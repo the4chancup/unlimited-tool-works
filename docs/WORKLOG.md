@@ -8726,6 +8726,16 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-11) — A PES 2017 Texport exported by the save editor (0.0.2-poc.1, a DBC7
+  tester's `/racestars/`) shows no players in the kick-off screen's "Starting Lineup", though
+  Edit lists them. `Texport::new` encodes the decoded records onto zeros, while the game copies
+  the save's records whole: every unmodeled byte is lost, among them the team's manager id
+  (team +4), the coach block (a template, not the team's coach record), tactics values and each
+  player's second id copy (`.tmp/report17/FINDINGS.md`). Fix: write onto the open save's own
+  record bytes (team, coach by manager id, roster, tactics, players), on 18-21 too, whose
+  writer zero-fills the same way. Which field the game needs waits on QUESTIONS "The PES 2017
+  Texport's empty starting lineup"; the fix does not.
+
 - open (2026-11-09) — One Compiler for every export kind (DECISIONS 2026-11-09): before Phase
   9's acceptance is written, the plans naming the Balls and Stadium compilers (about 30 files)
   are respelled for the Compiler and the Balls arranger, and the crate layout is chosen.

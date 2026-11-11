@@ -59,6 +59,19 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
 
+## The PES 2017 Texport's empty starting lineup
+
+- **Which lost field empties the lineup.** A tester's PES 2017 Texport from the save editor
+  (0.0.2-poc.1) imports and shows its players in Edit, but the kick-off screen's "Starting
+  Lineup" lists nobody (worklog issue of 2026-11-11). Four files in
+  `.tmp/report17/proof/<variant>/TEXPORT00000004`, each built from the game's own
+  `TEXPORT00000002` (/4cccc/, team 772): `A_current_writer` (rebuilt by the editor's writer),
+  `B_manager_id` (A with the team's manager id restored), `C_player_id_copy` (A with every
+  player's second id copy restored), `D_game_file_resalted` (the game's file, control). For
+  each: import it onto 772, pick /4cccc/ for a match, and say whether the kick-off screen lists
+  the starting eleven. The fix copies every field anyway; the answer says whether A reproduces
+  the report and which field the game needs.
+
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

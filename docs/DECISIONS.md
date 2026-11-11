@@ -16231,3 +16231,23 @@ member to a tool that leaves it. A bare `.mtl` name resolves in the folder (`sup
 upgrader respells it, so it is the folder's own path like `./`.
 Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
 "Kit-dependent assets".
+
+## 2026-11-11 — pes_savefile, save_editor — a Texport's records are the save's own bytes, the coach record by manager id
+Decision: `Texport::new` writes each record (team, coach, roster, tactics, every player) onto
+a copy of the open save's own record bytes, which `EditFile` hands over, instead of encoding the
+decoded entries onto zeros; the coach block is the save's coach record that the team record's
+manager id (its u32 at +4) names, from a new `coaches` section in the schema (17-21, measured
+on the reference saves), and a manager id naming none is `TexportError::NoCoach`. The header,
+tail and 660-byte block keep their measured templates. Supersedes the 2026-10-30 entry's
+"the records' unmodeled bytes written zero" (plan: "a written file imports to the same team
+and players").
+Why: a DBC7 tester's PES 2017 Texport from 0.0.2-poc.1 imports and lists its players, but the
+kick-off screen's "Starting Lineup" is empty. The game's own Texports are the save's records
+copied whole (both real PES 2017 files' records found in their save, the coach block byte for
+byte), and zero-filling loses fields the game reads: the manager id among them (0 in ours,
+the team id or the game's coach id in the game's), the tactics' unmodeled values, each
+player's second id copy. Copying the save's bytes covers every such field without our knowing
+which one the lineup needs (the in-game check, QUESTIONS, says which); a template coach block
+or patched constants would cover only the ones measured.
+Plan: `plans/pes_savefile/operations.md` "Texport (read + write)" ("The records are the
+save's"); worklog issue 2026-11-11.
