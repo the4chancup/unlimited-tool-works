@@ -37,6 +37,7 @@ test:
     {{python}} scripts/review/clones_test.py
     {{python}} scripts/drafts/bundle_drafts_test.py
     {{python}} scripts/drafts/draft_compare_test.py
+    {{python}} scripts/census/census_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
 gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
@@ -60,6 +61,7 @@ test-changed base="HEAD":
     {{python}} scripts/review/clones_test.py
     {{python}} scripts/drafts/bundle_drafts_test.py
     {{python}} scripts/drafts/draft_compare_test.py
+    {{python}} scripts/census/census_test.py
 
 # The GPU BC7 encoder's tests, ignored by `test` because they need a Vulkan or Metal device and
 # no CI runner has one: run by hand before landing a change to `dds_convert`'s `gpu` module.
@@ -145,6 +147,11 @@ parity:
 # docs/web/crate_map.html, the crates' dependency map, redrawn from the manifests (after a crate is added)
 crate-map:
     {{python}} scripts/crate_map.py
+
+# The census index of the real exports' textures and FMDL texture references, brought up to date
+# (.census/index.sqlite; queries: scripts/census/README.md)
+census-index *args:
+    {{python}} scripts/census/index.py {{args}}
 
 # Guardrail 4 (fmdl/pes_model dependency denylist) and the license allowlist (deny.toml)
 deps-check:
