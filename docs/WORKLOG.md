@@ -1917,9 +1917,9 @@ briefs, review loops, gates and mutation runs as for any step.
       1 to 6, defenders 2 to 5, each a refused drop; where the exe decides it is unread
       and not needed for the check
     - [ ] the sixth clause's distance (the maintainer, 2026-11-12: overlapping starters are
-      refused too, the stock drop on a teammate being a swap): how close the drop's
-      teammate detection lets two starters stand, from the exe (`0x43134c9`) and
-      `team_widgets`' pitch
+      refused too, and the stock screen keeps a minimum distance): read from a save the
+      stock game writes with two starters as close as the screen allows, side by side
+      and one above the other
     - [ ] the game's own formations under the six clauses: each team's in PES 2017's data
       and the preset list, then the cup saves, tallied by clause
     - [ ] each clause looked at in game under the stock exe (Pending looks)
