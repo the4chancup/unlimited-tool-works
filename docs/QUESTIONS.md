@@ -44,6 +44,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   slot 24's real count (marked uncertain)?
 - **Which PES version was the 15/16 pattern table measured on?** And is there a log from the
   other one, to say whether the two share it?
+- **VGL27's block table: /utg/ and /hanny/.** (worklog 0.0.2-poc13e) The VGL27 Friendlies'
+  /utg/ export packs boots and gloves 3252 to 3273, outside its row's 3401-3425 in
+  `crates/tools/team_compiler/data/legacy_boots_blocks.txt` (the wiki's PES 2019 table) and
+  inside no team's block; the block check refuses all 16, so /utg/'s players would show no
+  custom boots in the DLC. Is /utg/'s real block 3251 (the row then changes, in the embedded
+  copy or the organizer's `data/` copy)? /hanny/ packs 2351-2373, /gfg/'s block: there the
+  check keeps /gfg/'s models, and /hanny/'s players wear /gfg/'s, as a full Red compile
+  would also have collided; the manager has to renumber.
 
 ## The 0.0.2 Save editor report
 

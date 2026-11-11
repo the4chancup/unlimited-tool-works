@@ -7977,8 +7977,11 @@ briefs, review loops, gates and mutation runs as for any step.
       packed once per team, rows resolved per slot (TC-LEG-01/02). `team_compiler`
       `plan/legacy_ids.rs`, `plan/mod.rs`, `plan/item_rows.rs`, `deep/`, `messages`;
       `aesthetics_export` `validate/`; `resources/bundle/quick_upgrade.bat`
-    - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
-      directory's table (TC-LEG-03/04)
+    - [ ] poc13e the block check, brought into the PoC (2026-11-11, lead: the rebuilt
+      0.0.2-poc.2's Friendlies compile stopped on a Fatal `cpk_write_failed`, /hanny/ packing
+      /gfg/'s `k2351`): `legacy_id_out_of_block`, the data directory's table (TC-LEG-03/04);
+      SWE-2 brief `.tmp/0_0_2/poc13/brief_e.md`. /utg/ packs 3252-3273, outside its table
+      row's 3401-3425 and inside no team's block (QUESTIONS "VGL27's block table")
     - [x] poc13f a legacy merge that clashes keeps the folder shared, packed under its
       old ID (2026-11-11, SWE-2, landed first time; TC-LEG-05, EU-SET-17): `export_upgrader`
       `players.rs`, `messages.rs` (`legacy_merge_clash` gone), `help/`; `team_compiler`
@@ -8000,9 +8003,12 @@ briefs, review loops, gates and mutation runs as for any step.
       Edition`); the settings file written with its defaults (the PES path above all) and a
       comment per setting at creation, so the CLI runs without the GUI; the outdated `dpfl`
       finding made blocking. Bats keep their `quick_` names (the maintainer, 11-10)
-    - [ ] the embedded `dpfl`'s `4cc_99_test` renamed `4cc_90_test`, Red's default output CPK
-      name, for the VGL27 experiment only (the maintainer, 2026-11-10): on the PoC branch,
-      with the test CPK's own name if it follows the entry; main keeps `4cc_99_test`
+    - [x] the embedded `dpfl`'s `4cc_99_test` renamed `4cc_90_test`, Red's default output CPK
+      name, for the VGL27 experiment only (the maintainer, 2026-11-10): on the PoC branch
+      alone (`301c8b46`: both `DpFileList` templates, the default `cpk_name`, the bundle's
+      `settings.toml` and readme; the branch's tests spelling the old default left as they
+      are); main keeps `4cc_99_test`. `upgrade-dpfl` maps CPKs by stem, so a member's
+      `4cc_90_test.cpk` keeps its name
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
     and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).

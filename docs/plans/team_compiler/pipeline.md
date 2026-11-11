@@ -150,7 +150,8 @@ can: faces and kits need nothing (both tools name them by team ID and slot), sto
   ID or that slot's exclusive one; its wearers' rows find that package as above. A shared
   folder no linker records an ID for packs on Studio's IDs as usual. FoxDen's per-kit boots and
   gloves packages are not written for these IDs: old exports have none.
-- **Out of block** (0.0.2, after the PoC: not built with poc13). An old ID outside its
+- **Out of block** (poc13e, in the PoC: the VGL27 Friendlies' /hanny/ export packs /gfg/'s
+  IDs, and the two `k2351` paths stopped the compile on a Fatal). An old ID outside its
   team's block in `legacy_boots_blocks.txt`, or any old ID of a team the table does not
   list, is an Error (`legacy_id_out_of_block`, naming the ID, the folder and the block, or
   "none"): a folder packed under another team's ID puts its model over that team's. The

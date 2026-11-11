@@ -353,7 +353,7 @@ TC-LEG-05  GIVEN a /gbfg/ export whose shared folder Boots/Crocs (boots.fmdl) sl
                 legacy_ids.toml THEN Crocs and Mitts pack on Studio's IDs
 ```
 
-**0.0.2 scope (after the PoC).** The block check (`pipeline.md` "Legacy boots and gloves IDs
+**0.0.2-poc13e scope.** The block check (`pipeline.md` "Legacy boots and gloves IDs
 (VGL27)", "Out of block"). /gbfg/'s block is 2301 to 2325 in the embedded block table.
 
 ```
