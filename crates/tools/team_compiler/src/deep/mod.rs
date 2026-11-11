@@ -1483,8 +1483,10 @@ fn read(
 /// or in `Common/`, and for no other (a shared face folder's, a collar's). `kit_token_old`
 /// checks exactly these files: refusing a token anywhere else would send the member to an
 /// upgrade that leaves it as written. The upgrader's half of this rule is its
-/// `respell_outputs`. The root folders are matched in any letter case, as the export's
-/// content folders are.
+/// `respell_outputs`. Of the paths a file names, the upgrader respells a model's and a
+/// `.mtl`'s in these folders, and a `face.xml`'s only in a player folder's own `face.xml`,
+/// the one place the compiler reads one. The root folders are matched in any letter case, as
+/// the export's content folders are.
 fn kit_token_checked(path: &ScopePath) -> bool {
     let mut segments = path.segments();
     let root = segments.next().unwrap_or_default();

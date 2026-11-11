@@ -7959,8 +7959,9 @@ briefs, review loops, gates and mutation runs as for any step.
         its loop ended. SWE-2 S-poc12s4 r1 (two parts): part a 2 nits (`aa38922c`); part b 5
         accepted, the check wider than the upgrader's respelling (`Faces/`, collars,
         game-supplied names; the catalog row's text): rework by Opus sidekick `sk_kto`
-        (`4cded58e`, merge `46fc9622`; DECISIONS 2026-11-11), then SWE-2 r2; Carbon after
-        11-15
+        (`4cded58e`, merge `46fc9622`; DECISIONS 2026-11-11), then SWE-2 r2: 0 accepted (the
+        paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`; a doc nit
+        fixed), its loop ended; Carbon after 11-15
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
