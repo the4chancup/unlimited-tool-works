@@ -69,8 +69,9 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   `B_manager_id` (A with the team's manager id restored), `C_player_id_copy` (A with every
   player's second id copy restored), `D_game_file_resalted` (the game's file, control). For
   each: import it onto 772, pick /4cccc/ for a match, and say whether the kick-off screen lists
-  the starting eleven. The fix copies every field anyway; the answer says whether A reproduces
-  the report and which field the game needs.
+  the starting eleven. The fix copies every field anyway (landed 2026-11-11); the answer says
+  whether A reproduces the report and which field the game needs. The fix's own check: a
+  Texport of /4cccc/ exported by the next build's save editor lists the starting eleven.
 
 ## After the release
 

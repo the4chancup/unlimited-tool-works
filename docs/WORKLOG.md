@@ -8726,15 +8726,21 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open (2026-11-11) — A PES 2017 Texport exported by the save editor (0.0.2-poc.1, a DBC7
-  tester's `/racestars/`) shows no players in the kick-off screen's "Starting Lineup", though
-  Edit lists them. `Texport::new` encodes the decoded records onto zeros, while the game copies
-  the save's records whole: every unmodeled byte is lost, among them the team's manager id
-  (team +4), the coach block (a template, not the team's coach record), tactics values and each
-  player's second id copy (`.tmp/report17/FINDINGS.md`). Fix: write onto the open save's own
-  record bytes (team, coach by manager id, roster, tactics, players), on 18-21 too, whose
-  writer zero-fills the same way. Which field the game needs waits on QUESTIONS "The PES 2017
-  Texport's empty starting lineup"; the fix does not.
+- resolved 2026-11-11 (report17; `Texport::new`, `EditFile::team_records`) — A PES 2017
+  Texport exported by the save editor (0.0.2-poc.1, a DBC7 tester's `/racestars/`) showed no
+  players in the kick-off screen's "Starting Lineup", though Edit listed them: `Texport::new`
+  encoded the records onto zeros, losing the team's manager id, its coach record, tactics
+  values and each player's second id copy. It now writes onto the open save's own records
+  (17-21), the coach block being the save's coach record for the manager id (spec "Texport
+  (read + write)"). Not yet seen in game: QUESTIONS "The PES 2017 Texport's empty starting
+  lineup" holds the check, and which field the lineup needed.
+
+- open (2026-11-11) — `scripts/derive_savefile_schema.py` no longer reproduces `schema/fields.rs`
+  (from `Tools_4cc/4ccEditor-1` or `DBC7-Editor`): the file was edited by hand after it was
+  generated (the serde derives, `ABILITY_FIELDS`, two doc comments). The version tables
+  `pes15.rs`..`pes20.rs` still regenerate byte for byte (checked 2026-11-11, with `coaches`).
+  Either the generator emits those additions, or `spec/pes_savefile/codec.md` stops naming
+  `fields.rs` among its outputs.
 
 - open (2026-11-11) — `studio_core` settings' `read_back == desired` guards (`save`'s in-place
   edit and `fresh_from_template`) survive mutation (`mutants-diff ee80b0ac`, line 224): the

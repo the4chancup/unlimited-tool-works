@@ -56,7 +56,7 @@ layout. The payload, 5,578,704 bytes, is zero but:
 - the records where the reader finds them: the team record at `0x10054`, the coach block at
   `0x10234`, the roster at `0x1028C`, the tactics at `0x10330`, and each filled roster slot's
   player from `0x510840` at the player record's stride, each the open save's own record
-  bytes with the codec's fields written over them (below, "The records are the save's");
+  bytes with the codec's fields written over them ("The records are the save's", below);
 - the 8-byte tail `04 00 00 00 01 00 00 00`.
 
 The container: the PES 2017 key; the description `Team Export Data 01` with the team's name
@@ -67,29 +67,8 @@ zeroed); and the writer's serial, which `new` takes from the caller (the open sa
 `EditFile::serial`) and ignores on 18-21. PES 2015 and 2016 stay `NoTemplate`: no file of
 theirs was studied for a writer, and no cup asks for one.
 
-**The records are the save's (every version the writer covers, 17-21).** The game writes a
-Texport by copying the save's records whole: every record of two real PES 2017 Texports is in
-the save they came from, the coach block byte for byte. So `Texport::new` takes the open save's
-record bytes for the team, roster, tactics and each player, and the coach record, and writes the
-codec's fields over copies of them; a byte no field models keeps the save's value. We do not
-encode onto zeros, because the records hold fields the game reads that the schema does not
-model: a PES 2017 Texport written that way imports and lists its players in Edit, but the
-kick-off screen's "Starting Lineup" shows nobody (a tester's report, 2026-11-11). Among the
-lost bytes: the team record's u32 at +4, the team's **manager id** (on PES 17 equal to the
-team id on 218 of 220 teams; on 19 the game's own coach ids), the tactics record's unmodeled
-values, and each player record's second copy of the player id and the `ff ff` after it.
-
-The coach block is the save's **coach record** for that manager id: a section of 88-byte
-records sorted by coach id and closed by an all-`ff` record, its count a u16 in the payload
-header after the team count. Measured on the reference saves (2026-11-11): at `0x410118`, count
-at `0x62` (17); `0x40a35c`, `0x66` (18); `0x5fecbc`, `0x66` (19, not in team order); `0x94dddc`,
-`0x66` (20); `0x958da4`, `0x66` (21, 231 coaches for 210 teams). The schema gains the section
-(`coaches: SectionLayout` beside `teams`) and `EditFile` hands the writer a team's records,
-`EditFile::team_records(id)` (team, roster, tactics, and the coach record its manager id names)
-and `EditFile::player_record(id)`, as borrowed slices of the retained payload. A manager id
-naming no coach record is an error (`TexportError::NoCoach`), not a template: the game's file
-always carries one. The measured templates stay for what is not a record (the header, the
-tail, the 660-byte block, which the writer still writes zero).
+**The records are the save's** (17-21): built, in `spec/pes_savefile/operations.md`
+"Texport (read + write)", the paragraph "A written file's records are the save's".
 
 ### Aesthetics patch (new)
 

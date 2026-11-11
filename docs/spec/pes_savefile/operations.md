@@ -961,8 +961,42 @@ table (`schema/texport.rs`). Two eras:
   u32 at `0x0C` (two values seen on 18, one each on 19 and 21, independent of content) and the
   u32s at `0x10`/`0x14` (0 or 4): no content checksum was found (byte sums, CRC-32 and Adler-32
   of plaintext and ciphertext, with and without the key, match nothing). The coach block is
-  `team id (u32) | 4 constant bytes | flag byte | "MANAGER" | zeros`; the 660-byte block is zero
+  the save's coach record for the team (below); the 660-byte block is zero
   or one to five 125-188-byte runs (an edited coach, presumably; the writer writes it zero) and the tail is a per-version constant.
+
+**A written file's records are the save's.** The game writes a Texport by copying the save's
+records whole: every record of two real PES 2017 Texports is in the save they came from, the
+coach block byte for byte. So `Texport::new` (17-21) copies the open save's own record bytes
+for the team, roster, tactics and each rostered player, and the coach record, and writes the
+codec's fields over the copies; a byte no field models keeps the save's value. Encoding onto
+zeros instead loses fields the game reads: a PES 2017 file written that way imports and lists
+its players in Edit, but the kick-off screen's "Starting Lineup" shows nobody (a tester's
+report, 2026-11-11). Among the bytes no field models: the team record's u32 at +4, the team's
+**manager id** (on PES 17 equal to the team id on 218 of 220 teams; on 19 the game's own coach
+ids), tactics values, and each player record's second copy of the player id and the `ff ff`
+after it. The coach block is the save's **coach record** that manager id names: a section of
+88-byte records sorted by coach id (the u32 at +0) and closed by an all-`ff` record, its count
+a u16 in the payload header after the team count (`VersionSchema::coaches`, measured on the
+reference saves 2026-11-11: `0x410118`, count at `0x62` (17); `0x40a35c`, `0x66` (18);
+`0x5fecbc`, `0x66` (19, not in team order); `0x94dddc`, `0x66` (20); `0x958da4`, `0x66` (21,
+231 coaches for 210 teams); `None` on 15 and 16, not measured). A manager id naming no coach
+record is `NoCoach`, not a template: the game's file always carries one. The measured
+templates remain for what is not a record (the header, the tail, the zero 660-byte block).
+
+```rust
+/// `file.rs`: a team's own record bytes in the open save, as loaded (slices of the retained
+/// payload: an unsaved edit is not in them, the writer writes the entry over them).
+pub struct TeamRecords<'a> {
+    pub team: &'a [u8],
+    pub coach: Option<&'a [u8]>,   // the coach record its manager id names; None: no section or no record
+    pub roster: &'a [u8],
+    pub tactics: &'a [u8],
+}
+impl EditFile {
+    pub fn team_records(&self, id: u32) -> Option<TeamRecords<'_>>;   // None: no team `id`
+    pub fn player_record(&self, id: u32) -> Option<&[u8]>;          // None: no player `id`
+}
+```
 
 ```rust
 /// `schema/texport.rs`: the 18-21 layout, offsets derived from the record sizes.
@@ -970,14 +1004,13 @@ pub struct TexportLayout {
     pub key_index: usize,       // first key byte used
     pub size: usize,            // whole file
     pub header: [u8; 0x30],     // the fixture's header, the writer's template
-    pub coach: [u8; 88],        // the fixture's coach block minus the id, the writer's template
     pub tail: [u8; 12],
 }
 pub fn texport_layout(version: PesVersion) -> Option<&'static TexportLayout>;   // None on 15-17
 
 /// `interchange/texport.rs`.
 pub struct Texport { /* version, the plaintext (18-21) or the SaveContainer (15-17), team, players */ }
-pub enum TexportError { UnknownVersion, WrongSize { version, expected, actual }, Container(ContainerError), NotATexport, Codec(CodecError), RosterMismatch { slot, roster: u32, player: u32 }, NoTemplate(PesVersion), IdsDisagree { team, roster, tactics } }
+pub enum TexportError { UnknownVersion, WrongSize { version, expected, actual }, Container(ContainerError), NotATexport, Codec(CodecError), RosterMismatch { slot, roster: u32, player: u32 }, NoTemplate(PesVersion), IdsDisagree { team, roster, tactics }, NoCoach { team: u32, manager: u32 }, RecordSize { record: &'static str, expected: usize, actual: usize } }
 // `NotATexport`: a 15-17 savefile container that is a save, not a texport — the description is
 // the file's own label, checked before any record is read, so a save handed to `from_bytes` is
 // refused rather than opening with a garbage team and no players. `IdsDisagree`: the team,
@@ -989,13 +1022,16 @@ impl Texport {
     /// none or several do), then the container's version for 15-17. `Some(version)` on 15-17
     /// defers to the container's own version (no variant expresses the mismatch).
     pub fn from_bytes(bytes: &[u8], version: Option<PesVersion>) -> Result<Texport, TexportError>;
-    /// A fresh file; `players` in roster order, ids checked against the roster
-    /// (`RosterMismatch`). 18-21 from the layout's templates: header, coach (id patched), zero
-    /// block, tail, a key from `salt[..32]`. 17 a PES 2017 container around `PES17`'s payload
-    /// template and the records, carrying `serial`, the writer's serial (the open save's,
+    /// A fresh file written onto the save's own records (`EditFile::team_records`, and each
+    /// player paired with his `EditFile::player_record`, in roster order): the copies take the
+    /// entries' fields, ids checked against the roster and the record (`RosterMismatch`); the
+    /// coach block is `records.coach` as it is (`NoCoach` when `None`); a record of the wrong
+    /// size is `RecordSize`. Around the records, 18-21 the layout's header, a zero 660-byte
+    /// block, the tail and a key from `salt[..32]`; 17 a PES 2017 container around `PES17`'s
+    /// payload template, carrying `serial`, the writer's serial (the open save's,
     /// `EditFile::serial`; unused on 18-21). 15 and 16 are `NoTemplate`: write by reading a real
     /// file and replacing its team and players (`team_mut`/`players_mut`).
-    pub fn new(version: PesVersion, team: &TeamEntry, players: &[&PlayerEntry], salt: &[u8; 320], serial: &[u8]) -> Result<Texport, TexportError>;
+    pub fn new(version: PesVersion, team: &TeamEntry, records: &TeamRecords<'_>, players: &[(&PlayerEntry, &[u8])], salt: &[u8; 320], serial: &[u8]) -> Result<Texport, TexportError>;
     pub fn version(&self) -> PesVersion;
     pub fn team(&self) -> &TeamEntry;            // team + roster + tactics, the file's records on
                                                  //   every version
