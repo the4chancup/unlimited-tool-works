@@ -16381,3 +16381,16 @@ Open: whether the formations the game ships pass the four clauses, and what the 
 does with a formation breaking one; nothing is built before both.
 Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c and
 "Pending looks"; the reading in `.tmp/0_0_2/formation/research/report2.md`.
+
+## 2026-11-12 — aatf — The illegal formation test counts the lines: defenders 2 to 5, midfielders 1 to 6, forwards 1 to 5
+Decision (the maintainer, from PES 2017's stock formation screen): the screen refuses a drop
+that would leave fewer than two or more than five defenders, fewer than one or more than six
+midfielders, fewer than one or more than five forwards. The test gains that as its fifth
+clause, per formation set. This corrects "…in four clauses, with no line count" of the same
+day, whose reading of the exe had found no count on the drop's path and inferred there was
+none.
+Why: a formation outside those counts cannot be made in the game, which is the definition.
+The limits are the ones the match-time rewrite enforces, so the reading of the exe and the
+screen agree on the numbers; where the screen's refusal sits in the exe is unread, and the
+check does not need it.
+Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c.

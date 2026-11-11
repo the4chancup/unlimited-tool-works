@@ -1913,9 +1913,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] six defenders and seven midfielders tried in the stock screen (the maintainer,
       2026-11-12, two captures): the drop is refused with a no-entry sign, so the screens
       do count lines and the second reading's "no line count" is wrong
-    - [ ] the refusal read in the exe (the no-entry sign's condition; the upper and lower
-      limits per line; whether the classifier `0x3877476` or the area test `0x43149ea`
-      carries it)
+    - [x] the limits, from the maintainer's looks, 2026-11-12: forwards 1 to 5, midfielders
+      1 to 6, defenders 2 to 5, each a refused drop; where the exe decides it is unread
+      and not needed for the check
     - [ ] the game's own formations under the four clauses: each team's in PES 2017's data
       and the preset list, then the cup saves, tallied by clause
     - [ ] each clause looked at in game under the stock exe (Pending looks)
@@ -2123,9 +2123,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   `.tmp/0_0_2/formation/research/report2.md`): the keeper at (52, 1); the LB at (2, 10); a CF at (52, 10); a second LMF at
   (14, 30): does Team Sheet show each as stored, move the starter or change his position,
   and what does the save the game then writes hold; PES 2017; 0.0.2c; harness
-- The stock screen's lower limits: can the last forward, the last midfielder or the
-  second-last defender be dragged out of his line, or is that drop refused too; PES
-  2017 stock exe; 0.0.2c; maintainer or harness
 - A team's home stadium id (the u16 at +6) edited by the Save editor shows as that stadium in
   game; PES 2015 and 2016; 0.0.2-st15 (DECISIONS 2026-11-11); harness
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)

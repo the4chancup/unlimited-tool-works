@@ -117,13 +117,13 @@ position is one the spot offers, its band's default (CB to y 15, CMF from 16 to 
 each of LB, RB, LMF, RMF, LWF and RWF stands at most once in the set, as the drop offers a
 wide position only while no other starter of the set holds it. No overall enters it (the
 drag picks between a spot's two positions by rating, the menu gives either). A fifth clause
-counts the lines: the stock screen refuses a drop that would make a sixth defender or a
-seventh midfielder, showing a no-entry sign on the held starter (the maintainer's look,
-2026-11-12, PES 2017's stock screen; the second reading had inferred, wrongly, that nothing
-in the screens counts lines). Its limits are taken to be the match-time rewrite's until the
-refusal is read in the exe: two to five defenders, one to six midfielders, one to five
-forwards. Still open before anything is built: where the exe makes that refusal and its
-exact limits, the lower ones included; whether the game's
+counts the lines, per set: two to five defenders (CB, LB, RB), one to six midfielders (DMF,
+CMF, LMF, RMF, AMF), one to five forwards (LWF, RWF, SS, CF). The stock screen refuses a
+drop that would leave a line outside them, showing a no-entry sign on the held starter (the
+maintainer's looks, 2026-11-12, PES 2017's stock screen, both limits of each line; the
+second reading had inferred, wrongly, that nothing in the screens counts lines). They are
+the limits the match-time rewrite holds a formation to, so the game enforces one rule in
+two places. Still open before anything is built: whether the game's
 own formations (each team's in its data, the preset list) pass the clauses, since what
 the game ships is no tool's work; and what the stock screen does with a formation breaking
 one clause (Pending looks). Until they are read and each is looked at in game under the stock exe, nothing
