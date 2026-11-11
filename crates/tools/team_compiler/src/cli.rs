@@ -981,6 +981,35 @@ mod tests {
     }
 
     #[test]
+    fn the_block_table_falls_back_to_the_embedded_one_only_without_a_file() {
+        let gbfg = teams_list::TeamName::new("gbfg").unwrap();
+        let temp = scratch("cli_legacy_blocks");
+        let root = temp.path();
+        let embedded = LegacyBlocks::embedded().of(&gbfg);
+        assert!(embedded.is_some());
+        assert_eq!(load_legacy_blocks(None).unwrap().of(&gbfg), embedded);
+        assert_eq!(load_legacy_blocks(Some(root)).unwrap().of(&gbfg), embedded);
+
+        fs::write(
+            root.join(LEGACY_BLOCKS_FILE),
+            "Name\tFirstBootsID\n/gbfg/\t2326\n",
+        )
+        .unwrap();
+        assert_eq!(
+            load_legacy_blocks(Some(root)).unwrap().of(&gbfg),
+            Some(2326..=2350)
+        );
+
+        // A path that exists but cannot be read as a file aborts: only a missing file
+        // stands for the embedded table.
+        fs::remove_file(root.join(LEGACY_BLOCKS_FILE)).unwrap();
+        fs::create_dir(root.join(LEGACY_BLOCKS_FILE)).unwrap();
+        let error = load_legacy_blocks(Some(root)).unwrap_err();
+        assert_eq!(error.exit_code, ABORTED);
+        assert!(error.to_string().contains("cannot read"), "{error}");
+    }
+
+    #[test]
     fn a_missing_teams_list_is_created_only_with_a_data_directory() {
         let temp = scratch("cli_create_teams_list");
         let root = temp.path();

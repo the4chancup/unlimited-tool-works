@@ -621,6 +621,20 @@ mod tests {
             fs::read_to_string(&path).unwrap(),
             toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
         );
+
+        // A section written inline under a comment: the edit puts the comment inside the new
+        // table header, which does not parse (as in
+        // `save_writes_fresh_when_the_edit_would_not_read_back`).
+        fs::remove_file(&path).unwrap();
+        let mut settings =
+            Settings::default().with_template("# my cup settings\ncommon = { pes_version = 21 }\n");
+        settings.common.last_tool = Some("save-editor".to_owned());
+        settings.save(&path).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 

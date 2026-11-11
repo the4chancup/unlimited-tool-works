@@ -2375,6 +2375,37 @@ mod tests {
     }
 
     #[test]
+    fn a_common_file_named_with_a_legacy_kit_token_is_refused_and_not_checked_the_others_are() {
+        let temp = scratch("deep_texture_common_token");
+        // Both textures are too small: only the one with no token is checked.
+        let findings = findings_of(
+            temp.path(),
+            &[
+                ("Common/u0XXXp1_tiny.png", texture("tiny.png")),
+                ("Common/tiny.png", texture("tiny.png")),
+            ],
+            &[],
+        );
+        assert_eq!(
+            findings,
+            [
+                kit_token_name_finding(
+                    IssueScope::File(path("Common/u0XXXp1_tiny.png")),
+                    Disposition::DropFile,
+                    "Common/u0XXXp1_tiny.png"
+                ),
+                texture_finding_on(
+                    "texture_too_small",
+                    &IssueScope::File(path("Common/tiny.png")),
+                    "tiny.png",
+                    Disposition::DropFile,
+                    true
+                )
+            ]
+        );
+    }
+
+    #[test]
     fn an_all_texture_s_finding_goes_to_each_kit_inheriting_it_naming_its_path() {
         let temp = scratch("deep_texture_all");
         let findings = findings_for(

@@ -116,6 +116,11 @@ mod tests {
         ] {
             assert!(LegacyBlocks::parse(text).is_err(), "{text:?}");
         }
+        // The refusal names the row's line in the file, the header being line 1.
+        assert_eq!(
+            LegacyBlocks::parse("Name\tFirstBootsID\n/a/\t2001\n/A/\t2101\n").err(),
+            Some("line 3: the team is listed twice".to_owned())
+        );
     }
 
     #[test]

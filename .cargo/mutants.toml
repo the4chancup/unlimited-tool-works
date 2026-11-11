@@ -438,4 +438,15 @@ exclude_re = [
     # where `legacy_kit_token_at`'s `bytes.get(at..at + 7)` is `None`: the loop steps past the
     # end and returns the same tokens. The function's only `<`.
     "aesthetics_export/src/conventions/kit_token\\.rs:\\d+:\\d+: replace < with <= in legacy_kit_tokens",
+    # `legacy_token_names` searches each path from `folder.len() + 1`, past the folder and its
+    # `/`. Starting at the `/` (`*`) or the folder's last byte (`-`) finds the same first
+    # token: a token is 7 bytes with no `/`, so none can start there, and the name is cut at
+    # the token's end, not the search's start. The function's only `+`.
+    "team_compiler/src/deep/mod\\.rs:\\d+:\\d+: replace \\+ with [-*] in legacy_token_names",
+    # `convert_part` re-encodes an FMDL only when the path rewrite changed something
+    # (`changed > 0`); `>=` re-encodes an unchanged one too. `package` then reads every part
+    # again and packs its `model.write()`, and a re-encoded file reads back to the same model
+    # (`fmdl`'s round-trip tests), so the package holds the same bytes. The guard only saves
+    # the time. The function's only `>`.
+    "team_compiler/src/processing/model\\.rs:\\d+:\\d+: replace > with >= in convert_part",
 ]

@@ -649,6 +649,38 @@ mod tests {
         );
     }
 
+    // Two old gloves IDs: each slot's row waits on the task packing his own ID, not on
+    // the first gloves task.
+    #[test]
+    fn each_slot_s_row_waits_on_the_task_packing_his_own_old_id() {
+        let (rows, models) = planned_with_ids(
+            "co Midcup Rows",
+            &[
+                ("Players/05 - A/glove_l.fmdl", 1),
+                ("Players/06 - B/glove_l.fmdl", 1),
+            ],
+            None,
+            "[05]\ngloves = 2310\n[06]\ngloves = 2311\n",
+        );
+
+        assert_eq!(
+            models,
+            [
+                (0, ModelPackage::Face, vec![71405]),
+                (1, ModelPackage::Gloves, vec![2310]),
+                (2, ModelPackage::Face, vec![71406]),
+                (3, ModelPackage::Gloves, vec![2311]),
+            ]
+        );
+        assert_eq!(
+            rows,
+            [
+                set(ItemTable::Gloves, 71405, 2310, 1),
+                set(ItemTable::Gloves, 71406, 2311, 3),
+            ]
+        );
+    }
+
     // A slot the file gives no old ID of a kind gets no key of it: a folder mapping
     // two slots gives its keys per slot, so slot 05's row does not take 07's ID; a
     // folder holding parts of a kind it records nothing of packs none.

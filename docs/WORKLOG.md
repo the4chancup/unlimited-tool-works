@@ -8736,6 +8736,14 @@ points there.
   writer zero-fills the same way. Which field the game needs waits on QUESTIONS "The PES 2017
   Texport's empty starting lineup"; the fix does not.
 
+- open (2026-11-11) — `studio_core` settings' `read_back == desired` guards (`save`'s in-place
+  edit and `fresh_from_template`) survive mutation (`mutants-diff ee80b0ac`, line 224): the
+  shape their tests use, a section written inline under a comment, makes an edit that does
+  not parse at all, so only the `Err` arm is tested, and none of ten other shapes tried
+  (dotted keys, an array of tables, inline, nested and dotted tool tables) parses to other
+  values. The guards stay, as the net against writing a file `load` refuses; a test lands
+  when a shape that reaches them is found.
+
 - open (2026-11-09) — One Compiler for every export kind (DECISIONS 2026-11-09): before Phase
   9's acceptance is written, the plans naming the Balls and Stadium compilers (about 30 files)
   are respelled for the Compiler and the Balls arranger, and the crate layout is chosen.
