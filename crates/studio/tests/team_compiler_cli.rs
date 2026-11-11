@@ -136,6 +136,67 @@ fn check_prints_one_line_per_finding_and_exits_with_the_worst() {
     assert!(stderr(&output).is_empty(), "{}", stderr(&output));
 }
 
+/// `line` without its `--timestamps` prefix, asserting the prefix's shape: `+`, the whole
+/// seconds, `.`, three digits, a space.
+fn strip_timestamp(line: &str) -> &str {
+    let rest = line
+        .strip_prefix('+')
+        .unwrap_or_else(|| panic!("a timed line starts with `+`: {line}"));
+    let (stamp, text) = rest
+        .split_once(' ')
+        .unwrap_or_else(|| panic!("the prefix ends with a space: {line}"));
+    let (seconds, millis) = stamp
+        .split_once('.')
+        .unwrap_or_else(|| panic!("the prefix is `seconds.millis`: {line}"));
+    assert!(
+        !seconds.is_empty() && seconds.bytes().all(|byte| byte.is_ascii_digit()),
+        "{line}"
+    );
+    assert!(
+        millis.len() == 3 && millis.bytes().all(|byte| byte.is_ascii_digit()),
+        "{line}"
+    );
+    text
+}
+
+// TC-CLI-13
+#[test]
+fn check_with_timestamps_prefixes_each_line_with_the_seconds_since_the_run_started() {
+    let sandbox = Sandbox::new("check_timestamps", "");
+    sandbox.write(
+        "data/settings.toml",
+        &format!("[common]\n{}", sandbox.pes_folder_line()),
+    );
+    sandbox.write("data/teams_list.txt", "ID\tName\n714\t/co/\n");
+    sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", "");
+
+    let untimed = sandbox.run(&[
+        "team-compiler",
+        "check",
+        "--export",
+        "exports/co Midcup Error",
+    ]);
+    let timed = sandbox.run(&[
+        "team-compiler",
+        "check",
+        "--export",
+        "exports/co Midcup Error",
+        "--timestamps",
+    ]);
+
+    assert_eq!(timed.status.code(), Some(1), "stderr: {}", stderr(&timed));
+    let untimed_text = String::from_utf8_lossy(&untimed.stdout);
+    let timed_text = String::from_utf8_lossy(&timed.stdout);
+    let untimed_lines: Vec<&str> = untimed_text.lines().collect();
+    let timed_lines: Vec<&str> = timed_text.lines().map(strip_timestamp).collect();
+    assert_eq!(
+        timed_lines.len(),
+        2,
+        "the run's two finding lines: {timed_text}"
+    );
+    assert_eq!(timed_lines, untimed_lines);
+}
+
 // TC-CLI-04
 #[test]
 fn compile_with_a_positional_root_compiles_it_and_leaves_the_settings_file_alone() {

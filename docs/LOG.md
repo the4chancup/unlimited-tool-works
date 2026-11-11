@@ -3147,3 +3147,4 @@ worklog passed 7,000 lines.
 - 2026-11-11: 0.0.2-poc14 landed: `dpfilelist_outdated` and `cpk_name_unlisted` stop the run at the preflight (Fatal, exit 3, nothing compiled); the bundle's `settings.toml` carries a comment per setting in Red's layout and a fresh write starts from it.
 - 2026-11-11: 0.0.2-poc13g landed: an out-of-block legacy ID is reported once, on the folder that would pack it, not on each player folder linking a kept-shared one.
 - 2026-11-11: 0.0.2-ux1a landed: the upgrader's progress line counts one upgrade as one export (its output only named, `ExportNamed`) and counts the files it writes as parts.
+- 2026-11-11: 0.0.2-ux1b landed, closing ux1: `check` and `compile` take `--timestamps`, each finding line starting with the seconds since the run started when the finding was made (a task's on its worker).

@@ -167,7 +167,7 @@ pub(crate) fn run(
     apply: bool,
     ctx: &ToolContext,
 ) -> anyhow::Result<Option<Severity>> {
-    let mut events = RunEvents::new(ctx);
+    let mut events = RunEvents::new(ctx, false);
     let Some(templates) = templates::read_reported(ctx, &mut events) else {
         return Ok(events.worst());
     };

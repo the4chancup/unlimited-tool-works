@@ -15,7 +15,7 @@ use crate::validation::{run_budget, run_pool, validation_pass};
 /// over when the exports hold a refs export, as `compile` passes it over. Returns the worst
 /// severity reported; an exports folder that cannot be read is an error.
 pub(crate) fn run(inputs: &RunInputs, ctx: &ToolContext) -> anyhow::Result<Option<Severity>> {
-    let mut events = RunEvents::new(ctx);
+    let mut events = RunEvents::new(ctx, inputs.timestamps);
     let discovery = reader::discover(&inputs.exports_root, &inputs.exports)?;
     for path in &discovery.skipped {
         events.message(tool_message(

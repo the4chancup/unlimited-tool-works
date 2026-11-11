@@ -120,7 +120,8 @@ fn print_events(
             }
             None => {
                 if let Some(line) = lines.line(&envelope.event) {
-                    bar.suspend(|| writeln!(out, "{line}"))?;
+                    let prefix = envelope.made_at.map(timestamp_prefix).unwrap_or_default();
+                    bar.suspend(|| writeln!(out, "{prefix}{line}"))?;
                 }
             }
         }
@@ -235,6 +236,12 @@ fn elapsed_text(elapsed: Duration) -> String {
     format!("{}:{:02}", seconds / 60, seconds % 60)
 }
 
+/// The `+s.mmm ` a timed finding's line starts with: `made_at`'s whole seconds, unpadded,
+/// then its milliseconds truncated to three digits (`+0.042 `, `+125.500 `).
+fn timestamp_prefix(made_at: Duration) -> String {
+    format!("+{}.{:03} ", made_at.as_secs(), made_at.subsec_millis())
+}
+
 /// The plural `s`, absent for a count of one.
 fn plural_s(n: usize) -> &'static str {
     if n == 1 { "" } else { "s" }
@@ -285,6 +292,7 @@ mod tests {
             run_id: RunId(1),
             export_id: None,
             export_revision: None,
+            made_at: None,
             event,
         }
     }
@@ -614,5 +622,53 @@ mod tests {
         let mut out = Vec::new();
         print_notices(rx, &mut out).unwrap();
         assert_eq!(out, b"Switched to PES 2019\nCompiled 48 teams\n");
+    }
+
+    #[test]
+    fn the_timestamp_prefix_is_whole_seconds_then_three_truncated_milliseconds() {
+        assert_eq!(timestamp_prefix(Duration::from_millis(42)), "+0.042 ");
+        assert_eq!(
+            timestamp_prefix(Duration::from_micros(125_500_999)),
+            "+125.500 "
+        );
+    }
+
+    // TC-CLI-13
+    #[test]
+    fn a_timed_finding_prints_its_seconds_since_the_run_started_before_the_line() {
+        let (tx, rx) = unbounded();
+        tx.send(envelope(PipelineEvent::ExportStarted {
+            export_id: ExportId(1),
+            display_name: "co Spring.zip".to_owned(),
+        }))
+        .unwrap();
+        let finding = || {
+            PipelineEvent::Message(Message {
+                code: MessageCode {
+                    tool_id: "team-compiler",
+                    code: Cow::Borrowed("bad_file"),
+                },
+                severity: Severity::Warning,
+                disposition: Disposition::Keep,
+                scope: Scope::Export {
+                    export_id: ExportId(1),
+                },
+                context: Vec::new(),
+            })
+        };
+        tx.send(PipelineEventEnvelope {
+            made_at: Some(Duration::from_millis(12_345)),
+            ..envelope(finding())
+        })
+        .unwrap();
+        tx.send(envelope(finding())).unwrap();
+        drop(tx);
+
+        let mut out = Vec::new();
+        print_events(rx, false, &mut out, &mut Vec::new()).unwrap();
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            "+12.345 - co Spring.zip: Warning bad_file\n- co Spring.zip: Warning bad_file\n"
+        );
     }
 }

@@ -48,7 +48,7 @@ enum TeamCompilerCommand {
     },
 }
 
-/// Which exports a run reads.
+/// Which exports a run reads, and whether it times its findings.
 #[derive(Debug, Args)]
 struct SourceArgs {
     /// The folder holding the exports, for this run only. Without it, the
@@ -58,6 +58,10 @@ struct SourceArgs {
     /// name several exports.
     #[arg(long = "export", value_name = "PATH")]
     exports: Vec<PathBuf>,
+    /// Start each finding line with the seconds since the run started, when the finding
+    /// was made.
+    #[arg(long)]
+    timestamps: bool,
 }
 
 #[derive(Debug, Args)]
@@ -108,6 +112,9 @@ pub(crate) struct RunInputs {
     pub(crate) exports_root: PathBuf,
     /// The `--export` paths, as given; empty for every export under the root.
     pub(crate) exports: Vec<PathBuf>,
+    /// Whether the run times its findings (`--timestamps`): each `Message` carries the
+    /// seconds since the run started, when the finding was made.
+    pub(crate) timestamps: bool,
 }
 
 /// The `team-compiler` subcommand and its own subcommands.
@@ -130,8 +137,14 @@ pub(crate) fn run(
             let common = ctx.common();
             let settings = read_settings(&ctx.tool_settings(TOOL_ID), &common)?;
             let exports_root = prepare_exports_root(&source, &common, ctx.paths())?;
-            let inputs =
-                resolve_inputs(exports_root, source.exports, settings, common, ctx.paths())?;
+            let inputs = resolve_inputs(
+                exports_root,
+                source.exports,
+                source.timestamps,
+                settings,
+                common,
+                ctx.paths(),
+            )?;
             verdict(check::run(&inputs, ctx))
         }
         TeamCompilerCommand::Compile(args) => {
@@ -163,6 +176,7 @@ pub(crate) fn run(
             let inputs = resolve_inputs(
                 exports_root,
                 args.source.exports,
+                args.source.timestamps,
                 settings,
                 common,
                 ctx.paths(),
@@ -432,6 +446,7 @@ fn cpk_stem(key: &str, value: &str) -> Result<CpkStem, CliError> {
 fn resolve_inputs(
     exports_root: PathBuf,
     exports: Vec<PathBuf>,
+    timestamps: bool,
     settings: TeamCompilerSettings,
     common: CommonSettings,
     paths: &AppPaths,
@@ -448,6 +463,7 @@ fn resolve_inputs(
         legacy_blocks,
         exports_root,
         exports,
+        timestamps,
     })
 }
 
@@ -1058,6 +1074,7 @@ mod tests {
         let source = SourceArgs {
             exports_root: Some(given.clone()),
             exports: vec![],
+            timestamps: false,
         };
         let error =
             prepare_exports_root(&source, &CommonSettings::default(), &app_paths(root, None))
@@ -1081,6 +1098,7 @@ mod tests {
         let source = SourceArgs {
             exports_root: None,
             exports: vec![root.join("co Midcup A")],
+            timestamps: false,
         };
         let ready =
             prepare_exports_root(&source, &CommonSettings::default(), &app_paths(root, None))
@@ -1101,6 +1119,7 @@ mod tests {
         let source = SourceArgs {
             exports_root: None,
             exports: vec![],
+            timestamps: false,
         };
         let data_dir = root.join("data");
         let error =
@@ -1133,6 +1152,7 @@ mod tests {
         let source = SourceArgs {
             exports_root: None,
             exports: vec![],
+            timestamps: false,
         };
         let common = CommonSettings::default();
         let ready = prepare_exports_root(&source, &common, &app_paths(root, None)).unwrap();

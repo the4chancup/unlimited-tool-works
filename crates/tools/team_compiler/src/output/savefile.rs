@@ -279,7 +279,7 @@ mod tests {
             events_tx,
             requests_tx,
         );
-        (RunEvents::new(&ctx), events_rx)
+        (RunEvents::new(&ctx, false), events_rx)
     }
 
     /// The code and context pairs `rx` collected.

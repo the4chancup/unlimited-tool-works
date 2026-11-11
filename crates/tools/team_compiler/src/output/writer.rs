@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::ops::Range;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use aesthetics_export::ExportCoverage;
 use anyhow::{Context, ensure};
@@ -242,16 +243,16 @@ impl CpkOutput {
     /// manifest order, not arrival order, is what makes the CPK's layout the same on every run.
     /// A player folder's group (`TaskBatch::group`) is decided only once every batch of it is
     /// in: its packages wait, their memory still charged, for the textures batch that decides
-    /// them. Returns the batches decided, in manifest order, as each one's manifest position
-    /// and messages (a `duplicate_path` for each entry an override replaced among them), so
-    /// the caller reports findings in manifest order too; empty when `batch` waits for an
-    /// earlier one. With parts, a team is placed once the batches decided hold its export's
-    /// last task, whether that task committed or not; a team the parts cannot take is the
-    /// error (`parts::Unplaced`).
+    /// them. Returns the batches decided, in manifest order, as each one's manifest position,
+    /// finish time and messages (a `duplicate_path` for each entry an override replaced among
+    /// them), so the caller reports findings in manifest order too; empty when `batch` waits
+    /// for an earlier one. With parts, a team is placed once the batches decided hold its
+    /// export's last task, whether that task committed or not; a team the parts cannot take is
+    /// the error (`parts::Unplaced`).
     pub(crate) fn submit(
         &mut self,
         batch: TaskBatch,
-    ) -> anyhow::Result<Vec<(usize, Vec<Message>)>> {
+    ) -> anyhow::Result<Vec<(usize, Instant, Vec<Message>)>> {
         self.pending.insert(batch.index, batch);
         let mut committed = Vec::new();
         while let Some(next) = self.pending.get(&self.next) {
@@ -284,7 +285,7 @@ impl CpkOutput {
                 return Err(error);
             }
             for batch in batches {
-                committed.push((batch.index, batch.messages));
+                committed.push((batch.index, batch.finished, batch.messages));
             }
             self.next = range.end;
         }
@@ -712,7 +713,7 @@ mod tests {
     use std::path::Path;
     use std::sync::{Arc, mpsc};
     use std::thread;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use cpk::CpkArchive;
     use kit_config::{KitConfig, matches_fpc};
@@ -770,6 +771,7 @@ mod tests {
             uni_color: None,
             configless_kit: None,
             messages: vec![note(index)],
+            finished: Instant::now(),
             permit: None,
             output: None,
         }
@@ -804,7 +806,7 @@ mod tests {
         let mut output = CpkOutput::new(OutputSink::cpk(path.clone()), BTreeMap::new(), "", None);
         let mut reported = Vec::new();
         for batch in batches {
-            for (index, messages) in output.submit(batch).unwrap() {
+            for (index, _, messages) in output.submit(batch).unwrap() {
                 assert_eq!(messages, [note(index)], "task {index}'s own message");
                 reported.push(index);
             }
@@ -874,7 +876,7 @@ mod tests {
             .submit(empty_textures(dropping))
             .unwrap()
             .into_iter()
-            .map(|(index, _)| index)
+            .map(|(index, _, _)| index)
             .collect();
         assert_eq!(decided, [0, 1]);
         output
@@ -908,7 +910,7 @@ mod tests {
             .submit(empty_textures(kept))
             .unwrap()
             .into_iter()
-            .map(|(index, _)| index)
+            .map(|(index, _, _)| index)
             .collect();
         assert_eq!(decided, [0, 1]);
         assert!(finish_plain(output, PesVersion::Pes21).unwrap());
@@ -1087,8 +1089,10 @@ mod tests {
             .submit(batch(0, &["a/over.bin", "b/own.bin"], None))
             .unwrap();
 
-        assert_eq!(committed, [(0, vec![note(0), duplicate("a/over.bin")])]);
-        let message = &committed[0].1[1];
+        assert_eq!(committed.len(), 1);
+        assert_eq!(committed[0].0, 0);
+        assert_eq!(committed[0].2, [note(0), duplicate("a/over.bin")]);
+        let message = &committed[0].2[1];
         assert_eq!(message.code.code, "duplicate_path");
         assert_eq!(
             (message.severity, message.disposition, &message.scope),
@@ -1164,7 +1168,9 @@ mod tests {
 
         let committed = output.submit(kit_batch(0, &["kit/kit.ftex"])).unwrap();
 
-        assert_eq!(committed, [(0, vec![note(0), duplicate("kit/kit.ftex")])]);
+        assert_eq!(committed.len(), 1);
+        assert_eq!(committed[0].0, 0);
+        assert_eq!(committed[0].2, [note(0), duplicate("kit/kit.ftex")]);
         assert!(finish_plain(output, PesVersion::Pes21).unwrap());
         assert_eq!(entry(&path, "kit/kit.ftex"), override_bytes("kit/kit.ftex"));
         let bin = UniformParameter::read(&entry(&path, paths::UNIFORM_PARAMETER)).unwrap();
@@ -1833,7 +1839,9 @@ mod tests {
             .submit(batch(0, &["refs/over.bin", "refs/own.bin"], None))
             .unwrap();
 
-        assert_eq!(committed, [(0, vec![note(0), duplicate("refs/over.bin")])]);
+        assert_eq!(committed.len(), 1);
+        assert_eq!(committed[0].0, 0);
+        assert_eq!(committed[0].2, [note(0), duplicate("refs/over.bin")]);
         let (written, _) = finish_pes21(output);
         assert_eq!(
             written,
@@ -1999,13 +2007,23 @@ mod tests {
             "",
             None,
         );
-        let [first, second, third] = three_batches();
+        let [first, second, mut third] = three_batches();
+        // Task 2 finished before task 0's own `now` (a fast task beside a slow one), and
+        // arrives first: each committed batch still carries its own `finished`.
+        third.finished = first.finished - Duration::from_secs(1);
+        let finished = [first.finished, second.finished, third.finished];
 
         assert_eq!(output.submit(third).unwrap(), [], "task 2 waits for 0");
-        assert_eq!(output.submit(first).unwrap(), [(0, vec![note(0)])]);
+        assert_eq!(
+            output.submit(first).unwrap(),
+            [(0, finished[0], vec![note(0)])]
+        );
         assert_eq!(
             output.submit(second).unwrap(),
-            [(1, vec![note(1)]), (2, vec![note(2)])]
+            [
+                (1, finished[1], vec![note(1)]),
+                (2, finished[2], vec![note(2)])
+            ]
         );
     }
 
@@ -2778,7 +2796,9 @@ mod tests {
             .submit(batch(0, &["a/over.bin", "b/own.bin"], None))
             .unwrap();
 
-        assert_eq!(committed, [(0, vec![note(0), duplicate("a/over.bin")])]);
+        assert_eq!(committed.len(), 1);
+        assert_eq!(committed[0].0, 0);
+        assert_eq!(committed[0].2, [note(0), duplicate("a/over.bin")]);
         assert!(finish_plain(output, PesVersion::Pes21).unwrap());
         let run = folder.join("run");
         assert_eq!(layout(&run.join("4cc_41_teams.cpk")), ["b/own.bin"]);

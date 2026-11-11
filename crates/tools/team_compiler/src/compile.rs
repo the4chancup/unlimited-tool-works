@@ -16,6 +16,7 @@ use std::fs;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 
 use aesthetics_export::ExportIdentity;
 use anyhow::Context;
@@ -186,7 +187,7 @@ pub(crate) fn run(
     mode: &OutputMode,
     ctx: &ToolContext,
 ) -> anyhow::Result<Option<Severity>> {
-    let mut events = RunEvents::new(ctx);
+    let mut events = RunEvents::new(ctx, inputs.timestamps);
     let Some(templates) = templates::read_reported(ctx, &mut events) else {
         return Ok(events.worst());
     };
@@ -1070,6 +1071,9 @@ fn coordinate<'scope>(
                       permit: Option<Arc<Permit>>| {
         pool.spawn(move |_| {
             let mut batch = task_batch(index, task, files, context);
+            // The findings' `made` time is the task's own finish, before the batch waits
+            // on the writer behind a slower task.
+            batch.finished = Instant::now();
             batch.permit = permit;
             // Charged, never acquired: a task waiting here would hold its source permit
             // while it waits (`MemoryBudget::charge`).
@@ -1220,9 +1224,9 @@ fn write_batches(
                 return Err(error);
             }
         };
-        for (index, messages) in committed {
+        for (index, finished, messages) in committed {
             for message in messages {
-                events.message(message);
+                events.message_made(message, finished);
             }
             if let Some(export_id) = last_tasks.get(&index) {
                 events.processed(*export_id);
@@ -1262,6 +1266,7 @@ fn task_batch(
                 dropped_unit(&task.kind),
                 vec![("path", failure.path), ("error", failure.error)],
             )],
+            finished: Instant::now(),
             permit: None,
             output: None,
         },
@@ -1823,12 +1828,13 @@ mod tests {
                 uni_color: None,
                 configless_kit: None,
                 messages: Vec::new(),
+                finished: Instant::now(),
                 permit: None,
                 output: None,
             })
             .unwrap();
         drop(batches_tx);
-        let mut events = RunEvents::new(&tool_context(root, ""));
+        let mut events = RunEvents::new(&tool_context(root, ""), false);
 
         assert!(
             write_batches(
@@ -2016,6 +2022,7 @@ mod tests {
             legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: root.join("exports"),
             exports: Vec::new(),
+            timestamps: false,
         }
     }
 
@@ -2042,7 +2049,7 @@ mod tests {
             InstalledPaths::Unknown,
             &OutputMode::Test,
             None,
-            RunEvents::new(&ctx),
+            RunEvents::new(&ctx, false),
             &ctx,
         )
         .unwrap();
@@ -2098,7 +2105,7 @@ mod tests {
                 InstalledPaths::Unknown,
                 &normal,
                 None,
-                RunEvents::new(&ctx),
+                RunEvents::new(&ctx, false),
                 &ctx,
             )
             .unwrap();

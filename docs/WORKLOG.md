@@ -51,7 +51,8 @@ Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0
 upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
 (poc13e) was brought in. poc14 (the maintainer's asks of 2026-11-10: the DpFileList
 findings Fatal, the commented settings file) is landed and built: 0.0.2-poc.3 (archive
-`991cc670…`) beside poc.2 (`1cabaa13…`) goes to the maintainer; ux1 after it.
+`991cc670…`) beside poc.2 (`1cabaa13…`) goes to the maintainer. ux1 (the CLI's progress
+line and `--timestamps`) is landed, not in any bundle yet.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -8043,7 +8044,7 @@ briefs, review loops, gates and mutation runs as for any step.
       compile exits 1 with no Fatal, its Errors only `legacy_id_out_of_block` (/hanny/ 25,
       /utg/ 17; their wrong IDs, as intended) and /alg/, /ink/, /smtg/ `team_name_unknown`; `4cc_90_test.cpk`
       and the patch written. Not checked in game
-  - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
+  - [x] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
     and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).
     Specified: `plans/core/architecture.md` "The console's progress line and run summary",
@@ -8057,7 +8058,14 @@ briefs, review loops, gates and mutation runs as for any step.
       runs. `studio_core` `events.rs`, `studio` `console.rs`, `export_upgrader` `upgrade/`,
       `model_folders.rs`, `staging.rs`; match arms in three tools' test helpers. No test for
       a failed read's part (no fixture fails a read mid-write)
-    - [ ] ux1b `--timestamps` on `check` and `compile` (TC-CLI-13)
+    - [x] ux1b `--timestamps` on `check` and `compile` (TC-CLI-13): the time rides on the
+      event envelope (`PipelineEventEnvelope.made_at`, set only on a timed run's
+      `Message`s), a task's taken on its worker (`TaskBatch.finished`) and carried through
+      `CpkOutput::submit`; the console prints `+s.mmm ` before the line. `studio_core`
+      `events.rs`, `studio` `console.rs` and `tests/team_compiler_cli.rs`,
+      `team_compiler` `cli.rs`, `events.rs`, `check.rs`, `compile.rs`,
+      `output/writer.rs`, `processing/mod.rs`, `tests/cli/compile_exports.rs`; a
+      `made_at: None` in each other emitter
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

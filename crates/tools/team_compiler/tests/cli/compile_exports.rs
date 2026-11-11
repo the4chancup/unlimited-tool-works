@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
+use std::time::Instant;
 
 use dds_convert::{BlockCodec, SourceFormat, decode};
 use kit_config::{KitConfig, KitSlot, ShortSleeves};
@@ -2329,6 +2330,51 @@ fn an_export_is_processed_after_its_last_task_or_after_planning_when_it_has_none
         1,
         "the disabled export counts as skipped"
     );
+}
+
+// TC-CLI-13
+#[test]
+fn timestamps_marks_each_finding_with_the_seconds_since_the_run_started() {
+    // TC-CLI-11's root: a kit whose task fails on the pool, a disabled export.
+    let sandbox = Sandbox::new("timestamps");
+    sandbox.write("exports/co Midcup Kits/Kits/p1/kit.dds", &tracer_kit());
+    sandbox.write("exports/co Midcup Kits/Kits/g1/kit.dds", &pixels_cut_dds());
+    sandbox.write("exports/dbg Midcup Off/NO_USE", b"");
+    sandbox.write(
+        &format!("exports/dbg Midcup Off/{CLEAN_PLAYER}"),
+        &clean_model(),
+    );
+    let settings = pes21_settings(&sandbox);
+
+    let started = Instant::now();
+    let timed = sandbox.run(&settings, &["compile", "--no-deploy", "--timestamps"]);
+    let wall = started.elapsed();
+    let untimed = sandbox.run(&settings, &["compile", "--no-deploy"]);
+
+    assert_eq!(timed.messages(), untimed.messages());
+    assert!(!timed.messages().is_empty(), "the run reports findings");
+    for envelope in &timed.events {
+        match &envelope.event {
+            PipelineEvent::Message(_) => assert!(
+                envelope.made_at.is_some_and(|made| made <= wall),
+                "every Message carries a made_at under the run's {wall:?}: {envelope:?}"
+            ),
+            _ => assert_eq!(envelope.made_at, None, "{envelope:?}"),
+        }
+    }
+    for envelope in &untimed.events {
+        assert_eq!(envelope.made_at, None, "{envelope:?}");
+    }
+
+    let checked = sandbox.run(&settings, &["check", "--timestamps"]);
+    let mut findings = 0;
+    for envelope in &checked.events {
+        if let PipelineEvent::Message(_) = &envelope.event {
+            findings += 1;
+            assert!(envelope.made_at.is_some(), "{envelope:?}");
+        }
+    }
+    assert!(findings > 0, "the check reports findings");
 }
 
 // TC-PLN-05

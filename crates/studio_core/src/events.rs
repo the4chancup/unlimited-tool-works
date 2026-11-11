@@ -10,6 +10,7 @@
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::time::Duration;
 
 use vtree::ScopePath;
 
@@ -36,6 +37,10 @@ pub struct PipelineEventEnvelope {
     pub export_id: Option<ExportId>,
     /// The export revision the event was computed from, if any.
     pub export_revision: Option<ExportRevision>,
+    /// When the event was made, measured from the run's start: `Some` only on a `Message`
+    /// of a run asked to time its findings (`team-compiler`'s `--timestamps`), `None` on
+    /// every other event.
+    pub made_at: Option<Duration>,
     /// The event itself.
     pub event: PipelineEvent,
 }

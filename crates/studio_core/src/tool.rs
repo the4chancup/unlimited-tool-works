@@ -440,6 +440,7 @@ mod tests {
             run_id: RunId(1),
             export_id: None,
             export_revision: None,
+            made_at: None,
             event: PipelineEvent::UnmigratedContentFound,
         }
     }

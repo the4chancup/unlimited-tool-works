@@ -44,6 +44,7 @@ impl Report {
             run_id: RUN_ID,
             export_id: None,
             export_revision: None,
+            made_at: None,
             event,
         });
     }

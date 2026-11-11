@@ -23,6 +23,9 @@ What changed for members, release by release, newest first.
 - **Team compiler** — a model naming the team's Common by a team ID or the community's
   `000` placeholder is refused, with a hint to run it through the Export upgrader's
   `upgrade-models`.
+- **Team compiler** — `check` and `compile` take `--timestamps`: each finding line starts
+  with the seconds since the run started when the finding was made, for seeing where a slow
+  compile spends its time.
 
 ### Minor fixes
 

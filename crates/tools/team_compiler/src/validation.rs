@@ -2104,6 +2104,7 @@ mod tests {
             legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: exports.clone(),
             exports: Vec::new(),
+            timestamps: false,
         };
         let sources = reader::discover(&exports, &[]).unwrap().sources;
         let pool = rayon::ThreadPoolBuilder::new()

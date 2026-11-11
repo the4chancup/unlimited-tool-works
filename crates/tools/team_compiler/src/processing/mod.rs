@@ -19,6 +19,7 @@ use std::collections::BTreeMap;
 use std::ops::Range;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Instant;
 
 use aesthetics_export::{FileDescriptor, FileKind, ModelFormat};
 use dds_convert::{CachePolicy, Converter};
@@ -167,6 +168,10 @@ pub(crate) struct TaskBatch {
     pub(crate) configless_kit: Option<(u16, KitSlot)>,
     /// The task's findings.
     pub(crate) messages: Vec<Message>,
+    /// When the task's work ended on its worker, set by the pool's spawn closure as the
+    /// task returns: the findings' `made` time on a timed run (`--timestamps`), however
+    /// long the batch then waits to be committed.
+    pub(crate) finished: Instant,
     /// The memory the task was charged, released once the writer has its entries. A `.7z`
     /// export's tasks share one, its whole decompressed size, released with the last of them.
     pub(crate) permit: Option<Arc<Permit>>,
@@ -382,6 +387,7 @@ pub(crate) fn process_task(
         uni_color: None,
         configless_kit: None,
         messages: Vec::new(),
+        finished: Instant::now(),
         permit: None,
         output: None,
     };

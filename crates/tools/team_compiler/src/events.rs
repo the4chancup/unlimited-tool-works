@@ -2,6 +2,7 @@
 //! by export, and the worst severity among it, which decides the command's exit code.
 
 use std::collections::BTreeSet;
+use std::time::{Duration, Instant};
 
 use studio_core::{
     Disposition, ExportId, Message, PipelineEvent, PipelineEventEnvelope, RunId, Scope, Severity,
@@ -19,6 +20,9 @@ const RUN_ID: RunId = RunId(1);
 /// the command's exit code.
 pub(crate) struct RunEvents {
     ctx: ToolContext,
+    /// The run's start when the run times its findings, so a `Message` can carry when it
+    /// was made (`--timestamps`); `None` when it does not.
+    started: Option<Instant>,
     worst: Option<Severity>,
     /// The exports a finding refused whole (`DropExport`), by their id, for `Complete`'s
     /// summary: one export counts once however many findings refused it.
@@ -34,11 +38,13 @@ pub(crate) struct RunEvents {
 }
 
 impl RunEvents {
-    /// Events sent through `ctx`, none yet.
-    pub(crate) fn new(ctx: &ToolContext) -> RunEvents {
+    /// Events sent through `ctx`, none yet. `timestamps` starts the clock each finding's
+    /// `made_at` is measured from.
+    pub(crate) fn new(ctx: &ToolContext, timestamps: bool) -> RunEvents {
         // A clone shares the context's channels, so the events reach the same receivers.
         RunEvents {
             ctx: ctx.clone(),
+            started: timestamps.then(Instant::now),
             worst: None,
             skipped_exports: BTreeSet::new(),
             skipped_folders: BTreeSet::new(),
@@ -60,8 +66,14 @@ impl RunEvents {
         );
     }
 
-    /// One finding, addressed to the export its scope names.
+    /// One finding, addressed to the export its scope names, made when it is reported.
     pub(crate) fn message(&mut self, message: Message) {
+        self.message_made(message, Instant::now());
+    }
+
+    /// One finding made at `made`: a task's findings were made when the task finished on
+    /// its worker, however long the batch then waited to be reported.
+    pub(crate) fn message_made(&mut self, message: Message, made: Instant) {
         self.worst = self.worst.max(Some(message.severity));
         if message.disposition == Disposition::DropExport
             && let Some(export_id) = message.scope.export_id()
@@ -82,7 +94,14 @@ impl RunEvents {
         {
             self.folders_with_errors.insert(folder);
         }
-        self.emit(message.scope.export_id(), PipelineEvent::Message(message));
+        let made_at = self
+            .started
+            .map(|start| made.saturating_duration_since(start));
+        self.emit_at(
+            message.scope.export_id(),
+            PipelineEvent::Message(message),
+            made_at,
+        );
     }
 
     /// The export left the pipeline, whatever its outcome.
@@ -122,10 +141,20 @@ impl RunEvents {
     }
 
     fn emit(&self, export_id: Option<ExportId>, event: PipelineEvent) {
+        self.emit_at(export_id, event, None);
+    }
+
+    fn emit_at(
+        &self,
+        export_id: Option<ExportId>,
+        event: PipelineEvent,
+        made_at: Option<Duration>,
+    ) {
         self.ctx.emit(PipelineEventEnvelope {
             run_id: RUN_ID,
             export_id,
             export_revision: None,
+            made_at,
             event,
         });
     }

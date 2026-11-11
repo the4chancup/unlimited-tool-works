@@ -208,6 +208,7 @@ impl RunEvents {
             run_id: RUN_ID,
             export_id,
             export_revision: None,
+            made_at: None,
             event,
         });
     }
