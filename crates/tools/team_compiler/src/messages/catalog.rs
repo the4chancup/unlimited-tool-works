@@ -746,7 +746,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "kit_token_old",
         CatalogSeverity::Error,
         r#"A file or folder name in the export, or a path a model, `.mtl` or `face.xml` names, holds the old kit token: `u0`, three letters or digits, then `p` or `g` and a digit, in lowercase as shown (`kit6_u0827p0.dds`, `Common/u0XXXp1/`, `u0714g1`). A folder so named is reported once, not each file in it."#,
-        r#"The folder holding the name or the file naming the path is left out (in `Common/`, only that file or folder is left out). The Studio format spells the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an export, `export-upgrader upgrade-models` in a model folder alone."#,
+        r#"The folder holding the name or the file naming the path is left out (in `Common/`, only that file or folder is left out). The token is written `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an export, `export-upgrader upgrade-models` in a model folder alone."#,
     ),
     (
         "folder_pack_failed",
