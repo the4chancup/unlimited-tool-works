@@ -22,7 +22,7 @@ pub(crate) struct RunEvents {
     ctx: ToolContext,
     /// The run's start when the run times its findings, so a `Message` can carry when it
     /// was made (`--timestamps`); `None` when it does not.
-    started: Option<Instant>,
+    clock: Option<Instant>,
     worst: Option<Severity>,
     /// The exports a finding refused whole (`DropExport`), by their id, for `Complete`'s
     /// summary: one export counts once however many findings refused it.
@@ -44,7 +44,7 @@ impl RunEvents {
         // A clone shares the context's channels, so the events reach the same receivers.
         RunEvents {
             ctx: ctx.clone(),
-            started: timestamps.then(Instant::now),
+            clock: timestamps.then(Instant::now),
             worst: None,
             skipped_exports: BTreeSet::new(),
             skipped_folders: BTreeSet::new(),
@@ -95,7 +95,7 @@ impl RunEvents {
             self.folders_with_errors.insert(folder);
         }
         let made_at = self
-            .started
+            .clock
             .map(|start| made.saturating_duration_since(start));
         self.emit_at(
             message.scope.export_id(),

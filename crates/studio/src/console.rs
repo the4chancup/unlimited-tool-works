@@ -23,9 +23,10 @@ pub(crate) fn spawn_printer(events: Receiver<PipelineEventEnvelope>) -> JoinHand
     })
 }
 
-/// The run's events as lines on `out`, as `EventLines` formats them. With `draw`, the run's
-/// progress line (`[ 3/12 exports | 1,284/4,010 parts | 0:42 ]`) is drawn by indicatif on the
-/// process's stderr, redrawn in place at its rate and cleared while each line goes to `out`
+/// The run's events as lines on `out`, as `EventLines` formats them, each after the time it
+/// was made when its envelope carries one (`--timestamps`, `timestamp_prefix`). With `draw`,
+/// the run's progress line (`[ 3/12 exports | 1,284/4,010 parts | 0:42 ]`) is drawn by
+/// indicatif on the process's stderr, redrawn in place at its rate and cleared while each line goes to `out`
 /// (`suspend`); on `Complete` it is replaced on `err` by the run's summary, and a stream that
 /// ends without one (a `check`, an upgrade, a run stopped before it compiled) leaves no line.
 /// Without `draw` the bar is hidden and nothing touches `err`, so piped stdout is

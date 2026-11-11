@@ -8081,10 +8081,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `team_compiler` `cli.rs`, `events.rs`, `check.rs`, `compile.rs`,
       `output/writer.rs`, `processing/mod.rs`, `tests/cli/compile_exports.rs`; a
       `made_at: None` in each other emitter
-    - [ ] review rounds over ux1a + ux1b (`03ce3612..2ea6e27c`): the SWE-2 and Carbon loops
-      wait for a Devin login (`home` resets 2026-11-15; `work` is on the Free plan). Astra
-      ran meanwhile: A-ux1, 2 accepted (a test of `write_batches`' finish times, the plan's
-      `duplicate_path` timing), its loop ended
+    - [ ] review rounds over ux1a + ux1b (`03ce3612..2ea6e27c`): the Carbon loop waits for
+      `home`'s 2026-11-15 reset. Astra A-ux1: 2 accepted (a test of `write_batches`' finish
+      times, the plan's `duplicate_path` timing), its loop ended. SWE-2 S-ux1 r1 (three
+      parts): 1 accepted (TC-CLI-13's `check` test asserts no stderr), its loop ended
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):
@@ -8127,8 +8127,9 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2a JPEG XL sources (`spec/libs/dds_convert.md` "Accepted image formats";
     DECISIONS 2026-10-30): `jxl` =0.8.0 decoded directly (`dds_convert/src/jpeg_xl.rs`,
     `SourceFormat::Jxl`), the extension table, the compiler's sniffing, the Ruleset editor's
-    logo picker; TC-TEX-22, RE-GUI-19 widened; exe +2.8 MiB. Astra review pending
-    (after A-r17's, on Codex `brother`)
+    logo picker; TC-TEX-22, RE-GUI-19 widened; built without AVX-512 (DECISIONS
+    2026-11-11), exe +2.5 MiB. SWE-2 S-jxl r1: 2 accepted (a container fixture, a comment),
+    its loop ended; Astra pending (after A-r17's, on Codex `brother`), then Carbon (11-15)
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7

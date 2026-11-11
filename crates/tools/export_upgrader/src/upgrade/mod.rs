@@ -462,7 +462,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // are written as the Note spells them, one per line. The Note itself is
     // never written.
     let mut any_unmigrated = false;
-    // The root files above count as parts already done when the first
+    // The files written at the output's root next count as parts already done when the first
     // `Progress` goes.
     let mut root_files = 0;
     if let Some(note_text) = &note_text {

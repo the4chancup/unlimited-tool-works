@@ -195,6 +195,10 @@ fn check_with_timestamps_prefixes_each_line_with_the_seconds_since_the_run_start
         "the run's two finding lines: {timed_text}"
     );
     assert_eq!(timed_lines, untimed_lines);
+    // The flag adds nothing beside the findings: no progress line, no log on stderr.
+    for output in [&untimed, &timed] {
+        assert!(stderr(output).is_empty(), "{}", stderr(output));
+    }
 }
 
 // TC-CLI-04
