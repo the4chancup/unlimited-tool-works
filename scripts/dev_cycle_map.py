@@ -23,7 +23,8 @@ BANDS = [
 ]
 
 # (id, label, band, stage column, row within the band from 0, what it is). A band is as
-# tall as its rows: the reviewers take three, one column, since all three review.
+# tall as its rows: the reviewers take three, one column, since all three review, and so do
+# the three mutation runs, since all three measure the tests.
 NODES = [
     ("directives", "Directives", "maintainer", 0, 0,
      "Rules and choices the maintainer sets; each lands in a plan, AGENTS.md or RUNBOOK.md "
@@ -141,16 +142,16 @@ NODES = [
      "Every push runs just gates on Linux and on Windows, and a version tag builds the "
      "release's bundles with their checksums. just checkpoint-status prints its verdict on "
      "the pushed commit."),
-    ("mdiff", "mutants-diff", "mutation", 4, 0,
+    ("mdiff", "mutants-diff", "mutation", 5, 0,
      "Part of just checkpoint, over the commits since the last gated one: each surviving "
      "mutant is an assertion nobody wrote. Runs here while a whole run holds the VPS."),
-    ("whole", "Whole-crate run (VPS)", "mutation", 5, 0,
-     "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "
-     "the phase's close. The next phase starts while it runs."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, literal, normalize and order mutants cargo-mutants does not make, run before a "
      "whole-crate run into the same survivor list."),
-    ("triage", "Survivor triage", "mutation", 6, 0,
+    ("whole", "Whole-crate run (VPS)", "mutation", 5, 2,
+     "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "
+     "the phase's close. The next phase starts while it runs."),
+    ("triage", "Survivor triage", "mutation", 6, 1,
      "Each survivor is a missing test (into one rework brief) or an equivalent mutant, ruled "
      "once and recorded."),
 ]
