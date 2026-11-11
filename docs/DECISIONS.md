@@ -16362,3 +16362,22 @@ is being read with the rest: if every starter's position is one the drop offers 
 in everything the stock screens make, the drop rule is the test's main clause.
 Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c; the
 reading in `.tmp/0_0_2/formation/research/report.md`.
+
+## 2026-11-12 — aatf — The illegal formation test is the drop rule's offer, in four clauses, with no line count
+Decision (the lead, from the second reading of PES 2017's stock exe and the maintainer's word
+that the stock screens never leave a starter where his position is not offered): per preset
+and formation set, a formation is one the stock screens can make when (1) the first slot is
+the keeper at x 52, y 3; (2) every other spot is in y 4 to 47 and x 5 to 99; (3) every other
+position is the spot's band default (CB, CMF, SS by y) or the one other position whose area
+holds the spot; (4) each wide position stands at most once in the set. No overall and no
+line count enter it.
+Why: the drop and the Select Position menu write only a position the spot offers, a swap
+exchanges whole pairs, and the offers depend on the spot and on whether a wide position is
+taken in that set, nothing else; so the pairs stay valid whatever is dragged later, which
+answers 2026-10-31's objection. Nothing in the screens counts lines: the classifier the
+Whack Patch neutralises only names the formation (`4-4-2`, or the custom label), and the
+match-time rewrite acts on what the screens were free to make.
+Open: whether the formations the game ships pass the four clauses, and what the stock screen
+does with a formation breaking one; nothing is built before both.
+Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c and
+"Pending looks"; the reading in `.tmp/0_0_2/formation/research/report2.md`.

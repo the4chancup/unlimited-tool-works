@@ -106,11 +106,23 @@ dropped starter's position, and no comparison of a starter's spot with his posit
 the one area test in the exe refuses a drop in one group of screens and is left as it was.
 Its main clause is the drop rule's: every starter's position is one the game's drop offers
 at his spot, since the stock screens never leave a starter otherwise (the maintainer,
-2026-11-12, from play; the earlier objection, that a later drag never moves an earlier
-starter back, named no case). The other clauses are still being read: what else a spot is
-held to, the other ways the screens set a spot or a position (the Select Position menu, a
-swap, the preset formations), and whether the screens themselves keep the line counts (the
-maintainer looks at six defenders and at no forward in game). Until they are read and each is looked at in game under the stock exe, nothing
+2026-11-12, from play; the second reading of the exe found the same: the drop and the Select
+Position menu write a position the spot offers, a swap exchanges whole spot-and-position
+pairs, and nothing else moves a starter, so the earlier objection, that a later drag never
+moves an earlier starter back, names nothing that needs moving). The test, per preset and
+per formation set, over the eleven slots: (1) the first slot is the keeper, at x 52, y 3;
+(2) every other spot lies in the movable range, y 4 to 47 and x 5 to 99; (3) every other
+position is one the spot offers, its band's default (CB to y 15, CMF from 16 to 34, SS from
+35) or the one other position whose area in the drop rule's first table holds the spot; (4)
+each of LB, RB, LMF, RMF, LWF and RWF stands at most once in the set, as the drop offers a
+wide position only while no other starter of the set holds it. No overall enters it (the
+drag picks between a spot's two positions by rating, the menu gives either), and no line
+count: nothing in the screens counts defenders, midfielders or forwards, so the stock drag
+makes six defenders or no forward, and the match-time rewrite is no part of the test (the
+maintainer looks at that in game). Still open before anything is built: whether the game's
+own formations (each team's in its data, the preset list) pass the four clauses, since what
+the game ships is no tool's work, and what the stock screen does with a formation breaking
+one clause (Pending looks). Until they are read and each is looked at in game under the stock exe, nothing
 here is built. The check is the `libs/aatf` host's, in Rust beside the checks the host runs
 around the file's logic, never in the logic: the rule is the game's, the same for every cup,
 and in the logic it would copy the game's tables into every file and take a logic version;
