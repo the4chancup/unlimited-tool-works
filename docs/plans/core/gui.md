@@ -1333,8 +1333,8 @@ ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the int
 ST-UPD-02   GIVEN the offer shown
             WHEN its text is clicked, or Details
             THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
-                 pre-alpha.", the release's notes rendered as Markdown, and Open release page,
-                 Skip this version, Remind me later, no Update now (0.0.2's); WHEN Skip this
+                 pre-alpha.", the release's notes rendered as Markdown, and Update now, Open
+                 release page, Skip this version, Remind me later; WHEN Skip this
                  version THEN
                  `skipped_version` is `0.0.2` in the settings file and the offer is gone; WHEN
                  Remind me later THEN the dialog closes and the offer stays
