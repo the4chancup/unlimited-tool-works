@@ -92,17 +92,20 @@ def run(mutants: bool) -> int:
     if git("status", "--porcelain"):
         sys.exit("the tree is not clean: commit first, a checkpoint gates a commit")
     base = gated()
-    if base == git("rev-parse", "HEAD"):
+    # The commit the gates read, taken now: a commit made while they run is not gated by them.
+    head = git("rev-parse", "HEAD")
+    if base == head:
         print("HEAD is the gated commit already")
         return status(None)
     gates = subprocess.run(["just", "gates-changed", base], cwd=ROOT)
     if gates.returncode != 0:
         print(f"the gates failed: {REF} stays at {base[:8]}")
         return gates.returncode
+    print(f"the gates passed on {head[:8]}", flush=True)
     if mutants:
         diff = subprocess.run(["just", "mutants-diff", base], cwd=ROOT)
         print(f"mutants-diff ended with exit code {diff.returncode}; its survivors, if any, are in mutants.diff/missed_all.txt")
-    git("update-ref", REF, "HEAD")
+    git("update-ref", REF, head)
     return status(None)
 
 
