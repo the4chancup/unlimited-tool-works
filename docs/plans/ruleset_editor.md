@@ -59,7 +59,8 @@ the last edit changed are highlighted.
   the event page nor the logo, and their labels say so: `Event page (optional)` and
   `Event logo (optional)`. The event page is a text box (`https://` as its placeholder); the event logo shows the picture at the height the
   Save editor draws it (28, up to 84 wide), then `Choose picture…` (a file dialog for the
-  pictures `image` reads: PNG, JPEG, BMP, WebP, TGA, TIFF) and `Remove`, or a weak `None`
+  pictures `dds_convert` decodes but DDS and FTEX: PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL)
+  and `Remove`, or a weak `None`
   before them. A picture of any size is taken: scaled down (never up) to fit 168 × 56
   pixels, the 84 × 28 points the Save editor draws at 200% scaling, and stored as a PNG,
   which at that size is always under the file format's 64 KB; a file that is no picture it
@@ -429,7 +430,9 @@ RE-GUI-19  GIVEN a ruleset open with no logo
                 THEN the logo is a PNG of 112 × 56 pixels; WHEN a PNG of 336 × 112 pixels,
                 opaque white on its left half and transparent black on its right, is chosen
                 THEN the logo is 168 × 56 and every texel not fully transparent is white,
-                with no dark fringe at the edge; WHEN a file that is no picture
+                with no dark fringe at the edge; WHEN a lossless JPEG XL is chosen THEN the
+                logo is the PNG the same picture chosen as a lossless WebP gives, at its
+                size; WHEN a file that is no picture
                 is chosen THEN a line beside the buttons says so and the logo is unchanged;
                 WHEN the Event page holds `www.example` THEN General lists the problem
 RE-GUI-20  GIVEN Blank open on Universal rules

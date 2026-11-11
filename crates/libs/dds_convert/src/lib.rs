@@ -52,6 +52,7 @@ mod gpu {
         }
     }
 }
+mod jpeg_xl;
 mod mips;
 mod raster;
 mod resample;
@@ -84,6 +85,8 @@ pub enum SourceFormat {
     Tga,
     /// `.tif` / `.tiff`
     Tiff,
+    /// `.jxl` (JPEG XL)
+    Jxl,
 }
 
 impl SourceFormat {
@@ -99,6 +102,7 @@ impl SourceFormat {
             "webp" => SourceFormat::WebP,
             "tga" => SourceFormat::Tga,
             "tif" | "tiff" => SourceFormat::Tiff,
+            "jxl" => SourceFormat::Jxl,
             _ => return None,
         })
     }
@@ -193,6 +197,7 @@ pub fn decode(bytes: &[u8], format: SourceFormat) -> Result<Decoded, ConvertErro
         | SourceFormat::WebP
         | SourceFormat::Tga
         | SourceFormat::Tiff => raster::decode_raster(bytes, format),
+        SourceFormat::Jxl => jpeg_xl::decode(bytes),
     }
 }
 
@@ -294,14 +299,18 @@ pub fn probe(bytes: &[u8], format: SourceFormat) -> Result<Probe, ConvertError> 
         | SourceFormat::Bmp
         | SourceFormat::WebP
         | SourceFormat::Tga
-        | SourceFormat::Tiff => {
-            let (width, height) = raster::dimensions(bytes, format)?;
-            Ok(Probe {
-                width,
-                height,
-                mipmaps: mips::chain_len(width, height),
-            })
-        }
+        | SourceFormat::Tiff => Ok(raster_probe(raster::dimensions(bytes, format)?)),
+        SourceFormat::Jxl => Ok(raster_probe(jpeg_xl::dimensions(bytes)?)),
+    }
+}
+
+/// The probe of a source that carries one level, `(width, height)`: the
+/// chain conversion generates for it is the full one.
+fn raster_probe((width, height): (u32, u32)) -> Probe {
+    Probe {
+        width,
+        height,
+        mipmaps: mips::chain_len(width, height),
     }
 }
 
@@ -454,6 +463,8 @@ mod tests {
     const NM_PREFOX_D: &[u8] = include_bytes!("../tests/fixtures/bc3_nm_prefox.decoded.dds");
     const PNG: &[u8] = include_bytes!("../tests/fixtures/source.png");
     const PNG_OPAQUE: &[u8] = include_bytes!("../tests/fixtures/source_opaque.png");
+    const JXL_LOSSLESS: &[u8] = include_bytes!("../tests/fixtures/source.lossless.jxl");
+    const JXL_LOSSY: &[u8] = include_bytes!("../tests/fixtures/source.lossy.jxl");
     const FTEX_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.ftex");
     const DDS_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.dds");
     const CUBE: &[u8] =
@@ -1037,6 +1048,38 @@ mod tests {
             .max()
             .unwrap_or(0);
         assert!(max_diff <= 2, "jpg max channel diff {max_diff}");
+    }
+
+    #[test]
+    fn a_lossless_jxl_decodes_as_its_png_does() {
+        assert_eq!(
+            decode(JXL_LOSSLESS, SourceFormat::Jxl).unwrap(),
+            decode(PNG, SourceFormat::Png).unwrap()
+        );
+    }
+
+    #[test]
+    fn a_lossy_jxl_decodes_within_two_levels_of_libjxl_s_decode() {
+        // Two decoders of a lossy file may round differently (fixture README).
+        const LIBJXL_RGBA: &[u8] = include_bytes!("../tests/fixtures/source.lossy.jxl.rgba");
+        let decoded = decode(JXL_LOSSY, SourceFormat::Jxl).unwrap();
+        assert_eq!((decoded.width, decoded.height), (32, 16));
+        assert_eq!(decoded.mips.len(), 1);
+        assert!(!decoded.authored_mips);
+        assert_eq!(decoded.mips[0].len(), LIBJXL_RGBA.len());
+        let (index, ours, theirs) = decoded.mips[0]
+            .iter()
+            .zip(LIBJXL_RGBA)
+            .enumerate()
+            .map(|(index, (ours, theirs))| (index, *ours, *theirs))
+            .max_by_key(|(_, ours, theirs)| ours.abs_diff(*theirs))
+            .unwrap();
+        assert!(
+            ours.abs_diff(theirs) <= 2,
+            "pixel {} channel {}: {ours} against libjxl's {theirs}",
+            index / 4,
+            index % 4
+        );
     }
 
     #[test]
@@ -2395,6 +2438,8 @@ mod tests {
             ("bc1 ftex, three levels", FTEX_BC1, SourceFormat::Ftex),
             ("source.png", PNG, SourceFormat::Png),
             ("6x3 tga", tga.as_slice(), SourceFormat::Tga),
+            ("source.lossless.jxl", JXL_LOSSLESS, SourceFormat::Jxl),
+            ("source.lossy.jxl", JXL_LOSSY, SourceFormat::Jxl),
         ] {
             let probed = probe(bytes, format).unwrap();
             let decoded = decode(bytes, format).unwrap();
@@ -2411,8 +2456,18 @@ mod tests {
             let converted = ftex::info(&convert(&decoded, target).unwrap()).unwrap();
             assert_eq!(probed.mipmaps, u32::from(converted.mipmaps), "{name}");
         }
-        // The generated chains, spelled out: 6x3, 3x1, 1x1.
+        // The generated chains, spelled out: 6x3, 3x1, 1x1, and 32x16 down to 1x1.
         assert_eq!(probe(&tga, SourceFormat::Tga).unwrap().mipmaps, 3);
+        for jxl in [JXL_LOSSLESS, JXL_LOSSY] {
+            assert_eq!(
+                probe(jxl, SourceFormat::Jxl).unwrap(),
+                Probe {
+                    width: 32,
+                    height: 16,
+                    mipmaps: 6
+                }
+            );
+        }
     }
 
     #[test]
@@ -2432,6 +2487,8 @@ mod tests {
             ("ftex", &FTEX_BC1[..32], SourceFormat::Ftex),
             ("png", &PNG[..20], SourceFormat::Png),
             ("tga", &tga[..10], SourceFormat::Tga),
+            // The signature and its first two header bytes: this file's header is five.
+            ("jxl", &JXL_LOSSLESS[..4], SourceFormat::Jxl),
         ] {
             assert!(probe(cut, format).is_err(), "{name}");
         }
@@ -2450,6 +2507,7 @@ mod tests {
             ("tga", SourceFormat::Tga),
             ("tif", SourceFormat::Tiff),
             ("tiff", SourceFormat::Tiff),
+            ("jxl", SourceFormat::Jxl),
         ] {
             assert_eq!(
                 SourceFormat::from_extension(extension),
@@ -2479,6 +2537,10 @@ mod tests {
         assert!(matches!(
             decode(b"not a png", SourceFormat::Png),
             Err(ConvertError::Image(_))
+        ));
+        assert!(matches!(
+            decode(&JXL_LOSSLESS[..20], SourceFormat::Jxl),
+            Err(ConvertError::Truncated)
         ));
     }
 }

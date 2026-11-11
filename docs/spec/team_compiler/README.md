@@ -1512,6 +1512,12 @@ TC-TEX-20  GIVEN slot 05's model holding a texture entry unused.dds in the team'
            WHEN the export is compiled for PES 21
            THEN fmdl_texture_not_found is not reported for it, and the packed model's entry
                 names the compiling team's Common directory
+TC-TEX-22  GIVEN a /co/ export holding p1/kit.jxl and Portraits/05.jxl, lossless JPEG XL
+                 files of a kit.png and a portrait.png; and the same export holding those two
+                 PNGs instead
+           WHEN each is compiled for PES 21
+           THEN the first reports exactly the second's findings, and the two CPKs hold the
+                same entries byte for byte, u0714p1.ftex and 71405.dds among them
 ```
 
 **Deep checks**

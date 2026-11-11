@@ -8124,10 +8124,11 @@ briefs, review loops, gates and mutation runs as for any step.
     of the gate each failing one (`.tmp/acc/perturb.py`). Files: `scripts/gates/acceptance.py`,
     `acceptance_test.py`, `docs/spec/withdrawn_ids.md`, the three specs, `spec/README.md`,
     `CONTRIBUTING.md`
-  - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
-    DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
-    one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
-    formats) with its verify list
+  - [x] 0.0.2a JPEG XL sources (`spec/libs/dds_convert.md` "Accepted image formats";
+    DECISIONS 2026-10-30): `jxl` =0.8.0 decoded directly (`dds_convert/src/jpeg_xl.rs`,
+    `SourceFormat::Jxl`), the extension table, the compiler's sniffing, the Ruleset editor's
+    logo picker; TC-TEX-22, RE-GUI-19 widened; exe +2.8 MiB. Astra review pending
+    (after A-r17's, on Codex `brother`)
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7

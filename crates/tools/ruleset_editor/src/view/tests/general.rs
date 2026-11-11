@@ -426,6 +426,14 @@ fn write_bytes(dir: &Path, name: &str, bytes: &[u8]) -> PathBuf {
     path
 }
 
+/// A copy in `dir` of `dds_convert`'s test fixture `name` (described in
+/// that crate's `tests/fixtures/README.md`); the path.
+fn dds_convert_fixture(dir: &Path, name: &str) -> PathBuf {
+    let fixtures =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/dds_convert/tests/fixtures");
+    write_bytes(dir, name, &std::fs::read(fixtures.join(name)).unwrap())
+}
+
 /// The document's logo decoded: its width and height in pixels.
 fn logo_size(view: &RulesetView) -> (u32, u32) {
     let png = view
@@ -537,6 +545,29 @@ fn a_big_jpeg_is_made_smaller_to_fit_and_stored_as_a_png() {
         !contains_label(&frame.nodes, "is not a picture"),
         "no refusal"
     );
+}
+
+// RE-GUI-19
+#[test]
+fn a_jpeg_xl_is_stored_as_the_same_picture_in_webp_is() {
+    // Both files decode to `source.png`'s pixels, 32 × 16, and neither is
+    // a PNG, so each is encoded again. That encode zeroes the colour under
+    // its fully transparent texels, so the logo is not those pixels exactly.
+    let dir = crate::test_support::scratch("event_logo_jxl");
+    let mut logos = Vec::new();
+    for name in ["source.webp", "source.lossless.jxl"] {
+        let (ctx, _events, mut window, mut view) = fresh_blank();
+        choose_picture(
+            &mut window,
+            &mut view,
+            &ctx,
+            &dds_convert_fixture(&dir, name),
+        );
+        assert!(logo_text(&view).is_some(), "{name} is taken");
+        assert_eq!(logo_size(&view), (32, 16), "{name} keeps its size");
+        logos.push(view.document.as_ref().unwrap().ruleset.logo_png());
+    }
+    assert_eq!(logos[1], logos[0]);
 }
 
 // RE-GUI-19

@@ -678,7 +678,7 @@ pub struct FileDescriptor {
     pub size: u64,
     pub kind: FileKind,             // classified from the name alone ("Structure pass types")
     // glTF files may reference external .bin buffers and image files (any
-    // accepted format: DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF): those
+    // accepted format: DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL): those
     // dependencies are restricted to the source model folder, loaded once each,
     // and never doubled as pass-through output. Whether an image is a glTF
     // dependency is only known after deep glTF parsing; until then it is a

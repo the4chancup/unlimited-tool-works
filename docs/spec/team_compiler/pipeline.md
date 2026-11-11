@@ -560,7 +560,7 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    3-digit glove ID padding, `g567` → `g0567`, has no equivalent: the Studio format has no ID-named
    folders — IDs are auto-assigned. The Export upgrader normalizes old IDs when parsing them.)
 5. **Texture conversion** — all image formats are interchangeable as texture sources (see the
-   [library crates plan](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF. Material
+   [library crates plan](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL. Material
    references (FMDL path tables, `.mtl`, `.materials.toml`) name textures by **stem** (filename
    without extension); the compiler resolves each stem to the actual file in the model folder
    and converts according to the selected PES version, not just the Fox/pre-Fox split. BC7 is
@@ -2045,7 +2045,7 @@ Resolved decisions:
   already names such a set in the Common output.
 - **Texture references are stem-based (input)**: all material references (FMDL path tables,
   `.mtl`, `.materials.toml`) name textures by stem (filename without extension) in their
-  source/authoring form. Any image format (DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF) may be
+  source/authoring form. Any image format (DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL) may be
   used as a source for any model format — they are fully interchangeable. The compiler resolves
   each stem to the actual file in the folder and converts to the target format. Two image files
   with the same stem but different extensions is `texture_stem_conflict` (checked in the

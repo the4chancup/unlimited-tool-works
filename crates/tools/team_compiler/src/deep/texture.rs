@@ -38,7 +38,7 @@ impl SizeRule {
 
 /// The accepted formats that open with a fixed signature, and that signature; WebP's `RIFF`
 /// is checked with its `WEBP` tag below, and TGA has none.
-const SIGNATURES: [(&[u8], SourceFormat); 7] = [
+const SIGNATURES: [(&[u8], SourceFormat); 9] = [
     (b"DDS ", SourceFormat::Dds),
     (b"FTEX", SourceFormat::Ftex),
     (b"\x89PNG", SourceFormat::Png),
@@ -46,6 +46,9 @@ const SIGNATURES: [(&[u8], SourceFormat); 7] = [
     (b"BM", SourceFormat::Bmp),
     (b"II*\0", SourceFormat::Tiff),
     (b"MM\0*", SourceFormat::Tiff),
+    // JPEG XL as a bare codestream, and in its ISOBMFF container (the `JXL ` box).
+    (&[0xff, 0x0a], SourceFormat::Jxl),
+    (b"\0\0\0\x0cJXL \r\n\x87\n", SourceFormat::Jxl),
 ];
 
 /// The accepted format whose signature `bytes` open with, if any.
@@ -147,6 +150,11 @@ mod tests {
             "webp"
         );
         assert_eq!(
+            signature_format(&texture("kit.jxl")),
+            Some(SourceFormat::Jxl),
+            "jxl"
+        );
+        assert_eq!(
             signature_format(&texture("kit_back.tga")),
             None,
             "tga has no signature"
@@ -158,6 +166,12 @@ mod tests {
             (&b"II*\0\x08\x00\x00\x00"[..], SourceFormat::Tiff),
             (&b"MM\0*\x00\x00\x00\x08"[..], SourceFormat::Tiff),
             (&b"RIFF\x00\x00\x00\x00WEBPVP8 "[..], SourceFormat::WebP),
+            // JPEG XL's bare codestream, then its ISOBMFF container (the `JXL ` box).
+            (&[0xff, 0x0a, 0xc3, 0xc1], SourceFormat::Jxl),
+            (
+                &b"\x00\x00\x00\x0cJXL \x0d\x0a\x87\x0a\x00\x00\x00\x14ftyp"[..],
+                SourceFormat::Jxl,
+            ),
         ] {
             assert_eq!(signature_format(bytes), Some(format), "{format:?}");
         }
