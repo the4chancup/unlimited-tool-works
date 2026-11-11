@@ -7954,8 +7954,10 @@ briefs, review loops, gates and mutation runs as for any step.
         `validate/` `common_file_dropped`; `team_compiler` `deep/mod.rs`, `materials.rs`,
         `model.rs`, `messages`; TC-STR-22, TC-MOD-107, TC-MOD-91's fixture. The `.mtl`
         call of `names_export_file` has no test of its own (its `face.xml` twin has)
-      - [ ] review rounds: SWE-2 and Carbon loops wait for a Devin login (2026-11-15); an
-        Astra round on `brother` meanwhile
+      - [ ] review rounds: SWE-2 and Carbon loops wait for a Devin login (2026-11-15). Astra
+        ran meanwhile: A-poc12s4, 2 accepted (names below a player or shared folder and in
+        `Common/` only; a bare `.mtl` name is the folder's own; DECISIONS 2026-11-11), its
+        loop ended
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based

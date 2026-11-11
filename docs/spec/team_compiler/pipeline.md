@@ -1009,7 +1009,8 @@ describes behavior, not a serial scheduling requirement:
   exes match that spelling directly, and the historical `u0XXXp0` magic is legacy that only the
   Export upgrader understands and respells. In an export it is refused, as the old kit
   stand-in is: a legacy token (`u0`, three ASCII letters or digits, `p` or `g` and a digit, in
-  the letter case the upgrader matches) in a file or folder name, or in a path a model, `.mtl` or
+  the letter case the upgrader matches) in a file or folder name below a player or shared
+  folder or in `Common/`, or in a path a model, `.mtl` or
   `face.xml` names to a file of the export, its folder's own or the team's Common (checked by
   the deep pass), is `kit_token_old`, naming the upgrader, before
   anything is compiled. Before, a file so named packed as an ordinary texture

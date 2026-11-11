@@ -164,7 +164,7 @@ pub(super) fn names_export_file(value: &str) -> bool {
 /// alike). A path naming the kit stand-in's old spelling (a stem that, folded, is
 /// `dummy_kit` or `dummy_gk_kit`, alone or `_`-suffixed, whatever its directory) is
 /// `dummy_kit_name_old`, discarding the same; one path gets both findings when it trips
-/// both rules. A path naming a file of the export (`names_export_file`) and holding a
+/// both rules. A path naming a file of the export (`names_export_file`, or a bare name) and holding a
 /// legacy kit token (`aesthetics_export::legacy_kit_tokens`, the path as written) is
 /// `kit_token_old`, discarding the same, beside any other.
 /// `scope` is a model folder's
@@ -230,7 +230,10 @@ pub(super) fn texture_findings(
                     pass_through_eligible: false,
                 });
             }
-            if names_export_file(path) && !legacy_kit_tokens(path).is_empty() {
+            // A bare name is the folder's own too in a `.mtl`: `supply` looks it up there,
+            // and the upgrader respells it (a `face.xml` value has no such form).
+            let into_export = names_export_file(path) || !path.contains('/');
+            if into_export && !legacy_kit_tokens(path).is_empty() {
                 findings.push(ContentFinding {
                     code: Code::KitTokenOld.as_str(),
                     scope: scope.clone(),
@@ -952,6 +955,23 @@ mod tests {
                 finding("mtl_texture_not_found", "./skin.dds", "head"),
             ]
         );
+    }
+
+    #[test]
+    fn a_path_into_the_export_holding_the_legacy_kit_token_is_refused_and_a_game_path_is_not() {
+        // A bare name and a `./` one are the folder's own; `common_folder/` names the game's
+        // own file, whose name is the game's spelling.
+        let bare = "u0XXXp1.dds";
+        let local = "./u0714g1.dds";
+        let game = "common_folder/u0714p1.dds";
+        let found = findings(&[material("head", &[bare, local, game])], &["head"]);
+
+        let refused: Vec<&str> = found
+            .iter()
+            .filter(|finding| finding.code == "kit_token_old")
+            .map(|finding| finding.context[1].1.as_str())
+            .collect();
+        assert_eq!(refused, [bare, local], "{found:#?}");
     }
 
     #[test]

@@ -3150,3 +3150,4 @@ worklog passed 7,000 lines.
 - 2026-11-11: 0.0.2-ux1b landed, closing ux1: `check` and `compile` take `--timestamps`, each finding line starting with the seconds since the run started when the finding was made (a task's on its worker).
 - 2026-11-11: A-ux1 (Astra over ux1): 2 accepted, the loop ends; a test pins that a task's findings keep its worker finish time, and the plan says a writer-raised `duplicate_path` is timed with its task's.
 - 2026-11-11: 0.0.2-poc12 slice 4 landed: `kit_token_old` refuses the old kit token in an export's names and in paths to its own files, one matcher shared with the upgrader; a `DropFolder` on a `Common/` subfolder drops its files.
+- 2026-11-11: A-poc12s4 (Astra over slice 4): 2 accepted, the loop ends; names are checked below a player or shared folder and in `Common/` only, a bare `.mtl` name is the folder's own.

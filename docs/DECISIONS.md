@@ -16219,3 +16219,15 @@ TC-STR-22's "names `Common/u0XXXp0/` once, dropping it alone" hold; a finding pe
 it would repeat one fix many times.
 Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
 "Kit-dependent assets", `spec/model_format.md` "Output naming".
+
+## 2026-11-11 — team_compiler — kit_token_old checks names below a player or shared folder and in Common/ only
+Decision: `kit_token_old` checks the names below a player or shared folder and in `Common/`,
+not those folders' own names nor the kit folders'; a bare file name in a `.mtl` sampler is
+checked as the folder's own path.
+Why: the Export upgrader respells exactly those names (`respell_outputs` keeps a player or
+shared folder's own name, and the kit folders have their own naming, step 6's), and the
+compiler refuses exactly what it respells: refusing `Players/07 - u0XXXp1/` would send the
+member to a tool that leaves it. A bare `.mtl` name resolves in the folder (`supply`) and the
+upgrader respells it, so it is the folder's own path like `./`.
+Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
+"Kit-dependent assets".

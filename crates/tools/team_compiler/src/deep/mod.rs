@@ -1472,21 +1472,21 @@ fn read(
         })
 }
 
-/// The outermost names holding a legacy kit token in the folder at `folder` (its export
-/// path) and among its `files`, as export paths: the folder's own path alone when its own
-/// name holds one, else each file's or subfolder's outermost such name, each once (folded),
-/// in file order. A folder so named stands for every file below it: the fix, an upgrade, is
-/// the same for all of them.
-fn legacy_token_names<'a>(folder: &'a str, files: &'a [FileDescriptor]) -> Vec<&'a str> {
-    if legacy_token_name_end(folder).is_some() {
-        return vec![folder];
-    }
+/// The outermost names below the folder at `folder` (its export path) holding a legacy kit
+/// token, among its `files`, as export paths: each file's or subfolder's outermost such name,
+/// once (folded), in file order. A subfolder so named stands for every file below it: the
+/// fix, an upgrade, is the same for all of them. The folder's own name is not checked: the
+/// Export upgrader respells the names below a player, shared or `Common/` folder and keeps
+/// that folder's own, so refusing it would send the member to a tool that changes nothing.
+fn legacy_token_names<'a>(folder: &str, files: &'a [FileDescriptor]) -> Vec<&'a str> {
+    // Below the folder: past its path and the `/` after it.
+    let below = folder.len() + 1;
     let mut seen = BTreeSet::new();
     files
         .iter()
         .filter_map(|file| {
             let path = file.path.as_str();
-            let name = &path[..legacy_token_name_end(path)?];
+            let name = &path[..below + legacy_token_name_end(path.get(below..)?)?];
             seen.insert(vtree::fold_name(name)).then_some(name)
         })
         .collect()
@@ -2560,11 +2560,12 @@ mod tests {
                 refused("Players/05 - A", "Players/05 - A/kit1_u0714p1.dds"),
             ]
         );
-        // A folder so named is reported once, on its own name.
+        // A shared folder's own name is not checked (the upgrader keeps it); a name below it
+        // is.
         let files = descriptors(&["Boots/u0XXXp1/boots.fmdl", "Boots/u0XXXp1/x/u0714p1.dds"]);
         assert_eq!(
             kit_token_names(&path("Boots/u0XXXp1"), &files),
-            [refused("Boots/u0XXXp1", "Boots/u0XXXp1")]
+            [refused("Boots/u0XXXp1", "Boots/u0XXXp1/x/u0714p1.dds")]
         );
     }
 
