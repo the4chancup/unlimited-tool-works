@@ -36,6 +36,11 @@ def scope(within, kind=None):
     return " AND ".join(clauses), params
 
 
+# What holds textures and models the index does not open: a count read beside these is short by
+# whatever they pack.
+PACKED = (".zip", ".7z", ".rar", ".cpk", ".fpk")
+
+
 def changed_folders(db):
     """Indexed folders whose modification time differs from the walk's, or that are gone: a
     file added, removed or renamed in them since. A file rewritten in place changes no folder."""
@@ -49,19 +54,28 @@ def changed_folders(db):
     return changed
 
 
+def shell_path(path):
+    """A path as Git Bash takes it: forward slashes (it eats a backslash), quoted around a space."""
+    text = Path(path).as_posix()
+    return f'"{text}"' if " " in text else text
+
+
 def rerun_command(meta, index_path):
+    """The command that rebuilds this index. A roots file that is gone is left out: the rerun
+    then writes the default one."""
     command = "python scripts/census/index.py"
-    if Path(meta["roots_file"]).resolve() != (census.CENSUS / "roots.txt").resolve():
-        command += f" --roots {meta['roots_file']}"
+    roots_file = Path(meta["roots_file"])
+    if roots_file.exists() and roots_file.resolve() != (census.CENSUS / "roots.txt").resolve():
+        command += f" --roots {shell_path(roots_file)}"
     if index_path.resolve() != (census.CENSUS / "index.sqlite").resolve():
-        command += f" --index {index_path}"
+        command += f" --index {shell_path(index_path)}"
     if meta["keep_repositories"] == "1":
         command += " --keep-repositories"
     return command
 
 
 def describe(db, index_path):
-    """Prints the index's age, roots, skips, unopened archives and unreadable files, then
+    """Prints the index's age, roots, skips, unopened packed files and unreadable files, then
     whether the roots changed since."""
     meta = dict(db.execute("SELECT key, value FROM meta"))
     built = float(meta["built"])
@@ -70,21 +84,27 @@ def describe(db, index_path):
     print(f"index {index_path}: built {datetime.datetime.fromtimestamp(built):%Y-%m-%d %H:%M} "
           f"({hours:.1f} h ago) in {meta['seconds']} s over {', '.join(roots)}")
     skips = dict(db.execute("SELECT rule, folders FROM skips"))
-    archives = dict(db.execute("SELECT ext, count(*) FROM files WHERE ext IN ('.zip', '.7z') GROUP BY ext"))
+    packed = dict(db.execute("SELECT ext, count(*) FROM files GROUP BY ext"))
     bad_textures = db.execute("SELECT count(error) FROM textures").fetchone()[0]
     bad_fmdls = db.execute("SELECT count(error) FROM fmdls").fetchone()[0]
     repositories = "walked" if meta["keep_repositories"] == "1" else f"{skips['repository']:,} skipped"
     print(f"skipped folders: target {skips['target']:,}, .git {skips['.git']:,}, "
-          f"node_modules {skips['node_modules']:,}, unreadable {skips['unreadable']:,}; repositories {repositories}; "
-          f"archives not opened: {archives.get('.zip', 0):,} .zip, {archives.get('.7z', 0):,} .7z; "
+          f"node_modules {skips['node_modules']:,}, unreadable {skips['unreadable']:,}, "
+          f"links {skips.get('links', 0):,}; repositories {repositories}; packed files not opened: "
+          f"{', '.join(f'{packed.get(ext, 0):,} {ext}' for ext in PACKED)}; "
           f"unreadable files: {bad_textures:,} textures, {bad_fmdls:,} FMDLs")
-    current_roots = census.read_roots(Path(meta["roots_file"])) if Path(meta["roots_file"]).exists() else None
+    roots_file = Path(meta["roots_file"])
+    current_roots = census.read_roots(roots_file) if roots_file.exists() else None
     changed = changed_folders(db)
     if current_roots == roots and not changed:
         print("current: no indexed folder changed since the walk")
         return
-    reason = "the roots file changed" if current_roots != roots else \
-        f"{len(changed):,} folders changed since the walk (first: {changed[0]})"
+    if current_roots is None:
+        reason = f"the roots file {roots_file.as_posix()} is gone"
+    elif current_roots != roots:
+        reason = "the roots file changed"
+    else:
+        reason = f"{len(changed):,} folders changed since the walk (first: {changed[0]})"
     print(f"STALE: {reason}; rerun: {rerun_command(meta, index_path)}")
 
 

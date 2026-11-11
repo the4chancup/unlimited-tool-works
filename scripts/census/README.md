@@ -67,14 +67,16 @@ texture reference (a bone, a material, a parameter name) is never taken for one,
 reference is never missed for its spelling. An FMDL whose container does not read has a row in
 `fmdls` with the error and no references.
 
-**Not in the index:** archives (`.zip`, `.7z`) are not opened; each query prints how many
-there are. A `.model` or `.mtl` is listed in `files` but not read. A file rewritten in place
+**Not in the index:** packed files (`.zip`, `.7z`, `.rar`, `.cpk`, `.fpk`) are not opened;
+each query prints how many there are of each. A junction or symbolic link is not followed
+(its target's files would count twice), and counts under the skips as `links`. A `.model` or `.mtl` is listed in `files` but not read. A file rewritten in place
 changes no folder's time, so the staleness check misses it until a rerun picks it up.
 
 ### Queries
 
-Every query prints the index's age, roots, skips, unopened archives and unreadable files;
-says `STALE` with the rerun command when an indexed folder changed since the walk; then its
+Every query prints the index's age, roots, skips, unopened packed files and unreadable files;
+says `STALE` with the rerun command when an indexed folder changed since the walk, or the
+roots file changed or is gone; then its
 `COUNT`, a `control` or `scope` count beside it that shows the index held comparable files
 (a 0 is never alone), a tally of the values counted, and examples (`--examples N`, default
 10). Regular expressions are Python's, matched case-insensitively anywhere in the value;

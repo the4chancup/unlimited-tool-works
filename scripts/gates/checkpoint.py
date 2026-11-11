@@ -9,8 +9,11 @@ it and anything can ask how far HEAD has run past it.
 
 `run` needs a clean tree (the ref names a commit, so what is gated must be one): it runs
 `just gates-changed <gated>`, then `just mutants-diff <gated>` (skipped by `--no-mutants`),
-and moves the ref to HEAD when the gates pass. Surviving mutants do not stop the ref: they
-are assertions nobody wrote, listed in `mutants.diff/missed_all.txt` for triage.
+and moves the ref to the commit it started on when the gates pass. The tree must stay as it
+was until they have: the gates read the working tree, so a commit or an edit made while they
+run leaves the ref where it was. One made during the mutation run is fine, and is simply not
+gated yet. Surviving mutants do not stop the ref: they are assertions nobody wrote, listed in
+`mutants.diff/missed_all.txt` for triage.
 
 `status` prints the gated commit, how many commits HEAD is past it (docs-only ones apart),
 how many commits are not pushed, and what CI made of the pushed head. With
@@ -101,6 +104,11 @@ def run(mutants: bool) -> int:
     if gates.returncode != 0:
         print(f"the gates failed: {REF} stays at {base[:8]}")
         return gates.returncode
+    # The gates read the working tree, not the commit: a tree that moved under them (a commit,
+    # a merge, an edit) was not `head`'s, so their pass says nothing of it.
+    if git("rev-parse", "HEAD") != head or git("status", "--porcelain"):
+        print(f"the tree changed while the gates ran: {REF} stays at {base[:8]}; run the checkpoint again")
+        return 1
     print(f"the gates passed on {head[:8]}", flush=True)
     if mutants:
         diff = subprocess.run(["just", "mutants-diff", base], cwd=ROOT)

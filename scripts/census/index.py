@@ -91,7 +91,10 @@ def walk(root, keep_repositories, skips, folders):
             continue
         folders[folder.replace("\\", "/")] = mtime
         for entry in entries:
-            if entry.is_symlink():
+            # A junction is no symlink to Python: followed, it lists its target's files a second
+            # time under its own path, and one pointing at a folder above it never ends.
+            if entry.is_symlink() or entry.is_junction():
+                skips["links"] += 1
                 continue
             if entry.is_dir():
                 if entry.name in SKIPPED_NAMES:
@@ -99,7 +102,11 @@ def walk(root, keep_repositories, skips, folders):
                 else:
                     stack.append((entry.path, names + entry.name.lower() + "/"))
             elif entry.is_file():
-                stat = entry.stat()
+                # Gone since the listing: its folder's time changed with it, so the index reads as stale.
+                try:
+                    stat = entry.stat()
+                except OSError:
+                    continue
                 yield entry.path.replace("\\", "/"), stat.st_size, stat.st_mtime, names
 
 
@@ -246,7 +253,7 @@ def build(roots_path, index_path, keep_repositories):
     db.executemany("INSERT INTO folders VALUES (?, ?)", folders.items())
     db.execute("DELETE FROM skips")
     db.executemany("INSERT INTO skips VALUES (?, ?)",
-                   [(rule, skips[rule]) for rule in (*SKIPPED_NAMES, "repository", "unreadable")])
+                   [(rule, skips[rule]) for rule in (*SKIPPED_NAMES, "repository", "unreadable", "links")])
     meta = {"built": started, "seconds": round(time.time() - started, 1), "roots": json.dumps(roots),
             "roots_file": str(roots_path), "keep_repositories": int(keep_repositories)}
     db.execute("DELETE FROM meta")

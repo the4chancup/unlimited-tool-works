@@ -5,6 +5,7 @@ import io
 import os
 import re
 import shutil
+import sqlite3
 import struct
 import sys
 import tempfile
@@ -165,12 +166,39 @@ class Census(unittest.TestCase):
         self.build()
         text, numbers = self.ask("sql", "SELECT path FROM files WHERE path LIKE '%inside.fmdl' OR path LIKE '%skipped.dds'")
         self.assertEqual(numbers["COUNT"], 0)
-        self.assertIn("target 1, .git 0, node_modules 0, unreadable 0; repositories 1 skipped", text)
-        self.assertIn("archives not opened: 1 .zip, 0 .7z", text)
+        self.assertIn("target 1, .git 0, node_modules 0, unreadable 0, links 0; repositories 1 skipped", text)
+        self.assertIn("packed files not opened: 1 .zip, 0 .7z, 0 .rar, 0 .cpk, 0 .fpk", text)
         self.build(keep_repositories=True)
         text, numbers = self.ask("sql", "SELECT path FROM files WHERE path LIKE '%inside.fmdl'")
         self.assertEqual(numbers["COUNT"], 1)
-        self.assertIn("target 1, .git 1, node_modules 0, unreadable 0; repositories walked", text)
+        self.assertIn("target 1, .git 1, node_modules 0, unreadable 0, links 0; repositories walked", text)
+
+    def test_every_packed_kind_is_counted_as_not_opened(self):
+        for ext in (".7z", ".rar", ".cpk", ".fpk"):
+            (self.root / f"packed{ext}").write_bytes(b"")
+        self.build()
+        self.assertIn("packed files not opened: 1 .zip, 1 .7z, 1 .rar, 1 .cpk, 1 .fpk", self.ask("textures")[0])
+
+    @unittest.skipUnless(os.name == "nt", "NTFS junctions exist on Windows only")
+    def test_a_junction_is_not_followed_and_counts_as_a_link(self):
+        import _winapi
+        root = self.folder / "junctioned"
+        (root / "real").mkdir(parents=True)
+        (root / "real" / "kit.dds").write_bytes(dds(4, 4, b"DXT1"))
+        _winapi.CreateJunction(str(root / "real"), str(root / "link"))
+        self.roots.write_text(f"{root.as_posix()}\n", encoding="utf-8")
+        self.assertEqual(self.build()["files"], 1)
+        text, numbers = self.ask("sql", "SELECT rule FROM skips WHERE rule = 'links' AND folders = 1")
+        self.assertEqual(numbers["COUNT"], 1)
+        self.assertIn("unreadable 0, links 1;", text)
+
+    def test_an_index_written_before_the_links_rule_still_describes_itself(self):
+        self.build()
+        db = sqlite3.connect(self.index)
+        db.execute("DELETE FROM skips WHERE rule = 'links'")
+        db.commit()
+        db.close()
+        self.assertIn("unreadable 0, links 0;", self.ask("textures")[0])
 
     def test_a_rerun_rereads_changed_files_and_drops_gone_ones(self):
         first = self.build()
@@ -195,9 +223,25 @@ class Census(unittest.TestCase):
         (self.root / "Kits" / "new.dds").write_bytes(dds(4, 4, b"DXT1"))
         text, _ = self.ask("textures")
         self.assertIn("STALE: 1 folders changed since the walk", text)
-        self.assertIn(f"rerun: python scripts/census/index.py --roots {self.roots} --index {self.index}", text)
+        self.assertIn(f"rerun: python scripts/census/index.py --roots {self.roots.as_posix()} "
+                      f"--index {self.index.as_posix()}", text)
         self.roots.write_text(f"{self.root.as_posix()}/Kits\n", encoding="utf-8")
         self.assertIn("STALE: the roots file changed", self.ask("textures")[0])
+
+    def test_the_rerun_command_spells_its_paths_as_git_bash_takes_them(self):
+        meta = {"roots_file": str(self.roots), "keep_repositories": "0"}
+        command = query.rerun_command(meta, self.folder / "my index.sqlite")
+        self.assertNotIn("\\", command)
+        self.assertEqual(command, f"python scripts/census/index.py --roots {self.roots.as_posix()} "
+                                  f'--index "{self.folder.as_posix()}/my index.sqlite"')
+
+    def test_a_deleted_roots_file_is_named_and_the_rerun_leaves_it_out(self):
+        self.build()
+        self.roots.unlink()
+        text, _ = self.ask("textures")
+        self.assertIn(f"STALE: the roots file {self.roots.as_posix()} is gone; "
+                      f"rerun: python scripts/census/index.py --index {self.index.as_posix()}\n", text)
+        self.assertNotIn("--roots", text)
 
     def test_a_missing_roots_file_is_written_with_the_library_root(self):
         roots = self.folder / "census" / "roots.txt"
