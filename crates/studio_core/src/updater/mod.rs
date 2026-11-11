@@ -5,9 +5,18 @@
 //! (`newest_release`), offers it when it is newer than the built version and
 //! not the skipped one (`offers`), and stamps `last_update_check` when a check
 //! completes. The `Release` the offer keeps (notes, page URL and assets)
-//! feeds the Details dialog and the download. Native only: the browser build
-//! has no binary to swap and no settings file.
+//! feeds the Details dialog and the download. "Update now" is `install`: it
+//! downloads the release's archive, checks it, unpacks it and swaps it in
+//! (`install` and `swap`). Native only: the browser build has no binary to
+//! swap and no settings file.
 
+mod install;
+mod swap;
+
+pub use install::{InstallError, Installed, OpenUrl, Progress, install};
+pub use swap::SwapStep;
+
+use std::io::Read;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -201,12 +210,11 @@ pub fn start_check(
     rx
 }
 
-/// The real fetch: one GET of the releases list, with rustls on `ring` as the
-/// crypto provider and the system's certificate store, a `User-Agent` GitHub
-/// answers to and one global timeout. The body is read with ureq's default
-/// cap; the list is a few dozen kilobytes.
-pub fn fetch_releases() -> Result<String, UpdateError> {
-    let agent = ureq::Agent::config_builder()
+/// The HTTP settings the check and the download share: rustls on `ring` as
+/// the crypto provider, the system's certificate store and a `User-Agent`
+/// GitHub answers to. Each caller adds its own timeouts.
+fn agent_config() -> ureq::config::ConfigBuilder<ureq::typestate::AgentScope> {
+    ureq::Agent::config_builder()
         .tls_config(
             ureq::tls::TlsConfig::builder()
                 .provider(ureq::tls::TlsProvider::Rustls)
@@ -217,11 +225,33 @@ pub fn fetch_releases() -> Result<String, UpdateError> {
                 .build(),
         )
         .user_agent(concat!("unlimited-tool-works/", env!("CARGO_PKG_VERSION")))
+}
+
+/// The real fetch: one GET of the releases list, with one global timeout. The
+/// body is read with ureq's default cap; the list is a few dozen kilobytes.
+pub fn fetch_releases() -> Result<String, UpdateError> {
+    let agent = agent_config()
         .timeout_global(Some(FETCH_TIMEOUT))
         .build()
         .new_agent();
     let mut response = agent.get(RELEASES_URL).call()?;
     Ok(response.body_mut().read_to_string()?)
+}
+
+/// The real download stream: one GET of `url`, its body read as it arrives.
+/// The body is unbounded, where ureq's convenience readers stop at 10 MB,
+/// under a release archive's size. No global timeout: a slow line takes
+/// longer than `FETCH_TIMEOUT` over a whole archive, so the timeouts bound
+/// the connection and each read instead, and a download that stalls that long
+/// fails.
+pub fn open_url(url: &str) -> Result<Box<dyn Read + Send>, ureq::Error> {
+    let agent = agent_config()
+        .timeout_connect(Some(FETCH_TIMEOUT))
+        .timeout_per_read(Some(FETCH_TIMEOUT))
+        .build()
+        .new_agent();
+    let response = agent.get(url).call()?;
+    Ok(Box::new(response.into_body().into_reader()))
 }
 
 /// The releases list the updater's and the shell's tests share: `v0.0.2`

@@ -146,8 +146,9 @@ Key reasons:
 | `binrw` | Binary format parsing with derive macros | Production-ready |
 | `rayon` | Parallel iteration (work-stealing thread pool) | Production-ready |
 | `crossbeam-channel` | Tool↔shell event and request channels; the write queue between coordinator and writer | Production-ready |
-| `flate2` | zlib compression (WESYS format, FTEX's compressed chunks) | Production-ready |
-| `sevenz-rust2` | Native .7z reading (replaces 7z.exe); the maintained fork of `sevenz-rust`, which RUSTSEC-2026-0246 marks unmaintained | 0.22.2 in use, no default features (decode only: LZMA, LZMA2, BCJ) |
+| `flate2` | zlib compression (WESYS format, FTEX's compressed chunks); the gzip layer of the Linux bundle's `.tar.gz`, which the updater unpacks | Production-ready |
+| `sevenz-rust2` | Native .7z reading (replaces 7z.exe); the maintained fork of `sevenz-rust`, which RUSTSEC-2026-0246 marks unmaintained | 0.22.2 in use, no default features (decode only: LZMA, LZMA2, BCJ); `studio_core` adds `util`, the extraction of a whole archive into a folder for the updater (no further crate) |
+| `tar` | The Linux bundle's `.tar.gz`, unpacked by the updater with the files' modes (the program's executable bit) | 0.4.46 in use, no default features (no `xattr`: the bundle carries no extended attributes) |
 | `zip` | Native .zip reading | 9.0.5 in use, no default features plus `deflate` |
 | `serde` | Serialization: `PesVersion`'s two-digit number form, app settings and `aatf`'s ruleset data today; `serde_json` writes `save-editor diff --json`'s report today and joins with the Blender manifest (`player_aesthetics_editor.md`) and the match-event wire format (`match_feed.md`) in their phases | Production-ready |
 | `clap` | CLI argument parsing | Production-ready |
