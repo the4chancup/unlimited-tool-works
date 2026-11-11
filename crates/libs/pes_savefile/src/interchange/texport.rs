@@ -348,9 +348,8 @@ fn sized<'a>(
 /// its manager id names, roster, tactics, and each filled roster slot's
 /// player), then the entries written over them by `write_records`. The
 /// game writes a Texport by copying the save's records whole, and they
-/// hold bytes the codec does not model that the game reads (the team's
-/// manager id among them), so a byte no field covers keeps the save's
-/// value. `players` pairs each entry, in roster order, with its save
+/// hold bytes the codec does not model, so a byte no field covers keeps
+/// the save's value. `players` pairs each entry, in roster order, with its save
 /// record, whose id must be the entry's (`RosterMismatch`).
 fn lay_records(
     plain: &mut [u8],
@@ -1499,7 +1498,7 @@ mod tests {
     /// `team_mut` is written as `new` writes one: the description, the name
     /// the game lists, takes the new name, an old name's longer tail
     /// cleared, and the coach block stays the file's, the coach record the
-    /// team record's manager id (unmodeled, so kept) still names. The
+    /// team record's manager id (not edited, so kept) still names. The
     /// fixture is team 736 `/o/`; /bant/ is team 708.
     #[test]
     fn a_pes17_team_edit_reaches_the_description_and_keeps_the_coach_block() {
@@ -1763,7 +1762,7 @@ mod tests {
 
     /// An edit to the team and to a player is written over the save's
     /// bytes: the file reads back with both, and the team record still
-    /// carries the save's manager id, which no field models.
+    /// carries the save's manager id.
     #[test]
     fn an_edit_is_written_over_the_saves_bytes() {
         for version in [PesVersion::Pes17, PesVersion::Pes21] {

@@ -503,6 +503,16 @@ pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
             bit_width: 32,
         },
         FieldSpec {
+            field: TeamField::ManagerId,
+            bit_offset: 32,
+            bit_width: 32,
+        },
+        FieldSpec {
+            field: TeamField::StadiumId,
+            bit_offset: 80,
+            bit_width: 16,
+        },
+        FieldSpec {
             field: TeamField::Color1Red,
             bit_offset: 144,
             bit_width: 6,

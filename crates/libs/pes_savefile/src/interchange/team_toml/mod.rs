@@ -60,9 +60,9 @@ pub struct TeamSection {
     pub name: Option<String>,
     /// The three-letter short name.
     pub short_name: Option<String>,
-    /// Manager id (PES 19+).
+    /// Manager id (PES 17+).
     pub manager_id: Option<u32>,
-    /// Home stadium id (PES 19+).
+    /// Home stadium id (PES 17+).
     pub stadium_id: Option<u16>,
     /// First team colour (PES 17+).
     pub color_1: Option<TeamColor>,

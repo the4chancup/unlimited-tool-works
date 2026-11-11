@@ -452,7 +452,7 @@ fn a_pes_17_texport_carries_the_open_saves_serial() {
 }
 
 /// A PES 2017 Texport carries the save's own records: the team record's
-/// manager id, which no field models, and the coach record it names.
+/// manager id and the coach record it names.
 #[test]
 fn a_pes_17_texport_carries_the_teams_manager_and_its_coach_record() {
     let (mut view, mut window) = open_on(PesVersion::Pes17, "export_texport_17_coach", CO);

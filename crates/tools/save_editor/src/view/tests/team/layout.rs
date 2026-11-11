@@ -315,7 +315,7 @@ fn row_edges(version: PesVersion, test: &str) -> [f64; 6] {
     ]
 }
 
-// On PES 17, whose save stores no manager or stadium ID, the ids' disabled
+// On PES 16, whose save stores no manager or stadium ID, the ids' disabled
 // stand-ins take the number boxes' width: the row's controls stand where
 // they do on PES 21.
 #[test]
@@ -329,11 +329,11 @@ fn the_rows_controls_stand_still_on_a_version_without_the_ids() {
         "the Kit slots button",
     ];
     let stored = row_edges(PesVersion::Pes21, "team_row_edges_21");
-    let gated = row_edges(PesVersion::Pes17, "team_row_edges_17");
+    let gated = row_edges(PesVersion::Pes16, "team_row_edges_16");
     for ((control, gated), stored) in CONTROLS.iter().zip(gated).zip(stored) {
         assert!(
             (gated - stored).abs() <= 1.0,
-            "{control} stands {gated} on PES 17 against {stored} on PES 21"
+            "{control} stands {gated} on PES 16 against {stored} on PES 21"
         );
     }
 }

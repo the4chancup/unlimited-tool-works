@@ -558,7 +558,7 @@ all side by side.
   and colours 1-2 (RGB, each colour's picker and its hex, labelled `Col. 1` and `Col. 2`), the
   short name's box taking three characters (the game shows a three-letter abbreviation; every
   version stores it in 4 bytes, so a longer one typed would not reach the game as typed),
-  manager ID and stadium ID (19+) and a **Kit slots…** button opening the kit slot
+  manager ID and stadium ID (17+) and a **Kit slots…** button opening the kit slot
   assignments in a dialog (rarely edited, so not a panel that pushes the tactics down; a
   version that stores none says so in it). The ids share the fields' row, not one of their
   own, because the Tactics editor below needs the height: with a heading-size title and the

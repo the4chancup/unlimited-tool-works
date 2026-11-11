@@ -246,9 +246,9 @@ pub const ABILITY_FIELDS: [PlayerField; 25] = [
 pub enum TeamField {
     /// The team id.
     Id,
-    /// Manager id (PES 19+).
+    /// Manager id (PES 17+).
     ManagerId,
-    /// Home stadium id (PES 19+).
+    /// Home stadium id (PES 17+).
     StadiumId,
     /// The team name was edited.
     EditedName,

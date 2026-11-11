@@ -65,8 +65,8 @@ pub struct TeamEntry {
     pub name: String,            // on disk: UTF-8, 0x46 B (4ccEditor's wchar[0x46]
                                  // is its in-memory buffer)
     pub short_name: String,      // 3 chars, single-byte on disk
-    pub manager_id: Option<u32>,          // 19+
-    pub stadium_id: Option<u16>,          // 19+
+    pub manager_id: Option<u32>,          // 17+
+    pub stadium_id: Option<u16>,          // 17+
     pub colors: Option<[TeamColor; 2]>,   // 17+, 6 bits per channel
     pub edit_flags: TeamEditFlags,        // name; short name (15), stadium (20/21), strip (17)
     pub kit_slots: Option<[KitSlot; 10]>, // 17 only: kit number ↔ bound team id
@@ -549,7 +549,7 @@ included.
 
 ### The team record
 
-The tables cover 15 to 26% of the team record's bits. The uncovered bytes by version, with the
+The tables cover 15 to 27% of the team record's bits. The uncovered bytes by version, with the
 wiki's names (what a Save editor's team page would model):
 
 - **15/16** (456 B): 4 to 17 emblem, home stadium, nationality, callname, coach nationality and
@@ -558,7 +558,8 @@ wiki's names (what a Save editor's team page would model):
   75 three rival ids; 76 to 147 0xFF (145 to 147 set in about 600 records); 222 to 342 the
   custom stadium name; 343 to 406 four banner texts at a 16-byte stride; 407 to 455 the
   manager's name.
-- **17/18** (480 B): 4 to 17 manager id, emblem, stadium, nationality, callname; 19 to 27
+- **17/18** (480 B): 8 and 9, and 12 to 17, emblem, nationality, callname (the manager id
+  at 4 to 7 and the stadium at 10 and 11 are covered, at PES 19's offsets); 19 to 27
   stadium settings and edit flags (bits 215 and 216 set in about 10,400 of 15,221 records); 28
   to 67 the kit slots (uncovered on 18 alone); 68 to 79 rivals; 80 to 151 0xFF with
   banner-edited flags at 149 to 151; 226 to 346 the custom stadium name; 347 to 410 banners.
