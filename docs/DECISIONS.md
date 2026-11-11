@@ -16204,3 +16204,18 @@ a tool that cannot fix it; one function keeps the two tools from drifting. One f
 folder rather than per file under it, since the fix (an upgrade) is the same for all of them.
 Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
 "Kit-dependent assets", `spec/model_format.md` "Output naming"; TC-STR-22, TC-MOD-107.
+
+## 2026-11-11 — team_compiler, aesthetics_export — kit_token_old checks paths to the export's files only, and drops a Common/ subfolder whole
+Decision: `kit_token_old` checks a path a model, `.mtl` or `face.xml` names only when the path
+names a file of the export, its folder's own (`./`) or the team's Common
+(`team_common_folder/`); a path into the game's own folders is not checked. A `DropFolder`
+finding on a `Common/` subfolder drops every file below it, as one on a player, shared or kit
+folder drops that folder.
+Why: the game names its own kit textures `u0???pN`, so a path into its kit texture folder
+always holds a token, and the upgrader leaves every game-folder path as written: refusing
+those would tell the member to run a tool that changes nothing, and would replace
+`fmdl_texture_kit_path` (TC-MOD-91) with a folder drop. The `Common/` subfolder drop lets
+TC-STR-22's "names `Common/u0XXXp0/` once, dropping it alone" hold; a finding per file below
+it would repeat one fix many times.
+Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
+"Kit-dependent assets", `spec/model_format.md` "Output naming".

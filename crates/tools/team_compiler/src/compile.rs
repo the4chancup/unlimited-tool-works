@@ -1308,7 +1308,7 @@ mod tests {
     use crate::plan::{EffectiveTeamKitFpc, ModelFolder, TaskGroup, TaskKind, TeamKitEdits};
     use crate::reader::{ExportSource, Route};
     use crate::settings::TeamCompilerSettings;
-    use crate::testing::{sandbox, scratch, tool_context};
+    use crate::testing::{run_events, sandbox, scratch, tool_context};
 
     const PLAYER: &str = "Players/05 - The Chad Stormworks Player";
 
@@ -1852,6 +1852,70 @@ mod tests {
             matches!(budget.acquire(1), Err(Cancelled)),
             "the budget is cancelled"
         );
+    }
+
+    #[test]
+    fn a_task_s_findings_are_timed_when_it_finished_and_reported_in_manifest_order() {
+        let temp = scratch("write_batches_made_at");
+        let mut output = CpkOutput::new(
+            OutputSink::cpk(temp.path().join("cup.cpk")),
+            BTreeMap::new(),
+            "",
+            None,
+        );
+        let (mut events, rx) = run_events(true);
+        // Taken after the run's clock started, so a time measured from the clock is at least
+        // its distance from here.
+        let now = Instant::now();
+        let batch = |index: usize, finished: Instant| TaskBatch {
+            index,
+            entries: Vec::new(),
+            group: None,
+            uniparam: None,
+            uni_color: None,
+            configless_kit: None,
+            messages: vec![tool_message(
+                Code::FolderPackFailed,
+                Scope::Run,
+                Disposition::DropFolder,
+                vec![("task", index.to_string())],
+            )],
+            finished,
+            permit: None,
+            output: None,
+        };
+        // Task 1 finished first and arrives first; task 0 finished 60 s later. Reported in
+        // manifest order, task 0's finding comes first, each timed by its own task.
+        let (batches_tx, batches_rx) = unbounded();
+        batches_tx.send(batch(1, now)).unwrap();
+        batches_tx
+            .send(batch(0, now + Duration::from_secs(60)))
+            .unwrap();
+        drop(batches_tx);
+
+        write_batches(
+            batches_rx,
+            &mut output,
+            &mut events,
+            &BTreeMap::new(),
+            2,
+            &MemoryBudget::new(1 << 30),
+        )
+        .unwrap();
+
+        let made: Vec<(String, Duration)> = rx
+            .try_iter()
+            .filter_map(|envelope| match envelope.event {
+                PipelineEvent::Message(message) => {
+                    Some((message.context[0].1.clone(), envelope.made_at.unwrap()))
+                }
+                _ => None,
+            })
+            .collect();
+        let tasks: Vec<&str> = made.iter().map(|(task, _)| task.as_str()).collect();
+        assert_eq!(tasks, ["0", "1"], "{made:?}");
+        assert!(made[0].1 >= Duration::from_secs(60), "{made:?}");
+        assert!(made[1].1 < Duration::from_secs(60), "{made:?}");
     }
 
     #[test]

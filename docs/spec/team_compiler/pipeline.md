@@ -1010,14 +1010,16 @@ describes behavior, not a serial scheduling requirement:
   Export upgrader understands and respells. In an export it is refused, as the old kit
   stand-in is: a legacy token (`u0`, three ASCII letters or digits, `p` or `g` and a digit, in
   the letter case the upgrader matches) in a file or folder name, or in a path a model, `.mtl` or
-  `face.xml` names (checked by the deep pass), is `kit_token_old`, naming the upgrader, before
+  `face.xml` names to a file of the export, its folder's own or the team's Common (checked by
+  the deep pass), is `kit_token_old`, naming the upgrader, before
   anything is compiled. Before, a file so named packed as an ordinary texture
   and the exes' `u0???p0` swap still served it, so files spelled the old way lived on in
   exports nobody upgraded; we refuse rather than read both spellings because two spellings of
   one thing are what a new member cannot tell apart. The match is the upgrader's, one function
   in `aesthetics_export` for both tools, so whatever the compiler refuses the upgrader
   respells, and a case the upgrader leaves (`U0XXXP1`, a `u0XXXg` with no digit) is no token
-  to either. A variant set serves the export's kit numbers
+  to either. A path into the game's own folders is not checked: the game names its kit
+  textures `u0???pN`, and the upgrader leaves such a path as written. A variant set serves the export's kit numbers
   from its fallback (`kitF`, else the lowest variant with `kit_variant_missing`): copied
   into each gap on PES 15-17, written once under the reference's spelling on PES 18-21,
   where FoxDen loads it for a kit without a variant of its own; per-kit *model* sets

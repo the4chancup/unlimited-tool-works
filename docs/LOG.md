@@ -3148,3 +3148,4 @@ worklog passed 7,000 lines.
 - 2026-11-11: 0.0.2-poc13g landed: an out-of-block legacy ID is reported once, on the folder that would pack it, not on each player folder linking a kept-shared one.
 - 2026-11-11: 0.0.2-ux1a landed: the upgrader's progress line counts one upgrade as one export (its output only named, `ExportNamed`) and counts the files it writes as parts.
 - 2026-11-11: 0.0.2-ux1b landed, closing ux1: `check` and `compile` take `--timestamps`, each finding line starting with the seconds since the run started when the finding was made (a task's on its worker).
+- 2026-11-11: A-ux1 (Astra over ux1): 2 accepted, the loop ends; a test pins that a task's findings keep its worker finish time, and the plan says a writer-raised `duplicate_path` is timed with its task's.

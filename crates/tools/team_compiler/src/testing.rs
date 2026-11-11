@@ -10,12 +10,13 @@ use aesthetics_export::{
     CanonicalListing, ListedEntry, ListedKind, ResolvedAestheticsExport, SmallMetadata,
     ValidationContext, parse_listing,
 };
-use crossbeam_channel::unbounded;
+use crossbeam_channel::{Receiver, unbounded};
 use pes_version::PesVersion;
-use studio_core::{AppPaths, ExportId, Settings, ToolContext};
+use studio_core::{AppPaths, ExportId, PipelineEventEnvelope, Settings, ToolContext};
 use teams_list::TeamsList;
 
 use crate::bins::Rgb;
+use crate::events::RunEvents;
 use crate::messages::TOOL_ID;
 use crate::plan::ExportToPlan;
 use crate::settings::default_table;
@@ -146,6 +147,23 @@ pub(crate) fn tool_context(root: &Path, extra: &str) -> ToolContext {
         events_tx,
         requests_tx,
     )
+}
+
+/// Run events over a context of their own, timed as a `--timestamps` run's when `timestamps`,
+/// and the receiver that reads every event they send.
+pub(crate) fn run_events(timestamps: bool) -> (RunEvents, Receiver<PipelineEventEnvelope>) {
+    let (events_tx, events_rx) = unbounded();
+    let (requests_tx, _requests_rx) = unbounded();
+    let ctx = ToolContext::new(
+        Arc::new(Mutex::new(Settings::parse("").unwrap())),
+        AppPaths {
+            exe_dir: PathBuf::new(),
+            data_dir: None,
+        },
+        events_tx,
+        requests_tx,
+    );
+    (RunEvents::new(&ctx, timestamps), events_rx)
 }
 
 /// Calls `poll`, which polls a run and says whether it is still running, every 10 ms until it

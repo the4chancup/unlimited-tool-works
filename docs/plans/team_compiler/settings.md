@@ -50,7 +50,10 @@ governs what happens when that run ends.
 `check` and `compile` take `--timestamps`, off by default, for profiling a run: each finding
 line on stdout starts with the seconds since the run started, to the millisecond, when the
 finding was made (`+12.345 - co Spring.zip: Warning …`). A task's findings were made when the
-task finished processing on its worker, every other finding when it was reported. The lines
+task finished processing on its worker, every other finding when it was reported. A
+`duplicate_path` an `overrides/` file raises on one of a task's entries, found as its batch is
+written, is timed with that task's findings: it joins them, and splitting it out would carry
+a second list through the writer for one rare line of a profiling aid. The lines
 keep their order (findings are reported in manifest order, so the CPK and the log read the
 same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"), so their
 times need not increase: a task that waited behind a slower one shows when it was really
