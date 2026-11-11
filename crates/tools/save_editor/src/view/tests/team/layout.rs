@@ -315,11 +315,10 @@ fn row_edges(version: PesVersion, test: &str) -> [f64; 6] {
     ]
 }
 
-// On PES 16, whose save stores no manager or stadium ID, the ids' disabled
-// stand-ins take the number boxes' width: the row's controls stand where
-// they do on PES 21.
+// On PES 16, whose save stores no manager ID, its disabled stand-in takes
+// the number box's width: the row's controls stand where they do on PES 21.
 #[test]
-fn the_rows_controls_stand_still_on_a_version_without_the_ids() {
+fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
     const CONTROLS: [&str; 6] = [
         "the Short box",
         "Col. 1's swatch",

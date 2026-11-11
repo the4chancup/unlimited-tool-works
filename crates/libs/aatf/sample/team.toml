@@ -5,7 +5,7 @@ pes_version = 15                # the save this was written from; import into an
 name = "Sample"
 short_name = "SMP"
 # manager_id = 0                  # PES 17+
-# stadium_id = 0                  # PES 17+
+# stadium_id = 0
 # color_1 = [0, 0, 0]             # PES 17+; stored channels, 0-63 each
 # color_2 = [0, 0, 0]             # PES 17+; stored channels, 0-63 each
 # kit_slots = [{ number = 0, binding = 0 }] # PES 17

@@ -248,7 +248,7 @@ pub enum TeamField {
     Id,
     /// Manager id (PES 17+).
     ManagerId,
-    /// Home stadium id (PES 17+).
+    /// Home stadium id.
     StadiumId,
     /// The team name was edited.
     EditedName,

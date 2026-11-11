@@ -132,12 +132,18 @@ InstructionSide, index, part: InstructionPart }`, `Starting(u8)`, `Bench(u8)`,
 `PlayerToJoinAttack(u8)`, `ManMarking { preset, slot }`, the set-piece takers, `Captain`, the
 auto flags). Three kinds of field the reference never reads are measured instead and enter the
 generator as its `MEASURED_FIELDS` table: the man-marking runs (every version), PES 15's
-three auto flags, and the PES 17 and 18 team record's manager id (the u32 at +4) and home
-stadium id (the u16 at +10), which the reference reads only from PES 19 on, so a regeneration
-keeps them. The team ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16
+three auto flags, the PES 17 and 18 team record's manager id (the u32 at +4) and home
+stadium id (the u16 at +10), which the reference reads only from PES 19 on, and the PES 15
+and 16 team record's home stadium id (the u16 at +6), which it never reads, so a regeneration
+keeps them. The 17/18 ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16
 around them; on the reference saves (2026-11-11) the u32 at +4 equals the team id on 218 of
 220 PES 17 teams and 200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19
-stadium on 198 of 210 and 168 of 202 (21 distinct values on 18). Variant names are the
+stadium on 198 of 210 and 168 of 202 (21 distinct values on 18). PES 15 and 16 have no
+manager id: their record is PES 17's without its four bytes at +4, so the stadium sits at +6.
+On the same saves the u16 there equals the same team's PES 19 stadium on 198 of 210 PES 15
+teams (all 220 hold 29, as on PES 17) and 158 of 192 PES 16 ones (23 distinct values over 273
+teams), and PES 17's on 166 of 192; no other even offset from 4 to 16 matches more than once.
+Not checked in game. Variant names are the
 readable model names (`TightPossession`, not `tight_pos`); the table module's doc comment says
 which reference walk it was derived from, and this section is the evidence trail. The generator
 is `scripts/derive_savefile_schema.py <reference source dir> <crate>/src/schema`; it is committed so

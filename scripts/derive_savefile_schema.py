@@ -498,10 +498,12 @@ WIDTH_FIXES = {(18, "mo_armd"): 3}
 # none); the three presets sit one preset_stride apart, and PES 21 shares PES
 # 20's tables. "auto_flags": PES 15's three auto-flag bytes, in the order PES
 # 16's derived walk reads them. "team_ids": (field, byte, bit width) of the team
-# record fields the reference reads only from PES 19 on, at PES 19's offsets: on
-# the reference saves the u32 at +4 equals the team id on 218 of 220 PES 17 teams
-# and 200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19
-# stadium on 198 of 210 and 168 of 202.
+# record ids the reference reads only from PES 19 on. PES 17 and 18 keep them at
+# PES 19's offsets: on the reference saves the u32 at +4 equals the team id on 218
+# of 220 PES 17 teams and 200 of 202 PES 18 ones, and the u16 at +10 equals the
+# same team's PES 19 stadium on 198 of 210 and 168 of 202. PES 15 and 16 lack the
+# manager id's four bytes and keep the stadium at +6: it equals PES 19's on 198 of
+# 210 PES 15 teams and 158 of 192 PES 16 ones (and PES 17's on 166 of 192).
 MEASURED_FIELDS = {
     "man_marking": {15: 0x73, 16: 0x73, 17: 0x95, 18: 0x95, 19: 0x95, 20: 0x95},
     "auto_flags": {
@@ -512,6 +514,8 @@ MEASURED_FIELDS = {
         ],
     },
     "team_ids": {
+        15: [("stadium_id", 6, 16)],
+        16: [("stadium_id", 6, 16)],
         17: [("manager_id", 4, 32), ("stadium_id", 10, 16)],
         18: [("manager_id", 4, 32), ("stadium_id", 10, 16)],
     },
@@ -521,7 +525,7 @@ PLAYER_TEXT = {"name": ("Name", "The player name, UTF-8, colour codes included."
 TEAM = {
     "id": ("Id", "The team id."),
     "manager_id": ("ManagerId", "Manager id (PES 17+)."),
-    "stadium_id": ("StadiumId", "Home stadium id (PES 17+)."),
+    "stadium_id": ("StadiumId", "Home stadium id."),
     "b_edit_name": ("EditedName", "The team name was edited."),
     "b_edit_shortname": ("EditedShortName", "The short name was edited (PES 15)."),
     "b_edit_stadium": ("EditedStadium", "The home stadium was edited (PES 20+)."),

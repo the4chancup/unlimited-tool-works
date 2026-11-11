@@ -393,10 +393,10 @@ fn manager_unit(
     }
 }
 
-/// The stadium ID pair (PES 17+, `Option` on the entry): a changed
-/// stadium ID sets the stadium flag where the version has it (PES
-/// 20/21). Elsewhere the pair draws disabled with the `PES NN+` tooltip,
-/// in the same place.
+/// The stadium ID pair (`Option` on the entry, which every version
+/// fills): a changed stadium ID sets the stadium flag where the version
+/// has it (PES 20/21). A `None` draws the pair disabled with the
+/// `PES NN+` tooltip, in the same place, as the manager ID does.
 fn stadium_unit(
     ui: &mut egui::Ui,
     session: &mut Session,

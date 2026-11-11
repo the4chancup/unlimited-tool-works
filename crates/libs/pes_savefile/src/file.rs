@@ -544,28 +544,40 @@ mod tests {
     }
 
     /// PES 17 and 18 keep the manager id (the team record's u32 at +4) and
-    /// the home stadium id (its u16 at +10) where PES 19 does, and every
-    /// team reads them there.
+    /// the home stadium id (its u16 at +10) where PES 19 does; PES 15 and
+    /// 16, whose record lacks the manager id's four bytes, keep the stadium
+    /// id at +6. Every team reads them there.
     #[test]
-    fn pes17_and_18_teams_read_their_manager_and_stadium_ids() {
+    fn pes15_to_18_teams_read_their_manager_and_stadium_ids() {
         let mut stadiums = std::collections::BTreeSet::new();
-        for version in [PesVersion::Pes17, PesVersion::Pes18] {
+        for (version, manager_at, stadium_at) in [
+            (PesVersion::Pes15, None, 6),
+            (PesVersion::Pes16, None, 6),
+            (PesVersion::Pes17, Some(4), 10),
+            (PesVersion::Pes18, Some(4), 10),
+        ] {
             let (file, _) = open(version);
             for team in file.teams() {
                 let record = file.team_records(team.id).expect("the team's records").team;
-                let manager = record_id(&record[4..]);
-                let stadium = u16::from_le_bytes(record[10..12].try_into().expect("a u16"));
+                let manager = manager_at.map(|at| record_id(&record[at..]));
+                let stadium = u16::from_le_bytes(
+                    record[stadium_at..stadium_at + 2]
+                        .try_into()
+                        .expect("a u16"),
+                );
                 stadiums.insert(stadium);
                 assert_eq!(
                     (team.manager_id, team.stadium_id),
-                    (Some(manager), Some(stadium)),
+                    (manager, Some(stadium)),
                     "{version:?} team {}",
                     team.id
                 );
             }
         }
-        // Every PES 17 fixture team has stadium 29; the PES 18 one's vary.
+        // Every PES 15, 16 and 17 fixture team has stadium 29; the PES 18
+        // ones vary. None is the record's `ff ff` filler.
         assert!(stadiums.len() > 1, "premise: the stadiums differ");
+        assert!(!stadiums.contains(&0xFFFF), "premise: no filler read");
     }
 
     /// A save reports its container's serial, the one a PES 2017 Texport
@@ -658,37 +670,52 @@ mod tests {
 
     /// A PES 17 team given team 702's manager and stadium 46 (the PES 19
     /// fixture's team 100 plays there) writes them at +4 (u32) and +10
-    /// (u16), reads them back, and no other byte of its record changes.
+    /// (u16); a PES 16 team given stadium 15 (where 38 teams of a real
+    /// PES 16 save play: every fixture team plays in 29) writes it at +6.
+    /// Each reads back, and no other byte of its record changes.
     #[test]
-    fn a_pes17_manager_and_stadium_edit_writes_only_their_bytes() {
-        let (manager, stadium) = (702u32, 46u16);
-        let (mut file, _) = open(PesVersion::Pes17);
-        let before = file.team_records(701).expect("team 701").team.to_vec();
-        assert_ne!(
-            before[4..8],
-            manager.to_le_bytes(),
-            "premise: another manager"
-        );
-        assert_ne!(
-            before[10..12],
-            stadium.to_le_bytes(),
-            "premise: another stadium"
-        );
-        let team = file.team_mut(701).expect("team 701");
-        team.manager_id = Some(manager);
-        team.stadium_id = Some(stadium);
+    fn a_manager_and_stadium_edit_writes_only_their_bytes() {
+        for (version, manager, stadium, stadium_at) in [
+            (PesVersion::Pes17, Some(702u32), 46u16, 10),
+            (PesVersion::Pes16, None, 15, 6),
+        ] {
+            let (mut file, _) = open(version);
+            let before = file.team_records(701).expect("team 701").team.to_vec();
+            if let Some(manager) = manager {
+                assert_ne!(
+                    before[4..8],
+                    manager.to_le_bytes(),
+                    "{version:?} premise: another manager"
+                );
+            }
+            assert_ne!(
+                before[stadium_at..stadium_at + 2],
+                stadium.to_le_bytes(),
+                "{version:?} premise: another stadium"
+            );
+            let team = file.team_mut(701).expect("team 701");
+            team.manager_id = manager;
+            team.stadium_id = Some(stadium);
 
-        let out = file.to_bytes(&test_salt()).expect("the save writes");
-        let back = EditFile::from_bytes(&out).expect("the save reopens");
-        let team = back.team(701).expect("team 701");
-        assert_eq!(
-            (team.manager_id, team.stadium_id),
-            (Some(manager), Some(stadium))
-        );
-        let mut expected = before;
-        expected[4..8].copy_from_slice(&manager.to_le_bytes());
-        expected[10..12].copy_from_slice(&stadium.to_le_bytes());
-        assert_eq!(back.team_records(701).expect("team 701").team, expected);
+            let out = file.to_bytes(&test_salt()).expect("the save writes");
+            let back = EditFile::from_bytes(&out).expect("the save reopens");
+            let team = back.team(701).expect("team 701");
+            assert_eq!(
+                (team.manager_id, team.stadium_id),
+                (manager, Some(stadium)),
+                "{version:?}"
+            );
+            let mut expected = before;
+            if let Some(manager) = manager {
+                expected[4..8].copy_from_slice(&manager.to_le_bytes());
+            }
+            expected[stadium_at..stadium_at + 2].copy_from_slice(&stadium.to_le_bytes());
+            assert_eq!(
+                back.team_records(701).expect("team 701").team,
+                expected,
+                "{version:?}"
+            );
+        }
     }
 
     /// A team's coach record follows its manager id as edited, unsaved: the

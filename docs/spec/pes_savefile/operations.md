@@ -346,7 +346,7 @@ id = 841                        # the team this was exported from; the command l
 name = "/98hu/"                 # colour codes as in the save
 short_name = "I1"
 manager_id = 1000               # PES 17 and later
-stadium_id = 12                 # PES 17 and later
+stadium_id = 12
 color_1 = [31, 58, 15]          # PES 17 and later; red, green, blue: 0 to 63 each
 color_2 = [63, 63, 63]
 kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; ten entries, values as stored
