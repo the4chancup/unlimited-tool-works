@@ -1910,6 +1910,12 @@ briefs, review loops, gates and mutation runs as for any step.
       the drop's offers per spot (two area tables, PES 2017's first equal to
       `team_widgets`'), the menu, the swap, the per-set positions; the test's four clauses,
       no line counts; a formation breaking each clause
+    - [x] six defenders and seven midfielders tried in the stock screen (the maintainer,
+      2026-11-12, two captures): the drop is refused with a no-entry sign, so the screens
+      do count lines and the second reading's "no line count" is wrong
+    - [ ] the refusal read in the exe (the no-entry sign's condition; the upper and lower
+      limits per line; whether the classifier `0x3877476` or the area test `0x43149ea`
+      carries it)
     - [ ] the game's own formations under the four clauses: each team's in PES 2017's data
       and the preset list, then the cup saves, tallied by clause
     - [ ] each clause looked at in game under the stock exe (Pending looks)
@@ -2117,9 +2123,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   `.tmp/0_0_2/formation/research/report2.md`): the keeper at (52, 1); the LB at (2, 10); a CF at (52, 10); a second LMF at
   (14, 30): does Team Sheet show each as stored, move the starter or change his position,
   and what does the save the game then writes hold; PES 2017; 0.0.2c; harness
-- Six defenders and no forward made by the stock drag (both CFs dragged into the CB band),
-  then a match: the positions at kick-off; PES 2017 stock exe; 0.0.2c; maintainer (theirs,
-  2026-11-12)
+- The stock screen's lower limits: can the last forward, the last midfielder or the
+  second-last defender be dragged out of his line, or is that drop refused too; PES
+  2017 stock exe; 0.0.2c; maintainer or harness
 - A team's home stadium id (the u16 at +6) edited by the Save editor shows as that stadium in
   game; PES 2015 and 2016; 0.0.2-st15 (DECISIONS 2026-11-11); harness
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
