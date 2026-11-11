@@ -8143,11 +8143,12 @@ briefs, review loops, gates and mutation runs as for any step.
     Opus sidekick (`8cb837d6`, merge `395e734c`). SWE-2 S-ids r1: 2 accepted (a Texport's
     coach record follows the edited manager id, which Astra A-r17 found too; a doc line), the
     loop ended; Carbon after 11-15
-  - [ ] 0.0.2-st15 the home stadium id on PES 2015 and 2016 (the maintainer, 2026-11-11: low
-    importance, whenever convenient): measure where the 15/16 team record keeps its
-    stadium (`spec/pes_savefile/model.md` "The team record" lists "home stadium" in bytes 4
-    to 17; 15/16 have no manager id), map `StadiumId` there through the generator the same
-    way, with tests on the 15/16 fixtures and the docs that say 17+
+  - [x] 0.0.2-st15 the home stadium id on PES 2015 and 2016 (the maintainer, 2026-11-11: low
+    importance): the u16 at +6 (PES 17's record without the manager id), measured on the
+    reference saves (PES 16: 23 values, PES 17's on 166 of 192 teams), a generator measured
+    field; the Save editor shows it live on 15/16 (Opus sidekick `sk_st15`, `9975abe6`,
+    merge `9ae8e390`; draft `261e166f`; DECISIONS 2026-11-11). Not checked in game;
+    review rounds: SWE-2, then Carbon after 11-15
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
