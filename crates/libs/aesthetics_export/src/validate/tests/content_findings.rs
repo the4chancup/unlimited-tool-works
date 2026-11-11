@@ -187,6 +187,45 @@ fn a_content_finding_dropping_a_common_file_drops_the_player_linking_it() {
 }
 
 #[test]
+fn a_content_finding_dropping_a_common_subfolder_drops_every_file_below_it() {
+    // The subfolder's two files leave `common`, the root's stays, and a player linking one
+    // of them falls as one linking a dropped file does.
+    let report = with_findings(
+        &[
+            ("Common/u0XXXp0/a.dds", 9),
+            ("Common/u0XXXp0/b.dds", 9),
+            ("Common/u0XXXp0x.dds", 9),
+            ("Common/hair.dds", 9),
+            ("Players/03 - A/u0XXXp0/a.dds.common", 0),
+            ("Players/05 - B/boots.fmdl", 10),
+        ],
+        vec![far_vertex(
+            folder("Common/u0XXXp0"),
+            Disposition::DropFolder,
+        )],
+    );
+    assert_eq!(
+        report.issues,
+        vec![
+            far_vertex_issue(folder("Common/u0XXXp0"), Disposition::DropFolder),
+            dropped_link(
+                "Players/03 - A",
+                "a.dds.common",
+                "Common/u0XXXp0/a.dds",
+                "vertex_too_far_from_origin"
+            ),
+        ]
+    );
+    let validated = report.validated.unwrap();
+    assert_eq!(player_paths(&validated), vec!["Players/05 - B"]);
+    // A sibling whose name merely starts with the folder's is no file below it.
+    assert_eq!(
+        file_paths(&validated.common),
+        vec!["Common/hair.dds", "Common/u0XXXp0x.dds"]
+    );
+}
+
+#[test]
 fn a_common_kit_set_link_falls_only_with_its_last_member() {
     // A `.common` link naming a kit set reaches every member: a dropped member
     // is an absent one, a gap the set's completion fills, so one of several

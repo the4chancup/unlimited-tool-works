@@ -12,7 +12,7 @@ use crate::models::{
     body_skl, boots_mesh_count, compile_clean, package_names, template, tracer_boots_mesh_count,
 };
 use crate::prefox_faces::{expected_face_xml, face_cpk, face_folder, nested_entries, small_dds};
-use crate::{TEAM_COLORS_MISSING, findings_of, patch_written};
+use crate::{TEAM_COLORS_MISSING, assert_row_says, clean_model, findings_of, patch_written};
 
 const BOOTS_05: &str = "Asset/model/character/boots/k0625/#Win/boots.fpk";
 const FACE_05: &str = "Asset/model/character/face/real/71405/#Win/face.fpk";
@@ -89,6 +89,51 @@ fn the_marker_s_old_spellings_are_an_error_and_the_folder_compiles_as_without_it
         &entries,
         "Asset/model/character/face/real/71407/#Win/face.fpk",
     );
+}
+
+// TC-STR-22
+#[test]
+fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
+    let sandbox = Sandbox::new("str_kit_token_old");
+    let export = "exports/co Midcup Tokens";
+    // Slot 05 holds a texture named with a legacy token; `Common/` a folder so named with
+    // two textures in it; slot 06 two names that are no token: capitals, and a `g` with no
+    // digit after it.
+    let files = [
+        "Players/05 - A/kit1_u0714p1.dds",
+        "Common/u0XXXp0/a.dds",
+        "Common/u0XXXp0/b.dds",
+        "Players/06 - B/U0714P1.dds",
+        "Players/06 - B/u0XXXg_back.dds",
+    ];
+    for file in files {
+        sandbox.write(&format!("{export}/{file}"), &small_dds());
+    }
+    for slot in ["05 - A", "06 - B"] {
+        sandbox.write(
+            &format!("{export}/Players/{slot}/face_high.fmdl"),
+            &clean_model(),
+        );
+    }
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
+
+    // The whole list: the `Common/` folder is dropped alone, so no player falls with it and
+    // no file below it is checked again (no `file_not_used`); slot 06 gets nothing.
+    let lines = run.messages();
+    assert_eq!(
+        findings_of(&lines, "co Midcup Tokens"),
+        [
+            "Error kit_token_old [DropFolder] at Players/05 - A \
+             (path=Players/05 - A/kit1_u0714p1.dds)",
+            "Error kit_token_old [DropFolder] at Common/u0XXXp0 (path=Common/u0XXXp0)",
+            "Info export_identified [Keep] (team=/co/, id=714)",
+        ],
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    // The finding's text names the upgrader that respells the token.
+    assert_row_says("kit_token_old", &["export-upgrader upgrade"]);
 }
 
 // TC-MOD-16

@@ -18,7 +18,10 @@ use crate::conventions::{
 };
 use crate::listing::ValidationContext;
 use crate::parse::{AestheticsExportDraft, FileDescriptor, FolderDraft};
-use crate::validate::{Disposition, IssueScope, ValidationIssue, dropped_scopes, issue_in};
+use crate::validate::{
+    Disposition, IssueScope, ValidationIssue, common_file_dropped, dropped_scopes, is_below,
+    issue_in,
+};
 
 /// The kind of link a file is, and what it names.
 pub(crate) enum ResolvedLinkKind {
@@ -222,10 +225,12 @@ pub(crate) fn common_target_absent(
 /// Whether a `.common` link's target counts as dropped: every `Common/` file it
 /// reaches is ("Dropped link targets": a link naming a kit set falls only with
 /// its last member, a dropped member being a gap the set's completion fills).
-/// A link `common_link_files` finds nothing for is no link to a dropped file.
+/// A link `common_link_files` finds nothing for is no link to a dropped file. A file
+/// counts as dropped by `common_file_dropped`: itself, or a `Common/` subfolder above it.
 fn common_link_dropped(
     common: &[FileDescriptor],
     link: &ResolvedLink,
+    dropped_folders: &BTreeSet<String>,
     dropped_files: &BTreeSet<String>,
 ) -> bool {
     let ResolvedLinkKind::Common(below) = &link.kind else {
@@ -235,10 +240,11 @@ fn common_link_dropped(
     !files.is_empty()
         && files
             .iter()
-            .all(|file| dropped_files.contains(&file.path.fold_key()))
+            .all(|file| common_file_dropped(&file.path, dropped_folders, dropped_files))
 }
 
-/// The first dropping issue code for a path, in issue order.
+/// The first dropping issue code for a path, in issue order: one on the path itself, or a
+/// `DropFolder` one on a folder above it (a `Common/` subfolder holding a linked file).
 fn first_drop(issues: &[ValidationIssue], key: &str) -> &'static str {
     issues
         .iter()
@@ -247,7 +253,12 @@ fn first_drop(issues: &[ValidationIssue], key: &str) -> &'static str {
                 issue.disposition,
                 Disposition::DropFile | Disposition::DropFolder
             ) && match &issue.scope {
-                IssueScope::Folder(path) | IssueScope::File(path) => path.fold_key() == *key,
+                IssueScope::Folder(path) => {
+                    let folder = path.fold_key();
+                    folder == *key
+                        || (issue.disposition == Disposition::DropFolder && is_below(key, &folder))
+                }
+                IssueScope::File(path) => path.fold_key() == *key,
                 IssueScope::Export | IssueScope::RosterEntry { .. } => false,
             }
         })
@@ -283,7 +294,7 @@ pub(crate) fn cascade(
                         continue;
                     };
                     let key = target.fold_key();
-                    if common_link_dropped(&draft.common, &link, &dropped_files) {
+                    if common_link_dropped(&draft.common, &link, &dropped_folders, &dropped_files) {
                         issues.push(issue_in(
                             context,
                             "link_target_dropped",
@@ -318,7 +329,7 @@ pub(crate) fn cascade(
             let dropped = match link.kind {
                 ResolvedLinkKind::Shared(_) => dropped_folders.contains(&key),
                 ResolvedLinkKind::Common(_) => {
-                    common_link_dropped(&draft.common, &link, &dropped_files)
+                    common_link_dropped(&draft.common, &link, &dropped_folders, &dropped_files)
                 }
             };
             if dropped {

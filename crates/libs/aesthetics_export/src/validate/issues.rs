@@ -206,6 +206,26 @@ pub(crate) fn dropped_scopes(issues: &[ValidationIssue]) -> (BTreeSet<String>, B
     (folders, files)
 }
 
+/// Whether the `Common/` file at `path` is dropped: a finding drops the file itself
+/// (`dropped_files`) or a `Common/` subfolder above it (`dropped_folders`), as one on a
+/// player, shared or kit folder drops that folder. Both sets hold fold keys, as
+/// `dropped_scopes` returns them.
+pub(crate) fn common_file_dropped(
+    path: &ScopePath,
+    dropped_folders: &BTreeSet<String>,
+    dropped_files: &BTreeSet<String>,
+) -> bool {
+    let key = path.fold_key();
+    dropped_files.contains(&key) || dropped_folders.iter().any(|folder| is_below(&key, folder))
+}
+
+/// Whether the fold key `key` names a path below the folder whose fold key is `folder`:
+/// `common/a/x.dds` is below `common/a`, `common/ax.dds` is not.
+pub(crate) fn is_below(key: &str, folder: &str) -> bool {
+    key.strip_prefix(folder)
+        .is_some_and(|rest| rest.starts_with('/'))
+}
+
 /// Every code the crate emits, listed here so consumers can test their
 /// catalog against it.
 pub const ISSUE_CODES: &[&str] = &[

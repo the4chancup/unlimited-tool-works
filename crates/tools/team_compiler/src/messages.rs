@@ -470,6 +470,16 @@ pub(crate) enum Code {
     /// respells it (`model`, an FMDL, or `file`, a `.mtl`; `texture`, the path as
     /// written).
     DummyKitNameOld,
+    /// A legacy kit token, the old export format's kit magic (`u0`, three ASCII letters or
+    /// digits, `p` or `g` and a digit, in that letter case: `kit6_u0827p0.dds`,
+    /// `Common/u0XXXp1/`), in a file or folder name in the export or in a path a model,
+    /// `.mtl` or `face.xml` names: the match `aesthetics_export::legacy_kit_tokens` makes,
+    /// which the Export upgrader respells. The Studio format spells it `kit1` to `kit9`,
+    /// `kitN` or `kitF` (`gk_kit…` for a keeper's). A name is reported once, on the
+    /// outermost file or folder holding it (`path`); a path once per file and distinct path
+    /// (`file`, `reference`). The folder holding it is left out (in `Common/`, the file
+    /// alone).
+    KitTokenOld,
     /// A file a task reads cannot be read from its export; its folder is left out.
     SourceReadFailed,
     /// A task could not build its entries; its folder is left out.
@@ -604,7 +614,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 165] = [
+    const ALL: [Code; 166] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -728,6 +738,7 @@ impl Code {
         Code::FmdlTextureKitPath,
         Code::FmdlCommonPathInvalid,
         Code::DummyKitNameOld,
+        Code::KitTokenOld,
         Code::SourceReadFailed,
         Code::FolderPackFailed,
         Code::DpfilelistMissing,
@@ -898,6 +909,7 @@ impl Code {
             Code::FmdlTextureKitPath => "fmdl_texture_kit_path",
             Code::FmdlCommonPathInvalid => "fmdl_common_path_invalid",
             Code::DummyKitNameOld => "dummy_kit_name_old",
+            Code::KitTokenOld => "kit_token_old",
             Code::SourceReadFailed => "source_read_failed",
             Code::FolderPackFailed => "folder_pack_failed",
             Code::DpfilelistMissing => "dpfilelist_missing",

@@ -18,7 +18,7 @@
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
-use aesthetics_export::kit_token_starts;
+use aesthetics_export::{kit_token_starts, legacy_kit_tokens};
 use studio_core::{Disposition, Message, Scope};
 
 use crate::messages::{Code, INPUT, UnmigratedReason, tool_message, unmigrated};
@@ -52,47 +52,24 @@ pub(crate) enum Spelling {
 /// name's token winning over every directory segment's. Borrowed when
 /// nothing changed.
 pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling) -> Cow<'a, str> {
-    let bytes = text.as_bytes();
     // The edits, as (start, end, replacement) byte ranges of `text`,
     // disjoint: the legacy respells, and the `kit`→`kit_tex` of every Studio
     // kit token in a segment holding a legacy `p` one, the file name's when
     // a directory segment holds one.
     let mut edits: Vec<(usize, usize, Cow<str>)> = Vec::new();
-    let mut last = 0;
     let mut marked = BTreeSet::new();
     // The file-name segment's start: a `p` token in a directory segment
     // marks it too.
     let name_start = text.rfind('/').map_or(0, |slash| slash + 1);
-    for at in 0..bytes.len() {
-        // A match starting inside the one before it is not taken (the
-        // earlier one wins, left to right).
-        if at < last {
-            continue;
-        }
-        // `u0` + three ASCII letters or digits + `p`/`g`: the `u` is as
-        // written, lowercase.
-        if bytes[at] != b'u' || bytes.get(at + 1) != Some(&b'0') {
-            continue;
-        }
-        if bytes
-            .get(at + 2..at + 5)
-            .is_none_or(|chars| !chars.iter().all(|byte| byte.is_ascii_alphanumeric()))
-        {
-            continue;
-        }
+    for token in legacy_kit_tokens(text) {
+        let at = token.start;
         // `p` the outfielders' set, `g` the keeper's: both respell to a kit
         // token (`gk_kit1` holds `kit1`), the one kit number picking both.
-        let set = match bytes.get(at + 5) {
-            Some(&b'p') => "kit",
-            Some(&b'g') => "gk_kit",
-            _ => continue,
-        };
-        let number = match (bytes.get(at + 6), spelling) {
-            (Some(&b'0'), Spelling::Name) => 'F',
-            (Some(&b'0'), Spelling::Path) => 'N',
-            (Some(digit), _) if digit.is_ascii_digit() => char::from(*digit),
-            // A `u0???p` or `u0???g` followed by no digit is no token.
-            _ => continue,
+        let set = if token.keeper { "gk_kit" } else { "kit" };
+        let number = match (token.digit, spelling) {
+            (0, Spelling::Name) => 'F',
+            (0, Spelling::Path) => 'N',
+            (digit, _) => char::from(b'0' + digit),
         };
         let end = at + 7;
         // The `/`-separated segment the token stands in: the compiler reads a
@@ -106,7 +83,6 @@ pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling) -> Cow<'a, str> {
             marked.insert((name_start, text.len()));
         }
         edits.push((at, end, Cow::Owned(format!("{set}{number}"))));
-        last = end;
     }
     for (start, end) in marked {
         for k in kit_token_starts(&text[start..end]) {

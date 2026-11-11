@@ -94,6 +94,65 @@ pub fn kit_token_starts(stem: &str) -> Vec<usize> {
     starts
 }
 
+/// One legacy kit token in a name or path: the old export format's kit magic, `u0`, three
+/// characters, `p` (the outfielders' kit) or `g` (the keeper's) and a digit, 7 bytes in all
+/// (`kit6_u0827p0.dds`, `Common/u0XXXp1/`). Only the Export upgrader reads it, respelling it
+/// to the Studio token; the compiler refuses it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LegacyKitToken {
+    /// The byte offset of its `u`.
+    pub start: usize,
+    /// Whether it is the keeper's (`g`) rather than the outfielders' (`p`).
+    pub keeper: bool,
+    /// Its kit digit, 0 to 9: 0 is the kit picked in the game, 1 to 9 one kit number.
+    pub digit: u8,
+}
+
+/// Every legacy kit token in `text`, left to right: a lowercase `u`, `0`, three ASCII
+/// letters or digits, `p` or `g`, then an ASCII digit, in that letter case (`U0714P1` and a
+/// `u0XXXg` with no digit are none), anywhere in the text, whatever is around it. A match
+/// starting inside the one before it is not taken, so `u0u0Zg1p1` holds one token, at 0.
+/// The one match both the Export upgrader (which respells each) and the compiler (which
+/// refuses each) use, so the compiler refuses exactly what the upgrader can fix.
+pub fn legacy_kit_tokens(text: &str) -> Vec<LegacyKitToken> {
+    let bytes = text.as_bytes();
+    let mut tokens = Vec::new();
+    let mut at = 0;
+    while at < bytes.len() {
+        match legacy_kit_token_at(bytes, at) {
+            Some(token) => {
+                tokens.push(token);
+                at += LEGACY_KIT_TOKEN_LEN;
+            }
+            None => at += 1,
+        }
+    }
+    tokens
+}
+
+/// The length in bytes of a legacy kit token (`u0827p0`).
+const LEGACY_KIT_TOKEN_LEN: usize = 7;
+
+/// The legacy kit token starting at byte `at` of `bytes`, if one does.
+fn legacy_kit_token_at(bytes: &[u8], at: usize) -> Option<LegacyKitToken> {
+    let token = bytes.get(at..at + LEGACY_KIT_TOKEN_LEN)?;
+    let three = &token[2..5];
+    if !token.starts_with(b"u0") || !three.iter().all(u8::is_ascii_alphanumeric) {
+        return None;
+    }
+    let keeper = match token[5] {
+        b'p' => false,
+        b'g' => true,
+        _ => return None,
+    };
+    let digit = token[6];
+    digit.is_ascii_digit().then(|| LegacyKitToken {
+        start: at,
+        keeper,
+        digit: digit - b'0',
+    })
+}
+
 /// `stem`, which holds a kit token, with its first token spelled for `kit` (`pants_kit1` and
 /// 3 give `pants_kit3`); `None` when `stem` holds no token.
 pub fn variant_stem(stem: &str, kit: u8) -> Option<String> {
@@ -290,6 +349,41 @@ mod tests {
         assert_eq!(kit_token_starts("kit1kit2_kit3"), [9]);
         for stem in ["skit1", "kit1kit2", "kitNx", "KIT1", "pants"] {
             assert_eq!(kit_token_starts(stem), Vec::<usize>::new(), "{stem}");
+        }
+    }
+
+    #[test]
+    fn a_legacy_token_is_u0_three_letters_or_digits_p_or_g_and_a_digit_as_written() {
+        let token = |start, keeper, digit| LegacyKitToken {
+            start,
+            keeper,
+            digit,
+        };
+        assert_eq!(legacy_kit_tokens("kit6_u0827p0.dds"), [token(5, false, 0)]);
+        assert_eq!(legacy_kit_tokens("Common/u0XXXp1/"), [token(7, false, 1)]);
+        assert_eq!(legacy_kit_tokens("u0714g1"), [token(0, true, 1)]);
+        assert_eq!(legacy_kit_tokens("./u0714g9.dds"), [token(2, true, 9)]);
+        // Two in one path, each found, left to right.
+        assert_eq!(
+            legacy_kit_tokens("u0XXXp2/kit1_u0827g0.dds"),
+            [token(0, false, 2), token(13, true, 0)]
+        );
+        // A match starting inside the one before it is not taken.
+        assert_eq!(legacy_kit_tokens("u0u0Zg1p1"), [token(0, true, 1)]);
+        for text in [
+            // Capitals: the upgrader leaves it as it is.
+            "U0714P1",
+            "u0714P1",
+            // A `g` with no digit.
+            "u0XXXg_back",
+            // Two characters, not three.
+            "u0XXp1",
+            "u0XXXp",
+            "u1XXXp1",
+            "u0X_Xp1",
+            "kit1_back",
+        ] {
+            assert_eq!(legacy_kit_tokens(text), [], "{text}");
         }
     }
 

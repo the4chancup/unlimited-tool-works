@@ -23,7 +23,7 @@ use crate::prefox_faces::{
     write_slot_05_face,
 };
 use crate::textures::texture_fixture;
-use crate::{clean_model, findings_of};
+use crate::{assert_row_says, clean_model, findings_of};
 use pes_model::format::mtl::MaterialSet;
 use studio_core::StudioTool;
 
@@ -2023,6 +2023,67 @@ fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
             row.effect
         );
     }
+}
+
+// TC-MOD-107
+#[test]
+fn a_path_holding_the_legacy_kit_token_is_refused() {
+    let sandbox = Sandbox::new("mod_kit_token_old");
+    let export = "exports/co Midcup Nested";
+    // Slot 05's face names `u0XXXp1.dds` in `team_common_folder/`; slot 06's `.mtl` names
+    // `./u0714g1.dds` in two samplers, one path reported once; slot 07's face names
+    // `./kitN.dds`, the Studio token, with its `kit1` and `kit2` variants beside it, which
+    // no finding names.
+    sandbox.write(
+        &format!("{export}/Players/05 - A/face_high.fmdl"),
+        &clean_model_naming_in("team_kit.dds", "u0XXXp1.dds", "team_common_folder/"),
+    );
+    sandbox.write(
+        &format!("{export}/Players/06 - B/face_high.model"),
+        &card_model(),
+    );
+    let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
+        .unwrap()
+        .replace(
+            r#"<sampler name="DiffuseMap" path="./texture.dds" srgb="1" minfilter="linear" magfilter="linear" />"#,
+            r#"<sampler name="DiffuseMap" path="./u0714g1.dds" srgb="1" minfilter="linear" magfilter="linear" />
+    <sampler name="NormalMap" path="./u0714g1.dds" srgb="0" minfilter="linear" magfilter="linear" />"#,
+        );
+    assert_eq!(mtl.matches("./u0714g1.dds").count(), 2);
+    sandbox.write(
+        &format!("{export}/Players/06 - B/face_high.mtl"),
+        mtl.as_bytes(),
+    );
+    sandbox.write(
+        &format!("{export}/Players/07 - C/face_high.fmdl"),
+        &clean_model_naming_in("team_kit.dds", "kitN.dds", "./"),
+    );
+    for variant in ["kit1.dds", "kit2.dds"] {
+        sandbox.write(&format!("{export}/Players/07 - C/{variant}"), &small_dds());
+    }
+
+    for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
+        let run = sandbox.run(&settings, &["check"]);
+
+        let lines = run.messages();
+        assert_eq!(
+            findings_of(&lines, "co Midcup Nested"),
+            [
+                "Error kit_token_old [DropFolder] at Players/05 - A \
+                 (file=face_high.fmdl, reference=team_common_folder/u0XXXp1.dds)",
+                "Error kit_token_old [DropFolder] at Players/06 - B \
+                 (file=face_high.mtl, reference=./u0714g1.dds)",
+                "Info export_identified [Keep] (team=/co/, id=714)",
+            ],
+            "PES {version}: {lines:#?}"
+        );
+        assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
+    // The finding's text names the upgrader that respells the token.
+    assert_row_says(
+        "kit_token_old",
+        &["`kitN`", "export-upgrader upgrade", "upgrade-models"],
+    );
 }
 
 // TC-MOD-104

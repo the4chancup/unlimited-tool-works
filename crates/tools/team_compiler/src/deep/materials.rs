@@ -13,7 +13,7 @@ use std::collections::BTreeSet;
 
 use aesthetics_export::{
     ContentFinding, Disposition, FileDescriptor, FileKind, IssueScope, SharedKind,
-    SharedModelFolder,
+    SharedModelFolder, legacy_kit_tokens,
 };
 use pes_version::Engine;
 use vtree::ScopePath;
@@ -138,6 +138,17 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
     }
 }
 
+/// Whether the `.mtl` or `face.xml` path `value` names a file of the export: its folder's own
+/// (`./`) or one of the team's `Common/`. A path into the game's own folders is the game's
+/// spelling, which the game keeps for its kit textures (`u0???pN`), so `kit_token_old`
+/// checks only these.
+pub(super) fn names_export_file(value: &str) -> bool {
+    match reference(value) {
+        Reference::Local(_) | Reference::Common { .. } => true,
+        Reference::CommonInvalid | Reference::GameCommon(_) | Reference::Unchecked(_) => false,
+    }
+}
+
 /// `mtl_texture_not_found` and `mtl_texture_unused_missing` on `scope` for the `.mtl` whose
 /// `materials` are read, which the findings name `name`: one finding per distinct texture path
 /// (compared as written, in the order the `.mtl` first names it) that `sources` do not supply,
@@ -153,7 +164,10 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
 /// alike). A path naming the kit stand-in's old spelling (a stem that, folded, is
 /// `dummy_kit` or `dummy_gk_kit`, alone or `_`-suffixed, whatever its directory) is
 /// `dummy_kit_name_old`, discarding the same; one path gets both findings when it trips
-/// both rules. `scope` is a model folder's
+/// both rules. A path naming a file of the export (`names_export_file`) and holding a
+/// legacy kit token (`aesthetics_export::legacy_kit_tokens`, the path as written) is
+/// `kit_token_old`, discarding the same, beside any other.
+/// `scope` is a model folder's
 /// `Folder` (the `.mtl` of a player or shared folder's tree, whose finding drops the folder)
 /// or a `Common/` `.mtl`'s `File` (whose finding drops the file alone).
 pub(super) fn texture_findings(
@@ -212,6 +226,15 @@ pub(super) fn texture_findings(
                     code: Code::DummyKitNameOld.as_str(),
                     scope: scope.clone(),
                     context: vec![("file", name.to_owned()), ("texture", path.to_owned())],
+                    disposition: drop,
+                    pass_through_eligible: false,
+                });
+            }
+            if names_export_file(path) && !legacy_kit_tokens(path).is_empty() {
+                findings.push(ContentFinding {
+                    code: Code::KitTokenOld.as_str(),
+                    scope: scope.clone(),
+                    context: vec![("file", name.to_owned()), ("reference", path.to_owned())],
                     disposition: drop,
                     pass_through_eligible: false,
                 });
