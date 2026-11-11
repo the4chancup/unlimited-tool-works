@@ -7623,7 +7623,7 @@ briefs, review loops, gates and mutation runs as for any step.
       the loop ends): the organizer sent to his section before either launcher, a later
       matchday's export named midcup before its upgrade (a Full one removes the team's
       other kits), `apply-patch`'s paths quoted, a launcher's failure reported from its window.
-      Branch `poc/0.0.2-poc.1` (`63a1d183`, the version alone) built by `just release
+      Branch `vgl27` (named `poc/0.0.2-poc.1` until 2026-11-11; `63a1d183`, the version alone) built by `just release
       0.0.2-poc.1` 2026-11-08; the rehearsal's launcher half passed on PES 2019
       (`.tmp/0_0_2/ingame/rehearsal/findings.md`: both upgrade, a rerun leaves them, the
       compile deploys the slot and patches the save, the readme's quoted `apply-patch` line
