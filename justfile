@@ -30,6 +30,7 @@ clippy:
 # Gate 3: tests, the workspace's test binaries four at once (scripts/gates/run_tests.py says why)
 test:
     {{python}} scripts/gates/run_tests_test.py
+    {{python}} scripts/gates/checkpoint_test.py
     {{python}} scripts/gates/run_tests.py
     {{python}} scripts/mutation/mutants_test.py
     {{python}} scripts/review/perturb_check_test.py
@@ -40,9 +41,19 @@ test:
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
 gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
 
+# A checkpoint, in one command: `gates-changed` and `mutants-diff` since the last gated commit, which it then
+# moves to HEAD (scripts/gates/checkpoint.py; `--no-mutants` skips the mutation run)
+checkpoint *args:
+    {{python}} scripts/gates/checkpoint.py run {{args}}
+
+# How far HEAD is past the last gated commit, what is not pushed, and CI's verdict on the pushed head
+checkpoint-status *args:
+    {{python}} scripts/gates/checkpoint.py status {{args}}
+
 # Gate 3 over the packages the working tree changes since `base` and the packages depending on them
 test-changed base="HEAD":
     {{python}} scripts/gates/run_tests_test.py
+    {{python}} scripts/gates/checkpoint_test.py
     {{python}} scripts/gates/run_tests.py --changed {{base}}
     {{python}} scripts/mutation/mutants_test.py
     {{python}} scripts/review/perturb_check_test.py

@@ -15,8 +15,8 @@ STAGES = ["Plan", "Accept", "Brief", "Build", "Review", "Measure", "Close and re
 BANDS = [
     ("maintainer", "Maintainer", "--b-maint"),
     ("docs", "Documents", "--b-docs"),
-    ("lead", "Lead (Opus)", "--b-lead"),
-    ("sidekick", "Sidekick (SWE-2)", "--b-side"),
+    ("lead", "Lead", "--b-lead"),
+    ("sidekick", "Sidekicks", "--b-side"),
     ("reviewers", "Reviewers", "--b-rev"),
     ("checks", "Tests and gates", "--b-check"),
     ("mutation", "Mutation testing", "--b-mut"),
@@ -38,8 +38,9 @@ NODES = [
      "The maintainer confirms what only the game can show; Edit mode suffices for most looks. "
      "The proof becomes a 'manual: checked' line in the worklog."),
     ("release", "Release and push", "maintainer", 6, 0,
-     "Pushes and release cuts need the maintainer's OK. During 0.x.x a release does not wait "
-     "for whole-crate mutation runs: their findings ship in the next release or a patch."),
+     "Pushes and release cuts need the maintainer's OK, and a push is asked for only at a "
+     "gated commit; the lead reads CI after it. During 0.x.x a release does not wait for "
+     "whole-crate mutation runs: their findings ship in the next release or a patch."),
     ("plans", "Plans", "docs", 0, 0,
      "docs/plans/: the design of what is not built yet, its rationale ('we do X, not Y, because "
      "Y causes Z') and the open phase's Acceptance sections."),
@@ -53,14 +54,16 @@ NODES = [
      "QUESTIONS.md: what only the maintainer can answer. PROPOSALS.md: usability ideas nobody "
      "asked for, unbuilt until ruled."),
     ("worklog", "WORKLOG.md", "docs", 2, 0,
-     "Where we are: current status, the phase's steps with their verify criteria, open issues "
-     "and the handover queue."),
+     "Where we are: the release's blocking path, the open steps with their verify criteria, "
+     "the looks still owed in the game or the built window, and open issues. A step "
+     "collapses to one line when it closes."),
     ("spec", "Spec", "docs", 6, 0,
      "docs/spec/: what the suite does now. A closed phase's sections move here from the plans, "
      "acceptance IDs included, as the behavior contract."),
-    ("log", "LOG, CHANGELOG, README", "docs", 6, 1,
-     "LOG.md's dated lines, CHANGELOG.md's [Unreleased] entry for what a member would notice, "
-     "and the README brought to the closed phase."),
+    ("log", "CHANGELOG, README", "docs", 6, 1,
+     "CHANGELOG.md's [Unreleased] entry for what a member would notice, and the README "
+     "brought to the closed phase. The dated log is git log: an event is written in one "
+     "place."),
     ("plan_write", "Plan and decide", "lead", 0, 0,
      "The lead writes plans and applies its clear recommendations (plan edit, then a decision "
      "entry); only a truly open choice goes to QUESTIONS.md."),
@@ -69,7 +72,8 @@ NODES = [
      "a brief names the draft function it builds."),
     ("brief", "Brief", "lead", 2, 0,
      "One reviewable slice (about 500 lines at most): reading pointers, exact deliverables, a "
-     "Verify list whose every check can fail, and a closing 'Errors hit' section."),
+     "Verify list whose every check can fail, and a closing 'Errors hit' section. The "
+     "release's blocking path is briefed first; two or three sidekicks run at once."),
     ("critical", "Correctness-critical code", "lead", 3, 1,
      "What the lead writes itself because its wrong version passes: fixtures, golden files, "
      "lints, CI, measurements."),
@@ -80,15 +84,16 @@ NODES = [
      "Every reviewer concern is accepted or rejected with a reason. Being true is not enough: "
      "an accepted concern changes a real export, contradicts a rule, or fixes a wrong fact."),
     ("commit", "Commit", "lead", 5, 0,
-     "The step's gates run, the worklog step is marked done, a LOG line is added, then "
-     "git commit -F."),
+     "The changed crates' tests, clippy and fmt run, the worklog step collapses to one "
+     "line, then git commit -F: the message is the log."),
     ("converge", "Converge audit", "lead", 6, 0,
      "Closing a phase: every plan section and acceptance ID checked against the code, then a "
      "design-health pass (sweeps, whole-crate mutation runs, citation audit, pub items). "
      "Every gap becomes a new worklog step, and the phase stays open until those are done."),
     ("implement", "Implement, red first", "sidekick", 3, 0,
-     "SWE-2 implements the brief in the crates it owns: each new test fails first on the old "
-     "code, and it never commits."),
+     "An Opus sidekick in its own worktree (real slices) or SWE-2 (small ones) implements "
+     "the brief in the files it owns: each new test fails first on the old code, and it "
+     "never commits."),
     ("report", "Report", "sidekick", 4, 0,
      "Per item the change, its test and red run, the Verify output, Contradictions with the "
      "brief, and 'Errors hit', every suppression declared."),
@@ -96,16 +101,21 @@ NODES = [
      "A rework brief resumes the same session: numbered findings, each with its location, fix "
      "and test. Two failed attempts make the brief suspect."),
     ("ingame_run", "In-game run", "sidekick", 5, 0,
-     "A SWE-2 sidekick drives PES through the pad and OBS harness (scripts/ingame/) and writes "
-     "its findings and captures to files for the lead and the maintainer."),
+     "A SWE-2 sidekick drives PES through the pad and OBS harness (scripts/ingame/), working "
+     "through the worklog's pending looks, and writes its findings and captures to files "
+     "for the lead and the maintainer."),
     ("swe", "SWE-2 rounds", "reviewers", 3, 0,
-     "The free first layer: rounds over the surface until one accepts fewer than five concerns. "
-     "It runs again after a dearer layer's fixes."),
-    ("argon", "Argon rounds", "reviewers", 4, 0,
-     "Gemini 4 Argon High, the middle layer: better than SWE-2, much cheaper than Astra."),
+     "The free first layer, on every surface: rounds until one accepts fewer than five "
+     "concerns (one round for scripts and documents). It runs again after a dearer "
+     "layer's fixes."),
+    ("argon", "Carbon rounds", "reviewers", 4, 0,
+     "Gemini 4 Carbon High, the middle layer: better than SWE-2, much cheaper than Astra. "
+     "Shipped code gets one paid round; only what writes game files or saves gets both "
+     "paid loops."),
     ("astra", "Astra rounds", "reviewers", 5, 0,
      "GPT-6 Astra, the last layer, on what the cheaper ones could not see. Each layer loops "
-     "until a round accepts fewer than five."),
+     "until a round accepts fewer than five; a loop not started within a week folds into "
+     "the converge audit."),
     ("unit", "Unit & integration tests", "checks", 3, 0,
      "Each crate's tests, written red first; a test fails, it never hangs."),
     ("accept_tests", "Acceptance tests", "checks", 3, 1,
@@ -113,7 +123,9 @@ NODES = [
      "'manual: checked' line proves."),
     ("gates", "Gates", "checks", 4, 0,
      "just gates: fmt, clippy with warnings as errors, every test, line endings, comment "
-     "references and doc pointers; per commit the changed crates, at a checkpoint all."),
+     "references and doc pointers. just checkpoint runs them over everything since the last "
+     "gated commit, with mutants-diff, and moves that commit: at a loop's end, a step's "
+     "close, a merge, and before a push is asked for."),
     ("citation", "Citation audit", "checks", 5, 0,
      "Flags tests whose cited scenario they may not prove; every flag is ruled before a crate's "
      "review."),
@@ -122,10 +134,11 @@ NODES = [
      "diagnoses each new difference from Red's output."),
     ("census", "Census", "checks", 6, 1,
      "A format crate's close reads every file of its format on the machine, round trips and "
-     "checks each, and tallies the outcomes."),
+     "checks each, and tallies the outcomes. A kept index of the real exports answers a "
+     "reviewer's 'does any file do this' in seconds, beside a control count."),
     ("mdiff", "mutants-diff", "mutation", 4, 0,
-     "One run at each review loop's end over the loop's commits: each surviving mutant is an "
-     "assertion nobody wrote. Runs here while a whole run holds the VPS."),
+     "Part of just checkpoint, over the commits since the last gated one: each surviving "
+     "mutant is an assertion nobody wrote. Runs here while a whole run holds the VPS."),
     ("whole", "Whole-crate run (VPS)", "mutation", 5, 0,
      "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "
      "the phase's close. The next phase starts while it runs."),
@@ -161,6 +174,19 @@ EDGES = [
     ("converge", "parity"), ("converge", "census"), ("converge", "spec"),
     ("extra", "whole"), ("whole", "triage"), ("triage", "rework"),
     ("spec", "release"), ("converge", "release"), ("converge", "log"),
+    # What a slice is built from and checked by.
+    ("draft", "brief"), ("spec", "brief"), ("decisions", "brief"), ("brief", "critical"),
+    ("acceptance", "accept_tests"), ("accept_tests", "citation"), ("citation", "swe"),
+    # The reviewers between themselves, and what settles a concern.
+    ("argon", "swe"), ("swe", "astra"), ("census", "rulings"), ("census", "spec"),
+    ("rulings", "plans"), ("rulings", "decisions"),
+    # The checkpoint: the commits since the last gated one, and the push it allows.
+    ("commit", "mdiff"), ("unit", "mdiff"), ("unit", "whole"), ("gates", "release"),
+    ("log", "release"), ("release", "gates"),
+    # The looks owed, and what the measurements send back.
+    ("worklog", "ingame_run"), ("ingame_run", "worklog"), ("parity", "worklog"),
+    ("triage", "worklog"),
+    ("directives", "plan_write"), ("worklog", "plan_write"), ("converge", "extra"),
 ]
 
 LEFT, TOP, COL_W, BOX_W, BOX_H, BAND_H, SUB_Y = 150, 40, 205, 176, 30, 92, (14, 54)
@@ -287,9 +313,10 @@ if (localStorage.getItem("crate_map_theme") === "light")
 </script></head><body>
 <button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how work moves from a plan to a release</h1>
-<p>Each row is one participant, each column one stage. The lead (Opus) plans, briefs, reviews
-and talks to the maintainer; the sidekick (SWE-2) implements; three reviewer families critique
-what the lead writes, cheapest first; tests, gates and mutation runs measure what reading cannot.
+<p>Each row is one participant, each column one stage. The lead plans, briefs, reviews
+and talks to the maintainer; sidekicks implement, two or three at once, the release's blocking
+path first; up to three reviewer families critique a surface, cheapest first, as deep as a
+defect in it would cost; tests, gates and mutation runs measure what reading cannot.
 Every arrow points from a step to one it feeds. Details live in <code>AGENTS.md</code>,
 <code>docs/CONTRIBUTING.md</code> and <code>docs/RUNBOOK.md</code>.</p>
 <p class="key">Click a step to keep it highlighted and put it in the address

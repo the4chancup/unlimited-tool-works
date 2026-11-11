@@ -20,15 +20,15 @@ Ten documents, ten jobs. Do not let content leak between them; two homes means t
 | `docs/RUNBOOK.md` | How the lead runs the machinery: mutation runs and the VPS, the scratch folder, the agents and their harness limits, phases and releases, briefing and reviewing a sidekick, the review rounds' full rules |
 | `docs/GLOSSARY.md` | One line per domain term, pointing at the plan section that owns it |
 | `docs/WORKLOG.md` | *Where we are*: current status, phase/step checklist, current-state gotchas, open issues (the lead's and the sidekick's) |
-| `docs/LOG.md` | *What happened*: the dated log, three lines at most per entry, newest last (append-only) |
+| `docs/LOG.md` | *What happened* up to 2026-11-11, frozen: since then the dated log is `git log` |
 | `docs/DECISIONS.md` | Choices made where the plan was silent (append-only) |
 | `docs/QUESTIONS.md` | The questions only the maintainer can answer (in-game behavior, cup practice, a preference), grouped by what an answer unblocks; an entry leaves when answered and the answer lands in the plan and `DECISIONS.md` |
 | `docs/PROPOSALS.md` | Usability ideas nobody asked for (a button, a default, a shortcut), which the maintainer vetoes or accepts; an unruled one is not built |
 
 **Before a step:** read the worklog's current status, then the plan section the step points at,
 from the document, not from memory. **After a step:** run the step's checkpoint gates
-(`CONTRIBUTING.md` "Testing and verification": what runs per commit, what at a checkpoint), mark the
-step done with a one-line summary and the files touched, update "Current status", add a line to `docs/LOG.md`,
+(`CONTRIBUTING.md` "Testing and verification": what runs per commit, what at a checkpoint), collapse the
+closed step to one line (ID, date, commit, what it delivered), update "Current status",
 commit (`git commit -F <file>`; PowerShell has no heredocs). Once a release exists, a change a
 member would notice gets its `CHANGELOG.md` `[Unreleased]` line (`CONTRIBUTING.md` "Commits").
 
@@ -137,6 +137,7 @@ allowed only after `git add -A` has given every file a blob to restore from. Nev
 delete; use `/dev/null` in bash, `$null` in PowerShell.
 
 **Operations** are in `docs/RUNBOOK.md`, read before starting what each section covers:
+how the work runs (the release path first, `just checkpoint`, one home per event);
 mutation runs and the VPS (`just mutants`, `mutants-diff`, `gates-remote`, and the memory caps
 that keep the host's production service first); the `.tmp/` scratch layout and what an
 archived run keeps; the agents and their harness limits; phases and releases; lead and

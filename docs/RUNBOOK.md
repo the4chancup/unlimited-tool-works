@@ -1,6 +1,7 @@
 # Runbook
 
-How the lead runs the project's machinery: mutation runs and the VPS that shares them, the scratch
+How the lead runs the project's machinery: the order of the work and its checkpoints, mutation
+runs and the VPS that shares them, the scratch
 folder, the agents and their harness limits, how phases and releases open and close, briefing
 and reviewing a sidekick, and the full rules of the review rounds. Moved here from `AGENTS.md`,
 verbatim, because a harness truncates a project doc: the Codex CLI past 32 KB (2026-10-14, the
@@ -8,6 +9,75 @@ mutation, scratch, agent and review sections), Devin past 16 KB (2026-11-09, the
 sidekick sections, whose length had pushed the review sweeps, "When the plan has gaps" and
 "Conduct" past a Devin lead's cut); `AGENTS.md` keeps a summary of each and its rules stay in
 force. Read a section before starting what it covers.
+
+## How the work runs
+
+Eight rules the maintainer set on 2026-11-11, after a look at what the sessions had been
+doing against what these documents asked (the decision entry of that day titled "process —
+the release path first, one checkpoint command, review depth by tier").
+
+**The release path first.** The lead's handover opens with the next release's blocking path:
+the open steps the release cannot go out without, in order, and who is on each. A sidekick
+is on the first of them before anything else starts; review loops, small asks and anything
+the maintainer marked low importance fill the time while those sidekicks run, and never
+take their place. We do not pick by what is convenient to brief: on 2026-11-11 a
+low-importance ask and three review loops ran before the release's largest open step was
+started.
+
+**A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
+since the last gated commit and then moves that commit, the git ref
+`refs/checkpoints/gated`, to HEAD (`scripts/gates/checkpoint.py`; a clone seeds the ref
+once, as the script says). It runs at the end of a review loop, at a worklog step's close,
+after a merge, and before a push is asked for. `just checkpoint-status` says how far HEAD is
+past the gate, what is not pushed, and what CI made of the pushed head: the lead runs it
+after every push the maintainer makes, and a red run is looked at before other work. The
+handover's sync stamps the same lines into the handover and ends with an error once more
+than ten code commits are past the gate. We do not keep the last gated commit as a typed
+note, nor the two runs as separate steps to remember: three loops closed on 2026-11-11 with
+neither run, and a push went red on a broken pointer.
+
+**One home per event.** What happened is written once:
+
+| Event | Its one home |
+|---|---|
+| A reviewer's concern and its ruling | the rulings file (`.tmp/duck_rulings.md`); the worklog step gets the round's name and its accepted count, nothing more |
+| A choice made where the plan was silent | the plan edit and its `DECISIONS.md` entry |
+| A step's state | its worklog line |
+| What a commit did and why | the commit message; `docs/LOG.md` is frozen at 2026-11-11, and the dated log since is `git log` |
+| What the maintainer should read now | the turn's report (and `.tmp/report.md` in an autonomous run) |
+| What the next session does first | the handover, which copies no rule and no state that has a home |
+
+**A step collapses when it closes.** A closed worklog step is one line: its ID and title,
+the date, the landing commit, one clause of what it delivered, with its `manual: checked`
+lines under it. The story of how it got there (attempts, rounds, findings) is in git and in
+the rulings file. An open step keeps what is left to do and what its doer needs. We do not
+wait for the phase's close to collapse: with Phase 8 open for weeks the file reached 853 KB,
+and "where we are" could only be searched.
+
+**Looks owed are one list.** Every check that only the game or the built window can make,
+and that is still owed, is a line of the worklog's "Pending looks" section, ordered by what a
+wrong result would cost, each saying whether the in-game harness can make it (`scripts/ingame/`,
+with OBS when the maintainer has not set it off-limits) or the maintainer must. A step or a
+decision that says "not checked in game" adds its line there in the same edit. The lead
+sends what the harness can do to a SWE-2 in-game run whenever the list holds a
+game-facing write, and hands the maintainer the rest as one batch per game session.
+
+**Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
+that own disjoint files, the release path's first. The limits are the disk (a worktree that
+builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
+nothing and costs nothing) and SWE-2's hidden limit (two runs at once). When the Claude
+weekly window nears its limit, the sidekick work goes back to SWE-2.
+
+**The accounts' state has one home**: `~/.claude/skills/duck/accounts.md` (which login runs
+the lead, each sidekick and each reviewer, the limits, floors and resets). This file, the
+handover and the lead's memory point at it and copy nothing from it.
+
+**Counts over the real exports come from the kept index.** `scripts/census/` builds an index
+of the export library's textures and model references in `.census/` (gitignored, and never
+emptied by a disk cleanup) and answers a question about them in seconds, each count beside a
+control count (`scripts/census/README.md`). A count that a spec section, a decision or a
+ruling cites is cited as its query, not as a scratch file: three such files were gone when
+they were next needed.
 
 ## Mutation runs and the VPS
 
@@ -620,11 +690,26 @@ reviewer sees code SWE-2 has nothing left to say about, and one over its fixes (
 next round's "before"). A paid loop never reruns inside another: an Astra round's fixes get
 the SWE-2 subloop, then the next Astra round, never a Carbon one. Example, accepted counts in
 brackets: SWE(7) SWE(3) | Carbon(6) SWE(2) Carbon(3) SWE(1) | Astra(8) SWE(4) Astra(2) SWE(0).
-Which login runs each reviewer changes with the accounts' plans; the lead's memory holds the
-current routing. A Devin login on the Free plan runs nothing. Carbon spends a Devin plan's
+Which login runs each reviewer changes with the accounts' plans: "How the work runs" names
+the one file that holds them. A Devin login on the Free plan runs nothing. Carbon spends a Devin plan's
 usage far faster than SWE-2's hidden limit does; Astra runs on Codex (`--reviewer astra`).
 A reviewer with no usable login waits for one: its loop is queued in the worklog, and the
 next loop in the order runs meanwhile.
+**How deep a surface is reviewed follows what a defect in it would cost** (the maintainer,
+2026-11-11). *Tier 1*, a surface that writes what the game or a member's save reads (a CPK's
+content, a converted model or texture, the savefile codec and its patch, an interchange
+file, the Export upgrader's output, the updater's swap): the three loops above. *Tier 2*,
+other shipped code (a check and its messages, a view, the command line's surface): SWE-2's
+loop, then one round of one paid reviewer, which runs again only by the five-accepted rule.
+*Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a
+vital script, (e) above, keeps its own: SWE-2 rounds at least, Astra when a change reshapes
+how a run measures). A step's worklog line names its tier when it lands. A loop not started
+within seven days of the landing is not run on its own: the surface's next converge audit,
+(c) above, covers it, and the step's line says so. We do not give every slice the full
+stack: on 2026-11-11 ten loops were queued, some over code a week old, while it was the
+first rounds that found the real defects (a check wider than the upgrader's respelling, a
+size rule that dropped 76 real textures) and the one second round after a rework accepted
+none of its seven concerns.
 **The citation audit before every review round over code.** The lead runs `just
 citation-audit` (`CONTRIBUTING.md` "Citation audit": cached, so a run pays for changed pairs
 only) and rules its flags before writing the round's brief, so SWE-2 and Astra do not spend
