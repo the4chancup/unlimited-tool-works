@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From exports to the game: what the compile does</title>
+<style>
+/* Dark by default; the button switches to light, remembered in this browser. The three
+   hues (players, boots and gloves, kits) are validated for both surfaces; everything else
+   is told apart by its border style and its label, never by colour alone. */
+:root { --page: #1a1a19; --text: #e6e6e3; --soft: #b4b4ae; --hint: #85857f;
+  --box: #242422; --line: #8c8c86; --code: #2c2c29; --rule: #3a3a37;
+  --players: #3987e5; --boots: #d95926; --kits: #199e70; --edge-rest: 0.55; }
+:root[data-theme="light"] { --page: #fcfcfb; --text: #20201e; --soft: #4a4a46; --hint: #7a7a74;
+  --box: #ffffff; --line: #8a8a84; --code: #f0efec; --rule: #dddcd8;
+  --players: #2a78d6; --boots: #eb6834; --kits: #1baf7a; --edge-rest: 0.45; }
+body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; color: var(--text);
+  background: var(--page); line-height: 1.5; }
+main { max-width: 1040px; margin: 0 auto; padding: 28px 24px 60px; }
+h1 { font-size: 26px; margin: 0 0 6px; }
+h2 { font-size: 19px; margin: 40px 0 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+p, li { font-size: 15px; color: var(--soft); max-width: 860px; }
+p.lead { font-size: 16px; color: var(--text); }
+a { color: var(--players); }
+code { background: var(--code); padding: 0 4px; border-radius: 3px; font-size: 13.5px;
+  color: var(--text); font-family: Consolas, "Cascadia Mono", monospace; }
+#theme { position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
+  color: var(--text); background: var(--code); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+table { border-collapse: collapse; margin: 12px 0; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px;
+  border-bottom: 1px solid var(--rule); }
+th { color: var(--text); font-weight: 600; }
+td { color: var(--soft); }
+td:first-child { color: var(--text); white-space: nowrap; }
+.callout { border-left: 4px solid var(--players); background: var(--box); padding: 10px 16px;
+  margin: 16px 0; border-radius: 0 4px 4px 0; }
+.callout p { margin: 4px 0; color: var(--text); }
+figure { margin: 18px 0 8px; }
+figcaption { font-size: 14px; color: var(--hint); max-width: 860px; margin-top: 6px; }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--text); font-family: "Segoe UI", system-ui, sans-serif; }
+svg .title { font-family: Consolas, "Cascadia Mono", monospace; font-size: 14px; font-weight: 600; }
+svg .sub { fill: var(--soft); font-size: 12.5px; }
+svg .head { font-size: 15px; font-weight: 600; }
+svg .note { fill: var(--hint); font-size: 12.5px; }
+svg .box { fill: var(--box); stroke: var(--line); stroke-width: 1.2; }
+svg .box.save { stroke-width: 3; }
+svg .stripe.players { fill: var(--players); } svg .stripe.boots { fill: var(--boots); }
+svg .stripe.kits { fill: var(--kits); }
+svg .edge { fill: none; stroke-width: 2; opacity: var(--edge-rest); transition: opacity .12s; }
+svg .edge.players { stroke: var(--players); } svg .edge.boots { stroke: var(--boots); }
+svg .edge.kits { stroke: var(--kits); } svg .edge.plain { stroke: var(--line); }
+svg .edge.info { stroke-dasharray: 6 5; }
+svg .arrow { fill: none; stroke: var(--line); stroke-width: 2; }
+svg .num { fill: var(--text); font-weight: 700; font-size: 13px; }
+svg .numdot { fill: var(--code); stroke: var(--line); }
+svg.map .node { transition: opacity .12s; }
+svg.map.focus .node, svg.map.focus .edge { opacity: 0.15; }
+svg.map.focus .node.on { opacity: 1; }
+svg.map.focus .edge.on { opacity: 1; stroke-width: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13.5px; color: var(--soft);
+  margin: 8px 0 0; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+.sw.players { background: var(--players); } .sw.boots { background: var(--boots); }
+.sw.kits { background: var(--kits); }
+.sw.plain { background: var(--box); border: 1.5px solid var(--line); }
+.sw.save { background: var(--box); border: 3px solid var(--line); }
+.ln { display: inline-block; width: 30px; border-top: 2px solid var(--soft); }
+.ln.info { border-top-style: dashed; }
+</style></head>
+<body>
+<button id="theme" type="button">Light</button>
+<main>
+
+<h1>From exports to the game</h1>
+<p class="lead">Once the managers' exports are in the UTW format
+(<a href="upgrade_explained.html">the upgrade page</a> shows how they get there), one
+double-click compiles them. This page shows what the compile reads, what it writes, and what
+it does when something in an export is wrong.</p>
+
+<div class="callout">
+<p><strong>In one sentence:</strong> <code>quick_compile.bat</code> reads every export in
+<code>exports</code>, builds the CPKs and puts them into the game, then writes the players'
+looks into the save. The exports are never changed.</p>
+</div>
+
+<h2>What goes in and what comes out</h2>
+<p>Each box on the left is part of one export; the lines show where it ends up. Point at a
+box to follow only its lines. The CPK names are the ones of the league's first DLC, with
+<code>multicpk_mode = true</code>.</p>
+<figure>
+<svg class="map" id="map" viewBox="0 0 1000 600" role="img"
+  aria-label="Map from the parts of an export to the files the compile writes">
+  <text class="head" x="20" y="30">One export (UTW format)</text>
+  <text class="head" x="660" y="30">What the compile writes</text>
+
+  <!-- the lines first, so the boxes sit on top of them -->
+  <g id="edges">
+    <path class="edge players" data-a="L1" data-b="R1" d="M320 142 C470 142 510 140 660 140"/>
+    <path class="edge boots" data-a="L2" data-b="R1" d="M320 194 C470 194 510 158 660 158"/>
+    <path class="edge boots info" data-a="L3" data-b="R1" d="M320 246 C470 246 510 176 660 176"/>
+    <path class="edge kits" data-a="L4" data-b="R1" d="M320 298 C470 298 510 194 660 194"/>
+    <path class="edge plain" data-a="L6" data-b="R1" d="M320 402 C470 402 510 212 660 212"/>
+    <path class="edge plain" data-a="L7" data-b="R1" d="M320 454 C470 454 510 230 660 230"/>
+    <path class="edge plain" data-a="L8" data-b="R1" d="M320 506 C470 506 510 248 660 248"/>
+    <path class="edge kits" data-a="L4" data-b="R2" d="M320 298 C470 298 510 306 660 306"/>
+    <path class="edge plain" data-a="L5" data-b="R2" d="M320 350 C470 350 510 324 660 324"/>
+    <path class="edge players info" data-a="L1" data-b="R3" d="M320 142 C470 142 510 384 660 384"/>
+    <path class="edge boots info" data-a="L3" data-b="R3" d="M320 246 C470 246 510 402 660 402"/>
+    <path class="edge plain" data-a="L9" data-b="R5" d="M320 558 C470 558 510 540 660 540"/>
+    <path class="edge plain" data-a="R3" data-b="R4" d="M820 426 L820 452"/>
+    <path class="edge plain info" data-a="T" data-b="R1" d="M570 60 C625 60 615 128 660 128"/>
+    <path class="edge plain info" data-a="T" data-b="R2" d="M570 80 C625 80 615 296 660 296"/>
+  </g>
+
+  <g class="node" id="L1"><rect class="box" x="20" y="120" width="300" height="44" rx="5"/>
+    <rect class="stripe players" x="20" y="120" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="139">Players/05 - Snuffy/</text>
+    <text class="sub" x="36" y="157">his models, textures and settings.toml</text></g>
+  <g class="node" id="L2"><rect class="box" x="20" y="172" width="300" height="44" rx="5"/>
+    <rect class="stripe boots" x="20" y="172" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="191">Boots/Crocs/, Gloves/Mitts/</text>
+    <text class="sub" x="36" y="209">boots and gloves several players share</text></g>
+  <g class="node" id="L3"><rect class="box" x="20" y="224" width="300" height="44" rx="5"/>
+    <rect class="stripe boots" x="20" y="224" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="243">legacy_ids.toml</text>
+    <text class="sub" x="36" y="261">the boots and gloves IDs the manager used</text></g>
+  <g class="node" id="L4"><rect class="box" x="20" y="276" width="300" height="44" rx="5"/>
+    <rect class="stripe kits" x="20" y="276" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="295">Kits/p1/ … Kits/g1/</text>
+    <text class="sub" x="36" y="313">texture, settings and colours, per kit</text></g>
+  <g class="node" id="L5"><rect class="box" x="20" y="328" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="347">colors.txt</text>
+    <text class="sub" x="36" y="365">the team's colours</text></g>
+  <g class="node" id="L6"><rect class="box" x="20" y="380" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="399">logo.png</text>
+    <text class="sub" x="36" y="417">the team's emblem, any size</text></g>
+  <g class="node" id="L7"><rect class="box" x="20" y="432" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="451">Portraits/05.dds</text>
+    <text class="sub" x="36" y="469">the players' portraits</text></g>
+  <g class="node" id="L8"><rect class="box" x="20" y="484" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="503">Common/, Collars/</text>
+    <text class="sub" x="36" y="521">files the players share</text></g>
+  <g class="node" id="L9"><rect class="box" x="20" y="536" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="555">notes.txt</text>
+    <text class="sub" x="36" y="573">the manager's note to you</text></g>
+  <g class="node" id="T"><rect class="box" x="350" y="46" width="220" height="48" rx="5"/>
+    <text class="title" x="366" y="65">data\teams_list.txt</text>
+    <text class="sub" x="366" y="83">gives each team its ID</text></g>
+
+  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="152" rx="5"/>
+    <text class="title" x="676" y="139">4cc_41_teams.cpk and after</text>
+    <text class="sub" x="676" y="157">each player's face, hair, boots and gloves</text>
+    <text class="sub" x="676" y="174">boots and gloves at the manager's IDs</text>
+    <text class="sub" x="676" y="191">kit textures and kit settings</text>
+    <text class="sub" x="676" y="208">the emblem, in the game's three sizes</text>
+    <text class="sub" x="676" y="225">portraits</text>
+    <text class="sub" x="676" y="242">shared files and collars</text>
+    <text class="note" x="676" y="261">installed in the game's download folder</text></g>
+  <g class="node" id="R2"><rect class="box" x="660" y="286" width="320" height="62" rx="5"/>
+    <text class="title" x="676" y="305">4cc_08_bins.cpk</text>
+    <text class="sub" x="676" y="323">one kit list and one colour table for the</text>
+    <text class="sub" x="676" y="339">whole league, every team's rows in them</text></g>
+  <g class="node" id="R3"><rect class="box" x="660" y="364" width="320" height="62" rx="5"/>
+    <rect class="stripe players" x="660" y="364" width="6" height="62" rx="2"/>
+    <text class="title" x="676" y="383">output\aesthetics_patch.toml</text>
+    <text class="sub" x="676" y="401">each player's looks, and the IDs of the</text>
+    <text class="sub" x="676" y="417">boots and gloves he was compiled with</text></g>
+  <g class="node" id="R4"><rect class="box save" x="660" y="452" width="320" height="48" rx="5"/>
+    <text class="title" x="676" y="471">The save</text>
+    <text class="sub" x="676" y="489">the patch is written into it; a .bak is kept</text></g>
+  <g class="node" id="R5"><rect class="box" x="660" y="518" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="537">output\teamnotes.txt</text>
+    <text class="sub" x="676" y="555">every team's note, in one file</text></g>
+</svg>
+<div class="legend">
+  <span><i class="sw players"></i>players</span>
+  <span><i class="sw boots"></i>boots and gloves</span>
+  <span><i class="sw kits"></i>kits</span>
+  <span><i class="sw plain"></i>team files</span>
+  <span><i class="sw save"></i>the save</span>
+  <span><i class="ln"></i>files are built</span>
+  <span><i class="ln info"></i>information is read</span>
+</div>
+<figcaption>A kit goes two ways: its texture and settings into the team's CPK, its row into
+the kit list every team shares. A player goes two ways too: his models into the CPK, and
+the looks in his <code>settings.toml</code> into the patch, which ends up in the save.
+That is why a compile changes both the game folder and the save.</figcaption>
+</figure>
+
+<h2>What happens, in order</h2>
+<figure>
+<svg viewBox="0 0 1000 250" role="img" aria-label="The five stages of a compile">
+  <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+    orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/></marker></defs>
+  <g>
+    <rect class="box" x="10" y="40" width="180" height="150" rx="6"/>
+    <circle class="numdot" cx="32" cy="62" r="13"/><text class="num" x="32" y="67" text-anchor="middle">1</text>
+    <text x="52" y="67" class="head">Look at the game</text>
+    <text class="sub" x="24" y="96">Can the CPKs go into</text>
+    <text class="sub" x="24" y="114">the game folder, and</text>
+    <text class="sub" x="24" y="132">does its DpFileList.bin</text>
+    <text class="sub" x="24" y="150">list the league's CPKs?</text>
+  </g>
+  <path class="arrow" d="M190 115 L206 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="208" y="40" width="180" height="150" rx="6"/>
+    <circle class="numdot" cx="230" cy="62" r="13"/><text class="num" x="230" y="67" text-anchor="middle">2</text>
+    <text x="250" y="67" class="head">Check</text>
+    <text class="sub" x="222" y="96">Every export is read</text>
+    <text class="sub" x="222" y="114">and checked. What is</text>
+    <text class="sub" x="222" y="132">wrong is listed, and</text>
+    <text class="sub" x="222" y="150">left out of the build.</text>
+  </g>
+  <path class="arrow" d="M388 115 L404 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="406" y="40" width="180" height="150" rx="6"/>
+    <circle class="numdot" cx="428" cy="62" r="13"/><text class="num" x="428" y="67" text-anchor="middle">3</text>
+    <text x="448" y="67" class="head">Build</text>
+    <text class="sub" x="420" y="96">Models and textures are</text>
+    <text class="sub" x="420" y="114">converted to what your</text>
+    <text class="sub" x="420" y="132">PES reads, and packed</text>
+    <text class="sub" x="420" y="150">into the CPKs.</text>
+  </g>
+  <path class="arrow" d="M586 115 L602 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="604" y="40" width="180" height="150" rx="6"/>
+    <circle class="numdot" cx="626" cy="62" r="13"/><text class="num" x="626" y="67" text-anchor="middle">4</text>
+    <text x="646" y="67" class="head">Install</text>
+    <text class="sub" x="618" y="96">The new CPKs replace</text>
+    <text class="sub" x="618" y="114">the old ones in the</text>
+    <text class="sub" x="618" y="132">download folder: all of</text>
+    <text class="sub" x="618" y="150">them, or none.</text>
+  </g>
+  <path class="arrow" d="M784 115 L800 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box save" x="802" y="40" width="188" height="150" rx="6"/>
+    <circle class="numdot" cx="824" cy="62" r="13"/><text class="num" x="824" y="67" text-anchor="middle">5</text>
+    <text x="844" y="67" class="head">Patch the save</text>
+    <text class="sub" x="816" y="96">The patch is written,</text>
+    <text class="sub" x="816" y="114">then applied to the</text>
+    <text class="sub" x="816" y="132">save. The old save is</text>
+    <text class="sub" x="816" y="150">kept as .bak.</text>
+  </g>
+  <text class="note" x="10" y="226">A stop at stage 1 changes nothing. A save that cannot take the patch at stage 5 puts the old CPKs back.</text>
+</svg>
+<figcaption>The save is patched only after the CPKs are in the game, and the CPKs are taken
+out again when the save cannot be patched, so the two do not drift apart.</figcaption>
+</figure>
+<ul>
+<li><strong>Stage 1 can stop the run.</strong> When the window says
+<code>dpfilelist_outdated</code>, the game's list does not know the league's CPKs yet and
+nothing was compiled. The README's "Compiling" section, step 4, has the command that
+installs the official list; run <code>quick_compile.bat</code> again after it.</li>
+<li><strong>Stage 5 needs PES closed.</strong> The game writes its own copy of the save
+over the file when you leave Edit mode, which would undo the patch. With PES running, the
+compile skips the save and says so (<code>savefile_skipped_pes_running</code>).</li>
+<li><strong>Which save is patched.</strong> The one <code>savefile_path</code> names in
+<code>data\settings.toml</code>, or the game's own save under
+<code>Documents\KONAMI</code> when that line is not set. For an official save kept
+elsewhere, the README's "For VGL's organizer" section, step 3, has the one command that
+applies the patch to it.</li>
+</ul>
+
+<h2>When something in an export is wrong</h2>
+<p>The compile never stops at the first problem. It leaves out the smallest part that
+cannot be built, names it in the window, and builds everything else. The whole export is
+refused only when the compile cannot tell what it is.</p>
+<table>
+<tr><th>Where</th><th>What is left out</th><th>What still compiles</th></tr>
+<tr><td>A player's folder</td><td>That player's folder, for example when a model cannot be read or a
+texture has a size the game cannot load.</td><td>The other players, the kits, everything
+else of the team.</td></tr>
+<tr><td>A kit's folder</td><td>That kit.</td><td>The team's other kits and all its
+players.</td></tr>
+<tr><td>A file in <code>Common/</code></td><td>That file, and each player whose folder
+links to it.</td><td>The rest of <code>Common/</code> and the other players.</td></tr>
+<tr><td>A portrait</td><td>That portrait.</td><td>The player himself, and everything
+else.</td></tr>
+<tr><td>The export itself</td><td>The whole export: a team that
+<code>teams_list.txt</code> does not hold (<code>team_name_unknown</code>), or two exports
+of one team in <code>exports</code>
+(<code>duplicate_aesthetics_export</code>, both refused).</td><td>The other teams'
+exports.</td></tr>
+</table>
+<p>Each line in the window names a code, such as <code>texture_not_pow2</code>. The help
+(the <strong>?</strong> button at the bottom of the left bar in <code>UTW.exe</code>)
+explains every one, and says what the manager has to change. A team with something left
+out is still installed with the rest: send the manager the lines about their export, and
+compile again when the fixed export is in.</p>
+
+<h2>The first DLC and the matchdays after it</h2>
+<p>Two settings in <code>data\settings.toml</code> decide which CPKs a compile writes. The
+README's "For VGL's organizer" section, steps 1 and 4, says when to change them.</p>
+<table>
+<tr><th></th><th>The first DLC</th><th>A later matchday</th></tr>
+<tr><td>Settings</td><td><code>multicpk_mode = true</code></td>
+<td><code>multicpk_mode = false</code> and
+<code>cpk_name = "4cc_61_midcup"</code> (up to <code>4cc_75_midcup</code>)</td></tr>
+<tr><td>What <code>exports</code> holds</td><td>Every team's Full export.</td>
+<td>Only this matchday's Midcup exports.</td></tr>
+<tr><td>CPKs written</td><td>The teams fill <code>4cc_41_teams.cpk</code> and the CPKs
+after it, each up to its size limit. The files every team shares go into
+<code>4cc_08_bins.cpk</code>.</td><td>One CPK, the matchday's own, holding the new files
+and the shared files with the additions in them.</td></tr>
+<tr><td>What it does to a team</td><td>A Full export is the team's whole set: a kit it
+does not hold is removed from the team.</td><td>A Midcup export only adds: what the team
+already has stays.</td></tr>
+</table>
+<p>The game loads the CPKs in the order its <code>DpFileList.bin</code> lists them, and a
+later one covers an earlier one. That is why a matchday's CPK needs only what changed, and
+why a first DLC compiled into <code>4cc_99_test.cpk</code> by mistake would cover every
+matchday after it.</p>
+<p>A referee export (its name starts with <code>refs</code>) is compiled with the others
+and goes into a CPK of its own, <code>4cc_18_referees.cpk</code>, in either mode.</p>
+
+<h2>What the compile window tells you</h2>
+<ul>
+<li><strong>One line per finding, then one line that sums up.</strong> The last line counts
+the files written, the exports and folders left out, and the folders with errors.</li>
+<li><strong>Errors are what to send back to a manager.</strong> A line marked Error names
+something the team needed that was left out. A line marked Warning names something the
+compile handled by itself, such as a kit that got a fallback texture or a file it had no
+use for.</li>
+<li><strong>Every compile writes a new patch.</strong> The players' looks live in the save,
+not in the CPKs. After a later matchday, what goes out to the managers is the new CPK and
+the newly patched official save together.</li>
+<li><strong>The patch is the last write to the official save.</strong> A <code>.ted</code>
+imported after it overwrites that team's players, their looks included, so compile again
+(or apply the patch again) after any import.</li>
+</ul>
+
+</main>
+<script>
+// The theme button: dark by default, the choice remembered in this browser.
+const root = document.documentElement, button = document.getElementById("theme");
+function setTheme(theme) {
+  if (theme === "light") root.dataset.theme = "light"; else delete root.dataset.theme;
+  button.textContent = theme === "light" ? "Dark" : "Light";
+}
+setTheme(localStorage.getItem("utw-theme"));
+button.addEventListener("click", () => {
+  const next = root.dataset.theme === "light" ? "dark" : "light";
+  localStorage.setItem("utw-theme", next);
+  setTheme(next);
+});
+
+// The map: pointing at a box shows only its lines and the boxes they join.
+const map = document.getElementById("map");
+const edges = [...map.querySelectorAll(".edge")];
+let leave = null;
+for (const node of map.querySelectorAll(".node")) {
+  node.addEventListener("mouseenter", () => {
+    clearTimeout(leave);
+    map.querySelectorAll(".on").forEach(el => el.classList.remove("on"));
+    map.classList.add("focus");
+    node.classList.add("on");
+    for (const edge of edges) {
+      if (edge.dataset.a === node.id || edge.dataset.b === node.id) {
+        edge.classList.add("on");
+        document.getElementById(edge.dataset.a).classList.add("on");
+        document.getElementById(edge.dataset.b).classList.add("on");
+      }
+    }
+  });
+  // A short delay, so moving from one box to the next does not flicker.
+  node.addEventListener("mouseleave", () => {
+    leave = setTimeout(() => {
+      map.classList.remove("focus");
+      map.querySelectorAll(".on").forEach(el => el.classList.remove("on"));
+    }, 120);
+  });
+}
+</script>
+</body></html>
