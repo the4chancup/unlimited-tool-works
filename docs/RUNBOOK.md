@@ -336,7 +336,7 @@ brief's remaining items itself or briefs a fresh session.
 
 **A Devin CLI run is started detached** (the maintainer, 2026-11-05): `python
 ~/.claude/tools/run_detached.py <brief>.run.log "git add -A && python
-~/.claude/skills/duck/devin_sidekick.py ..."` (or `duck.py`), with a background waiter beside
+~/.claude/skills/sidekick/devin_sidekick.py ..."` (or `duck.py`), with a background waiter beside
 it (`until grep -q "^exit " <log>; do sleep 60; done; tail -40 <log>`) as the notification, and
 the stall watcher as before. A background command dies with the lead's session (an IDE
 restart killed none yet only because the lead timed it, 2026-11-05) and at the 2-hour cap; a
