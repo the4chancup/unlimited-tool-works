@@ -502,6 +502,11 @@ SE-DIF-05  GIVEN two PES 21 saves in which player 70101's appearance id is 70101
            WHEN diff is run, and with --json
            THEN the report holds his AppearanceId row, 70101 → 4294967295 (the game's -1 as
                 the save stores it), and the JSON's player object has no stripped key
+SE-DIF-06  GIVEN two PES 17 saves in which player 73401's heading is 77 in the first and 80 in
+                the second, every other byte equal
+           WHEN diff is run, and with --json
+           THEN the text row names the field Header, as PES 2017's view does, 77 → 80; the
+                JSON row keeps the schema's name, Heading
 ```
 
 **AATF**
@@ -518,17 +523,20 @@ SE-AATF-01 GIVEN a cup save with known error-severity violations, a team-level o
                 player, and exits 1; the second prints its warnings and exits 0; the third
                 prints none and exits 0
 SE-AATF-02 GIVEN the save with error-severity violations in two teams
-           WHEN check-aatf --teams names one of them, and again naming a team id the save
-                lacks, alone or beside one it holds
+           WHEN check-aatf --teams names one of them, then both, and again naming a team id the
+                save lacks, alone or beside one it holds
            THEN the first prints only that team's violations, and the exit code is 1; the
-                others are refused naming the missing id, with exit code 2, printing nothing
+                second prints both teams' (704's and 718's), in team id order, exit code 1;
+                the others are refused naming the missing id, with exit code 2, printing
+                nothing
 SE-AATF-03 GIVEN a rules file that fails load-time validation, and the VGL27 ruleset with a save
                 whose team breaks a VGL27 rule the official ruleset does not have
            WHEN check-aatf --rules is run with each, and with no --rules and the settings'
                 aatf_ruleset naming the embedded vgl27
            THEN the first is refused with its validation findings (line or key path) and exit
                 code 2; the second and the third print that violation, which a run with neither
-                does not
+                does not, printing the official ruleset's own instead (team 701's quota of
+                its Red height system, which VGL27 does not have)
 SE-AATF-04 GIVEN the VGL27 ruleset and save of SE-AATF-03, a copy of the ruleset in the data
                 directory's rules/, and the command started from another directory
            WHEN check-aatf is run with aatf_ruleset naming the copy's file name, and again

@@ -1907,13 +1907,19 @@ SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 
                 whose old and new values each draw their swatch before the hex) and none of
                 the prompt's save, discard and cancel; a click outside it, Esc, a second click
                 on the label or another edit closes it; GIVEN the toolbar's Undo clicked
-                THEN it closes and a click on the label reopens it two rows long
+                THEN it closes and a click on the label reopens it two rows long; a row's
+                item takes no click; GIVEN the pointer over the label THEN it is the pointing
+                hand, the tooltip `Lists the changes since the save was opened or last
+                saved`; GIVEN team 701's 23 players' heights edited THEN the popup's rows stop
+                at 240 points and scroll; GIVEN a 52-letter name THEN the popup holds at 640
+                points wide and its table scrolls sideways
 SE-GUI-06  GIVEN a PES 17 save
            WHEN the player view is drawn, its Appearance section open
            THEN the stronger hand control (General info) and the star and playing attitude
                 controls (Appearance's Cutscenes group) are disabled with a tooltip naming the
                 first version that has them, in the same place as on a PES 21 save, where they
-                are enabled
+                are enabled; GIVEN a PES 21 save, the aesthetics editable THEN Copy from ID's
+                Base copy flag is disabled in place, its tooltip `PES 15 to 18 only`
 SE-GUI-07  GIVEN the save open with "Aesthetics from exports" on
            WHEN the Appearance section is drawn open
            THEN its values below the Cutscenes group are disabled with the line saying the
@@ -2015,7 +2021,12 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 save rosters selects that player (one only in the picked save, or on no
                 roster, is listed and not clickable); each player's rows stand under the
                 head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
-           GIVEN a save of another version picked THEN it is refused naming both versions
+           GIVEN a save of another version picked THEN it is refused naming both versions;
+           GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
+                filter reads ALL; WHEN the same path is picked again after the file changed on
+                disk THEN the panel lists the new differences; WHEN Export writes diff.txt
+                THEN the panel reads `Wrote <path>`, and WHEN it names a folder that does not
+                exist THEN a dialog titled `Cannot export the differences` names the path
 SE-GUI-14  GIVEN (after Release 0.1.0) the transplant panel, a donor save, one of its teams and
                 that team's export in the exports folder, slots 03 and 07 checked
            WHEN Preview, then Apply
@@ -2059,7 +2070,10 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 end is moved past the last THEN the last end follows it, and the last end's
                 list starts at the first end's team; WHEN an end changes THEN the list is
                 checked again only once the ends have rested 500 ms, dimmed and marked
-                checking until then
+                checking until then; WHEN another ruleset is picked THEN the old one's rows
+                and summary are not drawn and Copy to clipboard is disabled until the new
+                one's check returns; GIVEN a PES 21 save whose team 703's record comes before
+                702's THEN the list and the range's combos run in id order, 702 above 703
 SE-GUI-51  GIVEN DBC6's save (`EDIT00000000_DBC6`) open under DBC7, Multi-team AATF open
            WHEN the range is set to 851 to 897
            THEN the line above the list reads `Medal systems: GGG 4, GGSS 21, GSSSS 20,
@@ -2075,7 +2089,13 @@ SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row s
                 list's first, selected WHEN Up is pressed THEN nothing moves; GIVEN a player's
                 Height field holding the keyboard WHEN Down is pressed THEN the selection
                 stays; WHEN Down is pressed on a row below the list's view THEN the list
-                scrolls so the selected row shows
+                scrolls so the selected row shows, and no widget holds the keyboard after a
+                press that moved the selection; GIVEN ALL's last row selected WHEN Down is
+                pressed THEN nothing moves; GIVEN the Player menu's Copy stats from dialog,
+                the unsaved-changes list or team 701's slot popover open, or a pointer button
+                held on a row, WHEN Down is pressed THEN the selection stays and the dialog,
+                list or popover stays open; WHEN the button is released, or PgDn selects a
+                player row from the slot popover, THEN Down walks one row again
 SE-GUI-53  GIVEN the PES 17 save open on ALL with team 718's player 05 selected
            WHEN PgDn is pressed
            THEN the next team's row is selected, and each PgDn after it the next one's,
@@ -2091,7 +2111,9 @@ SE-GUI-55  GIVEN a stat at 60 and the Live AATF check on
            WHEN ten wheel notches take it to 70 in one go
            THEN one Undo puts back 60; GIVEN a notch on another stat between two notches
                 THEN they are two entries; GIVEN a rating cell focused by Tab WHEN Space is
-                pressed THEN the next frame's check reads the new rating with no other key
+                pressed THEN the next frame's check reads the new rating with no other key;
+                GIVEN a digit typed into the Height field THEN no check starts while the
+                field holds the keyboard, and once Escape lets it go the next frame's does
 SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row clicked
            WHEN Ctrl+V is pressed
            THEN B's record holds what Copy stats from A writes, and one Undo restores B;
@@ -2100,7 +2122,15 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row cli
                 writes; GIVEN preset 1 copied from its selector and preset 2 shown WHEN
                 Ctrl+V is pressed THEN preset 2 equals preset 1, and likewise a formation;
                 GIVEN a preset copied WHEN a player row is selected and Ctrl+V pressed
-                THEN nothing changes
+                THEN nothing changes; each Ctrl+C puts on the system clipboard a line naming
+                what it copied (`Unlimited Tool Works: the stats of <name>`, `… preset 2 of
+                <team>`, `… the Kick-off formation of <team>`), the last control pressed
+                choosing it, the locked formation selector included, a pointer moved with no
+                press not; GIVEN team 701's row copied and pasted onto itself THEN no undo
+                entry is pushed and the save stays clean; GIVEN another save opened after
+                Ctrl+C WHEN Ctrl+V is pressed THEN nothing changes and no undo entry is pushed;
+                GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
+                the field's own: no record is written and the clipboard keeps A's stats
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before
@@ -2135,7 +2165,14 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 check returns THEN the copied text holds no suggestion; GIVEN Live AATF in its
                 window THEN the button stands at the count line's right end; GIVEN a team that
                 passes THEN the list reads `All clean`, the button is not greyed out and the
-                copied text is the header line and `All clean`
+                copied text is the header line and `All clean`; GIVEN Show suggestions off
+                THEN no suggestion is drawn, and on THEN the list ends with `Suggestions`,
+                then each player's head and his `Unused` rows (73410's `Unused: 4 of 5 paid
+                cards used` first), their rule name in the normal text colour; GIVEN no
+                check returned yet THEN the button is not greyed out and the copied text is
+                `Checking /lit/…`, and with ALL picked and nothing selected `No team is
+                open.`, the notice `Copied the Live AATF list.`; GIVEN a ruleset whose check fails on team 743 THEN the
+                list holds the failure line and no `All clean`
 SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
            WHEN the drag is held over player 03's row
            THEN that row alone is outlined in the selection colour; held over his own row,
@@ -2163,7 +2200,31 @@ SE-GUI-16  GIVEN the save open on a team
                 chosen, runs from the interchange dialog
            THEN the file written equals the CLI's export, and the import changes only the
                 gameplay fields (the team's colours, kits and every motion staying the
-                target's), with a warning list when the file's version differs
+                target's), with a warning list when the file's version differs; GIVEN a PES 19
+                save on team 701 (/3/) and team 714's file with a 200-letter team name THEN
+                the lib's refusal is drawn under the choices Stats, Aesthetics and Gameplan,
+                in the error colour, Apply disabled, until Stats is unticked
+SE-GUI-67  GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team TOML picked in
+                the interchange dialog
+           WHEN team 713 (/cm/) is selected before Apply
+           THEN the dialog reads `Import into /cm/ (713)` and Apply writes 713, 701 untouched;
+                WHEN instead Aesthetics is unticked and a 701 player renamed THEN Apply writes
+                the file's stats and the new name stays; WHEN instead Aesthetics is unticked
+                and another save opened THEN the dialog stays open with the file picked, and
+                Apply writes it onto the new save; WHEN instead "Aesthetics from exports" is
+                turned on THEN Apply writes no aesthetics, and once "Edit aesthetics anyway"
+                is on, Apply writes them; WHEN 713's file is picked after the first was
+                applied THEN the first's `Applied` line goes, and Apply writes 713's file
+                onto 701 and reads `Applied cm.toml. The changes stay unsaved until Save.`
+SE-GUI-68  GIVEN a PES 17 save open on team 714 (/co/)
+           WHEN team 714's Team TOML from a PES 21 save, its preset 1 attacking instructions
+                holding Wing Back, which PES 17 lacks, is picked; then the PES 19 squad file
+                `pes19_squad.4ccs`; and, on a PES 21 save's team 701, whose players fill places
+                01 to 23, a file naming players 24 and 25
+           THEN the first's notes hold the line `Preset 1 attacking instructions: Wing Back`;
+                the second's group `Goal celebration 1 motion · 23 players`, opened, lists
+                each player's place, name and value change (`01`, his name, `127 → 122`); the
+                third's notes are one group, `Empty roster place · 2 players`
 SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
            WHEN it is opened through the import dialog
            THEN its sections import as the Team TOML import does, read-only for the legacy
@@ -2171,12 +2232,27 @@ SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
                 written is a Texport of the save's version (on PES 17 under the first
                 `TEXPORT0000000N` the save's folder lacks) that the import dialog reads back
                 to the same team values; GIVEN a PES 15 or 16 save THEN the export is
-                disabled, its tooltip naming the missing template
+                disabled, its tooltip naming the missing template; GIVEN `pes19_squad.4ccs`
+                (23 player records) picked on a PES 19 team with 22 rostered players THEN it
+                is refused alone, `pes19_squad.4ccs: 23 player records; the target team has
+                22 rostered players`, with no section choice and no Apply
 SE-GUI-18  GIVEN an aesthetics patch of the save's version
            WHEN Apply aesthetics patch is used
            THEN the preview lists every player it changes with old and new values, Apply is
                 one undoable edit, and a patch of another version is refused with the save
-                untouched
+                untouched, its sentence (`<path>: the patch is for PES 2021, the save is PES
+                2017`) in the error colour; GIVEN the patch also naming team 999 (/zz/), which
+                the save lacks, THEN `Team 999 /zz/ is not in this save: its players are
+                skipped.` stands in the warning colour above the rest's preview; GIVEN a file
+                that cannot be read, or is not TOML, THEN its path and the reader's or the
+                parser's error are drawn, no Apply, the save untouched; WHEN a row's item is
+                clicked THEN that row's player is selected (71405's row: 71405, not 71403)
+                and the selector moves to his team; WHEN another save is opened, or an edit
+                gives a player the patch's value, THEN the preview follows it; WHEN an edit
+                follows Apply THEN the `Applied` line gives way to the preview (`The save
+                already holds every value this patch writes.`); GIVEN an edit still in flight,
+                the pointer held, THEN the preview drawn stays, and Apply recomputes it first,
+                the edit kept and the patch's values on it
 SE-GUI-19  GIVEN a player with name color codes
            WHEN settings.toml generation runs on his folder from the view
            THEN the file holds the explicit name string with its codes (never `name = true`,
@@ -2209,7 +2285,8 @@ SE-GUI-22  GIVEN the save open with "Aesthetics from exports" on and "Edit aesth
            THEN the FPC toggle and the team-wide FPC switch, the boots and gloves assignment,
                 Clear visual flags, Fix database and the imports' aesthetics section
                 are disabled, each with the ownership line as its tooltip, while Apply
-                aesthetics patch is enabled
+                aesthetics patch is enabled; WHEN the ownership line's link is clicked, on a
+                PES 17 save too, THEN the patch panel opens
 SE-GUI-23  GIVEN the save open on a team and the aesthetics editable (the setting off, or on
                 with "Edit aesthetics anyway" switched on)
            WHEN a team operation runs from its menu (Set edited flag, Set boots and gloves for
@@ -2245,7 +2322,11 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
                 recent file above the file picker; WHEN the menu is closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
-                THEN the file picker opens; WHEN Save as writes a new
+                THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
+                Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN
+                the menu's Choose file is used THEN the picker starts in the newest PES 21
+                save's folder, and with the selector at PES 18, which has no save there, in
+                no folder; WHEN Save as writes a new
                 path THEN the file replaced, if any, is kept once as its .bak
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
@@ -2285,7 +2366,8 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
                 to this player`, a `FieldedNotA` row's `Click to show him on the team's pitch` and a
                 team-wide row's none, and clicking a row
                 selects that player (a `FieldedNotA` row his team's row, the named preset
-                shown on a formation carrying the cross); WHEN an edit fixes one of them THEN the list stays,
+                shown on a formation carrying the cross), a click on a team-wide row
+                selecting nothing; WHEN an edit fixes one of them THEN the list stays,
                 marked `checking…`, until the check returns, its row then gone and N one less,
                 and an undo brings it back; WHEN another team is opened, or another ruleset
                 picked in the toolbar's dropdown, THEN the list and N are that team's, or that
@@ -2308,7 +2390,9 @@ SE-GUI-48  GIVEN SE-GUI-47's save, team, edit and check, the list in the dock
            THEN the dock is gone and a window titled `Live AATF` holds the dock's count line
                 and the same rows, the players' groups in one column in roster order (the
                 bench player 71801's, slot 0, above the starter 71808's, slot 7),
-                its dock icon left of its close button; WHEN the dock icon is clicked THEN the
+                its dock icon left of its close button, where it stays the frames after a
+                touch on the window; WHEN a row of 71801's group is clicked in the window THEN
+                71801 (718's slot 0) is selected; WHEN the dock icon is clicked THEN the
                 window is gone and the dock is back with its two columns; WHEN the list is
                 popped out again and the window's close button clicked THEN Live AATF is off
                 (the toolbar's button unfilled, no list, no marks), and WHEN it is turned on
@@ -2341,7 +2425,9 @@ SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check ret
                 the first is selected THEN a cross stands beside the Height box, its tooltip
                 the dock's line for that violation, and no other field carries one; WHEN an edit fixes the
                 height and the check returns THEN both marks are a check mark and the cross
-                beside the box is gone; WHEN Live AATF is switched off THEN no mark is drawn
+                beside the box is gone; WHEN Live AATF is switched off THEN no mark is drawn;
+                WHEN another ruleset is picked THEN the old ruleset's result marks no row and
+                crosses no field, and once the new one's check returns its marks are drawn
 SE-GUI-37  GIVEN the PES 17 save open on team 701
            WHEN the list is drawn
            THEN a team row heads the team's players, naming 701 and the team with its colours
@@ -2399,7 +2485,10 @@ SE-GUI-32  GIVEN the save open and VTL11 picked in the toolbar's ruleset dropdow
                 and `check-aatf` run without `--rules` checks against VTL11; GIVEN the setting
                 naming an imported file no longer in the data folder's `rules/` THEN at start
                 the ruleset is the first built-in one and a warning notice says so, and no
-                quick action, badge or list shows a load error
+                quick action, badge or list shows a load error; GIVEN it naming an imported
+                file still there (Cup Rules) THEN at start the dropdown shows Cup Rules with
+                no notice, and opened it lists the built-ins, then Cup Rules and its remove
+                row, then Import rules file…
 SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the active ruleset
            WHEN the view is drawn at the 1280-wide window
            THEN the logo stands 28 points high, its right edge 14 points from the window's

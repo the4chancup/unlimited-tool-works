@@ -1373,7 +1373,7 @@ mod tests {
     /// `TierCount`, and the red tall quota at 8 of 10) and eight `Unused`
     /// suggestions on slots 9, 10, 14 and 22. The list draws the team's own
     /// group, then each player's in roster order.
-    // SE-GUI-15
+    // SE-GUI-63
     #[test]
     fn the_list_groups_the_checks_violations_per_player() {
         let mut file = fixture();
@@ -1625,7 +1625,7 @@ mod tests {
     }
 
     /// Clicking a player's row selects him; a team's row is not clickable.
-    // SE-GUI-15
+    // SE-GUI-30
     #[test]
     fn a_player_rows_click_selects_him_on_that_frame_only() {
         let violations = [
@@ -1679,7 +1679,7 @@ mod tests {
 
     /// Suggestions draw only when asked, in their own group after the
     /// violations: team 734's eight `Unused` rows on slots 9, 10, 14 and 22.
-    // SE-GUI-15
+    // SE-GUI-63
     #[test]
     fn suggestions_draw_on_request_in_their_own_group() {
         let file = fixture();

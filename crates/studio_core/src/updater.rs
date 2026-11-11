@@ -347,7 +347,6 @@ mod tests {
         );
     }
 
-    // ST-UPD-01
     #[test]
     fn the_interval_in_seconds_is_the_settings_minutes() {
         let mut common = CommonSettings::default();

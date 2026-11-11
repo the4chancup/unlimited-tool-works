@@ -385,7 +385,12 @@ RE-GUI-14  GIVEN two edits made in order
 RE-GUI-15  GIVEN a document with unsaved changes
            WHEN the window is closed, another document opened or a template picked
            THEN a prompt offers to save, discard or cancel; cancel keeps the document as it
-                was; save writes it first (Save as for one never saved); discard goes on
+                was; save writes it first (Save as for one never saved); discard goes on;
+                WHEN Ctrl+Z, Ctrl+Y and Ctrl+S are pressed while the prompt, the start page
+                or an open's refusal dialog is up THEN the document, its undo entry and the
+                file are as they were; GIVEN Gold's id typed over as "royal", not committed,
+                WHEN Ctrl+S is pressed THEN the saved file's tier is royal and the document
+                is clean
 RE-GUI-16  manual  GIVEN Blank open
                    WHEN VGL26's data is rebuilt through the forms alone (no text edited)
                    THEN the saved file validates, its ruleset equals the embedded VGL26's, and
@@ -421,7 +426,10 @@ RE-GUI-19  GIVEN a ruleset open with no logo
            WHEN a PNG of 2 KB, 40 × 40 pixels, is chosen in General's Event logo
            THEN the field shows it 28 points high with Remove beside Choose picture…, the
                 file's logo that PNG unchanged; WHEN a JPEG of 1000 × 500 pixels is chosen
-                THEN the logo is a PNG of 112 × 56 pixels; WHEN a file that is no picture
+                THEN the logo is a PNG of 112 × 56 pixels; WHEN a PNG of 336 × 112 pixels,
+                opaque white on its left half and transparent black on its right, is chosen
+                THEN the logo is 168 × 56 and every texel not fully transparent is white,
+                with no dark fringe at the edge; WHEN a file that is no picture
                 is chosen THEN a line beside the buttons says so and the logo is unchanged;
                 WHEN the Event page holds `www.example` THEN General lists the problem
 RE-GUI-20  GIVEN Blank open on Universal rules
@@ -483,6 +491,10 @@ RE-FILE-09  GIVEN a ruleset with an event page and a logo
             WHEN it is saved and opened again
             THEN both are as they were, `page` written after `name` and `logo` as the data
                  block's last key, and the logic's identity is the one it had without them
+RE-FILE-10  GIVEN a.4ccrules open and edited
+            WHEN Save as writes b.4ccrules, then another edit is made and Save pressed
+            THEN a.4ccrules is unchanged both times; b.4ccrules holds the first edit, then
+                 the second, the document's file now b.4ccrules
 ```
 
 The older-official path (the banner offering **Update logic**, and `update-logic` migrating a

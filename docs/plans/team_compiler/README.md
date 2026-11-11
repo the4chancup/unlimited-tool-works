@@ -364,7 +364,18 @@ TC-LEG-03  GIVEN TC-LEG-01's export, its legacy_ids.toml also giving [09] gloves
                 and 2301 to 2325, no gloves package 2522 is written, and the patch still
                 gives 79609 gloves_id 2522; GIVEN the block
                 table's /gbfg/ row removed THEN every legacy ID of the export is reported
-                legacy_id_out_of_block, its block "none"
+                legacy_id_out_of_block, its block "none"; GIVEN TC-LEG-05's export, its
+                [05] and [08] giving boots = 2522 THEN legacy_id_out_of_block is reported
+                once, naming Boots/Crocs, no boots package holds Crocs, gloves package 2310
+                is written, and the patch gives 79605 and 79608 boots_id 2522; GIVEN slot 05
+                holding his own boots.fmdl and linking Gloves/Mitts, [05] giving boots =
+                2522 and gloves = 2523 THEN each is reported once, on the folder that would
+                pack it (Players/05 - A for 2522, Gloves/Mitts for 2523), no boots or gloves
+                package is written, and the patch gives 79605 both IDs; GIVEN a
+                /gbfg/ export and a /dbg/ export (block 2001 to 2025), each giving its slot
+                05's boots.fmdl boots = 2305 THEN legacy_id_out_of_block is reported as an
+                Error naming /dbg/'s slot 05 folder and 2001 to 2025, and the CPK holds one
+                boots package 2305, /gbfg/'s
 TC-LEG-04  GIVEN a data directory with no legacy_boots_blocks.txt
            WHEN an export without legacy_ids.toml is compiled, then TC-LEG-01's
            THEN the first creates no file and the second creates it from the embedded copy,

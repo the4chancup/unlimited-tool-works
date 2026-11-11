@@ -889,7 +889,7 @@ fn an_export_skipped_by_its_roster_leaves_the_export_beside_it_as_compiled_alone
     );
 }
 
-// ST-CLI-02
+// ST-CLI-03
 #[test]
 fn a_compile_reports_progress_per_task_and_ends_with_one_complete_holding_the_counts() {
     use studio_core::PipelineEvent;
@@ -946,7 +946,7 @@ fn a_compile_reports_progress_per_task_and_ends_with_one_complete_holding_the_co
     );
 }
 
-// ST-CLI-02
+// ST-CLI-03
 #[test]
 fn two_dropping_findings_on_one_folder_count_once_in_skipped_folders() {
     let sandbox = Sandbox::new("skipped_folders_distinct");
@@ -985,7 +985,7 @@ fn two_dropping_findings_on_one_folder_count_once_in_skipped_folders() {
     assert!(!complete.success, "an Error-worst run fails");
 }
 
-// ST-CLI-02
+// ST-CLI-03
 #[test]
 fn a_warning_only_folder_is_no_folder_with_errors() {
     let sandbox = Sandbox::new("folders_with_errors_warning");

@@ -567,7 +567,7 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     }
 }
 
-// SE-GUI-22
+// SE-GUI-67
 #[test]
 fn the_staged_import_follows_the_lock_turned_on_and_off_after_the_pick() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_lock_flip", THREE);
@@ -603,7 +603,7 @@ fn the_staged_import_follows_the_lock_turned_on_and_off_after_the_pick() {
     assert_imported(&view, THREE, &expected);
 }
 
-// SE-GUI-16
+// SE-GUI-67
 #[test]
 fn the_staged_import_follows_an_edit_made_after_the_pick() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_live", THREE);
@@ -638,7 +638,7 @@ const ALL: Sections = Sections {
     gameplan: true,
 };
 
-// SE-GUI-16
+// SE-GUI-67
 #[test]
 fn another_team_selected_after_the_pick_is_the_one_imported_into() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_retarget", THREE);
@@ -670,7 +670,7 @@ fn another_team_selected_after_the_pick_is_the_one_imported_into() {
     assert_eq!(rostered(&view, THREE), three, "its players untouched");
 }
 
-// SE-GUI-16
+// SE-GUI-67
 #[test]
 fn another_save_opened_after_the_pick_keeps_the_file_and_stages_against_it() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_reopen", THREE);
@@ -745,7 +745,7 @@ fn a_file_that_does_not_read_is_refused_alone() {
     );
 }
 
-// SE-GUI-16
+// SE-GUI-67
 #[test]
 fn a_second_pick_replaces_the_first_ones_import_and_applied_line() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_second_pick", THREE);

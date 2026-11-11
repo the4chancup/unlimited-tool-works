@@ -208,7 +208,7 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
 // A tactics key's group names what its notes carry after its subject, on
 // its one line: an instruction PES 17 lacks, written off, is named there
 // or nowhere.
-// SE-GUI-16
+// SE-GUI-68
 #[test]
 fn a_tactics_keys_note_names_the_instruction_written_off() {
     use pes_savefile::model::instruction::Instruction;
@@ -251,7 +251,7 @@ fn a_tactics_keys_note_names_the_instruction_written_off() {
 // A note that carries a detail draws it on its player's row: the opened
 // group's first row is the place, the target's player at that place and
 // the lowered value.
-// SE-GUI-17
+// SE-GUI-68
 #[test]
 fn an_opened_groups_row_draws_the_place_the_player_and_the_detail() {
     let (mut view, mut window) = open_on(PesVersion::Pes17, "interchange_note_detail", CO);
@@ -409,7 +409,7 @@ fn the_panel_holds_still_once_the_line_under_apply_shows_in_the_shortest_window(
     }
 }
 
-// SE-GUI-16
+// SE-GUI-68
 #[test]
 fn every_empty_place_a_file_names_is_one_group() {
     // PES 21's team 701 fills places 01 to 23 of its 32.
