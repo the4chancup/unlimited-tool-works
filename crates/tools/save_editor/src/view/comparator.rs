@@ -21,7 +21,8 @@ use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
 use studio_core::Recorder;
 use team_widgets::violations::{
-    RULE_COL, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, player_head_job, row_paint,
+    RULE_COL, RULE_GAP, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, player_head_job,
+    row_paint,
 };
 
 use crate::diff::{self, DiffReport, PlayerReport};
@@ -38,6 +39,15 @@ use crate::view::{
 /// The panel's first width in points, its whole frame included (the
 /// draft's `.panel`).
 const PANEL_WIDTH: f32 = 620.0;
+
+/// A field row's Old value column (the draft's `#cmp-rows .drow .o`): 200
+/// points, its text cut with an ellipsis when longer, so every New value
+/// starts at one place.
+const OLD_COL: f32 = 200.0;
+
+/// The list's first line whenever it holds a field row: the three columns'
+/// head (`Line::Columns`).
+static COLUMNS: Line = Line::Columns;
 
 /// The pick's Open dialog (`rfd` in the window, a stub in the tests — a
 /// native dialog cannot be driven headless; `SaveFileDialog`'s pattern).
@@ -177,20 +187,26 @@ pub(super) enum Line {
         /// filter keeps the line for it; `None`: no roster holds him).
         team: Option<u32>,
     },
-    /// A field's row in the views' terms (the draft's `.drow`): the label
-    /// in the first column, `<old> → <new>` in the second; `None` select
-    /// on a player no open roster holds (SE-GUI-13: listed and not
-    /// clickable).
+    /// A field's row in the views' terms (the draft's `#cmp-rows .drow`):
+    /// the label, the picked save's value and the open save's in three
+    /// columns; `None` select on a player no open roster holds (SE-GUI-13:
+    /// listed and not clickable).
     Row {
-        /// The field's label, the row's first column.
+        /// The field's label, the Item column.
         label: String,
-        /// `<old> → <new>`, the row's second column.
-        values: String,
+        /// The picked save's value, the Old value column.
+        old: String,
+        /// The open save's value, the New value column.
+        new: String,
         /// The player a click selects.
         select: Option<SelectedPlayer>,
         /// His open-save roster team, as the head's.
         team: Option<u32>,
     },
+    /// The rows' head, `Item`, `Old value`, `New value` (the draft's
+    /// `#cmp-rows .drow.head`). Never in a comparison's held lines:
+    /// `shown` puts it first when the drawn list holds a row.
+    Columns,
 }
 
 /// The window for one frame, while it is the open panel and a save is
@@ -590,7 +606,8 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
             let term = terms::row_term(version, &row.diff);
             lines.push(Line::Row {
                 label: term.label,
-                values: format!("{} \u{2192} {}", term.old, term.new),
+                old: term.old,
+                new: term.new,
                 select: place.map(Place::select),
                 team,
             });
@@ -654,27 +671,34 @@ fn head(file: &EditFile, place: Option<Place>, id: u32) -> (String, Option<Roste
 /// `lines` narrowed to `team` (All: every line): the heads and rows whose
 /// roster team is the picked one kept, a heading pushed before its first
 /// kept line — a group with nothing kept (the `No team` one, an only-in
-/// section with no player of the team's roster) loses its heading too.
-/// Runs on the frame, on the held result: a filter change starts no
-/// comparison.
+/// section with no player of the team's roster) loses its heading too —
+/// and the columns' head first when a row is kept. Runs on the frame, on
+/// the held result: a filter change starts no comparison.
 fn shown(lines: &[Line], team: TeamChoice) -> Vec<&Line> {
-    let TeamChoice::Team(team) = team else {
-        return lines.iter().collect();
-    };
-    let mut shown = Vec::new();
-    let mut heading = None;
-    for line in lines {
-        match line {
-            Line::Heading(_) => heading = Some(line),
-            Line::Head { team: kept, .. } | Line::Row { team: kept, .. } => {
-                if *kept == Some(team) {
-                    if let Some(heading) = heading.take() {
-                        shown.push(heading);
+    let mut shown = match team {
+        TeamChoice::All => lines.iter().collect(),
+        TeamChoice::Team(team) => {
+            let mut shown = Vec::new();
+            let mut heading = None;
+            for line in lines {
+                match line {
+                    Line::Heading(_) => heading = Some(line),
+                    Line::Head { team: kept, .. } | Line::Row { team: kept, .. } => {
+                        if *kept == Some(team) {
+                            if let Some(heading) = heading.take() {
+                                shown.push(heading);
+                            }
+                            shown.push(line);
+                        }
                     }
-                    shown.push(line);
+                    Line::Columns => {}
                 }
             }
+            shown
         }
+    };
+    if shown.iter().any(|line| matches!(line, Line::Row { .. })) {
+        shown.insert(0, &COLUMNS);
     }
     shown
 }
@@ -682,8 +706,9 @@ fn shown(lines: &[Line], team: TeamChoice) -> Vec<&Line> {
 /// One line of the list, one text row high (the `violations` list's row
 /// pattern, its `row_paint` tail shared): a heading in the strong color,
 /// a head in the lists' hyphenated style (one weak run when no roster
-/// holds the player), a row the draft's `.drow` two columns; a row or a
-/// head with `select` is a click target reporting the player.
+/// holds the player), a row the draft's `#cmp-rows .drow` three columns
+/// under their head; a row or a head with `select` is a click target
+/// reporting the player.
 fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
     let visuals = ui.visuals();
     match line {
@@ -696,10 +721,55 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
         } => head_line(ui, text, rostered.as_ref(), *select),
         Line::Row {
             label,
-            values,
+            old,
+            new,
             select,
             ..
-        } => field_row(ui, label, values, *select),
+        } => field_row(ui, label, old, new, *select),
+        Line::Columns => {
+            columns_head(ui);
+            None
+        }
+    }
+}
+
+/// The x offsets from a field row's left edge of its three columns, Item,
+/// Old value and New value: `drow_columns`' two, the label's column
+/// `RULE_COL` wide, then the New value `RULE_GAP` past the Old value's
+/// `OLD_COL`.
+fn column_offsets(width: f32) -> [f32; 3] {
+    let (label_x, old_x, _) = drow_columns(width, RULE_COL);
+    [label_x, old_x, old_x + OLD_COL + RULE_GAP]
+}
+
+/// The rows' head (the draft's `#cmp-rows .drow.head`): `Item`, `Old
+/// value` and `New value` in the weak colour at the field rows' three
+/// places, as the unsaved changes list heads its own. It names columns and
+/// selects nothing, so it takes no click and draws no hover outline.
+fn columns_head(ui: &mut egui::Ui) {
+    let weak = ui.visuals().weak_text_color();
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let offsets = column_offsets(ui.available_width());
+    let galleys = ["Item", "Old value", "New value"].map(|title| {
+        ui.painter()
+            .layout_no_wrap(title.to_owned(), font.clone(), weak)
+    });
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), galleys[0].size().y),
+        egui::Sense::hover(),
+    );
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::Role::Label,
+            ui.is_enabled(),
+            "Item Old value New value",
+        )
+    });
+    if ui.is_rect_visible(rect) {
+        for (x, galley) in offsets.into_iter().zip(galleys) {
+            ui.painter()
+                .galley(rect.min + egui::vec2(x, 0.0), galley, weak);
+        }
     }
 }
 
@@ -760,15 +830,35 @@ fn galley_line(
     )
 }
 
-/// A field's row (the draft's `.drow`): `label` in `RULE_COL` points of
-/// the plain text color, one line cut with an ellipsis as the AATF rows'
-/// names are, `values` in the strong color, `drow_columns`' inset and gap
-/// placing the pair. The whole `<label> <values>` is the AccessKit label,
-/// as it read before the two columns.
+/// `text` on one line in `color`, cut with an ellipsis past `width`
+/// points.
+fn cut_galley(
+    ui: &egui::Ui,
+    text: &str,
+    font: egui::FontId,
+    color: egui::Color32,
+    width: f32,
+) -> std::sync::Arc<egui::Galley> {
+    let mut job = egui::text::LayoutJob::single_section(
+        text.to_owned(),
+        egui::TextFormat::simple(font, color),
+    );
+    job.wrap = egui::text::TextWrapping::truncate_at_width(width);
+    ui.fonts_mut(|f| f.layout_job(job))
+}
+
+/// A field's row (the draft's `#cmp-rows .drow`) at `column_offsets`'
+/// three places: `label` in `RULE_COL` points of the plain text color, one
+/// line cut with an ellipsis as the AATF rows' names are, then `old` cut
+/// the same way at `OLD_COL` and `new` uncut, both in the strong color.
+/// `<label> <old> → <new>` is the AccessKit label, one name a screen
+/// reader reads; a row that cut its label or its old value hovers that
+/// name too, above the switch hint on a row that selects.
 fn field_row(
     ui: &mut egui::Ui,
     label: &str,
-    values: &str,
+    old: &str,
+    new: &str,
     select: Option<SelectedPlayer>,
 ) -> Option<SelectedPlayer> {
     let (text_color, strong_color) = {
@@ -776,17 +866,17 @@ fn field_row(
         (visuals.text_color(), visuals.strong_text_color())
     };
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let (name_x, value_x, _) = drow_columns(ui.available_width(), RULE_COL);
-    let mut job = egui::text::LayoutJob::single_section(
-        label.to_owned(),
-        egui::TextFormat::simple(font.clone(), text_color),
-    );
-    job.wrap = egui::text::TextWrapping::truncate_at_width(RULE_COL);
-    let label_galley = ui.fonts_mut(|f| f.layout_job(job));
-    let values_galley = ui
+    let [label_x, old_x, new_x] = column_offsets(ui.available_width());
+    let label_galley = cut_galley(ui, label, font.clone(), text_color, RULE_COL);
+    let old_galley = cut_galley(ui, old, font.clone(), strong_color, OLD_COL);
+    let new_galley = ui
         .painter()
-        .layout_no_wrap(values.to_owned(), font, strong_color);
-    let height = label_galley.size().y.max(values_galley.size().y);
+        .layout_no_wrap(new.to_owned(), font, strong_color);
+    let height = label_galley
+        .size()
+        .y
+        .max(old_galley.size().y)
+        .max(new_galley.size().y);
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), height),
         if select.is_some() {
@@ -795,19 +885,29 @@ fn field_row(
             egui::Sense::hover()
         },
     );
+    let name = format!("{label} {old} \u{2192} {new}");
+    let hover = if label_galley.elided || old_galley.elided {
+        Some(match select {
+            Some(_) => format!("{name}\n{SWITCH_TOOLTIP}"),
+            None => name.clone(),
+        })
+    } else {
+        select.map(|_| SWITCH_TOOLTIP.to_owned())
+    };
     row_paint(
         ui,
         response,
         &[
-            egui::Shape::galley(rect.min + egui::vec2(name_x, 0.0), label_galley, text_color),
             egui::Shape::galley(
-                rect.min + egui::vec2(value_x, 0.0),
-                values_galley,
-                strong_color,
+                rect.min + egui::vec2(label_x, 0.0),
+                label_galley,
+                text_color,
             ),
+            egui::Shape::galley(rect.min + egui::vec2(old_x, 0.0), old_galley, strong_color),
+            egui::Shape::galley(rect.min + egui::vec2(new_x, 0.0), new_galley, strong_color),
         ],
-        &format!("{label} {values}"),
+        &name,
         select,
-        select.is_some().then_some(SWITCH_TOOLTIP),
+        hover.as_deref(),
     )
 }

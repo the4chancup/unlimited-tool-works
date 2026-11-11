@@ -63,71 +63,194 @@ fn a_rows_hover_says_its_click_switches_to_the_player() {
     );
 }
 
-// A field's row is the draft's `.drow`: the label in the name's column
-// the draft's `padding` (4 points) in, the `old → new` the draft's `gap`
-// (8) past the column (4 + 190 + 8) in the strong colour; a player head
-// keeps the row's left edge.
+/// The painted text inside `bounds` whose galley's text is `text`.
+fn text_in_row<'a>(
+    shapes: &'a [egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+    text: &str,
+) -> &'a egui::epaint::TextShape {
+    texts_in_row(shapes, bounds)
+        .find(|shape| shape.galley.job.text == text)
+        .unwrap_or_else(|| panic!("no painted {text:?} inside {bounds:?}"))
+}
+
+/// The painted texts whose position lies inside `bounds`.
+fn texts_in_row(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> impl Iterator<Item = &egui::epaint::TextShape> {
+    shapes
+        .iter()
+        .filter_map(move |clipped| match &clipped.shape {
+            egui::Shape::Text(shape)
+                if f64::from(shape.pos.x) >= bounds.x0 - 0.5
+                    && f64::from(shape.pos.x) <= bounds.x1 + 0.5
+                    && f64::from(shape.pos.y) >= bounds.y0 - 0.5
+                    && f64::from(shape.pos.y) <= bounds.y1 + 0.5 =>
+            {
+                Some(shape)
+            }
+            _ => None,
+        })
+}
+
+/// Asserts `shape` starts `x` points right of `bounds`' left edge,
+/// within half a point.
+#[track_caller]
+fn assert_at_x(shape: &egui::epaint::TextShape, bounds: accesskit::Rect, x: f64) {
+    assert!(
+        (f64::from(shape.pos.x) - (bounds.x0 + x)).abs() <= 0.5,
+        "{:?} {x} points in: {:?} vs {bounds:?}",
+        shape.galley.job.text,
+        shape.pos
+    );
+}
+
+// A field's row stands in three columns, as the unsaved changes list's
+// (the draft's `#cmp-rows .drow`): the label the draft's `padding` (4
+// points) in, the picked save's value the draft's `gap` (8) past the
+// label's 190-point column (4 + 190 + 8), the open save's 8 past the old
+// value's 200 (202 + 200 + 8), both values in the strong colour and no
+// arrow painted. One head row, `Item`, `Old value`, `New value` at the
+// same three places in the weak colour, stands above the first team
+// heading; a player head keeps the row's left edge.
 // SE-GUI-13
 #[test]
-fn a_row_stands_in_the_drows_two_columns() {
+fn a_row_stands_in_three_columns_under_one_head() {
     let (mut view, mut window, _) = compared_73401("comparator_drow");
     scroll_to(&mut window, &mut view, "Player 73401 - 49 - Muh Spooks");
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    /// The painted text inside `bounds` whose galley starts with
-    /// `starts_with`.
-    fn text_in_row<'a>(
-        shapes: &'a [egui::epaint::ClippedShape],
-        bounds: accesskit::Rect,
-        starts_with: &str,
-    ) -> &'a egui::epaint::TextShape {
-        shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Text(shape)
-                    if shape.galley.job.text.starts_with(starts_with)
-                        && f64::from(shape.pos.x) >= bounds.x0 - 0.5
-                        && f64::from(shape.pos.x) <= bounds.x1 + 0.5
-                        && f64::from(shape.pos.y) >= bounds.y0 - 0.5
-                        && f64::from(shape.pos.y) <= bounds.y1 + 0.5 =>
-                {
-                    Some(shape)
-                }
-                _ => None,
-            })
-            .next()
-            .unwrap_or_else(|| panic!("no painted {starts_with:?} inside {bounds:?}"))
-    }
     let row = comparator_button(&pairs, "Height 185 \u{2192} 183")
         .1
         .bounds()
         .expect("the row's bounds");
-    let label = text_in_row(&shapes, row, "Height");
+    let (weak, strong) = {
+        let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
+        (visuals.weak_text_color(), visuals.strong_text_color())
+    };
+    assert_at_x(text_in_row(&shapes, row, "Height"), row, 4.0);
+    for (value, x) in [("185", 202.0), ("183", 410.0)] {
+        let shape = text_in_row(&shapes, row, value);
+        assert_at_x(shape, row, x);
+        assert_eq!(galley_color(shape), strong, "{value}'s strong colour");
+    }
     assert!(
-        (f64::from(label.pos.x) - (row.x0 + 4.0)).abs() <= 0.5,
-        "the label the row's 4-point inset in: {:?} vs {row:?}",
-        label.pos
+        texts_in_row(&shapes, row).all(|shape| !shape.galley.job.text.contains('\u{2192}')),
+        "no arrow painted in the row"
     );
-    let values = text_in_row(&shapes, row, "185 \u{2192} 183");
-    assert!(
-        (f64::from(values.pos.x) - (row.x0 + 202.0)).abs() <= 0.5,
-        "the values 4 + 190 + 8 in: {:?} vs {row:?}",
-        values.pos
-    );
-    let strong = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .strong_text_color();
-    assert_eq!(galley_color(values), strong, "the values' strong colour");
+
+    let heading = text_shape(&shapes, "Team 734 /lit/");
+    for (title, x) in [("Item", 4.0), ("Old value", 202.0), ("New value", 410.0)] {
+        let painted: Vec<&egui::epaint::TextShape> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text == title => Some(shape),
+                _ => None,
+            })
+            .collect();
+        let [shape] = painted.as_slice() else {
+            panic!("{title:?} painted once, got {}", painted.len())
+        };
+        assert_at_x(shape, row, x);
+        assert_eq!(galley_color(shape), weak, "{title}'s weak colour");
+        assert!(
+            shape.pos.y < heading.pos.y,
+            "{title:?} above the first team heading: {:?} vs {:?}",
+            shape.pos,
+            heading.pos
+        );
+    }
+
     let head_bounds = comparator_button(&pairs, "Player 73401 - 49 - Muh Spooks")
         .1
         .bounds()
         .expect("the head's bounds");
-    let head = text_in_row(&shapes, head_bounds, "Player 73401 ");
+    let head = texts_in_row(&shapes, head_bounds)
+        .find(|shape| shape.galley.job.text.starts_with("Player 73401 "))
+        .expect("the head's painted text");
+    assert_at_x(head, row, 0.0);
+}
+
+// A comparison whose only differences are players in one save alone (no
+// field row) paints no head row.
+// SE-GUI-13
+#[test]
+fn a_comparison_with_no_differing_field_paints_no_head() {
+    let (mut view, mut window) = open_734_with("comparator_no_head", &[], 183);
+    // As `the_players_only_in_one_save_list_under_their_headings`: one id
+    // renumbered out, so the report holds only-in players and no row.
+    let picked = picked_save(&scratch_of(&view), "picked", |file| {
+        file.player_mut(73410).expect("73410 is a player").id = 9_999_999;
+    });
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        (f64::from(head.pos.x) - row.x0).abs() <= 0.5,
-        "a head stays at the row's left edge: {:?} vs {row:?}",
-        head.pos
+        comparator_nodes(&pairs)
+            .iter()
+            .any(|node| node.value() == Some("Only in the picked save")),
+        "premise: the list holds the only-in sections"
+    );
+    assert!(
+        !shapes.iter().any(|clipped| matches!(
+            &clipped.shape,
+            egui::Shape::Text(shape)
+                if ["Item", "Old value", "New value"].contains(&shape.galley.job.text.as_str())
+        )),
+        "no head row painted"
+    );
+}
+
+// A value longer than its column is cut with an ellipsis, and the row's
+// hover holds its whole text above the switch hint; the open save's value
+// still starts at 410. A row that cuts nothing hovers the hint alone.
+// SE-GUI-13
+#[test]
+fn a_cut_value_ends_in_an_ellipsis_and_hovers_the_whole_row() {
+    let long = "THE EXTRAORDINARILY LONG-LEGGED FORWARD";
+    let (mut view, mut window) = open_734_with("comparator_cut", &[73401], 183);
+    // The picked save's 73401 renamed long: the row's old value.
+    let picked = picked_save(&scratch_of(&view), "picked", |file| {
+        file.player_mut(73401).expect("73401 is a player").name = long.to_owned();
+    });
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let name = format!("Name {long} \u{2192} Muh Spooks");
+    scroll_to(&mut window, &mut view, &name);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, node) = comparator_button(&pairs, &name);
+    let row = node.bounds().expect("the row's bounds");
+    let at = centre(node);
+    let old = text_in_row(&shapes, row, long);
+    assert!(old.galley.elided, "the old value is cut");
+    let last = old
+        .galley
+        .rows
+        .last()
+        .and_then(|row| row.row.glyphs.last())
+        .map(|glyph| glyph.chr);
+    assert_eq!(last, Some('\u{2026}'), "the cut ends in the ellipsis");
+    assert!(
+        old.galley.size().x <= 200.0,
+        "the old value no wider than its column: {}",
+        old.galley.size().x
+    );
+    assert_at_x(text_in_row(&shapes, row, "Muh Spooks"), row, 410.0);
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, at, "this player").as_deref(),
+        Some(format!("{name}\nClick to switch to this player").as_str()),
+        "the cut row hovers its whole text above the hint"
+    );
+
+    let pairs = scroll_to(&mut window, &mut view, "Height 185 \u{2192} 183");
+    let (_, height) = comparator_button(&pairs, "Height 185 \u{2192} 183");
+    let at = centre(height);
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, at, "this player").as_deref(),
+        Some("Click to switch to this player"),
+        "a row that cuts nothing hovers the hint alone"
     );
 }
 

@@ -614,9 +614,11 @@ fn team_row(
 /// nothing. While a drag holds over the row, it is outlined in the
 /// selection colour (the draft's `.dragover`) where the drop would move a
 /// record (`Session::moves_player`), so a member sees which slot the drop
-/// takes; a row the drop writes nothing on gets none. The row shows the
-/// grab hand wherever the pointer is on it (egui leaves a row that also
-/// takes clicks on the arrow, so the row asks for it).
+/// takes; a row the drop writes nothing on gets none. While held dragged,
+/// the row's handle, place, position and name float above the list with
+/// the point pressed under the pointer, its own place left blank. The row
+/// shows the grab hand wherever the pointer is on it (egui leaves a row
+/// that also takes clicks on the arrow, so the row asks for it).
 fn player_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
@@ -663,11 +665,32 @@ fn player_row(
             label.clone(),
         )
     });
-    let mark_response = if ui.is_rect_visible(rect) {
+    // While the row is held dragged, its text floats over the list, moved
+    // by the pointer's travel since the press, so the point first pressed
+    // stays under the pointer (as a dragged lineup row does); its place in
+    // the list is left blank, as egui leaves a dragged lineup row's.
+    let lift = if layout.draggable && response.dragged() {
+        ui.input(|i| Some(i.pointer.interact_pos()? - i.pointer.press_origin()?))
+    } else {
+        None
+    };
+    let mark_response = if lift.is_some() || ui.is_rect_visible(rect) {
         // What `egui::Button::selectable` painted: the selectable's
         // visuals and the text row, drawn by hand so the mark can sit
         // at the right end with the text truncated before it.
-        let visuals = paint_row_frame(ui, rect, &response, is_selected);
+        let (visuals, painter, rect) = match lift {
+            Some(travel) => (
+                ui.style().interact_selectable(&response, is_selected),
+                ui.ctx()
+                    .layer_painter(egui::LayerId::new(egui::Order::Tooltip, response.id)),
+                rect.translate(travel),
+            ),
+            None => (
+                paint_row_frame(ui, rect, &response, is_selected),
+                ui.painter().clone(),
+                rect,
+            ),
+        };
         let padding = ui.spacing().button_padding.x;
         let mark_width = mark.as_ref().map(|mark| mark.width(ui));
         // The end's room comes off the truncation width, so a long name
@@ -699,13 +722,13 @@ fn player_row(
             (rect.max.x - name_x - padding - room).max(0.0),
         );
         let name = ui.painter().layout_job(name);
-        ui.painter().galley(
+        painter.galley(
             egui::pos2(handle_x, rect.center().y - handle.size().y / 2.0),
             handle,
             visuals.fg_stroke.color,
         );
         for (x, galley) in [(place_x, place), (position_x, position), (name_x, name)] {
-            ui.painter().galley(
+            painter.galley(
                 egui::pos2(x, rect.center().y - galley.size().y / 2.0),
                 galley,
                 visuals.fg_stroke.color,
@@ -713,8 +736,8 @@ fn player_row(
         }
         // The dot at the row's right end in the warning colour, one item
         // spacing plus `DOT_MARK_GAP` before the mark when the row has
-        // one.
-        if let Some(dot) = dot {
+        // one; neither floats with a dragged row.
+        if let Some(dot) = dot.filter(|_| lift.is_none()) {
             let right = dot_right(ui, rect.max.x - padding, mark_width);
             ui.painter().galley(
                 egui::pos2(right - dot.size().x, rect.center().y - dot.size().y / 2.0),
@@ -722,7 +745,7 @@ fn player_row(
                 ui.visuals().warn_fg_color,
             );
         }
-        mark.as_ref().map(|mark| {
+        mark.as_ref().filter(|_| lift.is_none()).map(|mark| {
             live_marks::paint_row_mark(
                 ui,
                 rect.shrink2(egui::vec2(padding, 0.0)),

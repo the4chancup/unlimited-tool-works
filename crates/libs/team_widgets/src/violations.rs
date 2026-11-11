@@ -639,9 +639,10 @@ pub const RULE_COL: f32 = 190.0;
 /// ends inside its right, the draft's `padding: 0 4px`.
 const ROW_INSET: f32 = 4.0;
 
-/// The gap between a `.drow` row's name column and its value, the
-/// draft's `gap: 8px`.
-const RULE_GAP: f32 = 8.0;
+/// The gap between a `.drow` row's columns, the draft's `gap: 8px`: the
+/// name column and its value here, and each of the Save editor's
+/// comparator's three.
+pub const RULE_GAP: f32 = 8.0;
 
 /// The rule name's column in a one-column list (Live AATF's own window): 140
 /// points, since the window is narrow and the sentence beside it needs the
