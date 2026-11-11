@@ -974,8 +974,8 @@ its players in Edit, but the kick-off screen's "Starting Lineup" shows nobody (a
 report, 2026-11-11), or players with blank names and stats. The field the game needs is the
 manager id: of four files built from one game-made Texport of 772, the zero-encoded one and
 that one with every player's id copy restored showed blank names and stats, while that one
-with only the team record's +4 restored worked like the game's own file (PES 2017, in game,
-2026-11-11). Among the bytes no field models: the team record's u32 at +4, the team's
+with only the team record's +4 restored worked like the game's own file, and so did a file
+from the writer that copies the save's records (PES 2017, in game, 2026-11-11). Among the bytes no field models: the team record's u32 at +4, the team's
 **manager id** (on PES 17 equal to the team id on 218 of 220 teams; on 19 the game's own coach
 ids), tactics values, and each player record's second copy of the player id and the `ff ff`
 after it. The coach block is the save's **coach record** that manager id names: a section of

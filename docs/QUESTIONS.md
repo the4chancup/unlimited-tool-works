@@ -59,15 +59,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
 
-## The PES 2017 Texport's empty starting lineup
-
-- **The fixed writer's file.** The field the game needs is the manager id (answered
-  2026-11-11: `spec/pes_savefile/operations.md`, "A written file's records are the save's").
-  `.tmp/report17/proof/E_fixed_writer/TEXPORT00000004` is team 772 of the PES 2017 save
-  (now /qst/, manager id 772) as the fixed save editor writes it. Import it onto 772, pick
-  the team for a match, and say whether the kick-off screen shows the starting eleven with
-  their names and stats.
-
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
