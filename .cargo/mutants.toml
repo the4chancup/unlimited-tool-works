@@ -434,4 +434,8 @@ exclude_re = [
     # chip, the row and the next widget land where they did (measured identical). The `*`
     # stays measured: it pushes the chip down past the row.
     "team_widgets/src/cards\\.rs:\\d+:\\d+: replace \\+ with - in cards_used",
+    # `legacy_kit_tokens`' scan `at < bytes.len()` -> `<=` only adds a step at `at == len`,
+    # where `legacy_kit_token_at`'s `bytes.get(at..at + 7)` is `None`: the loop steps past the
+    # end and returns the same tokens. The function's only `<`.
+    "aesthetics_export/src/conventions/kit_token\\.rs:\\d+:\\d+: replace < with <= in legacy_kit_tokens",
 ]

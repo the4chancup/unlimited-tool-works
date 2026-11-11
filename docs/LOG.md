@@ -3151,3 +3151,4 @@ worklog passed 7,000 lines.
 - 2026-11-11: A-ux1 (Astra over ux1): 2 accepted, the loop ends; a test pins that a task's findings keep its worker finish time, and the plan says a writer-raised `duplicate_path` is timed with its task's.
 - 2026-11-11: 0.0.2-poc12 slice 4 landed: `kit_token_old` refuses the old kit token in an export's names and in paths to its own files, one matcher shared with the upgrader; a `DropFolder` on a `Common/` subfolder drops its files.
 - 2026-11-11: A-poc12s4 (Astra over slice 4): 2 accepted, the loop ends; names are checked below a player or shared folder and in `Common/` only, a bare `.mtl` name is the folder's own.
+- 2026-11-11: mutants-diff `ee80b0ac` (since 11-09): the Export upgrader's 7 survivors killed (an upgrade's progress over its root files, the gloves bound, a nested `sourceimages`), `legacy_kit_tokens`' `<=` excluded as equivalent; team_compiler's 10, studio_core's 1 and studio's rerun open.

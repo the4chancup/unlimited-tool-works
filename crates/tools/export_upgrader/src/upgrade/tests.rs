@@ -1,5 +1,5 @@
 use super::*;
-use crate::test_support::{scratch, test_ctx};
+use crate::test_support::{file_count, progress_events, scratch, test_ctx};
 
 #[test]
 fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
@@ -382,6 +382,73 @@ fn the_input_is_processed_once_its_named_output_is_validated() {
             format!("processed {}", INPUT.0),
         ]
     );
+}
+
+#[test]
+fn the_progress_starts_past_the_root_files_and_rises_by_one_to_the_output_s_file_count() {
+    // A team export's Note gives `colors.txt` and `notes.txt`, a referee
+    // export's roster `players.txt`: files written before the planned ones,
+    // which the first `Progress` already counts as done.
+    let root = scratch("upgrade_progress");
+    fs::create_dir_all(root.join("co Spring/Faces/XXX05 - Bob")).unwrap();
+    fs::write(
+        root.join("co Spring/co Note.txt"),
+        include_str!("../../tests/fixtures/co Spring/co Note.txt"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("co Spring/Faces/XXX05 - Bob/portrait.dds"),
+        b"portrait",
+    )
+    .unwrap();
+    fs::create_dir_all(root.join("refs Spring/Players/arbiter")).unwrap();
+    fs::write(root.join("refs Spring/refs.txt"), b"01 arbiter\r\n").unwrap();
+    fs::write(
+        root.join("refs Spring/Players/arbiter/boots.fmdl"),
+        b"boots",
+    )
+    .unwrap();
+    // A referee export takes no `--loose`.
+    for (export, loose, root_files) in [
+        ("co Spring", true, ["colors.txt", "notes.txt"].as_slice()),
+        ("refs Spring", false, ["players.txt"].as_slice()),
+    ] {
+        let (ctx, events_rx) = test_ctx();
+        let args = UpgradeArgs {
+            export: root.join(export),
+            savefile: None,
+            loose,
+            legacy_ids: false,
+            coverage: None,
+            output: Some(root.join(format!("{export} out"))),
+        };
+
+        let exit = run(&args, &ctx).unwrap();
+        drop(ctx);
+        assert_eq!(exit, CLEAN, "{export}");
+        // The output's own name carries the coverage tag the run guesses.
+        let outputs = fs::read_dir(root.join(format!("{export} out")))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect::<Vec<_>>();
+        let [out] = outputs.as_slice() else {
+            panic!("{export}: one output folder: {outputs:?}")
+        };
+        for name in root_files {
+            assert!(out.join(name).is_file(), "{export}: {name}");
+        }
+        let files = file_count(out);
+        let progress = progress_events(&events_rx);
+        assert!(
+            progress.iter().all(|(_, total)| *total == files),
+            "{export}: every Progress carries the output's file count: {progress:?}"
+        );
+        assert_eq!(
+            progress.iter().map(|(done, _)| *done).collect::<Vec<_>>(),
+            (root_files.len()..=files).collect::<Vec<_>>(),
+            "{export}"
+        );
+    }
 }
 
 #[test]

@@ -589,7 +589,7 @@ mod tests {
         folders.insert(3, wearing("Players/03 - A", Some(128), None));
         folders.insert(5, wearing("Players/05", None, Some(130)));
         folders.insert(7, wearing("Players/07 - B", Some(430), Some(431)));
-        folders.insert(9, wearing("Players/09", Some(100), Some(99)));
+        folders.insert(9, wearing("Players/09", Some(100), Some(100)));
         folders.insert(11, wearing("Players/11", Some(101), None));
         folders.insert(
             13,

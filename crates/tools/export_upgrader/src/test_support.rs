@@ -1,10 +1,10 @@
 //! Helpers the unit tests of several modules share.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
-use studio_core::{AppPaths, PipelineEventEnvelope, Settings, ToolContext};
+use studio_core::{AppPaths, PipelineEvent, PipelineEventEnvelope, Settings, ToolContext};
 
 /// A scratch folder under the temp dir (`CARGO_TARGET_TMPDIR` is set for
 /// integration tests only).
@@ -15,6 +15,30 @@ pub(crate) fn scratch(name: &str) -> PathBuf {
     }
     fs::create_dir_all(&root).unwrap();
     root
+}
+
+/// The files below `folder`, counted; a folder itself is no file.
+pub(crate) fn file_count(folder: &Path) -> usize {
+    fs::read_dir(folder)
+        .unwrap()
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            if path.is_dir() { file_count(&path) } else { 1 }
+        })
+        .sum()
+}
+
+/// The `(processed, total)` of the run's `Progress` events, in order.
+pub(crate) fn progress_events(
+    events_rx: &crossbeam_channel::Receiver<PipelineEventEnvelope>,
+) -> Vec<(usize, usize)> {
+    events_rx
+        .iter()
+        .filter_map(|envelope| match envelope.event {
+            PipelineEvent::Progress { processed, total } => Some((processed, total)),
+            _ => None,
+        })
+        .collect()
 }
 
 /// The unit tests' data directory, made once per process: it holds nothing

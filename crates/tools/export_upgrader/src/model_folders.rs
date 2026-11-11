@@ -531,12 +531,11 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::Path;
 
     use studio_core::{PipelineEvent, PipelineEventEnvelope};
 
     use super::*;
-    use crate::test_support::{scratch, test_ctx};
+    use crate::test_support::{file_count, progress_events, scratch, test_ctx};
 
     fn files(names: &[&str]) -> Vec<String> {
         names.iter().map(|name| (*name).to_owned()).collect()
@@ -877,17 +876,6 @@ mod tests {
         assert_eq!(staged("Other/x", &folders), "Other/x");
     }
 
-    /// The files below `folder`, counted; a folder itself is no file.
-    fn file_count(folder: &Path) -> usize {
-        fs::read_dir(folder)
-            .unwrap()
-            .map(|entry| {
-                let path = entry.unwrap().path();
-                if path.is_dir() { file_count(&path) } else { 1 }
-            })
-            .sum()
-    }
-
     /// The codes of the run's `Message` events, in order.
     fn codes(events_rx: &crossbeam_channel::Receiver<PipelineEventEnvelope>) -> Vec<String> {
         events_rx
@@ -988,13 +976,7 @@ mod tests {
         run(&args, &ctx).unwrap();
         drop(ctx);
 
-        let progress: Vec<(usize, usize)> = events_rx
-            .iter()
-            .filter_map(|envelope| match envelope.event {
-                PipelineEvent::Progress { processed, total } => Some((processed, total)),
-                _ => None,
-            })
-            .collect();
+        let progress = progress_events(&events_rx);
         let files = file_count(&root.join("new models upgraded"));
         assert!(
             progress.iter().all(|(_, total)| *total == files),

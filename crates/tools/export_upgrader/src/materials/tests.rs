@@ -353,10 +353,11 @@ fn the_fox_common_reference_needs_a_folder_but_sourceimages_and_sourceimages() {
             "{directory}"
         );
     }
-    // The game's own `sourceimages` is no team's, and the rest must end in
-    // `sourceimages/`.
+    // The game's own `sourceimages` is no team's, a folder below it ending in
+    // `sourceimages/` too, and the rest must end in `sourceimages/`.
     for directory in [
         "/Assets/pes16/model/character/common/sourceimages/",
+        "/Assets/pes16/model/character/common/sourceimages/sourceimages/",
         "/Assets/pes16/model/character/common/000/not_the_marker_end_at_all/",
     ] {
         assert_eq!(reference_into_fox_common(directory), None, "{directory}");
