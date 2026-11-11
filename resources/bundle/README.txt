@@ -86,8 +86,8 @@ Compiling
        UTW.exe team-compiler upgrade-dpfl --yes
 
    This is needed once per game folder. If the report said dpfilelist_outdated, the
-   compile installed nothing and did not touch the save, so double-click quick_compile.bat
-   again afterwards.
+   compile stopped before compiling anything, so double-click quick_compile.bat again
+   afterwards.
 
 
 For VGL's organizer

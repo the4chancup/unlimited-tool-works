@@ -158,6 +158,18 @@ config-dir choice, which EGG renames to `.bak`, cannot happen here: the dialog s
 neither file exists, and the program offers no later move of the data location (moving the
 folder is the move).
 
+**The settings file is written whole, commented.** The bundle ships `data/settings.toml`
+(`resources/bundle/data/settings.toml`) with every setting at its default, the bundle's
+presets aside (DBC's `pes_version` and `aatf_ruleset`), and a comment above each saying what
+it does and which values it takes, so a member sets the PES folder in a text editor and runs
+`quick_compile.bat` without opening the window. The binary embeds the same text: a settings
+file written fresh (the first-run dialog's choice, or a file that does not parse) starts
+from it, its values replaced by the session's, so it carries the comments too; a save edits
+the file in place, so they survive every later save. The comments are written for members,
+not taken from the code's doc comments, which speak to developers; a test of the `studio`
+crate keeps the file's keys equal to the registered tools' defaults and its values equal to
+them but for the presets.
+
 **The first run also finds the PES version and folder.** Below the location choice, the dialog
 offers the versions found on the machine: those whose save folder exists
 (`Documents\KONAMI\Pro Evolution Soccer 20xx`, the folders the save discovery already walks)

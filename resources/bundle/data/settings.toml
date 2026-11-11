@@ -1,9 +1,196 @@
+# Unlimited Tool Works - Settings file
+#
+# Lines starting with # are comments: UTW.exe ignores them.
+# Edit this file with UTW.exe closed, or change the settings in the window instead
+# (the gear at the bottom of the left bar).
+# Text goes between quotes. A folder path goes between single quotes ('like this'), so
+# its backslashes are read as they are written.
+# A setting whose line is removed goes back to its default.
+
+
 [common]
+
+# The PES the tools work for, the same as the PES picker on the window's left bar.
+# Accepted values: 15 - 16 - 17 - 18 - 19 - 20 - 21
+# Default: 19
 pes_version = 17
 
+# The folder where the PES exe is.
+# The ** in it is replaced by pes_version's number: with pes_version = 19, the default
+# below means C:\Program Files (x86)\Pro Evolution Soccer 2019.
+# A PES installed somewhere else can have its own folder: see pes_folders, at the end
+# of this section.
+# Default: 'C:\Program Files (x86)\Pro Evolution Soccer 20**'
+pes_folder_path = 'C:\Program Files (x86)\Pro Evolution Soccer 20**'
+
+# The exports folder a compile reads when no other folder is given.
+# A relative path starts from the folder UTW.exe is in.
+# Default: "exports"
+exports_folder_path = "exports"
+
+# How many processor threads a compile or an upgrade uses.
+# 0 means all of them but one.
+# Default: 0
+thread_count = 0
+
+# The most memory a compile or an upgrade may use, in percent of the PC's memory.
+# Default: 80.0
+memory_cap_percent = 80.0
+
+# The window's colors.
+# Accepted values: "dark" - "light"
+# Default: "dark"
+theme = "dark"
+
+# If true, the mouse wheel over a number turns it the other way: wheel down adds one.
+# Default: false
+invert_value_scrolling = false
+
+# If true, UTW.exe checks for a newer version every check_interval_minutes minutes.
+# Default: true
+check_for_updates = true
+
+# The minutes between two checks for a newer version.
+# Default: 120
+check_interval_minutes = 120
+
+# The boots ID the "hide" preset writes for a full-body (FPC) player: an ID the game
+# has no boots model for, so it draws no boots over the full body.
+# Default: 55
+fpc_hide_boots_id = 55
+
+# The gloves ID of the same preset. Gloves 1 to 10 are the keepers' real gloves, so
+# they cannot be used here.
+# Default: 11
+fpc_hide_gloves_id = 11
+
+# (Only needed when a PES is installed somewhere other than pes_folder_path says.)
+# To give that PES its own folder, remove the # at the start of the two lines below,
+# then write the PES number and its folder. Add one line like the second for each such
+# PES. These lines must stay the last ones of this section.
+# [common.pes_folders]
+# 21 = 'D:\Games\eFootball PES 2021'
+
+
+[export-upgrader]
+
+# The Export upgrader has no settings yet.
+
+
+[ruleset-editor]
+
+# Kept by the window: the folder Open and Save as start in, and the start page's list of
+# recent files. There is no need to edit them.
+# Default: ""
+last_folder = ""
+
+# Default: []
+recent_files = []
+
+
 [save-editor]
+
+# The ruleset the AATF checks use, the same as the toolbar's ruleset dropdown.
+# Accepted values: a built-in ruleset's name (like "dbc7" or "autumn26"), or the file
+# name of a ruleset imported into the rules folder inside the data folder.
+# Default: "autumn26"
 aatf_ruleset = "dbc7"
 
+# If true, Live AATF is on: after every edit, the open team's rule breaks are listed.
+# The same as the toolbar's Live AATF button.
+# Default: false
+live_aatf = false
+
+# If true, Live AATF also lists each player's unused allowances.
+# The same as the "Show suggestions" box beside the Live AATF button.
+# Default: false
+live_suggestions = false
+
+# If true, Live AATF's list is shown in a window of its own.
+# If false, it is shown in the panel at the bottom of the editor.
+# Default: false
+live_window = false
+
+# If true, the save's aesthetics are locked: they come from the exports, through the
+# Team compiler. "Edit aesthetics anyway" in the Appearance section unlocks them.
+# If false, they are edited like any other field.
+# Default: false
+aesthetics_from_exports = false
+
+# If true, names scroll, as they do in the game.
+# The same as the "Scroll names" box on the Tactics formation bar.
+# Default: true
+scroll_names = true
+
+
 [team-compiler]
+
+# (Usually only needed when making a cup's DLC.)
+# If true, the teams go into several numbered CPKs (4cc_41_teams, 4cc_42_teams and so on,
+# see teams_cpk_name), each filled up to cpk_part_max_size, and the files every team
+# shares go into the bins CPK (see bins_cpk_name).
+# If false, everything goes into the single CPK named by cpk_name.
+# Default: false
 multicpk_mode = false
+
+# The name of the CPK made when multicpk_mode is false, without .cpk.
+# The game only loads a CPK whose name is listed in its DpFileList.bin.
+# Default: "4cc_99_test"
 cpk_name = "4cc_99_test"
+
+# The folder where the compile writes its aesthetics patch and its team notes, and the
+# CPKs it does not install in the game.
+# A relative path starts from the folder UTW.exe is in.
+# Default: "output"
+output_folder_path = "output"
+
+# The save the compile's aesthetics patch is applied to.
+# "auto" means the game's own save, in Documents\KONAMI, of the PES set by pes_version.
+# Otherwise, write the save file's path.
+# Default: "auto"
+savefile_path = "auto"
+
+# (Only used when multicpk_mode is true.)
+# The name the teams CPKs share: every CPK listed in DpFileList.bin as
+# 4cc_<number>_<this name> is one of them, and they are filled in order of their number.
+# Default: "teams"
+teams_cpk_name = "teams"
+
+# (Only used when multicpk_mode is true.)
+# The most bytes one teams CPK holds before the next one is started.
+# 3221225472 bytes are 3 GiB.
+# Default: 3221225472
+cpk_part_max_size = 3221225472
+
+# (Only used when multicpk_mode is true.)
+# The name of the CPK that holds the files every team shares, without .cpk.
+# Default: "4cc_08_bins"
+bins_cpk_name = "4cc_08_bins"
+
+# The name of the referees CPK, without .cpk, made when the exports include a /refs/
+# export.
+# Default: "4cc_18_referees"
+refs_cpk_name = "4cc_18_referees"
+
+# (Only used for PES 2015, 2016 and 2017.)
+# Whether the textures are compressed, which makes the CPKs smaller.
+# "auto" compresses them when multicpk_mode is true, where a DLC's size matters.
+# Accepted values: "auto" - true - false
+# Default: "auto"
+dds_compression = "auto"
+
+# If true, a file whose type is not allowed in an export is an error.
+# If false, it only gets an info message.
+# Default: true
+strict_file_type_check = true
+
+# (Usually only needed when making a cup's DLC.)
+# If true, a file or folder with a content error is compiled anyway, where it can be.
+# A folder whose name, roster number or required files are wrong is still left out.
+# Default: false
+pass_through = false
+
+# The teams list each team's ID is taken from.
+# A relative path starts from the data folder, where this file is.
+# Default: "teams_list.txt"
+teams_list_path = "teams_list.txt"

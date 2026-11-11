@@ -16169,3 +16169,18 @@ Plan: `plans/export_upgrader.md` "What it does" (`--legacy-ids`) and EU-SET-17; 
 Decision (lead's, 0.0.2-poc13e): the block check (`legacy_id_out_of_block`, the data directory's `legacy_boots_blocks.txt`, TC-LEG-03/04), specified for after the PoC, is built before the PoC goes out, as specified; /utg/'s table row is left as the wiki gives it and asked.
 Why: the rebuilt 0.0.2-poc.2's VGL27 Friendlies compile stopped on a Fatal `cpk_write_failed`: /hanny/'s export packs /gfg/'s IDs 2351 to 2373, so two teams write `k2351`, and the whole DLC is lost to one manager's numbering. The check keeps the block owner's models and lets the compile finish. The editable data-directory copy is what lets the organizer correct a row (/utg/ packs 3252 to 3273, outside its row's 3401 and inside no team's block) without a new build.
 Plan: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)", "Out of block"; `plans/team_compiler/messages.md`; `plans/team_compiler/README.md` 0.0.2-poc13e scope.
+
+## 2026-11-11 — team_compiler — a DpFileList lacking the run's CPK stops the run before it compiles
+Decision (the maintainer's ask for the outdated list, the lead's for the unlisted name; 0.0.2-poc14a): `dpfilelist_outdated` and `cpk_name_unlisted` are Fatal (`AbortRun`) at the deploy preflight, before any export is read, instead of Errors that compile the whole run, promote its CPKs to `output/` and skip the install and the save.
+Why: either way the game would not load the CPK and the member has to fix the list or the name and compile again, so the full compile first costs minutes for CPKs nobody installs; `--no-deploy` still builds them without the check. Red stops its run the same way when the CPK name is not in the list and it installs (`cpk_name_check`), and one rule serves both findings.
+Plan: `plans/team_compiler/messages.md` "Output stage and savefile", the `dpfilelist_outdated` and `cpk_name_unlisted` rows.
+
+## 2026-11-11 — studio, studio_core — the settings file is written whole, with a comment per setting
+Decision (the maintainer's ask, 0.0.2-poc14b): the bundle's `data/settings.toml` holds every setting at its default (DBC's `pes_version` and `aatf_ruleset` presets aside) with a member-facing comment above each; the binary embeds it, and a settings file written fresh starts from that text with the session's values, so it is commented too. A `studio` test keeps its keys and values in step with the defaults.
+Why: a member sets the PES folder in a text editor and runs `quick_compile.bat` without opening the window. One hand-written file, not comments generated from doc comments, because those speak to developers; not a second copy for the fresh write, because two copies drift.
+Plan: `plans/core/distribution.md` "Data location: asked on first run", the paragraph "The settings file is written whole, commented".
+
+## 2026-11-11 — team_compiler — /utg/'s and /hanny/'s out-of-block IDs stay refused
+Decision (the maintainer's answer): the VGL27 block table keeps the wiki's rows; /utg/'s export (3252 to 3273, its row 3401) and /hanny/'s (2351 to 2373, /gfg/'s block) carry wrong IDs, and the block check refusing those folders (`legacy_id_out_of_block`) is the intended outcome; the managers renumber.
+Why: an ID outside the team's block is a numbering mistake in the export, not a table error; packing it would put the models on another team's IDs or on IDs the cup never assigned.
+Plan: no plan edit needed: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)", "Out of block", already specifies the refusal.

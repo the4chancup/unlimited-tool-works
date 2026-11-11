@@ -124,6 +124,10 @@ const PLANNED: [PlannedTool; 14] = [
 /// menu draws no section for them. The list goes when their views land.
 const CLI_ONLY: [&str; 2] = ["team-compiler", "export-upgrader"];
 
+/// The settings file's template: the bundle ships this same `data/settings.toml`, comments
+/// included, and a file written fresh starts from it.
+const SETTINGS_TEMPLATE: &str = include_str!("../../../resources/bundle/data/settings.toml");
+
 /// The registered tools, in sidebar order.
 fn tools() -> Vec<Box<dyn StudioTool>> {
     vec![
@@ -177,7 +181,8 @@ fn load_settings(
             Settings::load(&path).with_context(|| path.display().to_string())?
         }
         None => Settings::default(),
-    };
+    }
+    .with_template(SETTINGS_TEMPLATE);
     for tool in tools {
         settings.merge_defaults(tool.id(), &tool.default_settings());
     }
@@ -547,6 +552,46 @@ mod tests {
             }
         }
         assert!(hits.is_empty(), "{}", hits.join("\n"));
+    }
+
+    /// The bundled file's `pes_folder_path` line.
+    const BUNDLED_PES_FOLDER_LINE: &str =
+        "pes_folder_path = 'C:\\Program Files (x86)\\Pro Evolution Soccer 20**'";
+    /// The `pes_folder_path` line a fresh write produces: the bundled one on Windows, the
+    /// empty default elsewhere (no default install path exists off Windows).
+    #[cfg(windows)]
+    const FRESH_PES_FOLDER_LINE: &str = BUNDLED_PES_FOLDER_LINE;
+    #[cfg(not(windows))]
+    const FRESH_PES_FOLDER_LINE: &str = "pes_folder_path = \"\"";
+
+    // A settings file written fresh is the bundled file, comments included, with the
+    // bundle's presets (DBC's PES 17 and `dbc7` ruleset) replaced by the code's defaults.
+    // `load_settings` is the real call; a `data/` with the settings file makes its location
+    // the test folder's, so the real config folder is never read.
+    #[test]
+    fn a_fresh_settings_file_is_the_bundled_one_with_the_code_s_defaults() {
+        let dir = TestDir::new("bundled_settings");
+        fs::create_dir_all(dir.path().join("data")).unwrap();
+        fs::write(dir.path().join("data").join(SETTINGS_FILE_NAME), "").unwrap();
+        let (settings, _) = load_settings(&tools(), dir.path().to_path_buf()).unwrap();
+
+        let fresh = TestDir::new("bundled_settings_fresh");
+        let path = fresh.path().join(SETTINGS_FILE_NAME);
+        settings.save(&path).unwrap();
+
+        let expected = SETTINGS_TEMPLATE
+            .replace("pes_version = 17", "pes_version = 19")
+            .replace("aatf_ruleset = \"dbc7\"", "aatf_ruleset = \"autumn26\"")
+            .replace(BUNDLED_PES_FOLDER_LINE, FRESH_PES_FOLDER_LINE);
+        let written = fs::read_to_string(&path).unwrap();
+        for (line, (written, wanted)) in written.lines().zip(expected.lines()).enumerate() {
+            assert_eq!(written, wanted, "line {}", line + 1);
+        }
+        assert_eq!(
+            written.lines().count(),
+            expected.lines().count(),
+            "the line counts differ"
+        );
     }
 
     // A settings file that does not parse fails startup with code 2 (nothing ran) and

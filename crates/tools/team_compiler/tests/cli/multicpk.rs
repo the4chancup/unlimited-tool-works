@@ -443,7 +443,7 @@ fn a_deploying_multi_cpk_compile_installs_every_cpk_and_leaves_nothing_in_the_ou
 
 // TC-DEP-08
 #[test]
-fn a_list_without_the_teams_slots_is_one_dpfilelist_outdated_and_every_cpk_is_promoted() {
+fn a_list_without_the_teams_slots_is_one_dpfilelist_outdated_and_stops_the_run() {
     let sandbox = deploying_sandbox("multicpk_outdated", |sandbox| {
         sandbox.write("PES/PES2021.exe", b"the game");
         sandbox.write("PES/download/DpFileList.bin", &pes17_list());
@@ -452,23 +452,22 @@ fn a_list_without_the_teams_slots_is_one_dpfilelist_outdated_and_every_cpk_is_pr
 
     let run = compile_deploying(&sandbox);
 
-    // The PES 2017 list has the bins CPK, and none of the teams slots.
+    // The PES 2017 list has the bins CPK, and none of the teams slots: the one Fatal line,
+    // and nothing else — the run ends at the preflight, before any export is read.
     let expected = format!(
-        "Error dpfilelist_outdated [Keep] (cpk={}, path={}, output={}, command={} \
+        "Fatal dpfilelist_outdated [AbortRun] (cpk={}, path={}, command={} \
          team-compiler upgrade-dpfl)",
         TEAMS_SLOTS.join(", "),
         sandbox.display("PES/download/DpFileList.bin"),
-        sandbox.display("output"),
         studio_core::EXE_NAME
     );
-    let lines = run.messages();
-    assert_eq!(lines[0], expected, "{lines:#?}");
+    assert_eq!(run.messages(), [expected]);
+    assert_eq!(run.exit_code(), 3);
     assert!(
-        lines[1..].iter().all(|line| !line.starts_with("Error ")),
-        "{lines:#?}"
+        output_files(&sandbox).is_empty(),
+        "no CPK, no patch: nothing is written"
     );
-    assert_eq!(run.exit_code(), 1);
-    assert_every_cpk_promoted(&sandbox, false);
+    assert!(!sandbox.root.join("output/.staging").exists());
     assert_eq!(snapshot(&sandbox.root.join("PES/download")), download);
 }
 

@@ -802,10 +802,12 @@ the output folder where it was left instead (`output=...`), `pes_version_mismatc
 - `pes_version_mismatch`, a warning: the game folder holds no `PES20NN.exe` of the version you
   compile for. Check `pes_version` and `pes_folder_path`. The CPK is still installed.
 - `dpfilelist_outdated`: the game's `DpFileList.bin` is an older list that does not have the
-  CPK, so the game would not load it. `UTW team-compiler upgrade-dpfl`
-  installs the cup's official list, which has it.
+  CPK, so the game would not load it. The compile stops before compiling anything.
+  `UTW team-compiler upgrade-dpfl` installs the cup's official list, which has it; then
+  compile again.
 - `cpk_name_unlisted`: neither the game's `DpFileList.bin` nor the cup's official list has the
-  CPK's name, so the game would not load it. Set `cpk_name` to a name the list has.
+  CPK's name, so the game would not load it. The compile stops before compiling anything.
+  Set `cpk_name` to a name the list has, then compile again.
 - `deploy_target_unwritable`: the `download` folder, or the old CPK in it, cannot be written,
   usually because the game
   is installed under `Program Files`. Run Unlimited Tool Works as administrator and compile

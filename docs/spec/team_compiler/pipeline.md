@@ -1501,8 +1501,9 @@ describes behavior, not a serial scheduling requirement:
     must stay usable, and the finding says how the list differs (entries missing, entries the
     official list lacks, or the order) and names the upgrade;
   - missing any target of this run (typically the pre-`teams` layout, or a list without
-    `4cc_99_test` under the default `cpk_name`) → `dpfilelist_outdated` (E; the run degrades
-    like any deployment failure: the game would not load the CPK);
+    `4cc_99_test` under the default `cpk_name`) → `dpfilelist_outdated` (F: the game would
+    not load the CPK, and the run stops before reading any export, since the member has to
+    upgrade the list and compile again anyway);
   - separately, a listed CPK with no file in `download/`, other than the run's own target →
     `dpfilelist_cpk_missing` (W), naming the files: when any listed CPK is absent the game
     rejects the whole download folder and runs vanilla, which is why a DLC ships a
@@ -1570,7 +1571,9 @@ describes behavior, not a serial scheduling requirement:
   exists (the working-bin walk reports `dpfilelist_missing`), that it lists the run's CPK
   (`dpfilelist_outdated` when the official list names it, else `cpk_name_unlisted`), and then
   how it differs from the official list (`dpfilelist_not_official`, `dpfilelist_cpk_missing`,
-  both Warnings); the first Error ends the checks and the run compiles to `output/`. The
+  both Warnings); the first Error or Fatal ends the checks. After an Error the run compiles to
+  `output/`; after a Fatal (`dpfilelist_outdated`, `cpk_name_unlisted`) it stops there,
+  having read no export (TC-DEP-05, TC-DEP-08). The
   probe does not report an old CPK in use: PES may be closed before the run ends, and the
   deployment stage meets the lock if it is not. The CLI's message for each of these Errors
   names the path the CPK is promoted to instead.

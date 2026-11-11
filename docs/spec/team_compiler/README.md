@@ -2449,7 +2449,8 @@ TC-DEP-04  GIVEN a PES folder whose download/ denies writes
                 compiles and promotes to output/, and the exit code is 1
 TC-DEP-05  GIVEN a DPFL that lists neither cpk_name nor any bundled name for it
            WHEN it is compiled
-           THEN cpk_name_unlisted is reported and the CPK is promoted
+           THEN cpk_name_unlisted is a Fatal, the run stops before compiling, nothing is
+                written under output/, download/ is unchanged, and the exit code is 3
 TC-DEP-06  GIVEN a PES folder holding PES2019.exe while pes_version is 21
            WHEN it is compiled
            THEN pes_version_mismatch is a Warning and deployment proceeds
@@ -2459,9 +2460,10 @@ TC-DEP-07  GIVEN output/.staging/<a dead run's folder> left from a killed proces
 TC-DEP-08  GIVEN an installed DPFL with no 4cc_NN_teams entry (the pre-teams layout) and
            multicpk_mode on
            WHEN the root is compiled
-           THEN dpfilelist_outdated is reported naming upgrade-dpfl, every CPK is promoted to
-                output/, and the exit code is 1; so is it for any list lacking a CPK of the run
-                that the official list names (no entry for cpk_name)
+           THEN dpfilelist_outdated is a Fatal naming upgrade-dpfl, the run stops before
+                compiling, nothing is written under output/, download/ is unchanged, and the
+                exit code is 3; so is it for any list lacking a CPK of the run that the
+                official list names (no entry for cpk_name)
 TC-DEP-09  GIVEN the same install with a 1 KiB download/4cc_40_faces.cpk
            WHEN upgrade-dpfl runs without --yes
            THEN 4cc_40_faces is printed as renamed to 4cc_41_teams, DpFileList.bin is

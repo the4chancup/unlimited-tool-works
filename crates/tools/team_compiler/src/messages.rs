@@ -549,7 +549,8 @@ pub(crate) enum Code {
     /// `download/`: the game then loads none of them. The run still deploys.
     DpfilelistCpkMissing,
     /// The installed `DpFileList.bin` does not list the run's CPK, which the official list
-    /// names: an older list, so the game would not load it. The CPK goes to the output folder.
+    /// names: an older list, so the game would not load it. The run stops at the preflight,
+    /// before any export is read.
     DpfilelistOutdated,
     /// `upgrade-dpfl`: an old DLC's CPK renamed to an official name of its stem, so the game
     /// still loads it under the official list.
@@ -570,7 +571,7 @@ pub(crate) enum Code {
     /// nothing was written.
     DpfilelistUpgradePlanned,
     /// The installed `DpFileList.bin` does not list the run's CPK, so the game would not load
-    /// it: the CPK goes to the output folder.
+    /// it: the run stops at the preflight, before any export is read.
     CpkNameUnlisted,
     /// Multi-CPK mode: a team does not fit the official list's teams slots left at
     /// `cpk_part_max_size`; the run is aborted and no part is written.

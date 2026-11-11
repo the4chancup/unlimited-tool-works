@@ -34,6 +34,9 @@ pub struct Settings {
     pub common: CommonSettings,
     /// One table per tool, keyed by tool id, exactly as read (unknown keys included).
     tools: BTreeMap<String, Table>,
+    /// The text a fresh write starts from (`with_template`): the bundled settings file, so a
+    /// written file carries its comments. `None` writes the bare values.
+    template: Option<&'static str>,
 }
 
 /// Why the settings file could not be read.
@@ -77,7 +80,19 @@ impl Settings {
                 _ => return Err(SettingsError::NotASection(key)),
             }
         }
-        Ok(Settings { common, tools })
+        Ok(Settings {
+            common,
+            tools,
+            template: None,
+        })
+    }
+
+    /// Sets the text a fresh write of `save` starts from: the bundled settings file, so the
+    /// written file carries its comments, the session's values replacing the template's own.
+    /// A file that exists and parses is edited in place, template or not.
+    pub fn with_template(mut self, text: &'static str) -> Settings {
+        self.template = Some(text);
+        self
     }
 
     /// Writes the settings file atomically: to a sibling `<path>.<pid>-<n>.tmp`, then renamed
@@ -90,19 +105,34 @@ impl Settings {
         static SAVE_COUNTER: AtomicU64 = AtomicU64::new(0);
         let desired = self.to_table().map_err(io::Error::other)?;
         let regenerated = toml::to_string_pretty(&desired).map_err(io::Error::other)?;
-        // A file with nothing to keep is written fresh: none yet, one that is not text, or one
-        // that is not TOML (broken by hand since the session loaded it). The session's values
+        let written = regenerated
+            .parse::<DocumentMut>()
+            .expect("`toml`'s own output is valid TOML");
+        // A file with nothing to keep is written fresh: none yet, one that is not text, or one that
+        // is not TOML (broken by hand since the session loaded it). The fresh text is the
+        // `template`'s edited to the session's values when one is set and its own edit reads back —
+        // the file then carries its comments — and the values alone otherwise. The session's values
         // win there as they win over any hand edit made while the GUI runs, and a folder that
-        // cannot be written fails the write below, whatever the read said. So is a file whose
-        // edit would not read back as the settings: a shape the in-place edit cannot carry,
-        // such as a section written inline under a comment, which would come out as a table
-        // header `load` refuses and the next start could not open.
+        // cannot be written fails the write below, whatever the read said. So is a file whose edit
+        // would not read back as the settings: a shape the in-place edit cannot carry, such as a
+        // section written inline under a comment, which would come out as a table header `load`
+        // refuses and the next start could not open.
+        let fresh = |why: &str| match self
+            .template
+            .and_then(|template| fresh_from_template(template, &desired, written.as_table()))
+        {
+            Some(edited) => {
+                debug!("{}: written fresh from the template, {why}", path.display());
+                edited
+            }
+            None => {
+                debug!("{}: written fresh, {why}", path.display());
+                regenerated.clone()
+            }
+        };
         let text = match fs::read_to_string(path) {
             Ok(existing) => match (existing.parse::<DocumentMut>(), toml::from_str(&existing)) {
                 (Ok(mut document), Ok(held)) => {
-                    let written = regenerated
-                        .parse::<DocumentMut>()
-                        .expect("`toml`'s own output is valid TOML");
                     apply_desired(document.as_table_mut(), &held, written.as_table(), &desired);
                     let edited = document.to_string();
                     match toml::from_str::<Table>(&edited) {
@@ -116,15 +146,9 @@ impl Settings {
                         }
                     }
                 }
-                _ => {
-                    debug!("{}: written fresh, not TOML", path.display());
-                    regenerated
-                }
+                _ => fresh("not TOML"),
             },
-            Err(error) => {
-                debug!("{}: written fresh, not edited: {error}", path.display());
-                regenerated
-            }
+            Err(error) => fresh(&format!("not edited: {error}")),
         };
         let mut temp_name = path.file_name().unwrap_or_default().to_owned();
         let sequence = SAVE_COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -181,6 +205,24 @@ impl Settings {
         assert_reserved_free(tool_id);
         let table = self.tools.entry(tool_id.to_owned()).or_default();
         merge_missing(table, defaults);
+    }
+}
+
+/// `template` edited toward `desired` through `apply_desired` (`written` is `desired` written
+/// fresh): the text a fresh write starts from, or `None` when `template` is not TOML or its
+/// edit would not read back.
+fn fresh_from_template(template: &str, desired: &Table, written: &EditTable) -> Option<String> {
+    let (Ok(mut document), Ok(held)) = (
+        template.parse::<DocumentMut>(),
+        toml::from_str::<Table>(template),
+    ) else {
+        return None;
+    };
+    apply_desired(document.as_table_mut(), &held, written, desired);
+    let edited = document.to_string();
+    match toml::from_str::<Table>(&edited) {
+        Ok(read_back) if read_back == *desired => Some(edited),
+        _ => None,
     }
 }
 
@@ -455,6 +497,124 @@ mod tests {
         settings.common.last_tool = Some("save-editor".to_owned());
         fs::write(&path, "[common\npes_version = 21\n").unwrap();
 
+        settings.save(&path).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A small settings-file template: two leading comments, a `[common]` table whose one
+    /// key sits under a comment, and a tool table.
+    const SAVE_TEMPLATE: &str = "# the template's first line\n\
+                                 # and its second\n\
+                                 \n\
+                                 [common]\n\
+                                 # the version to target\n\
+                                 pes_version = 17\n\
+                                 \n\
+                                 [team-compiler]\n\
+                                 # the tool's note\n\
+                                 label = 'x'\n";
+
+    /// The settings `SAVE_TEMPLATE` serves: the defaults but PES 19 and the tool's `label`.
+    fn templated_settings() -> Settings {
+        let mut settings = Settings::default().with_template(SAVE_TEMPLATE);
+        settings.common.pes_version = PesVersion::Pes19;
+        settings.set_tool("team-compiler", table("label = 'x'"));
+        settings
+    }
+
+    /// Asserts `path` is what `settings`'s save of `SAVE_TEMPLATE` writes: the template's
+    /// comments kept, the session's values in their place.
+    fn assert_templated_save(path: &Path, settings: &Settings) {
+        let text = fs::read_to_string(path).unwrap();
+        assert!(
+            text.starts_with("# the template's first line\n# and its second\n"),
+            "{text}"
+        );
+        assert!(
+            text.contains("[common]\n# the version to target\npes_version = 19\n"),
+            "the template's comments, the session's value: {text}"
+        );
+        assert!(
+            text.contains("[team-compiler]\n# the tool's note\nlabel = 'x'\n"),
+            "{text}"
+        );
+        let loaded = Settings::load(path).unwrap();
+        assert_eq!(loaded.common, settings.common);
+        assert_eq!(loaded.tool("team-compiler"), settings.tool("team-compiler"));
+    }
+
+    // A save with a template and no file yet writes the template's comments with the
+    // session's values.
+    #[test]
+    fn a_fresh_save_starts_from_the_template() {
+        let dir = test_dir("studio_core_settings_template_fresh");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+
+        let settings = templated_settings();
+        settings.save(&path).unwrap();
+
+        assert_templated_save(&path, &settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // Over a file broken since the session loaded it, the template takes the same place the
+    // bare values take without one.
+    #[test]
+    fn a_file_that_is_not_toml_is_replaced_from_the_template() {
+        let dir = test_dir("studio_core_settings_template_broken");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "[common\nnot toml").unwrap();
+
+        let settings = templated_settings();
+        settings.save(&path).unwrap();
+
+        assert_templated_save(&path, &settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A file that parses is edited in place, template or not: its own comments stay, and no
+    // template comment is added.
+    #[test]
+    fn a_file_that_parses_is_edited_ignoring_the_template() {
+        let dir = test_dir("studio_core_settings_template_kept");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "# the member's own note\n[common]\npes_version = 17\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap().with_template(SAVE_TEMPLATE);
+        settings.common.pes_version = PesVersion::Pes19;
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.starts_with("# the member's own note\n"), "{text}");
+        assert!(text.contains("pes_version = 19\n"), "{text}");
+        assert!(
+            !text.contains("the template's first line"),
+            "the template never touches a file that parses: {text}"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A template that does not parse, or whose edit does not read back, falls back to the
+    // bare values.
+    #[test]
+    fn a_template_that_does_not_parse_falls_back_to_the_values() {
+        let dir = test_dir("studio_core_settings_template_fallback");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+
+        let settings = Settings::default().with_template("[common\nnot toml");
         settings.save(&path).unwrap();
 
         assert_eq!(

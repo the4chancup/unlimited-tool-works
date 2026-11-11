@@ -236,12 +236,16 @@ pub(crate) struct Download {
 /// `cpks`' order), the list is the official one (`dpfilelist_not_official`, a Warning), every
 /// CPK it lists but the run's has its file in `download/` (`dpfilelist_cpk_missing`, a
 /// Warning), and each CPK can be written in `download/` (`deploy_target_unwritable`, the first
-/// that cannot). The first Error ends them (both list Errors when the list lacks both kinds). A
-/// missing or unreadable list adds no finding: the working-bin walk, which reads it next,
-/// reports it (`dpfilelist_missing`, `installed_bin_unreadable`). Returns the `download/`
-/// to install into, `loaded` `false` when the game will run vanilla over it, or `None` when a
-/// check failed and the CPKs go to `promoted` (the one CPK's path in the output folder, or the
-/// folder), which each Error names; and the findings.
+/// that cannot). The first failing check ends them (both list findings when the list lacks both
+/// kinds). `dpfilelist_outdated` and `cpk_name_unlisted` are Fatal (`AbortRun`): the member has to
+/// fix the list or the CPK name and compile again anyway, so the run ends there rather than spend
+/// minutes on CPKs nobody installs; the other Errors end the checks but not the run. A missing or
+/// unreadable list adds no finding: the working-bin walk, which reads it next, reports it
+/// (`dpfilelist_missing`, `installed_bin_unreadable`). Returns the `download/` to install into,
+/// `loaded` `false` when the game will run vanilla over it, or `None` when a check failed, and the
+/// findings. `promoted` (the one CPK's path in the output folder, or the folder) is the CPKs'
+/// destination when the run goes on without deploying, which each remaining Error names; the list
+/// findings abort the run, so they name none.
 pub(crate) fn preflight(
     pes_folder: &Path,
     version: PesVersion,
@@ -295,21 +299,16 @@ pub(crate) fn preflight(
             messages.push(tool_message(
                 Code::DpfilelistOutdated,
                 Scope::Run,
-                Disposition::Keep,
-                vec![
-                    ("cpk", outdated.join(", ")),
-                    path(),
-                    output(),
-                    upgrade_command(),
-                ],
+                Disposition::AbortRun,
+                vec![("cpk", outdated.join(", ")), path(), upgrade_command()],
             ));
         }
         if !unlisted.is_empty() {
             messages.push(tool_message(
                 Code::CpkNameUnlisted,
                 Scope::Run,
-                Disposition::Keep,
-                vec![("cpk", unlisted.join(", ")), path(), output()],
+                Disposition::AbortRun,
+                vec![("cpk", unlisted.join(", ")), path()],
             ));
         }
         return (None, messages);
@@ -828,7 +827,6 @@ mod tests {
                 "path",
                 pes.join(DOWNLOAD).join(DPFILELIST).display().to_string(),
             ),
-            ("output", pes.join("promoted").display().to_string()),
         ];
         let code = if official {
             context.push(upgrade_command());
@@ -836,7 +834,7 @@ mod tests {
         } else {
             Code::CpkNameUnlisted
         };
-        tool_message(code, Scope::Run, Disposition::Keep, context)
+        tool_message(code, Scope::Run, Disposition::AbortRun, context)
     }
 
     #[test]

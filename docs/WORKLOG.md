@@ -49,8 +49,9 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
 **Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is built: the
 upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
-(poc13e) was brought in. Next: the 0.0.2-poc.2 bundle (archive `1cabaa13…`) goes to the
-maintainer; ux1 after it.
+(poc13e) was brought in. poc14 (the maintainer's asks of 2026-11-10: the DpFileList
+findings Fatal, the commented settings file) is landed and built: 0.0.2-poc.3 (archive
+`991cc670…`) beside poc.2 (`1cabaa13…`) goes to the maintainer; ux1 after it.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -7986,7 +7987,8 @@ briefs, review loops, gates and mutation runs as for any step.
       0.0.2-poc.2's Friendlies compile stopped on a Fatal `cpk_write_failed`, /hanny/ packing
       /gfg/'s `k2351`): `legacy_id_out_of_block`, the data directory's table (TC-LEG-03/04);
       SWE-2 brief `.tmp/0_0_2/poc13/brief_e.md`. /utg/ packs 3252-3273, outside its table
-      row's 3401-3425 and inside no team's block (QUESTIONS "VGL27's block table")
+      row's 3401-3425 and inside no team's block: wrong IDs, refusing them is right (the
+      maintainer, 2026-11-11; DECISIONS), the table unchanged
     - [x] poc13f a legacy merge that clashes keeps the folder shared, packed under its
       old ID (2026-11-11, SWE-2, landed first time; TC-LEG-05, EU-SET-17): `export_upgrader`
       `players.rs`, `messages.rs` (`legacy_merge_clash` gone), `help/`; `team_compiler`
@@ -8002,12 +8004,27 @@ briefs, review loops, gates and mutation runs as for any step.
       packs it under its wearers' recorded old ID (the earlier design's shared half);
       `legacy_merge_clash` goes. SWE-2 slice poc13f after the 03:20 reset, then rebuild
       0.0.2-poc.2 and rerun the Friendlies
-    - [ ] the maintainer's asks for the PoC if they fit (2026-11-10), each checked first:
-      why /nepgen/'s `SWITCH EXCLUSIVE` became a shared gloves folder with one wearer
-      (`C:/Data/unlimited-tool-works-0.0.2-poc.1/exports/nepgen Full Aesthetics Export Bote
-      Edition`); the settings file written with its defaults (the PES path above all) and a
-      comment per setting at creation, so the CLI runs without the GUI; the outdated `dpfl`
-      finding made blocking. Bats keep their `quick_` names (the maintainer, 11-10)
+    - [ ] the maintainer's asks for the PoC if they fit (2026-11-10), each checked first.
+      Bats keep their `quick_` names (the maintainer, 11-10)
+      - [x] why /nepgen/'s `SWITCH EXCLUSIVE` became a shared gloves folder with one wearer
+        (answered 2026-11-11, no change): Red's `g2635` carries its own
+        `body_d_u0XXXp1/p2.dds`, other bytes than the same names in the wearer's boots
+        folder `k2635`; one player folder holds one `body_d_kit1.dds`, so the gloves stay
+        shared (`merge_kept_shared` Info, `path=body_d_u0XXXp1.dds`)
+      - [x] poc14 (SWE-2, briefs `.tmp/0_0_2/poc14/brief_a*.md`, two reworks): A,
+        `dpfilelist_outdated` and `cpk_name_unlisted` Fatal (`AbortRun`) at the preflight,
+        nothing compiled, exit code 3 (TC-DEP-05, TC-DEP-08); B, the bundle's
+        `data/settings.toml` whole with a comment per setting in Red's layout (lead-written),
+        embedded by `studio`, a fresh write starting from it (`Settings::with_template`)
+        (DECISIONS 2026-11-11 ×2). Files: `compile.rs`, `output/deploy.rs`, `messages.rs`,
+        `catalog.rs`, `tests/cli/{deploy,multicpk}.rs`, `studio_core` `settings/mod.rs`,
+        `studio` `main.rs`, the bundle's settings and README, the help topic, spec
+        `messages.md`/`pipeline.md`/README, plans `messages.md`/`distribution.md`, the
+        drafts' catalog
+      - [x] 0.0.2-poc.3 built (2026-11-11; branch `1a731a94`: main merged `3f8a464c`, its
+        settings file's `cpk_name` and default kept `4cc_90_test`; archive SHA-256
+        `991cc670…`, its checksum file matching, the exe `v0.0.2-poc.3`) beside poc.2
+        (`1cabaa13…`, untouched) in `4cc-studio-temp/poc/target/dist`
     - [x] the embedded `dpfl`'s `4cc_99_test` renamed `4cc_90_test`, Red's default output CPK
       name, for the VGL27 experiment only (the maintainer, 2026-11-10): on the PoC branch
       alone (`301c8b46`: both `DpFileList` templates, the default `cpk_name`, the bundle's
@@ -8019,7 +8036,7 @@ briefs, review loops, gates and mutation runs as for any step.
       extracted exe with `--legacy-ids` (`.tmp/0_0_2/poc13/run_friendlies.py`): 36 of 39
       upgrade (/bag/, /wuwa/, /CIV4XG/ refused, as poc12), each with `legacy_ids.toml`; the
       compile exits 1 with no Fatal, its Errors only `legacy_id_out_of_block` (/hanny/ 25,
-      /utg/ 17; QUESTIONS) and /alg/, /ink/, /smtg/ `team_name_unknown`; `4cc_90_test.cpk`
+      /utg/ 17; their wrong IDs, as intended) and /alg/, /ink/, /smtg/ `team_name_unknown`; `4cc_90_test.cpk`
       and the patch written. Not checked in game
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)

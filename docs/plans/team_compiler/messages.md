@@ -114,6 +114,6 @@ states one-to-one; a glTF material with states absent just gets its family's sta
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
 | `dpfilelist_not_official` | W | as the spec's row | the GUI offers **Upgrade DpFileList**, which asks before replacing the list |
-| `dpfilelist_outdated` | E | as the spec's row | GUI offers Upgrade DpFileList |
+| `dpfilelist_outdated` | F | as the spec's row | GUI offers Upgrade DpFileList |
 | `old_cpk_locked` | E | as the spec's row | GUI offers Retry (deployment only) and Open output folder |
 | `deploy_target_unwritable` | E | as the spec's row | GUI offers Relaunch as administrator. Normally pre-empted by the live writability preflight (see `pipeline.md` "6. Post-processing") |

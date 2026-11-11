@@ -285,8 +285,7 @@ fn a_download_folder_that_denies_writes_is_reported_before_any_export_is_read() 
 
 // TC-DEP-05
 #[test]
-fn a_list_not_naming_the_cpk_is_cpk_name_unlisted_and_the_cpk_is_promoted() {
-    let twin = twin_cpk("deploy_unlisted_twin");
+fn a_list_not_naming_the_cpk_is_cpk_name_unlisted_and_stops_the_run() {
     let sandbox = Sandbox::new("deploy_unlisted");
     install_pes(&sandbox);
     let download = snapshot(&sandbox.root.join("PES/download"));
@@ -300,21 +299,20 @@ fn a_list_not_naming_the_cpk_is_cpk_name_unlisted_and_the_cpk_is_promoted() {
         &["compile", "--export", &tracer_export()],
     );
 
-    let mut expected = vec![format!(
-        "Error cpk_name_unlisted [Keep] (cpk=4cc_80_mine.cpk, path={}, output={})",
-        sandbox.display("PES/download/DpFileList.bin"),
-        sandbox.display("output/4cc_80_mine.cpk")
-    )];
-    expected.extend(bundled_bins_then(TRACER_FINDINGS));
-    expected.push(patch_written(&sandbox, "792"));
-    assert_eq!(run.messages(), expected);
-    assert_eq!(run.exit_code(), 1);
-    // The CPK's bytes do not depend on its name.
-    let promoted = fs::read(sandbox.root.join("output/4cc_80_mine.cpk")).unwrap();
-    assert!(
-        promoted == fs::read(&twin).unwrap(),
-        "the output folder holds the run's CPK"
+    // The Fatal finding ends the run at the preflight, so the messages are the one line.
+    assert_eq!(
+        run.messages(),
+        [format!(
+            "Fatal cpk_name_unlisted [AbortRun] (cpk=4cc_80_mine.cpk, path={})",
+            sandbox.display("PES/download/DpFileList.bin")
+        )]
     );
+    assert_eq!(run.exit_code(), 3);
+    assert!(
+        snapshot(&sandbox.root.join("output")).is_empty(),
+        "no CPK, no patch: nothing is written"
+    );
+    assert!(!sandbox.root.join("output/.staging").exists());
     assert_eq!(snapshot(&sandbox.root.join("PES/download")), download);
 }
 
@@ -430,8 +428,7 @@ fn a_listed_cpk_missing_from_download_is_dpfilelist_cpk_missing_and_the_cpk_is_i
 
 // TC-DEP-08
 #[test]
-fn a_list_lacking_the_cpk_the_official_one_names_is_dpfilelist_outdated_and_the_cpk_is_promoted() {
-    let twin = twin_cpk("deploy_outdated_twin");
+fn a_list_lacking_the_cpk_the_official_one_names_is_dpfilelist_outdated_and_stops_the_run() {
     let sandbox = Sandbox::new("deploy_outdated");
     install_pes(&sandbox);
     let names: Vec<String> = official_names()
@@ -440,19 +437,24 @@ fn a_list_lacking_the_cpk_the_official_one_names_is_dpfilelist_outdated_and_the_
         .collect();
     assert_eq!(names.len(), 52);
     install_list(&sandbox, &names);
+    let download = snapshot(&sandbox.root.join("PES/download"));
 
     let run = compile_tracer(&sandbox);
 
-    // No `dpfilelist_not_official`: the Error ends the checks.
-    let mut expected = vec![format!(
-        "Error dpfilelist_outdated [Keep] (cpk=4cc_99_test.cpk, path={}, output={}, {UPGRADE})",
-        sandbox.display("PES/download/DpFileList.bin"),
-        promoted(&sandbox)
-    )];
-    expected.extend(bundled_bins_then(TRACER_FINDINGS));
-    expected.push(patch_written(&sandbox, "792"));
-    assert_eq!(run.messages(), expected);
-    assert_eq!(run.exit_code(), 1);
-    assert_promoted(&sandbox, &twin);
-    assert!(!sandbox.root.join("PES/download/4cc_99_test.cpk").exists());
+    // No `dpfilelist_not_official`, no compile: the Fatal finding ends the run at the
+    // preflight, so the messages are the one line.
+    assert_eq!(
+        run.messages(),
+        [format!(
+            "Fatal dpfilelist_outdated [AbortRun] (cpk=4cc_99_test.cpk, path={}, {UPGRADE})",
+            sandbox.display("PES/download/DpFileList.bin")
+        )]
+    );
+    assert_eq!(run.exit_code(), 3);
+    assert!(
+        snapshot(&sandbox.root.join("output")).is_empty(),
+        "no CPK, no patch: nothing is written"
+    );
+    assert!(!sandbox.root.join("output/.staging").exists());
+    assert_eq!(snapshot(&sandbox.root.join("PES/download")), download);
 }

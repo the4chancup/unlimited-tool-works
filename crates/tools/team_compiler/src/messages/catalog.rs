@@ -903,13 +903,13 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     ),
     (
         "dpfilelist_outdated",
-        CatalogSeverity::Error,
+        CatalogSeverity::Fatal,
         r#"The cup's official list names one or more CPKs of this run that the game's older `DpFileList.bin` lacks (the line names them)."#,
         concat!(
-            "Deployment is skipped, so the CPK is left in the output folder and the save is not \
-             touched. `",
+            "The run stops before compiling anything: nothing is installed or written, and the save is \
+             not touched. `",
             studio_core::exe_name!(),
-            " team-compiler upgrade-dpfl` installs the official list."
+            " team-compiler upgrade-dpfl` installs the official list; then compile again."
         ),
     ),
     (
@@ -950,9 +950,9 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     ),
     (
         "cpk_name_unlisted",
-        CatalogSeverity::Error,
+        CatalogSeverity::Fatal,
         r#"The run's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."#,
-        r#"Deployment is skipped, so the CPK is left in the output folder and the save is not touched. Set `Output CPK name` to a name the list has."#,
+        r#"The run stops before compiling anything: nothing is installed or written, and the save is not touched. Set `Output CPK name` to a name the list has; then compile again."#,
     ),
     (
         "cpk_slots_exhausted",

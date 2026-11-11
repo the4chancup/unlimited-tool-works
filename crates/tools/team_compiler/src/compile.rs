@@ -171,13 +171,13 @@ impl CpkLayout {
 /// directory's `templates/` files replacing them (`templates`), and its bins are built on those
 /// of the installed CPKs listed before its first but the refs CPK (`bins::installed`). Returns
 /// the worst severity reported: a `templates/` file or an installed bin that cannot be read, an
-/// output that cannot be written or put in place, a team the parts cannot take, or an export
-/// file that changes while the run reads it, is a Fatal finding, after which the previous
-/// output is all that is left. An exports folder or an `overrides/` folder that cannot be read
-/// is an error. A run of several CPKs installs all of them or none. The
-/// `aesthetics_patch.toml` written beside the output is applied to the save `savefile_path`
-/// resolves to when the game loads the run's output (`spec/team_compiler/pipeline.md` "6.
-/// Post-processing").
+/// installed `DpFileList.bin` that does not list the run's CPKs, an output that cannot be written
+/// or put in place, a team the parts cannot take, or an export file that changes while the run
+/// reads it, is a Fatal finding, after which the previous output is all that is left. An exports
+/// folder or an `overrides/` folder that cannot be read is an error. A run of several CPKs installs
+/// all of them or none. The `aesthetics_patch.toml` written beside the output is applied to the
+/// save `savefile_path` resolves to when the game loads the run's output
+/// (`spec/team_compiler/pipeline.md` "6. Post-processing").
 pub(crate) fn run(
     inputs: &RunInputs,
     layout: &CpkLayout,
@@ -212,8 +212,16 @@ pub(crate) fn run(
             &layout.promoted(&paths.output_folder, refs),
             &official,
         );
+        // An aborted preflight ends the run once its findings are reported: nothing was
+        // compiled, so nothing is promoted, written or patched.
+        let aborted = messages
+            .iter()
+            .any(|message| message.disposition == Disposition::AbortRun);
         for message in messages {
             events.message(message);
+        }
+        if aborted {
+            return Ok(events.worst());
         }
         download
     } else {
