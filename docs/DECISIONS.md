@@ -16329,3 +16329,17 @@ own, reviewed alone.
 Plan: `plans/core/distribution.md` "Self-update" steps 3, 4 and 6, "Release builds in CI";
 `plans/core/gui.md` ST-UPD-03 to ST-UPD-06; the draft's `openUpdate`, `updateNow`,
 `openUpdateReady`.
+
+## 2026-11-12 — save_editor — The comparator's three columns have fixed widths; a dragged list row floats as a lineup row
+Decision (the lead, on the maintainer's asks of 2026-11-03, 0.0.2-cmp and 0.0.2-drag): a
+comparator row draws Item (190 points), Old value (200) and New value (the rest) under one
+head row, each of the first two cut with an ellipsis, a cut row's whole text on its hover;
+the row's accessible name keeps `<label> <old> → <new>`. The player list's dragged row is
+drawn under the pointer with the pressed point kept, as SE-GUI-65's lineup row, and its
+place in the list as the lineup draws a dragged row's place (SE-GUI-69).
+Why: the list is drawn row by row from thousands of rows, only those in view laid out, so a
+column as wide as its widest value (the changes list's `Grid`) would lay every row out
+first; a fixed width costs a cut value, which the hover gives back. A screen reader reads a
+row as one name, where "185 → 183" says which value is which and three bare words do not.
+Plan: `plans/save_editor.md` "Comparator (gameplay + aesthetics)", the player list's
+paragraph, SE-GUI-13, SE-GUI-69; the draft's `comparatorPanel`.

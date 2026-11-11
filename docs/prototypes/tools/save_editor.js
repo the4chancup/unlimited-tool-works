@@ -503,6 +503,13 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .panel .drow:hover { background: none; box-shadow: inset 0 0 0 1px #969696; }
 .panel .drow .f { width: 190px; flex: none; overflow: hidden; text-overflow: ellipsis; }
 .panel .drow .v { color: var(--strong); }
+/* The comparator's rows in three columns, as the unsaved changes list: the item, its value in
+   the second save, its value in the open one. The head is no row: it neither hovers nor jumps. */
+.panel #cmp-rows .drow .o { width: 200px; flex: none; overflow: hidden; text-overflow: ellipsis;
+  color: var(--strong); }
+.panel #cmp-rows .drow .n { color: var(--strong); }
+.panel #cmp-rows .drow.head { color: var(--strong); margin-bottom: 2px; }
+.panel #cmp-rows .drow.head:hover { box-shadow: none; }
 .panel .grp { color: var(--strong); margin: 6px 0 2px; }
 /* The view fills its pane (egui's side panel beside the central one): the
    list and its quick actions take the whole height, the detail scrolls on
@@ -6842,6 +6849,9 @@ function comparatorPanel() {
   // Per team, per player: the report's order, a header per player.
   let lastTeam = null, lastPid = null;
   const list = h("div", { id: "cmp-rows" });
+  if (rows.length)
+    list.append(h("div", { class: "drow head" }, h("span", { class: "f" }, "Item"),
+      h("span", { class: "o" }, "Old value"), h("span", { class: "n" }, "New value")));
   for (const r of rows) {
     const [pid, field, o, n] = r;
     const team = Math.floor(pid / 100);
@@ -6858,7 +6868,7 @@ function comparatorPanel() {
     const row = h("div", { class: "drow sel", title: "Click to switch to this player",
       onclick: () => { jumpToPlayer(team, pid % 100); render(); } },
       h("span", { class: "f" }, d.label),
-      h("span", { class: "v" }, d.oldV + " \u2192 " + d.newV));
+      h("span", { class: "o" }, d.oldV), h("span", { class: "n" }, d.newV));
     list.append(row);
   }
   c.append(list);

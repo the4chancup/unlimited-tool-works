@@ -249,7 +249,9 @@ all side by side.
   is held over a row of his team other than his own, that row, the slot the drop moves him to,
   is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
   theirs; a row the drop moves nothing onto (his own, another team's, an empty slot's) gets
-  none. A draggable row shows the pointing hand wherever the pointer is on it (egui leaves a
+  none. The dragged row is drawn under the pointer while it is held, the point first pressed
+  kept under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn
+  as the lineup draws a dragged row's place. A draggable row shows the pointing hand wherever the pointer is on it (egui leaves a
   row that also takes clicks on the arrow, so the row asks for it); the lineup rows keep the
   move cross, which Windows draws for egui's grab hand. A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
@@ -1439,8 +1441,14 @@ The panel over the spec's `diff` report:
   Not the report's values on screen, because a member reads a row against the view it jumps to,
   and a motion one lower than the view's reads as a wrong row; not view values in the report,
   because the report is what the compare scripts it replaces print.
-- The picked save is the report's first and the open save its second, so a row reads picked →
-  open: what the member's edits changed against the save he compares with.
+- The picked save is the report's first and the open save its second, so a row reads picked,
+  then open: what the member's edits changed against the save he compares with. A row stands
+  in three columns, Item, Old value and New value, named by a head row above the list, as
+  the unsaved changes list names its own (not one `old → new` text: values of every length
+  then start at one place, and the eye runs down a column). Item is 190 points wide and Old
+  value 200, each cut with an ellipsis where its text is longer, and New value takes the
+  rest; a row that cuts a value shows the whole row's text on hover, above the hint of what
+  its click does. The team and player heads are as they were.
 - Export writes the report of the toggled scope over the whole save, the text `save-editor diff
   <picked> <open>` prints with `--gameplay` or `--aesthetics` (All: neither); the team filter
   narrows the screen only. Not the rows shown, because the command has no team filter, and an
@@ -2021,6 +2029,9 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 save rosters selects that player (one only in the picked save, or on no
                 roster, is listed and not clickable); each player's rows stand under the
                 head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
+                each row draws its label, the picked save's value and the open save's in
+                three columns, at 4, 202 and 410 points from the row's left, under one head
+                row `Item`, `Old value`, `New value`, and no arrow;
            GIVEN a save of another version picked THEN it is refused naming both versions;
            GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
                 filter reads ALL; WHEN the same path is picked again after the file changed on
@@ -2182,6 +2193,11 @@ SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
 SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right of its centre
            WHEN it is dragged
            THEN the dragged row is drawn with that point under the pointer, not its centre
+SE-GUI-69  GIVEN a team's player list, row 03 pressed 20 points right of its name's start
+           WHEN it is dragged 30 points right and 40 down
+           THEN the row's name is drawn 30 points right and 40 below where it stood, on top
+                of the list; GIVEN a filter typed THEN a press and the same move draw nothing
+                there
 SE-GUI-66  GIVEN the PES 17 save open on a player whose own tier, Regular, allows 3 paid
                cards, 3 of them ticked
            WHEN Abilities shows

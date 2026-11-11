@@ -1663,7 +1663,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] slice 2a the dialog's stages: Update now, the download's progress and Cancel,
       `Update failed`, `Update ready` (ST-UPD-03)
     - [ ] slice 2b Later's `Update ready` in the status bar, Restart now, `UTW_RELEASES_URL`
-      (ST-UPD-05), the CHANGELOG line
+      (ST-UPD-05), the CHANGELOG line; with it the tests slice 1's `mutants-diff` asks for
+      (2026-11-12, 5 missed, all test gaps): a download whose read is interrupted once still
+      completes, and one whose read fails is `InstallError::Download` with nothing changed
+      (`install.rs` `download`, 3 mutants); a failed swap's sentence names its step
+      (`SwapStep`'s `Display`); the program's file name pinned per platform (`exe_file_name`)
     - [ ] slice 3 the `Updated to` notice (`last_run_version`) and the help's Updates and
       What's new chapters (ST-UPD-06)
     - [ ] slice 4 the settings menu's rollback (`plans/core/distribution.md` "Rollback")
