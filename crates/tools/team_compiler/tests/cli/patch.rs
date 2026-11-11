@@ -58,6 +58,7 @@ fn a_run_holding_no_patch_moves_an_earlier_one_aside_to_bak() {
 // (`spec/team_compiler/pipeline.md` "Output"): a patch whose every entry held
 // only a task-gated ID whose task failed emits no entry either, so the
 // previous CPK and the previous patch stay, no `.bak` turning over.
+// TC-SAV-22
 #[test]
 fn a_patch_that_settles_to_nothing_leaves_the_previous_cpk_and_patch_alone() {
     let sandbox = Sandbox::new("patch_settles_nothing");

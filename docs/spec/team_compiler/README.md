@@ -2741,6 +2741,14 @@ TC-SAV-21  GIVEN a savefile whose 71405 to 71408 records each hold an appearance
                 savefile the four records' looks and motions are as they were but for 71405's
                 boots, now 625, the others' boots still 7 (restates TC-BIN-33, TC-STR-18,
                 TC-STR-19)
+TC-SAV-22  GIVEN an output folder holding a previous <cpk_name>.cpk and aesthetics_patch.toml,
+                 and a /co/ export whose only player folder, 05, holds boots whose task fails
+                 (skl_merge_conflict), a settings.toml with a key of the wrong type and an
+                 ingame_face.toml, so his patch entry would hold the failed task's boots ID
+                 alone
+           WHEN it is compiled for PES 21
+           THEN no patch is written, no .bak is made, the previous CPK and patch are
+                byte-identical to before, and the exit code is 1
 TC-BIN-50  GIVEN a savefile whose 71405 record holds boots 7, and a /co/ export whose slot 05
                  holds a boots.fmdl whose task fails and a settings.toml setting an appearance
                  key and a motion key, and whose slot 06 holds a face model that compiles

@@ -7733,9 +7733,9 @@ briefs, review loops, gates and mutation runs as for any step.
       reads a member's `team_folder/refkit/` in any case (lead's fix, TC-REF-16 extended).
       `src/{user_face_xml,deep/materials,deep/mod,processing/model,processing/prefox_face,
       messages,messages/catalog}.rs`, `help/01_command_line.md`, tests (TC-XML-18 to 20,
-      TC-MOD-102; 25 inputs respelled). Open: `tests/cli/patch.rs:61`
-      (`a_patch_that_settles_to_nothing_…`, 8.36c) cites no scenario, which `acceptance.py
-      report` lists (exit 0) since before this step
+      TC-MOD-102; 25 inputs respelled). `tests/cli/patch.rs`'s
+      `a_patch_that_settles_to_nothing_…` (8.36c) now cites TC-SAV-22 (2026-11-11), the
+      spec's "a run that publishes nothing leaves the previous CPK and its patch alone"
     - [x] (b) the upgrader: `Identity::Team` holds the name alone, no teams list read
       (`load_teams_list` gone, the fixture list too); the save's team found by name, first in
       record order, a later one `save_team_name_repeated` (W); the collision rule's ID the
