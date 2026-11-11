@@ -33,8 +33,9 @@ What changed for members, release by release, newest first.
 - **Team compiler and Ruleset editor** — a texture can be a JPEG XL file (`.jxl`), which
   compiles exactly as the same picture saved as a PNG does, so no PNG copy is needed; the
   Ruleset editor's Event logo can be one too.
-- **Save editor** — a team's Manager ID and Stadium ID can be seen and edited on PES 2017
-  and 2018 too, not only from PES 2019 on, and a Team TOML carries them on those versions.
+- **Save editor** — a team's Stadium ID can be seen and edited on every version and its
+  Manager ID from PES 2017 on, not only from PES 2019 on, and a Team TOML carries them
+  wherever the save stores them.
 
 ### Fixes
 

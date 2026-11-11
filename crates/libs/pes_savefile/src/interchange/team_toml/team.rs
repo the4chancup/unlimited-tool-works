@@ -330,7 +330,7 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "stadium_id",
         team.stadium_id.map(|v| v.to_string()),
         "0",
-        "PES 17 and later",
+        "",
     );
     emit(
         out,
@@ -1001,6 +1001,13 @@ mod tests {
         let body = format!("manager_id = {}", team.manager_id.expect("PES 19 has it"));
         let expected = format!("{body}{}# PES 17 and later", " ".repeat(32 - body.len()));
         assert_eq!(*manager, expected, "the comment sits at column 33");
+        // Every version stores the stadium id, so its line names none.
+        let stadium = lines
+            .iter()
+            .find(|l| l.starts_with("stadium_id"))
+            .expect("a stadium_id line");
+        let expected = format!("stadium_id = {}", team.stadium_id.expect("PES 19 has it"));
+        assert_eq!(*stadium, expected, "no version comment");
     }
 
     /// A tactics key the target's schema lacks is a `NotInThisVersion` note

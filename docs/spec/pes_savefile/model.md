@@ -66,7 +66,7 @@ pub struct TeamEntry {
                                  // is its in-memory buffer)
     pub short_name: String,      // 3 chars, single-byte on disk
     pub manager_id: Option<u32>,          // 17+
-    pub stadium_id: Option<u16>,          // 17+
+    pub stadium_id: Option<u16>,          // every version
     pub colors: Option<[TeamColor; 2]>,   // 17+, 6 bits per channel
     pub edit_flags: TeamEditFlags,        // name; short name (15), stadium (20/21), strip (17)
     pub kit_slots: Option<[KitSlot; 10]>, // 17 only: kit number ↔ bound team id
@@ -552,9 +552,11 @@ included.
 The tables cover 15 to 27% of the team record's bits. The uncovered bytes by version, with the
 wiki's names (what a Save editor's team page would model):
 
-- **15/16** (456 B): 4 to 17 emblem, home stadium, nationality, callname, coach nationality and
-  image, turf, net, seats and sideline; 18 to 19 edit flags (the tables' `EditedName` at 0x12:0
-  is the wiki's "Unknown A", and its "names edited" is 0x12:7); 24 to 63 the kit slots; 64 to
+- **15/16** (456 B): 4 and 5, and 8 to 17, emblem, nationality, callname, coach nationality
+  and image, turf, net, seats and sideline (the home stadium at 6 and 7 is covered: the record
+  has no manager id, so it sits four bytes before PES 17's); 18 to 19 edit flags (the tables'
+  `EditedName` at 0x12:0 is the wiki's "Unknown A", and its "names edited" is 0x12:7); 24 to
+  63 the kit slots; 64 to
   75 three rival ids; 76 to 147 0xFF (145 to 147 set in about 600 records); 222 to 342 the
   custom stadium name; 343 to 406 four banner texts at a 16-byte stride; 407 to 455 the
   manager's name.

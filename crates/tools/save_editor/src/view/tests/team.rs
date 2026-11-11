@@ -655,7 +655,7 @@ fn a_team_name_keystroke_past_the_fields_limit_is_not_taken() {
 // the same place with the gate tooltip naming the first version that has
 // them.
 #[test]
-fn on_pes16_the_colours_ids_and_kit_slots_draw_disabled_with_their_versions() {
+fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versions() {
     let path = fixture(PesVersion::Pes16, "team_view_gated");
     let mut view = SaveView::new();
     view.open(&path);
@@ -689,15 +689,24 @@ fn on_pes16_the_colours_ids_and_kit_slots_draw_disabled_with_their_versions() {
             "the colour field's tooltip"
         );
     }
-    // Manager ID and Stadium ID, each its disabled stand-in with "PES 17+".
-    for label in ["Manager ID", "Stadium ID"] {
-        let dash = disabled_dash(&nodes, label);
-        assert_eq!(
-            tooltip_after_hover(&mut window, &mut view, centre(dash)),
-            Some("PES 17+".to_string()),
-            "{label}'s tooltip"
-        );
-    }
+    // The Manager ID, its disabled stand-in with "PES 17+".
+    let dash = disabled_dash(&nodes, "Manager ID");
+    assert_eq!(
+        tooltip_after_hover(&mut window, &mut view, centre(dash)),
+        Some("PES 17+".to_string()),
+        "the Manager ID's tooltip"
+    );
+    // The Stadium ID, which every version stores: a live number showing
+    // the team's own.
+    let stadium = team_entry(&view, 701)
+        .stadium_id
+        .expect("PES 16 stores the stadium ID");
+    let control = right_of_label(&nodes, "Stadium ID", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Stadium ID control");
+    assert!(!control.is_disabled(), "the Stadium ID is live");
+    assert_eq!(control.value(), Some(stadium.to_string().as_str()));
     // The kit slots' no-records line names PES 17, inside the dialog.
     click(
         &mut window,

@@ -508,6 +508,11 @@ pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
             bit_width: 32,
         },
         FieldSpec {
+            field: TeamField::StadiumId,
+            bit_offset: 48,
+            bit_width: 16,
+        },
+        FieldSpec {
             field: TeamField::EditedName,
             bit_offset: 144,
             bit_width: 1,

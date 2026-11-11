@@ -19,7 +19,7 @@ pub struct TeamEntry {
     pub short_name: String,
     /// Manager id (PES 17+).
     pub manager_id: Option<u32>,
-    /// Home stadium id (PES 17+).
+    /// Home stadium id.
     pub stadium_id: Option<u16>,
     /// The two team colours (PES 17+).
     pub colors: Option<[TeamColor; 2]>,
