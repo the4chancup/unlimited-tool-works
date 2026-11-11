@@ -33,6 +33,11 @@ What changed for members, release by release, newest first.
 - **Team compiler and Ruleset editor** — a texture can be a JPEG XL file (`.jxl`), which
   compiles exactly as the same picture saved as a PNG does, so no PNG copy is needed; the
   Ruleset editor's Event logo can be one too.
+- **Save editor** — the Comparator lists each difference in three columns, Item, Old value
+  and New value, under one head row, as the unsaved changes list does; a value too long for
+  its column is cut, and hovering the row shows it whole.
+- **Save editor** — a player dragged in a team's player list moves with the pointer, as a
+  dragged lineup row does.
 - **Save editor** — a team's Stadium ID can be seen and edited on every version and its
   Manager ID from PES 2017 on, not only from PES 2019 on, and a Team TOML carries them
   wherever the save stores them.

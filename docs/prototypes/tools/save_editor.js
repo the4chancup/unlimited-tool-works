@@ -508,7 +508,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .panel #cmp-rows .drow .o { width: 200px; flex: none; overflow: hidden; text-overflow: ellipsis;
   color: var(--strong); }
 .panel #cmp-rows .drow .n { color: var(--strong); }
-.panel #cmp-rows .drow.head { color: var(--strong); margin-bottom: 2px; }
+.panel #cmp-rows .drow.head { color: #6e6e6e; margin-bottom: 2px; }
 .panel #cmp-rows .drow.head:hover { box-shadow: none; }
 .panel .grp { color: var(--strong); margin: 6px 0 2px; }
 /* The view fills its pane (egui's side panel beside the central one): the

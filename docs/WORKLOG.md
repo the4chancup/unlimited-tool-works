@@ -14,9 +14,9 @@ is in `AGENTS.md` ("Working documents").
 0.0.2 step"), worked in this order:
 1. Update now (0.0.2-upd, its slices below), then the command line's notice (0.0.2-cli) and
    the TLS provider (0.0.2-tls).
-2. The illegal formation check (0.0.2c): the stock game's rule is being read from the PES
-   2017 executable.
-3. The Save editor asks of 2026-11-03 (0.0.2-cmp, -drag, -undo, -statlbl, -inst, -drift,
+2. The illegal formation check (0.0.2c): its six clauses are set; the game's own formations
+   and the cup saves are still to run under them.
+3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -statlbl, -inst, -drift,
    -clip).
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
 5. The library checkpoints (0.0.2-chk), then the cut.
@@ -1685,11 +1685,10 @@ briefs, review loops, gates and mutation runs as for any step.
     listed exception (`cc` in its build graph, `cargo tree -i cc` per release target)
     → verify: the gate red on an unlisted C crate; the update check's tests; a CI dry run's
     Linux binary passes the path check
-  - [ ] 0.0.2-cmp the comparator's rows that carry an arrow become three columns, Item, Old
-    value and New value, as the unsaved changes list; its team and player rows unchanged
-    (the maintainer, 2026-11-03)
-  - [ ] 0.0.2-drag the player list's dragged row floats under the pointer as the lineup
-    rows' does, its grab point kept (the maintainer, 2026-11-03)
+  - [x] 0.0.2-cmp 2026-11-12 (`5412b447`): the comparator's field rows in three columns,
+    Item, Old value and New value, under one head row (SE-GUI-13)
+  - [x] 0.0.2-drag 2026-11-12 (`5412b447`): the player list's dragged row floats under the
+    pointer, its grab point kept, its place left blank (SE-GUI-69)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
@@ -2180,6 +2179,10 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-12 (0.0.2-drag) — the player list draws only the rows in view, so a row
+  dragged while the wheel scrolls its place out of view stops floating until the release
+  (the drop still lands). Harmless on a team's list, which fits the window; a fix would
+  paint the float from outside the rows.
 - open 2026-11-11 (the census index, `.tmp/sidelead/sk_census.report.md`) — (1) 603 upgraded
   or Studio FMDLs still carry an old Common path in their strings that no texture reference
   uses (a raw-bytes search finds 8,783 files, the references 8,180): which tool leaves the
