@@ -75,6 +75,26 @@ class ExtractionTests(unittest.TestCase):
         self.assertTrue(source.startswith("// TC-KIT-01\n// TC-KIT-02\n#[test]"))
         self.assertTrue(source.endswith("    }\n}"), source)
 
+    def test_braces_in_strings_chars_and_comments_do_not_end_a_test(self):
+        lines = [
+            "// TC-KIT-01",
+            "#[test]",
+            "fn a_rules_file_is_written() {",
+            '    let text = "fn f() {};";',
+            '    let raw = r#"}"# ;',
+            "    let open = '{';",
+            "    // a } in a comment",
+            '    let escaped = "\\"}";',
+            "    let multi = \"}",
+            '    }";',
+            "    assert!(written(text));",
+            "}",
+            "fn after() {}",
+        ]
+        name, source = cited_test(lines, 0)
+        self.assertEqual(name, "a_rules_file_is_written")
+        self.assertTrue(source.endswith("    assert!(written(text));\n}"), source)
+
     def test_a_citation_not_above_a_test_gives_no_test(self):
         self.assertIsNone(cited_test(["// TC-KIT-01", "fn helper() {}"], 0))
 

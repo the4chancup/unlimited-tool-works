@@ -7943,8 +7943,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
       export's file names and paths, naming the upgrader (the bullet above); its spec first.
       After the PoC is handed over (the maintainer, 2026-11-09: not needed for it)
-      - [x] spec (lead): `kit_token_old` (`spec/team_compiler/messages.md`, `pipeline.md`
-        "Kit-dependent assets", `spec/model_format.md` "Output naming", the draft's catalog);
+      - [x] spec (lead): `kit_token_old` (`spec/team_compiler/messages.md`,
+        `spec/team_compiler/pipeline.md` "Kit-dependent assets", `spec/model_format.md` "Output naming", the draft's catalog);
         TC-STR-22, TC-MOD-107; DECISIONS 2026-11-11 (the upgrader's case-exact match, one
         function in `aesthetics_export`, not the "any case" above)
       - [x] the code (`9382b068`, merged `abe8e0ff`): Opus sidekick, `.tmp/0_0_2/poc12s4/brief.md`;
@@ -8022,7 +8022,7 @@ briefs, review loops, gates and mutation runs as for any step.
       0.0.2-poc.2 and rerun the Friendlies
     - [x] poc13g an out-of-block old ID reported once, on the folder that would pack it, not
       on each player folder linking a kept-shared one (2026-11-11, SWE-2, landed first time;
-      DECISIONS 2026-11-11; plan `pipeline.md` "Out of block"): `plan/mod.rs`
+      DECISIONS 2026-11-11; `plans/team_compiler/pipeline.md` "Out of block"): `plan/mod.rs`
       (`MappedFolder::refused` by kind, reported in `plan_run` where the folder's
       `own_parts` has the kind), TC-LEG-03's tests in `tests/cli/legacy_ids.rs` (one new)
     - [ ] the maintainer's asks for the PoC if they fit (2026-11-10), each checked first.

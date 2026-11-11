@@ -92,12 +92,62 @@ def scenario_text(lines: list[str], start: int) -> str:
     return "\n".join(body)
 
 
+RAW_STRING_OPEN = re.compile(r'b?r(#*)"')
+CHAR_LITERAL = re.compile(r"'(?:\\.|[^\\'])'")
+
+
+def code_braces(line: str, string: str | None) -> tuple[int, int, str | None]:
+    """The `{` and `}` counts of `line`'s code, skipping string and char literals and `//`
+    comments, and the string still open at its end (`string`: None, `'"'` or a raw string's
+    closing `"#…`), which the next line starts inside. A test holding `"};"` once ended at
+    that string, cutting off its assertions. Block comments are not skipped."""
+    opened = closed = 0
+    index = 0
+    while index < len(line):
+        if string == '"':
+            if line[index] == "\\":
+                index += 2
+                continue
+            if line[index] == '"':
+                string = None
+            index += 1
+            continue
+        if string is not None:
+            if line.startswith(string, index):
+                index += len(string)
+                string = None
+            else:
+                index += 1
+            continue
+        if line.startswith("//", index):
+            break
+        before = line[index - 1] if index else " "
+        raw = RAW_STRING_OPEN.match(line, index)
+        if raw and not (before.isalnum() or before == "_"):
+            string = '"' + raw.group(1)
+            index = raw.end()
+            continue
+        char = CHAR_LITERAL.match(line, index)
+        if char:
+            index = char.end()
+            continue
+        if line[index] == '"':
+            string = '"'
+        elif line[index] == "{":
+            opened += 1
+        elif line[index] == "}":
+            closed += 1
+        index += 1
+    return opened, closed, string
+
+
 def function_end(lines: list[str], start: int) -> int | None:
     """Index of the line whose brace closes the item opened at or after `start`."""
-    depth, opened = 0, False
+    depth, opened, string = 0, False, None
     for index in range(start, len(lines)):
-        depth += lines[index].count("{") - lines[index].count("}")
-        opened = opened or "{" in lines[index]
+        opens, closes, string = code_braces(lines[index], string)
+        depth += opens - closes
+        opened = opened or opens > 0
         if opened and depth <= 0:
             return index
     return None
