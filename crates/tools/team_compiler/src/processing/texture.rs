@@ -693,7 +693,8 @@ pub(super) fn portrait(
         | SourceFormat::Bmp
         | SourceFormat::WebP
         | SourceFormat::Tga
-        | SourceFormat::Tiff => {}
+        | SourceFormat::Tiff
+        | SourceFormat::Jxl => {}
     }
     encode_dds(&decoded, BlockCodec::Bc3).map_err(|error| conversion_failure(name, error))
 }

@@ -139,6 +139,42 @@ format. Two image files with the same stem but different extensions is a conflic
 | WebP | `image` crate | `.webp` | Pure Rust |
 | TGA | `image` crate | `.tga` | Pure Rust, under `image`'s default allocation limit. A TGA 2.0 extension declaring premultiplied alpha (attributes type 4) is un-multiplied like TIFF's; alpha that is 0 in every pixel is read as opaque, as texconv does by default. 16-bit TGA (5-bit primaries) is refused with a resave message, since `image` drops its alpha bit and DirectXTex keeps it; interleaved TGA is refused, as DirectXTex does |
 | TIFF | `image` crate | `.tif`, `.tiff` | Pure Rust; Photoshop users. Associated (premultiplied) alpha, `ExtraSamples = 1`, is un-multiplied after the decode, at the source's precision (f32 for float samples, 16 bits otherwise; the tag is read with `tiff`, the crate `image` decodes through) |
+| JPEG XL | `jxl` crate | `.jxl` | Pure Rust (Google's decoder). Costs a compile more than a PNG: 492 ms of CPU for a lossless 2048 × 2048 RGBA texture, 155 ms for a lossy one, against 24 ms for its PNG; the decoder adds 2.8 MiB to the exe (44,051,968 to 47,010,816 bytes, 2.4 MiB of it the `jxl` crates' code, measured with `cargo bloat`) |
+
+**JPEG XL.** `.jxl` is decoded to the same straight-alpha RGBA8 as a PNG and converted on
+the same path, so what the game reads does not change. Authors' tools have taken it up
+(browsers decode it since late 2026), and a texture made in one should not need a PNG copy
+first. The decoder is Google's `jxl` (BSD-3-Clause, the pure-Rust decoder Chrome and Firefox
+ship), version pinned, through its own API, not `jxl-oxide`: on a member's 2048 × 2048 RGBA
+face texture `jxl` spends 492 ms of CPU on a lossless decode and 155 ms on a lossy one,
+`jxl-oxide` 1116 ms and 817 ms (its threads finish one picture sooner, 165 ms, but the
+compiler already decodes one texture per core, so CPU time is what a compile pays). Both
+decode the lossless file to the PNG's pixels exactly and the lossy one within one level of
+libjxl's. `jxl-image-rs-integration`, which would let `image` read the file, is not used: it
+works by registering a process-wide decoding hook, a change to `image`'s global state that
+every other caller would inherit.
+
+`jxl` decodes on the calling thread (no parallel runner is handed to it), straight into
+RGBA8 whatever the file stores: a greyscale file comes out with R = G = B, a file without
+alpha with alpha 255, 8-bit samples as stored, and alpha the file stores premultiplied is
+divided out. Samples of more than 8 bits, and a lossy file's (its pixels are computed in
+floating point), are rounded to 8 bits by the decoder after an ordered dither of under half
+a level, as libjxl renders 8 bits: a sample can land one level away from the plain rounding
+`image` gives a 16-bit PNG, while 0 and full scale stay exact. A lossy (XYB) file is
+rendered to the colour space its header declares, or to sRGB when that is an ICC profile,
+as libjxl renders it; a lossless one keeps the colour space it stores, as a PNG's decode
+does. An animated file gives its first frame. The header is the decoder's own read up to its
+basic info, so `probe` pays no pixel decode. A lossy JXL normal map is taken as a lossy JPEG
+one is, with no warning of its own; a lossy JXL also drops the colour under fully transparent
+pixels unless its encoder is told to keep it (libjxl's default), as image editors that zero
+it do.
+
+The rule is one wherever a picture is picked: the aesthetics export's extension table
+(`aesthetics_export` "conventions") counts `.jxl` as a texture, the Team compiler's format
+sniffing knows both its signatures (the bare codestream's `FF 0A` and the ISOBMFF
+container's `00 00 00 0C 4A 58 4C 20 0D 0A 87 0A`), and the Ruleset editor's logo picker
+lists it (the Save editor picks no picture: its portraits come from the game's CPKs). The
+Export upgrader reads no JXL: no old export can hold one, since Red never read it.
 
 **Not accepted** (enable only the accepted decoders explicitly; the `image` crate's default
 features and AVIF backends vary by release):
@@ -176,7 +212,7 @@ sock band of a kit and a number atlas's digit glyphs with it ("Layout conversion
 /// The accepted source formats (table above), named by the file extension the
 /// compiler resolved the texture stem to. TGA has no magic, so the format is
 /// never sniffed from bytes.
-pub enum SourceFormat { Dds, Ftex, Png, Jpeg, Bmp, WebP, Tga, Tiff }
+pub enum SourceFormat { Dds, Ftex, Png, Jpeg, Bmp, WebP, Tga, Tiff, Jxl }
 impl SourceFormat {
     /// Case-insensitive, without the dot; `jpg`/`jpeg` and `tif`/`tiff` both accepted.
     pub fn from_extension(extension: &str) -> Option<Self>;
@@ -293,7 +329,8 @@ join the cache key with 2.5b, when a second encoder exists.
 `probe` reads a texture's size from its header alone. It exists for the Team compiler's deep
 pass, which checks every texture of an export and must not pay a decode for each: a DDS's layout
 through `ftex::dds::read_layout` (a WESYS-wrapped one unwrapped first), an FTEX's through
-`ftex::info`, a raster source's through the `image` decoder's dimensions. `Probe.mipmaps` is the
+`ftex::info`, a raster source's through the `image` decoder's dimensions, a JPEG XL's through
+`jxl`'s basic info. `Probe.mipmaps` is the
 level count the converted texture carries: a DDS or FTEX source's own count, and for a raster
 source the full chain down to 1x1, which conversion generates. `probe` fails on a header `decode`
 would fail to read; it says nothing of the pixel data behind the header, so a texture that

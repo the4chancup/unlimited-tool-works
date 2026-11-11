@@ -11,6 +11,7 @@ rust-version.workspace = true
 block_compression.workspace = true
 ftex.workspace = true
 image.workspace = true
+jxl.workspace = true
 log.workspace = true
 pes_version.workspace = true
 sha2.workspace = true

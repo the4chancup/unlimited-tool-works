@@ -25,6 +25,7 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
   | WebP | `image` crate (pure Rust) | `.webp` |
   | TGA | `image` crate (pure Rust) | `.tga` |
   | TIFF | `image` crate (pure Rust) | `.tif`, `.tiff` |
+  | JPEG XL | `jxl` crate (pure Rust) | `.jxl` |
 
   The `image` crate supports additional pure-Rust formats (QOI, PNM, Farbfeld, HDR, OpenEXR, GIF,
   ICO) that are not accepted because they serve no game-texture use case (animation, HDR, icons,

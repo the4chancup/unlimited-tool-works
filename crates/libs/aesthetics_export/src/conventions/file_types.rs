@@ -150,7 +150,7 @@ const METADATA: [(&str, MetadataFile); 10] = [
 ];
 
 /// Extensions, last `.`-separated segment: each with its `FileKind`.
-const EXTENSIONS: [(&str, FileKind); 19] = [
+const EXTENSIONS: [(&str, FileKind); 20] = [
     ("fmdl", FileKind::Model(ModelFormat::Fmdl)),
     ("model", FileKind::Model(ModelFormat::PesModel)),
     ("glb", FileKind::Model(ModelFormat::Gltf)),
@@ -165,6 +165,7 @@ const EXTENSIONS: [(&str, FileKind); 19] = [
     ("tga", FileKind::Texture),
     ("tif", FileKind::Texture),
     ("tiff", FileKind::Texture),
+    ("jxl", FileKind::Texture),
     ("skl", FileKind::Skl),
     ("fclo", FileKind::Fclo),
     ("xml", FileKind::Xml),
@@ -357,7 +358,7 @@ mod tests {
 
     #[test]
     fn classify_covers_the_convention_table() {
-        let cases: [(&str, FileKind); 62] = [
+        let cases: [(&str, FileKind); 63] = [
             ("Crocs.boots", FileKind::SharedLink(SharedKind::Boots)),
             ("Crocs.BOOTS.txt", FileKind::SharedLink(SharedKind::Boots)),
             ("Longhair.face", FileKind::SharedLink(SharedKind::Face)),
@@ -416,6 +417,7 @@ mod tests {
             ("x.tga", FileKind::Texture),
             ("x.tif", FileKind::Texture),
             ("x.tiff", FileKind::Texture),
+            ("x.JXL", FileKind::Texture),
             ("x.skl", FileKind::Skl),
             ("x.fclo", FileKind::Fclo),
             ("face_diff.bin", FileKind::Bin),

@@ -27,7 +27,7 @@ fn image_format(format: SourceFormat) -> Option<ImageFormat> {
         SourceFormat::WebP => ImageFormat::WebP,
         SourceFormat::Tga => ImageFormat::Tga,
         SourceFormat::Tiff => ImageFormat::Tiff,
-        SourceFormat::Dds | SourceFormat::Ftex => return None,
+        SourceFormat::Dds | SourceFormat::Ftex | SourceFormat::Jxl => return None,
     })
 }
 

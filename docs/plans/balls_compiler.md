@@ -86,7 +86,7 @@ balls 4cc/
     │   ├── ball.mtl           ←   + its material XML
     │   ├── materials.toml     ← glTF material properties (glTF folders only; see Unified model format plan)
     │   ├── ball_col.ftex      ← textures: any image format (DDS, FTEX, PNG, JPEG, BMP,
-    │   ├── *.png / *.jpg      ←   WebP, TGA, TIFF) — referenced by stem, interchangeable;
+    │   ├── *.png / *.jpg      ←   WebP, TGA, TIFF, JPEG XL) — referenced by stem, interchangeable;
     │   │                         see Unified model format plan
     │   ├── name.txt           ← optional display name (UTF-8, ≤135 bytes, one line);
     │   │                         falls back to the folder name

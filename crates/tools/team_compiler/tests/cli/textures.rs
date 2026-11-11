@@ -4,6 +4,7 @@
 //! chain, observed through the emitted FTEX's header and blocks. Also the texture findings the
 //! deep pass reports from their headers, at `check` and at `compile`.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -290,34 +291,50 @@ fn an_opaque_skin_is_bc1_and_its_normal_map_bc3_with_x_in_alpha_y_in_green_on_pe
     }
 }
 
+/// Compiles for PES 21, without deploying, the `/co/` export `co Midcup Kit` holding, for
+/// each (path, fixture) of `textures`, the texture fixture at that path in the export, in a
+/// sandbox named `sandbox`: the findings on the export, the exit code, and the written CPK's
+/// entries by path.
+fn compile_co_textures(
+    sandbox: &str,
+    textures: &[(&str, &str)],
+) -> (Vec<String>, u8, BTreeMap<String, Vec<u8>>) {
+    let sandbox = Sandbox::new(sandbox);
+    for (path, fixture) in textures {
+        sandbox.write(
+            &format!("exports/co Midcup Kit/{path}"),
+            &texture_fixture(fixture),
+        );
+    }
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    let findings = findings_of(&run.messages(), "co Midcup Kit")
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+    (findings, run.exit_code(), entries)
+}
+
 // TC-TEX-06
 #[test]
 fn png_and_tga_kit_textures_are_ftex_under_the_kit_s_names_and_a_webp_portrait_is_a_dds() {
-    let sandbox = Sandbox::new("tex_kit_formats");
-    sandbox.write(
-        "exports/co Midcup Kit/Kits/p1/kit.png",
-        &texture_fixture("kit.png"),
+    let (findings, exit_code, entries) = compile_co_textures(
+        "tex_kit_formats",
+        &[
+            ("Kits/p1/kit.png", "kit.png"),
+            ("Kits/p1/kit_back.tga", "kit_back.tga"),
+            ("Portraits/05.webp", "portrait.webp"),
+        ],
     );
-    sandbox.write(
-        "exports/co Midcup Kit/Kits/p1/kit_back.tga",
-        &texture_fixture("kit_back.tga"),
-    );
-    sandbox.write(
-        "exports/co Midcup Kit/Portraits/05.webp",
-        &texture_fixture("portrait.webp"),
-    );
-
-    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
     assert_eq!(
-        findings_of(&run.messages(), "co Midcup Kit"),
+        findings,
         [
             "Info export_identified [Keep] (team=/co/, id=714)",
             "Info team_colors_missing [Keep] ()",
         ]
     );
-    assert_eq!(run.exit_code(), 0);
-    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+    assert_eq!(exit_code, 0);
     for (name, width, height, mipmaps) in [("u0714p1", 256, 128, 9), ("u0714p1_back", 128, 64, 8)] {
         let info = ftex::info(&entries[&kit_texture(name)]).unwrap();
         assert_eq!(info.format, PixelFormat::Bc1, "{name}");
@@ -332,6 +349,42 @@ fn png_and_tga_kit_textures_are_ftex_under_the_kit_s_names_and_a_webp_portrait_i
     let layout = ftex::dds::read_layout(portrait).unwrap();
     assert_eq!(layout.pixel, ftex::dds::DdsPixel::Format(PixelFormat::Bc3));
     assert_eq!((layout.width, layout.height, layout.mipmaps), (128, 128, 8));
+}
+
+// TC-TEX-22
+#[test]
+fn a_jpeg_xl_kit_and_portrait_compile_to_their_pngs_entries_byte_for_byte() {
+    let (jxl_findings, jxl_exit_code, jxl_entries) = compile_co_textures(
+        "tex_jxl",
+        &[
+            ("Kits/p1/kit.jxl", "kit.jxl"),
+            ("Portraits/05.jxl", "portrait.jxl"),
+        ],
+    );
+    let (png_findings, png_exit_code, png_entries) = compile_co_textures(
+        "tex_jxl_png",
+        &[
+            ("Kits/p1/kit.png", "kit.png"),
+            ("Portraits/05.png", "portrait.png"),
+        ],
+    );
+
+    let portrait = "common/render/symbol/player/71405.dds".to_owned();
+    for name in [kit_texture("u0714p1"), portrait] {
+        assert!(
+            png_entries.contains_key(&name),
+            "premise: the PNGs make {name}"
+        );
+    }
+    assert_eq!(jxl_findings, png_findings);
+    assert_eq!(jxl_exit_code, png_exit_code);
+    assert_eq!(
+        jxl_entries.keys().collect::<Vec<_>>(),
+        png_entries.keys().collect::<Vec<_>>()
+    );
+    for (name, bytes) in &png_entries {
+        assert!(jxl_entries[name] == *bytes, "{name} differs");
+    }
 }
 
 /// The paths of the CPK the sandbox's last `compile` wrote.

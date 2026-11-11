@@ -232,7 +232,9 @@ fn default_logo_dialog() -> FilePicker {
         rfd::FileDialog::new()
             .add_filter(
                 "Picture",
-                &["png", "jpg", "jpeg", "bmp", "webp", "tga", "tif", "tiff"],
+                &[
+                    "png", "jpg", "jpeg", "bmp", "webp", "tga", "tif", "tiff", "jxl",
+                ],
             )
             .pick_file()
     })

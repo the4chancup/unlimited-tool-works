@@ -30,6 +30,9 @@ What changed for members, release by release, newest first.
   spelled with the old kit token (`u0XXXp1`, `kit6_u0827p0.dds`, `Common/u0XXXp0/`) is
   refused, with a hint to run the export through the Export upgrader, which respells it
   `kit1`, `kitN` or `kitF`. Paths into the game's own folders keep the game's names.
+- **Team compiler and Ruleset editor** — a texture can be a JPEG XL file (`.jxl`), which
+  compiles exactly as the same picture saved as a PNG does, so no PNG copy is needed; the
+  Ruleset editor's Event logo can be one too.
 
 ### Fixes
 

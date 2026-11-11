@@ -98,7 +98,8 @@ fn decode_and_convert(
         | SourceFormat::Bmp
         | SourceFormat::WebP
         | SourceFormat::Tga
-        | SourceFormat::Tiff => return crate::convert(&crate::decode(bytes, format)?, target),
+        | SourceFormat::Tiff
+        | SourceFormat::Jxl => return crate::convert(&crate::decode(bytes, format)?, target),
     };
     if let Some(output) = dds::pass_through(&dds_bytes, target)? {
         return Ok(output);

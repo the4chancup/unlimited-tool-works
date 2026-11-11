@@ -38,6 +38,9 @@ image = { version = "0.25.10", default-features = false, features = ["png", "jpe
 # draw-rate cap come with it.
 indicatif = { version = "0.18.6", default-features = false }
 indexmap = "2.14.2"
+# JPEG XL texture sources in `dds_convert`. Pinned exact: the decoder's API is still pre-1.0
+# and changes between minors.
+jxl = "=0.8.0"
 log = "0.4.34"
 md-5 = "0.11.0"
 minidump = "0.27.0"

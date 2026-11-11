@@ -403,14 +403,3 @@ TC-TEX-21  GIVEN TC-TEX-05's export and PES folder, only 4cc_63_midcup.cpk (list
                 hair path, the same line as with no PES folder, and the CPK holds slot 05's
                 face package (restates TC-TEX-05's second case)
 ```
-
-**0.0.2a scope.** JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)").
-
-```
-TC-TEX-22  GIVEN a /co/ export holding p1/kit.jxl and Portraits/05.jxl, lossless JPEG XL
-                 files of a kit.png and a portrait.png; and the same export holding those two
-                 PNGs instead
-           WHEN each is compiled for PES 21
-           THEN the first reports exactly the second's findings, and the two CPKs hold the
-                same entries byte for byte, u0714p1.ftex and 71405.dds among them
-```

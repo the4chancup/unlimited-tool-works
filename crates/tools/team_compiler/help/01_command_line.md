@@ -34,7 +34,7 @@ left out. A player
 with both gets one portrait when the two files are identical, while two that differ are the
 line `portrait_conflict` and the whole export is skipped, since the compiler cannot tell which
 one is meant. A texture (a player's, a shared folder's, a Common one, a kit's or a
-portrait) can be a `.dds`, `.ftex`, `.png`, `.jpg`, `.bmp`, `.webp`, `.tga` or `.tif` file
+portrait) can be a `.dds`, `.ftex`, `.png`, `.jpg`, `.bmp`, `.webp`, `.tga`, `.tif` or `.jxl` file
 (`.jpeg` and `.tiff` work too). Each
 is converted to what the chosen PES version reads: BC3, or BC1 when the image has no
 transparency at all. A `.dds` or `.ftex` stored uncompressed stays uncompressed on every

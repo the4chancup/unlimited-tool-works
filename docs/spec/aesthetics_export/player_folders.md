@@ -23,7 +23,7 @@ Players/
 │   ├── Crocs.boots           (link file: references Boots/Crocs/, shared with other players)
 │   ├── glove_l.fmdl
 │   ├── glove_r.fmdl
-│   ├── *.dds / *.ftex / *.png / *.jpg / *.bmp / *.webp / *.tga / *.tiff
+│   ├── *.dds / *.ftex / *.png / *.jpg / *.bmp / *.webp / *.tga / *.tiff / *.jxl
 │   │                         (textures: any image format, referenced by stem; interchangeable)
 │   ├── materials.toml        (glTF models only: PES material properties keyed by material name;
 │   │                          the catch-all applies to all glTFs in the folder. Optional
