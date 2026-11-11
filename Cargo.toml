@@ -39,8 +39,10 @@ image = { version = "0.25.10", default-features = false, features = ["png", "jpe
 indicatif = { version = "0.18.6", default-features = false }
 indexmap = "2.14.2"
 # JPEG XL texture sources in `dds_convert`. Pinned exact: the decoder's API is still pre-1.0
-# and changes between minors.
-jxl = "=0.8.0"
+# and changes between minors. Its default `all-simd` minus AVX-512, which added 0.37 MB to
+# the exe (spec "Accepted image formats"): the decoder picks the best compiled level at run
+# time, so an AVX-512 CPU runs the AVX2 code instead.
+jxl = { version = "=0.8.0", default-features = false, features = ["avx", "neon", "simd128"] }
 log = "0.4.34"
 md-5 = "0.11.0"
 minidump = "0.27.0"

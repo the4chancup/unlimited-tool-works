@@ -16256,3 +16256,8 @@ save's"); worklog issue 2026-11-11.
 Decision: the in-game check answered which lost field broke the kick-off lineup: the team record's manager id (u32 at +4). The writer keeps copying the save's whole records, which carries it; nothing is added for that field alone.
 Why: copying every record byte covers the manager id and any field not yet found; a writer that set only the manager id over zeros would fix this report and lose whatever else the game reads.
 Plan: spec `pes_savefile/operations.md` "A written file's records are the save's" now names the field and the four-file check; the fixed writer's own file waits in QUESTIONS.
+
+## 2026-11-11 — dds_convert — the JPEG XL decoder is built without its AVX-512 level
+Decision: `jxl` is built with its default SIMD levels minus AVX-512 (`avx`, `neon`, `simd128`; `avx` brings SSE4.2), not with its default `all-simd`, and stays the decoder rather than `jxl-oxide`.
+Why: the decoder's 2.9 MB was a lot of exe for one source format; AVX-512 was 0.37 MB of it, and the decoder falls back to AVX2 at run time on a CPU that has it, where a lossy decode measured 132 ms against 136 with every level (a Zen 3 CPU, which cannot run AVX-512 itself, so its gain there is unmeasured). `jxl-oxide` was no way to save more: it adds what `jxl` with SSE4.2 alone adds (2.2 MB) and decodes 1.4 to 2.1 times slower. SSE4.2 alone would save 0.4 MB more at a 15% slower lossy decode; the maintainer chose to drop AVX-512 only.
+Plan: `spec/libs/dds_convert.md` "Accepted image formats" (the JPEG XL row and paragraph), `spec/core/README.md` the `jxl` row.

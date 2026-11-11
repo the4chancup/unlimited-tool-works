@@ -139,7 +139,7 @@ format. Two image files with the same stem but different extensions is a conflic
 | WebP | `image` crate | `.webp` | Pure Rust |
 | TGA | `image` crate | `.tga` | Pure Rust, under `image`'s default allocation limit. A TGA 2.0 extension declaring premultiplied alpha (attributes type 4) is un-multiplied like TIFF's; alpha that is 0 in every pixel is read as opaque, as texconv does by default. 16-bit TGA (5-bit primaries) is refused with a resave message, since `image` drops its alpha bit and DirectXTex keeps it; interleaved TGA is refused, as DirectXTex does |
 | TIFF | `image` crate | `.tif`, `.tiff` | Pure Rust; Photoshop users. Associated (premultiplied) alpha, `ExtraSamples = 1`, is un-multiplied after the decode, at the source's precision (f32 for float samples, 16 bits otherwise; the tag is read with `tiff`, the crate `image` decodes through) |
-| JPEG XL | `jxl` crate | `.jxl` | Pure Rust (Google's decoder). Costs a compile more than a PNG: 492 ms of CPU for a lossless 2048 × 2048 RGBA texture, 155 ms for a lossy one, against 24 ms for its PNG; the decoder adds 2.8 MiB to the exe (44,051,968 to 47,010,816 bytes, 2.4 MiB of it the `jxl` crates' code, measured with `cargo bloat`) |
+| JPEG XL | `jxl` crate | `.jxl` | Pure Rust (Google's decoder). Costs a compile more than a PNG: 492 ms of CPU for a lossless 2048 × 2048 RGBA texture, 155 ms for a lossy one, against 24 ms for its PNG; the decoder adds 2.5 MiB to the exe (44,051,968 to 46,644,736 bytes, built without its AVX-512 level; 47,010,816 with it) |
 
 **JPEG XL.** `.jxl` is decoded to the same straight-alpha RGBA8 as a PNG and converted on
 the same path, so what the game reads does not change. Authors' tools have taken it up
@@ -160,7 +160,14 @@ alpha with alpha 255, 8-bit samples as stored, and alpha the file stores premult
 divided out. Samples of more than 8 bits, and a lossy file's (its pixels are computed in
 floating point), are rounded to 8 bits by the decoder after an ordered dither of under half
 a level, as libjxl renders 8 bits: a sample can land one level away from the plain rounding
-`image` gives a 16-bit PNG, while 0 and full scale stay exact. A lossy (XYB) file is
+`image` gives a 16-bit PNG, while 0 and full scale stay exact. The decoder is built with
+every SIMD level but AVX-512 (SSE4.2 and AVX2 on x86-64, NEON, WebAssembly SIMD) and picks the
+best one the CPU has at run time; AVX-512 added 0.37 MB to the exe. On the 2048 × 2048
+texture, one thread of a Zen 3 CPU (which has no AVX-512): a lossless decode takes 466 ms
+whatever the level, a lossy one 132 ms with AVX2, 153 ms with SSE4.2 alone and 225 ms with
+none; `jxl-oxide`, which adds to the exe what `jxl` with SSE4.2 alone adds, takes 643 and
+325 ms (measured 2026-11-11). A lossy file's pixels depend on the level, so the same file can
+compile a level apart on two CPUs; a lossless file's do not. A lossy (XYB) file is
 rendered to the colour space its header declares, or to sRGB when that is an ICC profile,
 as libjxl renders it; a lossless one keeps the colour space it stores, as a PNG's decode
 does. An animated file gives its first frame. The header is the decoder's own read up to its
