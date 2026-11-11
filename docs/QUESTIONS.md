@@ -61,17 +61,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## The PES 2017 Texport's empty starting lineup
 
-- **Which lost field empties the lineup.** A tester's PES 2017 Texport from the save editor
-  (0.0.2-poc.1) imports and shows its players in Edit, but the kick-off screen's "Starting
-  Lineup" lists nobody (worklog issue of 2026-11-11). Four files in
-  `.tmp/report17/proof/<variant>/TEXPORT00000004`, each built from the game's own
-  `TEXPORT00000002` (/4cccc/, team 772): `A_current_writer` (rebuilt by the editor's writer),
-  `B_manager_id` (A with the team's manager id restored), `C_player_id_copy` (A with every
-  player's second id copy restored), `D_game_file_resalted` (the game's file, control). For
-  each: import it onto 772, pick /4cccc/ for a match, and say whether the kick-off screen lists
-  the starting eleven. The fix copies every field anyway (landed 2026-11-11); the answer says
-  whether A reproduces the report and which field the game needs. The fix's own check: a
-  Texport of /4cccc/ exported by the next build's save editor lists the starting eleven.
+- **The fixed writer's file.** The field the game needs is the manager id (answered
+  2026-11-11: `spec/pes_savefile/operations.md`, "A written file's records are the save's").
+  `.tmp/report17/proof/E_fixed_writer/TEXPORT00000004` is team 772 of the PES 2017 save
+  (now /qst/, manager id 772) as the fixed save editor writes it. Import it onto 772, pick
+  the team for a match, and say whether the kick-off screen shows the starting eleven with
+  their names and stats.
 
 ## After the release
 

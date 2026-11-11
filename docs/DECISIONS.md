@@ -16251,3 +16251,8 @@ which one the lineup needs (the in-game check, QUESTIONS, says which); a templat
 or patched constants would cover only the ones measured.
 Plan: `plans/pes_savefile/operations.md` "Texport (read + write)" ("The records are the
 save's"); worklog issue 2026-11-11.
+
+## 2026-11-11 — pes_savefile — the PES 2017 lineup needs the team's manager id; the writer stays as it is
+Decision: the in-game check answered which lost field broke the kick-off lineup: the team record's manager id (u32 at +4). The writer keeps copying the save's whole records, which carries it; nothing is added for that field alone.
+Why: copying every record byte covers the manager id and any field not yet found; a writer that set only the manager id over zeros would fix this report and lose whatever else the game reads.
+Plan: spec `pes_savefile/operations.md` "A written file's records are the save's" now names the field and the four-file check; the fixed writer's own file waits in QUESTIONS.

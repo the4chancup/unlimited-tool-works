@@ -8732,8 +8732,8 @@ points there.
   encoded the records onto zeros, losing the team's manager id, its coach record, tactics
   values and each player's second id copy. It now writes onto the open save's own records
   (17-21), the coach block being the save's coach record for the manager id (spec "Texport
-  (read + write)"). Not yet seen in game: QUESTIONS "The PES 2017 Texport's empty starting
-  lineup" holds the check, and which field the lineup needed.
+  (read + write)"). In game (2026-11-11) the field is the manager id; the fixed writer's own
+  file waits on QUESTIONS "The PES 2017 Texport's empty starting lineup".
 
 - open (2026-11-11) — `scripts/derive_savefile_schema.py` no longer reproduces `schema/fields.rs`
   (from `Tools_4cc/4ccEditor-1` or `DBC7-Editor`): the file was edited by hand after it was
