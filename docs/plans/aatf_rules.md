@@ -123,7 +123,12 @@ drop that would leave a line outside them, showing a no-entry sign on the held s
 maintainer's looks, 2026-11-12, PES 2017's stock screen, both limits of each line; the
 second reading had inferred, wrongly, that nothing in the screens counts lines). They are
 the limits the match-time rewrite holds a formation to, so the game enforces one rule in
-two places. Still open before anything is built: whether the game's
+two places. A sixth clause refuses overlapping starters (the maintainer, 2026-11-12): the
+stock screen cannot put one starter on another, since a drop on a teammate exchanges the
+two, so two starters of a set never stand closer than the distance at which the drop takes
+the pointer to be over a teammate. That distance is still to read (the exe's teammate
+detection at `0x43134c9`, and what `team_widgets`' pitch uses for the same swap). Still
+open before anything is built: that distance; whether the game's
 own formations (each team's in its data, the preset list) pass the clauses, since what
 the game ships is no tool's work; and what the stock screen does with a formation breaking
 one clause (Pending looks). Until they are read and each is looked at in game under the stock exe, nothing

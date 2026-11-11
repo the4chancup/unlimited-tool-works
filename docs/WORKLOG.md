@@ -1916,7 +1916,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the limits, from the maintainer's looks, 2026-11-12: forwards 1 to 5, midfielders
       1 to 6, defenders 2 to 5, each a refused drop; where the exe decides it is unread
       and not needed for the check
-    - [ ] the game's own formations under the four clauses: each team's in PES 2017's data
+    - [ ] the sixth clause's distance (the maintainer, 2026-11-12: overlapping starters are
+      refused too, the stock drop on a teammate being a swap): how close the drop's
+      teammate detection lets two starters stand, from the exe (`0x43134c9`) and
+      `team_widgets`' pitch
+    - [ ] the game's own formations under the six clauses: each team's in PES 2017's data
       and the preset list, then the cup saves, tallied by clause
     - [ ] each clause looked at in game under the stock exe (Pending looks)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one

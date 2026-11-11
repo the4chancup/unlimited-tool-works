@@ -16394,3 +16394,14 @@ The limits are the ones the match-time rewrite enforces, so the reading of the e
 screen agree on the numbers; where the screen's refusal sits in the exe is unread, and the
 check does not need it.
 Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c.
+
+## 2026-11-12 — aatf — The illegal formation test refuses overlapping starters
+Decision (the maintainer): "we should also refuse overlapping players since those can't be
+obtained in the game's formation editor." The test's sixth clause: within a formation set no
+two starters stand closer than the stock drop allows, the distance at which it takes the
+pointer to be over a teammate and exchanges the two instead of placing one on the other.
+Why: the definition of the same day, a formation only a tool outside PES can make; the
+patched exe and 4ccEditor both write two starters on one spot or a unit apart (worklog
+cv14g's save held two CMFs on one spot).
+Open: the distance itself, to read from the exe's teammate detection and the editor's pitch.
+Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c.
