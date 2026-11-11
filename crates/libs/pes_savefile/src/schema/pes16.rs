@@ -727,6 +727,7 @@ pub(crate) static PES16: VersionSchema = VersionSchema {
         count_offset: 0x38,
     },
     team: &TEAM,
+    coaches: None,
     rosters: SectionLayout {
         offset: 0x4fcc6c,
         count_offset: 0x38,

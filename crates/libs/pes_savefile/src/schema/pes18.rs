@@ -814,6 +814,10 @@ pub(crate) static PES18: VersionSchema = VersionSchema {
         count_offset: 0x64,
     },
     team: &TEAM,
+    coaches: Some(SectionLayout {
+        offset: 0x40a35c,
+        count_offset: 0x66,
+    }),
     rosters: SectionLayout {
         offset: 0x46ff54,
         count_offset: 0x64,

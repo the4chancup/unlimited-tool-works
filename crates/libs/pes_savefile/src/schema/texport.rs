@@ -20,8 +20,6 @@ pub struct TexportLayout {
     pub size: usize,
     /// The fixture's header, the writer's template.
     pub header: [u8; 0x30],
-    /// The fixture's coach block minus the id, the writer's template.
-    pub coach: [u8; 88],
     /// The file's last 12 bytes.
     pub tail: [u8; 12],
 }
@@ -63,29 +61,12 @@ const fn digit(c: u8) -> u8 {
     }
 }
 
-/// The 88-byte coach block `team id (u32) | 4 constant bytes | flag |
-/// "MANAGER" | zeros`, the id left zero (patched at write).
-const fn coach(flag: u8) -> [u8; 88] {
-    let mut out = [0u8; 88];
-    out[4] = 0xe7;
-    out[6] = 0xff;
-    out[7] = 0xff;
-    out[8] = flag;
-    let mut i = 0;
-    while i < 7 {
-        out[9 + i] = b"MANAGER"[i];
-        i += 1;
-    }
-    out
-}
-
 static PES18: TexportLayout = TexportLayout {
     key_index: 0x12,
     size: 0x1FC0,
     header: hex(
         "1700010050000000701f0000062900000000000000000000000000000000000038000000000000000000000000000000",
     ),
-    coach: coach(0x61),
     tail: hex("000000000000000001000000"),
 };
 
@@ -95,7 +76,6 @@ static PES19: TexportLayout = TexportLayout {
     header: hex(
         "170001005000000060250000682900000400000004000000000000000000000027000000000000000000000000000000",
     ),
-    coach: coach(0x60),
     tail: hex("000000000400000001000000"),
 };
 
@@ -108,7 +88,6 @@ static PES20: TexportLayout = TexportLayout {
     header: hex(
         "180001005000000058390000312a00000000000000000000000000000000000017000000000000000000000000000000",
     ),
-    coach: coach(0x00),
     tail: hex("000000000000000001000000"),
 };
 
@@ -118,7 +97,6 @@ static PES21: TexportLayout = TexportLayout {
     header: hex(
         "180001005000000094390000742700000000000000000000000000000000000019000000000000000000000000000000",
     ),
-    coach: coach(0x00),
     tail: hex("000000000000000001000000"),
 };
 
@@ -136,14 +114,11 @@ pub(crate) struct TexportPes17 {
     pub marker_at: usize,
     /// The marker.
     pub marker: [u8; 4],
-    /// The coach block, the team id at 0..4 left zero (patched at write).
-    pub coach: [u8; 88],
     /// The payload's last 8 bytes.
     pub tail: [u8; 8],
 }
 
-/// Measured on ten real PES 2017 files. The coach block is the
-/// variant real files pair with the header's `0x27d8` at 0x0C.
+/// Measured on ten real PES 2017 files.
 pub(crate) static PES17: TexportPes17 = TexportPes17 {
     size: 0x551FD0,
     header: hex(
@@ -151,22 +126,8 @@ pub(crate) static PES17: TexportPes17 = TexportPes17 {
     ),
     marker_at: 0x10050,
     marker: hex("01000000"),
-    coach: pes17_coach(),
     tail: hex("0400000001000000"),
 };
-
-/// PES 2017's coach block: `00000000d700ffff614d616e61676572` (the id,
-/// 4 constant bytes, the flag `0x61`, `Manager`), then 72 zero bytes.
-const fn pes17_coach() -> [u8; 88] {
-    let head: [u8; 16] = hex("00000000d700ffff614d616e61676572");
-    let mut out = [0u8; 88];
-    let mut i = 0;
-    while i < head.len() {
-        out[i] = head[i];
-        i += 1;
-    }
-    out
-}
 
 /// Whether `Texport::new` writes a `version` file: PES 2017 from its
 /// template, 2018 to 2021 from their layouts. PES 2015 and 2016 have no

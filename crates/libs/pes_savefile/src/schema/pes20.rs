@@ -1126,6 +1126,10 @@ pub(crate) static PES20: VersionSchema = VersionSchema {
         count_offset: 0x64,
     },
     team: &TEAM,
+    coaches: Some(SectionLayout {
+        offset: 0x94dddc,
+        count_offset: 0x66,
+    }),
     rosters: SectionLayout {
         offset: 0x9ccc04,
         count_offset: 0x64,
@@ -1152,6 +1156,10 @@ pub(crate) static PES21: VersionSchema = VersionSchema {
         count_offset: 0x64,
     },
     team: &TEAM_21,
+    coaches: Some(SectionLayout {
+        offset: 0x958da4,
+        count_offset: 0x66,
+    }),
     rosters: SectionLayout {
         offset: 0x9d4648,
         count_offset: 0x64,

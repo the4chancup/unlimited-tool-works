@@ -782,14 +782,14 @@ VERSIONS = {
              roster="fill_team_rosters16", tactics="fill_team_tactics16",
              layouts={"Pes16": dict(players=(0x4C, 0x34), appearance=(0x2AB9CC, 0x36), teams=(0x46310C, 0x38), rosters=(0x4FCC6C, 0x38), tactics=(0x51F814, 0x38))}),
     17: dict(player="fill_player_entry17", team="fill_team_ids17", roster="fill_team_rosters17", tactics="fill_team_tactics17",
-             layouts={"Pes17": dict(players=(0x78, 0x5C), teams=(0x3C3E58, 0x60), rosters=(0x475A90, 0x60), tactics=(0x490640, 0x60))}),
+             layouts={"Pes17": dict(players=(0x78, 0x5C), teams=(0x3C3E58, 0x60), coaches=(0x410118, 0x62), rosters=(0x475A90, 0x60), tactics=(0x490640, 0x60))}),
     18: dict(player="fill_player_entry18", team="fill_team_ids18", roster="fill_team_rosters18", tactics="fill_team_tactics18",
-             layouts={"Pes18": dict(players=(0x7C, 0x60), teams=(0x3C3E5C, 0x64), rosters=(0x46FF54, 0x64), tactics=(0x488B74, 0x64))}),
+             layouts={"Pes18": dict(players=(0x7C, 0x60), teams=(0x3C3E5C, 0x64), coaches=(0x40A35C, 0x66), rosters=(0x46FF54, 0x64), tactics=(0x488B74, 0x64))}),
     19: dict(player="fill_player_entry19", team="fill_team_ids19", roster="fill_team_rosters19", tactics="fill_team_tactics19",
-             layouts={"Pes19": dict(players=(0x7C, 0x60), teams=(0x5BCC7C, 0x64), rosters=(0x6773C4, 0x64), tactics=(0x69EC8C, 0x64))}),
+             layouts={"Pes19": dict(players=(0x7C, 0x60), teams=(0x5BCC7C, 0x64), coaches=(0x5FECBC, 0x66), rosters=(0x6773C4, 0x64), tactics=(0x69EC8C, 0x64))}),
     20: dict(player="fill_player_entry20", team="fill_team_ids20", team21="fill_team_ids21", roster="fill_team_rosters20", tactics="fill_team_tactics20",
-             layouts={"Pes20": dict(players=(0x7C, 0x60), teams=(0x8ED2FC, 0x64), rosters=(0x9CCC04, 0x64), tactics=(0xA01E3C, 0x64)),
-                      "Pes21": dict(players=(0x7C, 0x60), teams=(0x8ED2FC, 0x64), rosters=(0x9D4648, 0x64), tactics=(0xA09880, 0x64))}),
+             layouts={"Pes20": dict(players=(0x7C, 0x60), teams=(0x8ED2FC, 0x64), coaches=(0x94DDDC, 0x66), rosters=(0x9CCC04, 0x64), tactics=(0xA01E3C, 0x64)),
+                      "Pes21": dict(players=(0x7C, 0x60), teams=(0x8ED2FC, 0x64), coaches=(0x958DA4, 0x66), rosters=(0x9D4648, 0x64), tactics=(0xA09880, 0x64))}),
 }
 
 
@@ -860,6 +860,10 @@ def version_rs(version, spec, walks):
             body.append("    appearance: None,")
         body.append(f"    teams: SectionLayout {{ offset: {lay['teams'][0]:#x}, count_offset: {lay['teams'][1]:#x} }},")
         body.append(f"    team: &{'TEAM_21' if name == 'Pes21' else 'TEAM'},")
+        if "coaches" in lay:
+            body.append(f"    coaches: Some(SectionLayout {{ offset: {lay['coaches'][0]:#x}, count_offset: {lay['coaches'][1]:#x} }}),")
+        else:
+            body.append("    coaches: None,")
         body.append(f"    rosters: SectionLayout {{ offset: {lay['rosters'][0]:#x}, count_offset: {lay['rosters'][1]:#x} }},")
         body.append("    roster: &ROSTER,")
         body.append(f"    tactics: SectionLayout {{ offset: {lay['tactics'][0]:#x}, count_offset: {lay['tactics'][1]:#x} }},")

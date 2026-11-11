@@ -20,18 +20,18 @@ use crate::codec::{
     write_player, write_roster, write_tactics, write_team,
 };
 use crate::container::{ContainerError, MasterKey, SaveContainer, Scheme};
+use crate::file::TeamRecords;
 use crate::model::player::PlayerEntry;
 #[cfg(test)]
 use crate::model::player::STRIPPED_APPEARANCE_ID;
 use crate::model::team::TeamEntry;
 use crate::schema::texport::{PES17, TexportLayout, TexportOld, texport_layout, texport_old};
-use crate::schema::{VersionSchema, schema_for};
+use crate::schema::{COACH_RECORD_SIZE, VersionSchema, schema_for};
 
 /// The 18-21 key sits at 0x30; the body it encrypts starts at 0x50.
 const KEY: usize = 0x30;
 const HEADER: usize = 0x50;
-/// The coach block's byte length and the unmodeled block's after tactics.
-const COACH: usize = 88;
+/// The unmodeled block's byte length after tactics.
 const BLOCK: usize = 660;
 const TAIL: usize = 12;
 
@@ -111,6 +111,26 @@ pub enum TexportError {
         /// The tactics record's id.
         tactics: u32,
     },
+    /// `new` was handed no coach record: the team's manager id names none
+    /// in the save. The game's own Texports always carry the team's coach
+    /// record, so there is no stand-in to write.
+    #[error("team {team}'s manager {manager} has no coach record in the save")]
+    NoCoach {
+        /// The team's id.
+        team: u32,
+        /// The manager id, the team record's u32 at +4.
+        manager: u32,
+    },
+    /// A save record handed to `new` is not its record kind's size.
+    #[error("the {record} record is {actual} bytes, not {expected}")]
+    RecordSize {
+        /// The record kind (`team`, `coach`, `roster`, `tactics`, `player`).
+        record: &'static str,
+        /// The version's size of that record.
+        expected: usize,
+        /// The slice's length.
+        actual: usize,
+    },
 }
 
 /// The little-endian u32 id at a record's start.
@@ -135,7 +155,7 @@ impl Offsets {
     fn of(layout: &TexportLayout, schema: &VersionSchema) -> Offsets {
         let team = HEADER;
         let coach = team + schema.team.size;
-        let roster = coach + COACH;
+        let roster = coach + COACH_RECORD_SIZE;
         let tactics = roster + schema.roster.size;
         let players = tactics + schema.tactic.size + BLOCK;
         let body = layout.size - TAIL - players;
@@ -262,8 +282,8 @@ fn slot_records<'a>(
 }
 
 /// The record writer of `new` and of `to_bytes`, PES 2017 to 2021 both:
-/// team, the coach block's id, roster, tactics and each filled
-/// roster slot's player record into `plain`; every other byte is kept as it
+/// team, roster, tactics and each filled roster slot's player record into
+/// `plain`; every other byte, the coach block's included, is kept as it
 /// was. `players` must be the filled slots' records in roster order
 /// (`RosterMismatch` on an id or count disagreement).
 fn write_records<'a>(
@@ -278,7 +298,6 @@ fn write_records<'a>(
         &mut plain[off.team..off.team + schema.team.size],
         schema.team,
     )?;
-    plain[off.coach..off.coach + 4].copy_from_slice(&team.id.to_le_bytes());
     write_roster(
         team,
         &mut plain[off.roster..off.roster + schema.roster.size],
@@ -308,25 +327,104 @@ fn write_records<'a>(
     Ok(())
 }
 
+/// `bytes`, a save record of kind `record`, if it is `expected` bytes long.
+fn sized<'a>(
+    record: &'static str,
+    bytes: &'a [u8],
+    expected: usize,
+) -> Result<&'a [u8], TexportError> {
+    if bytes.len() != expected {
+        return Err(TexportError::RecordSize {
+            record,
+            expected,
+            actual: bytes.len(),
+        });
+    }
+    Ok(bytes)
+}
+
+/// A fresh file's records, `new`'s on PES 2017 to 2021: the open save's
+/// own record bytes copied into their regions (the team, the coach record
+/// its manager id names, roster, tactics, and each filled roster slot's
+/// player), then the entries written over them by `write_records`. The
+/// game writes a Texport by copying the save's records whole, and they
+/// hold bytes the codec does not model that the game reads (the team's
+/// manager id among them), so a byte no field covers keeps the save's
+/// value. `players` pairs each entry, in roster order, with its save
+/// record, whose id must be the entry's (`RosterMismatch`).
+fn lay_records(
+    plain: &mut [u8],
+    off: &Offsets,
+    schema: &VersionSchema,
+    team: &TeamEntry,
+    records: &TeamRecords<'_>,
+    players: &[(&PlayerEntry, &[u8])],
+) -> Result<(), TexportError> {
+    let team_record = sized("team", records.team, schema.team.size)?;
+    let coach = records.coach.ok_or(TexportError::NoCoach {
+        team: team.id,
+        manager: record_id(&team_record[4..]),
+    })?;
+    let bases = [
+        (off.team, team_record),
+        (off.coach, sized("coach", coach, COACH_RECORD_SIZE)?),
+        (
+            off.roster,
+            sized("roster", records.roster, schema.roster.size)?,
+        ),
+        (
+            off.tactics,
+            sized("tactics", records.tactics, schema.tactic.size)?,
+        ),
+    ];
+    for (at, bytes) in bases {
+        plain[at..at + bytes.len()].copy_from_slice(bytes);
+    }
+    let entries = players.iter().map(|(player, _)| *player);
+    // `slot_players` pairs every entry in order or refuses, so its pairs
+    // line up with `players`.
+    for ((slot, player), (_, record)) in slot_players(team, entries, off.width)?
+        .into_iter()
+        .zip(players)
+    {
+        let record = sized("player", record, schema.player.size)?;
+        let id = record_id(record);
+        if id != player.id {
+            return Err(TexportError::RosterMismatch {
+                slot,
+                roster: player.id,
+                player: id,
+            });
+        }
+        let at = off.players + slot * schema.player.size;
+        plain[at..at + record.len()].copy_from_slice(record);
+    }
+    write_records(
+        plain,
+        off,
+        schema,
+        team,
+        players.iter().map(|(player, _)| *player),
+    )
+}
+
 /// A fresh 18-21 plaintext: the layout's header, the key `salt[..32]`, the
-/// coach template, a zero 660-byte block, the tail and the records.
+/// records (`lay_records`), a zero 660-byte block and the tail.
 fn ted_plaintext(
     version: PesVersion,
     team: &TeamEntry,
-    players: &[&PlayerEntry],
+    records: &TeamRecords<'_>,
+    players: &[(&PlayerEntry, &[u8])],
     salt: &[u8; 320],
 ) -> Result<Vec<u8>, TexportError> {
     let schema = schema_for(version);
     let layout = texport_layout(version).ok_or(TexportError::NoTemplate(version))?;
     let off = Offsets::of(layout, schema);
-    // The record space is zero-initialised so every unmodeled bit stays 0;
-    // `write_records` patches the coach template's id.
     let mut plain = vec![0u8; layout.size];
     plain[..KEY].copy_from_slice(&layout.header);
     plain[KEY..HEADER].copy_from_slice(&salt[..32]);
-    plain[off.coach..off.coach + COACH].copy_from_slice(&layout.coach);
     plain[layout.size - TAIL..].copy_from_slice(&layout.tail);
-    write_records(&mut plain, &off, schema, team, players.iter().copied())?;
+    lay_records(&mut plain, &off, schema, team, records, players)?;
     Ok(plain)
 }
 
@@ -334,13 +432,15 @@ fn ted_plaintext(
 const PES17_LOGO: &[u8] = include_bytes!("pes17_texport_logo.png");
 
 /// A fresh PES 2017 container: a payload zero but for `PES17`'s template
-/// and the records at `texport_old`'s offsets, under the PES 2017 key. Its
-/// description is `Team Export Data 01` with the team's name at 0x80, the
-/// name the game lists; its identifier is zero but for `TEXPORT` at 64, the
-/// 64 bytes before it differing per file and unchecked by the game.
+/// and the records (`lay_records`) at `texport_old`'s offsets, under the
+/// PES 2017 key. Its description is `Team Export Data 01` with the team's
+/// name at 0x80, the name the game lists; its identifier is zero but for
+/// `TEXPORT` at 64, the 64 bytes before it differing per file and
+/// unchecked by the game.
 fn pes17_container(
     team: &TeamEntry,
-    players: &[&PlayerEntry],
+    records: &TeamRecords<'_>,
+    players: &[(&PlayerEntry, &[u8])],
     serial: &[u8],
 ) -> Result<SaveContainer, TexportError> {
     let schema = schema_for(PesVersion::Pes17);
@@ -350,9 +450,8 @@ fn pes17_container(
     payload[..PES17.header.len()].copy_from_slice(&PES17.header);
     let marker = PES17.marker_at..PES17.marker_at + PES17.marker.len();
     payload[marker].copy_from_slice(&PES17.marker);
-    payload[off.coach..off.coach + COACH].copy_from_slice(&PES17.coach);
     payload[PES17.size - PES17.tail.len()..].copy_from_slice(&PES17.tail);
-    write_records(&mut payload, &off, schema, team, players.iter().copied())?;
+    lay_records(&mut payload, &off, schema, team, records, players)?;
 
     const LABEL: &[u8] = b"Team Export Data 01";
     let mut description = vec![0u8; 384];
@@ -534,27 +633,33 @@ impl Texport {
         })
     }
 
-    /// A fresh file from the version's template: `players` in roster order,
-    /// ids checked against the roster (`RosterMismatch`). On 18-21 the
-    /// layout's header, coach (id patched), zero block and tail, with a key
-    /// from `salt[..32]`. On 17 a PES 2017 container around `PES17`'s
-    /// payload template and the records. `serial` is the writer's serial a
-    /// 15-17 container carries (the open save's, `EditFile::serial`); it is
-    /// unused on 18-21, as `to_bytes` leaves `salt` unused there. 15 and 16
-    /// are `NoTemplate`: write by reading a real file and replacing its
-    /// team and players (`team_mut`/`players_mut`).
+    /// A fresh file written onto the open save's own records: `team` and
+    /// `players` (in roster order, each paired with its save record, ids
+    /// checked against the roster and the record: `RosterMismatch`) are
+    /// written over copies of `records` and the player records, so a byte
+    /// the codec does not model keeps the save's value. The coach block is
+    /// `records.coach` as it is (`NoCoach` when it is `None`); a record of
+    /// the wrong size is `RecordSize`. Around the records, on 18-21 the
+    /// layout's header, a zero 660-byte block and the tail, with a key from
+    /// `salt[..32]`; on 17 a PES 2017 container around `PES17`'s payload
+    /// template. `serial` is the writer's serial a 15-17 container carries
+    /// (the open save's, `EditFile::serial`); it is unused on 18-21, as
+    /// `to_bytes` leaves `salt` unused there. 15 and 16 are `NoTemplate`:
+    /// write by reading a real file and replacing its team and players
+    /// (`team_mut`/`players_mut`).
     pub fn new(
         version: PesVersion,
         team: &TeamEntry,
-        players: &[&PlayerEntry],
+        records: &TeamRecords<'_>,
+        players: &[(&PlayerEntry, &[u8])],
         salt: &[u8; 320],
         serial: &[u8],
     ) -> Result<Texport, TexportError> {
         let file = match version {
             PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
-                File::Ted(ted_plaintext(version, team, players, salt)?)
+                File::Ted(ted_plaintext(version, team, records, players, salt)?)
             }
-            PesVersion::Pes17 => File::Old(pes17_container(team, players, serial)?),
+            PesVersion::Pes17 => File::Old(pes17_container(team, records, players, serial)?),
             PesVersion::Pes15 | PesVersion::Pes16 => {
                 return Err(TexportError::NoTemplate(version));
             }
@@ -568,7 +673,7 @@ impl Texport {
             // save entry's.
             players: players
                 .iter()
-                .map(|p| PlayerEntry {
+                .map(|(p, _)| PlayerEntry {
                     appearance_id: Some(p.id),
                     ..(*p).clone()
                 })
@@ -647,8 +752,7 @@ impl Texport {
     }
 
     /// A PES 2017 container's records, written as `new` writes them
-    /// (`write_records`: the coach block's id, each player's own id at the
-    /// appearance-id slot).
+    /// (`write_records`: each player's own id at the appearance-id slot).
     fn write_pes17(&self, container: &mut SaveContainer) -> Result<(), TexportError> {
         let schema = schema_for(PesVersion::Pes17);
         let old = texport_old(PesVersion::Pes17).expect("PES 2017 has payload offsets");
@@ -719,10 +823,111 @@ impl Texport {
     }
 }
 
+/// A read PES 2017 to 2021 Texport's own records, sliced at its `Offsets`:
+/// the team, coach, roster and tactics records, and each filled roster
+/// slot's player record in roster order. The tests build `new`'s input from
+/// a fixture Texport with it, as the save editor builds it from a save.
+#[cfg(test)]
+pub(crate) fn file_records(texport: &Texport) -> (TeamRecords<'_>, Vec<&[u8]>) {
+    let schema = schema_for(texport.version);
+    let (plain, off) = match &texport.file {
+        File::Ted(plain) => {
+            let layout = texport_layout(texport.version).expect("a ted holds a layout");
+            (plain.as_slice(), Offsets::of(layout, schema))
+        }
+        File::Old(container) => {
+            let old = texport_old(texport.version).expect("an old texport has offsets");
+            let width = texport.team.roster.len();
+            (
+                container.payload.as_slice(),
+                Offsets::pes17(&old, schema, width),
+            )
+        }
+    };
+    let slice = |at: usize, size: usize| &plain[at..at + size];
+    let records = TeamRecords {
+        team: slice(off.team, schema.team.size),
+        coach: Some(slice(off.coach, COACH_RECORD_SIZE)),
+        roster: slice(off.roster, schema.roster.size),
+        tactics: slice(off.tactics, schema.tactic.size),
+    };
+    let players = texport
+        .team
+        .roster
+        .iter()
+        .enumerate()
+        .take(off.width)
+        .filter(|(_, slot)| slot.player_id != 0)
+        .map(|(slot, _)| slice(off.players + slot * schema.player.size, schema.player.size))
+        .collect();
+    (records, players)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::file::EditFile;
     use crate::test_support::{open, test_salt};
+
+    /// `players` each paired with the record at its position in `records`.
+    fn paired<'a>(
+        players: &[&'a PlayerEntry],
+        records: &[&'a [u8]],
+    ) -> Vec<(&'a PlayerEntry, &'a [u8])> {
+        players
+            .iter()
+            .copied()
+            .zip(records.iter().copied())
+            .collect()
+    }
+
+    /// The first team of `file` with a rostered player.
+    fn first_rostered_team(file: &EditFile) -> &TeamEntry {
+        file.teams()
+            .iter()
+            .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
+            .expect("a team with players")
+    }
+
+    /// `team`'s rostered players in roster order, each with his save
+    /// record, as the save editor hands them to `new`.
+    fn save_players<'a>(file: &'a EditFile, team: &TeamEntry) -> Vec<(&'a PlayerEntry, &'a [u8])> {
+        team.roster
+            .iter()
+            .filter(|slot| slot.player_id != 0)
+            .map(|slot| {
+                let id = slot.player_id;
+                let player = file.player(id).expect("the player is in the save");
+                (player, file.player_record(id).expect("his record"))
+            })
+            .collect()
+    }
+
+    /// A written PES 2017 to 2021 file's plaintext (17: the container's
+    /// payload; 18-21: the decrypted file) and its record offsets, for a
+    /// roster `width` slots wide on 17.
+    fn written_plain(version: PesVersion, bytes: &[u8], width: usize) -> (Vec<u8>, Offsets) {
+        let schema = schema_for(version);
+        match texport_layout(version) {
+            Some(layout) => (crypt(bytes, layout), Offsets::of(layout, schema)),
+            None => {
+                let old = texport_old(version).expect("a 15-17 layout");
+                let payload = SaveContainer::decrypt(bytes).expect("decrypts").payload;
+                (payload, Offsets::pes17(&old, schema, width))
+            }
+        }
+    }
+
+    /// The first offset where `written` and `expected` differ, `None` when
+    /// they are equal: an assertion on it names the byte, not two whole
+    /// records.
+    fn first_difference(written: &[u8], expected: &[u8]) -> Option<usize> {
+        written
+            .iter()
+            .zip(expected)
+            .position(|(a, b)| a != b)
+            .or((written.len() != expected.len()).then(|| written.len().min(expected.len())))
+    }
 
     /// The fixture .ted files, one per version.
     const TEDS: [(PesVersion, &[u8]); 4] = [
@@ -768,8 +973,16 @@ mod tests {
                 player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
             }
             let players: Vec<&PlayerEntry> = stripped.iter().collect();
-            let made = Texport::new(version, fixture.team(), &players, &test_salt(), &[])
-                .expect("synthesizes");
+            let (records, player_records) = file_records(&fixture);
+            let made = Texport::new(
+                version,
+                fixture.team(),
+                &records,
+                &paired(&players, &player_records),
+                &test_salt(),
+                &[],
+            )
+            .expect("synthesizes");
             // The stored players are what the file holds: each one's own id,
             // as the game's exports carry it.
             for player in made.players() {
@@ -817,11 +1030,19 @@ mod tests {
         for (version, bytes) in TEDS {
             let fixture = Texport::from_bytes(bytes, None).expect("opens");
             let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
+            let (records, player_records) = file_records(&fixture);
             // The fixture's own key, so the plaintexts compare byte for byte.
             let mut salt = test_salt();
             salt[..32].copy_from_slice(&bytes[KEY..HEADER]);
-            let made =
-                Texport::new(version, fixture.team(), &players, &salt, &[]).expect("synthesizes");
+            let made = Texport::new(
+                version,
+                fixture.team(),
+                &records,
+                &paired(&players, &player_records),
+                &salt,
+                &[],
+            )
+            .expect("synthesizes");
             let out = made.to_bytes(&test_salt()).expect("encodes");
             let layout = texport_layout(version).expect("a layout");
             assert_eq!(out.len(), layout.size, "{version:?}");
@@ -832,20 +1053,39 @@ mod tests {
             assert_eq!(back.players(), fixture.players(), "{version:?} players");
 
             // The non-record regions equal the real file's: the header and
-            // key, the coach block (id patched) and the tail.
+            // key, and the tail. The records, written over the fixture's
+            // own, equal them byte for byte, the coach block included.
             let made_plain = crypt(&out, layout);
             let fixture_plain = crypt(bytes, layout);
-            let off = Offsets::of(layout, schema_for(version));
+            let schema = schema_for(version);
+            let off = Offsets::of(layout, schema);
             assert_eq!(
                 &made_plain[..HEADER],
                 &fixture_plain[..HEADER],
                 "{version:?} header and key"
             );
-            assert_eq!(
-                &made_plain[off.coach..off.coach + COACH],
-                &fixture_plain[off.coach..off.coach + COACH],
-                "{version:?} coach"
+            let mut regions = vec![
+                (off.team, schema.team.size),
+                (off.coach, COACH_RECORD_SIZE),
+                (off.roster, schema.roster.size),
+                (off.tactics, schema.tactic.size),
+            ];
+            regions.extend(
+                fixture
+                    .team()
+                    .roster
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, slot)| slot.player_id != 0)
+                    .map(|(slot, _)| (off.players + slot * schema.player.size, schema.player.size)),
             );
+            for (at, size) in regions {
+                assert_eq!(
+                    first_difference(&made_plain[at..at + size], &fixture_plain[at..at + size]),
+                    None,
+                    "{version:?}: the record at {at:#x}"
+                );
+            }
             // The 660-byte block is written zero, as the game writes it for
             // the 18, 19 and 21 fixtures' teams; the PES 20 fixture's holds
             // five 125-byte runs, so the fixture's block is not compared.
@@ -868,10 +1108,12 @@ mod tests {
         let fixture = Texport::from_bytes(bytes, None).expect("opens");
         let mut players: Vec<&PlayerEntry> = fixture.players().iter().collect();
         players.swap(0, 1);
+        let (records, player_records) = file_records(&fixture);
         let err = Texport::new(
             PesVersion::Pes19,
             fixture.team(),
-            &players,
+            &records,
+            &paired(&players, &player_records),
             &test_salt(),
             &[],
         )
@@ -988,10 +1230,12 @@ mod tests {
             let roster = fixture.team().roster[slot].player_id;
             let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
             assert_eq!(players.last().expect("nonempty").id, roster, "{version:?}");
+            let (records, player_records) = file_records(&fixture);
             let err = Texport::new(
                 version,
                 fixture.team(),
-                &players[..players.len() - 1],
+                &records,
+                &paired(&players[..players.len() - 1], &player_records),
                 &test_salt(),
                 &[],
             )
@@ -1018,8 +1262,17 @@ mod tests {
             let fixture = Texport::from_bytes(bytes, None).expect("opens");
             let mut players: Vec<&PlayerEntry> = fixture.players().iter().collect();
             players.push(players[0]);
-            let err = Texport::new(version, fixture.team(), &players, &test_salt(), &[])
-                .expect_err("a player has no slot");
+            let (records, mut player_records) = file_records(&fixture);
+            player_records.push(player_records[0]);
+            let err = Texport::new(
+                version,
+                fixture.team(),
+                &records,
+                &paired(&players, &player_records),
+                &test_salt(),
+                &[],
+            )
+            .expect_err("a player has no slot");
             // `new` derives the roster width from the layout the same
             // way: the left-over refusal reports it as the slot.
             let off = Offsets::of(
@@ -1105,8 +1358,17 @@ mod tests {
         let bytes = crate::fixtures::pes17_texport();
         let fixture = Texport::from_bytes(&bytes, None).expect("opens");
         let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
+        let (records, player_records) = file_records(&fixture);
+        let players = paired(&players, &player_records);
         for version in [PesVersion::Pes15, PesVersion::Pes16] {
-            let made = Texport::new(version, fixture.team(), &players, &test_salt(), &[]);
+            let made = Texport::new(
+                version,
+                fixture.team(),
+                &records,
+                &players,
+                &test_salt(),
+                &[],
+            );
             assert!(
                 matches!(made, Err(TexportError::NoTemplate(v)) if v == version),
                 "{version:?}: {made:?}"
@@ -1234,14 +1496,17 @@ mod tests {
     }
 
     /// An opened PES 17 texport whose team is re-id'd and renamed through
-    /// `team_mut` is written as `new` writes one: the coach block carries
-    /// the new id and the description, the name the game lists, the new
-    /// name, an old name's longer tail cleared. The fixture is team 736
-    /// `/o/`; /bant/ is team 708.
+    /// `team_mut` is written as `new` writes one: the description, the name
+    /// the game lists, takes the new name, an old name's longer tail
+    /// cleared, and the coach block stays the file's, the coach record the
+    /// team record's manager id (unmodeled, so kept) still names. The
+    /// fixture is team 736 `/o/`; /bant/ is team 708.
     #[test]
-    fn a_pes17_team_edit_reaches_the_coach_block_and_the_description() {
-        // The coach block, right after the 480-byte team record at 0x10054.
-        let coach_at = 0x10234;
+    fn a_pes17_team_edit_reaches_the_description_and_keeps_the_coach_block() {
+        // The 480-byte team record at 0x10054, its manager id at +4, and
+        // the coach block right after it.
+        let manager_at = 0x10054 + 4;
+        let coach = 0x10234..0x10234 + COACH_RECORD_SIZE;
         // The container's label, then `name` at 0x80, zeros to 384 bytes.
         let described = |name: &[u8]| {
             let mut description = b"Team Export Data 03".to_vec();
@@ -1252,10 +1517,12 @@ mod tests {
         };
         let mut bytes = crate::fixtures::pes17_texport();
         let container = SaveContainer::decrypt(&bytes).expect("decrypts");
+        let fixture_coach = container.payload[coach.clone()].to_vec();
+        assert_eq!(record_id(&fixture_coach), 736, "the fixture's coach");
         assert_eq!(
-            record_id(&container.payload[coach_at..]),
+            record_id(&container.payload[manager_at..]),
             736,
-            "the fixture's coach"
+            "the fixture's manager id names its coach"
         );
         assert_eq!(container.description, described(b"/o/"), "the fixture's");
         // To /bant/ (708), then back to /o/ (736), three bytes shorter: a
@@ -1268,9 +1535,14 @@ mod tests {
             bytes = texport.to_bytes(&test_salt()).expect("encodes");
             let container = SaveContainer::decrypt(&bytes).expect("decrypts");
             assert_eq!(
-                record_id(&container.payload[coach_at..]),
-                id,
+                container.payload[coach.clone()],
+                fixture_coach[..],
                 "{name}: the coach"
+            );
+            assert_eq!(
+                record_id(&container.payload[manager_at..]),
+                736,
+                "{name}: the manager id"
             );
             assert_eq!(container.description, described(name.as_bytes()), "{name}");
             let back = Texport::from_bytes(&bytes, None).expect("reopens");
@@ -1418,5 +1690,186 @@ mod tests {
             matches!(err, TexportError::RosterMismatch { slot: 0, .. }),
             "{err:?}"
         );
+    }
+
+    /// A Texport of a team as the save holds it carries the save's own
+    /// records byte for byte: the team record (its manager id at +4
+    /// included), the coach record that id names, the roster, the tactics
+    /// and every rostered player's record.
+    #[test]
+    fn an_unedited_teams_texport_carries_the_saves_records_byte_for_byte() {
+        for version in [
+            PesVersion::Pes17,
+            PesVersion::Pes18,
+            PesVersion::Pes19,
+            PesVersion::Pes20,
+            PesVersion::Pes21,
+        ] {
+            let (file, _) = open(version);
+            let team = first_rostered_team(&file);
+            let records = file.team_records(team.id).expect("the team's records");
+            let coach = records.coach.expect("the team's coach record");
+            let players = save_players(&file, team);
+            let made = Texport::new(
+                version,
+                team,
+                &records,
+                &players,
+                &test_salt(),
+                file.serial(),
+            )
+            .expect("writes");
+            let out = made.to_bytes(&test_salt()).expect("encodes");
+            let (plain, off) = written_plain(version, &out, team.roster.len());
+            let schema = schema_for(version);
+            let region = |at: usize, size: usize| &plain[at..at + size];
+            for (what, written, saved) in [
+                ("team", region(off.team, schema.team.size), records.team),
+                ("coach", region(off.coach, COACH_RECORD_SIZE), coach),
+                (
+                    "roster",
+                    region(off.roster, schema.roster.size),
+                    records.roster,
+                ),
+                (
+                    "tactics",
+                    region(off.tactics, schema.tactic.size),
+                    records.tactics,
+                ),
+            ] {
+                assert_eq!(
+                    first_difference(written, saved),
+                    None,
+                    "{version:?} team {}: the {what} record",
+                    team.id
+                );
+            }
+            let slots = team
+                .roster
+                .iter()
+                .enumerate()
+                .filter(|(_, slot)| slot.player_id != 0);
+            for ((slot, _), (player, saved)) in slots.zip(&players) {
+                let written = region(off.players + slot * schema.player.size, schema.player.size);
+                assert_eq!(
+                    first_difference(written, saved),
+                    None,
+                    "{version:?} player {}",
+                    player.id
+                );
+            }
+        }
+    }
+
+    /// An edit to the team and to a player is written over the save's
+    /// bytes: the file reads back with both, and the team record still
+    /// carries the save's manager id, which no field models.
+    #[test]
+    fn an_edit_is_written_over_the_saves_bytes() {
+        for version in [PesVersion::Pes17, PesVersion::Pes21] {
+            let (file, _) = open(version);
+            let saved = first_rostered_team(&file);
+            let records = file.team_records(saved.id).expect("the team's records");
+            let manager = record_id(&records.team[4..]);
+            assert_ne!(manager, 0, "{version:?}: premise, the save names a manager");
+            let mut players = save_players(&file, saved);
+            let mut team = saved.clone();
+            let mut player = players[0].0.clone();
+            assert_ne!(team.name, "EDITED", "{version:?}");
+            assert_ne!(player.name, "EDITED PLAYER", "{version:?}");
+            team.name = "EDITED".to_string();
+            player.name = "EDITED PLAYER".to_string();
+            players[0].0 = &player;
+            let made = Texport::new(
+                version,
+                &team,
+                &records,
+                &players,
+                &test_salt(),
+                file.serial(),
+            )
+            .expect("writes");
+            let out = made.to_bytes(&test_salt()).expect("encodes");
+            let back = Texport::from_bytes(&out, None).expect("reopens");
+            assert_eq!(back.team().name, "EDITED", "{version:?}");
+            assert_eq!(back.players()[0].name, "EDITED PLAYER", "{version:?}");
+            let (plain, off) = written_plain(version, &out, team.roster.len());
+            assert_eq!(record_id(&plain[off.team + 4..]), manager, "{version:?}");
+        }
+    }
+
+    /// A team whose manager id names no coach record of the save has no
+    /// coach block to carry: `NoCoach` with the team and the manager id. A
+    /// team record one byte short is `RecordSize`.
+    #[test]
+    fn a_team_whose_manager_names_no_coach_is_no_coach() {
+        for version in [PesVersion::Pes17, PesVersion::Pes21] {
+            let (file, _) = open(version);
+            let team = first_rostered_team(&file);
+            let records = file.team_records(team.id).expect("the team's records");
+            let players = save_players(&file, team);
+            let manager = record_id(&records.team[4..]);
+            let no_coach = TeamRecords {
+                coach: None,
+                ..records
+            };
+            let err = Texport::new(version, team, &no_coach, &players, &test_salt(), &[])
+                .expect_err("no coach record");
+            assert!(
+                matches!(
+                    err,
+                    TexportError::NoCoach { team: t, manager: m } if t == team.id && m == manager
+                ),
+                "{version:?}: {err:?}"
+            );
+            let size = schema_for(version).team.size;
+            let short = TeamRecords {
+                team: &records.team[..size - 1],
+                ..records
+            };
+            let err = Texport::new(version, team, &short, &players, &test_salt(), &[])
+                .expect_err("a short team record");
+            assert!(
+                matches!(
+                    err,
+                    TexportError::RecordSize {
+                        record: "team",
+                        expected,
+                        actual,
+                    } if expected == size && actual == size - 1
+                ),
+                "{version:?}: {err:?}"
+            );
+        }
+    }
+
+    /// A rostered player handed another player's save record is refused at
+    /// his slot, naming the record's id.
+    #[test]
+    fn a_player_with_another_players_record_is_a_roster_mismatch() {
+        for version in [PesVersion::Pes17, PesVersion::Pes21] {
+            let (file, _) = open(version);
+            let team = first_rostered_team(&file);
+            let records = file.team_records(team.id).expect("the team's records");
+            let mut players = save_players(&file, team);
+            let (first, other) = (players[0].0.id, record_id(players[1].1));
+            assert_ne!(first, other, "{version:?}: premise, two players");
+            players[0].1 = players[1].1;
+            let slot = team
+                .roster
+                .iter()
+                .position(|slot| slot.player_id != 0)
+                .expect("a filled slot");
+            let err = Texport::new(version, team, &records, &players, &test_salt(), &[])
+                .expect_err("another player's record");
+            assert!(
+                matches!(
+                    err,
+                    TexportError::RosterMismatch { slot: s, roster, player }
+                        if s == slot && roster == first && player == other
+                ),
+                "{version:?}: {err:?}"
+            );
+        }
     }
 }

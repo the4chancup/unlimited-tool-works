@@ -14,7 +14,7 @@ use crate::codec::{
 use crate::container::{ContainerError, SaveContainer};
 use crate::model::player::PlayerEntry;
 use crate::model::team::TeamEntry;
-use crate::schema::{SectionLayout, VersionSchema, schema_for};
+use crate::schema::{COACH_RECORD_SIZE, SectionLayout, VersionSchema, schema_for};
 
 /// An open save: the retained container plus the decoded players and teams.
 #[derive(Clone)]
@@ -25,6 +25,22 @@ pub struct EditFile {
     /// The appearance record index of each player (PES 15/16 only).
     appearance_records: Vec<usize>,
     teams: Vec<TeamEntry>,
+}
+
+/// A team's own record bytes in the open save, as loaded: slices of the
+/// retained payload, so an edit made through `team_mut` is not in them (the
+/// Texport writer writes the entry over them).
+pub struct TeamRecords<'a> {
+    /// The team record.
+    pub team: &'a [u8],
+    /// The coach record the team record's manager id (its u32 at +4) names;
+    /// `None` when the version has no coach section or no record carries
+    /// that id.
+    pub coach: Option<&'a [u8]>,
+    /// The roster record.
+    pub roster: &'a [u8],
+    /// The tactics record.
+    pub tactics: &'a [u8],
 }
 
 /// Why a buffer is not a loadable save, or the save cannot be written.
@@ -275,6 +291,53 @@ impl EditFile {
         self.teams.iter_mut().find(|t| t.id == id)
     }
 
+    /// Team `id`'s own record bytes as loaded, and the coach record its
+    /// manager id names; `None` when the save has no team `id`. The records
+    /// sit where `to_bytes` writes the team: its section's offset plus the
+    /// team's index times the record size.
+    pub fn team_records(&self, id: u32) -> Option<TeamRecords<'_>> {
+        let schema = self.schema;
+        let index = self.teams.iter().position(|t| t.id == id)?;
+        let payload = &self.container.payload;
+        let record = |section: &SectionLayout, size: usize| {
+            let at = section.offset + index * size;
+            &payload[at..at + size]
+        };
+        let team = record(&schema.teams, schema.team.size);
+        Some(TeamRecords {
+            team,
+            coach: self.coach_record(record_id(&team[4..])),
+            roster: record(&schema.rosters, schema.roster.size),
+            tactics: record(&schema.tactics, schema.tactic.size),
+        })
+    }
+
+    /// The coach record whose coach id is `manager`, by a scan of the coach
+    /// section's counted records; `None` when the version has no coach
+    /// section or no counted record inside the payload carries that id.
+    fn coach_record(&self, manager: u32) -> Option<&[u8]> {
+        let section = self.schema.coaches.as_ref()?;
+        let payload = &self.container.payload;
+        let count = payload.get(section.count_offset..section.count_offset + 2)?;
+        let count = u16::from_le_bytes(count.try_into().expect("two bytes"));
+        (0..usize::from(count))
+            .map_while(|i| {
+                let at = section.offset + i * COACH_RECORD_SIZE;
+                payload.get(at..at + COACH_RECORD_SIZE)
+            })
+            .find(|coach| record_id(coach) == manager)
+    }
+
+    /// Player `id`'s own record bytes as loaded (the player record alone, on
+    /// PES 15 and 16 too); `None` when the save has no player `id`. The
+    /// record sits where `to_bytes` writes the player.
+    pub fn player_record(&self, id: u32) -> Option<&[u8]> {
+        let schema = self.schema;
+        let index = self.players.iter().position(|p| p.id == id)?;
+        let at = schema.players.offset + index * schema.player.size;
+        Some(&self.container.payload[at..at + schema.player.size])
+    }
+
     /// Every player and team written back into the retained payload, then
     /// re-encrypted under `salt`. The record order and count are the file's
     /// own (no player or team is added or removed through this API).
@@ -436,6 +499,46 @@ mod tests {
                 .collect::<Vec<_>>(),
             [70101, 70102, 70103, 70104]
         );
+    }
+
+    /// Every team's records are its own (each carries the team's id), and
+    /// on 17-21 its manager id names a coach record of the save, the one
+    /// handed over; every player's record carries his id. PES 15 and 16
+    /// have no coach section.
+    #[test]
+    fn every_teams_manager_id_names_a_coach_record() {
+        for version in FIXTURES {
+            let (file, _) = open(version);
+            for team in file.teams() {
+                let records = file.team_records(team.id).expect("the team's records");
+                for record in [records.team, records.roster, records.tactics] {
+                    assert_eq!(record_id(record), team.id, "{version:?} team {}", team.id);
+                }
+                let manager = record_id(&records.team[4..]);
+                match version {
+                    PesVersion::Pes15 | PesVersion::Pes16 => {
+                        assert!(records.coach.is_none(), "{version:?} team {}", team.id);
+                    }
+                    PesVersion::Pes17
+                    | PesVersion::Pes18
+                    | PesVersion::Pes19
+                    | PesVersion::Pes20
+                    | PesVersion::Pes21 => {
+                        let coach = records.coach.unwrap_or_else(|| {
+                            panic!("{version:?} team {}: no coach {manager}", team.id)
+                        });
+                        assert_eq!(coach.len(), COACH_RECORD_SIZE);
+                        assert_eq!(record_id(coach), manager, "{version:?} team {}", team.id);
+                    }
+                }
+            }
+            for player in file.players() {
+                let record = file.player_record(player.id).expect("the player's record");
+                assert_eq!(record_id(record), player.id, "{version:?}");
+            }
+            assert!(file.team_records(0).is_none(), "{version:?}: no team 0");
+            assert!(file.player_record(0).is_none(), "{version:?}: no player 0");
+        }
     }
 
     /// A save reports its container's serial, the one a PES 2017 Texport

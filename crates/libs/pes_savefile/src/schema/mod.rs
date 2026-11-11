@@ -222,6 +222,10 @@ pub struct SectionLayout {
     pub count_offset: usize,
 }
 
+/// The byte size of a coach record, on every version that has a coach
+/// section.
+pub const COACH_RECORD_SIZE: usize = 88;
+
 /// Every section's layout for one game version.
 pub struct VersionSchema {
     /// The version these tables describe.
@@ -240,6 +244,12 @@ pub struct VersionSchema {
     pub teams: SectionLayout,
     /// The team record layout.
     pub team: &'static RecordSchema<TeamField, TeamText>,
+    /// The coach record section: `COACH_RECORD_SIZE`-byte records sorted
+    /// by coach id (the u32 at +0) and closed by an all-`ff` record, their
+    /// u16 count at `count_offset`. A team record's manager id (its u32 at
+    /// +4) names one of them. `None` on PES 15 and 16, whose coach section
+    /// is not measured.
+    pub coaches: Option<SectionLayout>,
     /// The roster record section.
     pub rosters: SectionLayout,
     /// The roster record layout.
