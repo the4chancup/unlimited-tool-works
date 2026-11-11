@@ -59,6 +59,17 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
 
+## The 0.0.2 cut
+
+- **What the cut waits for.** The handover now opens with the release's blocking path
+  (`RUNBOOK.md` "How the work runs"), and the lead's reading of it for 0.0.2 is: Update now
+  (0.0.2-upd, with the command line's notice and the TLS provider), the in-game check of the
+  PoC bundle, the library checkpoints (0.0.2-chk), then the cut. Which of the other open
+  0.0.2 steps must be in it: the illegal formation check (0.0.2c), the compile profile
+  against Red (0.0.2d), `codegen-units` (0.0.2-cgu), the tester's report (0.0.2-se19), the
+  Save editor asks of 2026-11-03 (cmp, drag, undo, inst, drift, clip, statlbl)? Until
+  answered they wait behind the path above.
+
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
