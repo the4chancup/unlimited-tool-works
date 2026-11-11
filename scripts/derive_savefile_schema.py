@@ -498,7 +498,7 @@ WIDTH_FIXES = {(18, "mo_armd"): 3}
 # none); the three presets sit one preset_stride apart, and PES 21 shares PES
 # 20's tables. "auto_flags": PES 15's three auto-flag bytes, in the order PES
 # 16's derived walk reads them. "team_ids": (field, byte, bit width) of the team
-# record ids the reference reads only from PES 19 on. PES 17 and 18 keep them at
+# record ids the reference reads from PES 19 on at most. PES 17 and 18 keep them at
 # PES 19's offsets: on the reference saves the u32 at +4 equals the team id on 218
 # of 220 PES 17 teams and 200 of 202 PES 18 ones, and the u16 at +10 equals the
 # same team's PES 19 stadium on 198 of 210 and 168 of 202. PES 15 and 16 lack the

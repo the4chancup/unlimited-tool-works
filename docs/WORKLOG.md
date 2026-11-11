@@ -8148,7 +8148,8 @@ briefs, review loops, gates and mutation runs as for any step.
     reference saves (PES 16: 23 values, PES 17's on 166 of 192 teams), a generator measured
     field; the Save editor shows it live on 15/16 (Opus sidekick `sk_st15`, `9975abe6`,
     merge `9ae8e390`; draft `261e166f`; DECISIONS 2026-11-11). Not checked in game;
-    review rounds: SWE-2, then Carbon after 11-15
+    SWE-2 S-st15 r1: 1 accepted (the draft's canned Team TOML), its loop ended; Carbon
+    after 11-15
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
@@ -8175,8 +8176,11 @@ briefs, review loops, gates and mutation runs as for any step.
     (`kit_layout.rs`'s copied `uncompressed` flags; the exact codec per version) and the
     spec's `Decoded` and `Target` shapes; Astra's loop ends. Their rework landed 2026-11-08
     (SWE-2 sidekick, `.tmp/0_0_2/poc/brief_nobc7_fix.md`: uncompressed sources through the
-    layout tests, the exact codec per version, role and alpha, the spec's shapes). Open: the
-    SWE-2 loop over `6834fbdb` and it. The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
+    layout tests, the exact codec per version, role and alpha, the spec's shapes). SWE-2
+    S-nobc7 r1 (2026-11-11): 3 accepted, fixed by a SWE-2 sidekick: `texture_not_div4` skips
+    a pre-Fox texture written uncompressed (DECISIONS 2026-11-11), a test for
+    `common_texture`'s kept layout, the CHANGELOG line; its loop ended, Carbon after 11-15.
+    The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
     and compile clean (about 2 s for both), and the 8 players checked show their own
     faces and bodies
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation

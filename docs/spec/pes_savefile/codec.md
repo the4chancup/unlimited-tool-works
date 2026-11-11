@@ -143,7 +143,7 @@ manager id: their record is PES 17's without its four bytes at +4, so the stadiu
 On the same saves the u16 there equals the same team's PES 19 stadium on 198 of 210 PES 15
 teams (all 220 hold 29, as on PES 17) and 158 of 192 PES 16 ones (23 distinct values over 273
 teams), and PES 17's on 166 of 192; no other even offset from 4 to 16 matches more than once.
-Not checked in game. Variant names are the
+The 15/16 offset is not checked in game. Variant names are the
 readable model names (`TightPossession`, not `tight_pos`); the table module's doc comment says
 which reference walk it was derived from, and this section is the evidence trail. The generator
 is `scripts/derive_savefile_schema.py <reference source dir> <crate>/src/schema`; it is committed so
