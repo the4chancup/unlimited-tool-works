@@ -231,18 +231,17 @@ pub(crate) fn update(
 mod tests {
     use std::collections::BTreeMap;
     use std::fs;
-    use std::sync::{Arc, Mutex};
     use std::time::SystemTime;
 
-    use crossbeam_channel::{Receiver, unbounded};
+    use crossbeam_channel::Receiver;
     use pes_savefile::interchange::aesthetics_patch::{
         ALLOCATION_SCHEME_VERSION, PatchPlayer, PatchTeam, utc_datetime,
     };
     use pes_savefile::settings_toml::AppearanceSettings;
-    use studio_core::{AppPaths, PipelineEvent, PipelineEventEnvelope, Settings, ToolContext};
+    use studio_core::{PipelineEvent, PipelineEventEnvelope};
 
     use super::*;
-    use crate::testing::scratch;
+    use crate::testing::{run_events, scratch};
 
     /// A discovery candidate at `path`.
     fn candidate(path: PathBuf) -> SavefileCandidate {
@@ -263,23 +262,6 @@ mod tests {
             compiled: utc_datetime(0),
             teams: Vec::new(),
         }
-    }
-
-    /// Run events over a context whose channel `rx` reads the emitted messages.
-    fn events() -> (RunEvents, Receiver<PipelineEventEnvelope>) {
-        let settings = Settings::parse("").unwrap();
-        let (events_tx, events_rx) = unbounded();
-        let (requests_tx, _requests_rx) = unbounded();
-        let ctx = ToolContext::new(
-            Arc::new(Mutex::new(settings)),
-            AppPaths {
-                exe_dir: PathBuf::new(),
-                data_dir: None,
-            },
-            events_tx,
-            requests_tx,
-        );
-        (RunEvents::new(&ctx, false), events_rx)
     }
 
     /// The code and context pairs `rx` collected.
@@ -362,7 +344,7 @@ mod tests {
             version: PesVersion::Pes21,
             exe: None,
         }];
-        let (mut events, rx) = events();
+        let (mut events, rx) = run_events(false);
 
         update(
             &mut events,
@@ -416,7 +398,7 @@ mod tests {
                 },
             )]),
         });
-        let (mut events, rx) = events();
+        let (mut events, rx) = run_events(false);
 
         update(
             &mut events,
@@ -450,7 +432,7 @@ mod tests {
             name: "/co/".to_owned(),
             players: BTreeMap::new(),
         });
-        let (mut events, rx) = events();
+        let (mut events, rx) = run_events(false);
 
         update(
             &mut events,
@@ -502,7 +484,7 @@ mod tests {
                 players: slot_05(),
             });
         }
-        let (mut events, rx) = events();
+        let (mut events, rx) = run_events(false);
 
         update(
             &mut events,
@@ -555,7 +537,7 @@ mod tests {
                 },
             )]),
         });
-        let (mut events, rx) = events();
+        let (mut events, rx) = run_events(false);
 
         update(
             &mut events,

@@ -7947,7 +7947,9 @@ briefs, review loops, gates and mutation runs as for any step.
         "Kit-dependent assets", `spec/model_format.md` "Output naming", the draft's catalog);
         TC-STR-22, TC-MOD-107; DECISIONS 2026-11-11 (the upgrader's case-exact match, one
         function in `aesthetics_export`, not the "any case" above)
-      - [ ] the code: Opus sidekick, `.tmp/0_0_2/poc12s4/brief.md`
+      - [ ] the code: Opus sidekick, `.tmp/0_0_2/poc12s4/brief.md`; rework 1
+        (`rework1.md`): a `DropFolder` on a `Common/` subfolder drops its files, and paths
+        are checked only into the export (spec `a28ecd84`, DECISIONS 2026-11-11)
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
@@ -8071,6 +8073,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `team_compiler` `cli.rs`, `events.rs`, `check.rs`, `compile.rs`,
       `output/writer.rs`, `processing/mod.rs`, `tests/cli/compile_exports.rs`; a
       `made_at: None` in each other emitter
+    - [ ] review rounds over ux1a + ux1b (`03ce3612..2ea6e27c`): the SWE-2 and Carbon loops
+      wait for a Devin login (`home` resets 2026-11-15; `work` is on the Free plan). Astra
+      ran meanwhile: A-ux1, 2 accepted (a test of `write_batches`' finish times, the plan's
+      `duplicate_path` timing), its loop ended
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):
