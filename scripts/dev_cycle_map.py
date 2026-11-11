@@ -9,7 +9,7 @@ the mutation runs), each column one stage, left to right.
 import html
 import os
 
-STAGES = ["Plan", "Accept", "Brief", "Build", "Review", "Measure", "Close and release"]
+STAGES = ["Plan", "Accept", "Brief", "Build", "Review", "Measure", "Close", "Release"]
 
 # (key, label, colour variable)
 BANDS = [
@@ -38,7 +38,7 @@ NODES = [
     ("ingame_ok", "In-game look", "maintainer", 5, 0,
      "The maintainer confirms what only the game can show; Edit mode suffices for most looks. "
      "The proof becomes a 'manual: checked' line in the worklog."),
-    ("release", "Release and push", "maintainer", 6, 0,
+    ("release", "Release and push", "maintainer", 7, 0,
      "Pushes and release cuts need the maintainer's OK, and a push is asked for only at a "
      "gated commit; the lead reads CI after it. During 0.x.x a release does not wait for "
      "whole-crate mutation runs: their findings ship in the next release or a patch."),
@@ -61,7 +61,7 @@ NODES = [
     ("spec", "Spec", "docs", 6, 0,
      "docs/spec/: what the suite does now. A closed phase's sections move here from the plans, "
      "acceptance IDs included, as the behavior contract."),
-    ("log", "CHANGELOG, README", "docs", 6, 1,
+    ("log", "CHANGELOG, README", "docs", 7, 0,
      "CHANGELOG.md's [Unreleased] entry for what a member would notice, and the README "
      "brought to the closed phase. The dated log is git log: an event is written in one "
      "place."),
@@ -75,7 +75,7 @@ NODES = [
      "One reviewable slice (about 500 lines at most): reading pointers, exact deliverables, a "
      "Verify list whose every check can fail, and a closing 'Errors hit' section. The "
      "release's blocking path is briefed first; two or three sidekicks run at once."),
-    ("critical", "Correctness-critical code", "lead", 3, 1,
+    ("critical", "Correctness-critical code", "lead", 3, 0,
      "What the lead writes itself because its wrong version passes: fixtures, golden files, "
      "lints, CI, measurements."),
     ("diff_review", "Diff review and sweeps", "lead", 4, 0,
@@ -84,10 +84,10 @@ NODES = [
     ("rulings", "Rulings", "lead", 4, 1,
      "Every reviewer concern is accepted or rejected with a reason. Being true is not enough: "
      "an accepted concern changes a real export, contradicts a rule, or fixes a wrong fact."),
-    ("commit", "Commit", "lead", 5, 0,
+    ("commit", "Commit", "lead", 6, 0,
      "The changed crates' tests, clippy and fmt run, the worklog step collapses to one "
      "line, then git commit -F: the message is the log."),
-    ("converge", "Converge audit", "lead", 6, 0,
+    ("converge", "Converge audit", "lead", 6, 1,
      "Closing a phase: every plan section and acceptance ID checked against the code, then a "
      "design-health pass (sweeps, whole-crate mutation runs, citation audit, pub items). "
      "Every gap becomes a new worklog step, and the phase stays open until those are done."),
@@ -127,16 +127,20 @@ NODES = [
      "references and doc pointers. just checkpoint runs them over everything since the last "
      "gated commit, with mutants-diff, and moves that commit: at a loop's end, a step's "
      "close, a merge, and before a push is asked for."),
-    ("citation", "Citation audit", "checks", 5, 0,
+    ("citation", "Citation audit", "checks", 4, 1,
      "Flags tests whose cited scenario they may not prove; every flag is ruled before a crate's "
      "review."),
-    ("parity", "Library parity vs Red", "checks", 5, 1,
+    ("parity", "Library parity vs Red", "checks", 5, 0,
      "A phase that changes the Team compiler or the Export upgrader recompiles the library and "
      "diagnoses each new difference from Red's output."),
-    ("census", "Census", "checks", 6, 1,
+    ("census", "Census", "checks", 5, 1,
      "A format crate's close reads every file of its format on the machine, round trips and "
      "checks each, and tallies the outcomes. A kept index of the real exports answers a "
      "reviewer's 'does any file do this' in seconds, beside a control count."),
+    ("ci", "CI on the push", "checks", 7, 0,
+     "Every push runs just gates on Linux and on Windows, and a version tag builds the "
+     "release's bundles with their checksums. just checkpoint-status prints its verdict on "
+     "the pushed commit."),
     ("mdiff", "mutants-diff", "mutation", 4, 0,
      "Part of just checkpoint, over the commits since the last gated one: each surviving "
      "mutant is an assertion nobody wrote. Runs here while a whole run holds the VPS."),
@@ -188,6 +192,8 @@ EDGES = [
     ("worklog", "ingame_run"), ("ingame_run", "worklog"), ("parity", "worklog"),
     ("triage", "worklog"),
     ("directives", "plan_write"), ("worklog", "plan_write"), ("converge", "extra"),
+    # A push starts CI; its bundles are what a release publishes.
+    ("release", "ci"), ("ci", "release"),
 ]
 
 LEFT, TOP, COL_W, BOX_W, BOX_H, ROW_TOP, ROW_STEP = 150, 40, 205, 176, 30, 14, 40
