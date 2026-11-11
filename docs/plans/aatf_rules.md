@@ -124,11 +124,14 @@ maintainer's looks, 2026-11-12, PES 2017's stock screen, both limits of each lin
 second reading had inferred, wrongly, that nothing in the screens counts lines). They are
 the limits the match-time rewrite holds a formation to, so the game enforces one rule in
 two places. A sixth clause refuses starters too close together (the maintainer, 2026-11-12): the
-stock screen cannot put one starter on another, a drop on a teammate exchanging the two,
-and it keeps a minimum distance between any two beyond that. The distance is unmeasured:
-the second reading found no spacing rule on the drop's path, so it is taken from a save the
-stock game writes with two starters set as close as the screen allows, side by side and
-one above the other. Still open before anything is built: that distance; whether the game's
+stock screen cannot put one starter on another, since a drop inside a teammate's marker
+exchanges the two. The distance is the one the editor's pitch already swaps at
+(`team_widgets`' `swap_target`: a release inside another marker's box, 50 points wide, 57
+above its centre and 20 below, a unit of x being 2.827 points and one of y 6.793). A pair
+could have been made in either order of dropping, so it is refused only when each starter's
+spot lies in the other's box: no more than 8 units apart across and no more than 2 up or
+down. The keeper's marker takes no swap and is left out. Still open before anything is
+built: whether the game's
 own formations (each team's in its data, the preset list) pass the clauses, since what
 the game ships is no tool's work; and what the stock screen does with a formation breaking
 one clause (Pending looks). Until they are read and each is looked at in game under the stock exe, nothing

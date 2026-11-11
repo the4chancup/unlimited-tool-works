@@ -1916,10 +1916,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the limits, from the maintainer's looks, 2026-11-12: forwards 1 to 5, midfielders
       1 to 6, defenders 2 to 5, each a refused drop; where the exe decides it is unread
       and not needed for the check
-    - [ ] the sixth clause's distance (the maintainer, 2026-11-12: overlapping starters are
-      refused too, and the stock screen keeps a minimum distance): read from a save the
-      stock game writes with two starters as close as the screen allows, side by side
-      and one above the other
+    - [x] the sixth clause (the maintainer, 2026-11-12: overlapping starters are refused,
+      at the distance the editor's pitch already swaps at): two outfield starters no
+      more than 8 units apart across and 2 up or down, each inside the other's marker box
     - [ ] the game's own formations under the six clauses: each team's in PES 2017's data
       and the preset list, then the cup saves, tallied by clause
     - [ ] each clause looked at in game under the stock exe (Pending looks)
