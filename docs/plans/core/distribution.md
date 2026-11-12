@@ -43,9 +43,10 @@ There is no installer. Each release is a `.7z` archive containing:
   `Cargo.lock` gained. Each license appears once: its text, then every crate under it with the
   copyright lines its own copy states, which are what the licenses ask to keep (cargo-about's
   own listing repeats MIT once per copyright line, 117 times for 0.0.1). The workspace's crates
-  are left out, because the two license files cover them. About 70 KB, 18 KB of the archive
+  are left out, because the two license files cover them. `THIRD-PARTY-NOTICES.txt` is about
+  70 KB, 18 KB of the archive.
 
-`just release <version>` (`scripts/release/release.py`, Windows only) builds the exe with
+`just release <version>` (`scripts/release/release.py`), run on Windows, builds the exe with
 `--locked` and stages those files under one top folder, `unlimited-tool-works-<version>/`, so
 "Extract here" makes one folder rather than scattering the files. It packs that folder with
 7-Zip as `unlimited-tool-works-<version>-windows.7z` in the `dist/` folder of cargo's target
@@ -136,59 +137,9 @@ newer distribution.
 
 ### Release builds in CI
 
-A release is built by GitHub Actions, never on a developer's machine, so the binary the
-maintainer checks before publishing is the one members download (a local build and CI's
-differ at least in the linker's timestamps and the toolchain's machine).
+What exists of this is in `spec/core/distribution.md` "Release builds in CI".
 
-The workflow, `.github/workflows/release.yml`, runs `release.py` on `windows-latest` and on
-`ubuntu-22.04`. Each job checks its own binary with the recipe's checks (no build-machine path
-in it, the static C runtime on Windows, the listing equal to the staged set), then:
-
-- **A tag `v<version>`** (a semver: `v0.0.1`, `v0.0.1-rc.1`) whose version is the workspace's
-  creates a **draft** GitHub release named for the tag, marked pre-release when the version has
-  a pre-release part. It holds three assets:
-  - the Windows `.7z`;
-  - the Linux `.tar.gz`;
-  - `SHA256SUMS.txt`, both archives' `sha256sum` lines, the file the updater checks a download
-    against ("Self-update" step 3).
-
-  A draft is visible to the repository's maintainers alone. The maintainer downloads the
-  Windows asset, gives it the look before the cut, writes the notes and publishes it. The notes
-  are the release's body, the text the updater's dialog shows, taken from `CHANGELOG.md`'s
-  section, for every release after 0.0.1 (the file came the day after it).
-- **A push to `ci/release-dry-run`**, or a run started by hand once the workflow is on the
-  default branch (GitHub offers its **Run workflow** button only for a workflow there), builds
-  and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.
-  That is how the workflow itself is tested before a tag relies on it.
-
-Each job also uploads its symbols archive (Windows' `-symbols.7z`, the exe and its `.pdb`;
-Linux's `-linux-symbols.tar.gz`, `utw.debug`) as a run artifact, never a release asset. The
-archive stays with the maintainer, who keeps a copy beside the release's other files, because
-artifacts expire after 90 days and `symbolize_log.py` needs it for as long as the release is in
-use.
-
-Before 0.0.1's tag, one test tag `v0.0.1-rc.1`, pushed from a branch whose workspace version is
-bumped to it, runs the release job once. Its draft pre-release's three assets and their
-checksums are checked, then the draft and the tag are deleted.
-
-No release candidate is published, because a published pre-release is offered to every member
-whose version it outranks (the check reads pre-releases). Update now is therefore tested end to
-end (ST-UPD-04) against releases no member's check reads. The environment variable
-`UTW_RELEASES_URL`, when set, replaces the address the check reads the list of releases from,
-so a test build reads a list served from this PC or a test repository's, whose assets are two
-test bundles. It is a test hook, in no help topic and no settings file, because whoever can set
-a program's environment can already replace the program.
-
-The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the maintainer's PC) before a release is
-published.
-
-The user extracts the archive anywhere and runs the binary. In the common case the user drops
-an export into `exports/` (shipped empty beside the binary) and double-clicks
-`quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted
-data goes (the settings file, state like the skipped-update version, logs) is the user's
-choice, asked once on first run (see "Data location" below). This is the same folder model Red
-uses, minus the ~80MB embedded Python runtime that made Red's updates a folder-replacement
-operation.
+Update now is tested end to end (ST-UPD-04) against releases no member's check reads.
 
 ### Data location: asked on first run
 

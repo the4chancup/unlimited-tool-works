@@ -2218,20 +2218,10 @@ points there.
   `~/studio-mutants/tmp` and set the floor from it (a vital script: its SWE-2 rounds). The
   unrun mutant (`comparator.rs`, `column_offsets -> [0.0; 3]`) was applied by hand here:
   two comparator tests fail on it.
-- open 2026-11-12 (the readability findings' rest, `.tmp/readable/fix_resolutions.md`) —
-  89 of the 112 findings are fixed (`11ec3c6d`) and nine are questions for the maintainer
-  (`QUESTIONS.md` "Sentences the plans and the spec leave open"). Left for the lead, each
-  settled by reading or measuring: (1) `plans/core/distribution.md` "Distribution", the
-  `licenses/` item's "About 70 KB, 18 KB of the archive" (the notices file or the folder:
-  measure a bundle); (2) `spec/export_upgrader.md` step 5, "Reading a Kit Textures file.",
-  what "the copied textures" are and what "misses" means (the kit copy code); (3)
-  `spec/aatf_rules.md` "VGL25", whether Studio's data or the fork's checker tells the
-  goalkeeper and the captain; (4) `spec/team_compiler/README.md` "Development phases", whether
-  Phase 5's "on Fox" covered the default-ID rows and the Midcup shared-IDs record (the Phase 5
-  commits). Seen on the way: `plans/core/distribution.md` "Release builds in CI" describes
-  `release.yml`, which is built, so it belongs in the spec; the same file says `release.py` is
-  "Windows only" in one place and has it pack the Linux bundle in another; and
-  `spec/core/architecture.md`'s `studio_core` module tree has no `widgets/` entry.
+- open 2026-11-12 (the readability findings): `spec/aatf_rules.md`'s sentence that a VGL25
+  goalkeeper rated A at GK is still told of an unused A position comes from reading
+  `crates/libs/aatf/logic/logic.rhai` (`a_positions` makes no goalkeeper exception): no
+  fixture asserts that suggestion. A test with the ruleset's next change.
 - open 2026-11-12 (the readability findings, item 9) — the comments of a kit's generated
   `config.toml` (`crates/libs/kit_config/src/toml_form.rs`, `to_toml`) give the old editor's
   ranges, which the game's fields can exceed (`x  # 0-14` in a field of 0-15). The two that

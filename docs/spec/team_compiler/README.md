@@ -270,8 +270,9 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   on Phase 5's savefile and ID integration), so it runs once those phases land.
 - **Phase 5, savefile integration (done 2026-10-16):** on Fox, every compiled player's
   `PlayerAppearance.bin`, `BootsList.bin` and `GloveList.bin` rows from his resolved
-  `settings.toml`, the default-ID rows, the Midcup shared-IDs record, and the aesthetics patch,
-  written beside the output and applied to the local save in one transaction with the CPKs.
+  `settings.toml`, the default-ID rows, and the aesthetics patch, written beside the output and
+  applied to the local save in one transaction with the CPKs; on every version, the Midcup
+  shared-IDs record.
   The tables went at step 8.36c, and the patch has carried each player's whole look on every
   version since. What `compile` builds is "Phase 5 scope" below. Phase 5 left the pre-Fox patch
   with pre-Fox's other gaps; it landed at step 8.36c.

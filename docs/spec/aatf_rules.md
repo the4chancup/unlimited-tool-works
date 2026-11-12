@@ -717,9 +717,10 @@ Where the data reads differently from `aatf_single_vgl`, on purpose:
 - the checker repeats the bonus suggestion at team level for manlets under 175; here it is
   reported once;
 - the checker checks no registered-position or playing-style range, which `libs/aatf` builds in;
-- two suggestions read differently: a goalkeeper rated A at GK is still told of an unused A
-  position, and a captain without the Captaincy card is told through the `free_cards`
-  suggestion rather than a team-level line.
+- two suggestions read differently here: a goalkeeper rated A at GK is still told of an unused
+  A position, because the interpreter's `a_positions` suggestion treats him as any player, and a
+  captain without the Captaincy card is told through the `free_cards` suggestion, which the
+  data's captain special feeds, rather than a team-level line.
 
 ## VGL26
 

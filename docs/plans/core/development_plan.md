@@ -624,7 +624,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 - Release bundling: Linux tested on a real machine. Both bundles have been built since 0.0.1,
   by a CI workflow on a version tag into a draft GitHub Release, the Linux one's look so far
   taken in WSLg (DECISIONS 2026-11-02 "0.0.1 is built by CI; the release profile stays the
-  default", which overrides 2026-11-01's; see `distribution.md` "Release builds in CI",
+  default", which overrides 2026-11-01's; see `spec/core/distribution.md` "Release builds in CI",
   `distribution.md` "Changelog and version display")
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update` (see `distribution.md` "Distribution and updates")
