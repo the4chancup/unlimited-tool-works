@@ -1910,7 +1910,14 @@ briefs, review loops, gates and mutation runs as for any step.
       helpers gone; six tests for SE-GUI-72, one from PES 2019 to PES 2021. Both of the
       brief's doubts held: a stats document writes what Copy stats writes, a preset and a
       formation survive the document. Not tried in two real windows (look: Pending looks)
-    - [ ] its review rounds (tier 2): SWE-2, then Carbon after 2026-11-15
+    - [ ] its review rounds (tier 2): SWE-2, then Carbon after 2026-11-15. SWE-2 "S-clip
+      r1" 2026-11-12 (three parts): 14 of 18 accepted (`.tmp/duck_rulings.md`): a copy
+      of a Gameplan, preset or formation no longer builds the players' tables, whose odd
+      byte could stop it; eight on the tests (a wrong-kind test green without the kind
+      check, the source preset's index unproven, the Gameplan's expected value built by
+      the code under test, lost premises, helpers copied); SE-GUI-56 and 72 reworded.
+      Rejected: a note after a cross-version paste (`PROPOSALS.md` P54). Rework with the
+      Opus sidekick (`.tmp/0_0_2/clip/rework1.md`, its session resumed), then round 2
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
