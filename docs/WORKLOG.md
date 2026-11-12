@@ -1862,9 +1862,10 @@ briefs, review loops, gates and mutation runs as for any step.
       components" (the row on a menu's and a combo's rows), ST-COMBO-01 reworded,
       ST-COMBO-02 for a toolbar menu. Measured in the draft before and after
       (`.tmp/0_0_2/gap/shot_gap.py`: rows 18 and 3 apart, then 21 and 0; a menu's
-      separator 12 both times). The maintainer's look at `menu_after.png` and
-      `combo_after.png` beside it is pending
-    - [ ] the slice (`studio_core` alone, beside the Save editor's slices); Opus
+      separator 12 both times). The maintainer approved the draft on 2026-11-12
+    - [ ] the slice (Opus; brief `.tmp/0_0_2/gap/brief_gap.md`): `studio_core`'s
+      `widgets/`, and in the Save editor the separators of its menus and of the ruleset
+      picker's list (`menu_separator`, `combo_separator`) and the team dropdown's test
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
