@@ -18,11 +18,11 @@ BUILDERS = ("cc", "cmake")
 # The targets a release is built for (`.github/workflows/release.yml`).
 TARGETS = ("x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu")
 # The crates allowed to depend on a builder, each with the reason a pure-Rust choice falls
-# short; a new one is the maintainer's ruling (`docs/DECISIONS.md`).
+# short; a new one is the maintainer's ruling.
 EXCEPTIONS = {
     "ring": (
         "the update check's TLS crypto (C and assembly): no pure-Rust `rustls` provider is "
-        "fit for the update path yet (DECISIONS 2026-11-12)"
+        "fit for the update path yet (one is a pre-release, the other needs AVX2 and ADX)"
     ),
     "wayland-backend": (
         "compiles no C as built here: its build script calls `cc` only under its `log` "

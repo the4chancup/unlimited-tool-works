@@ -829,9 +829,9 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
-    // ST-SET-05 Two sessions that read the same file: each save writes only the
-    // session's own changes, and a value the other session changed keeps its new
-    // value and its line.
+    // Two sessions that read the same file: each save writes only the session's own
+    // changes, and a value the other session changed keeps its new value and its line.
+    // ST-SET-05
     #[test]
     fn each_sessions_save_writes_only_its_own_changes() {
         let dir = test_dir("studio_core_settings_two_sessions");
@@ -892,7 +892,8 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
-    // ST-SET-05 Two sessions changing the same value leave the later save's.
+    // Two sessions changing the same value leave the later save's.
+    // ST-SET-05
     #[test]
     fn the_later_save_of_the_same_value_wins() {
         let dir = test_dir("studio_core_settings_same_value");
@@ -911,7 +912,8 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
-    // ST-SET-05 A key one session removed stays removed when the other saves.
+    // A key one session removed stays removed when the other saves.
+    // ST-SET-05
     #[test]
     fn a_key_the_other_session_removed_stays_removed() {
         let dir = test_dir("studio_core_settings_removed_key");
