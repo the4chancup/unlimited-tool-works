@@ -391,7 +391,10 @@ pub(super) fn monitor_under(
 /// status bar's condition for drawing the Reset window button: maximized, or
 /// its inner size at zoom 1 (`screen_rect`'s size times the pass's zoom, which
 /// undoes the zoom the rect is expressed in) is not `design` fitted to its
-/// monitor, both rounded to whole points. The position never counts, and a
+/// monitor, both rounded to whole points. The fit counts no smaller than the
+/// window can get (`MIN_SIZE`, or `design` where that is smaller): on a monitor
+/// too small for the minimum the window stays at it, and a button drawn there
+/// would do nothing on every click. The position never counts, and a
 /// frame reporting no monitor or no size leaves nothing to compare, so the
 /// button is not drawn. `inner_rect`, the monitor and the decorations keep
 /// the zoom the input was built with while egui rescales `screen_rect` alone
@@ -415,13 +418,14 @@ pub(super) fn off_design_size(
         .outer_rect
         .map_or(egui::Vec2::ZERO, |outer| outer.size() - inner.size());
     let input_to_zoom_one = zoom * screen.size() / inner.size();
-    (screen.size() * zoom).round()
-        != fitted_size_of(
-            design,
-            monitor * input_to_zoom_one,
-            decorations * input_to_zoom_one,
-        )
-        .round()
+    let fitted = fitted_size_of(
+        design,
+        monitor * input_to_zoom_one,
+        decorations * input_to_zoom_one,
+    );
+    #[cfg(not(target_arch = "wasm32"))]
+    let fitted = fitted.max(MIN_SIZE.min(design));
+    (screen.size() * zoom).round() != fitted.round()
 }
 
 /// What the status bar's Reset window click sends: a maximized window is

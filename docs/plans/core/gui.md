@@ -1540,7 +1540,10 @@ ST-BAR-06   GIVEN a main tool active, the window at 1280 × 780 on a 1920 × 108
             WHEN the status bar is drawn
             THEN it draws no Reset window button; GIVEN the window resized to 1100 × 780,
                  or maximized, THEN the button is drawn; GIVEN a special tool declaring
-                 480 × 640 active, its window at 480 × 640 and moved, THEN no button
+                 480 × 640 active, its window at 480 × 640 and moved, THEN no button;
+                 GIVEN an 800 × 600 monitor and the main window at its minimum,
+                 960 × 600, THEN no button, and resized to 1100 × 700 the button is
+                 drawn
 ST-BAR-05   GIVEN a main tool active, the window maximized on a 1920 × 1080 monitor
             WHEN Reset window is clicked
             THEN the window is restored and asked for 1280 × 780, centered on that monitor;

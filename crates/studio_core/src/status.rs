@@ -58,7 +58,7 @@ impl ShellCondition {
                     .to_owned()
             }
             ShellCondition::UpdateAvailable { version } => format!(
-                "{} {} is out. Details shows what it brings.",
+                "{} {} is out. Click the Details button for more info.",
                 crate::APP_NAME,
                 crate::shell::version_label_of(version, false)
             ),
@@ -210,7 +210,7 @@ mod tests {
         };
         assert_eq!(
             offer.tooltip(),
-            "Unlimited Tool Works v0.0.2 pre-alpha is out. Details shows what it brings."
+            "Unlimited Tool Works v0.0.2 pre-alpha is out. Click the Details button for more info."
         );
     }
 }

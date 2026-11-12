@@ -245,7 +245,8 @@ impl StatusBar {
                             egui::Button::new(egui::RichText::new("Reset window").small().weak())
                                 .frame(false),
                         )
-                        .on_hover_text("Back to the default window size, centred on its monitor");
+                        .on_hover_text("Back to the default window size, centred on its monitor")
+                        .on_hover_cursor(egui::CursorIcon::PointingHand);
                     if reset.clicked() {
                         window_size::reset(ui.ctx(), &viewport, monitor_of(&viewport, zoom));
                     }
@@ -468,6 +469,31 @@ mod tests {
             buttons_below(&nodes, 1017.0),
             ["Reset window"],
             "its only button is Reset window"
+        );
+    }
+
+    // A monitor too small for the minimum window: the fit asks for less than
+    // the minimum, which the window cannot go under, so at the minimum the
+    // click would change nothing and the button is not drawn.
+    // ST-BAR-06
+    #[test]
+    fn the_reset_button_is_not_drawn_at_the_minimum_a_small_monitor_holds_the_window_at() {
+        let Shell { mut app, _dir, .. } = shell();
+        let small = egui::vec2(800.0, 600.0);
+        let minimum = crate::shell::window_size::MIN_SIZE;
+        assert!(
+            !draws_reset(
+                &mut app,
+                placed_input(egui::Pos2::ZERO, minimum, small, false)
+            ),
+            "960 x 600, the minimum, on an 800 x 600 monitor"
+        );
+        assert!(
+            draws_reset(
+                &mut app,
+                placed_input(egui::Pos2::ZERO, egui::vec2(1100.0, 700.0), small, false)
+            ),
+            "resized over the minimum on the same monitor: a click brings it back"
         );
     }
 
