@@ -1501,6 +1501,47 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     // ST-UPD-01
     #[test]
+    fn a_due_check_finding_no_newer_release_offers_nothing() {
+        let dir = TestDir::new("studio_core_update_not_newer");
+        let data = dir.path().join("data");
+        fs::create_dir_all(&data).unwrap();
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let Shell { mut app, ctx, .. } =
+            shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
+        // The list's newest is the version the window is told it runs, which
+        // is not the build's: an offer here means the build's was read.
+        app.version = "0.0.2";
+        app.update_fetch = std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
+        let egui_ctx = test_context();
+
+        // Wait on the stamp, which a drained check writes however it ended:
+        // before it, "no offer" holds of a check still in flight.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let nodes = loop {
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            if ctx.common().last_update_check.is_some() {
+                break out.nodes;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the update check's reply never landed"
+            );
+        };
+        assert!(
+            !has_text(&nodes, "Update available"),
+            "a release no newer than the build is not offered"
+        );
+        assert!(
+            app.update_release.is_none(),
+            "no release is kept for the dialog"
+        );
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
     fn no_check_runs_while_checks_are_off_or_the_interval_holds() {
         let egui_ctx = test_context();
         for last_check in [None, Some(crate::updater::now_secs())] {

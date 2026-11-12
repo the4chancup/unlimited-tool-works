@@ -343,7 +343,7 @@ fn install_kind(
     let (archive, checksums) = assets(release, kind)?;
     let temp = bundle.join(TEMP_FOLDER);
     let backup = temp.join(BACKUP_FOLDER);
-    if holds_a_file(&backup) && !temp.join(SUCCEEDED_MARK).exists() {
+    if !temp.join(SUCCEEDED_MARK).exists() && holds_a_file(&backup) {
         return Err(InstallError::OldFilesLeft { folder: backup });
     }
     create_temp(&temp).map_err(|source| InstallError::NotWritable {

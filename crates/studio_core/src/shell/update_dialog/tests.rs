@@ -352,6 +352,25 @@ fn the_offer_text_and_details_each_open_the_dialog() {
 
 // ST-UPD-02
 #[test]
+fn the_sentence_names_the_version_the_window_is_running() {
+    let (mut shell, _data) = offer_shell("studio_core_update_own_version");
+    shell.app.version = "0.0.0";
+    let egui_ctx = test_context();
+    let nodes = frame_until_offer(&egui_ctx, &mut shell.app).nodes;
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Details"));
+    let nodes = idle(&egui_ctx, &mut shell.app, 10).nodes;
+    assert!(
+        has_text(
+            &nodes,
+            "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.0 pre-alpha."
+        ),
+        "the sentence names the running version"
+    );
+}
+
+// ST-UPD-02
+#[test]
 fn skip_this_version_stores_the_version_and_drops_the_offer() {
     let (mut shell, data) = offer_shell("studio_core_update_skip");
     let egui_ctx = test_context();
