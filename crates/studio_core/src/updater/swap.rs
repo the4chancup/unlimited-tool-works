@@ -259,20 +259,21 @@ pub(super) fn swap(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shell::test_harness::TestDir;
     use crate::updater::test_bundle::folder_with;
 
     /// A program folder `name` holding a readme and a launcher, and the
     /// backup folder a swap there sets files aside in.
-    fn scene(name: &str) -> (PathBuf, PathBuf) {
-        let bundle = folder_with(
+    fn scene(name: &str) -> (TestDir, PathBuf) {
+        let dir = folder_with(
             name,
             &vec![
                 ("README.txt".to_owned(), "old readme"),
                 ("quick_compile.bat".to_owned(), "old launcher"),
             ],
         );
-        let backup = bundle.join(".update").join("backup");
-        (bundle, backup)
+        let backup = dir.path().join(".update").join("backup");
+        (dir, backup)
     }
 
     /// A swap of `bundle` that has set the readme, then the launcher, aside.
@@ -302,8 +303,9 @@ mod tests {
 
     #[test]
     fn an_undo_that_fails_still_undoes_the_older_moves() {
-        let (bundle, backup) = scene("undo_fails");
-        let swap = both_set_aside(&bundle, &backup);
+        let (dir, backup) = scene("undo_fails");
+        let bundle = dir.path();
+        let swap = both_set_aside(bundle, &backup);
         // The newest move's file is gone, so its undo fails.
         fs::remove_file(backup.join("quick_compile.bat")).unwrap();
 
@@ -315,17 +317,17 @@ mod tests {
             "{outcome:?}"
         );
         assert_eq!(
-            text(&bundle, "README.txt").as_deref(),
+            text(bundle, "README.txt").as_deref(),
             Some("old readme"),
             "the older move is undone"
         );
-        fs::remove_dir_all(bundle).unwrap();
     }
 
     #[test]
     fn a_failed_step_whose_undo_fails_too_names_the_backup_folder() {
-        let (bundle, backup) = scene("not_restored");
-        let swap = both_set_aside(&bundle, &backup);
+        let (dir, backup) = scene("not_restored");
+        let bundle = dir.path();
+        let swap = both_set_aside(bundle, &backup);
         fs::remove_file(backup.join("quick_compile.bat")).unwrap();
 
         let outcome = swap.finish(launcher_failed());
@@ -338,17 +340,17 @@ mod tests {
             "{outcome:?}"
         );
         assert_eq!(
-            text(&bundle, "README.txt").as_deref(),
+            text(bundle, "README.txt").as_deref(),
             Some("old readme"),
             "the older move is undone"
         );
-        fs::remove_dir_all(bundle).unwrap();
     }
 
     #[test]
     fn a_failed_step_whose_undo_succeeds_puts_every_file_back() {
-        let (bundle, backup) = scene("restored");
-        let swap = both_set_aside(&bundle, &backup);
+        let (dir, backup) = scene("restored");
+        let bundle = dir.path();
+        let swap = both_set_aside(bundle, &backup);
 
         let outcome = swap.finish(launcher_failed());
         assert!(
@@ -359,11 +361,10 @@ mod tests {
             ),
             "{outcome:?}"
         );
-        assert_eq!(text(&bundle, "README.txt").as_deref(), Some("old readme"));
+        assert_eq!(text(bundle, "README.txt").as_deref(), Some("old readme"));
         assert_eq!(
-            text(&bundle, "quick_compile.bat").as_deref(),
+            text(bundle, "quick_compile.bat").as_deref(),
             Some("old launcher")
         );
-        fs::remove_dir_all(bundle).unwrap();
     }
 }

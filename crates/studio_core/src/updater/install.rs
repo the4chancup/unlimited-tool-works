@@ -29,6 +29,11 @@ const TEMP_FOLDER: &str = ".update";
 /// until the swap is done.
 const BACKUP_FOLDER: &str = "backup";
 
+/// The empty file a succeeded update writes in the temp folder before it
+/// removes the folder. A backup beside it holds what that update replaced
+/// and could not remove, never the only copies of the program's old files.
+const SUCCEEDED_MARK: &str = "succeeded";
+
 /// What the download asks the network for: a URL's body as a stream.
 /// `open_url` is the real one; a test hands its own reader.
 pub(crate) type OpenUrl = dyn Fn(&str) -> Result<Box<dyn Read + Send>, ureq::Error> + Send + Sync;
@@ -100,10 +105,11 @@ pub(crate) enum InstallError {
     /// The release lists no `SHA256SUMS.txt`.
     #[error("The release has no {CHECKSUMS_ASSET} to check the download against.")]
     NoChecksums,
-    /// An earlier update left files in the temp folder's backup: it could not
-    /// put them back, or the program was closed during its swap. They may be
-    /// the only copies of the program's old files, so no update runs until the
-    /// member has dealt with them.
+    /// An earlier update left files in the temp folder's backup, and no mark
+    /// says it succeeded: it could not put them back, or the program was
+    /// closed during its swap. The files may be the only copies of the
+    /// program's old files, so no update runs until the member has dealt with
+    /// them. Empty folders in the backup count for nothing.
     #[error("An earlier update could not put some of the program's old files back, and they are still in {}. Put them back into the program's folder, or remove that folder, then update again.", folder.display())]
     OldFilesLeft {
         /// The backup folder holding them.
@@ -337,7 +343,7 @@ fn install_kind(
     let (archive, checksums) = assets(release, kind)?;
     let temp = bundle.join(TEMP_FOLDER);
     let backup = temp.join(BACKUP_FOLDER);
-    if fs::read_dir(&backup).is_ok_and(|mut entries| entries.next().is_some()) {
+    if holds_a_file(&backup) && !temp.join(SUCCEEDED_MARK).exists() {
         return Err(InstallError::OldFilesLeft { folder: backup });
     }
     create_temp(&temp).map_err(|source| InstallError::NotWritable {
@@ -348,12 +354,14 @@ fn install_kind(
     // its removal below.
     let outcome = (|| {
         let mut listed = String::new();
+        stop_if_cancelled(cancel)?;
         open_url(&checksums.download_url)
             .map_err(InstallError::Request)?
             .read_to_string(&mut listed)
             .map_err(InstallError::Download)?;
         let expected = listed_hash(&listed, &archive.name)?;
         let path = temp.join(&archive.name);
+        stop_if_cancelled(cancel)?;
         let body = open_url(&archive.download_url).map_err(InstallError::Request)?;
         let actual = download(body, &path, archive.size, cancel, &mut progress)?;
         if !actual.eq_ignore_ascii_case(&expected) {
@@ -366,9 +374,7 @@ fn install_kind(
         let staged = staged_bundle(&staging)?;
         // The download reads `cancel` before each read, so a Cancel clicked
         // after the last byte would otherwise be missed.
-        if cancel.load(Ordering::Relaxed) {
-            return Err(InstallError::Cancelled);
-        }
+        stop_if_cancelled(cancel)?;
         refuse_if_replaced(stamp, bundle)?;
         swap(&staged, bundle, &backup)
     })();
@@ -389,22 +395,69 @@ fn install_kind(
 
 /// Removes the temp folder `temp` once an install has ended with `outcome`,
 /// unless that is `NotRestored`: the folder's backup then holds the only
-/// copies of the program's old files.
+/// copies of the program's old files. A succeeded install first writes the
+/// mark, so a backup it cannot remove is known for what it is.
 fn remove_temp(temp: &Path, outcome: &Result<(), InstallError>) {
     if matches!(outcome, Err(InstallError::NotRestored { .. })) {
         return;
     }
-    if let Err(error) = fs::remove_dir_all(temp) {
+    // A mark that could not be written leaves a backup that refuses the next
+    // update, which is the safe side.
+    if outcome.is_ok()
+        && let Err(error) = File::create(temp.join(SUCCEEDED_MARK))
+    {
+        log::debug!("the update's succeeded mark was not written: {error}");
+    }
+    if let Err(error) = remove_temp_folder(temp) {
         log::debug!("the update's temp folder {} stays: {error}", temp.display());
     }
 }
 
-/// Creates the temp folder, first removing one an update that stopped midway
-/// (the program closed during a download) left behind. The caller has made
-/// sure it holds no backup.
+/// Removes the temp folder `temp`, its backup first. A file in the backup
+/// that cannot be removed (held open by another program) then stops the
+/// removal before it reaches the mark beside the backup, which removing the
+/// whole folder at once might have taken first.
+fn remove_temp_folder(temp: &Path) -> io::Result<()> {
+    match fs::remove_dir_all(temp.join(BACKUP_FOLDER)) {
+        Err(error) if error.kind() != io::ErrorKind::NotFound => return Err(error),
+        _ => {}
+    }
+    fs::remove_dir_all(temp)
+}
+
+/// Whether `folder` holds a file at any depth. A missing folder holds none;
+/// one that cannot be listed counts as holding one, so a doubt refuses.
+fn holds_a_file(folder: &Path) -> bool {
+    let mut entries = match fs::read_dir(folder) {
+        Ok(entries) => entries,
+        Err(error) => return error.kind() != io::ErrorKind::NotFound,
+    };
+    entries.any(|entry| {
+        let Ok(entry) = entry else {
+            return true;
+        };
+        match entry.file_type() {
+            Ok(kind) if kind.is_dir() => holds_a_file(&entry.path()),
+            _ => true,
+        }
+    })
+}
+
+/// Reads `cancel` before a step that starts something: a request, or the swap.
+fn stop_if_cancelled(cancel: &AtomicBool) -> Result<(), InstallError> {
+    if cancel.load(Ordering::Relaxed) {
+        return Err(InstallError::Cancelled);
+    }
+    Ok(())
+}
+
+/// Creates the temp folder, first removing one an earlier update left behind:
+/// one that stopped midway (the program closed during a download), or the
+/// leftovers of one that succeeded. The caller has made sure its backup holds
+/// no file an update that failed left there.
 fn create_temp(temp: &Path) -> io::Result<()> {
     if temp.exists() {
-        fs::remove_dir_all(temp)?;
+        remove_temp_folder(temp)?;
     }
     fs::create_dir(temp)
 }

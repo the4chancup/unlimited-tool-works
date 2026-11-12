@@ -17,7 +17,7 @@ mod instance;
 mod test_dir;
 
 use std::ffi::OsString;
-use std::io;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
@@ -305,20 +305,30 @@ fn run_command(
         }
     };
     let update = start_update_check(&settings.common, Arc::new(updater::fetch_releases));
-    run_loaded(tools, tool, matches, log, settings, paths, update)
+    let mut stderr = io::stderr();
+    run_loaded(
+        tools,
+        tool,
+        matches,
+        log,
+        &mut stderr,
+        (settings, paths),
+        update,
+    )
 }
 
 /// `run_command` past the startup: the tool's run with `settings` and `paths` loaded, and
-/// `update` the receiver of the check started beside it, `None` with checks off. The split
-/// lets a test hand it a reply that has arrived, which a run of the binary cannot: it never
-/// waits for one.
+/// `update` the receiver of the check started beside it, `None` with checks off. The
+/// update's notice prints on `stderr`, the process's own in a run. The split lets a test
+/// hand it a reply that has arrived, which a run of the binary cannot: it never waits for
+/// one.
 fn run_loaded(
     tools: &[Box<dyn StudioTool>],
     tool: &str,
     matches: &ArgMatches,
     log: Option<Arc<RunLog>>,
-    settings: Settings,
-    paths: AppPaths,
+    stderr: &mut impl Write,
+    (settings, paths): (Settings, AppPaths),
     update: Option<Receiver<CheckReply>>,
 ) -> io::Result<u8> {
     let skipped = settings.common.skipped_version.clone();
@@ -361,7 +371,7 @@ fn run_loaded(
         }
     };
     // Last, so the notice follows every other line of the run.
-    report_update(update.as_ref(), skipped.as_deref(), log.as_deref())?;
+    report_update(update.as_ref(), skipped.as_deref(), stderr, log.as_deref())?;
     Ok(code)
 }
 
@@ -375,11 +385,13 @@ fn start_update_check(common: &CommonSettings, fetch: Arc<Fetch>) -> Option<Rece
 }
 
 /// Prints the update notice when the check's reply has arrived and offers a release, on
-/// stderr and in the run's log. No reply yet, a failed check and no release to offer print
-/// nothing; a failed check writes a debug line. An `Err` is a write to the log that failed.
+/// `stderr` and in the run's log. No reply yet, a failed check and no release to offer print
+/// nothing; a failed check writes a debug line. An `Err` is a write to the log that failed:
+/// one to `stderr` is not the run's failure (a window started without a console has none).
 fn report_update(
     reply: Option<&Receiver<CheckReply>>,
     skipped: Option<&str>,
+    stderr: &mut impl Write,
     log: Option<&RunLog>,
 ) -> io::Result<()> {
     // `try_recv`, never `recv`: a reply still on its way is dropped with the process, so the
@@ -389,7 +401,12 @@ fn report_update(
     };
     match outcome {
         Ok(newest) => match updater::command_line_notice(newest.as_ref(), skipped) {
-            Some(line) => report(log, &line),
+            Some(line) => {
+                if let Err(error) = writeln!(stderr, "{line}") {
+                    log::debug!("the update notice did not reach stderr: {error}");
+                }
+                log_line(log, &line)
+            }
             None => Ok(()),
         },
         Err(error) => {
@@ -425,7 +442,8 @@ fn run_help_mode(
 
 /// Opens the shell on the registered tools and returns when the window closes: 0, the startup
 /// failure's code, 3 when the window could not be opened or the crash test's trigger
-/// returned, or 101 when a panic ended it. A failure shows its text in a dialog: a window
+/// returned, or 101 when a panic ended it. After the update dialog's Restart now, the new
+/// program is started as this one ends. A failure shows its text in a dialog: a window
 /// started by a double-click has no console to print it to. `crash_test` is the hidden
 /// `--crash-test stack` launch (ST-RUN-10): the window's start runs as usual, then the
 /// stack is overflowed before any window.
@@ -450,7 +468,7 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     };
     install_panic_hook();
     // The monitor starts with the log, once the data location exists: a first run has neither.
-    let _crash_handler = match (&installed_log, &paths.data_dir) {
+    let crash_handler = match (&installed_log, &paths.data_dir) {
         (Some(installed), Some(data_dir)) => watch_crashes(
             std::env::current_exe(),
             data_dir,
@@ -483,8 +501,9 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
         events_tx,
         requests_tx,
     );
-    guard_gui(
-        move || match run_gui(StudioApp::new(
+    let mut restart = None;
+    let code = guard_gui(
+        || match run_gui(StudioApp::new(
             tools,
             &PLANNED,
             &CLI_ONLY,
@@ -492,7 +511,10 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
             requests_rx,
             user_config_dir(),
         )) {
-            Ok(()) => ExitCode::SUCCESS,
+            Ok(program) => {
+                restart = program;
+                ExitCode::SUCCESS
+            }
             Err(error) => {
                 show_dialog(MessageLevel::Error, &format!("error: {error:#}"));
                 ExitCode::from(3)
@@ -503,7 +525,22 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
             .map(|installed| installed.path.as_path()),
         |text| show_dialog(MessageLevel::Error, text),
         log::logger(),
-    )
+    );
+    // Restart now's program starts last: the window's session is closed in the log, and
+    // this copy lets go of its slot first. Started any earlier, the new program would
+    // find the slot's lock held and open as a second copy, with the second copy's log.
+    drop(crash_handler);
+    drop(instance);
+    if let Some(program) = restart {
+        // The child is not waited for: it outlives the process that starts it.
+        if let Err(error) = std::process::Command::new(&program).spawn().map(drop) {
+            log::warn!(
+                "the new program {} could not be started: {error}",
+                program.display()
+            );
+        }
+    }
+    code
 }
 
 /// Binds this process to the console of the terminal that started it, so a command's
@@ -754,13 +791,20 @@ mod tests {
     }
 
     /// What `report_update` writes to a fresh run's log for `reply`, with `skipped` as the
-    /// settings' `skipped_version`.
+    /// settings' `skipped_version`, once asserted that it wrote the same to stderr.
     fn reported(reply: Option<&Receiver<CheckReply>>, skipped: Option<&str>) -> String {
         let dir = TestDir::new("update_report");
         let path = dir.path().join("run_log.txt");
         let log = RunLog::open(&path).unwrap();
-        report_update(reply, skipped, Some(&log)).unwrap();
-        fs::read_to_string(&path).unwrap()
+        let mut stderr = Vec::new();
+        report_update(reply, skipped, &mut stderr, Some(&log)).unwrap();
+        let written = fs::read_to_string(&path).unwrap();
+        assert_eq!(
+            String::from_utf8(stderr).unwrap(),
+            written,
+            "stderr and the log alike"
+        );
+        written
     }
 
     // ST-CLI-05
@@ -868,7 +912,16 @@ mod tests {
         let path = dir.path().join("run_log.txt");
         let log = Arc::new(RunLog::open(&path).unwrap());
         let update = Some(arrived(offer));
-        let code = run_loaded(&tools, &tool, &matches, Some(log), settings, paths, update);
+        let mut stderr = Vec::new();
+        let code = run_loaded(
+            &tools,
+            &tool,
+            &matches,
+            Some(log),
+            &mut stderr,
+            (settings, paths),
+            update,
+        );
         assert_eq!(code.unwrap(), 2);
         let written = fs::read_to_string(&path).unwrap();
         let [error, last] = written.lines().collect::<Vec<_>>()[..] else {
@@ -876,6 +929,11 @@ mod tests {
         };
         assert!(error.starts_with("error: "), "{written}");
         assert_eq!(last, notice);
+        assert_eq!(
+            String::from_utf8(stderr).unwrap(),
+            format!("{notice}\n"),
+            "the notice on stderr too"
+        );
     }
 
     // A settings file that does not parse fails startup with code 2 (nothing ran) and

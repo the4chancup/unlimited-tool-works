@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::{Sender, bounded};
@@ -23,7 +23,7 @@ use crate::updater::{InstallError, Progress, SwapStep};
 /// The offer's text in the status bar, `ShellCondition::UpdateAvailable`'s
 /// line for the fixture's `v0.0.2`.
 const OFFER_TEXT: &str = "Update available: v0.0.2";
-/// The dialog's sentence, for the fixture's `v0.0.2` over the built `0.0.1`.
+/// The dialog's sentence, for the fixture's `v0.0.2` over the shell's `0.0.1`.
 const SENTENCE: &str = "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1 pre-alpha.";
 /// The release page the fixture names.
 const PAGE_URL: &str = "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.2";
@@ -50,9 +50,10 @@ const REPLACED: &str = "The program was already replaced while this window was o
                         likely by an update from another window. Close this window and start \
                         the program again to use the new version.";
 
-/// A shell whose update check answers the shared releases fixture at once:
-/// the offer lands on the bar once the worker's reply is drained. Returns the
-/// shell and its data folder, where the settings file is written.
+/// A shell of version `0.0.1` whose update check answers the shared releases
+/// fixture at once: the offer lands on the bar once the worker's reply is
+/// drained. Returns the shell and its data folder, where the settings file is
+/// written.
 fn offer_shell(name: &str) -> (Shell, PathBuf) {
     let (shell, data, _bundle) = offer_shell_in(name, &Vec::new());
     (shell, data)
@@ -77,6 +78,7 @@ fn offer_shell_in(name: &str, bundle_files: &Files) -> (Shell, PathBuf, PathBuf)
         data_dir: Some(data.clone()),
     };
     let mut shell = shell_in(settings, vec![a], &[], &[], paths, None, vec![calls_a]);
+    shell.app.version = "0.0.1";
     shell.app.update_fetch = Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
     shell._dir = Some(dir);
     (shell, data, bundle)
@@ -112,16 +114,10 @@ fn ready_shell(name: &str) -> (Shell, PathBuf, egui::Context, Vec<accesskit::Nod
     (shell, bundle, egui_ctx, nodes)
 }
 
-/// Replaces `app`'s program start with a recorder, returning the paths it
-/// is asked to start, in order.
-fn record_starts(app: &mut StudioApp) -> Arc<Mutex<Vec<PathBuf>>> {
-    let starts = Arc::new(Mutex::new(Vec::new()));
-    let recorded = Arc::clone(&starts);
-    app.update_start = Box::new(move |path: &Path| {
-        recorded.lock().unwrap().push(path.to_owned());
-        Ok(())
-    });
-    starts
+/// The program `run_gui` would hand back to start if the window closed now,
+/// `None` for none.
+fn restart_of(app: &StudioApp) -> Option<PathBuf> {
+    app.update_restart.lock().unwrap().clone()
 }
 
 /// Asserts that the bar reads `Update ready: v0.0.2` and no offer is left.
@@ -896,9 +892,9 @@ fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
 
 // ST-UPD-05
 #[test]
-fn restart_now_closes_the_window_then_starts_the_new_program_once() {
+fn restart_now_closes_the_window_then_hands_back_the_new_program() {
     let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_restart");
-    let starts = record_starts(&mut shell.app);
+    assert_eq!(restart_of(&shell.app), None, "the premise: no restart yet");
 
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Restart now"));
     let out = frame(&egui_ctx, &mut shell.app, Vec::new(), true);
@@ -906,31 +902,32 @@ fn restart_now_closes_the_window_then_starts_the_new_program_once() {
         out.commands.contains(&egui::ViewportCommand::Close),
         "Restart now asks the window to close"
     );
+    let out = frame_closing(&egui_ctx, &mut shell.app);
     assert!(
-        starts.lock().unwrap().is_empty(),
-        "nothing starts before the window has closed"
+        !out.commands.contains(&egui::ViewportCommand::CancelClose),
+        "the premise: nothing holds the close"
     );
 
+    // The exit starts nothing itself: the program waits for `run_gui` to hand it
+    // back, once the window is gone and the lock and the log can be released.
     shell.app.on_exit();
-    assert_eq!(*starts.lock().unwrap(), vec![bundle.join(PROGRAM)]);
-    shell.app.on_exit();
-    assert_eq!(
-        starts.lock().unwrap().len(),
-        1,
-        "a second exit starts nothing"
-    );
+    assert_eq!(restart_of(&shell.app), Some(bundle.join(PROGRAM)));
 }
 
 // ST-UPD-05
 #[test]
 fn a_close_a_tool_holds_drops_the_restart_for_good() {
-    let (mut shell, _bundle, egui_ctx, nodes) = ready_shell("dialog_restart_held");
-    let starts = record_starts(&mut shell.app);
+    let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_restart_held");
     *shell.calls[0].unsaved.lock().unwrap() = true;
 
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Restart now"));
     let out = frame(&egui_ctx, &mut shell.app, Vec::new(), true);
     assert!(out.commands.contains(&egui::ViewportCommand::Close));
+    assert_eq!(
+        restart_of(&shell.app),
+        Some(bundle.join(PROGRAM)),
+        "the premise: Restart now armed the restart"
+    );
     let out = frame_closing(&egui_ctx, &mut shell.app);
     assert!(
         out.commands.contains(&egui::ViewportCommand::CancelClose),
@@ -947,8 +944,9 @@ fn a_close_a_tool_holds_drops_the_restart_for_good() {
         "the premise: nothing holds the later close"
     );
     shell.app.on_exit();
-    assert!(
-        starts.lock().unwrap().is_empty(),
+    assert_eq!(
+        restart_of(&shell.app),
+        None,
         "a held close dropped the restart"
     );
 }
@@ -957,11 +955,10 @@ fn a_close_a_tool_holds_drops_the_restart_for_good() {
 #[test]
 fn later_starts_nothing_when_the_window_closes() {
     let (mut shell, _bundle, egui_ctx, nodes) = ready_shell("dialog_later");
-    let starts = record_starts(&mut shell.app);
 
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Later"));
     let out = frame_closing(&egui_ctx, &mut shell.app);
     assert!(!out.commands.contains(&egui::ViewportCommand::CancelClose));
     shell.app.on_exit();
-    assert!(starts.lock().unwrap().is_empty(), "Later starts nothing");
+    assert_eq!(restart_of(&shell.app), None, "Later starts nothing");
 }

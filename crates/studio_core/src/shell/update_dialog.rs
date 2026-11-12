@@ -149,14 +149,15 @@ impl UpdateDialog {
     }
 
     /// Draws the dialog while it is up and returns the member's answer when
-    /// one lands, the dialog then closed. Update now and Retry install
-    /// `release` into `bundle`, the program's folder, downloading through
-    /// `open_url`; `stamp` is the program's file as the window found it
-    /// when it started.
+    /// one lands, the dialog then closed. The offer names `version`, the
+    /// program's own. Update now and Retry install `release` into `bundle`,
+    /// the program's folder, downloading through `open_url`; `stamp` is the
+    /// program's file as the window found it when it started.
     pub(super) fn show(
         &mut self,
         ctx: &egui::Context,
         release: &Arc<Release>,
+        version: &str,
         bundle: &Path,
         stamp: Option<ProgramStamp>,
         open_url: &Arc<OpenUrl>,
@@ -165,7 +166,7 @@ impl UpdateDialog {
             return None;
         }
         let click = match &self.stage {
-            Stage::Offer => show_offer(ctx, release, &mut self.cache),
+            Stage::Offer => show_offer(ctx, release, version, &mut self.cache),
             Stage::Downloading(install) => show_downloading(
                 ctx,
                 release,
@@ -333,10 +334,12 @@ fn version_label(release: &Release) -> String {
     version_label_of(&release.version.to_string(), false)
 }
 
-/// `Update available`: the version sentence, the notes and the four answers.
+/// `Update available`: the version sentence over the program's own `version`,
+/// the notes and the four answers.
 fn show_offer(
     ctx: &egui::Context,
     release: &Release,
+    version: &str,
     cache: &mut CommonMarkCache,
 ) -> Option<Click> {
     let dismiss = Click::Answer(UpdateAnswer::RemindLater);
@@ -345,7 +348,7 @@ fn show_offer(
             "{} {} is out. You have {}.",
             crate::APP_NAME,
             version_label(release),
-            version_label_of(env!("CARGO_PKG_VERSION"), false),
+            version_label_of(version, false),
         ));
         modal_sentence_gap(ui);
         // The notes' box, the draft's `.update-notes`: a stroke frame,

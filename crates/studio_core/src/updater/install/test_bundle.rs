@@ -6,6 +6,7 @@ use crossbeam_channel::{Receiver, RecvTimeoutError};
 use semver::Version;
 
 use super::*;
+use crate::shell::test_harness::TestDir;
 
 /// The new bundle's folder inside its archive.
 pub(super) const TOP: &str = "unlimited-tool-works-0.0.2";
@@ -54,15 +55,12 @@ pub(crate) fn old_files() -> Files {
     ]
 }
 
-/// A fresh `<temp>/studio_core_updater_<name>_<pid>` holding `files`.
-pub(crate) fn folder_with(name: &str, files: &Files) -> PathBuf {
-    let root =
-        std::env::temp_dir().join(format!("studio_core_updater_{name}_{}", std::process::id()));
-    if root.exists() {
-        fs::remove_dir_all(&root).unwrap();
-    }
-    write_files(&root, files);
-    root
+/// A fresh temp folder of its own holding `files`, removed when the guard is
+/// dropped, so a test that fails still leaves no folder behind.
+pub(crate) fn folder_with(name: &str, files: &Files) -> TestDir {
+    let dir = TestDir::new(&format!("studio_core_updater_{name}"));
+    write_files(dir.path(), files);
+    dir
 }
 
 /// Writes `files` under `root`, creating the folders they need.
