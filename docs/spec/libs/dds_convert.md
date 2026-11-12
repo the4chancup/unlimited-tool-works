@@ -41,15 +41,13 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
   development branch asks for a format name texconv rejects, `DX5nm`).
 - **Passthrough**: compressed blocks a target can read are kept and only the container changes.
   PES 15–18 read BC1, BC2 and BC3; PES 19–21 also read BC4, BC5 and BC7 (the legacy compilers
-  passed BC5 through to PES 19–21 as FTEX format 9).
+  passed BC5 through to PES 19–21 as FTEX format 9). A DX10-header BC1/BC3 is therefore
+  rewritten with a legacy header for PES 15–18 rather than re-encoded (the legacy compilers
+  re-encoded every DX10 header to DXT5, a lossy step with no purpose).
 
   The role narrows this: a normal-role source passes through only as BC3 (taken to be laid out
   already) or, on PES 19–21, as BC5. A normal-role BC7 or BC1 source is decoded and encoded to
   DXT5nm, because keeping its blocks would keep a color layout the shader reads as a normal map.
-
-  A DX10-header BC1/BC3 is therefore rewritten with a legacy header for PES 15–18 rather than
-  re-encoded (the legacy compilers re-encoded every DX10 header to DXT5, a lossy step with no
-  purpose).
 
   An uncompressed source is written uncompressed, decoded and written back in the A8R8G8B8
   layout: a legacy-header DDS on PES 15–17, an FTEX of format 0 on PES 18–21. Every uncompressed
@@ -369,11 +367,13 @@ The compiler sends no cube map here: it routes one by `ftex::dds::is_cube_map` b
   (`log2(larger side) + 1`), as D3D and texconv's default loader do; `ftex`'s own FTEX↔DDS
   conversions keep pes-file-tools' acceptance of both;
 - a block texture whose padded top mip decodes past 4 GiB, because the block decoder offsets its
-  output in 32 bits; and any buffer a texture's dimensions size past the target's `isize::MAX`
-  (2 GiB on wasm32) is refused rather than a capacity panic;
+  output in 32 bits;
 - a DX10 header declaring premultiplied alpha, a paletted header (`DDPF_PALETTEINDEXED8`), a
   legacy bump-map header (`DDPF_BUMPDUDV`/`DDPF_BUMPLUMINANCE`, signed) and an uncompressed
   header with no channel mask at all, since none has a straight-alpha unsigned decode.
+
+Any buffer a texture's dimensions size past the target's `isize::MAX` (2 GiB on wasm32) is
+refused rather than a capacity panic.
 
 How `decode` reads what it accepts:
 

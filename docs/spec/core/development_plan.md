@@ -381,7 +381,7 @@ gates.
     (`team_compiler/pipeline.md` "Per-export pipeline walkthrough");
   - texture conversion with the CPU converter, plus WESYS wrapping and relocation to common
     (`textures`). Each worker converts one texture at a time, so the conversions in flight are
-    bounded by the worker count. 0.1.0 ships CPU-only: the desktop GPU BC7 backend
+    bounded by the worker count. 0.1.0 ships CPU-only; the desktop GPU BC7 backend
     (`libs/README.md` "First-release desktop GPU BC7") is built on this step in Phase 16.
     Stopping a cancelled run between textures is Phase 8's cancellation, which brings the Cancel
     that triggers it;

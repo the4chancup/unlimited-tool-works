@@ -21,8 +21,8 @@ Permissive rather than copyleft because the suite is *designed as libraries with
 for a community that writes its own tools in whatever language the author knows. A GPL
 `pes_savefile` or `cpk` could go into a GPL Blender add-on and nowhere else, which would cancel
 half the reason the crate boundaries exist. The copyleft threat — a closed fork — has never
-materialized in this community's tooling and would do it no harm if it did, because the open
-version stays.
+materialized in this community's tooling and would do it no harm if it did; the open version
+stays.
 
 Apache alongside MIT for the explicit patent grant and because it is what every dependency uses.
 The door MIT closes (absorbing GPL code) leads nowhere: Red is the author's own, 4ccEditor is
@@ -77,7 +77,7 @@ per-crate split is an estimate, as the tool itself says):
   - `studio_core`'s shell up 0.36;
   - `egui` up 0.57 as the views use more of it;
   - `team_widgets`, `egui_extras`, the help window's Markdown and its text shaping about 0.6
-    together;
+    together.
 
   Besides these, `aatf` is up 0.28 and `std` up 0.4. Read-only data is 12.0 MiB, embedded files
   5.3 MiB of it (the body font, 0.34 MiB, the largest new one).
@@ -85,7 +85,7 @@ per-crate split is an estimate, as the tool itself says):
   published exe, built by CI, 43,813,376), code 26.9 MiB:
   - the update check's HTTPS client newly linked (`ureq`, `rustls` and `ring`, 0.83 MiB);
   - the Save editor up 0.4 to 1.5 MiB;
-  - `std` up 0.3, `studio_core` up 0.25;
+  - `std` up 0.3, `studio_core` up 0.25.
 
   Read-only data is 13.5 MiB.
 
