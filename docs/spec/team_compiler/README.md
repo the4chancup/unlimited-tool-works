@@ -266,7 +266,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   Studio-format fixtures, with planning fixing every output name and every model task's planned
   IDs before processing. What `compile` builds is "Phase 4 scope" below.
 
-  Its parity with Red covers the tracer export (Fox) and the pre-Fox reference (`testing.md`).
+  Phase 4's parity with Red covers the tracer export (Fox) and the pre-Fox reference (`testing.md`).
   The full Red parity gate over upgraded old exports depends on Phase 6's Export upgrader (and
   on Phase 5's savefile and ID integration), so it runs once those phases land.
 - **Phase 5 — savefile integration (done 2026-10-16):** on Fox, every compiled player's
@@ -2625,8 +2625,8 @@ A compiled player is every player a kept player folder of a team export maps to
 ("Player settings in exports" in the Aesthetics export plan). A referee export's settings
 reach no patch.
 
-Phase 5 withdrew TC-BIN-10, TC-BIN-17 and TC-BIN-22, because it changed their player tables,
-and restated them as TC-BIN-25 to TC-BIN-27. Those were themselves restated at step 8.36c.
+Phase 5 withdrew TC-BIN-10, TC-BIN-17 and TC-BIN-22, whose player tables it changed, and
+restated them as TC-BIN-25 to TC-BIN-27. Those were themselves restated at step 8.36c.
 
 Test data as in Phase 4. A scenario naming no coverage tag compiles a `Full` export (a
 `Midcup` one keeps a player's current ID where a `Full` one writes the default,
