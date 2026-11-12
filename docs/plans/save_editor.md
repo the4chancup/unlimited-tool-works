@@ -2623,7 +2623,8 @@ SE-GUI-55  GIVEN a stat at 60 and the Live AATF check on
                 pressed THEN the next frame's check reads the new rating with no other key;
                 GIVEN a digit typed into the Height field THEN no check starts while the
                 field holds the keyboard, and once Escape lets it go the next frame's does
-SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row clicked
+SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row selected (by a
+           click, or by Down from A's row)
            WHEN Ctrl+V is pressed
            THEN B's record holds what Copy stats from A writes, and one Undo restores B;
                 GIVEN team 701's row copied and team 702's row selected WHEN Ctrl+V is
@@ -2649,9 +2650,9 @@ SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team
                 Ctrl+C is a Team TOML document under two comment lines, the first naming what
                 was copied and the second its kind; GIVEN another save opened in the same
                 window after Ctrl+C WHEN Ctrl+V is pressed THEN the copy is pasted there too;
-                GIVEN clipboard text that is no such document, or one of another kind than
-                the target WHEN Ctrl+V is pressed THEN nothing changes and no undo entry is
-                pushed
+                GIVEN a clipboard holding an image, text that is no such document, or a copy
+                of another kind than the target WHEN Ctrl+V is pressed THEN nothing changes
+                and no undo entry is pushed
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before
