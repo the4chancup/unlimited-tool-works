@@ -1,9 +1,9 @@
 //! The unsaved-changes prompt (SE-GUI-05, the draft's `drawUnsavedPrompt`):
 //! "Unsaved changes" with Save, Discard and Cancel over the table of what a
-//! close or an open would write or lose, met by the window's close or an
-//! Open menu entry. The save's running-game question (`edit_mode_dialog`)
-//! shares the module: the window's Save and Save as ask it first while the
-//! save's own PES runs (SE-GUI-21's window rule).
+//! close or an open would write or lose, met by the window's close or one
+//! of the File menu's opens. The save's running-game question
+//! (`edit_mode_dialog`) shares the module: the window's Save and Save as
+//! ask it first while the save's own PES runs (SE-GUI-21's window rule).
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -32,9 +32,9 @@ pub(crate) enum Pending {
     /// and asks the shell to close again, so the re-asked `hold_close`
     /// returns `false`.
     Close,
-    /// An Open menu entry: the save at the path opens.
+    /// One of the File menu's opens: the save at the path opens.
     Open(PathBuf),
-    /// The Open menu's `Choose file…`: the file dialog follows the answer,
+    /// The File menu's `Choose file…`: the file dialog follows the answer,
     /// in the folder given when there is one (a cancelled dialog leaves
     /// the open save as it is).
     OpenPicker(Option<PathBuf>),

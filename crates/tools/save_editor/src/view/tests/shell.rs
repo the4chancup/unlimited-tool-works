@@ -56,6 +56,77 @@ fn an_edit_marks_the_row_until_ctrl_s_writes_the_save() {
     );
 }
 
+// SE-GUI-03
+#[test]
+fn the_file_menus_save_writes_the_save_and_clears_the_mark() {
+    let path = fixture(PesVersion::Pes21, "edit_then_menu_save");
+    let original = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    assert_ne!(edited.basic.height, 170, "premise: a real change");
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    row(&nodes, "01 CB PLACEHOLDER ●");
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        original,
+        "the file is unchanged until Save"
+    );
+
+    choose(&mut window, &mut view, "File", "Save Ctrl+S");
+    let nodes = draw(&mut window, &mut view);
+    row(&nodes, "01 CB PLACEHOLDER");
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
+    assert_eq!(
+        reopened.file().player(70101).unwrap().basic.height,
+        170,
+        "the reopened file holds the height"
+    );
+}
+
+/// Player 70101's Height and Weight as the session holds them.
+fn basics(view: &SaveView) -> (u8, u8) {
+    let player = view.session.as_ref().unwrap().file().player(70101).unwrap();
+    (player.basic.height, player.basic.weight)
+}
+
+/// Two edits made in order through the player view: 70101's Height 180 to
+/// 170, then his Weight 80 to 90, two gestures and so two undo entries.
+fn two_edits(window: &mut Headless, view: &mut SaveView) {
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let height = nodes
+        .iter()
+        .find(|node| node.role() == Role::SpinButton && node.value() == Some("180"))
+        .expect("the Height control");
+    click(window, height, view);
+    window.frame(vec![egui::Event::Text("170".to_owned())], |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
+        |ui| show(ui, view, &|| Vec::new()),
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let weight = nodes
+        .iter()
+        .find(|node| node.role() == Role::SpinButton && node.value() == Some("80"))
+        .expect("the Weight control");
+    click(window, weight, view);
+    window.frame(vec![egui::Event::Text("90".to_owned())], |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
+        |ui| show(ui, view, &|| Vec::new()),
+    );
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    assert_eq!(basics(view), (170, 90));
+}
+
 // SE-GUI-04
 #[test]
 fn undo_and_redo_step_the_edits_back_and_forth() {
@@ -64,40 +135,7 @@ fn undo_and_redo_step_the_edits_back_and_forth() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::new();
-    let basics = |view: &SaveView| {
-        let player = view.session.as_ref().unwrap().file().player(70101).unwrap();
-        (player.basic.height, player.basic.weight)
-    };
-
-    // Height 180 to 170, then Weight 80 to 90: two gestures, two entries.
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let height = nodes
-        .iter()
-        .find(|node| node.role() == Role::SpinButton && node.value() == Some("180"))
-        .expect("the Height control");
-    click(&mut window, height, &mut view);
-    window.frame(vec![egui::Event::Text("170".to_owned())], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    window.frame(
-        vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
-        |ui| show(ui, &mut view, &|| Vec::new()),
-    );
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let weight = nodes
-        .iter()
-        .find(|node| node.role() == Role::SpinButton && node.value() == Some("80"))
-        .expect("the Weight control");
-    click(&mut window, weight, &mut view);
-    window.frame(vec![egui::Event::Text("90".to_owned())], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    window.frame(
-        vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
-        |ui| show(ui, &mut view, &|| Vec::new()),
-    );
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(basics(&view), (170, 90));
+    two_edits(&mut window, &mut view);
 
     // Ctrl+Z takes back the second edit only; Ctrl+Y redoes it.
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
@@ -111,6 +149,55 @@ fn undo_and_redo_step_the_edits_back_and_forth() {
     window.frame(vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
+    assert_eq!(basics(&view), (170, 90), "the weight edit redone");
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        original,
+        "the file changes only on Save"
+    );
+}
+
+/// Whether the Edit menu's Undo and Redo are enabled, the menu opened to
+/// read them.
+fn history_entries(window: &mut Headless, view: &mut SaveView) -> (bool, bool) {
+    let nodes = open_menu(window, view, "Edit", "Undo");
+    let enabled = |entry: &str| !node_labeled(&nodes, Role::Button, entry).is_disabled();
+    (enabled("Undo Ctrl+Z"), enabled("Redo Ctrl+Y"))
+}
+
+// SE-GUI-04
+#[test]
+fn the_edit_menus_undo_and_redo_step_the_edits_and_wait_for_one() {
+    let path = fixture(PesVersion::Pes21, "undo_redo_menu");
+    let original = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    assert_eq!(
+        history_entries(&mut window, &mut view),
+        (false, false),
+        "nothing to undo or redo"
+    );
+    // A press on the Height control closes the menu before the edits.
+    two_edits(&mut window, &mut view);
+    assert_eq!(
+        history_entries(&mut window, &mut view),
+        (true, false),
+        "Undo enabled after two edits, Redo not"
+    );
+
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        basics(&view),
+        (170, 80),
+        "the weight edit undone, height kept"
+    );
+    assert_eq!(
+        history_entries(&mut window, &mut view),
+        (true, true),
+        "Redo enabled after the Undo"
+    );
+    choose(&mut window, &mut view, "Edit", "Redo");
     assert_eq!(basics(&view), (170, 90), "the weight edit redone");
     assert_eq!(
         std::fs::read(&path).unwrap(),

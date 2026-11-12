@@ -1,6 +1,7 @@
 //! Undo and redo over General edits (RE-GUI-14): two edits in order,
-//! undone and redone by the keys and by the Edit menu's buttons; and
-//! the form scrolling sideways when the preview narrows it.
+//! undone and redone by the keys and by the Edit menu's buttons; the
+//! toolbar's menus switching on hover; and the form scrolling sideways
+//! when the preview narrows it.
 
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 
@@ -691,4 +692,30 @@ fn an_event_page_that_is_no_web_address_is_a_general_problem() {
     assert_eq!(view.document.as_ref().unwrap().ruleset.page, None);
     let frame = window.draw(&mut view, &ctx);
     assert_eq!(rail_labels(&frame.nodes)[0], "General");
+}
+
+/// The toolbar is a menu bar: with File open, the pointer entering Edit's
+/// button (no click) opens Edit and closes File.
+#[test]
+fn hovering_edit_while_file_is_open_switches_the_menus() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = window.draw(&mut view, &ctx);
+    let edit = centre(node(&frame.nodes, &menu_label("Edit")));
+    let file = menu_label("File");
+    click_labeled(&mut window, &frame.nodes, &file, &mut view, &ctx);
+    let frame = window.draw(&mut view, &ctx);
+    assert!(
+        contains_label(&frame.nodes, "New from template"),
+        "premise: the File menu is open"
+    );
+
+    window.frame(vec![egui::Event::PointerMoved(edit)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    let frame = window.draw(&mut view, &ctx);
+    assert!(contains_label(&frame.nodes, "Undo"), "the Edit menu opened");
+    assert!(
+        !contains_label(&frame.nodes, "New from template"),
+        "the File menu closed"
+    );
 }

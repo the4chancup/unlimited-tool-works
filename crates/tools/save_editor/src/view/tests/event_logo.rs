@@ -1,5 +1,6 @@
 //! The event logo's tests: where it stands at the default window, that it
-//! moves no other widget, its tooltip and link, and when it is not drawn.
+//! moves no other widget, its tooltip and link, when it is not drawn, and
+//! the toolbar's band ending short of it.
 
 use super::*;
 
@@ -68,20 +69,52 @@ fn layout_without_logo(nodes: &[accesskit::Node], name: &str) -> Vec<String> {
 }
 
 /// The x where the toolbar's last widget ends: the rightmost edge of the
-/// nodes in the Open button's band, the logo left out.
+/// nodes in the File button's row, the logo left out.
 fn toolbar_end(nodes: &[accesskit::Node], name: &str) -> f64 {
-    let open = nodes
-        .iter()
-        .find(|node| node.role() == Role::Button && node.label() == Some("Open \u{23f7}"))
-        .and_then(accesskit::Node::bounds)
-        .expect("the Open menu button");
+    let file = menu_button(nodes, "File")
+        .bounds()
+        .expect("the File menu button's bounds");
     nodes
         .iter()
         .filter(|node| !(node.role() == Role::Image && node.label() == Some(name)))
         .filter_map(accesskit::Node::bounds)
-        .filter(|bounds| bounds.y0 >= open.y0 && bounds.y1 <= open.y1)
+        .filter(|bounds| bounds.y0 >= file.y0 && bounds.y1 <= file.y1)
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max)
+}
+
+/// The toolbar's band in the frame's shapes: the rect painted in the
+/// panel's fill from the view's top (the headless window's 0) and less
+/// than the logo's height, and the horizontal line in the panel's stroke
+/// under it, each as its left and right x.
+fn band(window: &Headless, shapes: &[egui::epaint::ClippedShape]) -> ((f32, f32), (f32, f32)) {
+    let visuals = &window.ctx.global_style().visuals;
+    let fill = shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect)
+                if rect.fill == visuals.panel_fill
+                    && rect.rect.top() == 0.0
+                    && rect.rect.height() < 28.0 =>
+            {
+                Some((rect.rect.left(), rect.rect.right()))
+            }
+            _ => None,
+        })
+        .expect("the band's fill");
+    let stroke = visuals.widgets.noninteractive.bg_stroke;
+    let line = shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke && points[0].y == points[1].y && points[0].y < 28.0 =>
+            {
+                Some((points[0].x.min(points[1].x), points[0].x.max(points[1].x)))
+            }
+            _ => None,
+        })
+        .expect("the band's line");
+    (fill, line)
 }
 
 // SE-GUI-44
@@ -231,29 +264,56 @@ fn a_logo_without_a_page_names_the_event_and_opens_nothing() {
 
 // SE-GUI-44
 #[test]
-fn a_toolbar_reaching_within_8_points_hides_the_logo() {
+fn the_band_ends_14_points_left_of_the_logo_with_the_fullest_row_inside_it() {
     let name = dbc7().name;
-    let pick = |view: &mut SaveView| view.aatf_ruleset = "dbc7".to_owned();
-    let (mut view, mut window) = opened_at("event_logo_measure", DEFAULT_PANE.x, pick);
-    let nodes = draw(&mut window, &mut view);
-    let end = toolbar_end(&nodes, &name) as f32;
-    let width = logo(&nodes, &name)
+    let (mut view, mut window) = opened_at("event_logo_band", DEFAULT_PANE.x, |view| {
+        view.aatf_ruleset = "dbc7".to_owned();
+        view.live_aatf = true;
+        view.live_suggestions = true;
+    });
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    draw(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        label_value(&nodes, "\u{2022} unsaved changes"),
+        "premise: the unsaved-changes marker is drawn"
+    );
+    node_labeled(&nodes, Role::CheckBox, "Show suggestions");
+    let logo_left = logo(&nodes, &name)
         .and_then(accesskit::Node::bounds)
-        .map(|bounds| (bounds.x1 - bounds.x0) as f32)
-        .expect("DBC7's logo is drawn");
-    // The narrowest window still drawing it: the toolbar's end, the 8
-    // points kept clear, the logo and its 14 from the window's edge.
-    let narrowest = end + 8.0 + width + 14.0;
+        .expect("DBC7's logo is drawn")
+        .x0 as f32;
+    let end = logo_left - 14.0;
+    assert!(
+        end < DEFAULT_PANE.x - 1.0,
+        "premise: the band's end with the logo is not the view's edge"
+    );
+    let (fill, line) = band(&window, &shapes);
+    assert_eq!(fill, (0.0, end), "the fill from the view's left edge");
+    assert_eq!(line, (0.0, end), "the line from the view's left edge");
+    assert!(
+        toolbar_end(&nodes, &name) < f64::from(end),
+        "the row's last widget ends inside the band ({} against {end})",
+        toolbar_end(&nodes, &name)
+    );
+}
 
-    let (mut view, mut window) = opened_at("event_logo_fits", narrowest, pick);
+// SE-GUI-44
+#[test]
+fn without_a_logo_the_band_runs_to_the_views_right_edge() {
+    let bare_file = dbc7_file(|ruleset| ruleset.logo = None);
+    let (mut view, mut window) = opened_at("event_logo_band_bare", DEFAULT_PANE.x, |view| {
+        pick_imported(view, "dbc7.4ccrules", &bare_file);
+    });
+    draw(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        logo(&draw(&mut window, &mut view), &name).is_some(),
-        "drawn at {narrowest} points wide"
+        logo(&nodes, &dbc7().name).is_none(),
+        "premise: no logo is drawn"
     );
-    let (mut view, mut window) = opened_at("event_logo_narrow", narrowest - 1.0, pick);
-    assert!(
-        logo(&draw(&mut window, &mut view), &name).is_none(),
-        "not drawn at {} points wide",
-        narrowest - 1.0
-    );
+    let (fill, line) = band(&window, &shapes);
+    assert_eq!(fill, (0.0, DEFAULT_PANE.x), "the fill to the view's edge");
+    assert_eq!(line, (0.0, DEFAULT_PANE.x), "the line to the view's edge");
 }

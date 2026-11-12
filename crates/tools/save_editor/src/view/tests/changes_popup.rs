@@ -291,7 +291,7 @@ fn a_click_outside_esc_and_the_label_again_close_the_list() {
 
 // SE-GUI-43
 #[test]
-fn an_edit_or_the_toolbars_undo_closes_the_list() {
+fn an_edit_or_the_edit_menus_undo_closes_the_list() {
     let (mut view, _) = three_changes("changes_list_edit");
     let mut window = Headless::new();
 
@@ -311,10 +311,14 @@ fn an_edit_or_the_toolbars_undo_closes_the_list() {
     assert!(view.session.as_mut().unwrap().undo(), "the age is undone");
     click_label(&mut window, &mut view);
     assert_eq!(list_rows(&mut window, &mut view).len(), 3, "premise: open");
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let undo = node_labeled(&nodes, Role::Button, "Undo");
-    click(&mut window, undo, &mut view);
-    assert!(view.changes_list.is_none(), "the toolbar's Undo closes it");
+    // The click opening the Edit menu is outside the list too, so the list
+    // is closed before Undo is chosen: the rows after it are what only
+    // the Undo can change.
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert!(
+        view.changes_list.is_none(),
+        "the Edit menu's Undo closes it"
+    );
     assert!(list_rows(&mut window, &mut view).is_empty());
 
     click_label(&mut window, &mut view);
@@ -406,6 +410,19 @@ fn a_team_wide_edits_list_stops_at_240_points_and_scrolls() {
     );
 }
 
+/// A PES 21 save open with player 70101 renamed to 52 letters, a change
+/// whose row is wider than the popup's 640-point cap.
+fn long_name_change(test: &str) -> SaveView {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    assert_ne!(edited.name, "W".repeat(52), "premise: a real change");
+    edited.name = "W".repeat(52);
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    view
+}
+
 /// The popup's outer box is the draft's `.chpop` width, 460 to 640
 /// points with its margins and stroke counted in: three short rows hold
 /// it at the 460 floor.
@@ -427,13 +444,7 @@ fn the_list_is_460_points_wide_with_its_margins() {
 // SE-GUI-43
 #[test]
 fn rows_wider_than_the_cap_hold_the_popup_at_640() {
-    let path = fixture(PesVersion::Pes21, "changes_list_cap_width");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut edited = player_entry(&view, 70101);
-    assert_ne!(edited.name, "W".repeat(52), "premise: a real change");
-    edited.name = "W".repeat(52);
-    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut view = long_name_change("changes_list_cap_width");
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -454,8 +465,8 @@ fn rows_wider_than_the_cap_hold_the_popup_at_640() {
 
 // SE-GUI-43: the list opens 3 points under the label at its left edge
 // where the window has room; at the default pane, where the label sits
-// too far right for a 460-point list, it slides left to 8 points inside
-// the window's edge (the draft's `changesPopup`).
+// too far right for a list at its 640-point cap, it slides left to 8
+// points inside the window's edge (the draft's `changesPopup`).
 #[test]
 fn the_list_opens_under_the_label_at_its_left_edge() {
     let (mut view, _) = three_changes("changes_list_place");
@@ -475,13 +486,13 @@ fn the_list_opens_under_the_label_at_its_left_edge() {
         "3 points under the label: popup {popup:?}, label {label:?}"
     );
 
-    let (mut view, _) = three_changes("changes_list_slide");
+    let mut view = long_name_change("changes_list_slide");
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
     let (label, popup) = label_and_popup(&mut window, &mut view);
     assert!(
-        label.x0 + 460.0 > f64::from(DEFAULT_PANE.x - 8.0),
-        "premise: the list would pass 8 points inside the window's edge"
+        label.x0 + 640.0 > f64::from(DEFAULT_PANE.x - 8.0),
+        "premise: the list would pass 8 points inside the window's edge: label {label:?}"
     );
     assert!(
         (popup.right() - (DEFAULT_PANE.x - 8.0)).abs() <= 0.5,

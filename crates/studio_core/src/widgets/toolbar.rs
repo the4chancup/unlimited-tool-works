@@ -1,5 +1,6 @@
-//! A tool's toolbar: one row of buttons and menus in egui's `MenuBar`, with
-//! the drafts' separator between its groups.
+//! A tool's toolbar: one row of menus in egui's `MenuBar`, drawn unframed
+//! as a menu bar draws them, with the drafts' separator between its groups
+//! and a scope for the few controls that keep their frames.
 
 /// The room a toolbar separator takes beside its line, each side (the
 /// drafts' `.tsep` margin).
@@ -7,16 +8,28 @@ const SEPARATOR_SIDE: f32 = 2.5;
 
 /// A tool's toolbar row: `add_contents` drawn in egui's `MenuBar`, so with
 /// one menu open the pointer entering another menu's button opens that one,
-/// as a menu bar does. The bar keeps the toolbar's style: `MenuBar`'s own
-/// strips the buttons' frames and fills, and the drafts draw a toolbar's
-/// buttons framed.
+/// as a menu bar does. The bar draws with the menu bar's own style
+/// (`egui::containers::menu::menu_style`): its buttons have no frame or
+/// fill at rest, and show one under the pointer. A control that must stay
+/// framed goes in `toolbar_framed`.
 pub fn toolbar<R>(
     ui: &mut egui::Ui,
     add_contents: impl FnOnce(&mut egui::Ui) -> R,
 ) -> egui::InnerResponse<R> {
-    egui::MenuBar::new()
-        .style(egui::style::StyleModifier::default())
-        .ui(ui, add_contents)
+    egui::MenuBar::new().ui(ui, add_contents)
+}
+
+/// `add_contents` drawn inside a toolbar with the window's own style rather
+/// than the bar's, so its buttons keep their frames: a combo box or a toggle
+/// drawn flat beside the menus reads as one more menu, or as a label.
+pub fn toolbar_framed<R>(
+    ui: &mut egui::Ui,
+    add_contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::InnerResponse<R> {
+    ui.scope(|ui| {
+        ui.set_style(ui.ctx().global_style());
+        add_contents(ui)
+    })
 }
 
 /// The line between two groups of a toolbar (the drafts' `.tsep`): 1 point
@@ -45,8 +58,10 @@ mod tests {
     use crate::widgets::menu_button;
 
     /// One frame of a toolbar holding the "Player" and "Team" menus, a
-    /// separator between them, with `events` as its input; the frame's
-    /// AccessKit nodes, its shapes and the separator's rect.
+    /// separator between them, then a "Framed" button in the framed scope,
+    /// and under the toolbar the "Outside" menu, with `events` as its
+    /// input; the frame's AccessKit nodes, its shapes and the separator's
+    /// rect.
     fn frame(
         ctx: &egui::Context,
         events: Vec<egui::Event>,
@@ -69,7 +84,9 @@ mod tests {
                 menu_button(ui, "Player", |ui| ui.button("Set all stats"));
                 separator = toolbar_separator(ui).rect;
                 menu_button(ui, "Team", |ui| ui.button("Set edited flag"));
+                toolbar_framed(ui, |ui| ui.button("Framed"));
             });
+            menu_button(ui, "Outside", |ui| ui.button("Set all stats"));
         });
         let update = output
             .platform_output
@@ -120,6 +137,45 @@ mod tests {
                 modifiers: egui::Modifiers::default(),
             },
         ]
+    }
+
+    /// Whether a filled or stroked rectangle the size of `node`'s bounds
+    /// (within the frame's stroke) is painted over it: the button's frame.
+    fn paints_frame(shapes: &[egui::epaint::ClippedShape], node: &accesskit::Node) -> bool {
+        let bounds = node.bounds().expect("a drawn button has bounds");
+        shapes.iter().any(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect) => {
+                let same = (f64::from(rect.rect.left()) - bounds.x0).abs() <= 1.0
+                    && (f64::from(rect.rect.right()) - bounds.x1).abs() <= 1.0
+                    && (f64::from(rect.rect.top()) - bounds.y0).abs() <= 1.0
+                    && (f64::from(rect.rect.bottom()) - bounds.y1).abs() <= 1.0;
+                let visible = rect.fill != egui::Color32::TRANSPARENT
+                    || (rect.stroke.width > 0.0 && rect.stroke.color != egui::Color32::TRANSPARENT);
+                same && visible
+            }
+            _ => false,
+        })
+    }
+
+    #[test]
+    fn a_menu_button_in_the_bar_paints_no_frame_at_rest_and_the_framed_scope_does() {
+        let ctx = context();
+        let (nodes, shapes, _) = frame(&ctx, Vec::new());
+        let outside = button(&nodes, "Outside \u{23f7}").expect("the menu outside the toolbar");
+        assert!(
+            paints_frame(&shapes, outside),
+            "premise: a menu button outside a toolbar paints its frame"
+        );
+        let player = button(&nodes, "Player \u{23f7}").expect("the Player menu button");
+        assert!(
+            !paints_frame(&shapes, player),
+            "the bar's menu button paints no frame"
+        );
+        let framed = button(&nodes, "Framed").expect("the framed scope's button");
+        assert!(
+            paints_frame(&shapes, framed),
+            "the framed scope's button paints its frame"
+        );
     }
 
     #[test]

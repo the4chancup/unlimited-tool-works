@@ -5,12 +5,12 @@
 
 use super::*;
 
-/// The toolbar's band: the Open menu button's vertical span.
+/// The toolbar's row: the File menu button's vertical span.
 fn toolbar_band(nodes: &[accesskit::Node]) -> (f64, f64) {
-    let open = menu_button(nodes, "Open")
+    let file = menu_button(nodes, "File")
         .bounds()
-        .expect("the Open menu button's bounds");
-    (open.y0, open.y1)
+        .expect("the File menu button's bounds");
+    (file.y0, file.y1)
 }
 
 /// The x of each toolbar separator's line, left to right: the vertical
@@ -58,9 +58,10 @@ fn ruleset_dropdown(nodes: &[accesskit::Node]) -> &accesskit::Node {
         .expect("the ruleset dropdown in the toolbar")
 }
 
-/// The toolbar's groups read left to right: Open, Save, Save as | Undo, Redo |
-/// Player, Team, Savefile | the ruleset dropdown, Live AATF; each `|` one
-/// separator's line, standing between the widgets either side of it.
+/// The toolbar's groups read left to right: File, Edit, Player, Team,
+/// Savefile | the ruleset dropdown, Live AATF; the `|` one separator's
+/// line, standing between the widgets either side of it. No Save, Save as,
+/// Undo or Redo button stands in the row: they are the menus' entries.
 #[test]
 fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
     let path = fixture(PesVersion::Pes21, "toolbar_order");
@@ -73,11 +74,8 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
         (bounds.x0, bounds.x1)
     };
     let widgets = [
-        x(menu_button(&nodes, "Open")),
-        x(node_labeled(&nodes, Role::Button, "Save")),
-        x(node_labeled(&nodes, Role::Button, "Save as")),
-        x(node_labeled(&nodes, Role::Button, "Undo")),
-        x(node_labeled(&nodes, Role::Button, "Redo")),
+        x(menu_button(&nodes, "File")),
+        x(menu_button(&nodes, "Edit")),
         x(menu_button(&nodes, "Player")),
         x(menu_button(&nodes, "Team")),
         x(menu_button(&nodes, "Savefile")),
@@ -88,14 +86,20 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
         assert!(pair[0].1 <= pair[1].0, "left to right: {widgets:?}");
     }
     let separators = separator_xs(&window, &nodes, &shapes);
-    assert_eq!(separators.len(), 3, "three separators: {separators:?}");
-    // After Save as, after Redo, after Savefile.
-    for (separator, after) in separators.iter().zip([2, 4, 7]) {
+    assert_eq!(separators.len(), 1, "one separator: {separators:?}");
+    assert!(
+        widgets[4].1 < separators[0] && separators[0] < widgets[5].0,
+        "the separator between Savefile and the dropdown: {separators:?}"
+    );
+    let (top, bottom) = toolbar_band(&nodes);
+    for gone in ["Save", "Save as", "Undo", "Redo"] {
         assert!(
-            widgets[after].1 < *separator && *separator < widgets[after + 1].0,
-            "a separator between {:?} and {:?}: {separators:?}",
-            widgets[after],
-            widgets[after + 1]
+            !nodes.iter().any(|node| {
+                node.role() == Role::Button
+                    && node.label() == Some(gone)
+                    && node.bounds().is_some_and(|b| b.y0 < bottom && b.y1 > top)
+            }),
+            "no {gone} button in the row"
         );
     }
 }
@@ -223,28 +227,62 @@ fn text_below<'a>(
         .unwrap_or_else(|| panic!("no painted {text:?} below {below}"))
 }
 
+/// The bottom of the toolbar band's line: the horizontal line in the
+/// panel's stroke that starts at the view's left edge, the first under the
+/// toolbar's buttons. It is the bar's lower edge as the eye sees it.
+fn band_bottom(
+    window: &Headless,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+) -> f64 {
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let buttons = toolbar_band(nodes).1 as f32;
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && points[0].x.min(points[1].x) == 0.0
+                    && points[0].y >= buttons =>
+            {
+                Some(points[0].y)
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.partial_cmp(b).expect("ordered lines"))
+        .expect("the band's line under the toolbar's buttons");
+    f64::from(line + 0.5 * stroke.width)
+}
+
 /// The view's title `title` in the frame's shapes, and the two ink gaps
-/// around it: from the toolbar's buttons' bottom to the title's ink, and
-/// from the title's ink to the ink of `first_row`, the view's first row's
-/// text.
+/// around it: from the toolbar band's line to the title's ink, and from
+/// the title's ink to the ink of `first_row`, the view's first row's text.
 fn title_gaps(
+    window: &Headless,
     nodes: &[accesskit::Node],
     shapes: &[egui::epaint::ClippedShape],
     title: &str,
     first_row: &str,
 ) -> (f64, f64) {
-    let buttons = toolbar_band(nodes).1;
+    let band = band_bottom(window, nodes, shapes);
     let title = text_below(shapes, title, 0.0);
     let title_ink = ink(title);
     let row_ink = ink(text_below(shapes, first_row, title_ink.bottom()));
     (
-        f64::from(title_ink.top()) - buttons,
+        f64::from(title_ink.top()) - band,
         f64::from(row_ink.top() - title_ink.bottom()),
     )
 }
 
 /// The player view's title `<id> <name>` stands as far below the
-/// toolbar's buttons as General info's title is below it, in ink (within
+/// toolbar's band as General info's title is below it, in ink (within
 /// a point).
 #[test]
 fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_row() {
@@ -257,6 +295,7 @@ fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_r
     draw(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (above, below) = title_gaps(
+        &window,
         &nodes,
         &shapes,
         &format!("{player_id} {name}"),
@@ -270,7 +309,7 @@ fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_r
 
 /// The team view's title is `<id> <name>`, team 701's `701 /3/` in the
 /// PES 21 fixture, the id in the weak colour, and stands as far below the
-/// toolbar's buttons as the Name field's row is below it, in ink (within a
+/// toolbar's band as the Name field's row is below it, in ink (within a
 /// point).
 #[test]
 fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
@@ -287,7 +326,13 @@ fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
         visuals.weak_text_color(),
         "the id in the weak colour"
     );
-    let (above, below) = title_gaps(&nodes, &shapes, "701 /3/", crate::view::team::TEAM_LABEL);
+    let (above, below) = title_gaps(
+        &window,
+        &nodes,
+        &shapes,
+        "701 /3/",
+        crate::view::team::TEAM_LABEL,
+    );
     assert!(
         (above - below).abs() <= 1.0,
         "the ink gaps {above} above and {below} below"
@@ -295,14 +340,41 @@ fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
 }
 
 // With no save open the menus that act on one are drawn disabled: Player,
-// Team and Savefile alike (SE-GUI-22's disabled-in-place rule).
+// Team and Savefile alike (SE-GUI-22's disabled-in-place rule). File and
+// Edit stay enabled: inside them the opens are enabled, and Save, Save as,
+// Undo and Redo disabled.
 #[test]
 fn the_menus_are_disabled_with_no_save_open() {
     let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
     let mut window = Headless::new();
     let nodes = draw(&mut window, &mut view);
     for menu in ["Player", "Team", "Savefile"] {
         assert!(menu_button(&nodes, menu).is_disabled(), "{menu}");
+    }
+    for menu in ["File", "Edit"] {
+        assert!(
+            !menu_button(&nodes, menu).is_disabled(),
+            "{menu} is enabled"
+        );
+    }
+    let nodes = open_menu(&mut window, &mut view, "File", "Choose file");
+    assert!(
+        !menu_item(&nodes, "Choose file").is_disabled(),
+        "the picker is enabled"
+    );
+    for entry in ["Save Ctrl+S", "Save as"] {
+        assert!(
+            node_labeled(&nodes, Role::Button, entry).is_disabled(),
+            "{entry} is disabled"
+        );
+    }
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Undo");
+    for entry in ["Undo Ctrl+Z", "Redo Ctrl+Y"] {
+        assert!(
+            node_labeled(&nodes, Role::Button, entry).is_disabled(),
+            "{entry} is disabled"
+        );
     }
 }
 

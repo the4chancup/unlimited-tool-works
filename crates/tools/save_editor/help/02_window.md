@@ -2,7 +2,7 @@ The Save editor's window opens a save (`EDIT00000000`, or a copy of it) and edit
 
 **Opening a save**
 
-The **Open** menu lists, from the top:
+The **File** menu lists, from the top:
 
 - the saves found in your Documents folder for every PES version, each named by its version,
   so your game's save opens in one click (hover an entry to see its full path). Ctrl+5 to
@@ -10,7 +10,9 @@ The **Open** menu lists, from the top:
   anywhere in the editor; with no save found for that version, they open the file picker;
 - the files you opened since the program started, the most recent first;
 - **Choose file…** (Ctrl+O), which picks any file and starts in the save folder of the PES
-  version selected in the sidebar when there is one.
+  version selected in the sidebar when there is one;
+- under a line, **Save** (Ctrl+S) and **Save as**, which write the open save (see **Saving**
+  below) and stay greyed out until a save is open.
 
 Once a save is open, the window's title bar shows its path, in square brackets after the
 editor's name, and the toolbar shows `• unsaved changes` while edits wait unsaved.
@@ -57,8 +59,8 @@ digits inside a name is a color code, and the field keeps it as typed.
 
 **Undo and redo**
 
-Every edit is undoable, and **Undo** and **Redo** step through them (Ctrl+Z, Ctrl+Y or
-Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
+Every edit is undoable, and the **Edit** menu's **Undo** and **Redo** step through them
+(Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
 
 **Quick actions**
 
@@ -73,10 +75,8 @@ The dropdown on the toolbar, left of **Live AATF**, picks the AATF rules the qui
 the Cards used badge and Live AATF use. Every cup's current rules are built in, listed by
 name, and the copies in the data folder's `rules` folder follow them. The pick is
 remembered. The ruleset's event logo shows at the window's top right, and when the ruleset
-names its event's page, a click on the logo opens it; a window too narrow for the toolbar and
-the logo hides the logo. When the
-copy picked last is gone from the data folder, 4cc Autumn 26 is used instead and a notice says
-so.
+names its event's page, a click on the logo opens it. When the copy picked last is gone from
+the data folder, 4cc Autumn 26 is used instead and a notice says so.
 
 **Import rules file…** at the bottom of the list adds a cup's `.4ccrules` file: it is copied
 into the data folder and picked, while a file with errors is refused with its errors listed,
@@ -132,10 +132,10 @@ time the editor is opened.
 
 **Saving**
 
-**Save** or Ctrl+S writes the edits to the file the save was opened from (a file it replaces
-is kept once as a `.bak` copy). **Save as** writes them to a file you pick instead, and the
-editor then carries on with that file, so the next Save writes there too. A file it replaces
-is kept as a `.bak` copy as well.
+The **File** menu's **Save**, or Ctrl+S, writes the edits to the file the save was opened
+from (a file it replaces is kept once as a `.bak` copy). **Save as** writes them to a file
+you pick instead, and the editor then carries on with that file, so the next Save writes
+there too. A file it replaces is kept as a `.bak` copy as well.
 
 While the save's own PES version is running, saving first shows how to keep the save:
 

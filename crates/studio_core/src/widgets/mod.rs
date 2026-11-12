@@ -8,7 +8,7 @@
 //! (`choice`), the text box every view draws (`text_box`) and its resting
 //! outline (`text_box_border`), the collapsing
 //! header every view draws (`collapsing_header`), a tool's
-//! toolbar row with its group separator (`toolbar`), the measure that
+//! toolbar row with its group separator and its framed scope (`toolbar`), the measure that
 //! places text by its ink (`ink`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), and the row spacing every form
 //! shares (`FORM_ROW_SPACING`).
@@ -40,7 +40,7 @@ pub use menu_button::menu_button;
 pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap};
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use text_box::{text_box, text_box_border};
-pub use toolbar::{toolbar, toolbar_separator};
+pub use toolbar::{toolbar, toolbar_framed, toolbar_separator};
 pub use wheel::{cycle_choice, set_inverted, step_choice, step_number, wheel_steps};
 
 /// The row spacing of a form that draws a drafts' `table.grid` (label, control,

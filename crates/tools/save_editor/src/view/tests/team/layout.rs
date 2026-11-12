@@ -340,7 +340,9 @@ fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
 // The ids share the fields' row because the Tactics editor below needs
 // the height: at the default pane the view's lowest drawn stroke (the
 // lists' and Automatic settings' frame bottoms) paints the draft's last
-// row, pixel row 741 of the 1280 x 780 client, whose y the pane shares.
+// row, pixel row 740 of the 1280 x 780 client, whose y the pane shares
+// (741 before the toolbar stood on its band, which set everything under it
+// 1 point higher).
 #[test]
 fn the_team_view_fits_the_default_pane() {
     let path = fixture(PesVersion::Pes21, "team_view_fit");
@@ -368,8 +370,8 @@ fn the_team_view_fits_the_default_pane() {
     // A 1-point stroke paints the row above its bounding bottom.
     let last_row = bottom - 1.0;
     assert!(
-        (last_row - 741.0).abs() <= 1.0,
-        "the lowest stroke paints the draft's last row, 741 ({last_row})"
+        (last_row - 740.0).abs() <= 1.0,
+        "the lowest stroke paints the draft's last row, 740 ({last_row})"
     );
 }
 
@@ -472,12 +474,14 @@ fn the_team_views_line_ends_8_from_the_windows_edge() {
         .widgets
         .noninteractive
         .bg_stroke;
+    // Right of the view's left edge: the toolbar band's line starts there.
     let line_right = shapes
         .iter()
         .find_map(|clipped| match &clipped.shape {
             egui::Shape::LineSegment { points, stroke: s }
                 if *s == stroke
                     && points[0].y == points[1].y
+                    && points[0].x.min(points[1].x) > PANEL_MARGIN
                     && (points[0].x - points[1].x).abs() > window.screen.x * 0.5 =>
             {
                 Some(f64::from(points[0].x.max(points[1].x)))

@@ -1,15 +1,15 @@
-//! The toolbar's Open menu (the draft's `openMenu`): the saves discovery
-//! finds under Documents for every version, one click each, then the files
-//! opened earlier in this run of the program, then the file picker, which
-//! starts in the selected version's save folder. Its shortcuts (the
-//! draft's `OPEN_KEYS`) open a version's newest save, or the picker, with
-//! the menu closed.
+//! The toolbar's File menu (the draft's `fileMenu`): first the opens, the
+//! saves discovery finds under Documents for every version, one click
+//! each, then the files opened earlier in this run of the program, then
+//! the file picker, which starts in the selected version's save folder;
+//! then Save and Save as. The opens' shortcuts (the draft's `OPEN_KEYS`)
+//! open a version's newest save, or the picker, with the menu closed.
 
 use std::path::{Component, Path, PathBuf};
 
 use pes_savefile::discovery::SavefileCandidate;
 use pes_version::PesVersion;
-use studio_core::widgets::menu_button;
+use studio_core::widgets::{add_enabled, menu_button};
 
 use crate::view::SaveView;
 use crate::view::prompt::{self, Pending};
@@ -65,12 +65,23 @@ pub(super) fn push_recent(recents: &mut Vec<PathBuf>, path: &Path) {
     recents.insert(0, path.to_path_buf());
 }
 
-/// The Open menu button. Discovery lists folders on disk, so it runs once
+/// The File menu's two writes, which `show` hands back to the toolbar: a
+/// write needs the running-game probe, which the menu does not hold.
+pub(super) enum Write {
+    /// Save: the open file.
+    Save,
+    /// Save as: the picker, then the picked path.
+    SaveAs,
+}
+
+/// The File menu button. Discovery lists folders on disk, so it runs once
 /// when the menu opens and its list is kept until the menu closes. An
-/// entry clicked with unsaved changes asks first (the unsaved-changes
-/// prompt), as the picker does.
-pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
-    let menu = menu_button(ui, "Open", |ui| {
+/// open clicked with unsaved changes asks first (the unsaved-changes
+/// prompt), as the picker does. Returns the write chosen this frame, if
+/// any; Save and Save as are disabled while no save is open.
+pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
+    let save_open = view.session.is_some();
+    let menu = menu_button(ui, "File", |ui| {
         let discovered = view.discovered.get_or_insert_with(|| {
             PesVersion::ALL
                 .into_iter()
@@ -125,16 +136,33 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 .map(|(_, candidate)| candidate);
             chosen = Some(choose_file(selected));
         }
-        if chosen.is_some() {
+        ui.separator();
+        let mut write = None;
+        if add_enabled(
+            ui,
+            save_open,
+            egui::Button::new("Save").shortcut_text("Ctrl+S"),
+        )
+        .clicked()
+        {
+            write = Some(Write::Save);
+        }
+        if add_enabled(ui, save_open, egui::Button::new("Save as")).clicked() {
+            write = Some(Write::SaveAs);
+        }
+        if chosen.is_some() || write.is_some() {
             ui.close();
         }
-        chosen
+        (chosen, write)
     });
-    match menu.inner {
-        None => view.discovered = None,
-        Some(None) => {}
-        Some(Some(pending)) => request(view, pending),
+    let Some((chosen, write)) = menu.inner else {
+        view.discovered = None;
+        return None;
+    };
+    if let Some(pending) = chosen {
+        request(view, pending);
     }
+    write
 }
 
 /// What an Open shortcut asks for.
