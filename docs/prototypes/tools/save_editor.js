@@ -352,15 +352,15 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* The two numbers' toggle disabled (SE-GUI-71): the picked choice on a grey rectangle, not
    the selection's blue, which would read as a control still live; its text the readouts'
    grey, so the stored value still reads. */
-.rate.tri.off .sel.on { background: #5a5a5a; color: #a0a0a0; }
+.rate.tri.off .sel.on { background: #2c2c2c; color: #a0a0a0; }
 .rate.off .sel:hover { background: none; color: #5a5a5a; }
 /* The formation picker while the preset's Fluid formation is off, drawn as the disabled
    numbers toggle above is: Kick-off, the entry it stays on, on the same grey rectangle and
    not the selection's blue, the other two in the disabled grey; its tooltip kept. */
-.fsel.off .sel.on { background: #5a5a5a; color: #a0a0a0; }
+.fsel.off .sel.on { background: #2c2c2c; color: #a0a0a0; }
 .fsel.off .sel:not(.on) { color: #5a5a5a; }
 .fsel.off .sel:hover { background: none; color: #5a5a5a; }
-.fsel.off .sel.on:hover { background: #5a5a5a; color: #a0a0a0; }
+.fsel.off .sel.on:hover { background: #2c2c2c; color: #a0a0a0; }
 .palette { display: inline-flex; gap: 2px; align-items: center; }
 .palette .swatch.on { outline: 1px solid var(--sel-fg); }
 .palette.off .swatch { opacity: .45; }
