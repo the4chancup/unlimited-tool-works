@@ -77,11 +77,11 @@ Principles:
   `messages.rs` holds each code's severity only, and the CLI prints the code with its context
   fields. Red's remediation-hint style is kept ("Resize it so that both sizes are powers of 2").
 - **Consequences are explicit**: `Disposition` records whether the finding keeps content, drops a
-  file, normalized roster slot, folder, or export, or aborts the run; severity remains a
+  file, normalized roster slot, folder, or export, or aborts the run. Severity remains a
   presentation/filtering concern. File-scoped consequences still roll up according to Red's rules
   (model-file failures drop the folder; standalone texture/portrait failures may drop only the
   file). A line-local `RosterEntry` finding with `DropSlot` removes only that normalized
-  assignment; file-wide encoding failure or roster ambiguity that prevents trustworthy
+  assignment. A file-wide encoding failure or roster ambiguity that prevents trustworthy
   normalization uses `DropExport` instead. Runtime failures derive their effective disposition
   from the owning scope:
   - optional root file → `DropFile`;
@@ -253,7 +253,7 @@ is loaded, whatever the target, and from the conversion steps on, on each conver
 target form).
 
 A finding keeps the format crate's code and its severity, which "What makes a finding an Error"
-sets; the one renamed is the far vertex, which both formats report as
+sets. The one renamed is the far vertex, which both formats report as
 `vertex_too_far_from_origin`, above.
 
 - An Error discards the folder and is pass-through-eligible, since the file can still be packed
@@ -454,9 +454,10 @@ New knowledge moves a row: when an experiment shows a value works, it joins the 
 vocabulary and stops warning; when one shows a value crashes, it becomes an error with the crash
 as its citation.
 
-How a `path` or `material` is resolved and written, Red's rules (`xml_check.py` `listed_file_check`,
-`update_xml_for_renamed_common_models`), since the one real member xml in the fixtures (the pre-Fox
-tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was written for them:
+How a `path` or `material` is resolved and written follows Red's rules (`xml_check.py`
+`listed_file_check`, `update_xml_for_renamed_common_models`), since the one real member xml in
+the fixtures (the pre-Fox tracer's Fumos folder: `./face_high_*.model` beside
+`face_high_win32.model`) was written for them:
 
 - A `./<name>` reference names a file of the face (the player's own files, directly in the
   folder, then a linked shared face's), and `./<path>/<name>` (`./jessie/body/x.model`) a file of
@@ -487,7 +488,7 @@ tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was
   `common/team_folder/`, because `common` is also the root folder of a CPK
   (`common/character1/model/character/uniform/common/…`). So a short `common/team_folder/x.dds`
   reads as a path in the archive, and a reference starting `common/` is
-  `xml_common_path_invalid`; one folder, not two, leaves nothing between the prefix and the
+  `xml_common_path_invalid`. One folder, not two, leaves nothing between the prefix and the
   team's Common to spell wrong.
 
   Any other folder after the long form's `common/` is `xml_common_path_invalid` too, and so is
@@ -521,16 +522,16 @@ What is emitted from such a folder:
 
 The `.mtl` the deep pass compares a listed model's material names with
 (`model_material_undefined`) is the entry's `material`, not the search's (`mtl_search`), which
-the xml overrides; an unlisted `.model` is `xml_model_unlisted` and is neither emitted nor
+the xml overrides. An unlisted `.model` is `xml_model_unlisted` and is neither emitted nor
 compared.
 
 The xml's own `<dif>` is decoded as a `face_diff.xml`'s is and checked the same way
 (`face_diff_invalid`). Beside a `face_diff.xml` it is `xml_dif_conflict`, while beside a
-`face_diff.bin` it is the dual-engine layout, each engine taking its own (the catalog row); with
-none of the three the bundled face diff is written.
+`face_diff.bin` it is the dual-engine layout, each engine taking its own (the catalog row). With
+none of the three, the bundled face diff is written.
 
 A `<model>`'s attributes are written in source order, verbatim but for `type` (the version
-rewrite) and the two references above; an unknown element is written verbatim with its
+rewrite) and the two references above. An unknown element is written verbatim with its
 attributes, text and children. The written order is the children in source order, then the
 `face_neck` dummy when appended, then the `<dif>` last, as the game's own files and Red's output
 place it.
@@ -539,7 +540,7 @@ A file two references name (a `.model` listed twice, a `.mtl` under two spelling
 once, under the first. A `kitN` reference to a `.mtl` set packs every variant as a `.model` set's
 does: a `pants_kitN.mtl` packed under that name is a file the game never asks for. An xml naming
 the dummy's own names (`./dummy.mtl`, `./oral_dummy_*.model`) without a `face_neck` entry fails
-the task when the dummy is appended, since two files cannot share a name; no export does this.
+the task when the dummy is appended, since two files cannot share a name. No export does this.
 `xml_uniform_pes15` on a user xml names the entry by its `path` value, since an entry need not
 resolve to a file.
 
@@ -559,7 +560,7 @@ xml's children and before the `face_neck` dummy and the `<dif>`. His own `face_d
 `face_diff.bin` is the face's diff over the shared xml's `<dif>`, as any of his files wins over
 the shared folder's. We append rather than generate a second list, because the shared xml is the
 author's statement of what the base face loads and the player's parts layer over it as his files
-do over the shared ones; the face has an xml, so the hand auto-split does not apply to it.
+do over the shared ones. The face has an xml, so the hand auto-split does not apply to it.
 
 A player folder linking a `Faces/` folder holds no `face.xml` of its own: two xmls for one face
 leave no rule for which one speaks, so his is `xml_shared_face_conflict` and the folder is
@@ -733,11 +734,11 @@ The one addition guards the reserved collar on regular teams:
 | `bin_header_repaired` | W | a working `TeamColor.bin` or `UniColor.bin` held records whose header was not their position's: the team ID, or in `TeamColor.bin` the color count. One finding per bin (context: the bin, the teams). It marks a corrupt installed bin, whatever wrote it, so the cause can be looked for | the headers are rewritten; each record's other bytes are kept, so those teams' colors may be wrong until their exports are compiled again |
 
 A missing savefile is the explicitly permitted warning-only case. A present savefile that cannot
-be read or whose version differs from the compile target is an error, not `savefile_missing`; do
+be read or whose version differs from the compile target is an error, not `savefile_missing`. Do
 not modify it or publish a partially deployed run.
 
-Deployment-stage errors above mean no partial installation: preflight failures leave installed
-outputs untouched; failures after replacement starts roll back the deployment as a whole.
+Deployment-stage errors above mean no partial installation. Preflight failures leave installed
+outputs untouched, and failures after replacement starts roll back the deployment as a whole.
 
 The `cpk_write_failed` and `output_commit_failed` consequences are required guarantees: partial
 generated output is discarded and prior published output remains untouched. The corresponding open

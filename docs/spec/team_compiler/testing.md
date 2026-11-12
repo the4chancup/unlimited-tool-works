@@ -77,17 +77,17 @@ Intentional differences must be accounted for:
 - **Auto-assigned boots/gloves IDs** may differ from the old embedded IDs — the comparison
   normalizes ID-dependent paths and embedded references.
 - **Texture locations**: every player's textures are relocated to per-player common subfolders
-  (see "Texture relocation to common" in the walkthrough), where Red packs an AET-layout export's
-  textures inside each model folder's structure and relocates a Pre-Studio (`Players/`) export's
-  to `common/<team>/<name part>/`, keyed by the folder name without its number prefix. Textures
-  resolved from `Common/` stay in the team's Common output and are referenced in place. The
-  comparison matches textures by content across locations and verifies that rewritten references
-  resolve to the relocated files (`check_resolved`). That a Common texture appears once in the
-  archive however many players reference it is `tests/cli/common_links.rs`'s check, since the
-  tracers hold no `Common/`.
+  (see "Texture relocation to common" in the walkthrough). Red instead packs an AET-layout
+  export's textures inside each model folder's structure, and relocates a Pre-Studio
+  (`Players/`) export's to `common/<team>/<name part>/`, keyed by the folder name without its
+  number prefix. Textures resolved from `Common/` stay in the team's Common output and are
+  referenced in place. The comparison matches textures by content across locations and verifies
+  that rewritten references resolve to the relocated files (`check_resolved`). That a Common
+  texture appears once in the archive however many players reference it is
+  `tests/cli/common_links.rs`'s check, since the tracers hold no `Common/`.
 - **Automatic collar reconciliation**: unlike Red's pass-through behavior, the compiler derives the
-  custom collar ID from the `collar_[ID]` filename and rewrites the team's kit configs;
-  `tests/cli/collars.rs` verifies those config-field changes, the tracers carrying no collar.
+  custom collar ID from the `collar_[ID]` filename and rewrites the team's kit configs.
+  `tests/cli/collars.rs` verifies those config-field changes, since the tracers carry no collar.
 - **Dropped features** (Other folder) are excluded.
 - **Kit-dependent path magic**: Red emits the legacy `u0XXXp0`/`u0XXXp1`… spelling (with the `XXX`
   placeholder or a baked-in team ID, as the author wrote it), the compiler emits `kitN`/`kit1`…
@@ -148,9 +148,11 @@ Key behavior areas:
     still emitted;
   - FMDL→pre-Fox conversion emitting an atomic `.model`+`.mtl` pair;
   - shared-texture dedup and deterministic conflict resolution under reversed rayon completion;
-  - logo production (a 1000×600 source under each fit mode yields the three square sizes;
-    `logo_small` replaces only the 128²; an undecodable `logo_small` drops all three; a 300²
-    source is upscaled and reported);
+  - logo production:
+    - a 1000×600 source under each fit mode yields the three square sizes;
+    - `logo_small` replaces only the 128²;
+    - an undecodable `logo_small` drops all three;
+    - a 300² source is upscaled and reported;
   - kit folders:
     - `p1 - Lakers` resolving to `p1` with the label kept;
     - `p1/` beside `p1 - Lakers/` discarding both;

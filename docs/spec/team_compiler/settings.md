@@ -56,10 +56,12 @@ it, not before, so no key is written that nothing honors yet. The compiler reads
 `bins_cpk_name`, `refs_cpk_name`, `dds_compression`, `strict_file_type_check`, `pass_through`
 and `teams_list_path`.
 
-A missing key loads as its default; a key of the wrong type is a configuration error (exit code
-2, naming the key). A missing `teams_list.txt`, or no data directory yet, reads the embedded list
-without writing it (only `compile` creates the file); one that exists but cannot be read or
-parsed stops the run before any export is read (exit code 3, naming the path).
+A missing key loads as its default. A key of the wrong type is a configuration error (exit code
+2, naming the key).
+
+A missing `teams_list.txt`, or no data directory yet, reads the embedded list without writing it
+(only `compile` creates the file). A `teams_list.txt` that exists but cannot be read or parsed
+stops the run before any export is read (exit code 3, naming the path).
 
 Output mode (normal / test / sideload) is not a persisted setting: it is the Compile button's
 dropdown in the GUI and a flag on the CLI subcommand, as in Blue's `--mode` argument.
@@ -71,17 +73,22 @@ header, write it back — I/O-bound and serial. In the Studio it is one more ste
 task, on bytes already in memory, running on rayon workers like everything else.
 
 Rough budget for a 200 MB pre-Fox export that is mostly DDS: `flate2` deflate at level 6 runs
-at roughly 30–60 MB/s per core on block-compressed texture data (DXT blocks are high-entropy, so
-it is neither fast nor very effective — expect 10–30 % size reduction), i.e. ~4–7 s of CPU
+at roughly 30–60 MB/s per core on block-compressed texture data. DXT blocks are high-entropy, so
+it is neither fast nor very effective (expect 10–30 % size reduction). That is ~4–7 s of CPU
 spread over ~7 workers, well under a second of wall time per export and far below the CPU BC3
 encode of any raster-source texture in the same task.
 
 **Measured at 4.16b** (36 real DDS files, 40.8 MB: a PES 17 kit pack, a team's 2048² kit
 textures, a 5.6 MB Common body, five 1.4 MB model textures; `flate2` 1.1.10 with its default
-`miniz_oxide` backend, one thread, release build): level 1 gives 8.6 % of the raw bytes in
-47 ms, level 3 6.7 % in 161 ms, level 6 6.4 % in 302 ms, level 9 6.2 % in 713 ms. DXT data
-compresses far better than the budget above feared (flat kit mains to 0.15 %, photographic
-textures to 15 %), and the whole set takes a third of a second at Red's level.
+`miniz_oxide` backend, one thread, release build):
+
+- level 1 gives 8.6 % of the raw bytes in 47 ms;
+- level 3 6.7 % in 161 ms;
+- level 6 6.4 % in 302 ms;
+- level 9 6.2 % in 713 ms.
+
+DXT data compresses far better than the budget above feared (flat kit mains to 0.15 %,
+photographic textures to 15 %), and the whole set takes a third of a second at Red's level.
 
 **The level is 6**, Red's. Level 3 would save 0.14 s per 40 MB and cost 5 % more bytes in every
 CPK the game loads, level 1 would save 0.25 s for 35 % more, and a compile of that export spends
@@ -207,7 +214,7 @@ as the mapping already says, so no caller special-cases deployment. The CLI is a
 with its own run and does not require the GUI to be closed.
 
 `--mode sideload` with `pes_version` 15 or 16 is an invalid configuration (exit code 2), because
-no sideloading runtime exists for them; so is a sideload run whose `pes_folder_path` is not a
+no sideloading runtime exists for them. So is a sideload run whose `pes_folder_path` is not a
 folder. In sideload mode the bins land at their game paths inside `livecpk/` ("Output-mode
 artifact routing" under `pipeline.md` "Resolved decisions"). A sideload-mode run with PES open
 skips the savefile step unless given `--edit-mode-closed` (`savefile_skipped_pes_running`, see

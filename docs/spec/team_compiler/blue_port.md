@@ -49,10 +49,10 @@ slot XX, shows none there. Fox writes them as the slot's `k99XX`/`g99XX` folders
 
 A refs export may hold shared `Boots/` and `Gloves/` folders like a team's, but a referee has no
 team block to give one an ID of its own. So a referee's link resolves to his slot's
-`k99XX`/`g99XX`, the shared folder written as that folder for every slot that links it (on Fox
-the referee's local parts merged in, as for a player's own folder). On pre-Fox the link is
-written there alone, never copied into his `face.xml` as well, because the game loads `k99XX` by
-slot and a second copy in the face would dress him twice.
+`k99XX`/`g99XX`: the shared folder is written as that folder for every slot that links it, and
+on Fox the referee's local parts are merged in, as for a player's own folder. On pre-Fox the
+link is written there alone, never copied into his `face.xml` as well, because the game loads
+`k99XX` by slot and a second copy in the face would dress him twice.
 
 A referee folder with no face model gets no face folder, where a team player's gets a blank one
 (the FPC rule, `pipeline.md` step 1). A referee has no FPC body to bring a head, so a blank face
@@ -60,18 +60,18 @@ would leave him headless, and the game's own referee head stays.
 
 **The referee body (`refkit`, PES 15-17).** Referee teams are full FPC, so a head-only
 referee shows no body unless his face lists one. The referee template tree ships one at
-`common/999/refkit/` (Red's). A refs export's `Common/refkit/` replaces its files of the same
-name, the template's others staying (the cup customizes it: the Winter 26 to Summer 26 exports
-change 12 of its 16 files). Every other file of the export's `Common/`, a subfolder's included,
-lays over the template's `common/999/` the same way.
+`common/999/refkit/` (Red's). A refs export's `Common/refkit/` replaces the template refkit's
+files of the same name, and the template's other files stay (the cup customizes it: the Winter
+26 to Summer 26 exports change 12 of its 16 files). Every other file of the export's `Common/`,
+a subfolder's included, lays over the template's `common/999/` the same way.
 
 A member's `face.xml` names the body with Common paths
 (`model/character/uniform/common/999/refkit/oral_thigh_*.model`), or, more simply, the referee
 folder holds `fpc_off` ("this player needs his body", `aesthetics_export/fpc_toggle.md`). With
-`fpc_off`, his face's xml (generated, his own or a linked shared face's) gets these entries
-appended, before the `face_neck` dummy and the `<dif>`, each with `material`
-`model/character/uniform/common/999/refkit/refkit.mtl` (the list a cup referee's own xml used in
-game, Winter 26's `tsuoffside`):
+`fpc_off`, his face's xml (generated, his own or a linked shared face's) gets the entries below
+appended, before the `face_neck` dummy and the `<dif>`. Each has `material`
+`model/character/uniform/common/999/refkit/refkit.mtl`. The list is the one a cup referee's own
+xml used in game (Winter 26's `tsuoffside`):
 
 | `path` (`model/character/uniform/common/999/refkit/` +) | `type` |
 |---|---|
@@ -80,11 +80,15 @@ game, Winter 26's `tsuoffside`):
 | `oral_hand_r_*.model` | `gloveR` |
 | `oral_boots_*.model` | `boots` |
 
-An entry whose model the xml already names is left out, and so are the boots when he has
-boots of his own (a model or a link) and the hands when he has gloves, so he is never dressed
-twice; a partial body (his own shirt over the refkit's legs) is written by hand in his own
-xml, without `fpc_off`. A referee folder with no face model gets no face, so `fpc_off` adds
-nothing there. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
+So that he is never dressed twice, three kinds of entry are left out:
+
+- an entry whose model the xml already names;
+- the boots, when he has boots of his own (a model or a link);
+- the hands, when he has gloves.
+
+A partial body (his own shirt over the refkit's legs) is written by hand in his own xml,
+without `fpc_off`. A referee folder with no face model gets no face, so `fpc_off` adds nothing
+there. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
 "Issues").
 
 What carries over from Red as compiler-internal behavior (invisible in the format):
@@ -109,7 +113,7 @@ Red did.
 
 Pre-Fox keeps Red's route, the template prop's texture replaced. In game on PES 17
 (2026-10-09), a `.mtl` beside a nocloth `.model` is read, and the collar model then stops
-drawing, so a collar cannot carry a texture of its own there; and a collar drawn with the kit's
+drawing, so a collar cannot carry a texture of its own there. And a collar drawn with the kit's
 own material has no alpha test, so it could not show a logo with transparency anyway.
 
 Either way nothing outside the refs CPK is ever written and no consent, backup or rollback is
@@ -124,16 +128,18 @@ needed:
   marker;
 - on Fox the refs CPK carries the marker model as that collar, at the collar's `nocloth` path
   ("Game paths reference" in `pipeline.md`): `collar_077.fmdl`, the file a Fox referee loads,
-  bundled with the compiler like the other referee templates. On pre-Fox the refs CPK carries
-  the marker texture as the template tree's `parts/referee/incom_bsm.dds`, the texture of the
-  prop model the game draws by itself (the tree's `referee_prop.model`, a flat square bound to
-  `judge_incom`), in place of the tree's file: no collar pair, and the template configs keep
-  their collar 26. A pre-Fox referee draws `referee_collar_<ID>.model` and needs
-  `collar_<ID>.model` to exist (in game, 2026-10-08), but a `.mtl` beside that model stops it
-  drawing (in game, 2026-10-09, with the prop's material set and with the kit's), so a collar
-  cannot carry the marker there. The 77 reservation holds on both engines all the same, one
-  rule: on pre-Fox it costs a team one stock collar ID for nothing, cheaper than an engine case
-  in two findings;
+  bundled with the compiler like the other referee templates.
+
+  On pre-Fox the refs CPK carries the marker texture as the template tree's
+  `parts/referee/incom_bsm.dds`, in place of the tree's file. That is the texture of the prop
+  model the game draws by itself (the tree's `referee_prop.model`, a flat square bound to
+  `judge_incom`). There is no collar pair, and the template configs keep their collar 26. A
+  pre-Fox referee draws `referee_collar_<ID>.model` and needs `collar_<ID>.model` to exist (in
+  game, 2026-10-08), but a `.mtl` beside that model stops it drawing (in game, 2026-10-09, with
+  the prop's material set and with the kit's), so a collar cannot carry the marker there.
+
+  The 77 reservation holds on both engines all the same, as one rule: on pre-Fox it costs a team
+  one stock collar ID for nothing, which is cheaper than an engine case in two findings;
 - the model's texture path names the marker texture in the referees' Common output, which is
   `ref_marker.dds` converted like any Common texture (the bundled Fox model's base texture,
   `common/000/sourceimages/cup_logo.dds`, is pointed at `common/999/sourceimages/ref_marker.dds`;
@@ -142,13 +148,15 @@ needed:
   replacement from the data directory's `templates/referees_fox/` included (nothing else in
   them changes). They are loose files under
   `common/character0/model/character/uniform/team/referee/` in the refs CPK on both engines,
-  as the templates ship them (`referee_DEF_1.bin` and the rest). On Fox each is also written
-  as the entry of its name, the file name with `.bin`, in the bins CPK's `UniformParameter.bin`,
-  inserted by name like a team's: the bundled bases hold the `ACL` and `DEF` ones (PES 18's
-  the `CL` ones too) at collar 105, which the entry written replaces, and no `LB` or `SDA`
-  entry, which is added. The game needs the loose file but reads the values from the entry,
-  as it does for a team's kit configs (in-game tests: a collar changed in an entry was worn).
-  Loose files alone leave the referees on the entries' collar 105.
+  as the templates ship them (`referee_DEF_1.bin` and the rest).
+
+  On Fox each is also written as the entry of its name, the file name with `.bin`, in the bins
+  CPK's `UniformParameter.bin`, inserted by name like a team's. The bundled bases hold the `ACL`
+  and `DEF` entries (PES 18's the `CL` ones too) at collar 105, which the entry written
+  replaces. They hold no `LB` or `SDA` entry, so that one is added. The game needs the loose
+  file but reads the values from the entry, as it does for a team's kit configs (in-game tests:
+  a collar changed in an entry was worn). Loose files alone leave the referees on the entries'
+  collar 105.
 
 Without `ref_marker.dds` the collar model and the texture are not emitted, and the template
 configs keep the collar they had. A marker that its texture checks drop or whose conversion
