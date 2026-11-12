@@ -1833,16 +1833,6 @@ briefs, review loops, gates and mutation runs as for any step.
     no cheap addition (`shot_dropline_light.py` overrides the variables for a one-off look)
     - [ ] the slice (small: `view/player_list.rs`; after 0.0.2-clip), then the look in the
       built window (Pending looks)
-  - [ ] 0.0.2-pal the drafts draw from a palette as the app does (the maintainer,
-    2026-11-12: "The draft should ideally use a palette like the app does"): every colour
-    that follows the theme is a variable of the host page named as `studio_core`'s
-    `theme.rs` names it, with a light value beside the dark one, and the settings' Theme
-    choice switches them; the colours that follow no theme (the pitch, the medals, a
-    name's own codes, the sample data) stay literals, marked as such. Measured 2026-11-12
-    (`.tmp/0_0_2/undo/colour_census.py`): 160 hex literals outside the 17 variables, 75
-    distinct, 116 of them in `save_editor.js`. A pure refactor first, proven by
-    `draft_shots.py` showing no changed shot on the dark theme; then the light values.
-    Opus, when a sidekick slot is free and no draft edit is in flight
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
@@ -2161,6 +2151,16 @@ briefs, review loops, gates and mutation runs as for any step.
   sidebar or Settings, the ring usable from the keyboard). Settled with the maintainer:
   the sidebar shows the current role as one compact control, not the six listed, the
   ring being where a role is chosen
+- [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
+  2026-11-12: "The draft should ideally use a palette like the app does"): every colour
+  that follows the theme is a variable of the host page named as `studio_core`'s
+  `theme.rs` names it, with a light value beside the dark one, and the settings' Theme
+  choice switches them; the colours that follow no theme (the pitch, the medals, a
+  name's own codes, the sample data) stay literals, marked as such. Measured 2026-11-12
+  (`.tmp/0_0_2/undo/colour_census.py`): 160 hex literals outside the 17 variables, 75
+  distinct, 116 of them in `save_editor.js`. A pure refactor first, proven by
+  `draft_shots.py` showing no changed shot on the dark theme; then the light values.
+  Opus, when no draft edit is in flight
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
