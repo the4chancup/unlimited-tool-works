@@ -21,10 +21,13 @@ is in `AGENTS.md` ("Working documents").
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
 5. The library checkpoints (0.0.2-chk), then the cut.
 
-**The PoC for VGL's organizer:** 0.0.2-poc.4 is built (`4cc-studio-temp/poc/target/dist`,
-archive SHA-256 `775fcf8c…`, branch `vgl27` at `73397383`: main of 2026-11-11, so with the
-old kit token's refusal, no BC7 encoding, JPEG XL sources and `--timestamps`), beside poc.3
-and poc.2. Its in-game check and its hand-over are the maintainer's.
+**The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
+archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
+`cfd15a27`, so with the launchers' logs, the readme's backup and list steps, Update now's
+Restart and the Save editor's three-column comparator), beside poc.4 and the older ones.
+Both launchers were run from the unpacked archive under a pseudo-console, over a fake PES 21
+install and the tests' fixture exports. Its in-game check and its hand-over are the
+maintainer's.
 **Blocked on:** nothing.
 **Behind 0.0.2:** Phase 8's other views and Release 0.1.0, then the phase order 1–6, 8,
 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases"; the first-class target is the
