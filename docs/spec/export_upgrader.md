@@ -1182,9 +1182,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
     folder's root counting as one. That conflict is the fold's making, while one already inside a
     location is the compile's to report as for any folder.
 
-    A folder left as it was is copied at its old paths, and step 7's renames and rewrites skip
-    it: it is the author's to repair by hand, and names moved under him would hide what the
-    report named.
+    "Left as it was" is the run's plan, not an output: each of these findings is an Error, so
+    the run writes nothing (EU-REF-03 and 11) and the author repairs the old export. In
+    the plan the folder keeps its old paths, and step 7's renames and rewrites skip it, so
+    every later finding of the same run names his files where he will find them.
 
     A model of `common/` that no reference of the referee names (a `face.xml` of his, wherever it
     stands in his folder, whose `path` value's file name, its `*` read as `win32`, is the

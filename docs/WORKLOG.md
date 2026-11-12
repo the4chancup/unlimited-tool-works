@@ -2357,11 +2357,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-12 (the lead, writing the referee export page): the Export upgrader's help
-  says a conflicting referee folder is "left as it was and reported", where EU-REF-03, 09
-  and 11 have a conflict report and write nothing at all. Find the sentence (the tool's
-  help chapter or its `--help`), check it against the three scenarios and the code, and
-  correct whichever is wrong.
+- resolved 2026-11-12 (the lead, writing the referee export page): the Export upgrader's
+  spec and `referees.rs` said a conflicting referee folder is "left as it was", copied at
+  its old paths for the author to repair, where EU-REF-03 and 11 write nothing. Both hold:
+  the finding is an Error, so nothing is written, and "left as it was" is the run's plan,
+  which keeps the folder's old paths so later findings name the files where they are. The
+  spec's paragraph and the module's comment now say so; no behaviour changed.
 - open 2026-11-12 (the maintainer; queued for after 0.0.2): who reads the attack and
   defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
   shows them, PES 17's does not, and PES 21's executable ignores them
