@@ -10,22 +10,28 @@ tool's view (Phase 8).
 
 ## What it does
 
-What exists of this is in `spec/export_upgrader.md` "What it does", steps 1 to 12. Step 8
-gains the base copy (with worklog 8.36c): a player whose record in the savefile copies another
-player (a base-copy id neither 0 nor his own) gets that id's `<id>.copy` link in his folder
-(`plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)"), since the copy lives only in the
-save and the `.ted` and would otherwise be cleared by the first patch; when his folder also
-holds a face of his own, the face stays, the copy is not written and a Warning names both (the
-game showed the copy over that face, so the manager's face was not what the cup saw, which the
-member is told rather than having it chosen for them silently): `base_copy_beside_face`
-(context: the folder, the copied id). A face of his own is a face folder's model; an
-in-game face the upgrader would generate from his record (the `ingame_face.toml` of a
-player with no face folder, or of a folder holding the old `ingame_face` marker) is not one:
-the game drew the copy over that record, so the copy is what the cup saw, and the folder gets
-the link in place of the `ingame_face.toml`, with no Warning. A copying player the upgrade
-gives no folder (a stock-booted player with no face folder) needs no link: no patch entry
-names him, so his record, copy included, stays as the save holds it. Loose mode, which has no
-save, writes none.
+What exists of this is in `spec/export_upgrader.md` "What it does", steps 1 to 12.
+
+Step 8 gains the base copy (with worklog 8.36c). A player whose record in the savefile copies
+another player (a base-copy id neither 0 nor his own) gets that id's `<id>.copy` link in his
+folder (`plans/aesthetics_export/player_folders.md` "Player folders (the Studio export
+format)"), because the copy lives only in the save and the `.ted` and would otherwise be
+cleared by the first patch.
+
+When his folder also holds a face of his own, the face stays, the copy is not written and a
+Warning names both: `base_copy_beside_face` (context: the folder, the copied id). The game
+showed the copy over that face, so the manager's face was not what the cup saw, and the member
+is told so rather than having it chosen for them silently.
+
+A face of his own is a face folder's model. An in-game face the upgrader would generate from
+his record (the `ingame_face.toml` of a player with no face folder, or of a folder holding the
+old `ingame_face` marker) is not one. The game drew the copy over that record, so the copy is
+what the cup saw, and the folder gets the link in place of the `ingame_face.toml`, with no
+Warning.
+
+A copying player the upgrade gives no folder (a stock-booted player with no face folder) needs
+no link, because no patch entry names him, so his record, copy included, stays as the save
+holds it. Loose mode, which has no save, writes none.
 
 What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "What it
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
@@ -37,20 +43,23 @@ boots and gloves IDs (VGL27)"). The organizer upgrades every VGL27 export with i
 included, while managers keep sending Red exports. It changes two things and nothing else:
 
 - **Shared boots or gloves folders merge into every wearer.** A folder two or more players
-  wear is not kept shared (step 4): step 3's merge copies it into each wearer's folder, as
+  wear is not kept shared (step 4). Step 3's merge copies it into each wearer's folder, as
   it merges a single wearer's, so each wearer's own package carries the folder's one old ID.
+
   A merge that would clash with a file already in any wearer's folder keeps the folder
   shared, as step 3 does outside the mode (`merge_kept_shared`, the first clashing path in
-  its context), and the wearers' `legacy_ids.toml` tables still record its ID, which the
+  its context). The wearers' `legacy_ids.toml` tables still record its ID, which the
   compiler packs the shared folder under. We keep it shared rather than refuse the export
   because real exports clash often: a full-body boots folder carries its own `skin.dds`,
   `face.dds` or `head.dds` beside the face folder's (15 of the 39 VGL27 Friendlies, 78
-  folders). Pre-Fox exports, whose item folders step 3 never merges, keep their shared
-  folders: the mode is for VGL27's PES 2019 exports.
+  folders).
+
+  Pre-Fox exports, whose item folders step 3 never merges, keep their shared folders, because
+  the mode is for VGL27's PES 2019 exports.
 - **Step 8 also writes the root `legacy_ids.toml`**: a table per player slot holding the
-  custom boots and gloves IDs (above 100) of the migrated folders he wears, the ID each
-  folder's name carries (`k0430 - Crocs` gives `boots = 430`), loose mode's inferred
-  wearers included, under a comment saying what reads it:
+  custom boots and gloves IDs (above 100) of the migrated folders he wears. The ID is the one
+  each folder's name carries (`k0430 - Crocs` gives `boots = 430`), loose mode's inferred
+  wearers included. The tables sit under a comment saying what reads the file:
 
   ```toml
   # The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).
@@ -64,37 +73,47 @@ included, while managers keep sending Red exports. It changes two things and not
   with no such player gets no file. `aesthetics_export` admits it as a team export's root
   metadata file, so the shared validation ("Verification") does not report it.
 
-Without `--legacy-ids` neither happens. A flag rather than every upgrade: copying shared
-folders changes the export's layout, which only the cup that needs it should get, and the
-file's presence is what turns the compiler's legacy packing on. Both go with VGL27.
+Without `--legacy-ids` neither happens. It is a flag rather than part of every upgrade because
+copying shared folders changes the export's layout, which only the cup that needs it should
+get, and because the file's presence is what turns the compiler's legacy packing on. Both go
+with VGL27.
 
 What worklog 0.0.2-poc5 and poc7 built is in `spec/export_upgrader.md` "What it does",
 step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
-    model files to glTF in place: every `.fmdl` (Fox exports) or `.model`+`.mtl` (pre-Fox exports)
-    in player folders, shared folders, and Common is imported to the IR and exported as one `.glb`
-    per model via `model_convert`'s `ir_to_gltf`. Old exports are always single-engine (Fox-only or
-    pre-Fox-only — Red cannot handle mixed states), so there is no dual-set superset merge to
-    automate: each model converts plainly through one path. Skeleton transforms come from the
-    FMDL's companion SKL or the embedded template skeleton, or from a `.model`'s inline bone table
-    (see "Skeleton reconstruction from FMDL" and "Skeleton in `.model`" in the [Model conversion
-    plan](model_conversion/README.md)). Textures stay in place
-    (existing DDS/FTEX referenced by stem from the generated `materials.toml`, whose entries carry
-    the `family` inferred from the native shader plus the native engine table — see "Emission" in
-    the [Unified model format plan](model_format.md)). A `.mtl.common` link converts to the
-    matching `.materials.toml.common` link, and the Common `.mtl` it points at is converted in
-    place like any other; texture links (`hair.dds.common`, created by step 7's path normalization
-    or already present) are format-neutral and stay as they are. For pre-Fox
-    exports, `.mtl` texture paths are stripped of extensions (normalized to stem-based references,
-    matching the Studio format). Replacement is transactional per model folder: all parts convert
-    first, and the structurally-migrated originals remain recoverable until publication completes.
-    Multiple writes/deletes are not a single atomic filesystem operation. Conversion or publication
-    failure restores the native folder, or retains a clearly identified recoverable copy if rollback
-    itself fails; success is not reported for a partial migration. The two-step design keeps the
-    structural migration lossless and parity-testable: the test suite validates the structural step against Red's reference output,
-    and the glTF conversion has its own roundtrip tests in `model_convert`.
+    model files to glTF in place. Every `.fmdl` (Fox exports) or `.model`+`.mtl` (pre-Fox
+    exports) in player folders, shared folders, and Common is imported to the IR and exported as
+    one `.glb` per model via `model_convert`'s `ir_to_gltf`.
+
+    Old exports are always single-engine (Fox-only or pre-Fox-only — Red cannot handle mixed
+    states), so there is no dual-set superset merge to automate: each model converts plainly
+    through one path. Skeleton transforms come from the FMDL's companion SKL or the embedded
+    template skeleton, or from a `.model`'s inline bone table (see "Skeleton reconstruction from
+    FMDL" and "Skeleton in `.model`" in the [Model conversion
+    plan](model_conversion/README.md)).
+
+    Textures stay in place: existing DDS/FTEX referenced by stem from the generated
+    `materials.toml`, whose entries carry the `family` inferred from the native shader plus the
+    native engine table (see "Emission" in the [Unified model format plan](model_format.md)).
+
+    - A `.mtl.common` link converts to the matching `.materials.toml.common` link, and the
+      Common `.mtl` it points at is converted in place like any other.
+    - Texture links (`hair.dds.common`, created by step 7's path normalization or already
+      present) are format-neutral and stay as they are.
+    - For pre-Fox exports, `.mtl` texture paths are stripped of extensions (normalized to
+      stem-based references, matching the Studio format).
+
+    Replacement is transactional per model folder: all parts convert first, and the
+    structurally-migrated originals remain recoverable until publication completes. Multiple
+    writes/deletes are not a single atomic filesystem operation. Conversion or publication
+    failure restores the native folder, or retains a clearly identified recoverable copy if
+    rollback itself fails. Success is not reported for a partial migration.
+
+    The two-step design keeps the structural migration lossless and parity-testable: the test
+    suite validates the structural step against Red's reference output, and the glTF conversion
+    has its own roundtrip tests in `model_convert`.
 
 ## CLI
 
@@ -105,22 +124,30 @@ What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--conve
 UTW export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
 ```
 
-`--legacy-ids` is VGL27's legacy mode ("What it does", 0.0.2-poc13). One addition to the built commands (the coverage tag and the staging folder's sweep are
+`--legacy-ids` is VGL27's legacy mode ("What it does", 0.0.2-poc13).
+
+One addition to the built commands (the coverage tag and the staging folder's sweep are
 built: `spec/export_upgrader.md` "CLI"):
 
 - **Several exports at once.** `upgrade` takes one or more exports, with one `--savefile` or
-  `--loose` for all of them: each is upgraded as if run alone (its own verdict, its output
-  written or not; with more than one export, its report block under a line naming it, so a
-  one-export run prints as today), every output inside `-o` or beside
-  its input, and the exit code is the highest any export's run gave. An argument error that
-  is the same for all (a flag, a savefile that does not read as a save) refuses the whole run
-  before any export is read; a missing export path, a save lacking one export's team, a
-  flag that export's kind refuses (`--savefile`, `--loose` or `--coverage` given with a
-  referee export among team exports), or one it requires and lacks (neither `--savefile`
-  nor `--loose` with a team export among referee exports) refuses that export alone, its
-  block saying so. For an organizer moving a cup's library
-  (about 50 teams) to Studio once per cup; the launcher keeps calling one export at a time,
-  since its summary line counts them. `upgrade-models` stays one folder.
+  `--loose` for all of them. Each is upgraded as if run alone: its own verdict, its output
+  written or not, and, with more than one export, its report block under a line naming it, so
+  a one-export run prints as today. Every output goes inside `-o` or beside its input, and the
+  exit code is the highest any export's run gave.
+
+  An argument error that is the same for all (a flag, a savefile that does not read as a save)
+  refuses the whole run before any export is read. These refuse that export alone, its block
+  saying so:
+  - a missing export path;
+  - a save lacking one export's team;
+  - a flag that export's kind refuses (`--savefile`, `--loose` or `--coverage` given with a
+    referee export among team exports);
+  - a flag it requires and lacks (neither `--savefile` nor `--loose` with a team export among
+    referee exports).
+
+  Several exports at once is for an organizer moving a cup's library (about 50 teams) to
+  Studio once per cup. The launcher keeps calling one export at a time, because its summary
+  line counts them. `upgrade-models` stays one folder.
 - **The progress line.** On a terminal, `upgrade` and `upgrade-models` draw the console's
   progress line as `compile` does, counting the input exports and the files written
   (`plans/core/architecture.md` "The console's progress line and run summary").
@@ -136,93 +163,128 @@ refined with the maintainer before `view/` is written:
   dropped on a target from outside the window or picked with the target's Browse button
   (`rfd`). The view holds one input: a drop on either target clears the other, and Upgrade runs
   the command of the target that holds it.
-- **The run's arguments**, under the first target, the CLI's and nothing more: the savefile
-  field, prefilled with the newest save `pes_savefile::discovery` finds for the selected PES version
-  (empty when it finds none; a Browse button beside it), and the **loose** switch (step 11).
-  Exactly one of the two is taken, so Upgrade is enabled once either is set; loose switched on
-  disables the savefile field, its value kept for when loose goes off and not passed, rather than
-  clearing it, since a member trying both ways would pick the save again. The field follows the
-  selected PES version's discovered save until the member edits or picks one. Both are disabled
-  for a referee export (its name's first word `refs`), which takes neither, so for it Upgrade is
-  enabled as soon as the target is filled, and likewise while the second target holds the input. An **Output into**
-  field holds the directory the output folder is written inside (`-o`): the input's parent by
-  default, so the output lands beside the input, as the CLI's default. For the second target
-  the same field is the output directory itself (`upgrade-models` writes its folders straight
-  into its `-o`), `<input> upgraded` beside the input by default, as the CLI's. A **Full /
-  Midcup** pair (`--coverage`) is prefilled with the name's guess once a team export is
-  dropped, its tooltip naming what decided it (`coverage_tag_chosen`'s `source`, `spec/export_upgrader.md` "CLI"); disabled for a referee
-  export and for the second target, and held on the name's tag when the name already carries
-  one (the CLI refuses the other there). The view passes `--coverage` only when the pair
-  differs from the name's guess, so the report's `source` is the name's whenever the member
-  left the pair alone.
-- **The savefile field names the team it needs.** Once a team export is dropped (a referee
-  export's field is disabled and shows nothing beside it: it takes no save), its team is
-  resolved (the Note's `Team:` line, else the name, step 6) and the field shows
-  `needs /egg/` beside it (the name alone: the upgrader reads no teams list and the save's team
-  is found by name, `spec/export_upgrader.md` step 6); a save picked or discovered that holds
-  no team of that name turns the
-  field red, the refusal's sentence as its tooltip, and Upgrade stays disabled, so a manager
-  whose save comes from another cup or version learns it before the run rather than from its
-  exit 2. A Note or name that gives no team name shows `no team name` instead and
-  disables nothing of its own (Upgrade still needs a save or loose, EU-GUI-01): the save is
-  then not checked for the team, which has no name to look for, and the run reports
-  `team_name_unknown` before any check of the save for the team, as the CLI does; a picked
-  or discovered file that does not read as a save turns the field red with the read error as its tooltip,
-  Upgrade disabled. An export whose Note or archive does not read at the drop leaves the field
-  plain: the run reports it (`source_read_failed`, `export_extract_failed`) as the CLI does.
-  A red field disables Upgrade only while loose is off: with loose on the field's value is not
+- **The run's arguments**, under the first target, the CLI's and nothing more:
+  - the savefile field, prefilled with the newest save `pes_savefile::discovery` finds for the
+    selected PES version (empty when it finds none; a Browse button beside it);
+  - the **loose** switch (step 11).
+
+  Exactly one of the two is taken, so Upgrade is enabled once either is set. Loose switched on
+  disables the savefile field, its value kept for when loose goes off and not passed, rather
+  than clearing it, because a member trying both ways would pick the save again. The field
+  follows the selected PES version's discovered save until the member edits or picks one.
+
+  Both are disabled for a referee export (its name's first word `refs`), which takes neither,
+  so for it Upgrade is enabled as soon as the target is filled, and likewise while the second
+  target holds the input.
+
+  An **Output into** field holds the directory the output folder is written inside (`-o`): the
+  input's parent by default, so the output lands beside the input, as the CLI's default. For
+  the second target the same field is the output directory itself (`upgrade-models` writes its
+  folders straight into its `-o`), `<input> upgraded` beside the input by default, as the
+  CLI's.
+
+  A **Full / Midcup** pair (`--coverage`) is prefilled with the name's guess once a team export
+  is dropped, its tooltip naming what decided it (`coverage_tag_chosen`'s `source`,
+  `spec/export_upgrader.md` "CLI"). The pair is disabled for a referee export and for the
+  second target, and held on the name's tag when the name already carries one (the CLI refuses
+  the other there). The view passes `--coverage` only when the pair differs from the name's
+  guess, so the report's `source` is the name's whenever the member left the pair alone.
+- **The savefile field names the team it needs.** Once a team export is dropped, its team is
+  resolved (the Note's `Team:` line, else the name, step 6) and the field shows `needs /egg/`
+  beside it. A referee export's field is disabled and shows nothing beside it, because it takes
+  no save. The field shows the name alone, because the upgrader reads no teams list and the
+  save's team is found by name (`spec/export_upgrader.md` step 6).
+
+  The field's states:
+  - A save picked or discovered that holds no team of that name turns the field red, the
+    refusal's sentence as its tooltip, and Upgrade stays disabled, so a manager whose save
+    comes from another cup or version learns it before the run rather than from its exit 2.
+  - A Note or name that gives no team name shows `no team name` instead and disables nothing
+    of its own (Upgrade still needs a save or loose, EU-GUI-01). The save is then not checked
+    for the team, which has no name to look for, and the run reports `team_name_unknown`
+    before any check of the save for the team, as the CLI does.
+  - A picked or discovered file that does not read as a save turns the field red with the read
+    error as its tooltip, Upgrade disabled.
+  - An export whose Note or archive does not read at the drop leaves the field plain: the run
+    reports it (`source_read_failed`, `export_extract_failed`) as the CLI does.
+
+  A red field disables Upgrade only while loose is off. With loose on the field's value is not
   passed (above), so loose stays the way out of a save that will not do.
-  The resolution and the save read are the run's own steps, moved to the drop
-  and the pick; the run still checks both.
+
+  The resolution and the save read are the run's own steps, moved to the drop and the pick;
+  the run still checks both.
 - **Upgrading without the save asks first.** With loose on, Upgrade opens a dialog before the
-  run: the save is where the players' looks live (the appearance step 8 reads into
-  `settings.toml`, and the in-game faces), the old export holds none of it, so an upgrade
+  run. The save is where the players' looks live (the appearance step 8 reads into
+  `settings.toml`, and the in-game faces), and the old export holds none of it. So an upgrade
   without the save carries none, and a compile of the output then gives the players it holds
-  the default look. The dialog says that and the remedy (cancel, and pick the save the team
-  was made in), and its Upgrade button stays disabled until the member ticks `I understand
-  the players' looks will be lost`; Cancel returns to the view, loose still on. Asked on every
-  loose run rather than once, since each export's loss is its own. The CLI asks nothing:
-  `--loose` is already the opt-in step 11 requires, and a prompt would stall a script.
+  the default look.
+
+  The dialog says that and the remedy (cancel, and pick the save the team was made in). Its
+  Upgrade button stays disabled until the member ticks
+  `I understand the players' looks will be lost`; Cancel returns to the view, loose still on.
+  The dialog is asked on every loose run rather than once, because each export's loss is its
+  own.
+
+  The CLI asks nothing: `--loose` is already the opt-in step 11 requires, and a prompt would
+  stall a script.
 - **The Upgrade button** runs the command on a thread of its own through the CLI's own parser,
   as the Team compiler's Compile does (`spec/core/development_plan.md` "Phase 3", the shell
-  slice), so the view cannot upgrade anything the command line would refuse; a refusal (a
+  slice), so the view cannot upgrade anything the command line would refuse. A refusal (a
   savefile without the team, exit 2) and an abort (an output folder that already exists, exit
-  3) show as the CLI prints them. The existing-output abort's done line carries **Open the
-  existing folder**, so a manager re-running an upgrade sees what the earlier run made and can
-  rename or remove it; the command returns the folder's path with that abort (a field of the
-  error, not parsed back from its text, which a Windows path's `:` would break). An abort over
-  a file that could not be written carries none: its folder is the incomplete staging one.
+  3) show as the CLI prints them.
+
+  The existing-output abort's done line carries **Open the existing folder**, so a manager
+  re-running an upgrade sees what the earlier run made and can rename or remove it. The command
+  returns the folder's path with that abort, as a field of the error, not parsed back from its
+  text, which a Windows path's `:` would break. An abort over a file that could not be written
+  carries no such button, because its folder is the incomplete staging one.
 - **The report** is the view's product: step 10's findings as the console prints them, in the
-  log panel, and above it the **left-behind** list, one row per `unmigrated_content` or
-  `leftover_dropped` entry with its input path, the finding's code and the entry's context (a
-  Note line, a kit config's error), so the author sees in one place what to fix in the input
-  (an unmigrated entry, which kept anything from being written) or what the output left out (a
-  leftover). Entries are grouped by their parent folder: a parent holding two or more is one
-  collapsing row with the count (`Boots/k2177 - THIS BEAVER IS CONTAMINATED: 18 left out`:
-  the count is of entries, files or folders alike), its chevron opening it to its entries, and a parent holding one stays that one row; the
-  export's own root, as a parent, is named by the input's name (`co Spring: 2 left out`);
-  an entry that is itself a folder (a second face folder) groups under its parent like a
-  file. A real export's upgrade (Lab's EGG, in the draft) left 120 rows, 18 of them one boots
-  folder's, which then read as the 25 folders they are about. A click on a group's row opens
-  or closes it, as its chevron does; a click on an entry's row opens the system file browser
-  at that entry (the folder, the file
-  selected where the platform can; for an archive input, the folder the archive sits in, the
-  archive selected), its tooltip saying so,
-  so the fix starts from the list rather than a walk through the folders. For `upgrade-models` the per-folder "where it
-  goes" lines are the log's, as the CLI prints them, and the list holds the folders it left
-  out. A **Copy report** button beside the done line puts the console's lines on the clipboard,
-  as the CLI prints them, for a manager asking for help in the cup's thread. The run ends with the exit code's meaning in words (clean; not clean, nothing written,
-  see the list; refused; aborted). A clean run, the only one that writes output, also gets the
-  notice `Upgraded <name> · [Open output folder]` in the status bar and, in the view's done
-  line, a **Move to exports and compile** button: the output is moved into the exports folder
-  and the Team compiler made active (`ctx.switch_to_tool`, as the Refs arranger hands off),
+  log panel, and above it the **left-behind** list. The list has one row per
+  `unmigrated_content` or `leftover_dropped` entry with its input path, the finding's code and
+  the entry's context (a Note line, a kit config's error), so the author sees in one place what
+  to fix in the input (an unmigrated entry, which kept anything from being written) or what the
+  output left out (a leftover).
+
+  Entries are grouped by their parent folder:
+  - A parent holding two or more is one collapsing row with the count
+    (`Boots/k2177 - THIS BEAVER IS CONTAMINATED: 18 left out`: the count is of entries, files
+    or folders alike), its chevron opening it to its entries.
+  - A parent holding one stays that one row.
+  - The export's own root, as a parent, is named by the input's name (`co Spring: 2 left out`).
+  - An entry that is itself a folder (a second face folder) groups under its parent like a
+    file.
+
+  A real export's upgrade (Lab's EGG, in the draft) left 120 rows, 18 of them one boots
+  folder's, which then read as the 25 folders they are about.
+
+  A click on a group's row opens or closes it, as its chevron does. A click on an entry's row
+  opens the system file browser at that entry (the folder, the file selected where the platform
+  can; for an archive input, the folder the archive sits in, the archive selected), its tooltip
+  saying so, so the fix starts from the list rather than a walk through the folders.
+
+  For `upgrade-models` the per-folder "where it goes" lines are the log's, as the CLI prints
+  them, and the list holds the folders it left out.
+
+  A **Copy report** button beside the done line puts the console's lines on the clipboard, as
+  the CLI prints them, for a manager asking for help in the cup's thread. The run ends with the
+  exit code's meaning in words (clean; not clean, nothing written, see the list; refused;
+  aborted).
+
+  A clean run, the only one that writes output, also gets the notice
+  `Upgraded <name> · [Open output folder]` in the status bar and, in the view's done line, a
+  **Move to exports and compile** button. The button moves the output into the exports folder
+  and makes the Team compiler active (`ctx.switch_to_tool`, as the Refs arranger hands off),
   the watcher then checking it like any dropped export. It is a button rather than the
   notice's action because a notice carries at most one (`spec/core/gui.md` "Status bar"), and
   Open output folder stays useful to a member who compiles elsewhere. Once clicked, the done
-  line says where the output moved to and the button goes. A clean `upgrade-models` run gets
-  the notice and no Move button: its output is folders to drop into an export, not an export.
-  Any other run publishes no notice, having nothing to open. A new input clears the previous
-  run's report, the log and the list included: the report is about the input it ran on.
+  line says where the output moved to and the button goes.
+
+  A clean `upgrade-models` run gets the notice and no Move button, because its output is
+  folders to drop into an export, not an export. Any other run publishes no notice, having
+  nothing to open.
+
+  A new input clears the previous run's report, the log and the list included, because the
+  report is about the input it ran on.
 - No settings section: the tool has no settings (step 6: it reads no teams list).
 
 ## Dependencies
