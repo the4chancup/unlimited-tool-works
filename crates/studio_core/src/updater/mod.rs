@@ -29,6 +29,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 use crate::settings::CommonSettings;
+use crate::shell::version_label_of;
 
 /// The releases list the check reads: `per_page=30`, so a run of tags that are
 /// no release still leaves the newest release inside the one page.
@@ -192,30 +193,61 @@ pub fn now_secs() -> u64 {
         .map_or(0, |elapsed| elapsed.as_secs())
 }
 
+/// A check's reply: the newest release (`None` when the list holds no
+/// `v<semver>` tag), or the check's failure.
+pub type CheckReply = Result<Option<Release>, UpdateError>;
+
 /// Starts the check on a thread of its own and returns the reply's channel:
-/// `fetch`'s body parsed into the newest release (`newest_release`), `None`
-/// when the list holds no `v<semver>` tag, or the check's failure; one send,
-/// then the thread is done. The shell polls the receiver each frame, and the
-/// send asks `egui_ctx` for a repaint so a finished check does not wait on
-/// input. The fetch is the caller's (`fetch_releases` in the window, a fixture
-/// in the tests), so the check's whole path runs in tests without the network.
-pub fn start_check(
-    fetch: Arc<Fetch>,
-    egui_ctx: &egui::Context,
-) -> Receiver<Result<Option<Release>, UpdateError>> {
+/// `fetch`'s body parsed into the newest release (`newest_release`); one
+/// send, then the thread is done. The window polls the receiver each frame
+/// and passes its `egui_ctx`, which the send asks for a repaint so a finished
+/// check does not wait on input. A tool command passes none: it takes the
+/// reply once, when its run is over. The fetch is the caller's
+/// (`fetch_releases` in the program, a fixture in the tests), so the check's
+/// whole path runs in tests without the network.
+pub fn start_check(fetch: Arc<Fetch>, egui_ctx: Option<&egui::Context>) -> Receiver<CheckReply> {
     let (tx, rx) = bounded(1);
-    let repaint = egui_ctx.clone();
+    let repaint = egui_ctx.cloned();
     std::thread::spawn(move || {
         let outcome = fetch().and_then(|body| newest_release(&body));
-        // One send, then the thread is done: a shell that dropped the receiver
-        // closed mid-check, and the reply goes with it.
+        // One send, then the thread is done: a caller that dropped the
+        // receiver (a window closed, a command over) left mid-check, and the
+        // reply goes with it.
         if tx.send(outcome).is_ok() {
-            repaint.request_repaint();
+            if let Some(repaint) = repaint {
+                repaint.request_repaint();
+            }
         } else {
             log::debug!("the update check's reply had no receiver left");
         }
     });
     rx
+}
+
+/// The program's own version, the one a release must be newer than.
+fn own_version() -> Version {
+    env!("CARGO_PKG_VERSION")
+        .parse()
+        .expect("CARGO_PKG_VERSION is a semver triple; the workspace cannot build without one")
+}
+
+/// The line a tool command prints when its check found a release to offer
+/// (`offers`, against the program's own version and `skipped`), or `None`
+/// when it found none. A member who only runs the launchers never sees the
+/// status bar's offer, so the line tells them where to find it.
+pub fn command_line_notice(newest: Option<&Release>, skipped: Option<&str>) -> Option<String> {
+    notice_line(newest, &own_version(), skipped)
+}
+
+/// `command_line_notice` with the program's version given, so a test can set it.
+fn notice_line(newest: Option<&Release>, own: &Version, skipped: Option<&str>) -> Option<String> {
+    let release = newest.filter(|release| offers(release, own, skipped))?;
+    Some(format!(
+        "{} {} is out (you have {}). Start the program and click Update available to get it.",
+        crate::APP_NAME,
+        version_label_of(&release.version.to_string(), false),
+        version_label_of(&own.to_string(), false),
+    ))
 }
 
 /// The HTTP settings the check and the download share: rustls on `ring` as
@@ -408,6 +440,39 @@ mod tests {
             Version::new(0, 0, 1),
             "a pre-release ranks under its release"
         );
+    }
+
+    // ST-CLI-05
+    #[test]
+    fn the_command_line_notice_names_a_release_the_offer_is_made_for() {
+        let release = |version: &str| {
+            newest_release(&format!(
+                r#"[{{"tag_name": "v{version}", "body": null, "html_url": "u", "assets": []}}]"#
+            ))
+            .expect("the list parses")
+        };
+        let own = Version::new(0, 0, 2);
+        for (case, newest, skipped, expected) in [
+            (
+                "newer",
+                release("0.0.3"),
+                None,
+                Some(
+                    "Unlimited Tool Works v0.0.3 pre-alpha is out (you have v0.0.2 pre-alpha). \
+                     Start the program and click Update available to get it.",
+                ),
+            ),
+            ("the same", release("0.0.2"), None, None),
+            ("older", release("0.0.1"), None, None),
+            ("skipped", release("0.0.3"), Some("0.0.3"), None),
+            ("no release", None, None, None),
+        ] {
+            assert_eq!(
+                notice_line(newest.as_ref(), &own, skipped).as_deref(),
+                expected,
+                "{case}"
+            );
+        }
     }
 
     #[test]

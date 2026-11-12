@@ -24,14 +24,15 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Context;
 use clap::ArgMatches;
-use crossbeam_channel::unbounded;
+use crossbeam_channel::{Receiver, unbounded};
 use log::LevelFilter;
 use rfd::MessageLevel;
 use studio_core::icons;
+use studio_core::updater::{self, CheckReply, Fetch};
 use studio_core::{
-    AppPaths, EXE_NAME, LaunchMode, PlannedTool, SETTINGS_FILE_NAME, Settings, ShellCondition,
-    StudioApp, StudioTool, ToolContext, parse_launch, resolve_data_dir, run_cli, run_gui, run_help,
-    settings_file_writable, user_config_dir,
+    AppPaths, CommonSettings, EXE_NAME, LaunchMode, PlannedTool, SETTINGS_FILE_NAME, Settings,
+    ShellCondition, StudioApp, StudioTool, ToolContext, parse_launch, resolve_data_dir, run_cli,
+    run_gui, run_help, settings_file_writable, user_config_dir,
 };
 
 use crate::console::{RunLog, spawn_notice_printer, spawn_printer};
@@ -284,7 +285,9 @@ fn report(log: Option<&RunLog>, text: &str) -> io::Result<()> {
 
 /// The tool subcommand's run, past the log's opening: its exit code is the tool's own, the
 /// startup failure's, or 3 when the console printer failed. Each line it prints on stderr
-/// also goes to the log; an `Err` is a write to the log that failed.
+/// also goes to the log; an `Err` is a write to the log that failed. With
+/// `check_for_updates` on, a check for a newer release runs beside the tool, and its
+/// notice, when it has one in time, is the run's last line.
 fn run_command(
     tools: &[Box<dyn StudioTool>],
     tool: &str,
@@ -298,6 +301,8 @@ fn run_command(
             return Ok(code);
         }
     };
+    let update = start_update_check(&settings.common, Arc::new(updater::fetch_releases));
+    let skipped = settings.common.skipped_version.clone();
     // The CLI never writes settings, so the read-only data directory is probed rather than
     // learned from a failed save. The condition prints once, as stderr's first line
     // (ST-CLI-01).
@@ -329,11 +334,48 @@ fn run_command(
         )?;
         return Ok(3);
     }
-    match result {
-        Ok(code) => Ok(code),
+    let code = match result {
+        Ok(code) => code,
         Err(error) => {
             report(log.as_deref(), &format!("error: {error}"))?;
-            Ok(error.exit_code)
+            error.exit_code
+        }
+    };
+    // Last, so the notice follows every other line of the run.
+    report_update(update.as_ref(), skipped.as_deref(), log.as_deref())?;
+    Ok(code)
+}
+
+/// Starts the update check a tool command makes when `check_for_updates` is on, and returns
+/// the receiver its reply arrives on; `None` with checks off. The command never waits for
+/// it: `report_update` takes whatever has arrived once the run is over.
+fn start_update_check(common: &CommonSettings, fetch: Arc<Fetch>) -> Option<Receiver<CheckReply>> {
+    common
+        .check_for_updates
+        .then(|| updater::start_check(fetch, None))
+}
+
+/// Prints the update notice when the check's reply has arrived and offers a release, on
+/// stderr and in the run's log. No reply yet, a failed check and no release to offer print
+/// nothing; a failed check writes a debug line. An `Err` is a write to the log that failed.
+fn report_update(
+    reply: Option<&Receiver<CheckReply>>,
+    skipped: Option<&str>,
+    log: Option<&RunLog>,
+) -> io::Result<()> {
+    // `try_recv`, never `recv`: a reply still on its way is dropped with the process, so the
+    // check costs the run no time.
+    let Some(Ok(outcome)) = reply.map(Receiver::try_recv) else {
+        return Ok(());
+    };
+    match outcome {
+        Ok(newest) => match updater::command_line_notice(newest.as_ref(), skipped) {
+            Some(line) => report(log, &line),
+            None => Ok(()),
+        },
+        Err(error) => {
+            log::debug!("the update check failed: {error}");
+            Ok(())
         }
     }
 }
@@ -674,6 +716,101 @@ mod tests {
             expected.lines().count(),
             "the line counts differ"
         );
+    }
+
+    /// A releases list whose one release is newer than any version of the program.
+    const NEWER_RELEASE: &str =
+        r#"[{"tag_name": "v999.0.0", "body": null, "html_url": "u", "assets": []}]"#;
+
+    /// The check's reply for `body`, as the check's thread parses it.
+    fn reply_of(body: &str) -> CheckReply {
+        updater::newest_release(body)
+    }
+
+    /// A receiver holding `reply` already, its sender gone.
+    fn arrived(reply: CheckReply) -> Receiver<CheckReply> {
+        let (tx, rx) = crossbeam_channel::bounded(1);
+        tx.send(reply).unwrap();
+        rx
+    }
+
+    /// What `report_update` writes to a fresh run's log for `reply`, with `skipped` as the
+    /// settings' `skipped_version`.
+    fn reported(reply: Option<&Receiver<CheckReply>>, skipped: Option<&str>) -> String {
+        let dir = TestDir::new("update_report");
+        let path = dir.path().join("run_log.txt");
+        let log = RunLog::open(&path).unwrap();
+        report_update(reply, skipped, Some(&log)).unwrap();
+        fs::read_to_string(&path).unwrap()
+    }
+
+    // ST-CLI-05
+    #[test]
+    fn a_tool_command_starts_the_check_only_with_checks_on() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counted = Arc::clone(&calls);
+        let fetch: Arc<Fetch> = Arc::new(move || {
+            counted.fetch_add(1, Ordering::SeqCst);
+            Ok(NEWER_RELEASE.to_owned())
+        });
+        let mut common = CommonSettings {
+            check_for_updates: true,
+            ..CommonSettings::default()
+        };
+        let reply = start_update_check(&common, Arc::clone(&fetch))
+            .expect("checks on: a check starts")
+            .recv_timeout(std::time::Duration::from_secs(10))
+            .expect("the check replies");
+        let newest = reply.expect("the list parses").expect("a release");
+        assert_eq!(newest.version.to_string(), "999.0.0");
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+        common.check_for_updates = false;
+        assert!(start_update_check(&common, fetch).is_none(), "checks off");
+        assert_eq!(calls.load(Ordering::SeqCst), 1, "checks off: no fetch");
+    }
+
+    // ST-CLI-05
+    #[test]
+    fn the_notice_is_written_when_the_reply_has_arrived_and_offers_a_release() {
+        let offer = reply_of(NEWER_RELEASE);
+        let line = updater::command_line_notice(offer.as_ref().unwrap().as_ref(), None)
+            .expect("the premise: the release is offered");
+        assert!(line.contains("v999.0.0"), "{line}");
+        assert_eq!(reported(Some(&arrived(offer)), None), format!("{line}\n"));
+
+        let skipped = arrived(reply_of(NEWER_RELEASE));
+        assert_eq!(reported(Some(&skipped), Some("999.0.0")), "", "skipped");
+        let failed = arrived(reply_of("not json"));
+        assert_eq!(reported(Some(&failed), None), "", "failed");
+        assert_eq!(reported(None, None), "", "checks off");
+    }
+
+    // ST-CLI-05
+    #[test]
+    fn a_reply_that_has_not_arrived_writes_nothing_and_is_not_waited_for() {
+        let (tx, rx) = crossbeam_channel::bounded(1);
+        let (go_tx, go_rx) = crossbeam_channel::bounded::<()>(1);
+        // The reply comes only if the report has not returned within the wait: a report
+        // that waited for it would then write the line and fail the test, not hang it.
+        let check = std::thread::spawn(move || {
+            if go_rx
+                .recv_timeout(std::time::Duration::from_secs(10))
+                .is_err()
+            {
+                tx.send(reply_of(NEWER_RELEASE)).unwrap();
+            }
+        });
+        let written = reported(Some(&rx), None);
+        assert_eq!(written, "");
+        assert!(
+            matches!(rx.try_recv(), Err(crossbeam_channel::TryRecvError::Empty)),
+            "the premise: the check's sender is still alive"
+        );
+        go_tx.send(()).unwrap();
+        check.join().unwrap();
     }
 
     // A settings file that does not parse fails startup with code 2 (nothing ran) and

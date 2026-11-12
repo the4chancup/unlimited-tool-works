@@ -12,6 +12,10 @@ use std::time::{Duration, Instant};
 /// which a test cannot import from the binary).
 const DUMP_WRITTEN_LINE: &str = "the crash dump was written to utw.dmp beside this log";
 
+/// The releases list's address the run reads: no connection can be made to port 0, so an
+/// update check the window starts fails at once and never reaches GitHub.
+const NO_RELEASES_URL: &str = "http://127.0.0.1:0/";
+
 /// A fresh folder holding a hard link to the binary and an empty `data/settings.toml`,
 /// so the portable data location is found beside the executable and no settings file
 /// elsewhere on the machine is read (`team_compiler_cli.rs`'s shape).
@@ -43,6 +47,7 @@ fn a_stack_overflow_leaves_a_dump_and_the_monitors_line() {
     let sandbox = Sandbox::new("stack");
     let mut child = Command::new(&sandbox.exe)
         .args(["--crash-test", "stack"])
+        .env("UTW_RELEASES_URL", NO_RELEASES_URL)
         .current_dir(&sandbox.root)
         .stdin(Stdio::null())
         .stdout(Stdio::null())

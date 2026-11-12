@@ -9,6 +9,10 @@ use std::process::{Command, Output, Stdio};
 
 use pes_version::PesVersion;
 
+/// The releases list's address every run reads: no connection can be made to port 0, so
+/// the update check a tool command starts fails at once and never reaches GitHub.
+const NO_RELEASES_URL: &str = "http://127.0.0.1:0/";
+
 /// A fresh folder standing in for the extracted bundle: the binary as
 /// `UTW.exe`, the two launchers, `data/` making the data location portable,
 /// and `exports/`/`old_exports/` beside them.
@@ -70,12 +74,14 @@ impl Sandbox {
     }
 
     /// Runs `cmd /c <bat> [args]` with the bundle as the current directory and stdin null:
-    /// the bat's `pause` reads end of input and returns at once.
+    /// the bat's `pause` reads end of input and returns at once. The binary the bat starts
+    /// inherits `NO_RELEASES_URL` for its update check.
     fn run_bat(&self, bat: &str, args: &[&Path]) -> Output {
         Command::new("cmd")
             .arg("/c")
             .arg(self.root.join(bat))
             .args(args)
+            .env("UTW_RELEASES_URL", NO_RELEASES_URL)
             .current_dir(&self.root)
             .stdin(Stdio::null())
             .output()
