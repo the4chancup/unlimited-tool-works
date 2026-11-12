@@ -4,7 +4,7 @@
 //! clipboard's text), within one window and from one window to another.
 
 use pes_savefile::interchange::team_toml::TeamToml;
-use pes_savefile::model::tactics::{TeamTactics, bench_fill};
+use pes_savefile::model::tactics::{TeamAutoFlags, TeamTactics, bench_fill};
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::interchange::{Import, held, stage};
@@ -795,10 +795,16 @@ fn a_gameplan_survives_the_document() {
             };
             let mut target = target_with(team, &seed.tactics);
             // The PES 17 and 21 fixtures hold the same auto flags on
-            // every cup team, so no seed differs on them there: the
-            // target's auto preset change is flipped by hand to the
-            // opposite of the source's, a flag the record stores.
-            target.tactics.auto.preset_change = Some(!ours.auto.preset_change.unwrap_or(false));
+            // every cup team, so no seed differs on them there: each of
+            // the target's four is set by hand to another value than the
+            // source's, since the import writes each as a key of its own.
+            let flipped = |flag: Option<bool>| Some(!flag.unwrap_or(false));
+            target.tactics.auto = TeamAutoFlags {
+                substitution: Some(u8::from(ours.auto.substitution != Some(1))),
+                offside_trap: flipped(ours.auto.offside_trap),
+                preset_change: flipped(ours.auto.preset_change),
+                attack_defence_levels: flipped(ours.auto.attack_defence_levels),
+            };
             through_text(&document)
                 .apply(version, &mut target, &mut [])
                 .unwrap();
