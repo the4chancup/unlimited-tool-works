@@ -3057,6 +3057,21 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     );
 }
 
+// An empty PES folder setting (the default where no install path is known)
+// names no path: the tooltip says none is set, not that a blank one is
+// missing.
+#[test]
+fn the_set_pes_path_tooltip_says_when_no_folder_is_set() {
+    assert_eq!(
+        crate::view::tactics::set_folder_tip(
+            PesVersion::Pes17,
+            ExeCheck::NoFolder,
+            Some(std::path::Path::new("")),
+        ),
+        "The players' portraits are read from the PES 2017 folder. No PES 2017 folder is set."
+    );
+}
+
 // The Automatic settings row wraps inside the settings column (the
 // draft's `.row`): the Substitution pair and the three checkboxes each
 // end inside the column's 422 width. And the armed mode draws no note:

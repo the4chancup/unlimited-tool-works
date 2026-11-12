@@ -484,11 +484,20 @@ fn set_pes_folder_button(
 /// The Set PES path button's hover text: the version whose PES folder the
 /// portraits are read from (the open save's), then what the check found in
 /// `folder`, worded as the sidebar's selector words it.
-fn set_folder_tip(version: PesVersion, check: ExeCheck, folder: Option<&Path>) -> String {
+pub(super) fn set_folder_tip(
+    version: PesVersion,
+    check: ExeCheck,
+    folder: Option<&Path>,
+) -> String {
     let tip = format!("The players' portraits are read from the {version} folder.");
     let Some(folder) = folder else {
         return tip;
     };
+    // An empty setting is no folder (the default where no install path is
+    // known): there is no path to name.
+    if folder.as_os_str().is_empty() {
+        return format!("{tip} No {version} folder is set.");
+    }
     let folder = folder.display();
     let found = match check {
         ExeCheck::Found => return tip,

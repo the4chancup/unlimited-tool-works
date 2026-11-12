@@ -372,17 +372,34 @@ mod tests {
     // SE-GUI-50
     #[test]
     fn the_view_takes_the_contexts_exe_check_for_the_saves_version() {
+        use pes_version::PesVersion;
+
         let dir = crate::test_support::scratch("lib_exe_check");
-        let (ctx, _events_rx, _requests_rx) =
-            crate::test_support::tool_context(&dir, studio_core::Settings::default());
+        // The selector's PES 2019 has a folder of its own holding its exe; the
+        // save's PES 2021 resolves the context's `pes`, which is missing. So
+        // only an ask for the save's version reads `NoFolder`.
+        let selected = dir.join("pes19");
+        std::fs::create_dir_all(&selected).unwrap();
+        std::fs::write(selected.join("PES2019.exe"), b"").unwrap();
+        let mut settings = studio_core::Settings::default();
+        settings.common.pes_version = PesVersion::Pes19;
+        settings
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes19, selected.display().to_string());
+        let (ctx, _events_rx, _requests_rx) = crate::test_support::tool_context(&dir, settings);
         assert_eq!(
             ctx.pes_exe_check(),
             None,
             "premise: the sidebar has not run a check"
         );
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes19),
+            studio_core::ExeCheck::Found,
+            "premise: an ask for the selector's version would read Found"
+        );
         let mut tool = Tool::new();
-        // A save open: its version's PES folder (the context's `pes`, missing)
-        // is asked, not the selector's.
+        // A save open: its version's PES folder is asked, not the selector's.
         let path = dir.join("EDIT00000000");
         std::fs::write(
             &path,

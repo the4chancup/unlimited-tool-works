@@ -514,6 +514,12 @@ impl Sidebar {
             .is_some_and(|tool| tool.targets_pes_version());
         let check = self.exe_check(&common, ui.input(|input| input.focused));
         args.ctx.set_pes_exe_check(check);
+        // A list opened under another tool is still open when a request, not a
+        // click, made this one active: a disabled combo keeps drawing its open
+        // list, live. Close it before the combo is drawn.
+        if !targets && let Some(popup_id) = self.combo_popup_id {
+            egui::Popup::close_id(ui.ctx(), popup_id);
+        }
 
         let mut picked = common.pes_version;
         let combo_response = add_enabled_ui(ui, targets && blocker.is_none(), |ui| {

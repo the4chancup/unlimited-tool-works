@@ -1461,6 +1461,44 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     );
 }
 
+// A list left open when a request, not a click, makes a tool that does not use
+// the selector the active one closes with the switch: no click reached it to
+// close it, and its entries would still write the version.
+#[test]
+fn the_selectors_open_list_closes_when_a_tool_that_does_not_use_it_takes_over() {
+    let egui_ctx = test_context();
+    let dir = TestDir::new("studio_core_sidebar_list_across_switch");
+    let (a, calls_a) = stub("a", "A", None);
+    let (b, calls_b) = stub("b", "B", None);
+    *calls_b.targets.lock().unwrap() = false;
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell_with(
+        test_settings(dir.path()),
+        vec![a, b],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a, calls_b],
+    );
+    let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+    let opened = open_sidebar(&egui_ctx, &mut app, entry(&out.nodes, "A"), 1.0);
+    click(&egui_ctx, &mut app, combo(&opened.nodes));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert!(
+        has_label(&nodes, "PES 2021"),
+        "premise: the list is open under A"
+    );
+
+    ctx.switch_to_tool("b");
+    frame(&egui_ctx, &mut app, Vec::new(), true);
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert_eq!(app.active, 1, "the request made B active");
+    assert!(
+        !has_label(&nodes, "PES 2021"),
+        "the list closed with the switch"
+    );
+}
+
 // ST-SIDE-07
 #[test]
 fn the_planned_tools_follow_the_registered_ones_grayed_and_inert() {

@@ -215,11 +215,16 @@ it, before the active view, so a tool reads that frame's verdict. A tool never l
 itself, because a check of its own could disagree with the selector, and a per-frame one would
 list the folder at every repaint.
 
-`ctx.set_pes_folder(folder)` stores a picked folder for the selected version as the
+A tool that works a file of one version asks about that version, not the selected one:
+`ctx.pes_exe_check_for(version)` is the same listing (`pes_process::check_pes_folder`) of the
+folder the settings resolve for `version` (`CommonSettings::pes_folder_for`), kept per version
+and listed again when that folder changes, when a folder is picked for the version, and when
+the window regains focus, the sidebar's own rule.
+
+`ctx.set_pes_folder_for(folder, version)` stores a picked folder for `version` as the
 running-PES notice's Fix PES path does (`CommonSettings::fix_pes_folder`), and queues
-`ShellRequest::SettingsChanged`. The sidebar's check then runs again, since the resolved folder
-changed. The Save editor's Set PES path button is the first caller of both methods
-(`save_editor.md` "Tactics editor").
+`ShellRequest::SettingsChanged`. The Save editor's Set PES path button is the caller of both,
+with its open save's version (`save_editor.md` "Tactics editor").
 
 The sidebar lists the planned tools a build does not register (`gui.md` "Sidebar", item 3), so
 `studio` also keeps the full registry as data: one `PlannedTool { id, label, icon }` per tool
