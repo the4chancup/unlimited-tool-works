@@ -15,11 +15,11 @@
 //! - one name in two locations is copied once when the bytes agree and is a
 //!   clash otherwise, as is one texture stem from two locations; a clash
 //!   leaves the folder as it was;
-//! - a folder left as it was keeps its old paths in the plan, out of the
-//!   model renames and reference rewrites (`PlayerFolders::untouched`), so
-//!   the run's later findings name the author's files where he will find
-//!   them. Its finding is an Error, so the run writes nothing: the plan is
-//!   what the report is made from, never an output.
+//! - a folder left as it was keeps its old paths in the planned layout, out
+//!   of the model renames and reference rewrites (`PlayerFolders::untouched`),
+//!   so the run's later findings name the author's files where he will find
+//!   them. Its finding is an Error, so the run writes nothing: the planned
+//!   layout is what the report is made from, never an output.
 
 use std::collections::{BTreeMap, BTreeSet};
 
