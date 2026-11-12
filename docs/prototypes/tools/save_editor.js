@@ -4326,6 +4326,11 @@ function teamRow(team) {
 }
 // The player row a drag started on (team and slot), while it is held.
 let playerDrag = null;
+// Takes the drop line off whichever player row holds it.
+function clearDropLine() {
+  for (const row of document.querySelectorAll(".plist .prow.dropabove, .plist .prow.dropbelow"))
+    row.classList.remove("dropabove", "dropbelow");
+}
 function playerRow(team, p) {
   const r = h("div", { class: "prow" + (S.sel && S.sel.team === team.id && S.sel.slot === p.slot ? " on" : ""),
       draggable: "true", "data-slot": p.slot, "data-team": team.id,
@@ -4342,21 +4347,26 @@ function playerRow(team, p) {
     e.dataTransfer.effectAllowed = "move";
     playerDrag = { team: team.id, slot: p.slot };
   });
-  r.addEventListener("dragend", () => { playerDrag = null; });
+  // A drag that ends anywhere, a drop, a release outside the list or Esc,
+  // takes the line away.
+  r.addEventListener("dragend", () => { playerDrag = null; clearDropLine(); });
   // A drop inserts the dragged player at this row's place and shifts the rows
   // between by one: it swaps no two rows. So the place is marked by a line
   // between two rows, not by an outline round this one: on this row's lower
   // edge when he comes from above (the rows down to this one move up, and he
   // lands under them), on its upper edge when he comes from below. His own
   // row and another team's, where the drop changes nothing, get no line.
+  // There is one place a drop can go, so there is one line at most: the line
+  // is taken off every row before it is drawn on this one.
   r.addEventListener("dragover", e => {
     e.preventDefault();
+    clearDropLine();
     if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot)
       r.classList.add(playerDrag.slot < p.slot ? "dropbelow" : "dropabove");
   });
-  r.addEventListener("dragleave", () => r.classList.remove("dropabove", "dropbelow"));
+  r.addEventListener("dragleave", clearDropLine);
   r.addEventListener("drop", e => {
-    e.preventDefault(); r.classList.remove("dropabove", "dropbelow");
+    e.preventDefault(); clearDropLine();
     const [tid, slot] = e.dataTransfer.getData("text/plain").split(":");
     if (Number(tid) === team.id) { movePlayer(team, Number(slot), p.slot); render(); }
   });

@@ -279,6 +279,8 @@ side.
   outline the lineup lists draw, because a drop here inserts the player and shifts the rows
   between, where a lineup drop swaps two rows: an outline round one row promised a swap. A
   row the drop moves nothing onto (his own, another team's, an empty slot's) gets no line.
+  A drop has one place to go, so the list never shows two lines, and a drag that ends
+  without a drop (a release outside the list, Esc) leaves none.
 
   The dragged row is drawn under the pointer while it is held, the point first pressed kept
   under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn as the

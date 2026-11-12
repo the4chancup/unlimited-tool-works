@@ -1825,7 +1825,8 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
-    (`.dropabove`, `.dropbelow`; render `.tmp/0_0_2/undo/dropline.png`), waiting for the
+    (`.dropabove`, `.dropbelow`; renders of a drag each way, `.tmp/0_0_2/undo/dropline_down.png`
+    and `dropline_up.png`, by `shot_dropline.py` beside them), waiting for the
     maintainer's look at the draft; then its scenario and the slice (small, after
     0.0.2-clip: `view/player_list.rs`)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
