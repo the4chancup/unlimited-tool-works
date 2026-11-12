@@ -16,6 +16,7 @@ What exists of this is in `spec/libs/dds_convert.md` "In-memory conversion cache
   the shared memory budget even after a task finishes; evict reusable cache entries under pressure
   so they cannot prevent working tasks from acquiring memory. Bypassing the cache for a large run
   does not by itself release entries retained by earlier small runs.
+
   The policy belongs to the Team compiler pipeline's memory budget and is built with the
   first caller that keeps a `Converter` across runs, the GUI's compile (Phase 8).
 
@@ -31,8 +32,11 @@ BC7"), a compile for PES 19-21 encodes BC7 on the GPU; a machine with no usable 
 that fails) keeps BC3/BC1 rather than falling back to the CPU's BC7, whose 31.7 s of CPU per
 2048 face is the reason none is encoded today.
 
-Encoding uncompressed sources again is reconsidered then, and not for every one: BC7 does not
-reliably keep a pixel's alpha at zero, so a texture relying on it for full transparency stays
-uncompressed, and a texture under a size floor of about 6 MiB stays as it is. The floor is
-what keeps UV Step timing textures uncompressed: they are all small, so it covers every one
-without telling them apart from other textures.
+Encoding uncompressed sources again is reconsidered then, and not for every one:
+
+- BC7 does not reliably keep a pixel's alpha at zero, so a texture relying on it for full
+  transparency stays uncompressed;
+- a texture under a size floor of about 6 MiB stays as it is.
+
+The floor is what keeps UV Step timing textures uncompressed: they are all small, so it covers
+every one without telling them apart from other textures.

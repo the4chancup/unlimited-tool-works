@@ -33,20 +33,21 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
 - **Score display**: unclassified totals are shown separately with a warning, for example
   `2–1 (+1 unclassified)`; they are never folded into regulation or shootout score.
 - **Match tabs**: at most one feed-bound **Current Match**, plus offline drafts, finalized
-  matches, and opened files; a finished match stays open as a tab. On a validated session
-  boundary after `Live`, the old Current Match tab becomes a finished tab and a new Current
-  Match tab is inserted only after the broker batch is prepared/reserved, the staged
-  finalized revision is durable, and the infallible atomic
-  `MatchFinalized`/`TeamsDetected` commit completes. If the durability write fails, the old
-  tab remains the authoritative Current Match with a finalization-blocked status and the
-  detected replacement-team state is retained for retry; new-session deltas are not applied
-  to the old match. A team change while still provisional updates or replaces the existing
-  Current Match draft without creating a finished empty tab. On
-  a profile-change release, the old Current Match becomes an **Offline draft** tab labeled
-  with its original game profile and receives no further live updates. After tracking
-  restarts, the next successful team detection creates the new Current Match tab. Save,
-  Finish, and Discard act on the selected tab, but
-  Finish or Discard of an offline draft never publishes to `match_feed`.
+  matches, and opened files; a finished match stays open as a tab.
+  - On a validated session boundary after `Live`, the old Current Match tab becomes a
+    finished tab. A new Current Match tab is inserted only after the broker batch is
+    prepared/reserved, the staged finalized revision is durable, and the infallible atomic
+    `MatchFinalized`/`TeamsDetected` commit completes.
+  - If the durability write fails, the old tab remains the authoritative Current Match with
+    a finalization-blocked status, and the detected replacement-team state is retained for
+    retry; new-session deltas are not applied to the old match.
+  - A team change while still provisional updates or replaces the existing Current Match
+    draft without creating a finished empty tab.
+  - On a profile-change release, the old Current Match becomes an **Offline draft** tab
+    labeled with its original game profile and receives no further live updates. After
+    tracking restarts, the next successful team detection creates the new Current Match tab.
+  - Save, Finish, and Discard act on the selected tab, but Finish or Discard of an offline
+    draft never publishes to `match_feed`.
 - **Lifecycle controls**: **Finish match** finalizes the selected live, suspended, or
   offline draft after confirmation, but is unavailable until that draft has reached
   `Live`. **Discard draft** abandons the selected draft and is available from

@@ -6,13 +6,15 @@
 
 GPU BC7 for PES 19–21 is a first-release (1.0.0) target, using `block_compression`'s existing wgpu
 backend inside `dds_convert`, built in Phase 16 on the Team compiler's texture step; Release 0.1.0
-ships the CPU encoder only (`plans/core/development_plan.md` "Releases"). The library supplies the kernels; Studio implements bounded batching,
-upload/readback, pipeline integration, and fallback. It can remain the permanent GPU backend.
-BC1/BC3 stay on the CPU initially; already-compatible compressed inputs and cache hits need no
-encoding at all. Until this lands, no compile encodes BC7 (`spec/libs/dds_convert.md` "Target codecs
-and CPU encoder"), and after it a machine with no usable GPU encodes BC3/BC1, not
-the CPU's BC7: CPU mode below means the deterministic reference for tests, not a compile's
-fallback.
+ships the CPU encoder only (`plans/core/development_plan.md` "Releases").
+
+The library supplies the kernels; Studio implements bounded batching, upload/readback, pipeline
+integration, and fallback. It can remain the permanent GPU backend. BC1/BC3 stay on the CPU
+initially; already-compatible compressed inputs and cache hits need no encoding at all.
+
+Until this lands, no compile encodes BC7 (`spec/libs/dds_convert.md` "Target codecs and CPU
+encoder"), and after it a machine with no usable GPU encodes BC3/BC1, not the CPU's BC7: CPU
+mode below means the deterministic reference for tests, not a compile's fallback.
 
 - **Auto / CPU:** Auto is the desktop default, using the GPU when ready, supported, and beneficial.
   CPU mode explicitly selects the deterministic reference. Unsupported/unready GPUs and recoverable
@@ -45,12 +47,17 @@ fallback.
 real 4096² kit textures with alpha (13 mips, BC7 `alpha_basic`), Vulkan encodes a chain in
 0.48 s once warm, against 16.1 s per chain with all 16 CPU threads busy (134.5 s on one), at
 the same quality (level 0 against the source: 67.35 dB PSNR, largest channel difference 3, the
-CPU's 67.31 dB and 3). Building the BC1-5 and BC7 pipelines took 16.3 s in the first process
-after the driver was installed and 25-27 ms in every later one: the driver's shader cache keeps
-them, so the cold start is paid once per driver install or update, not per compile (not yet
-measured on NVIDIA or Intel). DX12 is worse on every count (37 s cold, 1.1 s per chain, a
-largest difference of 18), and one submission of a whole 8192² chain ran about 6 s on it and
-lost the device to Windows' GPU timeout, which Vulkan's 2.8 s survived but is the same risk.
+CPU's 67.31 dB and 3).
+
+Building the BC1-5 and BC7 pipelines took 16.3 s in the first process after the driver was
+installed and 25-27 ms in every later one: the driver's shader cache keeps them, so the cold
+start is paid once per driver install or update, not per compile (not yet measured on NVIDIA or
+Intel).
+
+DX12 is worse on every count (37 s cold, 1.1 s per chain, a largest difference of 18), and one
+submission of a whole 8192² chain ran about 6 s on it and lost the device to Windows' GPU
+timeout, which Vulkan's 2.8 s survived but is the same risk.
+
 So:
 
 - **The encoder is Vulkan's (Metal's on macOS), started on its own thread.** The warm start
@@ -73,27 +80,33 @@ So:
   with no error to fall back from: Intel's HD Graphics 620 driver 31.0.101.2137 does so in
   `igvk64.dll` while wgpu creates its first descriptor pool (`Device::new`), on every start,
   as the GUI met it on 0.0.1's clean-machine check (`plans/core/gui.md` "The graphics
-  backend"). Before a compile first starts the encoder on a given adapter, the exe starts
-  itself hidden with a probe argument (as the crash monitor is started, kept out of
-  `--help`); the child creates the device on the encoder's backend, builds its pipelines and
-  encodes one block, and exits 0. A crash, a non-zero exit or no answer within a bound sized
-  to the measured cold start turns the GPU off for that adapter: the compile goes on on the
-  CPU (BC3/BC1 where BC7 needs the GPU, as above) and its report names the probe's outcome.
+  backend").
+
+  Before a compile first starts the encoder on a given adapter, the exe starts itself hidden
+  with a probe argument (as the crash monitor is started, kept out of `--help`). The child
+  creates the device on the encoder's backend, builds its pipelines and encodes one block, and
+  exits 0. A crash, a non-zero exit or no answer within a bound sized to the measured cold
+  start turns the GPU off for that adapter: the compile goes on on the CPU (BC3/BC1 where BC7
+  needs the GPU, as above) and its report names the probe's outcome.
+
   The result is kept in the data folder keyed by the adapter's vendor, device and driver
-  version, which wgpu reports without creating a device (the laptop listed its adapters
-  before the crash), so a driver update probes again and nothing else does. The probe's
-  pipeline build also warms the driver's shader cache, so the cold start it pays is not paid
-  again in the compile. The alternative, a list of known bad drivers, only covers drivers
-  someone has already seen crash.
+  version, which wgpu reports without creating a device (the laptop listed its adapters before
+  the crash), so a driver update probes again and nothing else does. The probe's pipeline
+  build also warms the driver's shader cache, so the cold start it pays is not paid again in
+  the compile. The alternative, a list of known bad drivers, only covers drivers someone has
+  already seen crash.
 - **The encoder starts when the Team compiler opens, not at the first Compile** (the
   maintainer, 2026-11-02), on a PES version whose compile encodes BC7 (19-21; on 15-18 no
   GPU starts): the probe when the adapter's driver has no recorded outcome, then the
   encoder on its thread, both off the UI thread, so a Compile clicked a while later finds it
-  ready. What it saves depends on the driver's shader cache: on the measured GPU a cold
-  cache, the first start after a driver install or update, costs 16.3 s, which the member
-  then spends looking at the tool rather than waiting on the compile; a warm one costs
-  25-27 ms of pipeline building plus the device's creation, a fraction of a second. A
-  Compile clicked before it is ready goes on as above: the CPU encodes and the GPU joins.
+  ready.
+
+  What it saves depends on the driver's shader cache. On the measured GPU a cold cache, the
+  first start after a driver install or update, costs 16.3 s, which the member then spends
+  looking at the tool rather than waiting on the compile; a warm one costs 25-27 ms of
+  pipeline building plus the device's creation, a fraction of a second.
+
+  A Compile clicked before it is ready goes on as above: the CPU encodes and the GPU joins.
   Leaving the tool keeps the encoder for the rest of the session, as a compile would.
 
 **The workload the speed is judged on.** A Studio export's textures are PNG by design: members
@@ -101,18 +114,24 @@ edit them losslessly, and flat colors make a PNG smaller than its DDS. So on PES
 every texture of a compile is encoded, not passed through. A player's textures add up to about
 one 4096² chain, and a team has seven kits, so a team is roughly 30 chains: about 15 s of
 encoding at the 0.48 s measured above, on a fairly high-end GPU, and 16 s per chain on the CPU
-encoder, too slow for a suite whose first goal is speed. A
-full-cup compile is run once per set of exports, so its every texture is encoded cold: no
+encoder, too slow for a suite whose first goal is speed.
+
+A full-cup compile is run once per set of exports, so its every texture is encoded cold: no
 conversion cache, in memory or on disk, shortens it, and the encoder's own speed is the floor.
-The levers left are the encoder's: a faster BC7 preset (`fast`, `very_fast`, `ultra_fast`),
-several textures in flight on the GPU at once rather than one, and flat 4×4 blocks (common in
-PNG kits) written directly and kept out of the encoder's search, BC7 blocks being independent.
+The levers left are the encoder's:
+
+- a faster BC7 preset (`fast`, `very_fast`, `ultra_fast`);
+- several textures in flight on the GPU at once rather than one;
+- flat 4×4 blocks (common in PNG kits) written directly and kept out of the encoder's search,
+  BC7 blocks being independent.
+
 A faster preset is taken only if its quality stays above BC3's; on the CPU the same holds for a
 SIMD encoder (`intel_tex_2`'s ISPC kernels) against the current one. If no CPU BC7 gets close, a
 compile for PES 19-21 that has no GPU writes BC3, as for PES 15-18 (the maintainer's fallback,
-2026-10-21). Writing our own GPU encoder is the last resort, only if these fall short: it is a
-permanent maintenance item the library spares us. The measurement deciding all this is
-worklog 16.x c.
+2026-10-21).
+
+Writing our own GPU encoder is the last resort, only if these fall short: it is a permanent
+maintenance item the library spares us. The measurement deciding all this is worklog 16.x c.
 
 **Built ahead (16.x a, before Release 0.1.0):** the encoder itself, in `dds_convert` behind
 `cfg(not(target_arch = "wasm32"))`, with its quality and fallback tests. Wiring it into the

@@ -26,15 +26,15 @@ crates/libs/aesthetics_export/src/
 Placement rules:
 
 - **No I/O.** `players_txt.rs` returns bytes and an atomic-replace *plan*; the caller writes.
-- **Conventions are data.** Two rules that
-  read like compiler behavior are conventions and live here, because a second consumer already
-  depends on them: the **model source selection rule** (target-native first, then glTF, then the
-  convertible opposite native format — the Player aesthetics editor uses it to decide which set
-  opens visible and why leftover natives must be removed after a glTF conversion), and the
-  **structural file-kind classification** of a model folder's files (model, texture, `GltfBuffer`,
-  `PotentialGltfImage`, link file, marker, disallowed — from names alone; `model_convert`'s glTF
-  dependency contract takes this classification as its input and only *promotes* candidates during
-  deep URI resolution).
+- **Conventions are data.** Two rules that read like compiler behavior are conventions and live
+  here, because a second consumer already depends on them:
+  - the **model source selection rule** (target-native first, then glTF, then the convertible
+    opposite native format — the Player aesthetics editor uses it to decide which set opens
+    visible and why leftover natives must be removed after a glTF conversion);
+  - the **structural file-kind classification** of a model folder's files (model, texture,
+    `GltfBuffer`, `PotentialGltfImage`, link file, marker, disallowed — from names alone;
+    `model_convert`'s glTF dependency contract takes this classification as its input and only
+    *promotes* candidates during deep URI resolution).
 
 ### Structure pass types
 
@@ -103,15 +103,22 @@ impl FaceModelFolder {
 
 `convert_to` converts every selected part to the target-native format before parts are grouped by
 `logical_output` for Fox merging or pre-Fox XML generation. A pre-Fox part always owns its `.model`
-and sibling `.mtl` as one native bundle; conversion consumes or produces both atomically and commits
-the replacement only after both succeed. Material-definition files pair with their models here for
-both formats by the same stem name-matching, each with its own resolution rule: pre-Fox `.mtl` via
-Red's cascade (exactly one per model), glTF `*.materials.toml` via the layered least→most-specific
-merge (see the [Unified model format plan](../model_format.md)'s "Material files"). For both, a
-`.common` link file (`body.mtl.common`, `body.materials.toml.common`) stands in for the Common
-file of that name, and a `.common`-linked *model* resolves its material files in Common first with
-the player folder's matches layered on top (format plan, "Link files"). This represents
-mixed local/shared/Common assemblies without forcing a model folder into one singular source format.
+and sibling `.mtl` as one native bundle. Conversion consumes or produces both atomically and commits
+the replacement only after both succeed.
+
+Material-definition files pair with their models here for both formats by the same stem
+name-matching, each with its own resolution rule:
+
+- pre-Fox `.mtl` via Red's cascade (exactly one per model);
+- glTF `*.materials.toml` via the layered least→most-specific merge (see the [Unified model
+  format plan](../model_format.md)'s "Material files").
+
+For both, a `.common` link file (`body.mtl.common`, `body.materials.toml.common`) stands in for
+the Common file of that name, and a `.common`-linked *model* resolves its material files in
+Common first with the player folder's matches layered on top (format plan, "Link files"). This
+represents mixed local/shared/Common assemblies without forcing a model folder into one singular
+source format.
+
 `BootsModelFolder` and `GlovesModelFolder` use the same `parts`/ancillary-`files` structure and
 processing contract as `FaceModelFolder`.
 

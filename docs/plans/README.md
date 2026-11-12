@@ -42,10 +42,12 @@ choices made where these plans were silent in [`../DECISIONS.md`](../DECISIONS.m
 Two trees with one layout: `docs/spec/` describes what the suite does now, `docs/plans/` the
 work not built yet. A file and a heading keep their path and text in both, so a section that is
 partly built appears in each tree under the same heading, the plan's part pointing at the spec
-section it builds on. Plans are written in the present tense, like the spec: the folder says the
-work is future, and a section moves without a rewrite of its verbs. Because an excerpt read
-without its path would pass for fact, every plan file opens with a banner saying it is a plan,
-and briefs and reviewer prompts quote plan text with its path.
+section it builds on.
+
+Plans are written in the present tense, like the spec. The folder says the work is future, and a
+section moves without a rewrite of its verbs. Because an excerpt read without its path would pass
+for fact, every plan file opens with a banner saying it is a plan, and briefs and reviewer prompts
+quote plan text with its path.
 
 - **Acceptance sections.** Before the phase that delivers a tool, that tool's plan gains an
   "Acceptance" section: stable-ID GIVEN/WHEN/THEN scenarios for the user-observable behavior the
@@ -56,10 +58,10 @@ and briefs and reviewer prompts quote plan text with its path.
 - **The move at phase close.** When a phase closes, after the converge audit has confirmed the
   code meets its sections and acceptance IDs, what it delivered moves to the same file and
   heading in `docs/spec/`, corrected where the code was built differently. The rationale ("X not
-  Y because Z") moves with it; the acceptance IDs move as the behavior contract. Moving per phase
-  rather than in one pass at the end keeps the spec true while the work is fresh. Text written
-  in the future tense before 2026-10-12 is converted when its section is next edited or moves,
-  never in bulk.
+  Y because Z") moves with it, and the acceptance IDs move as the behavior contract. Moving per
+  phase rather than in one pass at the end keeps the spec true while the work is fresh. Text
+  written in the future tense before 2026-10-12 is converted when its section is next edited or
+  moves, never in bulk.
 
 Three rules about where the text lives:
 
