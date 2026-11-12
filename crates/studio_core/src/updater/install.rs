@@ -298,7 +298,8 @@ fn staged_bundle(staging: &Path) -> Result<StagedBundle, InstallError> {
 /// moves into `old/` (replacing the one an earlier update left there), the new
 /// one takes its place and every other file of the bundle goes over the old
 /// one, `data/` aside. `cancel` is read once more before the swap; a swap that
-/// has started runs whole. Runs on the caller's thread, the network included,
+/// has started runs whole. A request or a read failing once `cancel` is set
+/// ends as the cancel does. Runs on the caller's thread, the network included,
 /// so the dialog calls it from a thread of its own.
 ///
 /// On a failure the program's folder is left as it was (`NotRestored` aside).
@@ -371,6 +372,17 @@ fn install_kind(
         refuse_if_replaced(stamp, bundle)?;
         swap(&staged, bundle, &backup)
     })();
+    // A request or a read that fails once Cancel is set is still that cancel:
+    // a stalled connection is when a member cancels, and its timeout arriving
+    // afterwards is not a failure to show them.
+    let outcome = match outcome {
+        Err(InstallError::Request(_) | InstallError::Download(_))
+            if cancel.load(Ordering::Relaxed) =>
+        {
+            Err(InstallError::Cancelled)
+        }
+        outcome => outcome,
+    };
     remove_temp(&temp, &outcome);
     outcome
 }

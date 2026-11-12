@@ -283,7 +283,8 @@ may change in a minor release.
    changes nothing. It shows `Update failed` with the reason (the updater's own sentence for
    it), then "Nothing was changed. You can download v<new> from the release page instead.", and
    **Retry**, **Open release page** and **Close**. Cancel is no failure: it returns to the
-   offer.
+   offer, also when the request or the read it was clicked over then fails (a stalled
+   connection is when a member cancels, and its timeout is not a failure to show them).
 
    While the download runs the dialog stays: the backdrop and Escape do nothing, because a
    stray click must neither cancel a download nor hide one that is running. A window closed

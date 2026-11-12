@@ -589,6 +589,56 @@ fn a_cancel_after_the_last_byte_stops_before_the_swap() {
     }
 }
 
+/// A download's body whose read sets `cancel` and then times out: a Cancel
+/// clicked while the read waited on a stalled connection.
+struct CancelThenTimeOut {
+    /// The flag the read sets.
+    cancel: Arc<AtomicBool>,
+}
+
+impl Read for CancelThenTimeOut {
+    fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+        self.cancel.store(true, Ordering::Relaxed);
+        Err(io::ErrorKind::TimedOut.into())
+    }
+}
+
+#[test]
+fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
+    let kind = ArchiveKind::SevenZ;
+    // Whether the archive's request itself fails, or its body's first read.
+    for (case, request_fails) in [("request", true), ("read", false)] {
+        let bundle = folder_with(&format!("cancel_then_{case}"), &old_files());
+        let before = snapshot(&bundle);
+        let cancel = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&cancel);
+        let (release, open_url) = release_answering(kind, move |_| {
+            if request_fails {
+                flag.store(true, Ordering::Relaxed);
+                return Err(ureq::Error::StatusCode(503));
+            }
+            Ok(Box::new(CancelThenTimeOut {
+                cancel: Arc::clone(&flag),
+            }))
+        });
+        let outcome = install_kind(
+            kind,
+            &release,
+            &bundle,
+            ProgramStamp::of(&bundle),
+            &open_url,
+            |_| {},
+            &cancel,
+        );
+        assert!(
+            matches!(outcome, Err(InstallError::Cancelled)),
+            "{case}: {outcome:?}"
+        );
+        assert_eq!(snapshot(&bundle), before, "{case}: no temp folder left");
+        fs::remove_dir_all(bundle).unwrap();
+    }
+}
+
 /// The program another window's update put in place.
 const REPLACED_PROGRAM: &str = "the program another window installed";
 

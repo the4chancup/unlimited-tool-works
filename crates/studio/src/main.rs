@@ -305,6 +305,22 @@ fn run_command(
         }
     };
     let update = start_update_check(&settings.common, Arc::new(updater::fetch_releases));
+    run_loaded(tools, tool, matches, log, settings, paths, update)
+}
+
+/// `run_command` past the startup: the tool's run with `settings` and `paths` loaded, and
+/// `update` the receiver of the check started beside it, `None` with checks off. The split
+/// lets a test hand it a reply that has arrived, which a run of the binary cannot: it never
+/// waits for one.
+fn run_loaded(
+    tools: &[Box<dyn StudioTool>],
+    tool: &str,
+    matches: &ArgMatches,
+    log: Option<Arc<RunLog>>,
+    settings: Settings,
+    paths: AppPaths,
+    update: Option<Receiver<CheckReply>>,
+) -> io::Result<u8> {
     let skipped = settings.common.skipped_version.clone();
     // The CLI never writes settings, so the read-only data directory is probed rather than
     // learned from a failed save. The condition prints once, as stderr's first line
@@ -814,6 +830,43 @@ mod tests {
         );
         go_tx.send(()).unwrap();
         check.join().unwrap();
+    }
+
+    // ST-CLI-05
+    #[test]
+    fn the_notice_is_the_last_line_of_a_tool_commands_run() {
+        let dir = TestDir::new("update_last_line");
+        fs::create_dir_all(dir.path().join("data")).unwrap();
+        let tools = tools();
+        let (settings, paths) = startup_in(&tools, dir.path().to_path_buf())
+            .unwrap_or_else(|(_, text)| panic!("{text}"));
+        // A refused command: the run has a line of its own, and reads no game folder.
+        let args = [
+            "utw",
+            "team-compiler",
+            "compile",
+            "--no-deploy",
+            "--mode",
+            "test",
+        ];
+        let launch = parse_launch(&tools, args.map(OsString::from)).unwrap();
+        let LaunchMode::Cli { tool, matches } = launch.mode else {
+            panic!("the premise: a tool's command")
+        };
+        let offer = reply_of(NEWER_RELEASE);
+        let notice = updater::command_line_notice(offer.as_ref().unwrap().as_ref(), None)
+            .expect("the premise: the release is offered");
+        let path = dir.path().join("run_log.txt");
+        let log = Arc::new(RunLog::open(&path).unwrap());
+        let update = Some(arrived(offer));
+        let code = run_loaded(&tools, &tool, &matches, Some(log), settings, paths, update);
+        assert_eq!(code.unwrap(), 2);
+        let written = fs::read_to_string(&path).unwrap();
+        let [error, last] = written.lines().collect::<Vec<_>>()[..] else {
+            panic!("the refusal's line, then the notice: {written}")
+        };
+        assert!(error.starts_with("error: "), "{written}");
+        assert_eq!(last, notice);
     }
 
     // A settings file that does not parse fails startup with code 2 (nothing ran) and

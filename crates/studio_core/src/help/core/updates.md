@@ -69,9 +69,10 @@ update starts until you do.
 
 Once the new version is in place, `Update ready` offers two buttons:
 
-- `Restart now` closes the program, asking about unsaved work first as closing
-  it always does, and then starts the new version. If you cancel at that
-  question, the program stays open and does not restart;
+- `Restart now` closes the program and starts the new version. If a tool asks
+  about unsaved work first, as closing the program always does, the program
+  closes or stays open as you answer and does not start again by itself: the
+  new version runs the next time you start it;
 - `Later` closes the window. The status bar then reads `Update ready`, which
   opens this window again, and the new version runs the next time you start
   the program.
