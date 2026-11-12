@@ -1745,12 +1745,16 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
-    and a portable bundle has none (pinning the button made them work). The fix: the window
-    sets its own relaunch command, name, icon and an application ID per copy
-    (`plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05 and 06;
-    DECISIONS 2026-11-12 "the window tells the Windows taskbar how to start it again").
-    The code is a SWE-2 slice, brief `.tmp/0_0_2/inst/brief_relaunch.md`; then the
-    properties read back off the built window, and the maintainer's clicks (Pending looks)
+    and a portable bundle has none (pinning the button made them work). The fix
+    (`91f32ded`, SWE-2 and the lead; merge `6242c2ec`): the window sets its own relaunch
+    command, name, icon and an application ID per copy, at every start
+    (`plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05; DECISIONS
+    2026-11-12 "the window tells the Windows taskbar how to start it again" and "set at
+    every start, pinned or not"). Open until seen working:
+    - [ ] the four properties read back off the built window (harness), then ST-WIN-06,
+      the maintainer's clicks and how a pin made by an earlier version stands beside the
+      window (Pending looks); the changelog says nothing of old pins until then
+    - [ ] review rounds (tier 2: a SWE-2 loop, then one paid round, Carbon from 2026-11-15)
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
