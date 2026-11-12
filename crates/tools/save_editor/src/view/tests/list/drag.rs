@@ -444,13 +444,47 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
 
 // The dragged row is drawn under the pointer, the point first pressed
 // kept under it, as a dragged lineup row is: row 03 pressed 20 points
-// right of its name's start and moved by a known offset paints its name
-// once, at its rest position plus that offset, after row 04's place (a
-// layer over the list, not the list's own). With a filter typed the row
-// does not drag: the same press and move paint the name at rest alone.
+// right of its name's start and moved by a known offset paints its
+// handle, place, position and name once each, at their rest positions
+// plus that offset, the name after row 04's place (a layer over the list,
+// not the list's own), and nothing inside its own place. The frame after
+// the release paints the row at rest again, in the list. With a filter
+// typed the row does not drag: the same press and move paint the row at
+// rest alone.
 // SE-GUI-69
 #[test]
 fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
+    /// The texts painted inside `bounds` (a row's), in paint order, each
+    /// with its position.
+    fn texts_inside(
+        shapes: &[egui::epaint::ClippedShape],
+        bounds: egui::Rect,
+    ) -> Vec<(String, egui::Pos2)> {
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if bounds.expand(0.5).contains(shape.pos) => {
+                    Some((shape.galley.job.text.clone(), shape.pos))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+    /// The paint-order index and text of each text painted within half a
+    /// point of `at`.
+    fn texts_at(shapes: &[egui::epaint::ClippedShape], at: egui::Pos2) -> Vec<(usize, &str)> {
+        shapes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, clipped)| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.pos.distance(at) <= 0.5 => {
+                    Some((index, shape.galley.job.text.as_str()))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
     let path = fixture(PesVersion::Pes21, "drag_float");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     file.player_mut(70103).unwrap().name = "DRAGGED NAME".to_owned();
@@ -459,48 +493,57 @@ fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
     view.open(&path);
     view.team = TeamChoice::Team(701);
     let mut window = Headless::new();
-    // The name's paints over the list's frame, with their place in the
-    // paint order: once row 03 is selected, the detail pane draws his name
-    // too, outside it.
-    let names_in_list = |window: &Headless, shapes: &[egui::epaint::ClippedShape]| {
-        let frame = list_frame(window, shapes);
-        shapes
-            .iter()
-            .enumerate()
-            .filter_map(|(index, clipped)| match &clipped.shape {
-                egui::Shape::Text(shape)
-                    if shape.galley.job.text == "DRAGGED NAME" && frame.contains(shape.pos) =>
-                {
-                    Some((index, shape.pos))
-                }
-                _ => None,
-            })
-            .collect::<Vec<(usize, egui::Pos2)>>()
-    };
     let offset = egui::vec2(30.0, 40.0);
     for (filter, floats) in [("", true), ("dragged", false)] {
         view.filter = filter.to_owned();
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let [(_, rest)] = names_in_list(&window, &shapes)[..] else {
-            panic!("premise: the name painted once at rest (filter {filter:?})")
+        let bounds = row(&nodes, "03 CB DRAGGED NAME")
+            .bounds()
+            .expect("row 03's bounds");
+        let bounds = egui::Rect::from_min_max(
+            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+        );
+        let rest = texts_inside(&shapes, bounds);
+        let texts: Vec<&str> = rest.iter().map(|(text, _)| text.as_str()).collect();
+        assert_eq!(
+            texts,
+            ["\u{2261}", "03", "CB", "DRAGGED NAME"],
+            "premise: row 03 paints its handle, place, position and name (filter {filter:?})"
+        );
+        // Each of the row's four texts painted once, `shift` from its rest
+        // position; their paint-order indices returned, in `rest`'s order.
+        let assert_row_at = |shapes: &[egui::epaint::ClippedShape],
+                             shift: egui::Vec2,
+                             when: &str| {
+            rest.iter()
+                .map(|(text, at)| {
+                    let here: Vec<usize> = texts_at(shapes, *at + shift)
+                        .into_iter()
+                        .filter(|(_, painted)| painted == text)
+                        .map(|(index, _)| index)
+                        .collect();
+                    let [index] = here[..] else {
+                        panic!("{text:?} painted once at rest plus {shift:?} {when} (filter {filter:?}), got {here:?}")
+                    };
+                    index
+                })
+                .collect::<Vec<usize>>()
         };
-        let press = egui::pos2(rest.x + 20.0, centre(row(&nodes, "03 CB DRAGGED NAME")).y);
-        window.frame(pointer_at(press, true), |ui| {
-            show(ui, &mut view, &|| Vec::new())
-        });
-        let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(press + offset)], |ui| {
-            show(ui, &mut view, &|| Vec::new())
-        });
-        let painted = names_in_list(&window, &shapes);
-        let [(index, at)] = painted.as_slice() else {
-            panic!("the name painted once (filter {filter:?}), got {painted:?}")
+        // Nothing painted where the row's texts would float to.
+        let assert_nothing_moved = |shapes: &[egui::epaint::ClippedShape], when: &str| {
+            for (text, at) in &rest {
+                let there = texts_at(shapes, *at + offset);
+                assert!(
+                    there.is_empty(),
+                    "nothing at {text:?}'s rest plus the move {when} (filter {filter:?}), got {there:?}"
+                );
+            }
         };
-        if floats {
-            let expected = rest + offset;
-            assert!(
-                at.distance(expected) <= 0.5,
-                "the dragged name at its rest position plus the move: {at:?} vs {expected:?}"
-            );
+        // Row 04's place's paint-order index (unfiltered, where row 04
+        // is listed): the list's own layer paints it, so a text painted
+        // after it floats above the list.
+        let place_04_index = |shapes: &[egui::epaint::ClippedShape]| {
             let place_04 = nodes
                 .iter()
                 .find(|node| {
@@ -508,7 +551,7 @@ fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
                 })
                 .and_then(accesskit::Node::bounds)
                 .expect("row 04's bounds");
-            let place = shapes
+            shapes
                 .iter()
                 .position(|clipped| match &clipped.shape {
                     egui::Shape::Text(shape) => {
@@ -518,21 +561,52 @@ fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
                     }
                     _ => false,
                 })
-                .expect("row 04's place painted");
+                .expect("row 04's place painted")
+        };
+
+        let name_rest = rest[3].1;
+        let press = egui::pos2(
+            name_rest.x + 20.0,
+            centre(row(&nodes, "03 CB DRAGGED NAME")).y,
+        );
+        window.frame(pointer_at(press, true), |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        let (_, _, held) = window.frame(vec![egui::Event::PointerMoved(press + offset)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        if floats {
+            let inside = texts_inside(&held, bounds);
             assert!(
-                *index > place,
-                "the dragged name paints over the list, after row 04's place ({index} vs {place})"
+                inside.is_empty(),
+                "row 03's place left blank while dragged, got {inside:?}"
+            );
+            let name = assert_row_at(&held, offset, "while dragged")[3];
+            let place = place_04_index(&held);
+            assert!(
+                name > place,
+                "the dragged name paints over the list, after row 04's place ({name} vs {place})"
             );
         } else {
-            assert!(
-                at.distance(rest) <= 0.5,
-                "under a filter the name stays at rest: {at:?} vs {rest:?}"
-            );
+            assert_row_at(&held, egui::Vec2::ZERO, "under a filter");
+            assert_nothing_moved(&held, "under a filter");
         }
-        // Released where it was pressed: the drop moves nothing.
+
+        // Released where it was pressed: the drop moves nothing, and the
+        // frame after the release paints the row at rest, in the list.
         window.frame(pointer_at(press, false), |ui| {
             show(ui, &mut view, &|| Vec::new())
         });
+        let (_, _, after) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let name = assert_row_at(&after, egui::Vec2::ZERO, "after the release")[3];
+        assert_nothing_moved(&after, "after the release");
+        if floats {
+            let place = place_04_index(&after);
+            assert!(
+                name < place,
+                "after the release the name paints in the list, before row 04's place ({name} vs {place})"
+            );
+        }
         assert!(
             !view.session.as_ref().unwrap().is_dirty(),
             "the drag moved no record"

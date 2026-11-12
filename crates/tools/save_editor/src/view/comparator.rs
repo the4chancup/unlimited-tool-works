@@ -850,10 +850,10 @@ fn cut_galley(
 /// A field's row (the draft's `#cmp-rows .drow`) at `column_offsets`'
 /// three places: `label` in `RULE_COL` points of the plain text color, one
 /// line cut with an ellipsis as the AATF rows' names are, then `old` cut
-/// the same way at `OLD_COL` and `new` uncut, both in the strong color.
-/// `<label> <old> → <new>` is the AccessKit label, one name a screen
-/// reader reads; a row that cut its label or its old value hovers that
-/// name too, above the switch hint on a row that selects.
+/// the same way at `OLD_COL` and `new` at the rest of the row's width,
+/// both in the strong color. `<label> <old> → <new>` is the AccessKit
+/// label, one name a screen reader reads; a row that cut any of the three
+/// hovers that name too, above the switch hint on a row that selects.
 fn field_row(
     ui: &mut egui::Ui,
     label: &str,
@@ -869,9 +869,13 @@ fn field_row(
     let [label_x, old_x, new_x] = column_offsets(ui.available_width());
     let label_galley = cut_galley(ui, label, font.clone(), text_color, RULE_COL);
     let old_galley = cut_galley(ui, old, font.clone(), strong_color, OLD_COL);
-    let new_galley = ui
-        .painter()
-        .layout_no_wrap(new.to_owned(), font, strong_color);
+    let new_galley = cut_galley(
+        ui,
+        new,
+        font,
+        strong_color,
+        (ui.available_width() - new_x).max(0.0),
+    );
     let height = label_galley
         .size()
         .y
@@ -886,7 +890,7 @@ fn field_row(
         },
     );
     let name = format!("{label} {old} \u{2192} {new}");
-    let hover = if label_galley.elided || old_galley.elided {
+    let hover = if label_galley.elided || old_galley.elided || new_galley.elided {
         Some(match select {
             Some(_) => format!("{name}\n{SWITCH_TOOLTIP}"),
             None => name.clone(),

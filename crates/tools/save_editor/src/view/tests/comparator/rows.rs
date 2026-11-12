@@ -202,45 +202,108 @@ fn a_comparison_with_no_differing_field_paints_no_head() {
     );
 }
 
+/// The name the cut tests give 73401 in one of the two saves: wider than
+/// the Old value's 200 points and than the rest of the row past the New
+/// value's 410.
+const LONG_NAME: &str = "THE EXTRAORDINARILY LONG-LEGGED FORWARD";
+
+/// 73401's Name row as a frame of the comparator drew it.
+struct NameRow {
+    /// The row's accessible name, `Name <old> → <new>`.
+    name: String,
+    bounds: accesskit::Rect,
+    centre: egui::Pos2,
+    shapes: Vec<egui::epaint::ClippedShape>,
+}
+
+/// Team 734's fixture save open with 73401's height edited to 183 and his
+/// name `LONG_NAME` in the open save (an unsaved rename) when `in_open`,
+/// else in the picked save; the comparator's result landed and a frame
+/// drawn with his Name row in view.
+fn compared_long_name(test: &str, in_open: bool) -> (SaveView, Headless, NameRow) {
+    let (mut view, mut window) = open_734_with(test, &[73401], 183);
+    let picked = picked_save(&scratch_of(&view), "picked", |file| {
+        if !in_open {
+            file.player_mut(73401).expect("73401 is a player").name = LONG_NAME.to_owned();
+        }
+    });
+    if in_open {
+        let mut entry = player_entry(&view, 73401);
+        entry.name = LONG_NAME.to_owned();
+        view.session
+            .as_mut()
+            .expect("the save opened")
+            .edit_players(vec![entry]);
+    }
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let (old, new) = if in_open {
+        ("Muh Spooks", LONG_NAME)
+    } else {
+        (LONG_NAME, "Muh Spooks")
+    };
+    let name = format!("Name {old} \u{2192} {new}");
+    scroll_to(&mut window, &mut view, &name);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, node) = comparator_button(&pairs, &name);
+    let row = NameRow {
+        bounds: node.bounds().expect("the row's bounds"),
+        centre: centre(node),
+        name,
+        shapes,
+    };
+    (view, window, row)
+}
+
+/// Asserts `shape` is cut: elided, ending in the ellipsis and no wider
+/// than `width` points.
+#[track_caller]
+fn assert_cut(shape: &egui::epaint::TextShape, width: f32) {
+    let text = &shape.galley.job.text;
+    assert!(shape.galley.elided, "{text:?} is cut");
+    let last = shape
+        .galley
+        .rows
+        .last()
+        .and_then(|row| row.row.glyphs.last())
+        .map(|glyph| glyph.chr);
+    assert_eq!(
+        last,
+        Some('\u{2026}'),
+        "{text:?}'s cut ends in the ellipsis"
+    );
+    assert!(
+        shape.galley.size().x <= width,
+        "{text:?} no wider than {width}: {}",
+        shape.galley.size().x
+    );
+}
+
 // A value longer than its column is cut with an ellipsis, and the row's
 // hover holds its whole text above the switch hint; the open save's value
 // still starts at 410. A row that cuts nothing hovers the hint alone.
 // SE-GUI-13
 #[test]
 fn a_cut_value_ends_in_an_ellipsis_and_hovers_the_whole_row() {
-    let long = "THE EXTRAORDINARILY LONG-LEGGED FORWARD";
-    let (mut view, mut window) = open_734_with("comparator_cut", &[73401], 183);
     // The picked save's 73401 renamed long: the row's old value.
-    let picked = picked_save(&scratch_of(&view), "picked", |file| {
-        file.player_mut(73401).expect("73401 is a player").name = long.to_owned();
-    });
-    view.panel = Some(Panel::Comparator);
-    pick(&mut window, &mut view, picked);
-    compared(&mut window, &mut view);
-    let name = format!("Name {long} \u{2192} Muh Spooks");
-    scroll_to(&mut window, &mut view, &name);
-    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, node) = comparator_button(&pairs, &name);
-    let row = node.bounds().expect("the row's bounds");
-    let at = centre(node);
-    let old = text_in_row(&shapes, row, long);
-    assert!(old.galley.elided, "the old value is cut");
-    let last = old
-        .galley
-        .rows
-        .last()
-        .and_then(|row| row.row.glyphs.last())
-        .map(|glyph| glyph.chr);
-    assert_eq!(last, Some('\u{2026}'), "the cut ends in the ellipsis");
+    let (mut view, mut window, row) = compared_long_name("comparator_cut", false);
+    let old = text_in_row(&row.shapes, row.bounds, LONG_NAME);
+    assert_cut(old, 200.0);
+    // Wider than the Item column's 190, so the cut is the Old value's own.
     assert!(
-        old.galley.size().x <= 200.0,
-        "the old value no wider than its column: {}",
+        old.galley.size().x > 190.0,
+        "the old value cut at its own column, not the label's: {}",
         old.galley.size().x
     );
-    assert_at_x(text_in_row(&shapes, row, "Muh Spooks"), row, 410.0);
+    assert_at_x(
+        text_in_row(&row.shapes, row.bounds, "Muh Spooks"),
+        row.bounds,
+        410.0,
+    );
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, at, "this player").as_deref(),
-        Some(format!("{name}\nClick to switch to this player").as_str()),
+        tooltip_containing(&mut window, &mut view, row.centre, "this player").as_deref(),
+        Some(format!("{}\nClick to switch to this player", row.name).as_str()),
         "the cut row hovers its whole text above the hint"
     );
 
@@ -251,6 +314,44 @@ fn a_cut_value_ends_in_an_ellipsis_and_hovers_the_whole_row() {
         tooltip_containing(&mut window, &mut view, at, "this player").as_deref(),
         Some("Click to switch to this player"),
         "a row that cuts nothing hovers the hint alone"
+    );
+}
+
+// The open save's value is cut too, at the rest of the row: 73401's long
+// name as the open save's value, the picked save keeping `Muh Spooks`,
+// starts at 410, ends in the ellipsis within the row, and the row's hover
+// holds the whole name above the switch hint.
+// SE-GUI-13
+#[test]
+fn a_cut_new_value_ends_in_an_ellipsis_within_the_row() {
+    let (mut view, mut window, row) = compared_long_name("comparator_cut_new", true);
+    let room = (row.bounds.x1 - row.bounds.x0) as f32 - 410.0;
+    let uncut = {
+        let font = egui::TextStyle::Body.resolve(&window.ctx.style_of(window.ctx.theme()));
+        window.ctx.fonts_mut(|fonts| {
+            fonts
+                .layout_no_wrap(LONG_NAME.to_owned(), font, egui::Color32::WHITE)
+                .size()
+                .x
+        })
+    };
+    assert!(
+        uncut > room,
+        "premise: the whole name ({uncut}) is wider than the row past 410 ({room})"
+    );
+    let new = text_in_row(&row.shapes, row.bounds, LONG_NAME);
+    assert_at_x(new, row.bounds, 410.0);
+    assert_cut(new, room);
+    let old = text_in_row(&row.shapes, row.bounds, "Muh Spooks");
+    assert_at_x(old, row.bounds, 202.0);
+    assert!(!old.galley.elided, "the old value is not cut");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, row.centre, "this player").as_deref(),
+        Some(
+            format!("Name Muh Spooks \u{2192} {LONG_NAME}\nClick to switch to this player")
+                .as_str()
+        ),
+        "the cut row hovers its whole text above the hint"
     );
 }
 
