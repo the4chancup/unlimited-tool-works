@@ -1741,9 +1741,13 @@ briefs, review loops, gates and mutation runs as for any step.
     set on Windows and nothing guards a second instance, so the code gives no reason it
     would fail; what happens today is asked in `QUESTIONS.md` ("The 0.0.2 Save editor
     report": the lead cannot click the taskbar)
-  - [ ] 0.0.2-drift the risk of the settings drifting between two instances open at once
-    checked: each saves its own copy, so the last to save may undo the other's change; find
-    out what happens today and rule a fix (the maintainer, 2026-11-03)
+  - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
+    2026-11-12 "A settings save writes only what its session changed"): today a save wrote
+    the window's whole copy, so the last of two windows to save undid every value the other
+    had changed; a save now writes only what its own session changed, a default not being
+    a change (ST-SET-05). Not looked at in two built windows
+    - [ ] review rounds (tier 2): SWE-2's loop, then one paid round (Carbon, from
+      2026-11-15)
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03)
