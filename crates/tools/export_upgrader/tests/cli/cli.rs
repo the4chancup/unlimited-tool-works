@@ -827,7 +827,7 @@ fn a_whole_run_refusal_reads_no_export() {
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 
-// EU-CLI-10, EU-CLI-13
+// EU-CLI-13
 #[test]
 fn all_skips_a_staging_folder_an_interrupted_run_left() {
     let sandbox = Sandbox::new("cli_all_staging");

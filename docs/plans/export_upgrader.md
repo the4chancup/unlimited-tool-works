@@ -355,7 +355,10 @@ EU-CLI-13  GIVEN a folder holding two old export folders, one named in capitals,
            THEN the three exports are upgraded in the order of their names, letter case set
                 aside, each under its naming line, the other file is passed over without a
                 line and the tally counts three; GIVEN a folder holding one export THEN its
-                naming line and the tally are still printed; GIVEN one of the folder's
+                naming line and the tally are still printed; GIVEN the folder also
+                holding the staging folder an interrupted run left, `co Full -
+                Spring.upgrading`, THEN it is passed over without a line and `co -
+                Spring` is upgraded; GIVEN one of the folder's
                 exports also named THEN it runs first, and its second turn is refused, its
                 output folder existing; GIVEN a folder that is missing, is a file or holds no
                 export, neither an export nor `--all`, or two exports named with a savefile
