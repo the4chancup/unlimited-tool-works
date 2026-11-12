@@ -11,7 +11,8 @@
 use std::sync::Arc;
 
 use studio_core::widgets::{
-    combo_label, modal, modal_buttons, modal_sentence_gap, step_choice, wheel_steps,
+    combo_label, combo_separator, modal, modal_buttons, modal_sentence_gap, step_choice,
+    wheel_steps,
 };
 use studio_core::{Notice, NoticeKind};
 
@@ -347,9 +348,9 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             .size()
             .x
     };
-    // An imported row's × sits inside the row at its right end, a square
-    // as tall as the row: its room counts in the row's width, so the text
-    // never runs under it.
+    // An imported row's × sits inside the row at its right end, as wide
+    // as a control is high and over the row's whole height: its room
+    // counts in the row's width, so the text never runs under it.
     let remove_width = ui.spacing().interact_size.y;
     let widest = builtins()
         .iter()
@@ -379,7 +380,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
             }
             if !view.imported.is_empty() {
-                ui.separator();
+                combo_separator(ui);
             }
             for import in &view.imported {
                 let name = &import.rules.ruleset().name;
@@ -410,7 +411,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     });
                 }
             }
-            ui.separator();
+            combo_separator(ui);
             if combo_label(ui, false, IMPORT_ROW)
                 .on_hover_text(IMPORT_TOOLTIP)
                 .clicked()

@@ -326,9 +326,8 @@ fn only_the_active_rulesets_row_reads_selected() {
         "between the last built-in and the command"
     );
 
-    // With an import active: its row selected alone, the separator
-    // between the built-ins and it (the command's own stands below the
-    // popup's fold, as in the no-imports case).
+    // With an import active: its row selected alone, a separator between
+    // the built-ins and it and the command's own below it.
     pick_imported(
         &mut view,
         "cup.4ccrules",
@@ -347,8 +346,8 @@ fn only_the_active_rulesets_row_reads_selected() {
     );
     assert_eq!(
         separators.len(),
-        1,
-        "the imports' separator: {separators:?}"
+        2,
+        "the imports' separator and the command's: {separators:?}"
     );
     assert!(
         gap_split(
@@ -358,6 +357,10 @@ fn only_the_active_rulesets_row_reads_selected() {
             "Cup Rules"
         ),
         "between the last built-in and the import"
+    );
+    assert!(
+        gap_split(&rows, &separators, "Cup Rules", IMPORT_ROW),
+        "between the import and the command"
     );
 }
 

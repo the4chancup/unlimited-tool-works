@@ -10,7 +10,7 @@ use std::path::{Component, Path, PathBuf};
 
 use pes_savefile::discovery::SavefileCandidate;
 use pes_version::PesVersion;
-use studio_core::widgets::{add_enabled, menu_button};
+use studio_core::widgets::{add_enabled, menu_button, menu_separator};
 
 use crate::view::SaveView;
 use crate::view::prompt::{self, Pending};
@@ -107,7 +107,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
             }
         }
         if !discovered.is_empty() && !view.recents.is_empty() {
-            ui.separator();
+            menu_separator(ui);
         }
         for path in &view.recents {
             if ui
@@ -119,7 +119,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
             }
         }
         if !discovered.is_empty() || !view.recents.is_empty() {
-            ui.separator();
+            menu_separator(ui);
         }
         if ui
             .add(egui::Button::new("Choose file\u{2026}").shortcut_text("Ctrl+O"))
@@ -128,7 +128,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         {
             chosen = Some(choose_file(view.last_folder.as_deref(), discovered));
         }
-        ui.separator();
+        menu_separator(ui);
         let mut write = None;
         if add_enabled(
             ui,

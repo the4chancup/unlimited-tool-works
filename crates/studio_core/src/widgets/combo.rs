@@ -1,33 +1,49 @@
 //! The rows a combo's open list shares: `combo_item` (`selectable_value`)
-//! and `combo_label` (`selectable_label`), each reaching half the item
-//! spacing's gap up and down with its click area, so a click in the gap
-//! picks the nearer row. Without it the popup's `Area` widget, which
-//! senses a click anywhere in it, takes a click landing between rows,
-//! and the list closes on it with nothing picked.
+//! and `combo_label` (`selectable_label`), and `combo_separator` between
+//! groups of them. The rows meet: each is a control's height and the item
+//! spacing's gap together (21 points in the suite's theme), with nothing
+//! between two, so every click in the list lands on a row. egui lays its
+//! rows a gap apart, and the popup's `Area` widget, which senses a click
+//! anywhere in it, takes a click landing in that gap and closes the list
+//! with nothing picked. The rows meet rather than each row reaching into
+//! the gap with extra click area: a reach has to be given to every kind
+//! of row one by one, and the toolbars' menus were left without it. With
+//! no gap there is nothing to forget. A menu's entries meet the same way
+//! (`menu_button`).
 
-/// `selectable_label` with half the item spacing's gap above and below it
-/// as click reach (`interact` on each strip, unioned in), so the list
-/// reads as rows that meet. The strips stop at the row's edges: a widget
-/// laid over the row would take its hover (egui hovers only the widget a
-/// click would hit, the last one registered) and the row would lose its
-/// highlight. The returned `rect` stays the painted row's.
+/// Makes the rows `ui` lays from now on meet: a control grows by the
+/// item spacing's gap and the gap goes, so rows keep their pitch and a
+/// row's text stays centred in it. A second call changes nothing, since
+/// the gap is then 0.
+pub(crate) fn rows_meet(spacing: &mut egui::style::Spacing) {
+    spacing.interact_size.y += spacing.item_spacing.y;
+    spacing.item_spacing.y = 0.0;
+}
+
+/// `selectable_label` as a row of a combo's open list: 21 points high,
+/// meeting the rows above and below it. A row cannot change its
+/// neighbours, so it sets the list's own `Ui` (`rows_meet`), as every row
+/// does; a widget added to the list after a row therefore touches it too.
 pub fn combo_label(
     ui: &mut egui::Ui,
     checked: bool,
     text: impl Into<egui::WidgetText>,
 ) -> egui::Response {
-    let row = ui.selectable_label(checked, text);
-    let (rect, half_gap) = (row.rect, ui.spacing().item_spacing.y / 2.0);
-    let above = egui::Rect::from_x_y_ranges(rect.x_range(), rect.top() - half_gap..=rect.top());
-    let below =
-        egui::Rect::from_x_y_ranges(rect.x_range(), rect.bottom()..=rect.bottom() + half_gap);
-    let above = ui.interact(above, row.id.with("gap above"), egui::Sense::click());
-    let below = ui.interact(below, row.id.with("gap below"), egui::Sense::click());
-    row.union(above).union(below).with_new_rect(rect)
+    rows_meet(ui.spacing_mut());
+    ui.selectable_label(checked, text)
+}
+
+/// The line between two groups of rows in a combo's open list, in the
+/// middle of the 7 points it stands in (the draft's `.combo-pop .sep`).
+/// egui's own separator stands in 6 and relies on the item spacing's gap
+/// above and below it, which the list's rows no longer leave.
+pub fn combo_separator(ui: &mut egui::Ui) -> egui::Response {
+    rows_meet(ui.spacing_mut());
+    ui.add(egui::Separator::default().spacing(7.0))
 }
 
 /// `selectable_value` as `combo_label`: `*current` takes `item` on a
-/// click in the row or in the gap beside it.
+/// click in the row.
 pub fn combo_item<Selection>(
     ui: &mut egui::Ui,
     current: &mut Selection,
@@ -54,7 +70,8 @@ mod tests {
     /// The five items of the test combo.
     const ITEMS: [&str; 5] = ["First", "Second", "Third", "Fourth", "Fifth"];
 
-    /// A headless five-item combo (the wheel tests' window's own): the
+    /// A headless five-item combo (the wheel tests' window's own) in the
+    /// suite's theme, whose 18-point controls make a row 21: the
     /// popup's rows' rects recorded each frame it is open, `scroll` capping
     /// the popup's height so its scroll area drags on a touch machine.
     struct Window {
@@ -64,7 +81,6 @@ mod tests {
         ids: Vec<egui::Id>,
         button: egui::Rect,
         scroll: bool,
-        spacing: f32,
         nodes: Vec<accesskit::Node>,
     }
 
@@ -72,6 +88,7 @@ mod tests {
         fn new(scroll: bool) -> Window {
             let ctx = egui::Context::default();
             ctx.enable_accesskit();
+            crate::theme::install(&ctx);
             Window {
                 ctx,
                 selected: 1,
@@ -79,7 +96,6 @@ mod tests {
                 ids: Vec::new(),
                 button: egui::Rect::NOTHING,
                 scroll,
-                spacing: 0.0,
                 nodes: Vec::new(),
             }
         }
@@ -98,7 +114,6 @@ mod tests {
             let mut rows = Vec::new();
             let mut ids = Vec::new();
             let mut button = egui::Rect::NOTHING;
-            let mut spacing = 0.0;
             let scroll = self.scroll;
             let mut output = self.ctx.run_ui(input, |ui| {
                 if scroll {
@@ -107,7 +122,6 @@ mod tests {
                 button = egui::ComboBox::from_id_salt("items")
                     .selected_text(ITEMS[selected])
                     .show_ui(ui, |ui| {
-                        spacing = ui.spacing().item_spacing.y;
                         for (index, item) in ITEMS.iter().enumerate() {
                             let response = combo_item(ui, &mut selected, index, *item);
                             rows.push(response.rect);
@@ -133,7 +147,6 @@ mod tests {
             self.rows = rows;
             self.ids = ids;
             self.button = button;
-            self.spacing = spacing;
             self.nodes = nodes;
         }
 
@@ -157,23 +170,6 @@ mod tests {
         }
     }
 
-    /// A click in the gap between the second and third rows, `from_edge`
-    /// points from the nearer one's edge (`third`'s top or `second`'s
-    /// bottom).
-    fn click_the_gap(window: &mut Window, nearer_third: bool, from_edge: f32) {
-        let (second, third) = (window.rows[1], window.rows[2]);
-        assert!(
-            third.min.y - second.max.y > 1.0,
-            "premise: a gap between the rows ({second:?}, {third:?})"
-        );
-        let y = if nearer_third {
-            third.min.y - from_edge
-        } else {
-            second.max.y + from_edge
-        };
-        window.click(egui::pos2(third.center().x, y));
-    }
-
     /// Open the combo and assert the rows are drawn.
     fn open(window: &mut Window) {
         window.frame(Vec::new());
@@ -182,26 +178,51 @@ mod tests {
         assert_eq!(window.rows.len(), 5, "premise: the popup's rows are drawn");
     }
 
-    // A click in the gap between two rows picks the nearer row, and the
-    // list closes (the popup's `Area` is the widget a gap click would
-    // otherwise hit).
-    // ST-COMBO-01
-    #[test]
-    fn a_click_in_the_gap_picks_the_nearer_row() {
-        let mut window = Window::new(false);
-        open(&mut window);
-        click_the_gap(&mut window, true, 0.5);
-        assert_eq!(window.selected, 2, "the nearer (third) row picked");
-        window.frame(Vec::new());
-        assert_eq!(window.rows.len(), 0, "the list closed");
-
-        open(&mut window);
-        click_the_gap(&mut window, false, 0.5);
-        assert_eq!(window.selected, 1, "the nearer (second) row picked");
+    /// Asserts each of the five rows is 21 high and starts where the row
+    /// above it ends.
+    fn assert_rows_meet(window: &Window) {
+        for row in &window.rows {
+            assert_eq!(row.height(), 21.0, "each row is 21 high: {row:?}");
+        }
+        for pair in window.rows.windows(2) {
+            assert_eq!(pair[1].min.y, pair[0].max.y, "the rows meet: {pair:?}");
+        }
     }
 
-    // A row under the pointer is the hovered widget, so it still paints
-    // its highlight: the gap's click reach does not cover the row.
+    /// A click on the line where the second and third rows meet, with
+    /// neither current: one of the two is picked and the list closes.
+    fn click_where_second_and_third_meet(window: &mut Window) {
+        let (second, third) = (window.rows[1], window.rows[2]);
+        assert_eq!(
+            third.min.y, second.max.y,
+            "premise: the rows meet ({second:?}, {third:?})"
+        );
+        assert_eq!(window.selected, 4, "premise: neither row is current");
+        window.click(egui::pos2(third.center().x, third.min.y));
+        assert!(
+            matches!(window.selected, 1 | 2),
+            "one of the two picked, not {}",
+            window.selected
+        );
+        window.frame(Vec::new());
+        assert_eq!(window.rows.len(), 0, "the list closed");
+    }
+
+    // The rows meet, so no click lands between two of them: the popup's
+    // `Area`, which senses a click anywhere in it, would take it and
+    // close the list with nothing picked.
+    // ST-COMBO-01
+    #[test]
+    fn the_rows_meet_and_a_click_where_two_meet_picks_one() {
+        let mut window = Window::new(false);
+        window.selected = 4;
+        open(&mut window);
+        assert_rows_meet(&window);
+        click_where_second_and_third_meet(&mut window);
+    }
+
+    // A row under the pointer is the hovered widget, so it paints its
+    // highlight.
     #[test]
     fn a_row_under_the_pointer_is_hovered() {
         let mut window = Window::new(false);
@@ -220,8 +241,9 @@ mod tests {
     // take the click either.
     // ST-COMBO-01
     #[test]
-    fn a_scrolling_list_on_a_touch_machine_picks_the_nearer_row_too() {
+    fn a_scrolling_list_on_a_touch_machine_picks_a_row_where_two_meet_too() {
         let mut window = Window::new(true);
+        window.selected = 4;
         // One touch event and every frame's scroll background is a drag
         // widget from then on, as on a machine with a touch screen.
         window.frame(vec![egui::Event::Touch {
@@ -232,32 +254,7 @@ mod tests {
             force: None,
         }]);
         open(&mut window);
-        let (second, third) = (window.rows[1], window.rows[2]);
-        assert!(
-            third.min.y - second.max.y > 1.0,
-            "premise: a gap between the rows ({second:?}, {third:?})"
-        );
-        window.click(egui::pos2(third.center().x, third.min.y - 0.5));
-        assert_eq!(window.selected, 2, "the nearer (third) row picked");
-    }
-
-    // A click just short of the gap's middle still picks the nearer
-    // row: the rows' click reach is half the gap, not less.
-    // ST-COMBO-01
-    #[test]
-    fn a_click_just_short_of_the_gaps_middle_picks_the_nearer_row() {
-        let mut window = Window::new(false);
-        open(&mut window);
-        let (second, third) = (window.rows[1], window.rows[2]);
-        let gap = third.min.y - second.max.y;
-        assert_eq!(gap, window.spacing, "premise: the gap is one item spacing");
-        let short = gap / 2.0 - 0.1;
-        click_the_gap(&mut window, true, short);
-        assert_eq!(window.selected, 2, "the nearer (third) row picked");
-
-        open(&mut window);
-        click_the_gap(&mut window, false, short);
-        assert_eq!(window.selected, 1, "the nearer (second) row picked");
+        click_where_second_and_third_meet(&mut window);
     }
 
     // The open list marks the current item's row selected, and no
