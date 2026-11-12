@@ -492,11 +492,11 @@ pub fn to_toml(config: &KitConfig) -> String {
         c.shirt.model
     ));
     line(&format!(
-        "collar = {}                # 1-107",
+        "collar = {}                # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
         c.shirt.collar
     ));
     line(&format!(
-        "winter_collar = {}         # 1-107",
+        "winter_collar = {}         # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
         c.shirt.winter_collar
     ));
     line(&format!(
@@ -564,7 +564,7 @@ pub fn to_toml(config: &KitConfig) -> String {
         c.numbers.chest.x
     ));
     line(&format!(
-        "y = {}                       # 0-7",
+        "y = {}                       # 0-15",
         c.numbers.chest.y
     ));
     line(&format!(

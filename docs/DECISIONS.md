@@ -16541,3 +16541,22 @@ Not chosen: a `commit-msg` hook through `core.hooksPath`, which would check with
 calling a script but changes the repository's git configuration, which each clone has to set.
 Plan: no plan edit needed, a gate's mechanics: `CONTRIBUTING.md` "Commits" and `AGENTS.md`
 describe it.
+
+## 2026-11-12 — kit_config — a generated `config.toml` gives the collar's range per PES version and the chest number's `y` as 0-15
+Decision: the comments `to_toml` writes beside `collar` and `winter_collar` read `# 1-131 (PES
+15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)`, and the one beside the chest
+number's `y` reads `# 0-15`. They said `# 1-107` and `# 0-7`. The four tracer fixtures and the
+spec's sample follow; a `config.toml` already written keeps its comments, as every user-facing
+TOML is edited and never regenerated.
+Why: the comments are the member's documentation of the file, and these two told them less
+than the game takes: the compiler accepts a collar up to the version's last stock one (its
+`collar_id_invalid` text and `deep/collar.rs` give the same six limits), and stock kit configs
+use the whole four-bit field of the chest number's `y`. 107 was no version's limit and no
+editor's (the old editor lists 106 or 109). The per-version list, not "1-131" alone, because
+a PES 2017 member typing 120 from the comment would meet the compiler's Error, and the
+name's `y` comment already sets the form (`# 0-39 (PES 15-20: 0-33)`).
+Not chosen: correcting every range to its field's. The others (`x  # 0-14` in a field of
+0-15) are the old editor's limits too, but the spec's format table records stock configs
+passing only these two, so what the game draws past the others is unmeasured; the worklog
+issue of 2026-11-12 keeps them for the Kit config editor's plan.
+Plan: `spec/kit_config_editor.md` "TOML form (`config.toml`)", the sample.

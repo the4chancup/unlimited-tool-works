@@ -184,8 +184,8 @@ the editor's `toml_edit`-based writes preserve them.
 
 [shirt]
 model = 176                 # 144 / 160 / 176
-collar = 105                # 1-107
-winter_collar = 105         # 1-107
+collar = 105                # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)
+winter_collar = 105         # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)
 tight = false               # 144/160 only
 pattern = 3                 # 0-13 (PES15 output supports 0-5)
 long_sleeves = "normal"     # "normal" / "undershirt-only" (144/160 only)
@@ -214,7 +214,7 @@ spacing = 2                 # 0-2
 
 [number.chest]
 x = 7                       # 0-14
-y = 2                       # 0-7
+y = 2                       # 0-15
 size = 10                   # 0-15
 
 [number.shorts]

@@ -77,6 +77,9 @@ What changed for members, release by release, newest first.
 
 - **Export upgrader** — the progress line in a terminal counts one upgrade as one export
   (`0/1`, not `0/2`), and counts the files it writes, where only the clock moved.
+- **Export upgrader** — the comments in a kit's `config.toml` give the ranges the game
+  takes: a collar's for each PES version (up to 131 on PES 2021) and 0-15 for the chest
+  number's `y`, where they said 1-107 and 0-7.
 - **Save editor** — an aesthetics patch's names now show in game on PES 2019: applying it
   marks each renamed player as edited, as typing the name does, where they showed
   PLACEHOLDER. `apply-patch` writing back over its own save with no player applied now

@@ -34,9 +34,9 @@ pub struct KitConfig {
 pub struct Shirt {
     /// Literal model byte: 144, 160 or 176, or any other value read.
     pub model: u8,
-    /// Collar id, 1-107.
+    /// Collar id, from 1 up to the version's last stock collar (131 on PES 2021).
     pub collar: u8,
-    /// Winter collar id, 1-107.
+    /// Winter collar id, in the collar's range.
     pub winter_collar: u8,
     /// Tight shirt (models 144/160 only).
     pub tight: bool,
@@ -150,7 +150,7 @@ pub struct BackNumber {
 pub struct ChestNumber {
     /// X, 0-14.
     pub x: u8,
-    /// Y, 0-7.
+    /// Y, 0-15.
     pub y: u8,
     /// Size, 0-15.
     pub size: u8,
