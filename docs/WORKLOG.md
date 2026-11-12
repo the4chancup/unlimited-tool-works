@@ -1689,8 +1689,9 @@ briefs, review loops, gates and mutation runs as for any step.
       the program's stamp compared again before the swap (a second window clicking Update
       now during the first one's download), each field of the stamp and the "old files not
       put back" ending tested, a member's file inside a folder the bundle ships
-    - [ ] the review loops' rest: SWE-2 round 3 over `314e2551`, then Carbon (from
-      2026-11-15), then Astra
+    - [x] review round 3 (SWE-2), 2026-11-12: one concern, rejected, which ends SWE-2's loop
+    - [ ] the review loops' rest: Astra's loop (running ahead of Carbon's, which waits for
+      its login's reset on 2026-11-15), then Carbon's
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
