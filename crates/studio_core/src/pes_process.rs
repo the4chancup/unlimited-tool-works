@@ -354,16 +354,29 @@ mod tests {
             folder,
         };
 
+        // The system names a process's file by its real path, which the temp
+        // folder's name need not be (a short name on a CI runner, a link in the
+        // gates): both sides are compared resolved.
+        let real_exe = exe.canonicalize().expect("the fake game's file resolves");
+        let lists_it = |games: &[RunningPes]| {
+            games.iter().any(|game| {
+                game.version == PesVersion::Pes20
+                    && game
+                        .exe
+                        .as_ref()
+                        .and_then(|path| path.canonicalize().ok())
+                        .as_ref()
+                        == Some(&real_exe)
+            })
+        };
+
         // The probe can take a moment to see a new process: poll for up to
         // five seconds, and kill the fake game as soon as one poll lists it.
         let deadline = Instant::now() + Duration::from_secs(5);
         let mut games;
         loop {
             games = running_pes();
-            if games.iter().any(|game| {
-                game.version == PesVersion::Pes20 && game.exe.as_deref() == Some(exe.as_path())
-            }) || Instant::now() >= deadline
-            {
+            if lists_it(&games) || Instant::now() >= deadline {
                 break;
             }
             std::thread::sleep(Duration::from_millis(30));
@@ -371,10 +384,9 @@ mod tests {
         drop(fake.child.kill());
         drop(fake.child.wait());
 
-        let expected = RunningPes {
-            version: PesVersion::Pes20,
-            exe: Some(exe),
-        };
-        assert!(games.contains(&expected), "{expected:?} not in {games:?}");
+        assert!(
+            lists_it(&games),
+            "PES 2020 at {real_exe:?} not in {games:?}"
+        );
     }
 }
