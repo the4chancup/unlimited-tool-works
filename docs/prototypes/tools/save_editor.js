@@ -349,10 +349,10 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .rate .sel.on.ra { background: #129648; color: #fff; }
 .rate .sel.on.rc { background: #5a5a5a; color: var(--text); }
 .rate.off .sel { color: #5a5a5a; }
-/* The two numbers' toggle disabled (SE-GUI-71): faded as .fsel.off is, the picked choice
-   keeping its text so the stored value still reads. */
-.rate.tri.off { opacity: .6; }
-.rate.tri.off .sel.on { color: var(--text); }
+/* The two numbers' toggle disabled (SE-GUI-71): the picked choice on a grey rectangle, not
+   the selection's blue, which would read as a control still live; its text the readouts'
+   grey, so the stored value still reads. */
+.rate.tri.off .sel.on { background: #5a5a5a; color: #a0a0a0; }
 .rate.off .sel:hover { background: none; color: #5a5a5a; }
 /* The formation picker while the preset's Fluid formation is off, drawn as egui draws a
    disabled widget: the selected entry in the selection's colours faded, an entry's text in

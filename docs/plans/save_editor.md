@@ -887,7 +887,9 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   toggle, Few | Medium | Many, rather than a three-step slider whose number a member had to
   hover to read). From PES 2017 on the game's own game plan no longer shows the two numbers
   (`spec/pes_savefile/model.md` "Player/team/tactics model"), so on a PES 17 to 21 save the
-  two toggles are drawn disabled, their stored choice still shown, with the tooltip "Not
+  two toggles are drawn disabled, their stored choice still shown, on a grey rectangle
+  rather than the selection's blue (which would read as a control still live), with the
+  tooltip "Not
   editable in the game from PES 2017 on", unless the active ruleset allows illegal
   formations ("Illegal formations" below): a member of a cup on the stock game cannot give
   his team a value the game would never let him pick, while a cup that already edits past
