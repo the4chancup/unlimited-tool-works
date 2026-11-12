@@ -1036,7 +1036,7 @@ fn contents(
     });
     if interchange.applied == Some(revision) {
         ui.weak(format!(
-            "Applied {}. The changes stay unsaved until Save.",
+            "Applied {}. The changes stay unsaved until you click Save.",
             file_name(&picked.path)
         ));
     } else if unchanged {

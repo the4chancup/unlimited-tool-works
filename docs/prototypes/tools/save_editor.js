@@ -7759,7 +7759,7 @@ function patchPanel() {
     }
     c.append(h("div", { style: "max-height:400px; overflow:auto" }, table));
   }
-  if (S.pat.applied) c.append(h("div", { class: "row" }, weak("Applied. The changes stay unsaved until Save.")));
+  if (S.pat.applied) c.append(h("div", { class: "row" }, weak("Applied. The changes stay unsaved until you click Save.")));
   return c;
 }
 
@@ -8335,7 +8335,7 @@ function interchangePanel() {
         title: "Write the chosen sections as one undoable edit" }),
     weak("The changes can be undone and stay unsaved until you click Save.")));
   if (S.ix.applied)
-    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
+    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until you click Save.")));
   else if (unchanged)
     c.append(h("div", { class: "row" }, weak("The team already holds every value of the chosen sections.")));
   return c;

@@ -394,7 +394,7 @@ fn the_panel_holds_still_once_the_line_under_apply_shows_in_the_shortest_window(
 
     click(&mut window, &apply, &mut view);
 
-    let applied = format!("Applied {SQUAD_19}. The changes stay unsaved until Save.");
+    let applied = format!("Applied {SQUAD_19}. The changes stay unsaved until you click Save.");
     let lines = panel_lines(&mut window, &mut view);
     assert!(
         lines.contains(&applied),

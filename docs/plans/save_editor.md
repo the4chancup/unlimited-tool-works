@@ -1747,7 +1747,7 @@ aesthetics** but through the switch:
   another save opened), not frozen at Open. A drag or a text edit in flight keeps the last
   preview drawn, since recomputing it every frame would slow the edit, and Apply recomputes a
   preview so held before it writes, never a list an edit since made stale. So after Apply the
-  list is empty and `Applied. The changes stay unsaved until Save.` stands in its place until
+  list is empty and `Applied. The changes stay unsaved until you click Save.` stands in its place until
   the next change. A patch whose values the save already holds lists nothing and says so, and
   Apply is disabled whenever the list is empty. An undo of the Apply brings the list back.
 
@@ -2631,9 +2631,10 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row cli
                 writes; GIVEN preset 1 copied from its selector and preset 2 shown WHEN
                 Ctrl+V is pressed THEN preset 2 equals preset 1, and likewise a formation;
                 GIVEN a preset copied WHEN a player row is selected and Ctrl+V pressed
-                THEN nothing changes; each Ctrl+C puts on the system clipboard a line naming
-                what it copied (`Unlimited Tool Works: the stats of <name>`, `… preset 2 of
-                <team>`, `… the Kick-off formation of <team>`), the last control pressed
+                THEN nothing changes; each Ctrl+C puts on the system clipboard a text whose
+                first line names what it copied (`# Unlimited Tool Works: the stats of
+                <name>`, `… preset 2 of <team>`, `… the Kick-off formation of <team>`;
+                SE-GUI-72 has the rest of the text), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
                 press not; GIVEN team 701's row copied and pasted onto itself THEN no undo
                 entry is pushed and the save stays clean;
@@ -2755,7 +2756,7 @@ SE-GUI-67  GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team
                 turned on THEN Apply writes no aesthetics, and once "Edit aesthetics anyway"
                 is on, Apply writes them; WHEN 713's file is picked after the first was
                 applied THEN the first's `Applied` line goes, and Apply writes 713's file
-                onto 701 and reads `Applied cm.toml. The changes stay unsaved until Save.`
+                onto 701 and reads `Applied cm.toml. The changes stay unsaved until you click Save.`
 SE-GUI-68  GIVEN a PES 17 save open on team 714 (/co/)
            WHEN team 714's Team TOML from a PES 21 save, its preset 1 attacking instructions
                 holding Wing Back, which PES 17 lacks, is picked; then the PES 19 squad file

@@ -382,7 +382,7 @@ fn contents(ui: &mut egui::Ui, patch: &Patch, revision: u64) -> Option<Action> {
                 // line: its warnings say it all.
                 if preview.writes {
                     ui.weak(if patch.applied == Some(revision) {
-                        "Applied. The changes stay unsaved until Save."
+                        "Applied. The changes stay unsaved until you click Save."
                     } else {
                         "The save already holds every value this patch writes."
                     });
