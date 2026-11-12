@@ -128,6 +128,18 @@ either side of the switch carry the same payload, their description's export num
 and the AATF check and the Tactics view field a PES 15 preset's kick-off formation alone. What
 the game fields after reloading a save it was switched on in is not measured.
 
+Numbers in attack and Numbers in defence are stored on every version, between the other
+sliders (support range, numbers in attack, defensive line, compactness, numbers in defence),
+but the game does not use them on every version. PES 16's game plan shows the two settings.
+PES 17's does not, and whether its match AI still reads the bytes is not known: its
+executable is packed on disk (measured 2026-11-12, a 38.7 MB section of entropy 8.00 and
+an empty `.text`), so only a memory dump of the running game could tell. PES 21's executable
+ignores both (Marco's `pes-re-tactics.md` section 4, EV-TAC-0008: byte 1's only reader
+discards the value, byte 4 is read by the menu's copier alone, both default to 2; the men
+in the box come from the attack level). PES 18 to 20 are not looked at. The crate keeps both
+on every version, since a save holds them and 4ccEditor writes them; what the Save editor
+should draw for them on the versions that ignore them is the maintainer's to rule.
+
 ---
 
 ## Player settings model (settings.toml)
