@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
+use std::time::Duration;
 
 use super::test_bundle::*;
 use super::*;
@@ -83,6 +84,12 @@ fn an_update_puts_the_new_bundle_in_place_and_keeps_data() {
             (
                 "data/teams_list.txt".to_owned(),
                 Some("a member's teams list"),
+            ),
+            (KEPT_FOLDER.to_owned(), None),
+            (format!("{KEPT_FOLDER}/co Full Spring"), None),
+            (
+                format!("{KEPT_FOLDER}/co Full Spring/notes.txt"),
+                Some("a member's notes"),
             ),
             (NEW_FOLDER.to_owned(), None),
         ]
@@ -196,8 +203,11 @@ fn a_swap_failing_midway_puts_every_file_back() {
         for older in [false, true] {
             // A folder where the new launcher must go, which the launcher's move
             // fails on: renaming a file over a non-empty folder is refused on
-            // Windows and Linux alike. The launcher comes last by name, so the
-            // program, the readme and the license have moved by then.
+            // Windows and Linux alike. The program moves first, the bundle's
+            // folders are made next and its other files move in name order, so
+            // by then the program, the readme and the license have moved and
+            // `old_exports/` is made, while the second launcher,
+            // `quick_upgrade.bat`, has not moved.
             let mut files: Files = old_files()
                 .into_iter()
                 .filter(|(name, _)| name != "quick_compile.bat")
@@ -410,29 +420,38 @@ impl Read for Stumbling {
     }
 }
 
-/// A 7z release of the new bundle whose archive's body stumbles once, with
-/// an error of `kind`; `SHA256SUMS.txt` reads whole.
-fn stumbling_release(kind: io::ErrorKind) -> (Release, Box<OpenUrl>) {
-    let assets = archive_assets(
-        ArchiveKind::SevenZ,
-        pack(ArchiveKind::SevenZ, &new_files()),
-        None,
-    );
+/// A release whose `kind` archive holds the new bundle, its `SHA256SUMS.txt`
+/// served whole and the archive's URL answered by `answer`, which is handed
+/// the archive's bytes.
+fn release_answering(
+    kind: ArchiveKind,
+    answer: impl Fn(&[u8]) -> Result<Box<dyn Read + Send>, ureq::Error> + Send + Sync + 'static,
+) -> (Release, Box<OpenUrl>) {
+    let assets = archive_assets(kind, pack(kind, &new_files()), None);
     let archive = assets[0].1.clone();
     let (release, served) = release(assets);
     let archive_url = release.assets[0].download_url.clone();
-    let open_url = move |url: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
-        if url != archive_url {
-            return served(url);
+    let open_url = move |url: &str| {
+        if url == archive_url {
+            answer(&archive)
+        } else {
+            served(url)
         }
+    };
+    (release, Box::new(open_url))
+}
+
+/// A 7z release of the new bundle whose archive's body stumbles once, with
+/// an error of `kind`; `SHA256SUMS.txt` reads whole.
+fn stumbling_release(kind: io::ErrorKind) -> (Release, Box<OpenUrl>) {
+    release_answering(ArchiveKind::SevenZ, move |archive| {
         let (first, rest) = archive.split_at(archive.len() / 2);
         Ok(Box::new(Stumbling {
             first: Cursor::new(first.to_vec()),
             error: Some(io::Error::new(kind, "the read stumbled")),
             rest: Cursor::new(rest.to_vec()),
         }))
-    };
-    (release, Box::new(open_url))
+    })
 }
 
 #[test]
@@ -469,18 +488,34 @@ fn a_read_that_fails_stops_the_download_and_changes_nothing() {
 #[test]
 fn a_program_replaced_since_the_window_started_is_refused_before_any_request() {
     let kind = ArchiveKind::SevenZ;
-    for (case, removed) in [("rewritten", false), ("removed", true)] {
+    // The program's new text, `None` to remove it, and how many seconds after
+    // the noted date its file is dated, so each field of the stamp is
+    // changed alone, whatever the file system's clock grain.
+    for (case, text, later) in [
+        ("same_length_later_date", Some("new program"), 10),
+        ("other_length_same_date", Some(REPLACED_PROGRAM), 0),
+        ("removed", None, 0),
+    ] {
         let bundle = folder_with(&format!("replaced_{case}"), &old_files());
         let stamp = ProgramStamp::of(&bundle);
-        assert!(
-            stamp.is_some(),
-            "{case}: the premise, the program's file is read"
-        );
+        let noted = stamp.expect("the premise: the program's file is read");
         let program = bundle.join(exe_file_name());
-        if removed {
-            fs::remove_file(&program).unwrap();
-        } else {
-            fs::write(&program, "the program another window installed").unwrap();
+        match text {
+            Some(text) => {
+                let mut file = File::create(&program).unwrap();
+                file.write_all(text.as_bytes()).unwrap();
+                file.set_modified(noted.modified + Duration::from_secs(later))
+                    .unwrap();
+            }
+            None => fs::remove_file(&program).unwrap(),
+        }
+        if let Some(now) = ProgramStamp::of(&bundle) {
+            let one_field = if later > 0 {
+                now.len == noted.len
+            } else {
+                now.modified == noted.modified
+            };
+            assert!(one_field, "{case}: the premise, the other field as noted");
         }
         let before = snapshot(&bundle);
         let (release, open_url) = bundle_release(kind, None);
@@ -528,20 +563,14 @@ fn a_cancel_after_the_last_byte_stops_before_the_swap() {
     for (kind, label) in KINDS {
         let bundle = folder_with(&format!("cancel_end_{label}"), &old_files());
         let before = snapshot(&bundle);
-        let archive = pack(kind, &new_files());
-        let (release, served) = release(archive_assets(kind, archive.clone(), None));
-        let archive_url = release.assets[0].download_url.clone();
         let cancel = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&cancel);
-        let open_url = move |url: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
-            if url != archive_url {
-                return served(url);
-            }
+        let (release, open_url) = release_answering(kind, move |archive| {
             Ok(Box::new(CancelAtEnd {
-                body: Cursor::new(archive.clone()),
+                body: Cursor::new(archive.to_vec()),
                 cancel: Arc::clone(&flag),
             }))
-        };
+        });
         let outcome = install_kind(
             kind,
             &release,
@@ -557,6 +586,81 @@ fn a_cancel_after_the_last_byte_stops_before_the_swap() {
         );
         assert_eq!(snapshot(&bundle), before, "{label}: no temp folder left");
         fs::remove_dir_all(bundle).unwrap();
+    }
+}
+
+/// The program another window's update put in place.
+const REPLACED_PROGRAM: &str = "the program another window installed";
+
+/// A download's body that rewrites the program's file as it reaches its end,
+/// as another window's update ending meanwhile would.
+struct ReplaceAtEnd {
+    /// The whole body.
+    body: Cursor<Vec<u8>>,
+    /// The program's file in the program's folder.
+    program: PathBuf,
+}
+
+impl Read for ReplaceAtEnd {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let read = self.body.read(buf)?;
+        if read == 0 {
+            fs::write(&self.program, REPLACED_PROGRAM)?;
+        }
+        Ok(read)
+    }
+}
+
+#[test]
+fn a_program_replaced_while_the_download_ran_is_refused_before_the_swap() {
+    for (kind, label) in KINDS {
+        let bundle = folder_with(&format!("replaced_late_{label}"), &old_files());
+        let mut expected = snapshot(&bundle);
+        expected.insert(exe_file_name(), Some(REPLACED_PROGRAM.to_owned()));
+        let program = bundle.join(exe_file_name());
+        let (release, open_url) = release_answering(kind, move |archive| {
+            Ok(Box::new(ReplaceAtEnd {
+                body: Cursor::new(archive.to_vec()),
+                program: program.clone(),
+            }))
+        });
+        let outcome = install_now(kind, &release, &bundle, &open_url);
+        assert!(
+            matches!(outcome, Err(InstallError::ProgramReplaced)),
+            "{label}: {outcome:?}"
+        );
+        assert_eq!(
+            snapshot(&bundle),
+            expected,
+            "{label}: only the program rewritten, no old/ and no temp folder"
+        );
+        fs::remove_dir_all(bundle).unwrap();
+    }
+}
+
+#[test]
+fn the_temp_folder_stays_only_when_the_old_files_could_not_be_put_back() {
+    let files: Files = vec![(format!("{BACKUP_FOLDER}/README.txt"), "old readme")];
+    let temp = folder_with("remove_temp", &files);
+    let not_restored = Err(InstallError::NotRestored {
+        step: SwapStep::PlaceFile(PathBuf::from("README.txt")),
+        source: io::Error::other("the move failed"),
+        restore: io::Error::other("the undo failed"),
+        kept: temp.join(BACKUP_FOLDER),
+    });
+    remove_temp(&temp, &not_restored);
+    assert_eq!(
+        fs::read_to_string(temp.join(BACKUP_FOLDER).join("README.txt")).ok(),
+        Some("old readme".to_owned()),
+        "the old files kept"
+    );
+    for (case, outcome) in [
+        ("cancelled", Err(InstallError::Cancelled)),
+        ("done", Ok(())),
+    ] {
+        write_files(&temp, &files);
+        remove_temp(&temp, &outcome);
+        assert!(!temp.exists(), "{case}");
     }
 }
 
@@ -595,6 +699,30 @@ fn a_request_the_server_refuses_changes_nothing() {
             Err(InstallError::Request(ureq::Error::StatusCode(503)))
         ),
         "{outcome:?}"
+    );
+    assert_eq!(snapshot(&bundle), before, "no temp folder left");
+    fs::remove_dir_all(bundle).unwrap();
+}
+
+#[test]
+fn an_archive_request_the_server_refuses_after_the_checksums_changes_nothing() {
+    let kind = ArchiveKind::SevenZ;
+    let bundle = folder_with("archive_refused", &old_files());
+    let before = snapshot(&bundle);
+    let (release, open_url) = release_answering(kind, |_| Err(ureq::Error::StatusCode(503)));
+    let (open_url, requests) = counted(open_url);
+    let outcome = install_now(kind, &release, &bundle, &open_url);
+    assert!(
+        matches!(
+            outcome,
+            Err(InstallError::Request(ureq::Error::StatusCode(503)))
+        ),
+        "{outcome:?}"
+    );
+    assert_eq!(
+        requests.load(Ordering::SeqCst),
+        2,
+        "the checksums, then the archive"
     );
     assert_eq!(snapshot(&bundle), before, "no temp folder left");
     fs::remove_dir_all(bundle).unwrap();

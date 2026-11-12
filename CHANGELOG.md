@@ -50,10 +50,10 @@ What changed for members, release by release, newest first.
   status bar until the next start. When an update fails, the dialog says whether anything
   was changed and where to download the version by hand. The first start of a new version
   shows `Updated to` and its number on the status bar, with What's new beside it. The
-  launchers and every command typed in a terminal also tell of a newer version, in one line
-  after their report, without waiting for the check. Cancel stops an update at any moment
-  before the new files are put in place, and a window whose program another window has
-  already updated says so instead of updating it a second time.
+  launchers and the tools' commands typed in a terminal also tell of a newer version, in
+  one line after their report, without waiting for the check. Cancel stops an update at
+  any moment before the new files are put in place, and a window whose program another
+  window has already updated says so instead of updating it a second time.
 - **Help**: two new chapters: Updates explains the check, the offer and each step of an
   update, and What's new holds this list of changes, version by version.
 - **Save editor**: the Comparator lists each difference in three columns, Item, Old value

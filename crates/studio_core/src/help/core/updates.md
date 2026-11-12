@@ -3,16 +3,17 @@ you, so you do not need to download a new release by hand.
 
 **Checking for a new version**
 
-When the program starts and the last check is older than 120 minutes, and again
+When the program starts, unless it checked less than 120 minutes ago, and again
 every 120 minutes while it stays open, it reads the list of releases on the
 program's GitHub page. You can turn this off with `Check for updates` in the
 settings, or change how often it happens with `Check interval (minutes)`. When
 a check fails, because you are offline for instance, nothing is shown and the
 program tries again later.
 
-The launchers and every command typed in a terminal look for a new version too,
-and tell of one in a line after their report. They install nothing: start the
-program and use the offer in the status bar.
+The launchers, and a tool's command typed in a terminal, look for a new version
+too while `Check for updates` is on, and tell of one in a line after their
+report. They install nothing: start the program and use the offer in the status
+bar.
 
 **The offer in the status bar**
 
