@@ -1720,18 +1720,23 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-statlbl the label of an ability stat the save's version does not have (Tight
     Possession, Aggression, ...) in the same darker colour as a greyed card's label (the
     maintainer, 2026-11-03); drafted first
-  - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, its SWE-2 loop owed): `--log-file
-    <FILE>` appends a run's whole output to the file and leaves Info findings out of
-    stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher run under a
-    pseudo-console showed the warnings, a refusal's `error:` line and the progress line in
-    the window and every line in the log. The bundle's readme names the logs, and the
-    organizer's backup of `download/` and the list's upgrade as steps
-  - [x] 0.0.2-upgall 2026-11-12 (`88c91de1`, Opus; tier 2, its SWE-2 loop owed): `upgrade`
+  - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, reviewed with 0.0.2-upgall
+    below): `--log-file <FILE>` appends a run's whole output to the file and leaves Info
+    findings out of stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher
+    run under a pseudo-console showed the warnings, a refusal's `error:` line and the
+    progress line in the window and every line in the log. The bundle's readme names the
+    logs, and the organizer's backup of `download/` and the list's upgrade as steps
+  - [x] 0.0.2-upgall 2026-11-12 (`88c91de1`, Opus; tier 2): `upgrade`
     takes several exports or `--all <DIR>` in one run (8.22i), each as if alone under its
     naming line, with the tally at the end, and `quick_upgrade.bat` starts the exe once, so
     the progress line counts every export (EU-CLI-11, 13 to 15). The launcher run under a
     pseudo-console over two exports, one refused, drew `[ 0/2 exports ]` first and showed
     both blocks, the `error:` line and `Upgraded: 1. Not upgraded: 1.`
+    - [x] review round 1 of both (SWE-2), 2026-11-12 (`be23aec1`, Opus): 12 of 19 concerns
+      accepted: a crash's text in the log file, the launcher's last report kept when no run
+      follows, the progress line's parts counter per export, and the cases of a run of
+      several exports no test reached
+    - [ ] SWE-2 round 2 over `be23aec1`, then one paid round (Carbon, from 2026-11-15)
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
