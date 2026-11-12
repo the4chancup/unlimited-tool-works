@@ -1792,12 +1792,13 @@ briefs, review loops, gates and mutation runs as for any step.
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
     2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
     "Set PES path", SE-GUI-26, 28 and 50). Tier 2
-    - [ ] a: the Save editor: portraits and Set PES path by the save's version, the version
-      warning and its standing notice gone, the picker's start folder (`last_folder`), its
-      draft and help
-    - [ ] b: the shell: `targets_pes_version` on each tool, the selector hidden with its
-      place kept, the standing notice and `SwitchVersion` removed (ST-BAR-07, 08
-      withdrawn), the drafts' sidebar
+    - [x] a (2026-11-12, `58892900`, merge `9ffffa8c`; SWE-2 and the lead): the Save
+      editor's portraits, Set PES path and its pick by the save's version, through
+      per-version reads on the common settings and the tool context; the version warning
+      gone (SE-GUI-28 withdrawn); the picker's start folder (`last_folder`); draft and help
+    - [ ] b: the shell: `targets_pes_version` on each tool, the selector disabled and
+      empty under a tool that does not use it, the standing notice and `SwitchVersion`
+      removed (ST-BAR-07, 08 withdrawn). Brief `.tmp/0_0_2/sel/brief_b.md`
     - [ ] the look in the built window; its review rounds
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
