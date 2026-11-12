@@ -320,8 +320,8 @@ fn files_an_earlier_update_left_aside_stop_the_next_one() {
     let kind = ArchiveKind::SevenZ;
     let mut files = old_files();
     files.push((
-        format!("{TEMP_FOLDER}/{BACKUP_FOLDER}/README.txt"),
-        "the readme an earlier update moved aside",
+        format!("{TEMP_FOLDER}/{BACKUP_FOLDER}/old/{}", exe_file_name()),
+        "the program an earlier update moved aside",
     ));
     let dir = folder_with("kept_backup", &files);
     let bundle = dir.path();
@@ -360,7 +360,10 @@ fn a_backup_without_files_or_beside_the_succeeded_mark_does_not_stop_the_next_on
     let (release, open_url) = bundle_release(kind, None);
     let backup = format!("{TEMP_FOLDER}/{BACKUP_FOLDER}");
     let marked: Files = vec![
-        (format!("{backup}/README.txt"), "the readme it replaced"),
+        (
+            format!("{backup}/old/{}", exe_file_name()),
+            "the program it replaced",
+        ),
         (format!("{TEMP_FOLDER}/{SUCCEEDED_MARK}"), ""),
     ];
     for (case, files, folders) in [
@@ -696,6 +699,31 @@ fn a_cancel_while_the_checksums_download_stops_before_the_archives_request() {
     assert_eq!(snapshot(bundle), before, "no temp folder left");
 }
 
+#[test]
+fn a_cancel_set_before_the_call_stops_before_any_request() {
+    let kind = ArchiveKind::SevenZ;
+    let dir = folder_with("cancel_first", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
+    let (release, open_url) = bundle_release(kind, None);
+    let (open_url, requests) = counted(open_url);
+    let outcome = install_kind(
+        kind,
+        &release,
+        bundle,
+        ProgramStamp::of(bundle),
+        &open_url,
+        |_| {},
+        &AtomicBool::new(true),
+    );
+    assert!(
+        matches!(outcome, Err(InstallError::Cancelled)),
+        "{outcome:?}"
+    );
+    assert_eq!(requests.load(Ordering::SeqCst), 0, "no request");
+    assert_eq!(snapshot(bundle), before, "no temp folder left");
+}
+
 /// A download's body whose read sets `cancel` and then times out: a Cancel
 /// clicked while the read waited on a stalled connection.
 struct CancelThenTimeOut {
@@ -841,6 +869,10 @@ fn the_temp_folder_stays_only_when_the_old_files_could_not_be_put_back() {
         kept: temp.join(BACKUP_FOLDER),
     });
     remove_temp(temp, &not_restored);
+    assert!(
+        !temp.join(SUCCEEDED_MARK).exists(),
+        "a failed update leaves no mark beside the files it keeps"
+    );
     assert_eq!(
         fs::read_to_string(temp.join(BACKUP_FOLDER).join("README.txt")).ok(),
         Some("old readme".to_owned()),
