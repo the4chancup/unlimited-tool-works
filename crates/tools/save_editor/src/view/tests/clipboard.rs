@@ -4,6 +4,7 @@
 //! clipboard's text), within one window and from one window to another.
 
 use pes_savefile::interchange::team_toml::TeamToml;
+use pes_savefile::model::tactics::{TeamTactics, bench_fill};
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::interchange::{Import, held, stage};
@@ -18,9 +19,21 @@ const GAMEPLAN: Sections = Sections {
     gameplan: true,
 };
 
+/// The Stats section alone chosen: what a stats copy keeps.
+const STATS: Sections = Sections {
+    stats: true,
+    aesthetics: false,
+    gameplan: false,
+};
+
+/// The save `view` holds.
+fn file(view: &SaveView) -> &EditFile {
+    view.session.as_ref().expect("an open save").file()
+}
+
 /// The row label `player_row` draws for `team_id`'s roster `slot`.
 fn player_row_label(view: &SaveView, team_id: u32, slot: u8) -> String {
-    let file = view.session.as_ref().expect("an open save").file();
+    let file = file(view);
     let player_id = file.team(team_id).expect("the team").roster[usize::from(slot)].player_id;
     let player = file.player(player_id).expect("a rostered player");
     let position = POSITIONS
@@ -41,6 +54,12 @@ fn click_player_row(window: &mut Headless, view: &mut SaveView, team_id: u32, sl
 fn click_team_row(window: &mut Headless, view: &mut SaveView, team_id: u32) {
     let nodes = draw(window, view);
     click(window, team_row(&nodes, view, team_id), view);
+}
+
+/// A click on the button labelled `label` (a Tactics selector's choice).
+fn click_button(window: &mut Headless, view: &mut SaveView, label: &str) {
+    let nodes = draw(window, view);
+    click(window, node_labeled(&nodes, Role::Button, label), view);
 }
 
 /// One frame carrying `events` (a key or a clipboard event).
@@ -74,6 +93,7 @@ fn head(text: &str) -> Vec<&str> {
     text.lines().take(2).collect()
 }
 
+/// Ctrl+Z: one frame carrying the key, the Edit menu's Undo.
 fn ctrl_z(window: &mut Headless, view: &mut SaveView) {
     send(
         window,
@@ -90,10 +110,11 @@ fn open_window(path: &Path) -> (Headless, SaveView) {
     (Headless::sized(DEFAULT_PANE.x, 900.0), view)
 }
 
-/// A click on the button labelled `label` (a Tactics selector's choice).
-fn click_button(window: &mut Headless, view: &mut SaveView, label: &str) {
-    let nodes = draw(window, view);
-    click(window, node_labeled(&nodes, Role::Button, label), view);
+/// Asserts that `view`'s save holds no edit: no undo entry, not dirty.
+fn assert_no_edit(view: &SaveView, case: &str) {
+    let session = view.session.as_ref().expect("an open save");
+    assert!(!session.can_undo(), "{case}: no undo entry was pushed");
+    assert!(!session.is_dirty(), "{case}: nothing was written");
 }
 
 /// The PES 17 fixture with 70101's stats made distinct (the fixture's
@@ -108,108 +129,45 @@ fn stats_fixture(test: &str) -> PathBuf {
     path
 }
 
+/// What Copy stats from `a` writes onto `b` in the save at `path`, built
+/// through a second session of it. Asserts that it differs from `b` as he
+/// stands, so a paste that wrote nothing cannot pass.
+fn copy_stats_result(path: &Path, a: u32, b: u32) -> PlayerEntry {
+    let mut second = Session::open(path, Recorder::default()).unwrap();
+    let before = second.file().player(b).unwrap().clone();
+    second.copy_stats(b, a);
+    let after = second.file().player(b).unwrap().clone();
+    assert_ne!(after, before, "premise: Copy stats from {a} changes {b}");
+    after
+}
+
+/// The fixture for the selector tests: preset sliders and formation
+/// coordinates made distinct (the fixture's are placeholders), the
+/// first preset's Fluid formation on so the formation selector clicks.
+fn selector_fixture(test: &str) -> PathBuf {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    for (preset, value) in [(0, 7), (1, 5), (2, 1)] {
+        file.team_mut(701).unwrap().tactics.presets[preset]
+            .sliders
+            .support_range = value;
+    }
+    for (formation, x) in [(0, 10), (1, 20), (2, 30)] {
+        file.team_mut(701).unwrap().tactics.presets[0].formations[formation].players[0].x = x;
+    }
+    file.team_mut(701).unwrap().tactics.presets[0].style.fluid = Some(true);
+    file.save(&path).unwrap();
+    path
+}
+
 /// `id`'s team's Gameplan document, as Ctrl+C builds it.
 fn gameplan_document(view: &SaveView, id: u32) -> TeamToml {
-    let file = view.session.as_ref().expect("an open save").file();
+    let file = file(view);
     let team = file.team(id).expect("the team");
     let players: Vec<&PlayerEntry> = file.players().iter().collect();
     let mut document = TeamToml::from_team(file.version(), team, &players).unwrap();
     keep_sections(&mut document, GAMEPLAN);
     document
-}
-
-// SE-GUI-56
-#[test]
-fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
-    let path = stats_fixture("clip_player_stats");
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let (a, b) = (70101, 70102);
-    let b_before = player_entry(&view, b);
-    // What the paste must write: Copy stats from A onto B, built
-    // through the session on a second copy of the same save.
-    let expected = {
-        let mut second = Session::open(&path, Recorder::default()).unwrap();
-        second.copy_stats(b, a);
-        second.file().player(b).unwrap().clone()
-    };
-    assert_ne!(expected, b_before, "premise: the copy changes B");
-
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
-    click_player_row(&mut window, &mut view, 701, 0);
-    let copied = copy(&mut window, &mut view);
-    click_player_row(&mut window, &mut view, 701, 1);
-    ctrl_v(&mut window, &mut view, &copied);
-
-    assert_eq!(
-        player_entry(&view, b),
-        expected,
-        "B's record is what Copy stats from A writes"
-    );
-    // One Ctrl+Z restores B.
-    ctrl_z(&mut window, &mut view);
-    assert_eq!(player_entry(&view, b), b_before, "one undo restores B");
-}
-
-// SE-GUI-56: Ctrl+V arriving as `PasteImage` (the clipboard holding an
-// image with no text form) pastes nothing: the copy is the clipboard's
-// text, and an image replaced it.
-#[test]
-fn ctrl_v_arriving_as_paste_image_pastes_nothing() {
-    let path = stats_fixture("clip_paste_image");
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let b = 70102;
-    let b_before = player_entry(&view, b);
-
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
-    click_player_row(&mut window, &mut view, 701, 0);
-    copy(&mut window, &mut view);
-    click_player_row(&mut window, &mut view, 701, 1);
-    send(
-        &mut window,
-        &mut view,
-        vec![egui::Event::PasteImage(std::sync::Arc::new(
-            egui::ColorImage::filled([1, 1], egui::Color32::BLACK),
-        ))],
-    );
-
-    assert_eq!(player_entry(&view, b), b_before, "B is untouched");
-    assert!(
-        !view.session.as_ref().unwrap().can_undo(),
-        "no undo entry was pushed"
-    );
-}
-
-// SE-GUI-56
-#[test]
-fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
-    let path = fixture(PesVersion::Pes17, "clip_gameplan");
-    let mut view = SaveView::new();
-    view.open(&path);
-    // The list under ALL, which `open` leaves, draws both teams' rows.
-    // What the paste must write: 701's Gameplan-only document staged
-    // onto 702, as the import panel's Apply would write it.
-    let document = gameplan_document(&view, 701);
-    assert!(held(&document).gameplan, "premise: a Gameplan is held");
-    let expected = {
-        let file = view.session.as_ref().unwrap().file();
-        let import = stage(file, file.team(702).unwrap(), &document, GAMEPLAN)
-            .expect("701's document stages onto 702");
-        assert!(import.changes, "premise: the Gameplans differ");
-        import
-    };
-
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
-    click_team_row(&mut window, &mut view, 701);
-    let copied = copy(&mut window, &mut view);
-    click_team_row(&mut window, &mut view, 702);
-    let before = team_entry(&view, 702);
-    ctrl_v(&mut window, &mut view, &copied);
-
-    assert_gameplan_import(&mut window, &mut view, &expected, &before);
 }
 
 /// `expected`'s Gameplan import written on its team and its rostered
@@ -242,32 +200,89 @@ fn assert_gameplan_import(
     );
 }
 
-/// The fixture for the selector tests: preset sliders and formation
-/// coordinates made distinct (the fixture's are placeholders), the
-/// first preset's Fluid formation on so the formation selector clicks.
-fn selector_fixture(test: &str) -> PathBuf {
-    let path = fixture(PesVersion::Pes21, test);
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    for (preset, value) in [(0, 7), (1, 5), (2, 1)] {
-        file.team_mut(701).unwrap().tactics.presets[preset]
-            .sliders
-            .support_range = value;
-    }
-    for (formation, x) in [(0, 10), (1, 20), (2, 30)] {
-        file.team_mut(701).unwrap().tactics.presets[0].formations[formation].players[0].x = x;
-    }
-    file.team_mut(701).unwrap().tactics.presets[0].style.fluid = Some(true);
-    file.save(&path).unwrap();
-    path
+// SE-GUI-56
+#[test]
+fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
+    let path = stats_fixture("clip_player_stats");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+    let (a, b) = (70101, 70102);
+    let b_before = player_entry(&view, b);
+    let expected = copy_stats_result(&path, a, b);
+
+    click_player_row(&mut window, &mut view, 701, 0);
+    let copied = copy(&mut window, &mut view);
+    click_player_row(&mut window, &mut view, 701, 1);
+    ctrl_v(&mut window, &mut view, &copied);
+
+    assert_eq!(
+        player_entry(&view, b),
+        expected,
+        "B's record is what Copy stats from A writes"
+    );
+    // One Ctrl+Z restores B.
+    ctrl_z(&mut window, &mut view);
+    assert_eq!(player_entry(&view, b), b_before, "one undo restores B");
+}
+
+// Ctrl+V arriving as `PasteImage` (the clipboard holding an image with no
+// text form) pastes nothing: the copy is the clipboard's text, and an
+// image replaced it.
+// SE-GUI-72
+#[test]
+fn ctrl_v_arriving_as_paste_image_pastes_nothing() {
+    let path = stats_fixture("clip_paste_image");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+    let b = 70102;
+    let b_before = player_entry(&view, b);
+
+    click_player_row(&mut window, &mut view, 701, 0);
+    copy(&mut window, &mut view);
+    click_player_row(&mut window, &mut view, 701, 1);
+    send(
+        &mut window,
+        &mut view,
+        vec![egui::Event::PasteImage(std::sync::Arc::new(
+            egui::ColorImage::filled([1, 1], egui::Color32::BLACK),
+        ))],
+    );
+
+    assert_eq!(player_entry(&view, b), b_before, "B is untouched");
+    assert_no_edit(&view, "an image");
+}
+
+// SE-GUI-56
+#[test]
+fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
+    let (mut window, mut view) = open_window(&fixture(PesVersion::Pes17, "clip_gameplan"));
+    // The list under ALL, which `open` leaves, draws both teams' rows.
+    // What the paste must write: 701's Gameplan-only document staged
+    // onto 702, as the import panel's Apply would write it.
+    let document = gameplan_document(&view, 701);
+    assert!(held(&document).gameplan, "premise: a Gameplan is held");
+    let expected = stage(
+        file(&view),
+        file(&view).team(702).unwrap(),
+        &document,
+        GAMEPLAN,
+    )
+    .expect("701's document stages onto 702");
+    assert!(expected.changes, "premise: the Gameplans differ");
+
+    click_team_row(&mut window, &mut view, 701);
+    let copied = copy(&mut window, &mut view);
+    click_team_row(&mut window, &mut view, 702);
+    let before = team_entry(&view, 702);
+    ctrl_v(&mut window, &mut view, &copied);
+
+    assert_gameplan_import(&mut window, &mut view, &expected, &before);
 }
 
 // SE-GUI-56
 #[test]
 fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
-    let path = selector_fixture("clip_preset");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) = open_window(&selector_fixture("clip_preset"));
     open_team_view(&mut window, &mut view, 701);
     let preset1 = team_entry(&view, 701).tactics.presets[0].clone();
     assert_ne!(
@@ -276,19 +291,9 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
         "premise: presets 1 and 2 differ"
     );
 
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "1"),
-        &mut view,
-    );
+    click_button(&mut window, &mut view, "1");
     let copied = copy(&mut window, &mut view);
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "2"),
-        &mut view,
-    );
+    click_button(&mut window, &mut view, "2");
     assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
     ctrl_v(&mut window, &mut view, &copied);
 
@@ -308,10 +313,7 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
 // SE-GUI-56
 #[test]
 fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_one() {
-    let path = selector_fixture("clip_formation");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) = open_window(&selector_fixture("clip_formation"));
     open_team_view(&mut window, &mut view, 701);
     let kick_off = team_entry(&view, 701).tactics.presets[0].formations[0].clone();
     assert_ne!(
@@ -320,19 +322,9 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
         "premise: the formations differ"
     );
 
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Kick-off"),
-        &mut view,
-    );
+    click_button(&mut window, &mut view, "Kick-off");
     let copied = copy(&mut window, &mut view);
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "In-possession"),
-        &mut view,
-    );
+    click_button(&mut window, &mut view, "In-possession");
     assert_eq!(view.tactics.formation, 1, "in-possession is on screen");
     ctrl_v(&mut window, &mut view, &copied);
 
@@ -343,61 +335,76 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
     );
 }
 
+// Each copy pasted onto a target of another kind, where a paste that
+// ignored the kind would write something the assertions see (a preset
+// onto a player row writes nothing either way: its document holds no
+// player table).
 // SE-GUI-56
 #[test]
 fn a_paste_of_another_kind_than_the_target_does_nothing() {
-    let path = selector_fixture("clip_kind_mismatch");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) = open_window(&selector_fixture("clip_kind_mismatch"));
     open_team_view(&mut window, &mut view, 701);
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "1"),
-        &mut view,
-    );
-    let copied = copy(&mut window, &mut view);
-    // Preset 2 shown, so a paste that ignored the kinds would write the
-    // copied preset 1 over it — a change the assertions can see.
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "2"),
-        &mut view,
-    );
-
+    // Preset 2 copied: written as a Gameplan, it would land on preset 1,
+    // which differs.
+    click_button(&mut window, &mut view, "2");
+    let preset = copy(&mut window, &mut view);
+    assert_eq!(head(&preset)[1], "# copied: preset");
+    click_team_row(&mut window, &mut view, 701);
+    let gameplan = copy(&mut window, &mut view);
+    assert_eq!(head(&gameplan)[1], "# copied: gameplan");
     let team_before = team_entry(&view, 701);
-    click_player_row(&mut window, &mut view, 701, 0);
-    let player_before = player_entry(&view, 70101);
-    ctrl_v(&mut window, &mut view, &copied);
-
-    assert_eq!(team_entry(&view, 701), team_before, "the team is untouched");
-    assert_eq!(
-        player_entry(&view, 70101),
-        player_before,
-        "the selected player is untouched"
+    assert_ne!(
+        team_before.tactics.presets[0], team_before.tactics.presets[1],
+        "premise: presets 1 and 2 differ"
     );
-    let session = view.session.as_ref().unwrap();
-    assert!(!session.can_undo(), "no undo entry was pushed");
-    assert!(!session.is_dirty(), "nothing was written");
+    let player_before = player_entry(&view, 70101);
+
+    // Each target: a click selecting it, the copy of another kind. The
+    // player row comes last: its click leaves the team view.
+    type Select = fn(&mut Headless, &mut SaveView);
+    let cases: [(&str, Select, &str); 3] = [
+        (
+            "a Gameplan onto the shown preset 2",
+            |window, view| click_button(window, view, "2"),
+            &gameplan,
+        ),
+        (
+            "a preset onto the team row",
+            |window, view| click_team_row(window, view, 701),
+            &preset,
+        ),
+        (
+            "a preset onto a player row",
+            |window, view| click_player_row(window, view, 701, 0),
+            &preset,
+        ),
+    ];
+    for (case, select, text) in cases {
+        select(&mut window, &mut view);
+        ctrl_v(&mut window, &mut view, text);
+        assert_eq!(
+            team_entry(&view, 701),
+            team_before,
+            "{case}: the team is untouched"
+        );
+        assert_eq!(
+            player_entry(&view, 70101),
+            player_before,
+            "{case}: the player is untouched"
+        );
+        assert_no_edit(&view, case);
+    }
 }
 
 // SE-GUI-56
 #[test]
 fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
     let path = stats_fixture("clip_arrow_target");
-    let mut view = SaveView::new();
-    view.open(&path);
+    let (mut window, mut view) = open_window(&path);
     view.team = TeamChoice::Team(701);
     let (a, b) = (70101, 70102);
-    let expected = {
-        let mut second = Session::open(&path, Recorder::default()).unwrap();
-        second.copy_stats(b, a);
-        second.file().player(b).unwrap().clone()
-    };
+    let expected = copy_stats_result(&path, a, b);
 
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
     click_player_row(&mut window, &mut view, 701, 0);
     let copied = copy(&mut window, &mut view);
     send(
@@ -423,18 +430,12 @@ fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
 #[test]
 fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
     let path = stats_fixture("clip_text_field");
-    let mut view = SaveView::new();
-    view.open(&path);
+    let (mut window, mut view) = open_window(&path);
     view.team = TeamChoice::Team(701);
     let (a, b) = (70101, 70102);
     let b_before = player_entry(&view, b);
-    let expected = {
-        let mut second = Session::open(&path, Recorder::default()).unwrap();
-        second.copy_stats(b, a);
-        second.file().player(b).unwrap().clone()
-    };
+    let expected = copy_stats_result(&path, a, b);
 
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
     click_player_row(&mut window, &mut view, 701, 0);
     let copied = copy(&mut window, &mut view);
     click_player_row(&mut window, &mut view, 701, 1);
@@ -477,27 +478,20 @@ fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
 // SE-GUI-56
 #[test]
 fn ctrl_v_of_a_teams_own_gameplan_pushes_no_undo_entry() {
-    let path = fixture(PesVersion::Pes17, "clip_gameplan_same_team");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) =
+        open_window(&fixture(PesVersion::Pes17, "clip_gameplan_same_team"));
     click_team_row(&mut window, &mut view, 701);
     let copied = copy(&mut window, &mut view);
     click_team_row(&mut window, &mut view, 701);
     ctrl_v(&mut window, &mut view, &copied);
 
-    let session = view.session.as_ref().unwrap();
-    assert!(!session.can_undo(), "no undo entry was pushed");
-    assert!(!session.is_dirty(), "the save is not dirty");
+    assert_no_edit(&view, "the team's own Gameplan");
 }
 
 // SE-GUI-56
 #[test]
 fn a_press_on_the_locked_formation_selector_sets_the_clipboard_kind() {
-    let path = fixture(PesVersion::Pes21, "clip_locked_formation");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) = open_window(&fixture(PesVersion::Pes21, "clip_locked_formation"));
     open_team_view(&mut window, &mut view, 701);
     // The fixture's preset 1 has Fluid formation off: the selector is
     // locked on Kick-off (disabled).
@@ -529,17 +523,9 @@ fn a_press_on_the_locked_formation_selector_sets_the_clipboard_kind() {
 // SE-GUI-56
 #[test]
 fn a_pointer_move_without_a_press_leaves_the_clipboard_kind() {
-    let path = selector_fixture("clip_hover_no_press");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let (mut window, mut view) = open_window(&selector_fixture("clip_hover_no_press"));
     open_team_view(&mut window, &mut view, 701);
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "2"),
-        &mut view,
-    );
+    click_button(&mut window, &mut view, "2");
     assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
 
     // One frame whose only event moves the pointer over 701's team
@@ -562,13 +548,10 @@ fn a_pointer_move_without_a_press_leaves_the_clipboard_kind() {
 // SE-GUI-56
 #[test]
 fn ctrl_c_names_what_it_copied_on_the_system_clipboard() {
-    let path = fixture(PesVersion::Pes17, "clip_system_line");
-    let mut view = SaveView::new();
-    view.open(&path);
+    let (mut window, mut view) = open_window(&fixture(PesVersion::Pes17, "clip_system_line"));
     view.team = TeamChoice::Team(701);
     let name = display_name(&player_entry(&view, 70101).name);
 
-    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
     click_player_row(&mut window, &mut view, 701, 0);
     let copied = copy(&mut window, &mut view);
     assert_eq!(
@@ -577,16 +560,44 @@ fn ctrl_c_names_what_it_copied_on_the_system_clipboard() {
     );
 }
 
-/// The Stats section alone chosen: what a stats copy keeps.
-const STATS: Sections = Sections {
-    stats: true,
-    aesthetics: false,
-    gameplan: false,
-};
-
 /// `document` through its text and back, as the clipboard carries it.
 fn through_text(document: &TeamToml) -> TeamToml {
     TeamToml::parse(&document.to_toml().unwrap()).unwrap()
+}
+
+/// The cup's teams (701 to 799) of `file`, whose tactics are their
+/// members'.
+fn cup_teams(file: &EditFile) -> Vec<&TeamEntry> {
+    file.teams()
+        .iter()
+        .filter(|team| (701..800).contains(&team.id))
+        .collect()
+}
+
+/// The first of `teams` that `unlike` holds for: the team a document is
+/// applied onto, so a key the document dropped leaves that team's own
+/// value, which the assertion sees.
+fn unlike_team<'a>(
+    teams: &[&'a TeamEntry],
+    unlike: impl Fn(&TeamEntry) -> bool,
+    what: &str,
+) -> &'a TeamEntry {
+    teams
+        .iter()
+        .copied()
+        .find(|team| unlike(team))
+        .unwrap_or_else(|| panic!("premise: a cup team whose {what}"))
+}
+
+/// A team that is `team` (its id and roster) with `tactics`: the target
+/// of a document's apply.
+fn target_with(team: &TeamEntry, tactics: &TeamTactics) -> TeamEntry {
+    TeamEntry {
+        id: team.id,
+        roster: team.roster.clone(),
+        tactics: tactics.clone(),
+        ..TeamEntry::default()
+    }
 }
 
 /// The PES 21 fixture with /co/'s first player's stats made distinct (the
@@ -668,16 +679,13 @@ fn a_stats_document_writes_what_copy_stats_writes() {
     }
 }
 
+// Each preset and each formation written as preset 1's, read back onto a
+// team whose own differs, so a key the document drops shows.
 #[test]
 fn a_preset_and_a_formation_survive_the_document() {
     for version in [PesVersion::Pes17, PesVersion::Pes19, PesVersion::Pes21] {
         let file = EditFile::from_bytes(&fixture_save(version)).unwrap();
-        // The cup's teams (701 to 799), whose tactics are their members'.
-        let teams: Vec<&TeamEntry> = file
-            .teams()
-            .iter()
-            .filter(|team| (701..800).contains(&team.id))
-            .collect();
+        let teams = cup_teams(&file);
         assert!(
             teams
                 .iter()
@@ -687,30 +695,35 @@ fn a_preset_and_a_formation_survive_the_document() {
                     && preset.attack_instructions.is_some()),
             "premise: {version:?} holds a preset unlike a blank team's"
         );
-        for team in teams {
+        for team in &teams {
             let exported = TeamToml::from_team(version, team, &[]).unwrap();
             for (index, preset) in team.tactics.presets.iter().enumerate() {
-                // Written as preset 1 and read back onto a blank team's
-                // preset 1: every field must come back.
+                let label = format!("{version:?} team {} preset {}", team.id, index + 1);
+                let seed = unlike_team(
+                    &teams,
+                    |other| {
+                        let theirs = &other.tactics.presets[index];
+                        theirs != preset
+                            && (0..3).all(|f| theirs.formations[f] != preset.formations[f])
+                    },
+                    &format!("preset and formations differ from {label}'s"),
+                );
                 let mut document = TeamToml {
                     pes_version: Some(version),
                     ..TeamToml::default()
                 };
                 document.tactics.presets[0] = exported.tactics.presets[index];
-                let mut blank = TeamEntry {
-                    id: team.id,
-                    roster: team.roster.clone(),
-                    ..TeamEntry::default()
-                };
+                let mut target = target_with(team, &seed.tactics);
+                target.tactics.presets[0] = seed.tactics.presets[index].clone();
+                let seeded = target.clone();
                 through_text(&document)
-                    .apply(version, &mut blank, &mut [])
+                    .apply(version, &mut target, &mut [])
                     .unwrap();
+                assert_eq!(target.tactics.presets[0], *preset, "{label}");
                 assert_eq!(
-                    blank.tactics.presets[0],
-                    *preset,
-                    "{version:?} team {} preset {}",
-                    team.id,
-                    index + 1
+                    target.tactics.presets[1..],
+                    seeded.tactics.presets[1..],
+                    "{label}: the other presets stay"
                 );
                 for (f, formation) in preset.formations.iter().enumerate() {
                     let mut document = TeamToml {
@@ -719,20 +732,103 @@ fn a_preset_and_a_formation_survive_the_document() {
                     };
                     document.tactics.presets[0].formations[0] =
                         exported.tactics.presets[index].formations[f];
-                    let mut blank = TeamEntry::default();
+                    let mut target = target_with(team, &seed.tactics);
+                    target.tactics.presets[0].formations[0] =
+                        seed.tactics.presets[index].formations[f].clone();
                     through_text(&document)
-                        .apply(version, &mut blank, &mut [])
+                        .apply(version, &mut target, &mut [])
                         .unwrap();
-                    assert_eq!(blank.tactics.presets[0].formations[0], *formation);
+                    assert_eq!(
+                        target.tactics.presets[0].formations[0],
+                        *formation,
+                        "{label} formation {}",
+                        f + 1
+                    );
                 }
             }
         }
     }
 }
 
-/// The save `view` holds.
-fn file(view: &SaveView) -> &EditFile {
-    view.session.as_ref().expect("an open save").file()
+// A team's whole `[tactics]` table, the Gameplan a team row copies,
+// written and read back onto a team whose own tactics differ: the record
+// comes back entire but for the bench's last nine entries. The document
+// carries the bench's first twelve, and the import writes the other nine
+// as the game fills them, which is not always what the save stored (255
+// on some teams).
+#[test]
+fn a_gameplan_survives_the_document() {
+    for version in [PesVersion::Pes17, PesVersion::Pes19, PesVersion::Pes21] {
+        let file = EditFile::from_bytes(&fixture_save(version)).unwrap();
+        let teams = cup_teams(&file);
+        for team in &teams {
+            let label = format!("{version:?} team {}", team.id);
+            let ours = &team.tactics;
+            let seed = unlike_team(
+                &teams,
+                |other| {
+                    let theirs = &other.tactics;
+                    theirs.starting_eleven != ours.starting_eleven
+                        && theirs.bench_order != ours.bench_order
+                        && theirs.set_pieces != ours.set_pieces
+                        && (0..3).all(|i| {
+                            theirs.presets[i] != ours.presets[i]
+                                && (0..3).all(|f| {
+                                    theirs.presets[i].formations[f] != ours.presets[i].formations[f]
+                                })
+                        })
+                },
+                &format!("lineup, bench, set pieces and presets differ from {label}'s"),
+            );
+            let document = TeamToml {
+                pes_version: Some(version),
+                tactics: TeamToml::from_team(version, team, &[]).unwrap().tactics,
+                ..TeamToml::default()
+            };
+            let mut target = target_with(team, &seed.tactics);
+            through_text(&document)
+                .apply(version, &mut target, &mut [])
+                .unwrap();
+            let theirs = &target.tactics;
+            assert_eq!(theirs.starting_eleven, ours.starting_eleven, "{label}");
+            assert_eq!(theirs.bench_order[..12], ours.bench_order[..12], "{label}");
+            assert_eq!(theirs.set_pieces, ours.set_pieces, "{label}");
+            assert_eq!(
+                theirs.players_to_join_attack, ours.players_to_join_attack,
+                "{label}"
+            );
+            assert_eq!(theirs.auto, ours.auto, "{label}");
+            assert_eq!(theirs.presets, ours.presets, "{label}");
+            let first_twelve: [u8; 12] = ours.bench_order[..12].try_into().unwrap();
+            assert_eq!(
+                theirs.bench_order[12..],
+                bench_fill(&ours.starting_eleven, &first_twelve),
+                "{label}: the bench's other nine are the game's own fill"
+            );
+        }
+    }
+}
+
+// A Gameplan, preset or formation copy keeps no player table, so the
+// team's export without its players must hold the same `[tactics]` (and
+// roster-order notes) as the export with them.
+#[test]
+fn a_teams_export_without_its_players_holds_the_same_tactics() {
+    for version in [PesVersion::Pes17, PesVersion::Pes19, PesVersion::Pes21] {
+        let file = EditFile::from_bytes(&fixture_save(version)).unwrap();
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        for team in cup_teams(&file) {
+            let with = TeamToml::from_team(version, team, &players).unwrap();
+            let without = TeamToml::from_team(version, team, &[]).unwrap();
+            assert!(!with.players.is_empty(), "premise: a player table");
+            assert_eq!(
+                without.tactics, with.tactics,
+                "{version:?} team {}",
+                team.id
+            );
+            assert_eq!(without.roster_breaks, with.roster_breaks);
+        }
+    }
 }
 
 /// What importing team `from_team`'s Team TOML document from `from`, Stats
@@ -861,83 +957,125 @@ fn a_teams_gameplan_copied_in_one_window_pastes_into_another() {
     assert_gameplan_import(&mut window_b, &mut view_b, &expected, &before);
 }
 
+// SE-GUI-72
+#[test]
+fn a_teams_gameplan_pastes_into_a_save_of_another_version() {
+    let (mut window17, mut view17) =
+        open_window(&fixture(PesVersion::Pes17, "clip_cross_gameplan_17"));
+    let (mut window21, mut view21) =
+        open_window(&fixture(PesVersion::Pes21, "clip_cross_gameplan_21"));
+    click_team_row(&mut window17, &mut view17, 701);
+    let copied = copy(&mut window17, &mut view17);
+    assert_eq!(head(&copied)[1], "# copied: gameplan");
+    // What importing the copied document, Gameplan alone, writes onto the
+    // PES 21 save's 702.
+    let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
+    assert_eq!(document.pes_version, Some(PesVersion::Pes17));
+    let expected = stage(
+        file(&view21),
+        file(&view21).team(702).unwrap(),
+        &document,
+        GAMEPLAN,
+    )
+    .expect("the PES 17 document stages onto the PES 21 team");
+    assert!(expected.changes, "premise: the import changes 702");
+
+    click_team_row(&mut window21, &mut view21, 702);
+    let before = team_entry(&view21, 702);
+    ctrl_v(&mut window21, &mut view21, &copied);
+
+    assert_gameplan_import(&mut window21, &mut view21, &expected, &before);
+}
+
 // The same version's import writes the record as it was
 // (`a_preset_and_a_formation_survive_the_document`), so the shown preset
-// is compared with the copied record itself.
+// is compared with the copied record itself. Preset 2 copied onto preset
+// 3, so a copy or a paste that read or wrote another index shows.
 // SE-GUI-72
 #[test]
 fn a_preset_copied_in_one_window_pastes_over_the_preset_shown_in_another() {
     let (mut window_a, mut view_a) = open_window(&selector_fixture("clip_cross_preset_a"));
-    let (mut window_b, mut view_b) =
-        open_window(&fixture(PesVersion::Pes21, "clip_cross_preset_b"));
+    let (mut window_b, mut view_b) = open_window(&selector_fixture("clip_cross_preset_b"));
     open_team_view(&mut window_a, &mut view_a, 701);
-    click_button(&mut window_a, &mut view_a, "1");
+    click_button(&mut window_a, &mut view_a, "2");
     let copied = copy(&mut window_a, &mut view_a);
     let name = display_name(&team_entry(&view_a, 701).name);
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: preset 1 of {name}").as_str(),
+            format!("# Unlimited Tool Works: preset 2 of {name}").as_str(),
             "# copied: preset"
         ]
     );
-    let preset1 = team_entry(&view_a, 701).tactics.presets[0].clone();
+    let presets = team_entry(&view_a, 701).tactics.presets.clone();
+    assert_ne!(presets[0], presets[1], "premise: presets 1 and 2 differ");
 
     open_team_view(&mut window_b, &mut view_b, 701);
-    click_button(&mut window_b, &mut view_b, "2");
-    assert_eq!(view_b.tactics.preset, 1, "preset 2 is on screen");
+    click_button(&mut window_b, &mut view_b, "3");
+    assert_eq!(view_b.tactics.preset, 2, "preset 3 is on screen");
     let before = team_entry(&view_b, 701);
     assert_ne!(
-        before.tactics.presets[1], preset1,
+        before.tactics.presets[2], presets[1],
         "premise: the presets differ"
     );
     ctrl_v(&mut window_b, &mut view_b, &copied);
 
     let mut expected = before.clone();
-    expected.tactics.presets[1] = preset1;
+    expected.tactics.presets[2] = presets[1].clone();
     assert_eq!(
         team_entry(&view_b, 701),
         expected,
-        "preset 2 took the copied preset, and nothing else changed"
+        "preset 3 took the copied preset, and nothing else changed"
     );
     ctrl_z(&mut window_b, &mut view_b);
     assert_eq!(team_entry(&view_b, 701), before, "one undo restores it");
 }
 
+// In-possession copied onto Out-of-possession, so a copy or a paste that
+// read or wrote another formation shows.
 // SE-GUI-72
 #[test]
 fn a_formation_copied_in_one_window_pastes_over_the_formation_shown_in_another() {
     let (mut window_a, mut view_a) = open_window(&selector_fixture("clip_cross_formation_a"));
     let (mut window_b, mut view_b) = open_window(&selector_fixture("clip_cross_formation_b"));
     open_team_view(&mut window_a, &mut view_a, 701);
-    click_button(&mut window_a, &mut view_a, "Kick-off");
+    click_button(&mut window_a, &mut view_a, "In-possession");
     let copied = copy(&mut window_a, &mut view_a);
     let name = display_name(&team_entry(&view_a, 701).name);
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: the Kick-off formation of {name}").as_str(),
+            format!("# Unlimited Tool Works: the In-possession formation of {name}").as_str(),
             "# copied: formation"
         ]
     );
-    let kick_off = team_entry(&view_a, 701).tactics.presets[0].formations[0].clone();
+    let formations = team_entry(&view_a, 701).tactics.presets[0]
+        .formations
+        .clone();
+    assert_ne!(
+        formations[0], formations[1],
+        "premise: Kick-off and In-possession differ"
+    );
 
     open_team_view(&mut window_b, &mut view_b, 701);
-    click_button(&mut window_b, &mut view_b, "In-possession");
-    assert_eq!(view_b.tactics.formation, 1, "in-possession is on screen");
+    click_button(&mut window_b, &mut view_b, "Out-of-possession");
+    assert_eq!(
+        view_b.tactics.formation, 2,
+        "out-of-possession is on screen"
+    );
     let before = team_entry(&view_b, 701);
     assert_ne!(
-        before.tactics.presets[0].formations[1], kick_off,
+        before.tactics.presets[0].formations[2], formations[1],
         "premise: the formations differ"
     );
     ctrl_v(&mut window_b, &mut view_b, &copied);
 
     let mut expected = before.clone();
-    expected.tactics.presets[0].formations[1] = kick_off;
+    expected.tactics.presets[0].formations[2] = formations[1].clone();
     assert_eq!(
         team_entry(&view_b, 701),
         expected,
-        "in-possession took the copied formation, and nothing else changed"
+        "out-of-possession took the copied formation, and nothing else changed"
     );
     ctrl_z(&mut window_b, &mut view_b);
     assert_eq!(team_entry(&view_b, 701), before, "one undo restores it");
@@ -988,24 +1126,12 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
         .map(|line| format!("{line}\n"))
         .collect();
 
-    // Preset 1 copied in this window too, and preset 2 shown: a paste that
-    // wrote anything over it would be a change the assertions see.
+    // Preset 2 shown: a paste that wrote anything over it would be a
+    // change the assertions see.
     let (mut window, mut view) = open_window(&selector_fixture("clip_no_copy_b"));
     open_team_view(&mut window, &mut view, 701);
-    click_button(&mut window, &mut view, "1");
-    copy(&mut window, &mut view);
     click_button(&mut window, &mut view, "2");
     let before = team_entry(&view, 701);
-    let assert_unchanged = |view: &SaveView, case: &str| {
-        assert_eq!(
-            team_entry(view, 701),
-            before,
-            "{case}: the team is untouched"
-        );
-        let session = view.session.as_ref().unwrap();
-        assert!(!session.can_undo(), "{case}: no undo entry was pushed");
-        assert!(!session.is_dirty(), "{case}: nothing was written");
-    };
     for (case, text) in [
         ("no Team TOML", "x".to_owned()),
         ("a Gameplan onto a preset", gameplan.clone()),
@@ -1020,7 +1146,12 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
         ),
     ] {
         ctrl_v(&mut window, &mut view, &text);
-        assert_unchanged(&view, case);
+        assert_eq!(
+            team_entry(&view, 701),
+            before,
+            "{case}: the team is untouched"
+        );
+        assert_no_edit(&view, case);
     }
 
     // A preset onto the shown formation.
@@ -1028,5 +1159,57 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
     click_button(&mut window, &mut view, "In-possession");
     assert_eq!(view.tactics.formation, 1, "in-possession is on screen");
     ctrl_v(&mut window, &mut view, &preset);
-    assert_unchanged(&view, "a preset onto a formation");
+    assert_eq!(team_entry(&view, 701), before, "a preset onto a formation");
+    assert_no_edit(&view, "a preset onto a formation");
+}
+
+/// The selector fixture with /3/'s first player's playing style set to
+/// 31: a byte the five-bit field holds and PES 2021's list of styles
+/// does not, so the Team TOML export refuses his record.
+fn unknown_style_fixture(test: &str) -> PathBuf {
+    let path = selector_fixture(test);
+    let mut file = EditFile::from_bytes(&std::fs::read(&path).unwrap()).unwrap();
+    let id = file.team(701).unwrap().roster[0].player_id;
+    file.player_mut(id).unwrap().positions.playing_style = 31;
+    file.save(&path).unwrap();
+    path
+}
+
+// A Gameplan, preset or formation copy holds no player table, so a player
+// whose record the export refuses does not stop his team's copies.
+// SE-GUI-72
+#[test]
+fn a_player_the_export_refuses_does_not_stop_his_teams_tactics_copies() {
+    let (mut window, mut view) = open_window(&unknown_style_fixture("clip_unknown_style"));
+    let players: Vec<&PlayerEntry> = file(&view).players().iter().collect();
+    assert!(
+        TeamToml::from_team(PesVersion::Pes21, file(&view).team(701).unwrap(), &players).is_err(),
+        "premise: the team's export with its players is refused"
+    );
+
+    open_team_view(&mut window, &mut view, 701);
+    let gameplan = ctrl_c(&mut window, &mut view);
+    click_button(&mut window, &mut view, "1");
+    let preset = ctrl_c(&mut window, &mut view);
+    click_button(&mut window, &mut view, "Kick-off");
+    let formation = ctrl_c(&mut window, &mut view);
+    let copies = [
+        ("gameplan", gameplan),
+        ("preset", preset),
+        ("formation", formation),
+    ];
+    let missing: Vec<&str> = copies
+        .iter()
+        .filter(|(_, copied)| copied.is_none())
+        .map(|(kind, _)| *kind)
+        .collect();
+    assert_eq!(
+        missing,
+        Vec::<&str>::new(),
+        "the copies not on the clipboard"
+    );
+    for (kind, copied) in copies {
+        let copied = copied.expect("checked above");
+        assert_eq!(head(&copied)[1], format!("# copied: {kind}"));
+    }
 }
