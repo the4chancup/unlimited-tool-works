@@ -181,7 +181,8 @@ built: `spec/export_upgrader.md` "CLI"):
   several exports counts them all from its first frame (`n/N exports`): the command
   announces how many it will run before the first starts, because it starts each when its
   turn comes, and every export counts as done once, whatever its outcome. The parts counter
-  is the current export's.
+  is the current export's: it leaves the line when the next export's turn starts, and a
+  refused export, which writes no file, shows none.
 
 ## GUI
 
@@ -341,15 +342,22 @@ EU-CLI-11  GIVEN two of EU-CLI-01's /co/ exports, a third export of another team
                 third's block ends with an `error:` line refusing it for its team, the last
                 line is `Upgraded: 2. Not upgraded: 1.` and the exit code is 2; WHEN one export
                 is named alone THEN no naming line and no tally are printed; GIVEN an unknown
-                flag THEN exit 2 before any export is read
-EU-CLI-13  GIVEN a folder holding an old export folder, an old export `.zip` and a file that
-                 is neither
+                flag THEN exit 2 before any export is read; GIVEN a path that does not exist
+                named between two exports THEN its block ends with its `error:` line, the two
+                are written and the exit code is 2; GIVEN a clean export, one whose upgrade
+                ends with an Error and a missing path THEN the tally reads `Upgraded: 1. Not
+                upgraded: 2.` and the exit code is 2
+EU-CLI-13  GIVEN a folder holding two old export folders, one named in capitals, an old
+                 export `.zip` and a file that is neither
            WHEN `upgrade --all <the folder>` runs
-           THEN both exports are upgraded in the order of their names, each under its naming
-                line, the other file is passed over without a line and the tally counts two;
-                GIVEN a folder holding one export THEN its naming line and the tally are still
-                printed; GIVEN a folder that is missing or holds no export, or two exports
-                named with a savefile that is no save THEN exit 2 and no export is read
+           THEN the three exports are upgraded in the order of their names, letter case set
+                aside, each under its naming line, the other file is passed over without a
+                line and the tally counts three; GIVEN a folder holding one export THEN its
+                naming line and the tally are still printed; GIVEN one of the folder's
+                exports also named THEN it runs first, and its second turn is refused, its
+                output folder existing; GIVEN a folder that is missing, is a file or holds no
+                export, neither an export nor `--all`, or two exports named with a savefile
+                that is no save THEN exit 2 and no export is read
 EU-CLI-14  GIVEN two exports named, the first's output folder already there
            WHEN `upgrade` runs
            THEN the first's block ends with its `error:` line, the second is upgraded, the
@@ -357,7 +365,8 @@ EU-CLI-14  GIVEN two exports named, the first's output folder already there
 EU-CLI-15  GIVEN two exports named, the second of a team the save lacks
            WHEN `upgrade` runs with the progress line drawn
            THEN the line's exports counter reads 0/2 from its first frame and 2/2 at the end,
-                the refused export counted as done
+                the refused export counted as done; the first export's parts counter is
+                drawn while it runs and gone from the last frame, the refused one having none
 ```
 
 **Phase 8 scope.** Phase 8 delivers the view ("GUI"). What a scenario observes is what a frame

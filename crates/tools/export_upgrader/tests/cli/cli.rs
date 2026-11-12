@@ -336,9 +336,9 @@ fn the_refusals_before_anything_is_written() {
     fs::write(sandbox.path("notes.txt"), b"text").unwrap();
     old_export(&sandbox, "co Spring", Some("/co/"));
     fs::write(sandbox.path("not-a-save.bin"), b"no save").unwrap();
-    // A savefile that does not hold the resolved team: no fixture save has a
-    // team named /newteam/.
-    old_export(&sandbox, "newteam Spring", Some("/newteam/"));
+    // A savefile that does not hold the resolved team: the PES 18 fixture save
+    // has no /trg/ (822).
+    old_export(&sandbox, "trg Spring", Some("/trg/"));
     let save18 = sandbox.arg("EDIT18");
     fs::write(
         sandbox.path("EDIT18"),
@@ -361,7 +361,7 @@ fn the_refusals_before_anything_is_written() {
         .assert_refused(2, &["notes.txt", "not a folder, a .zip or a .7z file"]);
     upgrade(&sandbox, "co Spring", &["--savefile", &not_save])
         .assert_refused(2, &["not-a-save.bin"]);
-    upgrade(&sandbox, "newteam Spring", &["--savefile", &save18]).assert_refused(2, &["/newteam/"]);
+    upgrade(&sandbox, "trg Spring", &["--savefile", &save18]).assert_refused(2, &["/trg/"]);
     let root_arg = root.display().to_string();
     let run = sandbox.run(&["upgrade", &root_arg, "--savefile", &save]);
     run.assert_refused(2, &["a filesystem root, not an export"]);
@@ -529,22 +529,22 @@ fn clean_old_exports(sandbox: &Sandbox, names: &[&str], team: &str) {
 fn several_exports_are_each_upgraded_as_if_alone() {
     let sandbox = Sandbox::new("cli_several");
     clean_old_exports(&sandbox, &["co - Spring", "co - Autumn"], "/co/");
-    // No fixture save has a team named /newteam/.
-    clean_old_exports(&sandbox, &["newteam Spring"], "/newteam/");
+    // The PES 21 fixture save has no /trg/ (822).
+    clean_old_exports(&sandbox, &["trg Spring"], "/trg/");
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
 
     let run = upgrade_several(
         &sandbox,
-        &["co - Spring", "co - Autumn", "newteam Spring"],
+        &["co - Spring", "co - Autumn", "trg Spring"],
         &["--savefile", &save],
     );
     let stdout = run.stdout();
     assert_eq!(run.exit_code(), 2, "{stdout}");
     assert!(sandbox.path("co Full - Spring").is_dir(), "{stdout}");
     assert!(sandbox.path("co Full - Autumn").is_dir(), "{stdout}");
-    sandbox.assert_nothing_written("newteam Full Spring", &stdout);
-    let refused = format!("error: --savefile {save} does not hold the export's team /newteam/");
+    sandbox.assert_nothing_written("trg Full Spring", &stdout);
+    let refused = format!("error: --savefile {save} does not hold the export's team /trg/");
     assert_eq!(
         output_lines(&run),
         [
@@ -552,7 +552,7 @@ fn several_exports_are_each_upgraded_as_if_alone() {
             "",
             "Upgrading co - Autumn",
             "",
-            "Upgrading newteam Spring",
+            "Upgrading trg Spring",
             &refused,
             "",
             "Upgraded: 2. Not upgraded: 1.",
@@ -575,7 +575,7 @@ fn several_exports_are_each_upgraded_as_if_alone() {
         assert!(block.contains("- Info migration_clean"), "{stdout}");
     }
     assert!(
-        blocks[2].starts_with("Upgrading newteam Spring\n") && blocks[2].ends_with(&refused),
+        blocks[2].starts_with("Upgrading trg Spring\n") && blocks[2].ends_with(&refused),
         "{stdout}"
     );
     assert_eq!(blocks[3], "Upgraded: 2. Not upgraded: 1.\n");
@@ -613,11 +613,78 @@ fn several_exports_are_each_upgraded_as_if_alone() {
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 
+// EU-CLI-11
+#[test]
+fn a_missing_export_between_two_is_refused_alone() {
+    let sandbox = Sandbox::new("cli_several_missing");
+    clean_old_exports(&sandbox, &["co - Spring", "co - Autumn"], "/co/");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Winter", "co - Autumn"],
+        &["--savefile", &save],
+    );
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 2, "{stdout}");
+    assert!(sandbox.path("co Full - Spring").is_dir(), "{stdout}");
+    assert!(sandbox.path("co Full - Autumn").is_dir(), "{stdout}");
+    let refused = format!("error: {} does not exist", sandbox.arg("co - Winter"));
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co - Spring",
+            "",
+            "Upgrading co - Winter",
+            &refused,
+            "",
+            "Upgrading co - Autumn",
+            "",
+            "Upgraded: 2. Not upgraded: 1.",
+        ]
+    );
+}
+
+// EU-CLI-11
+#[test]
+fn the_exit_code_is_the_worst_exports_and_only_a_clean_one_counts_as_upgraded() {
+    let sandbox = Sandbox::new("cli_several_unclean");
+    clean_old_exports(&sandbox, &["co - Spring"], "/co/");
+    crate::carried::two_portraits_of_one_slot(&sandbox, "co Kits");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+
+    // A clean export (0), one with an Error (1) and a missing one (2).
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co Kits", "gone"],
+        &["--savefile", &save],
+    );
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 2, "{stdout}");
+    assert!(
+        stdout.contains("- co Kits: Error unmigrated_content"),
+        "{stdout}"
+    );
+    assert_eq!(
+        output_lines(&run).last(),
+        Some(&"Upgraded: 1. Not upgraded: 2."),
+        "{stdout}"
+    );
+}
+
 // EU-CLI-13
 #[test]
 fn all_upgrades_every_export_in_the_folder_in_name_order() {
     let sandbox = Sandbox::new("cli_all");
-    clean_old_exports(&sandbox, &["library/co - Spring"], "/co/");
+    // `CO Winter` sorts last without regard to case and first by its bytes, since an
+    // uppercase letter's byte is below every lowercase one's.
+    clean_old_exports(
+        &sandbox,
+        &["library/co - Spring", "library/CO Winter"],
+        "/co/",
+    );
     sandbox.copy_fixture("co Spring.zip", "library/co Spring.zip");
     sandbox.write("library/notes.txt", b"not an export");
     sandbox.copy_fixture("co Spring.zip", "one/co Spring.zip");
@@ -649,7 +716,9 @@ fn all_upgrades_every_export_in_the_folder_in_name_order() {
             "",
             "Upgrading co Spring.zip",
             "",
-            "Upgraded: 2. Not upgraded: 0.",
+            "Upgrading CO Winter",
+            "",
+            "Upgraded: 3. Not upgraded: 0.",
         ]
     );
     // The one line naming a notes.txt is about the zip's own output, the
@@ -673,6 +742,45 @@ fn all_upgrades_every_export_in_the_folder_in_name_order() {
             "Upgrading co Spring.zip",
             "",
             "Upgraded: 1. Not upgraded: 0.",
+        ]
+    );
+
+    // An export named and also in the `--all` folder: the named one runs first, and the
+    // second turn is refused because the first wrote its output folder.
+    let (zip, out) = (
+        sandbox.arg("library/co Spring.zip"),
+        sandbox.arg("out both"),
+    );
+    let run = sandbox.run(&[
+        "upgrade",
+        &zip,
+        "--all",
+        &library,
+        "--savefile",
+        &save,
+        "-o",
+        &out,
+    ]);
+    assert_eq!(run.exit_code(), 3, "{}", run.stdout());
+    let lines = output_lines(&run);
+    let refused = lines.get(5).copied().unwrap_or_default();
+    assert!(
+        refused.starts_with("error: ") && refused.contains("already exists"),
+        "{lines:?}"
+    );
+    assert_eq!(
+        lines,
+        [
+            "Upgrading co Spring.zip",
+            "",
+            "Upgrading co - Spring",
+            "",
+            "Upgrading co Spring.zip",
+            refused,
+            "",
+            "Upgrading CO Winter",
+            "",
+            "Upgraded: 3. Not upgraded: 1.",
         ]
     );
 }
@@ -703,6 +811,11 @@ fn a_whole_run_refusal_reads_no_export() {
         &run,
         &[&empty, "holds no export (a folder, a .zip or a .7z file)"],
     );
+    let run = sandbox.run(&["upgrade", "--all", &not_save, "--savefile", &save]);
+    assert_whole_run_refused(&run, &[&not_save, "is not a folder"]);
+    // Neither an export nor `--all`: clap's own refusal names the missing exports.
+    let run = sandbox.run(&["upgrade", "--savefile", &save]);
+    assert_whole_run_refused(&run, &["required arguments were not provided", "<EXPORTS>"]);
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 

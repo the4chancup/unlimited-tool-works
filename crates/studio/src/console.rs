@@ -7,18 +7,23 @@
 
 use std::fs::{File, OpenOptions};
 use std::io::{self, IsTerminal, Write};
+use std::panic;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crossbeam_channel::Receiver;
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressState, ProgressStyle};
-use studio_core::{EventLines, PipelineEvent, PipelineEventEnvelope, Severity, ShellRequest};
+use studio_core::{
+    EventLines, PipelineEvent, PipelineEventEnvelope, RunId, Severity, ShellRequest,
+};
+
+use crate::gui_log::backtrace_lines;
 
 /// The file a CLI run appends everything it prints to (`--log-file`), its Info findings
-/// included. The event printer's thread, the notice printer's thread and `main` all write
-/// to it, so the file sits behind a lock and each line is written whole.
+/// included. The event printer's thread, the notice printer's thread, `main` and the panic
+/// hook all write to it, so the file sits behind a lock and each line is written whole.
 pub(crate) struct RunLog {
     file: Mutex<File>,
 }
@@ -37,6 +42,30 @@ impl RunLog {
     pub(crate) fn line(&self, text: &str) -> io::Result<()> {
         writeln!(self.file.lock().unwrap(), "{text}")
     }
+
+    /// `line` for the panic hook, which must not panic itself: a thread that panicked
+    /// while writing leaves the lock poisoned, and the panic is still worth writing after
+    /// its line.
+    fn line_while_panicking(&self, text: &str) -> io::Result<()> {
+        let mut file = self.file.lock().unwrap_or_else(PoisonError::into_inner);
+        writeln!(file, "{text}")
+    }
+}
+
+/// Installs a panic hook that also writes the panic to `log`: its message and location,
+/// then the stack frames. A member who posts the log after a crash posts the panic too.
+/// The hook installed before runs first, so the terminal shows the panic as it would
+/// without the log, whatever then happens to the write. A write that fails is dropped:
+/// the run is ending, and the log was the last place left to report anything.
+pub(crate) fn log_panics(log: Arc<RunLog>) {
+    let previous = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        previous(info);
+        let text = format!("{info}\n{}", backtrace_lines());
+        if let Err(error) = log.line_while_panicking(&text) {
+            log::debug!("the panic could not be written to the log file: {error}");
+        }
+    }));
 }
 
 /// Drains the channel on its own thread, printing each line to stdout, until every sender is
@@ -105,7 +134,7 @@ fn print_events(
     };
     let mut drawing = false;
     for envelope in events {
-        counts.observe(&envelope.event);
+        counts.observe(&envelope);
         // The line draws from the first event that gives it its counters (the first export
         // started, or the exports expected), not the first finding; its message is set
         // before the bar has a target, so its first frame already holds the counters.
@@ -196,8 +225,12 @@ struct RunCounts {
     /// The `ExportsExpected` total (0 until one arrives): a command that starts its exports
     /// one after the other announces them all before the first starts.
     exports_expected: usize,
-    /// The last `Progress` pair (`None` until one arrives): the manifest's tasks done of all.
+    /// The current run's last `Progress` pair (`None` until one arrives): the manifest's
+    /// tasks done of all.
     parts: Option<(usize, usize)>,
+    /// The run of the last event observed. A command that runs its exports one after the
+    /// other makes each a run of its own; a compile is one run.
+    run_id: Option<RunId>,
 }
 
 impl RunCounts {
@@ -207,12 +240,19 @@ impl RunCounts {
             exports_started: 0,
             exports_expected: 0,
             parts: None,
+            run_id: None,
         }
     }
 
-    /// One event's effect on the counters.
-    fn observe(&mut self, event: &PipelineEvent) {
-        match event {
+    /// One event's effect on the counters. An event of another run than the last clears
+    /// the parts: they are the previous export's, and a refused export sends no
+    /// `ExportStarted` that could clear them instead.
+    fn observe(&mut self, envelope: &PipelineEventEnvelope) {
+        if self.run_id.is_some_and(|run_id| run_id != envelope.run_id) {
+            self.parts = None;
+        }
+        self.run_id = Some(envelope.run_id);
+        match &envelope.event {
             PipelineEvent::ExportStarted { .. } => self.exports_started += 1,
             PipelineEvent::ExportsExpected { total } => self.exports_expected = *total,
             PipelineEvent::ExportProcessed { .. } => self.exports_done += 1,
@@ -516,7 +556,7 @@ mod tests {
         events
             .iter()
             .filter_map(|envelope| {
-                counts.observe(&envelope.event);
+                counts.observe(envelope);
                 counts.line()
             })
             .collect()
@@ -583,11 +623,12 @@ mod tests {
     // EU-CLI-15
     #[test]
     fn an_upgrade_of_two_exports_counts_both_from_the_first_line_and_the_refused_one_as_done() {
-        // The second export's team is in no fixture save, so its upgrade is refused.
+        // The second export's team, /trg/, is not in the fixture save, so its upgrade is
+        // refused.
         let dir = TestDir::new("console_upgrade_two");
         let exports = [
             old_export(&dir, "co - Spring", "/co/"),
-            old_export(&dir, "newteam Spring", "/newteam/"),
+            old_export(&dir, "trg Spring", "/trg/"),
         ];
         let (exit_code, events) = upgrade(&dir, &exports);
         assert_eq!(exit_code, 2);
@@ -600,8 +641,9 @@ mod tests {
                 .all(|line| !line.contains("/1 exports") && !line.contains("/3 exports")),
             "the run's total is its two exports from the first line on: {lines:?}"
         );
-        let last = lines.last().unwrap();
-        assert!(last.starts_with("2/2 exports | "), "{lines:?}");
+        // The first export's parts are drawn while it runs; the refused one has none.
+        assert!(lines.iter().any(|line| line.contains(" | ")), "{lines:?}");
+        assert_eq!(lines.last().map(String::as_str), Some("2/2 exports"));
     }
 
     #[test]
@@ -663,28 +705,91 @@ mod tests {
         assert_eq!(counts.line(), None, "no line before the first export");
         let finding = run_events()
             .iter()
-            .map(|envelope| envelope.event)
-            .find(|event| matches!(event, PipelineEvent::Message(_)))
+            .find(|envelope| matches!(envelope.event, PipelineEvent::Message(_)))
             .unwrap();
         counts.observe(&finding);
         assert_eq!(counts.line(), None, "a finding is no export either");
-        counts.observe(&PipelineEvent::ExportStarted {
+        counts.observe(&envelope(PipelineEvent::ExportStarted {
             export_id: ExportId(1),
             display_name: "co One".to_owned(),
-        });
-        counts.observe(&PipelineEvent::ExportStarted {
+        }));
+        counts.observe(&envelope(PipelineEvent::ExportStarted {
             export_id: ExportId(2),
             display_name: "co Two".to_owned(),
-        });
+        }));
         assert_eq!(counts.line().as_deref(), Some("0/2 exports"));
-        counts.observe(&PipelineEvent::ExportProcessed {
+        counts.observe(&envelope(PipelineEvent::ExportProcessed {
             export_id: ExportId(1),
-        });
-        counts.observe(&PipelineEvent::Progress {
+        }));
+        counts.observe(&envelope(PipelineEvent::Progress {
             processed: 3,
             total: 6,
-        });
+        }));
         assert_eq!(counts.line().as_deref(), Some("1/2 exports | 3/6 parts"));
+    }
+
+    #[test]
+    fn the_parts_counter_is_the_current_runs() {
+        // A run of several exports, each export a run of its own: the first one's parts
+        // leave the line with the second's first event, until the second's own arrive.
+        let mut counts = RunCounts::new();
+        for (run, event, line) in [
+            (
+                1,
+                PipelineEvent::ExportsExpected { total: 2 },
+                "0/2 exports",
+            ),
+            (
+                1,
+                PipelineEvent::Progress {
+                    processed: 1,
+                    total: 4,
+                },
+                "0/2 exports | 1/4 parts",
+            ),
+            (
+                1,
+                PipelineEvent::ExportProcessed {
+                    export_id: ExportId(1),
+                },
+                "1/2 exports | 1/4 parts",
+            ),
+            (
+                2,
+                PipelineEvent::Output("Upgrading co - Autumn".to_owned()),
+                "1/2 exports",
+            ),
+            (
+                2,
+                PipelineEvent::Progress {
+                    processed: 2,
+                    total: 7,
+                },
+                "1/2 exports | 2/7 parts",
+            ),
+            (
+                2,
+                PipelineEvent::ExportProcessed {
+                    export_id: ExportId(1),
+                },
+                "2/2 exports | 2/7 parts",
+            ),
+        ] {
+            counts.observe(&PipelineEventEnvelope {
+                run_id: RunId(run),
+                ..envelope(event)
+            });
+            assert_eq!(counts.line().as_deref(), Some(line), "run {run}");
+        }
+
+        // A compile is one run: its parts stay on every line after the first `Progress`.
+        let events: Vec<PipelineEventEnvelope> = run_events().iter().collect();
+        let lines = drawn_lines(&events);
+        let first = lines.iter().position(|line| line.contains(" | ")).unwrap();
+        assert!(
+            lines[first..].iter().all(|line| line.contains(" | ")),
+            "{lines:?}"
+        );
     }
 
     #[test]
@@ -692,14 +797,14 @@ mod tests {
         // A name for an id that is no export of its own (the upgrader's
         // output) neither starts the drawing nor raises the total.
         let mut counts = RunCounts::new();
-        counts.observe(&PipelineEvent::ExportStarted {
+        counts.observe(&envelope(PipelineEvent::ExportStarted {
             export_id: ExportId(1),
             display_name: "co Spring".to_owned(),
-        });
-        counts.observe(&PipelineEvent::ExportNamed {
+        }));
+        counts.observe(&envelope(PipelineEvent::ExportNamed {
             export_id: ExportId(2),
             display_name: "co Full Spring".to_owned(),
-        });
+        }));
         assert_eq!(counts.line().as_deref(), Some("0/1 exports"));
     }
 
@@ -707,7 +812,7 @@ mod tests {
     fn the_progress_counters_never_count_more_exports_done_than_started() {
         let mut counts = RunCounts::new();
         for envelope in run_events() {
-            counts.observe(&envelope.event);
+            counts.observe(&envelope);
         }
         assert!(
             counts.exports_done <= counts.exports_total(),
@@ -832,6 +937,35 @@ mod tests {
 
         assert_eq!(out, b"Compiled 48 teams\n");
         assert_eq!(fs::read_to_string(&path).unwrap(), "Compiled 48 teams\n");
+    }
+
+    #[test]
+    fn the_panic_hook_writes_the_panic_and_its_frames_to_the_run_log() {
+        let dir = TestDir::new("console_panic");
+        let (log, path) = run_log(&dir);
+        // The harness's hook is parked aside and restored before any assertion, so a
+        // failing assertion panics through it.
+        let hooks = crate::gui_log::PANIC_HOOK_TESTS.lock().unwrap();
+        let saved = panic::take_hook();
+        log_panics(Arc::new(log));
+        let result = panic::catch_unwind(|| panic!("probe 9"));
+        panic::set_hook(saved);
+        drop(hooks);
+        assert!(result.is_err());
+
+        let logged = fs::read_to_string(&path).unwrap();
+        let lines: Vec<&str> = logged.lines().collect();
+        let probe = lines
+            .iter()
+            .position(|line| line.contains("probe 9"))
+            .unwrap_or_else(|| panic!("no panic line in {logged:?}"));
+        // A frame line is `  <index>: 0x<address>`, the module's offset or not.
+        let frame = |line: &&str| {
+            line.trim_start()
+                .split_once(": 0x")
+                .is_some_and(|(index, _)| index.parse::<usize>().is_ok())
+        };
+        assert!(lines[probe + 1..].iter().any(frame), "{logged}");
     }
 
     #[test]

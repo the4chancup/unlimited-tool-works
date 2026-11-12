@@ -241,6 +241,12 @@ fn panic_hook(logger: &'static dyn log::Log) -> Box<dyn Fn(&PanicHookInfo<'_>) +
     })
 }
 
+/// Held by every test that replaces the panic hook: the hook is one per process, and the
+/// test harness runs tests on several threads, so two such tests at once would each
+/// restore the other's hook.
+#[cfg(test)]
+pub(crate) static PANIC_HOOK_TESTS: Mutex<()> = Mutex::new(());
+
 /// Installs the panic hook over the `log` sink installed by `install_gui_logger`; with
 /// none (a first run) `log::logger()` is a nop and only the chained hook still prints.
 pub(crate) fn install_panic_hook() {
@@ -264,7 +270,7 @@ fn frame_line(index: usize, ip: usize, base: Option<usize>) -> String {
 /// The running thread's frames, one `frame_line` per line. Nothing is resolved here:
 /// resolving needs the `.pdb` the bundle does not ship, and it costs time while the
 /// process is dying.
-fn backtrace_lines() -> String {
+pub(crate) fn backtrace_lines() -> String {
     backtrace::Backtrace::new_unresolved()
         .frames()
         .iter()
@@ -554,10 +560,12 @@ mod tests {
         // The harness's hook is parked aside and restored before any assertion, so a
         // failing assertion panics through it; meanwhile the hook under test chains the
         // default hook `take_hook` registered in its place.
+        let hooks = PANIC_HOOK_TESTS.lock().unwrap();
         let saved = panic::take_hook();
         panic::set_hook(panic_hook(logger));
         let result = panic::catch_unwind(|| panic!("probe 7"));
         panic::set_hook(saved);
+        drop(hooks);
         assert!(result.is_err());
         let records = logger.records.lock().unwrap();
         let record = records

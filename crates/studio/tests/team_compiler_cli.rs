@@ -306,8 +306,28 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
     fs::create_dir_all(&folder).unwrap();
     fs::copy(&kit, folder.join("kit.dds")).unwrap();
     sandbox.write("exports/co Midcup Kit/stray.txt", "stray");
-    sandbox.write("run_log.txt", "the run before\n");
     let log = sandbox.root.join("run_log.txt");
+
+    // A command line that does not parse starts no run: its `error:` line is on stderr
+    // alone, and the file is neither created nor written.
+    let unparsed = || {
+        let output = sandbox.run(&[
+            "team-compiler",
+            "check",
+            "--export",
+            "exports/co Midcup Kit",
+            "--log-file",
+            "run_log.txt",
+            "--bogus",
+        ]);
+        assert_eq!(output.status.code(), Some(2), "stderr: {}", stderr(&output));
+        assert!(stderr(&output).contains("error:"), "{}", stderr(&output));
+    };
+    unparsed();
+    assert!(!log.exists(), "the file is not created");
+    sandbox.write("run_log.txt", "the run before\n");
+    unparsed();
+    assert_eq!(fs::read_to_string(&log).unwrap(), "the run before\n");
 
     let output = sandbox.run(&[
         "team-compiler",

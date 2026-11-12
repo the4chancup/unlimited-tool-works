@@ -1760,9 +1760,11 @@ ST-CLI-04   GIVEN an export whose check reports Info findings and a Warning, and
             WHEN it is checked with `--log-file <the file>`
             THEN stdout holds the Warning line and no Info line; the file keeps its line,
                  then holds `$ UTW` and the run's arguments, every finding line of both
-                 severities and `exit 0`; GIVEN a command that is refused THEN the file's
+                 severities and `exit 0`; GIVEN a command its tool refuses THEN the file's
                  run ends with the `error:` line stderr printed and `exit` with the
-                 refusal's code; GIVEN a log file in a folder that does not exist THEN the
+                 refusal's code; GIVEN a command line that does not parse (an unknown
+                 flag) THEN exit 2, and the file is neither created nor, when it exists,
+                 written; GIVEN a log file in a folder that does not exist THEN the
                  run is refused with exit 2, names the file on stderr and checks nothing
 ST-CLI-05   GIVEN `check_for_updates` on, a releases list whose newest version is `0.0.3`
                   in a build of `0.0.2`, and the check's reply arrived

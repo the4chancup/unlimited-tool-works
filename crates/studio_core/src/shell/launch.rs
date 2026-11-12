@@ -110,7 +110,7 @@ fn root_command(tools: &[Box<dyn StudioTool>]) -> Command {
                 .value_name("FILE")
                 .value_parser(clap::value_parser!(PathBuf))
                 .global(true)
-                .help("Append everything a tool's command prints to FILE, and leave Info findings out of the console"),
+                .help("Append everything a tool's command prints to FILE, and leave Info messages out of the console"),
         )
         .subcommand(
             Command::new("help")
