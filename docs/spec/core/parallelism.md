@@ -36,15 +36,20 @@ manifest.tasks.into_par_iter().for_each(|task| {
 ```
 
 This is the design in outline; the code's shapes are `spec/team_compiler/pipeline.md` "Run
-driver shapes". There the duplicate-refs preflight is `reader::route`, before validation, plus an
-export-scoped `multiple_ref_exports` on each conflicting refs export; `plan_run` accepts only
-identity-resolved `ResolvedAestheticsExport` values and returns a `PlanReport` of the manifest
-and planning's messages, a dropped export being its `DropExport` message, which nothing looks up
-by ID; planning has no run-level fatal, so every run that reaches it gets a manifest; and the
-coordinator admits tasks into the pool in manifest order instead of `into_par_iter`. No processing-time locks are needed for output
-allocation — manifest planning establishes task independence before parallel work starts. The borrow
-checker enforces safe memory access, not disjoint output paths; manifest collision checks and tests
-establish the latter. No GIL, no `console_lock`, no free-threaded Python workarounds.
+driver shapes". There:
+
+- the duplicate-refs preflight is `reader::route`, before validation, plus an export-scoped
+  `multiple_ref_exports` on each conflicting refs export;
+- `plan_run` accepts only identity-resolved `ResolvedAestheticsExport` values and returns a
+  `PlanReport` of the manifest and planning's messages, a dropped export being its `DropExport`
+  message, which nothing looks up by ID;
+- planning has no run-level fatal, so every run that reaches it gets a manifest;
+- and the coordinator admits tasks into the pool in manifest order instead of `into_par_iter`.
+
+No processing-time locks are needed for output allocation — manifest planning establishes task
+independence before parallel work starts. The borrow checker enforces safe memory access, not
+disjoint output paths; manifest collision checks and tests establish disjoint output paths. No
+GIL, no `console_lock`, no free-threaded Python workarounds.
 
 ### Thread count
 
@@ -70,15 +75,18 @@ allocator behavior, parsed representations, and conversion buffers still add ove
 fixed Rust-versus-Python RSS ratio to rely on; measure the actual pipeline on representative inputs.
 
 **The budget works at loaded-`BuildTask`-scope granularity**, improving on Blue's per-export
-accounting: an export's structure (folder tree, names, sizes) is loaded eagerly but is tiny; each
-model, kit, logo, Common, collar, portrait, or referee-marker task loads content lazily and owns its
-lease and derived Arc clones until the writer drains its `TaskBatch`. Memory therefore drains
-continuously during a run rather than in whole-export steps. The bounded exception is a
-Team-compiler `PlayerBatchGroup`: face/boots/gloves child processing remains independent, but
-permit-charged bytes shared by those children stay charged until every child reports and the group's
-one shared-texture batch commits. Solid `.7z` archives are the other exception (one-pass
-decompression forces whole-export residency); plain folders and `.zip` support lazy per-folder
-loading. Details are in the Team compiler plan's walkthrough.
+accounting. An export's structure (folder tree, names, sizes) is loaded eagerly but is tiny. Each
+model, kit, logo, Common, collar, portrait, or referee-marker task loads content lazily and owns
+its lease and derived Arc clones until the writer drains its `TaskBatch`. Memory therefore drains
+continuously during a run rather than in whole-export steps.
+
+- The bounded exception is a Team-compiler `PlayerBatchGroup`: face/boots/gloves child
+  processing remains independent, but permit-charged bytes shared by those children stay charged
+  until every child reports and the group's one shared-texture batch commits.
+- Solid `.7z` archives are the other exception (one-pass decompression forces whole-export
+  residency); plain folders and `.zip` support lazy per-folder loading.
+
+Details are in the Team compiler plan's walkthrough.
 
 A task's charge includes source bytes, decoded textures, converted/merged models, and packed
 entries; shared bytes and the bounded conversion cache stay charged while retained. Source size

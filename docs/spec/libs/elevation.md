@@ -39,17 +39,21 @@ pub enum ElevationError {
 }
 ```
 
-Windows: `is_elevated` reads the process token's `TokenElevation`; `relaunch_elevated` is
-`ShellExecuteExW` with the `runas` verb and `SEE_MASK_NOCLOSEPROCESS`, the arguments quoted for
-`CommandLineToArgvW` (a `"` inside an argument doubles the preceding backslashes and escapes the
-quote). POSIX: `geteuid() == 0` through `libc`. The `unsafe` blocks (token query, shell
-execute, `geteuid`) each carry their `// SAFETY:` comment, as the coding rules require for this
-crate. The
-`requireAdministrator` manifest feature belongs to the `studio` binary (Phase 8), not here.
-Tests can only cover what runs without a prompt: `is_elevated` agrees with the OS's own answer
-(`IsUserAnAdmin` on Windows, `getuid` on POSIX), `is_access_denied` on a `PermissionDenied`
-error and on another kind, the
-argument quoting on the known awkward cases (spaces, embedded quotes, trailing backslashes, an
-empty argument) checked against what `CommandLineToArgvW` gives back.
+- Windows: `is_elevated` reads the process token's `TokenElevation`; `relaunch_elevated` is
+  `ShellExecuteExW` with the `runas` verb and `SEE_MASK_NOCLOSEPROCESS`, the arguments quoted
+  for `CommandLineToArgvW` (a `"` inside an argument doubles the preceding backslashes and
+  escapes the quote).
+- POSIX: `geteuid() == 0` through `libc`.
+
+The `unsafe` blocks (token query, shell execute, `geteuid`) each carry their `// SAFETY:`
+comment, as the coding rules require for this crate. The `requireAdministrator` manifest feature
+belongs to the `studio` binary (Phase 8), not here.
+
+Tests can only cover what runs without a prompt:
+
+- `is_elevated` agrees with the OS's own answer (`IsUserAnAdmin` on Windows, `getuid` on POSIX);
+- `is_access_denied` on a `PermissionDenied` error and on another kind;
+- the argument quoting on the known awkward cases (spaces, embedded quotes, trailing
+  backslashes, an empty argument) checked against what `CommandLineToArgvW` gives back.
 
 ---

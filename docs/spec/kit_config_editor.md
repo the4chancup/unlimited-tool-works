@@ -13,12 +13,14 @@ the [core plan](core/README.md).
 
 A kit config is a **120-byte binary file** that tells PES how to render a kit:
 which shirt/shorts/collar models to use, five fallback colors, number and name
-placement, sleeve-badge positions, and which kit textures exist. In game they live
-under `common/character0/model/character/uniform/team/{team_id}/` with names like
-`702_DEF_1st_realUni.bin`; in Fox-engine versions they are packed into
+placement, sleeve-badge positions, and which kit textures exist. Every kit in every
+aesthetics export ships one.
+
+In game they live under `common/character0/model/character/uniform/team/{team_id}/` with
+names like `702_DEF_1st_realUni.bin`. In Fox-engine versions they are packed into
 `UniformParameter.bin` (the `uniparam` lib's container format; Red bundles separate
 PES 18 / 19 fallback base files whose stock entries differ, but the container layout
-is the same). Every kit in every aesthetics export ships one.
+is the same).
 
 | Tool | Role | Status |
 |------|------|--------|
@@ -31,7 +33,7 @@ is the same). Every kit in every aesthetics export ships one.
 There is no old codebase: no sources, no format specification anywhere. The format
 below was **recovered by disassembling the editor** (capstone scripting over the
 ~50KB of actual program code — the other 51MB of the exe is prerendered preview
-bitmaps): every access to the loaded config buffer was cross-referenced with the
+bitmaps). Every access to the loaded config buffer was cross-referenced with the
 control-creation and message-handler code, giving field offsets, bit packing, value
 ranges (combo item counts), and cross-field constraints. Diffing the PES2021 patch
 (47 changed bytes) isolated the one field that differs between game versions. The
@@ -44,9 +46,11 @@ nobody has to do that archaeology again.
 ## The format
 
 120 bytes, little-endian, no header. Multi-bit fields packed across byte boundaries
-are noted explicitly; bit 0 = LSB. "?" bits are undecoded — the old editor never
-reads them and writes none but 0x19's bits 6–7, which its Back number spacing control
-clears; some are **set in real configs**, so they must be preserved on rewrite.
+are noted explicitly; bit 0 = LSB.
+
+"?" bits are undecoded — the old editor never reads them and writes none but 0x19's bits
+6–7, which its Back number spacing control clears. Some are **set in real configs**, so they
+must be preserved on rewrite.
 
 | Offset | Bits | Field | Values |
 |--------|------|-------|--------|
@@ -112,10 +116,14 @@ Notes:
   PES 2021's `UniformParameter.bin` (the `kit_config` mass round-trip fixture), stock data exceeds
   the listed ranges where the table says so above and byte 0x13 and bytes 0x25–0x27 are nonzero in
   most configs. `kit_config` therefore preserves every value it reads (enum fields keep a raw
-  variant for undocumented values) and its validation flags only what is known to be wrong: a
-  collar of 0, a shirt model outside 144/160/176, a raw sleeve value, the cross-field constraints
-  below, and values that do not fit the target version's encoding. A stock Konami config earns no
-  warning or error.
+  variant for undocumented values), and its validation flags only what is known to be wrong:
+  - a collar of 0;
+  - a shirt model outside 144/160/176;
+  - a raw sleeve value;
+  - the cross-field constraints below;
+  - values that do not fit the target version's encoding.
+
+  A stock Konami config earns no warning or error.
 - **Sleeve badges** are the four (X, Y) positions of the competition badge: one per
   sleeve (left/right) per kit variant (short/long sleeves).
 - **"Shirt model" is a misnomer**, kept because the old editor and the FPC
@@ -130,26 +138,31 @@ Notes:
   Collars folder) and point every kit config's collar at the replaced ID — the
   quick way to put a custom model on the whole team.
 - **Cross-field constraints** (enforced by the old editor with modal errors, by ours
-  inline as warnings): the old editor allowed undershirt-only long sleeves on shirt model 144
-  only (its cut-out short sleeves rule, 144 only too, sits in code its window never reaches:
-  the control stays disabled and byte 0x00 is never read, so no member ever set cut-out
-  sleeves with it), but PES 2021 stock data carries both on model 160 as well (32
-  configs), so `kit_config` warns only when they appear on model 176, which no stock config does;
-  tight requires 144 or 160 (a warning likewise). The FPC kit values (shirt 176, shorts 16,
-  collar and winter collar 105 — see "FPC toggle" in the
-  [Aesthetics export plan](aesthetics_export/README.md)) are
-  ordinary values of these fields.
+  inline as warnings):
+  - Sleeves: the old editor allowed undershirt-only long sleeves on shirt model 144 only. (Its
+    cut-out short sleeves rule, 144 only too, sits in code its window never reaches: the
+    control stays disabled and byte 0x00 is never read, so no member ever set cut-out sleeves
+    with it.) But PES 2021 stock data carries both on model 160 as well (32 configs), so
+    `kit_config` warns only when they appear on model 176, which no stock config does.
+  - Tight requires 144 or 160 (a warning likewise).
+
+  The FPC kit values (shirt 176, shorts 16, collar and winter collar 105 — see "FPC toggle" in
+  the [Aesthetics export plan](aesthetics_export/README.md)) are ordinary values of these
+  fields.
 - **Version differences**: PES2021 widens Name Y by one low bit, as noted — the only
   difference the 2021 patch makes. `name.y` is PES 2021's value on every version: the bytes are
   the same, an older game reading half of it (30 is its 15), so a config moves between versions
   with the name in the same place and nothing is converted. Only the range differs: an older
-  game's Y stops at 16, so a `name.y` over 33 is over its maximum there. PES 15 reads only bits 5–7 of the pattern byte (a 3-bit index, 0–5
-  valid) where later versions read bits 4–7; the TOML `pattern` is the 4-bit field every
-  version shares, and PES 15 emission maps 4-bit values 12–13 (3-bit 6, which PES 15 has no
-  pattern for) to 10–11 (3-bit 5), the byte-level rule the legacy compilers applied to
-  configs authored for later versions. Values 14–15 (3-bit 7) have no legacy rule and are
-  emitted as is; `validate` reports any value from 12 up as `kit_pattern_unsupported_pes15`
-  (warning) when the target is PES 15.
+  game's Y stops at 16, so a `name.y` over 33 is over its maximum there.
+
+  PES 15 reads only bits 5–7 of the pattern byte (a 3-bit index, 0–5 valid) where later
+  versions read bits 4–7. The TOML `pattern` is the 4-bit field every version shares:
+  - PES 15 emission maps 4-bit values 12–13 (3-bit 6, which PES 15 has no pattern for) to
+    10–11 (3-bit 5), the byte-level rule the legacy compilers applied to configs authored for
+    later versions.
+  - Values 14–15 (3-bit 7) have no legacy rule and are emitted as is.
+  - `validate` reports any value from 12 up as `kit_pattern_unsupported_pes15` (warning) when
+    the target is PES 15.
 - The five RGB triplets are the config's own kit colors (distinct from
   `UniColor.bin`'s menu colors, which come from `colors.txt`).
 
@@ -234,18 +247,20 @@ name = "00000000000000000000000000000000"
   at compile time from the textures actually present in the kit folder (`kit.dds` →
   `u0{team_id}{slot}`, `kit_back.dds` → `…_back`, and so on) — one less thing to
   desync, and the reason an export config can't reference a missing texture anymore.
+
   Standalone binary → TOML conversion is the exception: because it has no team/slot/
   folder context from which to rederive the original bytes, it preserves imported
   names in an optional source-only `[source_texture_names]` table. Export-folder mode
   and the Team compiler ignore that table and always rederive names from actual files.
 - **Version-neutral**: the TOML stores plain values; the version-specific bit
-  packing (Name Y, PES15 pattern) is applied when emitting binary. A value that
-  doesn't fit the target version (Name Y 36 for PES ≤20, which holds up to 33) is a
-  compile/check warning (`kit_value_out_of_range`, naming the field, the value and the
-  version's maximum) and is clamped to that maximum on emission; one table of per-field,
-  per-version maxima drives both the finding and the clamp, so they cannot disagree. The
-  same finding covers every packed field (number sizes, positions, spacing and
-  badge coordinates), whose maximum is the field's width.
+  packing (Name Y, PES15 pattern) is applied when emitting binary.
+
+  A value that doesn't fit the target version (Name Y 36 for PES ≤20, which holds up to 33) is
+  a compile/check warning (`kit_value_out_of_range`, naming the field, the value and the
+  version's maximum) and is clamped to that maximum on emission. One table of per-field,
+  per-version maxima drives both the finding and the clamp, so they cannot disagree. The same
+  finding covers every packed field (number sizes, positions, spacing and badge coordinates),
+  whose maximum is the field's width.
 - **Unknown bits** live in an `[unknown]` table keyed by byte offset, holding the
   byte's undecoded-bit remainder (known bits zeroed). Known fields plus `[unknown]`
   round-trip bit-identically; the derived texture-name region is excluded from that
@@ -259,23 +274,28 @@ The format knowledge as a lib crate:
 
 - `KitConfig` struct ↔ 120-byte binary (per-version encode/decode) ↔ TOML, including
   optional raw source texture-name bytes for standalone roundtrips; WESYS-wrapped input is
-  unwrapped on read (`tryDecompress` behavior carried over). The TOML side follows the
-  suite rule that user-facing TOML is edited, never regenerated: `update_toml` writes every
-  value into the existing document in place (an `[unknown]` key or a badge table keeps its
-  comments and its form), refuses a document whose section is not a table instead of
-  panicking, and `from_toml` refuses an `[unknown]` entry the codec could not carry (an
-  offset with no undecoded bits, a remainder outside that offset's mask, two spellings of one
-  offset) rather than dropping it on the next write.
+  unwrapped on read (`tryDecompress` behavior carried over).
+
+  The TOML side follows the suite rule that user-facing TOML is edited, never regenerated:
+  - `update_toml` writes every value into the existing document in place (an `[unknown]` key
+    or a badge table keeps its comments and its form), and refuses a document whose section is
+    not a table instead of panicking;
+  - `from_toml` refuses an `[unknown]` entry the codec could not carry (an offset with no
+    undecoded bits, a remainder outside that offset's mask, two spellings of one offset) rather
+    than dropping it on the next write.
 - The template defaults (from the bundled `XXX_DEF_xxx_realUni.bin` template) and
   `apply_fpc` / `matches_fpc`, used by the Team compiler's reconciliation
   (`kit_config_fpc_adjusted`) and by this tool's FPC indicator. The FPC values
   themselves come from the leaf crate `libs/fpc` (see [libs](libs/README.md)), which also holds the
   player-side presets `pes_savefile` applies — one description of the system for every tool.
-- `KitSlot`, the game's ten kit slots (`p1`–`p9`, `g1`): `KitSlot::parse` reads a slot name
-  ASCII-case-insensitively (the kit folder grammar's slot part, `aesthetics_export`'s parse),
-  `as_str` gives the lowercase name the texture names carry, and `config_name(team_id)` the
-  slot's config entry name, `{team_id}_DEF_{1st…9th|GK1st}_realUni.bin`. `all` is folder
-  grammar, not a slot.
+- `KitSlot`, the game's ten kit slots (`p1`–`p9`, `g1`):
+  - `KitSlot::parse` reads a slot name ASCII-case-insensitively (the kit folder grammar's slot
+    part, `aesthetics_export`'s parse);
+  - `as_str` gives the lowercase name the texture names carry;
+  - `config_name(team_id)` gives the slot's config entry name,
+    `{team_id}_DEF_{1st…9th|GK1st}_realUni.bin`.
+
+  `all` is folder grammar, not a slot.
 - Texture-name derivation from a kit's *effective* texture set (own files plus what it inherits
   from `Kits/all/`, as resolved by `aesthetics_export`) + team id + `KitSlot`. The team id stays a
   plain `u16` whose range is the caller's: the crate does not depend on `teams_list`.
