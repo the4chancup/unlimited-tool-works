@@ -72,8 +72,8 @@ start is (`spec/core/gui.md` "The window's size").
 **A place out of reach.** A remembered size larger than every monitor reopens at the largest
 monitor's size. eframe's creation clamp (`clamp_size_to_monitor_size`, on by default) is kept,
 so a window stretched over two monitors reopens no wider than the largest monitor once one is
-unplugged. It may still stand partly past that monitor's edge; the title-bar check below keeps
-it within reach.
+unplugged. The window may still stand partly past that monitor's edge; the title-bar check
+below keeps it within reach.
 
 A remembered place whose title bar lies on no monitor now (a second monitor unplugged) is
 dropped for the fit, so the window is never opened out of reach. The check runs on the first
@@ -322,13 +322,13 @@ Top to bottom:
    The pointer resting on the rail opens the full sidebar (the labels, the version dropdown)
    **over** the tool's left edge, as a floating layer edged by the rail's own 1-point line on
    its right, without a shadow, never pushing or resizing the view under it.
-   - The rest is a short delay, 100 ms, so a pointer crossing the rail on its way elsewhere
+   - The hover delay is short, 100 ms, so a pointer crossing the rail on its way elsewhere
      opens nothing. 150 and 120 felt slow, and a pointer that enters the rail and turns back
      out opens it at 120 as at 100, so the longer delay buys nothing.
    - The opened sidebar is as wide as the longest label needs on one line, "Player aesthetics
      editor", since its width costs the view nothing.
-   - It closes when the pointer leaves it, except while a popup it opened (the version
-     dropdown, the About block) is open.
+   - The opened sidebar closes when the pointer leaves it, except while a popup it opened (the
+     version dropdown, the About block) is open.
 
    A click on a rail entry switches tools without waiting for the hover, so the rail alone is
    enough to work with, and keyboard users get the same overlay on focus.
@@ -642,19 +642,20 @@ More rules that keep it worth the row:
   When it appears (none the frame before, the tool newly active, or the tool returning one
   again) it takes the middle slot as a new notice does, the notice shown before it dropped.
 
-  While it is shown, a notice published by anyone replaces it and ends it, and the tool is
-  told before it is next asked; a notice published while it is not shown ends nothing.
+  While the standing notice is shown, a notice published by anyone replaces it and ends it, and
+  the tool is told before it is next asked; a notice published while it is not shown ends
+  nothing.
 
-  A switch of tool takes it out of the bar without ending it, as a withdrawal does, so a
-  notice published after the switch ends nothing, even within one frame's requests. One
-  published before the switch, while the standing notice was still shown, ends it, and its
+  A switch of tool takes the standing notice out of the bar without ending it, as a withdrawal
+  does, so a notice published after the switch ends nothing, even within one frame's requests.
+  One published before the switch, while the standing notice was still shown, ends it, and its
   own tool is told, never the tool switched to. (The switching click's own frame may still draw
   it, because the bar is drawn before the sidebar. A tool switched to by a request is first
   asked the frame after.)
 
-  It never expires by time, since its tool withdraws it, and it never reaches the window
-  title: it is a state of the view, seen when the member looks, where the title keeps an
-  event that happened while the window was unfocused ("Window title").
+  The standing notice never expires by time, since its tool withdraws it, and it never reaches
+  the window title: it is a state of the view, seen when the member looks, where the title
+  keeps an event that happened while the window was unfocused ("Window title").
 
   Polled, not published with a handle the tool asks about: the tool already knows its state
   every frame, as it does for `activity()`, so rewording and withdrawing need no messages and
@@ -884,7 +885,7 @@ field kept it would join the field's undo entry, and every later notch with it.
 Two frames, not one, because a field that commits its value on losing the keyboard learns of a
 loss in the middle of a frame only on the next frame. (Such a field is the Ruleset editor's tier
 id, whose typing would otherwise carry through another tier's id; egui's drag value commits
-each keystroke.) The field's commit lands on that next frame, sealed at that frame's end, so a
+each keystroke.) The field's commit lands on that next frame, sealed at that frame's end, and a
 step on the same frame would join it.
 
 **The step.** A disabled control ignores the wheel, and an open combo's list scrolls as a
