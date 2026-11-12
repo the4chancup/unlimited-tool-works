@@ -240,7 +240,10 @@ mod tests {
         let path = config.join(crate::settings::SETTINGS_FILE_NAME);
         assert!(path.is_file(), "the choice wrote the settings file");
         let written = Settings::load(&path).expect("the settings file parses");
-        assert_eq!(written, settings, "the in-memory settings landed");
+        // The first frame recorded the program's version in memory, before any file.
+        let mut expected = settings;
+        expected.common.last_run_version = Some(env!("CARGO_PKG_VERSION").to_owned());
+        assert_eq!(written, expected, "the in-memory settings landed");
         assert_eq!(
             app.ctx.paths().data_dir.as_deref(),
             Some(config.as_path()),

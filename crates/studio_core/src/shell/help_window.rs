@@ -996,7 +996,9 @@ mod tests {
         };
         assert!(
             top("Setting up") < top("First run and data location")
-                && top("First run and data location") < top("Alpha")
+                && top("First run and data location") < top("Updates")
+                && top("Updates") < top("What's new")
+                && top("What's new") < top("Alpha")
                 && top("Alpha") < top("Beta"),
             "the chapters are in tree order"
         );
@@ -1103,6 +1105,8 @@ mod tests {
             [
                 "Setting up",
                 "First run and data location",
+                "Updates",
+                "What's new",
                 "Alpha",
                 "Beta",
                 "Gamma"

@@ -5,8 +5,8 @@
 //! one `CollapsingHeader` per registered tool that has a settings form, its body the
 //! tool's `settings_view`. A section is drawn when the tool's `has_settings_view()` is true
 //! and the build does not mark it CLI-only: such a tool's window is not built, so its keys are
-//! edited in the settings file. `last_tool`, `last_update_check` and
-//! `skipped_version`, the state the shell writes itself, have no row.
+//! edited in the settings file. `last_tool`, `last_run_version`, `last_update_check`
+//! and `skipped_version`, the state the shell writes itself, have no row.
 //!
 //! There is no Save or Apply: a widget's change writes the setting under the settings
 //! lock and asks the shell to save at the end of the frame. A text row commits when its

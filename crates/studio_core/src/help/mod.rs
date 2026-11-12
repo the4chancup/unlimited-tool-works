@@ -15,6 +15,9 @@ pub use export::run_help;
 /// and `showing`, the CLI's topic lookup, a log line's link target).
 pub(crate) const MESSAGES_SLUG: &str = "messages";
 
+/// The What's new chapter's id: the `Updated to` notice's What's new opens it.
+pub(crate) const WHATS_NEW_ID: &str = "whats-new";
+
 /// One tool's chapter of the help window: a title and its topics, in reading order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HelpSection {
@@ -75,6 +78,16 @@ pub struct CatalogRow {
     pub effect: &'static str,
 }
 
+/// The repository's changelog, embedded when the program is built so the help carries
+/// the notes of the version it belongs to, without its first line: the file's own
+/// title, which the topic's title already draws above it.
+fn changelog() -> &'static str {
+    let file = include_str!("../../../../CHANGELOG.md");
+    file.split_once('\n')
+        .map_or(file, |(_title, rest)| rest)
+        .trim_start()
+}
+
 /// The chapter list the help window and `UTW help` share: the core chapters first,
 /// then each of `tools`' `help()` under its id, in the order given (the window's is
 /// the sidebar's, `UTW help`'s the registry's).
@@ -102,6 +115,30 @@ pub(crate) fn chapters<'a>(
                     slug: "data-location",
                     title: "Choosing the data location",
                     body: include_str!("core/data_location.md"),
+                }],
+                messages: Vec::new(),
+            },
+        ),
+        (
+            "updates",
+            HelpSection {
+                title: "Updates",
+                topics: vec![HelpTopic {
+                    slug: "updating",
+                    title: "Updating the program",
+                    body: include_str!("core/updates.md"),
+                }],
+                messages: Vec::new(),
+            },
+        ),
+        (
+            WHATS_NEW_ID,
+            HelpSection {
+                title: "What's new",
+                topics: vec![HelpTopic {
+                    slug: "changelog",
+                    title: "Changelog",
+                    body: changelog(),
                 }],
                 messages: Vec::new(),
             },

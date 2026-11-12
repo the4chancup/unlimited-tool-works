@@ -42,7 +42,7 @@ use crate::help::{self, HelpTarget};
 use crate::settings::{Theme, WindowPlace};
 use crate::status::ActionEffect;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::status::ShellCondition;
+use crate::status::{Notice, NoticeAction, NoticeKind, ShellCondition};
 use crate::tool::{PlannedTool, ShellRequest, StudioTool, ToolContext};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::updater;
@@ -123,6 +123,31 @@ pub(crate) fn version_label_of(version: &str, debug: bool) -> String {
     format!("v{version}{stage}{build}")
 }
 
+/// The status bar's notice on the first start of a newer version, `Updated to v0.0.2
+/// pre-alpha` with a What's new that opens the help on the changelog, when `last_run`,
+/// the version whose window last started, is older than `own`, the program's. No
+/// notice when none is stored (a first run, or a file only versions without the notice
+/// wrote), when it is the same or newer (an older copy started after a newer one), or
+/// when it does not read as a version (edited by hand).
+#[cfg(not(target_arch = "wasm32"))]
+fn updated_notice(last_run: Option<&str>, own: &str) -> Option<Notice> {
+    let last_run = semver::Version::parse(last_run?).ok()?;
+    let own_version = semver::Version::parse(own)
+        .expect("the program's version is a semver triple; the workspace cannot build without one");
+    (last_run < own_version).then(|| Notice {
+        text: format!("Updated to {}", version_label_of(own, false)),
+        kind: NoticeKind::Info,
+        action: Some(NoticeAction {
+            label: "What's new".to_owned(),
+            effect: ActionEffect::OpenHelp(HelpTarget {
+                tool: help::WHATS_NEW_ID.to_owned(),
+                topic: None,
+                anchor: None,
+            }),
+        }),
+    })
+}
+
 /// The window: the registered tools in sidebar order, the platform handle they share, the
 /// receiving end of their shell requests, and which tool's view is on screen.
 pub struct StudioApp {
@@ -165,6 +190,11 @@ pub struct StudioApp {
     /// test replaces it with a fixed list, since a test's frame has no window.
     #[cfg(not(target_arch = "wasm32"))]
     monitors: fn(&eframe::Frame) -> Vec<window_size::Monitor>,
+    /// The program's version the first frame compares with `last_run_version` and then
+    /// stores there: the build's own in the window, a test's in the tests. `None` once
+    /// the first frame has recorded it.
+    #[cfg(not(target_arch = "wasm32"))]
+    start_version: Option<&'static str>,
     /// The first-run data-location dialog's state.
     first_run: FirstRun,
     /// The update check's fetch: `updater::fetch_releases` in the window, a fixture
@@ -268,6 +298,8 @@ impl StudioApp {
             window_maximized: false,
             #[cfg(not(target_arch = "wasm32"))]
             monitors: window_size::monitors,
+            #[cfg(not(target_arch = "wasm32"))]
+            start_version: Some(env!("CARGO_PKG_VERSION")),
             first_run: FirstRun::new(config_dir),
             #[cfg(not(target_arch = "wasm32"))]
             update_fetch: Arc::new(updater::fetch_releases),
@@ -481,6 +513,27 @@ impl StudioApp {
     /// The browser build checks nothing; its storage is the web phase's.
     #[cfg(target_arch = "wasm32")]
     fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
+
+    /// The first frame's record of the program's version `own`: the `Updated to`
+    /// notice when the version whose window last started is older, then `own` stored
+    /// in `last_run_version` and saved as every settings change is, whatever the
+    /// comparison found, so the notice shows on one start only. The command line never
+    /// comes here: it reads and writes no `last_run_version`.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn record_version(&mut self, own: &str) {
+        let last_run = self
+            .ctx
+            .settings()
+            .lock()
+            .unwrap()
+            .common
+            .last_run_version
+            .replace(own.to_owned());
+        if let Some(notice) = updated_notice(last_run.as_deref(), own) {
+            self.ctx.notify(notice);
+        }
+        self.ctx.request(ShellRequest::SettingsChanged);
+    }
 
     /// The update dialog, drawn while `update_release` stands (the release it
     /// was opened for gone, it closes itself); its Update now installs into
@@ -737,6 +790,11 @@ impl eframe::App for StudioApp {
         // save, the notice) apply in the frame that switches, not one repaint later.
         self.sidebar
             .poll_running_pes(egui_ctx, &self.tools, &self.ctx);
+        // Queued before the requests drain, so the notice and the save apply in this frame.
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(own) = self.start_version.take() {
+            self.record_version(own);
+        }
         self.poll_update(egui_ctx);
         // Asked before the requests drain, so a notice published this frame replaces the
         // standing one and ends it, and its tool hears so before it is next asked.
@@ -1755,5 +1813,78 @@ mod tests {
             Some("0.0.3"),
             "the release the offer keeps is the newer one"
         );
+    }
+
+    /// A shell starting as version 0.0.2 over the settings of `dir`, whose
+    /// `last_run_version` is `stored` and whose file is not written yet, after its
+    /// first frame: the app, its context and that frame's nodes.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn started_as_0_0_2(
+        dir: &TestDir,
+        stored: Option<&str>,
+    ) -> (StudioApp, egui::Context, Vec<egui::accesskit::Node>) {
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.last_run_version = stored.map(str::to_owned);
+        let Shell { mut app, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        app.start_version = Some("0.0.2");
+        let egui_ctx = test_context();
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        (app, egui_ctx, nodes)
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-06
+    #[test]
+    fn a_newer_versions_first_start_shows_updated_to_and_records_its_version() {
+        for (stored, notice) in [
+            (Some("0.0.1"), true),
+            (None, false),
+            (Some("0.0.2"), false),
+            (Some("0.0.3"), false),
+            (Some("not a version"), false),
+        ] {
+            let dir = TestDir::new("studio_core_updated_to");
+            let file = dir.path().join(crate::settings::SETTINGS_FILE_NAME);
+            assert!(!file.exists(), "the premise: no settings file yet");
+            let (_app, _egui_ctx, nodes) = started_as_0_0_2(&dir, stored);
+            assert_eq!(
+                has_text(&nodes, "Updated to v0.0.2 pre-alpha"),
+                notice,
+                "the notice, stored {stored:?}"
+            );
+            assert_eq!(
+                has_text(&nodes, "Updated to"),
+                notice,
+                "no other version's notice, stored {stored:?}"
+            );
+            assert_eq!(
+                Settings::load(&file)
+                    .unwrap()
+                    .common
+                    .last_run_version
+                    .as_deref(),
+                Some("0.0.2"),
+                "the file records the version, stored {stored:?}"
+            );
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-06
+    #[test]
+    fn the_updated_to_notices_whats_new_opens_the_help_on_the_changelog() {
+        let dir = TestDir::new("studio_core_updated_whats_new");
+        let (mut app, egui_ctx, nodes) = started_as_0_0_2(&dir, Some("0.0.1"));
+        assert_eq!(app.help_window.showing(), None, "the help window is closed");
+        click(&egui_ctx, &mut app, entry(&nodes, "What's new"));
+        idle(&egui_ctx, &mut app, 2);
+        assert_eq!(app.help_window.showing(), Some(("whats-new", "changelog")));
     }
 }
