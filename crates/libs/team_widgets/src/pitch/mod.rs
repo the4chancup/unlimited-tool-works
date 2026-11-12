@@ -2,7 +2,7 @@
 //! `slotPopover` — the formation canvas, a marker per starter dragged to
 //! his spot, dropped on to swap a bench player in, clicked for the slot's
 //! details — plus `lineupList` and `benchList`, the starting eleven and
-//! the bench, reordered and swapped by drag. The canvas is painted as the
+//! the bench, swapped by drag. The canvas is painted as the
 //! version's own formation screen: its texture's turf bands and lines,
 //! the screen's slot-to-spot mapping and markers of portrait, badge and
 //! coloured name.

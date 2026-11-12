@@ -16910,3 +16910,12 @@ worth. `Palette::locked_choice_fill` and the painted-over rectangle are removed;
 `team_widgets::tactics::lock_selection` sets the selection's colours inside the disabled
 scope. Plan: plans/save_editor.md "Tactics editor" (the numbers bullet, the Kick-off
 paragraph) edited; the drafts' three rules follow.
+
+## 2026-11-12 — save_editor — A bench row dropped on a bench row swaps the two
+
+The maintainer: the Tactics lists' bench moved a dragged row into the dropped row's place,
+the rows between shifting, where every other drop in the two lists (starter on starter,
+bench on starter, a marker on a row) swaps two players, and where the game itself swaps
+two bench players picked one after the other. A bench drop now exchanges the two
+`bench_order` entries. Plan: plans/save_editor.md "Lineup by drag-and-drop" edited; the
+draft's `moveBench` is `swapBench`.

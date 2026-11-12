@@ -5203,10 +5203,10 @@ function swapOnPitch(t, i, j) {
   edit("Swap on pitch", () => {
     const f = tacFormation(t).players, tmp = f[i]; f[i] = f[j]; f[j] = tmp; });
 }
-function moveBench(t, i, j) {
+function swapBench(t, i, j) {
   if (i === j) return;
-  edit("Reorder bench", () => {
-    const b = t.tactics.bench_order, [m] = b.splice(i, 1); b.splice(j, 0, m); });
+  edit("Swap on bench", () => {
+    const b = t.tactics.bench_order, tmp = b[i]; b[i] = b[j]; b[j] = tmp; });
 }
 // Make GK: the picked player's roster index takes the GK formation slot, the
 // keeper takes his (the formation slots keep their positions and coords; the
@@ -5857,10 +5857,10 @@ document.addEventListener("pointerup", e => {
   render();
 });
 
-// The starting eleven and the bench, reorderable drag lists (SE-GUI-12):
+// The starting eleven and the bench, drag lists (SE-GUI-12):
 // an XI row's data is xi:<slot index>, a bench row's bench:<index>. Drops:
 // xi on xi swaps the slots' players, xi on bench swaps them back, bench on
-// xi or on a pitch marker swaps in, bench on bench reorders.
+// xi or on a pitch marker swaps in, bench on bench swaps the two entries.
 function listRowDrag(row, data) {
   row.draggable = true;
   row.addEventListener("dragstart", e => {
@@ -5907,7 +5907,7 @@ function benchList(t) {
         p.positions.registered),
       h("span", { class: "lname", title: displayName(p.name) }, ...nameSpans(p.name)));
     listRowDrag(r, "bench:" + i);
-    rowDrop(r, (kind, j) => kind === "xi" ? swapLineup(t, j, i) : moveBench(t, j, i));
+    rowDrop(r, (kind, j) => kind === "xi" ? swapLineup(t, j, i) : swapBench(t, j, i));
     box.append(r);
   });
   return box;

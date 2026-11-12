@@ -1186,7 +1186,11 @@ Win32 original hurt the most):
 
     It is a widget placed over the pitch after the markers, as the formation's name is drawn
     after them, not painted on the pitch, so the formation pictures never carry it.
-- **Lineup by drag-and-drop**: the starting XI and bench are reorderable lists;
+- **Lineup by drag-and-drop**: the starting XI and bench are drag lists, and every drop
+  swaps two players: a row dropped on a row of its own list exchanges the two (the bench
+  as the eleven: the game's own game plan swaps two bench players picked one after the
+  other, and a drop that shifted the rows between would be the one list behaving
+  unlike the others), and
   **dragging a bench player onto a pitch player swaps them** (and vice versa). While a
   drag is held over a row, that row, the one the drop replaces, is outlined in the
   selection colour (the draft's `.dragover`), so a member sees whom the drop swaps out.
