@@ -1678,7 +1678,7 @@ briefs, review loops, gates and mutation runs as for any step.
       served from this PC (`UTW_RELEASES_URL`, plain http by ureq's defaults, read not run):
       each stage's look, which log slot the restarted program takes while the old one is
       still closing (ST-RUN-12), and whether it clears the old files
-    - [x] slice 3, 2026-11-12 (`0c2fe2fb`, Opus): the `Updated to` notice
+    - [x] slice 3, 2026-11-12 (`d617bf3a`, Opus): the `Updated to` notice
       (`last_run_version`), the help's Updates and What's new chapters (ST-UPD-06), the
       offer's tooltip naming the app and the version
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
