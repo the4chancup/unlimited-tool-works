@@ -2112,6 +2112,9 @@ briefs, review loops, gates and mutation runs as for any step.
     release build: Red's and ours on the same export, wall time, three runs, the median; our
     time split by stage (validation, planning, each task kind, the CPK write) with a
     sampling profiler; each stage that costs more than Red's whole run gets a worklog step
+- [ ] with Release 0.2.0 (the maintainer, 2026-11-12): the response-time gate at the
+  checkpoint (`plans/core/development_plan.md` "Release 0.2.0"); its first step only
+  reports the medians
 - [ ] later, once enough tools ship for it to filter anything (the maintainer's idea,
   2026-11-12, to design then, not ruled): roles in the sidebar. Above the tool list, with
   a separator between, a member's role (Manager, Aesthetics maker, Aesthetics helper,

@@ -491,9 +491,21 @@ tester told in person does not:
   the swap does. Until it ships, a new build does not replace a tester's working
   `data/teams_list.txt`, so a team added upstream is missing until the tester takes the new
   list by hand, which the release's notice says
+- A response-time gate at the checkpoint: five or six named actions a member waits on (a
+  PES 2021 save opened, the largest; a switch of team and of tab; a team file imported; a
+  save; one frame of the Tactics view and of the player list), driven headlessly on the
+  release build, each run several times and the median reported. The yardstick is the
+  Doherty threshold: a response within about 400 ms keeps a member's attention, so each
+  action's budget sits well under it, to leave room for a slower machine than the
+  maintainer's. It reports first and enforces later: the budgets are set once several
+  checkpoints have shown how much the medians move, since an assertion inside `cargo test`
+  would fail at random under the builds that run beside it. It does not see work that
+  blocks the frame on a slow disk (a listing, a read), which is fast on the machine that
+  measures: that stays review's. Not before 0.2.0: opening a save reads as instant today
 
 **Verification:** the update notice shown against a test release with a higher tag, and the
-teams-list merge's summary on a new binary's first start over a working list with a local row.
+teams-list merge's summary on a new binary's first start over a working list with a local row;
+the response-time gate's report at a checkpoint, with its medians.
 
 ### Phase 9: Stadium compiler (`tools/stadium_compiler`)
 

@@ -16919,3 +16919,14 @@ bench on starter, a marker on a row) swaps two players, and where the game itsel
 two bench players picked one after the other. A bench drop now exchanges the two
 `bench_order` entries. Plan: plans/save_editor.md "Lineup by drag-and-drop" edited; the
 draft's `moveBench` is `swapBench`.
+
+## 2026-11-12 — process — A response-time gate at the checkpoint, queued for Release 0.2.0
+
+The maintainer asked whether tests can keep the suite under the Doherty threshold (a
+response within about 400 ms) and took the lead's answer as work to try, with Release
+0.2.0: a timing gate at the checkpoint over a handful of named actions, on the release
+build, medians of several runs, reporting first and enforcing budgets later. Not a unit
+test: a time assertion under `cargo test` fails at random beside other builds. Not now:
+opening a save reads as instant on the maintainer's machine. Plan:
+plans/core/development_plan.md "Release 0.2.0" gained the item and its verification;
+worklog step added.
