@@ -88,11 +88,11 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
 - Closed sets are enums. A string that gets compared against literals, or matched with a `_ =>`
   arm, is an `enum`: `serde(rename_all)` for the file format, `Display`/`FromStr` for the CLI. A
   `_ =>` arm on one of our own enums is a smell; it is where the compiler stops catching the
-  missing case. The same holds for `pes_version::Engine`, which may grow a third engine (PES 12,
-  worklog 4.0a): it is branched on with an exhaustive `match`, never tested against one variant
-  with `==`/`!=` (comparing two engines is fine), and never derived from an ordering of
-  `PesVersion` (`>= Pes18`), so a new engine is a compile error at every site that must decide,
-  not a silent misroute.
+  missing case. The same holds for `pes_version::Engine`, which may grow a third engine (PES 12):
+  it is branched on with an exhaustive `match`, never tested against one variant with `==`/`!=`
+  (comparing two engines is fine), and never derived from an ordering of `PesVersion`
+  (`>= Pes18`), so a new engine is a compile error at every site that must decide, not a silent
+  misroute.
 - Borrow parameters (`&str`, `&Path`, `&[u8]`); own what you store and return (`String`,
   `PathBuf`, `Vec<T>`). Generics over std traits (`impl Read + Seek`, `impl Write`,
   `impl Iterator<Item = T>`) are fine; generics over our own traits, and struct lifetimes, only
@@ -196,8 +196,7 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   text alone, `**Teams and players**`, which the window and the drafts draw alike), and
   parallel items (a menu's entries, a dialog's options, the steps of a procedure) are a list,
   one item per line. A paragraph that runs through five facts one after the other reads as one
-  long line in the help window's wide pane, and a member scanning for one fact finds none
-  (the maintainer, of the Save editor's chapters).
+  long line in the help window's wide pane, and a member scanning for one fact finds none.
 - **No em dashes in text a user reads**: the README, the help chapters, message catalog text,
   UI strings, the comments injected into `settings.toml`/`config.toml`/`materials.toml`, the Team
   creator's `README.txt`. Use a comma, a colon, parentheses or a new sentence. The character has
@@ -214,29 +213,27 @@ just gates
 ```
 
 The root `justfile` is the one definition of the gates (`just line-endings`, which fails on a
-tracked file whose working copy has other line endings than `.gitattributes` asks, `cargo fmt --all --check`, `cargo clippy
---workspace --all-targets -- -D warnings`, the tests `cargo test --workspace` builds, run four
-binaries at once by `scripts/gates/run_tests.py` and then the doc-tests, `cargo check --target
-wasm32-unknown-unknown` for `studio_core` and every lib crate, and `just acceptance`, the
-acceptance-ID scanner in its `report` mode, and `just doc-pointers`, which fails on a
-pointer to a document's section, its path and then the quoted title, whose file or section is
-gone, or whose file is in the gitignored `.tmp/`, which no clone has, and `just comment-refs`, which fails on a code comment citing a plan, a decision, a step,
-a review or who decided, and `just colour-literals`, which fails on a colour written from literal
-values outside `studio_core`'s `theme.rs`, whose palette gives each colour its light value), and
-CI runs the same recipe, so
-the list cannot drift between this document, the local run and CI (it had, before the justfile
-existed: two spellings of the fmt gate in two documents). The test gate runs each binary whole,
-its tests on libtest's threads, several binaries at once: `cargo test` alone runs them one after
-another, leaving cores idle behind each binary's slowest test (277 s against 176 s, 2026-10-25),
-and `cargo nextest`'s process per test was slower still on Windows, where every test binary
-starts through the memory-cap wrapper. `just gates-changed [base]` runs the same gates with the
-test gate over the packages the working tree changes since `base` (default `HEAD`) and every
-package depending on them; a changed file outside every package, `docs/`, the root's `*.md`,
-the mutation runs' exclusion files and the scripts no test run goes through (every script but
-the runner and its memory-cap wrapper: no Rust test reads one, and the scripts' own
-`*_test.py` the gates list run whatever changed) runs every package's tests, since the toolchain, `Cargo.lock`,
-`.cargo/` and `resources/` reach
-them all.
+tracked file whose working copy has other line endings than `.gitattributes` asks, `cargo fmt
+--all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, the tests `cargo test
+--workspace` builds, run four binaries at once by `scripts/gates/run_tests.py` and then the
+doc-tests, `cargo check --target wasm32-unknown-unknown` for `studio_core` and every lib crate,
+and `just acceptance`, the acceptance-ID scanner in its `report` mode, and `just doc-pointers`,
+which fails on a pointer to a document's section, its path and then the quoted title, whose file
+or section is gone, or whose file is in the gitignored `.tmp/`, which no clone has, and `just
+comment-refs`, which fails on a code comment citing a plan, a decision, a step, a review or who
+decided, and `just colour-literals`, which fails on a colour written from literal values outside
+`studio_core`'s `theme.rs`, whose palette gives each colour its light value), and CI runs the
+same recipe, so the list cannot drift between this document, the local run and CI. The test gate
+runs each binary whole, its tests on libtest's threads, several binaries at once: `cargo test`
+alone runs them one after another, leaving cores idle behind each binary's slowest test (277 s
+against 176 s, 2026-10-25), and `cargo nextest`'s process per test was slower still on Windows,
+where every test binary starts through the memory-cap wrapper. `just gates-changed [base]` runs
+the same gates with the test gate over the packages the working tree changes since `base`
+(default `HEAD`) and every package depending on them; a changed file outside every package,
+`docs/`, the root's `*.md`, the mutation runs' exclusion files and the scripts no test run goes
+through (every script but the runner and its memory-cap wrapper: no Rust test reads one, and the
+scripts' own `*_test.py` the gates list run whatever changed) runs every package's tests, since
+the toolchain, `Cargo.lock`, `.cargo/` and `resources/` reach them all.
 
 How often each runs. A commit that touches only `docs/` or the root's `*.md` runs `just
 doc-pointers` and `just acceptance`. A code commit reruns, in the real workspace, the changed
@@ -246,26 +243,25 @@ the checks a slice's own change fails first. `just gates-changed <the last commi
 at>` runs once over every commit since, at a checkpoint: the end of a surface's review loop,
 right before its mutation run ("Mutation runs" below), which then starts from a tree known
 green; a worklog step's close; a merge of another branch. The full `just gates` runs before a
-release build, and CI runs it on every push. `just checkpoint` is the
-checkpoint's one command: it runs `gates-changed` and `mutants-diff` since the last gated
-commit and moves that commit to the one it started on (`RUNBOOK.md` "How the work runs"). A push is asked
-for only when `just checkpoint-status` shows no commit past the gate, so CI is never a
-stretch's first full run: a push of commits no checkpoint had gated went red on
-a broken doc pointer (2026-11-11). A failure a checkpoint finds in a dependent
-package is fixed by a commit of its own (or an amend of the newest unpushed one) naming the
-commit that caused it: the history stays local until the push, so a later find costs a short
-search over a few small commits, while running every dependent's tests on every commit cost
-minutes of the whole machine each time once the suite passed 5000 tests (2026-10-27: one
-commit to `studio_core` ran all 32 packages' tests). The other recipes are the project's
-repeatable sequences, each of which the plan names somewhere: `just deps-check` (guardrail 4,
-the `fmdl`/`pes_model` denylist, plus the `cargo deny` license allowlist; see "License" in the
-core plan; run it right after any change that adds a package to `Cargo.lock`, a transitive one
-included, because `just gates` does not run it: 3.z's `eframe` brought two `BSL-1.0` crates that
-only CI saw), `just acceptance strict` (the scanner's converge mode, under "Requirements"), `just parity`
-(the two Red-parity tests alone, `tests/parity.rs` and `tests/parity_prefox.rs`, which `just test`
-also runs), `just bindings` (the `maturin` build of `python_bindings`), `just release <version>`
-(arrives with release 0.1.0, `core/development_plan.md` "Release 0.1.0"), `just
-mutants <crate>`, `just mutants-collect` and `just mutants-diff [base]` (the mutation runs,
+release build, and CI runs it on every push. `just checkpoint` is the checkpoint's one command:
+it runs `gates-changed` and `mutants-diff` since the last gated commit and moves that commit to
+the one it started on (`RUNBOOK.md` "How the work runs"). A push is asked for only when `just
+checkpoint-status` shows no commit past the gate, so CI is never a stretch's first full run: a
+push of commits no checkpoint had gated once went red on a broken doc pointer. A failure a
+checkpoint finds in a dependent package is fixed by a commit of its own (or an amend of the
+newest unpushed one) naming the commit that caused it: the history stays local until the push,
+so a later find costs a short search over a few small commits, while running every dependent's
+tests on every commit cost minutes of the whole machine each time once the suite passed 5000
+tests (2026-10-27: one commit to `studio_core` ran all 32 packages' tests). The other recipes are
+the project's repeatable sequences, each of which the plan names somewhere: `just deps-check`
+(guardrail 4, the `fmdl`/`pes_model` denylist, plus the `cargo deny` license allowlist; see
+"License" in the core plan; run it right after any change that adds a package to `Cargo.lock`, a
+transitive one included, because `just gates` does not run it: adding `eframe` once brought two
+`BSL-1.0` crates that only CI saw), `just acceptance strict` (the scanner's converge mode, under
+"Requirements"), `just parity` (the two Red-parity tests alone, `tests/parity.rs` and
+`tests/parity_prefox.rs`, which `just test` also runs), `just bindings` (the `maturin` build of
+`python_bindings`), `just release <version>` (the portable Windows release bundle, Windows only),
+`just mutants <crate>`, `just mutants-collect` and `just mutants-diff [base]` (the mutation runs,
 below), `just citation-audit` (the citation audit, below), `just gpu-tests` (`dds_convert`'s GPU
 encoder tests: the one sanctioned `#[ignore]`, each with the reason `"needs a Vulkan or Metal
 GPU"`, since no CI runner has one; whoever changes `dds_convert`'s `gpu` module runs them on a
@@ -322,26 +318,24 @@ Requirements:
   that passes on the old code has not demonstrated the bug. A test of a write first asserts its
   premises: that the target does not already hold the value it expects (`assert_ne!` on the
   value before the write), and that its setup changed what it meant to change. Where a
-  fixture's value coincides, a skipped write passes the test. Three review rounds
-  at step 5.1d found such tests, among them one that compared a name against a different player
-  and one that swapped two roster slots without moving the player it patched.
+  fixture's value coincides, a skipped write passes the test: a review once found a test that
+  swapped two roster slots without moving the player it patched.
 - **A test fails, it never hangs.** A loop that waits for a condition (frames until a state
   shows, Ctrl+Z until the undo stack is empty) has a bound and panics past it, naming what
   never happened. Broken code then fails in seconds; unbounded, it spins until the mutation
-  run's timeout: at 2026-10-21's `mutants-diff 12ffa8c3` one such helper hung ten mutants for
-  17 minutes each.
+  run's timeout: one such helper once hung ten mutants for 17 minutes each.
 - **A worker's in-between state is read on a frame no reply can reach.** A view that starts a
   check on a worker thread and marks the list as checking until it replies cannot be tested
   by drawing the frame that starts it: egui runs a window's or panel's first frame in two
-  passes, and the worker can reply between them, so the frame draws the result instead (8.9j3:
-  one full-suite run in eight). The mark is read on a frame where no check can start (the
+  passes, and the worker can reply between them, so the frame draws the result instead (one
+  full-suite run in eight). The mark is read on a frame where no check can start (the
   pointer held over an unsettled edit); the test never widens its assertion to pass both ways.
 - **A test never reaches the developer's own files.** A setting whose default finds something on
   the machine (`savefile_path = auto` walks Documents\KONAMI, `pes_folder_path` names the real
   install) is set to a path under the test's own folder by every test context that runs the
   tool: the crate's CLI sandbox and its in-process `tool_context` alike, inserted before the
-  tool's defaults are merged in (a default already merged is not replaced). At 5.3b2 a context
-  that missed this let three GUI tests apply their patch to the maintainer's PES 21 save.
+  tool's defaults are merged in (a default already merged is not replaced). A context that
+  missed this once let three GUI tests apply their patch to the maintainer's PES 21 save.
   Machine state is held to the same rule: a test gets the running PES games (the process list)
   through the tool's probe, which it sets, and never reads them directly.
 - **Tests are code.** "Code style" holds for them as for the code they test: they read cleanly,
@@ -351,9 +345,8 @@ Requirements:
   test's table of cases (the `for (at, up, stored, ...) in [...]` shape), not a copy of its
   body. Before writing a helper, use the crate's own (`test_support.rs`, the test module's
   shape and node finders). A GUI test needs a scene and a few frames for each assertion, so
-  copied setup multiplies fastest there: slice tw1 of the 2026-11-04 `team_widgets` run
-  copied fifty lines of the lit-area test into a second one, until review moved them into
-  `held_dims` and `check_dims`.
+  copied setup multiplies fastest there: one slice copied fifty lines of the lit-area test into
+  a second one, until review moved them into `held_dims` and `check_dims`.
 - **Acceptance IDs.** Each tool plan has an "Acceptance" section listing that tool's user-observable
   behavior as scenarios with stable IDs, written before the phase that delivers them (procedure in
   `RUNBOOK.md` "Before a tool phase"). Format, one entry per behavior:
@@ -470,31 +463,13 @@ Requirements:
   receiver); an entry that matches nothing in its crate is reported as a stale exclusion
   among the survivors, since the code under the ruling changed. The tool's other kind
   (`guard`) is not run (`just extra-mutants <crate> --kind guard` runs it by hand): too few
-  of its survivors were real gaps (worklog 5.0b). A survivor of the remote half whose only
+  of its survivors were real gaps. A survivor of the remote half whose only
   catching test is `#[cfg(windows)]` is rerun on this machine when the run is collected, and
   the outcome here replaces the remote one; such a test's mutants are named in
   `WINDOWS_ONLY_TESTS` in `scripts/mutation/mutants.py`, by file and function. So a guard that
   refuses an input the standard library would accept (a leading `+`, which `u8::from_str`
   takes) still gets a test of its own when written: no run will ask for it (the color grammar
-  had none, with all its mutants caught; S10's review, 2026-10-09).
-- **Clef scan (retired 2026-10-17).** A decision model asked whether each 60-line window of
-  production code holds a bug (`scripts/review/clef_scan.py`, `just clef <crate>` and `just
-  clef-diff [base]`, Cloudflare's Clef, flags at P >= 0.7, rulings in
-  `scripts/review/clef_rulings.md`) ran at every phase close from 2026-10-06 and is no longer part of
-  any review. Over 88 ruled flags two were real (a version-gated flag, 4.c-fix1; a memory
-  charge released early, 4.y), both scored below every flag at 0.80 or above, and Phase 5's
-  close pass raised 22, all false; the cost was the lead's reading of every flag. Its
-  successor candidate was measured before anything replaced it (2026-10-17, outside the
-  repository, in the maintainer's `SystemOne/jev-eval/round3` folder, its results' Round 4):
-  SubQ Snap, a decision model with a 384K-token window, catches one-line slips of the
-  mutation-run kind far better (AUC 0.92 against 0.84 over 732 pairs), but on 111 real
-  defects from the project's fix commits
-  it scores the code before each fix no higher than the code after (AUC 0.50 for the window,
-  the whole file, and the file with the spec sections it cites), and its highest windows on
-  real code were less often ones a later fix changed than windows overall. The slips it does
-  catch are the kind a test catches, which the mutation runs already measure. A scan comes
-  back only with a model that separates real pre-fix code from fixed code on that history set
-  (`build_history.py` there rebuilds it from any list of fix commits).
+  once had none, with all its mutants caught).
 
 ## Dependencies
 
@@ -510,23 +485,22 @@ multi-crate step uses its phase, `feat(phase2): ...`). Types: `feat`, `fix`, `do
 `refactor`, `perf` (a change made for speed or memory that changes no behavior), `chore`
 (workspace, dependencies, CI). The first line is at most 120 characters: it is what `git log
 --oneline` and every tool's history view show, and a subject that lists every change of the
-commit is a body written on the wrong line (subjects had reached 368 characters). A worklog step tag (`4.y-sub b3b4c`) goes in the body, not the first
-line: the first line is for what changed. A summary naming something done puts every verb in
-the imperative (`docs(worklog): audit the open 0.0.1 boxes; close s, x and y4 as done`), never
-in the past participle (`the open 0.0.1 boxes audited; s, x and y4 closed as done`), which reads
-like verse; a summary stating what the code does from now on keeps the present tense (`the
-drafts name the suite Unlimited Tool Works where the preview does`). The body says why, not what; the diff says
-what. This is for maintainers reading history (`git log --grep '^fix('` when bisecting), not for
-members: `CHANGELOG.md` stays hand-written per the core plan's "Changelog and version display" and
-is never generated from commit messages. From the first release on, a commit that changes
-something a member notices against the last release (a fix for a bug a release shipped, a new or
-changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in `CHANGELOG.md`
-itself, a corner-case fix under its `### Minor fixes`; a fix for something no release has
-shipped adds none, and neither does a change to a tool no release has presented in its notes or
-the `README.md` (the Team compiler and the Export upgrader until one does). There is one `fix` type for both:
-`git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note owes its readers. Write
-the message to a file and `git commit -F` it;
-PowerShell has no heredocs.
+commit is a body written on the wrong line. A worklog step tag (`4.y-sub b3b4c`) goes in the
+body, not the first line: the first line is for what changed. A summary naming something done
+puts every verb in the imperative (`docs(worklog): audit the open 0.0.1 boxes; close s, x and y4
+as done`), never in the past participle (`the open 0.0.1 boxes audited; s, x and y4 closed as
+done`), which reads like verse; a summary stating what the code does from now on keeps the
+present tense (`the drafts name the suite Unlimited Tool Works where the preview does`). The body
+says why, not what; the diff says what. This is for maintainers reading history (`git log --grep
+'^fix('` when bisecting), not for members: `CHANGELOG.md` stays hand-written per the core plan's
+"Changelog and version display" and is never generated from commit messages. A commit that
+changes something a member notices against the last release (a fix for a bug a release shipped,
+a new or changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in
+`CHANGELOG.md` itself, a corner-case fix under its `### Minor fixes`; a fix for something no
+release has shipped adds none, and neither does a change to a tool no release has presented in
+its notes or the `README.md` (the Team compiler and the Export upgrader until one does). There is
+one `fix` type for both: `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note
+owes its readers. Write the message to a file and `git commit -F` it; PowerShell has no heredocs.
 Do not include agent co-authoring lines.
 
 ## Toolchain notes
@@ -552,7 +526,6 @@ Do not include agent co-authoring lines.
   `just line-endings`, the gates' first, lists every tracked file whose working copy has other
   endings than `.gitattributes` asks; git normalizes a text file on commit, so only the working
   copy shows the leak, and the leak still breaks what reads it (`cargo fmt --check`, a hashed
-  file such as `aatf`'s `logic.rhai`). Ten such copies had built up unseen when it was added.
-  Binary fixtures are exempt: `.gitattributes` marks `crates/**/tests/fixtures/**` as `-text`, so
-  a game file that happens to contain CRLF is stored as is (the first `cpk` fixture commit
-  normalized one and shrank it by 97 bytes before this rule existed).
+  file such as `aatf`'s `logic.rhai`). Binary fixtures are exempt: `.gitattributes` marks
+  `crates/**/tests/fixtures/**` as `-text`, so a game file that happens to contain CRLF is stored
+  as is (normalizing one once shrank a `cpk` fixture by 97 bytes).
