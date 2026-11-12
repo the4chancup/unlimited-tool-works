@@ -16502,3 +16502,22 @@ appears when 0.0.2 updates to its successor), and the plan's three lines left a 
 the button's wording after a rollback and the state after a cancelled restart all open.
 Plan: `plans/core/distribution.md` "Self-update" (the 0.0.2 list) and "Rollback";
 `spec/core/distribution.md` (the version axis bullet); worklog 0.0.2-upd; `PROPOSALS.md` P51.
+
+## 2026-11-12 — studio — The command line's update notice: what the plan left open
+Decision: a tool command checks for a newer release on a thread of its own when
+`check_for_updates` is on, never waits for the reply, and prints one line on stderr and in
+the log file when the reply has arrived by the end of the run and offers a release:
+`Unlimited Tool Works v<new> is out (you have v<own>). Start the program and click Update
+available to get it.` It stores nothing and so checks at every command. `UTW help` and a
+refused command line check nothing; the exit code stays the tool's.
+Why: no wait, because a command's time is the tool's and the launchers' runs (a compile, an
+upgrade) outlast the fetch anyway, while a wait would cost every quick command up to its
+length on a slow line; no interval, because its stamp lives in the settings file, which the
+command line never writes (ST-CLI-01's premise), and a stamp shared with the window would
+hide the window's offer for the next two hours from the member the line had just sent there;
+the line points at the window, not at a download, because Update now is one click there and
+the release page is one more.
+Not chosen: the notice read from a record the window keeps (a member who only uses the
+launchers never opens the window, and it is that member the line is for).
+Plan: `plans/core/distribution.md` "Self-update" step 2 ("The command line's notice"),
+`plans/core/gui.md` ST-CLI-05; worklog 0.0.2-cli.

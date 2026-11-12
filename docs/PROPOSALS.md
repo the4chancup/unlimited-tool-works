@@ -101,3 +101,19 @@ restart: a reminder like `Update ready`, and no update offered meanwhile. Only t
 file goes back: the launchers and the readme stay the newer version's, and a launcher that
 passes an option the older program lacks fails. A cheaper cover for the same case is one
 sentence in the help's Updates chapter giving the by-hand steps above.
+
+## P52 — The window checks for updates at every start
+
+From reading the check's schedule for the command line's notice (0.0.2-cli, 2026-11-12). The
+window checks when `last_update_check` is older than the interval (120 minutes by default),
+at startup as while it stays open, and the offer it finds lives for that session only. So a
+member who sees `Update available`, closes the program and opens it again within the interval
+finds no offer until the interval has passed: the plan's "the next check offers it again" is
+then up to two hours away. The command line's notice makes the case more likely, since its
+line sends the member to the window.
+
+Adds: the window checks once at every start, when `check_for_updates` is on, and the interval
+governs only the checks that follow while it stays open. An offer seen once is there again at
+the next start. Costs: one request to GitHub per start instead of at most one per interval
+(GitHub allows 60 an hour per address without a login); `last_update_check` stops deciding
+the first check, and the plan's step 1 and its tests change with it.

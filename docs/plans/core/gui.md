@@ -1749,6 +1749,14 @@ ST-CLI-04   GIVEN an export whose check reports Info findings and a Warning, and
                  run ends with the `error:` line stderr printed and `exit` with the
                  refusal's code; GIVEN a log file in a folder that does not exist THEN the
                  run is refused with exit 2, names the file on stderr and checks nothing
+ST-CLI-05   GIVEN `check_for_updates` on, a releases list whose newest version is `0.0.3`
+                  in a build of `0.0.2`, and the check's reply arrived
+            WHEN a tool command ends
+            THEN the line `Unlimited Tool Works v0.0.3 pre-alpha is out (you have v0.0.2
+                 pre-alpha). Start the program and click Update available to get it.` is
+                 written to stderr and to the log file; GIVEN the newest version `0.0.2`, or
+                 `0.0.3` skipped, or a failed check, or no reply yet THEN no line; GIVEN
+                 `check_for_updates` off THEN no check starts
 ST-CLI-03   GIVEN the tracer export; then a Midcup export whose player folders A and B each
                   hold a boots.fmdl that is not a model, A a face_high.fmdl too, and whose
                   folder C, a clean face, players.txt does not list

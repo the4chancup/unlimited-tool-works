@@ -300,8 +300,26 @@ may change in a minor release.
    - **Remind me later**, which closes the dialog; the next check offers it again.
 
    Turning checks off is the settings' `check_for_updates`, kept out of the dialog (Red's
-   `fuckoff`). From 0.0.2 the command line prints a one-line notice when a newer release
-   exists. A `UTW update` subcommand that checks and applies non-interactively comes later.
+   `fuckoff`). A `UTW update` subcommand that checks and applies non-interactively comes later.
+
+   **The command line's notice.** From 0.0.2 a tool command (`UTW <tool> <command>`, the
+   launchers' runs among them) looks for a newer release too, when `check_for_updates` is
+   on: a member who only double-clicks the launchers never sees the status bar.
+
+   - The check starts on a thread of its own as the command starts, and the command never
+     waits for it. A compile or an upgrade outlasts the fetch; a quick `check` may not, and
+     then prints nothing.
+   - When the command ends, a reply that has arrived and offers a release (newer than the
+     program's own version and not `skipped_version`) prints one line on stderr, after every
+     other line of the run: `Unlimited Tool Works v<new> is out (you have v<own>). Start the
+     program and click Update available to get it.` The line goes to the run's log file too
+     (`architecture.md` "A run's log file").
+   - No reply yet, a failed check and a release that is not newer print nothing. A failed
+     check writes one debug log line.
+   - The check stores nothing. The command line writes no settings, so `last_update_check`
+     stays the window's, and every command checks, whatever the interval.
+   - `UTW help` and a command line refused before its tool runs check nothing. The exit code
+     is the tool's, whatever the check did.
 3. **Download + verify**:
    1. fetch the release's archive for the running platform (the Windows `.7z`, the Linux
       `.tar.gz`: the artifacts members download by hand, one serving both paths) into a temp
