@@ -1832,9 +1832,11 @@ briefs, review loops, gates and mutation runs as for any step.
       the list and the close prompt; a moved player's rows against the record he came
       from (SE-GUI-73). Opus
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
-      one place per line, and the X as each row's first cell (at the row's end it left
-      the view under a wide row); renders `.tmp/0_0_2/undo/x_list.png`,
-      `x_after_height.png` by `shot_x.py` beside them. The maintainer's look is pending
+      one place per line (approved), and the X ending each row in the link blue, its
+      column fixed at the list's right edge while a wide row scrolls under it (the
+      maintainer, 2026-11-12: first in the row it read as an error mark); renders
+      `.tmp/0_0_2/undo/x_list.png`, `x_wide.png`, `x_wide_scrolled.png` by `shot_x.py`
+      and `shot_x_wide.py` beside them. The maintainer's look at the fixed X is pending
     - [ ] b: the X on each row of the toolbar's list (SE-GUI-74), as the draft's
       `changesTable` and `undoChange`
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
@@ -2142,7 +2144,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - re-timed 2026-11-06 (`.tmp/0_0_2/poc/retime.py`): 0.8 s wall where BC7 took about 1:30
     - in game on PES 2019 2026-11-07 (`.tmp/0_0_2/ingame/poc/findings.md`, `s42`-`s44`): the
       4096 `kit.dds` kept uncompressed loads and Edit mode draws the shirt; the seasonal
-      logos not seen (QUESTIONS "Seasonal logos on an uncompressed kit"; look: Pending looks)
+      logos not seen, which Edit mode never places (look: Pending looks)
     - Astra A-nobc7 r1 (3 accepted) and its rework 2026-11-08; SWE-2 S-nobc7 r1 2026-11-11
       (3 accepted, among them `texture_not_div4` skipping a pre-Fox texture written
       uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended, Carbon after
@@ -2438,8 +2440,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   2015, 2016, 2018 to 2021; 8.9k's k5g; harness
 - The drag rule's mapping of kicking power/swerve and body control/physical contact, and the B
   bonus in the overall; PES 2017; 0.0.1y's y4; maintainer (a save where those stats differ)
-- The seasonal logos on an uncompressed 4096 main kit; PES 2019; 0.0.2b (`QUESTIONS.md`
-  "Seasonal logos on an uncompressed kit"); harness
+- The seasonal logos on an uncompressed 4096 main kit, looked at in the pre-match menu (its
+  two demonstration players, when they wear the default kit models) or in a match: Edit
+  mode never places them, no competition type being chosen there. With it, whether the
+  player still draws see-through under an opaque texture (the first capture's test pattern
+  had alpha about 68, `.tmp/0_0_2/ingame/poc/s42_egg_body.png`); PES 2019; 0.0.2b; harness
 - Each version's stat names, read off its Edit screen; PES 2015, 2016, 2018 to 2021; 8.29d's
   d3b; harness
 - What a zero emblem in a Texport the panel wrote does in Select Team; PES 2017; 8.9k's k5f;

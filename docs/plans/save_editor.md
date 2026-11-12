@@ -833,8 +833,11 @@ side.
   One row per group, not per player, because the players between the two ends of a drag only
   shifted by one place, and a row each would bury the one move the member made.
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
-  draft's `changesTable`). It is the row's first cell, before the item: the table scrolls
-  sideways under a wide row, and an X at the row's end would leave the view. Its tooltip is
+  draft's `changesTable`). It ends the row, in the link blue of the label that opened the
+  list, and its column stays at the list's right edge while a wide row scrolls sideways
+  under it, so it never leaves the view: the X's are drawn right of the sideways scroll
+  area, inside the one that scrolls up and down, each on its row's line. At the row's start
+  it would never leave the view either, but there it reads as an error mark. Its tooltip is
   "Undoes this change alone". It writes
   the row's old value back into its field as one undo step, so Undo brings the change back,
   and the list stays open, a row shorter. It is no step taken out of the undo stack: later
@@ -2388,13 +2391,15 @@ SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto pl
                 later move's row compares against the written order
 SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a team's Support
            range row and a `Player order` row
-           WHEN the X at the start of the Height row is clicked
+           WHEN the X at the end of the Height row is clicked
            THEN the player's Height is the file's again, the list stays open without that
                 row, and one Undo sets the Height back to the edited value; the same for the
                 Support range row; GIVEN the X of the `Player order` row clicked THEN every
                 player of that group is back on his place in the file, an edit made on one of
                 them after the move still his; the close prompt's table has no X; GIVEN the
-                last row's X clicked THEN the list closes and the save is clean
+                last row's X clicked THEN the list closes and the save is clean; GIVEN a
+                row wider than the list, the list scrolled sideways to its end THEN every
+                X stands where it stood, at the list's right edge
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked

@@ -109,7 +109,10 @@ input[type=range]:focus { outline: none; }
   box-sizing: border-box; padding: 0 4px; text-align: center; background: var(--widget);
   border-radius: 2px; color: #b4b4b4; }
 #unsaved-changes { width: 100%; }
-#unsaved-changes th:nth-last-child(-n+2), #unsaved-changes td:nth-last-child(-n+2) { width: 30%; }
+#unsaved-changes th:nth-child(n+2), #unsaved-changes td:nth-child(n+2) { width: 30%; }
+#unsaved-changes th.undo, #unsaved-changes td.undo { width: 1%; position: sticky; right: 0;
+  background: var(--panel); }
+#unsaved-changes td.undo button { color: var(--link); }
 /* The prompt is as wide as its widest row, up to nine tenths of the window: a long player's
    name and its values read without scrolling sideways (save_editor.md, the closing bullet). */
 .window[data-dlg="unsaved-changes"] { max-width: 90%; }
@@ -3360,9 +3363,12 @@ function unsavedChanges() {
 }
 // The table of unsaved changes, the close prompt's and the toolbar label's
 // popup's alike: one row per changed field, a checkbox read as on or off,
-// scrolling past 240 points. `undoable` (the popup's) starts each row with
-// an X that undoes that change alone (SE-GUI-74; first, because a wide row
-// scrolls sideways and its end leaves the view): the old value written back as
+// scrolling past 240 points. `undoable` (the popup's) ends each row in an X
+// that undoes that change alone (SE-GUI-74), in the link blue of the label
+// that opened the list. The X's column stays at the list's right edge while
+// a wide row scrolls sideways under it, so it never leaves the view (egui:
+// the X's drawn right of the sideways scroll area, inside the one that
+// scrolls up and down, each on its row's line): the old value written back as
 // one edit, so Undo brings the change back, and the list stays open a row
 // shorter, closing with its last row. The prompt's table has none: it asks
 // one question about all the changes. sample wording: the X's tooltip and
@@ -3381,12 +3387,11 @@ function changesTable(undoable) {
     return h("td", { class: "mono" }, /^#[0-9A-F]{6}$/i.test(s)
       ? h("span", { class: "chswatch", style: "background:" + s }) : null, s); };
   const changes = h("table", { class: "grid", id: "unsaved-changes" },
-    h("tr", {}, undoable ? h("th", {}) : null,
-      h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value")),
-    unsavedChanges().map(([item, o, n, revert]) => h("tr", {},
-      undoable ? h("td", {}, button("×", () => undoChange(item, revert),
-        { frame0: true, title: "Undoes this change alone" })) : null,
-      h("td", {}, item), cell(o), cell(n))));
+    h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value"),
+      undoable ? h("th", { class: "undo" }) : null),
+    unsavedChanges().map(([item, o, n, revert]) => h("tr", {}, h("td", {}, item), cell(o), cell(n),
+      undoable ? h("td", { class: "undo" }, button("×", () => undoChange(item, revert),
+        { frame0: true, title: "Undoes this change alone" })) : null)));
   return h("div", { style: "max-height:240px; overflow:auto" }, changes);
 }
 function drawUnsavedPrompt(then) {
