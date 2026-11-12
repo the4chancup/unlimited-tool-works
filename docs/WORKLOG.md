@@ -1711,7 +1711,9 @@ briefs, review loops, gates and mutation runs as for any step.
       `0.0.2-rc.1` updated itself to `0.0.2-rc.2` and reopened on `Updated to v0.0.2-rc.2
       pre-alpha`, the settings, a file inside `exports/` and a root log file as they were
       (both bundles built by `just release` on the throwaway branch `test/upd-rc`, worktree
-      `4cc-studio-temp/rc`, never merged or pushed). Linux: open
+      `4cc-studio-temp/rc`, never merged or pushed). Linux: open, waits on the maintainer
+      (`QUESTIONS.md` "0.0.2's Update now on Linux": no Linux desktop here, WSL does not
+      start, and the bundles need `cargo-about` on the VPS)
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
     Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,
     the shipped graph's one crate that does. Candidates, each measured before one is proposed
