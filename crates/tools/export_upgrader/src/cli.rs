@@ -47,7 +47,7 @@ pub(crate) struct UpgradeArgs {
     pub(crate) all: Option<PathBuf>,
     /// The save (EDIT00000000) that says which player wears which
     /// boots and gloves.
-    #[arg(long, value_name = "EDIT")]
+    #[arg(long, value_name = "EDIT", conflicts_with = "loose")]
     pub(crate) savefile: Option<PathBuf>,
     /// Without a savefile, the wearer of each boots or gloves folder is
     /// inferred from its ID's position in the team's old block of 25 IDs.

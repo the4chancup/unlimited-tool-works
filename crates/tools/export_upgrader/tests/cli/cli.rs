@@ -813,10 +813,42 @@ fn a_whole_run_refusal_reads_no_export() {
     );
     let run = sandbox.run(&["upgrade", "--all", &not_save, "--savefile", &save]);
     assert_whole_run_refused(&run, &[&not_save, "is not a folder"]);
+    // `--savefile` with `--loose` is one argument error, the same for a run
+    // of one export (clap's own refusal) as for several.
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Autumn"],
+        &["--savefile", &save, "--loose"],
+    );
+    assert_whole_run_refused(&run, &["--savefile", "--loose"]);
     // Neither an export nor `--all`: clap's own refusal names the missing exports.
     let run = sandbox.run(&["upgrade", "--savefile", &save]);
     assert_whole_run_refused(&run, &["required arguments were not provided", "<EXPORTS>"]);
     assert_eq!(sandbox.listing(""), before, "nothing is written");
+}
+
+// EU-CLI-10, EU-CLI-13
+#[test]
+fn all_skips_a_staging_folder_an_interrupted_run_left() {
+    let sandbox = Sandbox::new("cli_all_staging");
+    clean_old_exports(&sandbox, &["library/co - Spring"], "/co/");
+    // The incomplete output folder an interrupted run leaves is no export:
+    // the scan passes it over without a line, and the export's own run
+    // removes it when it takes the staging name.
+    sandbox.write(
+        "library/co Full - Spring.upgrading/left.txt",
+        b"left behind",
+    );
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+    let library = sandbox.arg("library");
+
+    let run = sandbox.run(&["upgrade", "--all", &library, "--savefile", &save]);
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert_eq!(
+        output_lines(&run),
+        ["Upgrading co - Spring", "", "Upgraded: 1. Not upgraded: 0.",]
+    );
 }
 
 // EU-CLI-14
@@ -848,4 +880,63 @@ fn an_export_that_aborts_does_not_stop_the_run() {
         "{lines:?}"
     );
     assert_eq!(lines.last(), Some(&"Upgraded: 1. Not upgraded: 1."));
+}
+
+// EU-CLI-11, EU-REF-05
+#[test]
+fn a_referee_export_among_team_exports_is_refused_its_flag() {
+    let sandbox = Sandbox::new("cli_several_refs_save");
+    clean_old_exports(&sandbox, &["co - Spring"], "/co/");
+    sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
+    sandbox.write("refs Spring/Players/arbiter/boots.fmdl", b"boots");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "refs Spring"],
+        &["--savefile", &save],
+    );
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 2, "{stdout}");
+    assert!(sandbox.path("co Full - Spring").is_dir(), "{stdout}");
+    sandbox.assert_nothing_written("refs Spring upgraded", &stdout);
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co - Spring",
+            "",
+            "Upgrading refs Spring",
+            "error: --savefile does not apply to a referee export, which takes none of \
+             --savefile, --loose or --coverage",
+            "",
+            "Upgraded: 1. Not upgraded: 1.",
+        ]
+    );
+}
+
+// EU-CLI-03, EU-CLI-11
+#[test]
+fn a_team_export_among_referee_exports_needs_its_flag() {
+    let sandbox = Sandbox::new("cli_several_refs_none");
+    clean_old_exports(&sandbox, &["co - Spring"], "/co/");
+    sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
+    sandbox.write("refs Spring/Players/arbiter/boots.fmdl", b"boots");
+
+    let run = upgrade_several(&sandbox, &["co - Spring", "refs Spring"], &[]);
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 2, "{stdout}");
+    assert!(sandbox.path("refs Spring upgraded").is_dir(), "{stdout}");
+    sandbox.assert_nothing_written("co Full - Spring", &stdout);
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co - Spring",
+            "error: a team export takes exactly one of --savefile or --loose",
+            "",
+            "Upgrading refs Spring",
+            "",
+            "Upgraded: 1. Not upgraded: 1.",
+        ]
+    );
 }

@@ -363,8 +363,13 @@ fn exports_in(folder: &Path) -> Result<Vec<PathBuf>, CliError> {
     for entry in fs::read_dir(folder).map_err(cannot_list)? {
         let entry = entry.map_err(cannot_list)?;
         let path = entry.path();
+        let name = entry.file_name().to_string_lossy().into_owned();
+        // A folder ending in `.upgrading` is the incomplete output an
+        // interrupted run left, not an export.
+        if path.is_dir() && name.to_ascii_lowercase().ends_with(".upgrading") {
+            continue;
+        }
         if path.is_dir() || source::is_archive(&path) {
-            let name = entry.file_name().to_string_lossy().into_owned();
             exports.push((name.to_lowercase(), name, path));
         }
     }
