@@ -28,15 +28,27 @@ use toml_edit::{DocumentMut, Item as EditItem, Table as EditTable};
 pub const COMMON_KEY: &str = "common";
 
 /// Everything the settings file holds.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Settings {
     /// The `[common]` section.
     pub common: CommonSettings,
     /// One table per tool, keyed by tool id, exactly as read (unknown keys included).
     tools: BTreeMap<String, Table>,
+    /// The session's values, `to_table()`'s form, as of the last `parse` or successful
+    /// `save`: what a save tells the session's own changes from the file's. `None` for
+    /// settings that came from no file (`Settings::default()`).
+    baseline: Option<Table>,
     /// The text a fresh write starts from (`with_template`): the bundled settings file, so a
     /// written file carries its comments. `None` writes the bare values.
     template: Option<&'static str>,
+}
+
+impl PartialEq for Settings {
+    // `baseline` is bookkeeping for `save`, not part of what the settings hold: a
+    // settings loaded from a file equals one built to the same values.
+    fn eq(&self, other: &Self) -> bool {
+        self.common == other.common && self.tools == other.tools && self.template == other.template
+    }
 }
 
 /// Why the settings file could not be read.
@@ -80,11 +92,16 @@ impl Settings {
                 _ => return Err(SettingsError::NotASection(key)),
             }
         }
-        Ok(Settings {
+        let mut settings = Settings {
             common,
             tools,
+            baseline: None,
             template: None,
-        })
+        };
+        // `to_table` fails only on a `common` value TOML cannot write, which `save`
+        // reports before `baseline` is ever read; `None` just writes the whole state.
+        settings.baseline = settings.to_table().ok();
+        Ok(settings)
     }
 
     /// Sets the text a fresh write of `save` starts from: the bundled settings file, so the
@@ -99,9 +116,22 @@ impl Settings {
     /// over `path`, so a failure mid-write never leaves a truncated file behind, and two saves
     /// at once (two Studio processes, the GUI open while `quick_compile.bat` starts another; or
     /// two threads of one) never share a temporary file. An existing file is edited in place:
-    /// a save moves only the values that changed, so comments, blank lines and key order
-    /// written by hand survive.
-    pub fn save(&self, path: &Path) -> io::Result<()> {
+    /// comments, blank lines and key order written by hand survive.
+    ///
+    /// A save writes only what this session changed since it last read the file or last
+    /// wrote it (`baseline`), not the session's whole state: two windows open at once each
+    /// hold their own copy, and a save of the whole copy puts back every value the other
+    /// window changed meanwhile. So a `desired` value that still equals `baseline`'s is no
+    /// change of the session's, and the file's own value stands, its absence included; one
+    /// that differs is the session's change and is written, its absence included. With no
+    /// baseline, or a file missing or not TOML, the session's whole state is written.
+    ///
+    /// After a successful write `baseline` becomes the session's own values (`desired`), not
+    /// the file's: a value another window changed still differs from the session's copy, and
+    /// remembering the file's value would have the next save write the session's stale copy
+    /// back over it. After a failed write `baseline` stays as it was, so the next save still
+    /// writes the change.
+    pub fn save(&mut self, path: &Path) -> io::Result<()> {
         static SAVE_COUNTER: AtomicU64 = AtomicU64::new(0);
         let desired = self.to_table().map_err(io::Error::other)?;
         let regenerated = toml::to_string_pretty(&desired).map_err(io::Error::other)?;
@@ -133,10 +163,22 @@ impl Settings {
         let text = match fs::read_to_string(path) {
             Ok(existing) => match (existing.parse::<DocumentMut>(), toml::from_str(&existing)) {
                 (Ok(mut document), Ok(held)) => {
-                    apply_desired(document.as_table_mut(), &held, written.as_table(), &desired);
+                    // What the save leaves behind: with a baseline, the file's own values
+                    // with this session's changes laid over them; the session's whole
+                    // state otherwise.
+                    let target = self
+                        .baseline
+                        .as_ref()
+                        .map(|baseline| merge_desired(&held, baseline, &desired))
+                        .unwrap_or_else(|| desired.clone());
+                    let regenerated = toml::to_string_pretty(&target).map_err(io::Error::other)?;
+                    let written = regenerated
+                        .parse::<DocumentMut>()
+                        .expect("`toml`'s own output is valid TOML");
+                    apply_desired(document.as_table_mut(), &held, written.as_table(), &target);
                     let edited = document.to_string();
                     match toml::from_str::<Table>(&edited) {
-                        Ok(read_back) if read_back == desired => edited,
+                        Ok(read_back) if read_back == target => edited,
                         _ => {
                             debug!(
                                 "{}: written fresh, the edit did not read back",
@@ -168,6 +210,7 @@ impl Settings {
             }
             return Err(error);
         }
+        self.baseline = Some(desired);
         Ok(())
     }
 
@@ -199,12 +242,24 @@ impl Settings {
     /// Fills a tool's section with every default it lacks, recursing into nested tables. Values
     /// already present are kept, including ones no default names.
     ///
+    /// A default is no change of the session's (`save`), so `baseline` is filled the same
+    /// way: were it not, every window would write its defaults for the keys the file
+    /// lacks, over a value another window had just set for one of them.
+    ///
     /// # Panics
     /// If `tool_id` is the reserved `common` key (see [`Settings::set_tool`]).
     pub fn merge_defaults(&mut self, tool_id: &str, defaults: &Table) {
         assert_reserved_free(tool_id);
         let table = self.tools.entry(tool_id.to_owned()).or_default();
         merge_missing(table, defaults);
+        if let Some(baseline) = &mut self.baseline {
+            let remembered = baseline
+                .entry(tool_id.to_owned())
+                .or_insert_with(|| Value::Table(Table::new()));
+            if let Value::Table(remembered) = remembered {
+                merge_missing(remembered, defaults);
+            }
+        }
     }
 }
 
@@ -261,6 +316,36 @@ fn apply_desired(document: &mut EditTable, held: &Table, written: &EditTable, de
             }
         }
     }
+}
+
+/// `held` (the file's values now) with the session's changes laid over them: the table a
+/// save writes. `baseline` is what the session last read or wrote, `desired` its values
+/// now. A `desired` value that still equals `baseline`'s is no change of the session's,
+/// so the file's own value stands, its absence included; one that differs is the
+/// session's and is written, its absence included. A key all three hold as a table
+/// recurses, so a change inside one does not take over its other values.
+fn merge_desired(held: &Table, baseline: &Table, desired: &Table) -> Table {
+    let mut merged = Table::new();
+    for (key, wanted) in desired {
+        let value = match (wanted, baseline.get(key), held.get(key)) {
+            (wanted, Some(base), file) if wanted == base => file.cloned(),
+            (Value::Table(wanted), Some(Value::Table(base)), Some(Value::Table(file))) => {
+                Some(Value::Table(merge_desired(file, base, wanted)))
+            }
+            (wanted, _, _) => Some(wanted.clone()),
+        };
+        if let Some(value) = value {
+            merged.insert(key.clone(), value);
+        }
+    }
+    // A key the session dropped leaves the file; one another writer added while the
+    // session was away (`held` alone has it) stays.
+    for (key, file_value) in held {
+        if !desired.contains_key(key) && !baseline.contains_key(key) {
+            merged.insert(key.clone(), file_value.clone());
+        }
+    }
+    merged
 }
 
 fn assert_reserved_free(tool_id: &str) {
@@ -411,18 +496,10 @@ mod tests {
         settings.common.last_tool = Some("save-editor".to_owned());
         settings.save(&path).unwrap();
 
-        let expected = original
-            .replace(
-                "last_tool = \"team-compiler\"",
-                "last_tool = \"save-editor\"",
-            )
-            .replace(
-                "check_interval_minutes = 120\n",
-                "check_interval_minutes = 120\n\
-                 fpc_hide_boots_id = 55\n\
-                 fpc_hide_gloves_id = 11\n\
-                 invert_value_scrolling = false\n",
-            );
+        let expected = original.replace(
+            "last_tool = \"team-compiler\"",
+            "last_tool = \"save-editor\"",
+        );
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
             expected,
@@ -430,7 +507,8 @@ mod tests {
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
 
-        // A key the file lacks is added where its section ends.
+        // A key the session changed is added where its section ends; one the file
+        // lacks and the session did not change stays absent.
         let path = dir.join("settings_missing_key.toml");
         let original = "[common]\n\
                         check_for_updates = true\n\
@@ -452,13 +530,10 @@ mod tests {
             fs::read_to_string(&path).unwrap(),
             original.replacen(
                 "thread_count = 4\n",
-                "thread_count = 4\n\
-                 fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n\
-                 invert_value_scrolling = false\n\
-                 last_tool = \"save-editor\"\n",
+                "thread_count = 4\nlast_tool = \"save-editor\"\n",
                 1
             ),
-            "the absent key is appended where its section ends"
+            "the changed key is appended where its section ends"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
         fs::remove_dir_all(&dir).unwrap();
@@ -556,7 +631,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
-        let settings = templated_settings();
+        let mut settings = templated_settings();
         settings.save(&path).unwrap();
 
         assert_templated_save(&path, &settings);
@@ -572,7 +647,7 @@ mod tests {
         let path = dir.join("settings.toml");
         fs::write(&path, "[common\nnot toml").unwrap();
 
-        let settings = templated_settings();
+        let mut settings = templated_settings();
         settings.save(&path).unwrap();
 
         assert_templated_save(&path, &settings);
@@ -614,7 +689,7 @@ mod tests {
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
-        let settings = Settings::default().with_template("[common\nnot toml");
+        let mut settings = Settings::default().with_template("[common\nnot toml");
         settings.save(&path).unwrap();
 
         assert_eq!(
@@ -652,7 +727,8 @@ mod tests {
         fs::write(&path, original).unwrap();
 
         let mut settings = Settings::load(&path).unwrap();
-        settings.merge_defaults("export-upgrader", &Table::new());
+        // Set, not filled in as a default: a default is no change and is not written.
+        settings.set_tool("export-upgrader", Table::new());
         let mut tool = settings.tool("team-compiler").unwrap().clone();
         tool["kits"]
             .as_table_mut()
@@ -699,14 +775,7 @@ mod tests {
 
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
-            original
-                .replace("pes_version = 19 #", "pes_version = 21 #")
-                .replace(
-                    "check_interval_minutes = 120\n",
-                    "check_interval_minutes = 120\n\
-                     fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n\
-                     invert_value_scrolling = false\n"
-                ),
+            original.replace("pes_version = 19 #", "pes_version = 21 #"),
             "the comments around the changed value survive"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
@@ -749,9 +818,6 @@ mod tests {
                         check_for_updates = true\n\
                         check_interval_minutes = 120\n\
                         last_tool = \"team-compiler\"\n\
-                        fpc_hide_boots_id = 55\n\
-                        fpc_hide_gloves_id = 11\n\
-                        invert_value_scrolling = false\n\
                         \n\
                         [team-compiler]\n\
                         label = 'x'\n\
@@ -760,6 +826,277 @@ mod tests {
                         speed = 1\n";
         assert_eq!(fs::read_to_string(&path).unwrap(), expected);
         assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ST-SET-05 Two sessions that read the same file: each save writes only the
+    // session's own changes, and a value the other session changed keeps its new
+    // value and its line.
+    #[test]
+    fn each_sessions_save_writes_only_its_own_changes() {
+        let dir = test_dir("studio_core_settings_two_sessions");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\n\
+             thread_count = 4\n\
+             theme = \"dark\"\n\
+             \n\
+             [team-compiler]\n\
+             label = 'x'\n\
+             dt00_overwrite_allow = false\n",
+        )
+        .unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        session_a.common.thread_count = 8;
+        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        tool["dt00_overwrite_allow"] = Value::Boolean(true);
+        session_a.set_tool("team-compiler", tool);
+        session_a.save(&path).unwrap();
+        let after_a = fs::read_to_string(&path).unwrap();
+
+        session_b.common.theme = Theme::Light;
+        session_b.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        let loaded = Settings::parse(&text).unwrap();
+        assert_eq!(
+            loaded.common.thread_count, 8,
+            "session A's change kept: {text}"
+        );
+        assert_eq!(
+            loaded.common.theme,
+            Theme::Light,
+            "session B's change written: {text}"
+        );
+        assert_eq!(
+            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            Value::Boolean(true),
+            "{text}"
+        );
+        // The lines A's save wrote are still there, byte for byte.
+        let line = |text: &str, key: &str| {
+            text.lines()
+                .find(|line| line.starts_with(key))
+                .unwrap_or_else(|| panic!("{key} in: {text}"))
+                .to_owned()
+        };
+        assert_eq!(line(&text, "thread_count"), line(&after_a, "thread_count"));
+        assert_eq!(
+            line(&text, "dt00_overwrite_allow"),
+            line(&after_a, "dt00_overwrite_allow")
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ST-SET-05 Two sessions changing the same value leave the later save's.
+    #[test]
+    fn the_later_save_of_the_same_value_wins() {
+        let dir = test_dir("studio_core_settings_same_value");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        session_a.common.thread_count = 8;
+        session_a.save(&path).unwrap();
+        session_b.common.thread_count = 2;
+        session_b.save(&path).unwrap();
+
+        assert_eq!(Settings::load(&path).unwrap().common.thread_count, 2);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ST-SET-05 A key one session removed stays removed when the other saves.
+    #[test]
+    fn a_key_the_other_session_removed_stays_removed() {
+        let dir = test_dir("studio_core_settings_removed_key");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\n\
+             theme = \"dark\"\n\
+             \n\
+             [team-compiler]\n\
+             label = 'x'\n\
+             stale = 1\n",
+        )
+        .unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        session_a.set_tool("team-compiler", table("label = 'x'"));
+        session_a.save(&path).unwrap();
+        session_b.common.theme = Theme::Light;
+        session_b.save(&path).unwrap();
+
+        let loaded = Settings::load(&path).unwrap();
+        assert_eq!(
+            loaded.tool("team-compiler").unwrap(),
+            &table("label = 'x'"),
+            "`stale` stayed removed"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A key one session added survives the other's save of an unrelated change:
+    // the second session never saw it, so it is no change of its own.
+    #[test]
+    fn a_key_the_other_session_added_survives() {
+        let dir = test_dir("studio_core_settings_added_key");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\ntheme = \"dark\"\n\n[team-compiler]\nlabel = 'x'\n",
+        )
+        .unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        tool.insert("added".to_owned(), Value::Integer(7));
+        session_a.set_tool("team-compiler", tool);
+        session_a.set_tool("save-editor", table("speed = 1"));
+        session_a.save(&path).unwrap();
+        session_b.common.theme = Theme::Light;
+        session_b.save(&path).unwrap();
+
+        let loaded = Settings::load(&path).unwrap();
+        assert_eq!(
+            loaded.tool("team-compiler").unwrap()["added"],
+            Value::Integer(7),
+            "session B's save kept a key it never had"
+        );
+        assert_eq!(
+            loaded.tool("save-editor"),
+            Some(&table("speed = 1")),
+            "and a section it never had"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A save remembers the session's own values, not the file's: a value another
+    // session changed stays different from this session's copy, so it is still
+    // not this session's change at the save after next.
+    #[test]
+    fn a_save_remembers_the_sessions_values_not_the_files() {
+        let dir = test_dir("studio_core_settings_remembered");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        session_b.common.thread_count = 2;
+        session_b.save(&path).unwrap();
+
+        session_a.common.theme = Theme::Light;
+        session_a.save(&path).unwrap();
+        assert_eq!(
+            Settings::load(&path).unwrap().common.thread_count,
+            2,
+            "A's save kept B's value"
+        );
+        session_a.common.check_interval_minutes = 60;
+        session_a.save(&path).unwrap();
+        assert_eq!(
+            Settings::load(&path).unwrap().common.thread_count,
+            2,
+            "A's second save still keeps B's value"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A failed save leaves the remembered values as they were, so the change is
+    // still the session's change at the next save that succeeds.
+    #[test]
+    fn a_failed_save_keeps_the_change_for_the_next_one() {
+        let dir = test_dir("studio_core_settings_retry");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "[common]\nthread_count = 4\n").unwrap();
+        let mut settings = Settings::load(&path).unwrap();
+        settings.common.thread_count = 8;
+
+        // A directory at the path makes the rename fail, as
+        // `a_failed_save_leaves_no_tmp_sibling` shows.
+        let blocked = dir.join("blocked.toml");
+        fs::create_dir(&blocked).unwrap();
+        assert!(settings.save(&blocked).is_err());
+
+        settings.save(&path).unwrap();
+        assert_eq!(Settings::load(&path).unwrap().common.thread_count, 8);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // Settings that came from no file hold nothing to compare against: saved
+    // over an existing file they write their whole state, as before.
+    #[test]
+    fn a_settings_from_no_file_writes_its_whole_state() {
+        let dir = test_dir("studio_core_settings_no_file");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "# hand note\n[team-compiler]\nlabel = 'x'\nstale = 1\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::default();
+        settings.common.thread_count = 8;
+        settings.set_tool("team-compiler", table("label = 'x'"));
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.starts_with("# hand note\n"), "{text}");
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A default a tool fills in at start is no change of the session's: a key the file
+    // lacks, and a section it lacks, changed and saved by one session are not put back
+    // to their defaults by the other's save.
+    #[test]
+    fn a_default_filled_in_at_start_is_not_the_sessions_change() {
+        let dir = test_dir("studio_core_settings_defaults");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\ntheme = \"dark\"\n\n[team-compiler]\nlabel = 'x'\n",
+        )
+        .unwrap();
+        let compiler = table("label = ''\ndt00_overwrite_allow = false");
+        let editor = table("speed = 1");
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        for session in [&mut session_a, &mut session_b] {
+            session.merge_defaults("team-compiler", &compiler);
+            session.merge_defaults("save-editor", &editor);
+        }
+        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        tool["dt00_overwrite_allow"] = Value::Boolean(true);
+        session_a.set_tool("team-compiler", tool);
+        session_a.set_tool("save-editor", table("speed = 3"));
+        session_a.save(&path).unwrap();
+        session_b.common.theme = Theme::Light;
+        session_b.save(&path).unwrap();
+
+        let loaded = Settings::load(&path).unwrap();
+        assert_eq!(
+            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            Value::Boolean(true),
+            "B's default did not undo A's change"
+        );
+        assert_eq!(loaded.tool("save-editor"), Some(&table("speed = 3")));
+        assert_eq!(loaded.common.theme, Theme::Light);
         fs::remove_dir_all(&dir).unwrap();
     }
 

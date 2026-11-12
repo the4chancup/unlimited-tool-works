@@ -716,7 +716,7 @@ mod tests {
         let dir = TestDir::new("bundled_settings");
         fs::create_dir_all(dir.path().join("data")).unwrap();
         fs::write(dir.path().join("data").join(SETTINGS_FILE_NAME), "").unwrap();
-        let (settings, _) = load_settings(&tools(), dir.path().to_path_buf()).unwrap();
+        let (mut settings, _) = load_settings(&tools(), dir.path().to_path_buf()).unwrap();
 
         let fresh = TestDir::new("bundled_settings_fresh");
         let path = fresh.path().join(SETTINGS_FILE_NAME);
