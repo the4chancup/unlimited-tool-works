@@ -3,14 +3,15 @@
 //! release's `SHA256SUMS.txt`, unpack it and swap it into the program's
 //! folder. Everything happens in a temp folder inside the program's folder, so
 //! the swap's moves are renames on one volume, and the temp folder is removed
-//! whatever the outcome.
+//! whatever the outcome, unless the old files could not be put back: it then
+//! keeps them.
 
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::SystemTime;
 
-use semver::Version;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -30,33 +31,57 @@ const BACKUP_FOLDER: &str = "backup";
 
 /// What the download asks the network for: a URL's body as a stream.
 /// `open_url` is the real one; a test hands its own reader.
-pub type OpenUrl = dyn Fn(&str) -> Result<Box<dyn Read + Send>, ureq::Error> + Send + Sync;
+pub(crate) type OpenUrl = dyn Fn(&str) -> Result<Box<dyn Read + Send>, ureq::Error> + Send + Sync;
 
 /// How far the download is: `done` bytes of `total`, the archive's size as
 /// the release lists it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Progress {
+pub(crate) struct Progress {
     /// Bytes downloaded so far.
-    pub done: u64,
+    pub(crate) done: u64,
     /// The archive's size in bytes.
-    pub total: u64,
+    pub(crate) total: u64,
 }
 
-/// A finished update: the version now in the program's folder, and where the
-/// program that was running went (`old/UTW.exe`).
-#[derive(Debug)]
-pub struct Installed {
-    /// The installed release's version.
-    pub version: Version,
-    /// The previous program's path, inside `old/`.
-    pub old_exe: PathBuf,
+/// The program file's size and modification date in the program's folder, as
+/// a window notes them when it starts. Two windows may run from one folder:
+/// once an update in one has replaced the program, the file is another one,
+/// and an update from the other window would move the new program into `old/`
+/// in place of the previous one. A rename keeps both values, so a swap that
+/// was undone leaves the stamp as it was.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ProgramStamp {
+    /// The file's size in bytes.
+    len: u64,
+    /// When the file was last written.
+    modified: SystemTime,
+}
+
+impl ProgramStamp {
+    /// The stamp of the program in the program's folder `bundle`, `None` when
+    /// its file cannot be read.
+    pub(crate) fn of(bundle: &Path) -> Option<ProgramStamp> {
+        let metadata = fs::metadata(super::program_path(bundle)).ok()?;
+        Some(ProgramStamp {
+            len: metadata.len(),
+            modified: metadata.modified().ok()?,
+        })
+    }
 }
 
 /// Why an update failed. Each message is shown to the member after "Update
 /// failed". Every failure but `NotRestored` leaves the program's folder as it
 /// was.
 #[derive(Debug, Error)]
-pub enum InstallError {
+pub(crate) enum InstallError {
+    /// The program's file is no longer the one this window started from:
+    /// another window's update most likely replaced it.
+    #[error(
+        "The program was already replaced while this window was open, most likely by an update \
+         from another window. Close this window and start the program again to use the new \
+         version."
+    )]
+    ProgramReplaced,
     /// The release lists no archive for this system.
     #[error("The release has no download for this system (a file ending in {0}).")]
     NoArchive(&'static str),
@@ -252,26 +277,31 @@ fn staged_bundle(staging: &Path) -> Result<StagedBundle, InstallError> {
 }
 
 /// "Update now": installs `release` into `bundle`, the running program's
-/// folder. Downloads the running platform's archive through `open_url`,
-/// reporting `progress` and stopping when `cancel` is set, checks it against
-/// the release's `SHA256SUMS.txt`, unpacks it and swaps it in: the running
-/// program moves into `old/` (replacing the one an earlier update left there),
-/// the new one takes its place and every other file of the bundle goes over the
-/// old one, `data/` aside. Runs on the caller's thread, the network included,
-/// so the dialog calls it from a thread of its own.
+/// folder. Refuses at once when the program's file is no longer the one
+/// `stamp` noted (`None` notes nothing). Downloads the running platform's
+/// archive through `open_url`, reporting `progress` and stopping when `cancel`
+/// is set, checks it against the release's `SHA256SUMS.txt`, unpacks it and
+/// swaps it in: the running program moves into `old/` (replacing the one an
+/// earlier update left there), the new one takes its place and every other
+/// file of the bundle goes over the old one, `data/` aside. `cancel` is read
+/// once more before the swap; a swap that has started runs whole. Runs on the
+/// caller's thread, the network included, so the dialog calls it from a
+/// thread of its own.
 ///
 /// On a failure the program's folder is left as it was (`NotRestored` aside).
-pub fn install(
+pub(crate) fn install(
     release: &Release,
     bundle: &Path,
+    stamp: Option<ProgramStamp>,
     open_url: &OpenUrl,
     progress: impl FnMut(Progress),
     cancel: &AtomicBool,
-) -> Result<Installed, InstallError> {
+) -> Result<(), InstallError> {
     install_kind(
         ArchiveKind::RUNNING,
         release,
         bundle,
+        stamp,
         open_url,
         progress,
         cancel,
@@ -284,10 +314,16 @@ fn install_kind(
     kind: ArchiveKind,
     release: &Release,
     bundle: &Path,
+    stamp: Option<ProgramStamp>,
     open_url: &OpenUrl,
     mut progress: impl FnMut(Progress),
     cancel: &AtomicBool,
-) -> Result<Installed, InstallError> {
+) -> Result<(), InstallError> {
+    if let Some(stamp) = stamp
+        && ProgramStamp::of(bundle) != Some(stamp)
+    {
+        return Err(InstallError::ProgramReplaced);
+    }
     let (archive, checksums) = assets(release, kind)?;
     let temp = bundle.join(TEMP_FOLDER);
     let backup = temp.join(BACKUP_FOLDER);
@@ -317,17 +353,20 @@ fn install_kind(
         fs::create_dir(&staging).map_err(InstallError::Extract)?;
         kind.extract(&path, &staging)
             .map_err(InstallError::Extract)?;
-        swap(&staged_bundle(&staging)?, bundle, &backup)
+        let staged = staged_bundle(&staging)?;
+        // The download reads `cancel` before each read, so a Cancel clicked
+        // after the last byte would otherwise be missed.
+        if cancel.load(Ordering::Relaxed) {
+            return Err(InstallError::Cancelled);
+        }
+        swap(&staged, bundle, &backup)
     })();
     if !matches!(outcome, Err(InstallError::NotRestored { .. }))
         && let Err(error) = fs::remove_dir_all(&temp)
     {
         log::debug!("the update's temp folder {} stays: {error}", temp.display());
     }
-    Ok(Installed {
-        version: release.version.clone(),
-        old_exe: outcome?,
-    })
+    outcome
 }
 
 /// Creates the temp folder, first removing one an update that stopped midway

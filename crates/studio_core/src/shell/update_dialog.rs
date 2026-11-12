@@ -18,8 +18,8 @@ use crossbeam_channel::{Receiver, TryRecvError, unbounded};
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::shell::version_label_of;
-use crate::updater::{self, InstallError, OpenUrl, Progress, Release};
-use crate::widgets::{modal, modal_buttons, modal_sentence_gap};
+use crate::updater::{self, InstallError, OpenUrl, ProgramStamp, Progress, Release};
+use crate::widgets::{add_enabled, modal, modal_buttons, modal_sentence_gap};
 
 /// The bytes in one MB, as the download's line counts them.
 const MEGABYTE: f64 = 1_048_576.0;
@@ -74,7 +74,7 @@ enum Report {
     /// How far the download is.
     Progress(Progress),
     /// The install ended, the worker with it.
-    Done(Result<updater::Installed, InstallError>),
+    Done(Result<(), InstallError>),
 }
 
 /// What `Update failed` shows.
@@ -151,12 +151,14 @@ impl UpdateDialog {
     /// Draws the dialog while it is up and returns the member's answer when
     /// one lands, the dialog then closed. Update now and Retry install
     /// `release` into `bundle`, the program's folder, downloading through
-    /// `open_url`.
+    /// `open_url`; `stamp` is the program's file as the window found it
+    /// when it started.
     pub(super) fn show(
         &mut self,
         ctx: &egui::Context,
         release: &Arc<Release>,
         bundle: &Path,
+        stamp: Option<ProgramStamp>,
         open_url: &Arc<OpenUrl>,
     ) -> Option<UpdateAnswer> {
         if !self.open {
@@ -164,7 +166,12 @@ impl UpdateDialog {
         }
         let click = match &self.stage {
             Stage::Offer => show_offer(ctx, release, &mut self.cache),
-            Stage::Downloading(install) => show_downloading(ctx, release, install.progress),
+            Stage::Downloading(install) => show_downloading(
+                ctx,
+                release,
+                install.progress,
+                install.cancel.load(Ordering::Relaxed),
+            ),
             Stage::Failed(failure) => show_failed(ctx, release, failure),
             Stage::Ready => show_ready(ctx, release),
         };
@@ -174,6 +181,7 @@ impl UpdateDialog {
                     ctx,
                     Arc::clone(release),
                     bundle.to_owned(),
+                    stamp,
                     Arc::clone(open_url),
                 ));
                 return None;
@@ -248,6 +256,7 @@ impl Install {
         ctx: &egui::Context,
         release: Arc<Release>,
         bundle: PathBuf,
+        stamp: Option<ProgramStamp>,
         open_url: Arc<OpenUrl>,
     ) -> Install {
         let (sender, reports) = unbounded();
@@ -267,6 +276,7 @@ impl Install {
             let outcome = updater::install(
                 &release,
                 &bundle,
+                stamp,
                 &*open_url,
                 |progress| send(Report::Progress(progress)),
                 &worker_cancel,
@@ -369,13 +379,15 @@ fn bar_fraction(progress: Progress) -> f32 {
     }
 }
 
-/// `Updating to`: the download's line, its bar and Cancel. The backdrop and
-/// Escape do nothing: a stray click must neither cancel a download nor hide
-/// one that runs.
+/// `Updating to`: the download's line, its bar and Cancel, disabled once
+/// `cancelled` until the worker has answered. The backdrop and Escape do
+/// nothing: a stray click must neither cancel a download nor hide one that
+/// runs.
 fn show_downloading(
     ctx: &egui::Context,
     release: &Release,
     progress: Option<Progress>,
+    cancelled: bool,
 ) -> Option<Click> {
     let title = format!("Updating to v{}", release.version);
     stage_modal(ctx, title, None, |ui| {
@@ -400,7 +412,10 @@ fn show_downloading(
                     .fill(fill),
             );
         });
-        stage_buttons(ui, &[("Cancel", Click::Cancel)])
+        modal_buttons(ui, |ui| {
+            let cancel = add_enabled(ui, !cancelled, egui::Button::new("Cancel"));
+            cancel.clicked().then_some(Click::Cancel)
+        })
     })
 }
 

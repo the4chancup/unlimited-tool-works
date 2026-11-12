@@ -215,6 +215,12 @@ pub struct StudioApp {
     /// the tests, as `update_fetch` is for the check.
     #[cfg(not(target_arch = "wasm32"))]
     update_open_url: Arc<updater::OpenUrl>,
+    /// The program's file in the program's folder as this window found it when
+    /// it started (`None` when it could not be read): Update now is refused
+    /// once the file is another one, which an update from a second window
+    /// running from the same folder put there.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_program: Option<updater::ProgramStamp>,
     /// The update dialog: its open state, its stage with the install while one
     /// runs, and the notes' cache.
     #[cfg(not(target_arch = "wasm32"))]
@@ -279,6 +285,8 @@ impl StudioApp {
         let help_window = HelpWindow::new(help::chapters(sidebar::drawn_order(
             &tools, planned, cli_only,
         )));
+        #[cfg(not(target_arch = "wasm32"))]
+        let update_program = updater::ProgramStamp::of(&ctx.paths().exe_dir);
         StudioApp {
             tools,
             planned,
@@ -309,6 +317,8 @@ impl StudioApp {
             update_release: None,
             #[cfg(not(target_arch = "wasm32"))]
             update_open_url: Arc::new(updater::open_url),
+            #[cfg(not(target_arch = "wasm32"))]
+            update_program,
             #[cfg(not(target_arch = "wasm32"))]
             update_dialog: update_dialog::UpdateDialog::default(),
             #[cfg(not(target_arch = "wasm32"))]
@@ -565,6 +575,7 @@ impl StudioApp {
             egui_ctx,
             release,
             &self.ctx.paths().exe_dir,
+            self.update_program,
             &self.update_open_url,
         );
         match answer {
@@ -1849,6 +1860,7 @@ mod tests {
             (None, false),
             (Some("0.0.2"), false),
             (Some("0.0.3"), false),
+            (Some("0.0.10"), false),
             (Some("not a version"), false),
         ] {
             let dir = TestDir::new("studio_core_updated_to");
