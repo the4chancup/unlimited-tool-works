@@ -15,66 +15,76 @@ compile carries them to the game:
   (`spec/pes_savefile/operations.md` "Aesthetics patch (new)"). The compiler writes no
   `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin` rows, and no save is stripped.
 
-**Everything in the files is optional** — each file itself included: a player folder with only
+**Everything in the files is optional**, each file itself included: a player folder with only
 models is valid. **An absent key takes its default**, the value the templates below show for it,
-on both engines; model-derived ID assignments and FPC
-directives are separate inputs. `name` and `shirt_name` are the exceptions: absent means "not
-written" (see the name rules). A compiled player's appearance is therefore his export (these
-files, his folder's models and markers) and nothing else: no earlier compile or installed
-save contributes to it, except a boots or gloves ID whose output failed (step 1
-below),
-in a `Midcup` export, a category the folder leaves to its default (step 3), and a player whose
-`settings.toml` or `ingame_face.toml` is invalid, who keeps his installed look (below). A compiled player is
-every player a kept player folder of a team export maps to, whatever his tasks' outcomes. A referee export's
-`settings.toml` reaches no patch yet (worklog issue). A `settings.toml`'s and an
-`ingame_face.toml`'s findings, a referee export's included, are reported by `check` and `compile`
-alike.
+on both engines; model-derived ID assignments and FPC directives are separate inputs. `name` and
+`shirt_name` are the exceptions: absent means "not written" (see the name rules).
+
+A compiled player's appearance is therefore his export (these files, his folder's models and
+markers) and nothing else. No earlier compile or installed save contributes to it, except:
+
+- a boots or gloves ID whose output failed (step 1 below);
+- in a `Midcup` export, a category the folder leaves to its default (step 3);
+- a player whose `settings.toml` or `ingame_face.toml` is invalid, who keeps his installed look
+  (below).
+
+A compiled player is every player a kept player folder of a team export maps to, whatever his
+tasks' outcomes. A referee export's `settings.toml` reaches no patch yet (worklog issue). A
+`settings.toml`'s and an `ingame_face.toml`'s findings, a referee export's included, are reported
+by `check` and `compile` alike.
 
 **An invalid `settings.toml` or `ingame_face.toml` keeps the player's installed look.**
-`settings_toml_invalid` and `ingame_face_toml_invalid` ignore the file, and the patch holds no
+`settings_toml_invalid` and `ingame_face_toml_invalid` ignore the file. The patch holds no
 `[appearance]` entry for him and none of the boots or gloves IDs his settings would resolve (an
 authored stock ID, the marker's or a `Full` export's default), so the save keeps his record and
 his IDs, where compiling with the keys' defaults would reset a look on one mistyped value. Both
 files' keys go in the one `[appearance]`, so either file's invalidity holds back the other's.
-An ID his folder's models or links get still lands, his models still compile, and the file
-itself still marks the in-game face (the folder keeps its `ingame_face` marker's effects).
+
+An ID his folder's models or links get still lands, his models still
+compile, and the file itself still marks the in-game face (the folder keeps its `ingame_face`
+marker's effects).
 
 **The files can express everything the savefile's player appearance record holds.** Their joined
-schema is `pes_savefile`'s `PlayerSettings`: all of the decoded player appearance record —
-physique, strip style, wrist-tape and spectacle colours, skin and iris colour, the motion block,
-every setting of the ingame-face run (face sliders and feature types, eyebrow and facial-hair
-colours, in-game hair), and stock boots/gloves IDs (below), except the compiler-owned edit flags
-and base-copy ID.
+schema is `pes_savefile`'s `PlayerSettings`: all of the decoded player appearance record, except
+the compiler-owned edit flags and base-copy ID. That is:
+
+- physique, strip style, wrist-tape and spectacle colours, skin and iris colour;
+- the motion block;
+- every setting of the ingame-face run (face sliders and feature types, eyebrow and facial-hair
+  colours, in-game hair);
+- stock boots/gloves IDs (below).
+
 About one cup player in twenty relies on in-game hair rather than a face model. Every bit of the
-run is a key or measured unused ("The ingame-face run, decoded" in the
-[Savefile plan](../pes_savefile/model.md), whose spec part holds the completeness test).
-Completeness
+run is a key or measured unused ("The ingame-face run, decoded" in the [Savefile
+plan](../pes_savefile/model.md), whose spec part holds the completeness test). Completeness
 matters here because these files are the **only** route by which a team's aesthetics reach the
 game: the save editor's own appearance fields are read-only by default (see "Read-only
-aesthetics" in the [Save editor plan](../../plans/save_editor.md)). The **templates** — `settings.toml`'s, which the Export
-upgrader and the save editor generate, and `ingame_face.toml`'s, which the upgrader writes — are
-what a new player folder starts from, and therefore list every key, one per line, each followed
-on the same line by the comment that gives
-its range: set ones with their value, unset ones as commented lines (the boots/gloves IDs as
-`""`, see below), so a team can see what is
-authorable without any other document. The blocks below are the complete key tables; `to_toml`
-emits them in this order and with these comments.
+aesthetics" in the [Save editor plan](../../plans/save_editor.md)).
+
+The **templates** are what a new player folder starts from: `settings.toml`'s, which the Export
+upgrader and the save editor generate, and `ingame_face.toml`'s, which the upgrader writes. They
+therefore list every key, one per line, each followed on the same line by the comment that gives
+its range. Set keys appear with their value, unset ones as commented lines (the boots/gloves IDs
+as `""`, see below), so a team can see what is authorable without any other document. The blocks
+below are the complete key tables; `to_toml` emits them in this order and with these comments.
 
 **Boots/gloves IDs are authored only for stock models.** Custom boots and gloves are folder
 content: local models and shared link files determine the compiler's player-exclusive or shared
 assignments (see "Player folders"), and users never copy a custom model's numeric ID into this
-file. A player who wears one of the game's own models has no folder to express that, so the two
-top-level keys `boots_id` and `gloves_id` name a model of the **stock band**, IDs 0 to 100: the
+file.
+
+A player who wears one of the game's own models has no folder to express that, so the two
+top-level keys `boots_id` and `gloves_id` name a model of the **stock band**, IDs 0 to 100. The
 cup's stock kit compacts Konami's boots and gloves into that range, and the compiler's per-team
 blocks start at 101, so an ID above 100 is always some team's custom content and is rejected at
 parse (`OutOfRange` naming the key). Besides an integer, both keys accept the empty string, which
 means **default** and is the same as an absent key. Each category resolves in this order:
 
-1. The folder's own models or a link file provide the category → the compiler-assigned ID; when
-   that output fails, the player's installed ID stays (the save's current ID), so no ID points
-   at content the CPK lacks. A numeric key
-   is ignored with `settings_model_id_conflict` (W), reported on team exports, whose players
-   the patch gives their IDs — a referee export's `settings.toml` reaches no patch yet.
+1. The folder's own models or a link file provide the category → the compiler-assigned ID. When
+   that output fails, the player's installed ID stays (the save's current ID), so no ID points at
+   content the CPK lacks. A numeric key is ignored with `settings_model_id_conflict` (W),
+   reported on team exports, whose players the patch gives their IDs (a referee export's
+   `settings.toml` reaches no patch yet).
 2. A numeric key → that stock ID, whatever FPC marker the folder carries.
 3. Default (`""` or absent) → the folder's FPC marker decides: `fpc_on` writes the hide preset's
    nonexistent IDs (boots 55, gloves 11); `fpc_off` or no marker writes 0 for both (the default
@@ -88,13 +98,16 @@ model, which is why gloves ID 0 is a set of normal hands rather than "no gloves"
 Default is what nearly every player wants: an FPC player (a face model carrying the full body,
 no boots/gloves folders) needs the blank IDs, which the marker supplies without a key. Pre-Fox
 local models embedded in face XML request no standalone output, so they fall through to steps 2
-and 3. The template writes both keys uncommented
-as `""`, the only keys shown with a value that sets nothing: every other key has a neutral value
-to display, while any boots/gloves ID is a real model, and TOML has no bare `key =`. They sit at
-the file's top level, next to `name`, rather than in
-`[appearance]`: Team TOML embeds the `[appearance]` tables and has its own player-level
-`boots_id`/`gloves_id` over the full stored range (save interchange), which two keys of the same
-name inside `[appearance]` would collide with.
+and 3.
+
+The template writes both keys uncommented as `""`, the only keys shown with a value that sets
+nothing. Every other key has a neutral value to display, while any boots/gloves ID is a real
+model, and TOML has no bare `key =`.
+
+They sit at the file's top level, next to `name`, rather than in `[appearance]`. Team TOML embeds
+the `[appearance]` tables and has its own player-level `boots_id`/`gloves_id` over the full stored
+range (save interchange), which two keys of the same name inside `[appearance]` would collide
+with.
 
 ```toml
 # settings.toml, inside a player folder. Every key is optional: an absent key takes the
@@ -161,20 +174,22 @@ goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to
 ```
 
 **`ingame_face.toml`.** The marker's file: a folder holding it wears the in-game face, which the
-file sets (`player_folders.md` "`ingame_face` marker"). The template's `[appearance.face]` table,
-`[appearance.hair]` table and `iris_color`, 90 of its keys, moved into it: in the file they are
-the top-level `iris_color` and the tables `[face]` and `[hair]`, with the same keys, ranges,
-defaults, per-version rules and comments. `skin_color`, the physique (head size included), the
-strip, the motions and the boots/gloves IDs stay in `settings.toml`, since a player with a face
-model wears them too. The keys moved because the game draws them on the in-game face alone (the
-marker paragraph holds the measurement): a player wearing a face model sets them for nothing.
+file sets (`player_folders.md` "`ingame_face` marker").
+
+The template's `[appearance.face]` table, `[appearance.hair]` table and `iris_color`, 90 of its
+keys, moved into it. In the file they are the top-level `iris_color` and the tables `[face]` and
+`[hair]`, with the same keys, ranges, defaults, per-version rules and comments. `skin_color`, the
+physique (head size included), the strip, the motions and the boots/gloves IDs stay in
+`settings.toml`, since a player with a face model wears them too. The keys moved because the game
+draws them on the in-game face alone (the marker paragraph holds the measurement): a player
+wearing a face model sets them for nothing.
 
 **The document.** `pes_savefile`'s `settings_toml` module reads and writes it beside
-`settings.toml`, from the same key table: its keys sit at their `[appearance]` paths with the
-root dropped (`iris_color`, `face.cheek_type`, `hair.length`), in the same ranges as
-`settings.toml` (the widest per key). Team TOML keeps all of them under
-`[players.NN.appearance]`, unchanged. The player's settings stay one value, joined from the two
-files, so a row or the patch is built from one `PlayerSettings`:
+`settings.toml`, from the same key table. Its keys sit at their `[appearance]` paths with the root
+dropped (`iris_color`, `face.cheek_type`, `hair.length`), in the same ranges as `settings.toml`
+(the widest per key). Team TOML keeps all of them under `[players.NN.appearance]`, unchanged. The
+player's settings stay one value, joined from the two files, so a row or the patch is built from
+one `PlayerSettings`:
 
 ```rust
 /// A player's `ingame_face.toml`: the in-game face's keys, each `None` when absent.
@@ -335,49 +350,62 @@ list, with `wave_level` -1. A generated file must carry a save's player, so each
 as `variation` does, and `wave_level` (stored as the level plus 1) takes -1. The template's
 defaults stay the editor's.
 
-What a 0 draws was measured on PES 18, from Edit-mode renders of patched saves. A 0 in a list
-the hairstyle uses (`length` and `hairline` were measured) makes the game draw a fallback hair
-that depends on the face, not a look of 0's own: short black spiky hair on one face, short
-brown hair on another, and the all-zero players draw that same fallback. A 0 in a list the
-length greys out (`style`, `front_style`, `parted`, `variation` and `side_back_style` under
-shaven) changes nothing, so the 1,609 draw their shaven look. The editor shows a 0 as its
-first entry (`length` "Shaven", `hairline` "Type 1", `forehead_width` "Narrow",
-`cropped_style` "Type 1", `wave_level` "+0"); changing the length writes 1 into every list at
-0, and confirming a picker on the entry it shows writes 1 into a list at 0 and nothing into a
-list already holding its value. Not measured: `wave_level`, `forehead_width`,
-`cropped_style` or `side_back_style` at 0 with the other lists set, and any length but
-shaven. So the keys keep accepting 0, and a file that carries one compiles to what the save
-drew: the game's fallback.
+What a 0 draws was measured on PES 18, from Edit-mode renders of patched saves:
 
-Where the ranges come from, so a wrong one can be traced: the boots/gloves range is the stock
-band below the compiler's first team block (`spec/aesthetics_export/player_folders.md` "Assigns IDs automatically"); the colour, spectacle, sleeve, inner,
-sock, undershort, shirttail and wrist-taping lists are the reference save editor's combo boxes
-(stored value = list position; wrist taping 1 = right, 2 = left, 3 = both, matching the two taping
-bits); the physique numbers are the editor's spin ranges (stored value = number + 7); the motion
-ranges are its spin ranges per version (1-based ones are stored minus 1, celebrations as is); the
-face-type maxima are the caps the two legacy converters apply when writing a PES 16 and a PES 21
-save. The 17 and 18 face caps are unmeasured; PES 19's editor offers cheek types 0 to 5 and
-forehead types 0 to 6, wider than 16's, its other caps unmeasured. An unmeasured face cap is
-the field's bits, for the parser's widest range and the compiler's narrowing alike, the
-comments keeping the measured ranges (`spec/pes_savefile/operations.md` "Cross-version
-player conversion" holds the table). PES 15's face caps
-were measured: the editor's range joined with the game's own faces. The run's other keys were
-measured in the games (`spec/pes_savefile/model.md` "The ingame-face run"). The in-game hair
-ranges were measured on PES 21 and are assumed for 16 to 20. The parser checks a value against the **widest** range of a key (a PES
-16 file may legitimately be compiled for PES 21); the per-version narrowing is the compiler's
-finding at compile time, when the target version is known (`settings_value_out_of_range`). The
-value is then written as the key's default (a face type 0, a motion the template's value), as
-a cross-version player conversion resets a face type (`spec/pes_savefile/operations.md`
-"Cross-version player conversion"), and a custom skin (7) the target has none of as 1. Not as
-authored: a motion beyond the target's range may not fit its field's bits (PES 18's two for
-`hunching_dribbling`), and one that fits is shown as the list's top and may be rewritten to the
-list's first entry by the player's next in-game save (`spec/pes_savefile/operations.md`
-"Cross-version player conversion"). A key the target has
-no field for (`dribbling` before PES 20) is not written, with no finding: an export written for a
-newer version compiles for an older one as it is. Strings are matched exactly (lower case, as
-listed). Height and weight are not keys: they are the player record's own fields, not the
-appearance block's, and height affects gameplay, so both belong to the manager's tactical side
-(the save editor), and weight leaves with height for consistency.
+- A 0 in a list the hairstyle uses (`length` and `hairline` were measured) makes the game draw a
+  fallback hair that depends on the face, not a look of 0's own: short black spiky hair on one
+  face, short brown hair on another. The all-zero players draw that same fallback.
+- A 0 in a list the length greys out (`style`, `front_style`, `parted`, `variation` and
+  `side_back_style` under shaven) changes nothing, so the 1,609 draw their shaven look.
+- The editor shows a 0 as its first entry (`length` "Shaven", `hairline` "Type 1",
+  `forehead_width` "Narrow", `cropped_style` "Type 1", `wave_level` "+0"). Changing the length
+  writes 1 into every list at 0, and confirming a picker on the entry it shows writes 1 into a
+  list at 0 and nothing into a list already holding its value.
+
+Not measured: `wave_level`, `forehead_width`, `cropped_style` or `side_back_style` at 0 with the
+other lists set, and any length but shaven. So the keys keep accepting 0, and a file that carries
+one compiles to what the save drew: the game's fallback.
+
+Where the ranges come from, so a wrong one can be traced:
+
+- the boots/gloves range is the stock band below the compiler's first team block
+  (`spec/aesthetics_export/player_folders.md` "Assigns IDs automatically");
+- the colour, spectacle, sleeve, inner, sock, undershort, shirttail and wrist-taping lists are the
+  reference save editor's combo boxes (stored value = list position; wrist taping 1 = right, 2 =
+  left, 3 = both, matching the two taping bits);
+- the physique numbers are the editor's spin ranges (stored value = number + 7);
+- the motion ranges are its spin ranges per version (1-based ones are stored minus 1,
+  celebrations as is);
+- the face-type maxima are the caps the two legacy converters apply when writing a PES 16 and a
+  PES 21 save.
+
+The 17 and 18 face caps are unmeasured; PES 19's editor offers cheek types 0 to 5 and forehead
+types 0 to 6, wider than 16's, its other caps unmeasured. An unmeasured face cap is the field's
+bits, for the parser's widest range and the compiler's narrowing alike, the comments keeping the
+measured ranges (`spec/pes_savefile/operations.md` "Cross-version player conversion" holds the
+table). PES 15's face caps were measured: the editor's range joined with the game's own faces.
+The run's other keys were measured in the games (`spec/pes_savefile/model.md` "The ingame-face
+run"). The in-game hair ranges were measured on PES 21 and are assumed for 16 to 20.
+
+The parser checks a value against the **widest** range of a key (a PES 16 file may legitimately
+be compiled for PES 21). The per-version narrowing is the compiler's finding at compile time, when
+the target version is known (`settings_value_out_of_range`). The value is then written as the
+key's default (a face type 0, a motion the template's value), as a cross-version player
+conversion resets a face type (`spec/pes_savefile/operations.md` "Cross-version player
+conversion"), and a custom skin (7) the target has none of as 1.
+
+It is not written as authored, because a motion beyond the target's range may not fit its field's
+bits (PES 18's two for `hunching_dribbling`), and one that fits is shown as the list's top and may
+be rewritten to the list's first entry by the player's next in-game save
+(`spec/pes_savefile/operations.md` "Cross-version player conversion").
+
+A key the target has no field for (`dribbling` before PES 20) is not written, with no finding: an
+export written for a newer version compiles for an older one as it is. Strings are matched exactly
+(lower case, as listed).
+
+Height and weight are not keys. They are the player record's own fields, not the appearance
+block's, and height affects gameplay, so both belong to the manager's tactical side (the save
+editor), and weight leaves with height for consistency.
 
 The motion ranges were measured in every version's editor (2026-10-13, every row stepped past
 its top): each 1-based key starts at 1 and wraps, stored one below what the editor shows, and
@@ -421,41 +449,48 @@ Name-writing rules, in full — **not writing is the default**; writing is opt-i
    via `players.txt`, the same name is applied to all of them, with a warning
    (`settings_toml_name_shared`).
 
-`shirt_name` is a string or absent: absent writes nothing, a string is written as is (checked
-against the version's shirt-name field and character set, as a `name` string is, a misfit
-being `settings_name_invalid` and not written; it may fill the field, as real saves'
-shirt names do: only `shirt_name_from` keeps a byte free, for text it invents). There is
-no `true`: a shirt name rarely repeats the player name, and a derived default would be one more
-thing to read. In a `write_names` export a shared folder applies it to every mapped
-player, like `name`.
+`shirt_name` is a string or absent: absent writes nothing, and a string is written as is. The
+string is checked against the version's shirt-name field and character set, as a `name` string
+is, a misfit being `settings_name_invalid` and not written. It may fill the field, as real saves'
+shirt names do: only `shirt_name_from` keeps a byte free, for text it invents. There is no
+`true`: a shirt name rarely repeats the player name, and a derived default would be one more thing
+to read. In a `write_names` export a shared folder applies it to every mapped player, like
+`name`.
 
-Everything this file resolves reaches the savefile through the **aesthetics patch**: the
-`[appearance]` look (the motions inside it), the resolved boots and gloves IDs, and the names
-of an export carrying the `write_names` marker at its root. The motivating
-case is an autopilot team (an
-aesthetics export by a caretaker, a tactical export by the council, often written before the
-destination team was known, with names like "Gold striker"), whose names must be written over
-the tactical export's; an autopilot team whose tactical export already holds the right names
-leaves the marker out. The marker is named for what it does, not for the team's status, because
-the two do not coincide. The patch is applied whole, with no team
-picker: without the marker an export's `name` and `shirt_name` are not used, so a managed team's
-players keep the names their manager set in the save editor, and a generated file's names do no
-harm. No finding reports them unused: every generated file carries names, so it would fire on
-nearly every export.
+Everything this file resolves reaches the savefile through the **aesthetics patch**:
 
-Compile-time flow: resolve boots/gloves IDs from the models and link files present (a broken link is
-caught as `link_target_missing` — a check impossible in the current split-tool workflow), falling
-back per category to the authored stock `boots_id`/`gloves_id` → parse accepted TOML → compile →
-resolve the settings and the IDs of content that was actually written: each compiled player's
-look, his resolved IDs and a `write_names` export's names go into the **aesthetics patch**
-written with the CPKs (see "Post-processing" in the
-[Team compiler plan](../team_compiler/pipeline.md)).
+- the `[appearance]` look (the motions inside it);
+- the resolved boots and gloves IDs;
+- the names of an export carrying the `write_names` marker at its root.
+
+The motivating case for the marker is an autopilot team: an aesthetics export by a caretaker, a
+tactical export by the council, often written before the destination team was known, with names
+like "Gold striker". Its names must be written over the tactical export's. An autopilot team
+whose tactical export already holds the right names leaves the marker out. The marker is named
+for what it does, not for the team's status, because the two do not coincide.
+
+The patch is applied whole, with no team picker. Without the marker an export's `name` and
+`shirt_name` are not used, so a managed team's players keep the names their manager set in the
+save editor, and a generated file's names do no harm. No finding reports them unused: every
+generated file carries names, so it would fire on nearly every export.
+
+Compile-time flow:
+
+1. Resolve boots/gloves IDs from the models and link files present (a broken link is caught as
+   `link_target_missing`, a check impossible in the current split-tool workflow), falling back
+   per category to the authored stock `boots_id`/`gloves_id`.
+2. Parse accepted TOML.
+3. Compile.
+4. Resolve the settings and the IDs of content that was actually written: each compiled player's
+   look, his resolved IDs and a `write_names` export's names go into the **aesthetics patch**
+   written with the CPKs (see "Post-processing" in the [Team compiler
+   plan](../team_compiler/pipeline.md)).
 
 If a local savefile is configured, the compiler applies that patch to it through `pes_savefile`
-(decrypt, apply, re-encrypt, `.bak`); an entry's `[appearance]` also makes the record the
-player's own, his appearance id and base copy set to his own id. The patch is what a DLC
-builder hands to the savefile
-builder, who applies it in the save editor; the compiler has no other savefile write path (see
-"Post-processing" in the [Team compiler plan](../team_compiler/pipeline.md)).
+(decrypt, apply, re-encrypt, `.bak`). An entry's `[appearance]` also makes the record the
+player's own, his appearance id and base copy set to his own id. The patch is what a DLC builder
+hands to the savefile builder, who applies it in the save editor; the compiler has no other
+savefile write path (see "Post-processing" in the [Team compiler
+plan](../team_compiler/pipeline.md)).
 
 ---
