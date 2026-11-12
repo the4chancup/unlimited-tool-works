@@ -556,12 +556,34 @@ fn painted_label_color(
     shapes: &[egui::epaint::ClippedShape],
     value: &str,
 ) -> egui::Color32 {
-    let bounds = label_bounds(nodes, value);
+    painted_text_color(shapes, value, label_bounds(nodes, value))
+}
+
+/// The colour the checkbox labeled `label` painted its text in: a card's
+/// name is the checkbox's own text, not a Label node.
+fn painted_checkbox_color(
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+    label: &str,
+) -> egui::Color32 {
+    let bounds = node_labeled(nodes, Role::CheckBox, label)
+        .bounds()
+        .expect("bounds");
+    painted_text_color(shapes, label, bounds)
+}
+
+/// The colour of the `TextShape` reading `text` whose position lies inside
+/// `bounds`, a node's.
+fn painted_text_color(
+    shapes: &[egui::epaint::ClippedShape],
+    text: &str,
+    bounds: accesskit::Rect,
+) -> egui::Color32 {
     let shape = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Text(shape)
-                if shape.galley.job.text == value
+                if shape.galley.job.text == text
                     && f64::from(shape.pos.x) >= bounds.x0 - 1.0
                     && f64::from(shape.pos.x) <= bounds.x1 + 1.0
                     && f64::from(shape.pos.y) >= bounds.y0 - 1.0
@@ -572,7 +594,7 @@ fn painted_label_color(
             _ => None,
         })
         .next()
-        .unwrap_or_else(|| panic!("no painted {value:?} inside {bounds:?}"));
+        .unwrap_or_else(|| panic!("no painted {text:?} inside {bounds:?}"));
     galley_color(shape)
 }
 

@@ -650,7 +650,8 @@ fn playable_positions(
 /// view's third column), each label beside its `DragValue` 40-99 (the
 /// draft's `td.ilabel`): the labels start at one x, the grid's first
 /// column, and the numbers stand in its second, so a short label stands
-/// far from its number; a stat the version lacks shows `-`, disabled.
+/// far from its number; a stat the version lacks shows `-`, disabled,
+/// its name dimmed with it as a version-gated card's is.
 /// The grid sizes the label column to the widest label itself: a new
 /// grid's first pass is an invisible sizing pass, so the numbers stand at
 /// their final x from the first frame drawn. `marks` is Live AATF's held
@@ -672,7 +673,21 @@ fn ability_stats(
         .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FORM_ROW_SPACING))
         .show(ui, |ui| {
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
-                let label_cell = ui.label(stat_name(version, label)).rect;
+                let name = stat_name(version, label);
+                // A stat the version lacks reads dimmed with its `-`, as a
+                // version-gated card's name is: the click sense sends the
+                // label's text through the widget colours `add_enabled`
+                // dims (a hover-sensed one paints the plain text colour).
+                let label_cell = if abilities[index].is_some() {
+                    ui.label(name).rect
+                } else {
+                    add_enabled(
+                        ui,
+                        false,
+                        egui::Label::new(name).sense(egui::Sense::click()),
+                    )
+                    .rect
+                };
                 match abilities[index] {
                     Some(value) => {
                         number_field(

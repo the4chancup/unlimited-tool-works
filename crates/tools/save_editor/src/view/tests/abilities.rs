@@ -335,6 +335,71 @@ fn a_stat_the_version_lacks_shows_a_dash_disabled() {
     assert!(!speed.is_disabled(), "Speed is enabled on PES 15");
 }
 
+// The label of a stat the version lacks paints the colour a version-gated
+// card's name does, not the normal text colour; a stored stat's label
+// paints the normal one on every version.
+// SE-GUI-70
+#[test]
+fn a_stat_the_version_lacks_has_its_label_dimmed_as_a_gated_card() {
+    let path = fixture(PesVersion::Pes17, "gated_stat_label");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let text_color = window.ctx.style_of(window.ctx.theme()).visuals.text_color();
+
+    // A gated row may sit below the detail pane's fold: scroll each inside
+    // the clip, then read the settled frame's shapes. `Through Passing`
+    // (SKILLS[40]) is a card PES 17 lacks: its name's colour is the dimmed
+    // one the gated stats' labels take.
+    scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::CheckBox && node.label() == Some("Through Passing")
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dimmed = painted_checkbox_color(&nodes, &shapes, "Through Passing");
+    assert_ne!(
+        dimmed, text_color,
+        "premise: a gated card's name is not the normal text colour"
+    );
+
+    for label in ["Tight Possession", "Aggression"] {
+        scroll_into_view(&mut window, &mut view, |node| {
+            node.role() == Role::Label && node.value() == Some(label)
+        });
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, label),
+            dimmed,
+            "{label}'s label dimmed as a gated card's name is"
+        );
+    }
+    scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Speed")
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        painted_label_color(&nodes, &shapes, "Speed"),
+        text_color,
+        "a stored stat's label in the normal text colour"
+    );
+
+    // On PES 21, which stores the two, they paint the normal text colour.
+    let path = fixture(PesVersion::Pes21, "gated_stat_label_21");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    for label in ["Tight Possession", "Aggression"] {
+        scroll_into_view(&mut window, &mut view, |node| {
+            node.role() == Role::Label && node.value() == Some(label)
+        });
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, label),
+            text_color,
+            "{label} stored on PES 21 paints the normal text colour"
+        );
+    }
+}
+
 // The ability stats sit in one column in the game's order, each label
 // beside its number: the 25 stats run top to bottom, their labels'
 // left edges at one x, each label's SpinButton on its row.

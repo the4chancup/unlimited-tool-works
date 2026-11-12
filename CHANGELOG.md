@@ -98,6 +98,9 @@ What changed for members, release by release, newest first.
 - **Save editor**: after opening another save, a team's medal outlines and a player's Cards
   used badge no longer show the previous save's for a moment: they wait for the new save's own
   answer.
+- **Save editor**: the name of an ability stat the save's PES version does not have
+  (Tight Possession and Aggression before PES 2020, for one) is dimmed like its `-`, so it
+  no longer reads as a field left to fill.
 
 ## [0.0.1] - 2026-11-03
 
