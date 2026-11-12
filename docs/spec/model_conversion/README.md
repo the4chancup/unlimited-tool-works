@@ -66,22 +66,26 @@ Each `formats/<format>/` directory also holds its `tests.rs`.
 Placement rules:
 
 - **`formats/*` are the only modules that convert through `fmdl`, `pes_model`, or `gltf`**,
-  with three named exceptions that read the format types without converting: `convert.rs`
-  carries them in `NativeModelBundle` and reads their weight rows for the pre-check,
-  `ops/hand_split.rs`'s detection does the same (`fox_has_hand_weights`,
-  `prefox_has_hand_weights`), and `skeletons/` uses `fmdl::SklFile`, the SKL codec, which
-  lives in `fmdl` only because SKL is a Fox-engine file. Everything else sees the IR. A
-  format detail needed by an op is a field on the IR, not an import.
+  with three named exceptions that read the format types without converting:
+  - `convert.rs` carries them in `NativeModelBundle` and reads their weight rows for the
+    pre-check;
+  - `ops/hand_split.rs`'s detection does the same (`fox_has_hand_weights`,
+    `prefox_has_hand_weights`);
+  - `skeletons/` uses `fmdl::SklFile`, the SKL codec, which lives in `fmdl` only because SKL is a
+    Fox-engine file.
+
+  Everything else sees the IR. A format detail needed by an op is a field on the IR, not an
+  import.
 - **`ir/` has no format logic.** Validation plus the index bookkeeping the importers and
   ops share (parent-first ordering, bone-list rebuilds and weight remaps). Transformations
   are `ops/`; conversions are `formats/`.
 - **`skeletons/` holds no transcribed numbers.** The `.skl` files under the repository's
   `resources/skeletons/` are embedded with `include_bytes!` and parsed on first use
-  (`std::sync::LazyLock`); the only hand-maintained tables are the render parents and the fold
-  table, both names only. Provenance
-  stays with the `.skl` files, never with Python literals. (An earlier version of this plan generated
-  a `data.rs` of Rust literals; that is a 250 KB source file plus a generator plus a drift test, for
-  data the SKL codec already reads byte-exactly.)
+  (`std::sync::LazyLock`). The only hand-maintained tables are the render parents and the fold
+  table, both names only. Provenance stays with the `.skl` files, never with Python literals.
+  (An earlier version of this plan generated a `data.rs` of Rust literals; that is a 250 KB
+  source file plus a generator plus a drift test, for data the SKL codec already reads
+  byte-exactly.)
 - **`materials/` is shared by all three formats** and by the Blender project's glTF codec contract;
   it must remain independent of `formats/` so the schema can be tested without any model file.
 - **Same-format paths do not enter this crate** unless an explicitly planned IR operation is

@@ -138,8 +138,8 @@ Placement rules:
   `../../CONTRIBUTING.md` keeps legacy tool names out of code), and `codec.md` "Schema-driven save codec"
   holds the derivation method, so a mismatch found by a roundtrip test can be traced in one hop.
 - Lib dependencies are `fpc` (the FPC system's data) and nothing format-specific; no Blender, egui,
-  or tool dependency: this crate is consumed by `aatf`, the Team compiler, the Save
-  editor, the Export upgrader, and the Player aesthetics editor, and must stay `wasm32`-checkable
-  (core plan guardrail 6); discovery's filesystem walk is `cfg`-gated for non-desktop targets.
+  or tool dependency. This crate is consumed by `aatf`, the Team compiler, the Save editor, the
+  Export upgrader, and the Player aesthetics editor, and must stay `wasm32`-checkable (core plan
+  guardrail 6); discovery's filesystem walk is `cfg`-gated for non-desktop targets.
 
 ---

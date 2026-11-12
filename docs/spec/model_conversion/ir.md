@@ -95,18 +95,23 @@ pub struct Texture {
 pub struct BoundingBox { pub min: [f32; 4], pub max: [f32; 4] }
 ```
 
-Shapes this settled after reading the format crates (each is a decision entry): vertices are a
-struct of arrays, not a `Vec<Vertex>`; `Bone.children` is gone (derivable, and a second copy to
-keep in step through folds and prunes); `Mesh` carries no `alpha_flags`/`shadow_flags`
-fields (lifted to the material's `fox` table, see "Engine mapping"), no anti-blur field (the IR
-does not know anti-blur: "Anti-blur duplicates" below) and no `split_group_id` (the
-importers call the format crates' split *decode*, so an imported mesh is whole unless its group
-was too large to be, see below; a glTF `PES_mesh`
-identity is Phase 7's); `extension_headers` are sets of raw header lines, since both format
-crates already type the known headers; the template display positions (`start`/`end`) wait for the
-Blender export in Phase 7. `Affine` is the crate's own 3×4 row-major matrix type (`affine.rs`:
-multiply, invert, transform point/direction), because the only matrix work in the suite is bone
-transforms and a dependency on `nalgebra` would add a generic API for four functions.
+Shapes this settled after reading the format crates (each is a decision entry):
+
+- vertices are a struct of arrays, not a `Vec<Vertex>`;
+- `Bone.children` is gone (derivable, and a second copy to keep in step through folds and
+  prunes);
+- `Mesh` carries no `alpha_flags`/`shadow_flags` fields (lifted to the material's `fox` table,
+  see "Engine mapping"), no anti-blur field (the IR does not know anti-blur: "Anti-blur
+  duplicates" below) and no `split_group_id` (the importers call the format crates' split
+  *decode*, so an imported mesh is whole unless its group was too large to be, see below; a glTF
+  `PES_mesh` identity is Phase 7's);
+- `extension_headers` are sets of raw header lines, since both format crates already type the
+  known headers;
+- the template display positions (`start`/`end`) wait for the Blender export in Phase 7.
+
+`Affine` is the crate's own 3×4 row-major matrix type (`affine.rs`: multiply, invert, transform
+point/direction), because the only matrix work in the suite is bone transforms and a dependency
+on `nalgebra` would add a generic API for four functions.
 
 **What real files carry (the conversion census).** Every `.model` and FMDL on the maintainer's
 machine that its format crate reads was converted to the other engine and back (2026-09-28,
@@ -239,17 +244,20 @@ Konami FMDLs found bit 128 on 128/160 of `fox3ddf_blin`'s meshes in near-equal s
 i.e. on ordinary opaque skin, and the legacy converter judged transparency from the texture's alpha
 channel instead, which the format plan rules out. So a Fox part converted to pre-Fox gets the opaque
 state set unless its family is `glass`; what bit 128 means on deferred shaders is an open question.
+
 `model_to_ir` sets `two_sided` from the `twosided` state and `transparent` from `alphablend`.
+
 `ir_to_fmdl` adds the game's `dummy_nrm`/`dummy_srm` textures (`/Assets/pes16/model/character/
 common/sourceimages/`, the same dummies the anti-blur materials use) to a `shaded`/`metal` material
 missing its normal or specular map, as the working 16→21 converter does; the compiler's texture
 step replaces them when the folder has real maps. Only a material without a `fox` table gets them:
 a Fox-native material that ships without the maps (Konami's audience parts) is left as the game
-shipped it, so a same-format round trip adds no textures. Bone positions an FMDL export lacks are derived
-from `Bone.matrix` (see the `Bone` comment); the root's `local_position` is `[0, 0, 0, 1]`, a guess
-consistent with the audience fixture's `sk_belly` and unverified in game (the working converter
-wrote zero for every bone, so the game appears not to read the field when the template `.skl` is
-injected).
+shipped it, so a same-format round trip adds no textures.
+
+Bone positions an FMDL export lacks are derived from `Bone.matrix` (see the `Bone` comment). The
+root's `local_position` is `[0, 0, 0, 1]`, a guess consistent with the audience fixture's
+`sk_belly` and unverified in game (the working converter wrote zero for every bone, so the game
+appears not to read the field when the template `.skl` is injected).
 
 What the `.model` pair carries that the IR does not, and how the pre-Fox importer and exporter
 treat it:
@@ -283,26 +291,30 @@ treat it:
   left out of a `.model` export: a `.mtl` cannot hide a mesh, and unhidden it draws what
   its author hid (the blank head's oral mesh in `addon_oral.fmdl`, whose `dummy_bsm`
   material resolves on no pre-Fox path). No finding: the game showed nothing of it on
-  Fox, so nothing a member saw goes missing. Members hide meshes on purpose, as
-  placeholders: of 35,251 meshes in the 7,315 FMDLs on the maintainer's machine, 61 are
-  hidden, and in 38 files every mesh is (26 blank-head `oral.fmdl`, 8 one-sided
-  `glove_*.fmdl`, 3 stadium shadow models); the rest are shadow-only glove meshes and a
-  few face parts. An export left with no mesh is `ConvertError::EveryMeshHidden`, which
-  a consumer treats as a model that draws nothing, not as an empty model. The compiler
-  never reaches it: its deep pass drops such a file before any task converts or names it
-  (`team_compiler/messages.md` `model_hidden_dropped`), since the task converting a model
-  is not always the one naming it (a Common model's linking face, a shared folder's
-  merge), and the player's other models stand. Findings keep naming meshes by their source index.
-- **Mesh names.** `.model` has no groups; the import makes one group per mesh named after the
-  add-on's mesh name, `mesh_<index>` when the mesh has none (every Konami mesh), and the export
+  Fox, so nothing a member saw goes missing.
+
+  Members hide meshes on purpose, as placeholders: of 35,251 meshes in the 7,315 FMDLs on the
+  maintainer's machine, 61 are hidden, and in 38 files every mesh is (26 blank-head
+  `oral.fmdl`, 8 one-sided `glove_*.fmdl`, 3 stadium shadow models); the rest are shadow-only
+  glove meshes and a few face parts.
+
+  An export left with no mesh is `ConvertError::EveryMeshHidden`, which a consumer treats as a
+  model that draws nothing, not as an empty model. The compiler never reaches it: its deep pass
+  drops such a file before any task converts or names it (`team_compiler/messages.md`
+  `model_hidden_dropped`), since the task converting a model is not always the one naming it (a
+  Common model's linking face, a shared folder's merge), and the player's other models stand.
+  Findings keep naming meshes by their source index.
+- **Mesh names.** `.model` has no groups. The import makes one group per mesh named after the
+  add-on's mesh name, `mesh_<index>` when the mesh has none (every Konami mesh). The export
   names each mesh after the group that lists it (an add-on kind-128 annotation), `None` when no
   group does. So a Konami `.model` round trip gains `mesh_<index>` names; the game ignores them.
 - **Per-mesh extension headers** carry over minus the codec markers (`Split-Mesh` is consumed
   by the split decode, the vertex-loop marker by the export's re-encode).
-- **The `.mtl`.** Each material name the model binds must have a definition, else an error; a
+- **The `.mtl`.** Each material name the model binds must have a definition, else an error. A
   definition no mesh binds (Konami's `accessory.mtl` defines many parts' materials in one file)
   is not carried, so the exported `.mtl` holds exactly the model's materials, in model order.
-  Sampler paths split at the last `/` into `Texture`; entries are written samplers first, then
+
+  Sampler paths split at the last `/` into `Texture`. Entries are written samplers first, then
   states, then vectors: Konami's own order in 1217 of the 1265 materials that mix samplers and
   states (census over 941 PES 2017 `.mtl`, 3102 materials; 14 put states first, `glasses_02T`
   among them), so a round trip of those 14 regroups entries and changes nothing else.
@@ -319,36 +331,42 @@ treat it:
   very boolean read from it.
 
 **Stem-based texture references (input).** All three formats reference textures
-by **stem** (filename without extension) in their **source/authoring** form; the
+by **stem** (filename without extension) in their **source/authoring** form. The
 compiler resolves each stem to whatever accepted image file exists in the model
 folder and converts to the target format at compile time (format list, stem
 conflicts, and auto-naming rules: format plan, "Dependencies and images" and
 "Textures"). Studio-format `.mtl` and `.materials.toml` files write stems; FMDL
 path tables resolve by the same stem (a stored name's extension, when present, is
 decorative, the game appending `.ftex` either way). The planned Export upgrader strips
-extensions from old `.mtl` texture paths when migrating. **Output** `.mtl` files (written by
-`ir_to_model` at compile time) keep the `.dds` extension on texture paths, as
-the game expects; FMDL output path tables remain stem-based (the game appends
-`.ftex`). Auto-naming and auto-detection of texture roles happen during deep
-material parsing (not the structure pass), so a missing texture reports
-`mtl_texture_not_found` / `fmdl_texture_not_found` at that stage, not during
-shallow validation.
+extensions from old `.mtl` texture paths when migrating.
+
+**Output** `.mtl` files (written by `ir_to_model` at compile time) keep the `.dds` extension on
+texture paths, as the game expects; FMDL output path tables remain stem-based (the game appends
+`.ftex`).
+
+Auto-naming and auto-detection of texture roles happen during deep material parsing (not the
+structure pass), so a missing texture reports `mtl_texture_not_found` / `fmdl_texture_not_found`
+at that stage, not during shallow validation.
 
 ### Anti-blur duplicates
 
 The FMDL exporter writes no anti-blur duplicates, and the IR does not know the concept: no
 `Material` field and no `materials.toml` key ask for them (`spec/model_format.md` "Engine-neutral
 keys"). FoxDen's TAA removal script keeps models on Forward shaders sharp, so the copies would
-only draw every mesh twice. The FMDL importer still strips them (`antiblur::decode`), so a
-converted model never carries them, and splits a material by its meshes' alpha and shadow flags
-only, never by their anti-blur request, which nothing downstream reads. The Team compiler's
-pass-through route (a native FMDL packed as it is) neither looks for the copies nor touches
-them, and `fmdl`'s merge, which assembles native parts on that route, takes parts whatever their
-anti-blur state ("Extension algorithms" below). `fmdl` keeps `antiblur::encode` as an operation
-of the format: its tests and the Export upgrader's fixtures build anti-blur files with it. The
-Export upgrader drops the copies once, at the upgrade (`spec/export_upgrader.md` step 7). The
-Blender add-on adds them on its own, outside this repository (`python_bindings` only reads and
-writes the formats).
+only draw every mesh twice.
+
+The FMDL importer still strips them (`antiblur::decode`), so a converted model never carries
+them, and splits a material by its meshes' alpha and shadow flags only, never by their anti-blur
+request, which nothing downstream reads.
+
+The Team compiler's pass-through route (a native FMDL packed as it is) neither looks for the
+copies nor touches them, and `fmdl`'s merge, which assembles native parts on that route, takes
+parts whatever their anti-blur state ("Extension algorithms" below).
+
+`fmdl` keeps `antiblur::encode` as an operation of the format: its tests and the Export
+upgrader's fixtures build anti-blur files with it. The Export upgrader drops the copies once, at
+the upgrade (`spec/export_upgrader.md` step 7). The Blender add-on adds them on its own, outside
+this repository (`python_bindings` only reads and writes the formats).
 
 ### Extension algorithms (one implementation each)
 
@@ -372,30 +390,39 @@ function without going through the IR at all.
 
 The split vertex encoding is a property of the vertex *order* (loops of one vertex are consecutive
 runs), and the IR keeps the vertex order, so its "decode" on import is a read the importers have
-nothing to call: the owner map is recoverable from the IR at any time. The exporters recover it
-with the format crate's per-mesh `vertex_enc::decode` on the IR order, *not* the flag-gated
-`decode_model`: the IR carries no extension flag, and a run that satisfies the convention is a set
-of loops of one vertex whether or not the file declared the extension (an add-on file's loops
-survive the round trip; on a Konami file the same rule merges only vertices that share position,
-weights and an increasing attribute order, which is what a loop is). The encode on export is not
-a no-op: it groups every vertex sharing a topological key contiguously, and Konami files are not
-written that way (highneck: 198 of 204 vertices move; the vertex multiset and the face corner-tuples
-are unchanged). The legacy converters reorder the same way. A same-format round trip is therefore
-compared against the input with the same encoders applied, never byte for byte (see "Testing: IR
-roundtrips").
+nothing to call: the owner map is recoverable from the IR at any time.
 
-`fmdl` also owns **multi-FMDL mesh merging** — bone lists unioned by name (a shared bone's
-bounding box is the union of the parts' boxes, since a bone's box covers every vertex weighted
-to it; per-mesh bone groups remapped), meshes and mesh groups concatenated, materials merged by name (same-name materials with
-differing definitions rejected), buffers and headers rebuilt. A part with repeated bone names
-is refused (union by name is ambiguous). Parts merge whatever their anti-blur state: every mesh
-is kept as it is and the parts' extension flags are OR-ed, since nothing encodes anti-blur after
-a merge. It is not an IR operation: the Team
-compiler calls it directly to assemble multi-part models and to bake Common-linked models into
-player FMDLs on Fox targets, where the engine cannot load models from the Common folder (see "Common
-model links and model merging" in the [Team compiler plan](../team_compiler/README.md)). The pre-Fox
-counterpart is `pes_model::ops::merge`, native over `Model` + `MaterialSet` (see
-"`pes_model::ops::merge`" in the [Libraries plan](../libs/format_crates.md)), which follows the same rules.
+The exporters recover it with the format crate's per-mesh `vertex_enc::decode` on the IR order,
+*not* the flag-gated `decode_model`. The IR carries no extension flag, and a run that satisfies
+the convention is a set of loops of one vertex whether or not the file declared the extension
+(an add-on file's loops survive the round trip; on a Konami file the same rule merges only
+vertices that share position, weights and an increasing attribute order, which is what a loop
+is).
+
+The encode on export is not a no-op: it groups every vertex sharing a topological key
+contiguously, and Konami files are not written that way (highneck: 198 of 204 vertices move; the
+vertex multiset and the face corner-tuples are unchanged). The legacy converters reorder the same
+way. A same-format round trip is therefore compared against the input with the same encoders
+applied, never byte for byte (see "Testing: IR roundtrips").
+
+`fmdl` also owns **multi-FMDL mesh merging**:
+
+- bone lists unioned by name (a shared bone's bounding box is the union of the parts' boxes,
+  since a bone's box covers every vertex weighted to it; per-mesh bone groups remapped);
+- meshes and mesh groups concatenated;
+- materials merged by name (same-name materials with differing definitions rejected);
+- buffers and headers rebuilt.
+
+A part with repeated bone names is refused (union by name is ambiguous). Parts merge whatever
+their anti-blur state: every mesh is kept as it is and the parts' extension flags are OR-ed,
+since nothing encodes anti-blur after a merge.
+
+It is not an IR operation: the Team compiler calls it directly to assemble multi-part models and
+to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot load
+models from the Common folder (see "Common model links and model merging" in the [Team compiler
+plan](../team_compiler/README.md)). The pre-Fox counterpart is `pes_model::ops::merge`, native
+over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in the [Libraries
+plan](../libs/format_crates.md)), which follows the same rules.
 
 ### Conversion routing
 
@@ -424,17 +451,22 @@ pub struct Converted { pub bundle: NativeModelBundle, pub findings: Vec<loss::Fi
 `convert` takes a PES *version*, not a format: the format follows from the engine, and the
 skeleton retargeting pass (see `conversion.md` "Skeleton retargeting and bone conformance") runs inside the same
 IR round trip, so every model the compiler emits is on the target's skeleton without a second
-pass. The same-format short cut is decided by `needs_conversion`, the plan's native pre-check: the
+pass.
+
+The same-format short cut is decided by `needs_conversion`, the plan's native pre-check: the
 bundle's bone names (those its bone groups reference) against the target's tables, poses compared
 the way `retarget` does (source pose from the SKL or PES21's tables for Fox, the inverted inline
-matrix for pre-Fox; 3e-3 on any component). `convert` takes the bundle by value and returns a new
-one, so a pre-Fox result exists only once both its `.model` and its `.mtl` were produced: an error
-can never leave a converted `.model` paired with an old or missing `.mtl`. (The plan's first draft
-mutated a bundle in place; by value says the same thing with the type system instead of a
-comment.) The Fox side carries the companion `.skl` when one exists, which is where `fmdl_to_ir`
-reads the bind pose from (see "Skeleton reconstruction from FMDL"); `ir_to_fmdl` returns one when
-an exported bone sits outside PES21's template tables or off their pose (a custom bone,
-or a shared bone at the hand-table pose a retarget gave it).
+matrix for pre-Fox; 3e-3 on any component).
+
+`convert` takes the bundle by value and returns a new one, so a pre-Fox result exists only once
+both its `.model` and its `.mtl` were produced: an error can never leave a converted `.model`
+paired with an old or missing `.mtl`. (The plan's first draft mutated a bundle in place; by
+value says the same thing with the type system instead of a comment.)
+
+The Fox side carries the companion `.skl` when one exists, which is where `fmdl_to_ir` reads the
+bind pose from (see "Skeleton reconstruction from FMDL"). `ir_to_fmdl` returns one when an
+exported bone sits outside PES21's template tables or off their pose (a custom bone, or a shared
+bone at the hand-table pose a retarget gave it).
 
 **Unskinned meshes on Fox.** FMDL needs every vertex bound to a bone: an unbound mesh stays where
 the model is placed instead of following the player. A pre-Fox mesh without bone indices (the
@@ -442,9 +474,11 @@ ancient templates the 16→21 converter met) therefore gets, on `ir_to_fmdl`, a 
 (identity matrix, `global_position` `[0.2, 0, 0, 1]`, `local_position` zero: the converter's
 values, the name Konami's own skeleton lacks so the game leaves the mesh static) added once to the
 model, with every such mesh's vertices fully weighted to it (`static_bone_added`, one finding per
-mesh). The bone is not in any table, so the export also emits an SKL, which the compiler packs as
-the slot's skeleton in place of the template, as it packs a member's `.skl` of that stem
-(`team_compiler/pipeline.md` step 3 "Format conversion"): the template lacks the bone.
+mesh).
+
+The bone is not in any table, so the export also emits an SKL. The compiler packs it as the
+slot's skeleton in place of the template, as it packs a member's `.skl` of that stem
+(`team_compiler/pipeline.md` step 3 "Format conversion"), because the template lacks the bone.
 
 ### Roundtrip testing
 

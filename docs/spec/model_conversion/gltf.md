@@ -18,17 +18,21 @@ table and, per bone, a 3×4 **inverse bind matrix** inline (section 0's first en
 record per bone in name order — `ModelFile.parseBoneGroups` in the `pes-model` addon), which is
 exactly the data an FMDL keeps in its `.skl`. What it lacks is the hierarchy: parents are resolved
 by looking each bone name up in the template skeleton's render parents (the addon's `addBone`), so
-a bone unknown to the template is a root. `model_to_ir` inverts the stored matrices into
-`Bone.matrix`; `ir_to_model` writes the inverse of `Bone.matrix` back. What ends up in `Bone.matrix`
-at export time is decided by the skeleton retargeting pass (see "Skeleton retargeting and bone
-conformance"): standard bones carry the **target version's** bind pose — which is what a `.model`
-must contain to skin correctly against that game's runtime skeleton — and only bones unknown to the
-target's tables (a genuine custom skeleton) keep the model's own matrices. **This deviates from the
-19to16 converter**, which always wrote PES17's matrices (`fmdl2model.py`, identity for unknown
-bones) regardless of target and flattened custom skeletons. In the other direction, `.model` → Fox
-generates a companion `.skl` from the IR when an exported bone sits outside PES21's template
-tables or off their pose (a custom bone, or a glove's shared bones at the hand-table pose); a
-model wholly on the template gets none, and the compiler's template injection stands.
+a bone unknown to the template is a root.
+
+`model_to_ir` inverts the stored matrices into `Bone.matrix`; `ir_to_model` writes the inverse of
+`Bone.matrix` back. What ends up in `Bone.matrix` at export time is decided by the skeleton
+retargeting pass (see "Skeleton retargeting and bone conformance"): standard bones carry the
+**target version's** bind pose — which is what a `.model` must contain to skin correctly against
+that game's runtime skeleton — and only bones unknown to the target's tables (a genuine custom
+skeleton) keep the model's own matrices. **This deviates from the 19to16 converter**, which
+always wrote PES17's matrices (`fmdl2model.py`, identity for unknown bones) regardless of target
+and flattened custom skeletons.
+
+In the other direction, `.model` → Fox generates a companion `.skl` from the IR when an exported
+bone sits outside PES21's template tables or off their pose (a custom bone, or a glove's shared
+bones at the hand-table pose). A model wholly on the template gets none, and the compiler's
+template injection stands.
 
 ### IR part merge (`merge_ir_parts`)
 
@@ -36,11 +40,12 @@ model wholly on the template gets none, and the compiler's template injection st
 *several parts into one model* is a different operation, and it is **format-native on both
 engines**: `fmdl::ops::merge` for Fox, `pes_model::ops::merge` for pre-Fox (the `ingame_face`
 boots merge, and a shared link combined with local parts under `ingame_face` — see the [Aesthetics
-export plan](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a same-format
-merge never round-trips through the IR. An earlier version of this plan routed the pre-Fox cases
-through the IR-level `merge_ir_parts`; that was dropped because it made them the one
-exception to "same format skips the IR" for no gain (the `.mtl` merge is a material-name merge
-either way).
+export plan](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
+same-format merge never round-trips through the IR.
+
+An earlier version of this plan routed the pre-Fox cases through the IR-level `merge_ir_parts`.
+That was dropped because it made them the one exception to "same format skips the IR" for no
+gain (the `.mtl` merge is a material-name merge either way).
 
 ### glTF dependency and image contract
 
@@ -67,10 +72,17 @@ size and the format needs none of its own (see "File size and compression" in th
 The compiler detects the model format by file extension (`.fmdl`, `.model`, `.glb`/`.gltf`; a
 glTF selected for a stem drops its folder as `model_gltf_unsupported` until the importer lands)
 and routes accordingly.
-PES-native sources skip the IR for same-format targets — **except** when an IR-level operation applies: hand auto-split (models with
-`skh_` bone weights are imported, partitioned, and exported back to the same format) and
-cross-version skeleton retargeting (see `conversion.md` "Skeleton retargeting and bone conformance"). Both are lossless
-same-format IR round-trips. All other same-format processing (ID replacement, texture path
-rewriting, model merging on both engines, validation) is format-native and never touches the IR.
+
+PES-native sources skip the IR for same-format targets — **except** when an IR-level operation
+applies:
+
+- hand auto-split (models with `skh_` bone weights are imported, partitioned, and exported back
+  to the same format);
+- cross-version skeleton retargeting (see `conversion.md` "Skeleton retargeting and bone
+  conformance").
+
+Both are lossless same-format IR round-trips. All other same-format processing (ID replacement,
+texture path rewriting, model merging on both engines, validation) is format-native and never
+touches the IR.
 
 ---
