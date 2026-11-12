@@ -33,26 +33,34 @@ then          description ┐
   `c2=rol(c3,7)`, `c3=ror(c4,13)`. Data is XORed with the keystream.
 - **Section keys**: `fileKey ^ (n as u64 LE)` where `n` = the header's byte length
   (176/208) for the header, then `0` description, `1` logo, `2` payload, `3` serial.
-- **Header layout** (measured on real 16/17/18/19/21 saves, 2026-09-14): bytes 0–64 = the
-  effective master key (this is the integrity check: wrong key or corrupt file fails the
-  compare); bytes 64–80 = `payloadSize, logoSize, descriptionSize, serialSize` (4×u32; the
-  serial is UTF-16LE text and its length is stored in UTF-16 units, so its byte count is
-  `serialSize * 2`); bytes 80–144 = a 64-byte block of unknown meaning (`hash` in the
-  reference struct; not a hash of anything we could identify, retained verbatim); bytes
-  144–176 = the type string `EDIT`, NUL-padded to 32; on 18–21 bytes 176–208 = the game
-  version string, NUL-padded to 32 (`PRO EVOLUTION SOCCER 2018`, `PRO EVOLUTION SOCCER 2019`,
-  `eFootball PES 2021 SEASON UPDATE`). The crate keeps bytes 80 to the end as one opaque
-  `identifier` and writes it back unchanged.
-- **Section contents**: the description is 384 bytes on every version, `Edit Data` then zeros;
-  the logo is a PNG; the serial is the Windows account SID of the machine that wrote the save
-  (`S-1-5-21-…`, 44–46 UTF-16 units), which is why it is *not* committed as a fixture.
+- **Header layout** (measured on real 16/17/18/19/21 saves, 2026-09-14):
+  - bytes 0–64 = the effective master key. This is the integrity check: wrong key or corrupt
+    file fails the compare.
+  - bytes 64–80 = `payloadSize, logoSize, descriptionSize, serialSize` (4×u32). The serial is
+    UTF-16LE text and its length is stored in UTF-16 units, so its byte count is
+    `serialSize * 2`.
+  - bytes 80–144 = a 64-byte block of unknown meaning (`hash` in the reference struct). It is
+    not a hash of anything we could identify, and is retained verbatim.
+  - bytes 144–176 = the type string `EDIT`, NUL-padded to 32.
+  - on 18–21, bytes 176–208 = the game version string, NUL-padded to 32
+    (`PRO EVOLUTION SOCCER 2018`, `PRO EVOLUTION SOCCER 2019`,
+    `eFootball PES 2021 SEASON UPDATE`).
+
+  The crate keeps bytes 80 to the end as one opaque `identifier` and writes it back unchanged.
+- **Section contents**:
+  - the description is 384 bytes on every version, `Edit Data` then zeros;
+  - the logo is a PNG;
+  - the serial is the Windows account SID of the machine that wrote the save (`S-1-5-21-…`,
+    44–46 UTF-16 units), which is why it is *not* committed as a fixture.
 - **Writing**: generate 320 fresh salt bytes, derive the key from them, re-encrypt all
-  sections. There are no checksums to fix up. The salt's randomness has no security role (the
-  master keys are public); the container API takes it as a parameter so the round-trip tests are
-  deterministic, and `file.rs` supplies one derived with `sha2` from the payload and the clock
-  (no RNG crate; `std::time` is native-only, which is where saving to a path lives anyway).
-- **Strictness**: the four declared sizes must consume the file exactly (every real save does);
-  a short file, a size past the end or trailing bytes is a `ContainerError`, never a guess.
+  sections. There are no checksums to fix up.
+
+  The salt's randomness has no security role, because the master keys are public. The
+  container API takes it as a parameter so the round-trip tests are deterministic, and
+  `file.rs` supplies one derived with `sha2` from the payload and the clock. No RNG crate is
+  used; `std::time` is native-only, which is where saving to a path lives anyway.
+- **Strictness**: the four declared sizes must consume the file exactly (every real save does).
+  A short file, a size past the end or trailing bytes is a `ContainerError`, never a guess.
 - This description is cross-verified against `crypt.c` (the source of the DLLs every tool
   loads): `cryptHeader`/`reverseLongs`/`xorRepeatingBlocks`/`cryptStream`/`xorWithLongParam`
   correspond function-for-function to the Python reference, so the Python scripts are faithful
@@ -147,12 +155,17 @@ impl SaveContainer {
 }
 ```
 
-`ContainerError` is `Unrecognized` (no key's 64-byte compare held and the PES 15 description
-digest did not match; also any input too short for either check: 384 bytes keyed, 433 PES 15),
-`Truncated { needed, available }` (a scheme identified itself but its declared sizes run past
-the input), `TrailingBytes(n)`, `OddSerial(n)`, `BadIdentifier { expected, got }`,
-`BadDescription { expected, got }`, `SectionTooLarge { section, size }` (a section past the
-header's u32 size field).
+`ContainerError` is one of:
+
+- `Unrecognized`: no key's 64-byte compare held and the PES 15 description digest did not
+  match; also any input too short for either check (384 bytes keyed, 433 PES 15).
+- `Truncated { needed, available }`: a scheme identified itself but its declared sizes run past
+  the input.
+- `TrailingBytes(n)`.
+- `OddSerial(n)`.
+- `BadIdentifier { expected, got }`.
+- `BadDescription { expected, got }`.
+- `SectionTooLarge { section, size }`: a section past the header's u32 size field.
 
 `decrypt(to_bytes(c, salt)) == c` for any salt, and `to_bytes` with a real save's own salt
 reproduces that save's bytes exactly (the fixtures below carry enough of a real file to prove it
@@ -197,20 +210,24 @@ Section offsets inside the decrypted payload, transcribed from 4ccEditor's
 | PES 20 | 0x60 | 0x7C, 312 B unified | ID +240, boots/gloves +244 | 0x8ED2FC | 0x9CCC04 | 0xA01E3C |
 | PES 21 | 0x60 | 0x7C, 312 B unified | ID +240, boots/gloves +244 | 0x8ED2FC | 0x9D4648 | 0xA09880 |
 
-Notes: on 15/16 the player-entry count is read at 0x34 (4ccEditor) and the
-appearance-entry count at 0x36 (the Midcupping scripts); the two are equal on the PES 16 save
-but differ on the PES 15 one (5060 players at 0x34, 5061 appearance records at 0x36, while the
-player and appearance ID sets are equal at 5060): each array reads its own count — the extra
-appearance record is simply unreferenced. PES 17, 18 and 19 all use a 188-byte player record but
-**not the same field layout**: the first ~250 bits (id, nation, physique bytes, the ability run
-to `exp_pwr`) agree between 17 and 18, after which 18's motion/coverage/position bits sit at
-different offsets, and 19 reorders the whole record (measured 2026-09-14: each version's own
-table decodes its own save with every 7-bit ability in 40..99, the other versions' tables do
-not). PES 20 shares the 312-byte player walk with 21 but has its own roster/tactics
-offsets — the two versions' section offsets match only for team IDs (measured 2026-09-20 on a
-real PES 20 save: its payload is 31 300 bytes shorter than the 21 save's, exactly the roster and
-tactics offset difference, and both saves rewrite byte for byte under the 20 and 21 tables
-respectively).
+Notes:
+
+- **The 15/16 counts.** On 15/16 the player-entry count is read at 0x34 (4ccEditor) and the
+  appearance-entry count at 0x36 (the Midcupping scripts). The two are equal on the PES 16 save
+  but differ on the PES 15 one (5060 players at 0x34, 5061 appearance records at 0x36, while
+  the player and appearance ID sets are equal at 5060). Each array reads its own count — the
+  extra appearance record is simply unreferenced.
+- **The 188-byte records.** PES 17, 18 and 19 all use a 188-byte player record but **not the
+  same field layout**. The first ~250 bits (id, nation, physique bytes, the ability run to
+  `exp_pwr`) agree between 17 and 18, after which 18's motion/coverage/position bits sit at
+  different offsets, and 19 reorders the whole record. This was measured 2026-09-14: each
+  version's own table decodes its own save with every 7-bit ability in 40..99, the other
+  versions' tables do not.
+- **PES 20 and 21.** PES 20 shares the 312-byte player walk with 21 but has its own
+  roster/tactics offsets — the two versions' section offsets match only for team IDs. This was
+  measured 2026-09-20 on a real PES 20 save: its payload is 31 300 bytes shorter than the 21
+  save's, exactly the roster and tactics offset difference, and both saves rewrite byte for
+  byte under the 20 and 21 tables respectively.
 
 The payload's other sections (manager entries, competitions, stadium names, the kit entry
 table, the competition-entry lists) and the bytes inside these five records that no field
@@ -226,11 +243,13 @@ Structural eras:
   72-byte sub-block whose **internal layout is identical across 16–21** (playerID, the
   boots/gloves u32, copy ID, physique bitfields, wrist/strip bitfields, the ingame-face run,
   skin color, iris, hair). Only its position moves: a separate array in 15/16, record +116 in
-  17/18/19, record **+240** in 20/21. The 20/21 record grows to 312 bytes because the name
-  section ahead of it widens (name 61 B at +54, shirt name 61 B at +115, print name 64 B at
-  +176); within the sub-block: playerID +240, boots/gloves u32 +244, copy ID +248, physique
-  +252, ingame-face run +262…+285, skin +285, iris +304, hair +304…+312. Verified empirically
-  against a decrypted real PES 21 save (see Verification).
+  17/18/19, record **+240** in 20/21.
+
+  The 20/21 record grows to 312 bytes because the name section ahead of it widens (name 61 B
+  at +54, shirt name 61 B at +115, print name 64 B at +176). Within the sub-block: playerID
+  +240, boots/gloves u32 +244, copy ID +248, physique +252, ingame-face run +262…+285, skin
+  +285, iris +304, hair +304…+312. Verified empirically against a decrypted real PES 21 save
+  (see Verification).
 - ⚠ `convertTeam21.py` (the 16→21 reference) writes physique to record +128, the ingame-face
   run to +138…188, and the shirt name to +100 — stale PES 17/18/19 offsets — while its own
   240-anchored writes (boots/gloves u32 +244, wrist +259, skin/facial +285…) are correct. In
@@ -239,9 +258,12 @@ Structural eras:
   corrupted. The Rust port must take all 20/21 offsets from `pes20.cpp`'s walk, not from the
   converter (shirt name is at +115, physique at +252, ingame face at +262).
 - Within the appearance data, the known anchor fields (from Midcupping and the
-  converters): boots ID = 14 bits at bit offset 4 of the block's second u32,
-  gloves ID = 14 bits at bit offset 18 of the same u32, face ID = the third u32
-  (equal to the player ID when unset), physique bytes, strip-style bitfields,
-  and a ~50-byte ingame-face parameter run.
+  converters):
+  - boots ID = 14 bits at bit offset 4 of the block's second u32;
+  - gloves ID = 14 bits at bit offset 18 of the same u32;
+  - face ID = the third u32 (equal to the player ID when unset);
+  - physique bytes;
+  - strip-style bitfields;
+  - and a ~50-byte ingame-face parameter run.
 
 ---

@@ -6,7 +6,7 @@ Part of the [Savefile plan](README.md). Section headings are unchanged from the 
 
 One version-independent model (`model/player.rs`, `model/team.rs`, `model/tactics.rs`),
 populated by whichever schema loaded the file. 4ccEditor's ~100-line manual `operator==` and
-`PlayerExport()`/`PlayerImport()` copy methods are derived `PartialEq`/`Clone`; the model has
+`PlayerExport()`/`PlayerImport()` copy methods are derived `PartialEq`/`Clone`. The model has
 no serde derives, because every text form (Team TOML, `settings.toml`, Texport) is its own
 format with its own writer in `interchange/` and `settings_toml/`.
 
@@ -104,25 +104,26 @@ pub struct Formation {
 }
 ```
 
-Version quirks to encode: advanced-instruction value ranges differ (PES 17:
-0x00–0x0C; 18/19: 0x00–0x0F, different meanings — 4ccEditor resolves this through
-a canonical 17-order enum: values 0x08–0x0C shift +2 for 18/19, and 18/19's
-Defensive/False Winger/Wingback are 0x0D/0x0E/0x0F in canonical order, mapping
-to 0x08/0x09/0x0F; 20/21 insert Anchoring at 0x0A, 18/19's 0x0A–0x0F moving to
-0x0B–0x10, measured in-game on PES 21 — 4ccEditor's table is right for 17–19
-only), and **playstyle enums are
-version-specific** — 4ccEditor's `menu_lists.cpp` carries twelve conversion
-arrays (16↔17/18, 16↔19, 16↔20/21, 17/18↔19, 17/18↔20/21, 19↔20/21). In Rust
-these become one canonical `PlayStyle` enum (`model/playstyle.rs`) plus one list per version
-group with `decode`/`encode` (`schema/playstyle.rs`), which is what makes cross-version team
-import work; the lists and the rule for unlisted values are in `operations.md` "Cross-version
-player conversion". `PlayerPositions.playing_style` stays the stored `u8` index.
+Version quirks to encode:
 
-PES 15 has the game plan's Fluid Formation switch, but its saves do not keep it: the edit file
+- **Advanced-instruction value ranges differ.** PES 17 uses 0x00–0x0C; 18/19 use 0x00–0x0F,
+  with different meanings. 4ccEditor resolves this through a canonical 17-order enum: values
+  0x08–0x0C shift +2 for 18/19, and 18/19's Defensive/False Winger/Wingback are
+  0x0D/0x0E/0x0F in canonical order, mapping to 0x08/0x09/0x0F. 20/21 insert Anchoring at
+  0x0A, 18/19's 0x0A–0x0F moving to 0x0B–0x10, measured in-game on PES 21 — 4ccEditor's table
+  is right for 17–19 only.
+- **Playstyle enums are version-specific.** 4ccEditor's `menu_lists.cpp` carries twelve
+  conversion arrays (16↔17/18, 16↔19, 16↔20/21, 17/18↔19, 17/18↔20/21, 19↔20/21). In Rust
+  these become one canonical `PlayStyle` enum (`model/playstyle.rs`) plus one list per version
+  group with `decode`/`encode` (`schema/playstyle.rs`), which is what makes cross-version team
+  import work. The lists and the rule for unlisted values are in `operations.md` "Cross-version
+  player conversion". `PlayerPositions.playing_style` stays the stored `u8` index.
+
+PES 15 has the game plan's Fluid Formation switch, but its saves do not keep it. The edit file
 saved after switching it off was byte for byte the file before, and two team exports taken
 either side of the switch carry the same payload, their description's export number aside
 (the maintainer's PES 15 files, measured 2026-11-02). `fluid` is therefore absent on PES 15,
-and the AATF check and the Tactics view field a PES 15 preset's kick-off formation alone; what
+and the AATF check and the Tactics view field a PES 15 preset's kick-off formation alone. What
 the game fields after reloading a save it was switched on in is not measured.
 
 ---
@@ -144,30 +145,35 @@ may appear anywhere in the name, several times, to colour segments differently
 (`PEP\x11cffffffffSI \x11c004b93ffMAN` renders "PEPSI MAN" in three colours).
 They are used freely — medal players are the common case, but not the only one.
 Verified against ~30 decorated names across real PES 19 and 21 cup saves (see
-Verification). No tool in the 4cc toolset writes them; they are hand-edited by
+Verification). No tool in the 4cc toolset writes them. They are hand-edited by
 cup organizers and must be **preserved byte-for-byte** by every copy-through
-and roundtrip path. This crate exposes the raw name and a
-`display_name()` helper that strips the codes (fixed-length match: the colour is exactly the 8
-bytes after `\x11c`, hex or not, so a name letter `a`–`f` following a code is never eaten; the
-2-byte reset `\x11d` is stripped too; see `codec.md` "Whole-file API" for the measurement); the
-save editor renders the colours from the raw name and allows editing them, while
-folder-name derivation (Team compiler, Export upgrader) and search use the
-stripped form. Any other control character in a name is not a known code and is
-left alone.
+and roundtrip path.
 
-`PlayerSettings` covers the player `name`, the `shirt_name`, **every decoded field of the
-savefile's player appearance record** —
-physique, strip style (taping, spectacles and their colour, sleeves, inners, socks, undershorts,
-shirttail, player gloves and their colour), wrist-tape colours, skin and iris colour, the motion
-block (hunching, arm movement, kick motions, gc1/gc2, dribbling motion on 20+; visual choices a
-team makes, so aesthetics), every field of the ingame-face run — sliders, colours, hair, the
-eleven feature types; the run is fully decoded ("The ingame-face run" below) — and
-the boots/gloves model IDs
-**within the stock band** (0 to 100; custom IDs are derived by the compiler from the models and
-links present, see the Aesthetics export plan's "Player settings in exports") — with one exclusion,
-**compiler-owned**: the edit flags, the base-copy ID and the appearance id (derived from what was
-written). Export
-`settings.toml` neither accepts the excluded keys nor emits them when generated from a save.
+This crate exposes the raw name and a `display_name()` helper that strips the codes. The helper
+uses a fixed-length match: the colour is exactly the 8 bytes after `\x11c`, hex or not, so a
+name letter `a`–`f` following a code is never eaten. The 2-byte reset `\x11d` is stripped too
+(see `codec.md` "Whole-file API" for the measurement). The save editor renders the colours from
+the raw name and allows editing them, while folder-name derivation (Team compiler, Export
+upgrader) and search use the stripped form. Any other control character in a name is not a
+known code and is left alone.
+
+`PlayerSettings` covers:
+
+- the player `name`;
+- the `shirt_name`;
+- **every decoded field of the savefile's player appearance record**: physique, strip style
+  (taping, spectacles and their colour, sleeves, inners, socks, undershorts, shirttail, player
+  gloves and their colour), wrist-tape colours, skin and iris colour, the motion block
+  (hunching, arm movement, kick motions, gc1/gc2, dribbling motion on 20+; visual choices a
+  team makes, so aesthetics), and every field of the ingame-face run (sliders, colours, hair,
+  the eleven feature types; the run is fully decoded, "The ingame-face run" below);
+- the boots/gloves model IDs **within the stock band** (0 to 100; custom IDs are derived by the
+  compiler from the models and links present, see the Aesthetics export plan's "Player
+  settings in exports").
+
+It has one exclusion, **compiler-owned**: the edit flags, the base-copy ID and the appearance id
+(derived from what was written). Export `settings.toml` neither accepts the excluded keys nor
+emits them when generated from a save.
 
 ```rust
 /// `settings_toml`
@@ -237,13 +243,14 @@ No operation writes the appearance id's -1: no save is stripped (step 8.36b).
 **The ingame-face run.** From its 22nd byte to its end, the appearance block (72 bytes on PES 16 to
 21, 68 on PES 15; a separate record on 15/16, inside the player record from 17) is a run the crate
 carries verbatim as bytes with a typed accessor per field: `PlayerAppearance.ingame_face:
-IngameFace`, a `Vec<u8>` of the run (50 or 46 bytes; the schema says which). Every bit was measured
-in the games (2026-10-13): in Edit mode each player of one team had one setting changed, then the
-team was saved once, so the diff per player attributed each bit run to its setting; the rest was
-measured from renders of patched saves, and from censuses of the games' own face tables (PES 17 to
-21) and of every cup save (PES 15 to 21). PES 21 and PES 15 were measured whole; the renders were
-checked on PES 17 and 19. So the run has no undecoded bit left: each bit is a field below, or
-measured unused.
+IngameFace`, a `Vec<u8>` of the run (50 or 46 bytes; the schema says which).
+
+Every bit was measured in the games (2026-10-13). In Edit mode each player of one team had one
+setting changed, then the team was saved once, so the diff per player attributed each bit run to
+its setting. The rest was measured from renders of patched saves, and from censuses of the games'
+own face tables (PES 17 to 21) and of every cup save (PES 15 to 21). PES 21 and PES 15 were
+measured whole; the renders were checked on PES 17 and 19. So the run has no undecoded bit left:
+each bit is a field below, or measured unused.
 
 **Two layouts.** PES 16 to 21 share one layout of the 50-byte run (`FaceLayout::Pes16To21`). PES
 15's 46-byte run (`FaceLayout::Pes15`) shares its face part, its colours and its accessory bits,
@@ -406,15 +413,18 @@ impl IngameFace {
 ```
 
 The four fields the tables used to list as bit runs (`SkinColor`, `IrisColor`, `PlayerGloves`,
-`PlayerGlovesColor`) leave the per-version tables and the `PlayerField` enum: they are reached
+`PlayerGlovesColor`) leave the per-version tables and the `PlayerField` enum. They are reached
 through `IngameFace::get`/`set`, so no byte has two owners and the schema overlap test keeps it
-that way. `read_player_into` copies the run out of the record; `write_player` copies it back and
-rejects a run of the wrong length (`CodecError::RunSize`). The generator emits the `ingame_face`
-entry and omits the four fields; the round-trip tests over every real payload are unchanged and
-still prove byte identity. Cross-version conversion (a Team TOML import from another version) is
-where the 46-byte PES 15 run meets the 50-byte one: the run is written key by key, a key the
-target's layout does not hold dropped with a note (`operations.md` "Cross-version player
-conversion").
+that way.
+
+`read_player_into` copies the run out of the record; `write_player` copies it back and rejects a
+run of the wrong length (`CodecError::RunSize`). The generator emits the `ingame_face` entry and
+omits the four fields. The round-trip tests over every real payload are unchanged and still
+prove byte identity.
+
+Cross-version conversion (a Team TOML import from another version) is where the 46-byte PES 15
+run meets the 50-byte one. The run is written key by key, and a key the target's layout does
+not hold is dropped with a note (`operations.md` "Cross-version player conversion").
 
 Every field is a `settings.toml` key (the key table, ranges and defaults in
 `aesthetics_export/settings_toml.md`), so `[appearance.unknown]` is gone from `settings.toml`
@@ -425,20 +435,24 @@ the unused bits keep the save's values. Cross-version conversion converts the ru
 field between the layouts (`operations.md` "Cross-version player conversion"), and PES 15's
 face caps are measured there.
 
-**Completeness is a tested invariant, not a convention.** `settings_toml` classifies every
-`PlayerField` and every `IngameFaceField` exhaustively (an `Ownership::{Settings, CompilerOwned,
-Gameplay}` match with no wildcard arm, so a new field fails to compile until classified), and one
-test asserts that the `Settings` set equals the set of fields the `SettingKey` table reaches —
-a field added to a schema cannot be silently left out of the authorable set. A second test
-asserts, per version, that every bit of the appearance block has exactly one carrier — a
-`PlayerField` row of the block's record, an `INGAME_FACE_FIELDS` row, or an `UNUSED_FACE_BITS`
-row — and that none of it is `Gameplay`, so no undecoded bit lies outside the run. The generated
-template (the Export upgrader's and the save editor's `settings.toml` output, and the blank
-template for a new player folder) lists **every** `SettingKey`, one per line, each followed by the
-comment carrying its range: set ones with their value, unset ones as commented lines (unset
-boots/gloves IDs as `""`), so the file
-itself shows what can be authored and "absent = untouched" stays true for the unset ones. The key
-table, its order, its comments and its ranges are the block in the
+**Completeness is a tested invariant, not a convention.**
+
+- `settings_toml` classifies every `PlayerField` and every `IngameFaceField` exhaustively (an
+  `Ownership::{Settings, CompilerOwned, Gameplay}` match with no wildcard arm, so a new field
+  fails to compile until classified), and one test asserts that the `Settings` set equals the
+  set of fields the `SettingKey` table reaches — a field added to a schema cannot be silently
+  left out of the authorable set.
+- A second test asserts, per version, that every bit of the appearance block has exactly one
+  carrier — a `PlayerField` row of the block's record, an `INGAME_FACE_FIELDS` row, or an
+  `UNUSED_FACE_BITS` row — and that none of it is `Gameplay`, so no undecoded bit lies outside
+  the run.
+- The generated template (the Export upgrader's and the save editor's `settings.toml` output,
+  and the blank template for a new player folder) lists **every** `SettingKey`, one per line,
+  each followed by the comment carrying its range: set ones with their value, unset ones as
+  commented lines (unset boots/gloves IDs as `""`). So the file itself shows what can be
+  authored, and "absent = untouched" stays true for the unset ones.
+
+The key table, its order, its comments and its ranges are the block in the
 [Aesthetics export plan](../aesthetics_export/settings_toml.md) ("Player settings in exports"),
 which the code reproduces literally. This matters because the patch workflow below makes
 `settings.toml` the *only* route by which a team's aesthetics reach the official save: a field the
@@ -487,15 +501,18 @@ records of `container.md` "Payload layout per version") and their counts,
 and writes every other byte back as read. A census of every cup save on the maintainer's
 machine (PES 16: 28 distinct saves, 17: 73, 18: 9, 19: 23, 21: 15; 15 and 20 the fixture alone)
 measured what those other bytes hold, so that modeling any of them starts here and not from a
-new reading of the payload. The schema tables cover 12 to 27% of a payload's bits (PES 15
-17.9%, 16 17.2%, 17 19.7%, 18 26.7%, 19 15.7%, 20 12.9%, 21 12.4%), and almost all of the rest
-is empty capacity: each section is a fixed array of slots (25,000 player slots on 15/16,
-21,000 on 17/18, 32,000 on 19, 30,000 on 20/21; 650 to 850 team slots; 715 to 990 roster and
-tactics slots), and the
-unused slots are zeros or the `0x0003FFFF` "no team" filler, identical in every save. The data
-that varies between saves and no field covers is small, and every piece of it is named by the
-community's edit-file wiki pages or by its content. Offsets, strides, counts and what varies
-are measured; a name is the wiki's unless "measured" says an Edit-mode save moved it.
+new reading of the payload.
+
+The schema tables cover 12 to 27% of a payload's bits (PES 15 17.9%, 16 17.2%, 17 19.7%, 18
+26.7%, 19 15.7%, 20 12.9%, 21 12.4%), and almost all of the rest is empty capacity. Each section
+is a fixed array of slots (25,000 player slots on 15/16, 21,000 on 17/18, 32,000 on 19, 30,000
+on 20/21; 650 to 850 team slots; 715 to 990 roster and tactics slots), and the unused slots are
+zeros or the `0x0003FFFF` "no team" filler, identical in every save. The data that varies
+between saves and no field covers is small, and every piece of it is named by the community's
+edit-file wiki pages or by its content.
+
+Offsets, strides, counts and what varies are measured; a name is the wiki's unless "measured"
+says an Edit-mode save moved it.
 
 ### Sections past the records
 
@@ -513,39 +530,57 @@ the team slots:
 
 The 17 to 21 starts are the wiki's, each confirmed by the census (the section's stride starts
 where the page says); the 15, 16 and 20 starts were located by content (the 92-byte and
-128-byte strides, the manager and stadium names). The header's count block (0x3A to 0x4C on
-15/16, 0x62 to 0x7C on 17 to 21) holds each table's u16 count: competitions, stadiums,
-managers, team-player tables, game plans, and the kit entries (0x68 on 17, 0x6C on 18 to 21),
-measured equal to the table's non-empty entries. On 17 to 21 the header's bytes 0x30 to 0x4F
-differ in every save: the game rewrites them on every Edit-mode save (a digest or random,
-inferred), and a save patched with them left as they were loads and plays, so leaving them as
-read is safe. A PES 18 save also rewrote 0x0C to 0x0D and 0x54 to 0x55 (`06 29` to `76 27`,
-both pairs), unexplained; PES 16 rewrites no header byte.
+128-byte strides, the manager and stadium names).
+
+The header's count block (0x3A to 0x4C on 15/16, 0x62 to 0x7C on 17 to 21) holds each table's
+u16 count: competitions, stadiums, managers, team-player tables, game plans, and the kit
+entries (0x68 on 17, 0x6C on 18 to 21), measured equal to the table's non-empty entries.
+
+On 17 to 21 the header's bytes 0x30 to 0x4F differ in every save. The game rewrites them on
+every Edit-mode save (a digest or random, inferred), and a save patched with them left as they
+were loads and plays, so leaving them as read is safe. A PES 18 save also rewrote 0x0C to 0x0D
+and 0x54 to 0x55 (`06 29` to `76 27`, both pairs), unexplained; PES 16 rewrites no header byte.
 
 ### Kit slots and the strip table
 
 Every version's team record holds a block of ten u32 kit slots, each `(team id << 14) |
-strip number`: the outfield 1st to 4th strips are 0 to 3 (the editor's Add menu offers those
-and the goalkeeper's 1st; 4 to 8 occur on one team of one save), the goalkeeper's 1st is 0x80,
-and an unused slot is 0xFFFFC000. The block is at +0x1C on 17 and 18 (measured on 18), +0x20
-on 19 (measured) and +0x30 on 20/21 (measured on 21); on 15/16 bytes 24 to 63 are set and
-uncovered, the same size, inferred to be the same block. The schema tables carry the
-`KitSlotNumber`/`KitSlotTeam` rows for 17 alone ("The team
-side" above), so the rows for the other versions are what modeling this adds. Measured on 18, 19 and
-21: Edit > Teams > Strip > Add writes the new strip's key into the block's first unused slot
-(so a block's order is the order of adding, not numeric: one team holds 0, 1, 0x80, 2, 3), adds
-one entry with the same key to the strip table, which stays sorted by key (the entries after
-it move down one slot), and adds 1 to the header's kit-entry count; nothing else changes.
+strip number`:
+
+- the outfield 1st to 4th strips are 0 to 3 (the editor's Add menu offers those and the
+  goalkeeper's 1st; 4 to 8 occur on one team of one save);
+- the goalkeeper's 1st is 0x80;
+- an unused slot is 0xFFFFC000.
+
+The block is at +0x1C on 17 and 18 (measured on 18), +0x20 on 19 (measured) and +0x30 on 20/21
+(measured on 21). On 15/16 bytes 24 to 63 are set and uncovered, the same size, inferred to be
+the same block. The schema tables carry the `KitSlotNumber`/`KitSlotTeam` rows for 17 alone
+("The team side" above), so the rows for the other versions are what modeling this adds.
+
+Measured on 18, 19 and 21, Edit > Teams > Strip > Add:
+
+- writes the new strip's key into the block's first unused slot (so a block's order is the
+  order of adding, not numeric: one team holds 0, 1, 0x80, 2, 3);
+- adds one entry with the same key to the strip table, which stays sorted by key (the entries
+  after it move down one slot);
+- and adds 1 to the header's kit-entry count.
+
+Nothing else changes.
+
 The entry's body is the strip's design: on 20/21 a `FF 07 00 50` word and RGB-looking
 triplets (`36 36 36` in a default entry), inferred to be the kit colours; the layout is
 unmapped. The maintainer's PES 21 install refuses to edit a strip ("You cannot edit this
 strip"), on a cup team's 1st and on one just added, so mapping the body by editing needs
-another install or another route. A team whose slots name strips with no table entry (PES
-19: 158 teams own strips 0, 1 and 0x80 against 15 entries) draws them from the kit configs
-the CPK carries, inferred, not tested. In the live saves: PES 18, 89 teams with slots 0, 1 and
-0x80 (11 with a 4th, one with all ten) and 96 with none, the table empty; PES 19, 158 teams
-with 0, 1 and 0x80 and 52 with none; PES 21, every table entry populated, default teams
-included.
+another install or another route.
+
+A team whose slots name strips with no table entry (PES 19: 158 teams own strips 0, 1 and 0x80
+against 15 entries) draws them from the kit configs the CPK carries, inferred, not tested.
+
+In the live saves:
+
+- PES 18: 89 teams with slots 0, 1 and 0x80 (11 with a 4th, one with all ten) and 96 with
+  none, the table empty;
+- PES 19: 158 teams with 0, 1 and 0x80 and 52 with none;
+- PES 21: every table entry populated, default teams included.
 
 ### The team record
 
@@ -584,16 +619,20 @@ the tables' bits (`codec.md` "Reference readings the derivation flagged").
 
 The tables cover 4,120 of the record's 5,024 bits on 17 to 21 (4,088 of 4,128 on 15, 4,112
 of 4,160 on 16, where no uncovered bit is set in any save). On 17 to 21 the uncovered bits
-that real saves set are these. Bytes 516 to 523 on 19 to 21 are lineup slots 32 to 39
-of the wiki's 40-byte lineup at 0x1E4 (the tables cover slots 0 to 31 as the starting eleven
-and the bench); on PES 20, 218 of 220 records hold exactly 32 to 39 there. Byte 537 bit 0 is
-Switch Preset Tactics (measured on 21: On to Off cleared it; set in 1,529 of 8,388 PES 19
-records and 1,185 of 3,180 PES 21 ones) and byte 539 is Auto Lineup Select (measured on 21:
-"Unedited" is 0 and the next entry right, "By Ability", is 2, on which the game re-picked the
-lineup at once and swapped two lineup bytes; the other entries were not stepped through). On
-17/18 that setting is byte 530 bit 1 (values 2 and 3 in 288 and 25 records). The wiki's PES 19
-page lists its offsets after the lineup 3 bytes short; the tables and the data agree with each
-other.
+that real saves set are these:
+
+- Bytes 516 to 523 on 19 to 21 are lineup slots 32 to 39 of the wiki's 40-byte lineup at 0x1E4
+  (the tables cover slots 0 to 31 as the starting eleven and the bench). On PES 20, 218 of 220
+  records hold exactly 32 to 39 there.
+- Byte 537 bit 0 is Switch Preset Tactics (measured on 21: On to Off cleared it; set in 1,529
+  of 8,388 PES 19 records and 1,185 of 3,180 PES 21 ones).
+- Byte 539 is Auto Lineup Select (measured on 21: "Unedited" is 0 and the next entry right,
+  "By Ability", is 2, on which the game re-picked the lineup at once and swapped two lineup
+  bytes; the other entries were not stepped through). On 17/18 that setting is byte 530 bit 1
+  (values 2 and 3 in 288 and 25 records).
+
+The wiki's PES 19 page lists its offsets after the lineup 3 bytes short; the tables and the data
+agree with each other.
 
 ### The player record
 
@@ -630,23 +669,35 @@ byte-identical, so which screen sets them is not isolated.
 ### What the player's edit flags gate in game
 
 Measured in PES 2019's Edit mode (2026-11-07 to 11-09, on a cup save, a placeholder team's
-players): with every flag clear, a name written to the record shows PLACEHOLDER everywhere,
-the edit field included, while stats typed at 99 show and lift the overall; the `player` flag
-alone makes the name show; `abilities` alone changes nothing; `motion` gates nothing (a free
-kick, a penalty kick and a goal celebration written with every flag clear show on the Motion
-page), and the look flags (face, hair, physique, strip) are off on every team of a save whose
-compiled looks show. So of the flags only `player` matters to what the suite writes, and for
-a name. In VGL 27's Friendlies save every filled team holds `player` on all 23 players and
-the gameplay flags on nearly all, and every placeholder team holds none. The Save editor sets
-`player` when a member types a name or a shirt name, as 4ccEditor does; an import (Team TOML,
-legacy) writes the file's flags as they are, so a hand-renamed TOML with `edit_flags.player
-= false` stays PLACEHOLDER in game. Other versions are unmeasured.
+players):
+
+- with every flag clear, a name written to the record shows PLACEHOLDER everywhere, the edit
+  field included, while stats typed at 99 show and lift the overall;
+- the `player` flag alone makes the name show;
+- `abilities` alone changes nothing;
+- `motion` gates nothing (a free kick, a penalty kick and a goal celebration written with every
+  flag clear show on the Motion page);
+- and the look flags (face, hair, physique, strip) are off on every team of a save whose
+  compiled looks show.
+
+So of the flags only `player` matters to what the suite writes, and for a name. In VGL 27's
+Friendlies save every filled team holds `player` on all 23 players and the gameplay flags on
+nearly all, and every placeholder team holds none.
+
+The Save editor sets `player` when a member types a name or a shirt name, as 4ccEditor does. An
+import (Team TOML, legacy) writes the file's flags as they are, so a hand-renamed TOML with
+`edit_flags.player = false` stays PLACEHOLDER in game. Other versions are unmeasured.
 
 ### Open points
 
-Not determined by the census: PES 20's competition stride (49,528 B is not 65 × 760); PES 15's
-header 0x4A reading 1855 over an all-empty kit table; PES 16's competition-entry start (the
-ids begin 128 B before the wiki's size implies); the strip entries' layout beyond the key and
-the colour-looking bytes; the 32 header bytes; the edit flags' meanings beyond the section above (the wiki's
-words). Not measured in Edit mode: the manager entries, competitions, stadium names, the
+Not determined by the census:
+
+- PES 20's competition stride (49,528 B is not 65 × 760);
+- PES 15's header 0x4A reading 1855 over an all-empty kit table;
+- PES 16's competition-entry start (the ids begin 128 B before the wiki's size implies);
+- the strip entries' layout beyond the key and the colour-looking bytes;
+- the 32 header bytes;
+- the edit flags' meanings beyond the section above (the wiki's words).
+
+Not measured in Edit mode: the manager entries, competitions, stadium names, the
 commentary-name id, the print name, and the team record's emblem, stadium and banner bytes.
