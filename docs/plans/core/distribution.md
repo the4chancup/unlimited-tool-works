@@ -431,7 +431,9 @@ whole, in one bullet, as 0.0.1 did the Save editor.
 Nothing else describes releases; the three places a user meets release notes all read this
 file:
 
-1. **The help window's "What's new" chapter** — the file embedded at build time, newest first.
+1. **The help window's "What's new" chapter** — the file embedded at build time, newest first,
+   without its title line: the chapter's one topic is titled "Changelog" already, and the
+   window would draw the same heading twice.
 2. **The GitHub release body** — the release process copies the released version's section
    verbatim into the release notes. The updater dialog shows that body inline (see "Distribution
    and updates" step 2), so the dialog, the release page and the in-app chapter are the same text

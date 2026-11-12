@@ -47,7 +47,10 @@ What changed for members, release by release, newest first.
   version, checks it and puts it in the program's folder, showing its progress, with Cancel
   beside it. Restart now then starts the new version; Later leaves `Update ready` on the
   status bar until the next start. When an update fails, the dialog says whether anything
-  was changed and where to download the version by hand.
+  was changed and where to download the version by hand. The first start of a new version
+  shows `Updated to` and its number on the status bar, with What's new beside it.
+- **Help** — two new chapters: Updates explains the check, the offer and each step of an
+  update, and What's new holds this list of changes, version by version.
 - **Save editor** — the Comparator lists each difference in three columns, Item, Old value
   and New value, under one head row, as the unsaved changes list does; a value too long for
   its column is cut, and hovering the row shows it whole.

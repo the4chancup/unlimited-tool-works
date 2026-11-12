@@ -1585,8 +1585,8 @@ ST-UPD-05   GIVEN `Update ready` after an update to `v0.0.2`, the status bar rea
 ST-UPD-06   GIVEN a settings file whose `last_run_version` is `0.0.1`, in a build of `0.0.2`
             WHEN the shell starts
             THEN the notice `Updated to v0.0.2 pre-alpha` shows and the settings file says
-                 `0.0.2`; GIVEN it absent, or `0.0.2`, or `0.0.3` THEN no notice, and the
-                 file says `0.0.2`
+                 `0.0.2`; GIVEN it absent, or `0.0.2`, or `0.0.3`, or not a version THEN no
+                 notice, and the file says `0.0.2`
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn

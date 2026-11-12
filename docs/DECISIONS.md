@@ -16466,3 +16466,23 @@ Not chosen: exporting the temp variables for every recipe (the builds and the mu
 scratch copies would move behind the link for no test's benefit).
 Plan: no plan edit needed, a gate's mechanics: `CONTRIBUTING.md` "Testing and verification"
 describes it.
+
+## 2026-11-12 — studio_core — The `Updated to` notice and the two help chapters: what the plan left open
+Decision: the version whose window last started is `last_run_version` in the common settings,
+state the shell writes as it writes `last_tool`. The first frame compares it with the
+program's own version and then stores and saves the own one in every case. The notice shows
+only when the stored value reads as a version and is strictly older; absent, equal, newer or
+unreadable shows none. The command line neither reads nor writes it. The help's What's new
+chapter embeds `CHANGELOG.md` without its title line. The Updates chapter describes only what
+is built: no rollback, no command-line notice.
+Why: a settings key, not a marker file, because the settings file is already the one place the
+shell keeps its own state and is saved the same way; stored in every case, not only after a
+notice, because a start that leaves an older value shows the notice again at the next start;
+no notice for a newer stored value because an older copy started after a newer one was not
+updated; the title line dropped because the topic is titled "Changelog" and the window drew
+the heading twice; the chapter limited to what is built because a help text describing a
+planned button sends a member looking for it.
+Not chosen: a notice on a first run (nothing was updated); the version compared as text
+(`0.0.10` sorts before `0.0.9`).
+Plan: `plans/core/gui.md` ST-UPD-06 (the unreadable value added), `plans/core/distribution.md`
+"Changelog" reader 1; worklog 0.0.2-upd slice 3.

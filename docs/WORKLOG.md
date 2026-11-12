@@ -1670,10 +1670,9 @@ briefs, review loops, gates and mutation runs as for any step.
       served from this PC (`UTW_RELEASES_URL`, plain http by ureq's defaults, read not run):
       each stage's look, which log slot the restarted program takes while the old one is
       still closing (ST-RUN-12), and whether it clears the old files
-    - [ ] slice 3 the `Updated to` notice (`last_run_version`) and the help's Updates and
-      What's new chapters (ST-UPD-06); with it the offer's tooltip as the draft words it
-      (`<app> v<new> is out. Details shows what it brings.`, the bar says "A newer release
-      is out" today, where `Update ready`'s names the version)
+    - [x] slice 3, 2026-11-12 (`0c2fe2fb`, Opus): the `Updated to` notice
+      (`last_run_version`), the help's Updates and What's new chapters (ST-UPD-06), the
+      offer's tooltip naming the app and the version
     - [ ] slice 4 the settings menu's rollback (`plans/core/distribution.md` "Rollback")
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
