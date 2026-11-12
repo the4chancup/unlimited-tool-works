@@ -2340,8 +2340,16 @@ points there.
   packed on disk, so reading it takes a memory dump of the running game, then the analysis
   the PES 2016 executable got (`4cc-studio-temp/pes16_re`): find the tactics sheet's five
   slider bytes per preset and every reader of bytes 1 and 4. A dumping tool attached to
-  the game is a change on the maintainer's machine: ask before. The labels' question
-  waits in `docs/QUESTIONS.md` ("The two numbers' labels on PES 17 to 21").
+  the game is a change on the maintainer's machine: ask before.
+  The study also decides the two controls' labels. The Tactics view draws `Numbers in
+  attack` and `Numbers in defence` on every version; the unofficial 4ccEditor, whose
+  Tactics tab the view was ported from (the official one has none), keeps those names on
+  PES 16 only and labels the same two combos `Auto Atk. level:` and `Auto Def. level:` on
+  PES 17 to 21, with the same save bytes and the same Few, Medium and Many
+  (`4ccEditor-1/main.cpp`, "Update the numbers in attack combo boxes with the correct
+  labels"). The maintainer's ruling (2026-11-12): the bytes being the same, nothing is
+  relabelled yet; once the study says whether PES 17 uses them, and how, the two controls
+  are relabelled or disabled there.
 - open 2026-11-11 (the worklog's collapse) — What the collapse left for the lead, from its
   report (`.tmp/sidelead/sk_wl.report.md`): (1) the closed issues' in-game results, Tests 2,
   4, 4b, 4c and 5 (the BootsList and GloveList rows, the referee collars on PES 17 and 21),
