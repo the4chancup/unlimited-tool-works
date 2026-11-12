@@ -182,17 +182,17 @@ export format.
      A source's small metadata is read by its check, through the handle the deep pass then
      reads its contents from: a `.7z` is decompressed once for the metadata, the structure pass
      and the deep pass, under one permit. `check` releases it when the deep pass ends.
-     `compile` keeps a small archive's buffer and permit for its tasks (at most an eighth of
-     the cap, the cap left free of kept archives by at least `MIN_FREE_BUDGET` and the run's
-     largest other `.7z`: `spec/libs/pipeline.md` "What a solid `.7z` is charged") and
-     releases any other's the same way.
+     `compile` keeps a small archive's buffer and permit for its tasks and releases any
+     other's the same way. A small archive is one of at most an eighth of the cap, and the cap
+     stays free of kept archives by at least `MIN_FREE_BUDGET` and the run's largest other
+     `.7z` (`spec/libs/pipeline.md` "What a solid `.7z` is charged").
 
      Measured at 4.7 on two VGL26 exports of 0.6 and 1 GB, the serial pass took 0.5 to 0.8 s of
      a 1.7 to 3.1 s folder compile: most of it model parsing on one, whole-file reads of
      8192-pixel textures (for their headers) on the other.
 
-   Together the two passes cover these categories, adapted from Red's `export_check.py` to the new
-format:
+   Together the two passes cover these categories, adapted from Red's `export_check.py` to the
+   new format:
    - **Nested folder fix**: `Players/Players/` and similar are auto-flattened with a warning.
    - **Player folders**: normal teams are numbered via the folder name (`NN - Name`, 01–23) or
      authoritative root `players.txt` mapping (01–23); referee exports require `players.txt`
@@ -203,16 +203,19 @@ format:
        `glove_l`, `glove_r`);
      - pre-Fox: `.model`/`.mtl`/XML structure checks (`face_edithair.xml` and `hair.xml`
        rejected).
-   - **Shared folders** (`Faces/`, `Boots/`, `Gloves/`): same model checks; every folder must be referenced by at least one
-     player link file (warning if orphaned; error if a link references a missing folder).
-   - **Root files**: `colors.txt` and `notes.txt` are optional. `players.txt` is optional for normal
-     teams but required for referee exports; when present it must satisfy the shared roster grammar
-     and mapping rules. A present `colors.txt` must parse, and a non-empty `notes.txt` must be valid
-     UTF-8 (an optional UTF-8 BOM is stripped). Unexpected root files are warned about; a root
-     `README.txt` (case-insensitive) is known and ignored — the Team creator writes one, and human
-     readme files in exports predate it. Referee exports additionally permit `ref_marker.dds` and `ref_lists.txt` (the Fox
-     referee hook's file; not read, not packed). A missing referee roster reports
-     `players_txt_missing`.
+   - **Shared folders** (`Faces/`, `Boots/`, `Gloves/`): same model checks. Every folder must
+     be referenced by at least one player link file (a warning if orphaned, an error if a link
+     references a missing folder).
+   - **Root files**:
+     - `colors.txt` and `notes.txt` are optional. A present `colors.txt` must parse, and a
+       non-empty `notes.txt` must be valid UTF-8 (an optional UTF-8 BOM is stripped).
+     - `players.txt` is optional for normal teams but required for referee exports. When
+       present it must satisfy the shared roster grammar and mapping rules. A missing referee
+       roster reports `players_txt_missing`.
+     - Unexpected root files are warned about. A root `README.txt` (case-insensitive) is known
+       and ignored: the Team creator writes one, and human readme files in exports predate it.
+     - Referee exports additionally permit `ref_marker.dds` and `ref_lists.txt` (the Fox
+       referee hook's file; not read, not packed).
    - **Kits**:
      - kit folder names must parse as `<slot>[ - <label>]` with the slot in `p1`–`p9`, `g1`,
        `all` (`kit_folder_invalid`), one folder per slot (`kit_slot_duplicate` discards both);
@@ -244,11 +247,14 @@ format:
      - supplied configs' FPC fields are checked against the team's FPC status (reconciled at
        compile time, see "FPC toggle" in the
        [Aesthetics export plan](../aesthetics_export/fpc_toggle.md)).
-   - **Portraits/Logo/Common/Collars**: portrait naming (`NN.*`, NN in 01–23, as a player folder is numbered), root logo
-     files (stem grammar `logo[_small][_<fit>]`, one file per role, main present whenever
-     `_small` is, format in the raster allowlist — see "Root files" in the [Aesthetics export
-     plan](../aesthetics_export/README.md); decodability is checked in the deep pass), texture integrity
-     (`texture_check`), file-type allowlists per mode.
+   - **Portraits/Logo/Common/Collars**:
+     - portrait naming (`NN.*`, NN in 01–23, as a player folder is numbered);
+     - root logo files (stem grammar `logo[_small][_<fit>]`, one file per role, main present
+       whenever `_small` is, format in the raster allowlist: see "Root files" in the
+       [Aesthetics export plan](../aesthetics_export/README.md); decodability is checked in the
+       deep pass);
+     - texture integrity (`texture_check`);
+     - file-type allowlists per mode.
    - Processing consequences follow each message's effective disposition:
      - `DropFile` removes only that file;
      - `DropSlot` removes only the invalid normalized roster assignment;
@@ -278,9 +284,10 @@ format:
    wrapped in `ResolvedAestheticsExport` before run planning. (Red/Blue: `team_id_get.py`)
 4. **Portrait extraction** — for `ExportIdentity::Team { id, .. }`, a player folder's `portrait.*`
    (any accepted image; a non-DDS source is encoded as "Portraits" in the export plan says) is
-   renamed (`player_{id}{NN}.dds` for PES ≤18, `{id}{NN}.dds` for 19+; in Red
-   `portraits_move.py` stages face-folder portraits under the `player_` name and `export_move.py`'s
-   Portraits pass applies the version-specific final name) and staged with the portraits.
+   renamed and staged with the portraits. The name is `player_{id}{NN}.dds` for PES ≤18 and
+   `{id}{NN}.dds` for 19+. In Red, `portraits_move.py` stages face-folder portraits under the
+   `player_` name and `export_move.py`'s Portraits pass applies the version-specific final
+   name.
 
    An `ingame_face` marker emits **no face folder at all**, its boots and gloves parts going to
    player-specific folders on both engines (the categorization, rerouting and merge rules are
@@ -526,10 +533,12 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 
    The SKL the conversion generates takes the path a member's `.skl` of that stem would (the
    slot's skeleton, the merge rules), so a generated skeleton is not a new case. The exception
-   is a role with no skeleton slot (`face_high`, `hair_high`, `oral`, a glove): there the
-   generated SKL is dropped with no finding, where a member's own `.skl` of such a role is
-   `skl_no_slot`, because the member authored no file, and what the conversion changed its own
-   findings tell. Every converted face gets one, since its `skf_*` bones keep their own pose
+   is a role with no skeleton slot (`face_high`, `hair_high`, `oral`, a glove). There the
+   generated SKL is dropped with no finding, whereas a member's own `.skl` of such a role is
+   `skl_no_slot`. The generated one needs no finding because the member authored no file, and
+   the conversion's own findings tell what it changed.
+
+   Every converted face gets a generated SKL, since its `skf_*` bones keep their own pose
    (`conversion.md` item 4) and the SKL covers every bone off the template tables. The Fox face
    output has no file for it (the game's own face packages ship no `.skl`; Konami's FMDLs carry
    the bind pose in `bone_matrices`, which the converter does not yet write: worklog 4.17 "Open
@@ -549,10 +558,13 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
      or face he linked would compile to something he did not ask for.
 
    A `.model` directly in `Common/` with its `.mtl`, on PES 18-21, converts in each linking
-   player's Models task as his own `.model` does, the link baked away as a Common FMDL's is
-   (step 7), its `.mtl` the one its search finds in `Common/`, the conversion's skeleton under
-   the generated skeleton's rule above. A Common `.model` no player links is ignored there with
-   no finding, Fox having no Common model output.
+   player's Models task as his own `.model` does:
+   - the link is baked away as a Common FMDL's is (step 7);
+   - its `.mtl` is the one its search finds in `Common/`;
+   - the conversion's skeleton falls under the generated skeleton's rule above.
+
+   A Common `.model` no player links is ignored there with no finding, since Fox has no Common
+   model output.
 
    A shared `Boots/` or `Gloves/` folder's FMDL on PES 15-17 converts in the folder's own boots
    or gloves task, and an `ingame_face` player's FMDL parts in his. The boots and gloves writer
@@ -592,12 +604,14 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    path nothing supplies). A path naming the game's own file directly below the uniform Common
    folder that no texture place holds is written in the long form
    `model/character/uniform/common/<name>`, a short `common_folder/<name>` respelled to it.
-2. **ID replacement** — the team folder (`team_folder` in a `.mtl`, a `face.xml` and an FMDL's
-   Fox common directory, the only spelling the deep pass admits there:
-   `fmdl_common_path_invalid`, `mtl_common_path_invalid`) becomes the team's ID in file
-   contents (FMDL texture path tables via the `fmdl` crate's texture-path rewriting,
-   `ops::paths::rewrite_texture_paths`; `.mtl` texture paths pre-Fox, the short
-   `team_common_folder/` and `common_folder/` forms written long) and in file names.
+2. **ID replacement** — the team folder becomes the team's ID in file contents and in file
+   names. The team folder is spelled `team_folder` in a `.mtl`, a `face.xml` and an FMDL's Fox
+   common directory, the only spelling the deep pass admits there
+   (`fmdl_common_path_invalid`, `mtl_common_path_invalid`). The file contents replaced are:
+   - FMDL texture path tables, via the `fmdl` crate's texture-path rewriting,
+     `ops::paths::rewrite_texture_paths`;
+   - `.mtl` texture paths pre-Fox, the short `team_common_folder/` and `common_folder/` forms
+     written long.
 
    An FMDL texture directory takes the same two short forms as a `.mtl`, so a member learns
    one spelling for both formats:
@@ -667,14 +681,17 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    player's `.mtl` path at the Common texture the same way.
 
    An FMDL directly in `Common/` is converted once there, by the Common models task, as the face
-   converts a player's own (item 1): `oral_<stem>_win32.model` with its material set as
-   `<stem>.mtl`, its paired `Common/<stem>.skl` the bind pose, its texture paths pointed at the
-   Common texture directory, a metal material given the environment map (step 6). A member's
-   `Common/<stem>.mtl` beside it is two files of one name and fails the task. An `x.fmdl.common`
-   entry names them as a `.model.common` entry does (`.../oral_<stem>_*.model` with
-   `.../<stem>.mtl`), the link's own `.mtl` layering not applying, the FMDL carrying its
-   materials. Under `ingame_face` the link's FMDL converts in the boots and gloves writer as his
-   own FMDL parts do, from the Common file.
+   converts a player's own (item 1):
+   - it becomes `oral_<stem>_win32.model` with its material set as `<stem>.mtl`;
+   - its paired `Common/<stem>.skl` is the bind pose;
+   - its texture paths are pointed at the Common texture directory;
+   - a metal material is given the environment map (step 6).
+
+   A member's `Common/<stem>.mtl` beside it is two files of one name and fails the task. An
+   `x.fmdl.common` entry names them as a `.model.common` entry does (`.../oral_<stem>_*.model`
+   with `.../<stem>.mtl`). The link's own `.mtl` layering does not apply, because the FMDL
+   carries its materials. Under `ingame_face` the link's FMDL converts in the boots and gloves
+   writer as his own FMDL parts do, from the Common file.
 
    A model is packed as `oral_<stem>_win32.model` and its entry's `path` names it with `*` in
    the place of `win32` (`./oral_<stem>_*.model`), as the game's own XMLs and Red's do; the
@@ -703,10 +720,11 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    ID padding, `g567` → `g0567`, has no equivalent: the Studio format has no ID-named folders,
    since IDs are auto-assigned. The Export upgrader normalizes old IDs when parsing them.)
 5. **Texture conversion** — all image formats are interchangeable as texture sources (see the
-   [library crates plan](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL. Material
-   references (FMDL path tables, `.mtl`, `.materials.toml`) name textures by **stem** (filename
-   without extension); the compiler resolves each stem to the actual file in the model folder
-   and converts according to the selected PES version, not just the Fox/pre-Fox split.
+   [library crates plan](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG
+   XL. Material references (FMDL path tables, `.mtl`, `.materials.toml`) name textures by
+   **stem** (filename without extension). The compiler resolves each stem to the actual file
+   in the model folder and converts according to the selected PES version, not just the
+   Fox/pre-Fox split.
 
    BC7 is supported on PES 19–21 only: PES 15–18 transcode BC7 and encode raster sources to
    BC3, with BC1 for eligible fully opaque color textures under the library plan's alpha/role
@@ -735,12 +753,14 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    It is not read from the sampler of the model naming it: a stem is converted once per folder,
    whichever models and samplers name it, by a task that reads no model.
 
-   Raster sources decode via `image`, missing mipmaps are generated, and Fox output uses FTEX with
-   target-appropriate headers. Two image files with the same stem
-   but different extensions is a conflict (`texture_stem_conflict`). Optional zlib DDS
-   compression (PES ≤17). An in-memory conversion cache eliminates repeat conversion on the
-   edit→compile→test loop; see the [library crates plan](../libs/README.md) for design and engagement
-   rules (≤2-team limit, no disk persistence).
+   Raster sources decode via `image`, missing mipmaps are generated, and Fox output uses FTEX
+   with target-appropriate headers. Two image files with the same stem but different
+   extensions is a conflict (`texture_stem_conflict`). Zlib DDS compression is optional (PES
+   ≤17).
+
+   An in-memory conversion cache eliminates repeat conversion on the edit→compile→test loop;
+   see the [library crates plan](../libs/README.md) for design and engagement rules (≤2-team
+   limit, no disk persistence).
 6. **Texture relocation to common** (player folders only) — **all** textures of a player folder's
    own models (and a referee's), whether used by one of its models or several, are moved to a
    **per-player common subfolder** in the packed output, and the texture paths inside the FMDL/MTL
@@ -775,14 +795,17 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 
    The player's texture sources are its own folder (its subfolders included, each texture
    resolved and emitted as `spec/aesthetics_export/player_folders.md` "Subfolders" says) and
-   each shared face, boots or gloves folder it combines. Each of a combined folder's files
-   stands at its path below the player folder, as his own file there would (a combined
-   `Faces/Round/jessie/hair_high.fmdl` resolves nearest first from `jessie/`, among his
-   textures and the combined folder's at each place, and its `jessie/skin.dds` is emitted at
-   `jessie/` in his texture home, which is why the lookup mirrors that tree: a name resolves to
-   the texture the game finds there). A source counts for the package it feeds: the player's
-   own folder and a combined face folder for the face, a combined boots (gloves) folder for the
-   boots (gloves). Stems compare case-folded.
+   each shared face, boots or gloves folder it combines.
+
+   Each of a combined folder's files stands at its path below the player folder, as his own
+   file there would. A combined `Faces/Round/jessie/hair_high.fmdl` resolves nearest first from
+   `jessie/`, among his textures and the combined folder's at each place, and its
+   `jessie/skin.dds` is emitted at `jessie/` in his texture home. That is why the lookup
+   mirrors that tree: a name resolves to the texture the game finds there.
+
+   A source counts for the package it feeds: the player's own folder and a combined face folder
+   for the face, a combined boots (gloves) folder for the boots (gloves). Stems compare
+   case-folded.
 
    Local files win over imported ones. A texture path the player's own folder holds, as a
    texture or as a texture link standing there, is his whatever the packages: every model of
@@ -847,36 +870,36 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
      game loads them by those names and every DLC boots folder has exactly them; a folder
      holding several boots models merges them with `pes_model::ops::merge`, as `ingame_face`
      does);
-   - a shared gloves folder's models and the `.mtl` files they use (a `.mtl` no model uses is
-     not packed, the same rule as an `ingame_face` player's own gloves folder, which a `.mtl` of
-     his boots must not reach) under their own names lowercased at their paths below the
-     folder, as a face's are but without the `oral_` and `_win32` affixes, listed in a generated
-     `glove.xml` (the shape of the generated `face.xml` with no `<dif>`, each entry's `path`
-     `./<name>.model` as Red and the DLC write it, `./<sub>/<name>.model` for a subfolder's as
-     `face.xml` lists one, its type from the model-name table);
+   - a shared gloves folder's models and the `.mtl` files they use, under their own names
+     lowercased at their paths below the folder, as a face's are but without the `oral_` and
+     `_win32` affixes. A `.mtl` no model uses is not packed, the same rule as an `ingame_face`
+     player's own gloves folder, which a `.mtl` of his boots must not reach. The models are
+     listed in a generated `glove.xml`: the shape of the generated `face.xml` with no `<dif>`,
+     each entry's `path` `./<name>.model` as Red and the DLC write it (`./<sub>/<name>.model`
+     for a subfolder's, as `face.xml` lists one), its type from the model-name table;
    - either folder's textures as DDS at their paths below the folder, each `.mtl` path naming
-     its texture relative to the packed `.mtl` (`./<stem>.dds` beside it, `../<stem>.dds` for
+     its texture relative to the packed `.mtl`: `./<stem>.dds` beside it, `../<stem>.dds` for
      the folder's root texture a gloves subfolder's `.mtl` resolves nearest first, a boots
-     folder packing its one `boots.mtl` at the root; PES 17 loads the `./` and `./<sub>/` paths
-     but not the `../` one, which
-     `plans/team_compiler/pipeline.md` "3. Per-model-folder parallel steps (rayon)" removes by
-     packing every gloves `.mtl` at the root).
+     folder packing its one `boots.mtl` at the root. PES 17 loads the `./` and `./<sub>/`
+     paths but not the `../` one, which `plans/team_compiler/pipeline.md` "3. Per-model-folder
+     parallel steps (rayon)" removes by packing every gloves `.mtl` at the root.
 
    Fox mode packs allowed types (`.bin`, `.fmdl`, `.skl`, `.fclo`) into an FPK plus a generated
    empty `.fpkd` (player-owned and merge-copied textures having been relocated to the
    per-player common subfolder; plain shared-output textures remain in that model's own texture
    location). Packed entries are emitted to the writer queue. (Blue: `contents_packing.py`)
 
-   A gloves output on PES 15-17 (a shared folder's, or an `ingame_face` player's own, built by
-   the same code; his textures name game paths, so only the `.mtl` names change for him): every
+   A gloves output on PES 15-17 is a shared folder's, or an `ingame_face` player's own, built by
+   the same code (his textures name game paths, so only the `.mtl` names change for him). Every
    `.mtl` the output packs (a member's, or a converted model's `<stem>.mtl`) sits at the
-   output's root, named by its path below the folder with each `/` written `_`, lowercased
-   (`grip/materials.mtl` packs as `grip_materials.mtl`, a converted `grip/glove_r.fmdl`'s set
-   as `grip_glove_r.mtl`). `glove.xml` names it there (`material="./grip_materials.mtl"`)
-   while the model keeps its subfolder path (`./grip/glove_r.model`). Its textures are then
-   named from the root, `./<stem>.dds` or `./<sub>/<stem>.dds`, never `../`; the textures stay
-   where they are packed, and the lookup still resolves nearest first from the `.mtl`'s source
-   folder.
+   output's root, named by its path below the folder with each `/` written `_`, lowercased:
+   `grip/materials.mtl` packs as `grip_materials.mtl`, a converted `grip/glove_r.fmdl`'s set
+   as `grip_glove_r.mtl`. `glove.xml` names it there (`material="./grip_materials.mtl"`)
+   while the model keeps its subfolder path (`./grip/glove_r.model`).
+
+   The `.mtl`'s textures are then named from the root, `./<stem>.dds` or `./<sub>/<stem>.dds`,
+   never `../`. The textures stay where they are packed, and the lookup still resolves nearest
+   first from the `.mtl`'s source folder.
 
    The game does not load a `.mtl` texture path that climbs out of the `.mtl`'s folder. In PES
    17 Edit mode (2026-10-15) a right glove whose `grip/` `.mtl` named `../magenta.dds` drew
@@ -886,17 +909,19 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 
    We move the `.mtl` files rather than copy each texture a subfolder `.mtl` reaches above into
    its folder, which the textures task, emitting each texture once at its path, would have to
-   learn from the `.mtl` files; and rather than pack the folder flat, which would collide two
-   subfolders' `glove_r.model`. Two `.mtl` files whose flattened names meet (`grip/a.mtl` and a
-   root `grip_a.mtl`) fail the task as any two files of one packed name do. PES 15 and 16 are
-   unmeasured and taken to read as PES 17 does (the same engine).
+   learn from the `.mtl` files. We also move them rather than pack the folder flat, which would
+   collide two subfolders' `glove_r.model`.
+
+   Two `.mtl` files whose flattened names meet (`grip/a.mtl` and a root `grip_a.mtl`) fail the
+   task as any two files of one packed name do. PES 15 and 16 are unmeasured and taken to read
+   as PES 17 does (the same engine).
 
 ### 4. Per-export non-model steps
 
-These are logical per-export steps (Red: `export_move.py`, plus `bins_update.py` for its namesake
-step; Blue: `export_move_non_model`). They are ordinary
-manifest tasks and may run alongside model tasks once their dependencies are satisfied; this section
-describes behavior, not a serial scheduling requirement:
+These are logical per-export steps (Red: `export_move.py`, plus `bins_update.py` for its
+namesake step; Blue: `export_move_non_model`). They are ordinary manifest tasks and may run
+alongside model tasks once their dependencies are satisfied: this section describes behavior,
+not a serial scheduling requirement.
 
 - **Kits** — per kit (each `KitFolder` of the validated export; `all/` is not one): a `Full`
   export's missing kit configs (`config.toml`) are generated from the template, retaining the
@@ -1063,11 +1088,13 @@ describes behavior, not a serial scheduling requirement:
   (texture-name fields derived from the effective texture set, version-specific bit packing
   applied, including the PES 15 shirt-pattern clamp; see the [Kit config editor
   plan](../kit_config_editor.md)) and emitted under the game's kit-config name for its slot
-  (old `XXX_DEF_1st_realUni.bin` pattern with the team ID applied). A supplied config's value
-  that does not fit the target version is reported by the deep pass, so by `check` as by
-  `compile` (`kit_config_version_clamped` on the file, kept, naming the field, the value and the
-  version's maximum: `kit_config`'s `kit_value_out_of_range` and `kit_pattern_unsupported_pes15`
-  findings), and clamped when the binary is emitted.
+  (old `XXX_DEF_1st_realUni.bin` pattern with the team ID applied).
+
+  A supplied config's value that does not fit the target version is reported by the deep pass,
+  so by `check` as by `compile`, and clamped when the binary is emitted. The finding is
+  `kit_config_version_clamped` on the file, which is kept, naming the field, the value and the
+  version's maximum (`kit_config`'s `kit_value_out_of_range` and
+  `kit_pattern_unsupported_pes15` findings).
 
   A sleeve or fit option the config's shirt model does not take (`kit_config`'s three
   `kit_*_requires_model_144_or_160` findings: cut-out short sleeves, undershirt-only long
@@ -1230,8 +1257,8 @@ describes behavior, not a serial scheduling requirement:
 
   Custom collars are **compatible with team FPC**: collar rewriting runs after FPC
   reconciliation, so the custom ID deliberately overrides the FPC collar value in the configs.
-- **Common** — pre-Fox: `.mtl` texture IDs and relative→absolute path fixes, `oral_`/`_win32`
-  model-name prefixes, face XML references to renamed common models updated; both modes:
+- **Common** — on pre-Fox: `.mtl` texture IDs and relative→absolute path fixes, `oral_`/`_win32`
+  model-name prefixes, face XML references to renamed common models updated. In both modes:
   texture conversion, dummy ID replacement.
 
   On PES 15-17 a subfolder of `Common/` is packed under the team's Common output at its own
@@ -1288,8 +1315,10 @@ describes behavior, not a serial scheduling requirement:
   fallback, in what follows, is its `kitF` file when it has one, else its lowest variant, and
   only the second reports `kit_variant_missing`. A `kitF` file is never emitted under its own
   name, so a path naming it (`pants_kitF`, `./kitF/x`) is not found by any check that looks it
-  up. In any folder the token may be a whole folder name instead (`kit1/x.dds`, `kit2/x.dds`):
-  the files of one stem in sibling folders `kit1` to `kit9` (and `kitF`) are one set, whose
+  up.
+
+  In any folder the token may be a whole folder name instead (`kit1/x.dds`, `kit2/x.dds`): the
+  files of one stem in sibling folders `kit1` to `kit9` (and `kitF`) are one set, whose
   reference is `kitN/x`, completed below as a stem set is, each copy in its number's folder.
 
   A texture set is completed by the task that converts the folder's textures (a model
@@ -1317,13 +1346,15 @@ describes behavior, not a serial scheduling requirement:
   On Fox, and on PES 15-17 where no `face.xml` names the set (below), a model file of a set
   other than its fallback in the same folder is not compiled. The same folder means every file
   the part is built from: the folder's own, directly and in its subfolders, and a combined
-  shared folder's, the player's own winning a name both hold; a set split between them is one
+  shared folder's, the player's own winning a name both hold. A set split between them is one
   set, since the part merges them and two lone variants would both be drawn. Planning reports
   `kit_variant_model_left_out` on the folder, once per set that leaves out a file (a set of
-  `kitF` alone leaves out none). A set's variants are its model files of either native format
-  (`pants_kit1.fmdl` and `pants_kit2.model` are one set), a variant present in both formats one
-  variant, the target's format (`.fmdl` on Fox, `.model` on PES 15-17) its selected
-  representation, as the selection order says.
+  `kitF` alone leaves out none).
+
+  A set's variants are its model files of either native format (`pants_kit1.fmdl` and
+  `pants_kit2.model` are one set). A variant present in both formats is one variant, the
+  target's format (`.fmdl` on Fox, `.model` on PES 15-17) its selected representation, as the
+  selection order says.
 
   On pre-Fox every variant is packed under its own name and the set is listed once: the lowest
   variant's (`kitF`'s in a set of `kitF` alone) `face.xml` entries (its own, and its hands'
@@ -1385,15 +1416,18 @@ describes behavior, not a serial scheduling requirement:
   Red's `dummy_kit_replace.py` (copying the team's kit 1 textures over `dummy_kit*` in Common
   as a fallback for the substitution) is **not ported**: that fallback dates from when the
   substitution lived in Sider scripts; it is in the exes now and stable.
-- **Bins accumulation** — team colors (from the root `colors.txt`, when present: its first four
-  valid colors, the `TeamColor.bin` record's capacity, slots it does not fill keeping the working
-  bin's bytes) and per-kit colors
-  (from each kit folder's `colors.txt`, or derived from the main kit texture when it's missing —
-  shirt-region dominant color plus either the shirt's second tone or the shorts-region dominant;
-  `libs/color_tools` — with the menu icon number from the kit's optional `icon_<N>` marker, default 3) are
-  staged for in-memory copies of `TeamColor.bin` and `UniColor.bin` (fixed per-team byte offsets;
-  Red: `bins_update.py`; the file's grammar is "Root files", "Colors" in the [Aesthetics export
-  plan](../aesthetics_export/player_folders.md)).
+- **Bins accumulation** — team colors and per-kit colors are staged for in-memory copies of
+  `TeamColor.bin` and `UniColor.bin` (fixed per-team byte offsets; Red: `bins_update.py`):
+  - team colors come from the root `colors.txt`, when present: its first four valid colors,
+    the `TeamColor.bin` record's capacity, slots it does not fill keeping the working bin's
+    bytes;
+  - per-kit colors come from each kit folder's `colors.txt`, or are derived from the main kit
+    texture when it's missing (shirt-region dominant color plus either the shirt's second tone
+    or the shorts-region dominant; `libs/color_tools`), with the menu icon number from the
+    kit's optional `icon_<N>` marker, default 3.
+
+  The `colors.txt` grammar is "Root files", "Colors" in the [Aesthetics export
+  plan](../aesthetics_export/player_folders.md).
 
   A kit's entry goes into its team's `UniColor.bin` record by kit number (p1 to p9 are 0 to 8,
   g1 is 0x10): it replaces the entry of that number or joins the others, and the record is
@@ -1489,12 +1523,13 @@ describes behavior, not a serial scheduling requirement:
   approximates the same precedence by sorting the DPFL's CPK names in reverse alphabetical
   order). As in Red, the walk starts just below the compiler's own output CPK, skipping it and
   anything with higher priority: this keeps each compilation idempotent even after newer midcup
-  CPKs are added further down the list. One exception: in multi-CPK mode the walk for the
-  shared-IDs records starts at the bins CPK itself (`bins_cpk_name`), so a compile replacing
-  `4cc_08_bins.cpk` keeps the records it holds; a multi-CPK compile rebuilds each compiled
-  team's record from its export, so only a team no export compiles keeps its installed record.
-  Each bin is taken from the first CPK the walk finds it in, with the supplying CPK reported;
-  the bundled bases only serve from-scratch compiles.
+  CPKs are added further down the list. Each bin is taken from the first CPK the walk finds it
+  in, with the supplying CPK reported; the bundled bases only serve from-scratch compiles.
+
+  One exception: in multi-CPK mode the walk for the shared-IDs records starts at the bins CPK
+  itself (`bins_cpk_name`), so a compile replacing `4cc_08_bins.cpk` keeps the records it
+  holds. A multi-CPK compile rebuilds each compiled team's record from its export, so only a
+  team no export compiles keeps its installed record.
 
   A bin no CPK of the walk holds comes from the bundled base, and so does every bin when the
   walk cannot be made: no PES folder, no `DpFileList.bin` (`dpfilelist_missing`), or a list
@@ -1544,13 +1579,15 @@ describes behavior, not a serial scheduling requirement:
    coordinated so waiting later batches cannot prevent the next batch from completing. Written
    entries release their bytes; shared/cache-owned bytes remain charged while retained.
 3. **Duplicate invariant check** — all collision winners are decided deterministically by the
-   manifest (or, for deep-derived names, inside the owning task) — never by rayon completion or
+   manifest (or, for deep-derived names, inside the owning task), never by rayon completion or
    writer arrival order. The writer treats any path that still arrives twice as an internal
-   invariant violation; canonical manifest order and normalized CPK timestamps make otherwise
-   identical builds reproducible. The CPK header's tool-version string is `Unlimited Tool Works <version>`
-   (the workspace version), so the same release reproduces the same bytes.
-4. **Bins last** — after all exports complete, the accumulated bins (committed mutations only) are
-   written.
+   invariant violation.
+
+   Canonical manifest order and normalized CPK timestamps make otherwise identical builds
+   reproducible. The CPK header's tool-version string is `Unlimited Tool Works <version>` (the
+   workspace version), so the same release reproduces the same bytes.
+4. **Bins last** — after all exports complete, the accumulated bins (committed mutations only)
+   are written.
 5. **Output modes and targets** — normal (CPK), test (unpacked tree per export in `test_output/`),
    sideload (unpacked PES-folder structure in the game folder's `livecpk\`). Test-mode directory
    names derive from the canonical source key, not from potentially duplicated display names.
@@ -1587,33 +1624,39 @@ describes behavior, not a serial scheduling requirement:
    goes into the team side, step 1).
 
    Every emitted CPK name (team, teams part, refs) is a validated `CpkStem` (shared `pipeline`
-   type): filename stem only, 1–28 characters from ASCII alphanumeric, `_`, `-`, and `.`; no
-   separators, control characters, trailing dot, Windows reserved-device names, or
-   user-supplied `.cpk` suffix; uniqueness is checked case-insensitively.
+   type):
+   - filename stem only, 1–28 characters from ASCII alphanumeric, `_`, `-`, and `.`;
+   - no separators, control characters, trailing dot, Windows reserved-device names, or
+     user-supplied `.cpk` suffix;
+   - uniqueness is checked case-insensitively.
+
    Deployment/DpFileList/locked-file/marker-summary logic runs per generated CPK, including the
    refs CPK and every teams part.
 
 6. **Multi-CPK mode: teams parts.** Red's multi-CPK split by *content type* (`4cc_40_faces` /
-   `4cc_45_uniform` / `4cc_08_bins`) is replaced by a split by *size*: all team content — faces,
-   portraits, boots, gloves, common, kits, kit configs, logos — goes into a sequence of **`teams`
-   CPKs**, plus the separate bins CPK. The reason is a hard external limit: the cup DLC is versioned
-   in Git, and Git for Windows cannot handle objects of 4 GiB or more (`unsigned long` is 32-bit
-   under MinGW; the `size_t` conversion is still ongoing upstream in 2026). A **32-team**
-   `4cc_40_faces.cpk` already sits at 3.77 GB, so a 48-team cup lands near 5.7 GB — well past the
-   limit — while the uniform CPK was barely used. The faces/uniform distinction stops paying for
-   itself, and one uniformly filled sequence of parts replaces it.
+   `4cc_45_uniform` / `4cc_08_bins`) is replaced by a split by *size*: all team content (faces,
+   portraits, boots, gloves, common, kits, kit configs, logos) goes into a sequence of
+   **`teams` CPKs**, plus the separate bins CPK.
+
+   The reason is a hard external limit: the cup DLC is versioned in Git, and Git for Windows
+   cannot handle objects of 4 GiB or more (`unsigned long` is 32-bit under MinGW; the `size_t`
+   conversion is still ongoing upstream in 2026). A **32-team** `4cc_40_faces.cpk` already sits
+   at 3.77 GB, so a 48-team cup lands near 5.7 GB, well past the limit, while the uniform CPK
+   was barely used. The faces/uniform distinction stops paying for itself, and one uniformly
+   filled sequence of parts replaces it.
 
    - **The slots come from the DpFileList, midcup style.** The official DPFL reserves a run of
-     numbered names with the same stem — `4cc_41_teams`, `4cc_42_teams`, … — exactly like the
-     `4cc_61_midcup` … `4cc_75_midcup` run (and `4cc_20_stadiums` … `4cc_35_stadiums`). The compiler takes as
-     its part slots every entry of the **official** DPFL (the embedded one, or its `templates/`
-     override) matching `{prefix}_{NN}_{teams_cpk_stem}` (the `teams_cpk_name`
-     setting names the stem, default `teams`), ordered by number. The stem match is **exact** — the
-     text after `_NN_` must equal the stem, so `teams` never claims `teams2` slots — which is what
-     makes a **second slot run usable for a side event**: with `teams_cpk_name = teams2` and the
-     DPFL reserving `4cc_51_teams2` … in place of the old `4cc_50_other_faces`/`4cc_55_other_uniform`,
-     the same compile fills that run instead, sharing only the bins CPK (there was never an
-     `other_bins`).
+     numbered names with the same stem (`4cc_41_teams`, `4cc_42_teams`, …), exactly like the
+     `4cc_61_midcup` … `4cc_75_midcup` run (and `4cc_20_stadiums` … `4cc_35_stadiums`). The
+     compiler takes as its part slots every entry of the **official** DPFL (the embedded one,
+     or its `templates/` override) matching `{prefix}_{NN}_{teams_cpk_stem}` (the
+     `teams_cpk_name` setting names the stem, default `teams`), ordered by number.
+
+     The stem match is **exact**: the text after `_NN_` must equal the stem, so `teams` never
+     claims `teams2` slots. That is what makes a **second slot run usable for a side event**.
+     With `teams_cpk_name = teams2` and the DPFL reserving `4cc_51_teams2` … in place of the old
+     `4cc_50_other_faces`/`4cc_55_other_uniform`, the same compile fills that run instead,
+     sharing only the bins CPK (there was never an `other_bins`).
 
      There is no parts-count setting: capacity is a cup-level decision made once in the
      artifact every user already receives, and the compiler can never emit a part the users'
@@ -1631,17 +1674,17 @@ describes behavior, not a serial scheduling requirement:
      test and sideload mode write their loose files as they do without it.
    - **The run's first CPK is its boundary.** The working-bin walk and the installed texture
      lookup start below the earliest CPK the run writes in the list's order (the refs CPK
-     aside: step 5), which is the bins
-     CPK in the official list (its shared-IDs records at the bins CPK itself, above), since every
-     part the run writes replaces the one installed under its name.
+     aside: step 5), which is the bins CPK in the official list (its shared-IDs records at the
+     bins CPK itself, above), since every part the run writes replaces the one installed under
+     its name.
    - **The overrides go into the bins CPK.** An entry at an override's path is left out
      whichever CPK it would have gone to, so an override replaces a team's file as it does in a
      single CPK.
    - **Filling is deterministic first-fit by canonical team order, one team per decision, made by
-     the writer on exact sizes.** Teams are never split across parts: the writer holds a team's task
-     batches until the team is complete, then places the whole team — into the current part if it
-     fits under `cpk_part_max_size` (TOC included), otherwise it closes the part, opens the next slot,
-     and places it there.
+     the writer on exact sizes.** Teams are never split across parts. The writer holds a team's
+     task batches until the team is complete, then places the whole team into the current part
+     if it fits under `cpk_part_max_size` (TOC included); otherwise it closes the part, opens
+     the next slot, and places it there.
 
      This costs nothing measurable: the writer already lays out entries in canonical order, so a
      team's batches were waiting for their earlier siblings anyway. Holding them until the
@@ -1663,28 +1706,34 @@ describes behavior, not a serial scheduling requirement:
      cup DLC is compiled **once**; midcup changes go to the designated midcup CPKs (one per day,
      compiled in single-CPK mode with `cpk_name` set to that day's slot), so parts are never
      rewritten and cascading cannot occur.
-   - **Every slot is always written.** Slots the run does not fill receive the **empty placeholder
-     CPK** — the same 6,272-byte CPK, holding only an 11-byte file `placeholder`, that the official DLC already ships for unused
-     `midcup`/`test`/`stadiums` slots (`4cc_68_midcup.cpk` is one). This satisfies the DPFL without
-     relying on PES tolerating listed-but-missing files, and it makes superseded content trivial: a
-     recompile that needs fewer parts overwrites the stale higher slots with placeholders. The
-     placeholder is the shipped file itself, embedded (`resources/templates/placeholder.cpk`),
-     not written by the `cpk` crate: our writer's layout is not CRI Packed File Maker's, and a
-     copy is identical by construction where a re-creation would need a parity test of its own.
+   - **Every slot is always written.** Slots the run does not fill receive the **empty
+     placeholder CPK**: the same 6,272-byte CPK, holding only an 11-byte file `placeholder`,
+     that the official DLC already ships for unused `midcup`/`test`/`stadiums` slots
+     (`4cc_68_midcup.cpk` is one). This satisfies the DPFL without relying on PES tolerating
+     listed-but-missing files, and it makes superseded content trivial: a recompile that needs
+     fewer parts overwrites the stale higher slots with placeholders.
+
+     The placeholder is the shipped file itself, embedded
+     (`resources/templates/placeholder.cpk`), not written by the `cpk` crate: our writer's
+     layout is not CRI Packed File Maker's, and a copy is identical by construction where a
+     re-creation would need a parity test of its own.
+
      Running out of slots (content exceeds `slots × cap`) is fatal: `cpk_slots_exhausted` names
      the shortfall so the DPFL author can add slots.
-   - **`cpk_part_max_size`** defaults to 3 GiB — comfortably under Git for Windows' 4 GiB object
-     ceiling, and configurable. It applies to teams parts only; a single-CPK run that
-     exceeds it (a midcup day gone wild) is not split — single-CPK names have no slot run — but gets
-     `cpk_size_over_limit` (W), since the CPK is fine for PES and only the repository will object.
+   - **`cpk_part_max_size`** defaults to 3 GiB, comfortably under Git for Windows' 4 GiB object
+     ceiling, and is configurable. It applies to teams parts only. A single-CPK run that
+     exceeds it (a midcup day gone wild) is not split (single-CPK names have no slot run) but
+     gets `cpk_size_over_limit` (W), since the CPK is fine for PES and only the repository will
+     object.
    - **No legacy DPFL support in multi-CPK mode.** Multi-CPK is run only by the cup maintainers
-     assembling a whole DLC from the managers' exports; they are always on the latest tooling. The
-     compiler ships the current official DPFL as an embedded template (see "Resolved
-     decisions") and, when the installed one lacks the required slots, refuses the run with
-     `dpfilelist_outdated` and offers the **DpFileList upgrade** described under "Post-processing".
+     assembling a whole DLC from the managers' exports, and they are always on the latest
+     tooling. The compiler ships the current official DPFL as an embedded template (see
+     "Resolved decisions"). When the installed one lacks the required slots, the compiler
+     refuses the run with `dpfilelist_outdated` and offers the **DpFileList upgrade** described
+     under "Post-processing".
 
-   `test_output/` and `teamnotes.txt` are resolved beneath `output_folder_path`; a
-   CLI positional exports-root overrides `exports_folder_path` for that invocation only.
+   `test_output/` and `teamnotes.txt` are resolved beneath `output_folder_path`; a CLI
+   positional exports-root overrides `exports_folder_path` for that invocation only.
 
    **Test mode is Red's step 1.** Red's `1_exports_to_extracted.bat` stopped after
    pre-processing, leaving the checked and edited export in `extracted/` with its original
@@ -1727,11 +1776,11 @@ describes behavior, not a serial scheduling requirement:
      sideloading is revisited after the first full release (decision entry
      "sideloading through FoxDen").
 
-   The cost Blue paid — a second code path in the coordinator — is contained by deciding the
-   **output target once, at manifest planning**, and consuming it at exactly one seam: each task's
-   final *materialize* step (relocation to game paths, Fox FPK packing). In normal and sideload
-   mode it relocates and packs; in test mode it places each processed entry by the export's
-   layout instead, and packs nothing.
+   The cost Blue paid, a second code path in the coordinator, is contained by deciding the
+   **output target once, at manifest planning**, and consuming it at exactly one seam: each
+   task's final *materialize* step (relocation to game paths, Fox FPK packing). In normal and
+   sideload mode it relocates and packs; in test mode it places each processed entry by the
+   export's layout instead, and packs nothing.
 
    A test-mode entry sits at `test_output/<source>/<folder>/<name>`:
    - `<source>` is the export's source as discovered (its folder name, or its archive's file
@@ -1799,30 +1848,37 @@ describes behavior, not a serial scheduling requirement:
 - **Degraded run: promotion to `output/`** — if deployment cannot happen (`pes_folder_not_found`,
   `old_cpk_locked`, `deploy_target_unwritable`, `dpfilelist_missing`, ...), the staged CPKs are
   **promoted** to `output/{name}.cpk` (same volume, atomic rename, replacing any previous one)
-  instead of discarded; the message says so, and the CLI reports the error and the promoted
-  path. `output/` is thus Red's
-  `patches_output/` in its new place, reached by degradation or by `--no-deploy` rather than by a
-  setting. A machine without PES installed compiles this way automatically: the CPK lands in
-  `output/`, the bins are built from the bundled fallback bases, and the run says why. The
-  savefile step is skipped.
-- **`--no-deploy` (CLI only)** — skips the deployment, and the savefile step with it, and promotes the
-  staged CPKs to `output/` as a clean run, no error. This is the production flag for cup
-  maintainers building DLC on a machine whose install must not be disturbed, and for build boxes; it
-  is a flag, not a persisted setting, because the GUI's job is installing into the user's game.
+  instead of discarded. The message says so, and the CLI reports the error and the promoted
+  path. `output/` is thus Red's `patches_output/` in its new place, reached by degradation or
+  by `--no-deploy` rather than by a setting.
+
+  A machine without PES installed compiles this way automatically: the CPK lands in `output/`,
+  the bins are built from the bundled fallback bases, and the run says why. The savefile step
+  is skipped.
+- **`--no-deploy` (CLI only)** — skips the deployment, and the savefile step with it, and
+  promotes the staged CPKs to `output/` as a clean run, no error. This is the production flag
+  for cup maintainers building DLC on a machine whose install must not be disturbed, and for
+  build boxes. It is a flag, not a persisted setting, because the GUI's job is installing into
+  the user's game.
 - **Why no `move_cpks`.** Red's setting existed because Red's bins came from its bundled
-  `Engines/bins/`, so a compile was meaningful without a PES install. The Studio's bins accumulation
-  reads the installed CPKs, the version selector
-  checks the install's exe, and the savefile step reads the install's save — the pipeline is built
-  around a present install, and a "don't install"
-  switch on top of it was carrying real weight: dual-severity messages (`cpk_name_unlisted` W/E),
-  conditional checks (`pes_version_mismatch`, `dpfilelist_missing`), a marker message
-  (`ref_marker_requires_move`), `run_pes` depending on it, two preflight target sets, and — worst —
-  a coherence hole, since the savefile was still written while the CPK it referred to was not
-  installed. The promotion path already had to exist for failed deployments, so the setting's only
-  unique behavior was reachable at zero cost by degradation; the flag covers the one deliberate case.
-- **DpFileList upgrade** — the compiler never edits `DpFileList.bin` as a side effect of a compile
-  (the Balls compiler's "check, never write" rule holds for every tool). It does offer one explicit,
-  consent-based action. The current official DPFL ships as an embedded template
+  `Engines/bins/`, so a compile was meaningful without a PES install. The Studio's pipeline is
+  built around a present install: its bins accumulation reads the installed CPKs, the version
+  selector checks the install's exe, and the savefile step reads the install's save.
+
+  A "don't install" switch on top of it was carrying real weight:
+  - dual-severity messages (`cpk_name_unlisted` W/E);
+  - conditional checks (`pes_version_mismatch`, `dpfilelist_missing`);
+  - a marker message (`ref_marker_requires_move`);
+  - `run_pes` depending on it;
+  - two preflight target sets;
+  - and, worst, a coherence hole, since the savefile was still written while the CPK it
+    referred to was not installed.
+
+  The promotion path already had to exist for failed deployments, so the setting's only unique
+  behavior was reachable at zero cost by degradation; the flag covers the one deliberate case.
+- **DpFileList upgrade** — the compiler never edits `DpFileList.bin` as a side effect of a
+  compile (the Balls compiler's "check, never write" rule holds for every tool). It does offer
+  one explicit, consent-based action. The current official DPFL ships as an embedded template
   (`templates/` override applies, so maintainers can hot-swap it between releases).
 
   There is one official list, not one per PES version, and its entries are
@@ -1861,37 +1917,44 @@ describes behavior, not a serial scheduling requirement:
     placeholder in every unused slot. The run compiles and deploys; the upgrade below writes
     the placeholders.
 
-  With any of these findings the
-  CLI prints the subcommand, `UTW team-compiler upgrade-dpfl`, and never
-  upgrades on its own.
-  - The upgrade is an **override, not a merge**: the bundled official DPFL replaces the installed
-    file byte for byte, the old one kept as `DpFileList.bin.bak` (replacing an older backup: the
-    list a user last had is the one worth keeping). A list that cannot be read as a list is
-    replaced and kept the same way, with nothing renamed, an install with no list gets the
-    official one, and a list that is already the official one byte for byte is left as it is,
-    no backup written. The aesthetics community gives
-    zero support for custom-edited DPFLs — they have caused a long tail of problems — so preserving
-    a user's own entries would be preserving exactly the state the upgrade exists to end. The command
-    is honest about it: it lists every installed entry that the official list does not contain
-    and that is not renamed (below) as `dpfilelist_cpk_dropped`.
+  With any of these findings the CLI prints the subcommand, `UTW team-compiler upgrade-dpfl`,
+  and never upgrades on its own.
+  - The upgrade is an **override, not a merge**: the bundled official DPFL replaces the
+    installed file byte for byte, the old one kept as `DpFileList.bin.bak` (replacing an older
+    backup: the list a user last had is the one worth keeping). The other cases:
+    - a list that cannot be read as a list is replaced and kept the same way, with nothing
+      renamed;
+    - an install with no list gets the official one;
+    - a list that is already the official one byte for byte is left as it is, no backup
+      written.
+
+    The aesthetics community gives zero support for custom-edited DPFLs (they have caused a
+    long tail of problems), so preserving a user's own entries would be preserving exactly the
+    state the upgrade exists to end. The command is honest about it: it lists every installed
+    entry that the official list does not contain and that is not renamed (below) as
+    `dpfilelist_cpk_dropped`.
   - **An old DLC's CPKs are renamed by stem**, a best effort so a DLC cut for an older list
     keeps loading under the official one. A name's stem is what follows `{prefix}_{NN}_`.
+
     Each installed entry the official list lacks, whose file is in `download/`, is matched to
-    the official entries of its stem: the same stem, else the stem without trailing digits
-    (`stadiums0` is `stadiums`), else one of four fixed aliases, since the teams runs replaced
-    the faces/uniform split (`faces` and `uniform` are `teams`; `other_faces` and
-    `other_uniform` are `teams2`). Within one official stem the old files, in their list
-    order, take the official names in their list order, so load order is kept
-    (`4cc_60_midcup` to `4cc_74_midcup` become 61 to 75; `4cc_40_faces` and `4cc_45_uniform`
-    become `4cc_41_teams` and `4cc_42_teams`; `4cc_38_balls` becomes `4cc_16_balls`). The old
-    files of a stem are all its installed files once one of them needs a name, those already
-    under an official name included (in the example, `4cc_61_midcup` becomes 62), and the
-    renames run last first, so none lands on a file not yet moved; a file whose new name is
-    held by a file outside its stem's renames is not renamed. An old file with no
-    official name left for it (a sixteenth midcup, a stem the official list does not have)
-    is not renamed and is listed (`dpfilelist_cpk_dropped`); a rename never overwrites a
-    file. `upgrade-dpfl` without `--yes` shows every rename before anything
-    is done.
+    the official entries of its stem, trying in order:
+    1. the same stem;
+    2. the stem without trailing digits (`stadiums0` is `stadiums`);
+    3. one of four fixed aliases, since the teams runs replaced the faces/uniform split
+       (`faces` and `uniform` are `teams`; `other_faces` and `other_uniform` are `teams2`).
+
+    Within one official stem the old files, in their list order, take the official names in
+    their list order, so load order is kept (`4cc_60_midcup` to `4cc_74_midcup` become 61 to
+    75; `4cc_40_faces` and `4cc_45_uniform` become `4cc_41_teams` and `4cc_42_teams`;
+    `4cc_38_balls` becomes `4cc_16_balls`). The old files of a stem are all its installed
+    files once one of them needs a name, those already under an official name included (in
+    the example, `4cc_61_midcup` becomes 62).
+
+    The renames run last first, so none lands on a file not yet moved. A file whose new name is
+    held by a file outside its stem's renames is not renamed. An old file with no official
+    name left for it (a sixteenth midcup, a stem the official list does not have) is not
+    renamed and is listed (`dpfilelist_cpk_dropped`). A rename never overwrites a file.
+    `upgrade-dpfl` without `--yes` shows every rename before anything is done.
   - **The upgrade leaves no listed CPK missing.** After the renames, for every official entry
     with no file in `download/` it writes the empty placeholder CPK ("Every slot is always
     written" in "Multi-CPK mode"); it never overwrites a file that is there. When any listed
@@ -1910,11 +1973,11 @@ describes behavior, not a serial scheduling requirement:
     the writer never chooses a tail. PES 15, 16 and 18 are checked the same way when an
     install is available. The reader already exists for the bins walk; the upgrade only
     copies the bundled file.
-- **Destination writability preflight** — for every planned
-  destination (the single CPK, or every teams slot plus the bins CPK in multi-CPK mode, plus the refs CPK, under
-  `download/`): if the file exists, open it for
-  writing without truncating; if not, create and remove a probe file in its folder. The
-  deployment stage re-checks regardless; the preflight makes its failures rare, not impossible.
+- **Destination writability preflight** — for every planned destination (the single CPK, or
+  every teams slot plus the bins CPK in multi-CPK mode, plus the refs CPK, under `download/`):
+  if the file exists, open it for writing without truncating; if not, create and remove a probe
+  file in its folder. The deployment stage re-checks regardless; the preflight makes its
+  failures rare, not impossible.
 
   A `compile` that deploys runs the `download/` probe once before it reads any export, so a
   run that cannot deploy says so first (`deploy_target_unwritable`) and still compiles to
@@ -2198,7 +2261,8 @@ it, so a finished run leaves nothing but the CPK; a run that emits no entry writ
 leaves the previous CPK. The output folder is created and probed for writing (a file created
 and removed) before any export is read; a refusal is the CLI's exit 3 naming the path
 (TC-CLI-06), not a pipeline message.
-That is the normal mode's promotion; deployment into `download/`, its fallback to this
+
+That is the normal mode's promotion. Deployment into `download/`, its fallback to this
 promotion, and the test and sideload trees are "Deploy CPKs" and "5. Writer" above.
 
 ### Game paths reference
@@ -2230,16 +2294,16 @@ Resolved decisions:
 
 - The team info file is dismissed in favor of root `colors.txt`/`notes.txt`; the canonical
   first-word `team_name` (not the complete `export_display_name`) is looked up in `teams_list.txt`.
-- `ExportIdentity` keeps normal 701–920 `TeamId` values separate from referees; validation preserves
-  all issues while producing a sanitized eligible export; normal-team numbering comes from folder
-  names or root `players.txt`, while referee exports require the unified player-folder format's root
-  `players.txt` slot mapping.
+- `ExportIdentity` keeps normal 701–920 `TeamId` values separate from referees. Validation
+  preserves all issues while producing a sanitized eligible export. Normal-team numbering comes
+  from folder names or root `players.txt`, while referee exports require the unified
+  player-folder format's root `players.txt` slot mapping.
 - Player-owned textures relocate to per-player common while plain ID-based shared outputs retain
-  their own textures; a multi-mapped folder (one source folder listed under several `players.txt`
-  slots — rarity-repeated referees, or one model backing several team players) is instantiated per
-  slot but emits its textures **once**, into a single common subfolder keyed by the source folder's
-  name that every mapped slot's model references (Red's in-game-verified referee layout — no texture
-  duplication across slots).
+  their own textures. A multi-mapped folder (one source folder listed under several
+  `players.txt` slots: rarity-repeated referees, or one model backing several team players) is
+  instantiated per slot but emits its textures **once**, into a single common subfolder keyed
+  by the source folder's name that every mapped slot's model references (Red's
+  in-game-verified referee layout, with no texture duplication across slots).
 - Cross-export duplicate precedence is resolved by run-level manifest preflight; multiple normal
   exports resolving to the same team ID are rejected with `duplicate_aesthetics_export`.
 - **ID allocation**: 40-ID per-team blocks (23 player-exclusive + 17 shared), applied independently
@@ -2251,16 +2315,19 @@ Resolved decisions:
   [Aesthetics export plan](../aesthetics_export/player_folders.md).
 - **Root normalization**: exactly one usable nested root is flattened; multiple usable roots
   (`nested_root_ambiguous`) and loose-root/nested collisions (`nested_root_conflict`) reject the
-  export — an intentional deviation from Red's first-match rule.
+  export, an intentional deviation from Red's first-match rule.
 - **Model source selection**: target-native first, then glTF, then conversion from the opposite
   native format.
-- **Kit colors fallback**, in order: the kit's `colors.txt`; when missing or yielding fewer than
-  two valid colors, derivation from the kit's own main texture (`kit_colors_derived`) — never from
-  the placeholder checkerboard; when that is impossible too (no decodable own texture, or a
-  placeholder kit), the fixed **magenta/black "no colors chosen" pair is written**
-  (`kit_colors_missing`, W): magenta (255, 0, 255) as the first color, black (0, 0, 0) as the
-  second. The kit's own main texture is the `kit` texture of its effective set, so one
-  inherited from `all/` counts: it is what the kit wears in the game.
+- **Kit colors fallback**, in order:
+  1. the kit's `colors.txt`;
+  2. when missing or yielding fewer than two valid colors, derivation from the kit's own main
+     texture (`kit_colors_derived`), never from the placeholder checkerboard;
+  3. when that is impossible too (no decodable own texture, or a placeholder kit), the fixed
+     **magenta/black "no colors chosen" pair is written** (`kit_colors_missing`, W): magenta
+     (255, 0, 255) as the first color, black (0, 0, 0) as the second.
+
+  The kit's own main texture is the `kit` texture of its effective set, so one inherited from
+  `all/` counts: it is what the kit wears in the game.
 
   Loud on purpose: the menu dots and scoreboard strip then show a pair nobody would pick, so the
   omission is seen in the first menu instead of being papered over. The alternatives were both
@@ -2275,24 +2342,28 @@ Resolved decisions:
 - **Per-player common path templates**: the referee rows of "Game paths reference" carry Red's
   name-keyed per-referee common layout on both engines, the shape of "Texture relocation to
   common" with 999 as the team ID.
-- **FPC markers are player-level presets** (`fpc_on` = hide, `fpc_off` = un-hide, for that player's
-  appearance settings only); non-FPC players are valid on FPC teams, so mixed-marker teams are
-  ordinary supported usage. Team **kit**-FPC status is two-state (`On`/`Unknown`): any `fpc_on`
-  writes the FPC kit values into every config; otherwise supplied configs are left untouched — the
-  compiler never auto-reverts FPC values. Kit slots absent from the export are FPC-patched from the
-  installed cup content (`kit_config_fpc_adjusted`), so a midcup export can add an FPC player
-  without resending untouched kits (see "FPC toggle" in the [Aesthetics export plan](../aesthetics_export/fpc_toggle.md)).
+- **FPC markers are player-level presets** (`fpc_on` = hide, `fpc_off` = un-hide, for that
+  player's appearance settings only). Non-FPC players are valid on FPC teams, so mixed-marker
+  teams are ordinary supported usage.
+
+  Team **kit**-FPC status is two-state (`On`/`Unknown`): any `fpc_on` writes the FPC kit values
+  into every config; otherwise supplied configs are left untouched. The compiler never
+  auto-reverts FPC values. Kit slots absent from the export are FPC-patched from the installed
+  cup content (`kit_config_fpc_adjusted`), so a midcup export can add an FPC player without
+  resending untouched kits (see "FPC toggle" in the [Aesthetics export
+  plan](../aesthetics_export/fpc_toggle.md)).
 - **Bins updating is unconditional** — Red's `bins_updating` setting is dropped: it only existed
-  before "fetch the latest installed bins and update those" was a thing, and skipping bins updates
-  is never useful now that recompiles patch the current cup state.
-- **Working-bin lookup follows `DpFileList.bin`**: the download folder's DpFileList is walked from
-  the bottom up (the bottom has the highest PES loading priority; Red approximates this by sorting
-  the DPFL's CPK names in reverse alphabetical order, and searches only CPKs whose names hold
-  `midcup` or `bins`, a filter dropped here), starting just below the compiler's own output
-  CPK — skipping it and anything with higher priority keeps recompiles idempotent even after newer
-  midcup CPKs are added — and each bin comes from the first CPK the walk finds it in, with the
-  supplying CPK reported; the bundled bases only serve from-scratch compiles (see "Bins
-  accumulation").
+  before "fetch the latest installed bins and update those" was a thing, and skipping bins
+  updates is never useful now that recompiles patch the current cup state.
+- **Working-bin lookup follows `DpFileList.bin`**: the download folder's DpFileList is walked
+  from the bottom up, starting just below the compiler's own output CPK, and each bin comes
+  from the first CPK the walk finds it in, with the supplying CPK reported. The bundled bases
+  only serve from-scratch compiles (see "Bins accumulation").
+
+  The bottom has the highest PES loading priority. Red approximates this by sorting the DPFL's
+  CPK names in reverse alphabetical order, and searches only CPKs whose names hold `midcup` or
+  `bins`, a filter dropped here. Skipping the compiler's own output CPK and anything with
+  higher priority keeps recompiles idempotent even after newer midcup CPKs are added.
 - **Templates and fallback bins are embedded in the exe, with an override directory**: Red's loose
   `Engines/templates/` and `Engines/bins/` files, ~6 MB total, ship inside the binary
   (`include_bytes!`, one per file, the referee trees' files listed by game path; no
@@ -2345,48 +2416,53 @@ Resolved decisions:
   extension: it is the file cup organizers already pass around, and `.txt` opens in a text
   editor on double-click where `.tsv` opens nothing, or a spreadsheet that rewrites cells.
 
-  **The savefile is a second source for the list.** In-game team names in a 4cc
-  save are the `/xx/` names, so the savefile's `TeamEntry { id, name }` rows for IDs 701–920 are
-  a teams list — and the authoritative one for the cup the user is actually playing, ahead of
-  whatever the last release embedded. The [Save editor](../save_editor.md)'s **Export teams list**
-  action (it owns the open savefile; the compiler only consumes the list) runs the *same*
-  reconciliation as the updater with the savefile as the incoming list (added / kept / overridden,
-  reviewed before writing; savefile value wins a conflict), never a blind overwrite. It is
-  on-demand, not automatic: the list must keep working with no savefile present
-  (`savefile_missing` is a supported mode), and rewriting user data as a side effect of a compile
-  would be a surprise. Placeholder rows (`Backup N`, `Invitational N`) come along and are inert.
+  **The savefile is a second source for the list.** In-game team names in a 4cc save are the
+  `/xx/` names, so the savefile's `TeamEntry { id, name }` rows for IDs 701–920 are a teams
+  list, and the authoritative one for the cup the user is actually playing, ahead of whatever
+  the last release embedded.
+
+  The [Save editor](../save_editor.md)'s **Export teams list** action (it owns the open
+  savefile; the compiler only consumes the list) runs the *same* reconciliation as the updater
+  with the savefile as the incoming list (added / kept / overridden, reviewed before writing;
+  savefile value wins a conflict), never a blind overwrite. It is on-demand, not automatic: the
+  list must keep working with no savefile present (`savefile_missing` is a supported mode), and
+  rewriting user data as a side effect of a compile would be a surprise. Placeholder rows
+  (`Backup N`, `Invitational N`) come along and are inert.
 - **Collar contract**: the replaced stock collar ID comes from the `collar_[ID]` filename
-  (`collar_id_invalid` otherwise); two teams
-  claiming the same ID is an error caught by a run-wide claimed-ID list during serial planning
-  (`collar_id_conflict`, later claimant in canonical order loses); the list starts with ID 105,
-  reserved for FPC, and 77, reserved for the referees' marker, so neither can be replaced (a
-  team kit using 77 is `kit_collar_reserved`). Custom collars are compatible
-  with team FPC — collar rewriting runs after FPC reconciliation and deliberately overrides the FPC
-  collar value (see "Collars").
+  (`collar_id_invalid` otherwise).
+  - Two teams claiming the same ID is an error caught by a run-wide claimed-ID list during
+    serial planning (`collar_id_conflict`, later claimant in canonical order loses).
+  - The list starts with ID 105, reserved for FPC, and 77, reserved for the referees' marker,
+    so neither can be replaced (a team kit using 77 is `kit_collar_reserved`).
+  - Custom collars are compatible with team FPC: collar rewriting runs after FPC reconciliation
+    and deliberately overrides the FPC collar value (see "Collars").
 - **Pre-Fox local boots/gloves get no ID of their own**: they ride as typed face-XML entries, so
   only shared folders get compiler-assigned IDs, `ingame_face` the exception. The routing is
   "A link plus local models combines" and "`ingame_face` marker" in the [Aesthetics export
   plan](../aesthetics_export/player_folders.md); the ID a local-only category gets is steps 2
   and 3 of "Player settings in exports" ([`settings_toml.md`](../aesthetics_export/settings_toml.md)).
-- **Virtual-path safety** is specified on the shared `vtree::ScopePath` type
-  (see the [library crates plan](../libs/README.md)): traversal/absolute paths rejected, separators
-  normalized, case/Unicode collisions detected before extraction or packing; `aesthetics_export` uses the
+- **Virtual-path safety** is specified on the shared `vtree::ScopePath` type (see the [library
+  crates plan](../libs/README.md)): traversal/absolute paths rejected, separators normalized,
+  case/Unicode collisions detected before extraction or packing. `aesthetics_export` uses the
   shared type.
-- **Source snapshot**: a source's revision is taken when the reader lists it: for a
-  folder, each listed file's size and modified time; for an archive, the archive file's size and
-  modified time. `compile` checks it after each task's read: a folder's task checks the files it
-  read, an archive's task the archive file (a `.7z`, read once for all its tasks, is checked once,
-  after that read). A file that is gone, or whose size or modified time is no longer the
-  listing's, aborts the run with `source_changed_during_run`: the staging output is discarded and
-  nothing is deployed, so the previous CPK stays as it was.
+- **Source snapshot**: a source's revision is taken when the reader lists it:
+  - for a folder, each listed file's size and modified time;
+  - for an archive, the archive file's size and modified time.
+
+  `compile` checks it after each task's read: a folder's task checks the files it read, an
+  archive's task the archive file (a `.7z`, read once for all its tasks, is checked once, after
+  that read). A file that is gone, or whose size or modified time is no longer the listing's,
+  aborts the run with `source_changed_during_run`: the staging output is discarded and nothing
+  is deployed, so the previous CPK stays as it was.
 
   The check comes after the read, not before it, so a file saved over while it was being read
   is caught too. Only what a task reads is checked: a file added to a folder after its listing
   is in no task, so it changes nothing the run writes. `check` reads each source right after
-  listing it and checks nothing. The check
-  is against a member saving over a file while the cup is compiled, not against a hostile one: a
-  replacement of the same size that keeps the modified time (or lands inside the file system's
-  time granularity) goes unseen.
+  listing it and checks nothing.
+
+  The check is against a member saving over a file while the cup is compiled, not against a
+  hostile one: a replacement of the same size that keeps the modified time (or lands inside the
+  file system's time granularity) goes unseen.
 - **Merge-copy collisions within one child** have a winner: the parts merged into one output
   FMDL (Fox baking of local, shared, and `.common`-linked models into one allowed name) come from
   the player's folder, at most one combined folder of the package and `Common/`, whose textures
@@ -2412,21 +2488,24 @@ Resolved decisions:
   reaches the task: the file is dropped before planning, and a player whose texture link names
   it follows `link_target_dropped`, like any link to a dropped target.
 
-  On PES 18-21 the Common
-  tasks read the files directly in `Common/` and the subfolder files a `.common` link names
-  (a link at the same path below a player or shared folder, `spec/model_format.md` "Link files"),
-  a linked model bringing the files beside it that travel with it (the models and `.skl` of
-  its stem, the `.mtl` files its search may read, and every texture directly in its
-  directory or in one above it up to `Common/`, where its names resolve nearest first, the
-  textures a `.mtl` link brings too; none of them `file_not_used`), as every
-  texture directly in `Common/` is packed whether a model names it or not: knowing which of
-  them a model names would take a second texture resolver at planning, before any model is
-  read, that a slip in leaves a texture silently unpacked,
-  each at its path before the platform
-  folder, as Red packs a Common subfolder (`Common/kit1/x.dds` as
-  `common/<team>/kit1/sourceimages/#windx11/x.ftex`), since Fox reaches Common through links
-  alone: a subfolder file no link names or brings is `file_not_used` there; on PES 15-17 a
-  subfolder is packed at its own path ("Common" under step 4).
+  On PES 18-21 the Common tasks read:
+  - the files directly in `Common/`;
+  - the subfolder files a `.common` link names (a link at the same path below a player or
+    shared folder, `spec/model_format.md` "Link files");
+  - the files a linked model brings, which travel with it: the models and `.skl` of its stem,
+    the `.mtl` files its search may read, and every texture directly in its directory or in one
+    above it up to `Common/`, where its names resolve nearest first, the textures a `.mtl`
+    link brings too. None of them is `file_not_used`.
+
+  They are read as every texture directly in `Common/` is packed, whether a model names it or
+  not: knowing which of them a model names would take a second texture resolver at planning,
+  before any model is read, that a slip in leaves a texture silently unpacked.
+
+  Each is packed at its path before the platform folder, as Red packs a Common subfolder
+  (`Common/kit1/x.dds` as `common/<team>/kit1/sourceimages/#windx11/x.ftex`). Since Fox
+  reaches Common through links alone, a subfolder file no link names or brings is
+  `file_not_used` there. On PES 15-17 a subfolder is packed at its own path ("Common" under
+  step 4).
 
   A glTF directly in `Common/` is selected as a player folder's is (step 3 "Format conversion":
   target-native first, then glTF, then the other engine's format):
@@ -2439,23 +2518,23 @@ Resolved decisions:
     something he did not ask for);
   - one a target-native model beats is silent.
 
-  A player's `.model`
-  whose `.mtl` is a Common file (a `.mtl.common` link, or the search reaching `Common/`) has
-  its texture stems pointed as a Common part's are, at the team's Common output, a texture of
-  the folder's of one of those stems shadowing nothing: a stem resolves in the folder of the
-  material file that set it (`spec/model_format.md` "Link files"), where the deep pass checks it.
-  A Common `.model` converted with the folder's own `.mtl` is the other way round: its stems
-  resolve in the folder first, then in `Common/`. On PES 15-17 the face's `.mtl` search
-  already names such a set in the Common output.
+  A player's `.model` whose `.mtl` is a Common file (a `.mtl.common` link, or the search
+  reaching `Common/`) has its texture stems pointed as a Common part's are, at the team's Common
+  output. A texture of the folder's with one of those stems shadows nothing: a stem resolves in
+  the folder of the material file that set it (`spec/model_format.md` "Link files"), where the
+  deep pass checks it. A Common `.model` converted with the folder's own `.mtl` is the other
+  way round: its stems resolve in the folder first, then in `Common/`. On PES 15-17 the face's
+  `.mtl` search already names such a set in the Common output.
 - **Texture references are stem-based (input)**: all material references (FMDL path tables,
   `.mtl`, `.materials.toml`) name textures by stem (filename without extension) in their
-  source/authoring form. Any image format (DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL) may be
-  used as a source for any model format — they are fully interchangeable. The compiler resolves
-  each stem to the actual file in the folder and converts to the target format. Two image files
-  with the same stem but different extensions is `texture_stem_conflict` (checked in the
-  structure pass). FMDL path tables were already stem-based; Studio-format `.mtl` and
-  `.materials.toml` write stems; the Export upgrader strips extensions from old `.mtl` texture
-  paths when migrating.
+  source/authoring form. Any image format (DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG XL)
+  may be used as a source for any model format: they are fully interchangeable. The compiler
+  resolves each stem to the actual file in the folder and converts to the target format. Two
+  image files with the same stem but different extensions is `texture_stem_conflict` (checked
+  in the structure pass).
+
+  FMDL path tables were already stem-based; Studio-format `.mtl` and `.materials.toml` write
+  stems; the Export upgrader strips extensions from old `.mtl` texture paths when migrating.
 
   **Output** `.mtl` files (written at compile time) keep `.dds` extensions on texture paths, as
   the game expects; FMDL output path tables remain stem-based. Omitted or blank texture roles
@@ -2463,12 +2542,14 @@ Resolved decisions:
   [Unified model format plan](../model_format.md)); this happens during deep parsing, not the
   structure pass.
 
-  A stem resolves in the folder of the material file that set it,
-  so material files linked from Common (`*.materials.toml.common`, `*.mtl.common`) name Common's
-  textures while local overrides name the player folder's; a texture link (`hair.png.common`)
-  makes the Common file resolve under that stem in the player folder. Where a texture resolved
-  decides where it is packed (step 6): player folder → relocated to the player's common subfolder;
-  Common → referenced in place, once per team.
+  A stem resolves in the folder of the material file that set it, so material files linked from
+  Common (`*.materials.toml.common`, `*.mtl.common`) name Common's textures while local
+  overrides name the player folder's. A texture link (`hair.png.common`) makes the Common file
+  resolve under that stem in the player folder.
+
+  Where a texture resolved decides where it is packed (step 6):
+  - player folder → relocated to the player's common subfolder;
+  - Common → referenced in place, once per team.
 - **A texture a model names must exist** (`fmdl_texture_not_found`, `mtl_texture_not_found`): a
   player whose texture nobody supplies may not look as its author meant, so it is reported, as
   a Warning that keeps the package on every engine. Real models carry leftover meshes hidden
@@ -2545,23 +2626,25 @@ Resolved decisions:
   equivalent, since nothing is found by ID here.
 - **Conversion cache engages only for ≤2 teams**: the in-memory texture conversion cache is
   bypassed for compiles of 3+ teams; see the [library crates plan](../libs/README.md) for rationale.
-- **Output-mode artifact routing**: `teamnotes.txt` is written under `output_folder_path` in every
-  mode. In sideload mode the bins, the `overrides/` files and referee content land at their game
-  paths inside `livecpk/`, since that tree is what the CPK would contain, the referee template
-  tree with them when the refs export commits something. In test mode the bins go
-  under `test_output/_bins/` at their game-relative paths, referee content is written per export
-  like a team's, and overrides are not applied: test mode shows what the compiler did to an
-  export, and an override is not the export's; for the same reason it writes no referee
-  template tree, which is no export's either. Normal single-CPK, multi-CPK and refs routing is
-  the writer's (step 5 above).
+- **Output-mode artifact routing**: `teamnotes.txt` is written under `output_folder_path` in
+  every mode.
+  - In sideload mode the bins, the `overrides/` files and referee content land at their game
+    paths inside `livecpk/`, since that tree is what the CPK would contain, the referee
+    template tree with them when the refs export commits something.
+  - In test mode the bins go under `test_output/_bins/` at their game-relative paths, referee
+    content is written per export like a team's, and overrides are not applied: test mode
+    shows what the compiler did to an export, and an override is not the export's. For the
+    same reason it writes no referee template tree, which is no export's either.
+  - Normal single-CPK, multi-CPK and refs routing is the writer's (step 5 above).
 - **The aesthetics patch is the compiler's only savefile write path**: a compile writes
   `aesthetics_patch.toml` to its output folder with the CPKs it publishes (each compiled
-  player's look and IDs, and a `write_names` export's names, on every version); a configured
-  local savefile is updated by applying that
-  patch, never by a separate write. Reason: the DLC builder and the savefile builder are different
-  roles — the official save carries the teams' custom tactics, which the DLC builder must not have —
-  so the compile's savefile half has to be a file that can be carried to another machine and applied
-  there; making the local write use the same file removes the possibility of the two drifting. A
+  player's look and IDs, and a `write_names` export's names, on every version). A configured
+  local savefile is updated by applying that patch, never by a separate write.
+
+  Reason: the DLC builder and the savefile builder are different roles (the official save
+  carries the teams' custom tactics, which the DLC builder must not have), so the compile's
+  savefile half has to be a file that can be carried to another machine and applied there.
+  Making the local write use the same file removes the possibility of the two drifting. A
   missing local savefile remains a warning, not a supported quiet mode, because the DLC builder
   still compiles against a template save to test in PES.
 - **Missing savefile stays a warning**: deterministic ID allocation keeps a later savefile-inclusive
@@ -2588,16 +2671,22 @@ phase that owns them):
   that grows by waiting, which can wait on its own bytes. Solid 7z archives charge their
   full decompressed buffer until all dependent tasks drain; the conversion cache is charged
   with its eviction.
-- **`teams_list.txt` contract.** Resolved in `teams_list` (Phase 2): tab-separated (not
-  whitespace — Blue's `split()` turned `Backup 1` into `Backup`); a header line is required and its
-  fields are preserved on write; `ID` and `Name` are located by header position and further
-  columns (`MinBootsID`, `MaxBootsID`) are carried verbatim; Name folded through `TeamName::new` on
-  load; a line whose Name does not fold is a placeholder kept verbatim and never looked up; a line
-  whose Name folds but whose ID is outside 701–920 is an error, as are duplicate IDs or names; a
-  UTF-8 BOM is tolerated on read and never written; blank lines are dropped; CRLF or LF read, CRLF
-  written (the file Red's unreleased development branch writes: 220 rows, all ASCII; released
+- **`teams_list.txt` contract.** Resolved in `teams_list` (Phase 2):
+  - tab-separated (not whitespace: Blue's `split()` turned `Backup 1` into `Backup`);
+  - a header line is required and its fields are preserved on write;
+  - `ID` and `Name` are located by header position and further columns (`MinBootsID`,
+    `MaxBootsID`) are carried verbatim;
+  - Name folded through `TeamName::new` on load;
+  - a line whose Name does not fold is a placeholder kept verbatim and never looked up;
+  - a line whose Name folds but whose ID is outside 701–920 is an error, as are duplicate IDs
+    or names;
+  - a UTF-8 BOM is tolerated on read and never written;
+  - blank lines are dropped;
+  - CRLF or LF read, CRLF written.
+
+  This is the file Red's unreleased development branch writes: 220 rows, all ASCII. Released
   Red's separates its two columns, header `ID Name` included, by a space, which this reader
-  refuses naming the file).
+  refuses naming the file.
 
 **Pre-Phase-3 gates** (the normal-team versus referee `ExportIdentity` boundary, sanitized
 validated-versus-eligible projection, roster-entry scope/disposition semantics): confirmed
