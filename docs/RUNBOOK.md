@@ -70,7 +70,8 @@ game-facing write, and hands the maintainer the rest as one batch per game sessi
 **Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
 that own disjoint files, the release path's first. The limits are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
-nothing and costs nothing) and SWE-2's hidden limit (two runs at once). When the Claude
+nothing and costs nothing), the machine's three cargo builds (below), and for SWE-2 the
+login's limit on runs at once (`accounts.md`, next paragraph); a reviewer builds nothing. When the Claude
 weekly window nears its limit, the sidekick work goes back to SWE-2.
 
 **The accounts' state has one home**: `~/.claude/skills/duck/accounts.md` (which login runs
