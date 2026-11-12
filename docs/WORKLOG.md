@@ -1826,9 +1826,13 @@ briefs, review loops, gates and mutation runs as for any step.
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
     (`.dropabove`, `.dropbelow`; renders of a drag each way, `.tmp/0_0_2/undo/dropline_down.png`
-    and `dropline_up.png`, by `shot_dropline.py` beside them), waiting for the
-    maintainer's look at the draft; then its scenario and the slice (small, after
-    0.0.2-clip: `view/player_list.rs`)
+    and `dropline_up.png`, by `shot_dropline.py` beside them); the maintainer looked at
+    the draft and its light approximation and approved both, serifs included (2026-11-12).
+    SE-GUI-75. A light theme in the drafts was weighed and left out: 175 colours of
+    `index.html` and `save_editor.js` are written as literals beside the variables, so it is
+    no cheap addition (`shot_dropline_light.py` overrides the variables for a one-off look)
+    - [ ] the slice (small: `view/player_list.rs`; after 0.0.2-clip), then the look in the
+      built window (Pending looks)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,

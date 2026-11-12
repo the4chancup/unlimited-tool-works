@@ -2707,6 +2707,14 @@ SE-GUI-69  GIVEN a team's player list, row 03 pressed 20 points right of its nam
            THEN the row's name is drawn 30 points right and 40 below where it stood, on top
                 of the list; GIVEN a filter typed THEN a press and the same move draw nothing
                 there
+SE-GUI-75  GIVEN a team's player list and row 02 held dragged
+           WHEN the pointer is over row 06
+           THEN a line 2 points thick in the selection colour is drawn across row 06's lower
+                edge, a serif at each end, and no row is outlined; WHEN the pointer is over
+                row 01 instead THEN the line is across row 01's upper edge; the list draws
+                one line at most; GIVEN the pointer over his own row, an empty slot's or
+                another team's row THEN no line is drawn; GIVEN the drag released outside
+                the list THEN no line is left
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
