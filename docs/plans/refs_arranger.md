@@ -284,7 +284,7 @@ version-dependent behavior in the suite:
     numbers. A changed `players.txt` needs a recompiled CPK for everyone, so the Save
     confirmation says so whenever home slots moved.
   - **Lists.** A list is five positions (`0..4`, the order the game writes them), each
-    holding one referee, **all five distinct**. Five distinct referees are the reason force
+    holding one referee, **all five distinct**. Keeping all five distinct is the reason force
     lists are used rather than remap: collapsing 35 drawn ids onto N referees would regularly
     put the same model on the pitch twice. The role labels (main, linesmen, fourth official,
     board holder) are shown once the position roles are confirmed in-game (see Open

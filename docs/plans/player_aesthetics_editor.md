@@ -179,7 +179,7 @@ not filled in merely by opening the folder. The preview shows a key the file lea
 default, which is what the compile writes (the template's value; with no FPC marker, the
 base body is visible).
 
-The tool waits for explicit user edits: turning FPC on writes the canonical `fpc_on` marker,
+Writes wait for explicit user edits: turning FPC on writes the canonical `fpc_on` marker,
 turning it off writes `fpc_off`, and strip edits persist only the edited keys. Both panels
 follow this rule; there is no second FPC boolean in `settings.toml`.
 

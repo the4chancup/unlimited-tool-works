@@ -116,11 +116,11 @@ Plain text, one entry per line, `;`-separated fields:
     into a single token; `\[`, `\]`, and a leading `\` escape. An empty group `[]` is no
     token (`special []` reads as `special`). The writer never writes an empty group, nor
     brackets around a single word, because Rigdio's group runs from the `[` word to a
-    *later* word ending in `]` (`processTokens`, `condition.py:816-837`): on either, it
+    *later* word ending in `]` (`processTokens`, `condition.py:816-837`), so on either it
     crashes at the line's end or swallows the words after it.
 - Reserved words (not usable as player names): `name`, `sync`, `normalize`, `anthem`,
   `victory`, `goal`, `chant`. (Rigdio's set also contained the literal string
-  `;event`, unreachable since `;` is the field separator, so it is dropped here. `event`
+  `;event`, unreachable since `;` is the field separator, and dropped here. `event`
   is an instruction, never a slot, so it needs no reserving.)
 
 ### Conditions
@@ -723,11 +723,11 @@ and lane contract live in the Match tracker plan).
   released, they resume their ordinary manual match-state behavior.
 
   A `Goal` event with `OpenPlay`, `Penalty`, or regulation-phase `Unknown` kind
-  immediately increments the side's regulation score and the scorer's count. The scorer is
-  matched to a player slot as "Scorer matching" below says; with no matching slot, the
-  standard goalhorn is used and the goal still counts. When `resolves_unclassified` is
-  `Some(id)`, the player instead removes that exact uncertain record before applying the
-  classified score and scorer update, rather than adding a second goal.
+  immediately increments the side's regulation score and the scorer's count, unless
+  `resolves_unclassified` is `Some(id)`: then the player removes that exact uncertain record
+  before applying the classified score and scorer update, rather than adding a second goal.
+  The scorer is matched to a player slot as "Scorer matching" below says; with no matching
+  slot, the standard goalhorn is used and the goal still counts.
 
   The goalhorn then plays through the normal selection logic **after a settable
   announcement delay** (default 8s): the window where the caster calls the goal ("Goal!
@@ -770,8 +770,8 @@ and lane contract live in the Match tracker plan).
   slot named as in the game is never outscored by a fuzzy one.
 
   A name contained in a longer one scores 100 whichever is the slot. So a name under 4
-  characters ("I", "NO", "sex", all real in-game names) matches exactly or not at all,
-  because, contained, it would claim any slot spelling it. From 4 characters on, a contained
+  characters ("I", "NO", "sex", all real in-game names) matches exactly or not at all:
+  contained, it would claim any slot spelling it. From 4 characters on, a contained
   name ("Mark" in "Markus") still scores 100, and the logged names are how a manager finds
   it. The Studio beta's logs are where 90 and 4 are checked.
 
