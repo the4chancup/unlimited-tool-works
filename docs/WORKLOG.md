@@ -1765,8 +1765,13 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] 2026-11-12: the Save editor's draft and plan, copied by hand from the branch
       `ui/save-editor-polish` (cut afterwards), the band's stop corrected for a window
       drawn scaled down; the Ruleset editor's draft already has the look
-    - [ ] the two apps (a sidekick), with the scenarios the menus restate (SE-GUI-03, 04,
-      26) and the tests re-cited; then the look in the built window
+    - [x] the two apps, 2026-11-12 (`35224d61`, Opus; tier 2): `studio_core`'s `toolbar`
+      draws the menu bar's style and `toolbar_framed` keeps a control framed; SE-GUI-03, 04,
+      26, 43 and 44 restated and their tests re-aimed at the menus. The row is one line
+      that never wraps and the logo is always drawn (DECISIONS 2026-11-12); a view's title
+      is measured from the band's line, and everything under the bar stands 1 point higher
+    - [ ] the look in the built window, both tools, both themes (ask the maintainer)
+    - [ ] its review: a SWE-2 loop, then one paid round (Carbon, from 2026-11-15)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
