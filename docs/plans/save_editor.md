@@ -278,7 +278,10 @@ side.
   and he lands under them, and on its upper edge when he comes from below. A line, not the
   outline the lineup lists draw, because a drop here inserts the player and shifts the rows
   between, where a lineup drop swaps two rows: an outline round one row promised a swap. A
-  row the drop moves nothing onto (his own, another team's, an empty slot's) gets no line.
+  row the drop moves nothing onto (his own, another team's) gets no line; an empty slot has
+  no row. The line is drawn over the rows, after them, so the next row's background never
+  covers its lower half, and a pointer on the very edge two rows share marks the upper
+  row's drop alone, the one the release goes to.
   A drop has one place to go, so the list never shows two lines, and a drag that ends
   without a drop (a release outside the list, Esc) leaves none.
 
@@ -2726,7 +2729,9 @@ SE-GUI-75  GIVEN a team's player list and row 02 held dragged
            THEN a line 2 points thick in the selection colour is drawn across row 06's lower
                 edge, a serif at each end, and no row is outlined; WHEN the pointer is over
                 row 01 instead THEN the line is across row 01's upper edge; the list draws
-                one line at most; GIVEN the pointer over his own row, an empty slot's or
+                one line at most, also with the pointer on the edge two rows share, and the
+                next row's background, a selected row's or a team row's, covers none of
+                it; GIVEN the pointer over his own row or
                 another team's row THEN no line is drawn; GIVEN the drag released outside
                 the list THEN no line is left
 SE-GUI-76  GIVEN SE-AATF-09's save open, Live AATF on, 4cc Spring 26 the active ruleset
