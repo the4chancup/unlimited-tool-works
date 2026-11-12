@@ -776,11 +776,24 @@ side.
   Down pastes onto the next row. A paste of another kind does nothing; each paste is one undo
   step.
 
-  The clipboard is the editor's own, not the system's: a copy carries a save's records as they
-  were when copied, which another program cannot take, and opening another save empties it. A
-  copy still puts one line naming what it copied on the system clipboard ("Unlimited Tool
-  Works: the stats of SURNAME"), because the window hears Ctrl+V only as a paste of the system
-  clipboard's text, and an empty one sends nothing.
+  The copy is text on the system clipboard, so it pastes into another window of the suite, or
+  into the same window after another save was opened (0.0.2-clip; until it is built the
+  clipboard is the editor's own, emptied when a save opens, with one naming line on the
+  system's). The text is a Team TOML document holding only what was copied, under two comment
+  lines: the first names it for a person ("# Unlimited Tool Works: the stats of SURNAME"), the
+  second its kind for the paste ("# copied: stats", "gameplan", "preset" or "formation"). A
+  player's stats are his `[players.NN]` table's stats keys, a Gameplan the `[tactics]` table,
+  a preset `[tactics.preset_1]` and a formation `[tactics.preset_1.formation_1]`, whichever
+  preset or formation was shown: the copy keeps no place, and the paste goes onto the one
+  shown. Ctrl+V reads the text the window is handed (it hears Ctrl+V only as a paste of the
+  system clipboard's text), and writes what each kind's paste wrote before; text that is not
+  such a document, or is of another kind than the target, changes nothing.
+
+  Team TOML, not the records' bytes, because two windows may hold saves of different PES
+  versions: the document names its version and its import already converts the values, where
+  a record's bytes fit one version alone. It is also the one text form the editor already
+  reads and writes, so the copy needs no format of its own, and a member can paste it into a
+  message or a file.
 - In a number field being typed, **Up and Down** step the value by one, as a wheel notch
   does; egui steps a whole-number field by its drag speed (a quarter) and rounds the sum
   back, so a press changed nothing, and the drag's sensitivity stays as it is.
@@ -2576,10 +2589,21 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row cli
                 <team>`, `… the Kick-off formation of <team>`), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
                 press not; GIVEN team 701's row copied and pasted onto itself THEN no undo
-                entry is pushed and the save stays clean; GIVEN another save opened after
-                Ctrl+C WHEN Ctrl+V is pressed THEN nothing changes and no undo entry is pushed;
+                entry is pushed and the save stays clean;
                 GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
                 the field's own: no record is written and the clipboard keeps A's stats
+SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team's Gameplan, a
+                preset or a formation) and a second window with another save open, of the
+                same PES version or another
+           WHEN the same kind of target is selected there and Ctrl+V is pressed
+           THEN the target holds what importing the copied part from a Team TOML file of the
+                first save writes, as one undo step; the system clipboard's text after each
+                Ctrl+C is a Team TOML document under two comment lines, the first naming what
+                was copied and the second its kind; GIVEN another save opened in the same
+                window after Ctrl+C WHEN Ctrl+V is pressed THEN the copy is pasted there too;
+                GIVEN clipboard text that is no such document, or one of another kind than
+                the target WHEN Ctrl+V is pressed THEN nothing changes and no undo entry is
+                pushed
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before
