@@ -1,8 +1,9 @@
-//! `upgrade`: one old export read, resolved, written under its derived name
+//! `upgrade`: each old export read, resolved, written under its derived name
 //! and validated, in the order `spec/export_upgrader.md` "CLI" gives: the
 //! invocation checks first (nothing written by a refusal), then the source,
 //! the identity, the staging folder, the migration report and the shared
-//! validation's findings on what was written.
+//! validation's findings on what was written. A run of several exports
+//! upgrades them one after the other, each as if it ran alone.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -47,8 +48,11 @@ use crate::staging::{
 };
 use crate::texture_pairs;
 
-/// A command is one run per process, so every event carries the same run id.
-const RUN_ID: RunId = RunId(1);
+/// The run id of a command's first run. Each export `upgrade` runs is a run
+/// of its own, numbered on from this one, so the export ids `INPUT` and
+/// `OUTPUT` always name the current export's input and output; every other
+/// command has this one run.
+pub(crate) const FIRST_RUN: RunId = RunId(1);
 
 /// The input path made absolute, so its name and parent are the export's own:
 /// `upgrade .` run inside an export resolves to the export folder itself, and
@@ -116,20 +120,43 @@ pub(crate) enum Identity {
 /// drops something, which decide the exit code.
 pub(crate) struct RunEvents {
     ctx: ToolContext,
+    run_id: RunId,
     worst: Option<Severity>,
     dropped: bool,
+    processed_sent: bool,
 }
 
 impl RunEvents {
-    /// Events sent through `ctx`, none yet.
-    pub(crate) fn new(ctx: &ToolContext) -> RunEvents {
+    /// Events of the run `run_id` sent through `ctx`, none yet.
+    pub(crate) fn new(ctx: &ToolContext, run_id: RunId) -> RunEvents {
         // A clone shares the context's channels, so the events reach the same
         // receivers.
         RunEvents {
             ctx: ctx.clone(),
+            run_id,
             worst: None,
             dropped: false,
+            processed_sent: false,
         }
+    }
+
+    /// The event stream of the run after this one, none of its events sent
+    /// yet: the next export of a run of several.
+    fn next_run(&self) -> RunEvents {
+        RunEvents::new(&self.ctx, RunId(self.run_id.0 + 1))
+    }
+
+    /// How many exports the command runs one after the other, sent before
+    /// the first: the console's progress line counts them all from its
+    /// first frame.
+    fn exports_expected(&self, total: usize) {
+        self.emit(None, PipelineEvent::ExportsExpected { total });
+    }
+
+    /// A line printed as it is, around the findings (a run of several
+    /// exports' naming lines and tally).
+    fn output(&self, line: String) {
+        self.emit(None, PipelineEvent::Output(line));
     }
 
     /// An export entered the run: the console names its findings by this name.
@@ -144,9 +171,9 @@ impl RunEvents {
     }
 
     /// A name for the findings of `export_id`, which is no export of its own
-    /// in this run (the upgrade's output, the second half of the one
-    /// export): the console names its findings by this name, and no counter
-    /// counts it.
+    /// in this run (the upgrade's output, the second half of the export):
+    /// the console names its findings by this name, and no counter counts
+    /// it.
     pub(crate) fn named(&self, export_id: ExportId, display_name: &str) {
         self.emit(
             Some(export_id),
@@ -178,11 +205,19 @@ impl RunEvents {
     }
 
     /// The export left the pipeline, whatever its outcome.
-    pub(crate) fn processed(&self, export_id: ExportId) {
+    pub(crate) fn processed(&mut self, export_id: ExportId) {
+        self.processed_sent = true;
         self.emit(
             Some(export_id),
             PipelineEvent::ExportProcessed { export_id },
         );
+    }
+
+    /// Whether this run sent its `ExportProcessed`: a refusal or an abort
+    /// returns before it does, but the verdict's rename of the staging
+    /// folder, or its removal, can abort after.
+    fn processed_sent(&self) -> bool {
+        self.processed_sent
     }
 
     /// `processed` of `total` parts done (the files the run writes into its
@@ -205,7 +240,7 @@ impl RunEvents {
 
     fn emit(&self, export_id: Option<ExportId>, event: PipelineEvent) {
         self.ctx.emit(PipelineEventEnvelope {
-            run_id: RUN_ID,
+            run_id: self.run_id,
             export_id,
             export_revision: None,
             made_at: None,
@@ -225,8 +260,9 @@ pub(crate) fn aborted(error: anyhow::Error) -> CliError {
     CliError::new(ABORTED, error)
 }
 
-/// What `check_invocation` approved (the "CLI" paragraph's checks): the
-/// input resolved and named, the flags checked, the save loaded.
+/// What `check_export` approved (the "CLI" paragraph's checks of one
+/// export): the input resolved and named, the flags checked against its
+/// kind.
 struct Invocation {
     /// The input path, made absolute.
     path: PathBuf,
@@ -234,15 +270,12 @@ struct Invocation {
     name: String,
     /// Whether the name's first word is `refs`: a referee export.
     referees: bool,
-    /// The save `--savefile` loaded, when given.
-    save: Option<EditFile>,
 }
 
-/// The "CLI" paragraph's invocation checks, before anything is written
-/// (`run`'s order, `spec/export_upgrader.md` "CLI").
-fn check_invocation(args: &UpgradeArgs) -> Result<Invocation, CliError> {
+/// The "CLI" paragraph's invocation checks of the export at `path`, before
+/// anything is written (`spec/export_upgrader.md` "CLI").
+fn check_export(path: &Path, args: &UpgradeArgs) -> Result<Invocation, CliError> {
     // "CLI": the export must exist and be a folder or a `.zip`/`.7z`.
-    let path = &args.export;
     if !path.exists() {
         return Err(invalid(anyhow!("{} does not exist", path.display())));
     }
@@ -279,31 +312,146 @@ fn check_invocation(args: &UpgradeArgs) -> Result<Invocation, CliError> {
         )));
     }
 
-    // "CLI": the savefile, when one is given, must read as a save.
-    let save = match &args.savefile {
-        Some(savefile) => Some(EditFile::load(savefile).map_err(|error| {
-            invalid(anyhow!(
-                "cannot read the savefile {}: {error}",
-                savefile.display()
-            ))
-        })?),
-        None => None,
-    };
-
     Ok(Invocation {
         path,
         name,
         referees,
-        save,
     })
 }
 
-/// Runs `upgrade`: the invocation check, then the export opened and resolved,
-/// written and reported, validated and judged.
-pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError> {
-    let invocation = check_invocation(args)?;
-    let mut events = RunEvents::new(ctx);
+/// The save `--savefile` names, loaded once for the whole run; `None`
+/// without the flag. "CLI": it must read as a save.
+fn load_save(args: &UpgradeArgs) -> Result<Option<EditFile>, CliError> {
+    let Some(savefile) = &args.savefile else {
+        return Ok(None);
+    };
+    let save = EditFile::load(savefile).map_err(|error| {
+        invalid(anyhow!(
+            "cannot read the savefile {}: {error}",
+            savefile.display()
+        ))
+    })?;
+    Ok(Some(save))
+}
 
+/// The exports a run upgrades, in order: the ones named, then `--all`'s.
+fn export_paths(args: &UpgradeArgs) -> Result<Vec<PathBuf>, CliError> {
+    let mut paths = args.exports.clone();
+    if let Some(folder) = &args.all {
+        paths.extend(exports_in(folder)?);
+    }
+    Ok(paths)
+}
+
+/// Every export directly inside `folder` (`--all`): its folders and its
+/// `.zip` and `.7z` files, sorted by name without regard to letter case
+/// (ties by the exact name), any other file passed over. A folder that is
+/// missing, cannot be listed or holds no export refuses the whole run.
+fn exports_in(folder: &Path) -> Result<Vec<PathBuf>, CliError> {
+    if !folder.exists() {
+        return Err(invalid(anyhow!("{} does not exist", folder.display())));
+    }
+    if !folder.is_dir() {
+        return Err(invalid(anyhow!("{} is not a folder", folder.display())));
+    }
+    let cannot_list = |error: std::io::Error| {
+        invalid(anyhow!(
+            "cannot list the folder {}: {error}",
+            folder.display()
+        ))
+    };
+    let mut exports = Vec::new();
+    for entry in fs::read_dir(folder).map_err(cannot_list)? {
+        let entry = entry.map_err(cannot_list)?;
+        let path = entry.path();
+        if path.is_dir() || source::is_archive(&path) {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            exports.push((name.to_lowercase(), name, path));
+        }
+    }
+    if exports.is_empty() {
+        return Err(invalid(anyhow!(
+            "{} holds no export (a folder, a .zip or a .7z file)",
+            folder.display()
+        )));
+    }
+    exports.sort();
+    Ok(exports.into_iter().map(|(_, _, path)| path).collect())
+}
+
+/// The name a run of several exports gives `path` on its naming line: the
+/// folder's or the archive file's name, as the path ends.
+fn naming_line_name(path: &Path) -> String {
+    path.file_name().map_or_else(
+        || path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
+}
+
+/// Runs `upgrade`: the exports listed and the save loaded once, then each
+/// export upgraded as if it ran alone. A run of one named export prints what
+/// that export's upgrade prints. A run of several, or of `--all`, prints a
+/// line naming each export before its findings, a refused or aborted
+/// export's error as the last line of its block, and the tally of exports
+/// upgraded at the end. The exit code is the highest any export gave.
+pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError> {
+    let paths = export_paths(args)?;
+    if let ([path], None) = (paths.as_slice(), &args.all) {
+        // The export's own checks before the save's, as a run of one export
+        // has always made them: the same refusal wins.
+        let invocation = check_export(path, args)?;
+        let save = load_save(args)?;
+        let mut events = RunEvents::new(ctx, FIRST_RUN);
+        return upgrade_export(&invocation, args, save.as_ref(), &mut events);
+    }
+    let save = load_save(args)?;
+    let mut events = RunEvents::new(ctx, FIRST_RUN);
+    events.exports_expected(paths.len());
+    let mut worst = CLEAN;
+    let mut upgraded = 0;
+    for (index, path) in paths.iter().enumerate() {
+        if index > 0 {
+            events = events.next_run();
+            events.output(String::new());
+        }
+        events.output(format!("Upgrading {}", naming_line_name(path)));
+        let outcome = check_export(path, args)
+            .and_then(|invocation| upgrade_export(&invocation, args, save.as_ref(), &mut events));
+        let exit_code = match outcome {
+            Ok(exit_code) => exit_code,
+            Err(error) => {
+                // The progress line counts every export done once, whatever
+                // its outcome.
+                if !events.processed_sent() {
+                    events.processed(INPUT);
+                }
+                events.output(format!("error: {error}"));
+                error.exit_code
+            }
+        };
+        worst = worst.max(exit_code);
+        if exit_code == CLEAN {
+            upgraded += 1;
+        }
+    }
+    events.output(String::new());
+    events.output(format!(
+        "Upgraded: {upgraded}. Not upgraded: {}.",
+        paths.len() - upgraded
+    ));
+    Ok(worst)
+}
+
+/// Upgrades one export, which `check_export` approved, with the run's save:
+/// the export opened and resolved, written and reported, validated and
+/// judged. A refusal or an abort is the `Err`, the export's verdict the exit
+/// code.
+fn upgrade_export(
+    invocation: &Invocation,
+    args: &UpgradeArgs,
+    save: Option<&EditFile>,
+    events: &mut RunEvents,
+) -> Result<u8, CliError> {
     // Step 1: the export itself.
     events.started(INPUT, &invocation.name);
     let mut export = match OldExport::open(&invocation.path) {
@@ -363,8 +511,8 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // "CLI": the savefile must hold the resolved team — the first in the
     // save's record order folding to its name, whatever ID the save gives
     // it; each later one of the name is reported and not read (step 6).
-    let save_team = match (&invocation.save, &identity) {
-        (Some(save), Identity::Team { name }) => match team_in_save(save, name, &mut events) {
+    let save_team = match (save, &identity) {
+        (Some(save), Identity::Team { name }) => match team_in_save(save, name, events) {
             Some(id) => Some(id),
             None => {
                 return Err(invalid(anyhow!(
@@ -381,7 +529,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
 
     // Step 2: the team's roster, when a save is given — its players by slot,
     // read by the save team's ID (loose mode and referee exports have none).
-    let roster = match (&invocation.save, save_team) {
+    let roster = match (save, save_team) {
         (Some(save), Some(id)) => Some(Roster::read(save, id)),
         _ => None,
     };
@@ -556,7 +704,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // only where the old format's layout puts it: a leftover's decides
     // nothing (the real KFG VGL26 export, a Fox one, keeps `.model` copies
     // of its boots in a side folder `FMDL Boots/`).
-    let version = match &invocation.save {
+    let version = match save {
         Some(save) => save.version(),
         None => {
             if export.files.iter().any(|file| {
@@ -617,7 +765,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             );
             // Step 8: a `settings.toml` per player folder, from the save's
             // records; loose mode's holds `name = true` alone (step 11).
-            let mut settings = match (&invocation.save, &roster) {
+            let mut settings = match (save, &roster) {
                 (Some(save), Some(roster)) => {
                     settings_files(save, roster, &plan.folders, full, &plan.not_worn)
                 }
@@ -793,7 +941,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             bytes,
         });
     }
-    write_planned(&staging, &planned, root_files, &mut events, |path| {
+    write_planned(&staging, &planned, root_files, events, |path| {
         export.read(path)
     })?;
     // Every player folder exists even when no file lands in it: an empty
@@ -868,8 +1016,8 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // "Verification": the shared validation on what was written, read in the
     // staging folder. Every issue goes through `events.message`, whose
     // disposition sets `dropped`.
-    validate_output(&staging, &named.name, version, &mut events);
-    // The upgrade's one export ends once its output is validated.
+    validate_output(&staging, &named.name, version, events);
+    // The export ends once its output is validated.
     events.processed(INPUT);
 
     // "CLI": the verdict line and the exit code: not clean when a finding

@@ -24,8 +24,8 @@ pub(crate) struct RunLog {
 }
 
 impl RunLog {
-    /// Opens `path` for appending, creating it when missing: a launcher that runs the
-    /// command once per export keeps one log of its whole run.
+    /// Opens `path` for appending, creating it when missing: a script that starts the exe
+    /// more than once keeps one log of all its runs, and deletes the file to start afresh.
     pub(crate) fn open(path: &Path) -> io::Result<RunLog> {
         let file = OpenOptions::new().append(true).create(true).open(path)?;
         Ok(RunLog {
@@ -103,23 +103,23 @@ fn print_events(
     } else {
         ProgressBar::hidden()
     };
+    let mut drawing = false;
     for envelope in events {
         counts.observe(&envelope.event);
-        // The line draws from the first export started, not the first finding; its message
-        // is set before the bar has a target, so its first frame already holds the counters.
+        // The line draws from the first event that gives it its counters (the first export
+        // started, or the exports expected), not the first finding; its message is set
+        // before the bar has a target, so its first frame already holds the counters.
         if let Some(line) = counts.line() {
             bar.set_message(line);
+            if draw && !drawing {
+                drawing = true;
+                bar.set_draw_target(ProgressDrawTarget::stderr_with_hz(10));
+                // The steady tick makes the clock tick between findings, from its own
+                // thread: enabled once the message is up, so no empty brackets draw.
+                bar.enable_steady_tick(Duration::from_millis(500));
+            }
         }
         let summary = match &envelope.event {
-            PipelineEvent::ExportStarted { .. } => {
-                if draw && counts.exports_total == 1 {
-                    bar.set_draw_target(ProgressDrawTarget::stderr_with_hz(10));
-                    // The steady tick makes the clock tick between findings, from its own
-                    // thread: enabled once the message is up, so no empty brackets draw.
-                    bar.enable_steady_tick(Duration::from_millis(500));
-                }
-                None
-            }
             PipelineEvent::Complete {
                 files_written,
                 skipped_exports,
@@ -132,7 +132,9 @@ fn print_events(
                 *skipped_folders,
                 *folders_with_errors,
             )),
-            PipelineEvent::ExportProcessed { .. }
+            PipelineEvent::ExportStarted { .. }
+            | PipelineEvent::ExportsExpected { .. }
+            | PipelineEvent::ExportProcessed { .. }
             | PipelineEvent::ExportNamed { .. }
             | PipelineEvent::FolderStatus { .. }
             | PipelineEvent::Message(_)
@@ -184,12 +186,16 @@ fn print_events(
     Ok(())
 }
 
-/// The run's counters the progress line draws: the exports started (the total) and
-/// processed, and the parts the `Progress` events reported. Counting lives here, away from
-/// the bar's real stderr, so a test can read the line's text.
+/// The run's counters the progress line draws: the exports processed of all (the exports
+/// started, or the exports expected when a command announced more), and the parts the
+/// `Progress` events reported. Counting lives here, away from the bar's real stderr, so a
+/// test can read the line's text.
 struct RunCounts {
     exports_done: usize,
-    exports_total: usize,
+    exports_started: usize,
+    /// The `ExportsExpected` total (0 until one arrives): a command that starts its exports
+    /// one after the other announces them all before the first starts.
+    exports_expected: usize,
     /// The last `Progress` pair (`None` until one arrives): the manifest's tasks done of all.
     parts: Option<(usize, usize)>,
 }
@@ -198,7 +204,8 @@ impl RunCounts {
     fn new() -> RunCounts {
         RunCounts {
             exports_done: 0,
-            exports_total: 0,
+            exports_started: 0,
+            exports_expected: 0,
             parts: None,
         }
     }
@@ -206,7 +213,8 @@ impl RunCounts {
     /// One event's effect on the counters.
     fn observe(&mut self, event: &PipelineEvent) {
         match event {
-            PipelineEvent::ExportStarted { .. } => self.exports_total += 1,
+            PipelineEvent::ExportStarted { .. } => self.exports_started += 1,
+            PipelineEvent::ExportsExpected { total } => self.exports_expected = *total,
             PipelineEvent::ExportProcessed { .. } => self.exports_done += 1,
             PipelineEvent::Progress { processed, total } => {
                 self.parts = Some((*processed, *total));
@@ -220,10 +228,16 @@ impl RunCounts {
         }
     }
 
-    /// The progress line's counters text, `None` before the first `ExportStarted`.
+    /// The exports of the run: those started, or those expected while fewer have started.
+    fn exports_total(&self) -> usize {
+        self.exports_started.max(self.exports_expected)
+    }
+
+    /// The progress line's counters text, `None` before the first export started or
+    /// expected.
     fn line(&self) -> Option<String> {
-        (self.exports_total > 0)
-            .then(|| progress_line(self.exports_done, self.exports_total, self.parts))
+        let total = self.exports_total();
+        (total > 0).then(|| progress_line(self.exports_done, total, self.parts))
     }
 }
 
@@ -442,18 +456,15 @@ mod tests {
         Some((count(done)?, count(total)?))
     }
 
-    // EU-CLI-12
-    #[test]
-    fn an_upgrades_progress_line_counts_its_one_export_and_the_files_it_writes() {
-        // EU-CLI-01's /co/ export and its save, run in-process through the
-        // tool's command line as the binary's sandbox runs it.
-        let dir = TestDir::new("console_upgrade");
-        let export = dir.path().join("co - Spring");
+    /// EU-CLI-01's export at `dir/<name>`, its Note naming `team`: one face folder and a
+    /// team colour, so that its upgrade is clean.
+    fn old_export(dir: &TestDir, name: &str, team: &str) -> PathBuf {
+        let export = dir.path().join(name);
         fs::create_dir_all(export.join("Other")).unwrap();
         fs::write(export.join("Other/readme.txt"), b"x").unwrap();
         fs::write(
             export.join("co Note.txt"),
-            b"Team: /co/\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082\r\n",
+            format!("Team: {team}\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082\r\n"),
         )
         .unwrap();
         let face = export.join("Faces/XXX05 - A");
@@ -466,6 +477,13 @@ mod tests {
         ] {
             fs::write(face.join(name), bytes).unwrap();
         }
+        export
+    }
+
+    /// `export-upgrader upgrade <exports>... --savefile <the PES 21 fixture save>`, run
+    /// in-process through the tool's command line as the binary's sandbox runs it: its exit
+    /// code and its events.
+    fn upgrade(dir: &TestDir, exports: &[PathBuf]) -> (u8, Vec<PipelineEventEnvelope>) {
         let save = dir.path().join("EDIT");
         fs::write(&save, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
 
@@ -483,29 +501,37 @@ mod tests {
             events_tx,
             requests_tx,
         );
-        let matches = tool
-            .cli_command()
-            .try_get_matches_from([
-                "export-upgrader",
-                "upgrade",
-                export.to_str().unwrap(),
-                "--savefile",
-                save.to_str().unwrap(),
-            ])
-            .unwrap();
-        assert_eq!(tool.cli_run(&matches, &ctx).unwrap(), 0);
+        let mut args = vec!["export-upgrader", "upgrade"];
+        args.extend(exports.iter().map(|export| export.to_str().unwrap()));
+        args.extend(["--savefile", save.to_str().unwrap()]);
+        let matches = tool.cli_command().try_get_matches_from(args).unwrap();
+        let exit_code = tool.cli_run(&matches, &ctx).unwrap();
         drop(ctx);
-        let events: Vec<PipelineEventEnvelope> = events_rx.iter().collect();
+        (exit_code, events_rx.iter().collect())
+    }
 
-        // The counters the line draws, after each event.
+    /// The counters the line draws, after each event that gives it some.
+    fn drawn_lines(events: &[PipelineEventEnvelope]) -> Vec<String> {
         let mut counts = RunCounts::new();
-        let lines: Vec<String> = events
+        events
             .iter()
             .filter_map(|envelope| {
                 counts.observe(&envelope.event);
                 counts.line()
             })
-            .collect();
+            .collect()
+    }
+
+    // EU-CLI-12
+    #[test]
+    fn an_upgrades_progress_line_counts_its_one_export_and_the_files_it_writes() {
+        // EU-CLI-01's /co/ export and its save.
+        let dir = TestDir::new("console_upgrade");
+        let export = old_export(&dir, "co - Spring", "/co/");
+        let (exit_code, events) = upgrade(&dir, &[export]);
+        assert_eq!(exit_code, 0);
+
+        let lines = drawn_lines(&events);
         assert_eq!(lines.first().map(String::as_str), Some("0/1 exports"));
         assert!(
             lines.iter().all(|line| !line.contains("/2 exports")),
@@ -552,6 +578,30 @@ mod tests {
         let (out_piped, err_piped) = printed(false);
         assert_eq!(out_draw, out_piped, "the line changes no stdout byte");
         assert_eq!(err_piped, b"", "nothing is drawn on a piped stderr");
+    }
+
+    // EU-CLI-15
+    #[test]
+    fn an_upgrade_of_two_exports_counts_both_from_the_first_line_and_the_refused_one_as_done() {
+        // The second export's team is in no fixture save, so its upgrade is refused.
+        let dir = TestDir::new("console_upgrade_two");
+        let exports = [
+            old_export(&dir, "co - Spring", "/co/"),
+            old_export(&dir, "newteam Spring", "/newteam/"),
+        ];
+        let (exit_code, events) = upgrade(&dir, &exports);
+        assert_eq!(exit_code, 2);
+
+        let lines = drawn_lines(&events);
+        assert_eq!(lines.first().map(String::as_str), Some("0/2 exports"));
+        assert!(
+            lines
+                .iter()
+                .all(|line| !line.contains("/1 exports") && !line.contains("/3 exports")),
+            "the run's total is its two exports from the first line on: {lines:?}"
+        );
+        let last = lines.last().unwrap();
+        assert!(last.starts_with("2/2 exports | "), "{lines:?}");
     }
 
     #[test]
@@ -660,10 +710,10 @@ mod tests {
             counts.observe(&envelope.event);
         }
         assert!(
-            counts.exports_done <= counts.exports_total,
+            counts.exports_done <= counts.exports_total(),
             "{} of {}",
             counts.exports_done,
-            counts.exports_total
+            counts.exports_total()
         );
         assert_eq!(counts.line().as_deref(), Some("2/2 exports | 3/3 parts"));
     }

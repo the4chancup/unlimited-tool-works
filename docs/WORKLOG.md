@@ -802,8 +802,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] 8.22h the context the findings' texts need (P22, accepted 2026-10-26;
       `plans/team_compiler/messages.md` "A finding carries the context its text needs"),
       before the texts that read it → verify: a test per code reading the new field
-    - [ ] 8.22i `upgrade <export>...` (P20; `plans/export_upgrader.md` "CLI") → verify:
-      EU-CLI-11
+    - [x] 8.22i 2026-11-12 (`88c91de1`): `upgrade <export>...` (P20), built as 0.0.2-upgall
     - [ ] 8.22j the upgrader's view items (P18's pair, P19's dialog, P32-P36;
       `plans/export_upgrader.md` "GUI"), with the view (8.10), drafted first (8.17b) → verify:
       EU-GUI scenarios for each, written with the view's Acceptance before it is built
@@ -1713,14 +1712,14 @@ briefs, review loops, gates and mutation runs as for any step.
     pseudo-console showed the warnings, a refusal's `error:` line and the progress line in
     the window and every line in the log. The bundle's readme names the logs, and the
     organizer's backup of `download/` and the list's upgrade as steps
-  - [ ] 0.0.2-upgall the upgrade launcher's progress counts every export (the maintainer,
-    2026-11-12: `[ 0/1 exports | 0:00 ]` per export shows the line is each run's own, the
-    launcher starting the exe once per export): build `upgrade <export>...` (8.22i,
-    `plans/export_upgrader.md` "CLI", EU-CLI-11) and have `quick_upgrade.bat` start the exe
-    once. To settle with it: who prints the tally (the bat counts exit codes today), and
-    how the bat names 52 exports inside `cmd`'s 8,191-character line (a folder argument
-    would not have the limit) -> verify: EU-CLI-11; the launchers' tests; the launcher's
-    progress line under a pseudo-console reading `n/N exports`
+  - [x] 0.0.2-upgall 2026-11-12 (`88c91de1`, Opus; tier 2, its SWE-2 loop owed): `upgrade`
+    takes several exports or `--all <DIR>` in one run (8.22i), each as if alone under its
+    naming line, with the tally at the end, and `quick_upgrade.bat` starts the exe once, so
+    the progress line counts every export (EU-CLI-11, 13 to 15). The launcher run under a
+    pseudo-console over two exports, one refused, drew `[ 0/2 exports ]` first and showed
+    both blocks, the `error:` line and `Upgraded: 1. Not upgraded: 1.`. Owed once the
+    readability pass releases the files: `plans/core/architecture.md` "A run's log file"
+    and `plans/core/development_plan.md` still say the launcher runs the exe once per export
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [x] 0.0.2-se19 dropped 2026-11-11 (the maintainer: the tester's save is lost; DECISIONS

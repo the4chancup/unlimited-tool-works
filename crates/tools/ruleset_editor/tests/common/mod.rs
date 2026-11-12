@@ -148,6 +148,7 @@ impl Run {
                 PipelineEvent::ExportStarted { .. }
                 | PipelineEvent::ExportNamed { .. }
                 | PipelineEvent::Output(_)
+                | PipelineEvent::ExportsExpected { .. }
                 | PipelineEvent::ExportProcessed { .. }
                 | PipelineEvent::FolderStatus { .. }
                 | PipelineEvent::Progress { .. }

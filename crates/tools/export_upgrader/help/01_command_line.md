@@ -3,11 +3,14 @@ format the Team compiler reads. Its commands run from a terminal opened in the
 folder that holds `UTW.exe`.
 
 ```text
-UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
+UTW export-upgrader upgrade <export>... [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
 UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
-`upgrade` takes one old export: a folder, a `.zip` or a `.7z`. A team export
+`upgrade` takes one or more old exports, each a folder, a `.zip` or a `.7z`.
+`--all <DIR>` adds every export in the folder DIR after the ones named: its
+folders and its `.zip` and `.7z` files, in the order of their names. Any other
+file in DIR is passed over. A team export
 takes `--savefile`, naming the save (`EDIT00000000`) that says which player
 wears which boots and gloves, or `--loose` to guess the wearer of each boots
 or gloves folder from its ID alone. A referee export (a name whose first word
@@ -98,6 +101,22 @@ earlier run left behind is removed and reported (`staging_folder_removed`)
 before this run writes its own. One that cannot be removed still aborts the
 run.
 
+**Several exports at once**
+
+With several exports, the options given apply to all of them, and each export
+is upgraded as if it were run alone, so one that is refused or stops does not
+stop the others. The run prints a line `Upgrading <name>` before each export's
+findings, with an empty line between exports. When an export is refused or
+stops, the reason is the last line of its part of the report, starting with
+`error:`. The run ends with the count of exports upgraded and not upgraded
+(`Upgraded: 48. Not upgraded: 2.`), and an export counts as upgraded when its
+migration is clean. A run with `--all` prints these lines even when the folder
+holds one export. A bad argument, a savefile that does not read as a save, or
+an `--all` folder that is missing or holds no export refuses the whole run
+before any export is read.
+
+**Exit codes**
+
 The exit code is 0 when the migration is clean. It is 1 when the migration is
 not clean, after an error finding or after a finding that drops anything but
 a leftover (a warning that drops a folder counts, because the compile would
@@ -108,4 +127,5 @@ as a save or does not hold the team). It is 3 when the run aborted, either
 before anything is written (the output folder exists, a leftover `.upgrading`
 folder cannot be removed, or the output cannot
 be created) or when the output cannot be written, moved into place or removed
-and the incomplete output is left.
+and the incomplete output is left. With several exports, the exit code is the
+highest any of them gave.

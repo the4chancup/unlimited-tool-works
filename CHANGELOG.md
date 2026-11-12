@@ -25,6 +25,11 @@ What changed for members, release by release, newest first.
   `compile_log.txt` and `upgrade_log.txt` beside them. On the command line, `--log-file
   <FILE>` does the same for any tool's command: everything the run prints is added to the
   file, and Info messages are left out of the console.
+- **Export upgrader** — `upgrade` takes several exports in one run, or every export of a
+  folder with `--all <folder>`. Each is upgraded as if alone, under a line naming it; one
+  that is refused says why and does not stop the others, and the run ends with how many
+  were upgraded. `quick_upgrade.bat` runs this way, so its progress line counts all the
+  exports in `old_exports` (`12/52 exports`) and not one at a time.
 - **Team compiler** — a model naming the team's Common by a team ID or the community's
   `000` placeholder is refused, with a hint to run it through the Export upgrader's
   `upgrade-models`.

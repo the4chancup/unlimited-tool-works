@@ -121,36 +121,67 @@ What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--conve
 `upgrade` (off by default):
 
 ```text
-UTW export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
+UTW export-upgrader upgrade <export>... [--all <DIR>] [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
 ```
 
 `--legacy-ids` is VGL27's legacy mode ("What it does", 0.0.2-poc13).
 
-One addition to the built commands (the coverage tag and the staging folder's sweep are
+Two additions to the built commands (the coverage tag and the staging folder's sweep are
 built: `spec/export_upgrader.md` "CLI"):
 
 - **Several exports at once.** `upgrade` takes one or more exports, with one `--savefile` or
-  `--loose` for all of them. Each is upgraded as if run alone: its own verdict, its output
-  written or not, and, with more than one export, its report block under a line naming it, so
-  a one-export run prints as today. Every output goes inside `-o` or beside its input, and the
-  exit code is the highest any export's run gave.
+  `--loose` for all of them. It is for an organizer moving a cup's library (about 50 teams)
+  to Studio once per cup.
 
-  An argument error that is the same for all (a flag, a savefile that does not read as a save)
-  refuses the whole run before any export is read. These refuse that export alone, its block
-  saying so:
+  **Which exports.** The ones named, then, with `--all <DIR>`, every export directly inside
+  DIR: its folders and its `.zip` and `.7z` files, sorted by file name without regard to
+  letter case. Any other file in DIR is passed over without a line. At least one of the two
+  is given. `--all` exists for the launcher: a `cmd` line holds 8,191 characters, which 50
+  full paths can pass, and listing a folder is logic we keep in the exe, not in a bat.
+
+  **Each as if run alone.** Each export has its own verdict and its output written or not,
+  every output goes inside `-o` or beside its input, and nothing an export does stops the
+  run. The exit code is the highest any export's run gave.
+
+  **What refuses the whole run**, before any export is read: an argument error that is the
+  same for all (a flag, a savefile that does not read as a save), and an `--all` folder that
+  is missing, is no folder or holds no export.
+
+  **What refuses one export alone**, its block saying so:
   - a missing export path;
   - a save lacking one export's team;
   - a flag that export's kind refuses (`--savefile`, `--loose` or `--coverage` given with a
     referee export among team exports);
   - a flag that export's kind requires and lacks (neither `--savefile` nor `--loose` with a
-    team export among referee exports).
+    team export among referee exports);
+  - an abort of its own (its output folder exists, one of its files cannot be written).
 
-  Several exports at once is for an organizer moving a cup's library (about 50 teams) to
-  Studio once per cup. The launcher keeps calling one export at a time, because its summary
-  line counts them. `upgrade-models` stays one folder.
+  **What is printed.** A run of one named export, without `--all`, prints as today. Every
+  other run, `--all` over a folder of one export included, prints:
+  - before each export's findings, the line `Upgrading <the input's file name>`, with an
+    empty line before it except before the first;
+  - a refused or aborted export's reason as the line `error: <reason>`, the last of its
+    block;
+  - after the last export, an empty line and the tally `Upgraded: <n>. Not upgraded: <m>.`,
+    an export counting as upgraded when its own exit code is 0.
+
+  These lines go through the event stream as the findings do, so they keep their order and
+  reach a run's log file. We do not make them findings: a finding line names its export by
+  itself, and these lines exist for the two that do not (the verdict, whose scope is the
+  run, and a refusal).
+
+  **The launcher** starts the exe once, with `--all` over `old_exports`, so the tally and
+  the naming lines are the exe's and the launcher counts nothing. An export named twice, or
+  named and also inside the `--all` folder, gets no special case: once its first turn has
+  written the output, its second is refused because the output folder exists.
+  `upgrade-models` stays one folder.
 - **The progress line.** On a terminal, `upgrade` and `upgrade-models` draw the console's
   progress line as `compile` does, counting the input exports and the files written
-  (`plans/core/architecture.md` "The console's progress line and run summary").
+  (`plans/core/architecture.md` "The console's progress line and run summary"). A run of
+  several exports counts them all from its first frame (`n/N exports`): the command
+  announces how many it will run before the first starts, because it starts each when its
+  turn comes, and every export counts as done once, whatever its outcome. The parts counter
+  is the current export's.
 
 ## GUI
 
@@ -306,10 +337,27 @@ follow. Step 13's scenarios are written with Phase 7.
 EU-CLI-11  GIVEN two of EU-CLI-01's /co/ exports, a third export of another team, and a save
                  holding /co/ but not that team
            WHEN `upgrade` names all three with that save
-           THEN the two are written, each block under a line naming its export, the third's
-                block refuses it for its team, and the exit code is 2; WHEN one export is named
-                alone THEN no naming line is printed; GIVEN an unknown flag THEN exit 2 before
-                any export is read
+           THEN the two are written, each block under a line `Upgrading <its file name>`, the
+                third's block ends with an `error:` line refusing it for its team, the last
+                line is `Upgraded: 2. Not upgraded: 1.` and the exit code is 2; WHEN one export
+                is named alone THEN no naming line and no tally are printed; GIVEN an unknown
+                flag THEN exit 2 before any export is read
+EU-CLI-13  GIVEN a folder holding an old export folder, an old export `.zip` and a file that
+                 is neither
+           WHEN `upgrade --all <the folder>` runs
+           THEN both exports are upgraded in the order of their names, each under its naming
+                line, the other file is passed over without a line and the tally counts two;
+                GIVEN a folder holding one export THEN its naming line and the tally are still
+                printed; GIVEN a folder that is missing or holds no export, or two exports
+                named with a savefile that is no save THEN exit 2 and no export is read
+EU-CLI-14  GIVEN two exports named, the first's output folder already there
+           WHEN `upgrade` runs
+           THEN the first's block ends with its `error:` line, the second is upgraded, the
+                tally reads `Upgraded: 1. Not upgraded: 1.` and the exit code is 3
+EU-CLI-15  GIVEN two exports named, the second of a team the save lacks
+           WHEN `upgrade` runs with the progress line drawn
+           THEN the line's exports counter reads 0/2 from its first frame and 2/2 at the end,
+                the refused export counted as done
 ```
 
 **Phase 8 scope.** Phase 8 delivers the view ("GUI"). What a scenario observes is what a frame

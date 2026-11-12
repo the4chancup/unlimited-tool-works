@@ -30,7 +30,9 @@ use crate::players::{
 use crate::source::{self, OldExport};
 use crate::staging::{PlannedWrite, claim_staging, finish_staging, write_planned};
 use crate::texture_pairs;
-use crate::upgrade::{Identity, RunEvents, invalid, output_issues, resolve_input, verdict};
+use crate::upgrade::{
+    FIRST_RUN, Identity, RunEvents, invalid, output_issues, resolve_input, verdict,
+};
 
 /// Where an output folder of model-folder mode goes once dropped into a
 /// Studio export.
@@ -330,7 +332,7 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     }
     let path = resolve_input(path)?;
     let name = source::source_name(&path);
-    let mut events = RunEvents::new(ctx);
+    let mut events = RunEvents::new(ctx, FIRST_RUN);
     events.started(INPUT, &name);
 
     // Step 1, as it is: the folder's top level is the model folders.

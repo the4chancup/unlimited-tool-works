@@ -68,6 +68,13 @@ pub enum PipelineEvent {
         /// Human-readable name for the findings' lines.
         display_name: String,
     },
+    /// How many exports the command will run, sent before the first by a command that
+    /// starts its exports one after the other, where the count of `ExportStarted` so far is
+    /// not the total.
+    ExportsExpected {
+        /// The exports the command will run.
+        total: usize,
+    },
     /// An export left the pipeline, whatever its outcome.
     ExportProcessed {
         /// The export.
@@ -84,10 +91,12 @@ pub enum PipelineEvent {
     },
     /// A structured finding for the user (a warning, an error, an info line).
     Message(Message),
-    /// A command's result text (a JSON report, a document): the console prints it to stdout
-    /// as it is, no prefix or folding, and a tool's log shows it as one entry. A command
-    /// whose result is such text reports nothing else on success, so stdout parses
-    /// (`save-editor diff --json`).
+    /// A line of text the command prints as it is, no prefix or folding: a command's result
+    /// text (a JSON report, a document), or a line that frames its findings (the Export
+    /// upgrader's naming line before each export of a run of several, and its closing
+    /// tally). The console prints it to stdout, and to a run's log file, and a tool's log
+    /// shows it as one entry. A command whose result is such text reports nothing else on
+    /// success, so stdout parses (`save-editor diff --json`).
     Output(String),
     // The run strip needs stage, elapsed time, files written, and memory in
     // use — more than `Progress` carries. Extend `Progress` with these fields
@@ -311,7 +320,8 @@ impl EventLines {
             }
             PipelineEvent::Message(message) => Some(self.message_line(message)),
             PipelineEvent::Output(text) => Some(text.clone()),
-            PipelineEvent::ExportProcessed { .. }
+            PipelineEvent::ExportsExpected { .. }
+            | PipelineEvent::ExportProcessed { .. }
             | PipelineEvent::FolderStatus { .. }
             | PipelineEvent::Progress { .. }
             | PipelineEvent::Complete { .. }
@@ -629,6 +639,7 @@ mod tests {
     fn events_other_than_messages_print_nothing() {
         let mut printer = EventLines::new();
         let silent = [
+            PipelineEvent::ExportsExpected { total: 2 },
             PipelineEvent::ExportProcessed {
                 export_id: ExportId(1),
             },

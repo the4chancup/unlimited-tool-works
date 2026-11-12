@@ -4,16 +4,46 @@
 use std::fs;
 
 use pes_version::PesVersion;
+use studio_core::PipelineEvent;
 
-use crate::common::{Sandbox, snapshot};
+use crate::common::{Run, Sandbox, snapshot};
 use crate::players::face;
 
 /// `upgrade <input> <flags>`.
-fn upgrade(sandbox: &Sandbox, input: &str, flags: &[&str]) -> crate::common::Run {
-    let input = sandbox.arg(input);
-    let mut args = vec!["upgrade", &input];
+fn upgrade(sandbox: &Sandbox, input: &str, flags: &[&str]) -> Run {
+    upgrade_several(sandbox, &[input], flags)
+}
+
+/// `upgrade <inputs>... <flags>`.
+fn upgrade_several(sandbox: &Sandbox, inputs: &[&str], flags: &[&str]) -> Run {
+    let inputs: Vec<String> = inputs.iter().map(|input| sandbox.arg(input)).collect();
+    let mut args = vec!["upgrade"];
+    args.extend(inputs.iter().map(String::as_str));
     args.extend(flags);
     sandbox.run(&args)
+}
+
+/// The text of every `Output` event the run emitted, in order: the naming
+/// lines, the empty lines between blocks, the `error:` lines and the tally.
+fn output_lines(run: &Run) -> Vec<&str> {
+    run.events
+        .iter()
+        .filter_map(|envelope| match &envelope.event {
+            PipelineEvent::Output(text) => Some(text.as_str()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// A refusal of the whole run: exit 2 naming every one of `names`, before
+/// any export is read, so no event at all.
+fn assert_whole_run_refused(run: &Run, names: &[&str]) {
+    run.assert_refused(2, names);
+    assert!(
+        run.events.is_empty(),
+        "a refused run emits no event: {:?}",
+        run.events
+    );
 }
 
 /// A minimal old export at `relative`: an `Other/` folder with a file, plus a
@@ -483,4 +513,211 @@ fn a_corrupt_archive_is_export_extract_failed() {
     );
     assert!(run.stdout().contains("broken.zip"), "{}", run.stdout());
     assert_eq!(sandbox.listing(""), before, "nothing is written");
+}
+
+/// Old exports at each of `names`, each with a face folder so that its run is
+/// clean, the Note naming `team`.
+fn clean_old_exports(sandbox: &Sandbox, names: &[&str], team: &str) {
+    for name in names {
+        old_export(sandbox, name, Some(team));
+        face(sandbox, &format!("{name}/Faces/XXX05 - A"));
+    }
+}
+
+// EU-CLI-11
+#[test]
+fn several_exports_are_each_upgraded_as_if_alone() {
+    let sandbox = Sandbox::new("cli_several");
+    clean_old_exports(&sandbox, &["co - Spring", "co - Autumn"], "/co/");
+    // No fixture save has a team named /newteam/.
+    clean_old_exports(&sandbox, &["newteam Spring"], "/newteam/");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Autumn", "newteam Spring"],
+        &["--savefile", &save],
+    );
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 2, "{stdout}");
+    assert!(sandbox.path("co Full - Spring").is_dir(), "{stdout}");
+    assert!(sandbox.path("co Full - Autumn").is_dir(), "{stdout}");
+    sandbox.assert_nothing_written("newteam Full Spring", &stdout);
+    let refused = format!("error: --savefile {save} does not hold the export's team /newteam/");
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co - Spring",
+            "",
+            "Upgrading co - Autumn",
+            "",
+            "Upgrading newteam Spring",
+            &refused,
+            "",
+            "Upgraded: 2. Not upgraded: 1.",
+        ]
+    );
+    // The empty lines are the Output ones alone (no finding prints an empty
+    // line), so they cut the printed report into the three blocks and the
+    // tally, each block's findings under its own naming line.
+    let blocks: Vec<&str> = stdout.split("\n\n").collect();
+    assert_eq!(blocks.len(), 4, "{stdout}");
+    for (block, name) in blocks.iter().zip(["co - Spring", "co - Autumn"]) {
+        assert!(
+            block.starts_with(&format!("Upgrading {name}\n")),
+            "{stdout}"
+        );
+        assert!(
+            block.contains(&format!("- {name}: Info coverage_tag_chosen")),
+            "{stdout}"
+        );
+        assert!(block.contains("- Info migration_clean"), "{stdout}");
+    }
+    assert!(
+        blocks[2].starts_with("Upgrading newteam Spring\n") && blocks[2].ends_with(&refused),
+        "{stdout}"
+    );
+    assert_eq!(blocks[3], "Upgraded: 2. Not upgraded: 1.\n");
+
+    // One export named alone prints as it always did: no naming line, no
+    // tally.
+    let out = sandbox.arg("alone");
+    let run = upgrade(&sandbox, "co - Spring", &["--savefile", &save, "-o", &out]);
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(output_lines(&run).is_empty(), "{}", run.stdout());
+
+    // An unknown flag refuses the run before any export is read.
+    let before = sandbox.listing("");
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Autumn"],
+        &["--savefile", &save, "--bogus"],
+    );
+    assert_whole_run_refused(&run, &["--bogus"]);
+    assert_eq!(sandbox.listing(""), before, "nothing is written");
+}
+
+// EU-CLI-13
+#[test]
+fn all_upgrades_every_export_in_the_folder_in_name_order() {
+    let sandbox = Sandbox::new("cli_all");
+    clean_old_exports(&sandbox, &["library/co - Spring"], "/co/");
+    sandbox.copy_fixture("co Spring.zip", "library/co Spring.zip");
+    sandbox.write("library/notes.txt", b"not an export");
+    sandbox.copy_fixture("co Spring.zip", "one/co Spring.zip");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+    let (library, one, out) = (
+        sandbox.arg("library"),
+        sandbox.arg("one"),
+        sandbox.arg("out"),
+    );
+
+    let run = sandbox.run(&[
+        "upgrade",
+        "--all",
+        &library,
+        "--savefile",
+        &save,
+        "-o",
+        &out,
+    ]);
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(sandbox.path("out/co Full - Spring").is_dir(), "{stdout}");
+    assert!(sandbox.path("out/co Full Spring").is_dir(), "{stdout}");
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co - Spring",
+            "",
+            "Upgrading co Spring.zip",
+            "",
+            "Upgraded: 2. Not upgraded: 0.",
+        ]
+    );
+    // The one line naming a notes.txt is about the zip's own output, the
+    // notes its Note carried; none is about the stray file.
+    assert_eq!(
+        stdout
+            .lines()
+            .filter(|line| line.contains("notes.txt"))
+            .collect::<Vec<_>>(),
+        ["- co Full Spring: Info notes_found at notes.txt"],
+        "{stdout}"
+    );
+
+    // A folder holding one export still names it and tallies it.
+    let out = sandbox.arg("out one");
+    let run = sandbox.run(&["upgrade", "--all", &one, "--savefile", &save, "-o", &out]);
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert_eq!(
+        output_lines(&run),
+        [
+            "Upgrading co Spring.zip",
+            "",
+            "Upgraded: 1. Not upgraded: 0.",
+        ]
+    );
+}
+
+// EU-CLI-13
+#[test]
+fn a_whole_run_refusal_reads_no_export() {
+    let sandbox = Sandbox::new("cli_whole_run_refusals");
+    clean_old_exports(&sandbox, &["co - Spring", "co - Autumn"], "/co/");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+    fs::write(sandbox.path("not-a-save.bin"), b"no save").unwrap();
+    let not_save = sandbox.arg("not-a-save.bin");
+    fs::create_dir_all(sandbox.path("empty")).unwrap();
+    let (missing, empty) = (sandbox.arg("missing"), sandbox.arg("empty"));
+    let before = sandbox.listing("");
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Autumn"],
+        &["--savefile", &not_save],
+    );
+    assert_whole_run_refused(&run, &["not-a-save.bin"]);
+    let run = sandbox.run(&["upgrade", "--all", &missing, "--savefile", &save]);
+    assert_whole_run_refused(&run, &[&missing, "does not exist"]);
+    let run = sandbox.run(&["upgrade", "--all", &empty, "--savefile", &save]);
+    assert_whole_run_refused(
+        &run,
+        &[&empty, "holds no export (a folder, a .zip or a .7z file)"],
+    );
+    assert_eq!(sandbox.listing(""), before, "nothing is written");
+}
+
+// EU-CLI-14
+#[test]
+fn an_export_that_aborts_does_not_stop_the_run() {
+    let sandbox = Sandbox::new("cli_several_abort");
+    clean_old_exports(&sandbox, &["co - Spring", "co - Autumn"], "/co/");
+    // The first export's output is already there, a member's edit inside.
+    sandbox.write("co Full - Spring/keep.txt", b"my edit");
+    let save = sandbox.arg("EDIT");
+    sandbox.save("EDIT");
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co - Spring", "co - Autumn"],
+        &["--savefile", &save],
+    );
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 3, "{stdout}");
+    assert!(sandbox.path("co Full - Autumn").is_dir(), "{stdout}");
+    assert_eq!(
+        sandbox.listing("co Full - Spring"),
+        ["keep.txt"],
+        "the existing output is left as it was"
+    );
+    let lines = output_lines(&run);
+    assert!(
+        lines[1].starts_with("error: ") && lines[1].contains("already exists"),
+        "{lines:?}"
+    );
+    assert_eq!(lines.last(), Some(&"Upgraded: 1. Not upgraded: 1."));
 }

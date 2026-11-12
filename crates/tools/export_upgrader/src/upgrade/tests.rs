@@ -18,7 +18,7 @@ fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
 #[test]
 fn worst_tracks_the_worst_severity_reported() {
     let (ctx, _events_rx) = test_ctx();
-    let mut events = RunEvents::new(&ctx);
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
     assert_eq!(events.worst(), None);
     events.message(tool_message(
         Code::MigrationClean,
@@ -50,7 +50,7 @@ fn a_warning_finding_that_drops_something_is_not_clean() {
     // too: a finding below Error that drops a folder still refuses
     // `migration_clean`, since the compile would lose the folder.
     let (ctx, _events_rx) = test_ctx();
-    let mut events = RunEvents::new(&ctx);
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
     assert!(!events.dropped());
     events.message(tool_message(
         Code::RosterSlotEmpty,
@@ -139,7 +139,8 @@ fn a_model_file_in_any_letter_case_makes_a_loose_run_pre_fox() {
     .unwrap();
     let (ctx, _events_rx) = test_ctx();
     let args = UpgradeArgs {
-        export: root.join("co Spring"),
+        exports: vec![root.join("co Spring")],
+        all: None,
         savefile: None,
         loose: true,
         legacy_ids: false,
@@ -172,7 +173,8 @@ fn a_refs_txt_that_is_not_utf8_is_unmigrated_and_no_players_txt_is_written() {
     .unwrap();
     let (ctx, events_rx) = test_ctx();
     let args = UpgradeArgs {
-        export: root.join("refs Spring"),
+        exports: vec![root.join("refs Spring")],
+        all: None,
         savefile: None,
         loose: false,
         legacy_ids: false,
@@ -226,7 +228,8 @@ fn a_second_note_and_an_unclaimed_file_get_their_reasons() {
     fs::write(root.join("co Spring/Players/05 - A/face.fmdl"), b"face").unwrap();
     let (ctx, events_rx) = test_ctx();
     let args = UpgradeArgs {
-        export: root.join("co Spring"),
+        exports: vec![root.join("co Spring")],
+        all: None,
         savefile: None,
         loose: true,
         legacy_ids: false,
@@ -281,7 +284,7 @@ fn a_disallowed_file_type_drops_its_folder_in_the_output_validation() {
     fs::create_dir_all(output.join("Players/03 - A")).unwrap();
     fs::write(output.join("Players/03 - A/readme.doc"), b"x").unwrap();
     let (ctx, _events_rx) = test_ctx();
-    let mut events = RunEvents::new(&ctx);
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
     let issues = output_issues(
         &output,
         "co Midcup",
@@ -308,7 +311,7 @@ fn a_missing_shared_link_target_drops_its_folder() {
     fs::create_dir_all(output.join("Players/03 - A")).unwrap();
     fs::write(output.join("Players/03 - A/Crocs.boots"), b"").unwrap();
     let (ctx, _events_rx) = test_ctx();
-    let mut events = RunEvents::new(&ctx);
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
     let issues = output_issues(
         &output,
         "co Midcup",
@@ -346,7 +349,8 @@ fn the_input_is_processed_once_its_named_output_is_validated() {
     fs::write(&save, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
     let (ctx, events_rx) = test_ctx();
     let args = UpgradeArgs {
-        export: root.join("co Spring"),
+        exports: vec![root.join("co Spring")],
+        all: None,
         savefile: Some(save),
         loose: false,
         legacy_ids: false,
@@ -415,7 +419,8 @@ fn the_progress_starts_past_the_root_files_and_rises_by_one_to_the_output_s_file
     ] {
         let (ctx, events_rx) = test_ctx();
         let args = UpgradeArgs {
-            export: root.join(export),
+            exports: vec![root.join(export)],
+            all: None,
             savefile: None,
             loose,
             legacy_ids: false,
@@ -480,7 +485,8 @@ fn an_unused_pairs_dds_is_dropped_and_the_other_copies_written() {
     .unwrap();
     let (ctx, _events_rx) = test_ctx();
     let args = UpgradeArgs {
-        export: root.join("co Midcup Spring"),
+        exports: vec![root.join("co Midcup Spring")],
+        all: None,
         savefile: None,
         loose: true,
         legacy_ids: false,

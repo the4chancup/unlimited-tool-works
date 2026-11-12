@@ -40,6 +40,7 @@ fn check_brackets_each_export_with_its_start_and_end() {
                     "processed"
                 }
                 PipelineEvent::ExportNamed { .. }
+                | PipelineEvent::ExportsExpected { .. }
                 | PipelineEvent::FolderStatus { .. }
                 | PipelineEvent::Output(_)
                 | PipelineEvent::Progress { .. }
