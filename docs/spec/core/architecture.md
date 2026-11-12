@@ -151,8 +151,10 @@ crates/studio_core/src/
 ```
 
 Anything not on this list belongs in a lib crate or a tool crate. The two tempting misplacements:
-format knowledge (team IDs, teams-list parsing → `teams_list`; export conventions →
-`aesthetics_export`) and widgets used by one tool (→ that tool's `view/`).
+
+- format knowledge (team IDs, teams-list parsing → `teams_list`; export conventions →
+  `aesthetics_export`);
+- widgets used by one tool (→ that tool's `view/`).
 
 **The running-PES probe.** `pes_process::running_pes() -> Vec<RunningPes>` lists the PES games
 running now, each a `RunningPes { version: PesVersion, exe: Option<PathBuf> }`, matched by
@@ -161,14 +163,14 @@ with; a renamed exe is not seen, and neither is the short `pes21.exe`). How it f
 depends on the OS:
 
 - On Windows it walks a Toolhelp process snapshot and asks each match for its image path (the
-  `unsafe` the code style allows here), `None` when the process refuses (another user's or a
-  protected process; the limited query right is granted on an elevated game too).
+  `unsafe` the code style allows here). The path is `None` when the process refuses (another
+  user's or a protected process; the limited query right is granted on an elevated game too).
 - On Linux it reads each `/proc/<pid>/cmdline`, whose first argument under Wine or Proton is the
   exe's Windows path, and matches its last segment after a `\` or `/`.
 - Elsewhere it returns none.
 
 A process whose list entry cannot be read is skipped (on Linux, one whose `cmdline` cannot be
-read); a Windows match whose path cannot be read is kept with `exe: None`.
+read). A Windows match whose path cannot be read is kept with `exe: None`.
 
 Its callers today are the steps that must not run while the game of the save's version does: the
 compiler's savefile step and the Save editor's writing commands (a game of another version never
@@ -411,7 +413,7 @@ with its code, and adds only the codes no tool can see, in the same meanings:
   failure; a lost printer may have lost findings, so the tool's own verdict cannot stand).
 
 Today the `studio` binary's `tools()` registers the Team compiler, the Save editor and the
-Export upgrader, in that sidebar order, and takes no context; the `egui::Context` parameter
+Export upgrader, in that sidebar order, and takes no context. The `egui::Context` parameter
 arrives with the match feed (Phase 11), its first user. The full registry is the plan's
 (`plans/core/architecture.md` "Tool plugin interface").
 
@@ -489,8 +491,10 @@ Accepted trade-off: the `StudioTool` trait references egui types, so every tool 
 even in CLI use (dead code is stripped from the binary). If a truly headless build is ever needed
 (CI, server-side compilation), the escape hatch is splitting the trait into `StudioTool` (id,
 settings, CLI) and `StudioToolUi` (views) behind a `gui` cargo feature — deferred until that need is
-real. A cheap addition the registry enables: one cargo feature per tool in `studio`, allowing
-stripped single-tool builds.
+real.
+
+A cheap addition the registry enables: one cargo feature per tool in `studio`, allowing stripped
+single-tool builds.
 
 ### Event system
 
@@ -562,9 +566,9 @@ need a header to be read:
 - Warning no_exports_found (folder=C:\4cc\exports)
 ```
 
-The source name comes from the export's `ExportStarted` event; the scope is the folder or file
+The source name comes from the export's `ExportStarted` event. The scope is the folder or file
 path, `<file> line <n>` for a roster entry, and nothing for the export itself or a run-wide
-finding; the context fields follow in parentheses, in template order. Other events print
+finding. The context fields follow in parentheses, in template order. Other events print
 nothing, `Output` aside.
 
 **A command's result text.** `PipelineEvent::Output(String)` carries text a CLI command prints
@@ -600,7 +604,7 @@ console, and a lib printing to stdout corrupts piped CLI output.
   lib changes.
 - The split: if a user should see it, it is a finding (`Message`); if a developer should see it, it
   is a log line. Never both for one fact. Libs never `error!` — a lib returns the error and the
-  caller decides what it means; libs use `debug!`/`trace!`, and `warn!` only for a recovered
+  caller decides what it means. Libs use `debug!`/`trace!`, and `warn!` only for a recovered
   anomaly that is not a finding.
 - Levels: `info` is one line per stage per run; `debug` is per export or per file; `trace` is per
   item, and never inside per-vertex or per-pixel loops (the arguments are not formatted when the
@@ -608,9 +612,10 @@ console, and a lib printing to stdout corrupts piped CLI output.
   in messages: the target carries the module path.
 - `log`, not `tracing`. The structured, timed data Studio needs (stage, elapsed, per-export
   outcome) already flows through `PipelineEvent`, so what remains is flat diagnostics, which is
-  `log`'s job; `tracing`'s subscriber layers are the type-level complexity the code style excludes.
+  `log`'s job. `tracing`'s subscriber layers are the type-level complexity the code style excludes.
   The choice is no-regret: should spans become worth having, `tracing` can be adopted in the binary
-  only, consuming the libs' `log` lines through `tracing-log`; the reverse migration is not clean.
+  only, consuming the libs' `log` lines through `tracing-log`, whereas the reverse migration is not
+  clean.
   Profiling is a separate question (`puffin` integrates with egui) and is not what logging is for.
 
 ---

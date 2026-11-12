@@ -146,29 +146,31 @@ and iris fields hold the game's default face (not drawn, his face model standing
 At categorization the marker removes face-classified parts and face-specific ancillary files (each
 reported as `face_file_not_used`), and **no face folder is emitted**, on either engine. A face
 folder containing only boots/gloves would override the ingame face, and an empty one would blank
-it, because the cup keeps every player's "modified face" flag off, so the game loads a face folder
-whenever one exists for the player's ID, whatever the save says.
+it. This is because the cup keeps every player's "modified face" flag off, so the game loads a
+face folder whenever one exists for the player's ID, whatever the save says.
 
 The face-classified parts split into two groups with different fates:
 
 - **Explicitly-named face models** (`face_high`, `hair_high`, `oral`) have no skeleton slot and
-  belong only in a face folder — there is none under `ingame_face.toml`, and `fcl_hair` cannot
+  belong only in a face folder. There is none under `ingame_face.toml`, and `fcl_hair` cannot
   absorb them (it is a single body-skeleton model, not a container for the typed face set). Their
   presence combined with `ingame_face.toml` is a hard error that drops the whole player folder
   (`ingame_face_explicit_face_model`).
-- **Arbitrarily-named models** (those that would route to `fcl_hair`, which — like `boots` —
-  supports the full body skeleton) **reroute to the boots folder** instead of being dropped:
-  renamed to `boots`, or merged into one `boots` if several candidates are present (Fox: `fmdl`
-  mesh merging; pre-Fox: `pes_model`'s native merge over the `.model` + `.mtl` pair), and carrying their paired SKL into
-  the `boots.skl` slot (see "SKL pairing"). This generalizes the existing `ingame_face.toml` boots
-  relocation to the body-skeleton face content that would otherwise be lost.
+- **Arbitrarily-named models** (those that would route to `fcl_hair`, which, like `boots`,
+  supports the full body skeleton) **reroute to the boots folder** instead of being dropped. They
+  are renamed to `boots`, or merged into one `boots` if several candidates are present (Fox:
+  `fmdl` mesh merging; pre-Fox: `pes_model`'s native merge over the `.model` + `.mtl` pair), and
+  they carry their paired SKL into the `boots.skl` slot (see "SKL pairing"). This generalizes the
+  existing `ingame_face.toml` boots relocation to the body-skeleton face content that would
+  otherwise be lost.
 
-Remaining gloves parts are relocated to **player-specific gloves folders** (`glove_l`, `glove_r`),
-and the rerouted arbitrary-named models plus any explicit boots models form the **player-specific
-boots folder** — the one case where pre-Fox produces player-exclusive boots/gloves folders with IDs
-from the per-team block scheme and savefile writes. Without `ingame_face.toml`, a player with
-boots/gloves but no face models keeps a blank face folder (the FPC requirement — see the pipeline
-walkthrough).
+Remaining gloves parts are relocated to **player-specific gloves folders** (`glove_l`,
+`glove_r`), and the rerouted arbitrary-named models plus any explicit boots models form the
+**player-specific boots folder**. This is the one case where pre-Fox produces player-exclusive
+boots/gloves folders with IDs from the per-team block scheme and savefile writes.
+
+Without `ingame_face.toml`, a player with boots/gloves but no face models keeps a blank face
+folder (the FPC requirement: see the pipeline walkthrough).
 
 **`ingame_face` with shared links.** A boots/gloves link with no local parts of that category
 resolves as usual: on either engine the player simply wears the shared folder's ID, since nothing
@@ -228,7 +230,7 @@ nothing to name.
   the texture home at their directory, then `sourceimages/#windx11/`
   (`jessie/sourceimages/#windx11/skin.ftex`, the FMDL naming `jessie/sourceimages/skin`). This is
   the layout Red gives a `Common/` subfolder, and a linked `Common/` subfolder file has it here too
-  (`team_compiler/pipeline.md` step 6); PES 21 draws a player's subfolder texture there, checked
+  (`team_compiler/pipeline.md` step 6). PES 21 draws a player's subfolder texture there (checked
   in game).
 
   A `face.xml` or `.mtl` reference that carries a path (`./jessie/body/oral_x_*.model`,
@@ -245,12 +247,13 @@ nothing to name.
   has one of each, and two from different folders would have no merge. Inside a subfolder each
   is `file_type_disallowed`.
 - **A texture name resolves nearest first.** A texture named with no path resolves in the model's
-  own folder first, then in each parent up to the player's root, nearest first, never down;
-  one named with a path below the model's folder (`./textures/skin`) resolves at that path,
-  which is how a member sorts textures into subfolders beside a model above them. Two models in
-  different subfolders may each have a `skin.dds` of their own: the lookup namespace of
-  `texture_stem_conflict` is one folder, not the player folder with its subfolders, and a
-  collision is solved by keeping a texture beside the models that use it.
+  own folder first, then in each parent up to the player's root, nearest first, never down. One
+  named with a path below the model's folder (`./textures/skin`) resolves at that path, which is
+  how a member sorts textures into subfolders beside a model above them.
+
+  Two models in different subfolders may each have a `skin.dds` of their own: the lookup
+  namespace of `texture_stem_conflict` is one folder, not the player folder with its subfolders,
+  and a collision is solved by keeping a texture beside the models that use it.
 - **Only the root's markers and settings count.** `ingame_face.toml`, `fpc_on`, `fpc_off` and
   `settings.toml` are read directly in the player folder alone; inside a subfolder each is
   `file_type_disallowed`, an old-spelling marker the same.
@@ -273,12 +276,16 @@ nothing to name.
   A player folder moved into another keeps its files' roles but not its links' targets (they then
   name `Common/<its name>/...`): such composition is not a goal the link rule serves.
 - **A shared folder's tree is a player folder's.** A shared folder (`Faces/`, `Boots/`,
-  `Gloves/`) may hold subfolders under the same rules: their models are parts of its package,
-  named as its direct ones are (a boots or gloves folder's say so by suffix at any depth,
-  `extra/x_boots.fmdl`), its textures keep their paths and resolve nearest first, and its
-  `.common` links count at any depth. It holds no shared link, marker or settings, as before,
-  and its singletons (`face.xml`, the face diffs, `fcl_hair_sim.fclo`) count directly in it
-  alone, `file_type_disallowed` below a subfolder.
+  `Gloves/`) may hold subfolders under the same rules:
+
+  - their models are parts of its package, named as its direct ones are (a boots or gloves
+    folder's say so by suffix at any depth, `extra/x_boots.fmdl`);
+  - its textures keep their paths and resolve nearest first;
+  - its `.common` links count at any depth.
+
+  It holds no shared link, marker or settings, as before. Its singletons (`face.xml`, the face
+  diffs, `fcl_hair_sim.fclo`) count directly in it alone, and are `file_type_disallowed` below a
+  subfolder.
 - **No reserved names.** The names `face`, `boots`, `gloves` and `common` are plain subfolder names
   in a team export. They exist only in the AET referee layout, Red's prototype of the player
   folder (one subfolder per category inside each referee's folder), which the Export upgrader
@@ -425,7 +432,7 @@ pre-Fox `face.xml` type from it through one table:
 | *(none)* | face: the `fcl_hair.fmdl` merge (`fmdl_fcl_hair_fallback` reports each routed file) | `parts` (Red's default) |
 
 The first column's Fox allowed names and the pre-Fox type names are both native vocabularies, so
-both are accepted; `glove_l`/`gloveL` and `glove_r`/`gloveR` are aliases of each other. Matching
+both are accepted: `glove_l`/`gloveL` and `glove_r`/`gloveR` are aliases of each other. Matching
 is case-insensitive and ignores underscores inside the suffix, as Red's typing did. A
 `_ratio_<n>` token anywhere in the free part still sets the `face.xml` entry's `ratio` attribute
 (Red's convention). Pre-Fox entries additionally get the `oral_`/`_win32` affixes on the emitted
@@ -543,13 +550,15 @@ A folder holding both `face_diff.bin` and `face_diff.xml` gives one datum twice 
 (`xml_dif_conflict`). A player folder's own file over a combined shared face's is the ordinary
 layering, whichever form each has.
 
-Both findings are the Team compiler's deep pass's: `check` reports them, the folder holding the
+Both findings are the Team compiler's deep pass's. `check` reports them, the folder holding the
 file is dropped before any ID is planned for it, and neither is pass-through-eligible, as there is
-no usable diff to keep. The pass checks every file planning gives a face diff's role, which is the
-root's alone ("Subfolders": a subfolder's is `file_type_disallowed`). A file with no role (in a
-folder with no face model and no face link) is not read. The roles are the Fox output's, so a
-folder whose only face models are `.model` files has its face diff unchecked until the pre-Fox
-face steps give it a role.
+no usable diff to keep.
+
+The pass checks every file to which planning gives a face diff's role, which is the root's alone
+("Subfolders": a subfolder's is `file_type_disallowed`). A file with no role (in a folder with no
+face model and no face link) is not read. The roles are the Fox output's, so a folder whose only
+face models are `.model` files has its face diff unchecked until the pre-Fox face steps give it a
+role.
 
 No loose `face_diff.xml` exists on that machine, so the test fixtures are encoded from real
 `face_diff.bin` files. A diff is passed through for whatever target is compiled, although the two
@@ -576,9 +585,9 @@ error (`skl_merge_conflict`) that leaves that package out (`messages.md`).
 **Kits** live in a `Kits/` folder with one subfolder per kit (this per-kit granularity also drives
 the GUI's per-kit grid cells). A kit folder is named by its **slot**, optionally followed by a
 label in the same `<slot> - <label>` shape as player folders: `p1`, `p1 - Lakers`, `g1 - Goalie`.
-The slot part (`p1`–`p9`, `g1`, or `all`, case-insensitive) is all the compiler reads; the label is
-for the human: the GUI kit cell's tooltip and the Kit config editor's tab show it, and nothing is
-derived from it. Two folders resolving to the same slot (`p1/` and `p1 - Lakers/`) are an error
+The slot part (`p1`–`p9`, `g1`, or `all`, case-insensitive) is all the compiler reads. The label
+is for the human: the GUI kit cell's tooltip and the Kit config editor's tab show it, and nothing
+is derived from it. Two folders resolving to the same slot (`p1/` and `p1 - Lakers/`) are an error
 (`kit_slot_duplicate`), not a pick.
 
 The special folder **`all/`** holds textures shared by every kit. For each kit, the effective
@@ -631,9 +640,10 @@ one.
 **Kit layout marker.** The kit UV layout changed between the two engines. The shirt, sleeves,
 collar strip and shorts are laid out the same in PES 15–17 and 18–21, but the **sock islands are
 68 px narrower** in Fox (u 8–372 instead of 8–440 on the left, mirrored on the right; height
-unchanged), and not by one scale: the pre-Fox sock gives the part of the leg near one seam more
-texels than the rest, the Fox one spreads them evenly. A kit drawn for one engine and compiled for
-the other therefore shows its sock design displaced around the leg, by up to about 70 px of 2048.
+unchanged). They are not narrowed by one scale: the pre-Fox sock gives the part of the leg near
+one seam more texels than the rest, the Fox one spreads them evenly. A kit drawn for one engine
+and compiled for the other therefore shows its sock design displaced around the leg, by up to
+about 70 px of 2048.
 
 An optional empty **marker file** in the kit folder, named `pre-fox` or `fox` (case-insensitive;
 the Notepad forms `pre-fox.txt` / `fox.txt` are tolerated, as for `ingame_face`), declares which
@@ -696,9 +706,10 @@ Kits/
 accepted image format).
 
 - A DDS source under the legacy 128-byte header passes through unchanged.
-- One under a DX10 extension header goes out re-headered, its pixel data untouched: the legacy
-  FourCC header for BC1, BC2 and BC3 (an sRGB DXGI id as its UNORM twin) and the masks header for
-  BGRA8, a DX10 header with the UNORM id for a format the legacy header cannot express (BC7).
+- One under a DX10 extension header goes out re-headered, its pixel data untouched:
+  - the legacy FourCC header for BC1, BC2 and BC3 (an sRGB DXGI id as its UNORM twin);
+  - the masks header for BGRA8;
+  - a DX10 header with the UNORM id for a format the legacy header cannot express (BC7).
 - An uncompressed DX10 layout the legacy header cannot express (RGBA8) is encoded like a raster
   source.
 - On PES 15-18, which read BC1-BC3 only (`spec/libs/dds_convert.md` "Passthrough"), a BC4, BC5 or
@@ -816,20 +827,23 @@ byte-identical files are one portrait.
 At compile time, the pipeline:
 
 0. **Hand auto-split** — in-process in Rust via `model_convert`, select each hand's vertices with
-   positive `skh_*_l`/`skh_*_r` weights, grow the selection once along the mesh topology, and separate
-   it into `glove_l`/`glove_r`, leaving the body. This is equivalent to Blender's select → `Ctrl +`
-   → `P` workflow, not an invocation of Blender (see "Hand auto-split" in the
-   [Model conversion plan](../model_conversion/README.md)). Models without such weights pass through unchanged.
+   positive `skh_*_l`/`skh_*_r` weights, grow the selection once along the mesh topology, and
+   separate it into `glove_l`/`glove_r`, leaving the body. This is equivalent to Blender's select
+   → `Ctrl +` → `P` workflow, not an invocation of Blender (see "Hand auto-split" in the [Model
+   conversion plan](../model_conversion/README.md)). Models without such weights pass through
+   unchanged.
+
    Only models step 1 makes face content are split: the body stays face content and the split
-   parts join the player's gloves, while a model named as boots or gloves, or in a shared
+   parts join the player's gloves. A model named as boots or gloves, or in a shared
    `Boots/`/`Gloves/` folder, is never split.
 1. **Categorizes** each model file as face/boots/gloves — by filename convention or by
    face.xml-style metadata (the same categorization problem the 16→21 converter already solves via
    `parseFaceXml` and filename matching). Anything the conventions don't claim is **face content by
-   default**, so there is no "uncategorized model" failure. Pre-Fox the category only picks the
-   model's *type* attribute in the generated `face.xml` — everything ships in the one face folder;
-   Fox splits the categories into separate folders and merges each category's parts (see "Common
-   model links and model merging")
+   default**, so there is no "uncategorized model" failure.
+
+   Pre-Fox the category only picks the model's *type* attribute in the generated `face.xml` —
+   everything ships in the one face folder. Fox splits the categories into separate folders and
+   merges each category's parts (see "Common model links and model merging")
 2. **Assigns IDs automatically** (Fox needs both pools; pre-Fox only the shared one, having no
    player-exclusive boots/gloves folders, except under `ingame_face.toml`, see "ingame_face
    marker"). The IDs come from a **hardcoded per-team block of 40 IDs** in the 4-digit

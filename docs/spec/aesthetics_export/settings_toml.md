@@ -17,7 +17,7 @@ compile carries them to the game:
 
 **Everything in the files is optional**, each file itself included: a player folder with only
 models is valid. **An absent key takes its default**, the value the templates below show for it,
-on both engines; model-derived ID assignments and FPC directives are separate inputs. `name` and
+on both engines. Model-derived ID assignments and FPC directives are separate inputs. `name` and
 `shirt_name` are the exceptions: absent means "not written" (see the name rules).
 
 A compiled player's appearance is therefore his export (these files, his folder's models and
@@ -40,9 +40,8 @@ authored stock ID, the marker's or a `Full` export's default), so the save keeps
 his IDs, where compiling with the keys' defaults would reset a look on one mistyped value. Both
 files' keys go in the one `[appearance]`, so either file's invalidity holds back the other's.
 
-An ID his folder's models or links get still lands, his models still
-compile, and the file itself still marks the in-game face (the folder keeps its `ingame_face`
-marker's effects).
+An ID his folder's models or links get still lands, his models still compile, and the file itself
+still marks the in-game face (the folder keeps its `ingame_face` marker's effects).
 
 **The files can express everything the savefile's player appearance record holds.** Their joined
 schema is `pes_savefile`'s `PlayerSettings`: all of the decoded player appearance record, except
@@ -379,13 +378,15 @@ Where the ranges come from, so a wrong one can be traced:
 - the face-type maxima are the caps the two legacy converters apply when writing a PES 16 and a
   PES 21 save.
 
-The 17 and 18 face caps are unmeasured; PES 19's editor offers cheek types 0 to 5 and forehead
-types 0 to 6, wider than 16's, its other caps unmeasured. An unmeasured face cap is the field's
-bits, for the parser's widest range and the compiler's narrowing alike, the comments keeping the
-measured ranges (`spec/pes_savefile/operations.md` "Cross-version player conversion" holds the
-table). PES 15's face caps were measured: the editor's range joined with the game's own faces.
-The run's other keys were measured in the games (`spec/pes_savefile/model.md` "The ingame-face
-run"). The in-game hair ranges were measured on PES 21 and are assumed for 16 to 20.
+The 17 and 18 face caps are unmeasured. PES 19's editor offers cheek types 0 to 5 and forehead
+types 0 to 6, wider than 16's, and its other caps are unmeasured. An unmeasured face cap is the
+field's bits, for the parser's widest range and the compiler's narrowing alike, while the
+comments keep the measured ranges (`spec/pes_savefile/operations.md` "Cross-version player
+conversion" holds the table).
+
+PES 15's face caps were measured: the editor's range joined with the game's own faces. The run's
+other keys were measured in the games (`spec/pes_savefile/model.md` "The ingame-face run"). The
+in-game hair ranges were measured on PES 21 and are assumed for 16 to 20.
 
 The parser checks a value against the **widest** range of a key (a PES 16 file may legitimately
 be compiled for PES 21). The per-version narrowing is the compiler's finding at compile time, when
@@ -408,10 +409,11 @@ block's, and height affects gameplay, so both belong to the manager's tactical s
 editor), and weight leaves with height for consistency.
 
 The motion ranges were measured in every version's editor (2026-10-13, every row stepped past
-its top): each 1-based key starts at 1 and wraps, stored one below what the editor shows, and
-only the goal celebrations have an OFF entry (stored 0) below 1, stored as shown. The reference
-editor's ranges, which the template first copied, were wrong on PES 15's arm movements and on
-the celebrations of PES 15, 18, 19 and 20. The tops, as the editor shows them:
+its top). Each 1-based key starts at 1 and wraps, and is stored one below what the editor shows.
+Only the goal celebrations have an OFF entry (stored 0) below 1, and they are stored as shown.
+
+The reference editor's ranges, which the template first copied, were wrong on PES 15's arm
+movements and on the celebrations of PES 15, 18, 19 and 20. The tops, as the editor shows them:
 
 | Key | PES 15 | PES 16 | PES 17 | PES 18 | PES 19 | PES 20 | PES 21 |
 |---|---|---|---|---|---|---|---|
@@ -422,7 +424,7 @@ the celebrations of PES 15, 18, 19 and 20. The tops, as the editor shows them:
 | `penalty_kick` | 4 | 4 | 4 | 4 | 4 | 7 | 7 |
 | `goal_celebration_1`, `goal_celebration_2` | 112 | 122 | 122 | 127 | 140 | 152 | 162 |
 
-The parser accepts a key's widest range, the table's top over every version; the per-version
+The parser accepts a key's widest range, the table's top over every version. The per-version
 narrowing at compile time and the cross-version conversion's cap read the version's column. A
 stored value past a version's top is shown as the top: PES 16's editor shows "122" for a cup
 player who stores 183 in `goal_celebration_2`, and keeps the 183 when another row of the motion
@@ -441,7 +443,7 @@ Name-writing rules, in full — **not writing is the default**; writing is opt-i
    the whole folder name under `players.txt`) and written.
 3. `name = "..."` → the string is written as-is. This is also the only way to write a name carrying
    the savefile's **name colour codes** (`\x11c` + 8 hex digits, see the pes_savefile plan's "Name
-   colour codes") — control characters cannot appear in a folder name, so a derived name (`true`)
+   colour codes"). Control characters cannot appear in a folder name, so a derived name (`true`)
    is always plain. Cup organizers colour names freely (not only medal players'), so tools that
    generate `settings.toml` from a savefile (the Export upgrader, the save editor) must emit the
    explicit string whenever the savefile name carries codes, or the next compile would strip them.
@@ -451,7 +453,7 @@ Name-writing rules, in full — **not writing is the default**; writing is opt-i
 
 `shirt_name` is a string or absent: absent writes nothing, and a string is written as is. The
 string is checked against the version's shirt-name field and character set, as a `name` string
-is, a misfit being `settings_name_invalid` and not written. It may fill the field, as real saves'
+is: a misfit is `settings_name_invalid` and is not written. It may fill the field, as real saves'
 shirt names do: only `shirt_name_from` keeps a byte free, for text it invents. There is no
 `true`: a shirt name rarely repeats the player name, and a derived default would be one more thing
 to read. In a `write_names` export a shared folder applies it to every mapped player, like
