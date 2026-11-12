@@ -2205,6 +2205,15 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-12 (the readability findings, item 9) — a kit's generated `config.toml` tells
+  the member `collar = …  # 1-107` and, under the chest number, `y = …  # 0-7`
+  (`crates/libs/kit_config/src/toml_form.rs`, `to_toml`), while `spec/kit_config_editor.md`'s
+  format table and the compiler's `collar_id_invalid` text give the stock collars as 1-101 on
+  PES 2015 up to 1-131 on PES 2021, and stock configs use chest Y's whole field, 0-15. The
+  other comments are the old editor's ranges too (`x  # 0-14` in a field of 0-15). To do: the
+  comments say what a member may type (collar `1-131`, fewer on older versions; chest Y
+  `0-15`), with the four tracer fixtures and the spec's sample; whether the remaining ranges
+  follow the old editor or the field is settled with the Kit config editor's plan (Phase 12).
 - open 2026-11-12 (0.0.2-log, `.tmp/0_0_2/poc5/redirect_probe.bat`) — started from `cmd` or a
   bat, the exe's output can be neither redirected nor piped: `UTW.exe --version > file`,
   `| findstr` and `2>&1` each received 0 bytes, where Git Bash and a Rust `Command`, which
