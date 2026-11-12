@@ -371,6 +371,16 @@ fn a_stat_the_version_lacks_has_its_label_dimmed_as_a_gated_card() {
             dimmed,
             "{label}'s label dimmed as a gated card's name is"
         );
+        // The dimmed name answers a hover as its `-` and a gated card's name do.
+        let name = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(label))
+            .expect("the gated stat's label");
+        assert_eq!(
+            tooltip_after_hover(&mut window, &mut view, centre(name)),
+            Some("PES 20+".to_string()),
+            "{label}'s name names the first version on hover"
+        );
     }
     scroll_into_view(&mut window, &mut view, |node| {
         node.role() == Role::Label && node.value() == Some("Speed")

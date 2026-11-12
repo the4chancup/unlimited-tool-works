@@ -675,18 +675,18 @@ fn ability_stats(
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
                 let name = stat_name(version, label);
                 // A stat the version lacks reads dimmed with its `-`, as a
-                // version-gated card's name is: the click sense sends the
-                // label's text through the widget colours `add_enabled`
-                // dims (a hover-sensed one paints the plain text colour).
+                // version-gated card's name is, under the same tooltip: the
+                // click sense sends the label's text through the widget
+                // colours `add_enabled` dims (a hover-sensed one paints the
+                // plain text colour). `CLICK` alone, not `Sense::click()`,
+                // whose focus bit would offer a focus the disabled label
+                // can never take.
                 let label_cell = if abilities[index].is_some() {
                     ui.label(name).rect
                 } else {
-                    add_enabled(
-                        ui,
-                        false,
-                        egui::Label::new(name).sense(egui::Sense::click()),
-                    )
-                    .rect
+                    add_enabled(ui, false, egui::Label::new(name).sense(egui::Sense::CLICK))
+                        .on_disabled_hover_text(gating_tooltip(ABILITY_FIELDS[index]))
+                        .rect
                 };
                 match abilities[index] {
                     Some(value) => {

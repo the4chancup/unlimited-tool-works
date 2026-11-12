@@ -1770,7 +1770,9 @@ briefs, review loops, gates and mutation runs as for any step.
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
     looked at in the built window (look: Pending looks). The same rule for the editor's
     other gated fields is `PROPOSALS.md` P53, unruled
-    - [ ] review round (tier 3: one SWE-2 round)
+    - [x] review round (tier 3), SWE-2 "S-statlbl r1", 2026-11-12: 1 of 3 concerns
+      accepted (the dimmed name had no `PES NN+` tooltip, where its `-` and a gated
+      card's name have one)
   - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, reviewed with 0.0.2-upgall
     below): `--log-file <FILE>` appends a run's whole output to the file and leaves Info
     findings out of stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher

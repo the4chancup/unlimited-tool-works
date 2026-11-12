@@ -480,8 +480,9 @@ side.
      as the checkboxes' labels are, not the weak one: the weak grey read too dark beside them.
      The label of an ability stat the save's version does not store (Tight Possession and
      Aggression before PES 2020, among others) is the exception: it is drawn as a
-     version-gated card's label is, dimmed with its disabled `-`, so the row reads as a stat
-     this game does not have rather than as one left to fill.
+     version-gated card's label is, dimmed with its disabled `-` and with the same `PES NN+`
+     tooltip, so the row reads as a stat this game does not have rather than as one left to
+     fill.
      A label and its field are never closer than 9 points on a pair and 12 in the label-left
      rows and Ability stats; the room this takes comes off the margins either side of the
      centred view.
@@ -2596,7 +2597,8 @@ SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
                 a card PES 17 lacks paints (`Through Passing`'s), which is not the normal
-                text colour, and `Speed`'s label paints the normal one; GIVEN a PES 21 save
+                text colour, a hover on either shows `PES 20+`, and `Speed`'s label paints
+                the normal colour; GIVEN a PES 21 save
                 THEN `Tight Possession` and `Aggression` paint the normal text colour
 SE-GUI-66  GIVEN the PES 17 save open on a player whose own tier, Regular, allows 3 paid
                cards, 3 of them ticked
