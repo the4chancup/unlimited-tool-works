@@ -1792,12 +1792,13 @@ briefs, review loops, gates and mutation runs as for any step.
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
     2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
     "Set PES path", SE-GUI-26, 28 and 50). Tier 2
-    - [ ] a: the Save editor: portraits and Set PES path by the save's version, the version
-      warning and its standing notice gone, the picker's start folder (`last_folder`), its
-      draft and help
-    - [ ] b: the shell: `targets_pes_version` on each tool, the selector hidden with its
-      place kept, the standing notice and `SwitchVersion` removed (ST-BAR-07, 08
-      withdrawn), the drafts' sidebar
+    - [x] a (2026-11-12, `58892900`, merge `9ffffa8c`; SWE-2 and the lead): the Save
+      editor's portraits, Set PES path and its pick by the save's version, through
+      per-version reads on the common settings and the tool context; the version warning
+      gone (SE-GUI-28 withdrawn); the picker's start folder (`last_folder`); draft and help
+    - [ ] b: the shell: `targets_pes_version` on each tool, the selector disabled and
+      empty under a tool that does not use it, the standing notice and `SwitchVersion`
+      removed (ST-BAR-07, 08 withdrawn). Brief `.tmp/0_0_2/sel/brief_b.md`
     - [ ] the look in the built window; its review rounds
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
@@ -2385,6 +2386,18 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
+  on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
+  the three files sent (the team file, a save named as the one before, the saved file;
+  scratch `.tmp/report21/`): the saved file equals the earlier one but for teams 876 and
+  886, both holding the file's 23 players, and 876 holds what the command line's `import-toml`
+  writes (no difference in `diff` or in the team's export); the teams that were
+  placeholders (156 of 220) were so before. The saved file is two bytes longer than the
+  earlier save, which fits a serial (the writer's Windows account) one character longer,
+  not read out: another account or the game wrote it last, or the earlier save sent is
+  not the one that was open. Waits for the member to reproduce on 0.0.2 with its report button.
+  One thing found on the way is in `docs/QUESTIONS.md` (the manager id a team file brings
+  onto another team).
 - resolved 2026-11-12 (the lead, writing the referee export page): the Export upgrader's
   spec and `referees.rs` said a conflicting referee folder is "left as it was", copied at
   its old paths for the author to repair, where EU-REF-03 and 11 write nothing. Both hold:

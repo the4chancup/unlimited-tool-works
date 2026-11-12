@@ -97,6 +97,9 @@ What changed for members, release by release, newest first.
 - **Save editor and Ruleset editor**: the sidebar's PES version box stands empty and
   disabled while the editor is shown, instead of naming a version the editor does not
   use.
+- **Save editor**: in the Tactics tab's bench list, a player dragged onto another swaps
+  places with him, as in the starting eleven's list. He used to be moved into that place,
+  shifting the players between.
 
 ### Minor fixes
 

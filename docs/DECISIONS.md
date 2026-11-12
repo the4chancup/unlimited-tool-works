@@ -16896,3 +16896,26 @@ Plan: plans/core/gui.md "Sidebar" item 2 and ST-SIDE-09 edited.
 The maintainer, on seeing the draft: the disabled box is right, the hyphen in it is not
 needed. The box stands disabled and empty; the rest of the entry before this one holds.
 Plan: plans/core/gui.md "Sidebar" item 2 and ST-SIDE-09 edited.
+
+## 2026-11-12 — gui — A locked choice is drawn as a disabled button, with no grey of its own
+
+The maintainer, on seeing three renders: the held choice of a disabled numbers toggle or
+of the locked formation selector is drawn as any disabled button is, its box the resting
+button's fill as the disabled scope fades it (`#2b2b2b` on the dark panel) and its label
+dimmed with the rest ("no need to highlight the text of a disabled button"). This replaces
+the `#2c2c2c` rectangle with a brighter label painted over the choice, chosen earlier
+today: that grey sat one step from the disabled button's, and matching it by a second
+palette entry, a light-theme twin and a contrast test was more machinery than the look is
+worth. `Palette::locked_choice_fill` and the painted-over rectangle are removed;
+`team_widgets::tactics::lock_selection` sets the selection's colours inside the disabled
+scope. Plan: plans/save_editor.md "Tactics editor" (the numbers bullet, the Kick-off
+paragraph) edited; the drafts' three rules follow.
+
+## 2026-11-12 — save_editor — A bench row dropped on a bench row swaps the two
+
+The maintainer: the Tactics lists' bench moved a dragged row into the dropped row's place,
+the rows between shifting, where every other drop in the two lists (starter on starter,
+bench on starter, a marker on a row) swaps two players, and where the game itself swaps
+two bench players picked one after the other. A bench drop now exchanges the two
+`bench_order` entries. Plan: plans/save_editor.md "Lineup by drag-and-drop" edited; the
+draft's `moveBench` is `swapBench`.

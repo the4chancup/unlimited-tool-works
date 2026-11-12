@@ -877,8 +877,9 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   toggle, Few | Medium | Many, rather than a three-step slider whose number a member had to
   hover to read). From PES 2017 on the game's own game plan no longer shows the two numbers
   (`spec/pes_savefile/model.md` "Player/team/tactics model"), so on a PES 17 to 21 save the
-  two toggles are drawn disabled, their stored choice still shown, on a grey rectangle
-  rather than the selection's blue (which would read as a control still live), with the
+  two toggles are drawn disabled, their stored choice drawn as a disabled button is (its
+  box and its dimmed label) rather than on the selection's blue faded, which would read as
+  a control still live, with the
   tooltip "Not
   editable in the game from PES 2017 on", unless the active ruleset allows illegal
   formations ("Illegal formations" below): a member of a cup on the stock game cannot give
@@ -937,8 +938,8 @@ Win32 original hurt the most):
      pitch's width.
 
      While the shown preset's Fluid formation is off (PES 2015 has no switch, so always), the
-     formation selector is disabled and on Kick-off, Kick-off on a grey rectangle rather
-     than the selection's blue, as the stored choice of a disabled numbers toggle is
+     formation selector is disabled and on Kick-off, Kick-off drawn as a disabled button
+     rather than on the selection's blue, as the stored choice of a disabled numbers toggle is
      ("Tactics editor"'s second bullet), its hover `Formations 2 and 3 are used only while
      Fluid formation is on`. The game fields the other two only while it is on, so
      editing them there edits nothing a match uses, and switching Fluid formation off moves
@@ -1185,7 +1186,11 @@ Win32 original hurt the most):
 
     It is a widget placed over the pitch after the markers, as the formation's name is drawn
     after them, not painted on the pitch, so the formation pictures never carry it.
-- **Lineup by drag-and-drop**: the starting XI and bench are reorderable lists;
+- **Lineup by drag-and-drop**: the starting XI and bench are drag lists, and every drop
+  swaps two players: a row dropped on a row of its own list exchanges the two (the bench
+  as the eleven: the game's own game plan swaps two bench players picked one after the
+  other, and a drop that shifted the rows between would be the one list behaving
+  unlike the others), and
   **dragging a bench player onto a pitch player swaps them** (and vice versa). While a
   drag is held over a row, that row, the one the drop replaces, is outlined in the
   selection colour (the draft's `.dragover`), so a member sees whom the drop swaps out.

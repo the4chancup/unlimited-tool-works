@@ -3049,7 +3049,7 @@ fn the_locked_formation_selector_marks_kick_off_on_grey() {
     let mut window = Headless::sized(900.0, 1100.0);
     let visuals = window.ctx.global_style().visuals.clone();
     let (grey, blue) = (
-        studio_core::theme::palette(&visuals).locked_choice_fill,
+        visuals.disable(visuals.widgets.inactive.weak_bg_fill),
         visuals.selection.bg_fill,
     );
     let rect_of = |node: &accesskit::Node| {

@@ -455,11 +455,8 @@ fn a_drag_started_just_beside_a_rows_labels_moves_the_player() {
     );
     assert!(changed, "the drop changed the record");
     let mut expect = before;
-    expect[1] = before[2];
-    expect[2] = before[3];
-    expect[3] = before[4];
-    expect[4] = before[1];
-    assert_eq!(tactics.bench_order, expect, "row 1 landed at 4");
+    expect.swap(1, 4);
+    assert_eq!(tactics.bench_order, expect, "the two bench rows exchanged");
 }
 
 // A dragged row is drawn with the point first pressed under the pointer,
@@ -581,8 +578,8 @@ fn a_cut_name_shows_the_whole_plain_name_on_the_rows_hover() {
 
 // The draft's `swapStarters`: a starter on a starter exchanges the two
 // slots' players; both stay on the pitch so no role moves. Row 1 on
-// row 4, not on row 2: on adjacent rows a move (the bench rows'
-// shift) gives the same eleven as the exchange.
+// row 4, not on row 2: on adjacent rows a move gives the same eleven
+// as the exchange.
 #[test]
 fn a_starter_dropped_on_a_starter_exchanges_them_and_moves_no_role() {
     let mut window = Headless::sized(900.0, 1100.0);
@@ -614,20 +611,23 @@ fn a_starter_dropped_on_a_starter_exchanges_them_and_moves_no_role() {
     );
 }
 
-// The draft's `moveBench`: the dragged entry lands on the dropped
-// row's place, the rows between shifting by one toward it.
+// The draft's `swapBench`: a bench row on a bench row exchanges the two
+// entries, as a starter on a starter does; the rows between stay. Row 4
+// on row 1, not on row 2: on adjacent rows a move gives the same order
+// as the exchange.
 #[test]
-fn a_bench_row_dropped_on_a_bench_row_lands_in_its_place() {
+fn a_bench_row_dropped_on_a_bench_row_exchanges_them() {
     let mut window = Headless::sized(900.0, 1100.0);
     let mut tactics = fixture_tactics(PesVersion::Pes21);
     let mut view = TacticsView::default();
     let rows = fixture_rows(PesVersion::Pes21);
     let roster = roster_rows(&rows);
-    let before = tactics.bench_order;
-    assert_ne!(before[4], before[1], "premise: two different slots");
+    let before = tactics.clone();
+    assert_ne!(
+        before.bench_order[4], before.bench_order[1],
+        "premise: two different slots"
+    );
 
-    // Row 4 dropped on row 1: it takes 1's place, the rows between
-    // shifting down.
     let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     let changed = window.drag_lineup(
         row_centre(&nodes, 11 + 4),
@@ -639,32 +639,11 @@ fn a_bench_row_dropped_on_a_bench_row_lands_in_its_place() {
     );
     assert!(changed, "the drop changed the record");
     let mut expect = before;
-    expect[1] = before[4];
-    expect[2] = before[1];
-    expect[3] = before[2];
-    expect[4] = before[3];
-    assert_eq!(tactics.bench_order, expect, "row 4 landed at 1");
-
-    // Row 1 dropped on row 4: it takes 4's place, the rows between
-    // shifting up.
-    tactics = fixture_tactics(PesVersion::Pes21);
-    let before = tactics.bench_order;
-    let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
-    let changed = window.drag_lineup(
-        row_centre(&nodes, 11 + 1),
-        row_centre(&nodes, 11 + 4),
-        PesVersion::Pes21,
-        &mut tactics,
-        &mut view,
-        &roster,
+    expect.bench_order.swap(4, 1);
+    assert_eq!(
+        tactics, expect,
+        "the two exchanged, the rows between and everything else stay"
     );
-    assert!(changed, "the drop changed the record");
-    let mut expect = before;
-    expect[1] = before[2];
-    expect[2] = before[3];
-    expect[3] = before[4];
-    expect[4] = before[1];
-    assert_eq!(tactics.bench_order, expect, "row 1 landed at 4");
 }
 
 // The draft's `#tac-lists .llist`: no "Starting eleven" or "Bench"

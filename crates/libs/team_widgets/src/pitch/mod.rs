@@ -2,7 +2,7 @@
 //! `slotPopover` — the formation canvas, a marker per starter dragged to
 //! his spot, dropped on to swap a bench player in, clicked for the slot's
 //! details — plus `lineupList` and `benchList`, the starting eleven and
-//! the bench, reordered and swapped by drag. The canvas is painted as the
+//! the bench, swapped by drag. The canvas is painted as the
 //! version's own formation screen: its texture's turf bands and lines,
 //! the screen's slot-to-spot mapping and markers of portrait, badge and
 //! coloured name.
@@ -15,7 +15,7 @@ use studio_core::widgets::{add_enabled_ui, cycle_choice, wheel_steps};
 
 use crate::names::append_name;
 use crate::tactics::{
-    Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, bar_selector_spacing, locked_choice,
+    Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, bar_selector_spacing, lock_selection,
     name_at, raw_name_at,
 };
 
@@ -291,7 +291,7 @@ struct Held {
 /// `tactics`, the wheel stepping them as it steps the style toggles.
 /// While that preset fields its Kick-off formation alone, the
 /// three are disabled with Kick-off selected (`lock_to_fielded`) and
-/// marked through `locked_choice`, and the wheel does not step. Writes
+/// drawn as a disabled button, and the wheel does not step. Writes
 /// `view.formation`, never the record. Answers the three choices' union
 /// `Response`, so the host can see a click on one of them.
 pub fn formation_selector(
@@ -300,14 +300,9 @@ pub fn formation_selector(
     view: &mut TacticsView,
 ) -> egui::Response {
     let locked = lock_to_fielded(tactics, view);
-    let mut shown = None;
     let scope = add_enabled_ui(ui, !locked, |ui| {
-        // A disabled selected choice fills with the selection's blue
-        // faded, which a member still reads as a live control: inside
-        // the disabled scope the held choice fills with the locked grey
-        // `locked_choice` marks solid.
         if locked {
-            ui.visuals_mut().selection.bg_fill = theme::palette(ui.visuals()).locked_choice_fill;
+            lock_selection(ui);
         }
         let bar = ui.horizontal(|ui| {
             bar_selector_spacing(ui);
@@ -316,13 +311,7 @@ pub fn formation_selector(
             FORMATIONS
                 .iter()
                 .enumerate()
-                .map(|(index, label)| {
-                    let response = ui.selectable_value(&mut view.formation, index, *label);
-                    if index == view.formation {
-                        shown = Some((*label, response.rect));
-                    }
-                    response
-                })
+                .map(|(index, label)| ui.selectable_value(&mut view.formation, index, *label))
                 .reduce(|left, right| left | right)
                 .expect("the selector has three choices")
         });
@@ -339,13 +328,6 @@ pub fn formation_selector(
         }
         bar.inner
     });
-    // The disabled scope would fade the picked choice's selection blue
-    // to half, which still reads as a control live: while the selector
-    // is locked, Kick-off, the choice it stays on, reads on the grey
-    // rectangle a locked choice carries.
-    if locked && let Some((label, rect)) = shown {
-        locked_choice(ui, rect, label);
-    }
     scope.inner
 }
 

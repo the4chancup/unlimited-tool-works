@@ -1332,7 +1332,7 @@ fn the_numbers_are_locked_from_pes17_on_a_stock_game() {
         .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
     let visuals = window.ctx.global_style().visuals.clone();
     let (grey, blue) = (
-        studio_core::theme::palette(&visuals).locked_choice_fill,
+        visuals.disable(visuals.widgets.inactive.weak_bg_fill),
         visuals.selection.bg_fill,
     );
     for version in [PesVersion::Pes17, PesVersion::Pes21] {

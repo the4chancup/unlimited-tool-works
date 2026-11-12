@@ -1,6 +1,6 @@
 //! The "Starting eleven" and "Bench" lists, the draft's `lineupList` and
 //! `benchList`. Each row is a drag handle, a position and a name; a drop
-//! moves, exchanges or swaps a bench player in (`swap_in`).
+//! exchanges two players of a list or swaps a bench player in (`swap_in`).
 
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::tactics::{SetPieceTakers, TeamTactics};
@@ -40,7 +40,7 @@ const POSITION_WIDTH: f32 = 30.0;
 /// `view.formation`'s). Drops: a starter on a
 /// starter exchanges the two, a bench row on a starter (or a starter on
 /// a bench row) swaps them in `swap_in`'s sense, a bench row on a bench
-/// row moves the dragged entry to the dropped row's place. `roster`
+/// row exchanges the two. `roster`
 /// gives each roster slot's row, indexed by slot; a `bench_order` entry
 /// whose roster slot holds no player draws no row, so the eleven never
 /// gains an empty slot either (no row takes a starter).
@@ -189,10 +189,9 @@ fn bench_is_empty(tactics: &TeamTactics, roster: &[RosterRow<'_>], index: usize)
 
 /// One bench row (the draft's bench `lrow`): the player's registered
 /// position and name, always a drag source and a drop target. A starter
-/// dropped on it swaps in (`swap_in`); a bench row dropped on it moves the
-/// dragged entry to the dropped row's `bench_order` place, the entries
-/// between shifting by one (the draft's `moveBench`, a move, not an
-/// exchange).
+/// dropped on it swaps in (`swap_in`); a bench row dropped on it exchanges
+/// the two `bench_order` entries, as a starter on a starter does (the
+/// draft's `swapBench`): every drop in the two lists swaps two players.
 fn bench_row(
     ui: &mut egui::Ui,
     version: PesVersion,
@@ -216,13 +215,7 @@ fn bench_row(
             LineupDrag::Starter(starter) | LineupDrag::Marker(starter) => {
                 swap_in(version, tactics, starter, index);
             }
-            LineupDrag::Bench(from) => {
-                if from < index {
-                    tactics.bench_order[from..=index].rotate_left(1);
-                } else if from > index {
-                    tactics.bench_order[index..=from].rotate_right(1);
-                }
-            }
+            LineupDrag::Bench(from) => tactics.bench_order.swap(from, index),
         }
     }
 }

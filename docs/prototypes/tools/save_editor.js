@@ -348,18 +348,18 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .rate .sel.on.ra { background: #129648; color: #fff; }
 .rate .sel.on.rc { background: #5a5a5a; color: var(--text); }
 .rate.off .sel { color: #5a5a5a; }
-/* The two numbers' toggle disabled (SE-GUI-71): the picked choice on a grey rectangle, not
-   the selection's blue, which would read as a control still live; its text the readouts'
-   grey, so the stored value still reads. */
-.rate.tri.off .sel.on { background: #2c2c2c; color: #a0a0a0; }
+/* The two numbers' toggle disabled (SE-GUI-71): the picked choice drawn as a disabled
+   button (its box and its dimmed text), not on the selection's blue, which would read as
+   a control still live. */
+.rate.tri.off .sel.on { background: #2b2b2b; color: #5a5a5a; }
 .rate.off .sel:hover { background: none; color: #5a5a5a; }
 /* The formation picker while the preset's Fluid formation is off, drawn as the disabled
-   numbers toggle above is: Kick-off, the entry it stays on, on the same grey rectangle and
-   not the selection's blue, the other two in the disabled grey; its tooltip kept. */
-.fsel.off .sel.on { background: #2c2c2c; color: #a0a0a0; }
+   numbers toggle above is: Kick-off, the entry it stays on, as a disabled button and
+   not on the selection's blue, the other two in the disabled grey; its tooltip kept. */
+.fsel.off .sel.on { background: #2b2b2b; color: #5a5a5a; }
 .fsel.off .sel:not(.on) { color: #5a5a5a; }
 .fsel.off .sel:hover { background: none; color: #5a5a5a; }
-.fsel.off .sel.on:hover { background: #2c2c2c; color: #a0a0a0; }
+.fsel.off .sel.on:hover { background: #2b2b2b; color: #5a5a5a; }
 .palette { display: inline-flex; gap: 2px; align-items: center; }
 .palette .swatch.on { outline: 1px solid var(--sel-fg); }
 .palette.off .swatch { opacity: .45; }
@@ -5203,10 +5203,10 @@ function swapOnPitch(t, i, j) {
   edit("Swap on pitch", () => {
     const f = tacFormation(t).players, tmp = f[i]; f[i] = f[j]; f[j] = tmp; });
 }
-function moveBench(t, i, j) {
+function swapBench(t, i, j) {
   if (i === j) return;
-  edit("Reorder bench", () => {
-    const b = t.tactics.bench_order, [m] = b.splice(i, 1); b.splice(j, 0, m); });
+  edit("Swap on bench", () => {
+    const b = t.tactics.bench_order, tmp = b[i]; b[i] = b[j]; b[j] = tmp; });
 }
 // Make GK: the picked player's roster index takes the GK formation slot, the
 // keeper takes his (the formation slots keep their positions and coords; the
@@ -5857,10 +5857,10 @@ document.addEventListener("pointerup", e => {
   render();
 });
 
-// The starting eleven and the bench, reorderable drag lists (SE-GUI-12):
+// The starting eleven and the bench, drag lists (SE-GUI-12):
 // an XI row's data is xi:<slot index>, a bench row's bench:<index>. Drops:
 // xi on xi swaps the slots' players, xi on bench swaps them back, bench on
-// xi or on a pitch marker swaps in, bench on bench reorders.
+// xi or on a pitch marker swaps in, bench on bench swaps the two entries.
 function listRowDrag(row, data) {
   row.draggable = true;
   row.addEventListener("dragstart", e => {
@@ -5907,7 +5907,7 @@ function benchList(t) {
         p.positions.registered),
       h("span", { class: "lname", title: displayName(p.name) }, ...nameSpans(p.name)));
     listRowDrag(r, "bench:" + i);
-    rowDrop(r, (kind, j) => kind === "xi" ? swapLineup(t, j, i) : moveBench(t, j, i));
+    rowDrop(r, (kind, j) => kind === "xi" ? swapLineup(t, j, i) : swapBench(t, j, i));
     box.append(r);
   });
   return box;
