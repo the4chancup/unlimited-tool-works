@@ -16758,3 +16758,19 @@ would be two more scripts to keep equal to the batch files and to test, for memb
 the one command as easily.
 Plan: `plans/core/distribution.md` (the bundle's list) and `plans/core/architecture.md`
 "Launch modes"; `scripts/release/release.py` (`Platform.launchers`).
+
+## 2026-11-12 — updater — ST-UPD-04's Linux half is the maintainer's, on a virtual machine; `cargo-about` on the VPS
+Decision (maintainer, answering `QUESTIONS.md` "Where ST-UPD-04's Linux half runs": "I'll
+run it on a virtual machine with live ubuntu, if that's viable for the test. You can install
+cargo-about on the VPS. WSL needs to be reinstalled, I've deleted the ubuntu vhd to free
+some space"): the scenario's Linux half is run by the maintainer in a live-Ubuntu virtual
+machine, from a kit the lead prepares; `cargo-about` 0.9.2 is installed in the VPS build
+user's `~/.cargo/bin`, so the host packs the Linux test bundles; the lead does not reinstall
+WSL.
+Why: the scenario needs a Linux desktop to click in, which neither this PC (WSL's image is
+gone) nor the VPS (no display, a production host) has. It is viable: the two bundles built
+on the VPS ask for glibc 2.39 at most and link only the C and math libraries and libgcc, so
+Ubuntu 24.04 or newer starts them, and the kit serves its release list from the machine's
+own 127.0.0.1, so the virtual machine needs no network.
+Plan: `RUNBOOK.md` "Mutation runs and the VPS" (what the host has installed); the worklog's
+ST-UPD-04 line and its pending look.

@@ -13,8 +13,8 @@ is in `AGENTS.md` ("Working documents").
 (VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
 0.0.2 step"), worked in this order:
 1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
-   ST-UPD-04's Linux half waits on the maintainer). The TLS provider (0.0.2-tls) is
-   settled: `ring` stays.
+   ST-UPD-04's Linux half is the maintainer's look on a virtual machine, its kit ready).
+   The TLS provider (0.0.2-tls) is settled: `ring` stays.
 2. The illegal formation check (0.0.2c): its six clauses are set and the game's own
    formations pass them; the looks in game come next, then the slice.
 3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -statlbl, -inst, -drift,
@@ -1713,9 +1713,14 @@ briefs, review loops, gates and mutation runs as for any step.
       `0.0.2-rc.1` updated itself to `0.0.2-rc.2` and reopened on `Updated to v0.0.2-rc.2
       pre-alpha`, the settings, a file inside `exports/` and a root log file as they were
       (both bundles built by `just release` on the throwaway branch `test/upd-rc`, worktree
-      `4cc-studio-temp/rc`, never merged or pushed). Linux: open, waits on the maintainer
-      (`QUESTIONS.md` "0.0.2's Update now on Linux": no Linux desktop here, WSL does not
-      start, and the bundles need `cargo-about` on the VPS)
+      `4cc-studio-temp/rc`, never merged or pushed). Linux: the maintainer runs it on a
+      live-Ubuntu virtual machine (DECISIONS 2026-11-12 "ST-UPD-04's Linux half is the
+      maintainer's, on a virtual machine"; look: Pending looks). Its kit is ready,
+      `4cc-studio-temp/st-upd-04-linux/` (README, the two bundles built on the VPS by
+      `just remote just release <version>` from the same branch with main's fixed release
+      recipe copied in, a releases list served from the machine's own 127.0.0.1): the
+      layout and server scripts were tried on this PC, the Linux program itself was run by
+      nobody yet
   - [x] 0.0.2-tls 2026-11-12: the update check's TLS keeps `ring`, as the first listed
     exception to "the shipped build is pure Rust by default" (DECISIONS 2026-11-12, the
     lead's ruling for the maintainer to reverse; measurements by an Opus sidekick on a
@@ -2208,6 +2213,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   and gloves under their old IDs in Edit mode; PES 2019; 0.0.2-poc13's poc.2; harness
 - The 0.0.2-poc.4 bundle from a fresh extract: its launchers' upgrade and compile, the teams in
   Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11)
+- ST-UPD-04 on Linux: the bundle of `0.0.2-rc.1` updates itself to `0.0.2-rc.2` and reopens
+  on `Updated to v0.0.2-rc.2 pre-alpha`, by the kit `4cc-studio-temp/st-upd-04-linux/`
+  (its README has the steps; `sh start.sh`) on a live Ubuntu 24.04 or newer in a virtual
+  machine (the programs ask for glibc 2.39); no PES; 0.0.2-upd; maintainer
 - The illegal formation test's clauses under PES 2017's stock exe (`PES2017.exe.old5`), a
   4-4-2 changed in one starter each time by a tool (the base formation is in section 6 of
   `.tmp/0_0_2/formation/research/report2.md`): the keeper at (52, 1); the LB at (2, 10); a CF at (52, 10); a second LMF at

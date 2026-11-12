@@ -61,26 +61,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   see. What happens when you Shift+click the button (nothing, a second window, an error),
   and was the program started from the exe, a shortcut or a `.bat` when you saw it?
 
-## 0.0.2's Update now on Linux
-
-- **Where ST-UPD-04's Linux half runs** (worklog 0.0.2-upd; `plans/core/gui.md` ST-UPD-04).
-  The scenario clicks Update now and Restart now in the Linux bundle, so it needs a Linux
-  desktop and a pair of Linux bundles; Windows' half passed. Neither exists here yet:
-  - WSL does not start on this PC (2026-11-12: `ERROR_NO_SYSTEM_RESOURCES` at `CreateVm`,
-    three tries, the last with no build running; about 21 of the 32 GiB of RAM were in use
-    by the open programs). It has a display (WSLg). Whether a restart of the PC brings it
-    back is not known.
-  - The VPS has no display, and running a window there means installing a virtual one
-    (Xvfb, a software OpenGL, a tool that clicks) on the production host.
-  - The bundles: `just release` on Linux needs `cargo-about`, which the VPS lacks (a
-    `cargo install` in the build user's home, as `just` and cargo-mutants were), and a
-    bundle built there links Debian 13's glibc 2.41, so it may not start on an older
-    distribution; the release workflow builds on Ubuntu 22.04, but only from a pushed tag.
-
-  Which of these do you want: WSL once it starts again (after a restart you do), the virtual
-  display on the VPS, or running the scenario yourself on a Linux machine? And may
-  `cargo-about` be installed on the VPS for the bundles?
-
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

@@ -189,7 +189,11 @@ local half, no split threshold; the last local `mutants.out` set aside as
 the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
 while a mutants half is running or uncollected; the transient service `studio-gates`,
 memory-capped and CPU-idle, run synchronously). The VPS's `just` is installed in
-`~/.cargo/bin` at this machine's version, as cargo-mutants is. Its Python has Pillow from
+`~/.cargo/bin` at this machine's version, as cargo-mutants is, and so is `cargo-about` 0.9.2
+(the release workflow's version, `--features cli`), so `just remote just release <version>`
+packs a Linux bundle there, into the clone's `target/dist`. A bundle built on the host
+asks for a newer C library than the release workflow's (glibc 2.39 where the workflow
+builds on Ubuntu 22.04), so it serves a test, never a release. Its Python has Pillow from
 Debian's `python3-pil` package (11.1.0 on Debian 13, where CI installs the pinned 12.3.0
 through pip): `just test` runs the drafts tooling's tests, which read images through it, and
 without it the recipe stopped there with the tests after it unrun. The lead uses
