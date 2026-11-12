@@ -182,12 +182,13 @@ a program's environment can already replace the program.
 The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the maintainer's PC) before a release is
 published.
 
-The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
-export into `exports/` (shipped empty beside the binary) and double-clicks
-`quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted data goes
-(the settings file, state like the skipped-update version, logs) is the user's choice, asked once on
-first run — see "Data location" below. This is the same folder model Red uses, minus the ~80MB
-embedded Python runtime that made Red's updates a folder-replacement operation.
+The user extracts the archive anywhere and runs the binary. In the common case the user drops
+an export into `exports/` (shipped empty beside the binary) and double-clicks
+`quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted
+data goes (the settings file, state like the skipped-update version, logs) is the user's
+choice, asked once on first run (see "Data location" below). This is the same folder model Red
+uses, minus the ~80MB embedded Python runtime that made Red's updates a folder-replacement
+operation.
 
 ### Data location: asked on first run
 
@@ -197,9 +198,9 @@ Some users want a fully portable install, others want their data to survive repl
 program folder. Following EGG-Translator's first-start wizard, the first run asks where to store
 settings and data, with two options (each with a one-line hint, like EGG's buttons).
 
-On a first run the GUI shows the dialog and writes the settings file to the chosen location — the
-file's existence is what makes the choice stick. The dialog has no Cancel, because the choice is
-needed to start.
+On a first run the GUI shows the dialog and writes the settings file to the chosen location.
+The file's existence is what makes the choice stick. The dialog has no Cancel, because the
+choice is needed to start.
 
 A location that cannot be written (a program folder unpacked under `Program Files`, picked as
 "Next to the program") keeps the dialog open with the error under the buttons, so the member
@@ -253,10 +254,10 @@ storage.
 
 Red updates by downloading the new release's 7z, extracting it as a **sibling folder**, and
 migrating user data into it (settings via a transfer table, `teams_list.txt` via an interactive
-diff, `exports/` contents, state files) — necessary because Red's install folder is a pile of
-engine files that must be replaced wholesale, with user data interleaved. Unlimited Tool Works' folder is
-a few files, so the update inverts: **the folder stays, the binary is swapped in place**, and there
-is almost nothing to migrate.
+diff, `exports/` contents, state files). Red needs this because its install folder is a pile of
+engine files that must be replaced wholesale, with user data interleaved. Unlimited Tool Works'
+folder is a few files, so the update inverts: **the folder stays, the binary is swapped in
+place**, and there is almost nothing to migrate.
 
 The desktop flow is coordinated by `studio` (the binary crate). `studio_core::updater` provides
 generic release checking, download/verification, and binary replacement. `studio` separately
@@ -283,8 +284,8 @@ may change in a minor release.
    Then compare it with the built-in `CARGO_PKG_VERSION`.
 
    Pre-releases are included because `releases/latest` skips a release marked Pre-release,
-   which a 0.0.x may be. A tag that is not `v` and a semver is passed over.
-   The release's `body` (its notes) comes in the same response.
+   which a 0.0.x may be. A tag that is not `v` and a semver is passed over. The release's
+   `body` (its notes) comes in the same response.
 
    A completed check stores `last_update_check`. A failed one (offline, rate-limited, a body
    that does not parse) shows nothing and writes one line to the log.
@@ -384,7 +385,7 @@ may change in a minor release.
    version that last ran is `last_run_version`, state the shell writes as it does `last_tool`;
    it is absent on a fresh install and after 0.0.1, which then show no notice.
 
-   The settings file needs no transfer — it stays where it is, and the existing merge of
+   The settings file needs no transfer: it stays where it is, and the existing merge of
    `default_settings()` for missing keys (see `spec/core/gui.md` "Settings menu") absorbs
    new-version settings changes, which is what retired Red's transfer-table mechanism.
 
@@ -463,9 +464,10 @@ Where the version string appears:
 - **About** (logo click) — the detailed block with Copy (see `gui.md` "Sidebar" item 1).
 - **`UTW --version`** — the same one-liner on stdout (CLI equivalence); built,
   `spec/core/distribution.md` "Versioning: one workspace version, one exception".
-- **Not the title bar**: the title is what the taskbar and alt-tab show — the surface for what
-  the Studio is *doing* while the window is not in front (see `gui.md` "Window title"), and it is outside
-  every screenshot a user crops to the window content. **Not beside the logo**: duplicate of the
-  status bar, and homeless on the icon rail, which is all of the sidebar most of the time.
+- **Not the title bar**: the title is what the taskbar and alt-tab show, the surface for what
+  the Studio is *doing* while the window is not in front (see `gui.md` "Window title"), and it
+  is outside every screenshot a user crops to the window content.
+- **Not beside the logo**: duplicate of the status bar, and homeless on the icon rail, which is
+  all of the sidebar most of the time.
 
 ---

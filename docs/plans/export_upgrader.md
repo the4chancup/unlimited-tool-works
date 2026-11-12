@@ -259,8 +259,8 @@ refined with the maintainer before `view/` is written:
 
   A click on a group's row opens or closes it, as its chevron does. A click on an entry's row
   opens the system file browser at that entry (the folder, the file selected where the platform
-  can; for an archive input, the folder the archive sits in, the archive selected), its tooltip
-  saying so, so the fix starts from the list rather than a walk through the folders.
+  can; for an archive input, the folder the archive sits in, the archive selected), and its
+  tooltip says so. The fix then starts from the list rather than a walk through the folders.
 
   For `upgrade-models` the per-folder "where it goes" lines are the log's, as the CLI prints
   them, and the list holds the folders it left out.
@@ -315,10 +315,13 @@ EU-CLI-11  GIVEN two of EU-CLI-01's /co/ exports, a third export of another team
 **Phase 8 scope.** Phase 8 delivers the view ("GUI"). What a scenario observes is what a frame
 draws, through the headless harness (the frame's AccessKit nodes; a dropped path as egui's
 dropped-files input; a click as press and release frames), the output written, and the notice
-published; `manual` marks only what needs a native dialog. The inputs are Phase 6's fixtures,
-copied under the test's own folder; the discovered save is one placed under a Documents folder
-there. What the upgrade writes is the Phase 6 scenarios'; these observe that the view reaches
-the same command with the arguments shown and shows its report.
+published. `manual` marks only what needs a native dialog.
+
+The inputs are Phase 6's fixtures, copied under the test's own folder. The discovered save is
+one placed under a Documents folder there.
+
+What the upgrade writes is the Phase 6 scenarios'. These scenarios observe that the view
+reaches the same command with the arguments shown and shows its report.
 
 ```
 EU-GUI-01  GIVEN the selector at PES 21, an old export folder dropped on the Upgrade-an-export
