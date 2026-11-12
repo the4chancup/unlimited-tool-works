@@ -2123,7 +2123,9 @@ briefs, review loops, gates and mutation runs as for any step.
   "So who are you?" at startup, the roles on a ring with an icon each and a "Don't ask
   again" checkbox in a corner (the lead's points on it: ask on the first start and while
   no role is set rather than at every start, the same choice reachable later from the
-  sidebar or Settings, the ring usable from the keyboard)
+  sidebar or Settings, the ring usable from the keyboard). Settled with the maintainer:
+  the sidebar shows the current role as one compact control, not the six listed, the
+  ring being where a role is chosen
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
