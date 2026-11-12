@@ -25,6 +25,11 @@ pub(super) struct StatusBar {
     notice: Option<Notice>,
     /// egui time of the frame a no-action notice was first drawn.
     notice_shown_at: Option<f64>,
+    /// The window as it was when Reset window was last clicked: whether it was
+    /// maximized, and its size. While the window still reports exactly that, the
+    /// click changed nothing (a window manager can refuse the size asked for), so
+    /// the button is not drawn: it would do nothing again.
+    reset_tried: Option<(bool, Option<egui::Vec2>)>,
 }
 
 impl StatusBar {
@@ -219,7 +224,7 @@ impl StatusBar {
     /// Returns the content's right edge (the middle slot's left bound) and a
     /// clicked condition action's effect, if any.
     fn left_slot(
-        &self,
+        &mut self,
         ui: &mut egui::Ui,
         monitor_of: impl FnOnce(&egui::ViewportInfo, f32) -> Option<egui::Rect>,
     ) -> (f32, Option<ActionEffect>) {
@@ -234,12 +239,18 @@ impl StatusBar {
                         .small()
                         .weak(),
                 );
-                if window_size::off_design_size(
-                    &viewport,
-                    screen_rect,
-                    zoom,
-                    window_size::DEFAULT_SIZE,
-                ) {
+                let window = (
+                    viewport.maximized == Some(true),
+                    screen_rect.map(|rect| (rect.size() * zoom).round()),
+                );
+                if self.reset_tried != Some(window)
+                    && window_size::off_design_size(
+                        &viewport,
+                        screen_rect,
+                        zoom,
+                        window_size::DEFAULT_SIZE,
+                    )
+                {
                     let reset = ui
                         .add(
                             egui::Button::new(egui::RichText::new("Reset window").small().weak())
@@ -248,6 +259,7 @@ impl StatusBar {
                         .on_hover_text("Back to the default window size, centred on its monitor")
                         .on_hover_cursor(egui::CursorIcon::PointingHand);
                     if reset.clicked() {
+                        self.reset_tried = Some(window);
                         window_size::reset(ui.ctx(), &viewport, monitor_of(&viewport, zoom));
                     }
                 }
@@ -618,6 +630,47 @@ mod tests {
         assert!(
             !draws_reset(&mut app, raw_input(Vec::new(), true, None, None)),
             "neither reported"
+        );
+    }
+
+    // A window manager can refuse the size a reset asks for (a dock and a top
+    // bar leave less than the monitor): the window stays as it was, so the
+    // button goes after a click that changed nothing, and comes back once
+    // the window's size changes.
+    // ST-BAR-06
+    #[test]
+    fn the_reset_button_goes_after_a_click_the_window_did_not_follow() {
+        let Shell { mut app, _dir, .. } = shell();
+        let egui_ctx = test_context();
+        let monitor = egui::vec2(1280.0, 800.0);
+        // Held at 1280 x 700 where the fit on this monitor is 1264 x 720.
+        let held = |events: Vec<egui::Event>| {
+            let mut input =
+                placed_input(egui::Pos2::ZERO, egui::vec2(1280.0, 700.0), monitor, false);
+            input.events = events;
+            input
+        };
+        let nodes = run_frame(&egui_ctx, &mut app, held(Vec::new())).nodes;
+        let button = entry(&nodes, "Reset window");
+        run_frame(&egui_ctx, &mut app, held(pointer(button, true)));
+        let out = run_frame(&egui_ctx, &mut app, held(pointer(button, false)));
+        assert!(
+            !place_commands(&out).is_empty(),
+            "premise: the click asked for the fit"
+        );
+
+        let nodes = run_frame(&egui_ctx, &mut app, held(Vec::new())).nodes;
+        assert!(
+            !has_label(&nodes, "Reset window"),
+            "the window stayed as it was: another click would change nothing"
+        );
+        let resized = placed_input(egui::Pos2::ZERO, egui::vec2(1300.0, 700.0), monitor, false);
+        assert!(
+            has_label(
+                &run_frame(&egui_ctx, &mut app, resized).nodes,
+                "Reset window"
+            ),
+            "resized by hand: the button is back"
         );
     }
 

@@ -669,6 +669,11 @@ More rules that keep it worth the row:
   tool's class's design size fitted to the monitor: at that size the click would change
   nothing a member set out to change, so the bar shows the version alone. The window's
   position does not count, as a window moved at its default size is one the member placed.
+  Nor is it drawn where the click could change nothing: at the window's minimum on a
+  monitor too small for it (the fit then asks for less than the window can get), and after
+  a click the window did not follow, until its size next changes (a desktop can give a
+  window less than the fit asks for: on a 1280 × 800 Linux desktop with a dock and a top
+  bar the button stayed and did nothing).
 
   The data location is not shown: it is a choice made once and on purpose, its one failure
   mode already has the `data_dir_read_only` condition, and the About block carries it for the
@@ -1543,7 +1548,8 @@ ST-BAR-06   GIVEN a main tool active, the window at 1280 × 780 on a 1920 × 108
                  480 × 640 active, its window at 480 × 640 and moved, THEN no button;
                  GIVEN an 800 × 600 monitor and the main window at its minimum,
                  960 × 600, THEN no button, and resized to 1100 × 700 the button is
-                 drawn
+                 drawn; GIVEN a click on the button after which the window reports
+                 the size it had THEN no button, until its size changes
 ST-BAR-05   GIVEN a main tool active, the window maximized on a 1920 × 1080 monitor
             WHEN Reset window is clicked
             THEN the window is restored and asked for 1280 × 780, centered on that monitor;

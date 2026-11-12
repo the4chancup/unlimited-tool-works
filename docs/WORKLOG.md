@@ -1732,8 +1732,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `4cc-studio-temp/rc`, never merged or pushed).
       manual: checked 2026-11-12 by the maintainer on Linux, in a virtual machine: the
       update passed. It surfaced two things: the Reset window button did nothing on the
-      machine's small monitor (fixed the same day for a monitor too small for the minimum
-      window, 960 x 600; whether that was the machine's case waits for its resolution),
+      machine's 1280 x 800 monitor, where the fit asks for more than the desktop gives
+      a window (fixed the same day: the button goes after a click the window did not
+      follow, and is not drawn at the minimum a smaller monitor holds the window at;
+      not seen again on that machine yet),
       and the update notice's tooltip, reworded. Its kit,
       `4cc-studio-temp/st-upd-04-linux/` (README, the two bundles built on the VPS by
       `just remote just release <version>` from the same branch with main's fixed release

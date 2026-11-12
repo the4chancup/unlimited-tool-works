@@ -103,9 +103,9 @@ What changed for members, release by release, newest first.
 
 ### Minor fixes
 
-- The status bar's **Reset window** button no longer shows on a screen too small for
-  the default window, once the window is as small as it can get: clicking it there did
-  nothing. The pointer turns into a hand over the button.
+- The status bar's **Reset window** button no longer stays on a small screen where
+  clicking it did nothing: it goes once a click has left the window as it was, and
+  comes back when the window is resized. The pointer turns into a hand over it.
 - **Export upgrader**: the progress line in a terminal counts one upgrade as one export
   (`0/1`, not `0/2`), and counts the files it writes, where only the clock moved.
 - **Export upgrader**: the comments in a kit's `config.toml` give the ranges the game
