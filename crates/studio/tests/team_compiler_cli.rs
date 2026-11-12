@@ -7,6 +7,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+/// The releases list's address every run reads: no connection can be made to port 0, so
+/// the update check a tool command starts fails at once and never reaches GitHub.
+const NO_RELEASES_URL: &str = "http://127.0.0.1:0/";
+
 /// A fresh folder holding a copy of the binary and a `data/settings.toml`, so the portable data
 /// location is found beside the executable and no settings file elsewhere on the machine is read.
 struct Sandbox {
@@ -44,10 +48,12 @@ impl Sandbox {
         self.run_from(&self.root, args)
     }
 
-    /// Runs the copied binary with `current_dir` as the current directory.
+    /// Runs the copied binary with `current_dir` as the current directory, its update check
+    /// pointed at `NO_RELEASES_URL`.
     fn run_from(&self, current_dir: &Path, args: &[&str]) -> Output {
         Command::new(&self.exe)
             .args(args)
+            .env("UTW_RELEASES_URL", NO_RELEASES_URL)
             .current_dir(current_dir)
             .output()
             .unwrap()
@@ -430,6 +436,7 @@ fn a_warning_logged_during_a_command_does_not_hang_it() {
     );
     let mut child = Command::new(&sandbox.exe)
         .args(["team-compiler", "compile", "--no-deploy"])
+        .env("UTW_RELEASES_URL", NO_RELEASES_URL)
         .current_dir(&sandbox.root)
         .stdout(fs::File::create(sandbox.root.join("stdout.txt")).unwrap())
         .stderr(fs::File::create(sandbox.root.join("stderr.txt")).unwrap())

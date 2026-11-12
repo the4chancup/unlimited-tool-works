@@ -436,7 +436,8 @@ impl StudioApp {
                     // Due now: the check runs on its own thread, drained on a
                     // later frame.
                     Some(at) if at <= now => {
-                        let rx = updater::start_check(Arc::clone(&self.update_fetch), egui_ctx);
+                        let rx =
+                            updater::start_check(Arc::clone(&self.update_fetch), Some(egui_ctx));
                         self.update_poll = UpdatePoll::Running(rx);
                     }
                     // Later: wake for the moment it falls due, so an idle
