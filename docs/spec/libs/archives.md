@@ -5,7 +5,7 @@ Part of the [Library crates spec](README.md).
 ## `libs/archives`: reading `.zip` and `.7z` exports
 
 Members submit exports as folders, `.zip` or `.7z`; the Team compiler reads them in place
-(Team compiler plan, "Load": structure eagerly, contents lazily per folder, the export never
+(Team compiler spec, "Load": structure eagerly, contents lazily per folder, the export never
 written to). `archives` is the one place that knows the two containers. It works over any
 `Read + Seek` source so the crate stays `wasm32`-clean, with the disk-path opener behind
 `cfg(not(target_arch = "wasm32"))`:
@@ -32,14 +32,14 @@ pub enum ArchiveError {
 
 `zip` opens each entry's local header at open (the `zip` crate exposes an entry's size and
 encryption flag only through its raw entry view), one seek per entry and no decompression. The
-"central directory only" of the first plan text is not available through that crate's public
+"central directory only" of the first draft is not available through that crate's public
 API, and the cost is one seek per entry against an archive that will be decompressed anyway.
 
 `read` on a zip inflates that one entry (random access, which is what makes per-folder lazy
 loading possible). On a 7z the first `read` decompresses the whole archive into memory and later
 reads are lookups, because 7-Zip's default is one solid LZMA2 block and per-entry extraction of a
 solid archive is quadratic. The Team compiler's memory budget charges a 7z export by the sum of
-its `entries()` sizes for that reason (its plan already says so); dropping the `Archive` releases
+its `entries()` sizes for that reason (its spec already says so); dropping the `Archive` releases
 the buffer.
 
 Names are normalized (`\` to `/`, empty segments collapsed, a leading `/` or `./` stripped, a
@@ -47,7 +47,7 @@ directory entry's trailing `/` too).
 
 Directory entries are listed apart, by `folders()`, not in `entries()`. An empty folder exists in
 an archive only as a directory entry, and an empty kit folder is a placeholder kit (Team compiler
-plan), so dropping them lost a kit. Keeping `entries()` to files only keeps the sum of its sizes
+spec), so dropping them lost a kit. Keeping `entries()` to files only keeps the sum of its sizes
 equal to what a 7z read decompresses, which is what the budget charges.
 
 A folder that also has entries below it may or may not be listed, as the writer chose.
@@ -59,7 +59,7 @@ over an entry that says nothing.
 A name with a `.` or `..` segment or a drive prefix (a first segment `X:...`, whatever follows
 the colon) is `InvalidName` (a zip-slip name has no meaning in a tree that is never written to
 disk, and rejecting it keeps the guarantee visible). Two entries that normalize to one tree path
-(`a/b` and `a\b`, `./a/b`) are `DuplicateName`, the plan-wide rule that collisions are rejected,
+(`a/b` and `a\b`, `./a/b`) are `DuplicateName`, the suite-wide rule that collisions are rejected,
 never silently resolved. Two entries with the *same* raw name in a zip are collapsed by the
 `zip` crate's own name index before this crate sees them (an accepted limitation: no tool in use
 writes such a zip).

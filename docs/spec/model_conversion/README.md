@@ -11,8 +11,7 @@ spec](../model_format.md). Platform context is in the [core spec](../core/README
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|
@@ -83,7 +82,7 @@ Placement rules:
   `resources/skeletons/` are embedded with `include_bytes!` and parsed on first use
   (`std::sync::LazyLock`). The only hand-maintained tables are the render parents and the fold
   table, both names only. Provenance stays with the `.skl` files, never with Python literals.
-  (An earlier version of this plan generated a `data.rs` of Rust literals; that is a 250 KB
+  (An earlier version of this spec generated a `data.rs` of Rust literals; that is a 250 KB
   source file plus a generator plus a drift test, for data the SKL codec already reads
   byte-exactly.)
 - **`materials/` is shared by all three formats** and by the Blender project's glTF codec contract;

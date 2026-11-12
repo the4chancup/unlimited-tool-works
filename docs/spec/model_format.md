@@ -183,7 +183,7 @@ Rules:
 - The pre-Fox `uniform` model type in `face.xml`, which makes the game ignore the material's diffuse
   path and use the active kit texture plus the kit config's pattern normal map. It is a native game
   feature and stays available on pre-Fox targets through the model-name suffix (a model whose
-  name's suffix is `uniform` gets the type; the suffix table in the Aesthetics export plan's "Model
+  name's suffix is `uniform` gets the type; the suffix table in the Aesthetics export spec's "Model
   names"); it has no Fox counterpart and is not part of the cross-engine format.
 - The **kit stand-in** `team_kit` (and `team_kit_back/_chest/_leg/_name/_nrm/_srm`; the
   keeper's `team_gk_kit`, as `u0XXXgN` became `gk_kitN`), a reserved texture name the modded

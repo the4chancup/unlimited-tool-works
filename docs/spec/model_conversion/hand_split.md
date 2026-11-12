@@ -34,7 +34,7 @@ match is the complete identification.
 The games' own `hand_l.skl`/`hand_r.skl` (PES 18, 19, 21) hold 19 `skh_` bones each plus five
 bones shared with the body (`sk_forearm`, `sk_hand`, `dsk_forearm`, `dsk_wrist`,
 `dsk_forearm_t`). The `skf_` prefix belongs to the **face** skeleton (33 bones in `face.skl`); an
-earlier version of this plan named `skf_` here, which would have cut faces off at the jaw.
+earlier version of this spec named `skf_` here, which would have cut faces off at the jaw.
 
 No opt-in is needed: vertices with positive `skh_` weights seed the hand selection. Unused `skh_`
 names in a bone list do not trigger splitting; the check follows actual vertex weights.

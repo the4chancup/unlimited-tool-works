@@ -86,13 +86,13 @@ continuously during a run rather than in whole-export steps.
 - Solid `.7z` archives are the other exception (one-pass decompression forces whole-export
   residency); plain folders and `.zip` support lazy per-folder loading.
 
-Details are in the Team compiler plan's walkthrough.
+Details are in the Team compiler spec's walkthrough.
 
 A task's charge includes source bytes, decoded textures, converted/merged models, and packed
 entries; shared bytes and the bounded conversion cache stay charged while retained. Source size
 alone does not bound peak memory: texture decoding and conversion can expand it substantially.
 The goal is to bound live work independently of the number of teams, not to promise a fixed 2×
-source-size multiplier. Complete accounting is an implementation gate (see the Team compiler plan).
+source-size multiplier. Complete accounting is an implementation gate (see the Team compiler spec).
 
 Admission must remain progress-safe when a task already owns source/archive bytes and needs
 conversion workspace, and when canonical writer order delays later batches. Do not let all workers

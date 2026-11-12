@@ -113,7 +113,7 @@ Rules:
   `plans/libs/format_crates.md`. "As-is" means the entry points (file read/write, vertex and face
   decode/encode), not the codec's internals: `fmdl` keeps its raw container, vertex-attribute
   layout types, string lookup and split limits `pub(crate)` until a consumer names one.
-- Core plan guardrail 4 (PyO3-buildable, dependency denylist) applies to the whole crate; the split
+- Core spec guardrail 4 (PyO3-buildable, dependency denylist) applies to the whole crate; the split
   does not relax it for `ops/`.
 
 ### `uniparam`: a canonical writer, parity with the reference writer
@@ -424,7 +424,7 @@ was measured on all 945 of a PES 2017 install:
   No XML declaration, no BOM, no text content.
 - `<sampler>` attributes always appear in the order `name, path, srgb, minfilter, magfilter,
   mipfilter, uaddr, vaddr, waddr, maxaniso` with trailing ones omitted (four subsets seen).
-  Values: `srgb` 0/1, filters `linear`/`anisotropic` (the plan's material schema also allows
+  Values: `srgb` 0/1, filters `linear`/`anisotropic` (the spec's material schema also allows
   `point`), addresses `clamp`/`wrap`/`repeat`, `maxaniso` 2; paths end in `.dds` and are either
   `./name.dds` or `model/...` from the data root.
 - `<state name value>`: the seven names the material schema validates plus `shadowcaster`,
@@ -528,7 +528,7 @@ in range (cycles are cut, as before).
 
 The pre-Fox counterpart of `fmdl::ops::merge`, native over `Model` and `MaterialSet`, so both
 engines merge through the same kind of code and a same-format operation never round-trips
-through `model_convert`'s IR. (The plan's first answer routed the pre-Fox `ingame_face` merges
+through `model_convert`'s IR. (The first answer routed the pre-Fox `ingame_face` merges
 through an IR-level `merge_ir_parts`; dropped because it made them the one exception to "same
 format skips the IR" for no gain: the `.mtl` merge is a material-name merge either way, and the
 native op is what the Blender bindings can call.) A part is the pair the game loads:
@@ -559,7 +559,7 @@ pub enum MergeError {
   - and by at least `2.0e-4`, up to `0.5`, where the bind pose really differs (the gloves'
     forearm and hand bones, the shadow model, the special hair types' face bones).
 
-  So `1e-4` sits in the gap. Exact comparison, the plan's first answer and `fmdl`'s rule, cannot
+  So `1e-4` sits in the gap. Exact comparison, the first answer and `fmdl`'s rule, cannot
   merge two Konami kit parts.
 
   Each mesh's `bone_group` is remapped to the union; per-vertex bone indices index the group and

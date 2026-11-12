@@ -126,7 +126,7 @@ resolved export source.
 | `cache_clear` | No disk cache: the pipeline is in-memory (each task's files read as owned bytes, `reader/source.rs` `ContentSource`), so there is no equivalent of Red's `patches_contents/` staging folder for the setting to clear |
 | `move_cpks` | Deployment is always attempted; a run that cannot deploy degrades to `output/` by itself, and the deliberate "build but don't install" case is the CLI-only `--no-deploy` flag. See "Why no `move_cpks`" under `pipeline.md` "Post-processing" |
 | `pause_allow` | The `pause()` pattern is gone; errors/warnings are events rendered by the GUI/CLI. Its unattended-run half (`pause_allow = 0`: finish without stopping) needs no key: a CLI run never stops for input, and the bundled `quick_compile.bat` pauses once, after the run, so its report stays on screen |
-| `admin_mode` | Manifest-based UAC / GUI prompt (see core plan) |
+| `admin_mode` | Manifest-based UAC / GUI prompt (see core spec) |
 
 ### CLI
 

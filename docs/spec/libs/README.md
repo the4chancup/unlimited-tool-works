@@ -11,7 +11,7 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
   `aesthetics_export` (shared by the Team compiler, Export upgrader, Kit config editor, Refs
   arranger, and Team creator), specified in the [aesthetics export
   spec](../aesthetics_export/README.md).
-- The two big libs have their own plans: [Model conversion](../model_conversion/README.md)
+- The two big libs have their own specs: [Model conversion](../model_conversion/README.md)
   (`model_convert` + the mesh algorithms in `fmdl`/`pes_model`) and
   [Savefile](../pes_savefile/README.md) (`pes_savefile`).
 - The `pipeline` crate (reader/writer scaffolding, memory budget, folder watcher, check cache,
@@ -35,8 +35,7 @@ Platform context is in the [core spec](../core/README.md).
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|

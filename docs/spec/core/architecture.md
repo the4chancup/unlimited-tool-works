@@ -205,12 +205,12 @@ crates/tools/<tool>/
 The small tools (Kit config editor, Refs arranger, Balls compiler, Export upgrader, Player
 aesthetics editor, Music player, Music export editor) add their logic as flat modules next to these
 (`compile.rs`, `arrange.rs`, …) and need no further prescription. The two flagship tools and the
-Match tracker elaborate below the skeleton; their trees are in their own plans ("Crate layout" in
-the [Team compiler](../team_compiler/README.md), [Save editor](../save_editor.md), and [Match
-tracker](../../plans/match_tracker/README.md) plans).
+Match tracker elaborate below the skeleton; their trees are in their own documents ("Crate layout"
+in the [Team compiler](../team_compiler/README.md) and [Save editor](../save_editor.md) specs and
+the [Match tracker](../../plans/match_tracker/README.md) plan).
 
 Lib crates with a mandated layout are `pes_savefile`, `model_convert`, and `aesthetics_export` (in
-their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
+their specs) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
 [libs](../libs/README.md)); the remaining libs are single-concern and get no prescription.
 
 **Lib crates** (`crates/libs/`): shared functionality with no tool identity.

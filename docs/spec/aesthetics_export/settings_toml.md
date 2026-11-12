@@ -442,7 +442,7 @@ Name-writing rules, in full. **Not writing is the default**; writing is opt-in:
 2. `name = true` → the name is derived from the folder (the name part of a numbered folder name, or
    the whole folder name under `players.txt`) and written.
 3. `name = "..."` → the string is written as-is. This is also the only way to write a name carrying
-   the savefile's **name colour codes** (`\x11c` + 8 hex digits, see the pes_savefile plan's "Name
+   the savefile's **name colour codes** (`\x11c` + 8 hex digits, see the Savefile spec's "Name
    colour codes"). Control characters cannot appear in a folder name, so a derived name (`true`)
    is always plain. Cup organizers colour names freely (not only medal players'), so tools that
    generate `settings.toml` from a savefile (the Export upgrader, the save editor) must emit the

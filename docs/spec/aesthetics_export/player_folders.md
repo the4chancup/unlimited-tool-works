@@ -411,7 +411,7 @@ player-specific folders:
 
 - Multiple boots models are merged into one. On Fox this is `fmdl` mesh merging. On pre-Fox it is
   `pes_model::ops::merge`, the native counterpart with the same rules over the `.model` + `.mtl`
-  pair (see "`pes_model::ops::merge`" in the Libraries plan), the one pre-Fox merge case.
+  pair (see "`pes_model::ops::merge`" in the Library crates spec), the one pre-Fox merge case.
 - Gloves go to `glove_l`/`glove_r` folders on Fox, and to one player-exclusive gloves folder,
   unmerged, on pre-Fox (see "ingame_face marker").
 
@@ -453,7 +453,7 @@ or the material toml, so a `.glb` authored once compiles typed on pre-Fox and me
 **This inverts Red's typing, which matched types as prefixes** (`gloveL_foo.model`). The Studio
 format matches them as suffixes (`foo_gloveL.model`), the same position the Fox allowed names
 already occupied (`kit_boots.fmdl`), so there is one place to look. The Export upgrader swaps them
-(see its plan).
+(see its spec).
 
 "Arbitrary model names are face content" is the last row. It generalizes Red's fcl_hair fallback
 (which renamed a single arbitrary-named face FMDL to `fcl_hair.fmdl`): a model with no recognized
@@ -528,7 +528,7 @@ PES21's file is the template because it has the largest bone set of the Fox vers
 a model may reference has a bind pose. **Once the retargeting pass folds bones the target lacks,
 that superset rationale disappears** and injecting the *target version's* `body.skl` becomes the
 consistent choice (its rest pose is what the game's animations drive). Whether the game behaves
-differently with a same-version skeleton than with PES21's is untested in-game. The plan keeps
+differently with a same-version skeleton than with PES21's is untested in-game. The spec keeps
 PES21 as the injected file until a compile-and-play comparison on PES18/19 settles it (open
 point).
 
@@ -579,7 +579,7 @@ reaches (`DECISIONS.md` 2026-10-09), because:
 - a mismatch fails loudly (`skl_merge_conflict`).
 
 The pre-Fox native merge compares `.model` bone matrices within a measured `1e-4` per component
-(Libraries plan, "`pes_model::ops::merge`"). A skeleton mismatch between merge parts is a hard
+(Library crates spec, "`pes_model::ops::merge`"). A skeleton mismatch between merge parts is a hard
 error (`skl_merge_conflict`) that leaves that package out (`messages.md`).
 
 **Kits** live in a `Kits/` folder with one subfolder per kit (this per-kit granularity also drives

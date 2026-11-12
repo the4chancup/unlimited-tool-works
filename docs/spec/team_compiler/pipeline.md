@@ -61,7 +61,7 @@ export format.
 
    An oversized acquisition (`size > cap`) must wait specifically for `in_flight == 0` and then
    proceed alone; it must not wait for ordinary capacity, which can never satisfy it. (See the
-   core plan's Parallelism section; its semaphore pseudocode must preserve this oversized-request
+   core spec's Parallelism section; its semaphore pseudocode must preserve this oversized-request
    branch.)
 4. **Load**: the export's **structure** is always loaded eagerly (folder tree, file
    names/sizes, roster, link files: what validation and ID assignment need; kilobytes). File
@@ -97,7 +97,7 @@ export format.
    **Intentional deviation from Red** (whose `team_id_get.py` takes the first matching child):
    several usable candidates are ambiguous and reject the export (`nested_root_ambiguous`), and
    a loose root file colliding with a flattened file at the same virtual path rejects it too
-   (`nested_root_conflict`). This is consistent with the plan-wide rule that collisions are
+   (`nested_root_conflict`). This is consistent with the suite-wide rule that collisions are
    rejected, never silently resolved.
 2. **Validation, in two passes**: validation is read-only, and its expensive half, the deep
    pass, runs on the worker pool like compilation ("Deep format pass" below). Every finding is
@@ -270,7 +270,7 @@ export format.
    `ID` and `Name` columns, Name lowercased on load with the Reader's fold (see step 2 above).
    Further columns are ignored: the `MinBootsID`/`MaxBootsID` columns of Red's development-branch
    list are not read, and released Red's list has none (Studio derives the 40-ID block from the
-   team ID, see the export plan's "ID allocation"). Rows whose Name is not slash-wrapped (Red's
+   team ID, see "ID allocation" below). Rows whose Name is not slash-wrapped (Red's
    `Backup 1`, `VGL 55` placeholders) load but can never match. The complete
    `export_display_name` is never used as the lookup key.
 
@@ -283,7 +283,7 @@ export format.
    renders the game's fixed numeric ID 999 only at game-format boundaries. Either identity is
    wrapped in `ResolvedAestheticsExport` before run planning. (Red/Blue: `team_id_get.py`)
 4. **Portrait extraction**: for `ExportIdentity::Team { id, .. }`, a player folder's `portrait.*`
-   (any accepted image; a non-DDS source is encoded as "Portraits" in the export plan says) is
+   (any accepted image; a non-DDS source is encoded as "Portraits" in the export spec says) is
    renamed and staged with the portraits. The name is `player_{id}{NN}.dds` for PES ≤18 and
    `{id}{NN}.dds` for 19+. In Red, `portraits_move.py` stages face-folder portraits under the
    `player_` name and `export_move.py`'s Portraits pass applies the version-specific final
@@ -420,7 +420,7 @@ export format.
      linked texture (a textures task with nothing to emit is not planned: the writer takes an
      empty batch for a failed task's);
    - the converting package points each converted `Basic_CNSR` material with no
-     `EnvironmentMap` sampler at it (the Unified model format plan's `environment` role),
+     `EnvironmentMap` sampler at it (the Unified model format spec's `environment` role),
      without consulting the flag: the converter writes `Basic_CNSR` for the family the pass
      flags with the converter's own rule, so the shader and the flag agree.
 
@@ -727,7 +727,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    Fox/pre-Fox split.
 
    BC7 is supported on PES 19–21 only: PES 15–18 transcode BC7 and encode raster sources to
-   BC3, with BC1 for eligible fully opaque color textures under the library plan's alpha/role
+   BC3, with BC1 for eligible fully opaque color textures under the library spec's alpha/role
    rules. PES 19–21 retain supported BC7 inputs and use BC7 for newly encoded ordinary raster
    textures. Role-specific normal/data handling still applies; already-compatible blocks avoid
    re-encoding.
@@ -2372,10 +2372,10 @@ Resolved decisions:
   files are:
   - refscpk trees;
   - the per-version player skeletons from `resources/skeletons/` (Red's single `body.skl`
-    generalized, see the Model conversion plan's "Skeleton data");
+    generalized, see the Model conversion spec's "Skeleton data");
   - `face_diff.bin`;
   - the template environment cubemap that the material schema's `metal` family falls back to
-    on pre-Fox (see the Unified model format plan's "Textures");
+    on pre-Fox (see the Unified model format spec's "Textures");
   - `kit_mask.dds` and the checkerboard `kit.dds` for placeholder kits;
   - dummy model/MTL;
   - `fcl_hair_sim.fclo`;

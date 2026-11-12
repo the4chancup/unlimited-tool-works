@@ -171,7 +171,7 @@ known code and is left alone.
   team makes, so aesthetics), and every field of the ingame-face run (sliders, colours, hair,
   the eleven feature types; the run is fully decoded, "The ingame-face run" below);
 - the boots/gloves model IDs **within the stock band** (0 to 100; custom IDs are derived by the
-  compiler from the models and links present, see the Aesthetics export plan's "Player
+  compiler from the models and links present, see the Aesthetics export spec's "Player
   settings in exports").
 
 It has one exclusion, **compiler-owned**: the edit flags, the base-copy ID and the appearance id

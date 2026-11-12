@@ -8,7 +8,7 @@
 (Vector4), not the 3×3 rotation matrix. The full bind-pose transform (rotation + translation)
 lives in the companion `.skl` file. `fmdl_to_ir` resolves the bone transforms as follows:
 
-1. If the FMDL has a companion `.skl` (same basename, per the Aesthetics export plan's SKL pairing rule),
+1. If the FMDL has a companion `.skl` (same basename, per the Aesthetics export spec's SKL pairing rule),
    read the full 3×4 transforms from the SKL via the `fmdl` crate's SKL codec.
 2. If no companion SKL exists, use the embedded template skeleton (`body.skl`) for the standard
    bone transforms, supplemented by the FMDL's own position data.
@@ -43,7 +43,7 @@ boots merge, and a shared link combined with local parts under `ingame_face`; se
 export spec](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
 same-format merge never round-trips through the IR.
 
-An earlier version of this plan routed the pre-Fox cases through the IR-level `merge_ir_parts`.
+An earlier version of this spec routed the pre-Fox cases through the IR-level `merge_ir_parts`.
 That was dropped because it made them the one exception to "same format skips the IR" for no
 gain (the `.mtl` merge is a material-name merge either way).
 

@@ -43,10 +43,10 @@ entries as the member wrote them, and its `boots` typing's warning.
 The referee tracer (`tests/fixtures/tracer_refs/`, one referee of a Fox referee export in the
 old `face/`, `boots/`, `gloves/`, `common/` layout, mapped to three slots) has the upgraded case
 alone: the Export upgrader's flattened output compiled against Red's referee CPK for the old
-export (`tests/parity.rs`). The compiler reads no old layout, so the plan's "compiles
-identically to the unflattened original" is this comparison. A referee export takes no coverage
-tag, so the golden compiles under its own name. Its differences from Red are these (the
-fixture's README lists each):
+export (`tests/parity.rs`). The compiler reads no old layout, so the Export upgrader spec's
+"compiles to Red's output for the unflattened original" is this comparison. A referee export
+takes no coverage tag, so the golden compiles under its own name. Its differences from Red are
+these (the fixture's README lists each):
 
 - a referee folder with no face model getting no face (Red packs his `face_diff.bin` alone);
 - the dropped `*.fpk.xml` files;

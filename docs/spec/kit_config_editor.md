@@ -1,6 +1,6 @@
 # Unlimited Tool Works: Kit config editor spec
 
-This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
+This spec specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
 shared by:
 
 - the Kit config editor;
@@ -306,7 +306,7 @@ The format knowledge as a lib crate:
   implementation for the editor's inline hints, the compiler's checks, and the CLI.
 
 Consumers: this tool, `team_compiler` (generation, reconciliation, compile-time
-emission), `export_upgrader` (binary → TOML migration). The Team compiler plan's
+emission), `export_upgrader` (binary → TOML migration). The Team compiler spec's
 kit sections defer to this crate.
 
 ## Testing
@@ -333,10 +333,10 @@ kit sections defer to this crate.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Format knowledge | Recovered by disassembling Kit Manager v4 + diffing its PES2021 patch; documented in this plan | No sources or specs exist anywhere; the plan is now the reference |
+| Format knowledge | Recovered by disassembling Kit Manager v4 + diffing its PES2021 patch; documented in this spec | No sources or specs exist anywhere; the spec is now the reference |
 | Export storage | `config.toml` per kit folder, compiled to binary at compile time | Same philosophy as `settings.toml`: text in exports, binary only as output; editable without the tool |
 | Texture-name fields | Derived from kit-folder textures in export mode; optional raw `[source_texture_names]` preservation only for standalone binary conversion | Removes export desync while retaining bit-identical context-free CLI roundtrips |
 | Unknown bits | Preserved via `[unknown]` table + optional raw view | Real configs have undecoded bits set; silent loss would corrupt them; the raw view aids future decoding |
 | Version handling | Global PES version selector; version-neutral TOML, encode on emission | Matches the suite; the 2021 Name Y and PES15 pattern quirks are encoding details, not user concerns |
-| Format logic placement | `libs/kit_config`, shared with Team compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core plan's lib-crate rule) |
+| Format logic placement | `libs/kit_config`, shared with Team compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core spec's lib-crate rule) |
 | Menu icon storage | Own optional empty `icon_<N>` marker per kit folder (0–23, absent = 3) | Fits neither `colors.txt` (it's not a color) nor `config.toml` (it's UniColor data, not kit-config data) |

@@ -12,8 +12,7 @@ readers, Texport, the aesthetics patch). Shared by the [Save editor](../save_edi
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|
@@ -139,7 +138,7 @@ Placement rules:
   holds the derivation method, so a mismatch found by a roundtrip test can be traced in one hop.
 - Lib dependencies are `fpc` (the FPC system's data) and nothing format-specific; no Blender, egui,
   or tool dependency. This crate is consumed by `aatf`, the Team compiler, the Save editor, the
-  Export upgrader, and the Player aesthetics editor, and must stay `wasm32`-checkable (core plan
+  Export upgrader, and the Player aesthetics editor, and must stay `wasm32`-checkable (core spec
   guardrail 6); discovery's filesystem walk is `cfg`-gated for non-desktop targets.
 
 ---

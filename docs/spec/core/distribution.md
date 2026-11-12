@@ -144,7 +144,7 @@ The following things are *not* data-dir cargo:
 - The `output/` folder (the default `output_folder_path`) likewise lives next to the binary. It is
   Red's `patches_output/`, where users look for a CPK when a deployment could not happen or
   `--no-deploy` was given. It also hosts the run-scoped staging folder (see "Post-processing" in
-  the Team compiler plan).
+  the Team compiler spec).
 
 ### Update state
 

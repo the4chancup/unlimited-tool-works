@@ -86,7 +86,7 @@ implementation is measured against.
 
 ## Crate layout
 
-The Save editor follows the standard tool-crate skeleton (core plan, "Tool crates") and elaborates
+The Save editor follows the standard tool-crate skeleton (core spec, "Tool crates") and elaborates
 below it. The organizing principle: **`pes_savefile` owns every byte and every operation on the
 model; this crate owns the session (the file that is open) and the command line over it.** If a
 function here could be called without an egui context and without a `Session`, it belongs in the
@@ -446,7 +446,7 @@ code, and the files written (a save's decrypted payload, a Team TOML, a CPK's ta
 with the `cpk` crate). The operations with no command (editing, tactics, the FPC toggle, AATF
 quick actions, generation, Texport, the legacy imports) get their scenarios with the view.
 
-`libs/aatf` is a lib: its rulesets' fixtures are its spec (AATF rules plan, "Development phase
+`libs/aatf` is a lib: its rulesets' fixtures are its spec (AATF rules spec, "Development phase
 and verification"), and `check-aatf` is its one scenario surface here.
 
 Test data: the fixture saves are `pes_savefile`'s (`tests/fixtures/`, one real save per

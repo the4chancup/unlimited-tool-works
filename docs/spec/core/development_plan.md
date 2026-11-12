@@ -8,7 +8,7 @@ Phases 1–2 build the platform skeleton and every lib crate that can be verifie
 fixtures or reference outputs); the tools follow, each bringing the consumer-shaped libs it is the
 first to need.
 
-Each phase's detailed specification lives in the corresponding plan document:
+Each phase's detailed specification lives in the corresponding spec or plan document:
 
 - phase 2 in [libs](../libs/README.md)/[model
   conversion](../model_conversion/README.md)/[savefile](../pes_savefile/README.md)
@@ -30,7 +30,8 @@ The post-release phases 17–20 name their plans in their sections.
 
 **Target versions.** The cup moves from PES 17 (pre-Fox) to a Fox version, not yet chosen, around
 April 2027, and plays Fox versions for at least a year after that. Studio's first-class target is
-therefore that Fox version, and PES 15–17 support covers what the plans already give them.
+therefore that Fox version, and PES 15–17 support covers what the spec and the plans already give
+them.
 
 A change to the game's own behavior that Studio's output relies on (gloves on outfield players,
 the referee hook, LiveCPK) is made in **FoxDen** (`Tools_4cc/FoxDen`), the community's runtime
@@ -74,7 +75,7 @@ one that makes them enforceable:
   On Windows the recipes run under PowerShell (`set windows-shell`), the fallback
   `../../CONTRIBUTING.md` named, because Git for Windows' `sh` is not on PATH from a plain
   PowerShell. A planted clippy warning was verified to turn `just gates` red there. The
-  remaining recipes the plan names (`acceptance`, `parity`, `bindings`, `release`) arrive with
+  remaining recipes the spec names (`acceptance`, `parity`, `bindings`, `release`) arrive with
   the phases that give them something to run.
 - CI (`.github/workflows/ci.yml`) runs `just gates` on Ubuntu and Windows and `just deps-check`
   on Ubuntu, installing `just` and `cargo-deny` as prebuilt binaries; the `python_bindings` build
@@ -88,13 +89,13 @@ The non-GUI parts of `studio_core` exist as the closed module tree above prescri
   interface", `ToolContext`, and the `ShellRequest` enum the context queues for the shell
   (`SwitchTool`, `Notify`, `SettingsChanged`).
 - `events.rs`: the `architecture.md` "Event system" types, with `Message` and
-  `MessageCode { tool_id, code }` as the Team compiler plan's "Message structure" defines them.
+  `MessageCode { tool_id, code }` as the Team compiler spec's "Message structure" defines them.
 - `status.rs`: `ShellCondition`, `ToolActivity`, `Notice` with at most one typed `NoticeAction`.
 - `help/mod.rs`: the `HelpSection`, `HelpTopic`, `HelpTarget` types only; search, rendering and
   export come with the GUI.
 - `settings/`: `Settings::load` / `parse` / `save` / `merge_defaults`, the `[common]` +
   per-tool-table layout under `gui.md` "Settings menu", `CommonSettings` with the defaults the
-  Team compiler plan lists and the update-state keys. Saving is atomic through a `.tmp` rename,
+  Team compiler spec lists and the update-state keys. Saving is atomic through a `.tmp` rename,
   and the caller decides what a failed save means.
 - `shell/launch.rs`: the three launch modes, `-v` verbosity, one clap subcommand per registered
   tool named after its id, duplicate or reserved ids rejected at registration, and `run_cli`
@@ -240,7 +241,7 @@ Build rules:
 - The wheel version is the crate's own (`distribution.md` "One exception").
 
 **Verification (done):** per crate, per [libs](../libs/README.md) "Testing" and each crate's own
-plan:
+spec:
 
 - format round-trips on real fixtures (byte-identical on the layout the game's own files use);
 - `color_tools` on synthetic textures painted into its region constants and on the coloured kit
@@ -263,12 +264,12 @@ tests in 41 test runs, none failed or ignored; `just bindings` green.
 The Team compiler checks and compiles the tracer bullet's content end to end, from the command
 line and from a minimal window.
 
-What `compile` accepted at the phase's close is the Team compiler plan's "Phase 3 scope" (in its
+What `compile` accepted at the phase's close is the Team compiler spec's "Phase 3 scope" (in its
 "Acceptance"; Phase 4 withdrew the gate that refused the rest with `content_not_yet_compiled`).
 The behavior contract is that section's TC scenarios, every automated one cited by a test. Its
 entry gates (normal-team/referee `ExportIdentity`, the sanitized validated-versus-eligible
 projection, roster-entry scope and disposition semantics) are in the [Aesthetics
-export](../aesthetics_export/object_model.md) plan's "Validation semantics".
+export](../aesthetics_export/object_model.md) spec's "Validation semantics".
 
 - **Tracer bullet first.** Before the skeleton, the smallest real export was compiled end to
   end: /egg/'s one player folder (a Fox face) and one kit, read from disk and written as a CPK
@@ -277,7 +278,7 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
   Its test, `team_compiler/tests/parity.rs`, compares the result against Red's output for the
   same source export by the parity tiers that apply to it (tier 1 for textures, tier 2 for the
   FMDL through `fmdl`'s decoded model, tier 3 for the containers; "Testing: parity against Red"
-  in the Team compiler plan), and now runs through `compile`; Phase 4 grew it.
+  in the Team compiler spec), and now runs through `compile`; Phase 4 grew it.
 
   The fixture (`tests/fixtures/tracer/`) is a small old-layout export migrated to the Studio
   layout by hand, since the Export upgrader (Phase 6) does not exist yet; that same pair later
@@ -299,7 +300,7 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
   and `process_task` stay in `team_compiler`.
 - The pipeline orchestration (reader, coordinator, writer) on `rayon`, over `libs/pipeline`'s
   memory budget, thread count and `CpkStem`; the run driver's shapes are the Team compiler
-  plan's "Run driver shapes" (`pipeline.md`).
+  spec's "Run driver shapes" (`pipeline.md`).
 - CLI execution with console output (`UTW team-compiler compile ...`), one line per
   finding (`spec/core/architecture.md` "Event system").
 - **Shell slice, last.** The thinnest GUI path that runs:
@@ -350,7 +351,7 @@ Cross-format model conversion goes through Phase 2's `model_convert`; savefile w
 
 The work is organized by the Team compiler's stages, each specified in "Crate layout" and the
 "Per-export pipeline walkthrough" of the [Team compiler spec](../team_compiler/pipeline.md).
-What `compile` builds and refuses is that plan's "Phase 4 scope" (in its "Acceptance"), whose TC
+What `compile` builds and refuses is that spec's "Phase 4 scope" (in its "Acceptance"), whose TC
 scenarios are the behavior contract, every automated one cited by a test. Red module names in
 parentheses locate reference *behavior*; they prescribe nothing about the Rust code.
 
@@ -361,7 +362,7 @@ gates.
 
 - **Deep validation**: the compiler's `deep/` pass: content-level rules on top of
   `aesthetics_export`'s structural ones (that crate reads no file content: the Aesthetics export
-  plan's "Content findings"), and the `fmdl`/`pes_model` `check.rs` findings, all mapped through
+  spec's "Content findings"), and the `fmdl`/`pes_model` `check.rs` findings, all mapped through
   the Team compiler's message catalog (`export_check`, `xml_check`, `texture_check`). `check`
   and `compile` run the same pass. Live-grid scheduling in `check/` waits for Phase 8.
 - **`plan/`**: `BuildManifest` from a `ResolvedAestheticsExport`, `PlannedModelIds` (40-ID team
@@ -391,7 +392,7 @@ gates.
     `colors.txt` (Team Note entry format) or derived from the kit texture via
     `libs/color_tools` when absent;
   - portraits, logos, collars and Common (`portraits_move`, `name_editing`);
-  - referee processing per the Team compiler plan's "Referee export processing" with Red's
+  - referee processing per the Team compiler spec's "Referee export processing" with Red's
     observable output as the reference (`referee_tools`, referee code in
     `fmdl_editing`/`export_move`);
   - `materialize.rs` as the single output-mode seam: relocation to game paths and Fox FPK
@@ -417,7 +418,7 @@ gates.
   and multi-CPK; access-denied output paths fail cleanly via `libs/elevation` (the GUI's
   elevated-relaunch prompt is Phase 8). `output/savefile.rs` is Phase 5.
 - `dummy_kit_replace` is not ported: `dummy_kit*` stems are reserved game-substituted names, see
-  the Unified model format plan's "Kit-dependent assets".
+  the Unified model format spec's "Kit-dependent assets".
 
 **Verification (done):**
 
@@ -453,7 +454,7 @@ integration and Phase 6's Export upgrader.
   The table rows and the pre-Fox deferral of this paragraph went at step 8.36c: the full-look
   patch carries the resolved settings, the boots and gloves IDs (commit-conditioned, as the
   deferred design asked) and the names on every engine. The allocation scheme is fixed (40-ID
-  per-team blocks, see the Team compiler plan).
+  per-team blocks, see the Team compiler spec).
 - `libs/aatf`: the ruleset schema and its load-time validation, the generic Rhai interpreter, the
   host and `apply_tier`, logic identity, and the Autumn 26, Autumn 25, Spring 26, VGL25, VGL26,
   VGL27, VTL10 and VTL11 rulesets as data with their fixtures ([AATF rules](../aatf_rules.md),

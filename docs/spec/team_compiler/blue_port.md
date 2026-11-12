@@ -22,7 +22,7 @@ with shared models in named shared folders + link files.
 The per-referee subfolders of the AET layout are not read by the compiler. A referee folder
 holding one is refused with `player_layout_proto`, naming the Export upgrader, which flattens
 them into the Studio layout (see "Subfolders" in
-[`player_folders.md`](../aesthetics_export/player_folders.md), and the upgrader plan's item 12).
+[`player_folders.md`](../aesthetics_export/player_folders.md), and the upgrader spec's item 12).
 `refs.txt` is accepted as a legacy alias of `players.txt` (see "Player numbering"), and the
 upgrader renames it too. The flat layout lists a referee's contents more explicitly, and the
 compiler reading the AET layout would be a second dialect to author in.

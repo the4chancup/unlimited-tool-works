@@ -110,7 +110,7 @@ pub struct VersionSkeletons {
 pub fn skeletons(version: PesVersion) -> &'static VersionSkeletons;   // PES20 = PES21
 ```
 
-The plan's first draft had `phf::Map`s of `&'static` data generated into a source file. A sorted
+The first draft had `phf::Map`s of `&'static` data generated into a source file. A sorted
 `Vec` with a binary search over at most 175 names is as fast as matters and needs neither a
 generator nor a dependency.
 
@@ -137,7 +137,7 @@ Where each version keeps its player skeletons in the game data:
 | PES19 | `dt00_x64.cpk` | same | same |
 | PES21 | `dt00_x64.cpk` | same | same |
 
-PES20 is not installed here and was used in one 4cc event only (core plan, "Project context");
+PES20 is not installed here and was used in one 4cc event only (core spec, "Project context");
 **PES20 is assumed to equal PES21** until its files are checked.
 
 Pre-Fox ships no hand or face SKL (its remaining `.skl` files are cutscene mobs/props and 2D
@@ -277,7 +277,7 @@ importers put it there); the pass rewrites the bones and vertices in place:
    weight the Fox format would round to zero moves the drawn vertex by nothing visible on either
    engine.
 
-   The games' own files show why the per-bone comparison the plan first described is wrong
+   The games' own files show why the per-bone comparison first described is wrong
    (measured at 4.17g1 on the stock PES 2017 and PES 2021 files and the pre-Fox parity tracer):
    - Konami's boots sit on a **boots pose** 7° off the body table on every version, both feet in
      one mesh with opposite per-leg deltas;
@@ -324,7 +324,7 @@ compiles of models whose blended bones moved together, never enter the pass.
 What it does add for a **same-format** cross-version compile (a PES21-authored FMDL for PES18) is
 the IR round-trip it needs to run at all, which is why it is listed with hand auto-split as an
 explicit exception to the "same format skips the IR" rule. That round-trip is the lossless one
-the plan already tests, and it costs a few milliseconds of parse/serialize.
+the spec already tests, and it costs a few milliseconds of parse/serialize.
 
 ### SKL binary format
 
@@ -366,8 +366,8 @@ Fox-engine binary formats consumed together at pack time).
 
 For Fox-native `.fmdl` inputs staying native, the companion `.skl` can travel as opaque
 pass-through bytes. Native→IR conversion and Blender import also decode it for skeleton
-reconstruction; the SKL codec is not limited to glTF-authored inputs. The [Aesthetics export plan's "SKL pairing"
-section](../aesthetics_export/README.md) describes how paired SKLs travel with their models through links and
+reconstruction; the SKL codec is not limited to glTF-authored inputs. The [Aesthetics export spec's "SKL pairing"
+section](../aesthetics_export/player_folders.md) describes how paired SKLs travel with their models through links and
 merges regardless of source format.
 
 ### GPU offloading
@@ -380,6 +380,6 @@ merges regardless of source format.
 Keep model geometry conversion on the CPU and benchmark the port rather than promising specific
 latencies. Texture encoding is a separate workload: the [library crates spec](../libs/README.md) includes
 first-release desktop GPU BC7 for PNG-heavy PES 19–21 builds, with CPU fallback. That texture-only
-exception does not change this plan's CPU geometry processing or deterministic model output.
+exception does not change this spec's CPU geometry processing or deterministic model output.
 
 ---

@@ -69,7 +69,7 @@ starts.
 
 ### Validation semantics
 
-These settle the Team compiler plan's pre-Phase-3 gates (identity boundary, sanitized versus
+These settle the Team compiler spec's pre-Phase-3 gates (identity boundary, sanitized versus
 eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 
 - **Identity boundary.** The export kind follows from the canonical `team_name`: `/refs/` is a

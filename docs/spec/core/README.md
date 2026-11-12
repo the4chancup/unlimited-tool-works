@@ -1,14 +1,13 @@
 # Unlimited Tool Works: Core spec
 
-This is the core architectural plan for Unlimited Tool Works: the goals, the platform (crate
+This is the core architectural spec for Unlimited Tool Works: the goals, the platform (crate
 structure, tool plugin system, GUI shell, parallelism), and the cross-cutting
 decisions. The tools and the major library crates have their own documents, listed in the
 [index](../README.md).
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|
@@ -31,13 +30,13 @@ tightly integrated main tools. The second, the Save editor, is built in part
 Model format conversion (pre-Fox ↔ Fox) is **not** offered as a standalone tool: it is integrated
 into the Team compiler, which converts models to the target PES version's format at compile time.
 
-The plan documents form a standalone architectural plan derived from a feasibility analysis of the
+The spec documents form a standalone architectural spec derived from a feasibility analysis of the
 existing codebases.
 
 **Relationship to legacy tools:** Unlimited Tool Works is an independent reimplementation of their
 useful ideas and required observable results, not a translation of their source. Its
 implementation, internal data layout, module organization, and UI are designed anew around this
-plan. Legacy file and function names identify behavioral/format evidence, not code or application
+spec. Legacy file and function names identify behavioral/format evidence, not code or application
 structure to copy.
 
 Required PES binary formats and game-facing output conventions remain compatible: a new internal
@@ -226,4 +225,4 @@ pattern and the schema-driven save codec collapsing 4ccEditor's six per-version 
 | Team interchange | New full-fidelity Team TOML; `.4ccs`/`.4cct` read-only; Texport read+write | Text format editable without the Studio; player settings tables shared with settings.toml; Texport is PES's own format so both directions matter |
 | Player folders | The primary export unit | Face+boots+gloves in one folder; primary motivation for the project |
 | Auto-generated toml comments | App-injected (predefined per-field documentation), preserved by `toml_edit` | Users never write comments from scratch; the comments are the simplified documentation, present in every auto-generated `settings.toml`/`config.toml`/`materials.toml` |
-| Kit configs | `config.toml` in exports, game binary emitted at compile time; `libs/kit_config` shared by compiler/upgrader/editor | Format recovered by disassembling the abandoned closed-source Kit Manager (documented in the Kit config editor plan); text in exports matches the settings.toml philosophy |
+| Kit configs | `config.toml` in exports, game binary emitted at compile time; `libs/kit_config` shared by compiler/upgrader/editor | Format recovered by disassembling the abandoned closed-source Kit Manager (documented in the Kit config editor spec); text in exports matches the settings.toml philosophy |
