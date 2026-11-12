@@ -1852,7 +1852,12 @@ briefs, review loops, gates and mutation runs as for any step.
       clippy, fmt): three painter calls in `player_row`, the SE-GUI-75 test reading the
       line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
       of the line outside a row flush with the view's edge. Look: Pending looks
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/line/swe_line.md`)
+    - [ ] its SWE-2 review: "S-line r1" 2026-11-13, 5 of 7 accepted (`.tmp/duck_rulings.md`):
+      the next row's fill covered the line's lower half (a team row under ALL, a selected
+      row), and a pointer on the edge two rows share drew two lines; the mark is painted
+      once after the rows; SE-GUI-75 loses its empty slot's row (there is none) and gains
+      both clauses. Rework running (SWE-2, its session resumed, `.tmp/0_0_2/line/rework1.md`),
+      then round 2
   - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
     move to egui 0.37 rounded everything more, most were put back by hand and menus and
     dialogs kept slipping through; "a root solution", and the suite's own painted corners
