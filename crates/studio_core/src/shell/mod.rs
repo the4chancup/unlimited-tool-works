@@ -14,19 +14,15 @@ mod sidebar;
 mod status_bar;
 mod taskbar;
 #[cfg(test)]
-mod test_harness;
+pub(crate) mod test_harness;
 mod title;
 #[cfg(not(target_arch = "wasm32"))]
 mod update_dialog;
 mod window_size;
 
-#[cfg(not(target_arch = "wasm32"))]
-use std::io;
-#[cfg(not(target_arch = "wasm32"))]
-use std::path::Path;
 use std::path::PathBuf;
 #[cfg(not(target_arch = "wasm32"))]
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
 
@@ -191,11 +187,15 @@ pub struct StudioApp {
     /// test replaces it with a fixed list, since a test's frame has no window.
     #[cfg(not(target_arch = "wasm32"))]
     monitors: fn(&eframe::Frame) -> Vec<window_size::Monitor>,
-    /// The program's version the first frame compares with `last_run_version` and then
-    /// stores there: the build's own in the window, a test's in the tests. `None` once
-    /// the first frame has recorded it.
+    /// The program's version: the build's own in the window, a test's in the tests, so
+    /// a test's outcome does not change when the workspace's version does. The first
+    /// frame compares it with `last_run_version` and stores it there; the update check
+    /// offers only a release newer than it.
     #[cfg(not(target_arch = "wasm32"))]
-    start_version: Option<&'static str>,
+    version: &'static str,
+    /// Whether the first frame has recorded `version` in `last_run_version`.
+    #[cfg(not(target_arch = "wasm32"))]
+    version_recorded: bool,
     /// The first-run data-location dialog's state.
     first_run: FirstRun,
     /// The update check's fetch: `updater::fetch_releases` in the window, a fixture
@@ -226,20 +226,12 @@ pub struct StudioApp {
     /// runs, and the notes' cache.
     #[cfg(not(target_arch = "wasm32"))]
     update_dialog: update_dialog::UpdateDialog,
-    /// Set by `Update ready`'s Restart now, cleared by a close a tool holds:
-    /// while set, the window's close starts the new program.
+    /// The program to start once the window has closed: set by `Update ready`'s
+    /// Restart now, cleared by a close a tool holds. Shared with `run_gui`, which
+    /// hands it back once the window and this app are gone.
     #[cfg(not(target_arch = "wasm32"))]
-    update_restart: bool,
-    /// Starts the program at the given path without waiting for it: a real
-    /// process in the window, a recorder in the tests.
-    #[cfg(not(target_arch = "wasm32"))]
-    update_start: Box<StartProgram>,
+    update_restart: Arc<Mutex<Option<PathBuf>>>,
 }
-
-/// What Restart now calls once the window has closed: start the program at a
-/// path, not waiting for it.
-#[cfg(not(target_arch = "wasm32"))]
-type StartProgram = dyn Fn(&Path) -> io::Result<()>;
 
 /// Where the update check stands (native only; the browser build checks
 /// nothing): one check at a time, off the UI thread, and again once the
@@ -308,7 +300,9 @@ impl StudioApp {
             #[cfg(not(target_arch = "wasm32"))]
             monitors: window_size::monitors,
             #[cfg(not(target_arch = "wasm32"))]
-            start_version: Some(env!("CARGO_PKG_VERSION")),
+            version: env!("CARGO_PKG_VERSION"),
+            #[cfg(not(target_arch = "wasm32"))]
+            version_recorded: false,
             first_run: FirstRun::new(config_dir),
             #[cfg(not(target_arch = "wasm32"))]
             update_fetch: Arc::new(updater::fetch_releases),
@@ -323,10 +317,7 @@ impl StudioApp {
             #[cfg(not(target_arch = "wasm32"))]
             update_dialog: update_dialog::UpdateDialog::default(),
             #[cfg(not(target_arch = "wasm32"))]
-            update_restart: false,
-            // The child is not waited for: it outlives the window that starts it.
-            #[cfg(not(target_arch = "wasm32"))]
-            update_start: Box::new(|path| std::process::Command::new(path).spawn().map(drop)),
+            update_restart: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -468,9 +459,9 @@ impl StudioApp {
                     self.ctx.settings().lock().unwrap().common.last_update_check =
                         Some(updater::now_secs());
                     self.save_settings();
-                    let own = semver::Version::parse(env!("CARGO_PKG_VERSION")).expect(
-                        "CARGO_PKG_VERSION is a semver triple; the workspace cannot \
-                         build without one",
+                    let own = semver::Version::parse(self.version).expect(
+                        "the program's version is a semver triple: the build's own, which \
+                         the workspace cannot build without, or a test's",
                     );
                     let skipped = self.ctx.common().skipped_version;
                     if let Some(release) =
@@ -526,13 +517,14 @@ impl StudioApp {
     #[cfg(target_arch = "wasm32")]
     fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
 
-    /// The first frame's record of the program's version `own`: the `Updated to`
-    /// notice when the version whose window last started is older, then `own` stored
-    /// in `last_run_version` and saved as every settings change is, whatever the
+    /// The first frame's record of the program's `version`: the `Updated to` notice
+    /// when the version whose window last started is older, then `version` stored in
+    /// `last_run_version` and saved as every settings change is, whatever the
     /// comparison found, so the notice shows on one start only. The command line never
     /// comes here: it reads and writes no `last_run_version`.
     #[cfg(not(target_arch = "wasm32"))]
-    fn record_version(&mut self, own: &str) {
+    fn record_version(&mut self) {
+        let own = self.version;
         let last_run = self
             .ctx
             .settings()
@@ -554,7 +546,7 @@ impl StudioApp {
     /// this version stores the version as `skipped_version`, drops the offer
     /// and the release and saves as every settings change does; Restart now
     /// arms the restart and asks the window to close as its close button does
-    /// (`on_exit` starts the new program); the others only close it.
+    /// (`run_gui` hands the new program back); the others only close it.
     #[cfg(not(target_arch = "wasm32"))]
     fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
         let Some(release) = self.update_release.as_ref() else {
@@ -575,6 +567,7 @@ impl StudioApp {
         let answer = self.update_dialog.show(
             egui_ctx,
             release,
+            self.version,
             &self.ctx.paths().exe_dir,
             self.update_program,
             &self.update_open_url,
@@ -588,8 +581,11 @@ impl StudioApp {
                 self.update_release = None;
                 self.save_settings();
             }
+            // The path is the bundle's own, never this program's: on Linux the
+            // running program has moved into `old/` by now.
             Some(update_dialog::UpdateAnswer::RestartNow) => {
-                self.update_restart = true;
+                *self.update_restart.lock().unwrap() =
+                    Some(updater::program_path(&self.ctx.paths().exe_dir));
                 self.ctx.request(ShellRequest::Close);
             }
             Some(update_dialog::UpdateAnswer::RemindLater | update_dialog::UpdateAnswer::Later)
@@ -805,8 +801,9 @@ impl eframe::App for StudioApp {
             .poll_running_pes(egui_ctx, &self.tools, &self.ctx);
         // Queued before the requests drain, so the notice and the save apply in this frame.
         #[cfg(not(target_arch = "wasm32"))]
-        if let Some(own) = self.start_version.take() {
-            self.record_version(own);
+        if !self.version_recorded {
+            self.version_recorded = true;
+            self.record_version();
         }
         self.poll_update(egui_ctx);
         // Asked before the requests drain, so a notice published this frame replaces the
@@ -843,7 +840,7 @@ impl eframe::App for StudioApp {
             // prompt, and a later close is an ordinary one.
             #[cfg(not(target_arch = "wasm32"))]
             {
-                self.update_restart = false;
+                *self.update_restart.lock().unwrap() = None;
             }
         }
         let focused = egui_ctx.input(|input| input.focused);
@@ -948,12 +945,9 @@ impl eframe::App for StudioApp {
 
     /// The window's last normal place, and whether it was maximized, go into `window_main` as
     /// the window closes. eframe calls this once, on every exit path. A running update
-    /// install is cancelled first and waited for, so its swap is never cut midway. After
-    /// Restart now, the new program in the program's folder is started last, once the
-    /// settings are saved, so it reads them as this window leaves them.
+    /// install is cancelled first and waited for, so its swap is never cut midway. It
+    /// starts no program: after Restart now, `run_gui` hands the new one back.
     fn on_exit(&mut self) {
-        #[cfg(not(target_arch = "wasm32"))]
-        let restart = std::mem::take(&mut self.update_restart);
         #[cfg(not(target_arch = "wasm32"))]
         self.update_dialog.stop_install();
         if let Some(place) = self.window_place {
@@ -963,26 +957,18 @@ impl eframe::App for StudioApp {
             });
             self.save_settings();
         }
-        // The path is the bundle's own, never this program's: on Linux the running
-        // program has moved into `old/` by now.
-        #[cfg(not(target_arch = "wasm32"))]
-        if restart {
-            let program = updater::program_path(&self.ctx.paths().exe_dir);
-            if let Err(error) = (self.update_start)(&program) {
-                warn!(
-                    "the new program {} could not be started: {error}",
-                    program.display()
-                );
-            }
-        }
     }
 }
 
 /// Opens the window titled `APP_NAME` on `app` and runs it until it closes; an error is a
-/// window or graphics context that could not be set up.
+/// window or graphics context that could not be set up. Returns the program Restart now
+/// asked to start, `None` when it was not asked. The caller starts it once it has
+/// released its instance lock and ended its log's session: started earlier, the new
+/// program would find the lock held and open as a second copy of the program.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn run_gui(mut app: StudioApp) -> anyhow::Result<()> {
+pub fn run_gui(mut app: StudioApp) -> anyhow::Result<Option<PathBuf>> {
     let options = app.opening();
+    let restart = Arc::clone(&app.update_restart);
     eframe::run_native(
         APP_NAME,
         options,
@@ -1000,7 +986,8 @@ pub fn run_gui(mut app: StudioApp) -> anyhow::Result<()> {
             Ok(Box::new(app))
         }),
     )
-    .map_err(|error| anyhow::anyhow!("cannot open the window ({error})"))
+    .map_err(|error| anyhow::anyhow!("cannot open the window ({error})"))?;
+    Ok(restart.lock().unwrap().take())
 }
 
 #[cfg(test)]
@@ -1446,6 +1433,7 @@ mod tests {
         let (gate_tx, gate_rx) = unbounded::<()>();
         let Shell { mut app, ctx, .. } =
             shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
+        app.version = "0.0.1";
         // The fake fetch waits for the gate, so the worker is still fetching
         // when the first frame ends: a fetch on the UI thread would sit the
         // whole timeout out inside `frame` and come back a failed check the
@@ -1778,6 +1766,7 @@ mod tests {
             Some(dir.path().to_path_buf()),
             vec![calls_a],
         );
+        app.version = "0.0.1";
         app.update_fetch = std::sync::Arc::new(move || {
             if count.fetch_add(1, std::sync::atomic::Ordering::SeqCst) == 0 {
                 Ok(crate::updater::RELEASES_FIXTURE.to_owned())
@@ -1848,7 +1837,7 @@ mod tests {
             Some(dir.path().to_path_buf()),
             vec![calls_a],
         );
-        app.start_version = Some("0.0.2");
+        app.version = "0.0.2";
         let egui_ctx = test_context();
         let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
         (app, egui_ctx, nodes)

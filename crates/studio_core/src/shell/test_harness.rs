@@ -384,16 +384,13 @@ pub(super) fn shell_in(
         // check replace `update_fetch`, and the rest get an empty releases
         // list, which `test_settings` never asks for anyway (its
         // `check_for_updates` is off). The download answers 404 unless a
-        // test serves its own, and Restart now starts no program unless a
-        // test records the start.
+        // test serves its own.
         app.update_fetch = std::sync::Arc::new(|| Ok("[]".to_owned()));
         app.update_open_url = std::sync::Arc::new(
             |_: &str| -> Result<Box<dyn std::io::Read + Send>, ureq::Error> {
                 Err(ureq::Error::StatusCode(404))
             },
         );
-        app.update_start =
-            Box::new(|_: &Path| Err(std::io::Error::other("a test starts no program")));
     }
     Shell {
         app,
@@ -456,11 +453,11 @@ pub(super) fn test_dir(name: &str) -> PathBuf {
 /// that panics still leaves the temp folder clean. For the tests that want a real
 /// data directory: a `None` `data_dir` opens the first-run dialog (ST-RUN-01) and a
 /// missing folder raises `data_dir_read_only` at the first save.
-pub(super) struct TestDir(PathBuf);
+pub(crate) struct TestDir(PathBuf);
 
 impl TestDir {
     /// Creates `<temp>/<name>_<pid>_<n>`: unique in this process run.
-    pub(super) fn new(name: &str) -> TestDir {
+    pub(crate) fn new(name: &str) -> TestDir {
         static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
         let dir = test_dir(&format!(
             "{name}_{}",
@@ -471,7 +468,7 @@ impl TestDir {
     }
 
     /// The folder's path.
-    pub(super) fn path(&self) -> &Path {
+    pub(crate) fn path(&self) -> &Path {
         &self.0
     }
 }

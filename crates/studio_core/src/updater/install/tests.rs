@@ -43,14 +43,15 @@ fn counted(open_url: Box<OpenUrl>) -> (Box<OpenUrl>, Arc<AtomicUsize>) {
 #[test]
 fn an_update_puts_the_new_bundle_in_place_and_keeps_data() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("happy_{label}"), &old_files());
+        let dir = folder_with(&format!("happy_{label}"), &old_files());
+        let bundle = dir.path();
         let (release, open_url) = bundle_release(kind, None);
         let mut reports = Vec::new();
         install_kind(
             kind,
             &release,
-            &bundle,
-            ProgramStamp::of(&bundle),
+            bundle,
+            ProgramStamp::of(bundle),
             &open_url,
             |progress| reports.push(progress),
             &AtomicBool::new(false),
@@ -97,11 +98,10 @@ fn an_update_puts_the_new_bundle_in_place_and_keeps_data() {
         .map(|(path, text)| (path, text.map(str::to_owned)))
         .collect();
         assert_eq!(
-            snapshot(&bundle),
+            snapshot(bundle),
             expected,
             "{label}: the temp folder gone too"
         );
-        fs::remove_dir_all(bundle).unwrap();
     }
 }
 
@@ -110,9 +110,10 @@ fn an_older_program_in_old_is_replaced_by_the_running_one() {
     for (kind, label) in KINDS {
         let mut files = old_files();
         files.push((format!("old/{}", exe_file_name()), "older program"));
-        let bundle = folder_with(&format!("older_{label}"), &files);
+        let dir = folder_with(&format!("older_{label}"), &files);
+        let bundle = dir.path();
         let (release, open_url) = bundle_release(kind, None);
-        install_now(kind, &release, &bundle, &open_url)
+        install_now(kind, &release, bundle, &open_url)
             .unwrap_or_else(|error| panic!("{label}: {error}"));
         assert_eq!(
             fs::read_to_string(bundle.join("old").join(exe_file_name())).unwrap(),
@@ -120,31 +121,31 @@ fn an_older_program_in_old_is_replaced_by_the_running_one() {
             "{label}"
         );
         assert!(!bundle.join(TEMP_FOLDER).exists(), "{label}");
-        fs::remove_dir_all(bundle).unwrap();
     }
 }
 
 #[test]
 fn a_checksum_that_does_not_match_changes_nothing() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("mismatch_{label}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("mismatch_{label}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let (release, open_url) = bundle_release(kind, Some(to_hex(&[0x11; 32])));
-        let outcome = install_now(kind, &release, &bundle, &open_url);
+        let outcome = install_now(kind, &release, bundle, &open_url);
         assert!(
             matches!(&outcome, Err(InstallError::ChecksumMismatch(name)) if *name == archive_name(kind)),
             "{label}: {outcome:?}"
         );
-        assert_eq!(snapshot(&bundle), before, "{label}");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{label}");
     }
 }
 
 #[test]
 fn checksums_without_the_archives_line_change_nothing() {
     let kind = ArchiveKind::SevenZ;
-    let bundle = folder_with("no_line", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("no_line", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let archive = pack(kind, &new_files());
     let only_linux = format!(
         "{}  {}\n",
@@ -155,28 +156,28 @@ fn checksums_without_the_archives_line_change_nothing() {
         (archive_name(kind), archive),
         (CHECKSUMS_ASSET.to_owned(), only_linux.into_bytes()),
     ]);
-    let outcome = install_now(kind, &release, &bundle, &open_url);
+    let outcome = install_now(kind, &release, bundle, &open_url);
     assert!(
         matches!(&outcome, Err(InstallError::NoChecksumLine(name)) if *name == archive_name(kind)),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before);
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before);
 }
 
 #[test]
 fn a_download_cancelled_midway_changes_nothing() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("cancel_{label}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("cancel_{label}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let (release, open_url) = bundle_release(kind, None);
         let cancel = AtomicBool::new(false);
         let mut reports = Vec::new();
         let outcome = install_kind(
             kind,
             &release,
-            &bundle,
-            ProgramStamp::of(&bundle),
+            bundle,
+            ProgramStamp::of(bundle),
             &open_url,
             |progress| {
                 reports.push(progress);
@@ -192,8 +193,7 @@ fn a_download_cancelled_midway_changes_nothing() {
             panic!("{label}: one read before the cancel, got {reports:?}");
         };
         assert!(report.done < report.total, "{label}: cancelled midway");
-        assert_eq!(snapshot(&bundle), before, "{label}");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{label}");
     }
 }
 
@@ -216,18 +216,19 @@ fn a_swap_failing_midway_puts_every_file_back() {
             if older {
                 files.push((format!("old/{}", exe_file_name()), "older program"));
             }
-            let bundle = folder_with(&format!("swap_{label}_{older}"), &files);
-            let before = snapshot(&bundle);
+            let dir = folder_with(&format!("swap_{label}_{older}"), &files);
+            let bundle = dir.path();
+            let before = snapshot(bundle);
             let (release, open_url) = bundle_release(kind, None);
             // The window's stamp, taken once: the program moved into `old/` and
             // back is the same file, so a second attempt is not refused as a
             // program another window replaced.
-            let stamp = ProgramStamp::of(&bundle);
+            let stamp = ProgramStamp::of(bundle);
             for attempt in ["first", "second"] {
                 let outcome = install_kind(
                     kind,
                     &release,
-                    &bundle,
+                    bundle,
                     stamp,
                     &open_url,
                     |_| {},
@@ -245,12 +246,11 @@ fn a_swap_failing_midway_puts_every_file_back() {
                     "{label}, older {older}, {attempt} attempt"
                 );
                 assert_eq!(
-                    snapshot(&bundle),
+                    snapshot(bundle),
                     before,
                     "{label}, older {older}, {attempt} attempt"
                 );
             }
-            fs::remove_dir_all(bundle).unwrap();
         }
     }
 }
@@ -262,15 +262,16 @@ fn a_release_without_this_platforms_archive_or_checksums_is_refused() {
     } else {
         ArchiveKind::SevenZ
     };
-    let bundle = folder_with("assets", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("assets", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let checksums = (CHECKSUMS_ASSET.to_owned(), b"listed".to_vec());
     let (release_without_archive, open_url) =
         release(vec![(archive_name(other), b"archive".to_vec()), checksums]);
     let outcome = install(
         &release_without_archive,
-        &bundle,
-        ProgramStamp::of(&bundle),
+        bundle,
+        ProgramStamp::of(bundle),
         &open_url,
         |_| {},
         &AtomicBool::new(false),
@@ -285,8 +286,8 @@ fn a_release_without_this_platforms_archive_or_checksums_is_refused() {
     )]);
     let outcome = install(
         &release_without_checksums,
-        &bundle,
-        ProgramStamp::of(&bundle),
+        bundle,
+        ProgramStamp::of(bundle),
         &open_url,
         |_| {},
         &AtomicBool::new(false),
@@ -295,8 +296,7 @@ fn a_release_without_this_platforms_archive_or_checksums_is_refused() {
         matches!(outcome, Err(InstallError::NoChecksums)),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before);
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before);
 }
 
 #[test]
@@ -323,32 +323,96 @@ fn files_an_earlier_update_left_aside_stop_the_next_one() {
         format!("{TEMP_FOLDER}/{BACKUP_FOLDER}/README.txt"),
         "the readme an earlier update moved aside",
     ));
-    let bundle = folder_with("kept_backup", &files);
-    let before = snapshot(&bundle);
+    let dir = folder_with("kept_backup", &files);
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let (release, open_url) = bundle_release(kind, None);
-    let outcome = install_now(kind, &release, &bundle, &open_url);
+    let outcome = install_now(kind, &release, bundle, &open_url);
     let backup = bundle.join(TEMP_FOLDER).join(BACKUP_FOLDER);
     assert!(
         matches!(&outcome, Err(InstallError::OldFilesLeft { folder }) if *folder == backup),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before, "the leftover kept too");
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before, "the leftover kept too");
 
     let mut files = old_files();
     files.push((
         format!("{TEMP_FOLDER}/{}", archive_name(kind)),
         "the first half of an archive",
     ));
-    let bundle = folder_with("cut_download", &files);
-    install_now(kind, &release, &bundle, &open_url)
+    let dir = folder_with("cut_download", &files);
+    let bundle = dir.path();
+    install_now(kind, &release, bundle, &open_url)
         .unwrap_or_else(|error| panic!("a download cut short is cleared: {error}"));
     assert!(!bundle.join(TEMP_FOLDER).exists());
     assert_eq!(
         fs::read_to_string(bundle.join("README.txt")).unwrap(),
         "new readme"
     );
-    fs::remove_dir_all(bundle).unwrap();
+}
+
+/// A backup that holds no file (the empty folders left once a member has put
+/// the old files back), or one beside the mark a succeeded update writes (its
+/// leftovers, which it could not remove), does not stop the next update.
+#[test]
+fn a_backup_without_files_or_beside_the_succeeded_mark_does_not_stop_the_next_one() {
+    let kind = ArchiveKind::SevenZ;
+    let (release, open_url) = bundle_release(kind, None);
+    let backup = format!("{TEMP_FOLDER}/{BACKUP_FOLDER}");
+    let marked: Files = vec![
+        (format!("{backup}/README.txt"), "the readme it replaced"),
+        (format!("{TEMP_FOLDER}/{SUCCEEDED_MARK}"), ""),
+    ];
+    for (case, files, folders) in [
+        ("empty_folders", Vec::new(), vec!["old", "licenses"]),
+        ("marked", marked, Vec::new()),
+    ] {
+        let dir = folder_with(&format!("leftover_{case}"), &old_files());
+        let bundle = dir.path();
+        write_files(bundle, &files);
+        for folder in folders {
+            fs::create_dir_all(bundle.join(&backup).join(folder)).unwrap();
+        }
+        assert!(bundle.join(&backup).is_dir(), "{case}: the premise");
+        install_now(kind, &release, bundle, &open_url)
+            .unwrap_or_else(|error| panic!("{case}: {error}"));
+        assert!(!bundle.join(TEMP_FOLDER).exists(), "{case}");
+        assert_eq!(
+            fs::read_to_string(bundle.join("README.txt")).unwrap(),
+            "new readme",
+            "{case}"
+        );
+    }
+}
+
+/// A succeeded update whose backup cannot be removed (a file in it held open,
+/// as an antivirus or a window of the program set aside holds it) leaves the
+/// mark beside it, so the next update knows the backup for leftovers.
+#[cfg(windows)]
+#[test]
+fn the_succeeded_mark_stays_beside_a_backup_that_cannot_be_removed() {
+    use std::os::windows::fs::OpenOptionsExt;
+
+    let files: Files = vec![(
+        format!("{BACKUP_FOLDER}/README.txt"),
+        "the readme it replaced",
+    )];
+    let dir = folder_with("held_backup", &files);
+    let temp = dir.path();
+    let held_file = temp.join(BACKUP_FOLDER).join("README.txt");
+    // No sharing at all: neither a delete nor a rename of the file goes through.
+    let held = File::options()
+        .read(true)
+        .share_mode(0)
+        .open(&held_file)
+        .unwrap();
+    remove_temp(temp, &Ok(()));
+    assert!(held_file.is_file(), "the premise: the backup stays");
+    assert!(
+        temp.join(SUCCEEDED_MARK).is_file(),
+        "the mark stays beside it"
+    );
+    drop(held);
 }
 
 #[cfg(unix)]
@@ -357,7 +421,8 @@ fn the_installed_linux_program_is_executable() {
     use std::os::unix::fs::PermissionsExt;
 
     let kind = ArchiveKind::TarGz;
-    let bundle = folder_with("executable", &old_files());
+    let dir = folder_with("executable", &old_files());
+    let bundle = dir.path();
     let exe = bundle.join(exe_file_name());
     let owner_may_run = |path: &Path| fs::metadata(path).unwrap().permissions().mode() & 0o100 != 0;
     assert!(
@@ -365,9 +430,8 @@ fn the_installed_linux_program_is_executable() {
         "the premise: the old program is not executable"
     );
     let (release, open_url) = bundle_release(kind, None);
-    install_now(kind, &release, &bundle, &open_url).unwrap_or_else(|error| panic!("{error}"));
+    install_now(kind, &release, bundle, &open_url).unwrap_or_else(|error| panic!("{error}"));
     assert!(owner_may_run(&exe), "the installed program is executable");
-    fs::remove_dir_all(bundle).unwrap();
 }
 
 #[test]
@@ -382,16 +446,16 @@ fn an_archive_that_is_not_one_program_folder_changes_nothing() {
     ];
     let no_program: Files = vec![(format!("{TOP}/README.txt"), "new readme")];
     for (case, files) in [("two_folders", two_folders), ("no_program", no_program)] {
-        let bundle = folder_with(&format!("not_a_bundle_{case}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("not_a_bundle_{case}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let (release, open_url) = archive_release(kind, pack_entries(kind, &files, &[]), None);
-        let outcome = install_now(kind, &release, &bundle, &open_url);
+        let outcome = install_now(kind, &release, bundle, &open_url);
         assert!(
             matches!(outcome, Err(InstallError::NotABundle)),
             "{case}: {outcome:?}"
         );
-        assert_eq!(snapshot(&bundle), before, "{case}");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{case}");
     }
 }
 
@@ -456,24 +520,25 @@ fn stumbling_release(kind: io::ErrorKind) -> (Release, Box<OpenUrl>) {
 
 #[test]
 fn a_read_interrupted_once_goes_on_and_installs() {
-    let bundle = folder_with("interrupted", &old_files());
+    let dir = folder_with("interrupted", &old_files());
+    let bundle = dir.path();
     let (release, open_url) = stumbling_release(io::ErrorKind::Interrupted);
-    install_now(ArchiveKind::SevenZ, &release, &bundle, &open_url)
+    install_now(ArchiveKind::SevenZ, &release, bundle, &open_url)
         .unwrap_or_else(|error| panic!("{error}"));
     assert_eq!(
         fs::read_to_string(bundle.join(exe_file_name())).unwrap(),
         "new program"
     );
     assert!(!bundle.join(TEMP_FOLDER).exists());
-    fs::remove_dir_all(bundle).unwrap();
 }
 
 #[test]
 fn a_read_that_fails_stops_the_download_and_changes_nothing() {
-    let bundle = folder_with("read_fails", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("read_fails", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let (release, open_url) = stumbling_release(io::ErrorKind::ConnectionReset);
-    let outcome = install_now(ArchiveKind::SevenZ, &release, &bundle, &open_url);
+    let outcome = install_now(ArchiveKind::SevenZ, &release, bundle, &open_url);
     assert!(
         matches!(
             &outcome,
@@ -481,8 +546,7 @@ fn a_read_that_fails_stops_the_download_and_changes_nothing() {
         ),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before);
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before);
 }
 
 #[test]
@@ -496,8 +560,9 @@ fn a_program_replaced_since_the_window_started_is_refused_before_any_request() {
         ("other_length_same_date", Some(REPLACED_PROGRAM), 0),
         ("removed", None, 0),
     ] {
-        let bundle = folder_with(&format!("replaced_{case}"), &old_files());
-        let stamp = ProgramStamp::of(&bundle);
+        let dir = folder_with(&format!("replaced_{case}"), &old_files());
+        let bundle = dir.path();
+        let stamp = ProgramStamp::of(bundle);
         let noted = stamp.expect("the premise: the program's file is read");
         let program = bundle.join(exe_file_name());
         match text {
@@ -509,7 +574,7 @@ fn a_program_replaced_since_the_window_started_is_refused_before_any_request() {
             }
             None => fs::remove_file(&program).unwrap(),
         }
-        if let Some(now) = ProgramStamp::of(&bundle) {
+        if let Some(now) = ProgramStamp::of(bundle) {
             let one_field = if later > 0 {
                 now.len == noted.len
             } else {
@@ -517,13 +582,13 @@ fn a_program_replaced_since_the_window_started_is_refused_before_any_request() {
             };
             assert!(one_field, "{case}: the premise, the other field as noted");
         }
-        let before = snapshot(&bundle);
+        let before = snapshot(bundle);
         let (release, open_url) = bundle_release(kind, None);
         let (open_url, requests) = counted(open_url);
         let outcome = install_kind(
             kind,
             &release,
-            &bundle,
+            bundle,
             stamp,
             &open_url,
             |_| {},
@@ -534,8 +599,7 @@ fn a_program_replaced_since_the_window_started_is_refused_before_any_request() {
             "{case}: {outcome:?}"
         );
         assert_eq!(requests.load(Ordering::SeqCst), 0, "{case}: no request");
-        assert_eq!(snapshot(&bundle), before, "{case}");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{case}");
     }
 }
 
@@ -561,8 +625,9 @@ impl Read for CancelAtEnd {
 #[test]
 fn a_cancel_after_the_last_byte_stops_before_the_swap() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("cancel_end_{label}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("cancel_end_{label}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let cancel = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&cancel);
         let (release, open_url) = release_answering(kind, move |archive| {
@@ -574,8 +639,8 @@ fn a_cancel_after_the_last_byte_stops_before_the_swap() {
         let outcome = install_kind(
             kind,
             &release,
-            &bundle,
-            ProgramStamp::of(&bundle),
+            bundle,
+            ProgramStamp::of(bundle),
             &open_url,
             |_| {},
             &cancel,
@@ -584,9 +649,51 @@ fn a_cancel_after_the_last_byte_stops_before_the_swap() {
             matches!(outcome, Err(InstallError::Cancelled)),
             "{label}: {outcome:?}"
         );
-        assert_eq!(snapshot(&bundle), before, "{label}: no temp folder left");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{label}: no temp folder left");
     }
+}
+
+#[test]
+fn a_cancel_while_the_checksums_download_stops_before_the_archives_request() {
+    let kind = ArchiveKind::SevenZ;
+    let dir = folder_with("cancel_checksums", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
+    let assets = archive_assets(kind, pack(kind, &new_files()), None);
+    let listed = assets[1].1.clone();
+    let (release, served) = release(assets);
+    let checksums_url = release.assets[1].download_url.clone();
+    let cancel = Arc::new(AtomicBool::new(false));
+    let flag = Arc::clone(&cancel);
+    let open_url = move |url: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
+        if url != checksums_url {
+            return served(url);
+        }
+        Ok(Box::new(CancelAtEnd {
+            body: Cursor::new(listed.clone()),
+            cancel: Arc::clone(&flag),
+        }))
+    };
+    let (open_url, requests) = counted(Box::new(open_url));
+    let outcome = install_kind(
+        kind,
+        &release,
+        bundle,
+        ProgramStamp::of(bundle),
+        &open_url,
+        |_| {},
+        &cancel,
+    );
+    assert!(
+        matches!(outcome, Err(InstallError::Cancelled)),
+        "{outcome:?}"
+    );
+    assert_eq!(
+        requests.load(Ordering::SeqCst),
+        1,
+        "the checksums' request alone"
+    );
+    assert_eq!(snapshot(bundle), before, "no temp folder left");
 }
 
 /// A download's body whose read sets `cancel` and then times out: a Cancel
@@ -608,8 +715,9 @@ fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
     let kind = ArchiveKind::SevenZ;
     // Whether the archive's request itself fails, or its body's first read.
     for (case, request_fails) in [("request", true), ("read", false)] {
-        let bundle = folder_with(&format!("cancel_then_{case}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("cancel_then_{case}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let cancel = Arc::new(AtomicBool::new(false));
         let flag = Arc::clone(&cancel);
         let (release, open_url) = release_answering(kind, move |_| {
@@ -624,8 +732,8 @@ fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
         let outcome = install_kind(
             kind,
             &release,
-            &bundle,
-            ProgramStamp::of(&bundle),
+            bundle,
+            ProgramStamp::of(bundle),
             &open_url,
             |_| {},
             &cancel,
@@ -634,8 +742,7 @@ fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
             matches!(outcome, Err(InstallError::Cancelled)),
             "{case}: {outcome:?}"
         );
-        assert_eq!(snapshot(&bundle), before, "{case}: no temp folder left");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{case}: no temp folder left");
     }
 }
 
@@ -645,8 +752,9 @@ fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
 #[test]
 fn a_damaged_download_stays_a_failure_after_cancel() {
     let kind = ArchiveKind::SevenZ;
-    let bundle = folder_with("cancel_then_mismatch", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("cancel_then_mismatch", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let cancel = Arc::new(AtomicBool::new(false));
     let flag = Arc::clone(&cancel);
     let (release, open_url) = release_answering(kind, move |_| {
@@ -658,8 +766,8 @@ fn a_damaged_download_stays_a_failure_after_cancel() {
     let outcome = install_kind(
         kind,
         &release,
-        &bundle,
-        ProgramStamp::of(&bundle),
+        bundle,
+        ProgramStamp::of(bundle),
         &open_url,
         |_| {},
         &cancel,
@@ -669,8 +777,7 @@ fn a_damaged_download_stays_a_failure_after_cancel() {
         matches!(outcome, Err(InstallError::ChecksumMismatch(_))),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before, "no temp folder left");
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before, "no temp folder left");
 }
 
 /// The program another window's update put in place.
@@ -698,8 +805,9 @@ impl Read for ReplaceAtEnd {
 #[test]
 fn a_program_replaced_while_the_download_ran_is_refused_before_the_swap() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("replaced_late_{label}"), &old_files());
-        let mut expected = snapshot(&bundle);
+        let dir = folder_with(&format!("replaced_late_{label}"), &old_files());
+        let bundle = dir.path();
+        let mut expected = snapshot(bundle);
         expected.insert(exe_file_name(), Some(REPLACED_PROGRAM.to_owned()));
         let program = bundle.join(exe_file_name());
         let (release, open_url) = release_answering(kind, move |archive| {
@@ -708,31 +816,31 @@ fn a_program_replaced_while_the_download_ran_is_refused_before_the_swap() {
                 program: program.clone(),
             }))
         });
-        let outcome = install_now(kind, &release, &bundle, &open_url);
+        let outcome = install_now(kind, &release, bundle, &open_url);
         assert!(
             matches!(outcome, Err(InstallError::ProgramReplaced)),
             "{label}: {outcome:?}"
         );
         assert_eq!(
-            snapshot(&bundle),
+            snapshot(bundle),
             expected,
             "{label}: only the program rewritten, no old/ and no temp folder"
         );
-        fs::remove_dir_all(bundle).unwrap();
     }
 }
 
 #[test]
 fn the_temp_folder_stays_only_when_the_old_files_could_not_be_put_back() {
     let files: Files = vec![(format!("{BACKUP_FOLDER}/README.txt"), "old readme")];
-    let temp = folder_with("remove_temp", &files);
+    let dir = folder_with("remove_temp", &files);
+    let temp = dir.path();
     let not_restored = Err(InstallError::NotRestored {
         step: SwapStep::PlaceFile(PathBuf::from("README.txt")),
         source: io::Error::other("the move failed"),
         restore: io::Error::other("the undo failed"),
         kept: temp.join(BACKUP_FOLDER),
     });
-    remove_temp(&temp, &not_restored);
+    remove_temp(temp, &not_restored);
     assert_eq!(
         fs::read_to_string(temp.join(BACKUP_FOLDER).join("README.txt")).ok(),
         Some("old readme".to_owned()),
@@ -742,8 +850,8 @@ fn the_temp_folder_stays_only_when_the_old_files_could_not_be_put_back() {
         ("cancelled", Err(InstallError::Cancelled)),
         ("done", Ok(())),
     ] {
-        write_files(&temp, &files);
-        remove_temp(&temp, &outcome);
+        write_files(temp, &files);
+        remove_temp(temp, &outcome);
         assert!(!temp.exists(), "{case}");
     }
 }
@@ -753,30 +861,31 @@ fn a_folder_that_cannot_take_the_temp_folder_is_refused_before_any_request() {
     let kind = ArchiveKind::SevenZ;
     let mut files = old_files();
     files.push((TEMP_FOLDER.to_owned(), "a file where the temp folder goes"));
-    let bundle = folder_with("not_writable", &files);
-    let before = snapshot(&bundle);
+    let dir = folder_with("not_writable", &files);
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let (release, open_url) = bundle_release(kind, None);
     let (open_url, requests) = counted(open_url);
-    let outcome = install_now(kind, &release, &bundle, &open_url);
+    let outcome = install_now(kind, &release, bundle, &open_url);
     assert!(
         matches!(&outcome, Err(InstallError::NotWritable { folder, .. }) if *folder == bundle),
         "{outcome:?}"
     );
     assert_eq!(requests.load(Ordering::SeqCst), 0, "no request");
-    assert_eq!(snapshot(&bundle), before);
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before);
 }
 
 #[test]
 fn a_request_the_server_refuses_changes_nothing() {
     let kind = ArchiveKind::SevenZ;
-    let bundle = folder_with("refused", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("refused", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let (release, _) = bundle_release(kind, None);
     let unavailable = |_: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
         Err(ureq::Error::StatusCode(503))
     };
-    let outcome = install_now(kind, &release, &bundle, &unavailable);
+    let outcome = install_now(kind, &release, bundle, &unavailable);
     assert!(
         matches!(
             outcome,
@@ -784,18 +893,18 @@ fn a_request_the_server_refuses_changes_nothing() {
         ),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before, "no temp folder left");
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before, "no temp folder left");
 }
 
 #[test]
 fn an_archive_request_the_server_refuses_after_the_checksums_changes_nothing() {
     let kind = ArchiveKind::SevenZ;
-    let bundle = folder_with("archive_refused", &old_files());
-    let before = snapshot(&bundle);
+    let dir = folder_with("archive_refused", &old_files());
+    let bundle = dir.path();
+    let before = snapshot(bundle);
     let (release, open_url) = release_answering(kind, |_| Err(ureq::Error::StatusCode(503)));
     let (open_url, requests) = counted(open_url);
-    let outcome = install_now(kind, &release, &bundle, &open_url);
+    let outcome = install_now(kind, &release, bundle, &open_url);
     assert!(
         matches!(
             outcome,
@@ -808,24 +917,23 @@ fn an_archive_request_the_server_refuses_after_the_checksums_changes_nothing() {
         2,
         "the checksums, then the archive"
     );
-    assert_eq!(snapshot(&bundle), before, "no temp folder left");
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before, "no temp folder left");
 }
 
 #[test]
 fn an_archive_that_does_not_unpack_changes_nothing() {
     for (kind, label) in KINDS {
-        let bundle = folder_with(&format!("no_archive_{label}"), &old_files());
-        let before = snapshot(&bundle);
+        let dir = folder_with(&format!("no_archive_{label}"), &old_files());
+        let bundle = dir.path();
+        let before = snapshot(bundle);
         let (release, open_url) =
             archive_release(kind, b"these bytes are no archive".to_vec(), None);
-        let outcome = install_now(kind, &release, &bundle, &open_url);
+        let outcome = install_now(kind, &release, bundle, &open_url);
         assert!(
             matches!(outcome, Err(InstallError::Extract(_))),
             "{label}: {outcome:?}"
         );
-        assert_eq!(snapshot(&bundle), before, "{label}: no temp folder left");
-        fs::remove_dir_all(bundle).unwrap();
+        assert_eq!(snapshot(bundle), before, "{label}: no temp folder left");
     }
 }
 
@@ -836,11 +944,12 @@ fn a_program_folder_without_the_program_changes_nothing() {
         .into_iter()
         .filter(|(name, _)| *name != exe_file_name())
         .collect();
-    let bundle = folder_with("no_program", &files);
-    assert_eq!(ProgramStamp::of(&bundle), None, "the premise: no stamp");
-    let before = snapshot(&bundle);
+    let dir = folder_with("no_program", &files);
+    let bundle = dir.path();
+    assert_eq!(ProgramStamp::of(bundle), None, "the premise: no stamp");
+    let before = snapshot(bundle);
     let (release, open_url) = bundle_release(kind, None);
-    let outcome = install_now(kind, &release, &bundle, &open_url);
+    let outcome = install_now(kind, &release, bundle, &open_url);
     assert!(
         matches!(
             outcome,
@@ -851,8 +960,7 @@ fn a_program_folder_without_the_program_changes_nothing() {
         ),
         "{outcome:?}"
     );
-    assert_eq!(snapshot(&bundle), before);
-    fs::remove_dir_all(bundle).unwrap();
+    assert_eq!(snapshot(bundle), before);
 }
 
 #[test]
