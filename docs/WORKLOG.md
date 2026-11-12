@@ -1856,8 +1856,9 @@ briefs, review loops, gates and mutation runs as for any step.
       the next row's fill covered the line's lower half (a team row under ALL, a selected
       row), and a pointer on the edge two rows share drew two lines; the mark is painted
       once after the rows; SE-GUI-75 loses its empty slot's row (there is none) and gains
-      both clauses. Rework running (SWE-2, its session resumed, `.tmp/0_0_2/line/rework1.md`),
-      then round 2
+      both clauses. Rework landed 2026-11-13 (`b7b67cc5`, SWE-2 and the lead's rerun: 825
+      and 54 tests, clippy, fmt). Round 2 running (`.tmp/0_0_2/line/swe_line_r2.md`,
+      worktree `review13`)
   - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
     move to egui 0.37 rounded everything more, most were put back by hand and menus and
     dialogs kept slipping through; "a root solution", and the suite's own painted corners
@@ -1867,7 +1868,9 @@ briefs, review loops, gates and mutation runs as for any step.
     ST-CORNER-01)
     - [x] the plan and the drafts 2026-11-13 (the lead): the drafts' 6, 4 and 3 pixel
       radii are 2; pills and circles keep their shapes
-    - [ ] the slice (small, SWE-2; after 0.0.2-gap merges, the same `studio_core`): one
+    - [ ] the slice (small, SWE-2; running 2026-11-13 in the worktree
+      `4cc-studio-temp/rad`, branch `sk/rad`, brief `.tmp/0_0_2/rad/brief_rad.md`; the
+      captain's mark on the pitch keeps its radii, the maintainer): one
       constant in `theme.rs` for all seven, both themes; the literal radii in
       `studio_core`, `team_widgets` and `save_editor` (about a dozen: `git grep -n
       "CornerRadius::same(\|corner_radius(" crates`) read the style
@@ -1896,7 +1899,9 @@ briefs, review loops, gates and mutation runs as for any step.
       a list's rows; `menu_separator` (12) and `combo_separator` (7); the ruleset picker's
       list is 5 points shorter with an import, so its second separator shows and its test
       expects both. Look: Pending looks
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/gap/swe_gap.md`, worktree `review12`)
+    - [x] its SWE-2 review 2026-11-13: "S-gap r1", 3 of 5 accepted, the loop ends
+      (`.tmp/duck_rulings.md`): the menu sweep asserts which entry acted, the dropdown
+      test sees the list close, the changelog's "always" is gone (the lead)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
