@@ -2390,6 +2390,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   opened folder; both themes; no PES; 0.0.2-sel; maintainer
 - A bench row dragged onto another bench row swapping the two in the Tactics lists; no
   PES; DECISIONS 2026-11-12; maintainer
+- Reset window on the 1280 x 800 Linux virtual machine: after one click that leaves the
+  window as it was the button is gone, and a resize brings it back; the pointer is a hand
+  over it; no PES; `da241022`; maintainer (needs a Linux bundle built from main)
 
 ---
 
