@@ -1751,8 +1751,9 @@ The panel over the spec's `diff` report:
   list, as the unsaved changes list names its own (not one `old → new` text: values of every
   length then start at one place, and the eye runs down a column). Item is 190 points wide
   and Old value 200, each cut with an ellipsis where its text is longer, and New value takes
-  the rest. A row that cuts a value shows the whole row's text on hover, above the hint of
-  what its click does. The team and player heads are as they were.
+  the rest, cut the same way where the row is narrower than its text (a long name; a panel
+  dragged narrow). A row that cuts a value shows the whole row's text on hover, above the
+  hint of what its click does. The team and player heads are as they were.
 - Export writes the report of the toggled scope over the whole save, the text `save-editor diff
   <picked> <open>` prints with `--gameplay` or `--aesthetics` (All: neither); the team filter
   narrows the screen only. Not the rows shown, because the command has no team filter, and an
