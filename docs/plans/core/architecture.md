@@ -118,7 +118,7 @@ findings out: a compile prints hundreds of them around the few Warnings and Erro
 has to act on, and the file is where the rest is read. The file takes every finding line as
 stdout prints it without the option, and what the run writes to stderr (a notice, the run's
 summary whether or not a terminal draws it, the `error:` line); the progress line, redrawn in
-place, is not in it. The option is the exe's, not the launchers': started from a bat, this
+place, is not in it, nor are the diagnostics `-v` raises, which stay on stderr. The option is the exe's, not the launchers': started from a bat, this
 exe's output cannot be redirected or piped (`UTW.exe ... > file` and `UTW.exe ... | findstr`
 both received nothing when measured, the "Windows subsystem" arrangement below: a
 GUI-subsystem exe that attaches to its parent's console writes to that console, whatever

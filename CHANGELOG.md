@@ -20,6 +20,11 @@ What changed for members, release by release, newest first.
   `dummy_kit` the exe looks for; a model or `.mtl` still naming `dummy_kit` is refused, with
   a hint to run it through the Export upgrader. A team the current teams list no longer
   holds upgrades too, its roster found in the original save by the team's name.
+- **Team compiler and Export upgrader** — `quick_compile.bat` and `quick_upgrade.bat` show
+  warnings and errors only, and write the whole report, Info messages included, to
+  `compile_log.txt` and `upgrade_log.txt` beside them. On the command line, `--log-file
+  <FILE>` does the same for any tool's command: everything the run prints is added to the
+  file, and Info messages are left out of the console.
 - **Team compiler** — a model naming the team's Common by a team ID or the community's
   `000` placeholder is refused, with a hint to run it through the Export upgrader's
   `upgrade-models`.

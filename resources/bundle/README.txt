@@ -50,8 +50,10 @@ Exports in the old format need upgrading once before they compile here.
 1. Put the old exports in the old_exports folder: folders, .zip or .7z files.
 2. Drag your PES savefile onto quick_upgrade.bat. The savefile is the file named
    EDIT00000000, in the game's save folder under Documents\KONAMI.
-3. The upgraded exports land in the exports folder. The window says how many were upgraded;
-   for one that was not, it says why above that line.
+3. The upgraded exports land in the exports folder. The window lists each export's
+   warnings and errors and says how many were upgraded; for one that was not, it says why
+   above that line. Info messages are left out of the window: the whole report is in
+   upgrade_log.txt beside the launcher, until the next run replaces it.
 4. Then move the upgraded old exports out of old_exports. An export already upgraded is not
    upgraded again: the next run lists it as not upgraded ("the output folder already
    exists") and leaves its folder in exports as it is.
@@ -70,7 +72,9 @@ Compiling
 1. Put the exports to compile in the exports folder (the upgraded ones are already there).
 2. Close PES, then double-click quick_compile.bat. It compiles every export in the exports
    folder and installs the result in the game.
-3. Read the report, then press a key to close the window.
+3. Read the report, then press a key to close the window. It lists warnings and errors
+   only: the whole report, Info messages included, is in compile_log.txt beside the
+   launcher, until the next run replaces it.
 4. The game needs the cup's official DpFileList.bin. If the report says dpfilelist_outdated
    or dpfilelist_not_official, yours is another list, and the report names the command that
    installs the official one. To run it, close PES, open the folder that holds
@@ -183,5 +187,6 @@ Every message names a code, such as fpc_undershorts_break_hiding.
 The help explains each one: click the ? button at the bottom of the left bar.
 
 If the window crashes, please post the log file found in the data folder. If a launcher
-fails, copy what its black window says before pressing a key to close it, and post that:
-the launchers write no log file.
+fails, post its log file, found beside it: upgrade_log.txt for quick_upgrade.bat,
+compile_log.txt for quick_compile.bat. If there is no such file, copy what the black window
+says before pressing a key to close it, and post that.
