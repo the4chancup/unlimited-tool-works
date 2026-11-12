@@ -100,7 +100,7 @@ Trade-offs accepted:
   Icon glyphs for sidebar/toolbar/status icons come from the suite's own single-colour icon font,
   registered through `FontDefinitions` like any font: one SVG per icon, each tool's drawn to say
   what the tool does. The Team compiler's is the maintainer's running stickman dropping into an
-  open box drawn from the front, flaps out. A box in perspective reads as a pedestal at 24 px,
+  open box drawn from the front, flaps out: a box in perspective reads as a pedestal at 24 px,
   and an arrow does not show there. The stickman is a filled outline traced from the
   maintainer's drawing, which the build takes as it is.
 
@@ -147,7 +147,7 @@ Trade-offs accepted:
   framework change.
 - **3D preview requires `wgpu`**: the future model preview viewport (see Future Features in the
   [Team compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui
-  rather than Three.js in a webview. More work, but it's a post-MVP feature. Three.js would bring
+  rather than Three.js in a webview. More work, but it's a post-MVP feature: three.js would bring
   the glTF loader, the orbit camera and the skeleton overlay for free, where egui needs a small
   renderer of our own (shaders, a depth target, the camera), a one-off cost on one widget kept
   small by the preview's glance-only scope. PES's own shaders or posing would be custom work

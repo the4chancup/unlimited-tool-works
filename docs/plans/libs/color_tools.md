@@ -17,10 +17,10 @@ tints its menu-UI mockup and icon gallery with it), reverting when the hover end
 click.
 
 Its first host is the Save editor's team color fields (`plans/save_editor.md` "Crate layout"),
-which is what puts it in Phase 8. The Save editor's other colors, skin or spectacles, are
-palette indices, chosen from their palettes, not picked. Then come the Kit config editor (config
-colors and kit `colors.txt` colors) and the Team creator; any later tool that needs a color
-field uses it too.
+which is what puts it in Phase 8. Then come the Kit config editor (config colors and kit
+`colors.txt` colors) and the Team creator; any later tool that needs a color field uses it too.
+The Save editor's other colors, skin or spectacles, are palette indices, chosen from their
+palettes, not picked.
 
 **The field** is a color button showing the color, 22 × 16 points as the drafts' colour input,
 outlined as a resting text box is (the theme's quiet line, corners rounded by 3), so a color as

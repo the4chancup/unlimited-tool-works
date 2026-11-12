@@ -35,7 +35,7 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
 - **Match tabs**: at most one feed-bound **Current Match**, plus offline drafts, finalized
   matches, and opened files; a finished match stays open as a tab.
   - On a validated session boundary after `Live`, the old Current Match tab becomes a
-    finished tab. A new Current Match tab is inserted only after the broker batch is
+    finished tab and a new Current Match tab is inserted only after the broker batch is
     prepared/reserved, the staged finalized revision is durable, and the infallible atomic
     `MatchFinalized`/`TeamsDetected` commit completes.
   - If the durability write fails, the old tab remains the authoritative Current Match with

@@ -107,9 +107,8 @@ The suite therefore implements a new, tested exporter informed by these primitiv
 rather than porting a supposedly complete generator (see `match_files.md` "Match files").
 
 **Priority.** The first implementation registers PES 2019, then PES 2021, then the other
-versions, PES 2017 among them. This is the maintainer's order ("Key decisions", Game
-versions), because the cup plays 19 and 21 and both layouts are measured ("Independent
-measurements").
+versions, PES 2017 among them (the maintainer's order; "Key decisions", Game versions): the
+cup plays 19 and 21, and both layouts are measured ("Independent measurements").
 
 - The unofficial fork's PES21 claims (pointer chains, substitution journal, direct clock
   read) stay inactive reference data until verified (see "Verifying source-derived

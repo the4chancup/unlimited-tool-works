@@ -86,7 +86,7 @@ The flag tells the Save editor which pitch to give a member
 (`plans/save_editor.md` "Illegal formations").
 
 The flag sits in `universal` because it is the cup's rule for every team. It sits in the data
-section, never the logic's, since the logic never reads it, so the logic's hash and version
+section, never the logic's, since the logic never reads it: the logic's hash and version
 ignore it, as they ignore the logo. Left out, it is `false` (the empty value,
 `spec/aatf_rules.md` "The ruleset schema"), so every file written before it loads unchanged and
 keeps the game's rule. The built-in Autumn 26 and DBC7 set it; the others leave it out.
@@ -158,8 +158,8 @@ Still open before anything is built:
 Until they are read and each is looked at in game under the stock exe, nothing here is built.
 
 The check is the `libs/aatf` host's, in Rust beside the checks the host runs around the file's
-logic, never in the logic. The rule is the game's, the same for every cup. In the logic it
-would copy the game's tables into every file and take a logic version; the ruleset's flag only
+logic, never in the logic: the rule is the game's, the same for every cup, and in the logic it
+would copy the game's tables into every file and take a logic version. The ruleset's flag only
 turns it off. The tables it reads live in `team_widgets` today (the drop rule's, taken from PES
 2016), which `libs/aatf` cannot depend on, so they move to `pes_savefile` for both.
 
@@ -296,9 +296,9 @@ players stood in a bracket or where GigaHeight's extra height went.
 `BracketQuota` gains `players: Vec<(u8, u8)>`, each player counted in the bracket as his roster
 slot and the height read (his own less his allowance); under a pool, the players its slots took.
 Under a pool, a player for whom no quota bracket he reaches has room counts toward the tallest
-of them, past its quota, and still draws nothing. So seven 175s for the Manlet bracket's
-six slots are a `BracketQuota` of 7 for 6 listing all seven, since any of them is the one left,
-where before only the bracket left short (a Mid at 9 of 10) said anything.
+of them, past its quota, and still draws nothing. So seven 175s for the Manlet bracket's six
+slots are a `BracketQuota` of 7 for 6 listing all seven, since any of them is the one left, where
+before only the bracket left short (a Mid at 9 of 10) said anything.
 
 `ExtraHeight` gains `draws: Vec<(u8, BracketId, u8)>`, each player standing above his slot: his
 roster slot, the slot's bracket and the centimetres drawn. Players read at one height are placed
@@ -469,7 +469,7 @@ used bullet: "the tier his stats, registered position and height match under tha
 `check-aatf` recognizes it"), which then asks `card_limits` for that tier.
 
 It sits in the file's logic, beside `check_team`'s own reading, for the reason `card_limits`
-does. A widget that recognized tiers in Rust would be a second recognition that drifts from the
+does: a widget that recognized tiers in Rust would be a second recognition that drifts from the
 checks (recognition before choices, a height system told apart by its quotas, a special that
 moves a threshold), and from a file whose logic is not the build's.
 
