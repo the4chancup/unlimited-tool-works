@@ -94,9 +94,6 @@ pub(crate) struct SaveView {
     /// preset selector or the formation selector); clicks elsewhere
     /// leave it, `None` before the first click of one.
     click_kind: Option<clipboard::ClickKind>,
-    /// The editor's clipboard: at most one copy, a snapshot taken at
-    /// Ctrl+C; emptied when a save opens.
-    clip: Option<clipboard::Clip>,
     /// A page or arrow key moved the selection, or a team row's double
     /// click showed that team alone: the list scrolls to the selected row
     /// on the next draw, then clears this.
@@ -438,7 +435,6 @@ impl SaveView {
             filter: String::new(),
             selected: None,
             click_kind: None,
-            clip: None,
             reveal_selected: false,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
@@ -565,7 +561,6 @@ impl SaveView {
                 self.prompt = None;
                 self.edit_mode_question = None;
                 self.refusal = None;
-                self.clip = None;
                 self.boglo = None;
                 self.stat_num = None;
                 self.copy_swap = None;
@@ -1015,6 +1010,8 @@ fn toolbar(
     // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
     // while a dialog is up or a text edit holds the keyboard — a field
     // keeps its own copy and paste; a focused button does not hold them.
+    // A paste carries the system clipboard's text, which is the copy;
+    // `Event::PasteImage` means the clipboard holds an image, no copy.
     let copy_key = !typing
         && ui.input(|input| {
             input
@@ -1022,13 +1019,16 @@ fn toolbar(
                 .iter()
                 .any(|event| matches!(event, egui::Event::Copy))
         });
-    let paste_key = !typing
-        && ui.input(|input| {
-            input
-                .events
-                .iter()
-                .any(|event| matches!(event, egui::Event::Paste(_) | egui::Event::PasteImage(_)))
-        });
+    let pasted = if typing {
+        None
+    } else {
+        ui.input(|input| {
+            input.events.iter().find_map(|event| match event {
+                egui::Event::Paste(text) => Some(text.clone()),
+                _ => None,
+            })
+        })
+    };
     // PageDown and PageUp move the list's selection from any field, so
     // they are not held off while a widget has the keyboard: team row to
     // team row while the list holds two or more, else seven rows at a
@@ -1180,8 +1180,8 @@ fn toolbar(
     if copy_key {
         clipboard::copy(ui.ctx(), view);
     }
-    if paste_key {
-        clipboard::paste(view);
+    if let Some(text) = pasted {
+        clipboard::paste(view, &text);
     }
 }
 

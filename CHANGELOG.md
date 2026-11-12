@@ -71,6 +71,9 @@ What changed for members, release by release, newest first.
 - **Save editor**: on a PES 2017 to 2021 save, the Tactics tab's Numbers in attack and
   Numbers in defence are disabled, since the game no longer lets them be set, unless the
   active ruleset allows illegal formations: a cup playing a patched game keeps them.
+- **Save editor**: what Ctrl+C copies (a player's stats, a team's Gameplan, a tactics
+  preset or a formation) can be pasted with Ctrl+V in another Save editor window, even one
+  holding a save of another PES version, and still after opening another save.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES
