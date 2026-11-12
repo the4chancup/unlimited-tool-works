@@ -869,6 +869,7 @@ stadiums and cells = components.
 | Common and per-tool settings forms | egui widgets (`TextEdit`, `CheckBox`, `ComboBox`), saved to TOML |
 | Export tree browser | `egui::CollapsingHeader` tree, shows object model |
 | Menu buttons | egui's `menu_button`, its label ending in ` ⏷` (the symbols font's) as the drafts draw every menu button (`menu()` in `docs/prototypes/index.html`): egui draws no arrow on a menu button outside a menu, and the arrow is what tells a menu from a button |
+| The rows of a menu and of a combo's list | They meet (0.0.2-gap): each row is 21 points high with nothing between it and the next, its text where it stood, in a toolbar's menus and in every combo's open list (the drafts' `.menu` and `.combo-pop`). egui lays them a control's 18 high and `item_spacing.y`, 3, apart, and a click in those 3 points lands on the popup itself, which closes with nothing picked. The rows meet, where each row could have kept its 18 and taken the gap as extra click reach (the combo rows did until this), because the reach had to be given to every kind of row one by one, and the menus never got it: with no gap there is nothing to forget. The menus get it in `menu_button`, through the style a menu takes (`MenuConfig::style`: no row spacing, rows 21 high); a combo's rows in `combo_label` itself. A separator keeps the room it had (12 in a menu, 7 in a combo's list). The hovered row's highlight is 21 high, so two neighbours' highlights touch |
 | Modals | Every modal (the settings menu, the About, the first-run prompt, each tool's dialogs and prompts) draws through one `studio_core` helper, the drafts' `.window` (`docs/prototypes/index.html`): an `egui::Modal` whose frame has 12 points of margin across and 8 down, at least 360 wide with its margins (`min-width`), except a dialog its draft sizes to its contents (Set boots and gloves IDs for everyone, `.window:has(.boglo)`: the 360 left 42 points unused right of its groups), which is as wide as its contents; its title centred over it (`theme::window_title_text`) then 8 points before the body (`.window .title`'s margin, where a label leaves egui's 3); its buttons in one row 10 under the body, right-aligned, in the order the drafts give them (`window_()`'s row). A sentence in the body stands 8 points from a control under it (`.window p`'s margin; a label leaves egui's 3), the title's 8 and the buttons' 10 holding above and below it. One helper rather than each modal's own frame, because the build's modals each took egui's default (about 6 points of margin, the buttons wherever the body ended) and drifted 6 to 9 points from every draft at once |
 | Form grids | A form that draws a drafts' `table.grid` (a settings or field form: label, control, label, control) spaces its rows 22 apart, the drafts' 18-point control with its cell's 2 points above and below: `studio_core`'s one row-spacing constant, 4, is an `egui::Grid`'s row spacing (its column gap stays each form's own) and the `item_spacing.y` of a section whose rows are stacked in a vertical layout (General info's pairs); egui spaces both by `item_spacing.y`, 3, so each row of a long form lands a point higher than its draft's (25 points by the Ability stats' last). A grid of text rows (the help's Messages table) takes the same spacing over rows a line of text high, so its one-line rows stand 19 apart as the draft's: egui's `Grid` otherwise makes every row at least a control's 18. The theme's `item_spacing` stays 3: it spaces every other layout (the lists' rows, the toolbars) the drafts approved at 3 |
 | File/folder pickers | `rfd` for native dialogs and supported web file picking; web directory access needs a separate File System Access API adapter (`rfd` has no WASM folder picker) |
@@ -1869,9 +1870,18 @@ ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
                  WHEN the setting is off again and one notch down turns over the drag value
                  THEN it is 179; and a turn over the area's empty space scrolls it the same
                  way with the setting on or off
-ST-COMBO-01 GIVEN a combo of five items open, its list's rows drawn with the theme's gap
-            WHEN a click lands in the gap between the second and third rows, nearer the third
-            THEN the third item is picked and the list closes; WHEN, reopened, a click lands
-                 nearer the second THEN the second is picked; the same in the Save editor's
-                 team dropdown over the player list
+ST-COMBO-01 GIVEN a combo of five items open
+            WHEN its list is drawn
+            THEN each row is 21 points high and starts where the row above it ends; WHEN a
+                 click lands on the line where the second and third rows meet THEN one of
+                 the two is picked and the list closes; the same in the Save editor's team
+                 dropdown over the player list
+ST-COMBO-02 GIVEN a toolbar menu of three entries and a separator open
+            WHEN it is drawn
+            THEN each entry is 21 points high, two entries with no separator between them
+                 meet, and the separator stands in 12 points between its neighbours; WHEN a
+                 click lands on the line where the first and second entries meet THEN one
+                 of the two acts and the menu closes; no point between the first entry's
+                 top and the last entry's bottom, the separator's 12 points aside, closes
+                 the menu without an entry acting
 ```

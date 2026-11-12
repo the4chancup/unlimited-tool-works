@@ -400,19 +400,20 @@
   select { background: var(--widget); border: 0; border-radius: 2px; padding: 1px 2px; }
   /* An open combo as egui draws it (comboPopup below): the button in the open state, the
      list right under it on the panel colour, a 1-point border, corner 6, margin 6 and the
-     popup shadow; rows 18 high and 3 apart, unwrapped, hovered as a button, the current one
-     in the selection's colours; inside the margin, past egui's combo_height, 200, the rows
-     scroll, from the top. */
+     popup shadow; rows unwrapped, hovered as a button, the current one in the selection's
+     colours; inside the margin, past egui's combo_height, 200, the rows scroll, from the
+     top. The rows meet, as a menu's do: each 21 high with nothing between (egui's are 18
+     high and 3 apart, and a click between two picked nothing); a separator keeps its 7. */
   select.open { background: #2d2d2d; box-shadow: inset 0 0 0 1px var(--stroke); }
   .combo-pop { position: fixed; z-index: 140; background: var(--panel); border: 1px solid var(--stroke);
     border-radius: 6px; padding: 6px; box-shadow: 6px 10px 4px #00000060; }
-  .combo-pop > div { display: flex; flex-direction: column; gap: 3px; max-height: 200px; overflow-y: auto; }
-  .combo-pop > div > div:not(.sep) { flex: none; display: flex; align-items: center; min-height: 18px;
+  .combo-pop > div { display: flex; flex-direction: column; gap: 0; max-height: 200px; overflow-y: auto; }
+  .combo-pop > div > div:not(.sep) { flex: none; display: flex; align-items: center; min-height: 21px;
     padding: 0 4px; border-radius: 2px; color: #b4b4b4; white-space: nowrap; cursor: default; }
   .combo-pop > div > div:not(.sep):hover { background: var(--hover); box-shadow: inset 0 0 0 1px #969696;
     border-radius: 3px; color: #f0f0f0; }
   .combo-pop > div > div.on { background: var(--sel-bg); color: var(--sel-fg); }
-  .combo-pop > div > .sep { flex: none; margin: 0; }
+  .combo-pop > div > .sep { flex: none; margin: 3px 0; }
   /* A removable row's ×: a frameless small button at the row's right end, 12 from its text. */
   .combo-pop .combo-x { margin-left: auto; padding: 0 2px 0 12px; color: #8c8c8c; }
   .combo-pop .combo-x:hover { color: var(--error); }
@@ -485,11 +486,14 @@
   .sep { border-top: 1px solid var(--stroke); margin: 8px 0; }
   .handle { cursor: grab; color: #6e6e6e; padding: 0 4px; user-select: none; }
   .dragover { outline: 1px solid var(--sel-fg); }
-  /* A menu as egui 0.37 draws one (its menu_style, the theme's spacing): the frame's margin 6
-     (menu_margin), entries a control's 18 high and 3 apart (interact_size, item_spacing), their
-     text 2 in (menu_style's button_padding), a separator 6 with the spacing either side. */
-  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 6px; gap: 3px; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
-  .menu button { text-align: left; background: transparent; padding: 0 2px; min-height: 18px; }
+  /* A menu as egui 0.37 draws one (its menu_style, the theme's spacing), but for its rows:
+     the frame's margin 6 (menu_margin), the entries' text 2 in (menu_style's
+     button_padding). egui lays the entries a control's 18 high and 3 apart, and a click in
+     those 3 points picks nothing and closes the menu. Here the entries meet: each is 21
+     high with nothing between, its text where it stood, so every point of the list picks
+     an entry. A separator keeps its 12 (its line and 5.5 either side). */
+  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 6px; gap: 0; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
+  .menu button { text-align: left; background: transparent; padding: 0 2px; min-height: 21px; }
   .menu button:hover:not(:disabled) { background: var(--hover); }
   /* A menu item's shortcut (egui's shortcut_text): right-aligned in the weak colour, at least
      8 after the label (the icon spacing's 4 on each side of the stretch between them). */
@@ -1079,7 +1083,7 @@ function menu(label, items, opts = {}) {
     const [left, top] = inWin(r.left, r.top), below = top + r.height + 1;
     const m = h("div", { class: "menu", style: `left:${left}px; top:${below}px` },
       items.map(([text, fn, disabled, title]) => {
-        if (text === "-") return h("div", { class: "sep", style: "margin:2.5px 0" });
+        if (text === "-") return h("div", { class: "sep", style: "margin:5.5px 0" });
         const [name, keys] = text.split("\t");
         return h("button", { disabled, title, onclick: ev => { ev.stopPropagation(); closeMenus(); fn(); } },
           name, keys ? h("span", { class: "shortcut" }, keys) : null);
