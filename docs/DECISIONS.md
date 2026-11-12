@@ -16446,3 +16446,23 @@ line, and the launcher already printed one); a parts counter summed over the run
 export's file count is unknown until it is opened).
 Plan: `plans/export_upgrader.md` "CLI" ("Several exports at once", "The progress line"),
 EU-CLI-11 and EU-CLI-13 to 15; worklog 0.0.2-upgall.
+
+## 2026-11-12 — gates — Every test the gates run gets a temp folder reached through a link
+Decision: `scripts/gates/temp_alias.py` gives the gates' tests a temp folder that is not its
+own real path: a junction on Windows, a symlink elsewhere, to a folder inside the machine's
+temp folder (a temp folder that already is not its own real path, a CI runner's, is used as it
+is). `run_tests.py` passes it to every test binary and to the doc-tests; every `*_test.py` line
+of the justfile runs through `script_test`, which starts the script under it. A test that
+compares paths resolves its temp folder first. A test of printed text also runs on Linux before
+its slice merges.
+Why: a link in the gate, not a rule alone, because the defect (a temp path as handed out
+compared with a resolved one) passes on a machine whose temp folder is its own real path and
+fails only on a CI runner, whose temp folder has an 8.3 short name; it reached a push more than once,
+and a rule is followed until the next test is written from habit. A junction, not a real 8.3
+name, because short names can be switched off per volume and a junction needs no privilege;
+in the gates' runner, not in `.cargo/config.toml`'s runner, because that one also wraps `cargo
+run`, where a member-facing path would show the link.
+Not chosen: exporting the temp variables for every recipe (the builds and the mutation runs'
+scratch copies would move behind the link for no test's benefit).
+Plan: no plan edit needed, a gate's mechanics: `CONTRIBUTING.md` "Testing and verification"
+describes it.

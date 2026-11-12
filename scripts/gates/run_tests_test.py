@@ -1,8 +1,12 @@
 """Tests of scripts/gates/run_tests.py's selection; `just test` runs them before the tests."""
 
 import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
+import temp_alias
 from run_tests import ROOT, binaries, dependents, owner, packages, select
 
 
@@ -112,6 +116,26 @@ class Binaries(unittest.TestCase):
         found = binaries(lines, PKGS)
         self.assertEqual([(b.key, b.exe) for b in found],
                          [("save_editor/save_editor", "a.exe"), ("save_editor/cli", "b.exe")])
+
+
+class TempFolder(unittest.TestCase):
+    def test_the_tests_get_a_temp_folder_that_is_not_its_own_real_path(self) -> None:
+        # From a temp folder that is its own real path, as a developer's machine has.
+        real = Path(tempfile.gettempdir()).resolve()
+        with mock.patch.object(tempfile, "tempdir", str(real)):
+            env = temp_alias.env()
+        folder = Path(env["TEMP"])
+        self.assertTrue(folder.is_dir())
+        self.assertNotEqual(folder.resolve(), folder)
+        self.assertEqual(folder.resolve().parent, real)
+        self.assertEqual({env[name] for name in temp_alias.VARIABLES}, {str(folder)})
+
+    def test_a_temp_folder_already_reached_through_a_link_is_kept(self) -> None:
+        real = Path(tempfile.gettempdir()).resolve()
+        with mock.patch.object(tempfile, "tempdir", str(real)):
+            link = temp_alias.alias()
+        with mock.patch.object(tempfile, "tempdir", str(link)):
+            self.assertEqual(temp_alias.alias(), link)
 
 
 if __name__ == "__main__":

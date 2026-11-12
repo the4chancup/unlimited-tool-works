@@ -7,6 +7,9 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
 python := if os_family() == "windows" { "python" } else { "python3" }
+# A script's tests run with a temp folder that is not its own real path, as a CI runner's is
+# (scripts/gates/temp_alias.py)
+script_test := python + " scripts/gates/temp_alias.py"
 
 # The verification gates, in order. CI runs this same recipe.
 gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals
@@ -29,15 +32,15 @@ clippy:
 
 # Gate 3: tests, the workspace's test binaries four at once (scripts/gates/run_tests.py says why)
 test:
-    {{python}} scripts/gates/run_tests_test.py
-    {{python}} scripts/gates/checkpoint_test.py
+    {{script_test}} scripts/gates/run_tests_test.py
+    {{script_test}} scripts/gates/checkpoint_test.py
     {{python}} scripts/gates/run_tests.py
-    {{python}} scripts/mutation/mutants_test.py
-    {{python}} scripts/review/perturb_check_test.py
-    {{python}} scripts/review/clones_test.py
-    {{python}} scripts/drafts/bundle_drafts_test.py
-    {{python}} scripts/drafts/draft_compare_test.py
-    {{python}} scripts/census/census_test.py
+    {{script_test}} scripts/mutation/mutants_test.py
+    {{script_test}} scripts/review/perturb_check_test.py
+    {{script_test}} scripts/review/clones_test.py
+    {{script_test}} scripts/drafts/bundle_drafts_test.py
+    {{script_test}} scripts/drafts/draft_compare_test.py
+    {{script_test}} scripts/census/census_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
 gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
@@ -53,15 +56,15 @@ checkpoint-status *args:
 
 # Gate 3 over the packages the working tree changes since `base` and the packages depending on them
 test-changed base="HEAD":
-    {{python}} scripts/gates/run_tests_test.py
-    {{python}} scripts/gates/checkpoint_test.py
+    {{script_test}} scripts/gates/run_tests_test.py
+    {{script_test}} scripts/gates/checkpoint_test.py
     {{python}} scripts/gates/run_tests.py --changed {{base}}
-    {{python}} scripts/mutation/mutants_test.py
-    {{python}} scripts/review/perturb_check_test.py
-    {{python}} scripts/review/clones_test.py
-    {{python}} scripts/drafts/bundle_drafts_test.py
-    {{python}} scripts/drafts/draft_compare_test.py
-    {{python}} scripts/census/census_test.py
+    {{script_test}} scripts/mutation/mutants_test.py
+    {{script_test}} scripts/review/perturb_check_test.py
+    {{script_test}} scripts/review/clones_test.py
+    {{script_test}} scripts/drafts/bundle_drafts_test.py
+    {{script_test}} scripts/drafts/draft_compare_test.py
+    {{script_test}} scripts/census/census_test.py
 
 # The GPU BC7 encoder's tests, ignored by `test` because they need a Vulkan or Metal device and
 # no CI runner has one: run by hand before landing a change to `dds_convert`'s `gpu` module.
@@ -74,37 +77,37 @@ wasm-check:
 
 # Gate 5: the acceptance-ID scanner's own tests, then the scan (`report` fails on untrustworthy citations; `strict`, at converge, also on unproven scenarios)
 acceptance mode="report":
-    {{python}} scripts/gates/acceptance_test.py
-    {{python}} scripts/gates/citation_audit_test.py
+    {{script_test}} scripts/gates/acceptance_test.py
+    {{script_test}} scripts/gates/citation_audit_test.py
     {{python}} scripts/gates/acceptance.py {{mode}}
 
 # Does each test prove the scenario it cites? SubQ Snap asks every citation (converge; needs the network and STUDIO_SNAP_KEY_FILE); report in snap.out/citations.md
 citation-audit:
-    {{python}} scripts/gates/citation_audit_test.py
+    {{script_test}} scripts/gates/citation_audit_test.py
     {{python}} scripts/gates/citation_audit.py
 
 # Gate 6: the section-pointer check's own tests, then the check (every `file.md` "Section" pointer resolves)
 doc-pointers:
-    {{python}} scripts/gates/doc_pointers_test.py
-    {{python}} scripts/release/symbolize_log_test.py
+    {{script_test}} scripts/gates/doc_pointers_test.py
+    {{script_test}} scripts/release/symbolize_log_test.py
     {{python}} scripts/gates/doc_pointers.py
 
 # Gate 7: the comment check's own tests, then the check (no code comment cites a plan, a decision,
 # a step, a review or who decided, instead of standing on its own: CONTRIBUTING.md "Code style")
 comment-refs:
-    {{python}} scripts/gates/comment_refs_test.py
+    {{script_test}} scripts/gates/comment_refs_test.py
     {{python}} scripts/gates/comment_refs.py
 
 # Gate 8: the colour check's own tests, then the check (no colour is written from literal values
 # outside `studio_core`'s theme.rs, whose palette gives each colour its dark and its light value)
 colour-literals:
-    {{python}} scripts/gates/colour_literals_test.py
+    {{script_test}} scripts/gates/colour_literals_test.py
     {{python}} scripts/gates/colour_literals.py
 
 # Gate 0, first since it takes a second: the line-endings check's own tests, then the check (every
 # tracked file's working copy has the line endings .gitattributes asks: CONTRIBUTING.md "Toolchain notes")
 line-endings:
-    {{python}} scripts/gates/line_endings_test.py
+    {{script_test}} scripts/gates/line_endings_test.py
     {{python}} scripts/gates/line_endings.py
 
 # Mutation run over one crate (converge); survivors are test gaps, equivalents or dead code; every mutant on the STUDIO_MUTANTS_REMOTE host, refused without one
@@ -152,5 +155,5 @@ deps-check:
 # The portable release bundle, target/dist/unlimited-tool-works-<version>-windows.7z, its .sha256
 # and the kept symbols' -symbols.7z beside it; Windows only
 release version:
-    {{python}} scripts/release/release_test.py
+    {{script_test}} scripts/release/release_test.py
     {{python}} scripts/release/release.py {{version}}

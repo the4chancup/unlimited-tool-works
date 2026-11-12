@@ -239,7 +239,11 @@ How often each runs. A commit that touches only `docs/` or the root's `*.md` run
 doc-pointers` and `just acceptance`. A code commit reruns, in the real workspace, the changed
 packages' own tests (`cargo test -p <each>`), `cargo clippy -p <each> --all-targets -- -D
 warnings` and `cargo fmt --all --check`: the sidekick's pasted runs are a claim, and these are
-the checks a slice's own change fails first. `just gates-changed <the last commit it passed
+the checks a slice's own change fails first. A commit that adds or changes a test of printed
+text (a log file's lines, a command's output) also runs that test on Linux before it merges
+(`just remote cargo test -p <crate> <filter>`): the checkpoint's gates run on Windows only, and
+printed text differs between the two (the program is `UTW` on Windows and `utw` on Linux, which
+one log-file test spelled wrongly until CI ran it). `just gates-changed <the last commit it passed
 at>` runs once over every commit since, at a checkpoint: the end of a surface's review loop,
 right before its mutation run ("Mutation runs" below), which then starts from a tree known
 green; a worklog step's close; a merge of another branch. The full `just gates` runs before a
@@ -278,6 +282,19 @@ binary peaks under 0.5 GB (`pes_savefile`, 2026-09-29). rustc is not capped, so 
 turn a mutant unviable. The figure matches the VPS mutation unit's `MemoryMax=6G` only in
 number: that one caps the whole run (builds, both workers, page cache), this one each test
 binary alone. Linux relies on the kernel's OOM killer.
+
+Every test the gates run gets a temp folder that is not its own real path
+(`scripts/gates/temp_alias.py`): the test binaries from `run_tests.py`, each script's tests
+through the justfile's `script_test`. A CI runner's temp folder is named by something other than
+its real path (an 8.3 short name on GitHub's Windows runner, `RUNNER~1`; a symlink on macOS),
+while a developer's is its own real path. A test that compares a temp path as it was handed out
+with one the code resolved therefore passed every local gate and failed after the push
+(2026-11-12, the census tests, and not for the first time). Reached through a link, a junction
+on Windows and a symlink elsewhere, the same test fails at the checkpoint. Such a test resolves
+its temp folder before it builds paths from it (`Path(tempfile.mkdtemp()).resolve()`), or
+compares both sides resolved (`canonicalize` in Rust, as the running-PES probe's test does: the
+system names a process's file by its real path). A bare `cargo test -p <crate>` gets the
+machine's own temp folder, not the link: only the gates do.
 
 Rules for the justfile, so it stays a command list and not a second build system:
 

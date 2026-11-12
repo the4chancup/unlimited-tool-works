@@ -30,17 +30,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+import temp_alias
+
+ROOT =Path(__file__).resolve().parents[2]
 TIMES = ROOT / "target" / "run_tests_times.json"
 JOBS = min(4, os.cpu_count() or 1)
 # Files outside every package that no test reads: the mutation runs' exclusions, which change
 # with most review rounds (`scripts/mutation/mutants_test.py`, run in both modes, checks them).
 MUTATION_ONLY = {".cargo/mutants.toml", ".cargo/extra_mutants.toml"}
-# The scripts every test binary runs through (this runner and the memory-cap wrapper
-# `.cargo/config.toml` names): a change to one can change any result. Any other script under
-# `scripts/` no Rust test reads (a generator's output is committed inside its crate), so its
-# change cannot move a Rust result; the scripts' own `*_test.py` the gates list run regardless.
-TEST_PATH_SCRIPTS = {"scripts/gates/run_tests.py", "scripts/gates/test_runner.cmd", "scripts/gates/test_runner.py"}
+# The scripts every test binary runs through (this runner, the temp folder it gives them and the
+# memory-cap wrapper `.cargo/config.toml` names): a change to one can change any result. Any
+# other script under `scripts/` no Rust test reads (a generator's output is committed inside its
+# crate), so its change cannot move a Rust result; the scripts' own `*_test.py` the gates list
+# run regardless.
+TEST_PATH_SCRIPTS = {"scripts/gates/run_tests.py", "scripts/gates/temp_alias.py",
+                     "scripts/gates/test_runner.cmd", "scripts/gates/test_runner.py"}
 
 
 @dataclass(frozen=True)
@@ -150,11 +154,12 @@ def runner() -> list[str]:
     return [str(ROOT / command[0]), *command[1:]]
 
 
-def run(binary: Binary, pkgs: dict[str, Package], wrapper: list[str]) -> tuple[int, float, str]:
+def run(binary: Binary, pkgs: dict[str, Package], wrapper: list[str],
+        temp_env: dict[str, str]) -> tuple[int, float, str]:
     """One binary whole, as `cargo test` runs it: from its package's folder, with the package
-    variables cargo sets."""
+    variables cargo sets, in `temp_env` (`temp_alias.py` says what its temp folder is)."""
     pkg = pkgs[binary.package]
-    env = dict(os.environ, CARGO_MANIFEST_DIR=str(pkg.dir), CARGO_PKG_NAME=pkg.name)
+    env = dict(temp_env, CARGO_MANIFEST_DIR=str(pkg.dir), CARGO_PKG_NAME=pkg.name)
     start = time.monotonic()
     proc = subprocess.run([*wrapper, binary.exe], cwd=pkg.dir, env=env, capture_output=True,
                           text=True, encoding="utf-8", errors="replace")
@@ -186,10 +191,11 @@ def main(argv: list[str]) -> int:
     selected.sort(key=lambda b: -times.get(b.key, 0.0))
 
     wrapper = runner()
+    temp_env = temp_alias.env()
     start = time.monotonic()
     failed = passed = 0
     with ThreadPoolExecutor(max_workers=JOBS) as pool:
-        futures = {pool.submit(run, b, pkgs, wrapper): b for b in selected}
+        futures = {pool.submit(run, b, pkgs, wrapper, temp_env): b for b in selected}
         for future in as_completed(futures):
             binary = futures[future]
             code, secs, output = future.result()
@@ -207,7 +213,8 @@ def main(argv: list[str]) -> int:
           f"{wall:.0f} s, {JOBS} at once")
     if failed:
         return 1
-    return subprocess.run(["cargo", "test", "--workspace", "--doc"], cwd=ROOT).returncode
+    return subprocess.run(["cargo", "test", "--workspace", "--doc"], cwd=ROOT,
+                          env=temp_env).returncode
 
 
 if __name__ == "__main__":
