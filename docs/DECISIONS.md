@@ -16890,3 +16890,9 @@ in the rail and the opened sidebar, uncoloured by the exe check, its hover `This
 use the PES version`. The tool list still never moves between tools, and no version is named
 beside a save of another one.
 Plan: plans/core/gui.md "Sidebar" item 2 and ST-SIDE-09 edited.
+
+## 2026-11-12 — studio_core — The unused PES selector's box is empty, without the hyphen
+
+The maintainer, on seeing the draft: the disabled box is right, the hyphen in it is not
+needed. The box stands disabled and empty; the rest of the entry before this one holds.
+Plan: plans/core/gui.md "Sidebar" item 2 and ST-SIDE-09 edited.

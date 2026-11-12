@@ -2913,13 +2913,14 @@ function sidebarItems(full) {
   // on_disabled_hover_text), so a blocked selector's reason sits on a
   // wrapper that still senses hover (ST-SIDE-04).
   // Under a tool that does not target the version (the Save editor follows its
-  // open save, a ruleset names no game) the selector stands disabled, reading a
-  // hyphen and taking no colour from the exe check: it keeps its box, so the
-  // tool list under it never moves between tools, and names no version, which
-  // beside a save of another one would mislead (ST-SIDE-09).
+  // open save, a ruleset names no game) the selector stands disabled and empty,
+  // taking no colour from the exe check: it keeps its box, so the tool list
+  // under it never moves between tools, and names no version, which beside a
+  // save of another one would mislead (ST-SIDE-09). The no-break space keeps
+  // the empty box its height.
   const targets = (TOOLS.find(t => t.id === S.activeTool) || {}).pes;
   const unused = "This tool does not use the PES version";
-  const shown = targets ? pesSel : combo([["-", "-"]], "-", () => {},
+  const shown = targets ? pesSel : combo([["", " "]], "", () => {},
     { title: unused, cls: "", disabled: true });
   if (!targets) shown.id = pesSel.id;
   items.push(!targets ? h("span", { class: "sel-block", title: unused }, shown)
