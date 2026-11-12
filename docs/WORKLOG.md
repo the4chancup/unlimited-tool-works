@@ -2386,6 +2386,18 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
+  on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
+  the three files sent (the team file, a save named as the one before, the saved file;
+  scratch `.tmp/report21/`): the saved file equals the earlier one but for teams 876 and
+  886, both holding the file's 23 players, and 876 holds what the command line's `import-toml`
+  writes (no difference in `diff` or in the team's export); the teams that were
+  placeholders (156 of 220) were so before. The saved file is two bytes longer than the
+  earlier save, which fits a serial (the writer's Windows account) one character longer,
+  not read out: another account or the game wrote it last, or the earlier save sent is
+  not the one that was open. Waits for the member to reproduce on 0.0.2 with its report button.
+  One thing found on the way is in `docs/QUESTIONS.md` (the manager id a team file brings
+  onto another team).
 - resolved 2026-11-12 (the lead, writing the referee export page): the Export upgrader's
   spec and `referees.rs` said a conflicting referee folder is "left as it was", copied at
   its old paths for the author to repair, where EU-REF-03 and 11 write nothing. Both hold:

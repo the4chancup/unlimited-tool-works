@@ -66,6 +66,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   team and an imported Team TOML still write the two bytes, and the AATF check says
   nothing of them. Should those keep the target's numbers, should the check flag a value
   the game's menu could not have set, or is the toggles' lock enough?
+- **A team file imported onto another team brings its manager id.** The Save editor
+  imports a Team TOML onto the open team, and writes the file's `manager_id` as it is:
+  a file exported from team 876 and imported onto team 886 leaves both teams naming
+  coach 876 (seen in a member's PES 2021 save, 2026-11-12; in that save every other team's
+  manager id is its own team id). A player's base copy id is turned into the target's own
+  on the same import; the manager id is not. Does the game mind two teams sharing one
+  coach record, and should the import give the target its own manager id when the file's
+  equals the file's team id?
 
 ## After the release
 
