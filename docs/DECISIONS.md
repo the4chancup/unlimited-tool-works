@@ -16593,3 +16593,27 @@ Plan: `plans/decompiler.md` (was `plans/team_decompiler.md`); `plans/team_compil
 "Recovery manifest"; `plans/balls_compiler.md` and `plans/stadium_compiler.md`, "Recovery
 manifest" (new); `plans/README.md`, `plans/core/README.md` "Overview"; `QUESTIONS.md` "After
 the release".
+
+## 2026-11-12 — studio_core — Update now is refused when another window already replaced the program; Cancel holds until the swap starts
+Decision: three rules the plan was silent on, from the first review round of Update now
+(`.tmp/duck_rulings.md` "S-upd r1"). (1) A window notes its program file's size and
+modification date when it starts; Update now is refused before the download when the file in
+the folder no longer matches, with `Update failed` and "The program was already replaced while
+this window was open, most likely by an update from another window. Close this window and
+start the program again to use the new version." (2) Cancel is read once more after the
+download's last byte and before the swap starts; a started swap runs whole. (3) The Cancel
+button is disabled once clicked, until the offer's dialog is back.
+Why: (1) two windows over one folder are a supported state, and the one that did not update
+still offers the release: a second swap moves the new program into `old/` over the previous
+one, so the way back is lost, and on Windows the temp folder then cannot be removed (it holds
+the image the window runs), which refuses every later update with the wrong reason. The
+file's size and date, not the instance locks, because the second swap also happens after the
+first window has closed. (2) A member who cancels during the unpacking asked to stop, and the
+program was replaced anyway. (3) A stalled download reads Cancel only when its read times
+out, up to 30 s in which nothing showed the click had landed.
+Not chosen: a lock file held during the install (it stops two installs at once and not the
+second after the first); comparing the running image's path (Linux reports the renamed file,
+and Windows, as documented and not measured here, the path the program started from, so the
+two would need two rules).
+Plan: `plans/core/distribution.md` "Self-update: in-place binary swap" step 4;
+`plans/core/gui.md` ST-UPD-03.

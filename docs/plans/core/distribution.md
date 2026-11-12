@@ -310,6 +310,18 @@ may change in a minor release.
    a failure like the others, the release page its way out. There is no elevated relaunch,
    because the bundle is a folder the member unpacks wherever they can write.
 
+   Two windows may run from one folder, and an update in one replaces the program under the
+   other. That other window still runs the previous version and still offers the release, and
+   its Update now would swap a second time: the new program moved into `old/` in place of the
+   previous one, the way back lost. So a window notes its program file's size and date when it
+   starts, and Update now is refused, before the download, when the file in the folder is no
+   longer that one. It is a failure like the others, its sentence "The program was already
+   replaced while this window was open, most likely by an update from another window. Close
+   this window and start the program again to use the new version."
+
+   Cancel is read once more when the download has ended, before the swap starts; a swap that
+   has started runs whole.
+
    Restart only after active work is stopped and unsaved edits are handled by the ordinary
    close prompts.
 5. **Teams list reconciliation** (on the first start of the new binary, not during the swap): the

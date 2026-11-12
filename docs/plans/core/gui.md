@@ -1571,7 +1571,13 @@ ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` m
                  download's line stays; GIVEN a check falling due while it downloads THEN no
                  request starts; GIVEN the window closed while it downloads THEN the worker
                  has ended and every file is as it was; GIVEN a failure that could not put
-                 the old files back THEN `Update failed` leaves "Nothing was changed." out
+                 the old files back THEN `Update failed` leaves "Nothing was changed." out;
+                 GIVEN the program's file replaced since the window started THEN `Update
+                 failed` says the program was already replaced, no request is made and every
+                 file is as it was; GIVEN Cancel clicked after the download's last byte and
+                 before the swap THEN the offer's dialog is back and every file as it was;
+                 GIVEN Cancel clicked THEN the Cancel button is disabled until the offer's
+                 dialog is back
 ST-UPD-04  manual  GIVEN the release bundle of a test version, `0.0.2-rc.1`, started with
                  `UTW_RELEASES_URL` naming a list whose one release is the bundle of
                  `0.0.2-rc.2`, on Windows and on Linux
