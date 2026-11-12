@@ -1857,8 +1857,13 @@ briefs, review loops, gates and mutation runs as for any step.
     the combo lists through `combo_label` itself, whose strips then go; a separator keeps
     its room. The highlight grows from 18 to 21 points, in the drafts' `.combo-pop` and
     menus too (`docs/prototypes/index.html`, the comment "A menu as egui 0.37 draws one")
-    - [ ] the draft and the plan (`plans/core/gui.md`: the menus' and combos' rows,
-      ST-COMBO-01 reworded, a scenario for a toolbar menu); the lead
+    - [x] the draft and the plan 2026-11-12 (the lead): `.menu` and `.combo-pop` rows 21
+      high with no gap, separators keeping their room; `plans/core/gui.md` "Other UI
+      components" (the row on a menu's and a combo's rows), ST-COMBO-01 reworded,
+      ST-COMBO-02 for a toolbar menu. Measured in the draft before and after
+      (`.tmp/0_0_2/gap/shot_gap.py`: rows 18 and 3 apart, then 21 and 0; a menu's
+      separator 12 both times). The maintainer's look at `menu_after.png` and
+      `combo_after.png` beside it is pending
     - [ ] the slice (`studio_core` alone, beside the Save editor's slices); Opus
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
