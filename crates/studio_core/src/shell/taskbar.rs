@@ -154,8 +154,8 @@ mod tests {
     /// The four values read back off a real window's property store, which
     /// also runs `set_relaunch_values` to its end on a live window: a value
     /// freed twice there ends the process, and so this test's.
-    // ST-WIN-05
     #[cfg(windows)]
+    // ST-WIN-05
     #[test]
     fn a_window_holds_the_relaunch_values_it_was_given() {
         use windows::Win32::Foundation::PROPERTYKEY;
