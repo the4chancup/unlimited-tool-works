@@ -2729,6 +2729,13 @@ SE-GUI-75  GIVEN a team's player list and row 02 held dragged
                 one line at most; GIVEN the pointer over his own row, an empty slot's or
                 another team's row THEN no line is drawn; GIVEN the drag released outside
                 the list THEN no line is left
+SE-GUI-76  GIVEN SE-AATF-09's save open, Live AATF on, 4cc Spring 26 the active ruleset
+           WHEN team 701's row is selected
+           THEN the Live AATF list holds a warning reading `Preset 1, Kick-off: illegal
+                formation.` and then the LB's name with `is outside the area a starter can be
+                moved in`; WHEN the LB is dragged on the Tactics pitch to (12, 10) THEN the
+                warning is gone; WHEN DBC7 is picked instead THEN the list holds no such
+                warning; GIVEN a PES 21 save with the same set THEN none under any ruleset
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -3059,6 +3066,13 @@ SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding
            THEN the first prints SE-AATF-03's VGL27 violation; the second checks nothing,
                 exits 2 and its error names `nosuch` and every embedded ruleset's stem; the
                 third checks against the file: the VGL27 violation is not printed
+SE-AATF-09 GIVEN a PES 17 save whose team 701 has, in preset 1's Kick-off set, its LB at
+                (2, 10), and whose team 702 has the same in preset 1's In-possession set
+                with Fluid formation off
+           WHEN check-aatf is run with --rules spring26, then with --rules dbc7
+           THEN the first prints one warning on team 701 starting `Preset 1, Kick-off: illegal
+                formation.` and naming the LB by name, none on team 702 for it, and exits 0
+                when no team has an error; the second prints no such warning
 SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
                 opens the save, sets player 70101's Height from the value the save holds to
                 another and writes the save, the save so written its kept output

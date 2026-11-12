@@ -2187,7 +2187,13 @@ briefs, review loops, gates and mutation runs as for any step.
       box. The Whack Patch's exe is back as `E:/PES2017/PES2017.exe`. Ten other teams of
       the live cup save break clause 2 or 3 (made under the patch or a tool: what the
       warning is for)
-    - [ ] the plan's Acceptance, then the slice
+    - [x] the plan's rest and its Acceptance 2026-11-12 (the lead; DECISIONS 2026-11-12):
+      one warning per fielded set, the rule in `pes_savefile`, the fixtures, SE-AATF-09,
+      SE-GUI-76
+    - [ ] the slice (Opus): the fixture of the game's own formations and presets is the
+      lead's (from `.tmp/0_0_2/formation/census/game_formations.tsv` and the looks'
+      `b_teams/`); the throwaway clauses are `4cc-studio-temp/formation`'s
+      `formation_clauses.rs`
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts

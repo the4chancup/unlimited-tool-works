@@ -187,6 +187,35 @@ starter by a tool for each clause):
 Run under the clauses, the saves those looks kept flag each of the four changed formations
 under the clause it was made to break, and none of the formations a drop repaired.
 
+**What is checked and what the warning says.** Only the sets a preset fields are read
+(`TacticsPreset::fielded_formations`: Kick-off alone, or all three under Fluid formation): the
+game never plays the others, and the fielded positions check reads the same sets. Each fielded
+set that breaks a clause gives one warning on the team, so a team has nine at most. The warning
+carries the preset, the set and every break found in it, a break being one of:
+
+| Break | Clause | Carries |
+|---|---|---|
+| the keeper off his spot | 1 | nothing |
+| a starter outside the movable range | 2 | his formation slot |
+| a position the spot does not offer | 3 | his formation slot |
+| a wide position twice | 4 | the position and the slots holding it |
+| a line outside its limits | 5 | the line and its count |
+| two starters on each other | 6 | the two slots |
+
+A starter outside the movable range breaks clause 2 alone: no spot out there offers anything,
+so clause 3 would only say the same thing twice. Its text names the preset and the set, then
+each break in a clause's words, the starters by name and position: `Preset 1, Kick-off: illegal
+formation. SMITH (LB) is outside the area a starter can be moved in; JONES (CF) holds a position
+the game does not give at his spot; LMF is held twice (BROWN, WHITE); 6 defenders, where the
+game keeps 2 to 5; GREEN and BLACK stand on each other; the goalkeeper is not on the keeper's
+spot` (the words of each break as here; a set breaking one clause holds that one alone).
+
+The rule itself is `pes_savefile`'s, as the roster order's is (`Formation::illegal_breaks`, the
+breaks of one set), since it is the game's rule about a stored formation and the Save editor's
+pitch may come to ask the same question; the host calls it per fielded set, before the script
+runs, and turns each set's breaks into one `ViolationKind::IllegalFormation { preset, formation,
+breaks }` of warning severity.
+
 The check is the `libs/aatf` host's, in Rust beside the checks the host runs around the file's
 logic, never in the logic: the rule is the game's, the same for every cup, and in the logic it
 would copy the game's tables into every file and take a logic version. The ruleset's flag only
@@ -625,3 +654,20 @@ DBC7's fields and data block (worklog 20.0d) are verified as the others are:
   - a team 16 cm from every quota system and outside GigaHeight's span read as GigaHeight;
   - a tie on errors going to the nearer system.
 - Validation: one failing file per new load-time rule.
+
+The illegal formation check (0.0.2c) is verified by fixtures, none of them a ruleset's:
+
+- **The game's own formations pass.** The distinct formations of PES 2017's own data (920, from
+  `TacticsFormation.bin` and `TacticsFormation4.bin`) and the fifteen of the Game Plan menu's
+  Change Formation list (read from saves the stock game wrote, one pick each), kept as one text
+  fixture of eleven `position x y` triples a line: none has a break.
+- **One formation per clause**, each the PES 17 fixture's team 701 first Kick-off set (a 4-4-2
+  that passes) changed in one starter: the keeper at (52, 1); the LB at (2, 10), which breaks
+  clause 2 and not 3; a CF at (52, 10); a second LMF at (14, 30); a midfielder made a sixth
+  defender; two CMFs 8 apart across and 2 up, and the same pair 9 apart, and 3 up, which pass.
+- **Only fielded sets.** A broken In-possession set gives no warning while the preset's Fluid
+  formation is off, and one when it is on.
+- **The flag and the version.** Under a ruleset with `illegal_formations` no team gets the
+  warning; a PES 2021 save's team holding the same broken set gets none under any ruleset.
+- **A game-made repair passes.** The four saved sets the stock game wrote after a drop repaired
+  each broken starter (the LB at x 5, the CF made a CB, the second LMF a CMF) have no break.
