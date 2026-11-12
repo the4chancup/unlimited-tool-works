@@ -70,10 +70,12 @@ On PES 18–21 the draw can be overridden. FoxDen (`Tools_4cc/FoxDen`, formerly 
 `dinput8.dll` that runs Lua scripts inside the Fox games' embedded engine, with a
 sider-compatible API) ships `03_refmod.lua`, a trampoline on the game's **referee
 slot-writer**: the routine the game calls once per match position, `slot 0..4`, with the
-referee id it drew (1..35). It runs when the match menu opens, not at kickoff, so a force meant
-for a match is in place before its menu opens. So a Fox match has **five** referee positions,
-not three: main referee, two linesmen, and (to be confirmed by forcing ids in-game) the fourth
-official and the substitution-board holder.
+referee id it drew (1..35). So a Fox match has **five** referee positions, not three: main
+referee, two linesmen, and (to be confirmed by forcing ids in-game) the fourth official and the
+substitution-board holder.
+
+The routine runs when the match menu opens, not at kickoff, so a force meant for a match is in
+place before its menu opens.
 
 The hook offers two primitives, settable from Lua at any time and persistent across script
 reloads:
@@ -238,11 +240,12 @@ The compiler's Reader keeps its disabled-marker test to itself today; it moves i
 
 - Lists the referees found in the refs export: the player folders under `Players/`.
 
-  The arranger performs its plain-filesystem walk, supplies a `CanonicalListing` (each
-  entry a path string with its kind and size) plus the bytes of every small metadata file
-  the listing holds (`players.txt`, `refs.txt`, `notes.txt`: the parser reads each one listed,
-  and one missing from the map is a failed read) to `aesthetics_export::parse_listing`, and
-  receives a `ParsedAestheticsExport`; it never reads model or texture payloads.
+  The arranger performs its plain-filesystem walk and supplies two things to
+  `aesthetics_export::parse_listing`: a `CanonicalListing` (each entry a path string with its
+  kind and size), plus the bytes of every small metadata file the listing holds (`players.txt`,
+  `refs.txt`, `notes.txt`). The parser reads each one listed, and one missing from the map is a
+  failed read. The arranger receives a `ParsedAestheticsExport`; it never reads model or
+  texture payloads.
 
   The arranger deliberately does not require a `ValidatedAestheticsExport`: the roster may be
   missing, invalid, or partial, and creating and repairing it is this tool's job. Valid entries
@@ -414,9 +417,11 @@ and the arranger share it.
 
 Overwriting an existing `players.txt` asks for confirmation; creating one where none existed
 does not. The confirmation names the lines the rewrite drops and says the file is rewritten
-canonical. Save refuses with a notice while the storage box is empty (the compiler drops a
-roster with no entry). On PES 18–21 with no list, Save writes no `ref_lists.txt` and removes
-an existing one, with the same confirmation.
+canonical.
+
+Save refuses with a notice while the storage box is empty (the compiler drops a roster with no
+entry). On PES 18–21 with no list, Save writes no `ref_lists.txt` and removes an existing one,
+with the same confirmation.
 
 A legacy `refs.txt` (the read-only alias `aesthetics_export` accepts on referee exports; see
 "Player numbering" in the Team compiler plan) pre-populates the assignments like a

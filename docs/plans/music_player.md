@@ -288,10 +288,11 @@ pub struct EventClip {
   `goal_minute: Option<u32>`, and the *view* prompts for the minute when the press's walk
   would reach a `time` condition (the `needs_goal_minute` query, a dry run of the selection),
   before the selection runs. Rigdio prompts at that point of its check, so a press that
-  plays before any `time` is reached asks nothing. When a Match tracker
-  event supplies the goal clock, `goal_minute` comes from `Clock.display_minute` and the
-  view skips the prompt. Otherwise the ordinary view-driven prompt rules apply (see
-  "Autopilot").
+  plays before any `time` is reached asks nothing.
+
+  When a Match tracker event supplies the goal clock, `goal_minute` comes from
+  `Clock.display_minute` and the view skips the prompt. Otherwise the ordinary view-driven
+  prompt rules apply (see "Autopilot").
 - `MatchState` (scores, per-player scorer counts, team names, match type, goal minute)
   lives in `music_export` too: plain data + methods, trivially unit-testable, replacing
   `gamestate.py`'s five-mutex thread-safety dance (the GUI thread owns it; workers get
@@ -352,10 +353,11 @@ pub enum Instruction {
 `Comparison`, `MatchType`, `EventKind`, `PauseAction` and `EndAction` have
 `keyword(self) -> &'static str`, their spelling in the file (the editor's dropdowns and chips).
 `Condition` and `Instruction` have none: the serializer writes them whole.
-`Slot::keyword(&self) -> &str` is the reserved word or the player's name,
-what a press names as its `player`. `MatchType::ALL` is the nine types in the cup's order and
-`MatchType::KNOCKOUTS` the five `knockouts` stands for (the editor's Toggle Knockouts). The
-readers (`from_keyword`) are the parser's alone.
+`Slot::keyword(&self) -> &str` is the reserved word or the player's name, what a press names as
+its `player`. The readers (`from_keyword`) are the parser's alone.
+
+`MatchType::ALL` is the nine types in the cup's order and `MatchType::KNOCKOUTS` the five
+`knockouts` stands for (the editor's Toggle Knockouts).
 
 **Reading and writing.** The caller owns the file I/O: the parser takes the bytes and the
 file's stem (the team name when the file carries no `name` line), the serializer returns the
@@ -713,11 +715,12 @@ and lane contract live in the Match tracker plan).
   Autopilot mode controls playback and highlighting only. Selecting `Off` suppresses
   tracker-triggered playback and highlights but does not transfer score authority: manual
   score accounting resumes only after `MatchSuspended { reason: UserStopped }`,
-  `MatchFinalized`, `MatchAbandoned`, or `FeedReleased`. While the feed is score authority,
-  no manual soundboard action (Undo, per-team Reset, or team load/reload) may alter
-  authoritative score, scorer totals, discipline, or participation state; those actions
-  affect playback state, caches, and loaded audio only. Once authority is released, they
-  resume their ordinary manual match-state behavior.
+  `MatchFinalized`, `MatchAbandoned`, or `FeedReleased`.
+
+  While the feed is score authority, no manual soundboard action (Undo, per-team Reset, or
+  team load/reload) may alter authoritative score, scorer totals, discipline, or participation
+  state; those actions affect playback state, caches, and loaded audio only. Once authority is
+  released, they resume their ordinary manual match-state behavior.
 
   A `Goal` event with `OpenPlay`, `Penalty`, or regulation-phase `Unknown` kind
   immediately increments the side's regulation score and the scorer's count. The scorer is
@@ -861,10 +864,10 @@ and lane contract live in the Match tracker plan).
   with the same `stop_epoch` as the `ClockStopped` that opened the post-goal window;
   otherwise it is canceled.
 
-  `MatchSuspended` with reason `UserStopped`,
-  `MatchFinalized`, `MatchAbandoned`, and `FeedReleased` revert the player to fully
-  manual behavior and cancel all pending tracker-triggered one-shot automation (the
-  streamer deliberately stopped, finalized, discarded, or the draft was detached).
+  `MatchSuspended` with reason `UserStopped`, `MatchFinalized`, `MatchAbandoned`, and
+  `FeedReleased` revert the player to fully manual behavior and cancel all pending
+  tracker-triggered one-shot automation (the streamer deliberately stopped, finalized,
+  discarded, or the draft was detached).
   `MatchFinalized` releases feed score authority but neither stops currently playing
   audio nor triggers victory-anthem automation.
 
@@ -984,10 +987,9 @@ uses of mpv:
   methods (`algebraic_add`, etc.), which let the compiler reassociate and vectorize
   FP ops like `-ffast-math` but per-operation and opt-in.
 
-  Use them in these loops:
-  loudness values are compared against a tolerance, not byte-compared, so the
-  methods' non-determinism is acceptable here (unlike `model_convert`, whose
-  byte-reproducible output contract rules them out).
+  Use them in these loops. Loudness values are compared against a tolerance, not
+  byte-compared, so the methods' non-determinism is acceptable here (unlike
+  `model_convert`, whose byte-reproducible output contract rules them out).
 - The engine owns the audio thread; the tools drive it from the GUI update loop.
   **Zero polling threads**: fades are tweens, song-end is state queried per frame,
   timers (chant, VA, title.log) are deadlines checked per frame.

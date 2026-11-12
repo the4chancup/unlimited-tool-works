@@ -179,9 +179,9 @@ not filled in merely by opening the folder. The preview shows a key the file lea
 default, which is what the compile writes (the template's value; with no FPC marker, the
 base body is visible).
 
-Wait for explicit user edits: turning FPC on writes the canonical `fpc_on` marker, turning it
-off writes `fpc_off`, and strip edits persist only the edited keys. Both panels follow this
-rule; there is no second FPC boolean in `settings.toml`.
+The tool waits for explicit user edits: turning FPC on writes the canonical `fpc_on` marker,
+turning it off writes `fpc_off`, and strip edits persist only the edited keys. Both panels
+follow this rule; there is no second FPC boolean in `settings.toml`.
 
 **Conversion.** The "Convert to glTF" action (see below).
 
@@ -246,9 +246,9 @@ location per launch:
   `settings_toml` or `ingame_face_toml`) and its table there (empty for the file's top level),
   the key, type, range, and the app-injected comment as `doc`.
 
-  The Blender panel builds its widgets from it, so the two
-  forms show the same fields by construction and the plugin carries no copy of the schema (the
-  "no export-format reasoning on the Python side" rule, applied to settings).
+  The Blender panel builds its widgets from it, so the two forms show the same fields by
+  construction and the plugin carries no copy of the schema (the "no export-format reasoning
+  on the Python side" rule, applied to settings).
 - **Origins** record where each part came from (local file, resolved shared
   link, resolved `.common` link) for collection naming. Unresolvable links are
   listed in a `problems` array and shown in both UIs, not silently dropped.
