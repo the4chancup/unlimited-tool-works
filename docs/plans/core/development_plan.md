@@ -166,8 +166,9 @@ wait for a key at the end so the report can be read:
   It takes its `--gui` form (`architecture.md` "Launch modes") when the Team compiler's view
   lands.
 - `quick_upgrade.bat` upgrades every export in the bundle's `old_exports/` (folders, `.zip`,
-  `.7z`) into `exports/` against the savefile dropped onto it, then prints how many were
-  upgraded and how many were not.
+  `.7z`) into `exports/` against the savefile dropped onto it, in one run of the exe
+  (`upgrade --all`, `plans/export_upgrader.md` "CLI"), which prints how many were upgraded
+  and how many were not.
 
   It passes `--legacy-ids` (`plans/export_upgrader.md` "What it does"): the bundle exists for
   VGL27, whose exports keep the managers' old boots and gloves IDs, and a bat without it would
@@ -178,17 +179,16 @@ wait for a key at the end so the report can be read:
   back to loose. With no file dropped it says how to drop one and stops.
 
   An export already upgraded is refused on a second run, its folder in `exports/` existing
-  (replacing it would lose edits made since), and counted as not upgraded. The bat cannot tell
-  that refusal from another, so the readme tells the member to move upgraded old exports out of
-  `old_exports/`, which an organizer receiving exports over several days needs.
+  (replacing it would lose edits made since), and counted as not upgraded. The tally does not
+  tell that refusal from another, so the readme tells the member to move upgraded old exports
+  out of `old_exports/`, which an organizer receiving exports over several days needs.
 
   The bat goes when the Export upgrader's view lands.
 - Both pass `--log-file` (`architecture.md` "Launch modes"). The window shows the warnings
   and errors alone, and `compile_log.txt` or `upgrade_log.txt` beside the launcher holds the
   whole run, Info findings included, for reading afterwards and for posting when something
-  fails. Each launcher deletes its log before its first run, and `quick_upgrade.bat` adds its
-  tally line to it. Each ends by saying that Info messages were left out and where the full
-  report is.
+  fails. Each launcher deletes its log before its run. Each ends by saying that Info messages
+  were left out and where the full report is.
 
 The organizer's PES 2019 install carries the official DpFileList. An install with another list
 takes it with `team-compiler upgrade-dpfl`, run once from a console in the bundle's folder; no

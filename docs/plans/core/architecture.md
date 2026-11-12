@@ -116,7 +116,8 @@ so the grid never compiles unchecked state.
 
 **A run's log file.** `--log-file <FILE>` is a global option, accepted before or after the
 tool's id as `-v` is. With it, a CLI run appends everything it prints to FILE, between a first
-line `$ UTW <the arguments>` and a last line `exit <code>`, and its stdout leaves the Info
+line `$ <the program's name> <the arguments>` (`UTW` on Windows, `utw` on Linux) and a last
+line `exit <code>`, and its stdout leaves the Info
 findings out. A compile prints hundreds of them around the few Warnings and Errors a member
 has to act on, and the file is where the rest is read.
 
@@ -135,8 +136,8 @@ the exe prints: started from a bat, this exe's output cannot be redirected or pi
 the "Windows subsystem" arrangement below: a GUI-subsystem exe that attaches to its parent's
 console writes to that console, whatever `cmd` redirected.
 
-The file is appended to, so that `quick_upgrade.bat`, which runs the exe once per export, has
-one log of its whole run. A launcher deletes the file before its first run.
+The file is appended to: each run adds its own block, from its `$` line to its `exit` line. A
+launcher deletes the file before its run, so its log holds that run alone.
 
 A FILE that cannot be opened refuses the run before it starts (exit 2), and a write to it that
 fails ends the run as a failed console write does (exit 3): a log that silently stops is worse
