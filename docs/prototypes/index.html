@@ -406,12 +406,12 @@
      high and 3 apart, and a click between two picked nothing); a separator keeps its 7. */
   select.open { background: #2d2d2d; box-shadow: inset 0 0 0 1px var(--stroke); }
   .combo-pop { position: fixed; z-index: 140; background: var(--panel); border: 1px solid var(--stroke);
-    border-radius: 6px; padding: 6px; box-shadow: 6px 10px 4px #00000060; }
+    border-radius: 2px; padding: 6px; box-shadow: 6px 10px 4px #00000060; }
   .combo-pop > div { display: flex; flex-direction: column; gap: 0; max-height: 200px; overflow-y: auto; }
   .combo-pop > div > div:not(.sep) { flex: none; display: flex; align-items: center; min-height: 21px;
     padding: 0 4px; border-radius: 2px; color: #b4b4b4; white-space: nowrap; cursor: default; }
   .combo-pop > div > div:not(.sep):hover { background: var(--hover); box-shadow: inset 0 0 0 1px #969696;
-    border-radius: 3px; color: #f0f0f0; }
+    border-radius: 2px; color: #f0f0f0; }
   .combo-pop > div > div.on { background: var(--sel-bg); color: var(--sel-fg); }
   .combo-pop > div > .sep { flex: none; margin: 3px 0; }
   /* A removable row's ×: a frameless small button at the row's right end, 12 from its text. */
@@ -424,7 +424,7 @@
   option { font-family: var(--font-body), sans-serif; }
   /* A multiline TextEdit draws as a single-line one: without the textarea here each browser
      drew its own default, darker in Firefox than in Chromium. */
-  input[type=text], input[type=number], textarea { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 3px; padding: 1px 4px; }
+  input[type=text], input[type=number], textarea { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px; padding: 1px 4px; }
   input[type=number] { width: 52px; background: var(--widget); border: 0; text-align: center; }
   /* A DragValue has no spin arrows (the browsers draw theirs in the box). */
   input[type=number] { appearance: textfield; -moz-appearance: textfield; }
@@ -435,8 +435,8 @@
   /* The swatch outlined as a resting text box is (its stroke and corners), so a colour as dark
      as the panel still shows its box. */
   input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
-  input[type=color]::-webkit-color-swatch { border: 1px solid var(--stroke); border-radius: 3px; }
-  input[type=color]::-moz-color-swatch { border: 1px solid var(--stroke); border-radius: 3px; }
+  input[type=color]::-webkit-color-swatch { border: 1px solid var(--stroke); border-radius: 2px; }
+  input[type=color]::-moz-color-swatch { border: 1px solid var(--stroke); border-radius: 2px; }
   /* egui's CheckBox and RadioButton in theme.rs's widget states: a 14-point box (corner 2)
      or circle on the widget fill, no border; the tick a polyline across the box's central
      8 points, the dot's radius a third of them, both in the label's colour. Hovered or pressed
@@ -458,7 +458,7 @@
   label.cb:hover:not(:has(:disabled)) { color: #f0f0f0; }
   :is(label.cb:hover > input, input:hover):is([type=checkbox], [type=radio]):not(:disabled) {
     background-color: var(--hover); box-shadow: inset 0 0 0 1px #969696; }
-  :is(label.cb:hover > input, input:hover)[type=checkbox]:not(:disabled) { border-radius: 3px; }
+  :is(label.cb:hover > input, input:hover)[type=checkbox]:not(:disabled) { border-radius: 2px; }
   :is(label.cb:hover > input, input:hover)[type=checkbox]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='3,7 7,11 11,3' fill='none' stroke='%23c0deff' stroke-width='2'/%3E%3C/svg%3E"); }
   :is(label.cb:hover > input, input:hover)[type=radio]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Ccircle cx='7' cy='7' r='2.667' fill='%23c0deff'/%3E%3C/svg%3E"); }
   label.cb:active:not(:has(:disabled)) { color: var(--strong); }
@@ -492,7 +492,7 @@
      those 3 points picks nothing and closes the menu. Here the entries meet: each is 21
      high with nothing between, its text where it stood, so every point of the list picks
      an entry. A separator keeps its 12 (its line and 5.5 either side). */
-  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 6px; gap: 0; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
+  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px; padding: 6px; gap: 0; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
   .menu button { text-align: left; background: transparent; padding: 0 2px; min-height: 21px; }
   .menu button:hover:not(:disabled) { background: var(--hover); }
   /* A menu item's shortcut (egui's shortcut_text): right-aligned in the weak colour, at least
@@ -503,7 +503,7 @@
      the middle). */
   .tsep { flex: none; width: 1px; align-self: stretch; margin: 1px 2.5px; background: var(--stroke); }
   .modal-bg { position: fixed; inset: 0; background: #0008; display: flex; align-items: center; justify-content: center; z-index: 120; }
-  .window { background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 8px 12px; box-shadow: 0 8px 24px #000c; min-width: 360px; max-width: 640px; }
+  .window { background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px; padding: 8px 12px; box-shadow: 0 8px 24px #000c; min-width: 360px; max-width: 640px; }
   .window .title { color: var(--strong); font-size: 14px; margin-bottom: 8px; text-align: center; }
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 2px; border: 1px solid #000; vertical-align: middle; }
   .chip { background: var(--widget); border-radius: 2px; padding: 0 4px; }
@@ -574,8 +574,8 @@
   .window .update-notes { max-height: 240px; overflow-y: auto; padding: 0 8px;
     border: 1px solid var(--stroke); border-radius: 2px; }
   /* Update now's download: egui's ProgressBar, a filled bar in a track. */
-  .window .update-bar { height: 8px; width: 360px; background: var(--stroke); border-radius: 4px; }
-  .window .update-bar > div { height: 100%; background: var(--sel-fg); border-radius: 4px; }
+  .window .update-bar { height: 8px; width: 360px; background: var(--stroke); border-radius: 2px; }
+  .window .update-bar > div { height: 100%; background: var(--sel-fg); border-radius: 2px; }
   a { color: var(--link); }
   /* A path box holds a usual install path whole: Steam's
      C:\Program Files (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019, 71
@@ -646,7 +646,7 @@
   /* Remarks: the note popup at the click, above the menus, and the saved
      notes' numbered markers, which a click passes through to the control. */
   .rm-pop { position: fixed; z-index: 140; background: var(--panel); border: 1px solid var(--stroke);
-    border-radius: 6px; padding: 6px 8px; box-shadow: 0 4px 16px #000a; }
+    border-radius: 2px; padding: 6px 8px; box-shadow: 0 4px 16px #000a; }
   .rm-pop .title { color: var(--strong); margin-bottom: 4px; }
   .rm-mark { position: fixed; z-index: 135; pointer-events: none; transform: translate(-50%, -50%);
     min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; border-radius: 7px;

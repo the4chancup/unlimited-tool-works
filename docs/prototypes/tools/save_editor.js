@@ -152,7 +152,7 @@ input[type=range]:focus { outline: none; }
 .chfield .unsaved { cursor: pointer; color: var(--link); }
 .chpop { position: absolute; top: 100%; left: 0; margin-top: 3px; z-index: 30;
   width: max-content; min-width: 460px; max-width: 640px;
-  background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
   padding: 8px; box-shadow: 0 4px 16px #000a; }
 /* The formation pictures run's progress (egui: a ProgressBar). */
 .pbar { width: 100%; height: 14px; background: var(--extreme); border: 1px solid var(--stroke);
@@ -175,7 +175,7 @@ input[type=range]:focus { outline: none; }
   flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .plist .rows::-webkit-scrollbar { display: none; }
 .plist .vbar { flex: none; width: 6px; position: relative; }
-.plist .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--widget); }
+.plist .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
 .plist .vbar .thumb:hover, .plist .vbar .thumb.drag { background: var(--hover); }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -342,7 +342,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 #pos-grid .posrow { display: flex; justify-content: center; gap: 4px; }
 #pos-grid .poscell { width: 62px; padding: 2px 3px 3px; box-sizing: border-box;
   display: flex; flex-direction: column; align-items: center; }
-#pos-grid .poscell.reg { outline: 1px solid var(--sel-fg); border-radius: 3px; }
+#pos-grid .poscell.reg { outline: 1px solid var(--sel-fg); border-radius: 2px; }
 /* A clickable label: egui draws it in the resting widgets' grey, a button's text. */
 #pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px;
   color: #b4b4b4; }
@@ -385,7 +385,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .cbtn:hover { border-color: var(--hover); }
 .pkfield { position: relative; display: inline-block; }
 .pkpop { position: absolute; top: 100%; left: 0; margin-top: 3px; z-index: 25;
-  background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
   padding: 8px; box-shadow: 0 4px 16px #000a;
   display: flex; flex-direction: column; gap: 6px; }
 .pkpop canvas { display: block; border: 1px solid var(--stroke); }
@@ -476,7 +476,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 #tac-lists .lname { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tpopover { position: absolute; transform: translateX(-100%); width: max-content;
   background: var(--panel);
-  border: 1px solid var(--stroke); border-radius: 6px; padding: 6px 8px;
+  border: 1px solid var(--stroke); border-radius: 2px; padding: 6px 8px;
   z-index: 30; box-shadow: 0 4px 16px #000a; }
 .tpopover .pos-row { flex-wrap: nowrap; }
 /* The dropdown takes the row's width less Make GK's, which keeps its own:
@@ -498,7 +498,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .badge.over { color: var(--error); }
 /* the panels (egui::Window over the central panel) */
 .panel { position: fixed; right: 16px; top: 90px; width: 620px; max-height: 82%;
-  background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
   padding: 8px 12px; box-shadow: 0 8px 24px #000c; z-index: 110;
   display: flex; flex-direction: column; }
 .panel .title { color: var(--strong); font-size: 14px; margin-bottom: 6px;

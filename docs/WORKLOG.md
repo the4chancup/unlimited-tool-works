@@ -1853,6 +1853,19 @@ briefs, review loops, gates and mutation runs as for any step.
       line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
       of the line outside a row flush with the view's edge. Look: Pending looks
     - [ ] its SWE-2 review (running, `.tmp/0_0_2/line/swe_line.md`)
+  - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
+    move to egui 0.37 rounded everything more, most were put back by hand and menus and
+    dialogs kept slipping through; "a root solution", and the suite's own painted corners
+    read the theme's value). egui has no single setting, but all seven radii it draws are
+    in `Visuals`; `theme.rs` set five and left `window_corner_radius` and
+    `menu_corner_radius` at 6 (`plans/core/gui.md` "Other UI components", the Corners row;
+    ST-CORNER-01)
+    - [x] the plan and the drafts 2026-11-13 (the lead): the drafts' 6, 4 and 3 pixel
+      radii are 2; pills and circles keep their shapes
+    - [ ] the slice (small, SWE-2; after 0.0.2-gap merges, the same `studio_core`): one
+      constant in `theme.rs` for all seven, both themes; the literal radii in
+      `studio_core`, `team_widgets` and `save_editor` (about a dozen: `git grep -n
+      "CornerRadius::same(\|corner_radius(" crates`) read the style
   - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
