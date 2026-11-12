@@ -1771,7 +1771,12 @@ briefs, review loops, gates and mutation runs as for any step.
       that never wraps and the logo is always drawn (DECISIONS 2026-11-12); a view's title
       is measured from the band's line, and everything under the bar stands 1 point higher
     - [ ] the look in the built window, both tools, both themes (ask the maintainer)
-    - [ ] its review: a SWE-2 loop, then one paid round (Carbon, from 2026-11-15)
+    - [x] its SWE-2 loop, 2026-11-12 (`b1f3c85e`; two rounds, 6 of 11 then 1 of 2): the
+      logo's place is read once a frame and handed to the band and the logo both, and
+      tests pin the framed dropdown and Live AATF, the Ruleset editor's row 3 points
+      inside its panel, the team view's last row at 739 and no logo on the frame a save
+      opens
+    - [ ] one paid round (Carbon, from 2026-11-15)
   - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
     unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
     `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12): the draft,

@@ -333,19 +333,15 @@ fn a_save_opened_from_the_toolbar_shows_the_logo_on_the_next_frame() {
     assert!(view.session.is_none(), "premise: no save open");
 
     // Ctrl+1 opens the newest discovered PES 21 save on this frame.
-    let (_, nodes, shapes) = window.frame(
+    let (_, nodes, _) = window.frame(
         vec![key(egui::Key::Num1, egui::Modifiers::CTRL, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
     assert!(view.session.is_some(), "premise: the shortcut opened it");
-    if let Some(bounds) = logo(&nodes, &name).and_then(accesskit::Node::bounds) {
-        let (fill, _) = band(&window, &shapes);
-        assert_eq!(
-            fill.1,
-            bounds.x0 as f32 - 14.0,
-            "a logo on the open's own frame stands over a band ending 14 left of it"
-        );
-    }
+    assert!(
+        logo(&nodes, &name).is_none(),
+        "no logo on the open's own frame, whose band ran to the view's right edge"
+    );
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = logo(&nodes, &name)
         .and_then(accesskit::Node::bounds)
