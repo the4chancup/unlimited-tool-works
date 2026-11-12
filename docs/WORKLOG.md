@@ -1685,7 +1685,11 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted: Update now refused when another window replaced the program, Cancel read
       once more before the swap and disabled once clicked, a check interval of 0 read as a
       minute, the name lookup's timeout, and the endings and dialog moves no test reached
-    - [ ] the review loops' rest: SWE-2 round 2 over `caf88b0f`, then Carbon (from
+    - [x] review round 2 (SWE-2), 2026-11-12 (`314e2551`, Opus): 7 of 12 concerns accepted:
+      the program's stamp compared again before the swap (a second window clicking Update
+      now during the first one's download), each field of the stamp and the "old files not
+      put back" ending tested, a member's file inside a folder the bundle ships
+    - [ ] the review loops' rest: SWE-2 round 3 over `314e2551`, then Carbon (from
       2026-11-15), then Astra
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
@@ -1736,7 +1740,9 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted: a crash's text in the log file, the launcher's last report kept when no run
       follows, the progress line's parts counter per export, and the cases of a run of
       several exports no test reached
-    - [ ] SWE-2 round 2 over `be23aec1`, then one paid round (Carbon, from 2026-11-15)
+    - [x] review round 2 of both (SWE-2), 2026-11-12: 3 concerns, two comments corrected,
+      which ends SWE-2's loop
+    - [ ] one paid round (Carbon, from 2026-11-15)
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
