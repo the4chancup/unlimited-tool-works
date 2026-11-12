@@ -69,6 +69,18 @@ impl ProgramStamp {
     }
 }
 
+/// Refuses with `ProgramReplaced` when the program's file in `bundle` is no
+/// longer the one `stamp` noted. A `None` stamp noted nothing and refuses
+/// nothing.
+fn refuse_if_replaced(stamp: Option<ProgramStamp>, bundle: &Path) -> Result<(), InstallError> {
+    match stamp {
+        Some(stamp) if ProgramStamp::of(bundle) != Some(stamp) => {
+            Err(InstallError::ProgramReplaced)
+        }
+        _ => Ok(()),
+    }
+}
+
 /// Why an update failed. Each message is shown to the member after "Update
 /// failed". Every failure but `NotRestored` leaves the program's folder as it
 /// was.
@@ -277,16 +289,17 @@ fn staged_bundle(staging: &Path) -> Result<StagedBundle, InstallError> {
 }
 
 /// "Update now": installs `release` into `bundle`, the running program's
-/// folder. Refuses at once when the program's file is no longer the one
-/// `stamp` noted (`None` notes nothing). Downloads the running platform's
-/// archive through `open_url`, reporting `progress` and stopping when `cancel`
-/// is set, checks it against the release's `SHA256SUMS.txt`, unpacks it and
-/// swaps it in: the running program moves into `old/` (replacing the one an
-/// earlier update left there), the new one takes its place and every other
-/// file of the bundle goes over the old one, `data/` aside. `cancel` is read
-/// once more before the swap; a swap that has started runs whole. Runs on the
-/// caller's thread, the network included, so the dialog calls it from a
-/// thread of its own.
+/// folder. Refuses when the program's file is no longer the one `stamp` noted
+/// (`None` notes nothing): before the download, and once more before the
+/// swap, since another window's update may end while this one downloads.
+/// Downloads the running platform's archive through `open_url`, reporting
+/// `progress` and stopping when `cancel` is set, checks it against the
+/// release's `SHA256SUMS.txt`, unpacks it and swaps it in: the running program
+/// moves into `old/` (replacing the one an earlier update left there), the new
+/// one takes its place and every other file of the bundle goes over the old
+/// one, `data/` aside. `cancel` is read once more before the swap; a swap that
+/// has started runs whole. Runs on the caller's thread, the network included,
+/// so the dialog calls it from a thread of its own.
 ///
 /// On a failure the program's folder is left as it was (`NotRestored` aside).
 pub(crate) fn install(
@@ -319,11 +332,7 @@ fn install_kind(
     mut progress: impl FnMut(Progress),
     cancel: &AtomicBool,
 ) -> Result<(), InstallError> {
-    if let Some(stamp) = stamp
-        && ProgramStamp::of(bundle) != Some(stamp)
-    {
-        return Err(InstallError::ProgramReplaced);
-    }
+    refuse_if_replaced(stamp, bundle)?;
     let (archive, checksums) = assets(release, kind)?;
     let temp = bundle.join(TEMP_FOLDER);
     let backup = temp.join(BACKUP_FOLDER);
@@ -359,14 +368,23 @@ fn install_kind(
         if cancel.load(Ordering::Relaxed) {
             return Err(InstallError::Cancelled);
         }
+        refuse_if_replaced(stamp, bundle)?;
         swap(&staged, bundle, &backup)
     })();
-    if !matches!(outcome, Err(InstallError::NotRestored { .. }))
-        && let Err(error) = fs::remove_dir_all(&temp)
-    {
+    remove_temp(&temp, &outcome);
+    outcome
+}
+
+/// Removes the temp folder `temp` once an install has ended with `outcome`,
+/// unless that is `NotRestored`: the folder's backup then holds the only
+/// copies of the program's old files.
+fn remove_temp(temp: &Path, outcome: &Result<(), InstallError>) {
+    if matches!(outcome, Err(InstallError::NotRestored { .. })) {
+        return;
+    }
+    if let Err(error) = fs::remove_dir_all(temp) {
         log::debug!("the update's temp folder {} stays: {error}", temp.display());
     }
-    outcome
 }
 
 /// Creates the temp folder, first removing one an update that stopped midway

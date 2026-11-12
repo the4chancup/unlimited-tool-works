@@ -10,8 +10,12 @@ use super::*;
 /// The new bundle's folder inside its archive.
 pub(super) const TOP: &str = "unlimited-tool-works-0.0.2";
 
+/// The empty folder the new bundle ships and the old folder already holds,
+/// with a member's file inside.
+pub(super) const KEPT_FOLDER: &str = "exports";
+
 /// The empty folder the new bundle adds.
-pub(super) const NEW_FOLDER: &str = "exports";
+pub(super) const NEW_FOLDER: &str = "old_exports";
 
 /// A file name and its text.
 pub(crate) type Files = Vec<(String, &'static str)>;
@@ -31,8 +35,9 @@ pub(crate) fn new_files() -> Files {
 }
 
 /// The program's folder before the update: the new bundle's first files with
-/// the old version's bytes, the member's own settings, and two files of the
-/// member's the new bundle lacks, one at the root and one in `data/`.
+/// the old version's bytes, the member's own settings, and three files of the
+/// member's the new bundle lacks: one at the root, one in `data/` and one in
+/// `exports/`, a folder the new bundle ships empty.
 pub(crate) fn old_files() -> Files {
     vec![
         (exe_file_name(), "old program"),
@@ -42,6 +47,10 @@ pub(crate) fn old_files() -> Files {
         ("quick_compile.bat".to_owned(), "old launcher"),
         ("compile_log.txt".to_owned(), "a member's compile log"),
         ("data/teams_list.txt".to_owned(), "a member's teams list"),
+        (
+            "exports/co Full Spring/notes.txt".to_owned(),
+            "a member's notes",
+        ),
     ]
 }
 
@@ -135,14 +144,15 @@ pub(super) fn pack_entries(kind: ArchiveKind, files: &Files, folders: &[String])
     }
 }
 
-/// `files` and the empty `NEW_FOLDER`, packed under `TOP` as an archive of
-/// `kind`: the shape a release's archive has.
+/// `files` and the empty `KEPT_FOLDER` and `NEW_FOLDER`, packed under `TOP`
+/// as an archive of `kind`: the shape a release's archive has.
 pub(super) fn pack(kind: ArchiveKind, files: &Files) -> Vec<u8> {
     let under_top: Files = files
         .iter()
         .map(|(relative, text)| (format!("{TOP}/{relative}"), *text))
         .collect();
-    pack_entries(kind, &under_top, &[format!("{TOP}/{NEW_FOLDER}")])
+    let folders = [KEPT_FOLDER, NEW_FOLDER].map(|folder| format!("{TOP}/{folder}"));
+    pack_entries(kind, &under_top, &folders)
 }
 
 /// The archive asset's name for `kind`.

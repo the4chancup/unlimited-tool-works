@@ -198,7 +198,7 @@ fn installed(before: &BTreeMap<String, Option<String>>) -> BTreeMap<String, Opti
         .expect("the old files hold the program");
     expected.insert("old".to_owned(), None);
     expected.insert(format!("old/{program}"), Some(text.to_owned()));
-    expected.insert("exports".to_owned(), None);
+    expected.insert("old_exports".to_owned(), None);
     expected
 }
 

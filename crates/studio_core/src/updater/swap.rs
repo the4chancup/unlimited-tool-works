@@ -216,6 +216,26 @@ impl Swap<'_> {
         }
         first_failure.map_or(Ok(()), Err)
     }
+
+    /// Ends the swap on `applied`, what `apply` returned: done, or every move
+    /// undone and the failed step named. When an undo fails too, the files set
+    /// aside are still in the backup folder, and the error names it.
+    fn finish(self, applied: Result<(), (SwapStep, io::Error)>) -> Result<(), InstallError> {
+        let (step, source) = match applied {
+            Ok(()) => return Ok(()),
+            Err(failure) => failure,
+        };
+        let kept = self.backup.to_owned();
+        match self.undo() {
+            Ok(()) => Err(InstallError::Swap { step, source }),
+            Err(restore) => Err(InstallError::NotRestored {
+                step,
+                source,
+                restore,
+                kept,
+            }),
+        }
+    }
 }
 
 /// Swaps the bundle unpacked at `staged` into the program's folder `bundle`,
@@ -232,19 +252,8 @@ pub(super) fn swap(
         backup,
         journal: Vec::new(),
     };
-    let (step, source) = match swap.apply(staged) {
-        Ok(()) => return Ok(()),
-        Err(failure) => failure,
-    };
-    match swap.undo() {
-        Ok(()) => Err(InstallError::Swap { step, source }),
-        Err(restore) => Err(InstallError::NotRestored {
-            step,
-            source,
-            restore,
-            kept: backup.to_owned(),
-        }),
-    }
+    let applied = swap.apply(staged);
+    swap.finish(applied)
 }
 
 #[cfg(test)]
@@ -252,23 +261,49 @@ mod tests {
     use super::*;
     use crate::updater::test_bundle::folder_with;
 
-    #[test]
-    fn an_undo_that_fails_still_undoes_the_older_moves() {
+    /// A program folder `name` holding a readme and a launcher, and the
+    /// backup folder a swap there sets files aside in.
+    fn scene(name: &str) -> (PathBuf, PathBuf) {
         let bundle = folder_with(
-            "undo_fails",
+            name,
             &vec![
                 ("README.txt".to_owned(), "old readme"),
                 ("quick_compile.bat".to_owned(), "old launcher"),
             ],
         );
         let backup = bundle.join(".update").join("backup");
+        (bundle, backup)
+    }
+
+    /// A swap of `bundle` that has set the readme, then the launcher, aside.
+    fn both_set_aside<'a>(bundle: &'a Path, backup: &'a Path) -> Swap<'a> {
         let mut swap = Swap {
-            bundle: &bundle,
-            backup: &backup,
+            bundle,
+            backup,
             journal: Vec::new(),
         };
         swap.set_aside(Path::new("README.txt")).unwrap();
         swap.set_aside(Path::new("quick_compile.bat")).unwrap();
+        swap
+    }
+
+    /// The text of the file `name` in `bundle`, `None` when it is not there.
+    fn text(bundle: &Path, name: &str) -> Option<String> {
+        fs::read_to_string(bundle.join(name)).ok()
+    }
+
+    /// A failure of the step putting the new launcher in place.
+    fn launcher_failed() -> Result<(), (SwapStep, io::Error)> {
+        Err((
+            SwapStep::PlaceFile(PathBuf::from("quick_compile.bat")),
+            io::Error::other("the launcher's move failed"),
+        ))
+    }
+
+    #[test]
+    fn an_undo_that_fails_still_undoes_the_older_moves() {
+        let (bundle, backup) = scene("undo_fails");
+        let swap = both_set_aside(&bundle, &backup);
         // The newest move's file is gone, so its undo fails.
         fs::remove_file(backup.join("quick_compile.bat")).unwrap();
 
@@ -280,11 +315,54 @@ mod tests {
             "{outcome:?}"
         );
         assert_eq!(
-            fs::read_to_string(bundle.join("README.txt"))
-                .ok()
-                .as_deref(),
+            text(&bundle, "README.txt").as_deref(),
             Some("old readme"),
             "the older move is undone"
+        );
+        fs::remove_dir_all(bundle).unwrap();
+    }
+
+    #[test]
+    fn a_failed_step_whose_undo_fails_too_names_the_backup_folder() {
+        let (bundle, backup) = scene("not_restored");
+        let swap = both_set_aside(&bundle, &backup);
+        fs::remove_file(backup.join("quick_compile.bat")).unwrap();
+
+        let outcome = swap.finish(launcher_failed());
+        assert!(
+            matches!(
+                &outcome,
+                Err(InstallError::NotRestored { step: SwapStep::PlaceFile(path), kept, .. })
+                    if *path == Path::new("quick_compile.bat") && *kept == backup
+            ),
+            "{outcome:?}"
+        );
+        assert_eq!(
+            text(&bundle, "README.txt").as_deref(),
+            Some("old readme"),
+            "the older move is undone"
+        );
+        fs::remove_dir_all(bundle).unwrap();
+    }
+
+    #[test]
+    fn a_failed_step_whose_undo_succeeds_puts_every_file_back() {
+        let (bundle, backup) = scene("restored");
+        let swap = both_set_aside(&bundle, &backup);
+
+        let outcome = swap.finish(launcher_failed());
+        assert!(
+            matches!(
+                &outcome,
+                Err(InstallError::Swap { step: SwapStep::PlaceFile(path), .. })
+                    if *path == Path::new("quick_compile.bat")
+            ),
+            "{outcome:?}"
+        );
+        assert_eq!(text(&bundle, "README.txt").as_deref(), Some("old readme"));
+        assert_eq!(
+            text(&bundle, "quick_compile.bat").as_deref(),
+            Some("old launcher")
         );
         fs::remove_dir_all(bundle).unwrap();
     }
