@@ -2406,7 +2406,8 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`
-                reports, each row under the label its field's view draws it with and with
+                reports (the open save with its unsaved edits, in the list and in the
+                export), each row under the label its field's view draws it with and with
                 its values as that view shows them (a field no view shows is named in words
                 from the report's name, its stored values kept); the All / Gameplay / Aesthetics toggles and the team filter
                 narrow them; Export writes the text `diff <picked> <open>` prints for the
@@ -2416,7 +2417,10 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
                 each row draws its label, the picked save's value and the open save's in
                 three columns, at 4, 202 and 410 points from the row's left, under one head
-                row `Item`, `Old value`, `New value`, and no arrow;
+                row `Item`, `Old value`, `New value`, and no arrow; a value wider than its
+                column is cut with an ellipsis, and its row's hover then holds the whole row's
+                text above the click hint; a comparison with no field row (players in one
+                save alone) paints no head row;
            GIVEN a save of another version picked THEN it is refused naming both versions;
            GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
                 filter reads ALL; WHEN the same path is picked again after the file changed on

@@ -1541,9 +1541,12 @@ ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the int
                  bar shows `Update available: v0.0.2` in the link blue with a Details button;
                  `last_update_check` is stored; GIVEN the check off, or the last check inside
                  the interval THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
-                 offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN the fetch
-                 failing THEN no offer, one log line; GIVEN the window left open past the
-                 interval since the last completed check THEN a second check runs
+                 offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN a list holding
+                 `v0.0.1-rc.1` and `v0.0.1-rc.2` THEN its newest is `v0.0.1-rc.2`, and with
+                 `v0.0.1` beside them `v0.0.1` (a pre-release ranks under its release); GIVEN
+                 the fetch failing THEN no offer, one log line, and no other request until an
+                 interval has passed; GIVEN the window left open past the interval since the
+                 last completed check THEN a second check runs
 ST-UPD-02   GIVEN the offer shown
             WHEN its text is clicked, or Details
             THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
@@ -1551,7 +1554,8 @@ ST-UPD-02   GIVEN the offer shown
                  release page, Skip this version, Remind me later; WHEN Skip this
                  version THEN
                  `skipped_version` is `0.0.2` in the settings file and the offer is gone; WHEN
-                 Remind me later THEN the dialog closes and the offer stays
+                 Remind me later THEN the dialog closes and the offer stays; WHEN Open release
+                 page THEN the release's page opens in the browser and the dialog stays
 ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` match, and a
                  bundle folder in a temporary directory
             WHEN Update now is clicked
@@ -1581,12 +1585,15 @@ ST-UPD-05   GIVEN `Update ready` after an update to `v0.0.2`, the status bar rea
                  Restart now THEN the window is asked to close, and once it has closed the
                  program at the bundle's path is started, once; GIVEN a tool holding the
                  close and its prompt cancelled THEN nothing is started, then or at a later
-                 close
+                 close; GIVEN the install ending while a tool holding the close has the
+                 dialog hidden THEN the bar reads `Update ready: v0.0.2` and the dialog stays
+                 hidden
 ST-UPD-06   GIVEN a settings file whose `last_run_version` is `0.0.1`, in a build of `0.0.2`
             WHEN the shell starts
             THEN the notice `Updated to v0.0.2 pre-alpha` shows and the settings file says
-                 `0.0.2`; GIVEN it absent, or `0.0.2`, or `0.0.3`, or not a version THEN no
-                 notice, and the file says `0.0.2`
+                 `0.0.2`; WHEN the notice's What's new is clicked THEN the help opens on its
+                 What's new chapter; GIVEN it absent, or `0.0.2`, or `0.0.3`, or not a version
+                 THEN no notice, and the file says `0.0.2`
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn
