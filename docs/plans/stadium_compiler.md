@@ -86,4 +86,4 @@ The stadium pipeline emits the same `PipelineEvent` stream as the Team compiler,
 grid works for stadium compilation without modification (rows = stadiums, cells = components). Its
 warnings/errors likewise use the shared `Message` structure with a tool-owned `MessageCode` catalog,
 to be specified when the tool is planned in detail (see "Message catalog" in the [Team compiler
-plan](team_compiler/README.md)).
+plan](team_compiler/messages.md)).

@@ -92,7 +92,7 @@ step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step
     through one path. Skeleton transforms come from the FMDL's companion SKL or the embedded
     template skeleton, or from a `.model`'s inline bone table (see "Skeleton reconstruction from
     FMDL" and "Skeleton in `.model`" in the [Model conversion
-    plan](model_conversion/README.md)).
+    spec](../spec/model_conversion/gltf.md)).
 
     Textures stay in place: existing DDS/FTEX referenced by stem from the generated
     `materials.toml`, whose entries carry the `family` inferred from the native shader plus the

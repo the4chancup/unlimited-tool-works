@@ -75,7 +75,8 @@ kind after team and referee exports. It lives in `exports/` with its siblings.
 
 The export name's first word being `balls` is the discriminant, exactly as `refs` is for
 referee exports (the Team compiler skips `balls` exports with an info message pointing here;
-see "Compilation walkthrough" step 2 in the [Team compiler plan](team_compiler/README.md)).
+see "Per-export pipeline walkthrough" step 2 in the
+[Team compiler spec](../spec/team_compiler/pipeline.md)).
 **One balls export at a time**: the cup has one ball list, so finding several `balls*` exports
 is an error, like with referees.
 
@@ -137,7 +138,7 @@ menu order and the `ballXXX` numbering, at most 50 lines.
   model and is a typo far more often than intent.
 
 The *export* format knowledge (`balls.txt`, the folder layout) lives **inside the tool crate**:
-unlike `aesthetics_export` it has exactly one consumer, so it earns no lib crate (core plan,
+unlike `aesthetics_export` it has exactly one consumer, so it earns no lib crate (core spec,
 workspace guardrail 3).
 
 The `Ball.bin`/`BallCondition.bin` *record layouts* are the exception: they are two of the

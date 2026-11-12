@@ -17,7 +17,7 @@ adds on top (reading/writing the `PES_bone`/`PES_mesh` extensions and the `mater
 `gltf_to_ir`, and `ir_to_gltf`) is IR-coupled, so it lives inside `model_convert`.
 
 A separate wrapper crate would have `model_convert` as its single permanent consumer, which the
-core plan's workspace guardrails flag as over-splitting. There are also no format-native mesh
+core spec's workspace guardrails flag as over-splitting. There are also no format-native mesh
 algorithms or outside consumers to justify one (Blender-side glTF handling is Blender's own
 pipeline plus the `pes-models` extension's PES glTF codec, no Rust involved).
 
@@ -153,7 +153,7 @@ What exists of this is in `spec/model_conversion/gltf.md` "glTF dependency and i
 - **Accepted image formats and stem-based resolution:** the accepted image formats (all
   interchangeable as sources for any model format), the stem→file resolution, and the
   `texture_stem_conflict` rule are specified in the format plan ("Dependencies and images"); the
-  [library crates plan](../libs/README.md) has the full decoder matrix.
+  [library crates spec](../../spec/libs/dds_convert.md) has the full decoder matrix.
 - **PNG-texture trajectory:** Blender cannot write DDS natively, and the ported
   addons convert DDS→PNG on import, so glTF-authored models (the plan's end-state
   authoring path) naturally carry PNG textures. As the community migrates from
@@ -196,7 +196,7 @@ This loses custom skeleton data when the user later exports to glTF via Path B (
 carry the reference skeleton, not the custom one).
 
 The `pes-models` FMDL codec fixes this: on import, it reads the companion `.skl` (same-basename
-pairing, per the Aesthetics export plan's SKL pairing rule) and builds the armature from the SKL's
+pairing, per the Aesthetics export spec's SKL pairing rule) and builds the armature from the SKL's
 full 3×4 transforms. When no companion SKL exists, it falls back to the current
 `PesSkeletonData` behavior (the reference skeleton's positions, which were extracted from
 `body.skl` once). This ensures a Blender→glTF round-trip preserves the skeleton regardless of

@@ -183,7 +183,7 @@ side.
 - **Team selector** with an "ALL" entry (as in 4ccEditor), plus a **filter box
   that searches across all teams** (name, shirt name, ID): finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
-  `display_name()` (see the pes_savefile plan's "Name colour codes"), a team's own name
+  `display_name()` (see the pes_savefile spec's "Name colour codes"), a team's own name
   included. A team whose name matches lists all its players under its row: a search for a
   team shows its squad, not only the players whose own names happen to match.
 
@@ -1479,8 +1479,8 @@ version rule admits (`spec/pes_savefile/operations.md` "Team TOML"), not only in
 The tactics editor above, the skill/COM/playstyle pickers of the player view, and the AATF
 violations list are not this tool's alone: the [Team creator](team_creator.md) shows the same
 formation, cards and instructions to a new manager over a team that does not exist in any save
-yet. Tool crates never depend on tool crates (core plan, guardrail 1), so the widgets live in a
-lib, `libs/team_widgets`, an egui widget crate in the class the core plan already allows for
+yet. Tool crates never depend on tool crates (core spec, guardrail 1), so the widgets live in a
+lib, `libs/team_widgets`, an egui widget crate in the class the core spec already allows for
 `color_tools` and `model_viewport`: egui-dependent, `wasm32`-clean, and nothing else but
 `studio_core`'s shared widgets (the checkbox every view draws), so its controls look as the
 host's do.

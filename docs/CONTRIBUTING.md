@@ -261,7 +261,7 @@ tests on every commit cost minutes of the whole machine each time once the suite
 tests (2026-10-27: one commit to `studio_core` ran all 32 packages' tests). The other recipes are
 the project's repeatable sequences, each of which the plan names somewhere: `just deps-check`
 (guardrail 4, the `fmdl`/`pes_model` denylist, plus the `cargo deny` license allowlist; see
-"License" in the core plan; run it right after any change that adds a package to `Cargo.lock`, a
+"License" in the core spec; run it right after any change that adds a package to `Cargo.lock`, a
 transitive one included, because `just gates` does not run it: adding `eframe` once brought two
 `BSL-1.0` crates that only CI saw), `just acceptance strict` (the scanner's converge mode, under
 "Requirements"), `just parity` (the two Red-parity tests alone, `tests/parity.rs` and
