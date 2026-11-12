@@ -62,5 +62,5 @@ read the same on every run, `pipeline.md` "3. Per-model-folder parallel steps (r
 their times need not increase. A task that waited behind a slower one shows when it was really
 done.
 
-It is a flag rather than a setting, since it serves one run being looked at. The GUI's log
-does not show the times.
+`--timestamps` is a flag rather than a setting, since it serves one run being looked at. The
+GUI's log does not show the times.

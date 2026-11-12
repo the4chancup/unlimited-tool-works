@@ -63,7 +63,7 @@ run only at Save, which lists what blocks it.
 
 The rules file's data block, as the editor would write it, shows in a pane right of the form
 only while the **Show preview** toggle at the top right of the tool's bar is on. The toggle is
-off at every start, because the pane open beside the form would leave the sections a third of
+off at every start, because open beside the form the pane would leave the sections a third of
 Studio's window, and the block is a check on the form, not where the work happens. While the
 pane is shown, the lines the last edit changed are highlighted.
 
@@ -106,9 +106,9 @@ pane is shown, the lines the last edit changed are highlighted.
 
   The id commits on Enter or focus loss, as a path row does, not per keystroke. The commit
   carries the tier's key in the medal systems from the id it had to the one committed, but only
-  while no other tier carries the old id and no system holds the new one. The key is not
-  carried per keystroke, because then typing `gold2` over Silver passed through `gold`, the
-  Gold tier's own id, and the next keystroke moved Gold's counts to `gold2`.
+  while no other tier carries the old id and no system holds the new one. When the key was
+  carried per keystroke, typing `gold2` over Silver passed through `gold`, the Gold tier's own
+  id, and the next keystroke moved Gold's counts to `gold2`.
 
   An id typed and not yet committed is still an unsaved change. Save (the button, Ctrl+S or the
   prompt's) commits it first, and closing the window with one pending opens the unsaved-changes

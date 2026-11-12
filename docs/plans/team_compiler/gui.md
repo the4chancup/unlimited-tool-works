@@ -100,9 +100,8 @@ changed on its own.
 
   Each is a rename refused when the target name exists (the refusal says so), and the row
   revalidates as after any rename. The buttons are for a folder export only: inside an archive
-  nothing is renamed, so an archive's finding has no button. These fixes widen what the
-  untagged row's **Full**/**Midcup** buttons do, the precedent of the GUI renaming in an
-  export.
+  nothing is renamed, so an archive's finding has no button. These fixes widen the precedent
+  of the GUI renaming in an export, which the untagged row's **Full**/**Midcup** buttons set.
 - **An old export offers its upgrade.** A row red with `export_layout_old` or
   `player_layout_proto` carries an **Upgrade** button: the shell switches to the Export
   upgrader with the export as its input (a tool switch with an argument, as the Refs arranger's
@@ -370,9 +369,9 @@ A single primary action:
   With the sideload mode selected, a **Launch PES** button sits beside it. When that PES is not
   running, the button starts the selected version's `PES20{version}.exe` from the game folder
   (`pes_folder_path`). It never launches through Steam, whose launch is incompatible with the
-  cup's mods, so every version runs from its install folder. It is disabled while it runs (the
-  running-PES probe, `spec/core/architecture.md` "Crate structure", polled by the sidebar's
-  selector). It starts the game and does nothing else.
+  cup's mods, so every version runs from its install folder. It is disabled while that PES
+  runs (the running-PES probe, `spec/core/architecture.md` "Crate structure", polled by the
+  sidebar's selector). It starts the game and does nothing else.
 
   Red's staged operations as separate runs ("extracted → contents", "contents → CPK") are
   superseded by the unified pipeline and are not exposed.

@@ -44,7 +44,7 @@ and fallback requirements. The reproducibility paragraph in `spec/team_compiler/
 "Testing: parity against Red (adapted from Blue)" records the accepted texture-byte exception.
 
 Phase 4 builds the texture step CPU-only and Release 0.1.0 ships that way. The GPU backend is
-integrated into it in Phase 16, rather than waiting for 3D preview.
+integrated into the texture step in Phase 16, rather than waiting for 3D preview.
 
 ## Future Features
 

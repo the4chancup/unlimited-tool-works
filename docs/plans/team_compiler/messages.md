@@ -27,9 +27,9 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
 - **A finding carries the context its text needs.** The texts Phase 8 writes must say the fix,
   and some codes' context leaves the member unable to act. Each gains what its text names:
   - `players_txt_invalid`: which of its two causes it is, both roster-wide and so with no line
-    (the file is not UTF-8; a referee roster has no valid line). `notes_encoding_invalid`, whose one
-    cause is the file's encoding, gains nothing (both encoding texts say how to re-save as
-    UTF-8 in Notepad).
+    (the file is not UTF-8; a referee roster has no valid line). `notes_encoding_invalid`,
+    whose one cause is the file's encoding, gains nothing (both encoding texts say how to
+    re-save as UTF-8 in Notepad).
   - `player_folder_number_invalid` gains no field, its text naming the rule, which never
     varies: the folder's name starts with a number from 1 to 23 (`05` and `5` alike), then
     optionally a `-` and a name (`05 - Bob`, `05-Bob`), or the team uses a `players.txt`. A
