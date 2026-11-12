@@ -197,26 +197,7 @@ fn the_cards_labels_paint_the_normal_text_colour() {
     assert_ne!(text_color, weak_color, "premise: the two greys differ");
     assert_ne!(text_color, hovered_color, "premise: the hover's differs");
     let colour_of = |nodes: &[accesskit::Node], shapes: &[egui::epaint::ClippedShape]| {
-        let bounds = node_labeled(nodes, Role::CheckBox, "Heel Trick")
-            .bounds()
-            .expect("bounds");
-        let shape = shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Text(shape)
-                    if shape.galley.job.text == "Heel Trick"
-                        && f64::from(shape.pos.x) >= bounds.x0 - 1.0
-                        && f64::from(shape.pos.x) <= bounds.x1 + 1.0
-                        && f64::from(shape.pos.y) >= bounds.y0 - 1.0
-                        && f64::from(shape.pos.y) <= bounds.y1 + 1.0 =>
-                {
-                    Some(shape)
-                }
-                _ => None,
-            })
-            .next()
-            .unwrap_or_else(|| panic!("no painted Heel Trick inside {bounds:?}"));
-        galley_color(shape)
+        painted_checkbox_color(nodes, shapes, "Heel Trick")
     };
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
