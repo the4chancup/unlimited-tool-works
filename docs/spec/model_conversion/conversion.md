@@ -5,9 +5,9 @@ Part of the [Model conversion plan](README.md). Section headings are unchanged f
 ## Model Format Conversion
 
 **Conversion is not offered as a standalone tool.** It is integrated into the Team compiler: exports
-may contain models in the native formats (`.fmdl`, `.model`; `.glb`/`.gltf` are detected too and
-refused until the glTF importer lands, `model_gltf_unsupported`), and the pipeline converts them to
-the target PES version's format at compile time. The logic lives in the `model_convert` lib
+may contain models in the native formats (`.fmdl`, `.model`), and the pipeline converts them to
+the target PES version's format at compile time. `.glb`/`.gltf` are detected too and refused until
+the glTF importer lands (`model_gltf_unsupported`). The logic lives in the `model_convert` lib
 crate.
 
 ### What the converters do
@@ -240,12 +240,12 @@ importers put it there); the pass rewrites the bones and vertices in place:
    The SKL parent chain is *not* used: almost every `dsk_*` bone is a root in the games' own
    files.
 3. **Re-bind to the target pose** (problem B). For every surviving bone, re-pose the vertices from
-   the source rest pose into the target's — `v' = Σᵢ wᵢ · B_target,ᵢ · B_source,ᵢ⁻¹ · v` over the
-   vertex's weights, the blend divided by their sum when they do not total 1 (community weights
-   are kept as stored), normals/tangents by the rotational part — and write the **target
-   version's** inverse bind matrices into the emitted `.model` bone table or generated `.skl`.
-   Weights are untouched: `dsk_scapula_r` keeps driving the shoulder blade, sitting where PES15
-   expects it.
+   the source rest pose into the target's, and write the **target version's** inverse bind
+   matrices into the emitted `.model` bone table or generated `.skl`. A vertex is re-posed as
+   `v' = Σᵢ wᵢ · B_target,ᵢ · B_source,ᵢ⁻¹ · v` over the vertex's weights, the blend divided by
+   their sum when they do not total 1 (community weights are kept as stored); normals/tangents
+   are re-posed by the rotational part. Weights are untouched: `dsk_scapula_r` keeps driving the
+   shoulder blade, sitting where PES15 expects it.
 
    Reported once per model as `skeleton_retargeted` (I, `detail` the moved-bone count) when any
    bone's delta `Dᵢ` differs from the identity by more than a tolerance. The tolerance is 3e-3 on
@@ -271,10 +271,11 @@ importers put it there); the pass rewrites the bones and vertices in place:
    So **a model is on the target's skeleton when no vertex blends bones with differing
    deltas**, whatever its deltas are, and that is the test the native pre-check runs
    (`needs_conversion`): per bone the delta to the target's table, then one pass over the vertex
-   weights. A pre-Fox weight below half of Fox's 1/255 step counts as no weight. Community
-   exporters leave float noise (2^-24) on the unused slots of a vertex weighted whole to one bone
-   (225 vertices of the parity tracer's boots carry it on the other leg's bone), and a weight the
-   Fox format would round to zero moves the drawn vertex by nothing visible on either engine.
+   weights. A pre-Fox weight below half of Fox's 1/255 step counts as no weight, because
+   community exporters leave float noise (2^-24) on the unused slots of a vertex weighted whole to
+   one bone (225 vertices of the parity tracer's boots carry it on the other leg's bone), and a
+   weight the Fox format would round to zero moves the drawn vertex by nothing visible on either
+   engine.
 
    The games' own files show why the per-bone comparison the plan first described is wrong
    (measured at 4.17g1 on the stock PES 2017 and PES 2021 files and the pre-Fox parity tracer):
@@ -302,9 +303,9 @@ Retargeting is also what makes the **PES19→PES21** compile correct — today R
 `dsk_pos_*` bones dangling in a PES21 FMDL; whether the game ignores or misrenders them is untested,
 and folding makes it moot.
 
-A manual per-folder override for fold targets is deliberately not specified: the table plus
-nearest-bone fallback should cover real exports, and `settings.toml` is kept to appearance
-settings; revisit if a case turns up.
+A manual per-folder override for fold targets is deliberately not specified, because the table
+plus nearest-bone fallback should cover real exports and `settings.toml` is kept to appearance
+settings. Revisit if a case turns up.
 
 **Cost.** Re-binding is linear-blend skinning evaluated once, offline. Per surviving bone one delta
 matrix `Dᵢ = B_target,ᵢ · B_source,ᵢ⁻¹` is precomputed (≤ 175 small matrix products); per vertex the
@@ -314,8 +315,8 @@ player model is ~2 M flops, well under a millisecond single-threaded; the larges
 (~100k vertices) stay in single-digit milliseconds. It is not measurable next to mesh splitting
 (10–50 ms per model) or texture encoding (hundreds of ms).
 
-It runs at all only when the native-format pre-check (`needs_conversion`: bone names, the two
-versions' tables and one pass over the vertex weights, no vertex position read) finds a used
+The pass runs at all only when the native-format pre-check (`needs_conversion`: bone names, the
+two versions' tables and one pass over the vertex weights, no vertex position read) finds a used
 bone that the target lacks or a vertex blending bones whose deltas to the target differ beyond
 tolerance (item 3, "When re-binding changes anything"). Same-version compiles, and cross-version
 compiles of models whose blended bones moved together, never enter the pass.

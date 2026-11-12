@@ -90,12 +90,14 @@ The reference is spelled `kitN`, not `kit0`, because `kit0` reads as "the textur
 while `kitN` reads as the placeholder it is. The compiler writes the `kitN` and `kit1`…`kit9`
 spellings **verbatim**; there is no output-side rewrite.
 
-The fallback is a file of its own, not kit 1's: filling every gap from kit 1 puts the first kit's
-look on every other number (tape matching the home socks on the away kit), and the author's only
-way out would be a hand-made copy per gap. A team's kit folders keep their own fallback under its
-own name, `Kits/all/` (`player_folders.md`, the paragraph starting "**Kits** live"), not `kitF`:
-it is a kit slot, a different mechanism from a variant set, and one name for both would suggest a
-tie between them that does not exist.
+The fallback is a file of its own, not kit 1's, because filling every gap from kit 1 puts the
+first kit's look on every other number (tape matching the home socks on the away kit), and the
+author's only way out would be a hand-made copy per gap.
+
+A team's kit folders keep their own fallback under its own name, `Kits/all/` (`player_folders.md`,
+the paragraph starting "**Kits** live"), not `kitF`, because it is a kit slot, a different
+mechanism from a variant set, and one name for both would suggest a tie between them that does
+not exist.
 
 **The historical `u0XXXp0` magic is legacy.** It is what the exes matched so far — `u0XXXp0`
 rewritten to `u0XXXp1`, `u0XXXp2`, … — and the Studio compiler does **not** know it: the token is
@@ -116,7 +118,7 @@ below. It is named apart from the `p` set because a real `Common/` holds `u0XXXg
 `u0XXXp1.dds` (DECISIONS 2026-11-09).
 
 There is one number. PES lets the user pick a single kit number per team, which selects the
-outfield and goalkeeper kit textures together; with `kitN` the export supplies its *own* files and
+outfield and goalkeeper kit textures together. With `kitN` the export supplies its *own* files and
 only that number matters, so a goalkeeper's model uses `kitN` like anyone else's and its
 `kit1`…`kit9` files are simply whatever that model should wear when that kit is picked. (The `p` in
 the legacy magic was the exes' spelling, not an "outfielders only" restriction.)
@@ -191,24 +193,24 @@ Rules:
 
   The exes and FoxDen match the game's spelling `dummy_kit` (`dummy_gk_kit`), which the
   community's models named. The Studio format writes `team_kit` instead (the maintainer,
-  2026-11-09: more intuitive to a new member), and the compiler writes the game's spelling in
+  2026-11-09: more intuitive to a new member). The compiler writes the game's spelling in
   every output, the whole stem in lowercase (`Team_Kit_Srm` → `dummy_kit_srm`), the rest of the
   name and the directory compiled as any other path's.
 
   A stem is a stand-in when, folded, it is `team_kit` or `team_gk_kit`, alone or followed by `_`
   and anything (the exes replace the prefix and keep the rest: `dummy_kit_back` becomes
   `u0TTTpK_back`); `team_kitten` is none. The old spelling is refused (`dummy_kit_name_old`, the
-  maintainer: accepting it would let files spelled in it live on, unintuitive to new members);
-  only the Export upgrader reads it, and respells it.
+  maintainer: accepting it would let files spelled in it live on, unintuitive to new members).
+  Only the Export upgrader reads it, and respells it.
 
   The stand-in overlaps what `kitN` expresses with the export's own files, but is the only way
   for a model to wear the team's compiled kit texture itself, and gets **second-class
   support**: the compiler treats these stems as **game-provided** (like the Fox
   `dummy_nrm`/`dummy_srm` fallbacks, which are the game's own and keep their names), so a
   material may name them and the texture-existence check is skipped for them. Nothing is copied
-  or generated for them: the substitution logic now lives in the exes and is stable, unlike the
-  earlier Sider-script era that made Red's kit-1 fallback copies necessary. New exports should
-  use `kitN` for their own files.
+  or generated for them, because the substitution logic now lives in the exes and is stable,
+  unlike the earlier Sider-script era that made Red's kit-1 fallback copies necessary. New
+  exports should use `kitN` for their own files.
 
 ---
 
@@ -261,19 +263,19 @@ Rules:
   never copied into the output, and the link file itself is not emitted. For pre-Fox `.mtl.common`
   the generated XML points the model at the Common MTL path (Red's behavior).
 
-Pre-Fox `.model.common` links bring their own materials
-through the `.mtl` search below, which reads a name-matched `.mtl` beside the link first
-(a local override), then Common, then the link's folder, then the model folder.
+Pre-Fox `.model.common` links bring their own materials through the `.mtl` search below, which
+reads a name-matched `.mtl` beside the link first (a local override), then Common, then the
+link's folder, then the model folder.
 
 **Pre-Fox: the `.mtl` a `.model` uses.** Each `.model` uses exactly one `.mtl`, the first this
 search finds, and the generated `face.xml` names it. The search looks in a list of folders in
 turn, and in each folder for three kinds of `.mtl` in turn:
 
-1. a **name-matched** one (its stem, case folded, starts or ends the model's stem: `body.mtl` for
-   `body_high.model`; a model stem carrying both the `oral_` prefix and the `_win32` suffix is
-   read without them, `fbm.mtl` for `oral_fbm_u_win32.model`, since members name a part as the
+1. a **name-matched** one: its stem, case folded, starts or ends the model's stem (`body.mtl` for
+   `body_high.model`). A model stem carrying both the `oral_` prefix and the `_win32` suffix is
+   read without them (`fbm.mtl` for `oral_fbm_u_win32.model`), since members name a part as the
    game packs it and its `.mtl` by the part, and four VG exports' `Common/` folders hold such a
-   pair beside another `.mtl`);
+   pair beside another `.mtl`;
 2. `materials.mtl`;
 3. **any** `.mtl`.
 
@@ -428,9 +430,9 @@ are dropped for that engine (`material_texture_unused`, I):
 | `detail_material` | — | `DetailMaterialMap` | none |
 | `detail_normal` | — | `DetailNormalMap` | none |
 
-The one set of **reserved stems** a toml may name
-without a file behind them is the kit stand-in, the `team_kit*` and `team_gk_kit*` family,
-substituted by the modded exes (see "Kit-dependent assets"); the existence check skips them.
+The one set of **reserved stems** a toml may name without a file behind them is the kit
+stand-in, the `team_kit*` and `team_gk_kit*` family, substituted by the modded exes (see
+"Kit-dependent assets"); the existence check skips them.
 
 ### `[mat.fox]` — Fox (FMDL) table
 

@@ -56,9 +56,9 @@ Consumers: `aesthetics_export` (identity resolution), `team_compiler` (ID cell w
 later consumers are in `plans/libs/teams_list.md`. `wasm32`-clean.
 
 The embedded list started as the tab-separated `teams_list.txt` of Red's unreleased development
-branch (released Red's list separates its two columns, header `ID Name` included, by a space,
-which this reader refuses naming the file; 220 rows, the `Backup N`, `VGL N` and
-`Invitational N` placeholders). Its /vg/ League block (781–834) has since been replaced by each
+branch: 220 rows, the `Backup N`, `VGL N` and `Invitational N` placeholders. Released Red's list
+separates its two columns, header `ID Name` included, by a space, which this reader refuses,
+naming the file. Its /vg/ League block (781–834) has since been replaced by each
 league's own allocation (VGL27's 781–832 at 0.0.2-poc, 833–834 the placeholders `VGL 53` and
 `VGL 54`).
 

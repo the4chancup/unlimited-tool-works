@@ -87,11 +87,11 @@ Admission rules:
   after the other, each once the pipeline is empty again.
 - **Charge** (`charge`: memory a running task allocates, a decoded texture or a packed
   entry): adds `size` at once, whatever `in_flight`, the cap or cancellation, and updates
-  `peak` as `acquire` does. A task that holds a permit and waits for more can wait for bytes
-  only its own completion releases, and every worker can be in that state at once
-  (`spec/core/parallelism.md`, "Admission must remain progress-safe"), so a charge never waits.
+  `peak` as `acquire` does. A charge never waits, because a task that holds a permit and waits
+  for more can wait for bytes only its own completion releases, and every worker can be in that
+  state at once (`spec/core/parallelism.md`, "Admission must remain progress-safe").
   `in_flight` may then pass the cap by what the running tasks hold, at most the worker count
-  times one task's workspace, and every later `acquire` waits until it drains: the run's
+  times one task's workspace, and every later `acquire` waits until it drains, so the run's
   memory stays bounded whatever the number of teams.
 - **Release** is the `Permit`'s `Drop`: it subtracts its size and wakes every waiter
   (`notify_all`: an ordinary waiter and an oversized waiter wait for different conditions on one

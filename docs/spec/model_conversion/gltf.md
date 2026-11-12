@@ -69,9 +69,9 @@ size and the format needs none of its own (see "File size and compression" in th
 
 ### Pipeline integration
 
-The compiler detects the model format by file extension (`.fmdl`, `.model`, `.glb`/`.gltf`; a
-glTF selected for a stem drops its folder as `model_gltf_unsupported` until the importer lands)
-and routes accordingly.
+The compiler detects the model format by file extension (`.fmdl`, `.model`, `.glb`/`.gltf`) and
+routes accordingly. A glTF selected for a stem drops its folder as `model_gltf_unsupported` until
+the importer lands.
 
 PES-native sources skip the IR for same-format targets — **except** when an IR-level operation
 applies:

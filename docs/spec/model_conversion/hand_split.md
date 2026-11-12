@@ -104,9 +104,11 @@ face folder `00007 - BLANK`: 1,684 per hand of 9,563 vertices).
 
 On pre-Fox the split happens in the face task alone, since the face's `face.xml` lists gloves
 beside the face (there is no gloves task without `ingame_face`, and under the marker no model is
-face content, as on Fox, so none is split). A folder shipping its own `face.xml` is left as
-written, the member's xml saying what the face loads and a split only adding glove entries they
-did not write, so no model there is split either.
+face content, as on Fox, so none is split).
+
+A folder shipping its own `face.xml` is left as written, because the member's xml says what the
+face loads and a split would only add glove entries they did not write. So no model there is
+split either.
 
 The body keeps the model's name and entry. The hands of `<stem>.model` become
 `<stem>_glove_l.model` and `<stem>_glove_r.model`, each its own `face.xml` entry; their suffix

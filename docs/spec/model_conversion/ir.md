@@ -239,11 +239,12 @@ touches the shader at all. Per-mesh FMDL flags are lifted to the material on
 import (splitting instances whose meshes differ) and pushed back down on export.
 
 What the native importers derive for the *other* engine: `fmdl_to_ir` sets `two_sided` from alpha
-bit 32 and leaves `transparent` unset. It does not read bit 128 as transparency: a census of 1983
-Konami FMDLs found bit 128 on 128/160 of `fox3ddf_blin`'s meshes in near-equal share with 32/0,
-i.e. on ordinary opaque skin, and the legacy converter judged transparency from the texture's alpha
-channel instead, which the format plan rules out. So a Fox part converted to pre-Fox gets the opaque
-state set unless its family is `glass`; what bit 128 means on deferred shaders is an open question.
+bit 32 and leaves `transparent` unset. It does not read bit 128 as transparency, because a census
+of 1983 Konami FMDLs found bit 128 on 128/160 of `fox3ddf_blin`'s meshes in near-equal share with
+32/0, i.e. on ordinary opaque skin, and the legacy converter judged transparency from the
+texture's alpha channel instead, which the format plan rules out. So a Fox part converted to
+pre-Fox gets the opaque state set unless its family is `glass`; what bit 128 means on deferred
+shaders is an open question.
 
 `model_to_ir` sets `two_sided` from the `twosided` state and `transparent` from `alphablend`.
 
@@ -280,13 +281,14 @@ treat it:
   source has none and the export writes none, as the 19→16 converter did.
 - **Faces** reverse winding on import and again on export (the IR keeps FMDL's).
 - **Lower LOD levels, Konami tags, editor data, a nonzero mesh `order`, nonzero model
-  `flags`**: not in the IR (no 4cc export carries them, and a tag changes nothing the game
-  draws: PES 17 draws the stock captain armband's `DCaptainmark`-tagged mesh on a
-  non-captain, in Edit mode and in a match, exactly as it draws the same mesh with the tag
-  renamed, measured at 4.y-ingame2). Each non-default one the import drops
-  is a `native_field_dropped` finding whose `detail` names the field; the export writes no
-  LODs (`LodRecord::for_levels(0)`), no tags, `order` 0, `flags` 0, and recomputes the mesh and
-  model bounds from the positions.
+  `flags`**: not in the IR, because no 4cc export carries them and a tag changes nothing the game
+  draws. PES 17 draws the stock captain armband's `DCaptainmark`-tagged mesh on a non-captain,
+  in Edit mode and in a match, exactly as it draws the same mesh with the tag renamed (measured
+  at 4.y-ingame2).
+
+  Each non-default one the import drops is a `native_field_dropped` finding whose `detail`
+  names the field. The export writes no LODs (`LodRecord::for_levels(0)`), no tags, `order` 0,
+  `flags` 0, and recomputes the mesh and model bounds from the positions.
 - **A hidden Fox mesh** (`invisible`, shadow flag bit 2, the add-on's "invisible" box) is
   left out of a `.model` export: a `.mtl` cannot hide a mesh, and unhidden it draws what
   its author hid (the blank head's oral mesh in `addon_oral.fmdl`, whose `dummy_bsm`
@@ -393,11 +395,11 @@ runs), and the IR keeps the vertex order, so its "decode" on import is a read th
 nothing to call: the owner map is recoverable from the IR at any time.
 
 The exporters recover it with the format crate's per-mesh `vertex_enc::decode` on the IR order,
-*not* the flag-gated `decode_model`. The IR carries no extension flag, and a run that satisfies
-the convention is a set of loops of one vertex whether or not the file declared the extension
-(an add-on file's loops survive the round trip; on a Konami file the same rule merges only
-vertices that share position, weights and an increasing attribute order, which is what a loop
-is).
+*not* the flag-gated `decode_model`, because the IR carries no extension flag, and a run that
+satisfies the convention is a set of loops of one vertex whether or not the file declared the
+extension (an add-on file's loops survive the round trip; on a Konami file the same rule merges
+only vertices that share position, weights and an increasing attribute order, which is what a
+loop is).
 
 The encode on export is not a no-op: it groups every vertex sharing a topological key
 contiguously, and Konami files are not written that way (highneck: 198 of 204 vertices move; the
@@ -417,12 +419,12 @@ A part with repeated bone names is refused (union by name is ambiguous). Parts m
 their anti-blur state: every mesh is kept as it is and the parts' extension flags are OR-ed,
 since nothing encodes anti-blur after a merge.
 
-It is not an IR operation: the Team compiler calls it directly to assemble multi-part models and
-to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot load
-models from the Common folder (see "Common model links and model merging" in the [Team compiler
-plan](../team_compiler/README.md)). The pre-Fox counterpart is `pes_model::ops::merge`, native
-over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in the [Libraries
-plan](../libs/format_crates.md)), which follows the same rules.
+The merge is not an IR operation: the Team compiler calls it directly to assemble multi-part
+models and to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot
+load models from the Common folder (see "Common model links and model merging" in the [Team
+compiler plan](../team_compiler/README.md)). The pre-Fox counterpart is
+`pes_model::ops::merge`, native over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in
+the [Libraries plan](../libs/format_crates.md)), which follows the same rules.
 
 ### Conversion routing
 
@@ -471,10 +473,10 @@ bone at the hand-table pose a retarget gave it).
 **Unskinned meshes on Fox.** FMDL needs every vertex bound to a bone: an unbound mesh stays where
 the model is placed instead of following the player. A pre-Fox mesh without bone indices (the
 ancient templates the 16→21 converter met) therefore gets, on `ir_to_fmdl`, a bone named `static`
-(identity matrix, `global_position` `[0.2, 0, 0, 1]`, `local_position` zero: the converter's
-values, the name Konami's own skeleton lacks so the game leaves the mesh static) added once to the
-model, with every such mesh's vertices fully weighted to it (`static_bone_added`, one finding per
-mesh).
+added once to the model, with every such mesh's vertices fully weighted to it
+(`static_bone_added`, one finding per mesh). The bone has an identity matrix, `global_position`
+`[0.2, 0, 0, 1]` and `local_position` zero, the converter's values. Its name is one Konami's own
+skeleton lacks, so the game leaves the mesh static.
 
 The bone is not in any table, so the export also emits an SKL. The compiler packs it as the
 slot's skeleton in place of the template, as it packs a member's `.skl` of that stem

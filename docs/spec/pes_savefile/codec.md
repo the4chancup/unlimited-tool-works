@@ -358,9 +358,9 @@ two accounts can pin `savefile_path` if the guess is wrong.
 
 The version is verified after discovery, not assumed from the folder: the candidate is loaded
 with the ordinary `EditFile::load` auto-detection and must match the requested version,
-otherwise it is refused (`savefile_invalid`, naming the save's version) rather than used — a
-stale save left by a previous game version in a reused folder must not be edited as if it were
-current.
+otherwise it is refused (`savefile_invalid`, naming the save's version) rather than used,
+because a stale save left by a previous game version in a reused folder must not be edited as if
+it were current.
 
 Nothing found is the consumer's own message (`savefile_missing` in the compiler).
 
