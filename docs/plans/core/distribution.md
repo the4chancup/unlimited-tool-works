@@ -86,7 +86,7 @@ that matches wins (measured on rustc 1.98.1):
 1. the home folder becomes `~`;
 2. `CARGO_HOME` and `RUSTUP_HOME`, when set, become `~cargo` and `~rustup`;
 3. the repository becomes `.`;
-4. cargo's target directory, when outside it, becomes `target`.
+4. cargo's target directory, when outside the repository, becomes `target`.
 
 The flags go to cargo through `--config` on `target.x86_64-pc-windows-msvc.rustflags`, which
 joins the array `.cargo/config.toml` sets there. `RUSTFLAGS` or `CARGO_ENCODED_RUSTFLAGS`
@@ -204,8 +204,8 @@ choice is needed to start.
 
 A location that cannot be written (a program folder unpacked under `Program Files`, picked as
 "Next to the program") keeps the dialog open with the error under the buttons, so the member
-picks the other. A choice that never reached the disk would be asked again at every start, and
-the session's settings would vanish with it.
+picks the other. It stays open because a choice that never reached the disk would be asked
+again at every start, and the session's settings would vanish with it.
 
 The portable file shadowing a config-dir choice, which EGG renames to `.bak`, cannot happen
 here: the dialog shows only when neither file exists, and the program offers no later move of
@@ -283,8 +283,8 @@ may change in a minor release.
    GitHub releases and take the highest `v<version>` tag by semver, pre-releases included.
    Then compare it with the built-in `CARGO_PKG_VERSION`.
 
-   Pre-releases are included because `releases/latest` skips a release marked Pre-release,
-   which a 0.0.x may be. A tag that is not `v` and a semver is passed over. The release's
+   Pre-releases are included: `releases/latest` skips a release marked Pre-release, which a
+   0.0.x may be. A tag that is not `v` and a semver is passed over. The release's
    `body` (its notes) comes in the same response.
 
    A completed check stores `last_update_check`. A failed one (offline, rate-limited, a body

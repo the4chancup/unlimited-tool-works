@@ -142,8 +142,8 @@ built: `spec/export_upgrader.md` "CLI"):
   - a save lacking one export's team;
   - a flag that export's kind refuses (`--savefile`, `--loose` or `--coverage` given with a
     referee export among team exports);
-  - a flag it requires and lacks (neither `--savefile` nor `--loose` with a team export among
-    referee exports).
+  - a flag that export's kind requires and lacks (neither `--savefile` nor `--loose` with a
+    team export among referee exports).
 
   Several exports at once is for an organizer moving a cup's library (about 50 teams) to
   Studio once per cup. The launcher keeps calling one export at a time, because its summary
