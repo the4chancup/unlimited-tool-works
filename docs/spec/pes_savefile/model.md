@@ -148,14 +148,14 @@ may appear anywhere in the name, several times, to colour segments differently
 Verified against ~30 decorated names across real PES 19 and 21 cup saves (see
 Verification).
 
-They are used freely: medal players are the common case, but not the only one. No tool in the
-4cc toolset writes them. They are hand-edited by cup organizers and must be **preserved
+The codes are used freely: medal players are the common case, but not the only one. No tool in
+the 4cc toolset writes them. They are hand-edited by cup organizers and must be **preserved
 byte-for-byte** by every copy-through and roundtrip path.
 
 This crate exposes the raw name and a `display_name()` helper that strips the codes. The helper
 uses a fixed-length match: the colour is exactly the 8 bytes after `\x11c`, hex or not, so a
-name letter `a`–`f` following a code is never eaten. The 2-byte reset `\x11d` is stripped too
-(see `codec.md` "Whole-file API" for the measurement). The save editor renders the colours from
+name letter `a`–`f` following a code is never eaten. The 2-byte reset `\x11d` is stripped too.
+`codec.md` "Whole-file API" has the measurement for both. The save editor renders the colours from
 the raw name and allows editing them, while folder-name derivation (Team compiler, Export
 upgrader) and search use the stripped form. Any other control character in a name is not a
 known code and is left alone.

@@ -656,8 +656,8 @@ Rules of `apply`:
 - A `bench_order` writes its twelve and refills the record's other nine as the game writes them
   (the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
   being the file's `starting_eleven` when it has one, the record's else).
-- Only the `appearance` table's keys go through `settings_toml`'s shared writer, each as its
-  stored value. A key the table lacks keeps its value ("absent = untouched", where
+- The `appearance` table's keys alone, each as its stored value, go through `settings_toml`'s
+  shared writer. A key the table lacks keeps its value ("absent = untouched", where
   `settings.toml` and the patch write every field), and the run's measured-unused bits keep the
   save's values.
 - An import never sets a player's appearance id.
@@ -837,10 +837,11 @@ player's face and hair over his own:
 - The game shows a copied face with the face edit flag clear as with it set (the same save,
   that flag alone cleared), and over the player's own `face.fpk` too (two players with one
   each, flag set and clear, given a base copy).
-- A census of 125 Fox saves on the maintainer's machine (2026-10-14,
-  `.tmp/phase_05/5_4/base_copy_census.txt`) found such an id on 0 to 26 players of each real
-  PES 21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the
-  player's own.
+
+A census of 125 Fox saves on the maintainer's machine (2026-10-14,
+`.tmp/phase_05/5_4/base_copy_census.txt`) found such an id on 0 to 26 players of each real PES
+21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the player's
+own.
 
 A compiled player whose export describes no face of his own (no face model, no
 `ingame_face.toml`) then shows the Placeholder face, as his export says, where the copy showed

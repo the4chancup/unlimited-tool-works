@@ -187,7 +187,7 @@ What this editor adds on top of the lib:
 
     - A file whose description a built-in ruleset has is refused naming the clash (two rows
       would read the same, and a built-in is not replaced).
-    - One whose file name or description an earlier import has replaces that import once a
+    - A file whose file name or description an earlier import has replaces that import once a
       confirmation naming it is accepted (a cup's corrected rules keep their name).
     - A file picked under another ending is copied as `<stem>.4ccrules`, and one whose file
       name differs from an earlier import's in case alone takes that import's name: Windows
@@ -251,8 +251,8 @@ What this editor adds on top of the lib:
   - per row its severity, rule and sentence indented four;
   - and under a height row its players' lines indented six.
 
-  So it pastes readably into the thread (a failed team's error under its line). A notice says
-  `Copied the results of N teams.`, a count of 1 reading in the singular.
+  So the copied text pastes readably into the thread (a failed team's error under its line). A
+  notice says `Copied the results of N teams.`, a count of 1 reading in the singular.
 
   The dialog is 900 points wide, its list 874 by 360, and scrolls. `violations_list` draws both
   Live AATF's dock and this list (`ListUse`), and the copied text walks the same grouping
