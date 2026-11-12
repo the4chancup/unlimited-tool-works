@@ -183,8 +183,8 @@ export format.
      reads its contents from: a `.7z` is decompressed once for the metadata, the structure pass
      and the deep pass, under one permit. `check` releases it when the deep pass ends.
      `compile` keeps a small archive's buffer and permit for its tasks and releases any
-     other's the same way. A small archive is one of at most an eighth of the cap, and the cap
-     stays free of kept archives by at least `MIN_FREE_BUDGET` and the run's largest other
+     other's the same way. A small archive is one of at most an eighth of the cap that leaves
+     the cap free of kept archives by at least `MIN_FREE_BUDGET` and the run's largest other
      `.7z` (`spec/libs/pipeline.md` "What a solid `.7z` is charged").
 
      Measured at 4.7 on two VGL26 exports of 0.6 and 1 GB, the serial pass took 0.5 to 0.8 s of
@@ -773,8 +773,8 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    slot's instantiated model references that one location.
 
    This is Red's in-game-verified referee layout. Its preprocessing runs once per distinct
-   referee folder, rewriting texture paths to the name-keyed per-referee common subfolder, and
-   copies the folder's common content once, before the per-slot instantiation pass. The paths
+   referee folder, rewriting texture paths to the name-keyed per-referee common subfolder and
+   copying the folder's common content once, before the per-slot instantiation pass. The paths
    are rewritten:
    - MTL/XML to `model/character/uniform/common/{team ID}/{folder name}/` (packed under
      `common/character1/`);
@@ -1092,8 +1092,8 @@ not a serial scheduling requirement.
 
   A supplied config's value that does not fit the target version is reported by the deep pass,
   so by `check` as by `compile`, and clamped when the binary is emitted. The finding is
-  `kit_config_version_clamped` on the file, which is kept, naming the field, the value and the
-  version's maximum (`kit_config`'s `kit_value_out_of_range` and
+  `kit_config_version_clamped`, on the file (which is kept), and it names the field, the value
+  and the version's maximum (`kit_config`'s `kit_value_out_of_range` and
   `kit_pattern_unsupported_pes15` findings).
 
   A sleeve or fit option the config's shirt model does not take (`kit_config`'s three
@@ -1523,21 +1523,22 @@ not a serial scheduling requirement.
   approximates the same precedence by sorting the DPFL's CPK names in reverse alphabetical
   order). As in Red, the walk starts just below the compiler's own output CPK, skipping it and
   anything with higher priority: this keeps each compilation idempotent even after newer midcup
-  CPKs are added further down the list. Each bin is taken from the first CPK the walk finds it
-  in, with the supplying CPK reported; the bundled bases only serve from-scratch compiles.
+  CPKs are added further down the list.
 
   One exception: in multi-CPK mode the walk for the shared-IDs records starts at the bins CPK
   itself (`bins_cpk_name`), so a compile replacing `4cc_08_bins.cpk` keeps the records it
   holds. A multi-CPK compile rebuilds each compiled team's record from its export, so only a
   team no export compiles keeps its installed record.
 
-  A bin no CPK of the walk holds comes from the bundled base, and so does every bin when the
-  walk cannot be made: no PES folder, no `DpFileList.bin` (`dpfilelist_missing`), or a list
-  that does not name the run's CPK, so nothing is known to come before it (the rule the
-  texture lookup of "Resolved decisions" follows). A listed CPK with no file in `download/` is
-  passed over. The walk opens every CPK listed before the run's, also once each bin is found:
-  the texture lookup ("Resolved decisions", "A texture a model names must exist") needs every
-  table of contents, and each is read once per run.
+  Each bin is taken from the first CPK the walk finds it in, with the supplying CPK reported;
+  the bundled bases only serve from-scratch compiles. A bin no CPK of the walk holds comes from
+  the bundled base, and so does every bin when the walk cannot be made: no PES folder, no
+  `DpFileList.bin` (`dpfilelist_missing`), or a list that does not name the run's CPK, so
+  nothing is known to come before it (the rule the texture lookup of "Resolved decisions"
+  follows). A listed CPK with no file in `download/` is passed over. The walk opens every CPK
+  listed before the run's, also once each bin is found: the texture lookup ("Resolved
+  decisions", "A texture a model names must exist") needs every table of contents, and each is
+  read once per run.
 
   The walk runs before any export is read, and a list, a CPK or a bin in it that cannot be read
   stops the run there (`installed_bin_unreadable`, Fatal), so the previous CPK is kept. We
@@ -2081,10 +2082,11 @@ not a serial scheduling requirement.
   - a degraded run promoted to `output/`;
   - a deployment refused by its preflight;
   - `--no-deploy`;
-  - test mode, whose loose tree in `output/` the game never reads;
-  - and after a deployment the game will not load (`dpfilelist_cpk_missing`: the installed
-    list names a CPK `download/` lacks, so the game runs vanilla), which commits silently, the
-    warning having said why.
+  - test mode, whose loose tree in `output/` the game never reads.
+
+  It is skipped too after a deployment the game will not load (`dpfilelist_cpk_missing`: the
+  installed list names a CPK `download/` lacks, so the game runs vanilla), which commits
+  silently, the warning having said why.
 
   Sideload mode counts as deployed: its tree in `livecpk\` is what the game loads, and its
   savefile half waiting for Edit mode to be closed is the reason the running-PES skip exists.
@@ -2492,12 +2494,12 @@ Resolved decisions:
   - the files directly in `Common/`;
   - the subfolder files a `.common` link names (a link at the same path below a player or
     shared folder, `spec/model_format.md` "Link files");
-  - the files a linked model brings, which travel with it: the models and `.skl` of its stem,
-    the `.mtl` files its search may read, and every texture directly in its directory or in one
-    above it up to `Common/`, where its names resolve nearest first, the textures a `.mtl`
-    link brings too. None of them is `file_not_used`.
+  - the files a linked model brings, those beside it that travel with it: the models and `.skl`
+    of its stem, the `.mtl` files its search may read, and every texture directly in its
+    directory or in one above it up to `Common/`, where its names resolve nearest first, the
+    textures a `.mtl` link brings too. None of them is `file_not_used`.
 
-  They are read as every texture directly in `Common/` is packed, whether a model names it or
+  They are read as every texture directly in `Common/` is packed whether a model names it or
   not: knowing which of them a model names would take a second texture resolver at planning,
   before any model is read, that a slip in leaves a texture silently unpacked.
 
@@ -2510,9 +2512,9 @@ Resolved decisions:
   A glTF directly in `Common/` is selected as a player folder's is (step 3 "Format conversion":
   target-native first, then glTF, then the other engine's format):
   - one with no model of the target's format of its stem beside it is dropped at planning with
-    `model_gltf_unsupported`, the file alone, as a collar's is;
-  - and a model of the other engine's format of that stem is beaten by it, read by nothing, and
-    a mapped player whose `.common` link names that beaten model is dropped with
+    `model_gltf_unsupported`, the file alone, as a collar's is, and a model of the other
+    engine's format of that stem is beaten by it, read by nothing, and a mapped player whose
+    `.common` link names that beaten model is dropped with
     `model_gltf_unsupported` naming the glTF, as one linking a shared folder whose model is a
     glTF is (the link would load the glTF, and compiling him without the part would give him
     something he did not ask for);
