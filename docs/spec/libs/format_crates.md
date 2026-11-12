@@ -144,10 +144,12 @@ identity a pure `format/` layer owes; the byte test is against the reference wri
 
 `format/` is records and buffers; the ops (splitting, anti-blur, merging, path editing) reason
 about bones, materials, meshes and groups. `model.rs` is the layer between them: a `Model` built
-from an `FmdlFile` and written back to a fresh one. It is not byte-identical (a fresh file is laid
-out from scratch); it is *semantically* lossless: `Model::from_file(&FmdlFile::read(x)?)?.to_file()`
-read back gives an equal `Model`, on Konami files as well as add-on-written ones (the legacy writer
-could not rebuild Konami files at all; that is the bar this layer clears).
+from an `FmdlFile` and written back to a fresh one.
+
+It is not byte-identical, because a fresh file is laid out from scratch, but it is *semantically*
+lossless: `Model::from_file(&FmdlFile::read(x)?)?.to_file()` read back gives an equal `Model`, on
+Konami files as well as add-on-written ones. The legacy writer could not rebuild Konami files at
+all; that is the bar this layer clears.
 
 ```rust
 pub struct Model {
@@ -219,13 +221,13 @@ own, the one `from_file` enforces on read: every mesh in exactly one group, so i
 file its own reader refuses.
 
 `from_file` resolves every index through the tables (strings, bounding boxes, bone groups,
-materials, textures, parameter assignments, mesh-group assignments) and reads the extension
-headers from the string table's tail (`X-FMDL-Extensions:` plus per-object headers such as
-`Has-Antiblur-Meshes: 0,3` listing mesh indices, `Split-Mesh-Groups: 2` listing group indices,
-`Custom-Bounding-Box-Meshes`), the `key: value, value` grammar the add-ons write. Every dangling
-index is an error, never a panic, face indices included. Per-object headers other than those
-four are dropped: their values are mesh or group indices that any op renumbers, and no known
-writer emits another (unknown `X-FMDL-Extensions` flags carry no index and are kept in
+materials, textures, parameter assignments, mesh-group assignments). It reads the extension
+headers from the string table's tail, in the `key: value, value` grammar the add-ons write:
+`X-FMDL-Extensions:` plus per-object headers such as `Has-Antiblur-Meshes: 0,3` listing mesh
+indices, `Split-Mesh-Groups: 2` listing group indices, `Custom-Bounding-Box-Meshes`. Every
+dangling index is an error, never a panic, face indices included. Per-object headers other than
+those four are dropped: their values are mesh or group indices that any op renumbers, and no
+known writer emits another (unknown `X-FMDL-Extensions` flags carry no index and are kept in
 `Extensions::other`).
 
 **Anti-blur meshes.** Fox PES's temporal anti-aliasing (TAA) blurs meshes that use the
@@ -250,12 +252,15 @@ removal script keeps models sharp without them.
 
 **Custom bounding boxes.** The format has no per-mesh box; `Custom-Bounding-Box-Meshes` only
 marks a mesh whose box the author set by hand, and the add-on folds that box into the mesh's
-*group* box. We do the same both ways: `from_file` gives a marked mesh `custom_bounding_box =
-Some(its group's box)`; `to_file` emits the header for every mesh with `Some`, and when it
-computes a group box (the group had none) it uses a mesh's custom box in place of that mesh's
-vertex extent. A group box the model already carries is written as is. An anti-blur duplicate
-keeps its source's custom box (the add-on copies the source's headers onto the duplicate), so
-duplication never grows a hand-set group box back to the geometry.
+*group* box. We do the same both ways:
+
+- `from_file` gives a marked mesh `custom_bounding_box = Some(its group's box)`;
+- `to_file` emits the header for every mesh with `Some`, and when it computes a group box (the
+  group had none) it uses a mesh's custom box in place of that mesh's vertex extent. A group box
+  the model already carries is written as is.
+
+An anti-blur duplicate keeps its source's custom box (the add-on copies the source's headers
+onto the duplicate), so duplication never grows a hand-set group box back to the geometry.
 
 **Mesh-group assignments.** A group whose meshes are not consecutive (a split replaces a mesh
 by a child group, leaving its siblings apart) is written as one assignment record per run, all
@@ -324,11 +329,15 @@ fixtures in `crates/libs/pes_model/tests/fixtures/` are the representatives, one
   order of decreasing detail, level 0 first, and section 7's LOD record is
   `u32 level_count, f32 0.0625, f32 4.0, f32 0.3` (`0, 0.0625, 4.0, 0.0` without LODs). With no
   LODs Konami's `lod_table_offset` points at the section end; the add-on writes 0.
-- Mesh annotations: `(string, section-3 record, 7, type)`. Konami types: **1** the part name
-  (`prt`, `glasses_02`, `head_color`), always first; **10** the same string again (hair, glasses);
-  **2** `DSpecularS`; **7** a normal-map name (`DNormalS`, `HeadNormal`, `head_normal_default`,
-  `<hair>_face_normal`). The add-on defines **128** mesh name and **129** extension header, with
-  no section-3 record. The reference parser reads only 128 and 129, so it drops Konami's.
+- Mesh annotations: `(string, section-3 record, 7, type)`. Konami types:
+  - **1** the part name (`prt`, `glasses_02`, `head_color`), always first;
+  - **10** the same string again (hair, glasses);
+  - **2** `DSpecularS`;
+  - **7** a normal-map name (`DNormalS`, `HeadNormal`, `head_normal_default`,
+    `<hair>_face_normal`).
+
+  The add-on defines **128** mesh name and **129** extension header, with no section-3 record.
+  The reference parser reads only 128 and 129, so it drops Konami's.
 - Konami's empty section 8 has table-of-contents offset 0 (not 12) in every file; section 9's is
   12. Konami aligns some pointed-at data to 8 or 16 with zero padding in no fixed pattern; no file
   carries an unreferenced non-zero byte. Section 8 (cloth), 9 and 10 are empty in every one of
@@ -427,15 +436,18 @@ was measured on all 945 of a PES 2017 install:
 `MaterialSet` is the typed reader (`roxmltree`) and hand writer. The writer emits one canonical
 layout under a per-file `MtlStyle` (newline, indent unit, final newline) detected on read and
 defaulting to Konami's majority (CRLF, four spaces, final newline); vector components are written
-as the shortest `f32` text (`0`, `0.035`). Measured before coding: that writer reproduces 909 of
-the 945 files byte for byte; the 36 others mix indentation, align attributes with extra spaces,
-carry blank lines or trailing spaces, or write `0.0`, and are re-formatted on a rewrite with no
-semantic change. Byte parity is tested on the regular fixtures (card head, `headHi`, `hair`,
-`shadow`), the semantic round trip on all of them. An element or attribute the grammar does not
-name is a read error, never dropped.
+as the shortest `f32` text (`0`, `0.035`). An element or attribute the grammar does not name is
+a read error, never dropped.
+
+Measured before coding: that writer reproduces 909 of the 945 files byte for byte. The 36 others
+mix indentation, align attributes with extra spaces, carry blank lines or trailing spaces, or
+write `0.0`, and are re-formatted on a rewrite with no semantic change. Byte parity is tested on
+the regular fixtures (card head, `headHi`, `hair`, `shadow`), the semantic round trip on all of
+them.
 
 The census of every `.mtl` on the maintainer's machine (2026-09-28: 1509 distinct PES material
 sets read, 405 Wavefront OBJ `.mtl` files correctly refused) added three rules:
+
 - **`maxfilter`** is a sampler attribute: 3 community exports write it between `minfilter` and
   `magfilter`. It is read and written back in that position with the filter values, and is
   absent in every Konami file.
@@ -502,7 +514,7 @@ meshes over them) or a weighted bone slot past the bone group (`check.rs` warns)
 old exporter, go past it: the current modelling add-on enforces that limit, and a few hundred
 missing faces are too few to settle it in game, maintainer 2026-09-28.
 
-- `from_file` ends with it;
+- `from_file` ends with `Model::validate`;
 - `to_file`, `merge` (on each part) and `split::encode`/`decode` start with it;
 - `vertex_enc`'s per-mesh `encode` and `decode` start with its mesh-local half
   (`Mesh::validate`, crate-private), and `decode`/`decode_model` return `Result` for that.
@@ -544,9 +556,9 @@ pub enum MergeError {
     noise, kit parts included: `modD_cap` against a collar differs by up to `1e-4`-ish on four
     shoulder bones);
   - and by at least `2.0e-4`, up to `0.5`, where the bind pose really differs (the gloves'
-    forearm and hand bones, the shadow model, the special hair types' face bones);
+    forearm and hand bones, the shadow model, the special hair types' face bones).
 
-  so `1e-4` sits in the gap. Exact comparison, the plan's first answer and `fmdl`'s rule, cannot
+  So `1e-4` sits in the gap. Exact comparison, the plan's first answer and `fmdl`'s rule, cannot
   merge two Konami kit parts.
 
   Each mesh's `bone_group` is remapped to the union; per-vertex bone indices index the group and

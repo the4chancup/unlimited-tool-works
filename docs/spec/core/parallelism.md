@@ -46,8 +46,8 @@ driver shapes". There:
 - planning has no run-level fatal, so every run that reaches it gets a manifest;
 - and the coordinator admits tasks into the pool in manifest order instead of `into_par_iter`.
 
-No processing-time locks are needed for output allocation — manifest planning establishes task
-independence before parallel work starts. The borrow checker enforces safe memory access, not
+No processing-time locks are needed for output allocation, because manifest planning establishes
+task independence before parallel work starts. The borrow checker enforces safe memory access, not
 disjoint output paths; manifest collision checks and tests establish disjoint output paths. No
 GIL, no `console_lock`, no free-threaded Python workarounds.
 

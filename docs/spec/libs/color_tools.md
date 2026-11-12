@@ -7,7 +7,7 @@ Part of the [Library crates plan](README.md). Section headings are unchanged fro
 One small crate for the suite's color work: kit-color extraction (pure logic, the
 Phase 2 surface) plus the shared color-picker widget and the kit menu icon drawing
 routines (Phase 8, when `egui` joins the crate). Splitting the widget into its own
-crate isn't worth the boilerplate at this size; if the egui dependency ever bothers
+crate isn't worth the boilerplate at this size. If the egui dependency ever bothers
 a headless consumer, the widget module can move behind a feature flag.
 
 ### Dominant kit-color extraction
@@ -35,11 +35,11 @@ the caller decodes, so the crate stays pure logic with no image dependency):
 
    The lib constants are those zones inset to keep seams and neighbours out: **shirt**
    x 0.36–0.64, y 0.05–0.88; **shorts** x 0.04–0.29 and 0.71–0.96, y 0.61–0.90. Pixels with
-   alpha below 128 are skipped; sampling every 4th pixel in both axes (16k samples per region
+   alpha below 128 are skipped. Sampling every 4th pixel in both axes (16k samples per region
    on a 2048 texture) is plenty for a two-color answer.
 3. **Cluster** each region's samples: quantize to 5 bits per channel, sort the
    bins by count, then merge each bin into the first larger cluster whose mean
-   lies within RGB distance 24 (a greedy, deterministic merge); the result is the
+   lies within RGB distance 24 (a greedy, deterministic merge). The result is the
    ranked list of `(mean color, share)`. Sponsor logos and badges end up in small
    clusters and lose automatically.
 4. **Pick**, with "distinct" meaning RGB distance at least 60 (about navy against
@@ -56,11 +56,11 @@ the caller decodes, so the crate stays pure logic with no image dependency):
      When nothing is distinct (a one-color kit) color 2 is the shorts' largest
      cluster, identical or near-identical to color 1, and the result says so.
 
-Calibration evidence (134 texture/config pairs from the exports on the writing
-machine, 2048 and 4096 DXT1/DXT5 kits, the harness in `scripts/provenance/calib`, which
-predates the crate and carries its own clustering: it is the record of how the thresholds
-were chosen, not a second implementation to keep in step): the
-declared config colors are **not** a usable ground truth.
+Calibration evidence shows that the declared config colors are **not** a usable ground truth.
+The evidence is 134 texture/config pairs from the exports on the writing machine, 2048 and 4096
+DXT1/DXT5 kits, run through the harness in `scripts/provenance/calib`. That harness predates the
+crate and carries its own clustering: it is the record of how the thresholds were chosen, not a
+second implementation to keep in step.
 
 - Only 55 of 133 declared shirt colors appear anywhere in the shirt region's top four clusters
   (managers leave the template's colors or pick an accent).

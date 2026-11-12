@@ -53,9 +53,9 @@ The current teams list is not a bundle file: it is embedded in the binary and ma
 see the [Team compiler plan](../team_compiler/README.md), "Resolved
 decisions", "Teams list").
 
-**Size budget:** the release binary stays under about 30 MB, and up to
-50 MB is acceptable where a feature truly needs it. A new dependency is weighed against this,
-measured on an optimized build, not a debug one.
+**Size budget:** the release binary stays under about 30 MB, and up to 50 MB is acceptable where
+a feature truly needs it. A new dependency is weighed against this, measured on an optimized
+build, not a debug one.
 
 The measurements (the tables are `cargo bloat --release -p studio --crates`, whose
 per-crate split is an estimate, as the tool itself says):
@@ -79,15 +79,15 @@ per-crate split is an estimate, as the tool itself says):
   - `team_widgets`, `egui_extras`, the help window's Markdown and its text shaping about 0.6
     together;
 
-  with `aatf` up 0.28 and `std` up 0.4. Read-only data is 12.0 MiB, embedded files 5.3 MiB of
-  it (the body font, 0.34 MiB, the largest new one).
+  Besides these, `aatf` is up 0.28 and `std` up 0.4. Read-only data is 12.0 MiB, embedded files
+  5.3 MiB of it (the body font, 0.34 MiB, the largest new one).
 - **The release itself** (0.0.1, commit `c97ce914`): 41.6 MiB (43,661,824 bytes here; the
   published exe, built by CI, 43,813,376), code 26.9 MiB:
   - the update check's HTTPS client newly linked (`ureq`, `rustls` and `ring`, 0.83 MiB);
   - the Save editor up 0.4 to 1.5 MiB;
   - `std` up 0.3, `studio_core` up 0.25;
 
-  read-only data 13.5 MiB.
+  Read-only data is 13.5 MiB.
 
 The release profile stays the default: `panic = "abort"` would cut the unwinding tables, but the
 GUI reports a compile thread's panic instead of closing, and LTO trades longer builds for size.
@@ -117,9 +117,11 @@ Settings and data live in one of two locations:
 - **In the user config directory** — `%APPDATA%\unlimited-tool-works` on Windows, `~/.config/unlimited-tool-works` on
   Linux (via the `directories` crate). Survives deleting or replacing the program folder.
 
-Resolution at startup is **presence-based, no marker files** (EGG's mechanism): if
-`data/settings.toml` exists next to the binary → portable mode; otherwise if the config-dir settings
-file exists → config-dir mode; if neither → first run.
+Resolution at startup is **presence-based, no marker files** (EGG's mechanism):
+
+1. if `data/settings.toml` exists next to the binary → portable mode;
+2. otherwise if the config-dir settings file exists → config-dir mode;
+3. if neither → first run.
 
 The CLI resolves the location the same way but never asks and never writes the settings file,
 because a noninteractive run cannot make the choice, and a `check` that created files would not
@@ -139,9 +141,9 @@ The following things are *not* data-dir cargo:
   modes**, beside `quick_compile.bat`. Copying exports into `%APPDATA%` is impractical and would
   break the "drop it in the folder, double-click" habit Red established; users who want it elsewhere
   point the setting at another path.
-- The `output/` folder (the default `output_folder_path`) likewise lives next to the binary — it is
+- The `output/` folder (the default `output_folder_path`) likewise lives next to the binary. It is
   Red's `patches_output/`, where users look for a CPK when a deployment could not happen or
-  `--no-deploy` was given; it also hosts the run-scoped staging folder (see "Post-processing" in
+  `--no-deploy` was given. It also hosts the run-scoped staging folder (see "Post-processing" in
   the Team compiler plan).
 
 ### Update state
@@ -185,8 +187,8 @@ Rationale:
   `CARGO_PKG_VERSION` against a GitHub Release tag. The version they see *is* the suite version.
   Independent crate versions would be invisible to every actual consumer.
 - **Nothing is published to crates.io.** Per-crate semver exists to signal breaking changes to
-  downstream *crate* consumers; there are none; every internal crate's only consumer is `studio` (or
-  another internal crate), all compiled together in one binary.
+  downstream *crate* consumers, and there are none: every internal crate's only consumer is
+  `studio` (or another internal crate), all compiled together in one binary.
 - **Tools are compile-time plugins**, statically registered in `studio`. A "team_compiler 2.0 vs.
   studio 1.5" compatibility question is impossible by construction — a version mismatch can't ship.
 - **Changelog and rollback are per-Studio-release.** Release notes are "Unlimited Tool Works 1.4 adds the

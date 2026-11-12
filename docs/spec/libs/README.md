@@ -20,14 +20,16 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
   plan](../team_compiler/README.md) (walkthrough, live validation).
 - The music lib crates (`music_export`, `audio_engine`) are specified in the [Music player
   plan](../../plans/music_player.md).
-- The live-match event feed (`match_feed`) in the [Match tracker
+- The live-match event feed (`match_feed`) is specified in the [Match tracker
   plan](../../plans/match_tracker/README.md).
-- The kit config codec (`kit_config` — binary/TOML, reverse-engineered format documentation) in
-  the [Kit config editor plan](../kit_config_editor.md).
-- The AATF rules engine (`aatf`) in the [AATF rules](../aatf_rules.md).
-- The shared tactics/card widgets (`team_widgets`) in the [Save editor plan](../save_editor.md).
-- The fox2 parser in [fox2](fox2.md).
-- The Konami database tables (`pesdb`) in the [DB generator plan](../../plans/db_generator.md).
+- The kit config codec (`kit_config` — binary/TOML, reverse-engineered format documentation) is
+  specified in the [Kit config editor plan](../kit_config_editor.md).
+- The AATF rules engine (`aatf`) is specified in the [AATF rules](../aatf_rules.md).
+- The shared tactics/card widgets (`team_widgets`) are specified in the [Save editor
+  plan](../save_editor.md).
+- The fox2 parser is specified in [fox2](fox2.md).
+- The Konami database tables (`pesdb`) are specified in the [DB generator
+  plan](../../plans/db_generator.md).
 
 Platform context is in the [core plan](../core/README.md).
 

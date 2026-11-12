@@ -209,12 +209,16 @@ native.pes_model.MaterialSet.read(data) -> MaterialSet;  MaterialSet.write() -> 
 native.FormatError                             # every codec error, message = the Rust Display text
 ```
 
-`write` returns what the Rust `write` returns: FMDL and SKL bytes as stored; `.model` and `.mtl`
-unwrapped (the WESYS wrapping is the archive's concern, `wezlib`'s in Rust). The smoke test's
-oracle is each format crate's own invariant: byte identity where the crate proves it (Konami
-FMDLs, every SKL), write-idempotence (`write(read(write(read(b)))) == write(read(b))`) everywhere
-else, `FormatError` on junk input, and no warning-level log line on a clean read (the wheel
-installs `pyo3-log`, so the libs' `log` output lands in Blender's console).
+`write` returns what the Rust `write` returns: FMDL and SKL bytes as stored, `.model` and `.mtl`
+unwrapped (the WESYS wrapping is the archive's concern, `wezlib`'s in Rust).
+
+The smoke test's oracle is each format crate's own invariant:
+
+- byte identity where the crate proves it (Konami FMDLs, every SKL);
+- write-idempotence (`write(read(write(read(b)))) == write(read(b))`) everywhere else;
+- `FormatError` on junk input;
+- no warning-level log line on a clean read (the wheel installs `pyo3-log`, so the libs' `log`
+  output lands in Blender's console).
 
 Build rules:
 
@@ -286,13 +290,13 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
   it, it is shotgun surgery through the tool.
 - The tool's settings struct and its two CLI subcommands, `check` and `compile`, through the
   `StudioTool` trait, with the exit codes 0/1/2/3 (`spec/team_compiler/settings.md` "CLI").
-- `libs/aesthetics_export`: the source-neutral object model for the Studio export format
-  (canonical `vtree::ScopePath` listing → `ParsedAestheticsExport` → sanitized
-  `ValidatedAestheticsExport` → `ResolvedAestheticsExport`, with `ExportIdentity`, strong
-  `ValidatedRoster`, `PlayerFolder`, `SharedModelFolder`, and `KitsFolder`) plus its folder
-  conventions and the structure pass's validation rules, shared with the Export upgrader, Kit
-  config editor, and Refs arranger. Tool-local `BuildManifest`, `PlanReport`, `plan_run`, and
-  `process_task` stay in `team_compiler`.
+- `libs/aesthetics_export`: the source-neutral object model for the Studio export format, plus
+  its folder conventions and the structure pass's validation rules, shared with the Export
+  upgrader, Kit config editor, and Refs arranger. The object model runs canonical
+  `vtree::ScopePath` listing → `ParsedAestheticsExport` → sanitized `ValidatedAestheticsExport` →
+  `ResolvedAestheticsExport`, with `ExportIdentity`, strong `ValidatedRoster`, `PlayerFolder`,
+  `SharedModelFolder`, and `KitsFolder`. Tool-local `BuildManifest`, `PlanReport`, `plan_run`,
+  and `process_task` stay in `team_compiler`.
 - The pipeline orchestration (reader, coordinator, writer) on `rayon`, over `libs/pipeline`'s
   memory budget, thread count and `CpkStem`; the run driver's shapes are the Team compiler
   plan's "Run driver shapes" (`pipeline.md`).
@@ -333,9 +337,8 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
   the maintainer on Windows (Linux not yet, no machine with a display).
 
 Converge ran a whole-crate mutation run over each of the phase's crates, every survivor
-triaged. At the close (2026-10-02): `just gates` green, 1402
-tests in 50 test runs, none failed or ignored; acceptance 77 scenarios, 77 proven. Full
-packed-output comparison was left to Phase 4.
+triaged. At the close (2026-10-02): `just gates` green, 1402 tests in 50 test runs, none failed
+or ignored; acceptance 77 scenarios, 77 proven. Full packed-output comparison was left to Phase 4.
 
 ### Phase 4: Processing logic
 
@@ -376,11 +379,12 @@ gates.
     (folder-discarding, not pass-through-eligible) until Phase 7. It is never compiled from the
     opposite native format instead, since that output would change silently once glTF lands
     (`team_compiler/pipeline.md` "Per-export pipeline walkthrough");
-  - texture conversion with the CPU converter, each worker converting one texture at a time, so
-    the conversions in flight are bounded by the worker count (0.1.0 ships CPU-only; the desktop
-    GPU BC7 backend, `libs/README.md` "First-release desktop GPU BC7", is built on this step in
-    Phase 16; stopping a cancelled run between textures is Phase 8's cancellation, which brings
-    the Cancel that triggers it) — plus WESYS wrapping and relocation to common (`textures`);
+  - texture conversion with the CPU converter, plus WESYS wrapping and relocation to common
+    (`textures`). Each worker converts one texture at a time, so the conversions in flight are
+    bounded by the worker count. 0.1.0 ships CPU-only: the desktop GPU BC7 backend
+    (`libs/README.md` "First-release desktop GPU BC7") is built on this step in Phase 16.
+    Stopping a cancelled run between textures is Phase 8's cancellation, which brings the Cancel
+    that triggers it;
   - MTL / face XML / `materials.toml` editing (`xml_editing`);
   - kit folders: config generation/reconciliation/emission via `libs/kit_config` (TOML in
     exports, binary at compile time), FPC patching via `fpc`, kit colors from per-kit
@@ -455,9 +459,9 @@ integration and Phase 6's Export upgrader.
   VGL27, VTL10 and VTL11 rulesets as data with their fixtures ([AATF rules](../aatf_rules.md),
   "Development phase and verification").
 - The Save editor tool crate's non-GUI substance that a command drives: settings, the CLI, and
-  the `session/` operations its commands run over `pes_savefile` (Team TOML export and import,
-  the aesthetics patch, AATF checks, comparator, the teams list export (strip and seed with
-  its restored-id check went at step 8.36b); [Save editor](../save_editor.md), "CLI").
+  the `session/` operations its commands run over `pes_savefile` ([Save editor](../save_editor.md),
+  "CLI"): Team TOML export and import, the aesthetics patch, AATF checks, comparator, the teams
+  list export. Strip and seed, with its restored-id check, went at step 8.36b.
 
   The wiring only the view drives (editing with its undo stack, selection, recent files,
   tactics, the FPC toggle, AATF quick actions) is Phase 8's, each piece in the slice of the view
@@ -535,9 +539,9 @@ the only place old-format knowledge lives, through the CLI: `upgrade` (steps 1 t
 The closing whole-crate mutation runs (2026-10-20, extra kinds included, split with the VPS):
 
 - `export_upgrader` 981 caught, 6 missed, 1 timeout, 102 unviable;
-- `team_compiler` 2532 caught, 3 missed, 3 timeouts, 405 unviable;
+- `team_compiler` 2532 caught, 3 missed, 3 timeouts, 405 unviable.
 
-every survivor a test added, an equivalent pinned, or the placeholder views Phase 8 replaces.
-At the close (2026-10-20): `just gates` green,
-3987 tests passed in 67 test runs, 6 ignored (the GPU tests); acceptance 652 scenarios (10
-manual, 9 withdrawn), 564 proven, the 88 unproven Phase 8's GUI scenarios.
+For every survivor a test was added or an equivalent pinned, or it lay in the placeholder views
+Phase 8 replaces. At the close (2026-10-20): `just gates` green, 3987 tests passed in 67 test
+runs, 6 ignored (the GPU tests); acceptance 652 scenarios (10 manual, 9 withdrawn), 564 proven,
+the 88 unproven Phase 8's GUI scenarios.

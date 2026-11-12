@@ -5,15 +5,14 @@ Part of the [Library crates plan](README.md). Section headings are unchanged fro
 ## `libs/elevation`
 
 Admin rights for the tools that need them, in one small platform crate. Compiling
-into the PES install directory fails on default Windows installs when PES lives
-under `Program Files` — the compilers' normal output target — so all compiler
-tools that write to the PES install directory need an elevation path.
+into the PES install directory (the compilers' normal output target) fails on default Windows
+installs when PES lives under `Program Files`, so all compiler tools that write to the PES
+install directory need an elevation path.
 
 - **Detect + relaunch**: `is_elevated()` plus an elevated relaunch of the current
-  command line (`ShellExecuteExW` with `runas`, i.e. the UAC consent prompt) —
-  Red's `admin_tools.py` replacement. The
-  relaunch re-attaches to the same workspace state via ordinary startup (settings
-  file, CLI args preserved).
+  command line (`ShellExecuteExW` with `runas`, i.e. the UAC consent prompt), Red's
+  `admin_tools.py` replacement. The relaunch re-attaches to the same workspace state via
+  ordinary startup (settings file, CLI args preserved).
 - **CLI behavior**: an access-denied output path fails cleanly — a clear error and
   a non-zero exit — instead of half-written CPKs.
 

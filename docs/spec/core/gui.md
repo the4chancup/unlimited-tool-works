@@ -8,10 +8,11 @@ Part of the [Core plan](README.md). Section headings are unchanged from the sing
 
 In egui, the shell is built with `Panel` (sides) + `CentralPanel`, shown on the whole-app `Ui`
 that `eframe::App::ui` provides (API as of egui 0.37; see "egui version discipline" below).
+
 A fixed-width side panel (the sidebar, the help window's chapter tree, the Ruleset editor's
 rail) takes `.resizable(false)` beside its `exact_size`. egui's `Panel::left` and
-`Panel::right` start resizable and a pinned size does not turn that off, so the edge showed
-the resize cursor while a drag did nothing.
+`Panel::right` start resizable and a pinned size does not turn that off, so without it the edge
+showed the resize cursor while a drag did nothing.
 
 **The window's size.** Studio opens at 1280 × 780 points, centered, not maximized: the size of
 its client area, the title bar and borders outside it, as every window size here is.
@@ -62,7 +63,7 @@ editor, 2026-10-25), while height only ever needs a scroll.
 
 The zoom factor is the shell's alone. egui's keyboard zoom (Ctrl with plus, minus or 0) is
 turned off, because the width rule sets the zoom every frame and would undo a keyboard zoom one
-frame later; a member who wants larger text has the system's display scaling, which points
+frame later. A member who wants larger text has the system's display scaling, which points
 follow. A member's resize stops at **960 × 600 points**: below 960 the scaled text drops under
 75% of its size, past legible on a 100% display.
 

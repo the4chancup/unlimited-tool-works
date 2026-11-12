@@ -47,8 +47,8 @@ directory entry's trailing `/` too).
 
 Directory entries are listed apart, by `folders()`, not in `entries()`. An empty folder exists in
 an archive only as a directory entry, and an empty kit folder is a placeholder kit (Team compiler
-plan), so dropping them lost a kit; keeping `entries()` files only keeps its sizes the sum a 7z
-read decompresses, which is what the budget charges.
+plan), so dropping them lost a kit. Keeping `entries()` to files only keeps the sum of its sizes
+equal to what a 7z read decompresses, which is what the budget charges.
 
 A folder that also has entries below it may or may not be listed, as the writer chose.
 `folders()` carries no other guarantee and is not checked for duplicates (a folder holds no
@@ -91,8 +91,8 @@ Codecs:
   BZip2 7z lists and fails at the first `read`, since the codec is only met when a block is
   decoded).
 
-Both crates without default features, so no compression, encryption or time dependencies ride
-along.
+Both crates are built without default features, so no compression, encryption or time
+dependencies ride along.
 
 Fixtures (`crates/libs/archives/tests/fixtures/`): one small export-like tree (`sample/`: two
 player folders with real 176-byte, 476-byte and 960-byte PES files, an empty file, an empty folder,
@@ -103,9 +103,10 @@ a `Kits/Réf.txt` with a non-ASCII name) packed seven ways:
 - 7-Zip stored `.zip`;
 - PowerShell `Compress-Archive` (Deflate, UTF-8 flag);
 - 7-Zip encrypted `.7z` (header encrypted too);
-- `.7z` with the header readable and the entries encrypted, and `.zip`;
+- `.7z` with the header readable and the entries encrypted;
+- encrypted `.zip`.
 
-plus a PPMd `.7z` and a BZip2 `.zip` for the codecs the crate does not carry.
+Beside these, a PPMd `.7z` and a BZip2 `.zip` cover the codecs the crate does not carry.
 
 - Every readable archive must list the same six file entries with the same sizes and yield bytes
   equal to the tree's files.

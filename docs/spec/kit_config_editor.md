@@ -1,10 +1,14 @@
 # Unlimited Tool Works — Kit config editor plan
 
-This plan specifies **`libs/kit_config`**, the lib crate holding the format
-knowledge, shared by the Kit config editor, the [Team compiler](team_compiler/README.md) (config
-generation, FPC reconciliation, compile-time emission), and the
-[Export upgrader](export_upgrader.md) (binary → TOML migration) — one crate owns
-the format so all three agree on what a valid config is. Platform context is in
+This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
+shared by:
+
+- the Kit config editor;
+- the [Team compiler](team_compiler/README.md) (config generation, FPC reconciliation,
+  compile-time emission);
+- the [Export upgrader](export_upgrader.md) (binary → TOML migration).
+
+One crate owns the format so all three agree on what a valid config is. Platform context is in
 the [core plan](core/README.md).
 
 ---
@@ -126,13 +130,12 @@ Notes:
   A stock Konami config earns no warning or error.
 - **Sleeve badges** are the four (X, Y) positions of the competition badge: one per
   sleeve (left/right) per kit variant (short/long sleeves).
-- **"Shirt model" is a misnomer**, kept because the old editor and the FPC
-  constants established it: in game the field only selects the model used for the
-  **wrist-end of the long sleeves** when a player wears them — it does not change
-  the shirt mesh, and the kit texture's UV layout is identical for all three
-  values (which is what lets `color_tools` sample fixed shirt/shorts regions —
-  see the [library crates plan](libs/README.md)). The old editor does gate other fields
-  on it, as noted below.
+- **"Shirt model" is a misnomer**, kept because the old editor and the FPC constants
+  established it. In game the field only selects the model used for the **wrist-end of the long
+  sleeves** when a player wears them. It does not change the shirt mesh, and the kit texture's
+  UV layout is identical for all three values, which is what lets `color_tools` sample fixed
+  shirt/shorts regions (see the [library crates plan](libs/README.md)). The old editor does gate
+  other fields on it, as noted below.
 - **Collar IDs** index the game's stock collar model set (`nocloth`). Exports can
   replace a stock collar with a custom model (the Team compiler's pass-through
   Collars folder) and point every kit config's collar at the replaced ID — the
@@ -245,7 +248,7 @@ name = "00000000000000000000000000000000"
 
 - **No authored texture-name fields in exports**: the five 16-byte names are derived
   at compile time from the textures actually present in the kit folder (`kit.dds` →
-  `u0{team_id}{slot}`, `kit_back.dds` → `…_back`, and so on) — one less thing to
+  `u0{team_id}{slot}`, `kit_back.dds` → `…_back`, and so on). That is one less thing to
   desync, and the reason an export config can't reference a missing texture anymore.
 
   Standalone binary → TOML conversion is the exception: because it has no team/slot/
@@ -316,7 +319,8 @@ kit sections defer to this crate.
 - **TOML roundtrips** including the `[unknown]` preservation path, export-mode derivation of texture
   names, and standalone CLI bit-identical preservation through `[source_texture_names]`.
 - **Version encodings**: Name Y against configs saved by both Kit Manager variants (the
-  same bytes decode to the same `name.y`, a PES ≤20 config's Y being half of it); the PES15 pattern clamp against Red's behavior.
+  same bytes decode to the same `name.y`, a PES ≤20 config's Y being half of it); the PES15
+  pattern clamp against Red's behavior.
 
 ## Improvements over Kit Manager (summary)
 
