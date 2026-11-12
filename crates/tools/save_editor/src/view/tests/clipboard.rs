@@ -164,8 +164,7 @@ fn selector_fixture(test: &str) -> PathBuf {
 fn gameplan_document(view: &SaveView, id: u32) -> TeamToml {
     let file = file(view);
     let team = file.team(id).expect("the team");
-    let players: Vec<&PlayerEntry> = file.players().iter().collect();
-    let mut document = TeamToml::from_team(file.version(), team, &players).unwrap();
+    let mut document = TeamToml::from_team(file.version(), team, &[]).unwrap();
     keep_sections(&mut document, GAMEPLAN);
     document
 }
@@ -463,8 +462,13 @@ fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
         "the field's own copy"
     );
 
-    // The field's own paste left the copy's text in the filter; the
+    // The field's own paste left the copy's text in the filter, its
+    // line breaks turned to spaces as a single-line field holds it; the
     // click defocuses the field and selects B's row again.
+    assert!(
+        view.filter.contains("# copied: stats"),
+        "the field's paste left the copy's text in the filter"
+    );
     view.filter.clear();
     click_player_row(&mut window, &mut view, 701, 1);
     ctrl_v(&mut window, &mut view, &copied);
@@ -769,8 +773,9 @@ fn a_gameplan_survives_the_document() {
                 |other| {
                     let theirs = &other.tactics;
                     theirs.starting_eleven != ours.starting_eleven
-                        && theirs.bench_order != ours.bench_order
+                        && theirs.bench_order[..12] != ours.bench_order[..12]
                         && theirs.set_pieces != ours.set_pieces
+                        && theirs.players_to_join_attack != ours.players_to_join_attack
                         && (0..3).all(|i| {
                             theirs.presets[i] != ours.presets[i]
                                 && (0..3).all(|f| {
@@ -778,7 +783,10 @@ fn a_gameplan_survives_the_document() {
                                 })
                         })
                 },
-                &format!("lineup, bench, set pieces and presets differ from {label}'s"),
+                &format!(
+                    "lineup, bench, set pieces, players to join attack \
+                     and presets differ from {label}'s"
+                ),
             );
             let document = TeamToml {
                 pes_version: Some(version),
@@ -786,6 +794,11 @@ fn a_gameplan_survives_the_document() {
                 ..TeamToml::default()
             };
             let mut target = target_with(team, &seed.tactics);
+            // The PES 17 and 21 fixtures hold the same auto flags on
+            // every cup team, so no seed differs on them there: the
+            // target's auto preset change is flipped by hand to the
+            // opposite of the source's, a flag the record stores.
+            target.tactics.auto.preset_change = Some(!ours.auto.preset_change.unwrap_or(false));
             through_text(&document)
                 .apply(version, &mut target, &mut [])
                 .unwrap();
@@ -966,15 +979,22 @@ fn a_teams_gameplan_pastes_into_a_save_of_another_version() {
         open_window(&fixture(PesVersion::Pes21, "clip_cross_gameplan_21"));
     click_team_row(&mut window17, &mut view17, 701);
     let copied = copy(&mut window17, &mut view17);
-    assert_eq!(head(&copied)[1], "# copied: gameplan");
-    // What importing the copied document, Gameplan alone, writes onto the
-    // PES 21 save's 702.
+    let name = display_name(&team_entry(&view17, 701).name);
+    assert_eq!(
+        head(&copied),
+        [
+            format!("# Unlimited Tool Works: the Gameplan of {name}").as_str(),
+            "# copied: gameplan"
+        ]
+    );
     let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
     assert_eq!(document.pes_version, Some(PesVersion::Pes17));
+    // What importing 701's Gameplan document, Gameplan alone, writes onto
+    // the PES 21 save's 702.
     let expected = stage(
         file(&view21),
         file(&view21).team(702).unwrap(),
-        &document,
+        &gameplan_document(&view17, 701),
         GAMEPLAN,
     )
     .expect("the PES 17 document stages onto the PES 21 team");
@@ -1119,6 +1139,8 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
     let gameplan = copy(&mut window_a, &mut view_a);
     click_button(&mut window_a, &mut view_a, "1");
     let preset = copy(&mut window_a, &mut view_a);
+    assert_eq!(head(&gameplan)[1], "# copied: gameplan");
+    assert_eq!(head(&preset)[1], "# copied: preset");
     let [naming, kind] = [0, 1].map(|line| preset.lines().nth(line).unwrap());
     let body: String = preset
         .lines()
