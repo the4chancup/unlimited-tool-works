@@ -16560,3 +16560,36 @@ Not chosen: correcting every range to its field's. The others (`x  # 0-14` in a 
 passing only these two, so what the game draws past the others is unmeasured; the worklog
 issue of 2026-11-12 keeps them for the Kit config editor's plan.
 Plan: `spec/kit_config_editor.md` "TOML form (`config.toml`)", the sample.
+
+## 2026-11-12 — decompiler, team_compiler, balls_compiler, stadium_compiler — the Team decompiler becomes the Decompiler for every export kind, each kind's compile packing a recovery manifest
+Decision (maintainer): the planned Team decompiler is a general Decompiler: besides team
+aesthetics exports it extracts the referee export, the balls export, stadium exports and the
+billboards export from a DLC, and for that each kind's compile packs a recovery manifest as
+the one planned for team exports. Built after 0.0.2.
+Decision (lead, where the request was silent):
+- The manifest folder of a kind without a team ID sits under the kind's marker word
+  (`4cc/exports/refs/…`, `balls`, `stadium`, `billboards`), beside the teams' folders by ID; the
+  manifest names its kind.
+- The manifest folder carries every file the export model knows that the CPK holds under no
+  path of its own, not the TOML files alone, and the manifest lists the link files. The plan
+  of 2026-11-07 packed `settings.toml`, the kits' `config.toml` and the `materials.toml` files
+  only, so a decompiled export would have lost its `players.txt` (a referee export's slots),
+  its `colors.txt` files, its notes, `legacy_ids.toml` and every link to a shared folder or
+  to `Common/`, and would not have recompiled to the same CPK, which is what the manifest
+  promises.
+- The Decompiler opens one CPK or a DLC's folder and looks a manifest's paths up in every CPK
+  opened, because a DLC is several CPKs and a stadium's own billboards are packed into the
+  billboards' CPK.
+- Each kind also gets a path without a manifest (the heuristic), from what the game's own
+  files say; which kinds need it is asked of the maintainer.
+Why: one tool for every kind because the Compiler is one tool for every kind (DECISIONS
+2026-11-09): an organizer recovering a cup opens its DLC once. The manifests are planned now,
+ahead of the tool, for the reason the team manifest was: only DLCs compiled after a manifest
+ships carry it.
+Not chosen: one `4cc/exports/<export folder name>/` scheme for every kind, the team ID moved
+into the manifest. The team scheme of 2026-11-07 stands, and a team ID in the path lets a
+member with any CPK tool find a team's folder without opening manifests.
+Plan: `plans/decompiler.md` (was `plans/team_decompiler.md`); `plans/team_compiler/pipeline.md`
+"Recovery manifest"; `plans/balls_compiler.md` and `plans/stadium_compiler.md`, "Recovery
+manifest" (new); `plans/README.md`, `plans/core/README.md` "Overview"; `QUESTIONS.md` "After
+the release".

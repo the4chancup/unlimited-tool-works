@@ -44,10 +44,13 @@ rationale. Structural points worth noting here:
   card widgets with the Save editor through `libs/team_widgets`;
 - the **Ruleset editor** builds AATF rulesets through forms, as data that a generic interpreter
   in the rules file evaluates, so an invitational's organizer can make rules that need not
-  resemble the official ones.
+  resemble the official ones;
+- the **Decompiler** rebuilds exports of every kind from a cup's DLC, exactly as compiled
+  from the recovery manifests the Compiler packs, by a heuristic from older CPKs
+  (`decompiler.md`).
 
-Additional tools (CPK toolkit/decompiler; other utilities) will build on the same lib crates and
-be specified later.
+Additional tools (a CPK toolkit; other utilities) will build on the same lib crates and be
+specified later.
 
 ### Project context
 

@@ -199,7 +199,8 @@ as the readme shows): the team content fills `4cc_41_teams` and the slots after 
 bins go to `4cc_08_bins`, and a later matchday compiles single-CPK into its `midcup` slot
 (`spec/team_compiler/pipeline.md` "Multi-CPK mode: teams parts").
 
-The defaults stay as they are: the official list is what every install is meant to carry, and
+The compiler's default settings stay as they are, although a compile with them refuses to
+install on the older list: the official list is what every install is meant to carry, and
 `dpfilelist_outdated` already names the upgrade.
 
 The full-look aesthetics patch (worklog 8.36c) and its in-game check on PES 2019 (8.36d) come

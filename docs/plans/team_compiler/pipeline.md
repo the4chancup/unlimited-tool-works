@@ -197,25 +197,38 @@ compile reads the file.
 
 ### Recovery manifest
 
-A team's aesthetics export is sometimes lost, and the cup's DLC is then the only copy of its
-look: the files carry the team's ID, but the export's player, model and kit folder names are
-gone (a player folder's name survives in the save only sometimes).
+An export is sometimes lost, and the cup's DLC is then the only copy of what it held. For a
+team the files carry the team's ID, but the export's player, model and kit folder names are
+gone (a player folder's name survives in the save only sometimes), and so are its settings.
 
-So the writer packs a folder per compiled export into the CPK,
-`4cc/exports/<team id>/<export folder name>/`, a path no game version reads: every version
-ignores files it does not look up, as the 7 KB placeholder CPKs holding only `placeholder.txt`
-show. The Team decompiler (`plans/team_decompiler.md`) reads it back.
+So the writer packs a folder per compiled export into the CPK that holds the export's files,
+at a path no game version reads: every version ignores files it does not look up, as the 7 KB
+placeholder CPKs holding only `placeholder.txt` show. The Decompiler (`plans/decompiler.md`)
+reads it back.
 
-- **`manifest.toml`**: the export's folder name, the Studio version and the PES version it
-  was compiled for; every file the export packed, as its CPK path, the source path relative
-  to the export folder, and the conversion it took (passthrough, rewrap, a texture encoded
-  with a named codec, a model converted, a portrait converted).
-- **The export's TOML files, as files**: `settings.toml`, each kit's `config.toml`, each model
-  folder's `materials.toml`, at their paths relative to the export folder, beside the
-  manifest. They are packed as files, not embedded in the manifest as strings, because their
-  bytes then go in and come out as they are (comments, blank lines, line endings), where an
-  embedded copy needs escaping on the way in and out, and a member can take one out with any
-  CPK tool.
+- **Where**: `4cc/exports/<team id>/<export folder name>/` for a team's export, and
+  `4cc/exports/refs/<export folder name>/` for the referee export, which has no team ID. The
+  other export kinds follow the same scheme under their own marker word (`balls`, `stadium`,
+  `billboards`), each planned with its kind (`plans/balls_compiler.md` and
+  `plans/stadium_compiler.md`, "Recovery manifest"). A team ID is a number, so it never
+  collides with a marker word.
+- **`manifest.toml`**: the export's kind and folder name, the Studio version and the PES
+  version it was compiled for; every file the export packed, as its CPK path, the source path
+  relative to the export folder, and the conversion it took (passthrough, rewrap, a texture
+  encoded with a named codec, a model converted, a portrait converted). It also lists the
+  export's link files by path: a link file is a name without content, so the list is all of
+  it.
+- **The export's files that the CPK holds under no path of their own, as files**: its
+  settings (`settings.toml`, each kit's `config.toml`, each model folder's `materials.toml`),
+  its lists (`players.txt`, a refs export's `ref_lists.txt`, `legacy_ids.toml`) and its
+  `colors.txt`, `notes.txt` and `README.txt` files, at their paths relative to the export
+  folder, beside the manifest. The rule is the general one, not the list: every file the
+  export model knows travels here unless the manifest already maps it to a CPK path, or the
+  decompiled export would compile to something else, or lose what was written for people.
+
+  They are packed as files, not embedded in the manifest as strings, because their bytes then
+  go in and come out as they are (comments, blank lines, line endings), where an embedded copy
+  needs escaping on the way in and out, and a member can take one out with any CPK tool.
 
   The `settings.toml` matters beyond the folder names: the savefile settings reach the game
   only through the aesthetics patch, so without it the save is the only place they survive.
@@ -229,6 +242,7 @@ show. The Team decompiler (`plans/team_decompiler.md`) reads it back.
 - **No hashes, no sizes, no times, no absolute paths**: the decompiler hashes the CPK's own
   bytes if it needs to, and has no source to check a hash against otherwise. A time or a path
   would make two compiles of one export differ and could show a member's user name.
+- **In multi-CPK mode** a team's manifest folder goes into the teams part that holds the team.
 - Built early, ahead of the decompiler, because only DLCs compiled after it ships carry it, so
   every cup compiled without it is one more that can only be recovered by the decompiler's
   heuristic.

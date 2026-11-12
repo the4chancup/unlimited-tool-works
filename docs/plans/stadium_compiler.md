@@ -48,6 +48,22 @@ billboard CPK, or both) becomes the Compiler's choice of what to compile.
   defaults: `4cc_30_stadiums0`, `4cc_15_billboard`). A stadium is independent as a folder,
   never as a CPK: a CPK per stadium would put forty CPKs in the DLC.
 
+## Recovery manifest
+
+The stadiums' CPK and the billboards' CPK carry their exports' recovery manifests, as a team's
+CPK carries each team export's (`team_compiler/pipeline.md` "Recovery manifest", which sets
+the scheme and its reasons): `4cc/exports/stadium/<export folder name>/` per stadium export in
+the stadiums' CPK, and `4cc/exports/billboards/<export folder name>/` in the billboards' CPK.
+
+Each holds a `manifest.toml` (the kind, the export's folder name, the Studio and PES versions,
+every file packed with its source path and conversion, and for a stadium the stadium ID the
+list gave it) and, as files, the export's files that the CPK holds under no path of their own.
+A stadium's own `Billboards/` is packed into the billboards' CPK, while its manifest stays with
+the stadium: the Decompiler looks a manifest's paths up in every CPK it has open.
+
+Which files those are is settled with the export's format, when Phase 9 opens. The
+Decompiler (`decompiler.md`) rebuilds the exports from them.
+
 ## New formats to port
 
 | Format | Source | Size | Placement |

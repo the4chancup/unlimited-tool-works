@@ -35,14 +35,13 @@ Fox version the cup moves to around April 2027, "Target versions"). Phases 1 to 
 closed; 0.0.1 was released 2026-11-03 (tag `v0.0.1` on `c97ce914`). Built ahead of their
 phases: 10.0a-g (`music_export`), 16.w (the platform floor), 16.x a (`dds_convert`'s GPU
 BC7 half, unwired), 20.0 to 20.6a2a (the Ruleset editor, resuming after 0.1.0).
-**Plans owed** (the maintainer, 2026-11-12), written once the readability pass over
-`docs/spec` and `docs/plans` has landed; what they describe is built after 0.0.2:
-- The Team decompiler becomes a general-purpose Decompiler (`plans/team_decompiler.md`, a
-  stub today): besides team aesthetics exports it extracts referee exports, ball exports,
-  stadiums and adboards from a DLC. For that, the compiler writes a manifest for each of
-  those kinds, as the recovery manifest is planned for team aesthetics exports.
-- The compilers become one Compiler tool. The maintainer named this as upcoming; no plan
-  text describes it yet, and the Decompiler's plan is written with it in view.
+**Planned for after 0.0.2** (the maintainer, 2026-11-12): the Team decompiler is now the
+Decompiler, for every export kind (`plans/decompiler.md`, a stub: team, referee, balls,
+stadium and billboards exports from a DLC), and each kind's compile packs a recovery manifest
+(`plans/team_compiler/pipeline.md`, `plans/balls_compiler.md` and
+`plans/stadium_compiler.md`, "Recovery manifest"). The one Compiler those kinds are compiled
+by was already decided (DECISIONS 2026-11-09, `plans/core/README.md` "One Compiler"; its
+respelling of the plans is the issue of 2026-11-09 below). The plan's review is owed (tier 3).
 
 **Working mode.** `RUNBOOK.md` "How the work runs": the lead plans, briefs, reviews and
 writes what is correctness-critical; sidekicks implement, two or three at once; a review's
@@ -2207,6 +2206,20 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-12 (the readability findings' rest, `.tmp/readable/fix_resolutions.md`) —
+  89 of the 112 findings are fixed (`11ec3c6d`) and nine are questions for the maintainer
+  (`QUESTIONS.md` "Sentences the plans and the spec leave open"). Left for the lead, each
+  settled by reading or measuring: (1) `plans/core/distribution.md` "Distribution", the
+  `licenses/` item's "About 70 KB, 18 KB of the archive" (the notices file or the folder:
+  measure a bundle); (2) `spec/export_upgrader.md` step 5, "Reading a Kit Textures file.",
+  what "the copied textures" are and what "misses" means (the kit copy code); (3)
+  `spec/aatf_rules.md` "VGL25", whether Studio's data or the fork's checker tells the
+  goalkeeper and the captain; (4) `spec/team_compiler/README.md` "Development phases", whether
+  Phase 5's "on Fox" covered the default-ID rows and the Midcup shared-IDs record (the Phase 5
+  commits). Seen on the way: `plans/core/distribution.md` "Release builds in CI" describes
+  `release.yml`, which is built, so it belongs in the spec; the same file says `release.py` is
+  "Windows only" in one place and has it pack the Linux bundle in another; and
+  `spec/core/architecture.md`'s `studio_core` module tree has no `widgets/` entry.
 - open 2026-11-12 (the readability findings, item 9) — the comments of a kit's generated
   `config.toml` (`crates/libs/kit_config/src/toml_form.rs`, `to_toml`) give the old editor's
   ranges, which the game's fields can exceed (`x  # 0-14` in a field of 0-15). The two that
@@ -2285,9 +2298,10 @@ points there.
   read the host's; a flaky gate trains everyone to rerun until green.
 - open (2026-11-07) — The Team compiler's recovery manifest (`plans/team_compiler/pipeline.md`
   "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
-  ships carry it. One slice in the writer (each export's manifest and TOML files, the round trip
-  read back from a compiled CPK); no in-game check (every version ignores unread files). The
-  Team decompiler (`plans/team_decompiler.md`, a stub) waits for its own phase.
+  ships carry it. One slice in the writer (each team and referee export's manifest and the
+  files it packs beside it, the round trip read back from a compiled CPK); no in-game check
+  (every version ignores unread files). The balls, stadium and billboards manifests come with
+  their kinds, and the Decompiler (`plans/decompiler.md`, a stub) waits for its own phase.
 - open (2026-11-07) — Repro bundles in every tool (`plans/core/architecture.md` "Repro
   bundles", the maintainer's request after the 0.0.2-se19 report). To slice before briefing:
   (1) the button and dialog drafted in `docs/prototypes/` and looked at by the maintainer

@@ -210,6 +210,23 @@ For each listed ball at 1-based position N (id `ball%03d`):
    shared `pipeline` crate carries the staging/promotion scaffolding so both compilers behave
    identically.
 
+## Recovery manifest
+
+The balls CPK carries the balls export's recovery manifest, as a team's CPK carries each team
+export's (`team_compiler/pipeline.md` "Recovery manifest", which sets the scheme and its
+reasons): a folder `4cc/exports/balls/<export folder name>/` holding
+
+- `manifest.toml`: the kind, the export's folder name, the Studio and PES versions, and every
+  file packed, as its CPK path, its source path relative to the export folder
+  (`Balls/4CC Clover/ball.fmdl`) and the conversion it took;
+- the export's files that the CPK holds under no path of their own, as files: `balls.txt`,
+  and each ball's `name.txt` and `materials.toml`.
+
+`Ball.bin` already holds each ball's name and order, but not its folder's name, nor whether
+the name came from a `name.txt` or from the folder.
+
+The Decompiler (`decompiler.md`) rebuilds the export from it.
+
 ## Ball.bin (recovered format reference)
 
 Verified against the binary shipped with 2.03 (there is no other documentation):

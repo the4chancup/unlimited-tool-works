@@ -68,3 +68,52 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
   "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
   does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.
+- **Which kinds the Decompiler must recover from old DLCs** (`plans/decompiler.md` "Without
+  one: the heuristic"). From a DLC compiled with recovery manifests every kind comes back
+  exactly. A DLC compiled by the old tools has none, and the plan gives each kind a second
+  path that works from the game's own files (a team by its ID, the balls from `Ball.bin`,
+  the stadiums from their bins, the referees from their slots). That path is the larger half
+  of the tool. For which kinds are there old DLCs whose exports are lost and wanted back:
+  teams only, or the balls, the stadiums, the billboards and the referees too?
+
+## Sentences the plans and the spec leave open
+
+From the readability pass of 2026-11-12: passages its readers could take two ways, which
+neither the code nor another document settles (`.tmp/readable/findings.md`, with each one's
+evidence in `fix_resolutions.md` beside it). Each waits only for its tool's phase.
+
+- **The Refs arranger's label for PES 15/16** (`plans/refs_arranger.md` "CLI"). `chances`
+  labels its PES 15/16 figures "probability", while "Storage box" says of the same figures
+  "Exact for the supplied sample, not a claim about the game's true probabilities". What
+  should the label say?
+- **A manually started anthem and the kickoff fade** (`plans/music_player.md` "Autopilot",
+  "Anthems start manually": "The existing kickoff fade-out may still stop a manually started
+  anthem"). The only kickoff fade the plan defines is the goalhorn's, on the first clock start
+  after a goal. Does that fade also stop an anthem, or is another fade meant?
+- **A formation picture's panel colour** (`plans/save_editor.md` "Tactics editor", formation
+  pictures, "The picture.": "The theme's panel colour under the team's name in its colour
+  codes' colours, its id and the save's version"). Is the panel colour the whole picture's
+  background, or only the heading's?
+- **The file-name line for a range of teams** (same section: "the same checkbox, and the
+  file-name line, which follows it"). Does the line come after the checkbox, or does it
+  change with the checkbox's state?
+- **The Comparator's man-marking row** (`plans/save_editor.md` "Comparator (gameplay +
+  aesthetics)": "on the row of the own starter who marks (`Preset 1 · Man marking · <his
+  name>`): the bare byte read as one of the team's own players."). Does the last clause say
+  what the row shows, or what the bare byte must not be read as?
+- **A click on an entry of the Export upgrader's report** (`plans/export_upgrader.md` "GUI":
+  it "opens the system file browser at that entry (the folder, the file selected where the
+  platform can; ...)"). Does a folder entry open that folder and a file entry its folder with
+  the file selected, or does every entry open its containing folder with the entry selected?
+- **Why the legacy FMDL writer failed on Konami files** (`spec/libs/format_crates.md`
+  "`fmdl::model`", the bounding-box item: a group's box is "computed when the source had none,
+  which is why the legacy writer failed on Konami files"). What did the legacy writer do with
+  a group that had no box?
+- **The Texport experiment's files** (`spec/pes_savefile/operations.md` "Texport (read +
+  write)": "Four files were built from one game-made Texport of 772", the last bullet "and so
+  did a file from the writer that copies the save's records"). Was the writer's file the
+  fourth of the four, or a fifth?
+- **The collar's alpha test on PES 17** (`spec/team_compiler/blue_port.md` "What does not
+  carry over": the in-game test of 2026-10-09 found that a `.mtl` beside a nocloth `.model` is
+  read and the collar model then stops drawing, "And a collar drawn with the kit's own
+  material has no alpha test"). Did the same test show the second, or is it from elsewhere?
