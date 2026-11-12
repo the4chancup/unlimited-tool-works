@@ -35,9 +35,11 @@ pub(super) fn rect(ui: &egui::Ui, view: &SaveView) -> Option<egui::Rect> {
     ))
 }
 
-/// Draws the logo where `rect` places it, if anywhere.
-pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
-    let Some(rect) = rect(ui, view) else {
+/// Draws the logo where `rect` places it, if anywhere: the rect the
+/// toolbar's band already ended short of, computed before the toolbar
+/// ran, so a save the toolbar opened this frame shows it on the next.
+pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, rect: Option<egui::Rect>) {
+    let Some(rect) = rect else {
         return;
     };
     let Some(active) = view.rules.as_mut() else {

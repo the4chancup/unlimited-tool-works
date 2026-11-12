@@ -719,3 +719,53 @@ fn hovering_edit_while_file_is_open_switches_the_menus() {
         "the File menu closed"
     );
 }
+
+/// The toolbar's row keeps 3 points clear of its panel's top and of the
+/// panel's line under it (the draft's `.top` padding): the File menu
+/// button's top stands 3 under the panel's top, the line's top 3 under
+/// the button's bottom.
+#[test]
+fn the_toolbars_row_stands_3_points_inside_its_panel() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let file = node(&frame.nodes, &menu_label("File"))
+        .bounds()
+        .expect("the File menu button's bounds");
+    let visuals = window.ctx.global_style().visuals.clone();
+    let panel_top = frame
+        .shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect)
+                if rect.fill == visuals.panel_fill
+                    && rect.rect.left() == 0.0
+                    && rect.rect.top() == 0.0 =>
+            {
+                Some(f64::from(rect.rect.top()))
+            }
+            _ => None,
+        })
+        .expect("the toolbar panel's fill");
+    assert_eq!(file.y0, panel_top + 3.0, "the button's top 3 under it");
+
+    let stroke = visuals.widgets.noninteractive.bg_stroke;
+    let line = frame
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > file.y1
+                    && f64::from(points[0].y) < file.y1 + 10.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.partial_cmp(b).expect("ordered lines"))
+        .expect("the panel's line under the toolbar's row");
+    // The stroke centres on `line`: its top stands `bottom` under the row.
+    let line_top = line - 0.5 * f64::from(stroke.width);
+    assert_eq!(line_top, file.y1 + 3.0, "the line 3 under the button");
+}

@@ -378,6 +378,51 @@ fn the_menus_are_disabled_with_no_save_open() {
     }
 }
 
+/// Whether a filled or stroked rectangle the size of `node`'s bounds
+/// (within the frame's stroke) is painted over it: the button's frame.
+fn paints_frame(shapes: &[egui::epaint::ClippedShape], node: &accesskit::Node) -> bool {
+    let bounds = node.bounds().expect("a drawn button has bounds");
+    shapes.iter().any(|clipped| match &clipped.shape {
+        egui::Shape::Rect(rect) => {
+            let same = (f64::from(rect.rect.left()) - bounds.x0).abs() <= 1.0
+                && (f64::from(rect.rect.right()) - bounds.x1).abs() <= 1.0
+                && (f64::from(rect.rect.top()) - bounds.y0).abs() <= 1.0
+                && (f64::from(rect.rect.bottom()) - bounds.y1).abs() <= 1.0;
+            let visible = rect.fill != egui::Color32::TRANSPARENT
+                || (rect.stroke.width > 0.0 && rect.stroke.color != egui::Color32::TRANSPARENT);
+            same && visible
+        }
+        _ => false,
+    })
+}
+
+/// The bar's menus are unframed as a menu bar draws them; the ruleset
+/// dropdown and the Live AATF toggle keep their frames in the framed
+/// scope, a flat combo or toggle reading as one more menu or as a label.
+#[test]
+fn the_dropdown_and_the_toggle_paint_frames_where_the_menus_paint_none() {
+    let path = fixture(PesVersion::Pes21, "toolbar_frames");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        paints_frame(&shapes, ruleset_dropdown(&nodes)),
+        "the ruleset dropdown is framed"
+    );
+    assert!(
+        paints_frame(
+            &shapes,
+            node_labeled(&nodes, Role::Button, "\u{25b6} Live AATF")
+        ),
+        "the Live AATF toggle is framed"
+    );
+    assert!(
+        !paints_frame(&shapes, menu_button(&nodes, "File")),
+        "the File menu button paints no frame"
+    );
+}
+
 /// A dirty session's `• unsaved changes` paints in the link blue, not the
 /// weak grey that hid it among the toolbar's quieter text.
 #[test]

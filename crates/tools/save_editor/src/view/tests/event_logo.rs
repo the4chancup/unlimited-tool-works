@@ -2,6 +2,10 @@
 //! moves no other widget, its tooltip and link, when it is not drawn, and
 //! the toolbar's band ending short of it.
 
+use std::time::SystemTime;
+
+use pes_savefile::discovery::SavefileCandidate;
+
 use super::*;
 
 /// DBC7's ruleset as built in: its name and page are the logo's tooltip
@@ -69,7 +73,7 @@ fn layout_without_logo(nodes: &[accesskit::Node], name: &str) -> Vec<String> {
 }
 
 /// The x where the toolbar's last widget ends: the rightmost edge of the
-/// nodes in the File button's row, the logo left out.
+/// nodes overlapping the File button's row, the logo left out.
 fn toolbar_end(nodes: &[accesskit::Node], name: &str) -> f64 {
     let file = menu_button(nodes, "File")
         .bounds()
@@ -78,7 +82,7 @@ fn toolbar_end(nodes: &[accesskit::Node], name: &str) -> f64 {
         .iter()
         .filter(|node| !(node.role() == Role::Image && node.label() == Some(name)))
         .filter_map(accesskit::Node::bounds)
-        .filter(|bounds| bounds.y0 >= file.y0 && bounds.y1 <= file.y1)
+        .filter(|bounds| bounds.y0 < file.y1 && bounds.y1 > file.y0)
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max)
 }
@@ -297,6 +301,65 @@ fn the_band_ends_14_points_left_of_the_logo_with_the_fullest_row_inside_it() {
         toolbar_end(&nodes, &name) < f64::from(end),
         "the row's last widget ends inside the band ({} against {end})",
         toolbar_end(&nodes, &name)
+    );
+}
+
+// A save the toolbar opens on a frame (a File menu entry or a shortcut)
+// draws no logo on that frame, where the band's fill still ran to the
+// view's right edge under it; on the next frame the logo stands over a
+// band already ending 14 left of it.
+#[test]
+fn a_save_opened_from_the_toolbar_shows_the_logo_on_the_next_frame() {
+    let name = dbc7().name;
+    let path = fixture(PesVersion::Pes21, "event_logo_open_frame");
+    let mut view = SaveView::new();
+    view.aatf_ruleset = "dbc7".to_owned();
+    let discovered = path.clone();
+    view.discover = Box::new(move |_| {
+        vec![SavefileCandidate {
+            path: discovered.clone(),
+            account: None,
+            modified: SystemTime::now(),
+        }]
+    });
+    let mut window = Headless::new();
+    // One pass a frame: the fresh layout on the open's own frame asks for
+    // a re-pass, whose output already holds the opened save, so with two
+    // the pass under test is never returned.
+    window
+        .ctx
+        .options_mut(|options| options.max_passes = std::num::NonZeroUsize::MIN);
+    draw(&mut window, &mut view);
+    assert!(view.session.is_none(), "premise: no save open");
+
+    // Ctrl+1 opens the newest discovered PES 21 save on this frame.
+    let (_, nodes, shapes) = window.frame(
+        vec![key(egui::Key::Num1, egui::Modifiers::CTRL, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert!(view.session.is_some(), "premise: the shortcut opened it");
+    if let Some(bounds) = logo(&nodes, &name).and_then(accesskit::Node::bounds) {
+        let (fill, _) = band(&window, &shapes);
+        assert_eq!(
+            fill.1,
+            bounds.x0 as f32 - 14.0,
+            "a logo on the open's own frame stands over a band ending 14 left of it"
+        );
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = logo(&nodes, &name)
+        .and_then(accesskit::Node::bounds)
+        .expect("the logo is drawn on the next frame");
+    let (fill, line) = band(&window, &shapes);
+    assert_eq!(
+        fill.1,
+        bounds.x0 as f32 - 14.0,
+        "the fill ends 14 left of the logo"
+    );
+    assert_eq!(
+        line.1,
+        bounds.x0 as f32 - 14.0,
+        "the line ends 14 left of the logo"
     );
 }
 

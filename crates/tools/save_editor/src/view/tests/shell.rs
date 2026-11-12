@@ -3,6 +3,7 @@ use super::*;
 // Undo/redo and unsaved changes, the mechanism SE-GUI-03's scenario is
 // built on: an edit marks the row while the file stands; Ctrl+S writes it
 // and clears the mark.
+// SE-GUI-03
 #[test]
 fn an_edit_marks_the_row_until_ctrl_s_writes_the_save() {
     let path = fixture(PesVersion::Pes21, "edit_then_save");

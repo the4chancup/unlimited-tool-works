@@ -339,10 +339,10 @@ fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
 
 // The ids share the fields' row because the Tactics editor below needs
 // the height: at the default pane the view's lowest drawn stroke (the
-// lists' and Automatic settings' frame bottoms) paints the draft's last
-// row, pixel row 740 of the 1280 x 780 client, whose y the pane shares
-// (741 before the toolbar stood on its band, which set everything under it
-// 1 point higher).
+// lists' and Automatic settings' frame bottoms) paints 739, 1 above the
+// draft's last row, pixel row 740 of the 1280 x 780 client, whose y the
+// pane shares (as it stood 1 above 741 before the toolbar stood on its
+// band, which set everything under it 1 point higher).
 #[test]
 fn the_team_view_fits_the_default_pane() {
     let path = fixture(PesVersion::Pes21, "team_view_fit");
@@ -370,8 +370,8 @@ fn the_team_view_fits_the_default_pane() {
     // A 1-point stroke paints the row above its bounding bottom.
     let last_row = bottom - 1.0;
     assert!(
-        (last_row - 740.0).abs() <= 1.0,
-        "the lowest stroke paints the draft's last row, 740 ({last_row})"
+        (last_row - 739.0).abs() <= 0.5,
+        "the lowest stroke paints 739, 1 above the draft's last row of 740 ({last_row})"
     );
 }
 
