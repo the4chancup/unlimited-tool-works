@@ -156,7 +156,7 @@ input[type=range]:focus { outline: none; }
   padding: 8px; box-shadow: 0 4px 16px #000a; }
 /* The formation pictures run's progress (egui: a ProgressBar). */
 .pbar { width: 100%; height: 14px; background: var(--extreme); border: 1px solid var(--stroke);
-  border-radius: 7px; overflow: hidden; box-sizing: border-box; }
+  border-radius: 2px; overflow: hidden; box-sizing: border-box; }
 .pbar .fill { height: 100%; background: var(--sel-bg); }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }

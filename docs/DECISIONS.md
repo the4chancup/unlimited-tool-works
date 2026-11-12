@@ -17024,3 +17024,14 @@ Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)" (the list "Loo
 Decision: every corner the app draws has a radius of 2 points. `theme.rs` sets egui's seven radii (`window_corner_radius`, `menu_corner_radius`, the five widget states') from one constant in both themes, the hovered state's 3 included, and the suite's own painter and frame calls read the style's value instead of naming a number. Pills, circles and marks under 6 points keep their shapes.
 Why: egui has no single radius setting, and the theme set the widget states alone, so menus and dialogs kept egui 0.37's 6 and each new popup had to be put back by hand; setting all seven in one place and reading them everywhere else leaves nothing to forget. 2, not a larger value, because the look wanted is a rectangle whose corners are not sharp, not a rounded shape (the maintainer).
 Plan: `plans/core/gui.md` "Other UI components", the Corners row; ST-CORNER-01; the drafts' stylesheets.
+
+## 2026-11-13 — studio_core — progress bars take the one corner radius; radio buttons stay circles
+Decision: a progress bar (the update download's, the formation pictures run's) is drawn with
+the theme's corner radius of 2, track and fill, and a slider's handle stays the rectangle it
+is, at the same radius. A radio button stays a circle, as do a count badge's pill and a mark
+under 6 points. The captain's mark on the pitch keeps its own radii (3 and 2). The maintainer
+chose it from a side-by-side render (`.tmp/0_0_2/rad/pill_both.png`).
+Why: 2 on the bars not a pill because the pill was the only fully round shape left on screen
+beside rectangles that are merely not sharp; circles on the radio buttons not 2 because a
+squared radio button reads as a checkbox; the captain's mark imitates the game's.
+Plan: `core/gui.md` "Other UI components", the Corners row, and ST-CORNER-01.
