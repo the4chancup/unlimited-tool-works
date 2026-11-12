@@ -16881,3 +16881,12 @@ retarget the other tools). The lead placed it in 0.0.2, the confusion coming fro
 using the preview; the maintainer was asked and had not said.
 Plan: plans/core/gui.md "Sidebar" item 2 and "Status bar" edited, ST-SIDE-09 added;
 plans/save_editor.md "Set PES path", the File menu and SE-GUI-26, 28 and 50 edited.
+
+## 2026-11-12 — studio_core — Under a tool that does not target it, the PES selector stands disabled and reads a hyphen
+
+The maintainer's ruling, replacing the same day's "its place stays empty": the empty gap
+under the logo read as something missing. The selector keeps its box, disabled, reading `-`
+in the rail and the opened sidebar, uncoloured by the exe check, its hover `This tool does not
+use the PES version`. The tool list still never moves between tools, and no version is named
+beside a save of another one.
+Plan: plans/core/gui.md "Sidebar" item 2 and ST-SIDE-09 edited.

@@ -245,16 +245,20 @@ Top to bottom:
    tool: a member works on one cup's game across the tools, and a control in each tool would
    let the compiler target one version while the refs arranger targets another.
 
-   **It is drawn only while the active tool targets the version** (`StudioTool::
+   **It shows the version only while the active tool targets it** (`StudioTool::
    targets_pes_version`, false unless a tool says otherwise). The Save editor and the
    Ruleset editor do not: an open save keeps its own version and reads that version's PES
    folder (`plans/save_editor.md` "Set PES path"), and a ruleset names no game. A selector
    reading PES 2019 beside an open PES 2017 save told members the editor would treat the
-   save as PES 2019's. In those tools the selector's place stays empty, in the rail and in
-   the opened sidebar alike, so the tool list under it never moves between tools and a
-   member's hand finds each icon where it was. The setting itself is untouched by which
-   tool is shown: its Settings row stays, and so do the running-PES switch and its notice
-   below.
+   save as PES 2019's. In those tools the selector stands in its place disabled, reading a
+   hyphen (`-`) in the rail and in the opened sidebar alike, uncoloured whatever the exe
+   check found, its hover `This tool does not use the PES version`. Disabled and not
+   absent: an empty gap under the logo read as something missing, and the selector keeping
+   its box means the tool list under it never moves between tools, so a member's hand
+   finds each icon where it was. A hyphen and not the version: a disabled `PES 2019`
+   beside a PES 2017 save would raise the same question. The setting itself is untouched
+   by which tool is shown: its Settings row stays, and so do the running-PES switch and
+   its notice below.
 
    It is a compact dropdown. In the rail it shows its year alone (`21`), centred under the
    logo, with no arrow, the rail's 44 points holding the number alone; in the opened sidebar
@@ -1486,11 +1490,12 @@ ST-SIDE-08  GIVEN a build registering two window tools and one marked CLI-only, 
 ```
 ST-SIDE-09  GIVEN stub tool A, which targets the PES version, and stub tool B, which does not
             WHEN A is active
-            THEN the selector is drawn, in the rail and in the opened sidebar; WHEN B is made
-                 active THEN no selector is drawn and none is focusable, its place is empty,
-                 and every tool entry's icon stands where it stood under A, in the rail and
-                 in the opened sidebar; the setting is unchanged by the switch, and the
-                 Settings menu's PES version row still shows and changes it
+            THEN the selector shows the version, in the rail and in the opened sidebar; WHEN
+                 B is made active THEN the selector is disabled and reads `-` in both, takes
+                 no colour from the exe check, its hover is `This tool does not use the PES
+                 version`, and every tool entry's icon stands where it stood under A, in the
+                 rail and in the opened sidebar; the setting is unchanged by the switch, and
+                 the Settings menu's PES version row still shows and changes it
 ST-SET-01   GIVEN two registered tools with settings sections and the second active
             WHEN the settings gear is clicked
             THEN the menu shows the common section and one collapsible section per tool, the

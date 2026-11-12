@@ -2912,19 +2912,18 @@ function sidebarItems(full) {
   // A disabled control shows no tooltip in the browser (egui:
   // on_disabled_hover_text), so a blocked selector's reason sits on a
   // wrapper that still senses hover (ST-SIDE-04).
-  // A tool that does not target the version (the Save editor follows its open
-  // save, a ruleset names no game) gets no selector: its box stays, empty and
-  // out of the Tab order, so the tool list under it never moves between tools
-  // (ST-SIDE-09).
+  // Under a tool that does not target the version (the Save editor follows its
+  // open save, a ruleset names no game) the selector stands disabled, reading a
+  // hyphen and taking no colour from the exe check: it keeps its box, so the
+  // tool list under it never moves between tools, and names no version, which
+  // beside a save of another one would mislead (ST-SIDE-09).
   const targets = (TOOLS.find(t => t.id === S.activeTool) || {}).pes;
-  if (!targets) {
-    pesSel.style.visibility = "hidden";
-    pesSel.tabIndex = -1;
-    pesSel.setAttribute("aria-hidden", "true");
-    pesSel.removeAttribute("title");
-  }
-  items.push(targets && S.blocker
-    ? h("span", { class: "sel-block", title: pesSelectorTip() }, pesSel) : pesSel);
+  const unused = "This tool does not use the PES version";
+  const shown = targets ? pesSel : combo([["-", "-"]], "-", () => {},
+    { title: unused, cls: "", disabled: true });
+  if (!targets) shown.id = pesSel.id;
+  items.push(!targets ? h("span", { class: "sel-block", title: unused }, shown)
+    : S.blocker ? h("span", { class: "sel-block", title: pesSelectorTip() }, pesSel) : pesSel);
   items.push(h("div", { class: "sep" }));
   // Registered entries take focus and switch on Enter or Space; the planned
   // ones take no focus in either state. While the layer is open the rail's
