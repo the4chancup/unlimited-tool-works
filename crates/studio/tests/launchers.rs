@@ -4,6 +4,7 @@
 #![cfg(windows)] // the bats are the Windows bundle's; 0.0.1 is Windows only
 
 use std::fs;
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
@@ -22,8 +23,11 @@ struct Sandbox {
 
 impl Sandbox {
     fn new(name: &str) -> Sandbox {
+        // The parent folder's name holds a space, a parenthesis pair and an
+        // `&`, so the `%~dp0` paths a bat passes carry them: an unquoted
+        // path in a launcher fails here.
         let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("launchers")
+            .join("launchers (the) & real")
             .join(name);
         if root.exists() {
             fs::remove_dir_all(&root).unwrap();
@@ -77,10 +81,19 @@ impl Sandbox {
     /// the bat's `pause` reads end of input and returns at once. The binary the bat starts
     /// inherits `NO_RELEASES_URL` for its update check.
     fn run_bat(&self, bat: &str, args: &[&Path]) -> Output {
+        // Explorer-style quoting: with /s, cmd strips the outer pair of
+        // quotes and runs the rest literally, so each quoted path survives a
+        // folder name holding spaces or an `&`. `raw_arg` keeps Rust from
+        // escaping the inner quotes cmd must see.
+        let mut command = format!("\"{}\"", self.root.join(bat).display());
+        for arg in args {
+            command.push_str(&format!(" \"{}\"", arg.display()));
+        }
         Command::new("cmd")
+            .arg("/d")
+            .arg("/s")
             .arg("/c")
-            .arg(self.root.join(bat))
-            .args(args)
+            .raw_arg(format!("\"{command}\""))
             .env("UTW_RELEASES_URL", NO_RELEASES_URL)
             .current_dir(&self.root)
             .stdin(Stdio::null())
@@ -173,13 +186,18 @@ fn upgrade_upgrades_every_old_export_and_tallies() {
             "{log}"
         );
     }
+    let commands: Vec<&&str> = lines
+        .iter()
+        .filter(|line| line.starts_with("$ UTW "))
+        .collect();
     assert_eq!(
-        lines
-            .iter()
-            .filter(|line| line.starts_with("$ UTW "))
-            .count(),
+        commands.len(),
         1,
         "the exe is started once for both exports: {log}"
+    );
+    assert!(
+        commands[0].contains("--legacy-ids"),
+        "the run passes --legacy-ids: {log}"
     );
     assert!(
         sandbox

@@ -3,14 +3,14 @@ format the Team compiler reads. Its commands run from a terminal opened in the
 folder that holds `UTW.exe`.
 
 ```text
-UTW export-upgrader upgrade <export>... [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
+UTW export-upgrader upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
 UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
-`upgrade` takes one or more old exports, each a folder, a `.zip` or a `.7z`.
-`--all <DIR>` adds every export in the folder DIR after the ones named: its
-folders and its `.zip` and `.7z` files, in the order of their names. Any other
-file in DIR is passed over. A team export
+`upgrade` takes one or more old exports, `--all <DIR>`, or both. Each export
+is a folder, a `.zip` or a `.7z`. `--all <DIR>` adds every export in the
+folder DIR after the ones named: its folders and its `.zip` and `.7z` files,
+in the order of their names. Any other file in DIR is passed over. A team export
 takes `--savefile`, naming the save (`EDIT00000000`) that says which player
 wears which boots and gloves, or `--loose` to guess the wearer of each boots
 or gloves folder from its ID alone. A referee export (a name whose first word

@@ -121,7 +121,7 @@ What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--conve
 `upgrade` (off by default):
 
 ```text
-UTW export-upgrader upgrade <export>... [--all <DIR>] [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
+UTW export-upgrader upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
 ```
 
 `--legacy-ids` is VGL27's legacy mode ("What it does", 0.0.2-poc13).
