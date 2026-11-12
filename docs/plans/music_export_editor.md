@@ -83,7 +83,7 @@ Feature parity with RigDJ, restated on the shared model:
 
   The picker writes the path relative to the export's folder when the file is under it,
   a subfolder included since the player resolves one, and the bare file name otherwise,
-  as RigDJ did for every pick; validation then reports the file missing until it is
+  which RigDJ wrote for every pick; validation then reports the file missing until it is
   placed. A typed path is kept as typed.
 
   A new row's path is empty, not RigDJ's `New Song`, a name Rigdio looks for as a file.

@@ -126,7 +126,7 @@ export format.
      - a per-kit model variant left out, the folder's roles read as planning reads them, with
        the folder's `ingame_face` marker and over every source the part is built from,
        `ModelFolder::roles`;
-     - in a pre-Fox source its own `face.xml` controls, a model or `.mtl` the xml does not
+     - in a pre-Fox source whose own `face.xml` controls it, a model or `.mtl` the xml does not
        reference, a referenced set's variants counting as referenced;
      - a file below a `Common/` subfolder on PES 18-21 that no `.common` link names and no
        linked model or `.mtl` brings, and there a `Common/` `.mtl` no selected `.model`'s
@@ -512,7 +512,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    Not pre-checked:
    - the models a member's own `face.xml` lists (the member assembles that face, and the
      compiler packs what it names);
-   - collars on either engine.
+   - an FMDL collar on Fox.
 
    A Fox collar: no `.skl` is read beside one, and no Fox version's body table differs from PES
    21's on bones a measured model blends (4.17g3a: the game's own high-neck collar, the
@@ -756,7 +756,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    Raster sources decode via `image`, missing mipmaps are generated, and Fox output uses FTEX
    with target-appropriate headers. Two image files with the same stem but different
    extensions is a conflict (`texture_stem_conflict`). Zlib DDS compression is optional (PES
-   ≤17).
+   ≤17), chosen by the `dds_compression` setting (`settings.md`).
 
    An in-memory conversion cache eliminates repeat conversion on the edit→compile→test loop;
    see the [library crates plan](../libs/README.md) for design and engagement rules (≤2-team
@@ -881,17 +881,16 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
      its texture relative to the packed `.mtl`: `./<stem>.dds` beside it, `../<stem>.dds` for
      the folder's root texture a gloves subfolder's `.mtl` resolves nearest first, a boots
      folder packing its one `boots.mtl` at the root. PES 17 loads the `./` and `./<sub>/`
-     paths but not the `../` one, which `plans/team_compiler/pipeline.md` "3. Per-model-folder
-     parallel steps (rayon)" removes by packing every gloves `.mtl` at the root.
+     paths but not the `../` one, so every gloves `.mtl` is packed at the root (below).
 
    Fox mode packs allowed types (`.bin`, `.fmdl`, `.skl`, `.fclo`) into an FPK plus a generated
    empty `.fpkd` (player-owned and merge-copied textures having been relocated to the
    per-player common subfolder; plain shared-output textures remain in that model's own texture
    location). Packed entries are emitted to the writer queue. (Blue: `contents_packing.py`)
 
-   A gloves output on PES 15-17 is a shared folder's, or an `ingame_face` player's own, built by
-   the same code (his textures name game paths, so only the `.mtl` names change for him). Every
-   `.mtl` the output packs (a member's, or a converted model's `<stem>.mtl`) sits at the
+   In a gloves output on PES 15-17 (a shared folder's, or an `ingame_face` player's own, both
+   built by the same code; his textures name game paths, so only the `.mtl` names change for
+   him), every `.mtl` the output packs (a member's, or a converted model's `<stem>.mtl`) sits at the
    output's root, named by its path below the folder with each `/` written `_`, lowercased:
    `grip/materials.mtl` packs as `grip_materials.mtl`, a converted `grip/glove_r.fmdl`'s set
    as `grip_glove_r.mtl`. `glove.xml` names it there (`material="./grip_materials.mtl"`)
@@ -1385,12 +1384,12 @@ not a serial scheduling requirement.
   compares that variant with the `.mtl` the entry names, and a higher variant's materials are
   not compared with its respelled `.mtl`, a respelling that is processing's alone.
 
-  This holds for a player's face, its subfolders and a linked `Faces/` folder. Where no
-  `face.xml` names the set, under `ingame_face` (his boots and gloves hold parts, not entries)
-  and in a shared `Boots/` or `Gloves/` folder's own output (one `boots.model`, one `glove.xml`
-  listing every glove, so every variant would be worn at once), the fallback is used and the
-  others are left out with `kit_variant_model_left_out`, as on Fox: the member's base model is
-  what both engines agree on.
+  This pre-Fox set listing holds for a player's face, its subfolders and a linked `Faces/`
+  folder. Where no `face.xml` names the set, under `ingame_face` (his boots and gloves hold
+  parts, not entries) and in a shared `Boots/` or `Gloves/` folder's own output (one
+  `boots.model`, one `glove.xml` listing every glove, so every variant would be worn at once),
+  the fallback is used and the others are left out with `kit_variant_model_left_out`, as on
+  Fox: the member's base model is what both engines agree on.
 
   A lone variant (`pants_kit1.model` with no other number) is an ordinary model there, a part
   of his boots or gloves under the marker as any other. A `.common` link to a per-kit variant
@@ -1553,9 +1552,9 @@ not a serial scheduling requirement.
 
 ### 5. Writer (single-threaded)
 
-1. **Override priority** — manifest preflight gives the `overrides/` tree (Red's `sideload/`)
-   precedence over export entries at the same output path, and the writer emits accepted
-   overrides before export content in canonical order. Overrides target the normal team CPK(s);
+1. **Override priority** — the writer gives the `overrides/` tree (Red's `sideload/`)
+   precedence over export entries at the same output path, and emits accepted overrides before
+   export content in canonical order. Overrides target the normal team CPK(s);
    there is no refs-specific overrides tree unless one is introduced later.
 
    Every file below `overrides/` in the data directory is one CPK entry at its path relative to
@@ -1579,10 +1578,10 @@ not a serial scheduling requirement.
    discards every staged entry from a failed task. Ordered draining and memory admission must be
    coordinated so waiting later batches cannot prevent the next batch from completing. Written
    entries release their bytes; shared/cache-owned bytes remain charged while retained.
-3. **Duplicate invariant check** — all collision winners are decided deterministically by the
-   manifest (or, for deep-derived names, inside the owning task), never by rayon completion or
-   writer arrival order. The writer treats any path that still arrives twice as an internal
-   invariant violation.
+3. **Duplicate invariant check** — all collision winners are decided deterministically: an
+   override's by the writer (item 1), the others by the manifest (or, for deep-derived names,
+   inside the owning task), never by rayon completion or writer arrival order. The writer treats
+   any path that still arrives twice as an internal invariant violation.
 
    Canonical manifest order and normalized CPK timestamps make otherwise identical builds
    reproducible. The CPK header's tool-version string is `Unlimited Tool Works <version>` (the
@@ -2427,7 +2426,8 @@ Resolved decisions:
   savefile; the compiler only consumes the list) runs the *same* reconciliation as the updater
   with the savefile as the incoming list (added / kept / overridden, reviewed before writing;
   savefile value wins a conflict), never a blind overwrite. It is on-demand, not automatic: the
-  list must keep working with no savefile present (`savefile_missing` is a supported mode), and
+  list must keep working with no savefile present (`savefile_missing` is a warning, and the
+  compile goes on), and
   rewriting user data as a side effect of a compile would be a surprise. Placeholder rows
   (`Backup N`, `Invitational N`) come along and are inert.
 - **Collar contract**: the replaced stock collar ID comes from the `collar_[ID]` filename
@@ -2499,12 +2499,13 @@ Resolved decisions:
     directory or in one above it up to `Common/`, where its names resolve nearest first, the
     textures a `.mtl` link brings too. None of them is `file_not_used`.
 
-  They are read as every texture directly in `Common/` is packed whether a model names it or
-  not: knowing which of them a model names would take a second texture resolver at planning,
-  before any model is read, that a slip in leaves a texture silently unpacked.
+  They are read just as every texture directly in `Common/` is packed, whether a model names it
+  or not: knowing which of them a model names would take a second texture resolver at
+  planning, before any model is read, and a slip in that resolver would leave a texture
+  silently unpacked.
 
-  Each is packed at its path before the platform folder, as Red packs a Common subfolder
-  (`Common/kit1/x.dds` as `common/<team>/kit1/sourceimages/#windx11/x.ftex`). Since Fox
+  Each file they read is packed at its path before the platform folder, as Red packs a Common
+  subfolder (`Common/kit1/x.dds` as `common/<team>/kit1/sourceimages/#windx11/x.ftex`). Since Fox
   reaches Common through links alone, a subfolder file no link names or brings is
   `file_not_used` there. On PES 15-17 a subfolder is packed at its own path ("Common" under
   step 4).

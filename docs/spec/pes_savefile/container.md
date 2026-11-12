@@ -61,7 +61,7 @@ then          description ┐
   The salt's randomness has no security role, because the master keys are public. The
   container API takes it as a parameter so the round-trip tests are deterministic, and
   `file.rs` supplies one derived with `sha2` from the payload and the clock. No RNG crate is
-  used; `std::time` is native-only, which is where saving to a path lives anyway.
+  used; `std::time` is native-only, and so is saving to a path, where the clock is read.
 - **Strictness**: the four declared sizes must consume the file exactly (every real save does).
   A short file, a size past the end or trailing bytes is a `ContainerError`, never a guess.
 - This description is cross-verified against `crypt.c` (the source of the DLLs every tool
@@ -247,14 +247,14 @@ Structural eras:
   strip style, and the ingame face parameters.
 - **PES 17–21**: one unified block per player; the appearance fields moved inside it as a
   72-byte sub-block whose **internal layout is identical across 16–21** (playerID, the
-  boots/gloves u32, copy ID, physique bitfields, wrist/strip bitfields, the ingame-face run,
-  skin color, iris, hair). Only its position moves: a separate array in 15/16, record +116 in
-  17/18/19, record **+240** in 20/21.
+  boots/gloves u32, copy ID, physique bitfields, wrist/strip bitfields, the ingame-face run
+  holding skin color, iris and hair). Only its position moves: a separate array in 15/16,
+  record +116 in 17/18/19, record **+240** in 20/21.
 
   The 20/21 record grows to 312 bytes because the name section ahead of it widens (name 61 B
   at +54, shirt name 61 B at +115, print name 64 B at +176). Within the sub-block: playerID
-  +240, boots/gloves u32 +244, copy ID +248, physique +252, ingame-face run +262…+285, skin
-  +285, iris +304, hair +304…+312. Verified empirically against a decrypted real PES 21 save
+  +240, boots/gloves u32 +244, copy ID +248, physique +252, ingame-face run +262…+312, holding
+  skin +285, iris +304 and hair +304…+312. Verified empirically against a decrypted real PES 21 save
   (see Verification).
 - ⚠ `convertTeam21.py` (the 16→21 reference) writes three fields at stale PES 17/18/19
   offsets: physique to record +128, the ingame-face run to +138…188, and the shirt name to

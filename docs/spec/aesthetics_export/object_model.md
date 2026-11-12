@@ -11,7 +11,7 @@ every path and issue scope the model carries.
 **The model and its validation live in `libs/aesthetics_export`, not in the Team compiler.** The
 export format is shared knowledge: the Export upgrader writes it, the Kit config editor edits kit
 folders inside it, and the Team creator generates it from scratch. So one crate owns the object
-model, the folder conventions described under "Player folders (the export format)", and the
+model, the folder conventions described under "Player folders (the Studio export format)", and the
 check rules behind the format-level messages in the catalog.
 
 That includes the **structure parser**: canonical folder/file listing, names/sizes, supplied
@@ -23,7 +23,7 @@ and the memory budget remain pipeline concerns. The Load step's eager structure 
 on this parser, and the Refs arranger supplies a plain-filesystem listing.
 
 The Team compiler is the crate's biggest consumer, and the compile-time behavior (processing
-steps, packing, bins, GUI, CLI) stays here. The Team compiler itself is deliberately *not* split
+steps, packing, bins, GUI, CLI) stays in it. The Team compiler itself is deliberately *not* split
 into a companion lib crate — see "Lib crates" in the [core plan](../core/README.md).
 
 `TeamName`, `TeamId` and the `teams_list.txt` parse/reconcile logic live in the leaf crate

@@ -71,11 +71,11 @@ one that makes them enforceable:
     guarded crate's normal dependencies over every target and every feature, plus the
     `cargo deny` license allowlist in `deny.toml`.
 
-  On Windows the recipes run under PowerShell (`set windows-shell`), because Git for Windows'
-  `sh` is not on PATH from a plain PowerShell, the fallback `../../CONTRIBUTING.md` named. A
-  planted clippy warning was verified to turn `just gates` red there. The remaining recipes the
-  plan names (`acceptance`, `parity`, `bindings`, `release`) arrive with the phases that give
-  them something to run.
+  On Windows the recipes run under PowerShell (`set windows-shell`), the fallback
+  `../../CONTRIBUTING.md` named, because Git for Windows' `sh` is not on PATH from a plain
+  PowerShell. A planted clippy warning was verified to turn `just gates` red there. The
+  remaining recipes the plan names (`acceptance`, `parity`, `bindings`, `release`) arrive with
+  the phases that give them something to run.
 - CI (`.github/workflows/ci.yml`) runs `just gates` on Ubuntu and Windows and `just deps-check`
   on Ubuntu, installing `just` and `cargo-deny` as prebuilt binaries; the `python_bindings` build
   job is added in Phase 2 with the crate.

@@ -33,9 +33,9 @@ In **Load** (step 4): the eagerly loaded structure is also what the grid needs.
 
 What exists of this is in `spec/team_compiler/pipeline.md` "2. Per-export serial steps (coordinator)".
 
-In **Validation, in two passes** (step 2), after the deep pass: Plain-folder full checks run both
-passes. Packed archives run the structure pass during live checking, and this deferred deep
-pass at compile start, before eligibility is decided.
+In **Validation, in two passes** (step 2), after its "Deep format pass" bullet: Plain-folder
+full checks run both passes. Packed archives run the structure pass during live checking, and
+this deferred deep pass at compile start, before eligibility is decided.
 
 Among the categories the two passes cover:
 
@@ -86,10 +86,9 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   it lists every installed entry that the official list does not contain and that is not
   renamed as "will no longer be loaded", and shows every rename before anything is done.
 
-- **DpFileList upgrade** — for each entry the dialog lists as "will no longer be loaded" whose
-  `.cpk` still sits in `download/`, it shows the size and offers deletion, since renaming a
-  3.7 GB file as a backup is pointless. The user confirms per file, and nothing is deleted
-  without that confirmation.
+  For each entry the dialog lists as "will no longer be loaded" whose `.cpk` still sits in
+  `download/`, it shows the size and offers deletion, since renaming a 3.7 GB file as a backup
+  is pointless. The user confirms per file, and nothing is deleted without that confirmation.
 - **Destination writability preflight** — the two failure modes users actually hit are
   detectable long before Compile:
   - the download folder needs elevation because PES sits under `Program Files`;
@@ -165,8 +164,8 @@ compile reads the file.
   A slot whose own package of a kind has no recorded ID (a model under a stock ID, a
   hand-made folder) is not packed for that kind, and the patch leaves his ID of that kind as
   the save holds it. There is no finding, because every VGL27 export goes through the
-  upgrader, so a missing ID is no manager's mistake, and a slot ID could land in another
-  team's old block.
+  upgrader, so a missing ID is no manager's mistake. It is not packed under his slot ID
+  either, because a slot ID could land in another team's old block.
 
   A shared folder the upgrade kept (its merge clashed with a wearer's file) packs under the
   old ID its first plain linker in roster order records for its kind, whether it would take a

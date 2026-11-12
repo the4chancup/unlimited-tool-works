@@ -152,8 +152,8 @@ built: `spec/export_upgrader.md` "CLI"):
   - a save lacking one export's team;
   - a flag that export's kind refuses (`--savefile`, `--loose` or `--coverage` given with a
     referee export among team exports);
-  - a flag that export's kind requires and lacks (neither `--savefile` nor `--loose` with a
-    team export among referee exports);
+  - a flag that export's kind requires and the run lacks (neither `--savefile` nor `--loose`
+    with a team export among referee exports);
   - an abort of its own (its output folder exists, one of its files cannot be written).
 
   **What is printed.** A run of one named export, without `--all`, prints as today. Every
@@ -204,9 +204,9 @@ refined with the maintainer before `view/` is written:
   than clearing it, because a member trying both ways would pick the save again. The field
   follows the selected PES version's discovered save until the member edits or picks one.
 
-  Both are disabled for a referee export (its name's first word `refs`), which takes neither,
-  so for it Upgrade is enabled as soon as the target is filled, and likewise while the second
-  target holds the input.
+  Both are disabled for a referee export (its name's first word `refs`) and while the second
+  target holds the input, since neither takes them, so Upgrade is then enabled as soon as the
+  target is filled.
 
   An **Output into** field holds the directory the output folder is written inside (`-o`): the
   input's parent by default, so the output lands beside the input, as the CLI's default. For

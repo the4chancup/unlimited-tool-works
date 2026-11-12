@@ -423,10 +423,11 @@ checks it carefully, and the severity line is drawn by evidence, not by taste:
   compiler cannot resolve (`model/character/face/common/…` and any other game path). For such a
   path the compiler says it did not check, while Red let only `model/character/face/common/…`
   through silently and reported any other form it could not resolve as an Error for a model or
-  `.mtl`, a Warning for a texture: a pre-Fox gap, worklog "Issues". The value is **kept
-  verbatim**: a warning is the compiler saying "I can't vouch for this", never "I changed this".
-  A model file in the folder that the xml does not list is also a warning — it will not be in the
-  game, which is almost always a mistake and occasionally the point.
+  `.mtl`, a Warning for a texture: one of the compiler's pre-Fox gaps against Red, worklog
+  "Issues". The value is **kept verbatim**: a warning is the compiler saying "I can't vouch for
+  this", never "I changed this". A model file in the folder that the xml does not list is also a
+  warning — it will not be in the game, which is almost always a mistake and occasionally the
+  point.
 - **Info** — the compiler's own rewrites, which it performs on a user xml exactly as it would on a
   generated one and reports so the user knows the emitted file differs from the source: the
   `face_neck` dummy appended when no entry has that type; `uniform` → `uniform_sub` on PES15.

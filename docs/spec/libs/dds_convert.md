@@ -361,7 +361,8 @@ The compiler sends no cube map here: it routes one by `ftex::dds::is_cube_map` b
 (`team_compiler/pipeline.md` step 5), since referee exports carry copies of the template
 `env.dds`.
 
-`decode` also rejects:
+`decode` also rejects (and `probe`, which reads the same layout, all but the block texture past
+4 GiB and the header with no channel mask):
 
 - a zero width or height and a mip count past what the dimensions halve into
   (`log2(larger side) + 1`), as D3D and texconv's default loader do; `ftex`'s own FTEX↔DDS
@@ -434,10 +435,10 @@ of times with minor edits to one or two files. Carrying the cache across runs is
   to the finished DDS/FTEX bytes (not the decoded RGBA — the output is what the packing step
   needs).
 - The cache key includes the source content hash and every output-affecting conversion choice:
-  target codec/container, texture role and channel swizzle, and mip/color-space settings —
-  source hash, source format and target. The source hash is computed at materialization and
-  reused. DXT5 color data and DXT5nm normal data must not alias merely because they share a
-  codec.
+  target codec/container, texture role and channel swizzle, and mip/color-space settings, all
+  decided by the target: the key is the source hash, the source format and the target. The
+  source hash is computed at materialization and reused. DXT5 color data and DXT5nm normal data
+  must not alias merely because they share a codec.
 - Cache misses fall through to the normal decode → mipmap → encode path, or, for a source
   whose blocks the target keeps, to the passthrough, which rewraps them without a decode.
 - The cache is consulted after the build manifest has determined the target codec for each

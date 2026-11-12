@@ -139,9 +139,10 @@ its `MEASURED_FIELDS` table, so a regeneration keeps them:
 
 - the man-marking runs (every version);
 - PES 15's three auto flags;
-- the PES 17 and 18 team record's manager id (the u32 at +4) and home stadium id (the u16 at
-  +10), which the reference reads only from PES 19 on;
-- the PES 15 and 16 team record's home stadium id (the u16 at +6), which it never reads.
+- the team record's ids:
+  - on PES 17 and 18, its manager id (the u32 at +4) and home stadium id (the u16 at +10),
+    which the reference reads only from PES 19 on;
+  - on PES 15 and 16, its home stadium id (the u16 at +6), which it never reads.
 
 The 17/18 ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16 around them. On
 the reference saves (2026-11-11) the u32 at +4 equals the team id on 218 of 220 PES 17 teams and

@@ -618,7 +618,8 @@ side.
     A tier check that fails on the player shows `Tier check failed, click for more
     information.` in the error colour in the badge's place, its click opening a dialog titled
     `The tier check failed` with the error. The AATF check never runs the two functions the
-    badge asks, so a member's edit that breaks only them would otherwise show nowhere.
+    badge asks (`player_tier`, then `card_limits`), so a member's edit that breaks only them
+    would otherwise show nowhere.
 
     That error names a roster place as the player list numbers it (`place 04`). The quick
     actions' refusal `Cannot apply the tier` names a tier by its label (`Gold`), not by the
@@ -677,10 +678,10 @@ side.
 
   The row's units stand 8 points apart, egui's item spacing, as in every row of the drafts
   (the Name and Short labels are units of their own, 8 from their boxes). A colour's label,
-  picker and hex (in the weak grey, the picker's swatch carrying the colour), or an id's label
-  and its box, stand a space apart (3 points). The ids' grid cells are padded 4 points on each
-  side (so 12 before Manager ID, 8 between the ids), and each id's box is 46 wide (the draft's
-  `.info-grid` number box; egui's is 40).
+  picker and hex (the hex in the weak grey, the picker's swatch carrying the colour), or an
+  id's label and its box, stand a space apart (3 points). The ids' grid cells are padded 4
+  points on each side (so 12 before Manager ID, 8 between the ids), and each id's box is 46 wide
+  (the draft's `.info-grid` number box; egui's is 40).
 
   A stroke line under the row sets the team's fields apart from the Tactics (the draft's
   `.sep`, 8 points from the boxes around it). It is drawn 11 points under the row's controls
@@ -772,7 +773,8 @@ side.
 - The toolbar's `• unsaved changes` is a clickable label (Sense::click, the pointing-hand
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
   a popup under it holding the close prompt's table (the same rows, computed when the popup
-  opens, the table scrolling past 240 points) and none of the prompt's answers.
+  opens, the table scrolling past 240 points) and none of the prompt's answers. The popup is
+  460 to 640 points wide, its whole box.
 
   The popup closes on a click outside it, Esc, a second click on the label, or any edit, undo
   or redo (its rows would otherwise go stale under it); the toolbar's Undo is a click outside,
@@ -846,7 +848,7 @@ version's save.
   unsaved-changes prompt, keeps that prompt open).
 - **The command line**, which cannot ask, takes `--edit-mode-closed`, the member's word that
   Edit mode is closed. That is the one state that keeps the write with no step in game after
-  it, which a run from a script or a launcher cannot remind the member of
+  it, a step a run from a script or a launcher cannot remind the member of
   (`spec/save_editor.md` "CLI", "Writing a save").
 - The Team compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
   "Savefile update").
@@ -1374,7 +1376,7 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
 
   The formula is `pes_savefile`'s, on its player model (a player's abilities and positions and
   a position in, the overall out): twenty abilities weighted per position, the position's
-  bonus (registered, A, B; C none), and at the registered position, a keeper's aside, a blend
+  bonus (registered, A, B; C none), and at the registered position, unless it is GK, a blend
   with the first nineteen abilities' mean through a lookup table, clamped to 40-109. The two
   keeper terms are each the mean of a few keeper abilities. PES 2015 stores no clearing,
   reflexes or coverage, so its means take the ones it stores rather than counting the missing
@@ -1678,7 +1680,7 @@ aesthetics** but through the switch:
   only the fields their compile resolved.
 - **Unlock: "Edit aesthetics anyway"**, a switch in the Appearance section, drawn only while the
   setting is on, off at every start of the tool. Turning it on re-enables all the paths above
-  for the session, with the note that on a later patch overwrites whatever is edited by hand.
+  for the session, with the note that a later patch overwrites whatever is edited by hand.
 
   It exists for the cases the rule does not cover — a team with no export, a cup-night fix when
   recompiling is not an option — and it is a session switch rather than a second setting so
@@ -1862,9 +1864,9 @@ the editor exposes them as:
   its one line (`Preset 1 attacking instructions: Wing Back`), since a tactics key's note is
   the only place the instruction it writes off is named (the drafts' `ixWarningGroups`).
 
-  The console's line, code and key path
-  (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's, not the
-  dialog's words.
+  The console's line, with its code and key path
+  (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's form, not
+  the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
 - **Picking the file**: the import's file dialog has two filters, "Team files" (`.toml`,

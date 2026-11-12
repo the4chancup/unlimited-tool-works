@@ -275,10 +275,10 @@ prove PES accepts:
   normal, tangent, color, bone weights, bone indices, uv maps (a uv map identical to an earlier
   one shares its offset), faces in buffer 2;
 - strings de-duplicated;
-- a bounding box per bone and per mesh group that has meshes (computed when the source had none,
-  which is why the legacy writer failed on Konami files: over its meshes and its child groups'
-  boxes, as the add-on computes it; a group without meshes or box gets no assignment record,
-  Konami's own layout);
+- a bounding box per bone and per mesh group that has meshes (a group's computed when the source
+  had none, which is why the legacy writer failed on Konami files: over its meshes and its child
+  groups' boxes, as the add-on computes it; a group without meshes or box gets no assignment
+  record, Konami's own layout);
 - one level-of-detail record;
 - the fixed blocks 18 and 20 as the add-on writes them;
 - the extension headers re-emitted after the last string.
@@ -292,8 +292,9 @@ A `.model` is a pointer graph, not a block table: eleven sections, each a *recor
 12-byte table of contents `u32 first_record_offset, u32 record_count, u32 record_size`, an
 optional header of `first_record_offset - 12` bytes, then the fixed-size records) followed by the
 data its records point at, every offset relative to the array's own start. Layout measured on all
-2610 Konami `.model` files of a PES 2017 install plus the two add-on-written card heads (the
-fixtures in `crates/libs/pes_model/tests/fixtures/` are the representatives, one per variant):
+2610 `.model` files of a PES 2017 install (Konami's 2606, and four that came with Sider: three
+trophy models and a ball under `Sider/`) plus the two add-on-written card heads (the fixtures
+in `crates/libs/pes_model/tests/fixtures/` are the representatives, one per variant):
 
 - 8-byte magic `MODEL\0\0\0`, then `u32 table_offset` (16 always), `u16 unknown` (0 always),
   `u16 version` (19; one shadow model is 17), `u32 unknown` (9 always), `u32 flags` (0; 4 in two
@@ -550,8 +551,8 @@ pub enum MergeError {
   within `1e-4` per component (absolute), else `SkeletonConflict`; the first part's matrix is the
   merged one.
 
-  The tolerance is measured, not chosen. Over the 2606 Konami files, a bone name shared between
-  files differs from its first occurrence:
+  The tolerance is measured, not chosen. Over the 2606 Konami files (the 2610 less Sider's four),
+  a bone name shared between files differs from its first occurrence:
   - by at most `3.6e-5` per component where the files share a skeleton (8268 bone pairs of float
     noise, kit parts included: `modD_cap` against a collar differs by up to `1e-4`-ish on four
     shoulder bones);

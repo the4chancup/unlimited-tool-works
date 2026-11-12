@@ -338,11 +338,12 @@ PES version, PES folder path, and exports folder path are common settings (core 
 
 ## Testing
 
-In addition to model/bin/CPK fixtures:
+The tests:
 
-- **Save tests** observe repeated replacement of an existing `balls.txt`: interrupted temporary
-  writes never alter the old target, watcher reads see either the complete old or complete new
-  list but never a partial file, and atomic replacement is exercised explicitly on Windows.
+- **Save tests**, in addition to model/bin/CPK fixtures, observe repeated replacement of an
+  existing `balls.txt`: interrupted temporary writes never alter the old target, watcher reads
+  see either the complete old or complete new list but never a partial file, and atomic
+  replacement is exercised explicitly on Windows.
 - **Model fixtures** cover a missing/invalid pre-Fox MTL making that representation
   unavailable, atomic FMDL/glTF→`.model`+`.mtl` output, `materials.toml` parsing, native-model
   raster texture sources, and resolved glTF image dependencies, all producing target PES

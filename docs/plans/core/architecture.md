@@ -88,9 +88,6 @@ What exists of this is in `spec/core/architecture.md` "Launch modes".
 |---|---|
 | `UTW --gui <tool-id> <command> [args]` | **GUI autorun**: the GUI opens with `<tool-id>` active and the tool performs `<command>` inside the GUI, exactly as if the user had pressed the corresponding button |
 
-The bare `UTW` start reopens the tool the GUI last closed on (the `last_tool` common
-setting), not the first registered one.
-
 Besides the tools' subcommands, the shell owns `UTW help`, `UTW update` and `UTW
 --version` (see `gui.md` "Help window", `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version display").
 
@@ -385,8 +382,9 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 
   We do not ship the `.pdb`, deflated beside or inside the exe, because either costs every
   member's download for a file only the maintainer reads. The `.pdb` without line tables is
-  17 MB, about 3.8 MB deflated, and the release's own, with them, is 117 MB (measured at
-  0.0.1k2). The inside variant also has the crash write it out and point the backtrace at it.
+  17 MB, about 3.8 MB deflated, and the release's own, with them, is 117 MB undeflated
+  (measured at 0.0.1k2). The inside variant also has the crash write it out and point the
+  backtrace at it.
 - A session that ends without a word is reported at the next start. The window's normal
   close writes a closing line as the log's last, and so does a crash after its dialog. At
   start, a previous log (`utw.old.log` once renamed) that does not end with one of the two
@@ -506,8 +504,8 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   therefore leaves neither: a panic's dialog is its one trace, and the crashes this bullet is
   for leave none.
 
-  A CLI command installs none: its crash prints to the console it runs in, and a script
-  calling it in a loop would start a monitor per call.
+  A CLI command installs neither the hook nor the monitor: its crash prints to the console it
+  runs in, and a script calling it in a loop would start a monitor per call.
 
   **The crash test.** Its trigger is a hidden argument of the exe (`--crash-test stack`),
   handled once the monitor runs and before the window is created, so the test needs no

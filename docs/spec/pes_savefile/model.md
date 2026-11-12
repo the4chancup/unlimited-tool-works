@@ -110,7 +110,7 @@ Version quirks to encode:
 
   4ccEditor resolves this through a canonical 17-order enum: values 0x08–0x0C shift +2 for
   18/19, and 18/19's Defensive/False Winger/Wingback are 0x0D/0x0E/0x0F in canonical order,
-  mapping to 0x08/0x09/0x0F.
+  stored as 0x08/0x09/0x0F.
 
   20/21 insert Anchoring at 0x0A, and 18/19's 0x0A–0x0F move to 0x0B–0x10 (measured in-game on
   PES 21), so 4ccEditor's table is right for 17–19 only.
@@ -243,9 +243,9 @@ impl PlayerSettings {
 
 No operation writes the appearance id's -1: no save is stripped (step 8.36b).
 
-**The ingame-face run.** From its 22nd byte to its end, the appearance block (72 bytes on PES
-16 to 21, 68 on PES 15; a separate record on 15/16, inside the player record from 17) is a run
-the crate carries verbatim as bytes with a typed accessor per field:
+**The ingame-face run.** From its byte at offset 22 to its end, the appearance block (72 bytes
+on PES 16 to 21, 68 on PES 15; a separate record on 15/16, inside the player record from 17) is a
+run the crate carries verbatim as bytes with a typed accessor per field:
 `PlayerAppearance.ingame_face: IngameFace`, a `Vec<u8>` of the run (50 or 46 bytes; the schema
 says which).
 
