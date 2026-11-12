@@ -1890,9 +1890,13 @@ briefs, review loops, gates and mutation runs as for any step.
       ST-COMBO-02 for a toolbar menu. Measured in the draft before and after
       (`.tmp/0_0_2/gap/shot_gap.py`: rows 18 and 3 apart, then 21 and 0; a menu's
       separator 12 both times). The maintainer approved the draft on 2026-11-12
-    - [ ] the slice (Opus; brief `.tmp/0_0_2/gap/brief_gap.md`): `studio_core`'s
-      `widgets/`, and in the Save editor the separators of its menus and of the ruleset
-      picker's list (`menu_separator`, `combo_separator`) and the team dropdown's test
+    - [x] the slice 2026-11-13 (`c6aaa19c`, Opus; merge `0d225c19`; the lead's rerun of
+      `studio_core`, `save_editor`, `team_widgets` and `ruleset_editor`, clippy, fmt): one
+      `rows_meet` (a control's height plus the gap, the gap gone) for a menu's style and
+      a list's rows; `menu_separator` (12) and `combo_separator` (7); the ruleset picker's
+      list is 5 points shorter with an import, so its second separator shows and its test
+      expects both. Look: Pending looks
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/gap/swe_gap.md`, worktree `review12`)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
@@ -1952,7 +1956,9 @@ briefs, review loops, gates and mutation runs as for any step.
       every teammate's record. "S-clip r2" 2026-11-13 (two parts): 6 of 10 accepted, five
       asserts that could not fail and SE-GUI-72's clause for a tactics copy beside a
       player the export refuses (the plan, the lead); rework 2 (`f03528fe`, SWE-2; merge
-      `8aa9c94e`). Round 3 running (`.tmp/0_0_2/clip/swe_clip_r3.md`, worktree `review11`)
+      `8aa9c94e`). "S-clip r3": 1 of 2 accepted (all four auto flags set apart in the
+      Gameplan test; the lead's edit, uncommitted until the Save editor's tests are rerun
+      with the drop line's rework), which ends the SWE-2 loop; Carbon is left
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2523,6 +2529,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   clipboard: a player's stats, a team's Gameplan, a preset and a formation, the second
   window on a save of another PES version; and the copied text pasted into a text editor
   (two comment lines, then the Team TOML); no PES; 0.0.2-clip; maintainer
+- The toolbar's menus and the dropdown lists in the built window: entries 21 high that
+  touch, a click on the line between two acting on one, the separators' room (12 in a
+  menu, 7 in the ruleset picker's list, which was 12); no PES; 0.0.2-gap; maintainer
 - The player list's drop line in the built window: a player dragged down and up a team's
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
