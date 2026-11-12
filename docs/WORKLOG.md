@@ -1758,7 +1758,10 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-03)
   - [ ] 0.0.2-statlbl the label of an ability stat the save's version does not have (Tight
     Possession, Aggression, ...) in the same darker colour as a greyed card's label (the
-    maintainer, 2026-11-03); drafted first
+    maintainer, 2026-11-03). Drafted 2026-11-12 (the draft's `abilityPanel`; the plan's
+    sentence under "A field's label in these panels" and SE-GUI-70); the code is a SWE-2
+    slice, brief `.tmp/0_0_2/statlbl/brief_statlbl.md`. The same rule for the editor's other
+    gated fields is `PROPOSALS.md` P53, unruled
   - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, reviewed with 0.0.2-upgall
     below): `--log-file <FILE>` appends a run's whole output to the file and leaves Info
     findings out of stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher

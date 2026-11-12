@@ -605,6 +605,8 @@ button.livebtn.on { background: var(--sel-bg); color: var(--sel-fg); }
    starts, so a column of stats' marks lines up whatever the labels' lengths; drawn over the
    cell's 6 px padding and the gap before it, it moves no label. */
 [data-panel=ability-stats] td.ilabel { position: relative; }
+/* The label of a stat the version lacks, faded as .gate fades a gated card's. */
+[data-panel=ability-stats] td.ilabel.off { opacity: .6; }
 [data-panel=ability-stats] td.ilabel .xmark { position: absolute; right: calc(100% - 4px); top: 50%;
   transform: translateY(-50%); margin: 0; }
 .gen .pair .boxed { display: flex; align-items: center; flex: none; }
@@ -4654,17 +4656,18 @@ function gated(widget, minV) {
   return h("span", { class: "gate", title: "PES " + minV + "+" }, widget);
 }
 // The ability stats in one column, the game's order; a version-gated stat
-// sits disabled in its value cell.
+// sits disabled in its value cell, its label dimmed as a gated card's is.
 function abilityPanel(p) {
   const stats = h("table", { class: "grid stats-grid" });
   for (const s of ABILITY_STATS) {
     const minV = STAT_MIN_VERSION[s] || 15;
+    const off = version() < minV;
     const inp = h("input", { type: "number", "data-stat": s, value: p.stats[s] ?? "", min: 40, max: 99,
       onchange: e => { const v = parseInt(e.target.value, 10);
         if (!Number.isNaN(v)) { set(p, x => x.stats[s], (x, v2) => x.stats[s] = v2, v, s); render(); } } });
     // Live AATF's mark is drawn at the label cell's left edge (the ability-stats
     // rule), so the column's marks line up.
-    stats.append(h("tr", {}, h("td", { class: "ilabel" }, statLabel(s), fieldMark(p, "stat:" + s)),
+    stats.append(h("tr", {}, h("td", { class: off ? "ilabel off" : "ilabel" }, statLabel(s), fieldMark(p, "stat:" + s)),
       h("td", {}, gated(h("span", {}, inp), minV))));
   }
   return named(h("div", { class: "col" }, strong("Ability stats"), stats), "ability-stats");

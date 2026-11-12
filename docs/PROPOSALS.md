@@ -117,3 +117,18 @@ governs only the checks that follow while it stays open. An offer seen once is t
 the next start. Costs: one request to GitHub per start instead of at most one per interval
 (GitHub allows 60 an hour per address without a login); `last_update_check` stops deciding
 the first check, and the plan's step 1 and its tests change with it.
+
+## P53: Every version-gated field's label is dimmed with its control
+
+From the ask of 2026-11-03 that the name of an ability stat the save's version lacks be
+dimmed (0.0.2-statlbl, which does that for the Ability stats column alone). The Save editor
+has other fields a version lacks, each drawn disabled in place with its `PES NN+` tooltip
+while its label keeps the normal text colour: Stronger hand in General info before PES 2020,
+the Cutscenes group's star before PES 2019 and playing attitude before PES 2020, and on the
+team view of a PES 2016 save the colours, the Manager ID and the kit slots.
+
+Adds: one rule for the whole editor, "a field the save's version lacks has its label dimmed
+with its control", so a member reads every such row the same way. Costs: the label's draw
+call at each of those places goes through the disabled-widget helper, and each gets its
+line in a test; a member who reads a dimmed label as "locked by the aesthetics switch" (the
+Appearance section dims for that reason too) has one more thing dimmed there.
