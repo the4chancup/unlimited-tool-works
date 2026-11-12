@@ -56,6 +56,11 @@ pub struct CommonSettings {
     pub skipped_version: Option<String>,
     /// The tool active when the GUI last closed; `studio` with no arguments reopens it.
     pub last_tool: Option<String>,
+    /// The version of the program whose window last started (`0.0.2`), written by the
+    /// shell at each window start. A start of a newer version shows `Updated to` in the
+    /// status bar. Empty on a first run, and in a file that only versions older than
+    /// this setting wrote.
+    pub last_run_version: Option<String>,
     /// The main window class's last place, written when the window closes. `None` until the
     /// first close: the window then opens fitted and centered.
     pub window_main: Option<WindowPlace>,
@@ -82,6 +87,7 @@ impl Default for CommonSettings {
             last_update_check: None,
             skipped_version: None,
             last_tool: None,
+            last_run_version: None,
             window_main: None,
             fpc_hide_boots_id: fpc::HideIds::CONVENTION.boots(),
             fpc_hide_gloves_id: fpc::HideIds::CONVENTION.gloves(),
@@ -587,9 +593,9 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // 0 auto threads, 80.0, the update check) and `spec/core/distribution.md`'s
     // "Update state" table (`check_for_updates` true, `check_interval_minutes` 120,
     // `last_update_check` and `skipped_version` empty). `theme` is the dark
-    // preset, the default the GUI phase plans, `last_tool` empty on a first
-    // run, `window_main` empty until the first close. The hide IDs are the FPC
-    // convention's 55 and 11 (`fpc::HideIds::CONVENTION`).
+    // preset, the default the GUI phase plans, `last_tool` and `last_run_version`
+    // empty on a first run, `window_main` empty until the first close. The hide
+    // IDs are the FPC convention's 55 and 11 (`fpc::HideIds::CONVENTION`).
     #[test]
     fn the_defaults_match_the_settings_tables() {
         // `pes_folder_path` is the shipped pattern on Windows and empty
@@ -614,6 +620,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
                 last_update_check: None,
                 skipped_version: None,
                 last_tool: None,
+                last_run_version: None,
                 window_main: None,
                 fpc_hide_boots_id: 55,
                 fpc_hide_gloves_id: 11,

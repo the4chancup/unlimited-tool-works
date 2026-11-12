@@ -284,11 +284,59 @@ mod tests {
     fn the_core_chapters_come_first_then_the_tools_in_registry_order() {
         let chapters = chapters(stub_tools().iter().map(Box::as_ref));
         let ids: Vec<&str> = chapters.iter().map(|(id, _)| *id).collect();
-        assert_eq!(ids, ["setting-up", "first-run", "alpha", "beta"]);
+        assert_eq!(
+            ids,
+            [
+                "setting-up",
+                "first-run",
+                "updates",
+                "whats-new",
+                "alpha",
+                "beta"
+            ]
+        );
+        let titles: Vec<&str> = chapters[..4].iter().map(|(_, s)| s.title).collect();
+        assert_eq!(
+            titles,
+            [
+                "Setting up",
+                "First run and data location",
+                "Updates",
+                "What's new"
+            ]
+        );
         assert_eq!(chapters[0].1.topics[0].slug, "install");
         assert!(chapters[0].1.topics[0].body.contains("unpack it anywhere"));
         assert_eq!(chapters[1].1.topics[0].slug, "data-location");
+        assert_eq!(chapters[2].1.topics[0].slug, "updating");
         assert!(chapters[0].1.messages.is_empty());
+    }
+
+    // The What's new chapter is the repository's changelog after its title line, which
+    // the topic's own title stands for, read here from the file itself rather than
+    // through the chapter's own embedding.
+    #[test]
+    fn the_whats_new_chapter_is_the_changelog_after_its_title_line() {
+        let chapters = chapters(stub_tools().iter().map(Box::as_ref));
+        let (_, whats_new) = chapters
+            .iter()
+            .find(|(id, _)| *id == "whats-new")
+            .expect("the What's new chapter");
+        let file =
+            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../CHANGELOG.md"))
+                .unwrap();
+        let after_title = file
+            .strip_prefix("# Changelog\n")
+            .expect("the premise: the file opens with its title line")
+            .trim_start();
+        assert_eq!(whats_new.topics.len(), 1);
+        assert_eq!(whats_new.topics[0].slug, "changelog");
+        assert_eq!(whats_new.topics[0].title, "Changelog");
+        assert!(
+            whats_new.topics[0].body == after_title,
+            "the topic's body differs from CHANGELOG.md after its title line"
+        );
+        assert!(whats_new.messages.is_empty());
     }
 
     #[test]
@@ -299,6 +347,8 @@ mod tests {
             text(out),
             "setting-up  Setting up (install)\n\
              first-run  First run and data location (data-location)\n\
+             updates  Updates (updating)\n\
+             whats-new  What's new (changelog)\n\
              alpha  Alpha (topic-a, messages)\n\
              beta  Beta ()\n"
         );
@@ -331,7 +381,8 @@ mod tests {
         assert_eq!(error.exit_code, 2);
         assert_eq!(
             error.to_string(),
-            "there is no help chapter `nope` (the chapters are setting-up, first-run, alpha, beta)"
+            "there is no help chapter `nope` (the chapters are setting-up, first-run, updates, \
+             whats-new, alpha, beta)"
         );
         let error = run_help(&tools, Some("alpha"), Some("nope"), None, &mut out).unwrap_err();
         assert_eq!(error.exit_code, 2);
@@ -364,7 +415,14 @@ mod tests {
         files.sort();
         assert_eq!(
             files,
-            ["alpha.md", "beta.md", "first-run.md", "setting-up.md"]
+            [
+                "alpha.md",
+                "beta.md",
+                "first-run.md",
+                "setting-up.md",
+                "updates.md",
+                "whats-new.md"
+            ]
         );
         for (id, section) in chapters(tools.iter().map(Box::as_ref)) {
             assert_eq!(

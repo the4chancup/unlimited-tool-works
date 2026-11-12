@@ -57,7 +57,11 @@ impl ShellCondition {
                  only"
                     .to_owned()
             }
-            ShellCondition::UpdateAvailable { .. } => "A newer release is out".to_owned(),
+            ShellCondition::UpdateAvailable { version } => format!(
+                "{} {} is out. Details shows what it brings.",
+                crate::APP_NAME,
+                crate::shell::version_label_of(version, false)
+            ),
             ShellCondition::UpdateReady { version } => format!(
                 "{} {} is installed. Restart to start using it.",
                 crate::APP_NAME,
@@ -201,5 +205,16 @@ mod tests {
             "the premise: the offer has Details"
         );
         assert_eq!(ready.action(), offer.action());
+    }
+
+    #[test]
+    fn the_offers_tooltip_names_the_app_and_the_version() {
+        let offer = ShellCondition::UpdateAvailable {
+            version: "0.0.2".to_owned(),
+        };
+        assert_eq!(
+            offer.tooltip(),
+            "Unlimited Tool Works v0.0.2 pre-alpha is out. Details shows what it brings."
+        );
     }
 }
