@@ -153,10 +153,10 @@ needed:
   On Fox each is also written as the entry of its name, the file name with `.bin`, in the bins
   CPK's `UniformParameter.bin`, inserted by name like a team's. The bundled bases hold the `ACL`
   and `DEF` entries (PES 18's the `CL` ones too) at collar 105, which the entry written
-  replaces. They hold no `LB` or `SDA` entry, so that one is added. The game needs the loose
-  file but reads the values from the entry, as it does for a team's kit configs (in-game tests:
-  a collar changed in an entry was worn). Loose files alone leave the referees on the entries'
-  collar 105.
+  replaces. They hold no `LB` or `SDA` entry, so for those the entry written is added. The game
+  needs the loose file but reads the values from the entry, as it does for a team's kit configs
+  (in-game tests: a collar changed in an entry was worn). Loose files alone leave the referees
+  on the entries' collar 105.
 
 Without `ref_marker.dds` the collar model and the texture are not emitted, and the template
 configs keep the collar they had. A marker that its texture checks drop or whose conversion

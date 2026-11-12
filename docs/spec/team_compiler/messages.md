@@ -471,7 +471,7 @@ the fixtures (the pre-Fox tracer's Fumos folder: `./face_high_*.model` beside
 - A `team_common_folder/<name>` reference, or its long form
   `model/character/uniform/common/team_folder/<name>` (`team_folder` in any letter case), names
   the team's Common. It is written with `team_folder` replaced by the team's ID (999 for a refs
-  export), the long form's prefix always, and:
+  export), the long form's prefix always. The rest of the reference:
   - `<name>` (`*` as `win32`) names a file directly in the export's `Common/`, case-folded, else
     `xml_model_not_found`;
   - `<subfolder>/<name>` (`team_common_folder/refkit/oral_arm_*.model`, `<subfolder>` at any
@@ -494,11 +494,12 @@ the fixtures (the pre-Fox tracer's Fumos folder: `./face_high_*.model` beside
   Any other folder after the long form's `common/` is `xml_common_path_invalid` too, and so is
   any folder after `common_folder/`, the short form of the uniform Common folder itself
   (`common_folder/team_folder/` included, a second spelling of `team_common_folder/`). A file
-  directly below either (`common_folder/uniform.mtl`, the game's own) is the last bullet's,
-  written in the long form, the only one the game reads. The game's own files are named there
-  often enough to keep the short form: 592 of the 13,788 real `.mtl` and `face.xml` files on
-  the maintainer's machine name 14,102 of them, `specular.dds` and the `uni_pattern_*` maps
-  first, against 1,389 naming the team's Common (`.tmp/0_0_2/poc12/census_game_common.txt`).
+  directly below either (`common_folder/uniform.mtl`, the game's own) is the last bullet's
+  further down, written in the long form, the only one the game reads. The game's own files are
+  named there often enough to keep the short form: 592 of the 13,788 real `.mtl` and `face.xml`
+  files on the maintainer's machine name 14,102 of them, `specular.dds` and the `uni_pattern_*`
+  maps first, against 1,389 naming the team's Common
+  (`.tmp/0_0_2/poc12/census_game_common.txt`).
 
   A `.model` is written as the team's Common output packs it, `oral_<stem>_*.model` (the Common
   output renames every model, as Red's `model_names_fix` does, and Red then respells the xml);
