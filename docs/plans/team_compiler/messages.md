@@ -16,16 +16,18 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
 - **A failed name lookup names the nearest existing name**: `link_target_missing`,
   `players_txt_target_missing`, `common_link_missing`, `kit_folder_invalid`, and
   `file_type_disallowed` on a misspelled marker (`fpc-on`, `ingameface`), carry a `closest`
-  context field: the nearest name of the right kind (a shared folder for a link, a kit name for
-  a kit folder, a marker for a marker), by edit distance over case-folded names, under a small
-  threshold, absent when none is near. The text can then say "no shared boots folder `Crocs`;
-  `crocs new` exists". Nothing is resolved by the guess: the finding and its drop stay, since a
-  wrong guess compiled silently would be worse than the miss. One distance function in
+  context field. The field holds the nearest name of the right kind (a shared folder for a
+  link, a kit name for a kit folder, a marker for a marker), by edit distance over case-folded
+  names, under a small threshold, and is absent when none is near. The text can then say "no
+  shared boots folder `Crocs`; `crocs new` exists".
+
+  Nothing is resolved by the guess: the finding and its drop stay, since a wrong guess compiled
+  silently would be worse than the miss. There is one distance function, in
   `aesthetics_export`, never one per code.
 - **A finding carries the context its text needs.** The texts Phase 8 writes must say the fix,
   and some codes' context leaves the member unable to act. Each gains what its text names:
-  - `players_txt_invalid`: the cause, of two, both roster-wide and so with no line (the file
-    is not UTF-8; a referee roster has no valid line). `notes_encoding_invalid`, whose one
+  - `players_txt_invalid`: which of its two causes it is, both roster-wide and so with no line
+    (the file is not UTF-8; a referee roster has no valid line). `notes_encoding_invalid`, whose one
     cause is the file's encoding, gains nothing (both encoding texts say how to re-save as
     UTF-8 in Notepad).
   - `player_folder_number_invalid` gains no field, its text naming the rule, which never
@@ -40,11 +42,12 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
     file in the wrong place).
   - `skl_merge_conflict`, `merge_material_conflict` and `model_merge_flags_conflict`: the two
     parts that disagree.
-  - `model_conversion_failed`: which stage failed. Either reading or converting the source, or
-    writing the converted model (both naming the cause, the error chain as today: a member's
-    file can be at fault, such as a material path holding a character XML cannot carry), or
-    the converted model breaking a check of its target form (the conversion's fault, not the
-    member's file).
+  - `model_conversion_failed`: which stage failed, one of:
+    - reading or converting the source, or writing the converted model (both naming the cause,
+      the error chain as today: a member's file can be at fault, such as a material path
+      holding a character XML cannot carry);
+    - the converted model breaking a check of its target form (the conversion's fault, not the
+      member's file).
   - `texture_type_mismatch`: the format the bytes are.
   - `export_tag_missing`: the two exact names to rename to.
 

@@ -161,11 +161,12 @@ The step that makes the team legal. On entering it, everything not yet set is fi
 ### 4. Cards and instructions
 
 Optional, and legal when skipped: no cards is a valid team ("styleless is legitimate", says the
-wiki), and advanced instructions default to none. The page is the Save editor's tactics tab and
-its skill/COM/playstyle pickers, rendered by `team_widgets` over the draft `TeamEntry`, with the
-Save editor's one remaining-count badge per player: the cards his own tier leaves him, as the AATF
-rules read him (`player_tier`, then `card_limits`). Preset 1 only; presets 2 and 3 are the
-Save editor's business.
+wiki), and advanced instructions default to none.
+
+The page is the Save editor's tactics tab and its skill/COM/playstyle pickers, rendered by
+`team_widgets` over the draft `TeamEntry`. It carries the Save editor's one remaining-count
+badge per player: the cards his own tier leaves him, as the AATF rules read him (`player_tier`,
+then `card_limits`). Preset 1 only; presets 2 and 3 are the Save editor's business.
 
 ### 5. Looks
 

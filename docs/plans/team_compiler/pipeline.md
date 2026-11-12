@@ -8,21 +8,21 @@
 
 What exists of this is in `spec/team_compiler/pipeline.md` "1. Reader".
 
-In **Discovery** (step 1): In the GUI this scan is
-continuous (folder watcher, see `plans/team_compiler/gui.md` "Live validation"); in the CLI it runs once.
-A disabled export is a greyed row of the grid with **Enable**, never compiled
-(`plans/team_compiler/gui.md` "Row actions").
+In **Discovery** (step 1): In the GUI this scan is continuous (folder watcher, see
+`plans/team_compiler/gui.md` "Live validation"); in the CLI it runs once. A disabled export is
+a greyed row of the grid with **Enable**, never compiled (`plans/team_compiler/gui.md` "Row
+actions").
 
 Also in **Discovery**: a folder whose name ends in `.upgrading` (any letter case) is skipped
 with a Warning, `export_upgrade_unfinished`, naming it.
 
-It is the Export upgrader's staging folder (`spec/export_upgrader.md` "CLI"), which an upgrade
-killed part way (the console closed, Ctrl+C) leaves beside the output it was writing.
-Upgrading into `exports/`, as `quick_upgrade.bat` does, puts it where the compiler looks, and
-its first word is the team's. So without the skip a half-migrated export would compile, or
-refuse its team's finished export as a duplicate.
+Such a folder is the Export upgrader's staging folder (`spec/export_upgrader.md` "CLI"), which
+an upgrade killed part way (the console closed, Ctrl+C) leaves beside the output it was
+writing. Upgrading into `exports/`, as `quick_upgrade.bat` does, puts it where the compiler
+looks, and its first word is the team's, so without the skip a half-migrated export would
+compile, or refuse its team's finished export as a duplicate.
 
-It is a Warning, not the Info `export_disabled` gets, because the folder is a failure the
+The skip is a Warning, not the Info `export_disabled` gets, because the folder is a failure the
 member has to clear (remove it, then upgrade the old export again; the upgrader refuses while
 it exists, EU-CLI-05), not a choice they made. The skipped folder takes no part in duplicate
 detection or planning, as a disabled export does.
@@ -137,8 +137,8 @@ The organizer upgrades every VGL27 export in the upgrader's legacy mode (`--lega
 patches the old IDs of an export so upgraded. Managers change nothing: they keep sending Red
 exports, so the experiment is invisible to them.
 
-VGL28 runs on Studio's IDs, and the mode, the file and this section are then removed. It is
-temporary, so it changes as little as it can: faces and kits need nothing (both tools name
+VGL28 runs on Studio's IDs, and the mode, the file and this section are then removed. The mode
+is temporary, so it changes as little as it can: faces and kits need nothing (both tools name
 them by team ID and slot), stock-band IDs (1 to 100) are untouched, and nothing else in the
 compile reads the file.
 
@@ -164,8 +164,9 @@ compile reads the file.
 
   A slot whose own package of a kind has no recorded ID (a model under a stock ID, a
   hand-made folder) is not packed for that kind, and the patch leaves his ID of that kind as
-  the save holds it, with no finding: every VGL27 export goes through the upgrader, so a
-  missing ID is no manager's mistake, and a slot ID could land in another team's old block.
+  the save holds it. There is no finding, because every VGL27 export goes through the
+  upgrader, so a missing ID is no manager's mistake, and a slot ID could land in another
+  team's old block.
 
   A shared folder the upgrade kept (its merge clashed with a wearer's file) packs under the
   old ID its first plain linker in roster order records for its kind, whether it would take a
@@ -212,11 +213,13 @@ show. The Team decompiler (`plans/team_decompiler.md`) reads it back.
   with a named codec, a model converted, a portrait converted).
 - **The export's TOML files, as files**: `settings.toml`, each kit's `config.toml`, each model
   folder's `materials.toml`, at their paths relative to the export folder, beside the
-  manifest. Packed as files, not embedded in the manifest as strings: their bytes go in and
-  come out as they are (comments, blank lines, line endings), where an embedded copy needs
-  escaping on the way in and out, and a member can take one out with any CPK tool. The
-  `settings.toml` matters beyond the folder names: the savefile settings reach the game only
-  through the aesthetics patch, so without it the save is the only place they survive.
+  manifest. They are packed as files, not embedded in the manifest as strings, because their
+  bytes then go in and come out as they are (comments, blank lines, line endings), where an
+  embedded copy needs escaping on the way in and out, and a member can take one out with any
+  CPK tool.
+
+  The `settings.toml` matters beyond the folder names: the savefile settings reach the game
+  only through the aesthetics patch, so without it the save is the only place they survive.
 - **The replica it allows is the compiled one, not the sources**: a decompiled export
   recompiles to the same CPK. A file packed as it was comes back exact; a converted one comes
   back in its compiled form under its original name, which the next compile passes through.
@@ -227,8 +230,8 @@ show. The Team decompiler (`plans/team_decompiler.md`) reads it back.
 - **No hashes, no sizes, no times, no absolute paths**: the decompiler hashes the CPK's own
   bytes if it needs to, and has no source to check a hash against otherwise. A time or a path
   would make two compiles of one export differ and could show a member's user name.
-- Built early, ahead of the decompiler: only DLCs compiled after it ships carry it, so every
-  cup compiled without it is one more that can only be recovered by the decompiler's
+- Built early, ahead of the decompiler, because only DLCs compiled after it ships carry it, so
+  every cup compiled without it is one more that can only be recovered by the decompiler's
   heuristic.
 
 ### Resolved decisions and open questions
@@ -267,10 +270,10 @@ phase that owns them):
   Common models for a Fox merge while those folders also have independent output work (each
   player task reads and converts its parts itself today; the ordering of Fox's Common textures is
   settled above).
-- **`teams_list.txt` contract.** Still open: atomic writes
-  and concurrency between the grid's ID-cell write, the updater merge and the savefile import
-  (callers own I/O; the one writer so far, `compile`, only creates a missing file, so the
-  question opens with the grid's ID-cell write in Phase 8 and the update merge of Release 0.1.0).
+- **`teams_list.txt` contract.** Still open: atomic writes and concurrency between the grid's
+  ID-cell write, the updater merge and the savefile import. Callers own I/O. The one writer so
+  far, `compile`, only creates a missing file, so the question opens with the grid's ID-cell
+  write in Phase 8 and the update merge of Release 0.1.0.
 - **Run-result semantics.** Define separate compile and deployment outcome types so scoped errors,
   `pass_through`, failed moves, and failed savefile writes map predictably to GUI state and CLI exit
   codes. The exit codes are fixed (`spec/team_compiler/settings.md` "CLI"): deployment adds

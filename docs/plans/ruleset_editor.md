@@ -62,10 +62,10 @@ when the data breaks no rule. It claims no more, since the custom checks and the
 run only at Save, which lists what blocks it.
 
 The rules file's data block, as the editor would write it, shows in a pane right of the form
-only while the **Show preview** toggle at the top right of the tool's bar is on, off at every
-start. Open beside the form, it would leave the sections a third of Studio's window, and the
-block is a check on the form, not where the work happens. Shown, its lines the last edit
-changed are highlighted.
+only while the **Show preview** toggle at the top right of the tool's bar is on. The toggle is
+off at every start, because the pane open beside the form would leave the sections a third of
+Studio's window, and the block is a check on the form, not where the work happens. While the
+pane is shown, the lines the last edit changed are highlighted.
 
 - **General**: name, event page, event logo, the rating stats and the at-most
   stats (stat checklists, with one line on what each list does). A ruleset needs neither
@@ -83,12 +83,12 @@ changed are highlighted.
   A picture of any size is taken: scaled down (never up) to fit 168 × 56 pixels, the 84 × 28
   points the Save editor draws at 200% scaling, and stored as a PNG, which at that size is
   always under the file format's 64 KB. A file that is no picture it can read is refused with
-  a line beside the buttons, the logo kept as it was. Not a refusal of a big file, as at
-  first: an organizer's logo is whatever their event's page shows, and shrinking it by hand is
-  a step the editor can take for them.
+  a line beside the buttons, the logo kept as it was. A big file is not refused, as it was at
+  first, because an organizer's logo is whatever their event's page shows, and shrinking it by
+  hand is a step the editor can take for them.
 
   The data block's text writes `page` after `name` and `logo` last. The preview shortens the
-  logo's one long line to its first characters and its size, the file holding it whole.
+  logo's one long line to its first characters and its size, while the file holds it whole.
 - **Tiers**: a table, one row per tier, highest first, reordered by dragging, since the order is
   the recognition order and the quick-action buttons' order.
 
@@ -104,21 +104,23 @@ changed are highlighted.
   control's range on sight (DBC7's 48 paid cards, past a 0-20 range, were rewritten to 20 by
   drawing the section). The paid and minimum cards run to 48, every card the game has.
 
-  The id commits on Enter or focus loss, as a path row does, not per keystroke. It carries the
-  tier's key in the medal systems from the id it had to the one committed, only while no other
-  tier carries the old id and no system holds the new one. Carried per keystroke, typing
-  `gold2` over Silver passed through `gold`, the Gold tier's own id, and the next keystroke
-  moved Gold's counts to `gold2`. An id typed and not yet committed is still an unsaved change:
-  Save (the button, Ctrl+S or the prompt's) commits it first, and closing the window with one
-  pending opens the unsaved-changes prompt.
+  The id commits on Enter or focus loss, as a path row does, not per keystroke. The commit
+  carries the tier's key in the medal systems from the id it had to the one committed, but only
+  while no other tier carries the old id and no system holds the new one. The key is not
+  carried per keystroke, because then typing `gold2` over Silver passed through `gold`, the
+  Gold tier's own id, and the next keystroke moved Gold's counts to `gold2`.
+
+  An id typed and not yet committed is still an unsaved change. Save (the button, Ctrl+S or the
+  prompt's) commits it first, and closing the window with one pending opens the unsaved-changes
+  prompt.
 
   Per row, an expander holds:
-  - the per-stat targets (all ability stats, each an "own target" checkbox and its number:
-    unticked, the stat follows the rate and has no entry; a number field cannot be left empty,
-    which is how the draft says "the rate");
-  - the free cards per group (one number per group, COM styles first: as columns they would
-    widen the table past a laptop screen; 0 removes the group's entry, as an emptied draft
-    field does);
+  - the per-stat targets: all ability stats, each an "own target" checkbox and its number.
+    Unticked, the stat follows the rate and has no entry. A number field cannot be left empty,
+    which is how the draft says "the rate";
+  - the free cards per group, one number per group, COM styles first (as columns they would
+    widen the table past a laptop screen). 0 removes the group's entry, as an emptied draft
+    field does;
   - the tier's conditions (the condition editor below).
 
   Below the table, the medal systems (`spec/aatf_rules.md` "The ruleset schema",
@@ -208,11 +210,13 @@ changed are highlighted.
   summaries diffed in any text tool are the comparison between two rulesets.
 
 Undo and redo work on whole snapshots of the ruleset and its logic status (a ruleset is a few
-kilobytes): **Update logic** is an edit like a form's, and a snapshot of the ruleset alone would
-make its undo restore an identical ruleset and leave the new logic in place. A run of steps
-to one value (wheel notches, a stepper's clicks) merges into one snapshot, ended as the Save
-editor ends one (`plans/save_editor.md`, the undo bullet). Closing with unsaved changes
-prompts.
+kilobytes). The logic status is part of the snapshot because **Update logic** is an edit like a
+form's, and a snapshot of the ruleset alone would make its undo restore an identical ruleset
+and leave the new logic in place.
+
+A run of steps to one value (wheel notches, a stepper's clicks) merges into one snapshot, ended
+as the Save editor ends one (`plans/save_editor.md`, the undo bullet). Closing with unsaved
+changes prompts.
 
 ## Randomize
 
@@ -273,8 +277,8 @@ as New does). It has no custom checks.
 - *Unreadable* (a parse or schema error, or a broken load rule): not opened in the forms; the
   findings are listed with their line or key path, for fixing in a text editor. A file that
   reads but breaks a load rule (two tiers sharing an id, say) is refused like the other two,
-  not opened with rail marks: it is the file the Save editor refuses too, so both tools agree
-  on which files are rules files, and the forms never start from a ruleset no tool can load.
+  not opened with rail marks. The Save editor refuses that file too, so both tools agree on
+  which files are rules files, and the forms never start from a ruleset no tool can load.
 
 **Save** and **Save as** write the file: the header comment, the `RULESET` block from
 `libs/aatf`'s writer, the logic section (current, or the file's own when modified), and the
@@ -355,12 +359,15 @@ What a scenario observes is:
 `manual` marks only what needs a display or a native dialog.
 
 Rules files are the embedded rulesets (`libs/aatf`'s `rulesets/`, assembled with the current
-logic), copied under the test's own folder. "A team passes" or "fails" means
-`Rules::check_team` on a fixture team of `libs/aatf`'s fixtures (or `check-aatf` on the save it
-comes from), what a player pays for `Rules::card_limits` on him, and a random ruleset's witness
-teams are the ones the generator returns with it, one per height system (one in all for a
-ruleset without height systems). The writer's round trips and the load rules are
-`libs/aatf`'s own tests, not restated here.
+logic), copied under the test's own folder. In the scenarios:
+
+- "a team passes" or "fails" means `Rules::check_team` on a fixture team of `libs/aatf`'s
+  fixtures (or `check-aatf` on the save it comes from);
+- what a player pays means `Rules::card_limits` on him;
+- a random ruleset's witness teams are the ones the generator returns with it, one per height
+  system (one in all for a ruleset without height systems).
+
+The writer's round trips and the load rules are `libs/aatf`'s own tests, not restated here.
 
 **The editor**
 
@@ -559,9 +566,9 @@ RE-FILE-10  GIVEN a.4ccrules open and edited
 
 The older-official path (the banner offering **Update logic**, and `update-logic` migrating a
 file) has no scenario in Phase 20: logic version 1 is the only one, so no real file of an older
-official logic exists. Its first is a file the 0.0.1 preview saves, once a later logic change
-makes version 2 (`aatf_rules.md` "Loading and validation"); the scenarios are written then,
-with such a file as their fixture. Phase 20 builds the path. `libs/aatf`'s own tests prove the
+official logic exists. The first such file is one the 0.0.1 preview saves, once a later logic
+change makes version 2 (`aatf_rules.md` "Loading and validation"). The scenarios are written
+then, with such a file as their fixture. Phase 20 builds the path. `libs/aatf`'s own tests prove the
 identity and the section's replacement against a versions table holding a second entry.
 
 **Summary**

@@ -99,9 +99,10 @@ changed on its own.
   - a player folder `15 Snuffy` or `15_Snuffy` (→ `15 - Snuffy`).
 
   Each is a rename refused when the target name exists (the refusal says so), and the row
-  revalidates as after any rename. A folder export only: inside an archive nothing is renamed,
-  so an archive's finding has no button. It widens the untagged row's **Full**/**Midcup**
-  buttons, the precedent of the GUI renaming in an export.
+  revalidates as after any rename. The buttons are for a folder export only: inside an archive
+  nothing is renamed, so an archive's finding has no button. These fixes widen what the
+  untagged row's **Full**/**Midcup** buttons do, the precedent of the GUI renaming in an
+  export.
 - **An old export offers its upgrade.** A row red with `export_layout_old` or
   `player_layout_proto` carries an **Upgrade** button: the shell switches to the Export
   upgrader with the export as its input (a tool switch with an argument, as the Refs arranger's
@@ -118,11 +119,12 @@ changed on its own.
   export**, the CLI's `--export` from the grid, in the current output mode.
 
   A **compile column** of checkboxes at the start of each row, ticked by default, picks the
-  exports the next Compile takes. It is this run's selection only, written nowhere, every row
-  ticked again on the next start, and an unticked row is greyed and skipped as if absent. The
-  column is hidden by default, shown and hidden by a toggle in the Compile button's dropdown.
-  While it is hidden, every row is compiled. It is not the `NO_USE` marker, because a checkbox
-  that wrote into the export would change files on a click meant for one run.
+  exports the next Compile takes. It is this run's selection only: it is written nowhere, and
+  every row is ticked again on the next start. An unticked row is greyed and skipped as if
+  absent. The column is hidden by default, shown and hidden by a toggle in the Compile
+  button's dropdown. While it is hidden, every row is compiled. It is not the `NO_USE` marker,
+  because a checkbox that wrote into the export would change files on a click meant for one
+  run.
 - **Save findings open the Save editor at their fix.** `savefile_missing` (the patch written,
   no save to write it into) carries **Apply in Save editor**: the shell switches to the Save
   editor with that patch loaded and its apply action ready, the member picking the save. It is
@@ -361,13 +363,14 @@ A single primary action:
   the sideload mode exists for (compile → alt-tab to PES → adjust → compile again) is one click
   per iteration after the first. The mode resets to normal on the next launch (output mode is
   deliberately not a persisted setting), and a `--gui` autorun always uses its own `--mode`, so
-  `quick_compile.bat` cannot be hijacked by a leftover session mode. No separate buttons: the
-  three are the same compile with a different sink, so they belong to the same control.
+  `quick_compile.bat` cannot be hijacked by a leftover session mode. The modes get no separate
+  buttons, because the three are the same compile with a different sink, so they belong to the
+  same control.
 
-  With the sideload mode selected, a **Launch PES** button sits beside it. It starts the
-  selected version's `PES20{version}.exe` from the game folder (`pes_folder_path`; never
-  through Steam, whose launch is incompatible with the cup's mods, so every version runs from
-  its install folder) when that PES is not running. It is disabled while it runs (the
+  With the sideload mode selected, a **Launch PES** button sits beside it. When that PES is not
+  running, the button starts the selected version's `PES20{version}.exe` from the game folder
+  (`pes_folder_path`). It never launches through Steam, whose launch is incompatible with the
+  cup's mods, so every version runs from its install folder. It is disabled while it runs (the
   running-PES probe, `spec/core/architecture.md` "Crate structure", polled by the sidebar's
   selector). It starts the game and does nothing else.
 

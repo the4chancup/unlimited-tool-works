@@ -46,7 +46,11 @@ itself or its compiled form.
 
 A CPK compiled by Red, or by Studio before the manifest, has no manifest. The decompiler then
 gathers every file carrying the team's ID at the time (the organizer gives the ID, or picks it
-from the DLC's list), and names the folders as best it can: player folders from a save of that
-cup when its players' names match, numbered names otherwise; kit and model folders by their
-number. The settings the export carried are lost, apart from what that save still holds. The
-report says which names were recovered and which invented.
+from the DLC's list), and names the folders as best it can:
+
+- player folders from a save of that cup when its players' names match, numbered names
+  otherwise;
+- kit and model folders by their number.
+
+The settings the export carried are lost, apart from what that save still holds. The report
+says which names were recovered and which invented.

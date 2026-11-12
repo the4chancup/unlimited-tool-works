@@ -23,8 +23,8 @@ Placement rules:
 - `check/` only schedules the export validations of `libs/aesthetics_export` for the live grid.
   The folder watcher (`notify` + debouncing) and the check cache (the manifest fingerprint and
   what it keys) are `libs/pipeline`'s (`spec/libs/pipeline.md`), not this crate's. The Balls
-  compiler's list view watches its folder the same way (`plans/balls_compiler.md` "GUI"), and a
-  watcher in this crate would be copied there, tool crates never depending on tool crates.
+  compiler's list view watches its folder the same way (`plans/balls_compiler.md` "GUI"), and
+  since tool crates never depend on tool crates, a watcher in this crate would be copied there.
 
   The design of both is `gui.md` "Live validation", since the grid is what they exist for.
 - The view is drafted first (`core/gui.md` "Prototypes before implementation"):
@@ -143,10 +143,12 @@ concern.
 
 **When to implement:** After the GUI is functional (post-Phase 8). The core architecture doesn't
 need to change; it's a `wgpu` rendering pass alongside egui. The object model already has all the
-data needed. The first step is a short spike (one model, the orbit camera, one texture) that
-shows whether a maintained Rust crate keeps the renderer small, before `libs/model_viewport` is
-planned in detail: three.js would have given the loader and camera for free, so the renderer
-is the part to keep small.
+data needed.
+
+The first step, before `libs/model_viewport` is planned in detail, is a short spike (one model,
+the orbit camera, one texture) that shows whether a maintained Rust crate keeps the renderer
+small. The renderer is the part to keep small because three.js would have given the loader and
+camera for free.
 
 ---
 
@@ -309,10 +311,11 @@ TC-BIN-43  GIVEN fpc_hide_boots_id = 60 and fpc_hide_gloves_id = 12 in the commo
 
 **8.36c scope.** What exists of this is in `spec/team_compiler/README.md` "Acceptance", "The
 full-look patch": every compiled player's look goes into the patch on every engine, and the
-CPK carries no player table. Left here is c3, the `<id>.copy` link
-(`plans/aesthetics_export/player_folders.md`, its base copy paragraph; its findings in
-`messages.md` "Catalog"): a player folder holding `<id>.copy` gives him that player as his
-base copy, the patch entry's `base_copy_id` carrying it.
+CPK carries no player table.
+
+Left here is c3, the `<id>.copy` link (`plans/aesthetics_export/player_folders.md`, its base
+copy paragraph; its findings in `messages.md` "Catalog"). A player folder holding `<id>.copy`
+gives him that player as his base copy, and the patch entry's `base_copy_id` carries it.
 
 ```
 TC-SAV-20  GIVEN a /co/ export whose slot 05 holds 101334.copy and a settings.toml, and no

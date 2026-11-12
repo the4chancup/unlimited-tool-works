@@ -58,8 +58,8 @@ them because splitting it out would carry a second list through the writer for o
 of a profiling aid.
 
 The lines keep their order (findings are reported in manifest order, so the CPK and the log
-read the same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"). So
-their times need not increase: a task that waited behind a slower one shows when it was really
+read the same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"), so
+their times need not increase. A task that waited behind a slower one shows when it was really
 done.
 
 It is a flag rather than a setting, since it serves one run being looked at. The GUI's log
