@@ -885,7 +885,14 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
 - the three sliders (support range, defensive line, compactness) and the two numbers in
   attack and defence (stored 1 to 3, `spec/pes_savefile/operations.md`, each a three-choice
   toggle, Few | Medium | Many, rather than a three-step slider whose number a member had to
-  hover to read);
+  hover to read). From PES 2017 on the game's own game plan no longer shows the two numbers
+  (`spec/pes_savefile/model.md` "Player/team/tactics model"), so on a PES 17 to 21 save the
+  two toggles are drawn disabled, their stored choice still shown, with the tooltip "Not
+  editable in the game from PES 2017 on", unless the active ruleset allows illegal
+  formations ("Illegal formations" below): a member of a cup on the stock game cannot give
+  his team a value the game would never let him pick, while a cup that already edits past
+  the game's menus keeps them. Only the two toggles are disabled: a pasted or imported
+  preset still carries its numbers;
 - formation settings toggles (attacking style, zone, buildup, positioning, defensive style,
   containment, pressure);
 - advanced instructions (2 attack + 2 defense, with target player where applicable);
@@ -2428,6 +2435,16 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 holds LB at (64, 42) and the SS's slot is unchanged; WHEN the active ruleset is then switched to
                 /vg/ League 27, which does not allow them, and he is held at (42, 30) THEN
                 his badge reads AMF, as in SE-GUI-42, and his slot is as he left it
+SE-GUI-71  GIVEN the PES 17 save's team view on Tactics, and /vg/ League 27, which does not
+                allow illegal formations, the active ruleset
+           WHEN Formation settings is drawn
+           THEN the choices of Numbers in attack and Numbers in defence are disabled, the
+                stored one still shown as picked, a click or a wheel step over them changes
+                nothing, and their tooltip reads "Not editable in the game from PES 2017 on";
+                the same with no ruleset active, and on a PES 21 save; WHEN the active
+                ruleset is DBC7, which allows them, THEN a click on Many of Numbers in attack
+                stores 3; GIVEN a PES 16 save under /vg/ League 27 THEN the choices are
+                enabled
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`

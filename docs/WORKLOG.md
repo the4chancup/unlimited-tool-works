@@ -1772,6 +1772,10 @@ briefs, review loops, gates and mutation runs as for any step.
       is measured from the band's line, and everything under the bar stands 1 point higher
     - [ ] the look in the built window, both tools, both themes (ask the maintainer)
     - [ ] its review: a SWE-2 loop, then one paid round (Carbon, from 2026-11-15)
+  - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
+    unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
+    `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12): the draft,
+    `team_widgets`' `formation_settings`, its hosts, the CHANGELOG line
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows

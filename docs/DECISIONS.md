@@ -16846,3 +16846,17 @@ contents too wide for 1280 points, which a test now refuses; a second row would 
 down and egui's `MenuBar` lays out one row only. With File and Edit as menus the row is shorter
 than the one the hiding rule was written for.
 Plan: plans/save_editor.md "The toolbar" and SE-GUI-44 edited.
+
+## 2026-11-12 — save_editor — The two numbers' toggles are disabled from PES 2017 on unless the ruleset allows illegal formations
+
+The maintainer's ruling: Numbers in attack and Numbers in defence cannot be set in the game from
+PES 2017 on (its game plan no longer shows them), so on a PES 17 to 21 save the two toggles are
+drawn disabled, the stored choice shown, unless the active ruleset allows illegal formations, the
+flag of a cup that already edits past the game's menus. It replaces the same day's earlier ruling
+that the two controls wait for the PES 2017 executable study: the study still says who reads the
+bytes and whether the labels change, but a member on the stock game should not set a value the
+game never offers in the meantime. With no ruleset active the toggles are disabled too, as the
+pitch keeps the game's formation rule then. Only the toggles are disabled; a pasted or imported
+preset still carries its numbers, since refusing those would need a rule for every way a preset
+arrives.
+Plan: plans/save_editor.md "Tactics editor" edited; SE-GUI-71 added.
