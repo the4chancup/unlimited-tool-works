@@ -140,10 +140,11 @@ that as an invariant.
   home stat entry 0 is reached at `+0x3804` on PES17 or `+0x64D8` on PES21. This is
   ASLR-proof and far cheaper than region scanning; it does **not** locate the separate
   roster/team-data table. A readiness flag along the chain reports whether a match is
-  live, so the ladder can short-circuit before kickoff. Pointer chains break across game
-  patches, so the content-signature scan stays the fallback and the deep-scan escalation
-  below still applies when the chain goes stale; the chain is just the fast path when it
-  resolves.
+  live, so the ladder can short-circuit before kickoff.
+
+  Pointer chains break across game patches, so the content-signature scan stays the
+  fallback and the deep-scan escalation below still applies when the chain goes stale; the
+  chain is just the fast path when it resolves.
 - **Deep-scan escalation**: when the teams are found but the stats table is not (the
   pointer chain is stale, or PES occasionally allocates the table in a region that misses
   the size filter), the ladder escalates automatically: the cheap size-filtered scan

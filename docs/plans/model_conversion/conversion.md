@@ -28,11 +28,14 @@ kit folder says its layout (`spec/aesthetics_export/player_folders.md` "Kit layo
 marker means made for the target engine.
 
 When a face with face weighting (eye and eyelid bones in its skin) is compiled for the other
-engine, the compiler applies the transformation the Sopdog pair shows (`C:\Data\4cc\Lab\sopdog`:
-a Fox VGL22 face and the pre-Fox VGL24 one hacked from it, its author's explanation in
-`chat.txt`): the model's eyes and eyelid weights moved as the author moved them, and the diff's
-eye parameters (head floats 0x2C and 0x30, 60 on Fox against 35 on pre-Fox) and eye, eyelid and
-brow offsets set for the target.
+engine, the compiler applies the transformation the Sopdog pair shows:
+
+- the model's eyes and eyelid weights moved as the author moved them;
+- the diff's eye parameters (head floats 0x2C and 0x30, 60 on Fox against 35 on pre-Fox) and
+  eye, eyelid and brow offsets set for the target.
+
+The Sopdog pair (`C:\Data\4cc\Lab\sopdog`) is a Fox VGL22 face and the pre-Fox VGL24 one hacked
+from it, with its author's explanation in `chat.txt`.
 
 The transformation is derived from that pair and checked in game on both engines before it is
 built. If no rule reproduces it, the compiler reports the face (W, naming the engine it was made

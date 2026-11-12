@@ -165,11 +165,12 @@ cycle.
   boundary, not an extension of the initial assist-correlation timeout. Multiple
   simultaneous goals/assists that make pairing ambiguous are emitted without pairing.
 
-  On PES17 the outgoing player is not identifiable from the stats (first-minute-on-pitch
-  only reveals the incoming player; the original defined a slot for the outgoing player
-  that never got filled, and the feed's `player_out` is optional there). **On PES21 the
-  fork reports a substitution journal** *(unverified)* at a fixed offset from the
-  stats-table base: a count byte plus 40-byte records carrying team, period,
+  On PES17 the outgoing player is not identifiable from the stats, because
+  first-minute-on-pitch only reveals the incoming player. The original defined a slot for
+  the outgoing player that never got filled, and the feed's `player_out` is optional there.
+
+  **On PES21 the fork reports a substitution journal** *(unverified)* at a fixed offset
+  from the stats-table base: a count byte plus 40-byte records carrying team, period,
   minute-in-period, and both `inIdx`/`outIdx`. So `player_out` becomes exact and the sub
   minute is the recorded value, not the live clock. The journal lives in the game's memory
   and survives a tracker restart, so a re-attach replays existing records stamped with

@@ -322,6 +322,7 @@ clock presence.
 
 Clock and clock motion are `None` until first `Live`; after that the snapshot retains the
 most recently valid values through suspension and finalization.
+
 `ClockMotion::Stopped.stop_epoch` remains unchanged across reacquisition only when
 unchanged ticks and reducer state prove continuity of the same stoppage. Any observed or
 potentially unobserved progression changes the epoch or sets motion to `Unknown`, which

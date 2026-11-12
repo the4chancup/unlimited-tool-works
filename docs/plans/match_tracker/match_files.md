@@ -95,9 +95,9 @@ filename collisions receive a deterministic suffix.
 On startup, the tracker scans the autosave directory for unclosed recovery files and
 offers:
 
-- **Restore**, **Open read-only**, or **Discard**, for a recovery file;
-- **Open offline**, **Finalize offline** (available only if the draft reached `Live`), or
-  **Discard**, but never feed **Restore**, for an `offline_only` draft instead.
+- for a recovery file: **Restore**, **Open read-only**, or **Discard**;
+- for an `offline_only` draft, instead: **Open offline**, **Finalize offline** (available
+  only if the draft reached `Live`), or **Discard**, but never feed **Restore**.
 
 An `offline_only` draft cannot call `restore_retained` or publish later events under the
 released `match_id`, and its saved reliable cursor is audit metadata only.
