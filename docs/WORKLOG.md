@@ -1870,7 +1870,8 @@ briefs, review loops, gates and mutation runs as for any step.
       radii are 2; pills and circles keep their shapes
     - [ ] the slice (small, SWE-2; running 2026-11-13 in the worktree
       `4cc-studio-temp/rad`, branch `sk/rad`, brief `.tmp/0_0_2/rad/brief_rad.md`; the
-      captain's mark on the pitch keeps its radii, the maintainer): one
+      captain's mark on the pitch keeps its radii, the maintainer; at its review the lead adds
+      the update dialog's `ProgressBar` passing the style's radius, decided after the brief): one
       constant in `theme.rs` for all seven, both themes; the literal radii in
       `studio_core`, `team_widgets` and `save_editor` (about a dozen: `git grep -n
       "CornerRadius::same(\|corner_radius(" crates`) read the style
