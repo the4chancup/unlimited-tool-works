@@ -53,6 +53,13 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   all, or does this need a match to show whether Fox games write them into an uncompressed
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
+- **The lit area of a player rated nowhere.** While a starter's marker is held, the Tactics
+  pitch lights the areas of the positions his playable list rates A or B and darkens the
+  rest; a player whose list is all C (a blank team's placeholder, his registered position
+  included) darkens nothing (`plans/save_editor.md` "Tactics editor"; `roster_slot` in
+  `save_editor`'s `view/tactics.rs`). In the game's Edit Position screen, does such a
+  player get his registered position's area lit, or nothing? If lit, the registered
+  position counts as rated here too, as the overall already reads it.
 
 ## After the release
 
