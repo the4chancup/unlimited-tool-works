@@ -328,8 +328,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    unmigrated content otherwise. The same holds for any second config of one slot
    (`714_DEF_1st_realUni.bin` beside `XXX_DEF_1st_realUni.bin`): it is one config with the
    kit's when the bytes match, and unmigrated content otherwise. The kit's config is the root's
-   before a subfolder's, then the first by name, because two configs of one slot cannot both
-   reach the game. A file deeper than one subfolder, which Red's flatten left a folder and
+   before a subfolder's, then the first by name: two configs of one slot cannot both reach the
+   game. A file deeper than one subfolder, which Red's flatten left a folder and
    refused, and a config that does not decode (its error named in the report), are unmigrated
    content too.
 
@@ -378,11 +378,11 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
    A field is read as Red read it: by position, `u`, four characters, the kit (`p0` meaning the
    config's own), the rest naming the stem. The source is the named kit's migrated texture of
-   that rest. No copy is made when it is not in the output, or when the kit holds its own file
-   of the field's name, because the maker shipped that one (MGGG's goalkeeper holds its own back
-   and name textures while its config, copied from kit 1, names kit 1's). The finding is on the
-   config's file, its context the kit, the field's stem and the source (`kit=p2`,
-   `stem=kit_back`, `from=p1/kit_back`).
+   that rest. No copy is made when it is not in the output. Nor is one made when the kit holds
+   its own file of the field's name, because the maker shipped that one (MGGG's goalkeeper
+   holds its own back and name textures while its config, copied from kit 1, names kit 1's).
+   The finding is on the config's file, its context the kit, the field's stem and the source
+   (`kit=p2`, `stem=kit_back`, `from=p1/kit_back`).
 
    **Hoisting into `all/`.** Then the shared textures are **hoisted into `Kits/all/`** (a copied
    texture moves too when every kit now holds it): a stem present in *every* kit folder with
@@ -593,9 +593,9 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    links (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox alone,
    while the game path is supplied from the carried `Common/`.
 
-   A link stands for the `Common/` file at its own path below that root, so one beside a
-   subfolder's `.mtl` would name a file in a `Common/` subfolder; a bare name from a subfolder
-   finds the root's link, nearest first (see "Link files" in the
+   A link stands for the `Common/` file at its own path below the root of the model's player
+   folder, so one beside a subfolder's `.mtl` would name a file in a `Common/` subfolder; a bare
+   name from a subfolder finds the root's link, nearest first (see "Link files" in the
    [Unified model format plan](model_format.md)).
 
    Every old `.mtl` is read with `pes_model`'s `read_dropping_stray_text`. Text between its
@@ -643,8 +643,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
    The game's own directory below the Fox common directory, `common/sourceimages/` (where the
    game's shared textures such as `zero.dds` sit, used by the real `CIV4XG` VGL26 `k2071`),
-   keeps its meaning and is written in its short form `common_folder/`, as Red keeps that whole
-   prefix and as the compiler leaves a game directory unlooked-for. A directory below it, which
+   keeps its meaning, as Red keeps that whole prefix and as the compiler leaves a game directory
+   unlooked-for. It is written in its short form `common_folder/`; a directory below it, which
    the short form cannot spell, is kept as written.
 
    Every other FMDL texture directory becomes the model's own folder (the bare stem), as Red
@@ -664,8 +664,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
      exceptions. A team's Common folder there is respelled `team_common_folder/` (`000/` in the
      community's templates, which name `dummy_kit` there), since the compiler refuses any other
      folder, a dummy's too. The game's `common/sourceimages/` is respelled `common_folder/`. A
-     kit stand-in's stem among them is respelled too, as in a `.mtl` (below: `dummy_kit` →
-     `team_kit`);
+     kit stand-in's stem among those `dummy_` stems is respelled too, as in a `.mtl` (below:
+     `dummy_kit` → `team_kit`);
    - a directory starting `./` is the Studio spelling already, its kit magic alone respelled, as
      a `.mtl`'s;
    - the game's kit texture folder `/Assets/pes16/model/character/uniform/texture/` is kept as
@@ -1065,9 +1065,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
         it sits in the old format's folders (a model folder, `Common/`, `Collars/`,
         `Kit Configs/`, `Logo/`: `face.mtl.backup`, `materials.mtl.bak`, M Winter 18 and two
         other exports). Kept, it would be `file_type_disallowed` or `common_file_disallowed`,
-        Errors under the default `strict_file_type_check`. Red's
-        `common_check` deleted such a file and went on, while its other checks discarded the
-        folder;
+        Errors under the default `strict_file_type_check`. Red's `common_check` deleted such a
+        file and went on, while its other checks discarded the folder;
       - in a Fox boots or gloves folder, an FMDL under no name the game loads, Red's names being
         `boots`, `glove_l` and `glove_r`, each alone or after a prefix and `_`
         (`boots - Copy.fmdl` beside `boots.fmdl`), which in the wearer's player folder would be
@@ -1177,12 +1176,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
     A file name present in two locations with identical bytes is deduplicated. With different
     bytes it is reported as unmigrated content (step 10) and the folder is left as it was, for
-    the author to resolve.
-
-    So is one stem two files share with different extensions (`texture_stem_conflict` once
-    folded) when the two come from different locations, the folder's root counting as one. That
-    conflict is the fold's making, while one already inside a location is the compile's to
-    report as for any folder.
+    the author to resolve. So is one stem two files share with different extensions
+    (`texture_stem_conflict` once folded) when the two come from different locations, the
+    folder's root counting as one. That conflict is the fold's making, while one already inside a
+    location is the compile's to report as for any folder.
 
     A folder left as it was is copied at its old paths, and step 7's renames and rewrites skip
     it: it is the author's to repair by hand, and names moved under him would hide what the
@@ -1508,10 +1505,10 @@ validation, and reports every scoped issue.
 The validation is for the savefile's version (in loose mode, PES 21, or PES 16 when the export
 holds a `.model` file outside its leftovers, step 10) in a fixed context, not the compiler's
 settings: no pass-through, the strict file-type check on, as the compiler's default has it, no
-installed Common textures. Old exports are single-engine, and the version decides only which
-model names are allowed.
+installed Common textures.
 
-A leftover does not decide the version, because the real KFG VGL26 export, a Fox one, keeps
+Old exports are single-engine, and the version decides only which model names are allowed. A
+leftover does not decide the version, because the real KFG VGL26 export, a Fox one, keeps
 `.model` copies of its boots in a side folder `FMDL Boots/`. Counted, they made it migrate as
 pre-Fox, where item folders never merge, so its 23 single-wearer boots folders were kept shared
 past the block's 17 shared IDs.
