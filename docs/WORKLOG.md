@@ -28,7 +28,11 @@ archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 
 Restart and the Save editor's three-column comparator), beside poc.4 and the older ones.
 Both launchers were run from the unpacked archive under a pseudo-console, over a fake PES 21
 install and the tests' fixture exports. Its in-game check and its hand-over are the
-maintainer's.
+maintainer's. A Linux bundle, 0.0.2-poc.6, stands beside it (archive SHA-256 `0a68c459…`,
+branch `vgl27` at `a611951c`: main at `177657a3`, so also the settings' four-digit folder
+key, the taskbar fix and Update now's fixes of Carbon's round). It was built on the VPS
+(`just remote just release`), so it asks for glibc 2.39 and serves a test only; it has
+not been started.
 **Blocked on:** nothing.
 **Behind 0.0.2:** Phase 8's other views and Release 0.1.0, then the phase order 1–6, 8,
 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases"; the first-class target is the
@@ -1713,8 +1717,12 @@ briefs, review loops, gates and mutation runs as for any step.
       deleted refused every later one; Cancel read before each request; the offer tests
       survive the version bump of the release cut; ST-CLI-05's stderr half asserted
       (DECISIONS 2026-11-12 "An update that succeeded marks its leftovers")
-    - [ ] the review loops' rest: a SWE-2 subloop over `a1b233ea`, then Carbon's round 2 by
-      the rule (`work` at 97% of its week: after the Sunday reset, 2026-11-15)
+    - [x] the SWE-2 subloop over `a1b233ea`, 2026-11-12 (`96757ebb`, SWE-2): 4 of 12
+      concerns accepted, all tests that passed on wrong code (a kept file below the
+      backup's top level, no mark after a failed update, a version that is not the
+      build's, a cancel set before the call), which ends SWE-2's loop
+    - [ ] Carbon's round 2 by the rule (`work` at 97% of its week: after the Sunday reset,
+      2026-11-15)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
