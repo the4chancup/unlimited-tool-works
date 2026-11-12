@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -362,6 +362,13 @@ side.
   the picker), then under a separator `Save` (`Ctrl+S`) and `Save as`, both dead with no
   save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
   undo or redo.
+
+  The picker starts in the folder the last save was opened from, by whichever of the opens,
+  remembered in the tool's settings (`last_folder`) across starts: a member who keeps his
+  saves in a backup folder of his own is taken back there, where a start in the game's
+  Documents folder for the sidebar's version sent him away from it each time. With none
+  remembered, or the folder gone, it starts in the newest discovered save's folder, of
+  whatever version.
 
   With one menu open, the pointer entering another menu's button opens that one instead, as a
   menu bar does (`MenuBar` switches on hover).
@@ -807,31 +814,14 @@ side.
   12-point swatch before the hex, so the rows carry the colour typed rather than as text.
 - Save with the save's own PES running asks first ("Writing a save while its game runs",
   below); another version's game asks nothing.
-- A save of another version than the sidebar's selector opens with a Warning notice in the
-  status bar naming both (SE-GUI-28); the save keeps its own version. The warning lives from
-  the save's opening until the member has seen it, which is the first of:
-  - its action, **Switch to PES 20xx** (the save's version), which makes the same change the
-    sidebar's selector makes, its blockers included (while one holds, such as a running
-    compile, the action is disabled with the selector's reason and the warning stays up, as
-    the selector stays mismatched);
-  - its dismiss;
-  - or another notice taking the bar from it while it is shown (a notice arriving while the
-    versions match, such as a save's, ends nothing: no warning was there to see).
-
-  While it lives it follows the selector: shown whenever the selector names another version
-  than the save's, its text naming the selector's (a save opened under its own version too,
-  once the selector moves away), gone while the two match, back when they part again. Once it
-  has ended, nothing shows until another save is opened. Its text is the draft's: "Although
-  the sidebar is set to PES 2019, this save is from PES 2021, so the editor will keep treating
-  it as a PES 2021 save."
-
-  It is the editor's standing notice rather than a published one
-  (`StudioTool::standing_notice`, `plans/core/gui.md` "Status bar"), so it shows in the Save
-  editor's view only, and the shell tells the editor when it ended. A notice, not a banner
-  under the toolbar: the status bar is where the shell's environment warnings already sit, and
-  a banner pushed every view down a row. Not a switch on open: the selector also sets what the
-  other tools target (the Team compiler's game), and a member opening an old save to look at it
-  must not retarget them.
+- An open save keeps its own version in everything the editor does: its codec, its
+  widgets' gating, the PES folder its portraits are read from (the folder of the save's
+  version, "Set PES path") and the game whose running it asks about before a write. The
+  editor reads the sidebar's PES selector for nothing, so the selector is not drawn while
+  the editor is shown (`plans/core/gui.md` "Sidebar" item 2). A member opening a PES 2017
+  save beside a selector reading PES 2019 took the editor to be treating the save as PES
+  2019's, and the status bar warning that said otherwise explained a control the editor had
+  no use for; with nothing read from the selector, there is nothing left to warn about.
 
 Improvements policy: each of the above exists to remove a real friction point
 (finding players, reordering, fear of misclicks). No animations-for-the-sake-of-it.
@@ -1158,9 +1148,14 @@ Win32 original hurt the most):
     drawn (inferred from the outlines, not measured on a render). It is the one text in the
     suite not in the regular weight. The formation pictures (worklog 8.33, after 0.0.1) carry
     it in every cell.
-  - **Set PES path**: while the sidebar's PES selector is orange or red (`plans/core/gui.md`
-    "Live exe check": no folder, no PES exe in it, or another version's exe), a `Set PES
-    path` button stands in the pitch's bottom-right corner, in the room the bottom penalty
+  - **Set PES path**: the portraits are read from the PES folder of the open save's
+    version, whatever the sidebar's selector holds: the common settings resolve a folder
+    for any version (`plans/core/gui.md` "Settings menu": the main row's `**`, or the
+    version's own row), and a PES 2017 save drawn with PES 2019's portraits, or with none,
+    because another tool last targeted PES 2019 was wrong. While that folder fails the exe
+    check for the save's version (`plans/core/gui.md` "Live exe check", the same function
+    asked about the save's version: no folder, no PES exe in it, or another version's
+    exe), a `Set PES path` button stands in the pitch's bottom-right corner, in the room the bottom penalty
     box leaves: centred between the box's right line (its outer edge) and the pitch's right
     edge, its bottom as far from the pitch's bottom edge as its sides are from those two.
 
@@ -1170,20 +1165,23 @@ Win32 original hurt the most):
     130, which leaves 79 points beside it against 94. The margins are about 9 points on PES
     2017 and 1.5 on PES 2018-2021 (the label 72 points at the body font).
 
-    Its tooltip reads `The players' portraits are read from the PES folder` (the selector's own
-    names what the check found). The portraits come from the PES folder, and a member who
-    never notices the selector's colour, or reads the readme, would see only placeholders and
-    take them for the editor's best.
+    Its tooltip reads `The players' portraits are read from the PES <year> folder`, the
+    year the save's (`PES 2017`), then what the check found, as the selector's tooltip
+    words it. The portraits come from the PES folder, and a member who never reads the
+    readme would see only placeholders and take them for the editor's best. With the
+    selector not drawn in the editor, this button is the one place the editor says the
+    folder is wrong.
 
-    The button shows on red too: a folder holding another version's exe gives the wrong
-    game's portraits or none. It reads the selector's own check, never one of its own, so the
-    two cannot disagree, and it is gone as soon as the check passes.
+    The button shows for another version's exe too: that folder gives the wrong game's
+    portraits or none. It asks the shell's check, never one of its own, so the selector, in
+    a tool that draws it for the same version, cannot disagree with it, and it is gone as
+    soon as the check passes.
 
     It opens `rfd`'s native folder picker and stores the pick as the running-PES notice's Fix
-    PES path stores its folder (`plans/core/gui.md` "Settings menu", one function):
-    `pes_folder_path` with the version's year written `20**` when the folder's own name holds
-    it, or the selected version's own row once any version has one. The exe check runs again
-    and the portraits are read from the new folder.
+    PES path stores its folder (`plans/core/gui.md` "Settings menu", one function), for the
+    save's version: `pes_folder_path` with the version's year written `20**` when the
+    folder's own name holds it, or that version's own row once any version has one. The
+    check runs again and the portraits are read from the new folder.
 
     It is a widget placed over the pitch after the markers, as the formation's name is drawn
     after them, not painted on the pitch, so the formation pictures never carry it.
@@ -2774,7 +2772,8 @@ SE-GUI-25  GIVEN the team view's Tactics on preset 1
            THEN preset 2 equals preset 1 before the swap, the two formations are exchanged, each
                 as one undoable edit
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
-                 selector at PES 21, and one of the three opened earlier in the session
+                 PES 19 one the newest, no folder remembered from an earlier open, and one of
+                 the three opened earlier in the session
            WHEN the File menu is drawn
            THEN it lists the three discovered saves, each labelled by its version alone, the
                 first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
@@ -2784,9 +2783,13 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN
-                the menu's Choose file is used THEN the picker starts in the newest PES 21
-                save's folder, and with the selector at PES 18, which has no save there, in
-                no folder; WHEN Save as writes a new
+                the menu's Choose file is used THEN the picker starts in the PES 19 save's
+                folder, the newest discovered one's, whatever the selector holds, and with
+                no save discovered, in no folder; WHEN a save is then opened from
+                `<test folder>/backups` and Choose file is used again THEN the picker starts
+                in `<test folder>/backups`, and still does after the editor is started again
+                from the same settings, and WHEN that folder no longer exists THEN in the
+                newest discovered save's again; WHEN Save as writes a new
                 path THEN the file replaced, if any, is kept once as its .bak
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
@@ -2864,19 +2867,23 @@ SE-GUI-49  GIVEN SE-GUI-48's save, team, edit and check, the list in the dock
                 it is turned on again THEN the list opens in the dock, `live_window` still off;
                 the dock's close button is the window's in size and stroke, and stands right of
                 the pop-out icon by the window's spacing between its dock icon and close button
-SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar on PES 2017,
-                and the sidebar's exe check reporting that the PES folder does not exist
+SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar's selector on
+                PES 2019 with a folder that passes its check, and the exe check reporting
+                that PES 2017's folder does not exist
            WHEN the view is drawn
            THEN a `Set PES path` button stands in the pitch's bottom-right corner, its
                 left edge as far from the bottom penalty box's right line as its right edge is
                 from the pitch's right edge and its bottom from the pitch's bottom, within half
-                a point, and every starter's portrait is the placeholder; WHEN the check reports the folder holding `PES2017.exe`
-                THEN the button is gone; WHEN it reports `PES2019.exe` instead THEN it is
+                a point, its tooltip names PES 2017, and every starter's portrait is the
+                placeholder; WHEN the check reports PES 2017's folder holding `PES2017.exe`
+                THEN the button is gone and the portraits are read from that folder, not
+                from PES 2019's; WHEN it reports `PES2019.exe` there instead THEN it is
                 back; WHEN it is clicked and the folder picker returns
                 `<test folder>/Pro Evolution Soccer 2017` THEN the common settings'
-                `pes_folder_path` reads `<test folder>/Pro Evolution Soccer 20**`. Manual: the
-                click opens the native folder picker. (The check itself, a folder's listing
-                on a change and on the window's focus, is the sidebar's, ST-SIDE-03.)
+                `pes_folder_path` reads `<test folder>/Pro Evolution Soccer 20**`, and the
+                selector's setting is still PES 2019. Manual: the click opens the native
+                folder picker. (The check itself, a folder's listing on a change and on the
+                window's focus, is the shell's, ST-SIDE-03.)
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn

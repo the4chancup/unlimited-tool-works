@@ -16860,3 +16860,24 @@ pitch keeps the game's formation rule then. Only the toggles are disabled; a pas
 preset still carries its numbers, since refusing those would need a rule for every way a preset
 arrives.
 Plan: plans/save_editor.md "Tactics editor" edited; SE-GUI-71 added.
+
+## 2026-11-12 — studio_core, save_editor — The PES selector is drawn only for a tool that targets the version; the Save editor follows the open save
+
+The maintainer's ruling, after feedback that a selector reading PES 2019 beside an open PES
+2017 save reads as the editor treating the save as PES 2019's. The selector stays one global
+setting in the sidebar, since most planned tools target it and a control in each tool would
+let two tools disagree, but it is drawn only while the active tool targets the version
+(`StudioTool::targets_pes_version`). Its place stays reserved, in the rail and the opened
+sidebar, so the tool icons never move between tools (the maintainer: muscle memory).
+
+The Save editor stops reading it. The portraits and Set PES path use the PES folder of the
+open save's version; the version warning, its scenario (SE-GUI-28), the standing notice it
+was the only user of (ST-BAR-07) and the notice action that switched the version (ST-BAR-08)
+go; the file picker starts in the folder the last save was opened from, remembered across
+starts, and falls back to the newest discovered save's folder of any version (the
+maintainer: "Last folder" is good). Rejected: moving the selector into each tool's own view
+(six copies of one setting), and making the selector follow the opened save (it would
+retarget the other tools). The lead placed it in 0.0.2, the confusion coming from members
+using the preview; the maintainer was asked and had not said.
+Plan: plans/core/gui.md "Sidebar" item 2 and "Status bar" edited, ST-SIDE-09 added;
+plans/save_editor.md "Set PES path", the File menu and SE-GUI-26, 28 and 50 edited.

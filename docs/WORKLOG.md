@@ -1788,6 +1788,17 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
       tactics says when the two numbers are disabled
     - [ ] the look in the built window, both themes (Pending looks)
+  - [ ] 0.0.2-sel the PES selector drawn only for a tool that targets the version, its place
+    kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
+    2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
+    "Set PES path", SE-GUI-26, 28 and 50). Tier 2
+    - [ ] a: the Save editor: portraits and Set PES path by the save's version, the version
+      warning and its standing notice gone, the picker's start folder (`last_folder`), its
+      draft and help
+    - [ ] b: the shell: `targets_pes_version` on each tool, the selector hidden with its
+      place kept, the standing notice and `SwitchVersion` removed (ST-BAR-07, 08
+      withdrawn), the drafts' sidebar
+    - [ ] the look in the built window; its review rounds
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows

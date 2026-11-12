@@ -239,9 +239,22 @@ Top to bottom:
    No version is shown beside the logo itself: the status bar already shows it 300 px away, and
    the icon rail has no room for it, so it would be the one element that came and went with the
    hover.
-2. **PES version selector**: a *global* setting, not per-tool: the Team compiler targets it, the
-   save editor uses it as a selection/default hint (an open save keeps its detected schema), and
-   integrated conversion uses it as the destination format.
+2. **PES version selector**: a *global* setting, not per-tool: the Team compiler targets it,
+   integrated conversion uses it as the destination format, and the Export upgrader, the Kit
+   config editor, the Refs arranger and the match tracker read it. One setting, not one per
+   tool: a member works on one cup's game across the tools, and a control in each tool would
+   let the compiler target one version while the refs arranger targets another.
+
+   **It is drawn only while the active tool targets the version** (`StudioTool::
+   targets_pes_version`, false unless a tool says otherwise). The Save editor and the
+   Ruleset editor do not: an open save keeps its own version and reads that version's PES
+   folder (`plans/save_editor.md` "Set PES path"), and a ruleset names no game. A selector
+   reading PES 2019 beside an open PES 2017 save told members the editor would treat the
+   save as PES 2019's. In those tools the selector's place stays empty, in the rail and in
+   the opened sidebar alike, so the tool list under it never moves between tools and a
+   member's hand finds each icon where it was. The setting itself is untouched by which
+   tool is shown: its Settings row stays, and so do the running-PES switch and its notice
+   below.
 
    It is a compact dropdown. In the rail it shows its year alone (`21`), centred under the
    logo, with no arrow, the rail's 44 points holding the number alone; in the opened sidebar
@@ -631,56 +644,12 @@ More rules that keep it worth the row:
   slot gets the rest, its text centred in it and cut with an ellipsis only past that, the whole
   text then its tooltip. Not three equal columns: a third of a 1280-point bar cut the Save
   editor's version notice (about 100 characters) while the bar had room for all of it.
-- **A tool can keep a standing notice for a state rather than publish one for an event.** The Save
-  editor's version warning (`plans/save_editor.md`, SE-GUI-28) lives until the member has seen
-  it, follows the selector (reworded, hidden while the versions match, back when they part)
-  and must learn when it ended. `ctx.notify` cannot do that: the tool cannot reword or
-  withdraw a published notice, nor learn that it was dismissed. So the `StudioTool` trait
-  gets two methods, both defaulting to nothing:
-
-  ```rust
-  /// The notice this tool keeps in the status bar while its view is up, asked for every
-  /// frame: return it reworded as the state changes, `None` to withdraw it. Default: none.
-  fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
-      None
-  }
-
-  /// The standing notice has been seen: its action or dismiss was clicked, or another
-  /// notice replaced it while it was shown. The tool stops returning it until a new reason
-  /// to keep one arises. Default: nothing.
-  fn standing_notice_ended(&mut self) {}
-  ```
-
-  The bar asks the active tool only, once per frame before the frame's requests are applied:
-  a standing notice is about that tool's view, and another tool's view does not show it.
-  When it appears (none the frame before, the tool newly active, or the tool returning one
-  again) it takes the middle slot as a new notice does, the notice shown before it dropped.
-
-  While the standing notice is shown, a notice published by anyone replaces it and ends it, and
-  the tool is told before it is next asked; a notice published while it is not shown ends
-  nothing.
-
-  A switch of tool takes the standing notice out of the bar without ending it, as a withdrawal
-  does, so a notice published after the switch ends nothing, even within one frame's requests.
-  One published before the switch, while the standing notice was still shown, ends it, and its
-  own tool is told, never the tool switched to. (The switching click's own frame may still draw
-  it, because the bar is drawn before the sidebar. A tool switched to by a request is first
-  asked the frame after.)
-
-  The standing notice never expires by time, since its tool withdraws it, and it never reaches
-  the window title: it is a state of the view, seen when the member looks, where the title
-  keeps an event that happened while the window was unfocused ("Window title").
-
-  Polled, not published with a handle the tool asks about: the tool already knows its state
-  every frame, as it does for `activity()`, so rewording and withdrawing need no messages and
-  no id can go stale between a publish and the frame that draws it. It is the GUI's alone:
-  the CLI has no selector to follow.
-- **A notice can switch the PES version.** `ActionEffect::SwitchVersion(PesVersion)` makes
-  the change a manual pick in the sidebar's selector makes (the same function: the setting
-  written, the once-per-life auto-switch spent, the settings saved). While a tool reports a
-  `version_change_blocker`, the action's button is drawn disabled, its disabled hover the
-  selector's (`<label>: <reason>`), and the notice stays: a click that silently did nothing
-  would read as a broken button.
+- **A notice is an event's, never a state's.** No tool keeps a notice up for as long as a
+  state lasts, rewording and withdrawing it: the one that did, the Save editor's warning
+  that the selector named another version than the open save's, went with its cause (the
+  editor no longer reads the selector, "Sidebar" item 2), and with it the `StudioTool`
+  methods that polled for it and the notice action that switched the version. A state a
+  member must see is drawn in the tool's own view, where it is true for as long as it shows.
 - **Never modal, never a question.** Anything needing a decision (updater consent, the teams-list
   merge review) is a dialog. The bar announces; it does not ask.
 - **Empty state is static, not blank**: `v1.2.0` in small text, the one always-visible version
@@ -1515,6 +1484,13 @@ ST-SIDE-08  GIVEN a build registering two window tools and one marked CLI-only, 
 **Settings menu**
 
 ```
+ST-SIDE-09  GIVEN stub tool A, which targets the PES version, and stub tool B, which does not
+            WHEN A is active
+            THEN the selector is drawn, in the rail and in the opened sidebar; WHEN B is made
+                 active THEN no selector is drawn and none is focusable, its place is empty,
+                 and every tool entry's icon stands where it stood under A, in the rail and
+                 in the opened sidebar; the setting is unchanged by the switch, and the
+                 Settings menu's PES version row still shows and changes it
 ST-SET-01   GIVEN two registered tools with settings sections and the second active
             WHEN the settings gear is clicked
             THEN the menu shows the common section and one collapsible section per tool, the
