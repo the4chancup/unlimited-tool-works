@@ -1267,6 +1267,200 @@ fn a_wheel_notch_over_the_selector_steps_the_version_once_and_saves() {
     assert_eq!(written.common.pes_version, PesVersion::Pes20, "and saved");
 }
 
+// ST-SIDE-09
+#[test]
+fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
+    let egui_ctx = test_context();
+    egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+
+    // Stub A targets the version, stub B does not. The resolved PES folder
+    // holds no exe, so the exe check fails: under A the selector takes the
+    // check's orange, the premise B must not share.
+    let dir = TestDir::new("studio_core_sidebar_not_targeted");
+    let (a, calls_a) = stub("a", "A", None);
+    let (b, calls_b) = stub("b", "B", None);
+    *calls_b.targets.lock().unwrap() = false;
+    let mut settings = test_settings(dir.path());
+    settings.common.pes_version = PesVersion::Pes19;
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell_with(
+        settings,
+        vec![a, b],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a, calls_b],
+    );
+    let icons = |nodes: &[accesskit::Node]| {
+        ["A", "B", HELP_LABEL, SETTINGS_LABEL].map(|label| entry(nodes, label).bounds().unwrap())
+    };
+    let middle = egui::pos2(400.0, 300.0);
+    let visuals = egui_ctx.global_style().visuals.clone();
+
+    // Under A the rail's selector shows the year in the failing check's orange.
+    let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+    let cell = entry(&out.nodes, "A").bounds().unwrap().width();
+    let selector = combo(&out.nodes);
+    assert!(!selector.is_disabled(), "the selector is live under A");
+    assert_eq!(selector.value(), Some("19"), "the rail shows the year");
+    let year = text_shape_in(&out, "19", combo_rect(&out.nodes))
+        .expect("the rail's selector paints the year");
+    assert_eq!(
+        year.galley.job.sections[0].format.color, visuals.warn_fg_color,
+        "the premise: under a tool that targets the version the missing exe \
+         colours the selector orange"
+    );
+    let rail_icons = icons(&out.nodes);
+
+    // In the opened sidebar it shows the full name.
+    let opened = open_sidebar(&egui_ctx, &mut app, entry(&out.nodes, "A"), 1.0);
+    assert_eq!(
+        combo(&opened.nodes).value(),
+        Some("PES 2019"),
+        "the opened sidebar shows the full name"
+    );
+    let open_icons = icons(&opened.nodes);
+
+    // Under B the rail's stands disabled and holds no text.
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        vec![egui::Event::PointerMoved(middle)],
+        true,
+        Some(1.4),
+    );
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.5)).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "B"));
+    assert_eq!(app.active, 1, "B is the active tool");
+    assert_eq!(
+        ctx.common().pes_version,
+        PesVersion::Pes19,
+        "the switch touched no setting"
+    );
+    frame(
+        &egui_ctx,
+        &mut app,
+        vec![egui::Event::PointerMoved(middle)],
+        true,
+    );
+    let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+    let selector = combo(&out.nodes);
+    assert!(
+        selector.is_disabled(),
+        "the rail's selector is disabled under B"
+    );
+    assert!(
+        selector.value().is_some_and(|text| text.trim().is_empty()),
+        "it holds no version text: {:?}",
+        selector.value()
+    );
+    assert!(
+        text_shape_in(&out, "19", combo_rect(&out.nodes)).is_none(),
+        "no year is painted"
+    );
+    let space = text_shape_in(&out, " ", combo_rect(&out.nodes)).expect("the empty label paints");
+    assert_ne!(
+        space.galley.job.sections[0].format.color, visuals.warn_fg_color,
+        "the empty selector takes no colour from the failing check"
+    );
+    assert_eq!(icons(&out.nodes), rail_icons, "no rail entry moved under B");
+
+    // Its hover says why, and the rest opens the sidebar, where it is the same.
+    frame(&egui_ctx, &mut app, hover(combo(&out.nodes)), true);
+    let out = idle(&egui_ctx, &mut app, 10);
+    let selector = combo(&out.nodes);
+    assert!(
+        selector.is_disabled(),
+        "the opened selector is disabled under B"
+    );
+    assert!(
+        selector.value().is_some_and(|text| text.trim().is_empty()),
+        "the opened selector holds no version text"
+    );
+    assert!(
+        has_text(&out.nodes, "This tool does not use the PES version"),
+        "the disabled hover says why"
+    );
+    assert_eq!(
+        icons(&out.nodes),
+        open_icons,
+        "no opened entry moved under B"
+    );
+    click(&egui_ctx, &mut app, combo(&out.nodes));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert!(
+        !has_label(&nodes, "PES 2021"),
+        "the disabled combo opens no list"
+    );
+
+    // A wheel step over it changes nothing; a press on it opens nothing.
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        wheel_notch(combo(&nodes), false),
+        true,
+        Some(3.0),
+    );
+    idle(&egui_ctx, &mut app, 15);
+    assert_eq!(
+        ctx.common().pes_version,
+        PesVersion::Pes19,
+        "a wheel step over the disabled selector changes nothing"
+    );
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        vec![egui::Event::PointerMoved(middle)],
+        true,
+        Some(3.5),
+    );
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(3.6)).nodes;
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        pointer(combo(&nodes), true),
+        true,
+        Some(3.61),
+    );
+    let held = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(3.62)).nodes;
+    assert_eq!(
+        entry(&held, "A").bounds().unwrap().width(),
+        cell,
+        "the press did not open the sidebar at once"
+    );
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        pointer(combo(&held), false),
+        true,
+        Some(3.63),
+    );
+    let released = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(3.64)).nodes;
+    assert_eq!(
+        entry(&released, "A").bounds().unwrap().width(),
+        cell,
+        "the release opened nothing either"
+    );
+    assert!(!has_label(&released, "PES 2021"), "no list opened");
+
+    // The Settings menu's PES version row still shows and changes the version.
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    click(
+        &egui_ctx,
+        &mut app,
+        widget_on_row(&nodes, "PES version", Role::ComboBox),
+    );
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "PES 2021"));
+    assert_eq!(
+        ctx.common().pes_version,
+        PesVersion::Pes21,
+        "the settings row changed the version"
+    );
+}
+
 // ST-SIDE-07
 #[test]
 fn the_planned_tools_follow_the_registered_ones_grayed_and_inert() {

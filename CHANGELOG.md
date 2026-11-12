@@ -94,6 +94,9 @@ What changed for members, release by release, newest first.
   shows: the portraits and the Set PES path button read the PES folder of the save's
   version, and the editor no longer warns that the save is not the sidebar's version.
   The file picker starts in the folder the last save was opened from.
+- **Save editor and Ruleset editor**: the sidebar's PES version box stands empty and
+  disabled while the editor is shown, instead of naming a version the editor does not
+  use.
 
 ### Minor fixes
 

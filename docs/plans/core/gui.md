@@ -1564,29 +1564,8 @@ ST-BAR-04   GIVEN three notices published in turn, one of each kind (Success, In
             WHEN the status bar is drawn after each
             THEN each notice's text is drawn in its kind's colour: SUCCESS_FG, the link blue,
                  the warning orange
-ST-BAR-07   GIVEN stub tool A active, returning the Warning notice "standing one" without an
-                 action (`standing_notice`), and the notice "older" published before it
-                 appeared
-            WHEN the status bar is drawn
-            THEN its middle slot shows "standing one", not "older", and still does past the
-                 plain notices' few seconds; GIVEN A rewording it to "standing two" with an
-                 action THEN the slot shows "standing two" and its action, and A is not told
-                 of an end; GIVEN A returning none THEN the slot is empty and A is not told;
-                 GIVEN stub tool B made active while A returns it THEN, from the frame after
-                 the switch, B's view shows no standing notice, and a notice published then
-                 leaves A untold; GIVEN A active again and returning it, and a notice
-                 published THEN that notice shows and A is told once
-                 (`standing_notice_ended`); likewise once for its dismiss clicked, and once for
-                 its action clicked; GIVEN the window unfocused THEN the standing notice shows
-                 in the bar and the window title stays idle, or keeps an event's notice it
-                 holds
-ST-BAR-08   GIVEN the selector at PES 19 and a notice whose action is
-                 `SwitchVersion(PES 21)`
-            WHEN its action is clicked
-            THEN the setting is PES 21, the settings file says so, and the running-PES
-                 auto-switch is spent; GIVEN a stub tool reporting a version-change blocker
-                 THEN the action's button is disabled, its hover reads "<label>: <reason>",
-                 and a click leaves the setting at PES 19 and the notice in the bar
+ST-BAR-07   withdrawn: no tool keeps a standing notice (0.0.2-sel)
+ST-BAR-08   withdrawn: no notice action switches the PES version (0.0.2-sel)
 ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the interval, and a
                  fake releases list holding `v0.0.1`, `v0.0.2` (a pre-release) and `nightly`
             WHEN the shell starts

@@ -499,22 +499,37 @@ impl Sidebar {
     /// The PES version selector: a compact combo bound to the common `pes_version`, disabled
     /// with the blocking tool's reason while a `version_change_blocker` reports one, colored
     /// by the live exe check. A change writes the common setting and asks the shell to save.
+    /// Under a tool that does not target the version (ST-SIDE-09) it stands disabled and
+    /// empty, keeping its box so the entries under it never move: a `PES 2019` beside a PES
+    /// 2017 save would read as governing the tool. The exe check still runs and is still
+    /// published: the check is the shell's, not the selector's.
     /// `rail` picks the rail's form, the year alone (`21`) centred on the button without
     /// the arrow; the overlay shows `PES 2021` at the left with the arrow.
     fn version_selector(&mut self, ui: &mut egui::Ui, args: &SidebarFrame, rail: bool) {
         let common = args.ctx.common();
         let blocker = version_blocker(args.tools);
-        let folder = common.pes_folder();
+        let targets = args
+            .tools
+            .get(args.active)
+            .is_some_and(|tool| tool.targets_pes_version());
         let check = self.exe_check(&common, ui.input(|input| input.focused));
         args.ctx.set_pes_exe_check(check);
-        let tooltip = exe_tooltip(check, &folder);
 
         let mut picked = common.pes_version;
-        let combo_response = add_enabled_ui(ui, blocker.is_none(), |ui| {
+        let combo_response = add_enabled_ui(ui, targets && blocker.is_none(), |ui| {
             ui.scope(|ui| {
-                ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
+                if targets {
+                    ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
+                }
                 let combo = egui::ComboBox::from_id_salt("pes-version");
-                let selected = version_label(picked, rail);
+                // A space stands for the version under a tool that does not use
+                // it: an empty text would collapse the box's height and move
+                // every entry under it.
+                let selected = if targets {
+                    version_label(picked, rail)
+                } else {
+                    " ".to_owned()
+                };
                 // The combo always lays out an arrow slot `icon_width` wide after
                 // its text, growing into the spare width. On the rail that slot is
                 // zero wide and paints nothing, and an empty growing atom before
@@ -565,12 +580,20 @@ impl Sidebar {
         self.combo_popup_id = Some(combo_response.id.with("popup"));
         // A disabled widget keeps no hover response of its own: the reason goes on the
         // selector's own response, which still reports the pointer over its rect (ST-SIDE-04).
-        match blocker {
-            Some((label, reason)) => {
-                combo_response.on_disabled_hover_text(format!("{label}: {reason}"));
-            }
-            None => {
-                combo_response.on_hover_text(tooltip);
+        if !targets {
+            combo_response.on_disabled_hover_text("This tool does not use the PES version");
+        } else {
+            match blocker {
+                Some((label, reason)) => {
+                    combo_response.on_disabled_hover_text(format!("{label}: {reason}"));
+                }
+                None => {
+                    combo_response.on_hover_text(exe_tooltip(
+                        check,
+                        &common.pes_folder(),
+                        "this tool",
+                    ));
+                }
             }
         }
 
@@ -932,12 +955,13 @@ pub(super) fn version_blocker(tools: &[Box<dyn StudioTool>]) -> Option<(&'static
 }
 
 /// The version selector's enabled-state tooltip for an exe-check verdict (ST-SIDE-03):
-/// what the last listing of the resolved PES folder found. The settings menu's version
-/// row carries the same one (the draft's `pesSelectorTip`).
-pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path) -> String {
+/// what the last listing of the resolved PES folder found, `works_with` naming on the
+/// found line whose version it is: the sidebar's "this tool", the settings menu's
+/// "every tool" (the draft's `pesSelectorTip`, which the row shares).
+pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path, works_with: &str) -> String {
     match check {
         ExeCheck::Found => format!(
-            "{}\nThe PES version every tool works with",
+            "{}\nThe PES version {works_with} works with",
             folder.display()
         ),
         ExeCheck::OtherVersion(found) => format!(

@@ -762,27 +762,3 @@ fn the_panes_end_six_over_the_status_bar() {
         "the detail pane's frame ends 6 over the status bar ({frame:?})"
     );
 }
-
-// A save open under any selector value publishes no standing notice and the
-// selector's setting is untouched: the editor reads the selector for nothing.
-#[test]
-fn an_open_save_publishes_no_standing_notice_under_any_selector() {
-    use studio_core::StudioTool;
-
-    let path = fixture(PesVersion::Pes21, "no_standing_notice");
-    let (ctx, settings, _events_rx, _requests_rx) = crate::test_support::shared_tool_context(
-        path.parent().unwrap(),
-        studio_core::Settings::default(),
-    );
-    let mut tool = crate::Tool::new();
-    assert_eq!(tool.standing_notice(&ctx), None, "no save is open");
-    tool.view.open(&path);
-    for version in PesVersion::ALL {
-        settings.lock().unwrap().common.pes_version = version;
-        assert_eq!(
-            tool.standing_notice(&ctx),
-            None,
-            "the selector on {version} publishes nothing"
-        );
-    }
-}

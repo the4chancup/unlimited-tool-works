@@ -141,6 +141,12 @@ impl StudioTool for Tool {
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {
         cli::run(matches, ctx, self.running)
     }
+
+    /// The compile's CPK and the conversions into it are for the version the
+    /// sidebar's selector holds.
+    fn targets_pes_version(&self) -> bool {
+        true
+    }
 }
 
 #[cfg(test)]

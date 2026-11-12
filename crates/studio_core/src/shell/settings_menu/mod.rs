@@ -471,7 +471,7 @@ fn version_row(
         }
         None => {
             let check = sidebar.exe_check(common, ui.input(|input| input.focused));
-            combo.on_hover_text(exe_tooltip(check, &common.pes_folder()));
+            combo.on_hover_text(exe_tooltip(check, &common.pes_folder(), "every tool"));
         }
     }
     ui.end_row();
