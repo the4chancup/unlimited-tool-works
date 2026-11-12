@@ -17,7 +17,7 @@ use super::StudioApp;
 use crate::events::{PipelineEvent, PipelineEventEnvelope, RunId};
 use crate::help::{HelpSection, HelpTarget};
 use crate::settings::Settings;
-use crate::status::{Notice, ToolActivity};
+use crate::status::ToolActivity;
 use crate::tool::{AppPaths, CliError, PlannedTool, StudioTool, ToolContext};
 use crate::widgets::{LogLine, LogPanel, checkbox_without_text, path_row};
 
@@ -74,11 +74,10 @@ pub(super) struct Calls {
     /// The `Ui::max_rect` the last `view` ran against: where the tool's view sits
     /// and how wide it is (the sidebar's overlay must never move it).
     pub(super) view_rect: Mutex<Option<egui::Rect>>,
-    /// What `standing_notice` returns; `standing_notice_ended` clears it, as a real tool
-    /// stops returning its notice once told.
-    pub(super) standing: Mutex<Option<Notice>>,
-    /// How often the shell called `standing_notice_ended`.
-    pub(super) standing_ends: AtomicUsize,
+    /// What `targets_pes_version` reports: `stub_parts` sets it, the sidebar's
+    /// tests being about a selector in use, so they keep their meaning; a test
+    /// clears it for a tool the selector is not shown for.
+    pub(super) targets: Mutex<bool>,
 }
 
 impl Calls {
@@ -111,10 +110,6 @@ impl Calls {
     /// The rect the last `view` was given.
     pub(super) fn view_rect(&self) -> Option<egui::Rect> {
         *self.view_rect.lock().unwrap()
-    }
-    /// How often the stub was told its standing notice ended.
-    pub(super) fn standing_ends(&self) -> usize {
-        self.standing_ends.load(Ordering::SeqCst)
     }
 }
 
@@ -235,6 +230,9 @@ impl StudioTool for StubTool {
     fn cli_run(&self, _matches: &clap::ArgMatches, _ctx: &ToolContext) -> Result<u8, CliError> {
         Ok(0)
     }
+    fn targets_pes_version(&self) -> bool {
+        *self.calls.targets.lock().unwrap()
+    }
     fn version_change_blocker(&self) -> Option<&str> {
         *self.calls.blocker.lock().unwrap()
     }
@@ -262,13 +260,6 @@ impl StudioTool for StubTool {
     }
     fn title_detail(&self) -> Option<String> {
         self.calls.title_detail.lock().unwrap().clone()
-    }
-    fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
-        self.calls.standing.lock().unwrap().clone()
-    }
-    fn standing_notice_ended(&mut self) {
-        self.calls.standing_ends.fetch_add(1, Ordering::SeqCst);
-        *self.calls.standing.lock().unwrap() = None;
     }
 }
 
@@ -324,6 +315,7 @@ fn stub_parts(
     *calls.default_settings.lock().unwrap() =
         toml::Table::from_iter([("enabled".to_owned(), toml::Value::Boolean(true))]);
     *calls.has_settings_view.lock().unwrap() = true;
+    *calls.targets.lock().unwrap() = true;
     (
         Box::new(StubTool {
             id,
@@ -756,4 +748,34 @@ pub(super) fn has_text(nodes: &[accesskit::Node], needle: &str) -> bool {
 /// not `value`.
 pub(super) fn has_label(nodes: &[accesskit::Node], label: &str) -> bool {
     nodes.iter().any(|node| node.label() == Some(label))
+}
+
+/// The node carrying `text` as a label-role node's `value`.
+pub(super) fn text_node<'a>(nodes: &'a [accesskit::Node], text: &str) -> &'a accesskit::Node {
+    nodes
+        .iter()
+        .find(|node| node.value() == Some(text))
+        .unwrap_or_else(|| panic!("no node with text {text:?}"))
+}
+
+/// The widget of `role` drawn on `label`'s grid row: the same y span, and
+/// starting right of the label as a grid's widget cell does. The y span alone
+/// would also match a sidebar entry the label's height happens to share.
+pub(super) fn widget_on_row<'a>(
+    nodes: &'a [accesskit::Node],
+    label: &str,
+    role: Role,
+) -> &'a accesskit::Node {
+    let row = text_node(nodes, label)
+        .bounds()
+        .expect("the label has bounds");
+    nodes
+        .iter()
+        .find(|node| {
+            node.role() == role
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.y0 < row.y1 && bounds.y1 > row.y0 && bounds.x0 > row.x0
+                })
+        })
+        .unwrap_or_else(|| panic!("no {role:?} on the {label:?} row"))
 }

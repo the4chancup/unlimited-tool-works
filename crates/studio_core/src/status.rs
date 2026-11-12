@@ -161,10 +161,6 @@ pub enum ActionEffect {
     OpenHelp(HelpTarget),
     /// Make another tool the active view.
     SwitchTool(String),
-    /// Switch the PES version, as a manual pick in the sidebar's selector does: the setting
-    /// written, the running-PES auto-switch spent, the settings saved. Disabled while a tool
-    /// reports a version-change blocker, its hover the selector's reason.
-    SwitchVersion(PesVersion),
     /// Open the update offer's Details dialog: the shell's own action, as
     /// `FixPesPath` is (the release it shows is the shell's state, so no tool
     /// has a reason to publish it).

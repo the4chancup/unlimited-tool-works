@@ -75,6 +75,16 @@ pub trait StudioTool {
         anyhow::bail!("{} has no GUI-runnable commands", self.id())
     }
 
+    /// Whether the tool works with the PES version the sidebar's selector holds:
+    /// `true` for a tool whose work is for the selected game (the Team compiler
+    /// compiles for it, the Export upgrader upgrades into it). The selector shows
+    /// the version only while the active tool does; under one it governs nothing
+    /// in (the Save editor follows its open save's version, a ruleset names no
+    /// game) it stands disabled and empty. Default: false.
+    fn targets_pes_version(&self) -> bool {
+        false
+    }
+
     /// A short reason the global PES version cannot change right now (the match tracker holding
     /// live memory addresses), shown as the selector's disabled-state tooltip. Default: none.
     fn version_change_blocker(&self) -> Option<&str> {
@@ -97,17 +107,6 @@ pub trait StudioTool {
     fn activity(&self) -> Option<ToolActivity> {
         None
     }
-
-    /// The notice this tool keeps in the status bar while its view is up, asked for every
-    /// frame: return it reworded as the state changes, `None` to withdraw it. Default: none.
-    fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
-        None
-    }
-
-    /// The standing notice has been seen: its action or dismiss was clicked, or another
-    /// notice replaced it while it was shown. The tool stops returning it until a new reason
-    /// to keep one arises. Default: nothing.
-    fn standing_notice_ended(&mut self) {}
 
     /// What the tool has open, shown in square brackets after its name in the idle window
     /// title (`Save editor [C:\…\EDIT00000000] - <app>`): the path of the one file it edits.

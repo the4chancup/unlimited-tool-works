@@ -99,6 +99,11 @@ impl StudioTool for Tool {
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {
         cli::run(matches, ctx)
     }
+
+    /// An export is upgraded against the version the sidebar's selector holds.
+    fn targets_pes_version(&self) -> bool {
+        true
+    }
 }
 
 #[cfg(test)]

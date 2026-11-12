@@ -355,11 +355,6 @@ impl StudioApp {
             );
             return;
         }
-        // The outgoing tool hears of an end the bar saw before the switch (a notice
-        // published earlier in the same drain), and its standing notice leaves the bar
-        // without ending: the incoming tool is never told on its behalf.
-        self.tell_standing_end();
-        self.status_bar.stand(None);
         self.active = index;
         self.ctx.settings().lock().unwrap().common.last_tool =
             Some(self.tools[index].id().to_owned());
@@ -601,16 +596,6 @@ impl StudioApp {
     #[cfg(target_arch = "wasm32")]
     fn show_update_dialog(&mut self, _egui_ctx: &egui::Context) {}
 
-    /// Tells the active tool its standing notice ended, once, if the bar saw it end since
-    /// the last ask.
-    fn tell_standing_end(&mut self) {
-        if self.status_bar.take_standing_end()
-            && let Some(tool) = self.tools.get_mut(self.active)
-        {
-            tool.standing_notice_ended();
-        }
-    }
-
     /// Makes the tool with `id` the active view, if it is registered and not CLI-only.
     fn switch_to(&mut self, id: &str) {
         match self.tools.iter().position(|tool| tool.id() == id) {
@@ -658,8 +643,7 @@ impl StudioApp {
     /// Applies a clicked notice action (the notice is already dismissed). `SwitchTool` goes
     /// through the shell's own switch; `FixPesPath` points the settings at the running exe's
     /// folder, the main row or the version's own entry once any exists, then saves as any
-    /// change; `SwitchVersion` makes the selector's manual pick; `OpenSettings` opens the
-    /// settings menu on the active tool's section;
+    /// change; `OpenSettings` opens the settings menu on the active tool's section;
     /// `OpenHelp` opens the help window at the target; `OpenUpdateDetails` opens the update
     /// offer's dialog. `OpenFolder` has no target yet (the
     /// compile's "Open output" is a later GUI-phase step): it only dismisses.
@@ -675,7 +659,6 @@ impl StudioApp {
                     .fix_pes_folder(&folder, version);
                 self.ctx.request(ShellRequest::SettingsChanged);
             }
-            ActionEffect::SwitchVersion(version) => self.sidebar.pick_version(version, &self.ctx),
             ActionEffect::OpenSettings => self.settings_menu.open(self.active, &self.ctx),
             ActionEffect::OpenHelp(target) => self.open_help(&target),
             #[cfg(not(target_arch = "wasm32"))]
@@ -810,15 +793,7 @@ impl eframe::App for StudioApp {
             self.record_version();
         }
         self.poll_update(egui_ctx);
-        // Asked before the requests drain, so a notice published this frame replaces the
-        // standing one and ends it, and its tool hears so before it is next asked.
-        let standing = self
-            .tools
-            .get(self.active)
-            .and_then(|tool| tool.standing_notice(&self.ctx));
-        self.status_bar.stand(standing);
         self.apply_requests(egui_ctx);
-        self.tell_standing_end();
         // The window's close asks the tools in sidebar order until one holds it. The holder
         // cancels the close and becomes the active view, its prompt answering through
         // `ToolContext::request_close`. A close the shell initiated itself takes the same
@@ -864,7 +839,6 @@ impl eframe::App for StudioApp {
         // The status bar claims its row first, so it spans the whole width under the sidebar
         // and the tool view.
         let activities = self.activities(false);
-        let blocker = sidebar::version_blocker(&self.tools);
         #[cfg(not(target_arch = "wasm32"))]
         let monitor_of = |viewport: &egui::ViewportInfo, zoom: f32| {
             window_size::monitor_under(viewport, zoom, &(self.monitors)(_frame))
@@ -876,12 +850,8 @@ impl eframe::App for StudioApp {
             .frame(
                 egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(8, 0)),
             )
-            .show(ui, |ui| {
-                self.status_bar.show(ui, &activities, blocker, monitor_of)
-            })
+            .show(ui, |ui| self.status_bar.show(ui, &activities, monitor_of))
             .inner;
-        // Before the effect applies: a `SwitchTool` would make another tool the one told.
-        self.tell_standing_end();
         if let Some(effect) = effect {
             self.apply_notice_effect(effect);
         }

@@ -257,14 +257,6 @@ fn open_details(egui_ctx: &egui::Context, app: &mut StudioApp) -> Vec<accesskit:
     nodes
 }
 
-/// The node carrying `text` as a label-role node's `value`.
-fn text_node<'a>(nodes: &'a [accesskit::Node], text: &str) -> &'a accesskit::Node {
-    nodes
-        .iter()
-        .find(|node| node.value() == Some(text))
-        .unwrap_or_else(|| panic!("no node with text {text:?}"))
-}
-
 /// The painted `Shape::Text` carrying exactly `text`.
 fn text_shape<'a>(out: &'a FrameOutput, text: &str) -> &'a egui::epaint::TextShape {
     out.shapes

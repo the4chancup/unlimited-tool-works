@@ -11,32 +11,6 @@ use crate::shell::test_harness::*;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
 use crate::tool::AppPaths;
 
-/// The node carrying `text` as a label-role node's `value`.
-fn text_node<'a>(nodes: &'a [accesskit::Node], text: &str) -> &'a accesskit::Node {
-    nodes
-        .iter()
-        .find(|node| node.value() == Some(text))
-        .unwrap_or_else(|| panic!("no node with text {text:?}"))
-}
-
-/// The widget of `role` drawn on `label`'s grid row: the same y span, and
-/// starting right of the label as a grid's widget cell does. The y span alone
-/// would also match a sidebar entry the label's height happens to share.
-fn widget_on_row<'a>(nodes: &'a [accesskit::Node], label: &str, role: Role) -> &'a accesskit::Node {
-    let row = text_node(nodes, label)
-        .bounds()
-        .expect("the label has bounds");
-    nodes
-        .iter()
-        .find(|node| {
-            node.role() == role
-                && node.bounds().is_some_and(|bounds| {
-                    bounds.y0 < row.y1 && bounds.y1 > row.y0 && bounds.x0 > row.x0
-                })
-        })
-        .unwrap_or_else(|| panic!("no {role:?} on the {label:?} row"))
-}
-
 /// The `Role::TextRun` node on `label`'s row whose value is `text`: a text
 /// edit's run is the whole galley line, unclipped; the row's label carries a
 /// `TextRun` of its own text too, hence the value filter.
