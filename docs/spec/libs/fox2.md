@@ -117,7 +117,7 @@ skips it, because resolving through it would print a text that recompiles to a d
 - `<staticProperties>`/`<dynamicProperties>` holding `<property name type container arraySize>`
   and `<value>` children
 
-The values are written as follows:
+Each kind of data is written as follows:
 
 - a `Literal` is element text (`<value></value>` for the empty string), a `Hash` the attribute
   `hash="0x%08X"`

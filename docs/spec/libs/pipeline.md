@@ -229,7 +229,7 @@ The contract is `spec/team_compiler/pipeline.md` "Writer" item 5:
 - 1–28 characters, each ASCII alphanumeric, `_`, `-` or `.`;
 - no trailing `.`;
 - no `.cpk` suffix in any case;
-- and not a Windows reserved device name (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`,
+- not a Windows reserved device name (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`,
   `LPT1`–`LPT9`, any case), judged on the part before the first `.`, since Windows reserves
   `con.x` as it does `con`.
 

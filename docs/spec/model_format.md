@@ -237,7 +237,7 @@ There is no in-toml spelling for "this texture is in Common" (a `<common>/hair` 
 - a texture link works with auto-detection, so the common case — a shared normal map or hair
   texture — needs no toml editing at all, only a file that can be copied between player folders;
 - it works for native-format models too, which a toml tag could not;
-- and Explorer shows where a texture comes from.
+- Explorer shows where a texture comes from.
 
 The cost is one empty file per shared texture per player folder, which is what the other link
 kinds already cost.
