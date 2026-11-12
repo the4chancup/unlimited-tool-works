@@ -95,7 +95,7 @@ The `--gui` form exists for the release bundle's **`quick_compile.bat`**, the su
 `0_all_in_one.bat`, the one script almost every user runs: copy an export into `exports/`,
 double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui team-compiler
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
-the equivalent `quick_compile.sh`. Red's other staged bats (`1_`–`3_`) have no successor: the
+no launcher (`distribution.md`, the bundle's list). Red's other staged bats (`1_`–`3_`) have no successor: the
 unified pipeline has no stages to run separately. Users who want the plain GUI double-click the exe.
 
 Until the Team compiler's view exists, the 0.0.2 bundle's `quick_compile.bat` runs the plain CLI

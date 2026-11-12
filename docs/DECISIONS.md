@@ -16742,3 +16742,19 @@ folder holds. 2 rather than 5 for the host because the disk had 33 GiB free with
 at 13: at 29 the build cache could grow by 4 GiB before every run needed a cleanup first,
 at 26 by 7.
 Plan: `RUNBOOK.md` "The scratch folder" (the VPS paragraph).
+
+## 2026-11-12 — distribution — the Linux bundle ships no launchers
+Decision (maintainer: "The linux bundle needs no launchers, linux users can be expected to
+have more experience with CLI"): the two launchers, `quick_compile.bat` and
+`quick_upgrade.bat`, are in the Windows archive alone. The Linux archive ships neither and
+gets no `.sh` twin, which the plan had named (`quick_compile.sh`); the bundle's readme gives
+each launcher's command for a terminal. The empty `exports/` and `old_exports/` ship on both.
+Why: found building ST-UPD-04's Linux test bundles, the first Linux `just release` since the
+launchers came back for 0.0.2: the recipe staged the batch files on Linux too and checked
+that each calls the program by the name its `--help` prints, `utw` there, so it refused
+("quick_compile.bat does not call utw.exe"). The release workflow's Linux job would have
+refused the same way at the 0.0.2 tag. A batch file is of no use on Linux, and a shell twin
+would be two more scripts to keep equal to the batch files and to test, for members who type
+the one command as easily.
+Plan: `plans/core/distribution.md` (the bundle's list) and `plans/core/architecture.md`
+"Launch modes"; `scripts/release/release.py` (`Platform.launchers`).

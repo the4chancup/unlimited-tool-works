@@ -29,6 +29,15 @@ Getting started
    changes one setting and sets the order of the work, and all of that comes before the
    sections in between.
 
+On Linux the archive holds no .bat file. Wherever this readme names one, run its command
+from a terminal in this folder instead. For quick_compile.bat:
+
+    ./utw --log-file compile_log.txt team-compiler compile exports
+
+For quick_upgrade.bat, with the path of your PES savefile:
+
+    ./utw --log-file upgrade_log.txt export-upgrader upgrade --all old_exports --savefile <savefile> --legacy-ids -o exports
+
 
 Checking a team for the DBC
 ---------------------------

@@ -12,8 +12,11 @@ There is no installer. Each release is a `.7z` archive containing:
 
 - `UTW.exe` (or the `utw` Linux binary), the single self-contained binary
   (`development_plan.md` "The project's name: Unlimited Tool Works")
-- `quick_compile.bat` (`quick_compile.sh` on Linux), the double-click launcher: opens the GUI on
-  the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture)
+- `quick_compile.bat`, the double-click launcher: opens the GUI on
+  the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture).
+  The Windows archive alone has launchers. The Linux one ships none, not a `.sh` twin: a Linux
+  member can be expected to work from a terminal, where the launcher's one command is typed as
+  easily, and the bundle's readme gives each launcher's command for them
 - in the 0.0.2 preview only (0.0.1 is the Save editor's alone), until the two tools' views
   land: `quick_compile.bat` in its CLI form, `quick_upgrade.bat` and an empty `old_exports/`
   (`development_plan.md` "The /vg/ League 27 (VGL)"). The launchers' sources are

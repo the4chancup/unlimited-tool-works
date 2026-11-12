@@ -1596,7 +1596,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] f4a the design in `plans/core/distribution.md`: the tag trigger, the draft release's
       assets, how the Windows asset is checked against the locally checked exe (byte-identical,
       or the release checks plus the maintainer's look when CI's build cannot match), what
-      the Linux bundle holds (`utw`, `quick_compile.sh`, its archive)
+      the Linux bundle holds (`utw`, no launcher, its archive)
     - [ ] f4b the Windows bundle built by CI: `scripts/release/release.py`'s checks (no remapped
       prefix, static C runtime, the user's name absent) passing on CI's exe; the workflow
       written by the lead (CI is correctness-critical) → verify: a test tag produces a draft

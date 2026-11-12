@@ -300,9 +300,26 @@ class Pure(unittest.TestCase):
         )
 
     def test_expected_entries_linux(self) -> None:
-        entries = expected_entries("utw", "0.0.1", "linux")
-        self.assertIn("unlimited-tool-works-0.0.1/utw", entries)
-        self.assertEqual([entry for entry in entries if entry.endswith(".exe")], [])
+        # No launcher: the two are batch files, and a Linux member starts the program
+        # from a terminal. The folders the commands work in ship all the same.
+        self.assertEqual(
+            expected_entries("utw", "0.0.1", "linux"),
+            {
+                "unlimited-tool-works-0.0.1",
+                "unlimited-tool-works-0.0.1/utw",
+                "unlimited-tool-works-0.0.1/README.txt",
+                "unlimited-tool-works-0.0.1/licenses",
+                "unlimited-tool-works-0.0.1/licenses/LICENSE-MIT",
+                "unlimited-tool-works-0.0.1/licenses/LICENSE-APACHE",
+                "unlimited-tool-works-0.0.1/licenses/RobotoFlex-OFL.txt",
+                "unlimited-tool-works-0.0.1/licenses/PHOSPHOR-LICENSE.txt",
+                "unlimited-tool-works-0.0.1/licenses/THIRD-PARTY-NOTICES.txt",
+                "unlimited-tool-works-0.0.1/data",
+                "unlimited-tool-works-0.0.1/data/settings.toml",
+                "unlimited-tool-works-0.0.1/exports",
+                "unlimited-tool-works-0.0.1/old_exports",
+            },
+        )
 
     def test_the_bundle_ships_the_bundled_works_licenses(self) -> None:
         # Roboto Flex's OFL and Phosphor's MIT, the third-party works the suite bundles
@@ -592,8 +609,9 @@ class Listing(unittest.TestCase):
             self.assertEqual(found, symbols_entries("Tiny"))
 
     def test_a_packed_tarball_lists_the_staged_set_and_marks_the_binary(self) -> None:
-        # The Linux bundle: the same staged set as the .7z, but a tar keeps modes and
-        # ownership, so the binary must be executable and no member may name an owner.
+        # The Linux bundle: the .7z's staged set less the two batch launchers, and a tar
+        # keeps modes and ownership, so the binary must be executable and no member may
+        # name an owner.
         with tempfile.TemporaryDirectory() as tmp:
             stage = Path(tmp)
             top = stage / f"{PACKAGE}-9.9.9"
@@ -604,8 +622,6 @@ class Listing(unittest.TestCase):
             (top / "old_exports").mkdir()
             for bundled in (
                 "Tiny",
-                "quick_compile.bat",
-                "quick_upgrade.bat",
                 "README.txt",
                 "licenses/LICENSE-MIT",
                 "licenses/LICENSE-APACHE",

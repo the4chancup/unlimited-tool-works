@@ -5,7 +5,7 @@ The recipe builds `studio` with `--locked`, the build machine's home folder, car
 homes, repository and target directory remapped out of the binary's paths (`remap_flags`), reads the executable's name from the built binary's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
 stages `unlimited-tool-works-<version>/` — the binary as `<name>.exe` (`<name>` on Linux), the launchers it ships
-(`LAUNCHERS`, the two `quick_*.bat`), the readme, the license files (`LICENSES`) and the generated
+(`LAUNCHERS`, the two `quick_*.bat`, on Windows; none on Linux), the readme, the license files (`LICENSES`) and the generated
 third-party notices in `licenses/`, the bundled `data/settings.toml`,
 and the empty folders it ships (`EMPTY_FOLDERS`, `exports/` and `old_exports/`) — under a temporary folder in
 cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
@@ -81,21 +81,23 @@ NOTICES = "THIRD-PARTY-NOTICES.txt"
 class Platform:
     """The facts one platform decides: the rust target triple the build's rustflags key
     and cargo-about's dependency graph name, the file `cargo build` leaves under cargo's
-    target directory, the suffix the staged binary's name takes, and the release
-    archive's name ending."""
+    target directory, the suffix the staged binary's name takes, the release archive's
+    name ending, and the launchers its bundle ships."""
     triple: str
     built: str
     suffix: str
     archive: str
+    launchers: tuple[str, ...]
 
 
-# The two platforms a release packs for, keyed by `platform_name`'s results.
+# The two platforms a release packs for, keyed by `platform_name`'s results. Linux ships
+# no launcher: the two are batch files, and its members start the program from a terminal.
 PLATFORMS = {
     "windows": Platform(
-        "x86_64-pc-windows-msvc", "release/utw.exe", ".exe", "windows.7z"
+        "x86_64-pc-windows-msvc", "release/utw.exe", ".exe", "windows.7z", LAUNCHERS
     ),
     "linux": Platform(
-        "x86_64-unknown-linux-gnu", "release/utw", "", "linux.tar.gz"
+        "x86_64-unknown-linux-gnu", "release/utw", "", "linux.tar.gz", ()
     ),
 }
 
@@ -158,7 +160,7 @@ def expected_entries(name: str, version: str, platform: str) -> set[str]:
         *(f"{top}/licenses/{Path(license_file).name}" for license_file in (*LICENSES, NOTICES)),
         f"{top}/data",
         f"{top}/data/settings.toml",
-        *(f"{top}/{launcher}" for launcher in LAUNCHERS),
+        *(f"{top}/{launcher}" for launcher in PLATFORMS[platform].launchers),
         *(f"{top}/{folder}" for folder in EMPTY_FOLDERS),
     }
 
@@ -516,7 +518,7 @@ def release(version: str) -> None:
     name = exe_name(help_text)
     if name is None:
         raise Refusal(f"{exe} --help shows no usage line")
-    for bat in LAUNCHERS:
+    for bat in plat.launchers:
         path = ROOT / "resources/bundle" / bat
         if not launcher_calls(path.read_text(encoding="utf-8"), name):
             raise Refusal(f'{path.relative_to(ROOT)} does not call "%~dp0{name}.exe"')
@@ -566,7 +568,7 @@ def release(version: str) -> None:
                 raise Refusal(f"{binary} still carries debug sections: {', '.join(debug_sections)}")
             if ".symtab" not in sections:
                 raise Refusal(f"{binary} lost its symbol table with its debug info")
-        for bundled in LAUNCHERS + ("README.txt",):
+        for bundled in plat.launchers + ("README.txt",):
             shutil.copyfile(ROOT / "resources/bundle" / bundled, top / bundled)
         (top / "data").mkdir()
         shutil.copyfile(
