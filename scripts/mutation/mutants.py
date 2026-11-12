@@ -712,8 +712,8 @@ def disk_refusal(used: int, free: int) -> str | None:
     if free < REMOTE_FREE_FLOOR:
         return (
             f"remote disk: {figures}: below the floor. RUNBOOK \"The scratch folder\"'s remote "
-            "cleanup frees most of what the folder holds; if that cannot lift the floor, ask "
-            "the maintainer before starting the run"
+            "cleanup frees the clone's build cache; if that cannot lift the floor, ask the "
+            "maintainer before starting the run"
         )
     print(f"remote disk: {figures}", flush=True)
     return None

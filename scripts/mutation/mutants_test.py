@@ -1931,6 +1931,19 @@ class ExtraExclusions(unittest.TestCase):
                 extra_mutants.exclusions(Path(tmp))
 
 
+class RemoteDiskUse(unittest.TestCase):
+    def test_the_folders_size_comes_first_and_the_free_space_second(self):
+        # Swapped, the guard would read the folder's size as the disk's free space.
+        def ssh(host, command, **kwargs):
+            self.assertLess(command.index("du -sk"), command.index("df -Pk"))
+            return subprocess.CompletedProcess([host, command], 0, stdout="13631488\n34603008\n")
+
+        with mock.patch.object(mutants, "ssh", ssh):
+            self.assertEqual(
+                mutants.remote_disk_use("bonfire"), (13 * 2**30, 33 * 2**30)
+            )
+
+
 class DiskRefusal(unittest.TestCase):
     """The disk guard at its bound, with 2026-10-22's figures as the failing case."""
 

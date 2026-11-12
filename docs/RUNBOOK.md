@@ -339,7 +339,8 @@ tree copies, then refuses when the disk has under
 26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
 `save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
 the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
-most of that, and when it cannot lift the floor the maintainer is asked.
+the clone's build cache, usually most of it (a finished run's results stay until the next
+launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
 editor's pid-named copies of a fixture save), the disk was at 99% and a half lost five
 mutants. **At each phase's close**, after its last mutation run, the lead
