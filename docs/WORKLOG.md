@@ -1729,6 +1729,12 @@ briefs, review loops, gates and mutation runs as for any step.
     Item, Old value and New value, under one head row (SE-GUI-13)
   - [x] 0.0.2-drag 2026-11-12 (`5412b447`): the player list's dragged row floats under the
     pointer, its grab point kept, its place left blank (SE-GUI-69)
+    - [ ] review rounds over both (tier 2). SWE-2 S-se1 r1, 2026-11-12 (two parts): 4 of
+      10 concerns accepted (`a6174e84`, Opus; merge `78212109`): the New value cut with an
+      ellipsis as the other two columns are, and three tests that passed on wrong code
+      (the cut's width bounded from below, the whole dragged row watched, the float gone
+      after the release); its loop ended. One paid round is owed (Carbon, from
+      2026-11-15)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
