@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Export upgrader plan
+# Unlimited Tool Works: Export upgrader plan
 
 The Export upgrader (`crates/tools/export_upgrader`) migrates exports from the old
 format (the AET layout, `GLOSSARY.md` "AET") to the Studio player-folder format defined in the
@@ -1444,16 +1444,16 @@ validation's findings on what was written.
 
 | Code | Sev | When | Context |
 |---|---|---|---|
-| `no_old_export` | E | step 1: the input holds nothing an old export holds; nothing is written | — |
+| `no_old_export` | E | step 1: the input holds nothing an old export holds; nothing is written | - |
 | `export_extract_failed` | E | the archive does not open or its listing is refused (the compiler's code); nothing is written | `path`, `error` |
 | `source_read_failed` | E | a file of the input does not read after its listing did (the compiler's code); it is not migrated and the run reports on and ends not clean, so nothing is written; an unreadable Note (it decides the team) or a referee export's `refs.txt` (it decides the roster) stops the run at once | `path`, `error` |
 | `team_name_unknown` | E | the Note's `Team:` value, or the export name's first word, is no team name (empty, or holding a space or an inner `/`; the compiler's code, step 6), the `Team:` line's file or the export named; nothing is written | `name` |
 | `save_team_name_repeated` | W | step 6: a later team of the save folds to the export's team name; the first in record order is the export's, the later left out | `team` (the later team's ID), `kept` (the first's) |
 | `unmigrated_content` | E | an entry inside the old format's folders that reached the game and that no step migrates, or that step 10's boundary keeps an Error (two candidates for one place, a misnamed whole folder), entry by entry; a Note entry whose colors do not read is one, its line in the context, and so is a kit config that does not decode (step 5), its error in the context | `reason` (the cause), `other` (the other candidate's input path, where two claim one place), then `line` (a Note entry) or `error` (a kit config, a texture, an `.mtl`) |
-| `migration_clean` | I | last line: no Error finding, and no finding drops anything but a leftover ("Verification"'s clean migrated export); exit 0 | — |
-| `migration_not_clean` | I | last line otherwise: nothing is written ("Verification"); exit 1 after any finding that drops anything but a leftover | — |
+| `migration_clean` | I | last line: no Error finding, and no finding drops anything but a leftover ("Verification"'s clean migrated export); exit 0 | - |
+| `migration_not_clean` | I | last line otherwise: nothing is written ("Verification"); exit 1 after any finding that drops anything but a leftover | - |
 | `leftover_dropped` | W | step 10: content that never reached a player in game, outside the old format's layout or inside it (a refused portrait, a stray file, a second goalkeeper kit, ...), not written; a Note entry's dropped part names its line; the run stays clean | `line` (a Note entry) |
-| `mtl_stray_text_dropped` | I | step 7: an old `.mtl` held text between its elements, dropped as the file is written back | — |
+| `mtl_stray_text_dropped` | I | step 7: an old `.mtl` held text between its elements, dropped as the file is written back | - |
 | `coverage_tag_chosen` | I | `upgrade` of a team export: the coverage tag the output's name took ("CLI") | `tag`, `source` |
 | `staging_folder_removed` | I | an earlier run's staging folder for this output removed before the write ("CLI") | `path` |
 

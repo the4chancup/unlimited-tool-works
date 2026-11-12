@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Unified model format plan
+# Unlimited Tool Works: Unified model format plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -27,13 +27,13 @@ Instead of parsing `.blend` files directly (Blender's binary format changes betw
 mature Rust parser) or using FBX (proprietary, immature Rust support), the format is **glTF with PES
 extensions**:
 
-- **Blender exports glTF natively** — no addon needed for base mesh/skeleton/UV data; it has been a
+- **Blender exports glTF natively**: no addon needed for base mesh/skeleton/UV data; it has been a
   stock exporter since Blender 2.80
-- **Rust has a mature parser** — the `gltf` crate is production-quality
-- **Other 3D tools support glTF** — Maya, 3ds Max, Godot, Sketchfab, Windows 3D Viewer, etc.
-- **Extension mechanism** — PES-specific structural metadata (bones, mesh splitting) stored as
+- **Rust has a mature parser**: the `gltf` crate is production-quality
+- **Other 3D tools support glTF**: Maya, 3ds Max, Godot, Sketchfab, Windows 3D Viewer, etc.
+- **Extension mechanism**: PES-specific structural metadata (bones, mesh splitting) stored as
   custom JSON extensions; material properties live in TOML files alongside the model
-- **Binary bulk data** — vertex/face data is binary, not text; the JSON scene description is ~5-10%
+- **Binary bulk data**: vertex/face data is binary, not text; the JSON scene description is ~5-10%
   of total size.
 
 **Stock Blender is enough.** The plugin (`pes-models`, see the [Model conversion

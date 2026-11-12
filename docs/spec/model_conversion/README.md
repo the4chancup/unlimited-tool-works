@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Model conversion plan
+# Unlimited Tool Works: Model conversion plan
 
 Covers the `model_convert` lib crate (the IR plus importers/exporters and skeleton
 data) and the format-extension algorithms that live in the `fmdl` and `pes_model`

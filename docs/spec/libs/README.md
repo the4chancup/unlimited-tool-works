@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan
+# Unlimited Tool Works: Library crates plan
 
 Covers the small shared lib crates: the binary format parsers (`cpk`, `fpk`, `fmdl`,
 `pes_model`, `ftex`, `fox2`, `uniparam`, `wezlib`), `dds_convert`, `color_tools`,
@@ -56,7 +56,7 @@ single-file plan.
 |--------|-----------|------|-------|
 | CPK (CRI archive) | `utils/cpk.py` | 550 lines | UTF table with XOR encryption, read + write |
 | FMDL (Fox Model) | `utils/FmdlFile.py` | 1700 lines | Largest parser; segmented binary format |
-| SKL (Fox Skeleton) | — | ~150 lines | Bone list + bind-pose transforms; reference parser at `examples/skl.py`; lives in the `fmdl` crate (same Fox format family) |
+| SKL (Fox Skeleton) | - | ~150 lines | Bone list + bind-pose transforms; reference parser at `examples/skl.py`; lives in the `fmdl` crate (same Fox format family) |
 | FPK/FPKD | `utils/fpk.py` | 137 lines | Fox package with MD5 checksums |
 | FTEX | `utils/ftex.py` | 400 lines | PES texture with mipmap/BCn block math |
 | UniformParameter | `utils/uniparam.py` | 91 lines | Kit config container |

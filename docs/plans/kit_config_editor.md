@@ -1,8 +1,8 @@
-# Unlimited Tool Works — Kit config editor plan
+# Unlimited Tool Works: Kit config editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-What exists of this is in `spec/kit_config_editor.md` "Unlimited Tool Works — Kit config editor plan".
+What exists of this is in `spec/kit_config_editor.md` "Unlimited Tool Works: Kit config editor plan".
 
 The Kit config editor (`crates/tools/kit_config_editor`, tool id `kit-config-editor`,
 sidebar label "Kit config editor") is the successor to **Kit Manager PES2016** by
@@ -153,21 +153,21 @@ What exists of this is in `spec/kit_config_editor.md` "Testing".
 
 What exists of this is in `spec/kit_config_editor.md` "Improvements over Kit Manager (summary)".
 
-3. **Whole-team editing** — all of an export's kits in tabs, plus direct
+3. **Whole-team editing**: all of an export's kits in tabs, plus direct
    UniformParameter container editing; the original opened one file at a time.
 4. **Live preview from the kit's real textures** instead of 51MB of canned bitmaps.
-5. **Suite integration** — global PES version drives the encoding; FPC values are
+5. **Suite integration**: global PES version drives the encoding; FPC values are
    shared constants with the Team compiler, not folklore numbers; built-in color
    pickers with texture-derived suggestions.
-6. **Kit menu colors in the same place** — each kit's `colors.txt` (UniColor menu
+6. **Kit menu colors in the same place**: each kit's `colors.txt` (UniColor menu
    colors) and `icon_<N>` marker (menu icon, picked from a live-tinted visual gallery)
    are edited alongside its config, seeded by the same dominant-color extraction
    the compiler falls back on.
 
 ## Dropped features
 
-- **Prerendered preview bitmaps** — replaced by the schematic + texture composite.
-- **JCPicker integration** — replaced by the shared `color_tools` picker widget.
+- **Prerendered preview bitmaps**: replaced by the schematic + texture composite.
+- **JCPicker integration**: replaced by the shared `color_tools` picker widget.
 
 ## Key decisions
 

@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Distribution and updates
+# Unlimited Tool Works: Core plan: Distribution and updates
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -452,14 +452,14 @@ whole, in one bullet, as 0.0.1 did the Save editor.
 Nothing else describes releases; the three places a user meets release notes all read this
 file:
 
-1. **The help window's "What's new" chapter** — the file embedded at build time, newest first,
+1. **The help window's "What's new" chapter**: the file embedded at build time, newest first,
    without its title line: the chapter's one topic is titled "Changelog" already, and the
    window would draw the same heading twice.
-2. **The GitHub release body** — the release process copies the released version's section
+2. **The GitHub release body**: the release process copies the released version's section
    verbatim into the release notes. The updater dialog shows that body inline (see "Distribution
    and updates" step 2), so the dialog, the release page and the in-app chapter are the same text
    by construction rather than by discipline.
-3. **The post-update notice** — `Updated to v1.4.0 · [What's new]` in the status bar on the first
+3. **The post-update notice**: `Updated to v1.4.0 · [What's new]` in the status bar on the first
    start of a new version, opening reader 1 (see `spec/core/gui.md` "Status bar").
 
 **One version string, shown in one place.** `v{CARGO_PKG_VERSION}`, then the release stage
@@ -483,9 +483,9 @@ since releases are built from tags.
 
 Where the version string appears:
 
-- **Status bar empty state** — the one always-visible place, and the line to paste into a report.
+- **Status bar empty state**: the one always-visible place, and the line to paste into a report.
 - **About** (logo click) — the detailed block with Copy (see `gui.md` "Sidebar" item 1).
-- **`UTW --version`** — the same one-liner on stdout (CLI equivalence); built,
+- **`UTW --version`**: the same one-liner on stdout (CLI equivalence); built,
   `spec/core/distribution.md` "Versioning: one workspace version, one exception".
 - **Not the title bar**: the title is what the taskbar and alt-tab show, the surface for what
   the Studio is *doing* while the window is not in front (see `gui.md` "Window title"), and it

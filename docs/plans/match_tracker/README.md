@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Match tracker plan
+# Unlimited Tool Works: Match tracker plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -304,18 +304,18 @@ needed for `RawTableSnapshot` fixtures; it excludes unrelated process memory.
 
 ## Improvements over SEN:P-AI (summary)
 
-1. **Match logic decoupled from GUI and Win32** — pure model over
+1. **Match logic decoupled from GUI and Win32**: pure model over
    `DecodedGameSnapshot` input, testable headless against recorded `RawTableSnapshot`
    fixtures.
-2. **The feed replaces the pipe** — typed in-process events with snapshot replay, and
+2. **The feed replaces the pipe**: typed in-process events with snapshot replay, and
    the main consumer ships in the same binary: the Rigdio integration lost in 2020
    returns, stronger (autopilot instead of event clips only).
 3. **Readable match records** (JSON) instead of a bespoke binary format.
 4. **Per-version signature data** instead of hardcoded PES17 constants.
-5. **Wiki footballbox export** — a new, tested match exporter informed by the old
+5. **Wiki footballbox export**: a new, tested match exporter informed by the old
    formatting primitives and the fork's partial adapter produces `{{Football box}}`
    wikitext directly from match files.
-6. **Heatmaps** — if the PES17 grid is verified to populate with stable semantics,
+6. **Heatmaps**: if the PES17 grid is verified to populate with stable semantics,
    per-player position grids that the old tool processed only as a hidden summed scalar
    gain an independent GUI viewer implemented from verified 10x14 grid semantics;
    otherwise the PES17 viewer remains hidden.

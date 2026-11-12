@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Development plan
+# Unlimited Tool Works: Core plan: Development plan
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -359,15 +359,15 @@ folder-internal deep-derived names included, without a run phase or type of its 
 every model `BuildTask`'s planned model IDs before any task runs; these were the phase's entry
 gates.
 
-- **Deep validation** — the compiler's `deep/` pass: content-level rules on top of
+- **Deep validation**: the compiler's `deep/` pass: content-level rules on top of
   `aesthetics_export`'s structural ones (that crate reads no file content: the Aesthetics export
   plan's "Content findings"), and the `fmdl`/`pes_model` `check.rs` findings, all mapped through
   the Team compiler's message catalog (`export_check`, `xml_check`, `texture_check`). `check`
   and `compile` run the same pass. Live-grid scheduling in `check/` waits for Phase 8.
-- **`plan/`** — `BuildManifest` from a `ResolvedAestheticsExport`, `PlannedModelIds` (40-ID team
+- **`plan/`**: `BuildManifest` from a `ResolvedAestheticsExport`, `PlannedModelIds` (40-ID team
   blocks, deterministic boots/gloves assignment — assignment only; the savefile write is Phase 5),
   duplicate-refs preflight, `overrides/` precedence (`team_id_get`).
-- **`processing/`** — per-task work over `rayon` with memory permits:
+- **`processing/`**: per-task work over `rayon` with memory permits:
   - model format selection, cross-format conversion via `model_convert`, multi-model merging and
     SKL pairing (`fmdl_editing`);
   - hand auto-split (`model_convert::ops::hand_split`) on every model carrying
@@ -396,7 +396,7 @@ gates.
     `fmdl_editing`/`export_move`);
   - `materialize.rs` as the single output-mode seam: relocation to game paths and Fox FPK
     packing (`contents_packing`, `export_move`).
-- **`bins/`** — UniColor / TeamColor / UniformParameter accumulation via `uniparam`, DpFileList
+- **`bins/`**: UniColor / TeamColor / UniformParameter accumulation via `uniparam`, DpFileList
   read/write and slot discovery (`bins_update`).
 
   On Fox, the player appearance tables were read from the installed CPKs by the same walk and
@@ -411,7 +411,7 @@ gates.
   `PlayerAppearance.bin` passed through with no row changed. Phase 5 added the stock and
   default-ID rows and the appearance rows from `settings.toml`: this split was the only one in
   which Phase 4's CPK was game-correct for what it compiled without reading `settings.toml`.
-- **`output/`** — Phase 3's canonical-order writer, staging and promotion to `output/`, with
+- **`output/`**: Phase 3's canonical-order writer, staging and promotion to `output/`, with
   the output folder's writability preflight (TC-OUT-*, TC-CLI-06), behind `OutputSink` (CPK, or
   a loose folder for test and sideload), the `.partial` copy into `download/` for deployment,
   and multi-CPK; access-denied output paths fail cleanly via `libs/elevation` (the GUI's

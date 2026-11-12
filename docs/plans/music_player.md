@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Music player plan
+# Unlimited Tool Works: Music player plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -106,9 +106,9 @@ Plain text, one entry per line, `;`-separated fields:
     lenient on purpose, since it loses nothing.
 - Every other significant line is a song entry:
   `<slot>;<filename>;<condition-or-instruction>;<...>`
-  - **slot** — `anthem`, `victory`, `goal` (default goalhorn), `chant`, or a player
+  - **slot**: `anthem`, `victory`, `goal` (default goalhorn), `chant`, or a player
     name (free text; commas in a name render as line breaks on the button).
-  - **filename** — path relative to the `.4ccm`'s folder. If the line has only a slot,
+  - **filename**: path relative to the `.4ccm`'s folder. If the line has only a slot,
     a default is assumed: `{team} - {Label}.mp3` for reserved slots (Anthem, Victory
     Anthem, Goalhorn, Chant) or `{team} - {player} Goalhorn.mp3` for players.
   - Each further `;`-field is one condition or instruction: the first whitespace-token
@@ -140,10 +140,10 @@ Entries are checked top-down per slot; the first passing entry plays (priority o
 | `every` | n | player's goal count is divisible by n |
 | `opponent` | team names | the opponent is one of the listed teams |
 | `match` | type list | match type is one of: Group, Survival, RO16, Quarterfinal, Semifinal, Final, Third-Place, Boss, Consolation; `knockouts`, as the only argument, expands to RO16…Third-Place; beside other types it is refused (Rigdio reads it there as a type no match has) |
-| `home` | — | the team is in the home slot |
-| `once` | — | the first time the check reaches it; the entry is unloaded the next time (`goals >= 2;once` plays on the second goal) |
-| `first` | — | this is the team's first goal (score == 1 after increment) |
-| `comeback` | — | after scoring, still level or behind, and the opponent has scored |
+| `home` | - | the team is in the home slot |
+| `once` | - | the first time the check reaches it; the entry is unloaded the next time (`goals >= 2;once` plays on the second goal) |
+| `first` | - | this is the team's first goal (score == 1 after increment) |
+| `comeback` | - | after scoring, still level or behind, and the opponent has scored |
 | `mostgoals` | [player] | this (or the named) player has the most goals on the team (ties count) |
 | `special` | [label] | never auto-plays; marks a victory anthem selectable from the VA dropdown |
 | `time` | op, minute | the goal minute compares true; the minute is prompted from the streamer when the check reaches it |
@@ -173,13 +173,13 @@ Instructions modify playback rather than gate it:
 |-------------|-----------|--------|
 | `start` | time (`[[d:]h:]m:s` or seconds) | begin playback at this offset; looping returns to it |
 | `speed` | 0.25–4.00 | fixed playback speed for this entry (the parser takes any positive rate; the range is the editor's check, DECISIONS 2026-10-14) |
-| `randomise` | — | when all of a player's (non-warcry) entries have it: pick uniformly at random instead of by priority |
+| `randomise` | - | when all of a player's (non-warcry) entries have it: pick uniformly at random instead of by priority |
 | `pause` | `continue`\|`restart` [`every` n] | on pause: keep position, or restart (every nth pause) |
 | `end` | `stop` | do not loop; stop and reload at song end (`end loop` is a legacy no-op, silently accepted) |
-| `warcry` | — | play this entry to completion first, then fall through to the next non-warcry entry |
-| `unrandom` | — | exclude this chant from random chant selection |
-| `advance` | — | at song end, play the next valid entry instead of looping |
-| `louder` | — | mark for the team's volume-boost slider |
+| `warcry` | - | play this entry to completion first, then fall through to the next non-warcry entry |
+| `unrandom` | - | exclude this chant from random chant selection |
+| `advance` | - | at song end, play the next valid entry instead of looping |
+| `louder` | - | mark for the team's volume-boost slider |
 | `event` | `red`\|`yellow`\|`owngoal`\|`sub` | play this clip once (no loop; `start` honoured) when the Match tracker reports the event for this player (see "Autopilot"); inert without the tracker. The entry leaves its slot's goalhorn list: it is never in the priority order, the `randomise` all-entries check or the `goal` fallback, and its conditions are never evaluated (see "Model") |
 
 ### File resolution
@@ -280,7 +280,7 @@ pub struct EventClip {
   all-entries check and the `goal` fallback append need no exclusion either. Rigdio's parser
   routes them the same way (its `events` dict beside `players`); RigDJ drops them on load,
   so the editor's round trip keeps what RigDJ loses.
-- **One model, one parser, one serializer** — replaces the two divergent
+- **One model, one parser, one serializer**: replaces the two divergent
   `ConditionList` implementations. RigDJ's bracket-stripping/re-adding hack disappears
   because tokens survive the round trip typed instead of as strings.
 - Evaluation is pure: `Condition::eval(&self, state: &MatchState, side: Side, player: &str)
@@ -896,7 +896,7 @@ New implementation, all in-process:
   limiter DSP stage in `audio_engine`). Output protection also accounts for the final mixed
   signal after master/boost/chant gains: individually safe tracks can clip when they overlap.
   Normalization opt-out does not disable that protection.
-- **Volume model** — one formula instead of scattered slider/filter interactions.
+- **Volume model**: one formula instead of scattered slider/filter interactions.
   A track's effective gain in dB:
 
   ```
@@ -1095,7 +1095,7 @@ relaunch that loses the match). Rigdio's first-run offer to open its settings is
 | `write_song_title_log` | 0 | 0 off, N seconds, −1 whole song |
 | `fade` (per type + duration) | all on, 2s | |
 | default match type | Group | |
-| `music_library_folder` | — | autopilot team lookup (see "Autopilot") |
+| `music_library_folder` | - | autopilot team lookup (see "Autopilot") |
 | `autopilot_mode` | full | `full` / `co-pilot` / `assist` (highlight only) / `off` |
 | `autopilot_horn_delay` | 8s | announcement window between a detected goal and the horn |
 | `autopilot_horn_stop` | on | fade the goalhorn at the post-goal kickoff |
@@ -1117,20 +1117,20 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
 
 ## Improvements over Rigdio (summary)
 
-1. **Single binary** — libmpv-2.dll, ffmpeg.exe, the ffmpeg build script, PyInstaller
+1. **Single binary**: libmpv-2.dll, ffmpeg.exe, the ffmpeg build script, PyInstaller
    spec files, and UPX compression all disappear.
 2. **One typed condition model** with pure evaluation — no duplicate class hierarchies,
    no `eval()`, no UI calls inside domain logic, exceptions replaced by verdicts.
-3. **Event-driven engine** — the polling threads and `after()` loops become tweens,
+3. **Event-driven engine**: the polling threads and `after()` loops become tweens,
    callbacks, and frame-driven state checks; no global thread flags.
-4. **R128 loudness in-process** — better measurement (integrated LUFS + true peak) at
+4. **R128 loudness in-process**: better measurement (integrated LUFS + true peak) at
    zero subprocess cost, with a persistent cross-session cache and CLI pre-warming.
-5. **dB-native volume pipeline** — one composition formula; no mpv cubic conversion,
+5. **dB-native volume pipeline**: one composition formula; no mpv cubic conversion,
    no filter-string reapplication races.
 6. **Undo, reset, and team-slot swaps as plain state snapshots** on model data.
-7. **Suite integration** — settings section, theme, logging, and (via WASM) the
+7. **Suite integration**: settings section, theme, logging, and (via WASM) the
    browser build come from the platform.
-8. **Autopilot** — with the Match tracker running, team loading, scoring, goalhorns,
+8. **Autopilot**: with the Match tracker running, team loading, scoring, goalhorns,
    goal minutes, and event clips are driven by the game itself (manual override
    always available); upstream Rigdio at its most automated only had event clips, and
    the Rigdio fork adds team loading, the scorer's horn and stoppage chants over HTTP,

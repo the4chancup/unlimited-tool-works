@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Kit config editor plan
+# Unlimited Tool Works: Kit config editor plan
 
 This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
 shared by:
@@ -324,9 +324,9 @@ kit sections defer to this crate.
 
 ## Improvements over Kit Manager (summary)
 
-1. **The format is documented** — recovered once, written down here, implemented in
+1. **The format is documented**: recovered once, written down here, implemented in
    an open lib instead of a dead closed-source exe.
-2. **TOML configs in exports** — hand-editable, diffable, self-describing; binary
+2. **TOML configs in exports**: hand-editable, diffable, self-describing; binary
    only exists as a compile output and game-file import.
 
 ## Key decisions

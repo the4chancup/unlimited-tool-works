@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Pipeline
+# Unlimited Tool Works: Team compiler plan: Pipeline
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -77,11 +77,11 @@ runtime exists, the GUI disables the mode.
 
 What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
 
-- **Degraded run: promotion to `output/`** — the GUI offers **Retry** (for the locked case:
+- **Degraded run: promotion to `output/`**: the GUI offers **Retry** (for the locked case:
   the user closes PES and retries the deployment alone, no recompile) and **Open output
   folder** (a status-bar notice action after the run, and a permanent entry in the Compile
   dropdown).
-- **DpFileList upgrade** — with any of the preflight's DpFileList findings the GUI shows
+- **DpFileList upgrade**: with any of the preflight's DpFileList findings the GUI shows
   **Upgrade DpFileList**, which asks before it writes. The dialog is honest about the override:
   it lists every installed entry that the official list does not contain and that is not
   renamed as "will no longer be loaded", and shows every rename before anything is done.
@@ -89,7 +89,7 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   For each entry the dialog lists as "will no longer be loaded" whose `.cpk` still sits in
   `download/`, it shows the size and offers deletion, since renaming a 3.7 GB file as a backup
   is pointless. The user confirms per file, and nothing is deleted without that confirmation.
-- **Destination writability preflight** — the two failure modes users actually hit are
+- **Destination writability preflight**: the two failure modes users actually hit are
   detectable long before Compile:
   - the download folder needs elevation because PES sits under `Program Files`;
   - the old CPK is locked because PES is still running.
@@ -111,13 +111,13 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   The button stays enabled, since the user may close PES during the compile. The exception is
   the elevation case: compiling first would waste the run (relaunching loses it), so the click
   prompts for elevation up front.
-- **The savefile in the preflight** — the save's header is read with the destination preflight
+- **The savefile in the preflight**: the save's header is read with the destination preflight
   (live in the GUI, before any export is read in the CLI), so a save of another version or a
   damaged one (`savefile_invalid`) is reported before minutes of compiling rather than rolling
   the deployment back at the end. The end-of-run read stays as it is, since the file can change
   between the two. With `savefile_path = auto` the preflight rarely finds anything, which costs
   one header read.
-- **Run PES** — optional launch of `PES20{version}.exe`, only after the complete deployment
+- **Run PES**: optional launch of `PES20{version}.exe`, only after the complete deployment
   transaction succeeds. Built in Phase 8 together with sideload mode's Launch PES button, as one
   launcher: both start the same exe the same way, and the GUI phase is where its only manual
   check lives.

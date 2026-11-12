@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Match tracker plan: Match files
+# Unlimited Tool Works: Match tracker plan: Match files
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

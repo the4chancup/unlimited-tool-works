@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Save editor plan
+# Unlimited Tool Works: Save editor plan
 
 ## Background: 4ccEditor
 
@@ -67,7 +67,7 @@ implementation is measured against.
 |-----------|------|
 | AATF: current team / select teams | Kept (rules become configurable — see below) |
 | Compare EDITs | Kept, merged with Midcupping's aesthetics diff (see "Comparator") |
-| — | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses — added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
+| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses — added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
 
 ### New (from Midcupping)
 

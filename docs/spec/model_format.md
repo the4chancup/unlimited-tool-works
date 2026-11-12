@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Unified model format plan
+# Unlimited Tool Works: Unified model format plan
 
 ## A model folder
 
@@ -423,12 +423,12 @@ are dropped for that engine (`material_texture_unused`, I):
 | `base` | `Base_Tex_SRGB` (`Base_Tex_LIN` when `[fox] base_linear = true`) | `DiffuseMap` (`srgb="1"`) | required: `material_texture_not_found` |
 | `normal` | `NormalMap_Tex_NRM` | `NormalMap` (`srgb="0"`) | Fox, `shaded` and `metal`: game `dummy_nrm`; pre-Fox: no sampler |
 | `specular` | `SpecularMap_Tex_LIN` | `SpecularMap` (`srgb="1"`) | Fox, `shaded` and `metal`: game `dummy_srm`; pre-Fox: no sampler |
-| `metalness` | `MetalnessMap_Tex_LIN` | — | none |
-| `environment` | — | `EnvironmentMap` (`srgb="0"`, `minfilter="anisotropic"`, wrap addressing, `maxaniso="2"`) — the `R` in `Basic_CNSR` | `metal` family: the template environment map, emitted into the player's common textures like any other fallback texture; else none |
-| `reflection` | `GlassReflection_Tex_SRGB` | — | none |
-| `reflection_mask` | `GlassReflectionMask_Tex_LIN` | — | none |
-| `detail_material` | — | `DetailMaterialMap` | none |
-| `detail_normal` | — | `DetailNormalMap` | none |
+| `metalness` | `MetalnessMap_Tex_LIN` | - | none |
+| `environment` | - | `EnvironmentMap` (`srgb="0"`, `minfilter="anisotropic"`, wrap addressing, `maxaniso="2"`) — the `R` in `Basic_CNSR` | `metal` family: the template environment map, emitted into the player's common textures like any other fallback texture; else none |
+| `reflection` | `GlassReflection_Tex_SRGB` | - | none |
+| `reflection_mask` | `GlassReflectionMask_Tex_LIN` | - | none |
+| `detail_material` | - | `DetailMaterialMap` | none |
+| `detail_normal` | - | `DetailNormalMap` | none |
 
 The one set of **reserved stems** a toml may name without a file behind them is the kit
 stand-in, the `team_kit*` and `team_gk_kit*` family, substituted by the modded exes (see

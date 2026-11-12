@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Model conversion plan: glTF source
+# Unlimited Tool Works: Model conversion plan: glTF source
 
 ## glTF as the universal model source
 

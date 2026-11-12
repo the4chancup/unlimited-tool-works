@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Distribution and updates
+# Unlimited Tool Works: Core plan: Distribution and updates
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -111,10 +111,10 @@ Visual C++ redistributable installed.
 
 Settings and data live in one of two locations:
 
-- **Next to the executable** — a `data/` subfolder beside the binary. Fully portable: the folder
+- **Next to the executable**: a `data/` subfolder beside the binary. Fully portable: the folder
   carries the program and everything it persists; deleting it removes the program completely, moving
   it moves everything.
-- **In the user config directory** — `%APPDATA%\unlimited-tool-works` on Windows, `~/.config/unlimited-tool-works` on
+- **In the user config directory**: `%APPDATA%\unlimited-tool-works` on Windows, `~/.config/unlimited-tool-works` on
   Linux (via the `directories` crate). Survives deleting or replacing the program folder.
 
 Resolution at startup is **presence-based, no marker files** (EGG's mechanism):
@@ -154,8 +154,8 @@ Stored with the settings (common settings, `studio_core`):
 |-----|----------------|---------|
 | `check_for_updates` | `updates_check` ini key | `true` |
 | `check_interval_minutes` | hardcoded 60 minutes | `120`: minutes between release checks |
-| `last_update_check` | `state/update_check_last.txt` | — |
-| `skipped_version` | `state/update_skip_last.txt` | — |
+| `last_update_check` | `state/update_check_last.txt` | - |
+| `skipped_version` | `state/update_skip_last.txt` | - |
 
 This closes out Red's entire `Engines/state/` folder — the remaining five files either became
 settings or lost their reason to exist:

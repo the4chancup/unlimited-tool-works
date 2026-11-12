@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Balls compiler plan
+# Unlimited Tool Works: Balls compiler plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -58,14 +58,14 @@ implementation:
   `fmdl_id_change.py` → the `fmdl` crate's texture-path rewriting (the same
   mechanism the Team compiler uses); the admin batch dance → the `elevation` lib.
 - **Temp folders** → in-memory processing (`vtree`), like every suite compiler.
-- **The DpFileList appender** — dropped deliberately. Red removed its own appender
+- **The DpFileList appender**: dropped deliberately. Red removed its own appender
   ("Please never modify your dpfl") and the suite's policy is **check-only**. The
   Balls compiler reports equivalent tool-owned codes
   (`balls_dpfilelist_missing` / `balls_cpk_name_unlisted`) rather than reusing
   Team-compiler catalog identities.
-- **`ball.fpk.xml`** — pure GzsTool boilerplate (a one-entry manifest), generated
+- **`ball.fpk.xml`**: pure GzsTool boilerplate (a one-entry manifest), generated
   internally now; no longer part of the format.
-- **`name.txt` shipped inside the CPK** — a 2.03 artifact (the batch moved it into
+- **`name.txt` shipped inside the CPK**: a 2.03 artifact (the batch moved it into
   the packed tree); the new output omits it.
 
 ## The balls export (the format)
@@ -113,7 +113,7 @@ Improvements over the 2.03 folder format:
   FTEX→DDS for pre-Fox).
 - **Folder names may contain spaces** (a batch tokenization limit, not a format
   need).
-- **`name.txt` is optional** — the folder name is the fallback display name. The
+- **`name.txt` is optional**: the folder name is the fallback display name. The
   name is the file's text with a UTF-8 byte-order mark dropped and trimmed at both
   ends; a line break left inside it is an error naming the file.
 
@@ -157,7 +157,7 @@ dependencies, decoded/converted intermediates, and packed output until the write
 
 For each listed ball at 1-based position N (id `ball%03d`):
 
-1. **Model selection and dependency resolution** — pick the target version's format;
+1. **Model selection and dependency resolution**: pick the target version's format;
    convert via the IR if only another format is present; error if none is. A pre-Fox
    representation is an atomic `ball.model` + `ball.mtl` bundle: a missing or invalid
    MTL makes that representation unavailable, and FMDL/glTF→pre-Fox produces and
@@ -194,12 +194,12 @@ For each listed ball at 1-based position N (id `ball%03d`):
    `common/render/model/ball/ballXXX/`. No id rewriting — the `.mtl` uses relative
    `./` texture paths. Any other file in the folder is `file_not_used` (W): 2.03 copied
    the whole folder, `name.txt` and stray files included.
-4. **Thumbnail** — emit as `common/render/thumbnail/ball/ball_%03d.dds` (missing:
+4. **Thumbnail**: emit as `common/render/thumbnail/ball/ball_%03d.dds` (missing:
    warning, ball kept, slot has no menu image — 2.03's behavior).
-5. **Bins** — build `Ball.bin` (see the format reference below) with number = menu
+5. **Bins**: build `Ball.bin` (see the format reference below) with number = menu
    order = N and the display name; copy the embedded `BallCondition.bin` template
    verbatim; both to `common/etc/pesdb/`.
-6. **CPK** — validate the configured name as shared `pipeline::CpkStem`, pack everything into
+6. **CPK**: validate the configured name as shared `pipeline::CpkStem`, pack everything into
    one CPK (`cpk` crate; default stem `4cc_38_balls`), deploy it to the download folder
    (`elevation` lib when needed), and **check** the name is listed in `DpFileList.bin` — never
    write to it.
@@ -380,14 +380,14 @@ Phase 14 in the core plan's Development Plan. Needs the format/archive libs and
 
 ## Open questions
 
-- **`Ball.bin` name encoding on the game side** — 2.03 passed `name.txt`'s raw
+- **`Ball.bin` name encoding on the game side**: 2.03 passed `name.txt`'s raw
   bytes through, so the field's encoding was whatever the file was saved in; the
   shipped sample names are all ASCII. Whether PES decodes non-ASCII names as UTF-8
   (or a legacy codepage) needs an in-game test with a known non-ASCII name before
   the validator's byte-count limit is finalized.
-- **`BallCondition.bin` semantics** — the records' codes are undecoded (the format
+- **`BallCondition.bin` semantics**: the records' codes are undecoded (the format
   reference above gives the layout). Carrying the template verbatim matches 2.03 and works
   in-game; decoding is only needed if a future feature wants to edit it.
-- **Pre-Fox version quirks** — 2.03 treated PES 14–17 as one path and never
+- **Pre-Fox version quirks**: 2.03 treated PES 14–17 as one path and never
   zlib-compressed ball DDS textures (unlike the Team compiler's optional PES ≤17
   compression). Assumed fine as-is until a version-specific issue surfaces.

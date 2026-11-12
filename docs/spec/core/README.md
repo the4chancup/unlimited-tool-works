@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan
+# Unlimited Tool Works: Core plan
 
 This is the core architectural plan for Unlimited Tool Works: the goals, the platform (crate
 structure, tool plugin system, GUI shell, parallelism), and the cross-cutting
@@ -62,7 +62,7 @@ Three prior compiler implementations exist:
 
 | Version | Language | Status | Location |
 |---------|----------|--------|----------|
-| Original | Batch file | Obsolete, rudimentary | — |
+| Original | Batch file | Obsolete, rudimentary | - |
 | Red | Python | Mature, feature-complete; direct batch translation, works by moving files on storage | `4cc-aet-compiler-red` |
 | Blue | Python (free-threaded 3.14t) | LLM-made prototype of an in-memory parallel pipeline; missing referee support | `4cc-aet-compiler-blue` |
 

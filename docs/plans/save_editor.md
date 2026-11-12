@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Save editor plan
+# Unlimited Tool Works: Save editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -633,7 +633,7 @@ side.
     PES 2017 save in a release build. On the UI thread they made each wheel notch over a stat
     box cost over 100 ms, three times that under CPU load. Until the new badge lands the same
     player's kept one stays drawn, and another player's or ruleset's draws nothing.
-  - **Appearance** — first a **Cutscenes** group, star (19+) and playing attitude (20+),
+  - **Appearance**: first a **Cutscenes** group, star (19+) and playing attitude (20+),
     outside the aesthetics lock: they change only cutscenes, so they are no aesthetic the
     export owns. Then the ownership line, the switch and the locked groups, each group's
     labels in their own aligned cells, the draft's pairs per row (physique two, the strip's
@@ -1907,9 +1907,9 @@ the editor exposes them as:
   So organizers retype each name (`/gsg/`) after importing the cup's Texports in game; the
   other versions likely do the same, unconfirmed (worklog 8.9k5 k5g). Editing that bin, which
   would spare them, is future work with no plan yet.
-- **Aesthetics patch apply** — see "Read-only aesthetics"; the patch is written by the Team
+- **Aesthetics patch apply**: see "Read-only aesthetics"; the patch is written by the Team
   compiler, never by the editor.
-- **`settings.toml` generation** — per player folder, for migrating a team to the
+- **`settings.toml` generation**: per player folder, for migrating a team to the
   [Team compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
   through the aesthetics patch). Uses the shared authorable `PlayerSettings` subset;
   boots/gloves IDs are emitted only when they name a stock model (1 to 100), since custom IDs

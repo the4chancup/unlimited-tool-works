@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Plan index
+# Unlimited Tool Works: Plan index
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

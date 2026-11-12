@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan: color_tools
+# Unlimited Tool Works: Library crates plan: color_tools
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -95,7 +95,7 @@ at any size.
 Two render modes:
 
 - the **full shirt shape** (the editor's icon gallery);
-- **pattern-only** — just the two-color fill pattern as a flat square swatch, for sizes where
+- **pattern-only**: just the two-color fill pattern as a flat square swatch, for sizes where
   a shirt silhouette would turn to mush (the Team compiler's grid cells).
 
 The pattern shapes are transcribed from the PES 15 settings reference sheet (`Kiticons.png`,

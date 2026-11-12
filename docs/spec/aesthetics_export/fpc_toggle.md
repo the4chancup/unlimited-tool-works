@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Aesthetics export plan: FPC toggle
+# Unlimited Tool Works: Aesthetics export plan: FPC toggle
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -14,11 +14,11 @@ Setting it through individual `settings.toml` keys would be error-prone. Instead
 folder-level toggle, consistent with the principle that the folder view tells the whole story
 about how the player's models render:
 
-- **`fpc_on`** — an empty marker file in a player folder. When present, the compile applies the
+- **`fpc_on`**: an empty marker file in a player folder. When present, the compile applies the
   **FPC enable preset** from `libs/fpc` to the player's settings (the same
   preset the save editor's FPC toggle uses — one implementation, so the two tools can never drift);
   they reach the game like every other setting, through the aesthetics patch.
-- **`fpc_off`** — applies the disable preset (visible defaults) instead. Since an absent key takes
+- **`fpc_off`**: applies the disable preset (visible defaults) instead. Since an absent key takes
   its default, it differs from no marker only in these cases:
   - where an authored strip key, or an authored custom skin (7, PES 15 to 17, which the preset
     resets to 1), would otherwise apply;

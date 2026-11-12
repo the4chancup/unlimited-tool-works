@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Match tracker plan: Match feed
+# Unlimited Tool Works: Match tracker plan: Match feed
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -278,14 +278,14 @@ Each `FeedEvent` variant's automation eligibility and embedded snapshot payload:
 | `Snapshot` | Yes (replay) | No | Reflects current `score_authority` |
 | `TeamsDetected` | No | No | No authority (setup only) |
 | `MatchLive` | Yes | No | Acquires |
-| `Goal` | No | Yes (if live provenance) | — |
-| `GoalAmended` | No | No (presentation only) | — |
-| `ScoreReconciled` | Yes | No | — |
-| `OwnGoal` | No | Yes (if live provenance) | — |
-| `Card` | No | Yes (if live provenance) | — |
-| `SubOn` | No | Yes (if live provenance) | — |
-| `ClockStarted` | No | No | — |
-| `ClockStopped` | No | No | — |
+| `Goal` | No | Yes (if live provenance) | - |
+| `GoalAmended` | No | No (presentation only) | - |
+| `ScoreReconciled` | Yes | No | - |
+| `OwnGoal` | No | Yes (if live provenance) | - |
+| `Card` | No | Yes (if live provenance) | - |
+| `SubOn` | No | Yes (if live provenance) | - |
+| `ClockStarted` | No | No | - |
+| `ClockStopped` | No | No | - |
 | `MatchSuspended { SourceLoss }` | No | No (pauses) | Retains |
 | `MatchSuspended { UserStopped }` | No | No (cancels) | Releases |
 | `MatchResumed` | Yes | No | Acquires |

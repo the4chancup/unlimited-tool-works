@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan
+# Unlimited Tool Works: Team compiler plan
 
 The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK

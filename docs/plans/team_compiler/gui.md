@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: GUI grid
+# Unlimited Tool Works: Team compiler plan: GUI grid
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -348,7 +348,7 @@ between the old and new color over a few frames in the update loop (~10 lines).
 
 A single primary action:
 
-- **Compile** — the only button in the default view. During a run it becomes **Cancel**.
+- **Compile**: the only button in the default view. During a run it becomes **Cancel**.
 
   It is a **split button**: the main part runs the compile in the *current output mode*, the
   arrow part opens the mode list (see "Output modes and targets" in the Writer section):
@@ -384,7 +384,7 @@ A single primary action:
   The button carries the **destination writability badge** (PES running / elevation needed;
   see `spec/team_compiler/pipeline.md` "Post-processing") with the reason and remedy in its
   tooltip, and its dropdown always contains **Open output folder**.
-- **Run strip** — a one-line bar next to the button: current stage, elapsed time, files written,
+- **Run strip**: a one-line bar next to the button: current stage, elapsed time, files written,
   memory in use. (The one name for it across the plans: "strip" alone means a kit here, and
   "status strip" would be confused with the shell's status bar.) The core plan's current
   `Progress { processed, total }` payload is insufficient; extend it with these metrics or add

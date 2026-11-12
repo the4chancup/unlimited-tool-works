@@ -1,4 +1,4 @@
-# Unlimited Tool Works — DB generator plan
+# Unlimited Tool Works: DB generator plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -43,7 +43,7 @@ What the scripts produce, per version 15–21, into `database_NN/`:
 | `common/etc/pesdb/PlayerAssignment.bin` | 23 per team | assignment index, player id, team id, order (0-based on 19+, 1-based before) |
 | `common/etc/pesdb/Coach.bin` | one per team | manager id = team id, nationality 231, `マネージャー` / `MANAGER` |
 | `common/etc/pesdb/CompetitionEntry.bin` | one per team | team id, entry index, competition id and the team's order within it; competition 9 = the cup, 10 = Invitational, 11 = VGL, 12 = Backup, classified by the team's name |
-| blank files | — | every other table the version's game expects to find, as an empty file, so Konami's rows are cleared (the numbered `Team1.bin`..`Team6.bin` siblings included on 15–20; the myClub and Weekly tables where the version has them) |
+| blank files | - | every other table the version's game expects to find, as an empty file, so Konami's rows are cleared (the numbered `Team1.bin`..`Team6.bin` siblings included on 15–20; the myClub and Weekly tables where the version has them) |
 
 The scripts stop short of a complete database on purpose: `Country*.bin`, `Competition*.bin`,
 `CompetitionKind*.bin`, `CompetitionRegulation*.bin` are Konami's and must be copied from the
@@ -111,11 +111,11 @@ Inputs:
 
 Outputs (each an independent action, all three in one run by default):
 
-1. **Database tree** — `database_NN/common/etc/pesdb/*.bin` and
+1. **Database tree**: `database_NN/common/etc/pesdb/*.bin` and
    `database_NN/common/character0/model/character/appearance/PlayerAppearance.bin`, byte-identical
    to the scripts' output for the same teams list (see "Verification"), plus the Konami tables
    when an install is available.
-2. **Database CPK** — the tree packed with `libs/cpk`; file name is an Open question.
+2. **Database CPK**: the tree packed with `libs/cpk`; file name is an Open question.
 3. **Populated EDIT** (19–21) — the given EDIT with the player section filled and the count set,
    written next to the input with the suite's `.bak` rule (`pes_savefile::EditFile::save`).
 

@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Aesthetics export plan: Player folders
+# Unlimited Tool Works: Aesthetics export plan: Player folders
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -826,7 +826,7 @@ byte-identical files are one portrait.
 
 At compile time, the pipeline:
 
-0. **Hand auto-split** — in-process in Rust via `model_convert`, select each hand's vertices with
+0. **Hand auto-split**: in-process in Rust via `model_convert`, select each hand's vertices with
    positive `skh_*_l`/`skh_*_r` weights, grow the selection once along the mesh topology, and
    separate it into `glove_l`/`glove_r`, leaving the body. This is equivalent to Blender's select
    → `Ctrl +` → `P` workflow, not an invocation of Blender (see "Hand auto-split" in the [Model

@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: GUI design
+# Unlimited Tool Works: Core plan: GUI design
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -210,7 +210,7 @@ is each tool's.
 
 Top to bottom:
 
-1. **4cc logo** — the 4cc clover (the maintainer's `4cc-cloverleaf-logo.svg`: a dark green
+1. **4cc logo**: the 4cc clover (the maintainer's `4cc-cloverleaf-logo.svg`: a dark green
    ring, `#129648`, around four light green leaves, `#8cc642`, the inside left clear), 28
    points across in the 32-point square the hover fills, the same in both themes since it
    is the cup's mark. The square keeps its place when the sidebar opens, centred in the
@@ -239,7 +239,7 @@ Top to bottom:
    No version is shown beside the logo itself: the status bar already shows it 300 px away, and
    the icon rail has no room for it, so it would be the one element that came and went with the
    hover.
-2. **PES version selector** — a *global* setting, not per-tool: the Team compiler targets it, the
+2. **PES version selector**: a *global* setting, not per-tool: the Team compiler targets it, the
    save editor uses it as a selection/default hint (an open save keeps its detected schema), and
    integrated conversion uses it as the destination format.
 
@@ -284,7 +284,7 @@ Top to bottom:
 
      The action is offered only when the exe's folder is a folder on this system: under Wine or
      Proton the probe reports the game's Windows path, which a Linux setting cannot use.
-3. **Tool list** — vertical nav, one entry per tool: its icon at **24 points**, its label in the
+3. **Tool list**: vertical nav, one entry per tool: its icon at **24 points**, its label in the
    body text beside it once the sidebar opens (item 4), 6 points after the icon's 24-point box
    with 6 points of the row after the longest label (the draft's `.sidebar .tool` gap and
    `.rail .sel` padding), populated from the registered `StudioTool` list.
@@ -316,7 +316,7 @@ Top to bottom:
 
    The mark is the registry's, in `studio`, not a `StudioTool` method: which tools a build
    shows is the build's choice, and the preview's list goes when the views land.
-4. **A rail that opens on hover** — the sidebar is always an icon-only rail (~56 px) beside the
+4. **A rail that opens on hover**: the sidebar is always an icon-only rail (~56 px) beside the
    tool's view, which takes the rest of the window.
 
    The pointer resting on the rail opens the full sidebar (the labels, the version dropdown)

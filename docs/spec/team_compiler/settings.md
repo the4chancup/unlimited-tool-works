@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Settings
+# Unlimited Tool Works: Team compiler plan: Settings
 
 Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -14,19 +14,19 @@ settings** live in the Team compiler's own settings section.
 |---|---|---|
 | `pes_version` | 15 | Sidebar selector; 15–21. Unlimited Tool Works defaults to 19 as the version most relevant to the current community; derives `fox_mode` (≥18), per-version file extensions, game paths, bin names |
 | `pes_folder_path` | `C:\Program Files (x86)\Pro Evolution Soccer 20**` | `**` replaced with the version; derives `download/` path and `PES20{version}.exe` path. Empty off Windows, where no default install folder exists |
-| `pes_folders` | — | `[common.pes_folders]`, keyed by the version's number (`21 = '…'`); empty by default. A filled entry is that version's folder taken as written (no `**` expansion), overriding `pes_folder_path`; the settings menu's "A folder per version" rows |
+| `pes_folders` | - | `[common.pes_folders]`, keyed by the version's number (`21 = '…'`); empty by default. A filled entry is that version's folder taken as written (no `**` expansion), overriding `pes_folder_path`; the settings menu's "A folder per version" rows |
 | `exports_folder_path` | `exports/` | Watched by the GUI and scanned once by the CLI; belongs in `studio_core` so the Team, Refs, and Balls tools share one export source. Relative paths resolve **beside the executable** in both data-location modes (see "Path resolution"), so the folder sits next to `quick_compile.bat` like Red's `exports_to_add/` |
 | `thread_count` | 0 (auto) | Was a Blue CLI arg; auto = logical cores − 1 |
 | `memory_cap_percent` | 80.0 | Was a Blue CLI arg; memory budget cap, as a percent of the physical memory available at run start (`spec/libs/pipeline.md` "Memory cap"); `0 < percent <= 100` |
 | `check_for_updates` | 1 | Was per-compiler (`updates_check` in Red's ini); becomes a suite-wide update check |
 | `check_interval_minutes` | 60 minutes (hardcoded) | `120`: minutes between release checks. With `last_update_check` and `skipped_version` (both empty by default), the update state of `spec/core/distribution.md` "Update state" |
-| `last_update_check` | — | Update state (above): when the last release check ran. No row |
-| `skipped_version` | — | Update state (above): a release the member chose to skip. No row |
-| `theme` | — | `dark` or `light`, default `dark`: the GUI's color theme |
-| `last_tool` | — | The tool active when the GUI last closed, which it reopens; empty on a first run. Written by the shell, no row |
-| `window_main` | — | The main window's last place, `[x, y, width, height, scale, maximized]`, written when the window closes, the sixth number 1 when it was maximized (the first five then being the place its restore button gives back) and 0 when not; a record of five numbers reads as not maximized; empty until the first close. No row |
-| `fpc_hide_boots_id` | — | `55`: the boots ID the FPC hide preset writes, one the game has no boots model for |
-| `fpc_hide_gloves_id` | — | `11`: the gloves ID it writes (gloves 1 to 10 are the goalkeepers' real ones) |
+| `last_update_check` | - | Update state (above): when the last release check ran. No row |
+| `skipped_version` | - | Update state (above): a release the member chose to skip. No row |
+| `theme` | - | `dark` or `light`, default `dark`: the GUI's color theme |
+| `last_tool` | - | The tool active when the GUI last closed, which it reopens; empty on a first run. Written by the shell, no row |
+| `window_main` | - | The main window's last place, `[x, y, width, height, scale, maximized]`, written when the window closes, the sixth number 1 when it was maximized (the first five then being the place its restore button gives back) and 0 when not; a record of five numbers reads as not maximized; empty until the first close. No row |
+| `fpc_hide_boots_id` | - | `55`: the boots ID the FPC hide preset writes, one the game has no boots model for |
+| `fpc_hide_gloves_id` | - | `11`: the gloves ID it writes (gloves 1 to 10 are the goalkeepers' real ones) |
 
 ### Team compiler settings
 
@@ -37,10 +37,10 @@ differing new default is a deliberate decision, explained in the Controls column
 |---|---|---|---|
 | `cpk_name` | `4cc_90_test` | `4cc_99_test` | Single-CPK output `CpkStem` (shared validation contract in the Writer section); the new default is the official DpFileList's test entry (`pipeline.md` "DpFileList upgrade") |
 | `output_folder_path` | `patches_output/` (hardcoded) | `output/` | Root for promoted CPKs (degraded runs and `--no-deploy`), the `.staging/` folder, `test_output/`, and `teamnotes.txt`. Relative paths resolve **beside the executable** (Red's `patches_output/` in its new place; `%APPDATA%` is no place to look for a CPK) |
-| `savefile_path` | — | auto | `EDIT00000000` to update. `auto` runs `pes_savefile`'s discovery under the user's **Documents\KONAMI** folder for the selected version (the savefile is never inside the PES install, so `pes_folder_path` plays no part — see "Savefile discovery" in the Savefile spec); newest account wins when several exist (`savefile_autodetected`); nothing found → `savefile_missing` (Red never touches the savefile) |
+| `savefile_path` | - | auto | `EDIT00000000` to update. `auto` runs `pes_savefile`'s discovery under the user's **Documents\KONAMI** folder for the selected version (the savefile is never inside the PES install, so `pes_folder_path` plays no part — see "Savefile discovery" in the Savefile spec); newest account wins when several exist (`savefile_autodetected`); nothing found → `savefile_missing` (Red never touches the savefile) |
 | `multicpk_mode` | 0 | same | Cup DLC mode: team content into size-split `teams` parts + the bins CPK (see "Multi-CPK mode: teams parts"); replaces Red's faces/uniform/bins content split |
 | `teams_cpk_name` | `4cc_40_faces` + `4cc_45_uniform` | `teams` | Stem of the teams part slots; the slots themselves are every DpFileList entry matching `{prefix}_{NN}_{stem}` (`4cc_41_teams`, `4cc_42_teams`, …), ordered by number. A stem that is the bins CPK's own (`bins` for `4cc_08_bins`) is refused (exit code 2): the bins CPK would be a part too. Replaces `faces_cpk_name` and `uniform_cpk_name` |
-| `cpk_part_max_size` | — | `3221225472` (3 GiB) | Cap per teams part (TOC included); the writer places whole teams, rolling to the next slot when the next team would not fit — teams are never split across parts. Chosen comfortably under Git for Windows' 4 GiB object ceiling; five slots give 15 GiB. Written as a whole number of bytes, not as text like `3 GB`: a count needs no unit parser and leaves no doubt between GB and GiB, and the findings show it in KiB, MiB or GiB. Single-CPK runs are not split, only warned (`cpk_size_over_limit`) |
+| `cpk_part_max_size` | - | `3221225472` (3 GiB) | Cap per teams part (TOC included); the writer places whole teams, rolling to the next slot when the next team would not fit — teams are never split across parts. Chosen comfortably under Git for Windows' 4 GiB object ceiling; five slots give 15 GiB. Written as a whole number of bytes, not as text like `3 GB`: a count needs no unit parser and leaves no doubt between GB and GiB, and the findings show it in KiB, MiB or GiB. Single-CPK runs are not split, only warned (`cpk_size_over_limit`) |
 | `bins_cpk_name` | `4cc_08_bins` | same | Multi-CPK bins name |
 | `refs_cpk_name` | `4cc_35_referees` | `4cc_18_referees` | Referee CPK name, the new default the official DpFileList's. A name equal to `cpk_name`, or in multi-CPK mode to `bins_cpk_name` or one of the teams stem's slots (letter case aside), is refused as an invalid configuration (exit code 2): two writers on one file |
 | `dds_compression` | 0 | **auto** | WESYS-zlib every emitted DDS. Tri-state `auto` / `1` / `0`; `auto` **follows `multicpk_mode`**, since multi-CPK is the cup DLC workflow and containing the full-cup DLC's size is the whole point of the setting — a manager compiling one team gets no compression and no cost, a cup maintainer gets it without remembering a second switch. **Pre-Fox only (PES ≤17)**: on Fox versions the setting is ignored whatever its value, because FTEX conversion already provides the size reduction there and the game does not expect zlibbed FTEX. Cheap in-process either way (see "DDS compression cost" below) |

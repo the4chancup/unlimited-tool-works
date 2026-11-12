@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Savefile plan: Operations
+# Unlimited Tool Works: Savefile plan: Operations
 
 Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -158,10 +158,10 @@ every fixture save (a census of style × registered position: goalkeepers sit at
 | 15 | Build Up | Build Up | Build Up | Offensive Fullback |
 | 16 | *(unused: no player of either fixture save carries it)* | Offensive Goalkeeper | Offensive Fullback | Fullback Finisher |
 | 17 | Offensive Goalkeeper | Defensive Goalkeeper | Fullback Finisher | Defensive Fullback |
-| 18 | Defensive Goalkeeper | — | Defensive Fullback | Build Up |
-| 19 | — | — | Extra Frontman | Extra Frontman |
-| 20 | — | — | Offensive Goalkeeper | Offensive Goalkeeper |
-| 21 | — | — | Defensive Goalkeeper | Defensive Goalkeeper |
+| 18 | Defensive Goalkeeper | - | Defensive Fullback | Build Up |
+| 19 | - | - | Extra Frontman | Extra Frontman |
+| 20 | - | - | Offensive Goalkeeper | Offensive Goalkeeper |
+| 21 | - | - | Defensive Goalkeeper | Defensive Goalkeeper |
 
 A stored value outside the list (PES 15/16's 16 included) decodes to
 `CodecError::UnknownPlayingStyle { version, value }`, not to `None`: no real save carries one,

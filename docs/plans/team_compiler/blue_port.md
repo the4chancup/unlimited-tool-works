@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Blue features to port
+# Unlimited Tool Works: Team compiler plan: Blue features to port
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
