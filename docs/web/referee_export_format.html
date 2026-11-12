@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The referee export in the UTW format: what changed</title>
+<style>
+/* Dark by default; the button switches to light, remembered in this browser. The two hues
+   (gone, new) are always paired with a word or a sign, never the only cue. */
+:root { --page: #1a1a19; --text: #e6e6e3; --soft: #b4b4ae; --hint: #85857f;
+  --box: #242422; --line: #8c8c86; --code: #2c2c29; --rule: #3a3a37;
+  --gone: #e0734a; --new: #2fb27f; --accent: #3987e5; }
+:root[data-theme="light"] { --page: #fcfcfb; --text: #20201e; --soft: #4a4a46; --hint: #7a7a74;
+  --box: #ffffff; --line: #8a8a84; --code: #f0efec; --rule: #dddcd8;
+  --gone: #b8481f; --new: #127a52; --accent: #2a78d6; }
+body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; color: var(--text);
+  background: var(--page); line-height: 1.5; }
+main { max-width: 1040px; margin: 0 auto; padding: 28px 24px 60px; }
+h1 { font-size: 26px; margin: 0 0 6px; }
+h2 { font-size: 19px; margin: 40px 0 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+p, li { font-size: 15px; color: var(--soft); max-width: 860px; }
+p.lead { font-size: 16px; color: var(--text); }
+code { background: var(--code); padding: 0 4px; border-radius: 3px; font-size: 13.5px;
+  color: var(--text); font-family: Consolas, "Cascadia Mono", monospace; }
+#theme { position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
+  color: var(--text); background: var(--code); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+table { border-collapse: collapse; margin: 12px 0; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px;
+  border-bottom: 1px solid var(--rule); }
+th { color: var(--text); font-weight: 600; }
+td { color: var(--soft); }
+td:first-child { color: var(--text); }
+.callout { border-left: 4px solid var(--accent); background: var(--box); padding: 10px 16px;
+  margin: 16px 0; border-radius: 0 4px 4px 0; }
+.callout p { margin: 4px 0; color: var(--text); }
+.trees { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0 6px; }
+@media (max-width: 760px) { .trees { grid-template-columns: 1fr; } }
+.tree { background: var(--box); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 12px 16px; }
+.tree h3 { font-size: 15px; margin: 0 0 8px; }
+pre { margin: 0; font-family: Consolas, "Cascadia Mono", monospace; font-size: 13.5px;
+  line-height: 1.55; color: var(--text); white-space: pre; overflow-x: auto; }
+pre .hint { color: var(--hint); }
+pre .gone { color: var(--gone); }
+pre .new { color: var(--new); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13.5px; color: var(--soft);
+  margin: 4px 0 0; }
+.legend .gone { color: var(--gone); } .legend .new { color: var(--new); }
+pre.block { background: var(--box); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px; margin: 12px 0; max-width: 860px; }
+</style></head>
+<body>
+<button id="theme" type="button">Light</button>
+<main>
+
+<h1>The referee export in the UTW format</h1>
+<p class="lead">The referee export is the folder whose name starts with <code>refs</code>
+(such as <code>refs Spring</code>): the referees' faces, boots and gloves, and the list
+saying which referee fills which of the game's 35 referee slots. Unlimited Tool Works
+compiles it in the <strong>UTW format</strong>, which lays it out like a team's export. This
+page shows what changed from the previous layout (the AET format, the one Red compiles) and
+how an old referee export is upgraded.</p>
+
+<div class="callout">
+<p><strong>In one sentence:</strong> <code>refs.txt</code> becomes <code>players.txt</code>,
+and each referee's <code>face</code>, <code>boots</code>, <code>gloves</code> and
+<code>common</code> subfolders are folded into the referee's own folder. Everything else
+stays where it was.</p>
+</div>
+
+<h2>The two layouts side by side</h2>
+
+<div class="trees">
+<div class="tree">
+<h3>Previous (AET format)</h3>
+<pre>refs Spring/
+├── <span class="gone">refs.txt</span>             <span class="hint">slot → referee</span>
+├── ref_marker.dds
+├── Common/              <span class="hint">optional</span>
+│   └── refkit/          <span class="hint">PES 15-17 body</span>
+└── Players/
+    ├── tsuoffside/
+    │   ├── <span class="gone">face/</span>
+    │   │   ├── face.xml
+    │   │   ├── face_high_win32.model
+    │   │   └── face_bsm.dds
+    │   ├── <span class="gone">boots/</span>
+    │   │   └── oral_boots_win32.model
+    │   ├── <span class="gone">gloves/</span>
+    │   │   └── glove_l.model ...
+    │   └── <span class="gone">common/</span>
+    │       └── shirt.dds
+    └── galosengen/
+        └── ...</pre>
+</div>
+<div class="tree">
+<h3>New (UTW format)</h3>
+<pre>refs Spring/
+├── <span class="new">players.txt</span>          <span class="hint">slot → referee</span>
+├── ref_marker.dds
+├── Common/              <span class="hint">optional</span>
+│   └── refkit/          <span class="hint">PES 15-17 body</span>
+└── Players/
+    ├── tsuoffside/      <span class="new">one flat folder</span>
+    │   ├── face.xml
+    │   ├── face_high_win32.model
+    │   ├── face_bsm.dds
+    │   ├── oral_boots_win32.model
+    │   ├── glove_l.model ...
+    │   └── shirt.dds
+    └── galosengen/
+        └── ...</pre>
+</div>
+</div>
+<p class="legend"><span class="gone">Orange: gone in the new layout.</span>
+<span class="new">Green: new.</span> <span>The rest is unchanged.</span></p>
+<p>The file names are examples. A PES 18-21 export holds <code>.fmdl</code> and
+<code>.ftex</code> files in the same places.</p>
+
+<h2>What is different</h2>
+<table>
+<tr><th>What</th><th>Previous (AET format)</th><th>New (UTW format)</th></tr>
+<tr><td>The slot list</td>
+<td><code>refs.txt</code> at the root. Some older exports call it
+<code>Refs list.txt</code>.</td>
+<td><code>players.txt</code> at the root, the same file a team's export may use. It is
+required: the referees' folders carry no numbers, so the list is the only place that says
+who fills which slot.</td></tr>
+<tr><td>Inside a referee's folder</td>
+<td>Four subfolders: <code>face</code>, <code>boots</code>, <code>gloves</code> and
+<code>common</code>.</td>
+<td>No such subfolders. The models, textures and <code>face.xml</code> stand directly in the
+referee's folder, exactly as in a team player's folder.</td></tr>
+<tr><td>How a file's kind is told</td>
+<td>By the subfolder it is in: whatever lies in <code>boots</code> is boots.</td>
+<td>By the file's own name (<code>boots.fmdl</code>, <code>oral_boots_win32.model</code>,
+<code>glove_l.model</code>), as for a team player.</td></tr>
+<tr><td>Where the referees' folders stand</td>
+<td>In <code>Players/</code>. The oldest exports (the <code>Refs list.txt</code> ones) have
+them directly in the export.</td>
+<td>Always in <code>Players/</code>.</td></tr>
+<tr><td>A model several referees share</td>
+<td>Copied into each referee's folder.</td>
+<td>Copied as before, or kept once in a shared <code>Boots/</code>, <code>Gloves/</code> or
+<code>Faces/</code> folder at the root and linked from a referee's folder with an empty
+file named after it (<code>Crocs.boots</code>), as in a team's export.</td></tr>
+<tr><td>The referee marker on PES 18-21</td>
+<td>Red wrote <code>ref_marker.dds</code> into the game's own
+<code>dt00_x64.cpk</code>, after asking.</td>
+<td>The marker goes into the referees' CPK and no game file is written. See "The referee
+marker" below.</td></tr>
+</table>
+
+<h2>What stays the same</h2>
+<ul>
+<li><strong>The name.</strong> The export's name starts with <code>refs</code>. It takes no
+<code>Full</code> or <code>Midcup</code> word, unlike a team's export.</li>
+<li><strong>The 35 slots.</strong> The game has 35 referee slots and picks among them for
+each match. Listing one referee under several slots is still how you make that referee
+more frequent, and one listed once is rare.</li>
+<li><strong><code>ref_marker.dds</code></strong> at the root, same file, same place.</li>
+<li><strong><code>Common/</code></strong> and, on PES 15-17, <code>Common/refkit/</code>:
+the referees' body. Its files replace the built-in ones of the same name, and the built-in
+files you do not replace stay.</li>
+<li><strong>No savefile.</strong> A referee has no record in the save, so neither the
+upgrade nor the compile of a referee export reads one.</li>
+<li><strong>The result in game.</strong> The referees compile into a CPK of their own,
+as before.</li>
+</ul>
+
+<h2>The slot list, <code>players.txt</code></h2>
+<p>One line per slot: the slot's number, a space, then the name of the referee's folder in
+<code>Players/</code>.</p>
+<pre class="block">01 tsuoffside
+02 tsuoffside
+03 tsuoffside
+04 galosengen
+05 galosengen
+06 linesman bob
+...
+35 galosengen</pre>
+<ul>
+<li>Slots run from 01 to 35, each listed once at most. The list need not fill all 35.</li>
+<li>The same folder may appear on as many lines as you like.</li>
+<li>The folder's name is everything after the number, spaces included. Upper and lower
+case do not matter.</li>
+<li>Plain text saved as UTF-8. Blank lines are skipped. There are no comment lines.</li>
+<li>Every folder in <code>Players/</code> must be listed at least once, and the list must
+name at least one referee.</li>
+</ul>
+<p>An old <code>refs.txt</code> has the same lines, so the upgrade carries it over
+unchanged apart from the file's name and two-digit slot numbers.</p>
+
+<h2>Upgrading an old referee export</h2>
+<p>The referee export takes no savefile, so <code>quick_upgrade.bat</code> lists it as not
+upgraded. Upgrade it with its own command, from a console opened in the folder that holds
+<code>UTW.exe</code>, with your export's name in place of <code>refs Spring</code>:</p>
+<pre class="block">UTW.exe export-upgrader upgrade "old_exports\refs Spring" -o exports</pre>
+<p>The old export is never changed. The upgraded copy is written into
+<code>exports</code> under the same name. What the upgrade does:</p>
+<ul>
+<li>writes <code>players.txt</code> from <code>refs.txt</code> (or from
+<code>Refs list.txt</code> when there is no <code>refs.txt</code>), and leaves the old list
+out of the copy;</li>
+<li>folds each referee's <code>face</code>, <code>boots</code>, <code>gloves</code> and
+<code>common</code> subfolders into the referee's folder, without renaming any file;</li>
+<li>keeps a file once when two of those subfolders hold it with the same content;</li>
+<li>rewrites the paths inside the referee's <code>face.xml</code>, <code>.mtl</code> and
+model files so they still point at the moved files;</li>
+<li>moves referee folders that stood directly in the export into <code>Players/</code>;</li>
+<li>gives a referee a link file (<code>whistle.dds.common</code>) for a texture it takes
+from the export's <code>Common/</code>, as a team player's folder has;</li>
+<li>carries <code>ref_marker.dds</code> and <code>Common/</code> over, and drops a Team
+Note file with a warning, since nothing ever read one in a referee export.</li>
+</ul>
+<p>The upgrade never guesses. In the cases below it names the file, writes nothing and
+ends with an error, so you fix the old export and run the command again:</p>
+<table>
+<tr><th>In the old export</th><th>Why it stops</th></tr>
+<tr><td>Two of a referee's subfolders hold a file of the same name with different
+content, or two textures of the same name in different formats (<code>hair.dds</code> and
+<code>hair.ftex</code>)</td>
+<td>Only one of the two can stand in the flat folder, and the upgrade cannot know
+which.</td></tr>
+<tr><td>A <code>face</code>, <code>boots</code>, <code>gloves</code> or <code>common</code>
+folder inside one of those four (<code>Face/face/</code>)</td>
+<td>Folded, it would be the old layout again.</td></tr>
+<tr><td>A model in a referee's <code>common</code> that none of the referee's
+<code>face.xml</code> files names</td>
+<td>It was never shown in game, and in a flat folder it would become part of the
+face.</td></tr>
+<tr><td>No <code>refs.txt</code> and no <code>Refs list.txt</code></td>
+<td>There is no slot list to carry over.</td></tr>
+<tr><td>A slot list that is not valid UTF-8 text</td>
+<td>The referees' names cannot be read.</td></tr>
+</table>
+<p>The compile does not read the old layout. A referee folder that still has one of the
+four subfolders is refused there by name (<code>player_layout_proto</code>), with a
+pointer to the upgrade.</p>
+
+<h2>Making one directly in the new format</h2>
+<p>Build each referee's folder as you would a team player's: every model and texture
+directly in it. Then write <code>players.txt</code> and put <code>ref_marker.dds</code>
+beside it. Three things differ from a team player's folder:</p>
+<ul>
+<li><strong>No number in the folder's name.</strong> <code>tsuoffside</code>, not
+<code>01 - tsuoffside</code>: the slots come from <code>players.txt</code> alone.</li>
+<li><strong>A referee without a face model keeps the game's own head.</strong> A team
+player in the same case gets a blank face.</li>
+<li><strong>On PES 15-17, a referee whose face is a head only needs a body.</strong> Put
+an empty file named <code>fpc_off</code> in the folder and the compile dresses the referee
+in the refkit (shirt, shorts, socks, arms, and the boots and hands when the referee has
+none of its own). A referee whose <code>face.xml</code> already lists the body needs
+nothing.</li>
+</ul>
+
+<h2>The referee marker</h2>
+<p><code>ref_marker.dds</code> is the picture the referees wear so they are told apart
+from the players. It stays in the export, but it reaches the game differently:</p>
+<ul>
+<li><strong>PES 15-17:</strong> as before, it replaces a texture inside the referees'
+CPK.</li>
+<li><strong>PES 18-21:</strong> it is carried by collar <strong>77</strong>, which the
+referees' CPK provides. The game's own <code>dt00_x64.cpk</code> is no longer written, so
+there is no question to answer and nothing to back up.</li>
+</ul>
+<p>Collar 77 is therefore reserved for the referees on every version. A team's kit that
+uses it is left out at compile time and reported (<code>kit_collar_reserved</code>),
+because its players would wear the referees' marker.</p>
+
+</main>
+<script>
+// The theme button: dark by default, the choice remembered in this browser.
+const root = document.documentElement, button = document.getElementById("theme");
+function setTheme(theme) {
+  if (theme === "light") root.dataset.theme = "light"; else delete root.dataset.theme;
+  button.textContent = theme === "light" ? "Dark" : "Light";
+}
+setTheme(localStorage.getItem("utw-theme"));
+button.addEventListener("click", () => {
+  const next = root.dataset.theme === "light" ? "dark" : "light";
+  localStorage.setItem("utw-theme", next);
+  setTheme(next);
+});
+</script>
+</body></html>
