@@ -204,20 +204,19 @@ impl RunEvents {
         self.emit(None, PipelineEvent::UnmigratedContentFound);
     }
 
-    /// The export left the pipeline, whatever its outcome.
+    /// The export left the pipeline, whatever its outcome. Sent once per run,
+    /// however often it is asked: a refusal or an abort returns before the
+    /// upgrade sends it, a failed rename or removal of the staging folder
+    /// after, and the driver of a run of several exports asks either way.
     pub(crate) fn processed(&mut self, export_id: ExportId) {
+        if self.processed_sent {
+            return;
+        }
         self.processed_sent = true;
         self.emit(
             Some(export_id),
             PipelineEvent::ExportProcessed { export_id },
         );
-    }
-
-    /// Whether this run sent its `ExportProcessed`: a refusal or an abort
-    /// returns before it does, but the verdict's rename of the staging
-    /// folder, or its removal, can abort after.
-    fn processed_sent(&self) -> bool {
-        self.processed_sent
     }
 
     /// `processed` of `total` parts done (the files the run writes into its
@@ -422,9 +421,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             Err(error) => {
                 // The progress line counts every export done once, whatever
                 // its outcome.
-                if !events.processed_sent() {
-                    events.processed(INPUT);
-                }
+                events.processed(INPUT);
                 events.output(format!("error: {error}"));
                 error.exit_code
             }

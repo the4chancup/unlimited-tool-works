@@ -580,6 +580,21 @@ fn several_exports_are_each_upgraded_as_if_alone() {
     );
     assert_eq!(blocks[3], "Upgraded: 2. Not upgraded: 1.\n");
 
+    // What the progress line counts from: the total announced before anything
+    // else, each export a run of its own, and every export done once, the
+    // refused one included.
+    assert_eq!(
+        run.events.first().map(|envelope| &envelope.event),
+        Some(&PipelineEvent::ExportsExpected { total: 3 })
+    );
+    let done: Vec<u64> = run
+        .events
+        .iter()
+        .filter(|envelope| matches!(envelope.event, PipelineEvent::ExportProcessed { .. }))
+        .map(|envelope| envelope.run_id.0)
+        .collect();
+    assert_eq!(done, [1, 2, 3]);
+
     // One export named alone prints as it always did: no naming line, no
     // tally.
     let out = sandbox.arg("alone");

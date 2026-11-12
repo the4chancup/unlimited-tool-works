@@ -305,6 +305,11 @@ exclude_re = [
     # command typed in a terminal prints there. Pinned by column, `main`
     # being long; `==` timed out and stays measured.
     "studio/src/main\\.rs:\\d+:19: replace > with (>=|<) in main",
+    # studio: `print_events` gives the progress bar its terminal target at the first event that
+    # gives the line its counters (`draw && !drawing`). The tests read the line's text from the
+    # counters and draw to no terminal, so a bar that never gets its target passes them. Its
+    # check is a run under a pseudo-console (`scripts/conpty_run.py`), where the line shows.
+    "studio/src/console\\.rs:\\d+:24: delete ! in print_events",
     # studio_core: `monitors` reads the OS's monitors through the frame's winit window, which a
     # test frame has none of (its doc says so); the placement it feeds is tested through
     # `place_or_fit` and `resends_position` on given monitors, the primary flag included, and
