@@ -163,6 +163,11 @@ Each is a label over its control:
 The defensive style's choices are shortened so the row fits; point at one to
 read its full name.
 
+From PES 2017 on the game's own Game Plan no longer shows the two numbers, so on
+a PES 2017 to 2021 save their choices are disabled, the stored one on a grey
+rectangle, unless the cup allows illegal formations (see **When the cup allows
+illegal formations** above).
+
 **Advanced instructions**
 
 **Advanced instructions** (PES 2017 and later) sets the team's two attack and

@@ -1785,7 +1785,9 @@ briefs, review loops, gates and mutation runs as for any step.
       toggle holds stands on `locked_choice_fill` (`#2c2c2c`, the maintainer's pick; grey
       225 in the light theme by the contrast rule), and the formation selector locked on
       Kick-off marks it the same way
-    - [ ] one SWE-2 round (Devin `work`); the look in the built window, both themes
+    - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
+      tactics says when the two numbers are disabled
+    - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
