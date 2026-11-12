@@ -1825,7 +1825,13 @@ briefs, review loops, gates and mutation runs as for any step.
       several exports no test reached
     - [x] review round 2 of both (SWE-2), 2026-11-12: 3 concerns, two comments corrected,
       which ends SWE-2's loop
-    - [ ] one paid round (Carbon, from 2026-11-15)
+    - [x] the paid round (Carbon), 2026-11-12 (`27f7b59a`, SWE-2): 8 of 10 concerns
+      accepted: `--all` skips an interrupted run's `.upgrading` folder, `--savefile` with
+      `--loose` refuses the whole run before reading anything, the usage lines, the
+      readme's Linux note, and three test gaps (the launchers' quoting, `--legacy-ids`, a
+      referee export beside a team export)
+    - [ ] eight accepted, so the loop goes on: one SWE-2 round over `27f7b59a`, then
+      Carbon's round 2 (from 2026-11-15)
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
