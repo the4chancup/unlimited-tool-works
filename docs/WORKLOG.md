@@ -35,6 +35,14 @@ Fox version the cup moves to around April 2027, "Target versions"). Phases 1 to 
 closed; 0.0.1 was released 2026-11-03 (tag `v0.0.1` on `c97ce914`). Built ahead of their
 phases: 10.0a-g (`music_export`), 16.w (the platform floor), 16.x a (`dds_convert`'s GPU
 BC7 half, unwired), 20.0 to 20.6a2a (the Ruleset editor, resuming after 0.1.0).
+**Plans owed** (the maintainer, 2026-11-12), written once the readability pass over
+`docs/spec` and `docs/plans` has landed; what they describe is built after 0.0.2:
+- The Team decompiler becomes a general-purpose Decompiler (`plans/team_decompiler.md`, a
+  stub today): besides team aesthetics exports it extracts referee exports, ball exports,
+  stadiums and adboards from a DLC. For that, the compiler writes a manifest for each of
+  those kinds, as the recovery manifest is planned for team aesthetics exports.
+- The compilers become one Compiler tool. The maintainer named this as upcoming; no plan
+  text describes it yet, and the Decompiler's plan is written with it in view.
 
 **Working mode.** `RUNBOOK.md` "How the work runs": the lead plans, briefs, reviews and
 writes what is correctness-critical; sidekicks implement, two or three at once; a review's
