@@ -191,9 +191,9 @@ reference:
 **Licensing constraint.** Both SEN:P-AI repositories are GPLv3. Unlimited Tool Works uses an
 independent reimplementation based on independently verified factual layouts and observable
 behavior. The legacy source is a reverse-engineering reference, not a code source. Do not
-copy or adapt the fork's rendering or reducer code. The core plan's future
-project-wide licensing section must reflect the same constraint; this plan does not change
-that file.
+copy or adapt the fork's rendering or reducer code. The core spec's
+project-wide licensing section ("License") states the same constraint for the suite; this plan
+does not change that file.
 
 **Status:** pre-implementation architectural plan. The Rust crates and APIs shown below
 are proposed contracts; legacy-source claims are evidence to verify, not implemented
@@ -203,7 +203,7 @@ Unlimited Tool Works behavior.
 
 ## Crate layout
 
-The tracker follows the standard tool-crate skeleton (core plan, "Tool crates"). Its elaboration
+The tracker follows the standard tool-crate skeleton (core spec, "Tool crates"). Its elaboration
 exists for one reason: the plan promises that live tracking is *Windows-only behind a trait* while
 everything else (match model, files, view, feed publishing) is portable, and that promise is a
 placement rule, not a comment.

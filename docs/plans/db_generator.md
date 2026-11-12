@@ -138,7 +138,7 @@ with per-version layouts. Consumers:
   format reference stays in that plan and the record layout is transcribed from it);
 - the [Stadium compiler](stadium_compiler.md) (`Stadium`).
 
-Three writers of one family of tables is what earns the crate (core plan, workspace guardrail
+Three writers of one family of tables is what earns the crate (core spec, workspace guardrail
 3).
 
 Shape (future tense; the implementing step copies these blocks):

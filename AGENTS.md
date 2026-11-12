@@ -18,7 +18,7 @@ Ten documents, ten jobs. Do not let content leak between them; two homes means t
 | `docs/plans/*.md` | Work not built yet, with the same layout and headings as the spec: the design of what comes next, its rationale, and the open phase's "Acceptance" sections. Written in the present tense (the folder says it is future), each file opening with a banner that says so; a section partly built keeps its heading in both trees, the plan's part pointing at the spec section it builds on |
 | `docs/CONTRIBUTING.md` | How code is structured, written and verified |
 | `docs/RUNBOOK.md` | How the lead runs the machinery: mutation runs and the VPS, the scratch folder, the agents and their harness limits, phases and releases, briefing and reviewing a sidekick, the review rounds' full rules |
-| `docs/GLOSSARY.md` | One line per domain term, pointing at the plan section that owns it |
+| `docs/GLOSSARY.md` | One line per domain term, pointing at the spec or plan section that owns it |
 | `docs/WORKLOG.md` | *Where we are*: current status, phase/step checklist, current-state gotchas, open issues (the lead's and the sidekick's) |
 | `docs/LOG.md` | *What happened* up to 2026-11-11, frozen: since then the dated log is `git log` |
 | `docs/DECISIONS.md` | Choices made where the plan was silent (append-only) |

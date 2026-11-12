@@ -314,7 +314,7 @@ a file they replace.
 
 ## Crate layout
 
-Standard tool-crate skeleton (core plan, "Tool crates"), elaborated below it:
+Standard tool-crate skeleton (core spec, "Tool crates"), elaborated below it:
 
 ```
 crates/tools/ruleset_editor/src/

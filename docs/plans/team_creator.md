@@ -87,13 +87,13 @@ collapses it once (a per-tool setting).
   name not in the list is allowed with a warning: a fake team for an invitational gets its ID from
   the host, who adds it to the list. The creator does not invent IDs. The export folder's first
   word is this token, which is how the compiler resolves the team (see "Team identity" in the
-  [Aesthetics export plan](aesthetics_export/README.md)).
+  [Aesthetics export spec](../spec/aesthetics_export/player_folders.md)).
 - **PES version**: defaults to the common setting; decides the Team TOML's version and which
   version-gated fields the later steps show.
 - **Colors**: two, through the `color_tools` picker. They become the root `colors.txt` and the
   default menu colors of the kits.
 - **Logo**: one image, any accepted format and size; the compiler squares and resizes it (root
-  `logo.<ext>`, see "Logo" in the Aesthetics export plan). Optional.
+  `logo.<ext>`, see "Logo" in the Aesthetics export spec). Optional.
 
 ### 2. Players
 
@@ -193,7 +193,7 @@ accepted.
 `p1` and `g1` by default; **+ kit** adds up to `p9`. Per kit: two menu colors (defaults: the team
 colors for outfield kits, swapped for the GK kit), a drop zone for the main texture, and a
 **Drawn for** selector (this version / PES 15–17 / PES 18–21) that writes the kit layout marker
-(`pre-fox` / `fox`, see "Kit layout marker" in the Aesthetics export plan) when it names the
+(`pre-fox` / `fox`, see "Kit layout marker" in the Aesthetics export spec) when it names the
 other engine than the target.
 
 No texture means the compiler's placeholder: a checkerboard kit, loud on purpose. The creator
@@ -350,7 +350,7 @@ the CLI never writes an illegal Team TOML.
 
 ## Crate layout
 
-Standard tool-crate skeleton (core plan, "Tool crates"), elaborated below it:
+Standard tool-crate skeleton (core spec, "Tool crates"), elaborated below it:
 
 ```
 crates/tools/team_creator/src/
@@ -380,7 +380,7 @@ Placement rules:
 - Anything about *how a team is legal* lives in `libs/aatf` (parameters, checks, `apply_tier`),
   never here. `legal.rs` only decides *which* legal value to pick where several would do (which
   bracket a CB gets).
-- Formation constants stay in this crate as long as it is their only consumer (core plan,
+- Formation constants stay in this crate as long as it is their only consumer (core spec,
   guardrail 3). If the Save editor gains an "apply stock formation" action they move to
   `team_widgets`.
 

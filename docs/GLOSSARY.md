@@ -1,7 +1,8 @@
 # Unlimited Tool Works - Glossary
 
-One line per term, with the plan section that owns the full definition. This file defines nothing
-on its own: if a line and its plan section disagree, the plan is right and the line gets fixed.
+One line per term, with the spec or plan section that owns the full definition. This file defines
+nothing on its own: if a line and its section disagree, the section is right and the line gets
+fixed.
 Add a term when a session had to look it up or an agent misused it. Within a group, put related
 terms next to each other rather than in alphabetical order; adjacency is what makes them stick.
 

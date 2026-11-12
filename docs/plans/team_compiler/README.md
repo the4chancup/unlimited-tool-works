@@ -64,7 +64,7 @@ When this feature is built, the viewport widget goes into a shared **`libs/model
 crate (created then, not before: until this feature lands, no viewport code exists anywhere).
 The Player aesthetics editor embeds the same widget as a quick approximate preview beside its
 launcher, labeled as a preview with Blender as the accurate view, which gives the crate its
-second consumer per the core plan's workspace guardrails.
+second consumer per the core spec's workspace guardrails.
 
 **Feasibility:** High. egui renders via `wgpu`, which supports custom rendering alongside the
 immediate-mode UI. The selected folder's structure descriptor can lazily load and parse its model

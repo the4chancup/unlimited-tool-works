@@ -19,8 +19,8 @@ referee compilation. It is deliberately **not** a compiler (see "Why an arranger
 not a compiler"). Platform context is in the [core plan](core/README.md).
 
 The tool consumes `libs/aesthetics_export` (the export object model, folder conventions,
-and `players.txt` slot mapping; see "Player numbering" and "Referee export
-processing" in the Team compiler plan).
+and `players.txt` slot mapping; see "Player numbering" in the Aesthetics export spec and
+"Referee export processing" in the Team compiler plan).
 
 ---
 
@@ -191,13 +191,13 @@ at game-format boundaries (999 is not a normal 701–920 `TeamId`) and slot-mapp
 packing (see "Referee export processing" in the [Team compiler plan](team_compiler/blue_port.md)).
 
 A "Refs compiler" tool owning its own compile step would add no compilation behavior: it would
-only need to *trigger* one. Since tool crates must not depend on tool crates (core plan,
+only need to *trigger* one. Since tool crates must not depend on tool crates (core spec,
 workspace guardrail 1), that would force extracting the compilation engine (~80% of the Team
 compiler crate: pipeline, processing, packing, message catalog, settings ownership) into a lib
 crate with exactly one thin extra consumer. That is guardrail 3's over-splitting warning sign,
 and the convenience it buys is one saved click. Rejected; the engine split stays available
 along the blessed logic-vs-view seam if a substantial second consumer ever appears (see
-"No per-tool companion libs" in the core plan).
+"No per-tool companion libs" in the core spec).
 
 The handoff instead rides on machinery that already exists:
 
@@ -406,7 +406,7 @@ issues panel and not loaded, and the next Save rewrites the file without it.
 Save writes `players.txt` into the refs export (and, on PES 18–21, `ref_lists.txt` beside
 it) and nothing else: folders are never touched.
 
-`players.txt` uses the Team compiler plan's canonical UTF-8/LF roster grammar, through a
+`players.txt` uses the Aesthetics export spec's canonical UTF-8/LF roster grammar, through a
 writer `aesthetics_export` gains for it. The Export upgrader, which writes the same grammar
 from a `refs.txt` today with a function of its own, moves onto it.
 
@@ -424,7 +424,7 @@ entry). On PES 18–21 with no list, Save writes no `ref_lists.txt` and removes 
 with the same confirmation.
 
 A legacy `refs.txt` (the read-only alias `aesthetics_export` accepts on referee exports; see
-"Player numbering" in the Team compiler plan) pre-populates the assignments like a
+"Player numbering" in the Aesthetics export spec) pre-populates the assignments like a
 `players.txt` would. On save it is removed after the new `players.txt` is in place, with the
 same confirmation, so a successful save leaves only the canonical file. During the brief
 transition both may exist; the compiler's documented `players.txt` precedence handles that

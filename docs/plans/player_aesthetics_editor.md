@@ -138,7 +138,7 @@ implementation in the tool, so the view cannot disagree with the compile. Rules:
 - **every `PlayerSettings` key**, grouped as the schema groups them (appearance, physique,
   strip, motion, colours, ingame-face parameters), each key written to the file that owns it
   (the face, hair and iris keys to `ingame_face.toml`, "`ingame_face.toml`" in the
-  [Player folders plan](aesthetics_export/player_folders.md));
+  [Aesthetics export spec](../spec/aesthetics_export/settings_toml.md));
 - the `fpc_on`/`fpc_off`/absent marker tri-state;
 - an in-game face toggle, which creates an empty `ingame_face.toml` or, once confirmed,
   removes it (its group shown only while the file exists).
@@ -147,8 +147,8 @@ The form is **generated from the `PlayerSettings` schema**, not hand-built per f
 files are the only route by which a team's aesthetics reach the game (the compiler builds the
 Fox appearance tables and the pre-Fox aesthetics patch from them, and the save editor's own
 fields are read-only; see "Player settings in exports" in the
-[Aesthetics export plan](aesthetics_export/README.md)), so a field the schema gains must appear
-here without anyone remembering to add a widget. Each key renders from its schema type and
+[Aesthetics export plan](aesthetics_export/settings_toml.md)), so a field the schema gains must
+appear here without anyone remembering to add a widget. Each key renders from its schema type and
 range, with the same app-injected comment as its tooltip.
 
 Writes preserve user comments and formatting (`toml_edit`); validation is `aesthetics_export`'s,
@@ -363,7 +363,7 @@ glTF in the selection rule, so a stale `.fmdl` would silently win).
   `.model` state settings when FMDL geometry is preferred), merged by material
   name and part identity. Parts present in only one set convert plainly. The
   merge machinery is `model_convert`'s (see the [Model conversion
-  plan](model_conversion/README.md)'s "glTF export and dual-set superset merge").
+  plan](model_conversion/gltf.md)'s "glTF export and dual-set superset merge").
 - **Textures stay put.** Existing accepted image files (including DDS and FTEX) are kept and referenced externally
   from the generated `materials.toml` (allowed by the glTF image contract);
   nothing is re-encoded. The conversion emits a single `materials.toml` per
@@ -373,7 +373,7 @@ glTF in the selection rule, so a stale `.fmdl` would silently win).
 - **Skeleton from SKL.** Fox FMDLs carry only bone positions, not rotation
   matrices; the full bind-pose transform comes from the companion `.skl` (or the
   embedded template skeleton when no custom SKL is present). See "Skeleton
-  reconstruction from FMDL" in the [Model conversion plan](model_conversion/README.md).
+  reconstruction from FMDL" in the [Model conversion spec](../spec/model_conversion/gltf.md).
 - The CLI form takes the geometry preference as a flag instead of asking.
 
 ## Library impact

@@ -201,7 +201,8 @@ preserved separately from the render hierarchy).
 At compile time the skin's bind data goes wherever the target keeps it:
 
 - for Fox the compiler reconstructs the `.skl` binary (only when the skeleton differs from the
-  template; see "SKL pairing" in the [Team compiler plan](team_compiler/README.md));
+  template; see "SKL pairing" in the
+  [Aesthetics export spec](../spec/aesthetics_export/player_folders.md));
 - for pre-Fox it is written straight into the `.model`'s inline per-bone matrix table, which is
   where that format has always stored its skeleton.
 
@@ -209,7 +210,8 @@ This keeps the glTF self-contained (one file to manage, link, and pass through `
 and matches the Blender workflow: armatures export as native glTF skins automatically, with no
 separate SKL export step. The SKL binary layout and the
 skeleton-reconstruction rules for FMDL sources are in the [Model conversion
-plan](model_conversion/conversion.md) ("SKL binary format", "Skeleton reconstruction from FMDL").
+spec](../spec/model_conversion/conversion.md) ("SKL binary format", "Skeleton reconstruction
+from FMDL").
 
 ### File size and compression
 
