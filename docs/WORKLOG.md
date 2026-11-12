@@ -1690,8 +1690,13 @@ briefs, review loops, gates and mutation runs as for any step.
       now during the first one's download), each field of the stamp and the "old files not
       put back" ending tested, a member's file inside a folder the bundle ships
     - [x] review round 3 (SWE-2), 2026-11-12: one concern, rejected, which ends SWE-2's loop
-    - [ ] the review loops' rest: Astra's loop (running ahead of Carbon's, which waits for
-      its login's reset on 2026-11-15), then Carbon's
+    - [x] Astra's round, 2026-11-12 (`deafb774`, the lead), ahead of Carbon's loop: 3 of 4
+      concerns accepted, which ends Astra's loop: a Cancel over a stalled connection brings
+      the offer back when the wait times out, the help's Restart now says the restart is
+      dropped whenever a tool asks about unsaved work, and a test reads the command line's
+      notice after the command's own lines (ST-CLI-05)
+    - [ ] the review loops' rest: SWE-2's round over Astra's fixes, then Carbon's loop
+      (its login resets on 2026-11-15)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
