@@ -1704,11 +1704,20 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-statlbl the label of an ability stat the save's version does not have (Tight
     Possession, Aggression, ...) in the same darker colour as a greyed card's label (the
     maintainer, 2026-11-03); drafted first
-  - [ ] 0.0.2-log the run's log file (the maintainer, 2026-11-12; DECISIONS "A CLI run takes
-    `--log-file`"; `plans/core/architecture.md` "Launch modes", ST-CLI-04): `--log-file
-    <FILE>` appends the whole run to the file and leaves Info findings out of stdout; the
-    two launchers pass it. Then the bundle's readme, the changelog line and poc.5
-    -> verify: ST-CLI-04's test; the launchers' tests; a launcher run in a real console
+  - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, its SWE-2 loop owed): `--log-file
+    <FILE>` appends a run's whole output to the file and leaves Info findings out of
+    stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher run under a
+    pseudo-console showed the warnings, a refusal's `error:` line and the progress line in
+    the window and every line in the log. The bundle's readme names the logs, and the
+    organizer's backup of `download/` and the list's upgrade as steps
+  - [ ] 0.0.2-upgall the upgrade launcher's progress counts every export (the maintainer,
+    2026-11-12: `[ 0/1 exports | 0:00 ]` per export shows the line is each run's own, the
+    launcher starting the exe once per export): build `upgrade <export>...` (8.22i,
+    `plans/export_upgrader.md` "CLI", EU-CLI-11) and have `quick_upgrade.bat` start the exe
+    once. To settle with it: who prints the tally (the bat counts exit codes today), and
+    how the bat names 52 exports inside `cmd`'s 8,191-character line (a folder argument
+    would not have the limit) -> verify: EU-CLI-11; the launchers' tests; the launcher's
+    progress line under a pseudo-console reading `n/N exports`
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [x] 0.0.2-se19 dropped 2026-11-11 (the maintainer: the tester's save is lost; DECISIONS

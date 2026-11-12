@@ -25,7 +25,8 @@ Getting started
    the Settings gear at the bottom of the bar and set "PES folder" to the path of the
    folder that holds the PES exe.
 4. VGL's organizer: read "For VGL's organizer" at the end before running either launcher.
-   It changes one setting and sets the order of the work, and both come before the
+   It starts with a backup of the game's download folder and the game's DpFileList.bin,
+   changes one setting and sets the order of the work, and all of that comes before the
    sections in between.
 
 
@@ -85,7 +86,10 @@ Compiling
 
    and press Enter. It changes nothing yet: it lists what it would do (CPKs renamed to their
    official names, empty placeholders for the ones missing, the list replaced and the old one
-   kept as DpFileList.bin.bak). If that reads right, run it again with --yes at the end:
+   kept as DpFileList.bin.bak). Before going on, copy the game's download folder, found
+   inside the folder that holds the PES exe, to a safe place: putting that copy back undoes
+   everything this command and the compiles after it change there. If the list reads
+   right, run the command again with --yes at the end:
 
        UTW.exe team-compiler upgrade-dpfl --yes
 
@@ -97,21 +101,33 @@ Compiling
 For VGL's organizer
 -------------------
 
-1. Before the first compile: the game needs the cup's official DpFileList.bin (step 4 of
-   "Compiling" above installs it), and the league's first DLC is compiled into several
-   CPKs. With the window closed, open data\settings.toml in Notepad, change the line
+1. Before the first compile, do three things, in this order.
 
-       multicpk_mode = false
+   a. Back up the game's download folder. Close PES, then copy the download folder, found
+      inside the folder that holds the PES exe, to a safe place. The next step renames
+      CPKs in it and replaces its DpFileList.bin, and every compile writes CPKs into it.
+      To undo all of that, delete the download folder and put the copy back.
 
-   to
+   b. Install the cup's official DpFileList.bin. Step 4 of "Compiling" above shows how:
+      UTW.exe team-compiler upgrade-dpfl, read what it lists, then the same command with
+      --yes. Do it now, not when a compile asks for it: the game loads only the CPKs its
+      DpFileList.bin names, and a compile stops when the list lacks the CPKs it writes.
+      This is needed once per game folder.
 
-       multicpk_mode = true
+   c. Set the league's first DLC to compile into several CPKs. With the window closed,
+      open data\settings.toml in Notepad, change the line
 
-   and save the file. quick_compile.bat then puts the teams into 4cc_41_teams.cpk and the CPKs
-   after it, filling each one up to its size limit, and the files every team shares into
-   4cc_08_bins.cpk. Without this change, the first compile goes into 4cc_99_test.cpk
-   instead. The game loads that CPK last, so it would cover every team and midcup CPK
-   compiled later.
+          multicpk_mode = false
+
+      to
+
+          multicpk_mode = true
+
+      and save the file. quick_compile.bat then puts the teams into 4cc_41_teams.cpk and
+      the CPKs after it, filling each one up to its size limit, and the files every team
+      shares into 4cc_08_bins.cpk. Without this change, the first compile goes into
+      4cc_99_test.cpk instead. The game loads that CPK last, so it would cover every team
+      and midcup CPK compiled later.
 
 2. The work runs in this order. The managers' tactical exports (the .ted files) go into
    the base save first: import them in the Save editor (the Team menu's "Import / export
