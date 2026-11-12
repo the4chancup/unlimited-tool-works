@@ -23,8 +23,9 @@ BANDS = [
 ]
 
 # (id, label, band, stage column, row within the band from 0, what it is). A band is as
-# tall as its rows: the reviewers take three, one column, since all three review, and so do
-# the three mutation runs, since all three measure the tests.
+# tall as its rows. Review holds what reads the work and Measure what runs it: the three
+# reviewers stand in one column, and so do the gates with the other runs, and the three
+# mutation runs.
 NODES = [
     ("directives", "Directives", "maintainer", 0, 0,
      "Rules and choices the maintainer sets; each lands in a plan, AGENTS.md or RUNBOOK.md "
@@ -123,18 +124,18 @@ NODES = [
     ("accept_tests", "Acceptance tests", "checks", 3, 1,
      "Tests citing a scenario's ID; the acceptance gate lists every ID no test or "
      "'manual: checked' line proves."),
-    ("gates", "Gates", "checks", 4, 0,
+    ("gates", "Gates", "checks", 5, 0,
      "just gates: fmt, clippy with warnings as errors, every test, line endings, comment "
      "references and doc pointers. just checkpoint runs them over everything since the last "
      "gated commit, with mutants-diff, and moves that commit: at a loop's end, a step's "
      "close, a merge, and before a push is asked for."),
-    ("citation", "Citation audit", "checks", 4, 1,
+    ("citation", "Citation audit", "checks", 4, 0,
      "Flags tests whose cited scenario they may not prove; every flag is ruled before a crate's "
      "review."),
-    ("parity", "Library parity vs Red", "checks", 5, 0,
+    ("parity", "Library parity vs Red", "checks", 5, 1,
      "A phase that changes the Team compiler or the Export upgrader recompiles the library and "
      "diagnoses each new difference from Red's output."),
-    ("census", "Census", "checks", 5, 1,
+    ("census", "Census", "checks", 5, 2,
      "A format crate's close reads every file of its format on the machine, round trips and "
      "checks each, and tallies the outcomes. A kept index of the real exports answers a "
      "reviewer's 'does any file do this' in seconds, beside a control count."),
@@ -144,7 +145,8 @@ NODES = [
      "the pushed commit."),
     ("mdiff", "mutants-diff", "mutation", 5, 0,
      "Part of just checkpoint, over the commits since the last gated one: each surviving "
-     "mutant is an assertion nobody wrote. Runs here while a whole run holds the VPS."),
+     "mutant is an assertion nobody wrote. It runs on the lead's PC, so a whole-crate run "
+     "can hold the VPS meanwhile."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, literal, normalize and order mutants cargo-mutants does not make, run before a "
      "whole-crate run into the same survivor list."),
@@ -169,11 +171,11 @@ EDGES = [
     ("critical", "unit"), ("critical", "gates"),
     ("unit", "gates"), ("accept_tests", "gates"),
     ("report", "diff_review"), ("diff_review", "rework"), ("rework", "report"),
-    ("diff_review", "commit"), ("gates", "commit"),
+    ("diff_review", "commit"),
     ("commit", "worklog"), ("commit", "log"),
     ("commit", "swe"), ("swe", "argon"), ("argon", "astra"), ("astra", "swe"),
     ("swe", "rulings"), ("argon", "rulings"), ("astra", "rulings"),
-    ("rulings", "rework"), ("rulings", "mdiff"), ("mdiff", "triage"),
+    ("rulings", "rework"), ("rulings", "gates"), ("rulings", "mdiff"), ("mdiff", "triage"),
     ("ingame_run", "ingame_ok"), ("ingame_ok", "worklog"),
     ("plans", "converge"), ("acceptance", "converge"), ("commit", "converge"),
     ("converge", "worklog"), ("converge", "astra"), ("converge", "whole"), ("converge", "citation"),
@@ -187,8 +189,8 @@ EDGES = [
     ("argon", "swe"), ("swe", "astra"), ("census", "rulings"), ("census", "spec"),
     ("rulings", "plans"), ("rulings", "decisions"),
     # The checkpoint: the commits since the last gated one, and the push it allows.
-    ("commit", "mdiff"), ("unit", "mdiff"), ("unit", "whole"), ("gates", "release"),
-    ("log", "release"), ("release", "gates"),
+    ("commit", "gates"), ("commit", "mdiff"), ("unit", "mdiff"), ("unit", "whole"),
+    ("gates", "release"), ("log", "release"),
     # The looks owed, and what the measurements send back.
     ("worklog", "ingame_run"), ("ingame_run", "worklog"), ("parity", "worklog"),
     ("triage", "worklog"),
