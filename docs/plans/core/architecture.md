@@ -215,8 +215,8 @@ list the folder at every repaint.
 `ctx.set_pes_folder(folder)` stores a picked folder for the selected version as the
 running-PES notice's Fix PES path does (`CommonSettings::fix_pes_folder`), and queues
 `ShellRequest::SettingsChanged`. The sidebar's check then runs again, since the resolved folder
-changed. The Save editor's Set PES path button is their first caller (`save_editor.md`
-"Tactics editor").
+changed. The Save editor's Set PES path button is the first caller of both methods
+(`save_editor.md` "Tactics editor").
 
 The sidebar lists the planned tools a build does not register (`gui.md` "Sidebar", item 3), so
 `studio` also keeps the full registry as data: one `PlannedTool { id, label, icon }` per tool
@@ -299,7 +299,7 @@ compiled) leaves no line. The printer cannot know a `Complete` is coming until t
 so it draws from the first export and clears the line when the stream ends without one, rather
 than leaving a count that reads as unfinished.
 
-We draw it with `indicatif` (`default-features = false`) rather than a hand-written `\r` line
+We draw the line with `indicatif` (`default-features = false`) rather than a hand-written `\r` line
 because it already handles the terminal width, the Windows console and the draw-rate cap. It adds
 four small crates and about 145 KiB to a release binary (measured 2026-10-16, 0.18.6).
 
@@ -537,11 +537,11 @@ compiler and the Export upgrader, then the rest as they are built.
   machine's layout, and add nothing, since every effect passes through the model.
 
   The journal is taken at the one point each tool already changes its model through, so a
-  step cannot reach the model unrecorded. In the Save editor that point is
+  step cannot reach the model unrecorded. In the Save editor the journal is taken at
   `Session::changed` (`session/mod.rs`), which every edit, undo, redo, import and patch calls
-  with its field lines, plus the session's open and write. It is not the undo stack's push,
-  which import and patch bypass. A test per tool pins that every model change goes through
-  it.
+  with its field lines, and at the session's open and write. It is not taken at the undo
+  stack's push, which import and patch bypass. A test per tool pins that every model change
+  goes through it.
 - **The inputs are kept as they were opened.** Saving over the file it came from destroys
   the bundle's most important part, so the tool keeps the bytes it read in memory for the
   session (a PES save is 7 to 11 MB), and the bytes of each file it imported.
