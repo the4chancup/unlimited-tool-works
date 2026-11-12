@@ -770,6 +770,37 @@ Rules:
   The Windows taskbar progress bar (`ITaskbarList3`) is **not** used: neither winit nor eframe
   exposes it, and a text title covers the need without platform code.
 
+### A new instance from the taskbar button
+
+On Windows, a Shift+click or a middle click on a running program's taskbar button starts
+another instance only when Explorer has a shortcut for the program: in the Start Menu, on the
+desktop, or as a taskbar pin. A portable bundle has none, so both clicks did nothing, while
+the entry with the program's name in the button's menu, which starts the exe itself, worked
+(seen on Windows 10: pinning the button, which makes a shortcut, made both clicks work).
+
+The window therefore says how it is started again. When it is created it sets four
+properties on itself (`System.AppUserModel`, through the window's property store):
+
+- the relaunch command: the running exe's path between quotes, no arguments, so a window
+  that was started with a command comes back as the plain window;
+- the name and the icon the taskbar shows for that command: the program's name, and the exe's
+  own icon;
+- an application ID, which Windows asks for before it reads the other three:
+  `UnlimitedToolWorks.` and the first sixteen hex digits of the SHA-256 of the exe's path in
+  lower case. Each copy of the program is so its own taskbar group, as copies were when
+  Windows made the identity from the path, since nothing needs two copies grouped. The ID
+  comes from the path alone, not from the version: an ID that changed with an update would
+  part a pinned button from the window it starts.
+
+It does not create a shortcut, which would also make the clicks work: a portable program
+writes nothing outside its folder. This is platform code where the title's progress needed
+none, because no text and no setting makes the taskbar start a program. A failure to set
+the properties is logged and changes nothing else. Linux has no such step.
+
+A button pinned before this carries the identity Windows made from the path, so it is
+expected to stand apart from the running window until it is pinned again; ST-WIN-06 looks
+at that.
+
 ### Event wiring
 
 What exists of this is in `spec/core/gui.md` "Event wiring".
@@ -1406,6 +1437,18 @@ ST-WIN-04   GIVEN a main tool active and the window moved to (100, 50) and resiz
                  monitor list (a frame with no window) THEN the first frame sends the place's
                  position; GIVEN a last tool of the special class THEN it opens at
                  window_special's place
+ST-WIN-05   GIVEN the program at `C:\Tools\UTW\UTW.exe`
+            WHEN the taskbar's relaunch values are made for it
+            THEN the command is `"C:\Tools\UTW\UTW.exe"`, the icon `C:\Tools\UTW\UTW.exe,0`,
+                 and the application ID `UnlimitedToolWorks.` and sixteen hex digits, the
+                 same for `c:\tools\utw\utw.exe`, another for `D:\Other\UTW.exe`
+ST-WIN-06  manual  GIVEN the release bundle on Windows, started from its exe, no shortcut
+                 to it anywhere
+            WHEN its taskbar button is Shift+clicked, then middle-clicked
+            THEN each opens another window; GIVEN a second copy of the bundle in another
+                 folder, running THEN the two copies' buttons are two groups; GIVEN a
+                 button pinned by an earlier version THEN how it stands beside the
+                 running window is noted
 ```
 
 **Sidebar**

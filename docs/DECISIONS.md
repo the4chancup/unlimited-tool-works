@@ -16774,3 +16774,28 @@ Ubuntu 24.04 or newer starts them, and the kit serves its release list from the 
 own 127.0.0.1, so the virtual machine needs no network.
 Plan: `RUNBOOK.md` "Mutation runs and the VPS" (what the host has installed); the worklog's
 ST-UPD-04 line and its pending look.
+
+## 2026-11-12 — shell — the window tells the Windows taskbar how to start it again; an ID per copy
+Decision (maintainer, answering `QUESTIONS.md` "What a Shift+click on the taskbar button
+does today" and the lead's two follow-ups): on Windows the window sets its own relaunch
+command, display name, icon and application ID when it is created, so a Shift+click or a
+middle click on its taskbar button opens another window. The ID is made from the exe's path
+(`UnlimitedToolWorks.` and sixteen hex digits of the path's SHA-256), so each copy of the
+program is its own taskbar group ("there is no real need to keep the copies grouped").
+`unsafe` is allowed for it ("that's fine if there is no other way"): the properties are
+set through COM on the window's handle, and neither winit nor eframe offers them.
+Why: the maintainer saw both clicks do nothing on the program started from its exe, while
+the button's menu entry opened a second window, and both clicks work on Blender and on
+7-Zip's file manager. A process watch during their clicks showed Explorer starting nothing,
+and Explorer's own resolver gave the window a plain exe-path identity with pinning not
+prevented, so nothing in the program refused. What the two working programs have and this
+one lacks is a shortcut (7-Zip's in the Start Menu; Blender was started from one). Pinning
+the program's button, which makes a shortcut, made both clicks work at once. So Explorer's
+click starts a new instance through a shortcut and does nothing without one, unless the
+window states its own relaunch command, which is Windows' documented way for a program that
+has no shortcut.
+Not chosen: creating a shortcut, because a portable program writes nothing outside its
+folder; one fixed ID for every copy, which would group copies in different folders under one
+button for no need; telling members to pin the program, which works today and stays the
+workaround for 0.0.1.
+Plan: `plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05 and ST-WIN-06.

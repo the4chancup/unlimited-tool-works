@@ -1743,10 +1743,14 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
-    does for most apps (the maintainer, 2026-11-03). Read 2026-11-12: no application ID is
-    set on Windows and nothing guards a second instance, so the code gives no reason it
-    would fail; what happens today is asked in `QUESTIONS.md` ("The 0.0.2 Save editor
-    report": the lead cannot click the taskbar)
+    does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
+    at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
+    and a portable bundle has none (pinning the button made them work). The fix: the window
+    sets its own relaunch command, name, icon and an application ID per copy
+    (`plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05 and 06;
+    DECISIONS 2026-11-12 "the window tells the Windows taskbar how to start it again").
+    The code is a SWE-2 slice, brief `.tmp/0_0_2/inst/brief_relaunch.md`; then the
+    properties read back off the built window, and the maintainer's clicks (Pending looks)
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -2233,6 +2237,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   pre-Fox texture the compile block-compresses"); harness
 - Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
   0.0.1y's y7c (`QUESTIONS.md` "After the release"); harness
+- ST-WIN-06: the built program started from its exe with no shortcut to it, its taskbar
+  button Shift+clicked and middle-clicked (each opens another window); two copies in two
+  folders are two groups; how a button pinned by an earlier version stands beside the
+  running window; Windows 10, no PES; 0.0.2-inst; maintainer (the lead does not click the
+  taskbar)
 - The Ability stats column on a PES 17 save in the built window: Tight Possession's and
   Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the

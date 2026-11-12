@@ -53,13 +53,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   all, or does this need a match to show whether Fox games write them into an uncompressed
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
-- **What a Shift+click on the taskbar button does today** (worklog 0.0.2-inst, your ask of
-  2026-11-03). The program sets no application ID on Windows and has no single-instance
-  guard (two windows on one folder ran in Update now's look), so Windows' own Shift+click
-  should already start a second window, and nothing in the code says why it would not. The
-  lead's input goes only into the program's own window, so it cannot click the taskbar to
-  see. What happens when you Shift+click the button (nothing, a second window, an error),
-  and was the program started from the exe, a shortcut or a `.bat` when you saw it?
 
 ## After the release
 
