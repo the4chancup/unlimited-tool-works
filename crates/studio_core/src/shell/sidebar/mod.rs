@@ -965,6 +965,11 @@ pub(super) fn version_blocker(tools: &[Box<dyn StudioTool>]) -> Option<(&'static
 /// found line whose version it is: the sidebar's "this tool", the settings menu's
 /// "every tool" (the draft's `pesSelectorTip`, which the row shares).
 pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path, works_with: &str) -> String {
+    // An empty setting is no folder (the default where no install path is known):
+    // there is no path to name.
+    if folder.as_os_str().is_empty() {
+        return "No PES folder is set".to_owned();
+    }
     match check {
         ExeCheck::Found => format!(
             "{}\nThe PES version {works_with} works with",

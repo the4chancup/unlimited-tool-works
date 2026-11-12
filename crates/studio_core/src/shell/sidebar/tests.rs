@@ -1267,6 +1267,21 @@ fn a_wheel_notch_over_the_selector_steps_the_version_once_and_saves() {
     assert_eq!(written.common.pes_version, PesVersion::Pes20, "and saved");
 }
 
+// An empty PES folder setting (the default where no install path is known)
+// names no path: the selector's and the Settings row's tooltip says none is
+// set, not that a blank one does not exist.
+#[test]
+fn the_exe_tooltip_says_when_no_folder_is_set() {
+    assert_eq!(
+        super::exe_tooltip(
+            crate::ExeCheck::NoFolder,
+            std::path::Path::new(""),
+            "this tool"
+        ),
+        "No PES folder is set"
+    );
+}
+
 // ST-SIDE-09
 #[test]
 fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {

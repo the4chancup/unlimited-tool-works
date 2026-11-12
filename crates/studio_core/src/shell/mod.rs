@@ -651,13 +651,7 @@ impl StudioApp {
         match effect {
             ActionEffect::SwitchTool(id) => self.switch_to(&id),
             ActionEffect::FixPesPath { folder, version } => {
-                self.ctx
-                    .settings()
-                    .lock()
-                    .unwrap()
-                    .common
-                    .fix_pes_folder(&folder, version);
-                self.ctx.request(ShellRequest::SettingsChanged);
+                self.ctx.set_pes_folder_for(&folder, version);
             }
             ActionEffect::OpenSettings => self.settings_menu.open(self.active, &self.ctx),
             ActionEffect::OpenHelp(target) => self.open_help(&target),
