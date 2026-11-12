@@ -74,7 +74,7 @@ crates/studio_core/src/
 │   └── run_strip.rs
 ├── repro.rs          # the repro journal's Recorder and the bundle writer ("Repro bundles")
 ├── theme.rs          # the shared Visuals preset, fonts, the icon font's registration
-└── updater.rs        # release check, download/verify, binary swap, rollback (desktop only)
+└── updater.rs        # release check, download/verify, binary swap (desktop only)
 ```
 
 The running-PES probe (`pes_process.rs`, `spec/core/architecture.md` "Crate structure") is

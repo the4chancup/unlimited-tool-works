@@ -268,9 +268,8 @@ server-side.
 
 0.0.1 ships steps 1 and 2, in the window only, its dialog without **Update now** (a disabled
 one reads as an update that is not there), so a 0.0.1 member downloads 0.0.2 from the release
-page, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04), the command line's notice and
-rollback (the rollback lives in the newer exe). Step 5 and the `update` subcommand come with the
-Team compiler.
+page, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04) and the command line's notice.
+Step 5 and the `update` subcommand come with the Team compiler.
 
 The HTTP client is `ureq` pinned to `=3.5.0`, with default features off, `rustls-no-provider`
 and `platform-verifier`, `rustls` on `ring` handed to it as the crypto provider, the system's
@@ -391,9 +390,13 @@ may change in a minor release.
 
 ### Rollback
 
-`old/UTW.exe` is kept (one version deep — each update replaces it), and the settings menu gets a
-**"Roll back to previous version"** button that swaps the two binaries back and relaunches. This
-covers the "new version is broken" case that Red handles by preserving the entire old folder.
+`old/UTW.exe` is kept (one version deep — each update replaces it). This covers the "new
+version is broken" case that Red handles by preserving the entire old folder: the member
+closes the program and copies the program file from `old/` over the one in the bundle's
+folder.
+
+A settings menu button that does the swap and relaunches is a proposal, not planned work
+(`PROPOSALS.md` P51), and is not built while it is unruled.
 
 ### Changelog and version display
 

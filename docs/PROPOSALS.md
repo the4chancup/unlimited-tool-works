@@ -75,3 +75,29 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
+
+## P51 — A button that goes back to the version an update replaced
+
+From the first plan (2026-09-13, `plans/core/distribution.md` "Rollback"), written after Red,
+which keeps the whole old folder when it updates. The maintainer never asked for it, and on
+2026-11-12, with its slice next in line for 0.0.2, did not remember doing so; it waits here
+for a ruling instead.
+
+What is built: Update now leaves the program it replaced in the bundle's `old/` folder, one
+version deep. A member can go back by hand: close the program and copy the program file from
+`old/` over the one in the bundle's folder.
+
+Adds: a settings menu button, "Roll back to previous version", that swaps the two programs
+and restarts, for a member whose new version is broken. No member can reach it in 0.0.2:
+0.0.1 cannot update itself, so the first `old/` folder appears when 0.0.2 updates to its
+successor, and the button that then matters is the successor's. Only a 0.0.2 proof-of-concept
+build updated to the final 0.0.2 would show it.
+
+Costs: the plan's three lines leave most of it open, each a thing to build and a member to
+learn. A confirmation, since the program restarts. What the button reads after a rollback,
+when `old/` holds the newer program: naming the version needs a version file written beside
+the program in `old/`. The state after the swap when a tool's close prompt cancels the
+restart: a reminder like `Update ready`, and no update offered meanwhile. Only the program
+file goes back: the launchers and the readme stay the newer version's, and a launcher that
+passes an option the older program lacks fails. A cheaper cover for the same case is one
+sentence in the help's Updates chapter giving the by-hand steps above.

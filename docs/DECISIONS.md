@@ -16486,3 +16486,19 @@ Not chosen: a notice on a first run (nothing was updated); the version compared 
 (`0.0.10` sorts before `0.0.9`).
 Plan: `plans/core/gui.md` ST-UPD-06 (the unreadable value added), `plans/core/distribution.md`
 "Changelog" reader 1; worklog 0.0.2-upd slice 3.
+
+## 2026-11-12 — studio_core — The rollback button leaves 0.0.2 and waits as proposal P51
+Decision: the settings menu's "Roll back to previous version" button is not built. It leaves
+0.0.2-upd's slices and the plan's 0.0.2 list, and stands in `PROPOSALS.md` as P51 until the
+maintainer rules. The update still keeps the program it replaced in `old/`, and the plan's
+"Rollback" section gives the by-hand way back. This narrows "0.0.2 holds every open 0.0.2
+step" and the seventh point of "Update now's dialog: what the plan left open", which named
+the rollback as the slice after the notice.
+Why: the button came from the first plan, written after Red's kept old folder, not from a
+request, and the maintainer did not remember asking for it when its slice came up; an idea
+nobody asked for waits in the proposals file however long it has stood in a plan. It is also
+out of every 0.0.2 member's reach (0.0.1 cannot update itself, so the first `old/` folder
+appears when 0.0.2 updates to its successor), and the plan's three lines left a confirmation,
+the button's wording after a rollback and the state after a cancelled restart all open.
+Plan: `plans/core/distribution.md` "Self-update" (the 0.0.2 list) and "Rollback";
+`spec/core/distribution.md` (the version axis bullet); worklog 0.0.2-upd; `PROPOSALS.md` P51.

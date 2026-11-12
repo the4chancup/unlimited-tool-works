@@ -159,8 +159,8 @@ Rationale:
 - **Tools are compile-time plugins**, statically registered in `studio`. A "team_compiler 2.0 vs.
   studio 1.5" compatibility question is impossible by construction — a version mismatch can't ship.
 - **Changelog and rollback are per-Studio-release.** Release notes are "Unlimited Tool Works 1.4 adds the
-  Balls compiler"; the rollback button swaps two binaries in `old/`. Both only make sense on one
-  version axis.
+  Balls compiler"; a rollback puts back the one binary kept in `old/`. Both only make sense on
+  one version axis.
 
 A release is cut (tag, GitHub Release, `.7z` asset) when there's something to distribute; not every
 commit is a release. The workspace version is the next-release version; the tag is what the updater

@@ -1673,7 +1673,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 3, 2026-11-12 (`0c2fe2fb`, Opus): the `Updated to` notice
       (`last_run_version`), the help's Updates and What's new chapters (ST-UPD-06), the
       offer's tooltip naming the app and the version
-    - [ ] slice 4 the settings menu's rollback (`plans/core/distribution.md` "Rollback")
+    - the settings menu's rollback button is not a step: nobody asked for it, and it waits
+      for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
     Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,

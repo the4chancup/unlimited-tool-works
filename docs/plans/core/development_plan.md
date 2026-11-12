@@ -458,7 +458,7 @@ export's per-referee `face/`, `boots/`, `gloves/` and `common/` subfolders reach
 through the upgrader too (`player_layout_proto`).
 
 **Does not ship:** glTF (Phase 7), desktop GPU BC7, the Linux bundle, and the updater's
-download/swap/rollback (all Phase 16), the tools of Phases 9–15, and what Release 0.2.0 brings
+download/swap (all Phase 16), the tools of Phases 9–15, and what Release 0.2.0 brings
 (the help chapters beyond the per-view topics, the update check, the teams-list merge).
 
 - Release bundling as the `just release <version>` recipe, Windows bundle only (`distribution.md`
@@ -628,7 +628,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
   release builds right after 0.0.1's cut, Windows first"). Its design is written into
   `distribution.md` before it is built
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
-  update`, rollback button (see `distribution.md` "Distribution and updates")
+  update` (see `distribution.md` "Distribution and updates")
 - Desktop GPU BC7 on Phase 4's texture step (`libs/README.md` "First-release desktop GPU BC7"):
   cold pipeline creation and upload/readback measured first, then bounded batches, the Auto/CPU
   setting and the fallback report
