@@ -32,7 +32,8 @@ What exists of this is in `spec/model_conversion/ir.md` "Material sources per fo
   `*.materials.toml` files in the same folder (never embedded in the glTF
   JSON). The file pattern, name matching, layering, `.common` link files, and
   the complete schema are in the [Unified model format plan](../model_format.md).
+
   `gltf_to_ir` takes the folder's resolved material files as an argument and
   fills the IR's `Material` structs from them; the glTF files themselves are
-  never rewritten (exports stay read-only). glTF-only — FMDL and .model keep
+  never rewritten (exports stay read-only). glTF-only: FMDL and .model keep
   their native mechanisms.
