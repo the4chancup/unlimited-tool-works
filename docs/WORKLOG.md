@@ -1796,10 +1796,12 @@ briefs, review loops, gates and mutation runs as for any step.
       editor's portraits, Set PES path and its pick by the save's version, through
       per-version reads on the common settings and the tool context; the version warning
       gone (SE-GUI-28 withdrawn); the picker's start folder (`last_folder`); draft and help
-    - [ ] b: the shell: `targets_pes_version` on each tool, the selector disabled and
-      empty under a tool that does not use it, the standing notice and `SwitchVersion`
-      removed (ST-BAR-07, 08 withdrawn). Brief `.tmp/0_0_2/sel/brief_b.md`
-    - [ ] the look in the built window; its review rounds
+    - [x] b (2026-11-12, `de01a410`, merge `af786a5e`; SWE-2): the shell:
+      `StudioTool::targets_pes_version` (the Team compiler and the Export upgrader), the
+      selector disabled and empty under a tool that does not use it (ST-SIDE-09), the
+      standing notice and `SwitchVersion` removed (ST-BAR-07, 08 withdrawn)
+    - [ ] its review rounds (a SWE-2 loop over a and b; Carbon owed)
+    - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
@@ -2373,9 +2375,16 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   an event logo drawn) and the Ruleset editor, both themes; no PES; 0.0.2-bar; maintainer
   (the lead's window harness misplaces its pointer on the 4K primary at 200%)
 - The two numbers' toggles disabled on a PES 17 or 21 save under a ruleset without illegal
-  formations, and Kick-off with Fluid formation off, each on its grey rectangle, both
-  themes (the light one's grey, 225, was computed, never seen); no PES; 0.0.2-num;
+  formations, and Kick-off with Fluid formation off, each drawn as a disabled button (its
+  box and dimmed label; no test pins the label's colour), both themes; no PES; 0.0.2-num;
   maintainer
+- The PES selector disabled and empty under the Save editor and the Ruleset editor, as
+  before under the Team compiler and the Export upgrader, no icon moving between them, in
+  the rail and the opened sidebar; a PES 2017 save open with the selector on another
+  version: its portraits and Set PES path's tooltip; Choose file starting in the last
+  opened folder; both themes; no PES; 0.0.2-sel; maintainer
+- A bench row dragged onto another bench row swapping the two in the Tactics lists; no
+  PES; DECISIONS 2026-11-12; maintainer
 
 ---
 

@@ -618,7 +618,6 @@ Each item kind stays in the bar for its lifetime:
 | `ShellCondition` | While the condition holds; disappears by itself |
 | `ToolActivity` | While the tool reports it |
 | `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept: an event worth keeping is also a finding in a log |
-| Standing notice | While the active tool returns it; it ends when clicked, dismissed, or replaced by another notice while shown, and the tool is told |
 
 `update_available` carries a Details action, and its text `Update available: v<version>` is in
 the link blue and opens Details too, as the toolbar's unsaved-changes label opens its list: an
