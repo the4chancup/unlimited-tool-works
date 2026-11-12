@@ -1,11 +1,15 @@
 # Withdrawn scenario IDs
 
 The acceptance scenarios that left their tool's spec, each line as it was written there, so
-that its ID is never reused (`CONTRIBUTING.md` "Testing"). Two kinds of line come here: an
-area whose every scenario was withdrawn, moved whole with its heading, and a run of
-consecutive withdrawn IDs in an area that still has live scenarios, which its spec now shows
-as one range line (`TC-BIN-25 to 33  withdrawn: …`), so whoever writes the area's next
-scenario still sees every number taken. A line is copied here before it leaves its spec.
+that its ID is never reused (`CONTRIBUTING.md` "Testing"). Two kinds of line come here:
+
+- an area whose every scenario was withdrawn, moved whole with its heading;
+- a run of consecutive withdrawn IDs in an area that still has live scenarios, which its spec
+  now shows as one range line (`TC-BIN-25 to 33  withdrawn: …`), so whoever writes the area's
+  next scenario still sees every number taken.
+
+A line is copied here before it leaves its spec.
+
 `just acceptance` reads this file: an ID here is defined and withdrawn, so a test citing it
 and a new scenario reusing it both fail, and every ID a range line compacts must be here.
 

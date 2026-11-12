@@ -48,43 +48,50 @@ differing new default is a deliberate decision, explained in the Controls column
 | `pass_through` | 0 | same | Keep folders with errors instead of discarding them (cup DLC workflow) |
 | `teams_list_path` | `teams_list.txt` (hardcoded, beside the exe) | `teams_list.txt` | Location of the working teams list; relative paths resolve in the data directory (see "Path resolution"). Created from the embedded list on first run |
 
-In the settings file the 0/1 settings are TOML booleans (`pass_through = false`). A setting enters
-`TeamCompilerSettings` and `default_settings()` with the phase whose code reads it, not before,
-so no key is written that nothing honors yet; the compiler reads `cpk_name`,
+In the settings file the 0/1 settings are TOML booleans (`pass_through = false`).
+
+A setting enters `TeamCompilerSettings` and `default_settings()` with the phase whose code reads
+it, not before, so no key is written that nothing honors yet. The compiler reads `cpk_name`,
 `output_folder_path`, `savefile_path`, `multicpk_mode`, `teams_cpk_name`, `cpk_part_max_size`,
 `bins_cpk_name`, `refs_cpk_name`, `dds_compression`, `strict_file_type_check`, `pass_through`
-and `teams_list_path`. A missing key
-loads as its default; a key of the wrong type is a configuration error (exit code 2, naming the
-key). A missing `teams_list.txt`, or no data directory yet, reads the embedded list without
-writing it (only `compile` creates the file); one that exists but cannot be read or parsed stops
-the run before any export is read (exit code 3, naming the path).
+and `teams_list_path`.
 
-Output mode (normal / test / sideload) is not a persisted setting: it is the Compile button's dropdown
-in the GUI and a flag on the CLI subcommand, as in Blue's `--mode` argument.
+A missing key loads as its default; a key of the wrong type is a configuration error (exit code
+2, naming the key). A missing `teams_list.txt`, or no data directory yet, reads the embedded list
+without writing it (only `compile` creates the file); one that exists but cannot be read or
+parsed stops the run before any export is read (exit code 3, naming the path).
+
+Output mode (normal / test / sideload) is not a persisted setting: it is the Compile button's
+dropdown in the GUI and a flag on the CLI subcommand, as in Blue's `--mode` argument.
 
 **DDS compression cost.** Red's `dds_compression` is a separate pass at the end of its
 extraction stage: walk `extracted_teams/` (team exports only; referee content is never
 compressed), read each DDS, Python `zlib.compress` at level 6, wrap in the 16-byte WESYS
-header, write it back — I/O-bound and serial. In the Studio it is one more step in the texture task,
-on bytes already in memory, running on rayon workers like everything else. Rough budget for a
-200 MB pre-Fox export that is mostly DDS: `flate2` deflate at level 6 runs at roughly 30–60 MB/s
-per core on block-compressed texture data (DXT blocks are high-entropy, so it is neither fast nor
-very effective — expect 10–30 % size reduction), i.e. ~4–7 s of CPU spread over ~7 workers, well
-under a second of wall time per export and far below the CPU BC3 encode of any raster-source
-texture in the same task. **Measured at 4.16b** (36 real DDS files, 40.8 MB: a PES 17 kit pack,
-a team's 2048² kit textures, a 5.6 MB Common body, five 1.4 MB model textures; `flate2` 1.1.10
-with its default `miniz_oxide` backend, one thread, release build): level 1 gives 8.6 % of the
-raw bytes in 47 ms, level 3 6.7 % in 161 ms, level 6 6.4 % in 302 ms, level 9 6.2 % in 713 ms.
-DXT data compresses far better than the budget above feared (flat kit mains to 0.15 %,
-photographic textures to 15 %), and the whole set takes a third of a second at Red's level.
-**The level is 6**, Red's: level 3 would save 0.14 s per 40 MB and cost 5 % more bytes in every
-CPK the game loads, level 1 0.25 s for 35 % more, and a compile of that export spends seconds
-elsewhere. The `zlib-rs` backend is not adopted: it is a new dependency for a cost already
-under a second, so it stays a maintainer's call. The Red parity harness compares WESYS-wrapped
-entries **decompressed**, since deflate output is not byte-stable across implementations and
-levels. Textures already WESYS-wrapped in the export are passed through, not re-compressed
-(Red's `zlib_file` skip). With the `auto` default the cost is only ever paid on cup-DLC
-compiles, where a few seconds against a 48-team run is irrelevant.
+header, write it back — I/O-bound and serial. In the Studio it is one more step in the texture
+task, on bytes already in memory, running on rayon workers like everything else.
+
+Rough budget for a 200 MB pre-Fox export that is mostly DDS: `flate2` deflate at level 6 runs
+at roughly 30–60 MB/s per core on block-compressed texture data (DXT blocks are high-entropy, so
+it is neither fast nor very effective — expect 10–30 % size reduction), i.e. ~4–7 s of CPU
+spread over ~7 workers, well under a second of wall time per export and far below the CPU BC3
+encode of any raster-source texture in the same task.
+
+**Measured at 4.16b** (36 real DDS files, 40.8 MB: a PES 17 kit pack, a team's 2048² kit
+textures, a 5.6 MB Common body, five 1.4 MB model textures; `flate2` 1.1.10 with its default
+`miniz_oxide` backend, one thread, release build): level 1 gives 8.6 % of the raw bytes in
+47 ms, level 3 6.7 % in 161 ms, level 6 6.4 % in 302 ms, level 9 6.2 % in 713 ms. DXT data
+compresses far better than the budget above feared (flat kit mains to 0.15 %, photographic
+textures to 15 %), and the whole set takes a third of a second at Red's level.
+
+**The level is 6**, Red's. Level 3 would save 0.14 s per 40 MB and cost 5 % more bytes in every
+CPK the game loads, level 1 would save 0.25 s for 35 % more, and a compile of that export spends
+seconds elsewhere. The `zlib-rs` backend is not adopted: it is a new dependency for a cost
+already under a second, so it stays a maintainer's call.
+
+The Red parity harness compares WESYS-wrapped entries **decompressed**, since deflate output is
+not byte-stable across implementations and levels. Textures already WESYS-wrapped in the export
+are passed through, not re-compressed (Red's `zlib_file` skip). With the `auto` default the cost
+is only ever paid on cup-DLC compiles, where a few seconds against a 48-team run is irrelevant.
 
 ### Path resolution
 
@@ -126,69 +133,85 @@ UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList w
 [Save editor plan](../save_editor.md) "CLI".)
 
 `upgrade-dpfl` prints what the override changes (entries that will no longer be loaded, with the
-sizes of any matching `.cpk` files found in `download/`) and stops unless `--yes` is given; it never
-deletes CPK files non-interactively — those are listed for the user to remove. See "DpFileList
-upgrade" under "Post-processing". It prints as the other commands do, one finding per line
-(`dpfilelist_cpk_renamed`, `dpfilelist_placeholder_written`, `dpfilelist_replaced`,
-`dpfilelist_cpk_dropped`, then `dpfilelist_upgrade_planned` without `--yes`, or
-`dpfilelist_up_to_date` alone), in the order `--yes` acts: renames, placeholders, the list.
-It exits 0 when it is done or only listed; 2 when the PES folder or its `download/` is not a
-folder; 3 when a file cannot be read or written, naming it, after which what was done before
-stays done (the list is replaced last, so a failure leaves the old list in place, and running
-the command again finishes the work: a file already renamed is no longer under its old name).
+sizes of any matching `.cpk` files found in `download/`) and stops unless `--yes` is given. It
+never deletes CPK files non-interactively — those are listed for the user to remove. See
+"DpFileList upgrade" under "Post-processing".
 
-The optional positional argument is an exports-root override for that invocation; when omitted, both
-commands use the common `exports_folder_path`. It is not a single-export path and is never persisted
-back to settings. A relative path given on the command line (the root or an `--export`) resolves
-against the current directory, as any command-line path does; only the settings' relative paths
-resolve beside the executable or in the data directory ("Path resolution").
+It prints as the other commands do, one finding per line (`dpfilelist_cpk_renamed`,
+`dpfilelist_placeholder_written`, `dpfilelist_replaced`, `dpfilelist_cpk_dropped`, then
+`dpfilelist_upgrade_planned` without `--yes`, or `dpfilelist_up_to_date` alone), in the order
+`--yes` acts: renames, placeholders, the list. It exits:
 
-`--no-deploy` builds the CPKs into `output/` without touching the PES install or the savefile (see
-`pipeline.md` "Post-processing"). It is CLI-only and has no GUI or settings counterpart: it is the cup maintainer's
-DLC-production flag and the build-box flag, not something a regular user should find and leave on.
-It is rejected together with `--mode test|sideload`, which have no deployment to skip.
+- 0 when it is done or only listed;
+- 2 when the PES folder or its `download/` is not a folder;
+- 3 when a file cannot be read or written, naming it, after which what was done before stays
+  done (the list is replaced last, so a failure leaves the old list in place, and running the
+  command again finishes the work: a file already renamed is no longer under its old name).
+
+The optional positional argument is an exports-root override for that invocation; when omitted,
+both commands use the common `exports_folder_path`. It is not a single-export path and is never
+persisted back to settings. A relative path given on the command line (the root or an
+`--export`) resolves against the current directory, as any command-line path does; only the
+settings' relative paths resolve beside the executable or in the data directory ("Path
+resolution").
+
+`--no-deploy` builds the CPKs into `output/` without touching the PES install or the savefile
+(see `pipeline.md` "Post-processing"). It is CLI-only and has no GUI or settings counterpart,
+because it is the cup maintainer's DLC-production flag and the build-box flag, not something a
+regular user should find and leave on. It is rejected together with `--mode test|sideload`,
+which have no deployment to skip.
 
 `--edit-mode-closed` is the member's word that the compile target's game has its Edit mode
-closed: with it the savefile step writes the save even while that PES runs, where without it
-the step is skipped (`savefile_skipped_pes_running`; `pipeline.md` "6. Post-processing"). It
-is `compile`'s alone (`check` writes no save) and has no settings counterpart: a standing "yes"
-would answer a question about the game's state now before it is asked. A run that writes no
-save (`--no-deploy`, `--mode test`) accepts it and changes nothing: the member's word about
-Edit mode is not wrong there, only unused, and refusing it would break a launcher line that
-always passes it.
+closed. With it, the savefile step writes the save even while that PES runs; without it, the
+step is skipped (`savefile_skipped_pes_running`; `pipeline.md` "6. Post-processing").
 
-`--export <path>` (repeatable) restricts the run to the named exports — a path to an export folder
-or archive, anywhere on disk, not necessarily under the exports root. A path that does not exist,
-or is a file other than a `.zip`/`.7z`, is an invalid invocation (exit code 2, naming the path),
-and nothing runs. This is the contract for
-**external callers driving a sideloading prototyping loop**, first of all the `pes-models` Blender
-extension's "export model and compile for sideloading" button: it saves the model into the player folder
-it was loaded from (it knows the export from the launch manifest — see the Player aesthetics editor
-plan), then runs
+- It is `compile`'s alone (`check` writes no save).
+- It has no settings counterpart, because a standing "yes" would answer a question about the
+  game's state now before it is asked.
+- A run that writes no save (`--no-deploy`, `--mode test`) accepts it and changes nothing: the
+  member's word about Edit mode is not wrong there, only unused, and refusing it would break a
+  launcher line that always passes it.
+
+`--export <path>` (repeatable) restricts the run to the named exports — a path to an export
+folder or archive, anywhere on disk, not necessarily under the exports root. A path that does not
+exist, or is a file other than a `.zip`/`.7z`, is an invalid invocation (exit code 2, naming the
+path), and nothing runs.
+
+This is the contract for **external callers driving a sideloading prototyping loop**, first of
+all the `pes-models` Blender extension's "export model and compile for sideloading" button: it
+saves the model into the player folder it was loaded from (it knows the export from the launch
+manifest — see the Player aesthetics editor plan), then runs
 
 ```text
 UTW team-compiler compile --mode sideload --export "D:\exports\aaa_export"
 ```
 
 and PES, with its sideloading runtime serving `livecpk\` (FoxDen on 18–21, Sider 3 on 17), shows
-the result on the next model load. `--mode sideload` with `pes_version` 15 or 16 is an invalid
-configuration (exit code 2): no sideloading runtime exists for them; so is one whose
-`pes_folder_path` is not a folder. Without `--export` the plugin
-would recompile every export in the folder on each iteration. Console output follows the ordinary
-`-` prefixed format, and the exit code gives a caller a one-line verdict: **0** clean (Warning and
-Info findings allowed), **1** finished with an Error finding in some scope (something was dropped,
-or kept by `pass_through`), **2** invalid invocation or configuration (clap's own code for the
-arguments, and a setting that fails its validation such as a `cpk_name` that is no `CpkStem`;
-nothing ran), **3** aborted (an `AbortRun` or Fatal finding, or an environment failure found
-before the run, such as an output folder that cannot be written). `check` and `compile` share the
-mapping, and deployment adds no code to it: a degraded run (a deployment Error finding, the CPKs
-promoted to `output/`) exits 1 and an aborted deployment 3, as the mapping already says, so no
-caller special-cases deployment. The CLI is a separate process with its own run
-and does not require the GUI to be closed. In sideload mode the bins land at
-their game paths inside `livecpk/` ("Output-mode artifact routing" under `pipeline.md` "Resolved
-decisions"). A sideload-mode run with PES open skips the savefile step unless given
-`--edit-mode-closed` (`savefile_skipped_pes_running`, see `pipeline.md` "Post-processing"): the
-model iteration lands through sideloading, and the savefile catches up on a compile given the
-flag or made with PES closed.
+the result on the next model load. Without `--export` the plugin would recompile every export in
+the folder on each iteration.
+
+Console output follows the ordinary `-` prefixed format, and the exit code gives a caller a
+one-line verdict:
+
+- **0** clean (Warning and Info findings allowed);
+- **1** finished with an Error finding in some scope (something was dropped, or kept by
+  `pass_through`);
+- **2** invalid invocation or configuration (clap's own code for the arguments, and a setting
+  that fails its validation such as a `cpk_name` that is no `CpkStem`; nothing ran);
+- **3** aborted (an `AbortRun` or Fatal finding, or an environment failure found before the run,
+  such as an output folder that cannot be written).
+
+`check` and `compile` share the mapping, and deployment adds no code to it: a degraded run (a
+deployment Error finding, the CPKs promoted to `output/`) exits 1 and an aborted deployment 3,
+as the mapping already says, so no caller special-cases deployment. The CLI is a separate process
+with its own run and does not require the GUI to be closed.
+
+`--mode sideload` with `pes_version` 15 or 16 is an invalid configuration (exit code 2), because
+no sideloading runtime exists for them; so is a sideload run whose `pes_folder_path` is not a
+folder. In sideload mode the bins land at their game paths inside `livecpk/` ("Output-mode
+artifact routing" under `pipeline.md` "Resolved decisions"). A sideload-mode run with PES open
+skips the savefile step unless given `--edit-mode-closed` (`savefile_skipped_pes_running`, see
+`pipeline.md` "Post-processing"): the model iteration lands through sideloading, and the
+savefile catches up on a compile given the flag or made with PES closed.
 
 ---

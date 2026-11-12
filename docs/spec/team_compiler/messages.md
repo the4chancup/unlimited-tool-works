@@ -4,11 +4,12 @@ Part of the [Team compiler plan](README.md). Section headings are unchanged from
 
 ## Message catalog
 
-The warning/error messaging is overhauled, not ported (see `README.md` "Relationship to the older compilers").
-Red's ~150 messages (audited across `export_check.py`, `texture_check.py`, `xml_check.py`,
-`team_id_get.py`, `portraits_move.py`, `bins_update.py`, `referee_tools.py`, `cpk_tools.py` and the
-stage scripts) reduce to a structured catalog: every reportable condition gets a stable ID, and the
-pipeline emits it as **data** — the GUI, CLI, and log files decide presentation.
+The warning/error messaging is overhauled, not ported (see `README.md` "Relationship to the
+older compilers"). Red's ~150 messages (audited across `export_check.py`, `texture_check.py`,
+`xml_check.py`, `team_id_get.py`, `portraits_move.py`, `bins_update.py`, `referee_tools.py`,
+`cpk_tools.py` and the stage scripts) reduce to a structured catalog: every reportable condition
+gets a stable ID, and the pipeline emits it as **data** — the GUI, CLI, and log files decide
+presentation.
 
 ### Message structure
 
@@ -71,20 +72,22 @@ Principles:
 - **One condition, one ID.** Red repeats near-identical messages per folder type ("Bad face folders"
   / "Bad boots folders" / "Bad gloves folders"); here the folder identity is in the `scope`, so one
   `fmdl_name_invalid` ID covers all model folder kinds.
-- **Message text lives in one table** keyed by ID (template + remediation hint; until the help
-  window and the GUI log need the text, in Phase 8, `messages.rs` holds each code's severity
-  only, and the CLI prints the code with its context fields), not scattered
-  through the pipeline. Red's remediation-hint style is kept ("Resize it so that both sizes are
-  powers of 2").
+- **Message text lives in one table** keyed by ID (template + remediation hint), not scattered
+  through the pipeline. Until the help window and the GUI log need the text, in Phase 8,
+  `messages.rs` holds each code's severity only, and the CLI prints the code with its context
+  fields. Red's remediation-hint style is kept ("Resize it so that both sizes are powers of 2").
 - **Consequences are explicit**: `Disposition` records whether the finding keeps content, drops a
   file, normalized roster slot, folder, or export, or aborts the run; severity remains a
   presentation/filtering concern. File-scoped consequences still roll up according to Red's rules
   (model-file failures drop the folder; standalone texture/portrait failures may drop only the
-  file). A line-local `RosterEntry` finding with `DropSlot` removes only that normalized assignment;
-  file-wide encoding failure or roster ambiguity that prevents trustworthy normalization uses
-  `DropExport` instead. Runtime failures derive their effective disposition from the owning scope:
-  optional root file → `DropFile`, folder/task → `DropFolder`, required export metadata or unusable
-  source → `DropExport`, output-writer/global invariant → `AbortRun`.
+  file). A line-local `RosterEntry` finding with `DropSlot` removes only that normalized
+  assignment; file-wide encoding failure or roster ambiguity that prevents trustworthy
+  normalization uses `DropExport` instead. Runtime failures derive their effective disposition
+  from the owning scope:
+  - optional root file → `DropFile`;
+  - folder/task → `DropFolder`;
+  - required export metadata or unusable source → `DropExport`;
+  - output-writer/global invariant → `AbortRun`.
 - **What makes a finding an Error.** A file that cannot be produced, or whose compiled result is
   unusable or visibly compromised in the game (a mesh that does not render, geometry that lags
   the match, a texture the model names and nobody supplies), is an Error and drops its folder. A
@@ -94,19 +97,27 @@ Principles:
   Error that a census shows on models the game renders fine is a wrong severity in the format
   crate, fixed there, not an exception here.
 - **`pass_through`** overrides only eligible content-level `DropFile`/`DropFolder` dispositions to
-  keep-with-flag, as in Red, while retaining the original severity. Not eligible: findings whose
-  content cannot exist (failed conversion/packing, unproducible logos), unused content
-  (`shared_folder_orphaned`), contradictory directives that leave no value to keep
-  (`fpc_conflict`, `kit_layout_conflict`, `shared_link_duplicate`), kit identities that cannot be kept (`kit_slot_duplicate`,
-  `kit_folder_invalid`), ambiguous model-source or texture identity/conflicts, foundational
-  unsafe-path/ambiguous-roster/required-metadata failures, geometry far from the origin
-  (`vertex_too_far_from_origin`: the lag it causes persists for the whole matchday),
-  `DropSlot`, `DropExport`, `AbortRun`, and environment-level dispositions. Written errored content
-  receives a distinct `DoneWithErrors` outcome rather than an ordinary red error state.
-- **No blocking console prompts.** Red's prompts are replaced, not kept: unknown team ID becomes a
-  plain Error (`team_name_unknown`),
-  the one standing consent (overwriting `dt00_x64.cpk` with the Fox referee marker) is gone with
-  the write it guarded, and retry-on-locked-file becomes a plain Error. The CLI never prompts: all of these are hard errors there.
+  keep-with-flag, as in Red, while retaining the original severity. Not eligible:
+  - findings whose content cannot exist (failed conversion/packing, unproducible logos);
+  - unused content (`shared_folder_orphaned`);
+  - contradictory directives that leave no value to keep (`fpc_conflict`,
+    `kit_layout_conflict`, `shared_link_duplicate`);
+  - kit identities that cannot be kept (`kit_slot_duplicate`, `kit_folder_invalid`);
+  - ambiguous model-source or texture identity/conflicts;
+  - foundational unsafe-path/ambiguous-roster/required-metadata failures;
+  - geometry far from the origin (`vertex_too_far_from_origin`: the lag it causes persists for
+    the whole matchday);
+  - `DropSlot`, `DropExport`, `AbortRun`, and environment-level dispositions.
+
+  Written errored content receives a distinct `DoneWithErrors` outcome rather than an ordinary
+  red error state.
+- **No blocking console prompts.** Red's prompts are replaced, not kept:
+  - unknown team ID becomes a plain Error (`team_name_unknown`);
+  - the one standing consent (overwriting `dt00_x64.cpk` with the Fox referee marker) is gone
+    with the write it guarded;
+  - retry-on-locked-file becomes a plain Error.
+
+  The CLI never prompts: all of these are hard errors there.
 - **Progress chatter is not a message.** Red's "- Packing the face folders..." prints map to
   `Progress` events, not catalog entries.
 
@@ -239,19 +250,25 @@ savefile messages are new.
 
 **Model checks** (the format crates' `check`, run by the deep pass on every native model as it
 is loaded, whatever the target, and from the conversion steps on, on each converted model in its
-target form. A finding keeps the format crate's code and its severity, which "What makes a
-finding an Error" sets; the one renamed is the far vertex, which both formats report as
-`vertex_too_far_from_origin`, above. An Error discards the folder and is
-pass-through-eligible, since the file can still be packed as it is; a Warning or an Info changes
-nothing. On a converted form only an Error acts (`model_conversion_failed`, the far vertex,
-both the package's); its Warnings and Infos are not reported: they describe the converter's
-output (every converted FMDL trips `fmdl_weights_not_normalized`), and what the member can
-change is in the source, which the deep pass checks with every rule. One finding per file and
-code, however many meshes trip the rule. Context: the model
-file, and the number of items that tripped it over the whole file: faces, vertices or bone
-slots for a rule about a mesh's contents, and the meshes, materials or bones themselves for a
-rule about one of them (two empty meshes count 2). A finding on a
-`Common/` model acts on that file, and the players linking it follow `link_target_dropped`)
+target form).
+
+A finding keeps the format crate's code and its severity, which "What makes a finding an Error"
+sets; the one renamed is the far vertex, which both formats report as
+`vertex_too_far_from_origin`, above.
+
+- An Error discards the folder and is pass-through-eligible, since the file can still be packed
+  as it is.
+- A Warning or an Info changes nothing.
+- On a converted form only an Error acts (`model_conversion_failed`, the far vertex, both the
+  package's). Its Warnings and Infos are not reported, because they describe the converter's
+  output (every converted FMDL trips `fmdl_weights_not_normalized`), and what the member can
+  change is in the source, which the deep pass checks with every rule.
+
+One finding per file and code, however many meshes trip the rule. Context: the model file, and
+the number of items that tripped it over the whole file: faces, vertices or bone slots for a rule
+about a mesh's contents, and the meshes, materials or bones themselves for a rule about one of
+them (two empty meshes count 2). A finding on a `Common/` model acts on that file, and the
+players linking it follow `link_target_dropped`.
 
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
@@ -275,43 +292,57 @@ rule about one of them (two empty meshes count 2). A finding on a
 | `model_material_unused` | I | pre-Fox: a material name no mesh uses | none |
 
 The `.mtl` checks (`mtl_material_duplicate`, `mtl_state_*`) are in "XML/MTL content checks"
-below; the deep pass runs them on every `.mtl` it reads: on PES 15-17 every one, on PES 18-21
+below. The deep pass runs them on every `.mtl` it reads: on PES 15-17 every one, on PES 18-21
 the one a selected `.model` or a Common `.model` link pairs with, in a model folder or in
 `Common/` (the `mtl_texture_not_found` row). It also reports `model_material_undefined` for
 each pre-Fox `.model` (or `.common` link to one) of a model folder, pairing it with the `.mtl`
 the face step's search finds (`spec/model_format.md` "Pre-Fox: the `.mtl` a `.model` uses"), so
 `check` reports it too.
 
-**Textures** (file-scoped; in model folders the folder fails, and so does a kit, whose config
-names its textures; elsewhere (`Common/`, portraits) the file is dropped; the logo sources are the
-exception — main and `_small` fail as one atomic producer of the game's three sizes. A file is
-`texture_type_mismatch` when its bytes open with the signature of another accepted format than
-its extension's; TGA has no signature, so a `.tga` is a mismatch only when it opens with
-another's. An uncompressed texture is no finding: a `.dds` or `.ftex` stored uncompressed
-is written uncompressed, except a kit's main texture on PES 15–17 (which those versions
-crash on uncompressed) and a normal map, both encoded like any raster source
-(`spec/libs/dds_convert.md` "Passthrough"))
+**Textures** (file-scoped):
+
+- in model folders the folder fails, and so does a kit, whose config names its textures;
+- elsewhere (`Common/`, portraits) the file is dropped;
+- the logo sources are the exception — main and `_small` fail as one atomic producer of the
+  game's three sizes.
+
+A file is `texture_type_mismatch` when its bytes open with the signature of another accepted
+format than its extension's. TGA has no signature, so a `.tga` is a mismatch only when it opens
+with another's.
+
+An uncompressed texture is no finding: a `.dds` or `.ftex` stored uncompressed is written
+uncompressed, except a kit's main texture on PES 15–17 (which those versions crash on
+uncompressed) and a normal map, both encoded like any raster source (`spec/libs/dds_convert.md`
+"Passthrough").
 
 The deep pass reports `texture_type_mismatch`, `texture_too_small`, `texture_not_pow2`,
 `texture_not_div4` and `kit_texture_too_big` from each texture's header (`probe` in
 `libs/dds_convert.md`), without decoding it, so `check` reports them and the folder is dropped
 before any ID is planned for it. A mismatched file gets that one finding: its header is another
-format's, so its size is not read. `texture_type_mismatch` is not pass-through-eligible, because
-the file cannot be converted as the format its name declares; nor is `texture_not_div4`, because
-a texture it holds is one the compile block-compresses (BC1 or BC3), and the pre-Fox games'
-Direct3D 9 renderer cannot create a block-compressed texture whose sides are not multiples of
-4. The other
-three size findings are eligible: the texture converts, and what the game makes of it is the
-member's risk. A texture whose header the
-probe refuses is a finding here too, at the same place as a mismatched file's:
-`texture_unreadable` when the header cannot be read at all (bytes that are no texture, a header
-cut short), `texture_codec_unsupported` when the probe refuses its codec or its kind of DDS, the
-two arms conversion itself calls a codec refusal (`processing::texture::conversion_failure`), so
-that the file never reaches a task that would fail whole with it (a Common texture's task packs
-every Common texture). A cube map skips the probe: the 2D reader refuses every cube map, and the
-compile never decodes one (it goes out as it is, or through the FTEX container conversion), so
-a cube map the Fox route refuses still fails its task. Pixel data cut short, which no header
-shows, still fails the task (`folder_pack_failed`).
+format's, so its size is not read.
+
+`texture_type_mismatch` is not pass-through-eligible, because the file cannot be converted as the
+format its name declares. Nor is `texture_not_div4`, because a texture it holds is one the compile
+block-compresses (BC1 or BC3), and the pre-Fox games' Direct3D 9 renderer cannot create a
+block-compressed texture whose sides are not multiples of 4. The other three size findings are
+eligible: the texture converts, and what the game makes of it is the member's risk.
+
+A texture whose header the probe refuses is a finding here too, at the same place as a
+mismatched file's:
+
+- `texture_unreadable` when the header cannot be read at all (bytes that are no texture, a header
+  cut short);
+- `texture_codec_unsupported` when the probe refuses its codec or its kind of DDS.
+
+These are the two arms conversion itself calls a codec refusal
+(`processing::texture::conversion_failure`). They are reported here so that the file never
+reaches a task that would fail whole with it (a Common texture's task packs every Common
+texture).
+
+A cube map skips the probe: the 2D reader refuses every cube map, and the compile never decodes
+one (it goes out as it is, or through the FTEX container conversion), so a cube map the Fox route
+refuses still fails its task. Pixel data cut short, which no header shows, still fails the task
+(`folder_pack_failed`).
 
 A portrait (a `Portraits/` file or a player folder's `portrait.*`) is checked the same way and
 dropped alone, its player folder keeping everything else. Its sides must be powers of two
@@ -382,19 +413,20 @@ checks it carefully, and the severity line is drawn by evidence, not by taste:
 - **Error** — what is known not to work, or cannot work: unparsable XML, a root other than
   `<config>`, a `<model>` without `type` or `path`, a `./` or Common reference to a file the export
   does not contain (the one thing the compiler can verify outright), a Common path naming a
-  folder other than `team_folder` or spelled `common/`, the PES16 `oral_`/`face_high_`/`hair_high_` name rule, and two sources for
-  the face diff. These are Red's checks (`xml_check.py`), each added after real breakage, plus the
-  two structural impossibilities Red happened not to test (a missing `path`, a doubled diff).
+  folder other than `team_folder` or spelled `common/`, the PES16
+  `oral_`/`face_high_`/`hair_high_` name rule, and two sources for the face diff. These are Red's
+  checks (`xml_check.py`), each added after real breakage, plus the two structural
+  impossibilities Red happened not to test (a missing `path`, a doubled diff).
 - **Warning** — everything outside the vocabulary the compiler's own generator emits, because
   that vocabulary is the in-game-verified set and nothing outside it is: an unknown element or
   attribute, a `type` not in the type table, a non-numeric `ratio`, a path in a form the
-  compiler cannot resolve (`model/character/face/common/…` and any other game path; the
-  compiler says it did not check, while Red let only `model/character/face/common/…` through
-  silently and reported any other form it could not resolve as an Error for a model or `.mtl`,
-  a Warning for a texture: a pre-Fox gap, worklog "Issues"). The value is **kept verbatim**: a
-  warning is the compiler saying "I can't vouch for this", never "I changed this". A model file in
-  the folder that the xml does not list is also a warning — it will not be in the game, which is
-  almost always a mistake and occasionally the point.
+  compiler cannot resolve (`model/character/face/common/…` and any other game path). For such a
+  path the compiler says it did not check, while Red let only `model/character/face/common/…`
+  through silently and reported any other form it could not resolve as an Error for a model or
+  `.mtl`, a Warning for a texture: a pre-Fox gap, worklog "Issues". The value is **kept
+  verbatim**: a warning is the compiler saying "I can't vouch for this", never "I changed this".
+  A model file in the folder that the xml does not list is also a warning — it will not be in the
+  game, which is almost always a mistake and occasionally the point.
 - **Info** — the compiler's own rewrites, which it performs on a user xml exactly as it would on a
   generated one and reports so the user knows the emitted file differs from the source: the
   `face_neck` dummy appended when no entry has that type; `uniform` → `uniform_sub` on PES15.
@@ -406,55 +438,67 @@ checks it carefully, and the severity line is drawn by evidence, not by taste:
   LoD level, and higher levels are merely uncommon, not unverified (a value that has already made
   the move from warning to known).
 
-Rules that follow from "the xml is the authority in its folder": filename typing is off — the
-suffix table is for generating an xml, and this folder has one; `.common` model links are not needed
-(the xml names Common paths itself) and an unlisted one is just an unlisted file; only what the xml
-references is emitted, plus the MTLs and textures those models bind, which go through the ordinary
-MTL and texture checks unchanged. The compiler always re-serializes the xml it emits (it has to, for
-the ID substitution and the appended entries), so comments, whitespace and the encoding declaration
-of the source never reach the game — the checks above are about content, not formatting. New
-knowledge moves a row: when an experiment shows a value works, it joins the generated vocabulary and
-stops warning; when one shows a value crashes, it becomes an error with the crash as its citation.
+Rules that follow from "the xml is the authority in its folder":
+
+- filename typing is off — the suffix table is for generating an xml, and this folder has one;
+- `.common` model links are not needed (the xml names Common paths itself) and an unlisted one is
+  just an unlisted file;
+- only what the xml references is emitted, plus the MTLs and textures those models bind, which go
+  through the ordinary MTL and texture checks unchanged.
+
+The compiler always re-serializes the xml it emits (it has to, for the ID substitution and the
+appended entries), so comments, whitespace and the encoding declaration of the source never reach
+the game — the checks above are about content, not formatting.
+
+New knowledge moves a row: when an experiment shows a value works, it joins the generated
+vocabulary and stops warning; when one shows a value crashes, it becomes an error with the crash
+as its citation.
 
 How a `path` or `material` is resolved and written, Red's rules (`xml_check.py` `listed_file_check`,
 `update_xml_for_renamed_common_models`), since the one real member xml in the fixtures (the pre-Fox
 tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was written for them:
 
-- A `./<name>` reference names a file of the face (the player's own files, directly in the folder,
-  then a linked shared face's), and `./<path>/<name>` (`./jessie/body/x.model`) a file of the
-  player's subfolder at that path, relative to the referencing file
-  (`spec/aesthetics_export/player_folders.md` "Subfolders"), compared case-folded with the reference's `*`
-  read as `win32`; the referenced file is **packed under the name the reference gives** (`*` as
-  `win32`, spelled as the xml spells it) and the reference is written as it is. We do not
-  rename the file to its `oral_<stem>_win32` packed name and respell the reference, because the
-  xml is the member's statement of what the game should load, and Red kept both as written.
+- A `./<name>` reference names a file of the face (the player's own files, directly in the
+  folder, then a linked shared face's), and `./<path>/<name>` (`./jessie/body/x.model`) a file of
+  the player's subfolder at that path, relative to the referencing file
+  (`spec/aesthetics_export/player_folders.md` "Subfolders"), compared case-folded with the
+  reference's `*` read as `win32`. The referenced file is **packed under the name the reference
+  gives** (`*` as `win32`, spelled as the xml spells it) and the reference is written as it is.
+  We do not rename the file to its `oral_<stem>_win32` packed name and respell the reference,
+  because the xml is the member's statement of what the game should load, and Red kept both as
+  written.
 - A `team_common_folder/<name>` reference, or its long form
   `model/character/uniform/common/team_folder/<name>` (`team_folder` in any letter case), names
-  the team's Common: it is written with `team_folder` replaced by the team's ID (999 for a refs
-  export), the long form's prefix always, and `<name>` (`*` as
-  `win32`) names a file directly in the export's `Common/`, case-folded, else `xml_model_not_found`;
-  `<subfolder>/<name>` (`team_common_folder/refkit/oral_arm_*.model`, `<subfolder>` at any depth)
-  names a file in that
-  subfolder of `Common/`, which the team's Common output packs at its own path (`pipeline.md`
-  "Common"), and in a refs export a file of the referee template's `common/999/` tree counts
-  too when the export does not hold one of that path (`blue_port.md` "Referee export
-  processing"). We write `team_folder`, not the team's ID or `XXX`, because the Studio format
-  holds no team ID of any kind: an export compiles under whatever ID the teams list gives its
-  team, and `XXX` is the legacy placeholder, which only the Export upgrader reads (DECISIONS
-  2026-11-09). The short form is the one folder `team_common_folder/` (any letter case), not
-  `common/team_folder/`: `common` is also the root folder of a CPK
-  (`common/character1/model/character/uniform/common/…`), so a short `common/team_folder/x.dds`
+  the team's Common. It is written with `team_folder` replaced by the team's ID (999 for a refs
+  export), the long form's prefix always, and:
+  - `<name>` (`*` as `win32`) names a file directly in the export's `Common/`, case-folded, else
+    `xml_model_not_found`;
+  - `<subfolder>/<name>` (`team_common_folder/refkit/oral_arm_*.model`, `<subfolder>` at any
+    depth) names a file in that subfolder of `Common/`, which the team's Common output packs at
+    its own path (`pipeline.md` "Common"), and in a refs export a file of the referee
+    template's `common/999/` tree counts too when the export does not hold one of that path
+    (`blue_port.md` "Referee export processing").
+
+  We write `team_folder`, not the team's ID or `XXX`, because the Studio format holds no team ID
+  of any kind: an export compiles under whatever ID the teams list gives its team, and `XXX` is
+  the legacy placeholder, which only the Export upgrader reads (DECISIONS 2026-11-09).
+
+  The short form is the one folder `team_common_folder/` (any letter case), not
+  `common/team_folder/`, because `common` is also the root folder of a CPK
+  (`common/character1/model/character/uniform/common/…`). So a short `common/team_folder/x.dds`
   reads as a path in the archive, and a reference starting `common/` is
   `xml_common_path_invalid`; one folder, not two, leaves nothing between the prefix and the
-  team's Common to spell wrong. Any other folder after the long form's `common/` is
-  `xml_common_path_invalid` too, and so is any folder after `common_folder/`, the short form
-  of the uniform Common folder itself (`common_folder/team_folder/` included, a second
-  spelling of `team_common_folder/`); a file directly below either
-  (`common_folder/uniform.mtl`, the game's own) is the last bullet's, written in the long
-  form, the only one the game reads. The game's own files are named there often enough to
-  keep the short form: 592 of the 13,788 real `.mtl` and `face.xml` files on the
-  maintainer's machine name 14,102 of them, `specular.dds` and the `uni_pattern_*` maps
+  team's Common to spell wrong.
+
+  Any other folder after the long form's `common/` is `xml_common_path_invalid` too, and so is
+  any folder after `common_folder/`, the short form of the uniform Common folder itself
+  (`common_folder/team_folder/` included, a second spelling of `team_common_folder/`). A file
+  directly below either (`common_folder/uniform.mtl`, the game's own) is the last bullet's,
+  written in the long form, the only one the game reads. The game's own files are named there
+  often enough to keep the short form: 592 of the 13,788 real `.mtl` and `face.xml` files on
+  the maintainer's machine name 14,102 of them, `specular.dds` and the `uni_pattern_*` maps
   first, against 1,389 naming the team's Common (`.tmp/0_0_2/poc12/census_game_common.txt`).
+
   A `.model` is written as the team's Common output packs it, `oral_<stem>_*.model` (the Common
   output renames every model, as Red's `model_names_fix` does, and Red then respells the xml);
   a `.mtl` keeps its name there.
@@ -467,47 +511,63 @@ tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was
 - Any other path form is `xml_path_unchecked` and written as it is, but for a short
   `common_folder/<name>`, written `model/character/uniform/common/<name>`.
 
-What is emitted from such a folder: each referenced `.model` under its name, each referenced
-`.mtl` under its own name with its texture paths pointed as a generated face's are, the
-folder's textures as usual, and the xml. The `.mtl` the deep pass compares a listed model's
-material names with (`model_material_undefined`) is the entry's `material`, not the search's
-(`mtl_search`), which the xml overrides; an unlisted `.model` is `xml_model_unlisted` and is
-neither emitted nor compared. The xml's own `<dif>` is decoded as a `face_diff.xml`'s is and
-checked the same way (`face_diff_invalid`); beside a `face_diff.xml` it is `xml_dif_conflict`, while
-beside a `face_diff.bin` it is the dual-engine layout, each engine taking its own (the catalog
-row); with none of the three the bundled face diff is written. A `<model>`'s
-attributes are written in source order, verbatim but for `type` (the version rewrite) and the
-two references above; an unknown element is written verbatim with its attributes, text and
-children. The written order is the children in source order, then the `face_neck` dummy when
-appended, then the `<dif>` last, as the game's own files and Red's output place it. A file two
-references name (a `.model` listed twice, a `.mtl` under two spellings) is packed once, under
-the first. A `kitN` reference to a `.mtl` set packs every variant as a `.model` set's does: a
-`pants_kitN.mtl` packed under that name is a file the game never asks for. An xml naming the
-dummy's own names (`./dummy.mtl`, `./oral_dummy_*.model`) without a `face_neck` entry fails the
-task when the dummy is appended, since two files cannot share a name; no export does this. `xml_uniform_pes15` on a
-user xml names the entry by its `path` value, since an entry need not resolve to a file. The hand
-auto-split does not apply to such a folder: the xml says what the face loads, and a split would
-add glove entries the member did not write. A folder holding a `face.xml` has a face, whatever
-models it holds (an xml naming only Common models is one), so its face files are used.
+What is emitted from such a folder:
+
+- each referenced `.model` under its name;
+- each referenced `.mtl` under its own name with its texture paths pointed as a generated face's
+  are;
+- the folder's textures as usual;
+- the xml.
+
+The `.mtl` the deep pass compares a listed model's material names with
+(`model_material_undefined`) is the entry's `material`, not the search's (`mtl_search`), which
+the xml overrides; an unlisted `.model` is `xml_model_unlisted` and is neither emitted nor
+compared.
+
+The xml's own `<dif>` is decoded as a `face_diff.xml`'s is and checked the same way
+(`face_diff_invalid`). Beside a `face_diff.xml` it is `xml_dif_conflict`, while beside a
+`face_diff.bin` it is the dual-engine layout, each engine taking its own (the catalog row); with
+none of the three the bundled face diff is written.
+
+A `<model>`'s attributes are written in source order, verbatim but for `type` (the version
+rewrite) and the two references above; an unknown element is written verbatim with its
+attributes, text and children. The written order is the children in source order, then the
+`face_neck` dummy when appended, then the `<dif>` last, as the game's own files and Red's output
+place it.
+
+A file two references name (a `.model` listed twice, a `.mtl` under two spellings) is packed
+once, under the first. A `kitN` reference to a `.mtl` set packs every variant as a `.model` set's
+does: a `pants_kitN.mtl` packed under that name is a file the game never asks for. An xml naming
+the dummy's own names (`./dummy.mtl`, `./oral_dummy_*.model`) without a `face_neck` entry fails
+the task when the dummy is appended, since two files cannot share a name; no export does this.
+`xml_uniform_pes15` on a user xml names the entry by its `path` value, since an entry need not
+resolve to a file.
+
+The hand auto-split does not apply to such a folder: the xml says what the face loads, and a
+split would add glove entries the member did not write. A folder holding a `face.xml` has a face,
+whatever models it holds (an xml naming only Common models is one), so its face files are used.
 
 A `Faces/` folder's `face.xml` is the xml of every face linking the folder. The deep pass
 checks it in the shared folder's own pass as a member's own (its `./` references naming the
-shared folder's files, a model of the folder it does not list `xml_model_unlisted`). A
-linking player's face is the shared folder's copy with his own files on top ("A link plus
+shared folder's files, a model of the folder it does not list `xml_model_unlisted`).
+
+A linking player's face is the shared folder's copy with his own files on top ("A link plus
 local models combines" in `aesthetics_export/player_folders.md`), and its xml is the shared
-one: a reference resolves over the face's files as above, his own file first, and each of
-his models the xml does not name gets the entry a generated xml would give it, appended
-after the xml's children and before the `face_neck` dummy and the `<dif>`. His own
-`face_diff.xml` or `face_diff.bin` is the face's diff over the shared xml's `<dif>`, as any
-of his files wins over the shared folder's. We append rather than generate a second list,
-because the shared xml is the author's statement of what the base face loads and the
-player's parts layer over it as his files do over the shared ones; the face has an xml, so
-the hand auto-split does not apply to it. A player folder linking a `Faces/` folder holds no
-`face.xml` of its own: two xmls for one face leave no rule for which one speaks, so his is
-`xml_shared_face_conflict` and the folder is discarded, whether or not the shared folder
-has one. With neither, the face's xml is generated as usual. A `Boots/` or `Gloves/`
-folder's `face.xml` is ignored on PES 15-17 as on Fox (`xml_ignored_shared`): its output is
-one model or a `glove.xml`, which no face xml drives.
+one. A reference resolves over the face's files as above, his own file first, and each of his
+models the xml does not name gets the entry a generated xml would give it, appended after the
+xml's children and before the `face_neck` dummy and the `<dif>`. His own `face_diff.xml` or
+`face_diff.bin` is the face's diff over the shared xml's `<dif>`, as any of his files wins over
+the shared folder's. We append rather than generate a second list, because the shared xml is the
+author's statement of what the base face loads and the player's parts layer over it as his files
+do over the shared ones; the face has an xml, so the hand auto-split does not apply to it.
+
+A player folder linking a `Faces/` folder holds no `face.xml` of its own: two xmls for one face
+leave no rule for which one speaks, so his is `xml_shared_face_conflict` and the folder is
+discarded, whether or not the shared folder has one. With neither, the face's xml is generated
+as usual.
+
+A `Boots/` or `Gloves/` folder's `face.xml` is ignored on PES 15-17 as on Fox
+(`xml_ignored_shared`): its output is one model or a `glove.xml`, which no face xml drives.
 
 Texture existence is checked **deep**, not shallow: `pes_model` parses the `.model` files and knows
 which MTL material each mesh actually binds, so a missing texture on a mesh-used material is a hard
@@ -517,46 +577,63 @@ every miss as a warning.
 
 On pre-Fox the check runs in the deep pass, which already pairs each `.model` with its `.mtl`
 (the search, or the entry of the member's own `face.xml`) and has read both, so `check` reports
-it as `compile` does; Fox's `fmdl_texture_not_found` runs in its package's task instead, where the
-merged model's pointed paths are known. A `.mtl` material is **mesh-used** when a model paired
-with that `.mtl` binds its name. Every `.mtl` of a folder is checked, so one no model pairs with
-(an unlisted `.mtl` beside a member's xml) reports its misses as `mtl_texture_unused_missing`.
+it as `compile` does. Fox's `fmdl_texture_not_found` runs in its package's task instead, where
+the merged model's pointed paths are known.
+
+A `.mtl` material is **mesh-used** when a model paired with that `.mtl` binds its name. Every
+`.mtl` of a folder is checked, so one no model pairs with (an unlisted `.mtl` beside a member's
+xml) reports its misses as `mtl_texture_unused_missing`.
+
 A sampler path, whatever directory it spells (but a `./<dir>/` one, which resolves at that path
 alone, `spec/model_format.md` "Stem-based texture references"), is supplied when its stem (or a
-variant of its
-set, for a `pants_kitN` reference) is one the folder's lookup resolves for it, nearest first
-from the `.mtl`'s folder (`spec/aesthetics_export/player_folders.md` "Subfolders"): a texture among the folder's own
-files or its linked shared face's (for a referee, whose face packs his combined boots' and
-gloves' textures too, those folders' as well), or the linked stem of a texture `.common` link;
-this is the stem rule the face task points `.mtl` paths by, so the check and the pointing
-agree. A shared face folder's `.mtl` files are checked in that folder's own pass against its
-own textures: a shared face is complete by itself, and a texture a player holds of a stem it
-names does not count. Past the folder, a `./` or bare path is missing (the face packs no
-texture the folder does not hold); a path of the Common form
-`team_common_folder/<path>` or its long form (`<path>` a name, or a `Common/` subfolder's
-`jessie/skin.dds`, at any depth; a `kitN/` directory stands for its set, a file of the set supplying it, as in
-`pipeline.md`) is supplied when `Common/` holds the stem at that path, or an installed CPK
-holds `common/character1/model/character/uniform/common/<team>/<path>` as a `.dds`
-(the walk of `fmdl_texture_not_found`; a lookup that cannot be made, or an export with no team
-ID, holds nothing); any other path names the game's own files and is not looked up, nor is a
-`dummy_*` stem or a kit stand-in (`team_kit*`, `team_gk_kit*`; the old `dummy_kit*` spelling is
-`dummy_kit_name_old`). One finding per `.mtl` and distinct path, naming the file, the path as written
-and the materials naming it; a folder an xml Error drops gets none. **The finding is a Warning
-that keeps the folder**, where Fox's is an Error: the pre-Fox tracer's Fumos face names
-`./face_edithair_specular_roughness.dds` on a mesh-used material, holds no such file, and played
-a cup as Red compiled it with a warning. Which samplers a pre-Fox shader reads is not known, so
-the compiler cannot tell that harmless miss from one that shows, and refusing a face the game
-plays would fail the parity standard; the Warning tells the member where to look. A `Common/`
-`.mtl` is packed once for the team, so its mesh-used names are those every kept `Common/`
-`.model` binds, and its paths resolve among the `Common/` textures and the installed CPKs. A
-Common-form path the face task does not point (it points only stems the folder holds) is
+variant of its set, for a `pants_kitN` reference) is one the folder's lookup resolves for it,
+nearest first from the `.mtl`'s folder (`spec/aesthetics_export/player_folders.md`
+"Subfolders"):
+
+- a texture among the folder's own files or its linked shared face's (for a referee, whose face
+  packs his combined boots' and gloves' textures too, those folders' as well);
+- or the linked stem of a texture `.common` link.
+
+This is the stem rule the face task points `.mtl` paths by, so the check and the pointing agree.
+A shared face folder's `.mtl` files are checked in that folder's own pass against its own
+textures: a shared face is complete by itself, and a texture a player holds of a stem it names
+does not count.
+
+Past the folder:
+
+- a `./` or bare path is missing (the face packs no texture the folder does not hold);
+- a path of the Common form `team_common_folder/<path>` or its long form (`<path>` a name, or a
+  `Common/` subfolder's `jessie/skin.dds`, at any depth; a `kitN/` directory stands for its set,
+  a file of the set supplying it, as in `pipeline.md`) is supplied when `Common/` holds the stem
+  at that path, or an installed CPK holds
+  `common/character1/model/character/uniform/common/<team>/<path>` as a `.dds` (the walk of
+  `fmdl_texture_not_found`; a lookup that cannot be made, or an export with no team ID, holds
+  nothing);
+- any other path names the game's own files and is not looked up, nor is a `dummy_*` stem or a
+  kit stand-in (`team_kit*`, `team_gk_kit*`; the old `dummy_kit*` spelling is
+  `dummy_kit_name_old`).
+
+One finding per `.mtl` and distinct path, naming the file, the path as written and the materials
+naming it; a folder an xml Error drops gets none.
+
+**The finding is a Warning that keeps the folder**, where Fox's is an Error. The pre-Fox
+tracer's Fumos face names `./face_edithair_specular_roughness.dds` on a mesh-used material,
+holds no such file, and played a cup as Red compiled it with a warning. Which samplers a pre-Fox
+shader reads is not known, so the compiler cannot tell that harmless miss from one that shows,
+and refusing a face the game plays would fail the parity standard; the Warning tells the member
+where to look.
+
+A `Common/` `.mtl` is packed once for the team, so its mesh-used names are those every kept
+`Common/` `.model` binds, and its paths resolve among the `Common/` textures and the installed
+CPKs. A Common-form path the face task does not point (it points only stems the folder holds) is
 written `model/character/uniform/common/<team ID>/<path>`, the ID 999 for a refs export, and a
-short `common_folder/<name>` naming the game's own file `model/character/uniform/common/<name>`: the
-game reads neither `team_folder` nor a short form. A pre-Fox texture `.common` link
-whose target is not in the export stays `common_link_missing`, not yet satisfied by an installed
-CPK: the face task points a link by its target's name, so lifting that needs the task to point
-a targetless link by the link's own stem, an improvement deferred until the cup next plays a
-pre-Fox version (worklog step 4.y-sub, slice (b3b4e)).
+short `common_folder/<name>` naming the game's own file `model/character/uniform/common/<name>`:
+the game reads neither `team_folder` nor a short form.
+
+A pre-Fox texture `.common` link whose target is not in the export stays `common_link_missing`,
+not yet satisfied by an installed CPK. The face task points a link by its target's name, so
+lifting that needs the task to point a targetless link by the link's own stem, an improvement
+deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice (b3b4e)).
 
 **Kits**
 
@@ -597,13 +674,16 @@ pre-Fox version (worklog step 4.y-sub, slice (b3b4e)).
 | `collar_id_conflict` | E | the stock collar ID is already claimed: by another export earlier in this run (canonical export order), or by the suite itself, which reserves 105 (FPC) and 77 (the referees' marker, `blue_port.md` "Referee export processing") (context: the claimant, an export's name or `FPC` / `referees`) | the collar is discarded and its team's configs are not rewritten |
 | `common_file_disallowed` | E/I | as `file_type_disallowed`, Common scope | files discarded / kept |
 
-**Referees** — referee exports use the same player-folder format (see `blue_port.md` "Referee export processing"),
-so all player-folder, texture, and XML/MTL messages above apply as-is. The referee marker needs
-no code of its own on a refs export: on both engines it is a model on the referees' reserved
-collar and a texture in their Common output, both inside the refs CPK (`blue_port.md` "Referee
-export processing"), so its failures are the texture codes above, on `ref_marker.dds`. Red's
-injection into the system `dt00_x64.cpk`, and with it `ref_marker_needs_consent` and
-`dt00_write_failed`, is gone. The one addition guards the reserved collar on regular teams:
+**Referees** — referee exports use the same player-folder format (see `blue_port.md` "Referee
+export processing"), so all player-folder, texture, and XML/MTL messages above apply as-is.
+
+The referee marker needs no code of its own on a refs export. On both engines it is a model on
+the referees' reserved collar and a texture in their Common output, both inside the refs CPK
+(`blue_port.md` "Referee export processing"), so its failures are the texture codes above, on
+`ref_marker.dds`. Red's injection into the system `dt00_x64.cpk`, and with it
+`ref_marker_needs_consent` and `dt00_write_failed`, is gone.
+
+The one addition guards the reserved collar on regular teams:
 
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
@@ -652,10 +732,9 @@ injection into the system `dt00_x64.cpk`, and with it `ref_marker_needs_consent`
 | `bin_source` | I | which installed CPK supplied a working bin in the DpFileList walk, or `bundled` when the embedded base was used (context: the bin, the CPK or `bundled`) | none |
 | `bin_header_repaired` | W | a working `TeamColor.bin` or `UniColor.bin` held records whose header was not their position's: the team ID, or in `TeamColor.bin` the color count. One finding per bin (context: the bin, the teams). It marks a corrupt installed bin, whatever wrote it, so the cause can be looked for | the headers are rewritten; each record's other bytes are kept, so those teams' colors may be wrong until their exports are compiled again |
 
-A missing savefile
-is the explicitly permitted warning-only case. A present savefile that cannot be read or whose
-version differs from the compile target is an error, not `savefile_missing`; do not modify it or
-publish a partially deployed run.
+A missing savefile is the explicitly permitted warning-only case. A present savefile that cannot
+be read or whose version differs from the compile target is an error, not `savefile_missing`; do
+not modify it or publish a partially deployed run.
 
 Deployment-stage errors above mean no partial installation: preflight failures leave installed
 outputs untouched; failures after replacement starts roll back the deployment as a whole.
