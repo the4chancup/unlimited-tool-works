@@ -270,10 +270,15 @@ side.
   A drop works on a row of the dragged player's own team, in one team's list or under ALL,
   where each team's rows run unbroken under its team row. A drop on another team's row does
   nothing, and drag is off while a filter is typed, where neighbouring rows are not one team's
-  neighbouring slots. While a drag is held over a row of his team other than his own, that
-  row, the slot the drop moves him to, is outlined in the selection colour (the draft's
-  `.dragover`), as the lineup lists outline theirs. A row the drop moves nothing onto (his
-  own, another team's, an empty slot's) gets no outline.
+  neighbouring slots. While a drag is held over a row of his team other than his own, the
+  place the drop moves him to is marked by a line between two rows, 2 points thick in the
+  selection colour, with a short serif at each end (the draft's `.dropabove` and
+  `.dropbelow`; until it is built that row is outlined, the draft's `.dragover`). The line is
+  on the row's lower edge when he comes from above, since the rows down to that one move up
+  and he lands under them, and on its upper edge when he comes from below. A line, not the
+  outline the lineup lists draw, because a drop here inserts the player and shifts the rows
+  between, where a lineup drop swaps two rows: an outline round one row promised a swap. A
+  row the drop moves nothing onto (his own, another team's, an empty slot's) gets no line.
 
   The dragged row is drawn under the pointer while it is held, the point first pressed kept
   under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn as the

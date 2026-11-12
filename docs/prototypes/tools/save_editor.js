@@ -185,6 +185,16 @@ input[type=range]:focus { outline: none; }
 /* A player row drags from anywhere on it, so the whole row shows the pointing hand, never
    the text I-beam. */
 .plist .rows .prow[draggable=true] { cursor: pointer; user-select: none; }
+/* Where a dragged player would be inserted: a line 2 thick in the selection colour across the
+   row's upper or lower edge, half on each of the two rows it parts, with a serif 7 high at each
+   end so it reads as a place between rows and not as a row's border. */
+.plist .rows .prow { position: relative; }
+.plist .rows .prow.dropabove::after, .plist .rows .prow.dropbelow::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 7px; pointer-events: none; z-index: 1;
+  border-left: 2px solid var(--sel-fg); border-right: 2px solid var(--sel-fg);
+  background: linear-gradient(var(--sel-fg), var(--sel-fg)) center / 100% 2px no-repeat; }
+.plist .rows .prow.dropabove::after { top: -4px; }
+.plist .rows .prow.dropbelow::after { bottom: -4px; }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
    (the row's padding) and 4 before the place or position (the row's gap of 5 less 1), so the
    names get the room. */
@@ -4333,16 +4343,20 @@ function playerRow(team, p) {
     playerDrag = { team: team.id, slot: p.slot };
   });
   r.addEventListener("dragend", () => { playerDrag = null; });
-  // The row a drop would move the dragged player to is outlined (egui's
-  // dnd_hover_payload); his own row and another team's, where the drop
-  // changes nothing, are not.
+  // A drop inserts the dragged player at this row's place and shifts the rows
+  // between by one: it swaps no two rows. So the place is marked by a line
+  // between two rows, not by an outline round this one: on this row's lower
+  // edge when he comes from above (the rows down to this one move up, and he
+  // lands under them), on its upper edge when he comes from below. His own
+  // row and another team's, where the drop changes nothing, get no line.
   r.addEventListener("dragover", e => {
     e.preventDefault();
-    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot) r.classList.add("dragover");
+    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot)
+      r.classList.add(playerDrag.slot < p.slot ? "dropbelow" : "dropabove");
   });
-  r.addEventListener("dragleave", () => r.classList.remove("dragover"));
+  r.addEventListener("dragleave", () => r.classList.remove("dropabove", "dropbelow"));
   r.addEventListener("drop", e => {
-    e.preventDefault(); r.classList.remove("dragover");
+    e.preventDefault(); r.classList.remove("dropabove", "dropbelow");
     const [tid, slot] = e.dataTransfer.getData("text/plain").split(":");
     if (Number(tid) === team.id) { movePlayer(team, Number(slot), p.slot); render(); }
   });

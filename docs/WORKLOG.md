@@ -19,7 +19,8 @@ is in `AGENTS.md` ("Working documents").
    formations pass them; the looks in game are running (a SWE-2 sidekick, 2026-11-12), then
    the slice.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
-   SE-GUI-72; its slice comes next), -undo (waits on `QUESTIONS.md`), and -inst, whose
+   SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
+   two slices follow -clip), and -inst, whose
    cause is being looked for with the maintainer; -drift and -statlbl are in.
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
 5. The cut. The library checkpoints (0.0.2-chk) are in.
@@ -1821,6 +1822,12 @@ briefs, review loops, gates and mutation runs as for any step.
       from (SE-GUI-73). Opus
     - [ ] b: the X on each row of the toolbar's list (SE-GUI-74); the draft's
       `changesPopup` first (the lead)
+  - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
+    round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
+    `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
+    (`.dropabove`, `.dropbelow`; render `.tmp/0_0_2/undo/dropline.png`), waiting for the
+    maintainer's look at the draft; then its scenario and the slice (small, after
+    0.0.2-clip: `view/player_list.rs`)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
