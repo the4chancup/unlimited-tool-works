@@ -223,11 +223,49 @@ fn upgrade_over_an_empty_old_exports_says_there_is_no_export() {
     assert_eq!(output.status.code(), Some(1), "{stdout}");
 }
 
-/// `quick_compile.bat` compiles what `exports/` holds and deploys into the PES folder the
-/// settings name: the CPK lands in the fake install's `download/`.
+/// `quick_upgrade.bat` passes `upgrade_log.txt` to each export's run: the log holds every
+/// finding line of this run, Info ones included, and the tally, and nothing of the run
+/// before. The exe's lines never reach the bat's piped stdout, so only the bat's own lines
+/// can be read there.
 #[test]
-fn compile_compiles_the_exports_and_deploys_into_the_pes_folder() {
-    let sandbox = Sandbox::new("compile");
+fn upgrade_logs_every_line_of_its_run_in_upgrade_log_txt() {
+    let sandbox = Sandbox::new("upgrade_log");
+    fs::copy(
+        upgrader_fixture("co Spring.zip"),
+        sandbox.root.join("old_exports/day5.zip"),
+    )
+    .unwrap();
+    sandbox.write("upgrade_log.txt", b"the run before\n");
+    let save = sandbox.save("save/EDIT00000000");
+
+    let output = sandbox.run_bat("quick_upgrade.bat", &[save.as_path()]);
+
+    let stdout = stdout(&output);
+    assert_eq!(output.status.code(), Some(0), "{stdout}");
+    assert!(
+        stdout.contains("Info messages are left out above. The full report is in upgrade_log.txt."),
+        "{stdout}"
+    );
+    let log = fs::read_to_string(sandbox.root.join("upgrade_log.txt")).unwrap_or_default();
+    let lines: Vec<&str> = log.lines().collect();
+    for line in [
+        "- day5: Info coverage_tag_chosen (tag=Full, source=default)",
+        "- day5: Warning kit_without_config at co Note.txt (slot=p1)",
+        "- co Full day5: Info notes_found at notes.txt",
+        "- Info migration_clean",
+        "exit 0",
+        "Upgraded: 1. Not upgraded: 0.",
+    ] {
+        assert!(lines.contains(&line), "{line}: {log}");
+    }
+    assert!(lines.iter().any(|line| line.starts_with("$ UTW ")), "{log}");
+    assert!(!log.contains("the run before"), "{log}");
+}
+
+/// A sandbox ready to compile: a fake PES 21 install, and one minimal team export in
+/// `exports/`.
+fn compile_sandbox(name: &str) -> Sandbox {
+    let sandbox = Sandbox::new(name);
     // The fake PES 21 install: the exe and an `download/` as `upgrade-dpfl` leaves it, the
     // official list with a placeholder CPK for every name but the run's own.
     let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/templates");
@@ -253,6 +291,14 @@ fn compile_compiles_the_exports_and_deploys_into_the_pes_folder() {
             .join("../tools/team_compiler/tests/fixtures/tracer/studio/egg Midcup Tracer/Kits/g1"),
         &sandbox.root.join("exports/co Midcup Kit/Kits/p1"),
     );
+    sandbox
+}
+
+/// `quick_compile.bat` compiles what `exports/` holds and deploys into the PES folder the
+/// settings name: the CPK lands in the fake install's `download/`.
+#[test]
+fn compile_compiles_the_exports_and_deploys_into_the_pes_folder() {
+    let sandbox = compile_sandbox("compile");
 
     let output = sandbox.run_bat("quick_compile.bat", &[]);
 
@@ -260,9 +306,39 @@ fn compile_compiles_the_exports_and_deploys_into_the_pes_folder() {
     assert_eq!(output.status.code(), Some(0), "{stdout}");
     let installed = sandbox.root.join("PES/download/4cc_99_test.cpk");
     assert!(installed.is_file(), "{stdout}");
+    let placeholder =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/templates/placeholder.cpk");
     assert_ne!(
         fs::read(&installed).unwrap(),
-        placeholder,
+        fs::read(placeholder).unwrap(),
         "the installed CPK is the run's own, not a placeholder"
     );
+}
+
+/// `quick_compile.bat` passes `compile_log.txt` to its run: the log holds the run's Warning
+/// and Info lines, and nothing of the run before.
+#[test]
+fn compile_logs_every_line_of_its_run_in_compile_log_txt() {
+    let sandbox = compile_sandbox("compile_log");
+    // A file the export's root does not expect: the run's one Warning.
+    sandbox.write("exports/co Midcup Kit/stray.txt", b"stray");
+    sandbox.write("compile_log.txt", b"the run before\n");
+
+    let output = sandbox.run_bat("quick_compile.bat", &[]);
+
+    let stdout = stdout(&output);
+    assert_eq!(output.status.code(), Some(0), "{stdout}");
+    assert!(
+        stdout.contains("Info messages are left out above. The full report is in compile_log.txt."),
+        "{stdout}"
+    );
+    let log = fs::read_to_string(sandbox.root.join("compile_log.txt")).unwrap_or_default();
+    let lines: Vec<&str> = log.lines().collect();
+    for line in [
+        "- co Midcup Kit: Warning root_file_unexpected at stray.txt",
+        "- co Midcup Kit: Info export_identified (team=/co/, id=714)",
+    ] {
+        assert!(lines.contains(&line), "{line}: {log}");
+    }
+    assert!(!log.contains("the run before"), "{log}");
 }

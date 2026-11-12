@@ -17,7 +17,8 @@ mod instance;
 mod test_dir;
 
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 
@@ -33,7 +34,7 @@ use studio_core::{
     settings_file_writable, user_config_dir,
 };
 
-use crate::console::{spawn_notice_printer, spawn_printer};
+use crate::console::{RunLog, spawn_notice_printer, spawn_printer};
 use crate::crash_dump::{
     HiddenLaunch, hidden_launch, overflow_the_stack, run_monitor, watch_crashes,
 };
@@ -194,10 +195,10 @@ fn load_settings(
 /// window shows it in a dialog): 3 when the executable's folder cannot be found (an
 /// environment failure), 2 when the settings file cannot be loaded (a configuration
 /// error: nothing ran). These are the binary's own codes, not a tool's.
-fn startup(tools: &[Box<dyn StudioTool>]) -> Result<(Settings, AppPaths), (ExitCode, String)> {
+fn startup(tools: &[Box<dyn StudioTool>]) -> Result<(Settings, AppPaths), (u8, String)> {
     match exe_dir() {
         Ok(exe_dir) => startup_in(tools, exe_dir),
-        Err(error) => Err((ExitCode::from(3), format!("error: {error:#}"))),
+        Err(error) => Err((3, format!("error: {error:#}"))),
     }
 }
 
@@ -206,19 +207,95 @@ fn startup(tools: &[Box<dyn StudioTool>]) -> Result<(Settings, AppPaths), (ExitC
 fn startup_in(
     tools: &[Box<dyn StudioTool>],
     exe_dir: PathBuf,
-) -> Result<(Settings, AppPaths), (ExitCode, String)> {
-    load_settings(tools, exe_dir).map_err(|error| (ExitCode::from(2), format!("error: {error:#}")))
+) -> Result<(Settings, AppPaths), (u8, String)> {
+    load_settings(tools, exe_dir).map_err(|error| (2, format!("error: {error:#}")))
 }
 
 /// Runs one tool subcommand headless and returns the process exit code: the tool's own, the
-/// startup failure's, or 3 when the console printer failed.
+/// startup failure's, 2 when the run's log file cannot be opened, or 3 when the console
+/// printer or a write to the log failed. With `log_file` the run appends everything it
+/// prints to that file, between a first line `$ UTW <the arguments>` and a last line
+/// `exit <code>`.
 #[expect(clippy::print_stderr, reason = "CLI result output is the binary's job")]
-fn run_cli_mode(tools: &[Box<dyn StudioTool>], tool: &str, matches: &ArgMatches) -> ExitCode {
+fn run_cli_mode(
+    tools: &[Box<dyn StudioTool>],
+    tool: &str,
+    matches: &ArgMatches,
+    log_file: Option<&Path>,
+) -> ExitCode {
+    let log = match log_file {
+        None => None,
+        Some(path) => match RunLog::open(path) {
+            Ok(log) => Some(Arc::new(log)),
+            Err(error) => {
+                eprintln!(
+                    "error: cannot open the log file {}: {error}",
+                    path.display()
+                );
+                return ExitCode::from(2);
+            }
+        },
+    };
+    let result = log_line(log.as_deref(), &command_line(std::env::args_os().skip(1)))
+        .and_then(|()| run_command(tools, tool, matches, log.clone()))
+        .and_then(|code| log_line(log.as_deref(), &format!("exit {code}")).map(|()| code));
+    match result {
+        Ok(code) => ExitCode::from(code),
+        Err(error) => {
+            // A log that silently stops is worse than none, so the run reports a failure
+            // even when the tool's own verdict was a success.
+            eprintln!("error: the log file could not be written: {error}");
+            ExitCode::from(3)
+        }
+    }
+}
+
+/// The log's first line: `$ UTW`, then `args` one space apart, an argument holding a space
+/// inside double quotes.
+fn command_line(args: impl IntoIterator<Item = OsString>) -> String {
+    let args: Vec<String> = args
+        .into_iter()
+        .map(|arg| {
+            let arg = arg.to_string_lossy().into_owned();
+            if arg.contains(' ') {
+                format!("\"{arg}\"")
+            } else {
+                arg
+            }
+        })
+        .collect();
+    format!("$ {EXE_NAME} {}", args.join(" "))
+}
+
+/// Writes `text` to the run's log, when there is one.
+fn log_line(log: Option<&RunLog>, text: &str) -> io::Result<()> {
+    match log {
+        Some(log) => log.line(text),
+        None => Ok(()),
+    }
+}
+
+/// Prints `text` on stderr, and writes it to the run's log when there is one.
+#[expect(clippy::print_stderr, reason = "CLI result output is the binary's job")]
+fn report(log: Option<&RunLog>, text: &str) -> io::Result<()> {
+    eprintln!("{text}");
+    log_line(log, text)
+}
+
+/// The tool subcommand's run, past the log's opening: its exit code is the tool's own, the
+/// startup failure's, or 3 when the console printer failed. Each line it prints on stderr
+/// also goes to the log; an `Err` is a write to the log that failed.
+fn run_command(
+    tools: &[Box<dyn StudioTool>],
+    tool: &str,
+    matches: &ArgMatches,
+    log: Option<Arc<RunLog>>,
+) -> io::Result<u8> {
     let (settings, paths) = match startup(tools) {
         Ok(loaded) => loaded,
         Err((code, text)) => {
-            eprintln!("{text}");
-            return code;
+            report(log.as_deref(), &text)?;
+            return Ok(code);
         }
     };
     // The CLI never writes settings, so the read-only data directory is probed rather than
@@ -227,12 +304,12 @@ fn run_cli_mode(tools: &[Box<dyn StudioTool>], tool: &str, matches: &ArgMatches)
     if let Some(dir) = &paths.data_dir
         && !settings_file_writable(dir)
     {
-        eprintln!("{}", ShellCondition::DataDirReadOnly.text());
+        report(log.as_deref(), &ShellCondition::DataDirReadOnly.text())?;
     }
     let (events_tx, events_rx) = unbounded();
     let (requests_tx, requests_rx) = unbounded();
-    let printer = spawn_printer(events_rx);
-    let notices = spawn_notice_printer(requests_rx);
+    let printer = spawn_printer(events_rx, log.clone());
+    let notices = spawn_notice_printer(requests_rx, log.clone());
     let ctx = ToolContext::new(
         Arc::new(Mutex::new(settings)),
         paths,
@@ -246,14 +323,17 @@ fn run_cli_mode(tools: &[Box<dyn StudioTool>], tool: &str, matches: &ArgMatches)
     if !matches!(printer.join(), Ok(Ok(()))) || !matches!(notices.join(), Ok(Ok(()))) {
         // Findings were lost, so the tool's verdict cannot be reported as it stands: 3 is the
         // code of a run that did not finish as reported.
-        eprintln!("error: the output to the console stopped unexpectedly");
-        return ExitCode::from(3);
+        report(
+            log.as_deref(),
+            "error: the output to the console stopped unexpectedly",
+        )?;
+        return Ok(3);
     }
     match result {
-        Ok(code) => ExitCode::from(code),
+        Ok(code) => Ok(code),
         Err(error) => {
-            eprintln!("error: {error}");
-            ExitCode::from(error.exit_code)
+            report(log.as_deref(), &format!("error: {error}"))?;
+            Ok(error.exit_code)
         }
     }
 }
@@ -293,7 +373,7 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
         Ok(loaded) => loaded,
         Err((code, text)) => {
             show_dialog(MessageLevel::Error, &text);
-            return code;
+            return ExitCode::from(code);
         }
     };
     // The copy's slot is claimed before the log opens, so a second window logs to its
@@ -426,7 +506,9 @@ fn main() -> ExitCode {
             );
             ExitCode::from(2)
         }
-        LaunchMode::Cli { tool, matches } => run_cli_mode(&tools, &tool, &matches),
+        LaunchMode::Cli { tool, matches } => {
+            run_cli_mode(&tools, &tool, &matches, launch.log_file.as_deref())
+        }
         LaunchMode::Help {
             chapter,
             topic,
@@ -609,7 +691,7 @@ mod tests {
         let Err((code, text)) = startup_in(&tools(), dir.path().to_path_buf()) else {
             panic!("a settings file that does not parse is a startup failure")
         };
-        assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::from(2)));
+        assert_eq!(code, 2);
         assert!(text.starts_with("error: "), "{text}");
     }
 }

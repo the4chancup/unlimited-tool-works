@@ -2,24 +2,60 @@
 //! command runs. Events' lines go to stdout, as `studio_core::EventLines` formats them.
 //! Notices' texts go to stderr: the status bar's right slot, rendered as lines. On a terminal
 //! stderr the event printer also draws the run's progress line and leaves its summary;
-//! piped, it prints stdout alone.
+//! piped, it prints stdout alone. With a run's log (`--log-file`) both printers also write
+//! every line to it, and stdout leaves the Info findings out.
 
+use std::fs::{File, OpenOptions};
 use std::io::{self, IsTerminal, Write};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crossbeam_channel::Receiver;
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressState, ProgressStyle};
-use studio_core::{EventLines, PipelineEvent, PipelineEventEnvelope, ShellRequest};
+use studio_core::{EventLines, PipelineEvent, PipelineEventEnvelope, Severity, ShellRequest};
+
+/// The file a CLI run appends everything it prints to (`--log-file`), its Info findings
+/// included. The event printer's thread, the notice printer's thread and `main` all write
+/// to it, so the file sits behind a lock and each line is written whole.
+pub(crate) struct RunLog {
+    file: Mutex<File>,
+}
+
+impl RunLog {
+    /// Opens `path` for appending, creating it when missing: a launcher that runs the
+    /// command once per export keeps one log of its whole run.
+    pub(crate) fn open(path: &Path) -> io::Result<RunLog> {
+        let file = OpenOptions::new().append(true).create(true).open(path)?;
+        Ok(RunLog {
+            file: Mutex::new(file),
+        })
+    }
+
+    /// Appends `text` and a newline.
+    pub(crate) fn line(&self, text: &str) -> io::Result<()> {
+        writeln!(self.file.lock().unwrap(), "{text}")
+    }
+}
 
 /// Drains the channel on its own thread, printing each line to stdout, until every sender is
 /// gone. Whether stderr is a terminal decides whether the progress line is drawn; it is read
 /// here alone, so `print_events` takes the decision and its writers as arguments.
-pub(crate) fn spawn_printer(events: Receiver<PipelineEventEnvelope>) -> JoinHandle<io::Result<()>> {
+pub(crate) fn spawn_printer(
+    events: Receiver<PipelineEventEnvelope>,
+    log: Option<Arc<RunLog>>,
+) -> JoinHandle<io::Result<()>> {
     let draw = io::stderr().is_terminal();
     std::thread::spawn(move || {
         // The unlocked handles lock per write, as the notice printer's do.
-        print_events(events, draw, &mut io::stdout(), &mut io::stderr())
+        print_events(
+            events,
+            draw,
+            log.as_deref(),
+            &mut io::stdout(),
+            &mut io::stderr(),
+        )
     })
 }
 
@@ -30,10 +66,13 @@ pub(crate) fn spawn_printer(events: Receiver<PipelineEventEnvelope>) -> JoinHand
 /// (`suspend`); on `Complete` it is replaced on `err` by the run's summary, and a stream that
 /// ends without one (a `check`, an upgrade, a run stopped before it compiled) leaves no line.
 /// Without `draw` the bar is hidden and nothing touches `err`, so piped stdout is
-/// byte-for-byte what it is on a terminal.
+/// byte-for-byte what it is on a terminal. With a `log`, every line `out` would get goes to
+/// the log first, and an Info finding's line goes to the log alone; the summary goes to the
+/// log whether or not it is drawn, and the progress line never does.
 fn print_events(
     events: Receiver<PipelineEventEnvelope>,
     draw: bool,
+    log: Option<&RunLog>,
     out: &mut impl Write,
     err: &mut impl Write,
 ) -> io::Result<()> {
@@ -105,24 +144,36 @@ fn print_events(
             Some((files, skipped_exports, skipped_folders, folders_with_errors)) => {
                 ended = true;
                 bar.finish_and_clear();
+                let summary = summary_line(
+                    files,
+                    skipped_exports,
+                    skipped_folders,
+                    folders_with_errors,
+                    bar.elapsed(),
+                );
+                if let Some(log) = log {
+                    log.line(&summary)?;
+                }
                 if draw {
-                    writeln!(
-                        err,
-                        "{}",
-                        summary_line(
-                            files,
-                            skipped_exports,
-                            skipped_folders,
-                            folders_with_errors,
-                            bar.elapsed()
-                        )
-                    )?;
+                    writeln!(err, "{summary}")?;
                 }
             }
             None => {
                 if let Some(line) = lines.line(&envelope.event) {
                     let prefix = envelope.made_at.map(timestamp_prefix).unwrap_or_default();
-                    bar.suspend(|| writeln!(out, "{prefix}{line}"))?;
+                    let line = format!("{prefix}{line}");
+                    if let Some(log) = log {
+                        log.line(&line)?;
+                    }
+                    // The log holds the Info findings, so the console keeps the lines a
+                    // member has to act on.
+                    let info = matches!(
+                        &envelope.event,
+                        PipelineEvent::Message(message) if message.severity == Severity::Info
+                    );
+                    if !(info && log.is_some()) {
+                        bar.suspend(|| writeln!(out, "{line}"))?;
+                    }
                 }
             }
         }
@@ -249,24 +300,35 @@ fn plural_s(n: usize) -> &'static str {
 }
 
 /// Drains the shell-request channel, printing each notice's text to `out` on its own line,
-/// until every sender is gone. Other requests are the shell's alone and are skipped; the
-/// action a notice may carry cannot be clicked in a terminal.
-fn print_notices(requests: Receiver<ShellRequest>, out: &mut impl Write) -> io::Result<()> {
+/// and to the `log` when there is one, until every sender is gone. Other requests are the
+/// shell's alone and are skipped; the action a notice may carry cannot be clicked in a
+/// terminal.
+fn print_notices(
+    requests: Receiver<ShellRequest>,
+    log: Option<&RunLog>,
+    out: &mut impl Write,
+) -> io::Result<()> {
     for request in requests {
         if let ShellRequest::Notify(notice) = request {
             writeln!(out, "{}", notice.text)?;
+            if let Some(log) = log {
+                log.line(&notice.text)?;
+            }
         }
     }
     Ok(())
 }
 
 /// Runs `print_notices` on stderr on its own thread; the join carries the writes' outcome.
-pub(crate) fn spawn_notice_printer(requests: Receiver<ShellRequest>) -> JoinHandle<io::Result<()>> {
+pub(crate) fn spawn_notice_printer(
+    requests: Receiver<ShellRequest>,
+    log: Option<Arc<RunLog>>,
+) -> JoinHandle<io::Result<()>> {
     std::thread::spawn(move || {
         // The unlocked handle locks per write: holding `stderr().lock()` for the command's
         // whole run would block every other thread's stderr write, the logger's included, and
         // hang the command at its first warning.
-        print_notices(requests, &mut std::io::stderr())
+        print_notices(requests, log.as_deref(), &mut std::io::stderr())
     })
 }
 
@@ -274,8 +336,7 @@ pub(crate) fn spawn_notice_printer(requests: Receiver<ShellRequest>) -> JoinHand
 mod tests {
     use std::borrow::Cow;
     use std::fs;
-    use std::path::Path;
-    use std::sync::{Arc, Mutex};
+    use std::path::PathBuf;
 
     use crossbeam_channel::unbounded;
     use pes_version::PesVersion;
@@ -298,22 +359,27 @@ mod tests {
         }
     }
 
-    /// One run's stream: two exports started, a finding, three parts, both exports done,
-    /// the run's end.
-    fn run_events() -> Receiver<PipelineEventEnvelope> {
-        let (tx, rx) = unbounded();
-        let finding = PipelineEvent::Message(Message {
+    /// A Team compiler finding of `severity` with `code` and no context, on export 1.
+    fn finding(severity: Severity, code: &'static str) -> PipelineEvent {
+        PipelineEvent::Message(Message {
             code: MessageCode {
                 tool_id: "team-compiler",
-                code: Cow::Borrowed("bad_file"),
+                code: Cow::Borrowed(code),
             },
-            severity: Severity::Warning,
+            severity,
             disposition: Disposition::Keep,
             scope: Scope::Export {
                 export_id: ExportId(1),
             },
             context: Vec::new(),
-        });
+        })
+    }
+
+    /// One run's stream: two exports started, a finding, three parts, both exports done,
+    /// the run's end.
+    fn run_events() -> Receiver<PipelineEventEnvelope> {
+        let (tx, rx) = unbounded();
+        let finding = finding(Severity::Warning, "bad_file");
         for event in [
             PipelineEvent::ExportStarted {
                 export_id: ExportId(1),
@@ -479,7 +545,7 @@ mod tests {
             }
             drop(tx);
             let (mut out, mut err) = (Vec::new(), Vec::new());
-            print_events(rx, draw, &mut out, &mut err).unwrap();
+            print_events(rx, draw, None, &mut out, &mut err).unwrap();
             (out, err)
         };
         let (out_draw, _) = printed(true);
@@ -492,13 +558,20 @@ mod tests {
     fn the_lines_print_the_same_stdout_whether_the_progress_line_draws_or_not() {
         let mut out_no_draw = Vec::new();
         let mut err_no_draw = Vec::new();
-        print_events(run_events(), false, &mut out_no_draw, &mut err_no_draw).unwrap();
+        print_events(
+            run_events(),
+            false,
+            None,
+            &mut out_no_draw,
+            &mut err_no_draw,
+        )
+        .unwrap();
         assert_eq!(out_no_draw, b"- co One: Warning bad_file\n");
         assert_eq!(err_no_draw, b"", "nothing is drawn on a piped stderr");
 
         let mut out_draw = Vec::new();
         let mut err_draw = Vec::new();
-        print_events(run_events(), true, &mut out_draw, &mut err_draw).unwrap();
+        print_events(run_events(), true, None, &mut out_draw, &mut err_draw).unwrap();
         assert_eq!(out_draw, out_no_draw, "the line changes no stdout byte");
         let err = String::from_utf8(err_draw).unwrap();
         assert!(
@@ -621,8 +694,94 @@ mod tests {
         .unwrap();
         drop(tx);
         let mut out = Vec::new();
-        print_notices(rx, &mut out).unwrap();
+        print_notices(rx, None, &mut out).unwrap();
         assert_eq!(out, b"Switched to PES 2019\nCompiled 48 teams\n");
+    }
+
+    /// A run's log in a fresh file of `dir`, and the file's path to read it back.
+    fn run_log(dir: &TestDir) -> (RunLog, PathBuf) {
+        let path = dir.path().join("run_log.txt");
+        (RunLog::open(&path).unwrap(), path)
+    }
+
+    #[test]
+    fn with_a_log_an_info_line_goes_to_the_log_alone_and_every_other_line_to_both() {
+        let dir = TestDir::new("console_log");
+        let (log, path) = run_log(&dir);
+        let (tx, rx) = unbounded();
+        tx.send(envelope(PipelineEvent::ExportStarted {
+            export_id: ExportId(1),
+            display_name: "co One".to_owned(),
+        }))
+        .unwrap();
+        tx.send(envelope(finding(Severity::Info, "export_identified")))
+            .unwrap();
+        tx.send(PipelineEventEnvelope {
+            made_at: Some(Duration::from_millis(42)),
+            ..envelope(finding(Severity::Warning, "bad_file"))
+        })
+        .unwrap();
+        tx.send(envelope(PipelineEvent::Output(
+            "Written: out.cpk".to_owned(),
+        )))
+        .unwrap();
+        tx.send(envelope(PipelineEvent::Complete {
+            success: true,
+            files_written: 1,
+            skipped_exports: 0,
+            skipped_folders: 0,
+            duplicates: 0,
+            folders_with_errors: 0,
+        }))
+        .unwrap();
+        drop(tx);
+
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        print_events(rx, false, Some(&log), &mut out, &mut err).unwrap();
+
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            "+0.042 - co One: Warning bad_file\nWritten: out.cpk\n"
+        );
+        assert_eq!(err, b"", "the summary reaches stderr only when drawn");
+        let logged = fs::read_to_string(&path).unwrap();
+        let lines: Vec<&str> = logged.lines().collect();
+        assert_eq!(
+            lines[..lines.len().min(3)],
+            [
+                "- co One: Info export_identified",
+                "+0.042 - co One: Warning bad_file",
+                "Written: out.cpk",
+            ],
+            "{logged}"
+        );
+        assert_eq!(lines.len(), 4, "{logged}");
+        assert!(
+            lines[3].starts_with(
+                "Done: 1 file written, 0 exports skipped, 0 folders skipped, 0 folders with errors, 0:"
+            ),
+            "{logged}"
+        );
+    }
+
+    #[test]
+    fn with_a_log_each_notice_goes_to_stderr_and_to_the_log() {
+        let dir = TestDir::new("console_notice_log");
+        let (log, path) = run_log(&dir);
+        let (tx, rx) = unbounded();
+        tx.send(ShellRequest::Notify(Notice {
+            text: "Compiled 48 teams".to_owned(),
+            kind: NoticeKind::Success,
+            action: None,
+        }))
+        .unwrap();
+        drop(tx);
+
+        let mut out = Vec::new();
+        print_notices(rx, Some(&log), &mut out).unwrap();
+
+        assert_eq!(out, b"Compiled 48 teams\n");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "Compiled 48 teams\n");
     }
 
     #[test]
@@ -643,30 +802,17 @@ mod tests {
             display_name: "co Spring.zip".to_owned(),
         }))
         .unwrap();
-        let finding = || {
-            PipelineEvent::Message(Message {
-                code: MessageCode {
-                    tool_id: "team-compiler",
-                    code: Cow::Borrowed("bad_file"),
-                },
-                severity: Severity::Warning,
-                disposition: Disposition::Keep,
-                scope: Scope::Export {
-                    export_id: ExportId(1),
-                },
-                context: Vec::new(),
-            })
-        };
         tx.send(PipelineEventEnvelope {
             made_at: Some(Duration::from_millis(12_345)),
-            ..envelope(finding())
+            ..envelope(finding(Severity::Warning, "bad_file"))
         })
         .unwrap();
-        tx.send(envelope(finding())).unwrap();
+        tx.send(envelope(finding(Severity::Warning, "bad_file")))
+            .unwrap();
         drop(tx);
 
         let mut out = Vec::new();
-        print_events(rx, false, &mut out, &mut Vec::new()).unwrap();
+        print_events(rx, false, None, &mut out, &mut Vec::new()).unwrap();
         assert_eq!(
             String::from_utf8(out).unwrap(),
             "+12.345 - co Spring.zip: Warning bad_file\n- co Spring.zip: Warning bad_file\n"
