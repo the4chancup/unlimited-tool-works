@@ -422,27 +422,16 @@ pub(crate) fn bar_selector_spacing(ui: &mut egui::Ui) {
     spacing.interact_size.y = 17.0;
 }
 
-/// The choice a disabled toggle or selector still holds, marked over
-/// the widget it was drawn disabled with (the drafts' `.sel.on` inside
-/// `.off`): a `locked_choice_fill` rectangle in the widget's corner
-/// radius, its label centred in the readouts' grey in the button's
-/// font. Painted after, outside the disabled scope, which would fade
-/// the choice's own mark: a selected button's selection blue at half
-/// still reads as a control live.
-pub(crate) fn locked_choice(ui: &egui::Ui, rect: egui::Rect, label: &str) {
-    let palette = studio_core::theme::palette(ui.visuals());
-    ui.painter().rect_filled(
-        rect,
-        ui.visuals().widgets.inactive.corner_radius,
-        palette.locked_choice_fill,
-    );
-    ui.painter().text(
-        rect.center(),
-        egui::Align2::CENTER_CENTER,
-        label,
-        egui::TextStyle::Button.resolve(ui.style()),
-        palette.readout,
-    );
+/// Draws the held choice of a disabled toggle or selector as a disabled
+/// button (the drafts' `.sel.on` inside `.off`). Called inside the
+/// disabled scope, it gives the selection the resting button's fill and
+/// text, which the scope then fades as it fades any button: left alone,
+/// the selection's blue at half still reads as a control live.
+pub(crate) fn lock_selection(ui: &mut egui::Ui) {
+    let resting = ui.visuals().widgets.inactive;
+    let selection = &mut ui.visuals_mut().selection;
+    selection.bg_fill = resting.weak_bg_fill;
+    selection.stroke.color = resting.fg_stroke.color;
 }
 
 /// The Fluid formation switch of the preset bar (the draft's `fluid`,
@@ -647,9 +636,8 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 /// Locked (the stock game of a version whose game plan drops the two
 /// numbers, the draft's `.rate.tri.off`): the choices draw disabled, a
 /// click or a wheel step changing nothing, their hover
-/// `NUMBERS_LOCKED_TIP`; the stored choice stays marked through
-/// `locked_choice`, since the selection's blue would read as a control
-/// still live.
+/// `NUMBERS_LOCKED_TIP`; the stored choice is drawn as a disabled button
+/// (`lock_selection`).
 fn number_choices(
     ui: &mut egui::Ui,
     sliders: &mut TacticSliders,
@@ -660,16 +648,10 @@ fn number_choices(
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - 2.0 * CHOICE_GAP) / 3.0;
     let mut value = (spec.get)(sliders);
-    let mut picked = None;
     // The three choices as one control, so the wheel over any moves it.
     let control = add_enabled_ui(ui, editable, |ui| {
-        // A disabled selected button fills with the selection's blue
-        // faded, which a member still reads as a live control: inside
-        // the disabled scope the held choice fills with the locked grey
-        // `locked_choice` marks solid.
         if !editable {
-            ui.visuals_mut().selection.bg_fill =
-                studio_core::theme::palette(ui.visuals()).locked_choice_fill;
+            lock_selection(ui);
         }
         TRI_CHOICES
             .iter()
@@ -679,9 +661,6 @@ fn number_choices(
                     egui::vec2(width, ui.spacing().interact_size.y),
                     egui::Button::selectable(value == choice, *name).truncate(),
                 );
-                if value == choice {
-                    picked = Some((*name, response.rect));
-                }
                 if response.clicked() {
                     value = choice;
                 }
@@ -693,9 +672,6 @@ fn number_choices(
     .inner;
     if !editable {
         control.on_disabled_hover_text(NUMBERS_LOCKED_TIP);
-        if let Some((name, rect)) = picked {
-            locked_choice(ui, rect, name);
-        }
         return;
     }
     // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
