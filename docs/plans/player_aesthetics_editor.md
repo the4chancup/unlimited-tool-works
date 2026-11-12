@@ -2,14 +2,15 @@
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-Covers `tools/player_aesthetics_editor` — a convenience tool for viewing and
+Covers `tools/player_aesthetics_editor`, a convenience tool for viewing and
 tweaking a single player folder: browse the available exports' player folders,
 open one **in Blender** with everything pre-loaded, edit its `settings.toml`,
 and convert its models to glTF. It also specifies the **launch manifest**, the
-contract between the Studio tool and the Blender-side loader. The loader is a
-module of the **all-in-one PES models extension** (working name `pes-models`) —
-one Blender 5.2 extension owning import *and* export of `.fmdl`, `.model`, and
-PES glTF, which replaces the standalone ported `pes-fmdl`/`pes-model` addons at
+contract between the Studio tool and the Blender-side loader.
+
+The loader is a module of the **all-in-one PES models extension** (working name
+`pes-models`): one Blender 5.2 extension owning import *and* export of `.fmdl`, `.model`,
+and PES glTF, which replaces the standalone ported `pes-fmdl`/`pes-model` addons at
 its release. The extension is planned with the Blender project, outside this
 repo (`blender_project/pes_models_plan.md`); this plan owns only the manifest
 contract and the Studio side.
@@ -19,7 +20,7 @@ The export format and `settings.toml` schema are owned by the
 [Model conversion plan](model_conversion/README.md); FPC by the
 [Save editor plan](save_editor.md); platform context in the [core plan](core/README.md).
 
-The tool is **not essential** — nothing else depends on it — but it is planned
+The tool is **not essential** (nothing else depends on it), but it is planned
 now because it settles library seams early: `model_convert` gains its only glTF
 *exporter* (`ir_to_gltf`), and the decision to view models in Blender rather
 than in an in-app viewport removes a whole prospective lib crate (see "Why
@@ -64,11 +65,12 @@ work items while giving strictly better results:
   extension.
 
 Costs accepted: the tool's viewing half is desktop-only (no WASM launch path),
-and Blender plus the ported addons must be installed. Blender stays the
-**accurate, primary** viewing path permanently; an in-app viewport re-enters
+and Blender plus the ported addons must be installed.
+
+Blender stays the **accurate, primary** viewing path permanently. An in-app viewport re-enters
 only as a byproduct: if/when the [Team compiler plan](team_compiler/README.md)'s
 future 3D-preview feature is built, its widget lands in a shared
-**`libs/model_viewport`** crate and this tool embeds it too — a quick
+**`libs/model_viewport`** crate and this tool embeds it too, as a quick
 approximate preview beside the launcher, labeled "preview only — open in
 Blender for the accurate version". Two consumers justify the crate then; until
 that feature lands, no viewport code exists anywhere and nothing in this tool
@@ -90,77 +92,100 @@ folder before using these actions. The tool does not silently extract to a tempo
 or write back into archives.
 
 **Browser/launcher.** Lists the exports in the configured exports folder (via
-`aesthetics_export` structure parsing — the same eager descriptor load the compiler
-uses) and each export's player folders; referee exports appear like any other
+`aesthetics_export` structure parsing, the same eager descriptor load the compiler
+uses) and each export's player folders. Referee exports appear like any other
 (their folders are ordinary player folders). Shared `Faces/`/`Boots/`/`Gloves/`
-folders are listed too and can be launched bare (models only — no settings, no
-base-model context). Selecting a player folder shows its summary: models per
-category and source format set, link targets and whether they resolve, portrait
-presence, `fpc_on`/`fpc_off` marker, settings.toml presence. (Once `libs/model_viewport`
-exists — created with the Team compiler's future 3D-preview feature, not for
-this tool — the summary also gains the quick approximate preview described in
-"Why Blender, not a custom viewport".) The **Launch** button writes
-the manifest and starts Blender (path from the tool settings, auto-detected
-when possible) with the loader module's bootstrap:
+folders are listed too and can be launched bare (models only: no settings, no
+base-model context).
+
+Selecting a player folder shows its summary:
+
+- models per category and source format set;
+- link targets and whether they resolve;
+- portrait presence;
+- `fpc_on`/`fpc_off` marker;
+- settings.toml presence.
+
+(Once `libs/model_viewport` exists, created with the Team compiler's future 3D-preview
+feature and not for this tool, the summary also gains the quick approximate preview described
+in "Why Blender, not a custom viewport".)
+
+The **Launch** button writes the manifest and starts Blender (path from the tool settings,
+auto-detected when possible) with the loader module's bootstrap:
 `blender --python <bootstrap> -- <manifest.json>` (exact invocation is an
 implementation detail; the manifest is the contract).
 
 **Folder tree.** The summary shows the selected folder's tree as the compiler reads it, so
-the format's flexibility is seen rather than inferred: each subfolder, each `.common` link with
-the `Common/` file it stands for (the file at the link's own path below `Common/`) and whether
-it resolves, each shared link with its folder, kit-token folders (`kit1` to `kit9`) grouped as
-one set with the kit numbers the export defines and those it lacks, and for each texture a
-model names, where it resolves (beside the model, a parent folder, a subfolder path the model
-names, a link into `Common/`, or nowhere). The resolution is `aesthetics_export`'s and the
-compiler's planning, not a second implementation in the tool, so the view cannot disagree with
-the compile. Rules: `spec/aesthetics_export/player_folders.md` "Subfolders", `model_format.md`
-"Link files" and "Kit-dependent assets".
+the format's flexibility is seen rather than inferred:
 
-**Settings panel.** A form over the selected folder's `settings.toml` and `ingame_face.toml` —
-the name rule (absent / `true` / explicit string) and **every `PlayerSettings` key**, grouped as
-the schema groups them (appearance, physique, strip, motion, colours, ingame-face parameters),
-each key written to the file that owns it (the face, hair and iris keys to `ingame_face.toml`,
-"`ingame_face.toml`" in the [Player folders plan](aesthetics_export/player_folders.md)) — plus
-the `fpc_on`/`fpc_off`/absent marker tri-state and an in-game face toggle, which creates an
-empty `ingame_face.toml` or, once confirmed, removes it (its group shown only while the file
-exists). The form is **generated from the `PlayerSettings` schema**, not hand-built per field:
-the two files are the only route by which a team's aesthetics reach the game (the compiler
-builds the Fox appearance tables and the pre-Fox aesthetics patch from them, and the save
-editor's own fields are read-only — see "Player
-settings in exports" in the [Aesthetics export plan](aesthetics_export/README.md)), so a field the
-schema gains must appear here without anyone
-remembering to add a widget. Each key renders from its schema type and range, with the same
-app-injected comment as its tooltip. Writes preserve user comments and formatting (`toml_edit`);
-validation is `aesthetics_export`'s, so the form can never write a file the compiler would reject.
-Comments in auto-generated tomls are app-injected (predefined per-field documentation, never
-user-authored from scratch); `toml_edit` preserves them and injects comments for newly added keys.
-This is the quick-edit path that doesn't need Blender running — for example flipping `fpc_off` on
-a player without launching anything.
+- each subfolder;
+- each `.common` link with the `Common/` file it stands for (the file at the link's own path
+  below `Common/`) and whether it resolves;
+- each shared link with its folder;
+- kit-token folders (`kit1` to `kit9`) grouped as one set with the kit numbers the export
+  defines and those it lacks;
+- for each texture a model names, where it resolves (beside the model, a parent folder, a
+  subfolder path the model names, a link into `Common/`, or nowhere).
+
+The resolution is `aesthetics_export`'s and the compiler's planning, not a second
+implementation in the tool, so the view cannot disagree with the compile. Rules:
+`spec/aesthetics_export/player_folders.md` "Subfolders", `model_format.md` "Link files" and
+"Kit-dependent assets".
+
+**Settings panel.** A form over the selected folder's `settings.toml` and `ingame_face.toml`:
+
+- the name rule (absent / `true` / explicit string);
+- **every `PlayerSettings` key**, grouped as the schema groups them (appearance, physique,
+  strip, motion, colours, ingame-face parameters), each key written to the file that owns it
+  (the face, hair and iris keys to `ingame_face.toml`, "`ingame_face.toml`" in the
+  [Player folders plan](aesthetics_export/player_folders.md));
+- the `fpc_on`/`fpc_off`/absent marker tri-state;
+- an in-game face toggle, which creates an empty `ingame_face.toml` or, once confirmed,
+  removes it (its group shown only while the file exists).
+
+The form is **generated from the `PlayerSettings` schema**, not hand-built per field. The two
+files are the only route by which a team's aesthetics reach the game (the compiler builds the
+Fox appearance tables and the pre-Fox aesthetics patch from them, and the save editor's own
+fields are read-only; see "Player settings in exports" in the
+[Aesthetics export plan](aesthetics_export/README.md)), so a field the schema gains must appear
+here without anyone remembering to add a widget. Each key renders from its schema type and
+range, with the same app-injected comment as its tooltip.
+
+Writes preserve user comments and formatting (`toml_edit`); validation is `aesthetics_export`'s,
+so the form can never write a file the compiler would reject. Comments in auto-generated tomls
+are app-injected (predefined per-field documentation, never user-authored from scratch);
+`toml_edit` preserves them and injects comments for newly added keys.
+
+This is the quick-edit path that doesn't need Blender running, for example flipping `fpc_off`
+on a player without launching anything.
 
 The **ingame-face parameters** are the one group the form exposes but does not expect anyone to
 type: the eleven decoded feature types, and from Phase 5 the version's undecoded bits, that
-mean nothing without seeing the face. The expected
-workflow for that group is the game's own face editor, then generating the folder's two files
-from the save (the save editor's `settings.toml` generation and "Generate in-game face", or the
-Export upgrader; both, since a skin or physique change made in the same visit is
-`settings.toml`'s) and committing the
-result. The form shows the numbers so a diff is readable and a
-single value can be nudged. A face
-editor with a live preview — a rendered head from the parameters, the game's editor outside the
-game — would be a genuine tool of its own and is noted as a **future step**, not a requirement on
-this panel: it needs the head-morph data the game applies those parameters to, which nothing in the
-suite decodes yet.
+mean nothing without seeing the face.
+
+The expected workflow for that group is the game's own face editor, then generating the
+folder's two files from the save (the save editor's `settings.toml` generation and "Generate
+in-game face", or the Export upgrader; both, since a skin or physique change made in the same
+visit is `settings.toml`'s), and committing the result. The form shows the numbers so a diff
+is readable and a single value can be nudged.
+
+A face editor with a live preview (a rendered head from the parameters, the game's editor
+outside the game) would be a genuine tool of its own and is noted as a **future step**, not a
+requirement on this panel. It needs the head-morph data the game applies those parameters to,
+which nothing in the suite decodes yet.
 
 **Unset values stay unset.** Missing FPC/strip settings are not inferred from a savefile and are
 not filled in merely by opening the folder. The preview shows a key the file leaves out at its
 default, which is what the compile writes (the template's value; with no FPC marker, the
-base body is visible). Wait for explicit user edits: turning FPC on writes the canonical `fpc_on` marker, turning it off writes
-`fpc_off`, and strip edits persist only the edited keys. Both panels follow this rule; there is no
-second FPC boolean in `settings.toml`.
+base body is visible).
+
+Wait for explicit user edits: turning FPC on writes the canonical `fpc_on` marker, turning it
+off writes `fpc_off`, and strip edits persist only the edited keys. Both panels follow this
+rule; there is no second FPC boolean in `settings.toml`.
 
 **Conversion.** The "Convert to glTF" action (see below).
 
-Both this panel and the Blender panel edit the same file; last writer wins, and
+Both the Studio settings panel and the Blender panel edit the same file; last writer wins, and
 the Studio form re-reads on focus (the suite's folder watcher makes this cheap).
 That is acceptable for a single-user convenience tool; no locking is attempted.
 
@@ -169,7 +194,7 @@ That is acceptable for a single-user convenience tool; no locking is attempted.
 ## The launch manifest
 
 A versioned JSON file (`serde_json` on the Rust side, `json` stdlib on the
-Python side — no TOML parsing needed to *read* the contract), written to a temp
+Python side: no TOML parsing needed to *read* the contract), written to a temp
 location per launch:
 
 ```json
@@ -215,11 +240,13 @@ location per launch:
   selection rule for the current global PES version (target-native first, then
   glTF, then the opposite native format), so what opens visible is what would
   compile.
-- **`settings_schema`** is the `PlayerSettings` field list for the manifest's PES version — group,
-  the file that owns the key (`settings` or `ingame_face`, the manifest's `settings_toml` or
-  `ingame_face_toml`) and its table there (empty for the file's top level), key, type, range,
-  and the app-injected comment as `doc` — emitted by `pes_savefile` from the same
-  tables that drive the Studio form. The Blender panel builds its widgets from it, so the two
+- **`settings_schema`** is the `PlayerSettings` field list for the manifest's PES version,
+  emitted by `pes_savefile` from the same tables that drive the Studio form. Each entry gives
+  the group, the file that owns the key (`settings` or `ingame_face`, the manifest's
+  `settings_toml` or `ingame_face_toml`) and its table there (empty for the file's top level),
+  the key, type, range, and the app-injected comment as `doc`.
+
+  The Blender panel builds its widgets from it, so the two
   forms show the same fields by construction and the plugin carries no copy of the schema (the
   "no export-format reasoning on the Python side" rule, applied to settings).
 - **Origins** record where each part came from (local file, resolved shared
@@ -233,25 +260,30 @@ location per launch:
 - **`player.export_path` and `studio.exe`** exist for the plugin's **"Export model and compile for
   sideloading"** button: after saving the model into `player.folder`, the plugin runs
   `<UTW.exe> team-compiler compile --mode sideload --export <export_path>` and reports the exit
-  code (see "CLI" in the Team compiler plan). The CLI is the whole integration — no IPC with the
-  running Studio, no Python-side knowledge of the pipeline. `studio.pes_version` is informational,
-  letting the plugin label the button with the target version — but **only in a Blender session
-  that Studio launched**, where the manifest was written moments ago for this very launch. In a
-  standalone Blender session there is no fresh manifest; the plugin must not reuse one remembered
-  from an earlier launch, since the user may have changed the Studio's version selector since. There
-  it falls back to its own preference for the `studio.exe` path (if set), labels the button without
-  a version, and the compile simply uses whatever version the Studio's settings currently hold.
+  code (see "CLI" in the Team compiler plan). The CLI is the whole integration: no IPC with the
+  running Studio, no Python-side knowledge of the pipeline.
+
+  `studio.pes_version` is informational, letting the plugin label the button with the target
+  version, but **only in a Blender session that Studio launched**, where the manifest was
+  written moments ago for this very launch. In a standalone Blender session there is no fresh
+  manifest, and the plugin must not reuse one remembered from an earlier launch, since the user
+  may have changed the Studio's version selector since. There it falls back to its own
+  preference for the `studio.exe` path (if set), labels the button without a version, and the
+  compile simply uses whatever version the Studio's settings currently hold.
 
 ## The Blender side: the loader module of `pes-models`
 
 The loader is one module of the all-in-one PES models extension, which lives
-with the Blender 5.2 project (outside this repo) and consolidates the ported
-`pes-fmdl`/`pes-model` codecs, a new PES glTF codec (Blender's native glTF I/O
-plus `materials.toml` read/write and `PES_bone`/`PES_mesh` extension handling),
-and this loader into a single extension. The
-all-in-one shape exists partly *because of* the loader: a player folder's sets
+with the Blender 5.2 project (outside this repo) and consolidates into a single extension:
+
+- the ported `pes-fmdl`/`pes-model` codecs;
+- a new PES glTF codec (Blender's native glTF I/O plus `materials.toml` read/write and
+  `PES_bone`/`PES_mesh` extension handling);
+- this loader.
+
+The all-in-one shape exists partly *because of* the loader: a player folder's sets
 may be `.fmdl`, `.model`+`.mtl`, or glTF, so the loader depends on all three
-importers no matter how they're packaged — one extension makes that dependency
+importers no matter how they're packaged, and one extension makes that dependency
 one install. Details, module layout, and the replacement of the standalone
 addons are in the extension's own plan (`blender_project/pes_models_plan.md`).
 
@@ -266,13 +298,13 @@ The loader module does four things:
    otherwise it is visible, using the manifest's strip variants. Missing settings remain
    visibly unset in the form, the preview showing their defaults, which the compile writes.
 3. **Sidebar panel** (N-panel): the same form over `settings.toml` and `ingame_face.toml` as
-   the Studio panel, each key to its own file — generated from the same schema, which the manifest carries so the two
-   panels cannot disagree on the field set (`tomlkit` for comment-preserving
-   writes, shipped with the addon) — plus the `fpc_on`/`fpc_off` marker tri-state. FPC and strip edits update the base-model
-   collection visibility immediately — the "see the setting on the model" loop
-   the Studio panel can't offer.
-4. Everything else is stock Blender: per-mesh hide via the Outliner, and — as
-   a bonus outside this tool's contract — the user can edit meshes and
+   the Studio panel, each key to its own file, plus the `fpc_on`/`fpc_off` marker tri-state.
+   The form is generated from the same schema, which the manifest carries so the two panels
+   cannot disagree on the field set (`tomlkit` for comment-preserving writes, shipped with
+   the addon). FPC and strip edits update the base-model collection visibility immediately:
+   the "see the setting on the model" loop the Studio panel can't offer.
+4. Everything else is stock Blender: per-mesh hide via the Outliner, and (as
+   a bonus outside this tool's contract) the user can edit meshes and
    re-export through the extension's own codecs (any of the three formats).
 
 The loader performs **no export-format reasoning**: it never scans folders,
@@ -284,7 +316,7 @@ folder format** knowledge: rosters, links, categories, markers.)
 ## Base models (generic PES body/kit)
 
 Showing a non-FPC player honestly requires the generic PES body wearing a
-generic kit — and its absence is exactly what an FPC preview must show.
+generic kit, and its absence is exactly what an FPC preview must show.
 
 - **Primary source: the user's installed PES.** The generic body/kit models are
   extracted from the installed game's CPKs via the `cpk` lib into a per-PES-
@@ -301,15 +333,15 @@ generic kit — and its absence is exactly what an FPC preview must show.
 - Strip variants map to variant meshes/collections, not deformations.
 - **Physique scaling is deliberately deferred**, but the seams expect it: the
   manifest's `base_models.initial` block is where a `physique` object would be
-  added, and applying it would be plugin-side (Blender armature/lattice scaling)
-  — no Studio-side redesign. Until then physique fields are edited blind, as
+  added, and applying it would be plugin-side (Blender armature/lattice scaling),
+  with no Studio-side redesign. Until then physique fields are edited blind, as
   they are today.
 
 ## glTF conversion
 
 Converts the folder's models to the unified authoring format, **in place**:
 after a successful conversion the folder contains the glTF set and the original
-native files are gone — this is a migration, not an export, and leaving the
+native files are gone. This is a migration, not an export, and leaving the
 originals behind would change what the compiler selects (target-native beats
 glTF in the selection rule, so a stale `.fmdl` would silently win).
 
@@ -326,7 +358,7 @@ glTF in the selection rule, so a stale `.fmdl` would silently win).
 - **Dual-set superset merge.** When both native sets exist, each part pairs its
   Fox and pre-Fox sources and produces **one** glTF holding the superset of
   both formats' data: geometry (and everything derivable from it) comes from
-  the **preferred set** — asked at conversion time, defaulting to Fox/FMDL —
+  the **preferred set** (asked at conversion time, defaulting to Fox/FMDL),
   while the other set contributes only its format-exclusive fields (e.g.
   `.model` state settings when FMDL geometry is preferred), merged by material
   name and part identity. Parts present in only one set convert plainly. The
@@ -346,7 +378,7 @@ glTF in the selection rule, so a stale `.fmdl` would silently win).
 
 ## Library impact
 
-The point of planning this tool early — what moves where:
+The point of planning this tool early, what moves where:
 
 | Piece | Home | Status |
 |-------|------|--------|
