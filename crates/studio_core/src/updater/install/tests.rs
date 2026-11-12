@@ -639,6 +639,40 @@ fn a_request_or_a_read_failing_after_cancel_is_the_cancel() {
     }
 }
 
+/// Only a failed request or read becomes the cancel. Every other failure
+/// stays one: were they all turned, the swap's `NotRestored` would be too, and
+/// the temp folder holding the old files would then be removed.
+#[test]
+fn a_damaged_download_stays_a_failure_after_cancel() {
+    let kind = ArchiveKind::SevenZ;
+    let bundle = folder_with("cancel_then_mismatch", &old_files());
+    let before = snapshot(&bundle);
+    let cancel = Arc::new(AtomicBool::new(false));
+    let flag = Arc::clone(&cancel);
+    let (release, open_url) = release_answering(kind, move |_| {
+        Ok(Box::new(CancelAtEnd {
+            body: Cursor::new(b"not the archive".to_vec()),
+            cancel: Arc::clone(&flag),
+        }))
+    });
+    let outcome = install_kind(
+        kind,
+        &release,
+        &bundle,
+        ProgramStamp::of(&bundle),
+        &open_url,
+        |_| {},
+        &cancel,
+    );
+    assert!(cancel.load(Ordering::Relaxed), "the premise: Cancel is set");
+    assert!(
+        matches!(outcome, Err(InstallError::ChecksumMismatch(_))),
+        "{outcome:?}"
+    );
+    assert_eq!(snapshot(&bundle), before, "no temp folder left");
+    fs::remove_dir_all(bundle).unwrap();
+}
+
 /// The program another window's update put in place.
 const REPLACED_PROGRAM: &str = "the program another window installed";
 

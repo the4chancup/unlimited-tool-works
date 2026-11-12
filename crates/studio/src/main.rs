@@ -836,10 +836,19 @@ mod tests {
     #[test]
     fn the_notice_is_the_last_line_of_a_tool_commands_run() {
         let dir = TestDir::new("update_last_line");
-        fs::create_dir_all(dir.path().join("data")).unwrap();
+        let data = dir.path().join("data");
+        fs::create_dir_all(&data).unwrap();
+        // The settings file is what makes `data/` the data location: without it the
+        // machine's own settings would be read.
+        fs::write(data.join(SETTINGS_FILE_NAME), "").unwrap();
         let tools = tools();
         let (settings, paths) = startup_in(&tools, dir.path().to_path_buf())
             .unwrap_or_else(|(_, text)| panic!("{text}"));
+        assert_eq!(
+            paths.data_dir.as_deref(),
+            Some(data.as_path()),
+            "the premise"
+        );
         // A refused command: the run has a line of its own, and reads no game folder.
         let args = [
             "utw",

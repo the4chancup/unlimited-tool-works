@@ -1695,8 +1695,10 @@ briefs, review loops, gates and mutation runs as for any step.
       the offer back when the wait times out, the help's Restart now says the restart is
       dropped whenever a tool asks about unsaved work, and a test reads the command line's
       notice after the command's own lines (ST-CLI-05)
-    - [ ] the review loops' rest: SWE-2's round over Astra's fixes, then Carbon's loop
-      (its login resets on 2026-11-15)
+    - [x] SWE-2's round over Astra's fixes, 2026-11-12: 2 of 4 concerns accepted, both in
+      the new tests (the notice test read the machine's own settings; no test kept a
+      failure a failure after Cancel), which ends the subloop
+    - [ ] the review loops' rest: Carbon's loop (its login resets on 2026-11-15)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
