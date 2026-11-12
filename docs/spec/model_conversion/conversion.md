@@ -5,9 +5,9 @@ Part of the [Model conversion plan](README.md). Section headings are unchanged f
 ## Model Format Conversion
 
 **Conversion is not offered as a standalone tool.** It is integrated into the Team compiler: exports
-may contain models in the native formats (`.fmdl`, `.model`; `.glb`/`.gltf` are detected too and
-refused until the glTF importer lands, `model_gltf_unsupported`), and the pipeline converts them to
-the target PES version's format at compile time. The logic lives in the `model_convert` lib
+may contain models in the native formats (`.fmdl`, `.model`), and the pipeline converts them to
+the target PES version's format at compile time. `.glb`/`.gltf` are detected too and refused until
+the glTF importer lands (`model_gltf_unsupported`). The logic lives in the `model_convert` lib
 crate.
 
 ### What the converters do
@@ -110,11 +110,13 @@ pub struct VersionSkeletons {
 pub fn skeletons(version: PesVersion) -> &'static VersionSkeletons;   // PES20 = PES21
 ```
 
-The plan's first draft had `phf::Map`s of `&'static` data generated into a source file; a sorted
+The plan's first draft had `phf::Map`s of `&'static` data generated into a source file. A sorted
 `Vec` with a binary search over at most 175 names is as fast as matters and needs neither a
-generator nor a dependency. The Blender display positions (`start`/`end`, `PesSkeletonData`'s
-`_displayPositions`) are not skeleton data the games ship; they join `PesBone` in Phase 7 with the
-glTF exporter that needs them.
+generator nor a dependency.
+
+The Blender display positions (`start`/`end`, `PesSkeletonData`'s `_displayPositions`) are not
+skeleton data the games ship; they join `PesBone` in Phase 7 with the glTF exporter that needs
+them.
 
 **Provenance.** Every number comes from a game file, never from a transcription. The files
 themselves are checked in under `resources/skeletons/pes{15,16,17,18,19,21}/` (extracted once,
@@ -122,8 +124,9 @@ stored decompressed; see the README there), embedded with `include_bytes!` and p
 use with `fmdl::SklFile` — the Python literals are not copied. The one hand-maintained skeleton
 table is `render_parents.rs`, names only: `PesSkeletonData`'s render hierarchy (139 entries, body,
 hands and face), which no game file records. A bone outside that table is a render root, which is
-what every `dsk_*` bone already is in the games' own parent columns. Where each version keeps its
-player skeletons in the game data:
+what every `dsk_*` bone already is in the games' own parent columns.
+
+Where each version keeps its player skeletons in the game data:
 
 | Version | Archive | Path | Files |
 |---|---|---|---|
@@ -135,13 +138,16 @@ player skeletons in the game data:
 | PES21 | `dt00_x64.cpk` | same | same |
 
 PES20 is not installed here and was used in one 4cc event only (core plan, "Project context");
-**PES20 is assumed to equal PES21** until
-its files are checked. Pre-Fox ships no hand or face SKL (its remaining `.skl` files are cutscene
-mobs/props and 2D overlays), which is why `.model` files carry only names and matrices and leave the
-hierarchy to the table; the hand and face hierarchies for pre-Fox targets come from PES19's files,
-as `PesSkeletonData.py` already did. The `render_parent` column is `PesSkeletonData`'s own (the SKL
-files' `parent_index` makes almost every `dsk_*` bone a root, so it cannot serve as a hierarchy for
-mesh splitting or Blender armatures).
+**PES20 is assumed to equal PES21** until its files are checked.
+
+Pre-Fox ships no hand or face SKL (its remaining `.skl` files are cutscene mobs/props and 2D
+overlays), which is why `.model` files carry only names and matrices and leave the hierarchy to
+the table. The hand and face hierarchies for pre-Fox targets come from PES19's files, as
+`PesSkeletonData.py` already did.
+
+The `render_parent` column is `PesSkeletonData`'s own (the SKL files' `parent_index` makes almost
+every `dsk_*` bone a root, so it cannot serve as a hierarchy for mesh splitting or Blender
+armatures).
 
 **The body skeleton is not one skeleton.** Parsing all six `body.skl` files side by side:
 
@@ -174,23 +180,25 @@ The `4cc-model-simplifier-15` (`Engines/python/simplify.py`) and the 19to16 conv
 prototypes. Both solve A with a hand-written table (`missingBones`: `dsk_deltoid_*` →
 `dsk_upperarm_*`, `dsk_trapezius_*` → `sk_shoulder_*`, `dsk_upperarm_long_*` → `dsk_upperarm_*`).
 Neither solves B: both write **PES17's** matrices (`PesSkeletonData`) into models destined for other
-versions, and the simplifier's "full" mode papers over the worst B cases by transferring weights
-away from the displaced bones (`movedBones`: `dsk_belly_scale` → `sk_belly`, `dsk_pectoralis_*` →
-`sk_chest`, `dsk_scapula_r` → `sk_shoulder_r`) — losing the deformation those bones provide. The
-forearm/hand chain, displaced just as much in PES15, was never handled, which is the probable cause
-of the **broken wrist pose in some PES15 animations (the pre-match entrance) on 17→15 ports** — a
-pose-dependent error is exactly what wrong bind pivots produce. *Hypothesis; verify on a known-broken
-port once the pass exists.*
+versions. The simplifier's "full" mode papers over the worst B cases by transferring weights away
+from the displaced bones (`movedBones`: `dsk_belly_scale` → `sk_belly`, `dsk_pectoralis_*` →
+`sk_chest`, `dsk_scapula_r` → `sk_shoulder_r`) — losing the deformation those bones provide.
+
+The forearm/hand chain, displaced just as much in PES15, was never handled, which is the probable
+cause of the **broken wrist pose in some PES15 animations (the pre-match entrance) on 17→15
+ports** — a pose-dependent error is exactly what wrong bind pivots produce. *Hypothesis; verify
+on a known-broken port once the pass exists.*
 
 The Studio runs one IR pass, `retarget(ir: CanonicalModel, target: PesVersion) ->
 Result<(CanonicalModel, Vec<loss::Finding>), ConvertError>` (`skeletons/retarget.rs`; the error
 is a singular bind matrix, which no importer lets through, or the final `validate`). It takes
 the model by value, so an error can never leave a half-retargeted model behind. It runs in every
-export path after conversion and before mesh
-splitting. A bone is *standard* when some version's tables (any body, face or hand skeleton) name
-it, *custom* otherwise; only standard bones the target lacks are folded, and custom bones pass
-through untouched, matrices included. The source bind pose is already in the IR's
-`Bone.matrix` (the importers put it there); the pass rewrites the bones and vertices in place:
+export path after conversion and before mesh splitting.
+
+A bone is *standard* when some version's tables (any body, face or hand skeleton) name it,
+*custom* otherwise. Only standard bones the target lacks are folded, and custom bones pass through
+untouched, matrices included. The source bind pose is already in the IR's `Bone.matrix` (the
+importers put it there); the pass rewrites the bones and vertices in place:
 
 1. **Source bind pose.** `.model`: the inline matrices, inverted. glTF: `skin.inverseBindMatrices`.
    FMDL: the companion `.skl`; without one, the source is assumed to be **PES21**'s skeleton (the
@@ -198,42 +206,55 @@ through untouched, matrices included. The source bind pose is already in the IR'
    and the toe tips; FMDL files do not record their game version).
 2. **Fold bones the target lacks** (problem A). For each used bone absent from the target's body
    table, transfer its weight to the bone named by the **fold table** for that bone — one table for
-   every version, name → name, in `skeletons/fold.rs`: the two legacy tables verbatim, the
-   PES15-only bones (`dsk_chest` → `sk_chest`, `dsk_belly` → `sk_belly`, `dsk_upperarm_{b,m,t}_*` →
-   `dsk_upperarm_*`, `tip_belly`/`tip_chest` → `sk_belly`/`sk_chest`), PES19's `dsk_pos_*` helpers
-   (`dsk_pos_*_wrist_*` → `sk_hand_*`, `dsk_pos_<bone>_*` → `dsk_<bone>_*` or the `sk_` bone
-   the helper sits on), and PES21's additions whose name spells the body part (`dsk_sleeve*`,
-   `dsk_underarm*` → `sk_upperarm_*`; `dsk_hem_*_fake_*` → `dsk_hem_*_*`; `dsk_kneeback_*` →
-   `sk_leg_*`; `dsk_thighmain_*` → `sk_thigh_*`; `dsk_sternum_*` → `sk_chest`). Entries beyond the
-   legacy tables are name-based judgment, not game-verified. A table entry whose target the version
-   also lacks is **followed as a chain** (`dsk_upperarm_long_l` → `dsk_upperarm_l` → PES15 has it;
-   `dsk_pos_trapezius_l` → `dsk_trapezius_l` → `sk_shoulder_l` on PES15); a unit test walks every
-   entry against every version and fails on a chain that ends nowhere or loops. A removed bone with
-   no entry (PES21's `dsk_back`, the `pos_arm_target_*` IK helpers) falls back to the **nearest
-   target body bone by rest position** (the model's own bind translation against the target
-   table's). Every fold of a weighted bone is reported, one finding per bone with `detail`
+   every version, name → name, in `skeletons/fold.rs`. It holds:
+
+   - the two legacy tables verbatim;
+   - the PES15-only bones (`dsk_chest` → `sk_chest`, `dsk_belly` → `sk_belly`,
+     `dsk_upperarm_{b,m,t}_*` → `dsk_upperarm_*`, `tip_belly`/`tip_chest` →
+     `sk_belly`/`sk_chest`);
+   - PES19's `dsk_pos_*` helpers (`dsk_pos_*_wrist_*` → `sk_hand_*`, `dsk_pos_<bone>_*` →
+     `dsk_<bone>_*` or the `sk_` bone the helper sits on);
+   - PES21's additions whose name spells the body part (`dsk_sleeve*`, `dsk_underarm*` →
+     `sk_upperarm_*`; `dsk_hem_*_fake_*` → `dsk_hem_*_*`; `dsk_kneeback_*` → `sk_leg_*`;
+     `dsk_thighmain_*` → `sk_thigh_*`; `dsk_sternum_*` → `sk_chest`).
+
+   Entries beyond the legacy tables are name-based judgment, not game-verified. A table entry
+   whose target the version also lacks is **followed as a chain** (`dsk_upperarm_long_l` →
+   `dsk_upperarm_l` → PES15 has it; `dsk_pos_trapezius_l` → `dsk_trapezius_l` → `sk_shoulder_l`
+   on PES15); a unit test walks every entry against every version and fails on a chain that ends
+   nowhere or loops.
+
+   A removed bone with no entry (PES21's `dsk_back`, the `pos_arm_target_*` IK helpers) falls
+   back to the **nearest target body bone by rest position** (the model's own bind translation
+   against the target table's).
+
+   Every fold of a weighted bone is reported, one finding per bone with `detail`
    `"<bone> -> <target>"`: `bone_folded_for_version` from the table, `bone_folded_by_position`
-   for the fallback (a guess the user should hear about); an unweighted removed bone just
-   disappears. Bone groups and vertex mappings are remapped exactly as the simplifier's
-   `simplifyModel` does: the folded bone leaves the bone list and every group, the target bone is
-   appended where absent (to the model with the target's matrix, to the group), and a vertex whose
-   slots now name one bone twice merges the weights into the first slot. Children of a removed bone
-   take its parent. The SKL parent chain is *not* used: almost every `dsk_*` bone is a root in the
-   games' own files.
+   for the fallback (a guess the user should hear about). An unweighted removed bone just
+   disappears.
+
+   Bone groups and vertex mappings are remapped exactly as the simplifier's `simplifyModel` does:
+   the folded bone leaves the bone list and every group, the target bone is appended where absent
+   (to the model with the target's matrix, to the group), and a vertex whose slots now name one
+   bone twice merges the weights into the first slot. Children of a removed bone take its parent.
+   The SKL parent chain is *not* used: almost every `dsk_*` bone is a root in the games' own
+   files.
 3. **Re-bind to the target pose** (problem B). For every surviving bone, re-pose the vertices from
-   the source rest pose into the target's — `v' = Σᵢ wᵢ · B_target,ᵢ · B_source,ᵢ⁻¹ · v` over the
-   vertex's weights, the blend divided by their sum when they do not total 1 (community weights
-   are kept as stored), normals/tangents by the rotational part — and write the **target
-   version's**
-   inverse bind matrices into the emitted `.model` bone table or generated `.skl`. Weights are
-   untouched: `dsk_scapula_r` keeps driving the shoulder blade, sitting where PES15 expects it.
+   the source rest pose into the target's, and write the **target version's** inverse bind
+   matrices into the emitted `.model` bone table or generated `.skl`. A vertex is re-posed as
+   `v' = Σᵢ wᵢ · B_target,ᵢ · B_source,ᵢ⁻¹ · v` over the vertex's weights, the blend divided by
+   their sum when they do not total 1 (community weights are kept as stored); normals/tangents
+   are re-posed by the rotational part. Weights are untouched: `dsk_scapula_r` keeps driving the
+   shoulder blade, sitting where PES15 expects it.
+
    Reported once per model as `skeleton_retargeted` (I, `detail` the moved-bone count) when any
-   bone's delta `Dᵢ` differs from the identity by more than a tolerance (3e-3 on any component:
-   Konami's own PES 17 glove `g101` sits 0.0025 off the hand table on three finger bones, and the
-   smallest difference between two versions' body tables is 0.0042, one hem bone of PES 15
-   against 17, so 3e-3 clears the games' own files and still catches every version difference;
-   measured at 4.17g1);
-   a bone within tolerance is left exactly as it was, and a vertex none of whose bones moved is
+   bone's delta `Dᵢ` differs from the identity by more than a tolerance. The tolerance is 3e-3 on
+   any component: Konami's own PES 17 glove `g101` sits 0.0025 off the hand table on three finger
+   bones, and the smallest difference between two versions' body tables is 0.0042, one hem bone
+   of PES 15 against 17, so 3e-3 clears the games' own files and still catches every version
+   difference (measured at 4.17g1).
+
+   A bone within tolerance is left exactly as it was, and a vertex none of whose bones moved is
    not touched, so a same-version compile is a no-op by construction, float noise included.
    Normals, tangents (xyz; `w` kept) and bitangents take the blended rotation and are
    renormalized. Bones the target's tables do not know at all (a genuine custom skeleton) keep
@@ -245,35 +266,46 @@ through untouched, matrices included. The source bind pose is already in the IR'
    The two are equal for a vertex weighted to one bone, and for a vertex whose bones all share
    one delta: such a model is moved rigidly, never distorted, in every pose. They differ only
    for a vertex that blends bones whose deltas differ: that vertex flexes about the wrong pivots
-   once the joint animates, which is problem B. So **a model is on the target's skeleton when no
-   vertex blends bones with differing deltas**, whatever its deltas are, and that is the test the
-   native pre-check runs (`needs_conversion`): per bone the delta to the target's table, then one
-   pass over the vertex weights. A pre-Fox weight below half of Fox's 1/255 step counts as no
-   weight: community exporters leave float noise (2^-24) on the unused slots of a vertex weighted
-   whole to one bone (225 vertices of the parity tracer's boots carry it on the other leg's
-   bone), and a weight the Fox format would round to zero moves the drawn vertex by nothing
-   visible on either engine. The games' own files show why the per-bone comparison the plan
-   first described is wrong (measured at 4.17g1 on the stock PES 2017 and PES 2021 files and the
-   pre-Fox parity tracer): Konami's boots sit on a **boots pose** 7° off the body table on every
-   version, both feet in one mesh with opposite per-leg deltas, and the community's PES 15-posed
-   gloves sit 0.36 off PES 17's arm with every bone sharing one delta; all of them draw right,
-   and a per-bone check would have re-bound every one.
+   once the joint animates, which is problem B.
+
+   So **a model is on the target's skeleton when no vertex blends bones with differing
+   deltas**, whatever its deltas are, and that is the test the native pre-check runs
+   (`needs_conversion`): per bone the delta to the target's table, then one pass over the vertex
+   weights. A pre-Fox weight below half of Fox's 1/255 step counts as no weight, because
+   community exporters leave float noise (2^-24) on the unused slots of a vertex weighted whole to
+   one bone (225 vertices of the parity tracer's boots carry it on the other leg's bone), and a
+   weight the Fox format would round to zero moves the drawn vertex by nothing visible on either
+   engine.
+
+   The games' own files show why the per-bone comparison the plan first described is wrong
+   (measured at 4.17g1 on the stock PES 2017 and PES 2021 files and the pre-Fox parity tracer):
+   - Konami's boots sit on a **boots pose** 7° off the body table on every version, both feet in
+     one mesh with opposite per-leg deltas;
+   - the community's PES 15-posed gloves sit 0.36 off PES 17's arm with every bone sharing one
+     delta.
+
+   All of them draw right, and a per-bone check would have re-bound every one.
 4. **Hands** conform against the target's `hand_*` tables (Konami's gloves match them to 0.0025,
    measured; the tables are byte-identical across PES 18-21 and pre-Fox ships none, so PES19's
-   serve every version). **A face's `skf_*` bones are not conformed and not re-bound**: their
-   pose is per face (Konami's PES 2017 faces sit up to 0.28 off `face.skl` and 0.26 off each
-   other; a PES 2021 face 0.34 off), the base table moved by the player's own face diff, so no
-   shared table is a reference for them; they keep the model's own matrices, as custom bones do,
-   and count as neither moved nor blended in the pre-check. A face's body bones (`sk_head`,
-   `sk_neck`, `dsk_*`) conform against the body table, which every stock face matches to 0.0000.
+   serve every version).
+
+   **A face's `skf_*` bones are not conformed and not re-bound**: their pose is per face
+   (Konami's PES 2017 faces sit up to 0.28 off `face.skl` and 0.26 off each other; a PES 2021
+   face 0.34 off), the base table moved by the player's own face diff, so no shared table is a
+   reference for them. They keep the model's own matrices, as custom bones do, and count as
+   neither moved nor blended in the pre-check. A face's body bones (`sk_head`, `sk_neck`,
+   `dsk_*`) conform against the body table, which every stock face matches to 0.0000.
 
 The two legacy tables become regression fixtures: PES19→PES16 and PES17→PES15 must fold exactly the
 `missingBones` those tools folded, and must *not* fold the `movedBones` (retargeting handles them).
+
 Retargeting is also what makes the **PES19→PES21** compile correct — today Red leaves PES19's eight
 `dsk_pos_*` bones dangling in a PES21 FMDL; whether the game ignores or misrenders them is untested,
-and folding makes it moot. A manual per-folder override for fold targets is deliberately not
-specified: the table plus nearest-bone fallback should cover real exports, and `settings.toml` is
-kept to appearance settings; revisit if a case turns up.
+and folding makes it moot.
+
+A manual per-folder override for fold targets is deliberately not specified, because the table
+plus nearest-bone fallback should cover real exports and `settings.toml` is kept to appearance
+settings. Revisit if a case turns up.
 
 **Cost.** Re-binding is linear-blend skinning evaluated once, offline. Per surviving bone one delta
 matrix `Dᵢ = B_target,ᵢ · B_source,ᵢ⁻¹` is precomputed (≤ 175 small matrix products); per vertex the
@@ -281,16 +313,18 @@ position is `Σ wᵢ Dᵢ v` over at most four weights (≈ 50 multiply-adds) an
 the rotational part (≈ 40 more) — on the order of 100 flops per vertex, done in place. A 20k-vertex
 player model is ~2 M flops, well under a millisecond single-threaded; the largest 4cc models
 (~100k vertices) stay in single-digit milliseconds. It is not measurable next to mesh splitting
-(10–50 ms per model) or texture encoding (hundreds of ms), and it runs at all only when the
-native-format pre-check (`needs_conversion`: bone names, the two versions' tables and one pass
-over the vertex weights, no vertex position read) finds a used bone that the target lacks or a
-vertex blending bones whose deltas to the target differ beyond tolerance (item 3, "When
-re-binding changes anything") — same-version compiles, and cross-version compiles of models
-whose blended bones moved together, never enter the pass. What it does
-add for a **same-format** cross-version compile (a PES21-authored FMDL for PES18) is the IR
-round-trip it needs to run at all, which is why it is listed with hand auto-split as an explicit
-exception to the "same format skips the IR" rule; that round-trip
-is the lossless one the plan already tests, and it costs a few milliseconds of parse/serialize.
+(10–50 ms per model) or texture encoding (hundreds of ms).
+
+The pass runs at all only when the native-format pre-check (`needs_conversion`: bone names, the
+two versions' tables and one pass over the vertex weights, no vertex position read) finds a used
+bone that the target lacks or a vertex blending bones whose deltas to the target differ beyond
+tolerance (item 3, "When re-binding changes anything"). Same-version compiles, and cross-version
+compiles of models whose blended bones moved together, never enter the pass.
+
+What it does add for a **same-format** cross-version compile (a PES21-authored FMDL for PES18) is
+the IR round-trip it needs to run at all, which is why it is listed with hand auto-split as an
+explicit exception to the "same format skips the IR" rule. That round-trip is the lossless one
+the plan already tests, and it costs a few milliseconds of parse/serialize.
 
 ### SKL binary format
 
@@ -323,9 +357,10 @@ scratch (`SklFile::new`) pads to 4, as the reference writer does.
 Each transform row is `[rot_x, rot_y, rot_z, translation]`, giving a 3×3 bind-pose rotation plus a
 model-space position per bone. The positions correspond to the `PesSkeletonData._positions`
 reference, but template variants can differ numerically; do not require exact equality to that
-hardcoded reference. Preserve the SKL parent hierarchy separately from the render hierarchy. The `fmdl` crate owns the SKL codec alongside
-the FMDL codec (same format family — both are Fox-engine binary formats consumed together at pack
-time).
+hardcoded reference. Preserve the SKL parent hierarchy separately from the render hierarchy.
+
+The `fmdl` crate owns the SKL codec alongside the FMDL codec (same format family — both are
+Fox-engine binary formats consumed together at pack time).
 
 ### SKL and glTF: native integration, not a companion
 

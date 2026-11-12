@@ -5,9 +5,13 @@
 4ccEditor (`Tools_4cc/4ccEditor`, the official repository's `origin/master`; its Autumn 26
 edition, 2026-10-20, merged the Tactics tab and Texport import from the fork in
 `Tools_4cc/4ccEditor-1`) is a raw Win32 C++ application that edits PES save files
-(`EDIT00000000`) for PES 2015–2021. The local `master` carries two of the maintainer's own
-experiments upstream does not have (the "Make everyone else Messi" team action, out of
-scope); read the official code through `origin/master`. Its codebase breaks down as:
+(`EDIT00000000`) for PES 2015–2021.
+
+The local `master` carries two of the maintainer's own experiments upstream does not have (the
+"Make everyone else Messi" team action, out of scope), so read the official code through
+`origin/master`.
+
+Its codebase breaks down as:
 
 | Component | Files | Size | Fate in the Rust port |
 |-----------|-------|------|----------------------|
@@ -40,8 +44,9 @@ is too heavy:
 The second is absorbed into the save editor as the `diff` command and the comparator panel (the
 operation lives in `pes_savefile`, "Save-to-save operations" in the [Savefile
 plan](pes_savefile/operations.md)). The first is not: aesthetics live in the exports now, so a
-look copied into a save is overwritten by the next compile. Its successor copies a donor save's looks into the team's export instead (after
-Release 0.1.0, "Aesthetics transplant" in the [Save editor plan](../plans/save_editor.md)).
+look copied into a save is overwritten by the next compile. Its successor copies a donor save's
+looks into the team's export instead (after Release 0.1.0, "Aesthetics transplant" in the [Save
+editor plan](../plans/save_editor.md)).
 
 ---
 
@@ -139,45 +144,58 @@ The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping'
 4ccEditor's AATF tool hardcodes both its parameters and its logic in C++; a ruleset change is a
 recompile. This editor checks a **rules file** instead: a ruleset as data plus a
 generic interpreter, specified in the [AATF rules plan](aatf_rules.md) (`libs/aatf`), and
-built without code in the [Ruleset editor](../plans/ruleset_editor.md). Every cup's current
-ruleset ships embedded, the official one the default; the `aatf_ruleset` setting names the one
-in use, an embedded ruleset's file stem (`vgl27`) or the file name of a copy in the data
-folder's `rules/`.
+built without code in the [Ruleset editor](../plans/ruleset_editor.md).
+
+Every cup's current ruleset ships embedded, the official one the default. The `aatf_ruleset`
+setting names the one in use, an embedded ruleset's file stem (`vgl27`) or the file name of a
+copy in the data folder's `rules/`.
 
 What this editor adds on top of the lib:
 
 - **The ruleset dropdown.** A combo box on the toolbar, left of the Live AATF toggle, drawn
   whether Live AATF is on or off: the ruleset drives the quick actions, the Cards used badge
-  and which skills the Tricks or Free cards panel holds, not only the check. It lists the
-  rulesets built into the binary, every cup's current ones in `aatf_rules.md`
-  "Embedded rulesets"'s order, each by its description alone, the file's `name` (`aatf_rules.md`
-  "The ruleset schema": `/vg/ League 27`, not a file name or a code), then under a separator the imported ones the same way, each row with an ×
-  at its right end (a frameless small button: egui's combo popup holds any widget), then
-  under another `Import rules file…`, a command rather than a value. The choice
-  is the `aatf_ruleset` setting (an embedded ruleset's file stem, `autumn26`, or an imported
-  copy's file name), remembered across restarts, and `check-aatf` without `--rules` reads it.
+  and which skills the Tricks or Free cards panel holds, not only the check. It lists, in this
+  order:
+  - the rulesets built into the binary, every cup's current ones in `aatf_rules.md`
+    "Embedded rulesets"'s order, each by its description alone, the file's `name`
+    (`aatf_rules.md` "The ruleset schema": `/vg/ League 27`, not a file name or a code);
+  - then under a separator the imported ones the same way, each row with an × at its right end
+    (a frameless small button: egui's combo popup holds any widget);
+  - then under another separator `Import rules file…`, a command rather than a value.
+
+  The choice is the `aatf_ruleset` setting (an embedded ruleset's file stem, `autumn26`, or an
+  imported copy's file name), remembered across restarts, and `check-aatf` without `--rules`
+  reads it.
+
   It replaces the `aatf_rules` path setting and its settings-menu row: one place to pick the
   rules, the place a member switching between cups' rules is already looking (switching
   through the settings row was awkward). The settings menu's Save editor section keeps the
   "Aesthetics from exports" checkbox ("Read-only aesthetics").
+
   - **Import rules file…** opens the file dialog on `.4ccrules` files and loads the pick as
-    `Rules::load` does (`aatf_rules.md` "Loading and validation"). A file with findings is
-    refused, a dialog titled `The rules file has errors` listing them, each with its line and
-    column or key path, and nothing is copied: no file that does not load can become the
-    ruleset, so the quick actions and the badge never have a load error to show (the file is
-    fixed, in the Ruleset editor or by hand, and imported again). A clean file is copied into
-    the data folder's `rules/` under its file name and becomes the ruleset. The imported
-    rulesets are the `.4ccrules` files in that folder, read at start, no list kept beside
-    them, so moving or editing the original changes nothing until it is imported again. A
-    file whose description a built-in ruleset has is refused naming the clash (two rows would
-    read the same, and a built-in is not replaced); one whose file name or description an
-    earlier import has replaces that import once a confirmation naming it is accepted (a cup's
-    corrected rules keep their name). A file picked under another ending is copied as
-    `<stem>.4ccrules`, and one whose file name differs from an earlier import's in case alone
-    takes that import's name: Windows reads the two as one file, and the replace would
-    otherwise delete the copy it had just written. With no data folder (a portable copy
-    beside a read-only exe), the import is refused saying so. No Save a copy: writing a
-    ruleset out is the Ruleset editor's.
+    `Rules::load` does (`aatf_rules.md` "Loading and validation").
+
+    A file with findings is refused, a dialog titled `The rules file has errors` listing them,
+    each with its line and column or key path, and nothing is copied. No file that does not
+    load can become the ruleset, so the quick actions and the badge never have a load error to
+    show (the file is fixed, in the Ruleset editor or by hand, and imported again).
+
+    A clean file is copied into the data folder's `rules/` under its file name and becomes the
+    ruleset. The imported rulesets are the `.4ccrules` files in that folder, read at start, no
+    list kept beside them, so moving or editing the original changes nothing until it is
+    imported again.
+
+    - A file whose description a built-in ruleset has is refused naming the clash (two rows
+      would read the same, and a built-in is not replaced).
+    - A file whose file name or description an earlier import has replaces that import once a
+      confirmation naming it is accepted (a cup's corrected rules keep their name).
+    - A file picked under another ending is copied as `<stem>.4ccrules`, and one whose file
+      name differs from an earlier import's in case alone takes that import's name: Windows
+      reads the two as one file, and the replace would otherwise delete the copy it had just
+      written.
+
+    With no data folder (a portable copy beside a read-only exe), the import is refused saying
+    so. No Save a copy: writing a ruleset out is the Ruleset editor's.
   - **The ×** asks first (`Remove an imported ruleset?`, naming it, saying its copy is
     deleted and the original stays), then deletes the copy; removing the ruleset in use falls
     back to the first built-in one.
@@ -193,33 +211,52 @@ What this editor adds on top of the lib:
   `check-aatf --teams` on the command line.
 - **Multi-team AATF.** The Savefile menu's `Multi-team AATF…`, after Output rosters to TSV,
   opens a dialog, `Multi-team AATF (<ruleset>)`, for an organizer checking a cup's
-  teams, who does not use a command line. On one row `Teams`, the range's first team, `to`, its
-  last: two combo boxes of the save's teams by id and name, both on the save's first team when
-  the dialog first opens (a whole save's check is the long one, and an organizer checks a few
-  teams at a time), the pick kept while the save stays open. The last end lists only the teams
-  from the first end on and follows the first end when it passes it, so the range is never
-  reversed and needs no warning. Under it a line, `N teams checked, M with issues`; then every team of the range under its id and name, its rows
-  grouped and worded as Live AATF's dock words them, errors first, or `All clean` under a team
-  with none, so a clean team reads as checked rather than missed, the list as wide as the
-  dialog's content; then `Copy to clipboard` and `Close`. The teams are checked on a worker, in parallel as `check-aatf` runs them (220 teams
-  of a PES 2017 save in 2.0 s on 16 threads, 13.2 s on one), when the dialog opens and once
-  the ends have rested 500 ms after a change: the wheel over an end steps one team a frame
-  (`plans/core/gui.md` "The wheel over a value"), and a check started per step left the window
-  unresponsive for about two minutes over 220 teams. Until the new list arrives the previous
-  one is kept, dimmed and marked as checking, unless the ruleset changed (that list, and its Copy, would name findings of
-  another ruleset under the active one's name: it is dropped until the new one arrives); a team whose check fails is a line naming it and the error, the others still
-  listed. Suggestions are not asked for (an unused allowance is the manager's business, not
-  the organizer's), and a row's click does nothing. A dialog, not a docked panel or a
-  floating window: it is a report read once and copied out, while Live AATF is where a team
-  gets fixed. Copy to clipboard copies the list as plain text, a line per row: first the
-  ruleset and range with the error and warning counts, then per team its id and name after a
-  `>`, which a cup's thread draws as green text so each team stands out, per player his id and
-  name indented two spaces (the team's own rows under `Team-wide issues`; `All clean` there
-  under a clean team), per row its severity, rule and sentence indented four, and under a
-  height row its players' lines indented six, so it pastes readably into the thread (a failed team's error under its line); a notice says `Copied the
-  results of N teams.`, a count of 1 reading in the singular. The dialog is 900 points wide,
-  its list 874 by 360, and scrolls. `violations_list` draws both Live AATF's dock and this list (`ListUse`), and
-  the copied text walks the same grouping (`issue_groups`), so the two read alike.
+  teams, who does not use a command line.
+
+  One row holds `Teams` (the range's first team) and `to` (its last): two combo boxes of the
+  save's teams by id and name. Both are on the save's first team when the dialog first opens (a
+  whole save's check is the long one, and an organizer checks a few teams at a time), and the
+  pick is kept while the save stays open. The last end lists only the teams from the first end
+  on and follows the first end when it passes it, so the range is never reversed and needs no
+  warning.
+
+  Under it, in order:
+  - a line, `N teams checked, M with issues`;
+  - then every team of the range under its id and name, its rows grouped and worded as Live
+    AATF's dock words them, errors first, or `All clean` under a team with none, so a clean
+    team reads as checked rather than missed, the list as wide as the dialog's content;
+  - then `Copy to clipboard` and `Close`.
+
+  The teams are checked on a worker, in parallel as `check-aatf` runs them (220 teams of a
+  PES 2017 save in 2.0 s on 16 threads, 13.2 s on one), when the dialog opens and once the ends
+  have rested 500 ms after a change. The wait is there because the wheel over an end steps one
+  team a frame (`plans/core/gui.md` "The wheel over a value"), and a check started per step
+  left the window unresponsive for about two minutes over 220 teams.
+
+  Until the new list arrives the previous one is kept, dimmed and marked as checking, unless
+  the ruleset changed (that list, and its Copy, would name findings of another ruleset under
+  the active one's name: it is dropped until the new one arrives). A team whose check fails is
+  a line naming it and the error, the others still listed.
+
+  Suggestions are not asked for (an unused allowance is the manager's business, not the
+  organizer's), and a row's click does nothing. A dialog, not a docked panel or a floating
+  window: it is a report read once and copied out, while Live AATF is where a team gets fixed.
+
+  Copy to clipboard copies the list as plain text, a line per row:
+  - first the ruleset and range with the error and warning counts;
+  - then per team its id and name after a `>`, which a cup's thread draws as green text so
+    each team stands out;
+  - per player his id and name indented two spaces (the team's own rows under
+    `Team-wide issues`; `All clean` there under a clean team);
+  - per row its severity, rule and sentence indented four;
+  - and under a height row its players' lines indented six.
+
+  So the copied text pastes readably into the thread (a failed team's error under its line). A
+  notice says `Copied the results of N teams.`, a count of 1 reading in the singular.
+
+  The dialog is 900 points wide, its list 874 by 360, and scrolls. `violations_list` draws both
+  Live AATF's dock and this list (`ListUse`), and the copied text walks the same grouping
+  (`issue_groups`), so the two read alike.
 - **Validate rules.** `check-aatf` refuses a rules file that fails the lib's load-time
   validation with its findings (line or key path), so the command doubles as a rules file's
   check.
@@ -244,96 +281,116 @@ UTW save-editor export-teams-list ./EDIT00000000 [--yes]     # merge the save's 
 
 Rules every command shares:
 
-- **Exit codes**, the Team compiler's meanings: 0 done; 1 done with an error reported (a patch's
-  team the save lacks, an AATF error); 2 refused before anything was
-  written (a bad argument, a version mismatch, an unreadable file, a team or player the save
-  lacks); 3 a write failed (what was already written stands).
+- **Exit codes**, the Team compiler's meanings:
+  - 0 done;
+  - 1 done with an error reported (a patch's team the save lacks, an AATF error);
+  - 2 refused before anything was written (a bad argument, a version mismatch, an unreadable
+    file, a team or player the save lacks);
+  - 3 a write failed (what was already written stands).
 - **Writing a save.** A command that writes a save reads its source save (`--base`) and
   writes `--out`, which may be the same path; an existing output save is first copied to
-  `<file>.bak` (one level, as every save does). There is no implicit base save and no command creates a whole EDIT. While the PES
-  of that save's version is running (the source save's version, read before anything is
-  written), a command that writes a save writes only when given `--edit-mode-closed`, the
-  member's word that the game's Edit mode is closed: the game writes the save it holds over the
-  file when the member leaves Edit mode after changing anything there, so a write made while it
-  is open is lost then unless Edit mode's Load reads it in first, while one made with it closed
-  stands and opening Edit mode reads it in without restarting the game. Closed is the state
-  the flag asks for: the only one that keeps the write with no step in game after it. Without the
-  flag the command writes nothing and exits 2, its message naming the game and the flag. Not a
-  warning followed by the write: a write made while Edit mode is open is lost without a word,
-  and the warning would come after it. A running PES of another version needs no flag, because
-  a game only ever writes its own version's save; refusing on any running game would refuse
-  every edit of another version's save, and a copy of one, for no protection. The compiler's
-  savefile step follows the same rule (`team_compiler/pipeline.md`,
-  `savefile_skipped_pes_running`).
+  `<file>.bak` (one level, as every save does). There is no implicit base save and no command
+  creates a whole EDIT.
+
+  While the PES of that save's version is running (the source save's version, read before
+  anything is written), a command that writes a save writes only when given
+  `--edit-mode-closed`, the member's word that the game's Edit mode is closed. The game writes
+  the save it holds over the file when the member leaves Edit mode after changing anything
+  there. So a write made while Edit mode is open is lost then unless Edit mode's Load reads it
+  in first, while one made with it closed stands and opening Edit mode reads it in without
+  restarting the game. Closed is the state the flag asks for: the only one that keeps the write
+  with no step in game after it.
+
+  Without the flag the command writes nothing and exits 2, its message naming the game and the
+  flag. Not a warning followed by the write: a write made while Edit mode is open is lost
+  without a word, and the warning would come after it.
+
+  A running PES of another version needs no flag, because a game only ever writes its own
+  version's save; refusing on any running game would refuse every edit of another version's
+  save, and a copy of one, for no protection. The compiler's savefile step follows the same
+  rule (`team_compiler/pipeline.md`, `savefile_skipped_pes_running`).
 
 The commands:
 
 - `export-toml` requires an explicit source EDIT and either `--team <id>` with `-o`/`--out <file>`,
   or `--all-teams` with `--out-dir <directory>` for one file per team of the save, named
   `<id>.toml`. These forms are mutually exclusive; there is no implicit current-team selection.
-  An existing TOML is replaced, with no backup; a `--team` the save lacks is refused, and so
-  is an `--out` naming the input save itself (exit 2, nothing written): the no-backup rule
-  is for a Team TOML, and replacing the save with one would lose it.
+  An existing TOML is replaced, with no backup. A `--team` the save lacks is refused, and so is
+  an `--out` naming the input save itself (exit 2, nothing written): the no-backup rule is for a
+  Team TOML, and replacing the save with one would lose it.
 - `import-toml` requires the Team TOML, `--base <EDIT>`, and `--out <EDIT>`. It imports onto
-  the team the document's `id` names, preserving unmodeled
-  save data; it prints each import note (a converted or dropped value) on its own line. The
-  file's sections are its selection: a section left out of the file is untouched, so the CLI has
-  no section flags. A document with no `id`, or one the save lacks, is refused.
-- `apply-patch` takes the patch, `--base <EDIT>` and `--out <EDIT>` exactly like `import-toml`;
-  the patch holds each compiled player's whole look on every engine (the `[appearance]`
+  the team the document's `id` names, preserving unmodeled save data, and prints each import
+  note (a converted or dropped value) on its own line. The file's sections are its selection: a
+  section left out of the file is untouched, so the CLI has no section flags. A document with no
+  `id`, or one the save lacks, is refused.
+- `apply-patch` takes the patch, `--base <EDIT>` and `--out <EDIT>` exactly like `import-toml`.
+  The patch holds each compiled player's whole look on every engine (the `[appearance]`
   entry, boots and gloves IDs, `base_copy_id`, and a `write_names` export's names:
-  `spec/pes_savefile/operations.md` "Aesthetics patch (new)"). It
-  refuses a version or allocation-scheme mismatch before touching anything, prints the per-team
-  summary (applied / skipped: not in save), and is the batch form of the GUI action — the savefile
-  builder can apply a night's patches in one script. A team is listed as applied only when at
-  least one of its players was written: a team the save holds whose patch players it all lacks
-  prints only their skips. A skipped team or player is an error (exit
-  1) and the rest is written; a save holding none of the patch's players, with `--out` naming
-  `--base`, is not rewritten, so its `.bak` stays the previous backup (SE-PAT-12). Like every
-  command that writes a save (`import-toml`'s notes),
-  its lines are printed
-  once `--out` is written, or once that in-place write is skipped: a write that fails prints only its failure (exit 3), never a line
-  saying what was written. The read-only lock is a GUI guard; a CLI command that writes
-  aesthetics (an `import-toml` whose file holds aesthetics) is explicit by nature and is not
-  gated.
-- `diff` prints the comparator's report to stdout, players paired by id, each changed field as
-  old → new, then the
-  players only in one save (human-readable by default, `--json` for
-  tooling), replacing the Midcupping compare scripts; `--aesthetics` and `--gameplay` keep one
+  `spec/pes_savefile/operations.md` "Aesthetics patch (new)").
+
+  It refuses a version or allocation-scheme mismatch before touching anything, prints the
+  per-team summary (applied / skipped: not in save), and is the batch form of the GUI action —
+  the savefile builder can apply a night's patches in one script. A team is listed as applied
+  only when at least one of its players was written: a team the save holds whose patch players
+  it all lacks prints only their skips.
+
+  A skipped team or player is an error (exit 1) and the rest is written. A save holding none of
+  the patch's players, with `--out` naming `--base`, is not rewritten, so its `.bak` stays the
+  previous backup (SE-PAT-12).
+
+  Like every command that writes a save (`import-toml`'s notes), its lines are printed once
+  `--out` is written, or once that in-place write is skipped: a write that fails prints only
+  its failure (exit 3), never a line saying what was written.
+
+  The read-only lock is a GUI guard; a CLI command that writes aesthetics (an `import-toml`
+  whose file holds aesthetics) is explicit by nature and is not gated.
+- `diff` prints the comparator's report to stdout, replacing the Midcupping compare scripts:
+  players paired by id, each changed field as old → new, then the players only in one save
+  (human-readable by default, `--json` for tooling). `--aesthetics` and `--gameplay` keep one
   scope. Saves of two versions are refused. Differences are its output, not an error: exit 0.
 - `check-aatf` runs the active ruleset (`--rules`, else the one the `aatf_ruleset` setting
-  names) over the cup teams the
-  save holds (701-920, or `--teams`) and prints each violation with its team and, for a player's,
-  the player; an error-severity violation makes the exit code 1, a warning alone leaves it 0. A rules file that fails load-time validation is
-  refused with its findings (line or key path), so `check-aatf` doubles as the CLI's rules
-  validation. Each violation is one finding line, `aatf_violation`, at the violation's severity:
-  the team, the player's id for a player's violation, the rule named in words (`rule=Fielded
-  position`) and what is wrong, the sentence the window's AATF rows print (`problem=Attacking
-  Prowess 82, over the 77 the rules allow`; `aatf_rules.md` "Hints at a valid value"): the
-  rules file's spellings (`FieldedNotA`, `attacking_prowess`) are for the program alone. A
+  names) over the cup teams the save holds (701-920, or `--teams`) and prints each violation
+  with its team and, for a player's, the player. An error-severity violation makes the exit
+  code 1, a warning alone leaves it 0. A rules file that fails load-time validation is refused
+  with its findings (line or key path), so `check-aatf` doubles as the CLI's rules validation.
+
+  Each violation is one finding line, `aatf_violation`, at the violation's severity:
+  - the team;
+  - the player's id for a player's violation;
+  - the rule named in words (`rule=Fielded position`);
+  - and what is wrong, the sentence the window's AATF rows print (`problem=Attacking Prowess
+    82, over the 77 the rules allow`; `aatf_rules.md` "Hints at a valid value").
+
+  The rules file's spellings (`FieldedNotA`, `attacking_prowess`) are for the program alone. A
   height row's sentence is followed by each of its players' lines after `; `, as the window
   draws them under it (`problem=... where its quota is 10; At 185: Stack Bros. (189),
-  HELLOHELL; At 180: Let's Ghost`). Teams
-  in id order, each team's lines in the order its check
-  returns them. Suggestions are not printed: the CLI has no "Show suggestions" toggle, and an
-  unused allowance is not something to fix. A team whose check fails (a bug in the logic or in a
+  HELLOHELL; At 180: Let's Ghost`). Teams are printed in id order, each team's lines in the
+  order its check returns them.
+
+  Suggestions are not printed: the CLI has no "Show suggestions" toggle, and an unused
+  allowance is not something to fix. A team whose check fails (a bug in the logic or in a
   custom check) is an `aatf_check_failed` error line and the other teams are still checked.
   `--teams` takes ids and inclusive ranges (`701,705-710`); an id the save lacks is refused
-  (exit 2). The setting resolves as the window resolves it: an embedded ruleset's stem, else a
-  copy of that file name in the data directory's `rules/` that loads, else the first embedded
-  ruleset, Autumn 26, with the warning line `aatf_ruleset_gone` (a copy deleted or edited
-  until it no longer loads; the check still runs). `--rules`, a command-line path, is relative
-  to the current directory; when no file has that name, it is an embedded ruleset's stem, the
-  name the `aatf_ruleset` setting stores (`--rules dbc7`), and a value that is neither is
-  refused (exit 2) with every embedded stem listed. A file of that name wins over the stem.
+  (exit 2).
+
+  The setting resolves as the window resolves it: an embedded ruleset's stem, else a copy of
+  that file name in the data directory's `rules/` that loads, else the first embedded ruleset,
+  Autumn 26, with the warning line `aatf_ruleset_gone` (a copy deleted or edited until it no
+  longer loads; the check still runs).
+
+  `--rules`, a command-line path, is relative to the current directory. When no file has that
+  name, it is an embedded ruleset's stem, the name the `aatf_ruleset` setting stores
+  (`--rules dbc7`), and a value that is neither is refused (exit 2) with every embedded stem
+  listed. A file of that name wins over the stem.
 - `export-teams-list` prints the merge summary (added / kept / overridden / unresolved) and stops
   unless `--yes` is given; a change behind an unresolved conflict is dropped, as for the updater
   merge (`libs/teams_list.md`). An unwritable data directory reports `teams_list_read_only` and
-  writes nothing (exit 1). The save's list is its slash-wrapped names with a cup id (701-920),
-  colour codes stripped; a later team folding to an earlier one's name (the fold is
-  case-insensitive; a real PES 21 cup save holds `/4ccg/` twice) is left out and reported as
-  `teams_list_name_duplicate` (exit 1), since the list holds a name once and the save, not the
-  list, is where the clash is fixed.
+  writes nothing (exit 1).
+
+  The save's list is its slash-wrapped names with a cup id (701-920), colour codes stripped. A
+  later team folding to an earlier one's name (the fold is case-insensitive; a real PES 21 cup
+  save holds `/4ccg/` twice) is left out and reported as `teams_list_name_duplicate` (exit 1),
+  since the list holds a name once and the save, not the list, is where the clash is fixed.
 
 AATF quick actions (`apply_tier`), the FPC toggle, `settings.toml` generation, Texport and the
 legacy imports have no command: they are GUI actions (Phase 8), and generation's batch form is
@@ -344,10 +401,13 @@ the Export upgrader's (Phase 6).
 ## Messages
 
 Every finding a command reports is a `Message` carrying one of these codes; an `Error` finding
-makes the command's exit code 1. The catalog is `crates/tools/save_editor/src/messages.rs`,
-whose order this table keeps; the console prints the code with its context fields (the
-parenthesized names). All findings are run-wide and kept: a command works on one save, and a
-finding that drops something says so with its own code.
+makes the command's exit code 1.
+
+The catalog is `crates/tools/save_editor/src/messages.rs`, whose order this table keeps. The
+console prints the code with its context fields (the parenthesized names).
+
+All findings are run-wide and kept: a command works on one save, and a finding that drops
+something says so with its own code.
 
 | Code | Severity | When | Effect |
 |------|----------|------|--------|
@@ -381,16 +441,17 @@ finding that drops something says so with its own code.
 Format and rules: `CONTRIBUTING.md` "Testing". IDs are never reused; later phases append.
 
 **Phase 5 scope.** Phase 5 delivers the tool crate's settings, CLI and operations wiring, and
-`libs/aatf`; the view is Phase 8's, so these scenarios are what the CLI shows: stdout, the exit
+`libs/aatf`. The view is Phase 8's, so these scenarios are what the CLI shows: stdout, the exit
 code, and the files written (a save's decrypted payload, a Team TOML, a CPK's tables read back
 with the `cpk` crate). The operations with no command (editing, tactics, the FPC toggle, AATF
 quick actions, generation, Texport, the legacy imports) get their scenarios with the view.
+
 `libs/aatf` is a lib: its rulesets' fixtures are its spec (AATF rules plan, "Development phase
-and verification"), and `check-aatf` is its one scenario surface here. Test data: the fixture
-saves are `pes_savefile`'s (`tests/fixtures/`, one real save per version, rebuilt from the
-slices held there), a team or player
-named by its id in that save. The cup saves with known violations and the rules files are
-`libs/aatf`'s fixtures.
+and verification"), and `check-aatf` is its one scenario surface here.
+
+Test data: the fixture saves are `pes_savefile`'s (`tests/fixtures/`, one real save per
+version, rebuilt from the slices held there), a team or player named by its id in that save.
+The cup saves with known violations and the rules files are `libs/aatf`'s fixtures.
 
 **CLI**
 
@@ -588,9 +649,12 @@ SE-TL-05   GIVEN a data directory whose teams_list.txt cannot be read (a folder 
 
 **8.36c scope.** `apply-patch` with the full-look patch (`spec/pes_savefile/operations.md`
 "Aesthetics patch (new)"): an entry's `[appearance]`, `boots_id`, `gloves_id` and
-`base_copy_id`, on every engine. "A player" is one of the fixture save's cup players; 7511
-and 101334 are copied ids real cup saves hold; an entry's `[appearance]` holds every key its
-version holds, as the compiler writes it, unless the scenario says otherwise.
+`base_copy_id`, on every engine. In these scenarios:
+
+- "A player" is one of the fixture save's cup players.
+- 7511 and 101334 are copied ids real cup saves hold.
+- An entry's `[appearance]` holds every key its version holds, as the compiler writes it,
+  unless the scenario says otherwise.
 
 ```
 SE-PAT-07  GIVEN the PES 21 fixture save, a player whose record holds appearance id -1 and

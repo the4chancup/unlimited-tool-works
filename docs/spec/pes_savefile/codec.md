@@ -123,73 +123,102 @@ pub fn schema_for(version: PesVersion) -> &'static VersionSchema;
 ```
 
 `F` and `T` are the field vocabularies in `schema/fields.rs` (generated with the tables):
-`PlayerField` (scalar variants plus `PlayablePosition(u8)`, `ComStyle(u8)`, `Skill(u8)`),
-`PlayerText` (`Name`, `ShirtName`), `TeamField` (identity, colours, edit flags,
-`KitSlotNumber(u8)`/`KitSlotTeam(u8)`), `TeamText` (`Name`, `ShortName`), `RosterField` (`TeamId`,
-`Player(u8)`, `Number(u8)`), `TacticsField` (`TeamId`, `Preset { preset, field: PresetField }`,
-`Formation { preset, formation, slot, part: FormationPart }`, `Instruction { preset, side:
-InstructionSide, index, part: InstructionPart }`, `Starting(u8)`, `Bench(u8)`,
-`PlayerToJoinAttack(u8)`, `ManMarking { preset, slot }`, the set-piece takers, `Captain`, the
-auto flags). Three kinds of field the reference never reads are measured instead and enter the
-generator as its `MEASURED_FIELDS` table: the man-marking runs (every version), PES 15's
-three auto flags, the PES 17 and 18 team record's manager id (the u32 at +4) and home
-stadium id (the u16 at +10), which the reference reads only from PES 19 on, and the PES 15
-and 16 team record's home stadium id (the u16 at +6), which it never reads, so a regeneration
-keeps them. The 17/18 ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16
-around them; on the reference saves (2026-11-11) the u32 at +4 equals the team id on 218 of
-220 PES 17 teams and 200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19
-stadium on 198 of 210 and 168 of 202 (21 distinct values on 18). PES 15 and 16 have no
-manager id: their record is PES 17's without its four bytes at +4, so the stadium sits at +6.
-On the same saves the u16 there equals the same team's PES 19 stadium on 198 of 210 PES 15
-teams (all 220 hold 29, as on PES 17) and 158 of 192 PES 16 ones (23 distinct values over 273
-teams), and PES 17's on 166 of 192; no other even offset from 4 to 16 matches more than once.
-The 15/16 offset is not checked in game. Variant names are the
-readable model names (`TightPossession`, not `tight_pos`); the table module's doc comment says
-which reference walk it was derived from, and this section is the evidence trail. The generator
-is `scripts/derive_savefile_schema.py <reference source dir> <crate>/src/schema`; it is committed so
-the tables can be regenerated, and the tables it wrote are committed as ordinary source.
+
+- `PlayerField` (scalar variants plus `PlayablePosition(u8)`, `ComStyle(u8)`, `Skill(u8)`)
+- `PlayerText` (`Name`, `ShirtName`)
+- `TeamField` (identity, colours, edit flags, `KitSlotNumber(u8)`/`KitSlotTeam(u8)`)
+- `TeamText` (`Name`, `ShortName`)
+- `RosterField` (`TeamId`, `Player(u8)`, `Number(u8)`)
+- `TacticsField` (`TeamId`, `Preset { preset, field: PresetField }`, `Formation { preset,
+  formation, slot, part: FormationPart }`, `Instruction { preset, side: InstructionSide, index,
+  part: InstructionPart }`, `Starting(u8)`, `Bench(u8)`, `PlayerToJoinAttack(u8)`,
+  `ManMarking { preset, slot }`, the set-piece takers, `Captain`, the auto flags)
+
+Three kinds of field the reference never reads are measured instead and enter the generator as
+its `MEASURED_FIELDS` table, so a regeneration keeps them:
+
+- the man-marking runs (every version);
+- PES 15's three auto flags;
+- the PES 17 and 18 team record's manager id (the u32 at +4) and home stadium id (the u16 at
+  +10), which the reference reads only from PES 19 on;
+- the PES 15 and 16 team record's home stadium id (the u16 at +6), which it never reads.
+
+The 17/18 ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16 around them. On
+the reference saves (2026-11-11) the u32 at +4 equals the team id on 218 of 220 PES 17 teams and
+200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19 stadium on 198 of 210
+and 168 of 202 (21 distinct values on 18).
+
+PES 15 and 16 have no manager id: their record is PES 17's without its four bytes at +4, so the
+stadium sits at +6. On the same saves the u16 there equals the same team's PES 19 stadium on 198
+of 210 PES 15 teams (all 220 hold 29, as on PES 17) and 158 of 192 PES 16 ones (23 distinct
+values over 273 teams), and PES 17's on 166 of 192; no other even offset from 4 to 16 matches
+more than once. The 15/16 offset is not checked in game.
+
+Variant names are the readable model names (`TightPossession`, not `tight_pos`). The table
+module's doc comment says which reference walk it was derived from, and this section is the
+evidence trail. The generator is `scripts/derive_savefile_schema.py <reference source dir>
+<crate>/src/schema`; it is committed so the tables can be regenerated, and the tables it wrote
+are committed as ordinary source.
 
 **Text fields hold `len` bytes, not `len - 1`.** A text that fills its field is stored without a
 NUL; a shorter one gets one NUL after it and the rest of the field keeps its old bytes. The
 savefile census (2.20i, every save on the maintainer's machine) found real saves in both
 shapes: PES 16 shirt names of exactly 16 bytes (`MEAT ON THE BONE`) and PES 17 names of exactly
-46 bytes. Reading stops at the first NUL or the field end; writing refuses only a text longer
-than the field, so every save we read writes back byte for byte, and a Team TOML carried from
-such a save applies back. We do not cut a full text by one character to make room for a NUL,
-which silently renames the player on the first save. The one place that still keeps a byte
-free is `shirt_name_from` (`operations.md`), because it invents text rather than carrying it.
+46 bytes.
+
+Reading stops at the first NUL or the field end. Writing refuses only a text longer than the
+field, so every save we read writes back byte for byte, and a Team TOML carried from such a save
+applies back. We do not cut a full text by one character to make room for a NUL, which silently
+renames the player on the first save. The one place that still keeps a byte free is
+`shirt_name_from` (`operations.md`), because it invents text rather than carrying it.
+
 A name whose bytes are not UTF-8 (one PES 17 save carries a CP1252 `£`, byte `0xA3`) is refused
 on read, not decoded lossily: that save does not load in 4ccEditor either, so no working save
 carries one.
 
-**Derivation, not transcription.** The tables are not typed in by hand: a lead script interprets
+**Derivation, not transcription.** The tables are not typed in by hand. A lead script interprets
 each reference read walk (`fill_player_entry17`, `fill_team_ids21`, …) over a symbolic byte
 array, so `read_data(start, bits, …)`, `data[current_byte] >> 4`, `+= (data[current_byte] << 1)
-& 127` and the string copies all resolve to which record bits feed which field bits, then checks
-every field is one contiguous LSB-first run and emits the Rust tables. The derived tables were
-checked against the real payloads (2026-09-14): every player of every save decodes to plausible
-values (ages 15–50, abilities 40–99, positions 0–12, valid UTF-8 names), the PES 15/16 appearance
-arrays resolve every player id, and the team id at +0 of the team, roster and tactics records
-lists the same ids in the same order on every version (which pins all three record sizes).
-Record sizes: player 112/112/188/188/188/312/312; appearance 68/72 (15/16); team
-456/456/480/480/416/528/588; roster 164 (32 slots) on 15–18, 244 (40 slots) on 19, 284 (40) on
-20/21; tactics 516/520/628/628/628/628/628, versions 15 to 21 in order. Counts: players u16 at
-0x34/0x34/0x5C/0x60/0x60/0x60/0x60, teams at 0x38/0x38/0x60/0x64/0x64/0x64/0x64.
+& 127` and the string copies all resolve to which record bits feed which field bits. It then
+checks every field is one contiguous LSB-first run and emits the Rust tables.
+
+The derived tables were checked against the real payloads (2026-09-14):
+
+- every player of every save decodes to plausible values (ages 15–50, abilities 40–99,
+  positions 0–12, valid UTF-8 names);
+- the PES 15/16 appearance arrays resolve every player id;
+- the team id at +0 of the team, roster and tactics records lists the same ids in the same order
+  on every version (which pins all three record sizes).
+
+Record sizes, versions 15 to 21 in order:
+
+- player 112/112/188/188/188/312/312
+- appearance 68/72 (15/16)
+- team 456/456/480/480/416/528/588
+- roster 164 (32 slots) on 15–18, 244 (40 slots) on 19, 284 (40) on 20/21
+- tactics 516/520/628/628/628/628/628
+
+Counts: players u16 at 0x34/0x34/0x5C/0x60/0x60/0x60/0x60, teams at
+0x38/0x38/0x60/0x64/0x64/0x64/0x64.
 
 Reference readings the derivation flagged, kept as the reference has them and listed here so
-nobody mistakes them for ours: `b_edit_stadium` on PES 19 is masked to zero by the reference
-(`>> 6 & 64`), so the PES 19 table has no such field. The PES 21 team-colour bit positions were
-suspect (they read zero for 203 of 220 teams of one 4cc save where PES 17/18 read the same
-teams' colours) until measured in Edit mode on PES 21: the game shows and saves Team Colour 1
-and 2 at the table's bits (changing colour 1 to a swatch moved `Color1Red`, `Color1Green` and
-`Color1Blue` alone, to the RGB the face colour picker gives that swatch), and in the live cup
-save the 70 cup teams 701 to 770 hold colours while the 140 placeholder teams 771 to 910 are
-zero.
-Two corrections are ours, applied by the generator, not the reference: PES 18's
-dribbling-arm motion (`mo_armd`) is 3 bits wide where the reference reads 2 (`WIDTH_FIXES`; the
-2.20i census found 2,808 records setting the third bit); and on PES 17+ the appearance block's
-first u32, the appearance id the reference reads past, gets a row (`AppearanceId`), as the
-PES 15/16 appearance record's `id` does.
+nobody mistakes them for ours:
+
+- `b_edit_stadium` on PES 19 is masked to zero by the reference (`>> 6 & 64`), so the PES 19
+  table has no such field.
+- The PES 21 team-colour bit positions were suspect (they read zero for 203 of 220 teams of one
+  4cc save where PES 17/18 read the same teams' colours) until measured in Edit mode on PES 21.
+  The game shows and saves Team Colour 1 and 2 at the table's bits (changing colour 1 to a
+  swatch moved `Color1Red`, `Color1Green` and `Color1Blue` alone, to the RGB the face colour
+  picker gives that swatch), and in the live cup save the 70 cup teams 701 to 770 hold colours
+  while the 140 placeholder teams 771 to 910 are zero.
+
+Two corrections are ours, applied by the generator, not the reference:
+
+- PES 18's dribbling-arm motion (`mo_armd`) is 3 bits wide where the reference reads 2
+  (`WIDTH_FIXES`; the 2.20i census found 2,808 records setting the third bit);
+- on PES 17+ the appearance block's first u32, the appearance id the reference reads past, gets
+  a row (`AppearanceId`), as the PES 15/16 appearance record's `id` does.
 
 ~190KB of C++ collapses into static tables plus a ~100-line engine (the Rust equivalent of the
 reference's `read_data`/`write_data`, which handle bit runs crossing byte boundaries). Roundtrip
@@ -216,13 +245,19 @@ The consumer-facing entry point wraps the container crypto and the schema codec:
 `EditFile::load` (version auto-detected by trying master keys / container shape;
 decrypt, parse) and `EditFile::save` (serialize, re-encrypt, and preserve the original in a `.bak`
 before replacement — the shared convention behind the save editor's save action and the Team
-compiler's savefile update stage). An open `EditFile` keeps its detected version; changing the
-suite selector cannot reinterpret it. Compiler updates require a save matching the compile target.
+compiler's savefile update stage).
+
+An open `EditFile` keeps its detected version; changing the suite selector cannot reinterpret it.
+Compiler updates require a save matching the compile target.
+
 Retain unmodeled container sections, payload bytes, padding, and unknown bits, patching only the
 selected known fields; rebuilding only the modeled fields cannot satisfy lossless-save tests.
-A model value the record cannot hold is refused, never cut: a value wider than its field
-(`ValueTooWide`), a text longer than its field, a roster longer than the record's slots
-(`RosterTooLong`).
+
+A model value the record cannot hold is refused, never cut:
+
+- a value wider than its field (`ValueTooWide`);
+- a text longer than its field;
+- a roster longer than the record's slots (`RosterTooLong`).
 
 ```rust
 /// An open save: the retained container plus the decoded players and teams.
@@ -261,11 +296,12 @@ the three team sections must list the same ids in the same order, which every re
 
 **Name colour codes, as measured** (2026-09-14, 346 decorated names across the PES 16/19/21
 saves): a code is the byte `0x11`, the letter `c`, then **exactly eight bytes** taken as the
-colour; the game does not check they are hex (nine names of one PES 21 team carry
-`\x11ca000c8ON` and display without the `ON`), so neither does `display_name`. A second code
-exists: `\x11d`, two bytes, which resets the colour (`WHEN THE \x11cb7bec5ffWORK RESULT\x11d WAS
-GOOD`). `display_name` strips both; any other `0x11` sequence is left alone. `name` is the raw
-form; the save editor renders the colours from it.
+colour. The game does not check they are hex (nine names of one PES 21 team carry
+`\x11ca000c8ON` and display without the `ON`), so neither does `display_name`.
+
+A second code exists: `\x11d`, two bytes, which resets the colour (`WHEN THE \x11cb7bec5ffWORK
+RESULT\x11d WAS GOOD`). `display_name` strips both; any other `0x11` sequence is left alone.
+`name` is the raw form; the save editor renders the colours from it.
 
 ### Savefile discovery
 
@@ -318,12 +354,15 @@ pub fn discover_savefiles(version: PesVersion) -> Vec<SavefileCandidate>;
 
 The compiler's `savefile_path = auto` takes the newest candidate and reports which one it
 chose (`savefile_autodetected`, Info, with the path and the candidate count) so a user with
-two accounts can pin `savefile_path` if the guess is wrong. The version is verified after
-discovery, not assumed from the folder: the candidate is loaded with the ordinary
-`EditFile::load` auto-detection and must match the requested version, otherwise it is
-refused (`savefile_invalid`, naming the save's version) rather than used — a stale save
-left by a previous game version in a reused folder must not be edited as if it were
-current. Nothing found is the consumer's own message (`savefile_missing` in the compiler).
+two accounts can pin `savefile_path` if the guess is wrong.
+
+The version is verified after discovery, not assumed from the folder: the candidate is loaded
+with the ordinary `EditFile::load` auto-detection and must match the requested version,
+otherwise it is refused (`savefile_invalid`, naming the save's version) rather than used,
+because a stale save left by a previous game version in a reused folder must not be edited as if
+it were current.
+
+Nothing found is the consumer's own message (`savefile_missing` in the compiler).
 
 Discovery returns paths and never opens the saves; verifying the version is the caller's
 `EditFile::load`, the rule above.

@@ -10,12 +10,14 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
 - **Decoding (DDS/FTEX)**: `block_compression`'s `decode` module (BC1–BC5, BC7), the same crate
   that encodes, so one dependency covers both directions; the `texture2ddecoder` crate the plan
   first named is not used. `dds_convert`/`ftex` handle the DDS/FTEX containers and normalize
-  decoded channel order to RGBA. Parity is verified against DirectXTex `texconv`, the reference
-  decoder: the `dds_convert` fixtures are texconv-encoded BC1/BC2/BC3/BC4/BC5/BC7, R8 and legacy
-  luminance (L8) files with texconv's own decode of every mip as the expected output, and the
-  tests require an exact match. The reference build is texconv 2024.1.1.1, the binary the legacy
-  compilers shipped; a one-channel source (BC4, R8, L8) decodes grey (`R = G = B`, alpha 255) as
-  it does, since its R-to-RGB conversion splats the channel (BC5 keeps `B = 0`).
+  decoded channel order to RGBA.
+
+  Parity is verified against DirectXTex `texconv`, the reference decoder: the `dds_convert`
+  fixtures are texconv-encoded BC1/BC2/BC3/BC4/BC5/BC7, R8 and legacy luminance (L8) files with
+  texconv's own decode of every mip as the expected output, and the tests require an exact
+  match. The reference build is texconv 2024.1.1.1, the binary the legacy compilers shipped. A
+  one-channel source (BC4, R8, L8) decodes grey (`R = G = B`, alpha 255) as it does, since its
+  R-to-RGB conversion splats the channel (BC5 keeps `B = 0`).
 - **Decoding (raster sources)**: the `image` crate decodes all accepted raster formats to RGBA
   in pure Rust (no C dependencies). See the format matrix below.
 - **Encoding**: use `block_compression`'s Rust CPU backend for BC1, BC3, and BC7, rather than
@@ -24,47 +26,58 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
   desktop GPU BC7".
 - **DXT5nm handling**: a normal map that has to be encoded (a BC5 source on PES 15–18, or any
   normal-role source that is not already BC3, raster and BC7 included, on every version) becomes
-  BC3 with X in alpha and Y in green, which is what both
-  engines ship: every Konami normal map measured is BC3 with `A = X`, `G = Y` (PES 17 `oral_nrm`,
-  `bibs_nrm`, `skin_nrm`; PES 21 `dummy_nrm`). The two engines differ only in the channels the
-  shader ignores, and the output copies each engine's own files rather than guessing what the
-  shader reads: pre-Fox `R = G = B = Y` (the color block is a grey Y), Fox `R = 255`, `B = 0` (the
-  DirectXTex `DXT5nm` layout). The legacy compilers never produced this conversion at all: released
-  Red converts every DX10 texture with texconv's `-f DXT5 -srgb`, which drops X when the source is
-  BC5 (its unreleased development branch asks for a format name texconv rejects, `DX5nm`), so
-  there is no legacy output to be parity with; the Konami files are the standard.
+  BC3 with X in alpha and Y in green, which is what both engines ship. Every Konami normal map
+  measured is BC3 with `A = X`, `G = Y` (PES 17 `oral_nrm`, `bibs_nrm`, `skin_nrm`; PES 21
+  `dummy_nrm`).
+
+  The two engines differ only in the channels the shader ignores, and the output copies each
+  engine's own files rather than guessing what the shader reads:
+  - pre-Fox `R = G = B = Y` (the color block is a grey Y);
+  - Fox `R = 255`, `B = 0` (the DirectXTex `DXT5nm` layout).
+
+  The legacy compilers never produced this conversion at all, so there is no legacy output to
+  be parity with; the Konami files are the standard. Released Red converts every DX10 texture
+  with texconv's `-f DXT5 -srgb`, which drops X when the source is BC5 (its unreleased
+  development branch asks for a format name texconv rejects, `DX5nm`).
 - **Passthrough**: compressed blocks a target can read are kept and only the container changes.
   PES 15–18 read BC1, BC2 and BC3; PES 19–21 also read BC4, BC5 and BC7 (the legacy compilers
-  passed BC5 through to PES 19–21 as FTEX format 9). The role narrows this: a normal-role source
-  passes through only as BC3 (taken to be laid out already) or, on PES 19–21, as BC5; a
-  normal-role BC7 or BC1 source is decoded and encoded to DXT5nm, because keeping its blocks would
-  keep a color layout the shader reads as a normal map. A DX10-header BC1/BC3 is therefore rewritten
-  with a legacy header for PES 15–18 rather than re-encoded (the legacy compilers re-encoded every
-  DX10 header to DXT5, a lossy step with no purpose). An uncompressed source is written
-  uncompressed, decoded and written back in the A8R8G8B8 layout (a legacy-header DDS on PES
-  15–17, an FTEX of format 0 on PES 18–21; every uncompressed layout the crate reads has 8-bit
-  channels, so nothing is lost; a source's own mips are kept, a missing chain generated). A
-  member saves a texture uncompressed on purpose, rarely and for a reason block compression
-  breaks: alpha that must stay exactly zero, a UV Step timing texture. Two cases are still
-  encoded: a normal-role source, to DXT5nm (the shader reads that layout, as for a normal-role
-  BC1 or BC7 source), and a kit's main texture on PES 15–17, which those versions edit in
-  memory to place the seasonal logos and soft-crash on above a 2048 × 2048 DXT5's 5.33 MB (Red
-  refuses an uncompressed one there). `Decoded::uncompressed` records an uncompressed source,
-  a re-laid or re-arranged kit texture keeping it, and `Target::keep_uncompressed`, which the
-  Team compiler sets false only for that main kit texture, asks for the encode. Whether the Fox
-  games crash on an uncompressed main kit texture is not known yet; Red passes one through on
-  Fox, and so does Studio until an in-game check says otherwise.
-- **Mipmaps**: each mip level is decoded and re-encoded individually; a DDS/FTEX source keeps its
-  own mip count whatever its codec, uncompressed included (Konami ships single-mip pre-Fox
-  textures; on Fox the Team compiler's deep pass refuses a mipped texture with neither side a
-  power of two, as `texture_not_pow2`), a raster source gets the
-  full chain down to 1×1 by 2×2 box averaging on
-  straight alpha (odd sides floor, never below 1). Output headers are rebuilt from the emitted
-  layout: legacy DX9 headers for BC1/BC3 (what texconv wrote for the legacy compilers and what
-  Konami ships), a DX10 header for BC7.
+  passed BC5 through to PES 19–21 as FTEX format 9). A DX10-header BC1/BC3 is therefore
+  rewritten with a legacy header for PES 15–18 rather than re-encoded (the legacy compilers
+  re-encoded every DX10 header to DXT5, a lossy step with no purpose).
+
+  The role narrows this: a normal-role source passes through only as BC3 (taken to be laid out
+  already) or, on PES 19–21, as BC5. A normal-role BC7 or BC1 source is decoded and encoded to
+  DXT5nm, because keeping its blocks would keep a color layout the shader reads as a normal map.
+
+  An uncompressed source is written uncompressed, decoded and written back in the A8R8G8B8
+  layout: a legacy-header DDS on PES 15–17, an FTEX of format 0 on PES 18–21. Every uncompressed
+  layout the crate reads has 8-bit channels, so nothing is lost. A source's own mips are kept, a
+  missing chain generated. A member saves a texture uncompressed on purpose, rarely and for a
+  reason block compression breaks: alpha that must stay exactly zero, a UV Step timing texture.
+  Two cases are still encoded:
+  - a normal-role source, to DXT5nm (the shader reads that layout, as for a normal-role BC1 or
+    BC7 source);
+  - a kit's main texture on PES 15–17, which those versions edit in memory to place the seasonal
+    logos and soft-crash on above a 2048 × 2048 DXT5's 5.33 MB (Red refuses an uncompressed one
+    there).
+
+  `Decoded::uncompressed` records an uncompressed source, and a re-laid or re-arranged kit
+  texture keeps it. `Target::keep_uncompressed`, which the Team compiler sets false only for that
+  main kit texture, asks for the encode. Whether the Fox games crash on an uncompressed main kit
+  texture is not known yet; Red passes one through on Fox, and so does Studio until an in-game
+  check says otherwise.
+- **Mipmaps**: each mip level is decoded and re-encoded individually.
+  - A DDS/FTEX source keeps its own mip count whatever its codec, uncompressed included (Konami
+    ships single-mip pre-Fox textures; on Fox the Team compiler's deep pass refuses a mipped
+    texture with neither side a power of two, as `texture_not_pow2`).
+  - A raster source gets the full chain down to 1×1 by 2×2 box averaging on straight alpha (odd
+    sides floor, never below 1).
+
+  Output headers are rebuilt from the emitted layout: legacy DX9 headers for BC1/BC3 (what
+  texconv wrote for the legacy compilers and what Konami ships), a DX10 header for BC7.
 - **FTEX texture type**: every Fox output is written with texture type `0x9`, the value the legacy
-  compilers wrote for every texture, color and normal alike, for years of PES 19–21 exports; Konami
-  uses `0x1`/`0x3` for color textures, but the parity standard is what is known to render.
+  compilers wrote for every texture, color and normal alike, for years of PES 19–21 exports.
+  Konami uses `0x1`/`0x3` for color textures, but the parity standard is what is known to render.
 
 This covers the actual conversion cases (DX10 BC7 → DXT5, BC5/ATI2 → DXT5nm) that `texconv -f
 DXT5` was handling, or failing to handle, in practice. Benefits over the subprocess approach:
@@ -109,15 +122,19 @@ its alpha stores a normal component, not opacity.
 **Selected encoder:** `block_compression` (reviewed release **0.10.0**) supplies the CPU
 encoder (the reference/fallback when the GPU step lands, `plans/libs/README.md` "First-release
 desktop GPU BC7"). It is built with `default-features = false` and `bc15`/`bc7`; the `wgpu`
-feature joins with the GPU step and BC6H is not needed. Use basic opaque/alpha BC7 presets initially, preserving
-alpha when required; tune against representative textures, not assumed timings. `texpresso` lacks
-BC7, while `intel_tex_2` adds native ISPC kernels; one library serves both paths without maintaining
-our own encoders. This is a best-fit selection, not a measured claim of optimal throughput.
+feature joins with the GPU step and BC6H is not needed.
+
+Use basic opaque/alpha BC7 presets initially, preserving alpha when required, and tune against
+representative textures, not assumed timings.
+
+`texpresso` lacks BC7, while `intel_tex_2` adds native ISPC kernels; one library serves both
+paths without maintaining our own encoders. This is a best-fit selection, not a measured claim
+of optimal throughput.
 
 Before integration, check decode/quality parity, repeatability, and native/WASM builds. Exercise
-PES18 versus PES19 output, opaque versus alpha-bearing textures, DXT5nm, and the complete mip chain;
-the CPU API requires 4-aligned input dimensions, so edge padding must also handle 1×1/2×2 tail mips
-without changing their logical DDS/FTEX dimensions.
+PES18 versus PES19 output, opaque versus alpha-bearing textures, DXT5nm, and the complete mip
+chain. The CPU API requires 4-aligned input dimensions, so edge padding must also handle 1×1/2×2
+tail mips without changing their logical DDS/FTEX dimensions.
 
 ### Accepted image formats
 
@@ -144,44 +161,63 @@ format. Two image files with the same stem but different extensions is a conflic
 **JPEG XL.** `.jxl` is decoded to the same straight-alpha RGBA8 as a PNG and converted on
 the same path, so what the game reads does not change. Authors' tools have taken it up
 (browsers decode it since late 2026), and a texture made in one should not need a PNG copy
-first. The decoder is Google's `jxl` (BSD-3-Clause, the pure-Rust decoder Chrome and Firefox
-ship), version pinned, through its own API, not `jxl-oxide`: on a member's 2048 × 2048 RGBA
-face texture `jxl` spends 492 ms of CPU on a lossless decode and 155 ms on a lossy one,
-`jxl-oxide` 1116 ms and 817 ms (its threads finish one picture sooner, 165 ms, but the
-compiler already decodes one texture per core, so CPU time is what a compile pays). Both
-decode the lossless file to the PNG's pixels exactly and the lossy one within one level of
-libjxl's. `jxl-image-rs-integration`, which would let `image` read the file, is not used: it
-works by registering a process-wide decoding hook, a change to `image`'s global state that
-every other caller would inherit.
+first.
+
+The decoder is Google's `jxl` (BSD-3-Clause, the pure-Rust decoder Chrome and Firefox ship),
+version pinned, through its own API, not `jxl-oxide`. On a member's 2048 × 2048 RGBA face
+texture `jxl` spends 492 ms of CPU on a lossless decode and 155 ms on a lossy one, `jxl-oxide`
+1116 ms and 817 ms (its threads finish one picture sooner, 165 ms, but the compiler already
+decodes one texture per core, so CPU time is what a compile pays). Both decode the lossless
+file to the PNG's pixels exactly and the lossy one within one level of libjxl's.
+
+`jxl-image-rs-integration`, which would let `image` read the file, is not used: it works by
+registering a process-wide decoding hook, a change to `image`'s global state that every other
+caller would inherit.
 
 `jxl` decodes on the calling thread (no parallel runner is handed to it), straight into
-RGBA8 whatever the file stores: a greyscale file comes out with R = G = B, a file without
-alpha with alpha 255, 8-bit samples as stored, and alpha the file stores premultiplied is
-divided out. Samples of more than 8 bits, and a lossy file's (its pixels are computed in
-floating point), are rounded to 8 bits by the decoder after an ordered dither of under half
-a level, as libjxl renders 8 bits: a sample can land one level away from the plain rounding
-`image` gives a 16-bit PNG, while 0 and full scale stay exact. The decoder is built with
-every SIMD level but AVX-512 (SSE4.2 and AVX2 on x86-64, NEON, WebAssembly SIMD) and picks the
-best one the CPU has at run time; AVX-512 added 0.37 MB to the exe. On the 2048 × 2048
-texture, one thread of a Zen 3 CPU (which has no AVX-512): a lossless decode takes 466 ms
-whatever the level, a lossy one 132 ms with AVX2, 153 ms with SSE4.2 alone and 225 ms with
-none; `jxl-oxide`, which adds to the exe what `jxl` with SSE4.2 alone adds, takes 643 and
-325 ms (measured 2026-11-11). A lossy file's pixels depend on the level, so the same file can
-compile a level apart on two CPUs; a lossless file's do not. A lossy (XYB) file is
-rendered to the colour space its header declares, or to sRGB when that is an ICC profile,
-as libjxl renders it; a lossless one keeps the colour space it stores, as a PNG's decode
-does. An animated file gives its first frame. The header is the decoder's own read up to its
-basic info, so `probe` pays no pixel decode. A lossy JXL normal map is taken as a lossy JPEG
-one is, with no warning of its own; a lossy JXL also drops the colour under fully transparent
-pixels unless its encoder is told to keep it (libjxl's default), as image editors that zero
-it do.
+RGBA8 whatever the file stores:
 
-The rule is one wherever a picture is picked: the aesthetics export's extension table
-(`aesthetics_export` "conventions") counts `.jxl` as a texture, the Team compiler's format
-sniffing knows both its signatures (the bare codestream's `FF 0A` and the ISOBMFF
-container's `00 00 00 0C 4A 58 4C 20 0D 0A 87 0A`), and the Ruleset editor's logo picker
-lists it (the Save editor picks no picture: its portraits come from the game's CPKs). The
-Export upgrader reads no JXL: no old export can hold one, since Red never read it.
+- a greyscale file comes out with R = G = B;
+- a file without alpha with alpha 255;
+- 8-bit samples as stored;
+- alpha the file stores premultiplied is divided out.
+
+Samples of more than 8 bits, and a lossy file's (its pixels are computed in floating point), are
+rounded to 8 bits by the decoder after an ordered dither of under half a level, as libjxl renders
+8 bits. So a sample can land one level away from the plain rounding `image` gives a 16-bit PNG,
+while 0 and full scale stay exact.
+
+The decoder is built with every SIMD level but AVX-512 (SSE4.2 and AVX2 on x86-64, NEON,
+WebAssembly SIMD) and picks the best one the CPU has at run time; AVX-512 added 0.37 MB to the
+exe. On the 2048 × 2048 texture, one thread of a Zen 3 CPU (which has no AVX-512):
+
+- a lossless decode takes 466 ms whatever the level;
+- a lossy one 132 ms with AVX2, 153 ms with SSE4.2 alone and 225 ms with none;
+- `jxl-oxide`, which adds to the exe what `jxl` with SSE4.2 alone adds, takes 643 and 325 ms
+  (measured 2026-11-11).
+
+A lossy file's pixels depend on the level, so the same file can compile a level apart on two
+CPUs; a lossless file's do not.
+
+- A lossy (XYB) file is rendered to the colour space its header declares, or to sRGB when that
+  is an ICC profile, as libjxl renders it; a lossless one keeps the colour space it stores, as a
+  PNG's decode does.
+- An animated file gives its first frame.
+- The header is the decoder's own read up to its basic info, so `probe` pays no pixel decode.
+- A lossy JXL normal map is taken as a lossy JPEG one is, with no warning of its own.
+- A lossy JXL also drops the colour under fully transparent pixels unless its encoder is told to
+  keep it (libjxl's default), as image editors that zero it do.
+
+The rule is one wherever a picture is picked:
+
+- the aesthetics export's extension table (`aesthetics_export` "conventions") counts `.jxl` as a
+  texture;
+- the Team compiler's format sniffing knows both its signatures (the bare codestream's `FF 0A`
+  and the ISOBMFF container's `00 00 00 0C 4A 58 4C 20 0D 0A 87 0A`);
+- and the Ruleset editor's logo picker lists it (the Save editor picks no picture: its portraits
+  come from the game's CPKs).
+
+The Export upgrader reads no JXL: no old export can hold one, since Red never read it.
 
 **Not accepted** (enable only the accepted decoders explicitly; the `image` crate's default
 features and AVIF backends vary by release):
@@ -199,19 +235,26 @@ features and AVIF backends vary by release):
 
 ### `dds_convert` API
 
-The crate is three pure steps and one stateful wrapper. `decode` turns any accepted source into
-straight-alpha RGBA8 mips plus, for DDS/FTEX, the compressed blocks it carried; `convert` applies
-the codec rules above to a decoded texture and returns the finished container bytes (a DDS for
-PES 15–17, an FTEX for PES 18–21); `Converter` is the session cache in front of both, which
-skips the decode for a DDS or FTEX source whose blocks the target keeps, rewrapping them into
-the bytes `decode` + `convert` would make.
-`encode_dds` is the one exception to choosing by version: a file every engine reads as a DDS
-in a codec the plan fixes (a player portrait, BC3: "Portraits" in the [player folders
-plan](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets too.
+The crate is three pure steps and one stateful wrapper:
+
+- `decode` turns any accepted source into straight-alpha RGBA8 mips plus, for DDS/FTEX, the
+  compressed blocks it carried;
+- `convert` applies the codec rules above to a decoded texture and returns the finished
+  container bytes (a DDS for PES 15–17, an FTEX for PES 18–21);
+- `Converter` is the session cache in front of both, which skips the decode for a DDS or FTEX
+  source whose blocks the target keeps, rewrapping them into the bytes `decode` + `convert`
+  would make.
+
+`encode_dds` is the one exception to choosing by version: a file every engine reads as a DDS in
+a codec the plan fixes (a player portrait, BC3: "Portraits" in the [player folders
+plan](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets
+too.
+
 `resize` is the suite's one resampler (Lanczos3, through the `image` crate this crate already
-decodes rasters with, so no tool crate depends on `image` for it): the Team compiler resamples a
+decodes rasters with, so no tool crate depends on `image` for it). The Team compiler resamples a
 sock band of a kit and a number atlas's digit glyphs with it ("Layout conversion" in the
 [pipeline plan](../team_compiler/pipeline.md)), and sizes the logo with it.
+
 `encode_png` is the one raster this crate writes: the game reads a team's logo as three PNGs
 ("Logo" in the pipeline plan), and it lives here for `resize`'s reason.
 
@@ -300,63 +343,91 @@ impl Converter {
 }
 ```
 
-`decode` rejects cube maps, volume textures (the caps2 bit, or a legacy header's `DDSD_DEPTH`
-with a depth above 1, as DirectXTex classifies them), texture arrays and the signed block formats (BC4/BC5
-SNORM, BC6H SF16), every one of them as `ConvertError::Ftex(UnsupportedDds)` from
-`ftex::dds::read_layout`, which `probe` and `decode` both run first (the compiler reports each
-as `texture_codec_unsupported`, the file dropped; `ConvertError::Unsupported` is for what the
-layout reads but the decoder or a target cannot take: an unknown pixel format or mask layout, a
-block texture past the decoder's 4 GiB limit). The compiler sends no cube map here: it routes one by `ftex::dds::is_cube_map`
-before any decode (`team_compiler/pipeline.md` step 5), since referee exports carry copies of
-the template `env.dds`. A signed block relabelled unsigned would silently change the texture. It also rejects a zero width or height and
-a mip count past what the dimensions halve into (`log2(larger side) + 1`), as D3D and texconv's
-default loader do; `ftex`'s own FTEX↔DDS conversions keep pes-file-tools' acceptance of both. The
-mip count is the header's count field alone, as DirectXTex reads it; `dds_to_ftex` keeps
-pes-file-tools' rule that a cleared `DDSCAPS_MIPMAP` means one level. The alpha mask of an
-uncompressed header counts only under `DDPF_ALPHAPIXELS` or `DDPF_ALPHA` (DirectXTex reads an RGB
-header as opaque). A block texture whose padded top mip decodes past 4 GiB is refused: the block
-decoder offsets its output in 32 bits, and any buffer a texture's dimensions size past the
-target's `isize::MAX` (2 GiB on wasm32) is refused rather than a capacity panic. The named
-uncompressed layouts (32-bit ARGB8, 8-bit luminance) are matched on the bit count as well as the
-masks, as DirectXTex matches them. A DX10
-header declaring premultiplied alpha, a paletted header (`DDPF_PALETTEINDEXED8`), a legacy bump-map
-header (`DDPF_BUMPDUDV`/`DDPF_BUMPLUMINANCE`, signed) and an uncompressed header with no channel
-mask at all are refused too, since none has a straight-alpha unsigned decode; BC4 is read under
-both its FourCCs (`ATI1`, `BC4U`); NVTT v1's L8 header (the RGB flag, 8 bits, an R mask only) reads as R8, as DirectXTex
-reads it. `convert` checks a
-`Decoded` it did not produce against the same rules (`ConvertError::InvalidDecoded`: nonzero
-dimensions, a top level of at most 4 GiB of RGBA since mip generation and the codecs index in
-32 bits, one mip per level with `width * height * 4` bytes, block buffers sized for their
-codec). An uncompressed DDS whose header declares a row pitch wider
-than its rows (some exporters pad rows to 4 bytes) is read at that pitch, each lower mip at the
-same 4-byte row alignment. `Decoded.authored_mips` says whether the source format carries a mip
-chain (DDS/FTEX, its level count is kept) or not (raster, a chain is generated). A WESYS-wrapped DDS (PES 15–17 sources) is unwrapped first through `wezlib`. The DDS
-header knowledge (`DdsHeader`, `Dx10Header`, the FourCC/mask/DXGI table) lives in `ftex`, which
-already needed it in both directions; `ftex` exposes it as `ftex::dds` (`read_layout`,
-`header_bytes`, and `DdsPixel::row_bytes`, the one tight-row rule) and `dds_convert` uses that
-instead of carrying a second copy. Encoder settings
-join the cache key with 2.5b, when a second encoder exists.
+`decode` rejects the following, every one of them as `ConvertError::Ftex(UnsupportedDds)` from
+`ftex::dds::read_layout`, which `probe` and `decode` both run first:
+
+- cube maps;
+- volume textures (the caps2 bit, or a legacy header's `DDSD_DEPTH` with a depth above 1, as
+  DirectXTex classifies them);
+- texture arrays;
+- the signed block formats (BC4/BC5 SNORM, BC6H SF16): a signed block relabelled unsigned would
+  silently change the texture.
+
+The compiler reports each as `texture_codec_unsupported`, the file dropped.
+`ConvertError::Unsupported` is for what the layout reads but the decoder or a target cannot
+take: an unknown pixel format or mask layout, a block texture past the decoder's 4 GiB limit.
+
+The compiler sends no cube map here: it routes one by `ftex::dds::is_cube_map` before any decode
+(`team_compiler/pipeline.md` step 5), since referee exports carry copies of the template
+`env.dds`.
+
+`decode` also rejects:
+
+- a zero width or height and a mip count past what the dimensions halve into
+  (`log2(larger side) + 1`), as D3D and texconv's default loader do; `ftex`'s own FTEX↔DDS
+  conversions keep pes-file-tools' acceptance of both;
+- a block texture whose padded top mip decodes past 4 GiB, because the block decoder offsets its
+  output in 32 bits;
+- a DX10 header declaring premultiplied alpha, a paletted header (`DDPF_PALETTEINDEXED8`), a
+  legacy bump-map header (`DDPF_BUMPDUDV`/`DDPF_BUMPLUMINANCE`, signed) and an uncompressed
+  header with no channel mask at all, since none has a straight-alpha unsigned decode.
+
+Any buffer a texture's dimensions size past the target's `isize::MAX` (2 GiB on wasm32) is
+refused rather than a capacity panic.
+
+How `decode` reads what it accepts:
+
+- The mip count is the header's count field alone, as DirectXTex reads it; `dds_to_ftex` keeps
+  pes-file-tools' rule that a cleared `DDSCAPS_MIPMAP` means one level.
+- The alpha mask of an uncompressed header counts only under `DDPF_ALPHAPIXELS` or `DDPF_ALPHA`
+  (DirectXTex reads an RGB header as opaque).
+- The named uncompressed layouts (32-bit ARGB8, 8-bit luminance) are matched on the bit count as
+  well as the masks, as DirectXTex matches them.
+- BC4 is read under both its FourCCs (`ATI1`, `BC4U`).
+- NVTT v1's L8 header (the RGB flag, 8 bits, an R mask only) reads as R8, as DirectXTex reads it.
+- An uncompressed DDS whose header declares a row pitch wider than its rows (some exporters pad
+  rows to 4 bytes) is read at that pitch, each lower mip at the same 4-byte row alignment.
+- A WESYS-wrapped DDS (PES 15–17 sources) is unwrapped first through `wezlib`.
+
+`convert` checks a `Decoded` it did not produce against the same rules
+(`ConvertError::InvalidDecoded`: nonzero dimensions, a top level of at most 4 GiB of RGBA since
+mip generation and the codecs index in 32 bits, one mip per level with `width * height * 4`
+bytes, block buffers sized for their codec). `Decoded.authored_mips` says whether the source
+format carries a mip chain (DDS/FTEX, its level count is kept) or not (raster, a chain is
+generated).
+
+The DDS header knowledge (`DdsHeader`, `Dx10Header`, the FourCC/mask/DXGI table) lives in
+`ftex`, which already needed it in both directions. `ftex` exposes it as `ftex::dds`
+(`read_layout`, `header_bytes`, and `DdsPixel::row_bytes`, the one tight-row rule), and
+`dds_convert` uses that instead of carrying a second copy. Encoder settings join the cache key
+with 2.5b, when a second encoder exists.
 
 `probe` reads a texture's size from its header alone. It exists for the Team compiler's deep
-pass, which checks every texture of an export and must not pay a decode for each: a DDS's layout
-through `ftex::dds::read_layout` (a WESYS-wrapped one unwrapped first), an FTEX's through
-`ftex::info`, a raster source's through the `image` decoder's dimensions, a JPEG XL's through
-`jxl`'s basic info. `Probe.mipmaps` is the
-level count the converted texture carries: a DDS or FTEX source's own count, and for a raster
-source the full chain down to 1x1, which conversion generates. `Probe.uncompressed` is
-`Decoded::uncompressed`'s notion read from the header: true for a DDS or FTEX stored
-uncompressed, false for a block-compressed codec and for every raster source. `probe` fails on a header `decode`
-would fail to read; it says nothing of the pixel data behind the header, so a texture that
-probes can still fail to decode.
+pass, which checks every texture of an export and must not pay a decode for each:
+
+- a DDS's layout through `ftex::dds::read_layout` (a WESYS-wrapped one unwrapped first);
+- an FTEX's through `ftex::info`;
+- a raster source's through the `image` decoder's dimensions;
+- a JPEG XL's through `jxl`'s basic info.
+
+`Probe.mipmaps` is the level count the converted texture carries: a DDS or FTEX source's own
+count, and for a raster source the full chain down to 1x1, which conversion generates.
+`Probe.uncompressed` is `Decoded::uncompressed`'s notion read from the header: true for a DDS or
+FTEX stored uncompressed, false for a block-compressed codec and for every raster source.
+
+`probe` fails on a header `decode` would fail to read. It says nothing of the pixel data behind
+the header, so a texture that probes can still fail to decode.
 
 ### In-memory conversion cache
 
 CPU texture conversion is reusable for a given source hash and complete conversion configuration
 (the key below), so a run caches converted output bytes in memory for its length: a source
-converted once is not converted again in that run. This targets the edit→compile→test loop — the hot path, where
-the same export is compiled dozens of times with minor edits to one or two files; carrying the
-cache across runs is `plans/libs/dds_convert.md`. While an entry is retained,
-unchanged textures reuse its converted bytes; eviction may require conversion again.
+converted once is not converted again in that run. While an entry is retained, unchanged
+textures reuse its converted bytes; eviction may require conversion again.
+
+This targets the edit→compile→test loop — the hot path, where the same export is compiled dozens
+of times with minor edits to one or two files. Carrying the cache across runs is
+`plans/libs/dds_convert.md`.
 
 **Design:**
 - A `Converter` struct in `dds_convert` holds an internal `HashMap<CacheKey, Arc<[u8]>>` mapping
@@ -364,20 +435,23 @@ unchanged textures reuse its converted bytes; eviction may require conversion ag
   needs).
 - The cache key includes the source content hash and every output-affecting conversion choice:
   target codec/container, texture role and channel swizzle, and mip/color-space settings —
-  source hash, source format and target. The source hash is computed at materialization and reused; DXT5 color data and
-  DXT5nm normal data must not alias merely because they share a codec.
+  source hash, source format and target. The source hash is computed at materialization and
+  reused. DXT5 color data and DXT5nm normal data must not alias merely because they share a
+  codec.
 - Cache misses fall through to the normal decode → mipmap → encode path, or, for a source
-  whose blocks the target keeps, to the passthrough, which rewraps them without a decode. The
-  cache is consulted after the build manifest has determined the target codec for each texture, so the
-  same source PNG cached as DXT5 for a pre-Fox compile is not wrongly reused for a Fox BC7
-  compile (different `target_codec` → different key → separate entry).
+  whose blocks the target keeps, to the passthrough, which rewraps them without a decode.
+- The cache is consulted after the build manifest has determined the target codec for each
+  texture, so the same source PNG cached as DXT5 for a pre-Fox compile is not wrongly reused for
+  a Fox BC7 compile (different `target_codec` → different key → separate entry).
 - **Engagement limit:** the cache engages only when compiling **≤2 teams**. The build manifest
   knows the team count at planning time; for larger compiles (3+ teams, e.g. a 48-team DLC),
-  the cache is bypassed entirely — entries are never inserted. Rationale: a large compile has
-  mostly first-seen textures (no cache benefit), and caching thousands of converted DDS/FTEX
-  buffers would consume a sizeable amount of memory for no gain, hurting parallelism by
-  reducing the budget available to worker tasks. The ≤2 team threshold covers the typical
-  edit→test scenario (one or two teams) while keeping large compiles from adding cache entries.
+  the cache is bypassed entirely — entries are never inserted.
+
+  Rationale: a large compile has mostly first-seen textures (no cache benefit), and caching
+  thousands of converted DDS/FTEX buffers would consume a sizeable amount of memory for no gain,
+  hurting parallelism by reducing the budget available to worker tasks. The ≤2 team threshold
+  covers the typical edit→test scenario (one or two teams) while keeping large compiles from
+  adding cache entries.
 - A CLI run is one process: it makes its `Converter` per run and drops it with the run, so what
   the cache holds is at most two exports' conversions, which no session accumulates.
   `Converter` retains every distinct conversion until `clear`, and exposes `retained_bytes`
@@ -392,10 +466,14 @@ count; a cache does not establish a fixed compile-time guarantee.
 
 Blender cannot write DDS natively, and the ported addons convert DDS→PNG on import. As the
 community migrates to glTF authoring (the plan's end-state path), PNG becomes the norm for
-source textures, not the corner case. The conversion pipeline is designed for this: the `image`
-crate handles decoding, mipmap generation fills the chain that raster sources don't carry, and
-the in-memory cache (above) keeps the edit→compile→test loop fast. The worst-case first-compile
-cost is accepted as the price of dropping the texconv.exe dependency and enabling glTF authoring
-— strictly better than the current workflow (manual texconv runs or no PNG support at all).
+source textures, not the corner case. The conversion pipeline is designed for this:
+
+- the `image` crate handles decoding;
+- mipmap generation fills the chain that raster sources don't carry;
+- the in-memory cache (above) keeps the edit→compile→test loop fast.
+
+The worst-case first-compile cost is accepted as the price of dropping the texconv.exe dependency
+and enabling glTF authoring — strictly better than the current workflow (manual texconv runs or
+no PNG support at all).
 
 ---
