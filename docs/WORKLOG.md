@@ -1921,8 +1921,13 @@ briefs, review loops, gates and mutation runs as for any step.
       byte could stop it; eight on the tests (a wrong-kind test green without the kind
       check, the source preset's index unproven, the Gameplan's expected value built by
       the code under test, lost premises, helpers copied); SE-GUI-56 and 72 reworded.
-      Rejected: a note after a cross-version paste (`PROPOSALS.md` P54). Rework with the
-      Opus sidekick (`.tmp/0_0_2/clip/rework1.md`, its session resumed), then round 2
+      Rejected: a note after a cross-version paste (`PROPOSALS.md` P54). Rework 1
+      2026-11-12 (`55b61937`, Opus, its session resumed; merge `af03939f`; the lead's
+      rerun: 823 and 54 tests, clippy, fmt): all ten done; a Gameplan's whole record
+      through the document comes back but for the bench's last nine places, which the
+      format fills as the game does (the test pins that rule); a stats copy still needs
+      every teammate's record. Round 2 running (SWE-2, two parts,
+      `.tmp/0_0_2/clip/swe_clip_r2a.md` and `r2b.md`, review worktree `review9`)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
