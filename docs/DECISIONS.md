@@ -16521,3 +16521,23 @@ Not chosen: the notice read from a record the window keeps (a member who only us
 launchers never opens the window, and it is that member the line is for).
 Plan: `plans/core/distribution.md` "Self-update" step 2 ("The command line's notice"),
 `plans/core/gui.md` ST-CLI-05; worklog 0.0.2-cli.
+
+## 2026-11-12 — gates — Every commit and merge goes through `scripts/commit.py`, and a gate checks the range
+Decision (the maintainer): nobody runs `git commit` or `git merge` with a message of their
+own any more. `python scripts/commit.py <message file> [git commit arguments]`, or `--merge
+<branch> <message file>`, checks the message first (`scripts/gates/commit_message.py`: the
+first line `type(scope): summary`, the type one of the documented ones, at most 120 characters,
+no full stop at its end, a blank line before the body, no agent credit) and commits nothing
+when it fails. `just commit-messages <base>`, part of `just gates-changed` and so of every
+checkpoint, checks each commit since the last gated one. `merge` joins the documented types,
+which 108 merge commits already used; `build` does not.
+Why: a script, not the rule alone, because the rule was written and the readability pass's
+own landing script still made 49 commits reading `docs: b07 pass 2 of the readability pass`
+(no scope, a scratch name for a subject), with five more subjects over 120 characters the
+same night, all pushed before anyone read the log; the range gate beside the script, because
+a script can still call `git commit` itself and the gate then stops it at the checkpoint, not
+after the push.
+Not chosen: a `commit-msg` hook through `core.hooksPath`, which would check without anyone
+calling a script but changes the repository's git configuration, which each clone has to set.
+Plan: no plan edit needed, a gate's mechanics: `CONTRIBUTING.md` "Commits" and `AGENTS.md`
+describe it.

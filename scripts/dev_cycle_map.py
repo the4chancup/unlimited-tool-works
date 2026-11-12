@@ -88,7 +88,7 @@ NODES = [
      "an accepted concern changes a real export, contradicts a rule, or fixes a wrong fact."),
     ("commit", "Commit", "lead", 6, 0,
      "The changed crates' tests, clippy and fmt run, the worklog step collapses to one "
-     "line, then git commit -F: the message is the log."),
+     "line, then scripts/commit.py checks the message and commits: the message is the log."),
     ("converge", "Converge audit", "lead", 6, 1,
      "Closing a phase: every plan section and acceptance ID checked against the code, then a "
      "design-health pass (sweeps, whole-crate mutation runs, citation audit, pub items). "

@@ -29,7 +29,8 @@ Ten documents, ten jobs. Do not let content leak between them; two homes means t
 from the document, not from memory. **After a step:** run the step's checkpoint gates
 (`CONTRIBUTING.md` "Testing and verification": what runs per commit, what at a checkpoint), collapse the
 closed step to one line (ID, date, commit, what it delivered), update "Current status",
-commit (`git commit -F <file>`; PowerShell has no heredocs). Once a release exists, a change a
+commit (`python scripts/commit.py <message file>`, the only way to commit or merge: it checks
+the message first). Once a release exists, a change a
 member would notice gets its `CHANGELOG.md` `[Unreleased]` line (`CONTRIBUTING.md` "Commits").
 
 **Phases, releases and sidekicks** follow `docs/RUNBOOK.md`, read before doing what each

@@ -222,7 +222,9 @@ which fails on a pointer to a document's section, its path and then the quoted t
 or section is gone, or whose file is in the gitignored `.tmp/`, which no clone has, and `just
 comment-refs`, which fails on a code comment citing a plan, a decision, a step, a review or who
 decided, and `just colour-literals`, which fails on a colour written from literal values outside
-`studio_core`'s `theme.rs`, whose palette gives each colour its light value), and CI runs the
+`studio_core`'s `theme.rs`, whose palette gives each colour its light value, and `just
+commit-messages`, which checks the message of every commit since the base it is given, "Commits"
+below), and CI runs the
 same recipe, so the list cannot drift between this document, the local run and CI. The test gate
 runs each binary whole, its tests on libtest's threads, several binaries at once: `cargo test`
 alone runs them one after another, leaving cores idle behind each binary's slowest test (277 s
@@ -500,7 +502,8 @@ The first line is `type(scope): summary` (Conventional Commits), scope being the
 (`fix(vtree): ...`, `feat(studio_core): ...`, `docs(plans): ...`, `chore(workspace): ...`; a
 multi-crate step uses its phase, `feat(phase2): ...`). Types: `feat`, `fix`, `docs`, `test`,
 `refactor`, `perf` (a change made for speed or memory that changes no behavior), `chore`
-(workspace, dependencies, CI). The first line is at most 120 characters: it is what `git log
+(workspace, dependencies, CI, the gates) and `merge` (a merge commit, its scope the area the
+merged branch changed). The first line is at most 120 characters: it is what `git log
 --oneline` and every tool's history view show, and a subject that lists every change of the
 commit is a body written on the wrong line. A worklog step tag (`4.y-sub b3b4c`) goes in the
 body, not the first line: the first line is for what changed. A summary naming something done
@@ -517,8 +520,18 @@ a new or changed behavior, a speed-up worth telling) adds its line under `[Unrel
 release has shipped adds none, and neither does a change to a tool no release has presented in
 its notes or the `README.md` (the Team compiler and the Export upgrader until one does). There is
 one `fix` type for both: `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note
-owes its readers. Write the message to a file and `git commit -F` it; PowerShell has no heredocs.
-Do not include agent co-authoring lines.
+owes its readers. Do not include agent co-authoring lines.
+
+Write the message to a file and commit with `python scripts/commit.py <message file> [git commit
+arguments]`; a merge is `python scripts/commit.py --merge <branch> <message file>`. The script
+checks the message first (`scripts/gates/commit_message.py`: the first line's shape, its type,
+its 120 characters, the blank line before the body, no agent credit) and commits nothing when
+it fails. Nobody commits or merges another way, a lead, a sidekick or a script alike: a script
+that worded its own subjects once made 49 commits reading `docs: b07 pass 2 of ...`, a scratch
+name where the change should be, and they were pushed before anyone read the log. `just
+commit-messages <base>`, part of `just gates-changed`, checks every commit since the last gated
+one, so a commit made around the script fails the checkpoint instead of reaching a push. What
+no script can tell stays the writer's: that the summary says what changed, in the mood above.
 
 ## Toolchain notes
 

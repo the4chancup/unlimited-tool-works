@@ -12,7 +12,7 @@ python := if os_family() == "windows" { "python" } else { "python3" }
 script_test := python + " scripts/gates/temp_alias.py"
 
 # The verification gates, in order. CI runs this same recipe.
-gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals
+gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals commit-messages
 
 # The same gates on the mutants host (STUDIO_MUTANTS_REMOTE) against the working tree, while this machine should not carry the load
 gates-remote:
@@ -43,7 +43,12 @@ test:
     {{script_test}} scripts/census/census_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
-gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
+gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals (commit-messages base)
+
+# Every commit since `base` has a message of the project's shape (CONTRIBUTING.md "Commits"); `scripts/commit.py` checks one before it commits it
+commit-messages base="HEAD":
+    {{script_test}} scripts/gates/commit_message_test.py
+    {{python}} scripts/gates/commit_message.py --range {{base}}
 
 # A checkpoint, in one command: `gates-changed` and `mutants-diff` since the last gated commit, which it then
 # moves to HEAD (scripts/gates/checkpoint.py; `--no-mutants` skips the mutation run)
