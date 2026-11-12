@@ -2286,8 +2286,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   form; PES 2019, then 2021 and 2017; 8.36d; harness
 - The Friendlies compiled with `--legacy-ids` (`4cc_90_test.cpk` and the patched save), boots
   and gloves under their old IDs in Edit mode; PES 2019; 0.0.2-poc13's poc.2; harness
-- The 0.0.2-poc.4 bundle from a fresh extract: its launchers' upgrade and compile, the teams in
-  Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11)
+- The 0.0.2-poc.5 bundle from a fresh extract (it replaced poc.4): its launchers' upgrade
+  and compile, the teams in Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11).
+  The Linux bundle 0.0.2-poc.6 beside it has never been started; no PES; maintainer
 - ST-UPD-04 on Linux: the bundle of `0.0.2-rc.1` updates itself to `0.0.2-rc.2` and reopens
   on `Updated to v0.0.2-rc.2 pre-alpha`, by the kit `4cc-studio-temp/st-upd-04-linux/`
   (its README has the steps; `sh start.sh`) on a live Ubuntu 24.04 or newer in a virtual
@@ -2337,6 +2338,13 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - ov7b's Import and × dialogs, ov10's pitch drag and ov12's popover steppers in the built
   window; any PES; 0.0.1ov; harness
 - The players' name colour codes in the light theme; any PES; 0.0.1ov's ov11b; maintainer
+- The toolbar as a menu bar in the built window, the Save editor (no save open, a save open,
+  an event logo drawn) and the Ruleset editor, both themes; no PES; 0.0.2-bar; maintainer
+  (the lead's window harness misplaces its pointer on the 4K primary at 200%)
+- The two numbers' toggles disabled on a PES 17 or 21 save under a ruleset without illegal
+  formations, and Kick-off with Fluid formation off, each on its grey rectangle, both
+  themes (the light one's grey, 225, was computed, never seen); no PES; 0.0.2-num;
+  maintainer
 
 ---
 
@@ -2347,6 +2355,11 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-12 (the lead, writing the referee export page): the Export upgrader's help
+  says a conflicting referee folder is "left as it was and reported", where EU-REF-03, 09
+  and 11 have a conflict report and write nothing at all. Find the sentence (the tool's
+  help chapter or its `--help`), check it against the three scenarios and the code, and
+  correct whichever is wrong.
 - open 2026-11-12 (the maintainer; queued for after 0.0.2): who reads the attack and
   defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
   shows them, PES 17's does not, and PES 21's executable ignores them

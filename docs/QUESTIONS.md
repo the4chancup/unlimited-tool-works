@@ -60,6 +60,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   `save_editor`'s `view/tactics.rs`). In the game's Edit Position screen, does such a
   player get his registered position's area lit, or nothing? If lit, the registered
   position counts as rated here too, as the overall already reads it.
+- **The two numbers arriving another way.** On a PES 17 to 21 save under a ruleset without
+  illegal formations the toggles of Numbers in attack and Numbers in defence are disabled
+  (SE-GUI-71), but a preset pasted or copied from another, a Gameplan pasted from another
+  team and an imported Team TOML still write the two bytes, and the AATF check says
+  nothing of them. Should those keep the target's numbers, should the check flag a value
+  the game's menu could not have set, or is the toggles' lock enough?
 
 ## After the release
 
