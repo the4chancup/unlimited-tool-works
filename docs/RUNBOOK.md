@@ -446,6 +446,11 @@ sidekick launcher starts its `claude` process that way (everything the sidekick 
 inherits it), and the lead starts its own gates, package tests and release builds through a
 wrapper that does the same (`~/.claude/tools/below_normal.py <command>`). A job found at normal
 priority is lowered with its whole process tree (`~/.claude/tools/lower_tree.ps1 -Match <text>`).
+Priority alone proved too little: a test gate that filled all sixteen logical processors at
+below-normal priority still slowed the desktop (2026-11-12). So the wrapper and the detached
+launcher also keep their job off two logical processors, one core, which the job's
+processes inherit as they inherit the priority (`~/.claude/tools/leave_cores.py`;
+`lower_tree.ps1 -Match <text> -Free 2` for a job already running).
 
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
