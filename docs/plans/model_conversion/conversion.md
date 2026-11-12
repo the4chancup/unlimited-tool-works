@@ -20,7 +20,7 @@ The two engines animate eyes differently, so a face model and its diff are made 
 
 - Pre-Fox blinks with the lower eyelid too and assumes the eyes half closed, so its diff says
   how far to open and close them.
-- Fox assumes them fully open and rotates the whole eye, eyelids included, which authors
+- Fox assumes the eyes fully open and rotates the whole eye, eyelids included, which authors
   compensate for in the model (eyes pulled deeper into the head, eyelids weighted to the head).
 
 A face folder says which engine its face was made for with a `fox` or `pre-fox` marker file, as a

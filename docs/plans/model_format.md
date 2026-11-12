@@ -164,8 +164,8 @@ with these fallbacks, which are the same ones native models without the data alr
 | `PES_mesh` | Mesh-splitting group identity, so a same-format round-trip re-splits meshes identically | The compiler splits from scratch at compile time (it must be able to anyway — hardware limits are checked on every model); only byte-stability of round-trips is lost |
 
 The extensions are listed in `extensionsUsed`, never in `extensionsRequired`, so every glTF-aware
-tool opens a Studio-written file. Unknown extensions are skipped on import. A plugin-less re-export
-drops them, which the fallbacks above absorb; the `pes-models` codec preserves them.
+tool opens a Studio-written file (unknown extensions are skipped on import). A plugin-less
+re-export drops them, which the fallbacks above absorb; the `pes-models` codec preserves them.
 
 ```json
 {

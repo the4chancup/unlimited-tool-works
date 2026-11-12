@@ -228,8 +228,8 @@ cycle.
   needed for later classification; recovered aggregate records use the optional fields
   described in the feed model below.
 
-  *`Pending` and `Permanent`.* If classification remains impossible, its state becomes
-  `Permanent`. When a record becomes `Permanent` before finalization, the reducer publishes
+  *`Pending` and `Permanent`.* If classification remains impossible, the record's state
+  becomes `Permanent`. When a record becomes `Permanent` before finalization, the reducer publishes
   the snapshot-bearing, presentation-only
   `ScoreReconciled { reason: ClassificationBecamePermanent }`. At feed-bound finalization,
   any required `Pending` → `Permanent` reconciliation is published in the same atomic
@@ -271,7 +271,7 @@ cycle.
   If classification completes after kickoff, suspension, or another closing boundary, it
   instead publishes the snapshot-bearing, presentation-only
   `ScoreReconciled { reason: ClassificationResolved }`. That event updates the appropriate
-  score domain, and updates ordinary scorer state only for a classified non-shootout goal;
+  score domain and updates ordinary scorer state only for a classified non-shootout goal;
   it is never eligible for one-shot automation. A record materialized from recovered
   aggregate counters always uses `ScoreReconciled { reason: ClassificationResolved }` when
   later classified.
@@ -346,21 +346,19 @@ cycle.
   verified from fixtures; both the two-sample condition and the corresponding
   elapsed-time minimum must be satisfied. The elapsed-time and event-clock anchor is the
   first unchanged or advancing sample, respectively. Read failures and phase transitions
-  are not treated as clock samples.
+  are not treated as clock samples. The original's estimate jumps up to three and a half
+  minutes ahead around a substitution made during a stoppage and is back within a minute
+  of the HUD about a minute later (seen on PES 2017, 2019 and 2021 against the HUD clock;
+  README "Independent measurements"), so the fixtures include such a substitution and the
+  reducer must not reproduce the jump. The verified values of each version are recorded in
+  its profile before that version is registered, so changing the poll rate does not
+  materially change behavior.
 
-  The original's estimate jumps up to three and a half minutes ahead around a substitution
-  made during a stoppage and is back within a minute of the HUD about a minute later (seen
-  on PES 2017, 2019 and 2021 against the HUD clock; README "Independent measurements"), so
-  the fixtures include such a substitution and the reducer must not reproduce the jump.
-  The verified values of each version are recorded in its profile before that version is
-  registered, so changing the poll rate does not materially change behavior.
-
-  *Direct read on PES21.* **On PES21 the fork reads the clock directly** *(unverified)*
-  via a pointer chain to a clock object exposing the current segment (u32) and a raw tick
-  count (f32, ticks/3600 = minutes); the segment maps to the period base minute and even
-  segments flag injury time. The direct read supersedes the reconstruction where
-  available; the reconstruction remains the PES17 path and the fallback if the PES21
-  clock chain breaks.
+  **On PES21 the fork reads the clock directly** *(unverified)* via a pointer chain to a
+  clock object exposing the current segment (u32) and a raw tick count (f32, ticks/3600 =
+  minutes); the segment maps to the period base minute and even segments flag injury time.
+  The direct read supersedes the reconstruction where available; the reconstruction
+  remains the PES17 path and the fallback if the PES21 clock chain breaks.
 - **Stop reasons**: inferred from which counters moved around the stop — offside
   beats foul, goal/own goal, a save implies a corner, an off-target shot implies a
   goal kick — replicating the original's heuristic table.

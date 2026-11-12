@@ -132,9 +132,9 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
     missed before retry;
   - a team-identity change while provisional replacing the existing `TeamsDetected` draft
     without finalizing an empty match;
-  - a provisional `TeamsDetected` draft disabling Finish, and discarding that feed-bound
-    draft publishing `MatchAbandoned`, clearing retained snapshot/watch state, and
-    suppressing immediate recreation from the same source session;
+  - a provisional `TeamsDetected` draft disabling Finish;
+  - discarding that feed-bound draft publishing `MatchAbandoned`, clearing retained
+    snapshot/watch state, and suppressing immediate recreation from the same source session;
   - transient read failure vs. finalized match;
   - Finish and Discard while the source session remains live (the terminal `match_id`
     receives no more deltas and the same session cannot create another draft);

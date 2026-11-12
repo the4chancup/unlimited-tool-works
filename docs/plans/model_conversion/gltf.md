@@ -30,10 +30,11 @@ the field-level deep merge and schema validation, so the merge rule has one impl
 by every consumer. Each layer is tagged with its origin folder (player folder or Common), because
 a texture stem resolves in the folder of the material file that set it.
 
-It fills the IR's `Material` structs from the merged entries, resolving canonical texture roles to
-`Texture` entries through the caller-supplied asset resolver (see "glTF dependency and image
-contract"). Schema violations surface as typed errors the caller maps to the `material_*` message
-catalog. The glTF files themselves are never rewritten (exports stay read-only).
+`gltf_to_ir` fills the IR's `Material` structs from the merged entries, resolving canonical
+texture roles to `Texture` entries through the caller-supplied asset resolver (see "glTF
+dependency and image contract"). Schema violations surface as typed errors the caller maps to the
+`material_*` message catalog. The glTF files themselves are never rewritten (exports stay
+read-only).
 
 ### glTF export (`ir_to_gltf`) and dual-set superset merge
 
