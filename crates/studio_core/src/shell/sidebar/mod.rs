@@ -676,7 +676,7 @@ impl Sidebar {
         self.was_focused = focused;
         if stale || gained_focus {
             self.exe_listings += 1;
-            let found = check_pes_folder(common.pes_version, &folder);
+            let found = crate::pes_process::check_pes_folder(common.pes_version, &folder);
             self.exe_check = Some((common.pes_version, folder, found));
         }
         self.exe_check.as_ref().expect("a check ran above").2
@@ -968,35 +968,4 @@ pub(super) fn selector_color(check: ExeCheck, visuals: &egui::Visuals) -> Option
         ExeCheck::NoExe | ExeCheck::NoFolder => Some(visuals.warn_fg_color),
         ExeCheck::Found => None,
     }
-}
-
-/// One directory listing of `folder` for `PES20NN.exe` names, in any letter case: the
-/// selected version's own exe wins when several are present (ST-SIDE-03). Only files count:
-/// the condition mirrors the compiler's preflight (`is_file` on the exe's path).
-fn check_pes_folder(version: PesVersion, folder: &Path) -> ExeCheck {
-    let entries = match std::fs::read_dir(folder) {
-        Ok(entries) => entries,
-        Err(_) => return ExeCheck::NoFolder,
-    };
-    let mut other = None;
-    for entry in entries.flatten() {
-        // `Path::is_file` follows a link the same way the compiler's preflight does.
-        if !entry.path().is_file() {
-            continue;
-        }
-        let Some(found) = entry
-            .file_name()
-            .to_str()
-            .and_then(crate::pes_process::version_of_exe)
-        else {
-            continue;
-        };
-        if found == version {
-            return ExeCheck::Found;
-        }
-        if other.is_none() {
-            other = Some(found);
-        }
-    }
-    other.map_or(ExeCheck::NoExe, ExeCheck::OtherVersion)
 }

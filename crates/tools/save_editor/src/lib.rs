@@ -26,7 +26,7 @@ mod test_support;
 mod view;
 
 use studio_core::widgets::{FORM_ROW_SPACING, checkbox_without_text};
-use studio_core::{CliError, HelpSection, HelpTopic, Notice, RunningPes, StudioTool, ToolContext};
+use studio_core::{CliError, HelpSection, HelpTopic, RunningPes, StudioTool, ToolContext};
 
 use crate::messages::TOOL_ID;
 
@@ -126,6 +126,10 @@ impl StudioTool for Tool {
         if !self.imports_read {
             self.view.data_dir = ctx.paths().data_dir.clone();
             self.view.imported = session::rules::imported(self.view.data_dir.as_deref());
+            // State the tool writes itself (an open's last folder), so it is
+            // read once: a per-frame sync would overwrite an open that ran
+            // between frames before the write-back could carry it.
+            self.view.last_folder = tool_settings.last_folder.clone();
             self.imports_read = true;
         }
         self.view.aatf_ruleset = tool_settings.aatf_ruleset.clone();
@@ -136,31 +140,37 @@ impl StudioTool for Tool {
         self.view.tactics.scroll_names = tool_settings.scroll_names;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
-        self.view.pes_version = common.pes_version;
-        self.view.pes_exe_check = ctx.pes_exe_check();
+        // Everything the editor needs of a PES version is the open save's: its
+        // own version's folder, exe check and picked-folder store. With no save
+        // open, nothing is asked.
+        if let Some(version) = self.view.save_version() {
+            self.view.pes_exe_check = Some(ctx.pes_exe_check_for(version));
+            let folder = common.pes_folder_for(version);
+            self.view.pes_folder = Some(folder.clone());
+            self.view.select_portraits(ui.ctx(), &folder, version);
+        }
         self.view.recorder = ctx.recorder().clone();
-        self.view
-            .select_portraits(ui.ctx(), &common.pes_folder(), common.pes_version);
         view::show(ui, &mut self.view, &self.running);
         if std::mem::take(&mut self.view.request_close) {
             ctx.request_close();
         }
-        if let Some(folder) = self.view.picked_pes_folder.take() {
-            ctx.set_pes_folder(&folder);
+        if let Some((version, folder)) = self.view.picked_pes_folder.take() {
+            ctx.set_pes_folder_for(&folder, version);
         }
         if let Some(notice) = self.view.notice.take() {
             ctx.notify(notice);
         }
         // The toolbar's ruleset dropdown, its toggle and Show suggestions,
-        // where Live AATF's list stands and the formation bar's Scroll names
-        // are settings: the table as read with only those keys replaced, so
-        // any other key survives (as `settings_view` writes
-        // `aesthetics_from_exports`).
+        // where Live AATF's list stands, the formation bar's Scroll names and
+        // the picker's last folder are settings: the table as read with only
+        // those keys replaced, so any other key survives (as `settings_view`
+        // writes `aesthetics_from_exports`).
         if self.view.aatf_ruleset != tool_settings.aatf_ruleset
             || self.view.live_aatf != tool_settings.live_aatf
             || self.view.live_suggestions != tool_settings.live_suggestions
             || self.view.live_window != tool_settings.live_window
             || self.view.tactics.scroll_names != tool_settings.scroll_names
+            || self.view.last_folder != tool_settings.last_folder
         {
             let mut table = table;
             table.insert(
@@ -183,6 +193,13 @@ impl StudioTool for Tool {
                 "scroll_names".to_owned(),
                 toml::Value::Boolean(self.view.tactics.scroll_names),
             );
+            match &self.view.last_folder {
+                Some(folder) => table.insert(
+                    "last_folder".to_owned(),
+                    toml::Value::String(folder.display().to_string()),
+                ),
+                None => table.remove("last_folder"),
+            };
             ctx.set_tool_settings(TOOL_ID, table);
         }
     }
@@ -287,16 +304,6 @@ impl StudioTool for Tool {
         self.view.save_path().map(|path| path.display().to_string())
     }
 
-    /// The version warning, while a save of another version than the sidebar's selector is
-    /// open and the member has not seen it yet.
-    fn standing_notice(&self, ctx: &ToolContext) -> Option<Notice> {
-        self.view.version_notice(ctx.common().pes_version)
-    }
-
-    fn standing_notice_ended(&mut self) {
-        self.view.version_warning = false;
-    }
-
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {
         cli::run(matches, ctx, self.running)
     }
@@ -321,13 +328,14 @@ mod tests {
     }
 
     // The Set PES path button's ask reaches the common settings on the
-    // frame it was made: the PES folder setting with its year as 20**.
+    // frame it was made: the picked folder stored for the save's version with
+    // its year as 20**, the selector's setting unmoved.
     // SE-GUI-50
     #[test]
-    fn the_picked_pes_folder_is_stored_as_the_pes_folder_setting() {
+    fn the_picked_pes_folder_is_stored_for_the_saves_version() {
         let dir = crate::test_support::scratch("lib_set_pes_folder");
         let mut settings = studio_core::Settings::default();
-        settings.common.pes_version = pes_version::PesVersion::Pes17;
+        settings.common.pes_version = pes_version::PesVersion::Pes19;
         let (ctx, shared, _events_rx, _requests_rx) =
             crate::test_support::shared_tool_context(&dir, settings);
         let expected = dir.join("Pro Evolution Soccer 20**");
@@ -337,7 +345,10 @@ mod tests {
             "premise: the setting does not hold the folder yet"
         );
         let mut tool = Tool::new();
-        tool.view.picked_pes_folder = Some(dir.join("Pro Evolution Soccer 2017"));
+        tool.view.picked_pes_folder = Some((
+            pes_version::PesVersion::Pes17,
+            dir.join("Pro Evolution Soccer 2017"),
+        ));
 
         let egui_ctx = egui::Context::default();
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
@@ -346,15 +357,21 @@ mod tests {
             std::path::PathBuf::from(&shared.lock().unwrap().common.pes_folder_path),
             expected
         );
+        assert_eq!(
+            shared.lock().unwrap().common.pes_version,
+            pes_version::PesVersion::Pes19,
+            "the selector unmoved"
+        );
         assert_eq!(tool.view.picked_pes_folder, None, "the ask was taken");
     }
 
-    // The view's exe check is the context's, refreshed every `Tool::view`
-    // frame: the Set PES path button comes and goes with the sidebar's
-    // check, never with a verdict the view once held.
+    // The view's exe check is the context's per-version one for the open save,
+    // refreshed every `Tool::view` frame: the Set PES path button comes and
+    // goes with the folder the save's version resolves, never with a verdict
+    // the view once held or with the selector's.
     // SE-GUI-50
     #[test]
-    fn the_view_takes_the_contexts_exe_check_each_frame() {
+    fn the_view_takes_the_contexts_exe_check_for_the_saves_version() {
         let dir = crate::test_support::scratch("lib_exe_check");
         let (ctx, _events_rx, _requests_rx) =
             crate::test_support::tool_context(&dir, studio_core::Settings::default());
@@ -364,14 +381,70 @@ mod tests {
             "premise: the sidebar has not run a check"
         );
         let mut tool = Tool::new();
+        // A save open: its version's PES folder (the context's `pes`, missing)
+        // is asked, not the selector's.
+        let path = dir.join("EDIT00000000");
+        std::fs::write(
+            &path,
+            pes_savefile::fixture_save(pes_version::PesVersion::Pes21),
+        )
+        .unwrap();
+        tool.view.open(&path);
         tool.view.pes_exe_check = Some(studio_core::ExeCheck::Found);
 
         let egui_ctx = egui::Context::default();
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
         output.drop_without_applying_deltas();
         assert_eq!(
-            tool.view.pes_exe_check, None,
-            "the view's check is the context's"
+            tool.view.pes_exe_check,
+            Some(studio_core::ExeCheck::NoFolder),
+            "the view's check is the save's version's, listed by the context"
+        );
+    }
+
+    // An open writes `last_folder` into the settings, and the editor started
+    // again from the same settings reads it back into the picker's start.
+    // SE-GUI-26
+    #[test]
+    fn the_last_folder_survives_a_restart_through_the_settings() {
+        let dir = crate::test_support::scratch("lib_last_folder");
+        let backups = dir.join("backups");
+        std::fs::create_dir_all(&backups).unwrap();
+        let path = backups.join("EDIT00000000");
+        std::fs::write(
+            &path,
+            pes_savefile::fixture_save(pes_version::PesVersion::Pes21),
+        )
+        .unwrap();
+        let (ctx, _shared, _events_rx, _requests_rx) =
+            crate::test_support::shared_tool_context(&dir, studio_core::Settings::default());
+        let mut tool = Tool::new();
+        assert!(
+            ctx.tool_settings(TOOL_ID).get("last_folder").is_none(),
+            "premise: the setting holds no folder yet"
+        );
+        let expected = backups.display().to_string();
+        let egui_ctx = egui::Context::default();
+        // The first frame reads the setting into the view; the open, as every
+        // open, writes it back on its own frame.
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+        tool.view.open(&path);
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+        assert_eq!(
+            ctx.tool_settings(TOOL_ID)["last_folder"].as_str(),
+            Some(expected.as_str()),
+            "the open wrote the folder into the settings"
+        );
+
+        let mut restarted = Tool::new();
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| restarted.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+        assert_eq!(
+            restarted.view.last_folder,
+            Some(backups),
+            "read back at the restart"
         );
     }
 

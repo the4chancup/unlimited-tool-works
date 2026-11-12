@@ -3,9 +3,11 @@
 //! editor's writing commands refuse while one is, and the GUI's version selector polls
 //! it on a timer.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use pes_version::PesVersion;
+
+use crate::tool::ExeCheck;
 
 /// A PES game running now.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,6 +39,35 @@ pub(crate) fn version_of_exe(name: &str) -> Option<PesVersion> {
         .ok()?;
     // `from_number` also accepts the short `pes21.exe`, which is not a shipped name.
     PesVersion::from_number(year).filter(|version| version.year() == year)
+}
+
+/// One directory listing of `folder` for `PES20NN.exe` names, in any letter case:
+/// `version`'s own exe wins when several are present (ST-SIDE-03). Only files count:
+/// the condition mirrors the compiler's preflight (`is_file` on the exe's path). The
+/// shell's one exe check: the sidebar colors its selector by it, and a tool reads the
+/// verdict through `ToolContext`.
+pub(crate) fn check_pes_folder(version: PesVersion, folder: &Path) -> ExeCheck {
+    let entries = match std::fs::read_dir(folder) {
+        Ok(entries) => entries,
+        Err(_) => return ExeCheck::NoFolder,
+    };
+    let mut other = None;
+    for entry in entries.flatten() {
+        // `Path::is_file` follows a link the same way the compiler's preflight does.
+        if !entry.path().is_file() {
+            continue;
+        }
+        let Some(found) = entry.file_name().to_str().and_then(version_of_exe) else {
+            continue;
+        };
+        if found == version {
+            return ExeCheck::Found;
+        }
+        if other.is_none() {
+            other = Some(found);
+        }
+    }
+    other.map_or(ExeCheck::NoExe, ExeCheck::OtherVersion)
 }
 
 /// The game a `/proc/<pid>/cmdline` buffer says its process is, or `None`: the first

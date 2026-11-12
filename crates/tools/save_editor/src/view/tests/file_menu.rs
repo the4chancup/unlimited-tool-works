@@ -25,7 +25,7 @@ struct Tree {
     pes21_old: PathBuf,
     /// PES 21 under the account `76561199320748656`, the newer.
     pes21_new: PathBuf,
-    /// PES 19 under the account `292733975847239680`.
+    /// PES 19 under the account `292733975847239680`, the newest of the three.
     pes19: PathBuf,
     /// A PES 21 save outside `Documents`.
     elsewhere: PathBuf,
@@ -56,8 +56,12 @@ fn tree(test: &str) -> Tree {
     let now = SystemTime::now();
     let hour_ago = now - Duration::from_secs(3600);
     let pes21_old = save(PesVersion::Pes21, "292733975847239680", hour_ago);
-    let pes21_new = save(PesVersion::Pes21, "76561199320748656", now);
-    let pes19 = save(PesVersion::Pes19, "292733975847239680", hour_ago);
+    let pes21_new = save(
+        PesVersion::Pes21,
+        "76561199320748656",
+        now - Duration::from_secs(1800),
+    );
+    let pes19 = save(PesVersion::Pes19, "292733975847239680", now);
     let elsewhere_dir = dir.join("elsewhere");
     std::fs::create_dir_all(&elsewhere_dir).unwrap();
     let elsewhere = elsewhere_dir.join("EDIT00000000");
@@ -139,7 +143,6 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
     let mut view = SaveView::new();
     view.open(&tree.elsewhere);
     let calls = discover_counted(&mut view, &tree.documents);
-    view.pes_version = PesVersion::Pes21;
     let mut window = Headless::new();
 
     let nodes = open_menu(&mut window, &mut view, "File", PES19_ENTRY);
@@ -194,7 +197,7 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
         tree.pes21_new.display().to_string(),
         tree.pes21_old.display().to_string(),
         tree.elsewhere.display().to_string(),
-        "Opens in the selected version's save folder when it exists".to_owned(),
+        "Opens in the folder the last save was opened from, or the newest found save's".to_owned(),
     ];
     for (place, tip) in tips.iter().enumerate() {
         let nodes = draw(&mut window, &mut view);
@@ -315,24 +318,51 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
 
 // SE-GUI-26
 #[test]
-fn choose_file_starts_in_the_selected_versions_save_folder() {
+fn the_picker_starts_in_the_last_opened_folder_then_the_newest_found_saves() {
     let tree = tree("open_menu_choose_file");
     let mut view = SaveView::new();
     discover_counted(&mut view, &tree.documents);
     let starts = picker_starts(&mut view);
     let mut window = Headless::new();
 
-    view.pes_version = PesVersion::Pes21;
+    // Nothing remembered from an earlier open: the picker starts in the
+    // newest discovered save's folder, of whatever version (PES 19's here,
+    // the newest of the three).
     choose(&mut window, &mut view, "File", "Choose file");
-    // PES 18 has no save under the test's Documents.
-    view.pes_version = PesVersion::Pes18;
-    choose(&mut window, &mut view, "File", "Choose file");
-
     assert_eq!(
         *starts.borrow(),
-        [tree.pes21_new.parent().map(Path::to_path_buf), None],
-        "the newest PES 21 save's folder, then no folder for PES 18"
+        [tree.pes19.parent().map(Path::to_path_buf)],
+        "the newest discovered save's folder"
     );
+
+    // A save opened from a backups folder is remembered: the picker returns
+    // there while the folder exists, and falls back to the newest discovered
+    // save's once it is gone.
+    let backups = crate::test_support::scratch("open_menu_backups").join("backups");
+    std::fs::create_dir_all(&backups).unwrap();
+    let backup_save = backups.join("EDIT00000000");
+    std::fs::write(&backup_save, fixture_save(PesVersion::Pes21)).unwrap();
+    view.open(&backup_save);
+    choose(&mut window, &mut view, "File", "Choose file");
+    std::fs::remove_dir_all(&backups).unwrap();
+    choose(&mut window, &mut view, "File", "Choose file");
+    assert_eq!(
+        *starts.borrow(),
+        [
+            tree.pes19.parent().map(Path::to_path_buf),
+            Some(backups.clone()),
+            tree.pes19.parent().map(Path::to_path_buf),
+        ],
+        "the last opened folder while it exists, the newest discovered's else"
+    );
+
+    // Nothing discovered and nothing remembered: the picker starts in no
+    // folder.
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    let starts = picker_starts(&mut view);
+    choose(&mut window, &mut view, "File", "Choose file");
+    assert_eq!(*starts.borrow(), [None], "nothing discovered: no folder");
 }
 
 // SE-GUI-05, SE-GUI-26: one of the File menu's opens under unsaved changes
@@ -414,21 +444,23 @@ fn a_shortcut_with_no_save_found_opens_the_picker() {
     let mut window = Headless::new();
     draw(&mut window, &mut view);
 
-    // No PES 17 save under the test's Documents.
-    view.pes_version = PesVersion::Pes21;
+    // No PES 17 save under the test's Documents: the picker starts in the
+    // newest discovered save's folder, of whatever version.
     press_ctrl(&mut window, &mut view, egui::Key::Num7);
     assert_eq!(
         *starts.borrow(),
-        [tree.pes21_new.parent().map(Path::to_path_buf)],
-        "Ctrl+7 opened the picker once, in the newest PES 21 save's folder"
+        [tree.pes19.parent().map(Path::to_path_buf)],
+        "Ctrl+7 opened the picker once, in the newest discovered save's folder"
     );
-    // No PES 18 save either: Ctrl+O's picker starts in no folder.
-    view.pes_version = PesVersion::Pes18;
+    // Ctrl+O asks the same start rule.
     press_ctrl(&mut window, &mut view, egui::Key::O);
     assert_eq!(
         *starts.borrow(),
-        [tree.pes21_new.parent().map(Path::to_path_buf), None],
-        "Ctrl+O opened the picker in no folder for PES 18"
+        [
+            tree.pes19.parent().map(Path::to_path_buf),
+            tree.pes19.parent().map(Path::to_path_buf),
+        ],
+        "Ctrl+O opened the picker in the same folder"
     );
     assert!(view.session.is_none(), "a cancelled picker opens nothing");
 }

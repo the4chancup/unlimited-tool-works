@@ -3,6 +3,7 @@
 //! tool's one handle on the platform: settings, the event sink,
 //! and requests to the shell (switch tool, notify).
 
+use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -217,6 +218,11 @@ pub struct ToolContext {
     /// The sidebar's latest exe check, shared by every clone; `None` until the sidebar's
     /// first frame, and always in the CLI.
     pes_exe_check: Arc<Mutex<Option<ExeCheck>>>,
+    /// The per-version exe checks `pes_exe_check_for` fills, each entry keyed by the
+    /// folder the settings last resolved for the version: a version's folder is listed
+    /// again once it resolves elsewhere, and `clear_pes_exe_checks` drops the map for
+    /// the window's regained focus.
+    exe_checks: Arc<Mutex<BTreeMap<PesVersion, (PathBuf, ExeCheck)>>>,
     /// The repro journal every tool's model steps record into; every clone
     /// shares it, so the bundle covers the whole session.
     recorder: Recorder,
@@ -238,6 +244,7 @@ impl ToolContext {
             requests,
             wake: Arc::new(OnceLock::new()),
             pes_exe_check: Arc::new(Mutex::new(None)),
+            exe_checks: Arc::new(Mutex::new(BTreeMap::new())),
             recorder: Recorder::default(),
         }
     }
@@ -314,17 +321,52 @@ impl ToolContext {
         *self.pes_exe_check.lock().unwrap() = Some(check);
     }
 
-    /// Points the settings at a PES folder the member picked for the selected version,
-    /// as the running-PES notice's Fix PES path does: that version's own entry, the
-    /// folder as it is, once any version has one; otherwise the main row, with the year
-    /// in the folder's name written `20**`. Then asks the shell to save; the sidebar's
-    /// exe check lists the new folder on its next frame.
-    pub fn set_pes_folder(&self, folder: &Path) {
+    /// The exe check's verdict for `version`: what `check_pes_folder` finds in the PES
+    /// folder the settings resolve for it (`CommonSettings::pes_folder_for`), the same
+    /// listing the sidebar's selector is coloured by, so a tool that works a file of one
+    /// version asks that version's folder's verdict here rather than the selector's. An
+    /// entry is kept per version keyed by the resolved folder and listed again when the
+    /// resolution changes, never per ask; `clear_pes_exe_checks` drops the map. Unlike
+    /// `pes_exe_check`, which waits for the sidebar, the ask runs the listing itself on
+    /// a miss, so there is always a verdict.
+    pub fn pes_exe_check_for(&self, version: PesVersion) -> ExeCheck {
+        let folder = self.settings.lock().unwrap().common.pes_folder_for(version);
+        let mut checks = self.exe_checks.lock().unwrap();
+        if let Some((resolved, check)) = checks.get(&version)
+            && *resolved == folder
         {
-            let mut settings = self.settings.lock().unwrap();
-            let version = settings.common.pes_version;
-            settings.common.fix_pes_folder(folder, version);
+            return *check;
         }
+        let check = crate::pes_process::check_pes_folder(version, &folder);
+        checks.insert(version, (folder, check));
+        check
+    }
+
+    /// Drops every per-version exe check so the next ask lists its folder again. The
+    /// shell calls it when the window regains focus, the trigger the sidebar's own
+    /// check re-lists on, so a folder repaired on disk is seen by the two alike.
+    pub(crate) fn clear_pes_exe_checks(&self) {
+        self.exe_checks.lock().unwrap().clear();
+    }
+
+    /// Points the settings at a PES folder the member picked for the selected version:
+    /// `set_pes_folder_for` with the common `pes_version`.
+    pub fn set_pes_folder(&self, folder: &Path) {
+        let version = self.common().pes_version;
+        self.set_pes_folder_for(folder, version);
+    }
+
+    /// Points the settings at a PES folder the member picked for `version`, as the
+    /// running-PES notice's Fix PES path does: that version's own entry, the
+    /// folder as it is, once any version has one; otherwise the main row, with the year
+    /// in the folder's name written `20**`. Then asks the shell to save; the exe check
+    /// lists the new folder on the next ask.
+    pub fn set_pes_folder_for(&self, folder: &Path, version: PesVersion) {
+        self.settings
+            .lock()
+            .unwrap()
+            .common
+            .fix_pes_folder(folder, version);
         self.request(ShellRequest::SettingsChanged);
     }
 
@@ -606,6 +648,93 @@ mod tests {
             requests_rx.try_recv().unwrap(),
             ShellRequest::SettingsChanged
         );
+    }
+
+    // A picked folder lands under the version named, wherever the selector
+    // stands: the main row takes PES 17's pick as `20**` with the selector on
+    // PES 19, and PES 19's setting is unmoved.
+    #[test]
+    fn set_pes_folder_for_stores_the_picked_folder_for_its_version() {
+        let (ctx, _events_rx, requests_rx) = context();
+        ctx.settings().lock().unwrap().common.pes_version = PesVersion::Pes19;
+        let picked = Path::new("/games/Pro Evolution Soccer 2017");
+        ctx.set_pes_folder_for(picked, PesVersion::Pes17);
+        assert_eq!(
+            PathBuf::from(ctx.common().pes_folder_path),
+            PathBuf::from("/games/Pro Evolution Soccer 20**"),
+            "the main row holds the pick with its year as 20**"
+        );
+        assert_eq!(
+            ctx.common().pes_version,
+            PesVersion::Pes19,
+            "the selector unmoved"
+        );
+        assert_eq!(
+            requests_rx.try_recv().unwrap(),
+            ShellRequest::SettingsChanged
+        );
+    }
+
+    // `pes_exe_check_for` answers each version's own folder's verdict (PES 17's
+    // folder holds its exe, PES 19's holds another version's), re-lists a version
+    // when the settings resolve a new folder for it, and lists a folder that
+    // gained its exe only after the cache's drop, never on the next ask.
+    #[test]
+    fn pes_exe_check_for_checks_each_versions_own_folder() {
+        let dir = scratch("tool_exe_check_for");
+        let games = dir.join("games");
+        std::fs::create_dir_all(games.join("PES 2017")).unwrap();
+        std::fs::write(games.join("PES 2017/PES2017.exe"), b"").unwrap();
+        let (ctx, _events_rx, _requests_rx) = context();
+        ctx.settings().lock().unwrap().common.pes_folder_path =
+            games.join("PES 20**").display().to_string();
+
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes17),
+            ExeCheck::Found,
+            "PES 17's folder holds PES2017.exe"
+        );
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes19),
+            ExeCheck::NoFolder,
+            "PES 19's folder does not exist, whatever the selector's PES 19"
+        );
+
+        // A version's resolved folder changing re-lists it: the entry given
+        // PES 19 names the folder PES2017.exe sits in.
+        ctx.settings().lock().unwrap().common.pes_folders.insert(
+            PesVersion::Pes19,
+            games.join("PES 2017").display().to_string(),
+        );
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes19),
+            ExeCheck::OtherVersion(PesVersion::Pes17),
+            "PES 19's new folder holds another version's exe"
+        );
+
+        // A folder gaining its exe between two asks reads Found only after the
+        // cache's drop (the window's regained focus): the next ask alone keeps
+        // the cached verdict.
+        let pes21 = games.join("PES 2021");
+        std::fs::create_dir_all(&pes21).unwrap();
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            ExeCheck::NoExe,
+            "an empty folder"
+        );
+        std::fs::write(pes21.join("PES2021.exe"), b"").unwrap();
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            ExeCheck::NoExe,
+            "cached: the ask does not re-list"
+        );
+        ctx.clear_pes_exe_checks();
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            ExeCheck::Found,
+            "the drop re-lists"
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

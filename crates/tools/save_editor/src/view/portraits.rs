@@ -46,7 +46,7 @@ pub(crate) struct Portraits {
     /// The PES folder `select` last pointed the source at, `None` for "no folder": an empty
     /// setting is no folder.
     folder: Option<PathBuf>,
-    /// The game `select` was last given (the sidebar's PES), held whether or not a folder is
+    /// The game `select` was last given (the open save's PES), held whether or not a folder is
     /// set or readable: the placeholder is its. `None` before the first `select`.
     version: Option<PesVersion>,
     /// The folder's reading thread, `None` when there is no folder.
@@ -95,9 +95,15 @@ impl Portraits {
         Portraits::default()
     }
 
-    /// Points the source at `pes_folder` for `version` (the sidebar's PES and the PES folder
-    /// setting, each frame); a change drops the current worker and its textures and starts a
-    /// new one when a folder is set.
+    /// The PES folder `select` last pointed the source at (`None`: no folder).
+    #[cfg(test)]
+    pub(crate) fn folder(&self) -> Option<&Path> {
+        self.folder.as_deref()
+    }
+
+    /// Points the source at `pes_folder` for `version` (the open save's PES and its
+    /// version's PES folder setting, each frame); a change drops the current worker and
+    /// its textures and starts a new one when a folder is set.
     pub(crate) fn select(&mut self, ctx: &egui::Context, pes_folder: &Path, version: PesVersion) {
         let folder = (!pes_folder.as_os_str().is_empty()).then_some(pes_folder);
         if self.folder.as_deref() == folder && self.version == Some(version) {

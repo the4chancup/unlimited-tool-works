@@ -9,8 +9,8 @@ The **File** menu lists, from the top:
   Ctrl+9 open the save of PES 2015 to PES 2019, Ctrl+0 PES 2020's and Ctrl+1 PES 2021's, from
   anywhere in the editor; with no save found for that version, they open the file picker;
 - the files you opened since the program started, the most recent first;
-- **Choose file…** (Ctrl+O), which picks any file and starts in the save folder of the PES
-  version selected in the sidebar when there is one;
+- **Choose file…** (Ctrl+O), which picks any file and starts in the folder the last save
+  was opened from when it exists, or in the newest found save's folder;
 - under a line, **Save** (Ctrl+S) and **Save as**, which write the open save (see **Saving**
   below) and stay greyed out until a save is open.
 
@@ -19,10 +19,9 @@ editor's name, and the toolbar shows `• unsaved changes` while edits wait unsa
 
 **A save from another PES version**
 
-A save from another PES version than the one selected in the sidebar opens as its own
-version, with a warning in the status bar until you dismiss it or switch. Its **Switch to
-PES 20xx** button sets the sidebar to the save's version, which also changes the game the
-other tools work with.
+A save opens and edits as its own version, whatever the sidebar's selector shows: the
+editor reads the game from the open save, so its portraits and the PES folder they are
+read from are the save's version's.
 
 **Teams and players**
 

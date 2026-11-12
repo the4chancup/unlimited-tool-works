@@ -13,6 +13,7 @@
 //! scales the whole UI (`spec/core/gui.md` "Scaling with the width"), so
 //! there is no narrow fallback.
 
+use std::path::Path;
 use std::sync::Arc;
 
 use aatf::TeamView;
@@ -52,8 +53,6 @@ const SET_FOLDER_LABEL: &str = "Set PES path";
 /// `#set-pes-folder`): a button's usual 4 would not fit beside PES
 /// 2018-2021's wider penalty box.
 const SET_FOLDER_SIDE_PADDING: f32 = 2.0;
-/// The Set PES path button's hover text.
-const SET_FOLDER_TIP: &str = "The players' portraits are read from the PES folder";
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
 /// display name, the raw name, the registered position, the thirteen
@@ -110,6 +109,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         live_aatf,
         live_suggestions,
         pes_exe_check,
+        pes_folder,
         picked_pes_folder,
         pick_folder_dialog,
         click_kind,
@@ -326,18 +326,20 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             &roster,
             illegal_formations,
         );
-        // While the PES selector is orange or red the portraits come from no
-        // folder or from another game's, so the pitch offers to set it. Drawn
-        // after the pitch, so it takes a press over the markers and no
-        // formation picture carries it.
-        if pes_exe_check.is_some_and(|check| check != ExeCheck::Found) {
+        // While the exe check of the save's version's PES folder fails the
+        // portraits come from no folder or from another game's, so the pitch
+        // offers to set it. Drawn after the pitch, so it takes a press over
+        // the markers and no formation picture carries it.
+        if let Some(check) = *pes_exe_check
+            && check != ExeCheck::Found
+        {
             let canvas =
                 egui::Rect::from_min_size(egui::pos2(pitch_left, row2_top), pitch::PITCH_BOX)
                     .shrink(1.0);
-            if set_pes_folder_button(ui, canvas, version)
+            if set_pes_folder_button(ui, canvas, version, check, pes_folder.as_deref())
                 && let Some(folder) = pick_folder_dialog()
             {
-                *picked_pes_folder = Some(folder);
+                *picked_pes_folder = Some((version, folder));
             }
         }
         let mut assigns_ui = cell(
@@ -434,7 +436,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// far above the canvas' bottom as its sides are from those two. Outlined
 /// 1 point inside its edge in the text's grey, since a plain button's fill
 /// alone reads as a patch of the grass. Answers whether it was clicked.
-fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect, version: PesVersion) -> bool {
+/// `version` is the open save's, `check` the exe check's failing verdict on
+/// `folder`, `version`'s resolved PES folder when known.
+fn set_pes_folder_button(
+    ui: &mut egui::Ui,
+    canvas: egui::Rect,
+    version: PesVersion,
+    check: ExeCheck,
+    folder: Option<&Path>,
+) -> bool {
     // The margin needs the button's width before it is laid out: its
     // label in the button text style, between its two side paddings.
     let label_width = ui
@@ -460,7 +470,7 @@ fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect, version: PesVers
     corner.spacing_mut().button_padding.x = SET_FOLDER_SIDE_PADDING;
     let response = corner
         .button(SET_FOLDER_LABEL)
-        .on_hover_text(SET_FOLDER_TIP);
+        .on_hover_text(set_folder_tip(version, check, folder));
     let visuals = &corner.visuals().widgets;
     corner.painter().rect_stroke(
         response.rect,
@@ -469,6 +479,27 @@ fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect, version: PesVers
         egui::StrokeKind::Inside,
     );
     response.clicked()
+}
+
+/// The Set PES path button's hover text: the version whose PES folder the
+/// portraits are read from (the open save's), then what the check found in
+/// `folder`, worded as the sidebar's selector words it.
+fn set_folder_tip(version: PesVersion, check: ExeCheck, folder: Option<&Path>) -> String {
+    let tip = format!("The players' portraits are read from the {version} folder.");
+    let Some(folder) = folder else {
+        return tip;
+    };
+    let folder = folder.display();
+    let found = match check {
+        ExeCheck::Found => return tip,
+        ExeCheck::OtherVersion(other) => format!(
+            "{folder} holds PES{}.exe, which is a different version's.",
+            other.year()
+        ),
+        ExeCheck::NoExe => format!("There is no PES exe in {folder}."),
+        ExeCheck::NoFolder => format!("{folder} does not exist."),
+    };
+    format!("{tip} {found}")
 }
 
 /// The preset bar's Copy/swap menu (the draft's `presetMenu`): acting on

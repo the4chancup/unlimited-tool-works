@@ -96,15 +96,21 @@ impl Default for CommonSettings {
 }
 
 impl CommonSettings {
-    /// The PES installation folder: `pes_version`'s `pes_folders` entry taken as written
-    /// (no `**` expansion) when it has one; otherwise `pes_folder_path` with every `**`
-    /// replaced by the two-digit number of `pes_version` (`21` for PES 2021).
+    /// The PES installation folder `pes_folder_for` resolves for `pes_version`.
     pub fn pes_folder(&self) -> PathBuf {
-        if let Some(folder) = self.pes_folders.get(&self.pes_version) {
+        self.pes_folder_for(self.pes_version)
+    }
+
+    /// The PES installation folder for `version`: its `pes_folders` entry taken as written
+    /// (no `**` expansion) when it has one; otherwise `pes_folder_path` with every `**`
+    /// replaced by `version`'s two-digit number (`21` for PES 2021). A tool working a file
+    /// of one version asks for that version's folder here, not for the selector's.
+    pub fn pes_folder_for(&self, version: PesVersion) -> PathBuf {
+        if let Some(folder) = self.pes_folders.get(&version) {
             return PathBuf::from(folder);
         }
-        let version = self.pes_version.number().to_string();
-        PathBuf::from(self.pes_folder_path.replace("**", &version))
+        let number = version.number().to_string();
+        PathBuf::from(self.pes_folder_path.replace("**", &number))
     }
 
     /// Points the settings at a PES folder for `version`, from the running-PES
@@ -340,6 +346,26 @@ mod tests {
             at_21.pes_folder(),
             PathBuf::from("/a/b/PES20**"),
             "an override holding ** is not expanded"
+        );
+    }
+
+    // `pes_folder_for` resolves any version's folder, whatever `pes_version`
+    // holds: the version's own row first, the main row's `**` expansion else.
+    #[test]
+    fn pes_folder_for_resolves_the_asked_versions_folder() {
+        let mut at_21 = settings(PesVersion::Pes21, "/games/Pro Evolution Soccer 20**");
+        at_21
+            .pes_folders
+            .insert(PesVersion::Pes17, "/elsewhere/PES17".to_owned());
+        assert_eq!(
+            at_21.pes_folder_for(PesVersion::Pes17),
+            PathBuf::from("/elsewhere/PES17"),
+            "PES 17's own row, taken as written"
+        );
+        assert_eq!(
+            at_21.pes_folder_for(PesVersion::Pes19),
+            PathBuf::from("/games/Pro Evolution Soccer 2019"),
+            "PES 19 falls back to the main row's resolution"
         );
     }
 

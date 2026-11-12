@@ -1,8 +1,9 @@
 //! The toolbar's File menu (the draft's `fileMenu`): first the opens, the
 //! saves discovery finds under Documents for every version, one click
 //! each, then the files opened earlier in this run of the program, then
-//! the file picker, which starts in the selected version's save folder;
-//! then Save and Save as. The opens' shortcuts (the draft's `OPEN_KEYS`)
+//! the file picker, which starts in the folder the last save was opened
+//! from, or the newest discovered save's; then Save and Save as. The opens'
+//! shortcuts (the draft's `OPEN_KEYS`)
 //! open a version's newest save, or the picker, with the menu closed.
 
 use std::path::{Component, Path, PathBuf};
@@ -25,7 +26,8 @@ pub(crate) type Discover = Box<dyn Fn(PesVersion) -> Vec<SavefileCandidate>>;
 pub(crate) type OpenDialog = Box<dyn FnMut(Option<&Path>) -> Option<PathBuf>>;
 
 /// `Choose file…`'s tooltip.
-const CHOOSE_FILE_TIP: &str = "Opens in the selected version's save folder when it exists";
+const CHOOSE_FILE_TIP: &str =
+    "Opens in the folder the last save was opened from, or the newest found save's";
 
 /// Discovery under the shell's Documents folder.
 #[cfg(not(test))]
@@ -82,16 +84,10 @@ pub(super) enum Write {
 pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
     let save_open = view.session.is_some();
     let menu = menu_button(ui, "File", |ui| {
-        let discovered = view.discovered.get_or_insert_with(|| {
-            PesVersion::ALL
-                .into_iter()
-                .flat_map(|version| {
-                    (view.discover)(version)
-                        .into_iter()
-                        .map(move |candidate| (version, candidate))
-                })
-                .collect()
-        });
+        if view.discovered.is_none() {
+            view.discovered = Some(discover_all(view));
+        }
+        let discovered = view.discovered.as_ref().expect("filled above");
         let mut chosen = None;
         let mut previous = None;
         for (version, candidate) in discovered.iter() {
@@ -130,11 +126,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
             .on_hover_text(CHOOSE_FILE_TIP)
             .clicked()
         {
-            let selected = discovered
-                .iter()
-                .find(|(version, _)| *version == view.pes_version)
-                .map(|(_, candidate)| candidate);
-            chosen = Some(choose_file(selected));
+            chosen = Some(choose_file(view.last_folder.as_deref(), discovered));
         }
         ui.separator();
         let mut write = None;
@@ -197,7 +189,11 @@ pub(super) fn open_shortcut(view: &mut SaveView, shortcut: Shortcut) {
     };
     let pending = match newest {
         Some(candidate) => Pending::Open(candidate.path),
-        None => choose_file((view.discover)(view.pes_version).first()),
+        None => {
+            // The picker's start folder asks the newest discovered save of
+            // whatever version.
+            choose_file(view.last_folder.as_deref(), &discover_all(view))
+        }
     };
     request(view, pending);
 }
@@ -235,12 +231,35 @@ fn shortcut_text(version: PesVersion) -> String {
     format!("Ctrl+{}", shortcut_key(version).name())
 }
 
-/// `Choose file…`'s request: the picker, starting in the folder of
-/// `selected`, the selected version's newest discovered save, if any.
-fn choose_file(selected: Option<&SavefileCandidate>) -> Pending {
+/// Every version's saves under Documents, each with its version, in
+/// `PesVersion::ALL`'s order (`view.discover`, stubbed in the tests).
+fn discover_all(view: &SaveView) -> Vec<(PesVersion, SavefileCandidate)> {
+    PesVersion::ALL
+        .into_iter()
+        .flat_map(|version| {
+            (view.discover)(version)
+                .into_iter()
+                .map(move |candidate| (version, candidate))
+        })
+        .collect()
+}
+
+/// `Choose file…`'s request, the picker the Open shortcuts fall back to too:
+/// starting in `last_folder`, the folder the last save was opened from, while
+/// it exists, else in `discovered`'s newest save's folder, else in no folder.
+fn choose_file(
+    last_folder: Option<&Path>,
+    discovered: &[(PesVersion, SavefileCandidate)],
+) -> Pending {
     Pending::OpenPicker(
-        selected
-            .and_then(|candidate| candidate.path.parent())
+        last_folder
+            .filter(|folder| folder.is_dir())
+            .or_else(|| {
+                discovered
+                    .iter()
+                    .max_by_key(|(_, candidate)| candidate.modified)
+                    .and_then(|(_, candidate)| candidate.path.parent())
+            })
             .map(Path::to_path_buf),
     )
 }

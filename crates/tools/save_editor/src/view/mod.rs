@@ -48,7 +48,7 @@ use studio_core::widgets::{
     add_enabled, collapsing_header, menu_button, modal, modal_buttons, step_number, toolbar_framed,
     toolbar_separator,
 };
-use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, Recorder, RunningPes};
+use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
 
 use crate::session::Session;
 use crate::session::journal;
@@ -140,10 +140,12 @@ pub(crate) struct SaveView {
     /// the most recent first: the File menu's opens' middle group. Not a
     /// setting.
     recents: Vec<PathBuf>,
-    /// The sidebar's PES version, refreshed from the common settings each
-    /// `Tool::view` frame: `Choose file…` starts in its save folder. PES 21
-    /// in the tests' view-only frames until a test sets it.
-    pub(crate) pes_version: PesVersion,
+    /// The folder the last save was opened from: `Tool::view` reads the
+    /// `last_folder` setting into it on its first frame and writes it back
+    /// when an open changes it: `Choose file…` and the Open shortcuts' picker
+    /// start there while the folder exists. `None` in the tests' view-only
+    /// frames until a test sets it.
+    pub(crate) last_folder: Option<PathBuf>,
     /// A refusal to show until dismissed (an open the save refused).
     refusal: Option<Refusal>,
     /// The `aatf_ruleset` setting: `Tool::view` refreshes it each frame,
@@ -199,23 +201,22 @@ pub(crate) struct SaveView {
     /// Set PES path button (`rfd`, stubbed in tests — the same pattern
     /// as `open_save_dialog`).
     pick_folder_dialog: generate::PickFolderDialog,
-    /// The sidebar's PES selector's exe check, refreshed from the context
-    /// each `Tool::view` frame: while it is `Some` and not `Found`, the
-    /// pitch carries the Set PES path button. `None` in the tests'
-    /// view-only frames until a test sets it.
+    /// The exe check of the open save's version's PES folder, refreshed from
+    /// the context each `Tool::view` frame: while it is `Some` and not
+    /// `Found`, the pitch carries the Set PES path button. `None` in the
+    /// tests' view-only frames until a test sets it.
     pub(crate) pes_exe_check: Option<ExeCheck>,
-    /// The folder the Set PES path button's picker returned, drained by
-    /// `Tool::view` into `ctx.set_pes_folder` (the shell owns the
-    /// settings).
-    pub(crate) picked_pes_folder: Option<PathBuf>,
+    /// The PES folder the open save's version's folder resolves to, refreshed
+    /// with `pes_exe_check`: the Set PES path button's tooltip names it.
+    /// `None` in the tests' view-only frames until a test sets it.
+    pub(crate) pes_folder: Option<PathBuf>,
+    /// The save's version and the folder the Set PES path button's picker
+    /// returned, drained by `Tool::view` into `ctx.set_pes_folder_for` (the
+    /// shell owns the settings).
+    pub(crate) picked_pes_folder: Option<(PesVersion, PathBuf)>,
     /// The status-bar notice the last action raised; `Tool::view` forwards
     /// it to the shell's `notify` after the frame.
     pub(crate) notice: Option<Notice>,
-    /// The version warning lives: set by every open, so a new save starts
-    /// it over, and cleared once the member has seen it (its action, its
-    /// dismiss, or another notice taking the bar from it). The selector
-    /// matching the save only hides it: it shows again when they part.
-    pub(crate) version_warning: bool,
     /// The Live AATF toolbar toggle's state: `Tool::view` refreshes it
     /// from the `live_aatf` setting and writes the setting back when the
     /// toggle changes it; off in the tests' view-only frames.
@@ -450,7 +451,7 @@ impl SaveView {
             discover: file_menu::default_discover(),
             discovered: None,
             recents: Vec::new(),
-            pes_version: PesVersion::Pes21,
+            last_folder: None,
             refusal: None,
             aatf_ruleset: rules::FIRST_BUILTIN.to_owned(),
             imported: Vec::new(),
@@ -469,9 +470,9 @@ impl SaveView {
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             pes_exe_check: None,
+            pes_folder: None,
             picked_pes_folder: None,
             notice: None,
-            version_warning: false,
             live_aatf: false,
             live_suggestions: false,
             live_window: false,
@@ -498,7 +499,7 @@ impl SaveView {
     }
 
     /// Points the pitch's portrait source at `pes_folder` for `version`: `Tool::view` calls it
-    /// each frame with the sidebar's PES and the PES folder setting, as it refreshes `hide_ids`.
+    /// each frame with the open save's PES and its version's PES folder, as it refreshes `hide_ids`.
     pub(crate) fn select_portraits(
         &mut self,
         ctx: &egui::Context,
@@ -552,9 +553,9 @@ impl SaveView {
                     });
                 self.comparator.reset(session.version(), &self.recorder);
                 file_menu::push_recent(&mut self.recents, path);
+                self.last_folder = path.parent().map(Path::to_path_buf);
                 self.session = Some(session);
                 self.generation += 1;
-                self.version_warning = true;
                 // A view setting, not the save's: `scroll_names` is the
                 // member's, so it survives the open (the rest is the
                 // save's: back to preset 1 and kick-off).
@@ -585,32 +586,19 @@ impl SaveView {
         }
     }
 
-    /// The version warning while it lives and the sidebar's `selector`
-    /// names another version than the open save's: a Warning whose action
-    /// switches the selector to the save's version. `None` otherwise.
-    pub(crate) fn version_notice(&self, selector: PesVersion) -> Option<Notice> {
-        let save = self.session.as_ref()?.version();
-        if !self.version_warning || selector == save {
-            return None;
-        }
-        Some(Notice {
-            text: version_warning_text(selector, save),
-            kind: NoticeKind::Warning,
-            action: Some(NoticeAction {
-                label: format!("Switch to {save}"),
-                effect: ActionEffect::SwitchVersion(save),
-            }),
-        })
+    /// The open save's version, `None` with none open: `Tool::view` reads it
+    /// for the per-version asks (the exe check, the PES folder, the pick's
+    /// store): the editor follows the save's version, never the selector.
+    pub(crate) fn save_version(&self) -> Option<PesVersion> {
+        self.session.as_ref().map(Session::version)
     }
-}
 
-/// The version warning's sentence: the save opened under its own version,
-/// whatever the sidebar's selector names.
-pub(crate) fn version_warning_text(selector: PesVersion, save: PesVersion) -> String {
-    format!(
-        "Although the sidebar is set to {selector}, this save is from {save}, so the editor \
-         will keep treating it as a {save} save."
-    )
+    /// The PES folder the portraits read, `None` for "no folder" (the
+    /// Set PES path tests' premise).
+    #[cfg(test)]
+    pub(crate) fn portrait_folder(&self) -> Option<&Path> {
+        self.portraits.folder()
+    }
 }
 
 /// The player list's column, the draft's `.plist`: the rows' frame and
