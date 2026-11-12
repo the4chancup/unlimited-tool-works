@@ -1681,6 +1681,12 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 3, 2026-11-12 (`d617bf3a`, Opus): the `Updated to` notice
       (`last_run_version`), the help's Updates and What's new chapters (ST-UPD-06), the
       offer's tooltip naming the app and the version
+    - [x] review round 1 (tier 1, SWE-2), 2026-11-12 (`caf88b0f`, Opus): 23 of 43 concerns
+      accepted: Update now refused when another window replaced the program, Cancel read
+      once more before the swap and disabled once clicked, a check interval of 0 read as a
+      minute, the name lookup's timeout, and the endings and dialog moves no test reached
+    - [ ] the review loops' rest: SWE-2 round 2 over `caf88b0f`, then Carbon (from
+      2026-11-15), then Astra
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
