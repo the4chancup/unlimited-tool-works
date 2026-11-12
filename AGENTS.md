@@ -104,7 +104,8 @@ your question may already be listed, with the phase in which it gets resolved.
 - **Legacy tools are evidence, not source.** Red, Blue, 4ccEditor, Midcupping, Rigdio, SEN:P-AI,
   the converters and the Blender addons define *what* must be produced (formats, observable
   behavior), never *how* the Rust code is organized: no line-by-line translation, no copied module
-  structure. Red's CPK output is the parity golden standard. Marco's reverse engineering of the
+  structure. Red's CPK output is the parity golden standard; a phase's compile of the library is
+  measured against our own last checkpoint, not Red (`RUNBOOK.md` "Phases and releases"). Marco's reverse engineering of the
   PES 2021 executable (`C:/Data/4cc/Tools_Marco/GodotFootball/docs/re/`, index `README.md`;
   save records, kits, faces, formats, each claim tagged observed or inferred) is evidence of
   the same kind, for PES 2021 only.

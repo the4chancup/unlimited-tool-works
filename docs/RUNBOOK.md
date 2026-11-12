@@ -523,8 +523,10 @@ machine (found through the Everything index, archives opened) run through read, 
 round trip and `check`, tallied by outcome, each failing class diagnosed before it is fixed or
 recorded as a refusal, and re-run after every fix with a regression check (`scripts/census/`: the file list, the tally
 and the regression check; its README says how a run fits them). A phase that changes the Team compiler or the Export upgrader also reruns the
-library parity against Red (`scripts/library_parity/`, `plans/team_compiler/testing.md`), each
-new difference class diagnosed. Fixtures and mutation runs only test the files someone thought to add; the
+upgrade census and our compile of the library, compared entry by entry with the last checkpoint
+(`scripts/library_parity/`, its README's rerun order; `spec/team_compiler/testing.md`
+"Testing: parity against Red (adapted from Blue)"), each changed entry traced to a commit of
+the phase or fixed; Red is not run. Fixtures and mutation runs only test the files someone thought to add; the
 first census found about 1900 community `.model` files the reader refused. A census of a
 bit-packed format also tallies the bits real records set that no schema field covers: a round
 trip keeps them, so only this tally shows a field modeled too narrow (one found PES 18's

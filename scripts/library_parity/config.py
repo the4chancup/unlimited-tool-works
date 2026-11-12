@@ -8,10 +8,11 @@ import os
 REPO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
 # Where every run writes (gitignored scratch): the census under `census/`, the library run
-# under `library/`.
+# under `library/`, our own compile's checkpoints under `checkpoints/`, one folder per tag.
 WORK = os.path.join(REPO, ".tmp", "library_parity")
 CENSUS_DIR = os.path.join(WORK, "census")
 LIBRARY_DIR = os.path.join(WORK, "library")
+CHECKPOINT_DIR = os.path.join(WORK, "checkpoints")
 
 # The Red checkout the library run copies for each export, and the commit it must be at (`main`,
 # 4.4.0): Red's output is the parity standard, so a run against another commit is no comparison.

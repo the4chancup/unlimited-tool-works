@@ -41,6 +41,7 @@ test:
     {{script_test}} scripts/drafts/bundle_drafts_test.py
     {{script_test}} scripts/drafts/draft_compare_test.py
     {{script_test}} scripts/census/census_test.py
+    {{script_test}} scripts/library_parity/checkpoint_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
 gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals (commit-messages base)
@@ -75,6 +76,7 @@ test-changed base="HEAD":
     {{script_test}} scripts/drafts/bundle_drafts_test.py
     {{script_test}} scripts/drafts/draft_compare_test.py
     {{script_test}} scripts/census/census_test.py
+    {{script_test}} scripts/library_parity/checkpoint_test.py
 
 # The GPU BC7 encoder's tests, ignored by `test` because they need a Vulkan or Metal device and
 # no CI runner has one: run by hand before landing a change to `dds_convert`'s `gpu` module.

@@ -16943,3 +16943,45 @@ gates run; only "main can be pushed" still waits for a green run over the latest
 commit. The cost is disk, a second full `target/`: the maintainer lowered the floor of free
 space on C: from 60 to 40 GiB for it. `RUNBOOK.md` "How the work runs" gained the
 paragraph.
+
+## 2026-11-12 — team_compiler, process — the library's compile is measured against our own checkpoints, not Red
+Decision (the maintainer, 2026-11-09, the shape the lead's; 0.0.2-chk): a phase close that
+changes the Team compiler or the Export upgrader reruns the upgrade census and our compile of
+the library alone, lists every entry of every CPK written by name, size and hash
+(`scripts/library_parity/checkpoint.py write`), and compares the list with the last
+checkpoint's (`checkpoint.py diff`), inputs matched by path. Each entry added, removed or
+changed is traced to a commit of the phase that meant it, or is a defect; the new list is
+then the next phase's checkpoint. The first checkpoint, `p11`, is the output of the last run
+against Red (`3c512628`), written again with that run's frozen binary: 419 of that run's 469
+inputs are still on disk (37,407 entries over the 234 that compile), and each one's CPKs hash
+the same as that run's, so the compile repeats byte for byte. Red is run only for a question about what
+the old tool did, at a checkpoint of its own. The committed tracer cases against Red stay as
+they are.
+Why: a checkpoint, not Red at every run, because parity was proven while the core was built
+and the output has since diverged by design in some thirty classes; each run against Red
+attributes every line to those classes again, which costs more with every intended change
+and says nothing new. Hashes, not the compiled output, because a changed entry is diagnosed by
+building the checkpoint's commit in a worktree and compiling that input again, so nothing
+needs keeping but the list. Entries are listed through an extraction by the `cpk` crate's
+`cpk_list` example and hashed by the script, not by a new Rust tool, because the example
+already reads nested archives and no code had to change.
+Plan: `spec/team_compiler/testing.md` "Testing: parity against Red (adapted from Blue)" (the
+library paragraphs), `scripts/library_parity/README.md`, `RUNBOOK.md` "Phases and releases",
+`AGENTS.md` "Fundamental concepts".
+
+## 2026-11-12 — save_editor — Ctrl+C puts a Team TOML document on the system clipboard, so a copy pastes across windows and saves
+Decision (the lead, on the maintainer's ask of 2026-11-03 "Ctrl+C/Ctrl+V across instances, if
+possible"; 0.0.2-clip): it is possible, and the copy becomes text. Ctrl+C writes to the
+system clipboard a Team TOML document holding only what was copied (a player's stats keys, the
+`[tactics]` table, `[tactics.preset_1]` or `[tactics.preset_1.formation_1]`) under two comment
+lines, one naming it for a person and one naming its kind. Ctrl+V parses the text the window
+is handed and writes what each kind's paste wrote before. The editor's own in-memory clipboard
+goes, and with it the rule that opening another save empties it: a copy now pastes into
+another save, in the same window or another (SE-GUI-72).
+Why: text on the system clipboard, not a second channel between processes, because the window
+is already handed that text on Ctrl+V and nothing else crosses two instances without new
+machinery. Team TOML, not the records' bytes, because the two saves may be of different PES
+versions and the document's import already converts, and because it is a format the editor
+reads and writes today. One path for a paste, not the in-memory copy kept beside the text,
+because two paths would have to be kept writing the same thing.
+Plan: `plans/save_editor.md` "Editing UI" (the Ctrl+C and Ctrl+V bullet), SE-GUI-72.

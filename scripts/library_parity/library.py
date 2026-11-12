@@ -207,12 +207,13 @@ def clear_readonly(function, path, _error):
 
 
 def remove_scratch(target):
-    """Removes `red/<n>` or `jobs/<n>/up` or `jobs/<n>/out`, which this run created, and nothing
-    else; retries while another process (an antivirus scan) holds a just-written file."""
+    """Removes `red/<n>` or `jobs/<n>/up`, `out` or `entries` (a checkpoint's extraction), which
+    this run created, and nothing else; retries while another process (an antivirus scan) holds
+    a just-written file."""
     resolved = os.path.realpath(target)
     parent = os.path.dirname(resolved)
     if os.path.dirname(parent) == os.path.realpath(JOBS):
-        assert os.path.basename(resolved) in ("up", "out"), resolved
+        assert os.path.basename(resolved) in ("up", "out", "entries"), resolved
         assert os.path.basename(parent).isdigit(), resolved
     else:
         assert parent == os.path.realpath(RED_COPIES), resolved
@@ -229,7 +230,10 @@ def remove_scratch(target):
             time.sleep(0.5)
 
 
-def run_one(index, path, exe, parity_exe, worker):
+def run_ours(index, path, exe, worker):
+    """Upgrades input `index` and compiles the result into `jobs/<index>/out/`. Returns the
+    upgrade's exit code, the PES version compiled for (None when the upgrade wrote no single
+    export), the compile's outcome, its seconds and our CPKs' names."""
     job = os.path.join(JOBS, str(index))
     assert not os.path.exists(job), f"{job} exists: an earlier run's"
     up = os.path.join(job, "up")
@@ -243,7 +247,7 @@ def run_one(index, path, exe, parity_exe, worker):
     written = os.listdir(up)
     if len(written) != 1:
         remove_scratch(up)
-        return (index, path, "-", "-", 0.0, "", up_code, f"no single upgraded export: {written}", 0.0, "")
+        return up_code, None, f"no single upgraded export: {written}", 0.0, []
     upgraded = os.path.join(up, written[0])
     version = PREFOX_VERSION if has_model(upgraded) else FOX_VERSION
     bin_exe, output = prepare_bin(exe, worker, version)
@@ -257,6 +261,16 @@ def run_one(index, path, exe, parity_exe, worker):
     ids = ids_lines(up_output, compile_output)
     with open(os.path.join(job, "ids.tsv"), "w", encoding="utf-8", newline="\n") as handle:
         handle.write("".join(line + "\n" for line in ids))
+    return up_code, version, outcome, seconds, ours
+
+
+def run_one(index, path, exe, parity_exe, worker):
+    job = os.path.join(JOBS, str(index))
+    up = os.path.join(job, "up")
+    out = os.path.join(job, "out")
+    up_code, version, outcome, seconds, ours = run_ours(index, path, exe, worker)
+    if version is None:
+        return (index, path, "-", "-", 0.0, "", up_code, outcome, 0.0, "")
 
     red_target = os.path.join(RED_COPIES, str(index))
     setup_red(red_target, version, path)

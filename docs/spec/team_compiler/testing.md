@@ -53,24 +53,42 @@ these (the fixture's README lists each):
 - the team side written for the bins on PES 18-21, the referee kit configs being entries of
   `UniformParameter.bin`.
 
-Beyond the tracers, whose small trees are committed, the parity over the maintainer's whole
+Beyond the tracers, whose small trees are committed, the compile of the maintainer's whole
 library of old exports is a **measurement rerun at each phase close** that changes the Team
-compiler or the Export upgrader, not a committed test. Every input the upgrade census upgrades
-clean is upgraded, compiled, compiled by Red from a fresh copy, and compared by `red_parity`
-(`team_compiler/examples/red_parity.rs`, one classified line per Red entry). Every line is
-attributed to an intentional class or a defect (`scripts/library_parity/classes.md`), a new
-class diagnosed before the phase closes.
+compiler or the Export upgrader, not a committed test. It is measured against our own last
+run, a **checkpoint**, not against Red. Every input the upgrade census upgrades clean is
+upgraded and compiled, and every entry of every CPK written is listed by name, size and hash
+(`scripts/library_parity/checkpoint.py`). The list is compared with the last checkpoint's,
+entry by entry. Each entry added, removed or changed is traced to a commit of the phase that
+meant it, or is a defect and becomes a worklog step. Once every difference is accounted for,
+the new list is the checkpoint the next phase is measured against.
 
-We do not commit a hash manifest of Red's trees as a fixture, because:
+We compare with a checkpoint, not with Red at every run, because parity with Red was proven
+while the compiler's core was built, and the output has diverged from Red's by design since,
+in some thirty classes (`scripts/library_parity/classes.md`). Every further run against Red
+has to attribute each of its lines to one of those classes again, which grows costlier with
+every intended change and says nothing new about Red. A checkpoint shows only what changed
+since the last run, which is what a phase has to answer for. The first checkpoint is the
+output of the last run measured against Red, with every line attributed (commit `3c512628`).
+
+Red is run again only for a question about what the old tool did (a member's report, the
+first build of a newly ported area), as the library run it was: every clean input also
+compiled by Red from a fresh copy and compared by `red_parity`
+(`team_compiler/examples/red_parity.rs`, one classified line per Red entry), every line
+attributed to a class or a defect. Such a run starts a checkpoint of its own.
+
+A checkpoint keeps hashes, not the compiled output. An entry that changed is diagnosed by
+building the checkpoint's commit in a worktree and compiling that one input again with both
+builds. The checkpoints are not committed either:
 
 - the inputs are members' exports on the maintainer's machine alone (several hundred, several
   GB), so no such test could run in CI;
-- our output differs from Red's by design in some thirty classes, so a manifest of either output
-  would be a golden that every intentional change rewrites, while the attribution, which needs
-  judgement on each new class, is what the run is for.
+- a committed list would be a golden that every intentional change rewrites, while tracing
+  each change to its commit, which needs judgement, is what the run is for.
 
-One run takes about 20 minutes of Red and 17 of ours over 250 exports, with three workers. The
-scripts and the order of a rerun are under `scripts/library_parity/` (its `README.md`).
+One run takes about 17 minutes of ours over 250 exports, with three workers, and a run against
+Red about 20 more. The scripts and the order of a rerun are under `scripts/library_parity/`
+(its `README.md`).
 
 Intentional differences must be accounted for:
 

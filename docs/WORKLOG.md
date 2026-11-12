@@ -16,11 +16,13 @@ is in `AGENTS.md` ("Working documents").
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
 2. The illegal formation check (0.0.2c): its six clauses are set and the game's own
-   formations pass them; the looks in game come next, then the slice.
-3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -clip, and -inst, whose
-   cause is being looked for with the maintainer); -drift and -statlbl are in.
+   formations pass them; the looks in game are running (a SWE-2 sidekick, 2026-11-12), then
+   the slice.
+3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
+   SE-GUI-72; its slice comes next), -undo (waits on `QUESTIONS.md`), and -inst, whose
+   cause is being looked for with the maintainer; -drift and -statlbl are in.
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
-5. The library checkpoints (0.0.2-chk), then the cut.
+5. The cut. The library checkpoints (0.0.2-chk) are in.
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1809,7 +1811,12 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted; fixes `1c765193` and the commit after it). Carbon owed
     - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
-    if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
+    if a design for changes spanning many fields holds (the maintainer, 2026-11-03).
+    Looked at 2026-11-12: a row holds its field and old value (`PlayerDiff`, `TeamDiff`), so
+    writing one back is a plain edit; a reorder trades two whole records between their ids
+    and fills the list with both players' fields, where one row written back mixes the two.
+    Waits on `QUESTIONS.md` "An X on a row of the unsaved changes list, after a player was
+    moved" (read from the plan and the code, no list opened after a move)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
@@ -1847,7 +1854,10 @@ briefs, review loops, gates and mutation runs as for any step.
       no test reached removed (`9d12e100`). The review rounds are done
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
-    2026-11-03)
+    2026-11-03). Possible, as text: Ctrl+C puts a Team TOML document of the copy on the
+    system clipboard, which Ctrl+V parses (DECISIONS 2026-11-12; `plans/save_editor.md`
+    "Editing UI", SE-GUI-72; SE-GUI-56 lost its "another save empties the clipboard" case)
+    - [ ] the slice (Opus, `.tmp/0_0_2/clip/brief_clip.md`), then its review rounds (tier 2)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2027,28 +2037,15 @@ briefs, review loops, gates and mutation runs as for any step.
       `home`'s 2026-11-15 reset. Astra A-ux1: 2 accepted (a test of `write_batches`' finish
       times, the plan's `duplicate_path` timing), its loop ended. SWE-2 S-ux1 r1 (three
       parts): 1 accepted (TC-CLI-13's `check` test asserts no stderr), its loop ended
-  - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
-    parity with Red was proven once the core was built; divergence is expected since, and
-    accounting for it at every run grows costlier). *Lead*, the shape (veto any):
-    - the p11 run (`3c512628`, every line attributed) is the last measured against Red; its
-      commit's outputs become checkpoint 1: per job, the CPK entries' names and hashes, kept
-      under `.tmp/library_parity/checkpoints/<tag>/` (machine-local, as the inputs are)
-    - a phase close reruns the upgrade census (`regress_check.py` already compares against the
-      previous tag) and our compile alone, diffed entry by entry against the last checkpoint;
-      each changed entry is traced to a commit of the phase (intended: the checkpoint is
-      re-pinned, the diff's summary in the commit) or is a defect (a worklog step). Red is not
-      run, and `classes.md`'s thirty-odd Red classes are not re-attributed
-    - an entry is diagnosed by rebuilding the checkpoint's commit in a worktree and rerunning
-      that job, so the checkpoint keeps hashes, not GBs of output
-    - Red comes back only for a question about what the old tool did (a member's report, a
-      newly ported area's first build), at a checkpoint of its own
-    - the committed tracer cases (`tests/parity.rs` against `red/`) stay as they are: small,
-      run in CI, and `parity.rs` changed in 4 commits since 2026-10-20 (22 in all); they become checkpoint
-      goldens of our own output the first time keeping one costs more than re-pinning
-    Lands in `spec/team_compiler/testing.md` (the library paragraph's rationale),
-    `scripts/library_parity/` (a `checkpoint.py` writing and diffing manifests, the README's
-    rerun order), RUNBOOK.md "Closing a phase" and AGENTS.md's one sentence. After poc12 and
-    the PoC; until then no Red run is due (the next is a phase close's)
+  - [x] 0.0.2-chk 2026-11-12 (the lead): the library's compile is measured against our own
+    checkpoints, not Red (DECISIONS 2026-11-12; `spec/team_compiler/testing.md`, the
+    library paragraphs): `scripts/library_parity/checkpoint.py` (`write`, `diff`), the
+    README's rerun order, RUNBOOK and AGENTS. Checkpoint `p11` written with the p11 run's
+    frozen binary (`.tmp/library_parity/checkpoints/p11/`): 419 of its 469 inputs are
+    still on disk (45 of the 50 gone were under `C:/Data/4cc/Lab/VGL26`), every CPK hashing as in
+    that run. `library.py`, split for it, gives the p11 run's rows again on two inputs,
+    against a clean clone of Red (the maintainer's checkout has an uncommitted
+    `teams_list.txt`, which the script refuses). No review round (scripts and docs)
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): whole
     withdrawn areas in `docs/spec/withdrawn_ids.md`, runs of withdrawn IDs as range lines
   - [x] 0.0.2a JPEG XL sources (DECISIONS 2026-10-30; TC-TEX-22): `jxl` =0.8.0 decoded
