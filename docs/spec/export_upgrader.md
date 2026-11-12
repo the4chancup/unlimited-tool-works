@@ -1,10 +1,10 @@
-# Unlimited Tool Works: Export upgrader plan
+# Unlimited Tool Works: Export upgrader spec
 
 The Export upgrader (`crates/tools/export_upgrader`) migrates exports from the old
 format (the AET layout, `GLOSSARY.md` "AET") to the Studio player-folder format defined in the
-[Team compiler plan](team_compiler/README.md): the compiler only supports the Studio format,
+[Team compiler spec](team_compiler/README.md): the compiler only supports the Studio format,
 so this is the one-time migration path for every existing export.
-Platform context is in the [core plan](core/README.md).
+Platform context is in the [core spec](core/README.md).
 
 ---
 
@@ -244,7 +244,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
    - The binary config is converted to `config.toml` via `libs/kit_config` (texture-name fields
      dropped: the compiler re-derives them from the textures present; undecoded bits preserved
-     in the `[unknown]` table, see the [Kit config editor plan](kit_config_editor.md)).
+     in the `[unknown]` table, see the [Kit config editor spec](kit_config_editor.md)).
    - Kit textures are renamed from the old `u0XXXp1_…` to `u0XXXp9_…` and `u0XXXg1_…` patterns
      (into `p1/` to `p9/` and `g1/`; a `u0XXXg2` and up, no Studio slot, is a leftover as below)
      to the generic `kit` prefix (`kit.dds`, `kit_mask.dds`, `kit_chest.dds`, …) that the
@@ -253,7 +253,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
      per line. The Note's kit entry holds both on one line, `211 74 79 - 162 62 77 - 3` or
      `#D34A4F - #A23E4D - 3`. Its trailing icon number, when present, from 0 to 23 and not the
      default 3, becomes that kit's icon marker, `icon_<N>` ("Marker names" in the Aesthetics
-     export plan). One past 23, which Red replaced by the default, writes none.
+     export spec). One past 23, which Red replaced by the default, writes none.
 
    **Reading the Note.** The Note's bytes are read as UTF-8, a byte sequence that is not UTF-8
    reading as the replacement character. Every token the grammar below reads is ASCII, and real
@@ -401,7 +401,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    they are: the author can hoist by hand once the `all/` folder exists.
 
    **No kit layout marker.** No kit layout marker (`pre-fox` / `fox`, see "Kit layout marker" in
-   the [Aesthetics export plan](aesthetics_export/README.md)) is ever written. Old kits have
+   the [Aesthetics export spec](aesthetics_export/README.md)) is ever written. Old kits have
    passed through several export converters unchanged, so nothing in the files says which engine
    they were drawn for, and a wrong guess would silently displace a correct kit's socks. Authors
    add the marker when they compile across engines.
@@ -453,7 +453,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
    The key is also the output's first word ("CLI"). The complete folder name remains the
    display/source name, and the Studio output carries no Note (the format has no `Team:` line;
-   see the Team compiler plan's "Root files").
+   see the Aesthetics export spec's "Root files").
 7. **Carries over** Portraits, Collars, and Common, and **converts the Logo folder**.
 
    **Portraits.** An old portrait is named `player_???NN.dds` (the AET page's
@@ -596,7 +596,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    A link stands for the `Common/` file at its own path below the root of the model's player
    folder, so one beside a subfolder's `.mtl` would name a file in a `Common/` subfolder; a bare
    name from a subfolder finds the root's link, nearest first (see "Link files" in the
-   [Unified model format plan](model_format.md)).
+   [Unified model format spec](model_format.md)).
 
    Every old `.mtl` is read with `pes_model`'s `read_dropping_stray_text`. Text between its
    elements (a `\` typed after a `<sampler/>` in G Autumn 25's `72117 - Lisa/apc.mtl`, which
@@ -690,7 +690,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
    **Kit magic.** In the same pass, the legacy kit-dependent path magic is rewritten to the
    Studio spelling (see "Kit-dependent assets" in the
-   [Unified model format plan](model_format.md)):
+   [Unified model format spec](model_format.md)):
 
    - `u0???p1`…`u0???p9` → `kit1`…`kit9`, in file and folder names and in `.mtl`/`face.xml`
      paths and FMDL path tables alike;
@@ -813,7 +813,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `face.xml` entries by a leading type (`gloveL_foo.model`, matched case-insensitively with
    underscores ignored, or a `model_type_<x>` token anywhere); the Studio format puts the type
    last (`foo_gloveL.model`, `foo_model_type_<x>.model`; see "Model names: a free part plus a
-   suffix" in the [Aesthetics export plan](aesthetics_export/README.md)).
+   suffix" in the [Aesthetics export spec](aesthetics_export/README.md)).
 
    The swap applies **only to folders without a `face.xml`**: filename typing exists to
    generate the xml, so a folder that ships its own xml carries the types there and its files
@@ -969,7 +969,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    Real saves hold values past the ranges assumed for versions no game measured (79 players of
    the PES 18 fixture save, `cheek_type` 4 or 5 among them), and those ranges become the fields'
    bits ("Player settings in exports" in the
-   [Aesthetics export plan](aesthetics_export/settings_toml.md)).
+   [Aesthetics export spec](aesthetics_export/settings_toml.md)).
 
    A value past even a key's widest range cannot be written, the parser refusing it (a PES 16
    cup player stores `goal_celebration_2` 183, `spec/aesthetics_export/settings_toml.md`). That
@@ -1026,7 +1026,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 10. **Reports** anything that couldn't be migrated automatically (e.g. contents of the Other folder,
     unassigned model folders) for manual attention: the `UnmigratedContentFound` pipeline event;
     the tool defines its own message catalog on the shared `Message` structure (see the Team
-    compiler plan's "Message catalog").
+    compiler spec's "Message catalog").
 
     Content is reported entry by entry. Where Red discarded a whole folder for one bad entry
     (every `Kit Configs/` config when one name breaks the grammar, as the real `CIV4XG` VGL26
@@ -1341,7 +1341,7 @@ export by:
 1. the resolved team's key (step 6);
 2. then the coverage tag (`Midcup` when the old name holds `midcup` or `additions` in any
    letter case, the two ways old midcup exports were named; `Full` otherwise; the Aesthetics
-   export plan's "Coverage tag");
+   export spec's "Coverage tag");
 3. then the rest of the old name (`co - Spring` → `co Full - Spring`).
 
 An old name whose first word is not the key keeps that word in the rest (`Numbers` resolved
@@ -1532,7 +1532,7 @@ Fixtures cover:
 
 - both old `ingame_face` spellings, asserting one canonical `ingame_face.toml` in the migrated
   player folder;
-- savefile names with colour codes (see the pes_savefile plan), asserting a plain folder name
+- savefile names with colour codes (see the Savefile spec), asserting a plain folder name
   plus an explicit `name = "..."` preserving the codes;
 - a Red-era referee export, asserting that its face/boots/gloves/common subfolders are
   flattened, `refs.txt` becomes `players.txt` and is removed, and the result compiles to Red's
@@ -1580,7 +1580,7 @@ Phase 7's, their scenarios with them in `plans/export_upgrader.md`. Observed are
 files, the report and the exit code.
 
 That a migrated export compiles to Red's output for the old one is the parity test's (Team
-compiler plan, `testing.md`), not a scenario's, and so is a converted kit config's content
+compiler spec, `testing.md`), not a scenario's, and so is a converted kit config's content
 beyond the keys named here (`kit_config`'s fixtures).
 
 Test data:

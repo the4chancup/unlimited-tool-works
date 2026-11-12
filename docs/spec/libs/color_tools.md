@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: color_tools
+# Unlimited Tool Works: Library crates spec: color_tools
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## `libs/color_tools`
 
@@ -17,7 +17,7 @@ drive the match UI scoreboard and the kit-selection color dots, which is what le
 teams pick non-clashing kits when a preview player's custom body hides the actual
 kit. Managers often don't bother providing them, so the Team compiler derives them
 from the kit's main texture when a kit folder has no `colors.txt` (see the Team
-compiler plan's kit steps and `kit_colors_derived` message).
+compiler spec's kit steps and `kit_colors_derived` message).
 
 The extraction (`color_tools::kit::extract_kit_colors(rgba, width, height) -> Option<KitColors>`;
 the caller decodes, so the crate stays pure logic with no image dependency):
@@ -26,7 +26,7 @@ the caller decodes, so the crate stays pure logic with no image dependency):
    mip only. That is the caller's step; the function takes the RGBA8 pixels.
 2. **Sample fixed template regions.** The community kit template has a fixed UV
    layout (the same for every kit: the config's "shirt model" field does not
-   affect it, see the Kit config editor plan). Measured on the PES 19 colored
+   affect it, see the Kit config editor spec). Measured on the PES 19 colored
    template sheet (`Kit_col_template_pes19.png`):
    - the shirt, front and back, is the center band x 0.336–0.664, y 0.02–0.91 with the
      collar strip below it at y 0.92–0.95;

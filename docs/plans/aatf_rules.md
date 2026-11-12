@@ -2,7 +2,7 @@
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-What exists of this is in `spec/aatf_rules.md` "Unlimited Tool Works: AATF rules plan".
+What exists of this is in `spec/aatf_rules.md` "Unlimited Tool Works: AATF rules spec".
 
 ## The rules file
 

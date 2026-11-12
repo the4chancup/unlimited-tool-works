@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Hand auto-split
+# Unlimited Tool Works: Model conversion spec: Hand auto-split
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Hand auto-split
 
@@ -34,7 +34,7 @@ match is the complete identification.
 The games' own `hand_l.skl`/`hand_r.skl` (PES 18, 19, 21) hold 19 `skh_` bones each plus five
 bones shared with the body (`sk_forearm`, `sk_hand`, `dsk_forearm`, `dsk_wrist`,
 `dsk_forearm_t`). The `skf_` prefix belongs to the **face** skeleton (33 bones in `face.skl`); an
-earlier version of this plan named `skf_` here, which would have cut faces off at the jaw.
+earlier version of this spec named `skf_` here, which would have cut faces off at the jaw.
 
 No opt-in is needed: vertices with positive `skh_` weights seed the hand selection. Unused `skh_`
 names in a bone list do not trigger splitting; the check follows actual vertex weights.
@@ -84,7 +84,7 @@ native weight check needs no IR import or re-export; the original model is retai
 ### Pipeline integration
 
 The auto-split applies to the models categorization makes **face content** (see "Player folder
-categorization" in the [Team compiler plan](../team_compiler/README.md)): the body stays face
+categorization" in the [Team compiler spec](../team_compiler/README.md)): the body stays face
 content, and the gloves join the player's `glove_l`/`glove_r` parts as if they were authored as
 separate files. The rest of the pipeline (merge, ID assignment, packing) is transparent to
 whether the gloves were auto-split or authored.

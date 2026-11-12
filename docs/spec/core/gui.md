@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Core plan: GUI design
+# Unlimited Tool Works: Core spec: GUI design
 
-Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Core spec](README.md).
 
 ## GUI Design
 
@@ -97,7 +97,7 @@ default. Rules:
   no API this workspace calls directly.
 - Treat deprecation warnings as errors in CI (`#![deny(deprecated)]` or `-D deprecated`) so stale
   API from generated code is caught at compile time rather than accumulating.
-- The code sketches in these plans were written against 0.36 and earlier; they illustrate
+- The code sketches in these documents were written against 0.36 and earlier; they illustrate
   structure and must be re-checked against the pinned version when implemented, not pasted.
 
 ### Settings menu

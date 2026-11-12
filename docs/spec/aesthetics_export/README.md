@@ -1,10 +1,10 @@
-# Unlimited Tool Works: Aesthetics export plan
+# Unlimited Tool Works: Aesthetics export spec
 
 Covers the `aesthetics_export` lib crate and the **Studio aesthetics export format** it describes: the object
 model and its validation progression, the player-folder format, `settings.toml` in exports, and the
 FPC marker files.
 
-The format is shared knowledge, so one plan and one crate own it:
+The format is shared knowledge, so one spec and one crate own it:
 
 - the [Team compiler](../team_compiler/README.md) compiles it;
 - the [Export upgrader](../export_upgrader.md) writes it;
@@ -14,14 +14,13 @@ The format is shared knowledge, so one plan and one crate own it:
   player folders in it;
 - the Team creator generates it.
 
-Compile-time behavior (what the compiler *does* with an export) stays in the Team compiler plan.
+Compile-time behavior (what the compiler *does* with an export) stays in the Team compiler spec.
 Model-level format details (glTF + PES extensions, `materials.toml`) are in the [Unified model
-format plan](../model_format.md). Platform context is in the [core plan](../core/README.md).
+format spec](../model_format.md). Platform context is in the [core spec](../core/README.md).
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|

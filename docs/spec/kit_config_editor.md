@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Kit config editor plan
+# Unlimited Tool Works: Kit config editor spec
 
-This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
+This spec specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
 shared by:
 
 - the Kit config editor;
@@ -9,7 +9,7 @@ shared by:
 - the [Export upgrader](export_upgrader.md) (binary → TOML migration).
 
 One crate owns the format so all three agree on what a valid config is. Platform context is in
-the [core plan](core/README.md).
+the [core spec](core/README.md).
 
 ---
 
@@ -134,7 +134,7 @@ Notes:
   established it. In game the field only selects the model used for the **wrist-end of the long
   sleeves** when a player wears them. It does not change the shirt mesh, and the kit texture's
   UV layout is identical for all three values, which is what lets `color_tools` sample fixed
-  shirt/shorts regions (see the [library crates plan](libs/README.md)). The old editor does gate
+  shirt/shorts regions (see the [library crates spec](libs/README.md)). The old editor does gate
   other fields on it, as noted below.
 - **Collar IDs** index the game's stock collar model set (`nocloth`). Exports can
   replace a stock collar with a custom model (the Team compiler's pass-through
@@ -150,7 +150,7 @@ Notes:
   - Tight requires 144 or 160 (a warning likewise).
 
   The FPC kit values (shirt 176, shorts 16, collar and winter collar 105; see "FPC toggle" in
-  the [Aesthetics export plan](aesthetics_export/README.md)) are ordinary values of these
+  the [Aesthetics export spec](aesthetics_export/README.md)) are ordinary values of these
   fields.
 - **Version differences**: PES2021 widens Name Y by one low bit, as noted (the only
   difference the 2021 patch makes). `name.y` is PES 2021's value on every version: the bytes are
@@ -306,7 +306,7 @@ The format knowledge as a lib crate:
   implementation for the editor's inline hints, the compiler's checks, and the CLI.
 
 Consumers: this tool, `team_compiler` (generation, reconciliation, compile-time
-emission), `export_upgrader` (binary → TOML migration). The Team compiler plan's
+emission), `export_upgrader` (binary → TOML migration). The Team compiler spec's
 kit sections defer to this crate.
 
 ## Testing
@@ -333,10 +333,10 @@ kit sections defer to this crate.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Format knowledge | Recovered by disassembling Kit Manager v4 + diffing its PES2021 patch; documented in this plan | No sources or specs exist anywhere; the plan is now the reference |
+| Format knowledge | Recovered by disassembling Kit Manager v4 + diffing its PES2021 patch; documented in this spec | No sources or specs exist anywhere; the spec is now the reference |
 | Export storage | `config.toml` per kit folder, compiled to binary at compile time | Same philosophy as `settings.toml`: text in exports, binary only as output; editable without the tool |
 | Texture-name fields | Derived from kit-folder textures in export mode; optional raw `[source_texture_names]` preservation only for standalone binary conversion | Removes export desync while retaining bit-identical context-free CLI roundtrips |
 | Unknown bits | Preserved via `[unknown]` table + optional raw view | Real configs have undecoded bits set; silent loss would corrupt them; the raw view aids future decoding |
 | Version handling | Global PES version selector; version-neutral TOML, encode on emission | Matches the suite; the 2021 Name Y and PES15 pattern quirks are encoding details, not user concerns |
-| Format logic placement | `libs/kit_config`, shared with Team compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core plan's lib-crate rule) |
+| Format logic placement | `libs/kit_config`, shared with Team compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core spec's lib-crate rule) |
 | Menu icon storage | Own optional empty `icon_<N>` marker per kit folder (0–23, absent = 3) | Fits neither `colors.txt` (it's not a color) nor `config.toml` (it's UniColor data, not kit-config data) |

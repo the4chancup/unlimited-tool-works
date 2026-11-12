@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: teams_list
+# Unlimited Tool Works: Library crates spec: teams_list
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## `libs/teams_list`
 
@@ -18,9 +18,9 @@ updater depend on the whole export object model for one file format.
   `is_reserved()`. Splitting an export display name into its first token is export-format
   knowledge and stays in `aesthetics_export::identity`, which calls `TeamName::new`.
 - `id.rs` (`TeamId`): validated 701–920. Referees' fixed 999 is not a `TeamId` (see the Team
-  compiler plan, "Export identity resolution").
+  compiler spec, "Export identity resolution").
 - `file.rs` (`TeamsList`): parse / write `teams_list.txt` per the contract in the Team compiler
-  plan ("Export identity resolution" and the "`teams_list.txt` contract" open question):
+  spec ("Export identity resolution" and the "`teams_list.txt` contract" open question):
   - tab-split, `ID` and `Name` columns located by header label in any order;
   - every other cell carried verbatim and written back in place;
   - a slash-wrapped Name cell (`/xx/`, the file's own convention) folded through

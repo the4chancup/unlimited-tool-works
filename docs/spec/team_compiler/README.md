@@ -1,14 +1,14 @@
-# Unlimited Tool Works: Team compiler plan
+# Unlimited Tool Works: Team compiler spec
 
 The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK
 archives. Model format conversion happens at compile time (see the
-[Model conversion plan](../model_conversion/README.md)), and so do the aesthetics: the run
+[Model conversion spec](../model_conversion/README.md)), and so do the aesthetics: the run
 writes `aesthetics_patch.toml` with its CPKs and applies it to the save, on every version (see
-the [Savefile plan](../pes_savefile/README.md)).
+the [Savefile spec](../pes_savefile/README.md)).
 
 Platform context (crate structure, tool plugin trait, GUI shell, parallelism) is in the
-[core plan](../core/README.md).
+[core spec](../core/README.md).
 
 ### Relationship to the older compilers
 
@@ -27,19 +27,18 @@ None of them is followed to the letter:
   artifacts and normalized semantic parity for intentional ID/path/layout changes (see
   `testing.md` "Testing: parity against Red"). *How* that output is produced is free to change.
 - **The implementation is built around the object model** (typed structs representing each
-  element of an export: see the [Aesthetics export plan](../aesthetics_export/README.md)), not
+  element of an export: see the [Aesthetics export spec](../aesthetics_export/README.md)), not
   around Red's disk-shuffling stages or Blue's path-string processing functions. References to
   Red/Blue modules in this document identify *where the behavior to reproduce is specified*,
   not code to translate.
 - **Warning/error messaging is overhauled**, not ported: the pipeline emits
-  structured `PipelineEvent`s (see the core plan) carrying export/folder identity,
+  structured `PipelineEvent`s (see the core spec) carrying export/folder identity,
   and the GUI/CLI decide presentation. Red's console-text messages serve only as a
   checklist of conditions worth reporting.
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|
@@ -222,11 +221,11 @@ Placement rules:
 - **`view/` is render-only.** It reads tool state built from `PipelineEvent`s and emits the user
   intent (compile); it never calls into `processing/` or `output/` directly.
 - **Module names follow the walkthrough's stage names** (`reader`, `check`, `plan`, `processing`,
-  `bins`, `output`) so the plan and the tree use one vocabulary. `pipeline` is deliberately *not*
+  `bins`, `output`) so the spec and the tree use one vocabulary. `pipeline` is deliberately *not*
   used for a tool-local module: it is the shared lib's name, and `pipeline::MemoryBudget` next to a
   `crate::pipeline::…` would be a permanent source of confusion.
 - **Files, not folders, until a module exceeds roughly a thousand lines**: then it becomes a
-  folder with a `mod.rs` and the same name, so paths in this plan stay valid.
+  folder with a `mod.rs` and the same name, so paths in this spec stay valid.
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the stage that uses it; one used by
   several stages belongs to `pipeline`.
 
@@ -234,7 +233,7 @@ Placement rules:
 
 ## Object model and export format
 
-The [Aesthetics export plan](../aesthetics_export/README.md) specifies:
+The [Aesthetics export spec](../aesthetics_export/README.md) specifies:
 
 - the export object model and its validation progression (`ParsedAestheticsExport` →
   `ValidatedAestheticsExport` → `ResolvedAestheticsExport`);
@@ -243,7 +242,7 @@ The [Aesthetics export plan](../aesthetics_export/README.md) specifies:
 - `settings.toml` in exports;
 - the FPC marker files.
 
-The compiler consumes them. Only the compile-time behavior lives in this crate and this plan:
+The compiler consumes them. Only the compile-time behavior lives in this crate and this spec:
 the loaded processing types (`ModelFolder` and friends, with their conversion and packing
 methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI.
 
@@ -255,7 +254,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   - `libs/aesthetics_export`'s structure parsing and format-level validation (on the
     `ExportIdentity` boundary, the sanitized validated-versus-eligible projection and the
     roster-entry semantics of "Validation semantics" in the
-    [Aesthetics export plan](../aesthetics_export/object_model.md));
+    [Aesthetics export spec](../aesthetics_export/object_model.md));
   - the Team compiler settings/CLI surface;
   - the reader/coordinator/writer over `libs/pipeline` compiling the subset in "Phase 3 scope"
     below;
@@ -278,7 +277,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   with pre-Fox's other gaps; it landed at step 8.36c.
 
 This list documents the parity gate's dependency on Phases 5 and 6 without changing the phase
-order in the core plan.
+order in the core spec.
 
 ---
 
@@ -289,7 +288,7 @@ Format and rules: `CONTRIBUTING.md` "Testing". IDs are never reused: later phase
 In every phase's scenarios:
 
 - a team export is a `Full` export, its name carrying the tag, unless the scenario says
-  `Midcup` (the Aesthetics export plan's "Coverage tag");
+  `Midcup` (the Aesthetics export spec's "Coverage tag");
 - a scenario that names no PES version runs for PES 21.
 
 A GIVEN names the files that decide its outcome. A folder or export it names also holds the
@@ -301,7 +300,7 @@ texture is used, a kit in an export whose bin entries are observed.
 
 - discovery and export sources;
 - `aesthetics_export`'s structure pass with its dispositions ("Validation semantics" in the
-  Aesthetics export plan);
+  Aesthetics export spec);
 - export identity;
 - the settings and CLI surface;
 - the pipeline scaffolding compiling the tracer bullet's content (Fox player folders with face
@@ -2623,7 +2622,7 @@ The CPK carries no player table. The `PlayerAppearance.bin`, `BootsList.bin` and
 patch to PES 15-17, whose compiles wrote none before it.
 
 A compiled player is every player a kept player folder of a team export maps to
-("Player settings in exports" in the Aesthetics export plan). A referee export's settings
+("Player settings in exports" in the Aesthetics export spec). A referee export's settings
 reach no patch.
 
 Phase 5 withdrew TC-BIN-10, TC-BIN-17 and TC-BIN-22, whose player tables it changed, and

@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: dds_convert
+# Unlimited Tool Works: Library crates spec: dds_convert
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## In-process DDS conversion (replaces texconv)
 
@@ -8,7 +8,7 @@ The PES Stadium Compiler (`Tools_4cc/pes-stadium-compiler-v1.0.0`) already prove
 approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` package:
 
 - **Decoding (DDS/FTEX)**: `block_compression`'s `decode` module (BC1–BC5, BC7), the same crate
-  that encodes, so one dependency covers both directions; the `texture2ddecoder` crate the plan
+  that encodes, so one dependency covers both directions; the `texture2ddecoder` crate
   first named is not used. `dds_convert`/`ftex` handle the DDS/FTEX containers and normalize
   decoded channel order to RGBA.
 
@@ -246,17 +246,17 @@ The crate is three pure steps and one stateful wrapper:
   would make.
 
 `encode_dds` is the one exception to choosing by version: a file every engine reads as a DDS in
-a codec the plan fixes (a player portrait, BC3: "Portraits" in the [player folders
-plan](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets
+a codec the spec fixes (a player portrait, BC3: "Portraits" in the [player folders
+spec](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets
 too.
 
 `resize` is the suite's one resampler (Lanczos3, through the `image` crate this crate already
 decodes rasters with, so no tool crate depends on `image` for it). The Team compiler resamples a
 sock band of a kit and a number atlas's digit glyphs with it ("Layout conversion" in the
-[pipeline plan](../team_compiler/pipeline.md)), and sizes the logo with it.
+[pipeline spec](../team_compiler/pipeline.md)), and sizes the logo with it.
 
 `encode_png` is the one raster this crate writes: the game reads a team's logo as three PNGs
-("Logo" in the pipeline plan), and it lives here for `resize`'s reason.
+("Logo" in the pipeline spec), and it lives here for `resize`'s reason.
 
 ```rust
 /// The accepted source formats (table above), named by the file extension the

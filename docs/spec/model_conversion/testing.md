@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Testing
+# Unlimited Tool Works: Model conversion spec: Testing
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Testing: IR roundtrips
 

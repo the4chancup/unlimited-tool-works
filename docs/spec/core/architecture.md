@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Core plan: Architecture
+# Unlimited Tool Works: Core spec: Architecture
 
-Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Core spec](README.md).
 
 ## Architecture
 
@@ -205,12 +205,12 @@ crates/tools/<tool>/
 The small tools (Kit config editor, Refs arranger, Balls compiler, Export upgrader, Player
 aesthetics editor, Music player, Music export editor) add their logic as flat modules next to these
 (`compile.rs`, `arrange.rs`, …) and need no further prescription. The two flagship tools and the
-Match tracker elaborate below the skeleton; their trees are in their own plans ("Crate layout" in
-the [Team compiler](../team_compiler/README.md), [Save editor](../save_editor.md), and [Match
-tracker](../../plans/match_tracker/README.md) plans).
+Match tracker elaborate below the skeleton; their trees are in their own documents ("Crate layout"
+in the [Team compiler](../team_compiler/README.md) and [Save editor](../save_editor.md) specs and
+the [Match tracker](../../plans/match_tracker/README.md) plan).
 
 Lib crates with a mandated layout are `pes_savefile`, `model_convert`, and `aesthetics_export` (in
-their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
+their specs) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
 [libs](../libs/README.md)); the remaining libs are single-concern and get no prescription.
 
 **Lib crates** (`crates/libs/`): shared functionality with no tool identity.
@@ -225,7 +225,7 @@ their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
 lines, stays a single crate, organized by internal modules mirroring its pipeline stages
 (`reader/`, `check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/`; the full tree and
 placement rules are the "Crate layout" section of the [Team compiler
-plan](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
+spec](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
 consumer, which rule 3 below calls out, and it would buy nothing for navigation that the module
 tree doesn't already give.
 
@@ -246,7 +246,7 @@ only prepares the refs export's `players.txt` and hands compilation off to the T
 "Why an arranger, not a compiler" in its plan).
 
 `fmdl` and `pes_model` have a second consumer outside this workspace: the Blender addons (see
-"Blender integration" in the [Model conversion plan](../model_conversion/gltf.md)). Their mesh splitting,
+"Blender integration" in the [Model conversion spec](../model_conversion/gltf.md)). Their mesh splitting,
 split vertex encoding, and anti-blur logic lives inside the format crate, not in `model_convert`, so
 that a same-format FMDL or .model round-trip in Blender is lossless and never routes through the IR.
 `model_convert` calls these format-native algorithms during cross-format conversion; the format

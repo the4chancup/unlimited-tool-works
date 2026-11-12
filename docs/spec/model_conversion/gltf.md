@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Model conversion plan: glTF source
+# Unlimited Tool Works: Model conversion spec: glTF source
 
 ## glTF as the universal model source
 
@@ -8,7 +8,7 @@
 (Vector4), not the 3×3 rotation matrix. The full bind-pose transform (rotation + translation)
 lives in the companion `.skl` file. `fmdl_to_ir` resolves the bone transforms as follows:
 
-1. If the FMDL has a companion `.skl` (same basename, per the Aesthetics export plan's SKL pairing rule),
+1. If the FMDL has a companion `.skl` (same basename, per the Aesthetics export spec's SKL pairing rule),
    read the full 3×4 transforms from the SKL via the `fmdl` crate's SKL codec.
 2. If no companion SKL exists, use the embedded template skeleton (`body.skl`) for the standard
    bone transforms, supplemented by the FMDL's own position data.
@@ -40,10 +40,10 @@ template injection stands.
 *several parts into one model* is a different operation, and it is **format-native on both
 engines**: `fmdl::ops::merge` for Fox, `pes_model::ops::merge` for pre-Fox (the `ingame_face`
 boots merge, and a shared link combined with local parts under `ingame_face`; see the [Aesthetics
-export plan](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
+export spec](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
 same-format merge never round-trips through the IR.
 
-An earlier version of this plan routed the pre-Fox cases through the IR-level `merge_ir_parts`.
+An earlier version of this spec routed the pre-Fox cases through the IR-level `merge_ir_parts`.
 That was dropped because it made them the one exception to "same format skips the IR" for no
 gain (the `.mtl` merge is a material-name merge either way).
 
@@ -53,7 +53,7 @@ gain (the `.mtl` merge is a material-name merge either way).
   independently of the model's source format. BC7 is supported on PES 19–21, not PES18 despite
   its Fox model format. PES 15–18 convert BC7/raster inputs to BC3 or eligible opaque-color BC1;
   PES 19–21 retain supported BC7 and encode ordinary raster sources to BC7. The [library
-  crates plan](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
+  crates spec](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
   Already-compatible blocks are retained where only DDS/FTEX container adaptation is needed.
   `model_convert` supplies pixels and material roles, not final player/team paths; the run-level
   `BuildManifest` and texture-relocation step own those destinations.

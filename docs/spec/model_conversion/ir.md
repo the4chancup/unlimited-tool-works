@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Intermediate representation
+# Unlimited Tool Works: Model conversion spec: Intermediate representation
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Intermediate Representation (IR)
 
@@ -201,7 +201,7 @@ pub enum Address { Wrap, Clamp, Repeat }
 ```
 
 (`states` are `u32` and `parameters` keep their stored component count, as the `.mtl` codec
-reads them, so a `.model` round trip loses nothing; the plan's draft had `i32` and `[f32; 4]`.)
+reads them, so a `.model` round trip loses nothing; the draft had `i32` and `[f32; 4]`.)
 
 FMDL stores four-component normals and tangents; the IR must not silently discard their fourth
 components.
@@ -232,7 +232,7 @@ booleans, canonical texture roles, parameters) with an optional native table per
 engine. Importers fill the native table of their own engine verbatim and infer
 `family` from the shader; exporters use the target engine's native table when
 present and otherwise derive it from `family` through the shader-family defaults
-and role→sampler tables in the format plan. So a `.model` → IR → FMDL conversion
+and role→sampler tables in the format spec. So a `.model` → IR → FMDL conversion
 picks the Fox shader from the family (as `model2fmdl.py` does today with its
 `Basic_C` → `fox3ddf_blin` table), while an FMDL → IR → FMDL round-trip never
 touches the shader at all. Per-mesh FMDL flags are lifted to the material on
@@ -242,7 +242,7 @@ What the native importers derive for the *other* engine: `fmdl_to_ir` sets `two_
 bit 32 and leaves `transparent` unset. It does not read bit 128 as transparency, because a census
 of 1983 Konami FMDLs found bit 128 on 128/160 of `fox3ddf_blin`'s meshes in near-equal share with
 32/0, i.e. on ordinary opaque skin, and the legacy converter judged transparency from the
-texture's alpha channel instead, which the format plan rules out. So a Fox part converted to
+texture's alpha channel instead, which the format spec rules out. So a Fox part converted to
 pre-Fox gets the opaque state set unless its family is `glass`; what bit 128 means on deferred
 shaders is an open question.
 
@@ -336,7 +336,7 @@ treat it:
 by **stem** (filename without extension) in their **source/authoring** form. The
 compiler resolves each stem to whatever accepted image file exists in the model
 folder and converts to the target format at compile time (format list, stem
-conflicts, and auto-naming rules: format plan, "Dependencies and images" and
+conflicts, and auto-naming rules: format spec, "Dependencies and images" and
 "Textures"). Studio-format `.mtl` and `.materials.toml` files write stems; FMDL
 path tables resolve by the same stem (a stored name's extension, when present, is
 decorative, the game appending `.ftex` either way). The planned Export upgrader strips
@@ -422,9 +422,9 @@ since nothing encodes anti-blur after a merge.
 The merge is not an IR operation: the Team compiler calls it directly to assemble multi-part
 models and to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot
 load models from the Common folder (see "Common model links and model merging" in the [Team
-compiler plan](../team_compiler/README.md)). The pre-Fox counterpart is
+compiler spec](../team_compiler/README.md)). The pre-Fox counterpart is
 `pes_model::ops::merge`, native over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in
-the [Libraries plan](../libs/format_crates.md)), which follows the same rules.
+the [Libraries spec](../libs/format_crates.md)), which follows the same rules.
 
 ### Conversion routing
 
@@ -455,14 +455,14 @@ skeleton retargeting pass (see `conversion.md` "Skeleton retargeting and bone co
 IR round trip, so every model the compiler emits is on the target's skeleton without a second
 pass.
 
-The same-format short cut is decided by `needs_conversion`, the plan's native pre-check: the
+The same-format short cut is decided by `needs_conversion`, the spec's native pre-check: the
 bundle's bone names (those its bone groups reference) against the target's tables, poses compared
 the way `retarget` does (source pose from the SKL or PES21's tables for Fox, the inverted inline
 matrix for pre-Fox; 3e-3 on any component).
 
 `convert` takes the bundle by value and returns a new one, so a pre-Fox result exists only once
 both its `.model` and its `.mtl` were produced: an error can never leave a converted `.model`
-paired with an old or missing `.mtl`. (The plan's first draft mutated a bundle in place; by
+paired with an old or missing `.mtl`. (The first draft mutated a bundle in place; by
 value says the same thing with the type system instead of a comment.)
 
 The Fox side carries the companion `.skl` when one exists, which is where `fmdl_to_ir` reads the

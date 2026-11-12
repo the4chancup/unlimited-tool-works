@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler plan: Settings
+# Unlimited Tool Works: Team compiler spec: Settings
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Team compiler spec](README.md).
 
 ## Settings
 
@@ -126,7 +126,7 @@ resolved export source.
 | `cache_clear` | No disk cache: the pipeline is in-memory (each task's files read as owned bytes, `reader/source.rs` `ContentSource`), so there is no equivalent of Red's `patches_contents/` staging folder for the setting to clear |
 | `move_cpks` | Deployment is always attempted; a run that cannot deploy degrades to `output/` by itself, and the deliberate "build but don't install" case is the CLI-only `--no-deploy` flag. See "Why no `move_cpks`" under `pipeline.md` "Post-processing" |
 | `pause_allow` | The `pause()` pattern is gone; errors/warnings are events rendered by the GUI/CLI. Its unattended-run half (`pause_allow = 0`: finish without stopping) needs no key: a CLI run never stops for input, and the bundled `quick_compile.bat` pauses once, after the run, so its report stays on screen |
-| `admin_mode` | Manifest-based UAC / GUI prompt (see core plan) |
+| `admin_mode` | Manifest-based UAC / GUI prompt (see core spec) |
 
 ### CLI
 
@@ -137,7 +137,7 @@ UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList w
 ```
 
 (Refreshing `teams_list.txt` from a savefile is the Save editor's `export-teams-list`; see the
-[Save editor plan](../save_editor.md) "CLI".)
+[Save editor spec](../save_editor.md) "CLI".)
 
 `upgrade-dpfl` prints what the override changes (entries that will no longer be loaded, with the
 sizes of any matching `.cpk` files found in `download/`) and stops unless `--yes` is given. It

@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Save editor plan
+# Unlimited Tool Works: Save editor spec
 
 ## Background: 4ccEditor
 
@@ -43,7 +43,7 @@ is too heavy:
 
 The second is absorbed into the save editor as the `diff` command and the comparator panel (the
 operation lives in `pes_savefile`, "Save-to-save operations" in the [Savefile
-plan](pes_savefile/operations.md)). The first is not: aesthetics live in the exports now, so a
+spec](pes_savefile/operations.md)). The first is not: aesthetics live in the exports now, so a
 look copied into a save is overwritten by the next compile. Its successor copies a donor save's
 looks into the team's export instead (after Release 0.1.0, "Aesthetics transplant" in the [Save
 editor plan](../plans/save_editor.md)).
@@ -59,7 +59,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Save squad (`.4ccs`) | Replaced by **Team TOML export** (full-fidelity, human-readable; see the [Savefile plan](pes_savefile/README.md)) |
+| Save squad (`.4ccs`) | Replaced by **Team TOML export** (full-fidelity, human-readable; see the [Savefile spec](pes_savefile/README.md)) |
 
 ### Database operations
 
@@ -67,7 +67,7 @@ implementation is measured against.
 |-----------|------|
 | AATF: current team / select teams | Kept (rules become configurable; see below) |
 | Compare EDITs | Kept, merged with Midcupping's aesthetics diff (see "Comparator") |
-| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses; added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
+| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses; added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler spec](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
 
 ### New (from Midcupping)
 
@@ -86,7 +86,7 @@ implementation is measured against.
 
 ## Crate layout
 
-The Save editor follows the standard tool-crate skeleton (core plan, "Tool crates") and elaborates
+The Save editor follows the standard tool-crate skeleton (core spec, "Tool crates") and elaborates
 below it. The organizing principle: **`pes_savefile` owns every byte and every operation on the
 model; this crate owns the session (the file that is open) and the command line over it.** If a
 function here could be called without an egui context and without a `Session`, it belongs in the
@@ -125,7 +125,7 @@ The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping'
 
 - It takes a second save (the same version) and lists the per-player differences.
 - The two scopes are `PlayerDiff::scope()`'s (`DiffScope`, "Save-to-save operations" in the
-  [Savefile plan](pes_savefile/operations.md)); the lists below are the two references' rows,
+  [Savefile spec](pes_savefile/operations.md)); the lists below are the two references' rows,
   each a subset of ours.
 - **Gameplay scope** (from 4ccEditor): names, IDs, basics (age/height/weight),
   every ability stat, playstyle, positions and ratings, COM styles, all skills,
@@ -143,7 +143,7 @@ The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping'
 
 4ccEditor's AATF tool hardcodes both its parameters and its logic in C++; a ruleset change is a
 recompile. This editor checks a **rules file** instead: a ruleset as data plus a
-generic interpreter, specified in the [AATF rules plan](aatf_rules.md) (`libs/aatf`), and
+generic interpreter, specified in the [AATF rules spec](aatf_rules.md) (`libs/aatf`), and
 built without code in the [Ruleset editor](../plans/ruleset_editor.md).
 
 Every cup's current ruleset ships embedded, the official one the default. The `aatf_ruleset`
@@ -446,7 +446,7 @@ code, and the files written (a save's decrypted payload, a Team TOML, a CPK's ta
 with the `cpk` crate). The operations with no command (editing, tactics, the FPC toggle, AATF
 quick actions, generation, Texport, the legacy imports) get their scenarios with the view.
 
-`libs/aatf` is a lib: its rulesets' fixtures are its spec (AATF rules plan, "Development phase
+`libs/aatf` is a lib: its rulesets' fixtures are its spec (AATF rules spec, "Development phase
 and verification"), and `check-aatf` is its one scenario surface here.
 
 Test data: the fixture saves are `pes_savefile`'s (`tests/fixtures/`, one real save per

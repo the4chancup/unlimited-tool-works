@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Model conversion plan
+# Unlimited Tool Works: Model conversion spec
 
 Covers the `model_convert` lib crate (the IR plus importers/exporters and skeleton
 data) and the format-extension algorithms that live in the `fmdl` and `pes_model`
@@ -7,12 +7,11 @@ conversion is not a standalone tool: it runs inside the
 [Team compiler](../team_compiler/README.md) at compile time, converting models to the target
 PES version's format. The glTF + `materials.toml` authoring format that `gltf_to_ir`
 reads and `ir_to_gltf` writes (Phase 7) is specified in the [Unified model format
-plan](../model_format.md). Platform context is in the [core plan](../core/README.md).
+spec](../model_format.md). Platform context is in the [core spec](../core/README.md).
 
 ---
 
-The plan is split into parts; section headings are unchanged from the
-single-file plan.
+The spec is split into parts:
 
 | Part | Covers |
 |---|---|
@@ -83,7 +82,7 @@ Placement rules:
   `resources/skeletons/` are embedded with `include_bytes!` and parsed on first use
   (`std::sync::LazyLock`). The only hand-maintained tables are the render parents and the fold
   table, both names only. Provenance stays with the `.skl` files, never with Python literals.
-  (An earlier version of this plan generated a `data.rs` of Rust literals; that is a 250 KB
+  (An earlier version of this spec generated a `data.rs` of Rust literals; that is a 250 KB
   source file plus a generator plus a drift test, for data the SKL codec already reads
   byte-exactly.)
 - **`materials/` is shared by all three formats** and by the Blender project's glTF codec contract;
