@@ -17009,3 +17009,8 @@ the undo stack, because later steps may build on an earlier one while a row alre
 value to write.
 Plan: `plans/save_editor.md` "Editing UI" (the two bullets after the changes table's),
 SE-GUI-73, SE-GUI-74.
+
+## 2026-11-12 — in-game looks — seasonal logos are looked at in the pre-match menu or a match, never in Edit mode
+Decision: a look at the seasonal logos on a kit (the uncompressed 4096 kit of 0.0.2b first) runs in the pre-match menu, whose two demonstration players wear them when they use the default kit models, or in a match. The question "does PES 2019 place the logos in Edit mode at all" leaves `QUESTIONS.md` answered: it does not.
+Why: the game places the logos for the competition type chosen, and Edit mode has none chosen, so a capture there showing no logo says nothing about the kit (the maintainer).
+Plan: no plan edit needed: the worklog's pending look names where to look.

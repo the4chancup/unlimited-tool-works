@@ -47,12 +47,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## The 0.0.2 Save editor report
 
-- **Seasonal logos on an uncompressed kit.** On PES 2019 an uncompressed 4096 main kit
-  (worklog 0.0.2b) loads and draws in Edit mode with no crash, but no seasonal logo showed
-  (`.tmp/0_0_2/ingame/poc/s42_egg_body.png`). Does PES 2019 place the logos in Edit mode at
-  all, or does this need a match to show whether Fox games write them into an uncompressed
-  kit as PES 15–17 do? The player also draws see-through in that capture; the export's
-  textures are a noise test pattern with alpha about 68, which may be all it is.
 - **The lit area of a player rated nowhere.** While a starter's marker is held, the Tactics
   pitch lights the areas of the positions his playable list rates A or B and darkens the
   rest; a player whose list is all C (a blank team's placeholder, his registered position
