@@ -2206,6 +2206,17 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-12 (`just mutants-diff 33fe81f0`, `.tmp/process/mutants_1112h.log`) — the
+  VPS's disk filled during `save_editor`'s remote half ("No space left on device"), which
+  stopped with one of its 16 mutants unrun, although the guard had passed: 26.8 GiB in the
+  project's folder (budget 30) and 19.5 GiB free (floor 12). So a `save_editor` half needs
+  more than the 10 GiB `REMOTE_FREE_FLOOR` allows for (`scripts/mutation/mutants.py`), or
+  the host's own use grew meanwhile. The clone's build cache was then 28 GB of the folder;
+  `remote_clean_target.sh` removed it (47 GB free, the disk at 70%), so the next
+  `just remote` builds cold. To do: measure a `save_editor` half's peak in
+  `~/studio-mutants/tmp` and set the floor from it (a vital script: its SWE-2 rounds). The
+  unrun mutant (`comparator.rs`, `column_offsets -> [0.0; 3]`) was applied by hand here:
+  two comparator tests fail on it.
 - open 2026-11-12 (the readability findings' rest, `.tmp/readable/fix_resolutions.md`) —
   89 of the 112 findings are fixed (`11ec3c6d`) and nine are questions for the maintainer
   (`QUESTIONS.md` "Sentences the plans and the spec leave open"). Left for the lead, each

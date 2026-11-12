@@ -18,7 +18,7 @@ use crate::tool::AppPaths;
 use crate::updater::test_bundle::{
     folder_with, new_files, old_files, running_assets, serve, snapshot,
 };
-use crate::updater::{InstallError, SwapStep};
+use crate::updater::{InstallError, Progress, SwapStep};
 
 /// The offer's text in the status bar, `ShellCondition::UpdateAvailable`'s
 /// line for the fixture's `v0.0.2`.
@@ -137,7 +137,7 @@ fn frame_until_text(
     app: &mut StudioApp,
     text: &str,
 ) -> Vec<accesskit::Node> {
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let deadline = Instant::now() + Duration::from_secs(10);
     loop {
         let nodes = frame(egui_ctx, app, Vec::new(), true).nodes;
         if nodes.iter().any(|node| node.value() == Some(text)) {
@@ -460,6 +460,17 @@ fn update_now_shows_the_download_then_installs_and_reports_ready() {
     entry(&nodes, "Later");
     assert_eq!(snapshot(&bundle), installed(&before));
     fs::remove_dir_all(bundle).unwrap();
+}
+
+// ST-UPD-03
+#[test]
+fn the_bar_fills_by_the_share_downloaded_and_stays_empty_without_a_size() {
+    let fraction = |done, total| super::bar_fraction(Progress { done, total });
+    assert_eq!(fraction(3, 4), 0.75);
+    assert_eq!(fraction(4, 4), 1.0);
+    // A release that lists no size gives nothing to divide by.
+    assert_eq!(fraction(0, 0), 0.0);
+    assert_eq!(fraction(5, 0), 0.0);
 }
 
 // ST-UPD-03

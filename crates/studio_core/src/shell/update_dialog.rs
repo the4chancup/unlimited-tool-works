@@ -359,6 +359,16 @@ fn show_offer(
     })
 }
 
+/// How much of the download's bar is filled, from 0 to 1: nothing while the
+/// release lists no size to divide by.
+fn bar_fraction(progress: Progress) -> f32 {
+    if progress.total > 0 {
+        (progress.done as f64 / progress.total as f64) as f32
+    } else {
+        0.0
+    }
+}
+
 /// `Updating to`: the download's line, its bar and Cancel. The backdrop and
 /// Escape do nothing: a stray click must neither cancel a download nor hide
 /// one that runs.
@@ -370,14 +380,11 @@ fn show_downloading(
     let title = format!("Updating to v{}", release.version);
     stage_modal(ctx, title, None, |ui| {
         let mut line = format!("Downloading {}…", version_label(release));
-        let mut fraction = 0.0;
         if let Some(Progress { done, total }) = progress {
             let (done, total) = (done as f64, total as f64);
             line += &format!(" {:.1} of {:.1} MB", done / MEGABYTE, total / MEGABYTE);
-            if total > 0.0 {
-                fraction = (done / total) as f32;
-            }
         }
+        let fraction = progress.map_or(0.0, bar_fraction);
         ui.label(line);
         modal_sentence_gap(ui);
         // The draft's `.update-bar`: the stroke colour under a fill in the

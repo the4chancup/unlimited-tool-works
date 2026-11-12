@@ -74,6 +74,13 @@ exclude_re = [
     # headless through `StudioApp`'s `logic`/`ui`; these two are what the manual TC-GUI-01 run
     # proves.
     "replace run_gui(_mode)? -> ",
+    # `studio`'s `print_events` sets the progress line's draw target once, on `draw &&
+    # !drawing`. With `||` it sets it again on every event when `draw` holds, and once on the
+    # hidden bar when it does not; `draw` is whether stderr is a terminal (`spawn_printer`), and
+    # without one indicatif's stderr target draws nothing. Either way only a terminal shows a
+    # difference, which no test has: the line is looked at under a pseudo-console when the
+    # launchers change.
+    "replace && with \\|\\| in print_events",
     # `window_size::hide_title_bar_icon` takes the native window's handle, which only
     # `run_gui`'s creator has, and changes what Windows draws in the title bar, which nothing
     # in the process can read back; its `()` replacement is unkillable for the same reason as
