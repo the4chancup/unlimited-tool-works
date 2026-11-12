@@ -2190,10 +2190,21 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the plan's rest and its Acceptance 2026-11-12 (the lead; DECISIONS 2026-11-12):
       one warning per fielded set, the rule in `pes_savefile`, the fixtures, SE-AATF-09,
       SE-GUI-76
-    - [ ] the slice (Opus): the fixture of the game's own formations and presets is the
-      lead's (from `.tmp/0_0_2/formation/census/game_formations.tsv` and the looks'
-      `b_teams/`); the throwaway clauses are `4cc-studio-temp/formation`'s
-      `formation_clauses.rs`
+    - [ ] the same looks on PES 2019 (the maintainer, 2026-11-13: the check is wanted
+      there first, VGL27 plays on it; its exe is unread). Under PES 2017's tables the
+      game's own teams in the PES 2019 saves hold no break (484 distinct formations) and
+      the cup slots' 30 breaking sets look tool-made, so the same rule is expected.
+      Briefed (`.tmp/0_0_2/formation/ingame19/brief_form_looks19.md`, SWE-2: the four
+      broken starters, a drop near each area's edge, the presets, the line limits, the
+      swap distance); it runs only while no cargo job does. Then the plan names the
+      versions the check runs on
+    - [ ] the slices (Opus), after the PES 2019 looks: first `pes_savefile`'s rule
+      (`Formation::illegal_breaks`, the area tables moved from `team_widgets`'
+      `pitch/drop_rule.rs`), with the lead's fixture of the game's own formations and
+      presets (`.tmp/0_0_2/formation/fixture/game_formations_pes17.txt`, built by
+      `make_fixture.py` beside it) and the throwaway clauses of `4cc-studio-temp/formation`'s
+      `formation_clauses.rs` as its model; then the host's warning, its text, SE-AATF-09
+      and SE-GUI-76
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
