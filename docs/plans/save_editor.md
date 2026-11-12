@@ -2699,12 +2699,10 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 `Checking /lit/…`, and with ALL picked and nothing selected `No team is
                 open.`, the notice `Copied the Live AATF list.`; GIVEN a ruleset whose check fails on team 743 THEN the
                 list holds the failure line and no `All clean`
-SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
-           WHEN the drag is held over player 03's row
-           THEN that row alone is outlined in the selection colour; held over his own row,
-                or under ALL over a row of the next team, no row is; released off the list,
-                no row is; GIVEN the pointer over a player row's name, no drag held THEN the
-                cursor is the pointing hand; GIVEN a filter typed THEN it is the arrow
+SE-GUI-64  GIVEN the save open on a team, no drag held
+           WHEN the pointer is over a player row's name
+           THEN the cursor is the pointing hand; GIVEN a filter typed THEN it is the arrow
+                (the mark of a held drag's drop place is SE-GUI-75's)
 SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right of its centre
            WHEN it is dragged
            THEN the dragged row is drawn with that point under the pointer, not its centre
