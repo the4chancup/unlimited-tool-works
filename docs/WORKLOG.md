@@ -1931,8 +1931,10 @@ briefs, review loops, gates and mutation runs as for any step.
       rerun: 823 and 54 tests, clippy, fmt): all ten done; a Gameplan's whole record
       through the document comes back but for the bench's last nine places, which the
       format fills as the game does (the test pins that rule); a stats copy still needs
-      every teammate's record. Round 2 running (SWE-2, two parts,
-      `.tmp/0_0_2/clip/swe_clip_r2a.md` and `r2b.md`, review worktree `review9`)
+      every teammate's record. "S-clip r2" 2026-11-13 (two parts): 6 of 10 accepted, five
+      asserts that could not fail and SE-GUI-72's clause for a tactics copy beside a
+      player the export refuses (the plan, the lead); rework 2 (`f03528fe`, SWE-2; merge
+      `8aa9c94e`). Round 3 running (`.tmp/0_0_2/clip/swe_clip_r3.md`, worktree `review11`)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
