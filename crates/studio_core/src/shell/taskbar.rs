@@ -129,6 +129,8 @@ fn set_relaunch_values(
         // which is alive for the call.
         unsafe { store.SetValue(&key, &*value) }?;
     }
+    // Kept though no test fails without it: a test reads back the store it wrote,
+    // uncommitted values included, and only the taskbar itself would tell.
     // SAFETY: `store` is the window's live property store.
     unsafe { store.Commit() }
 }
@@ -151,18 +153,11 @@ mod tests {
         assert_ne!(app_id(Path::new(r"D:\Other\UTW.exe")), id);
     }
 
-    /// The four values read back off a real window's property store, which
-    /// also runs `set_relaunch_values` to its end on a live window: a value
-    /// freed twice there ends the process, and so this test's.
+    /// A real window to hold the values, and what its property store gives
+    /// back: the two tests below set the values on one and read them here.
     #[cfg(windows)]
-    // ST-WIN-05
-    #[test]
-    fn a_window_holds_the_relaunch_values_it_was_given() {
-        use windows::Win32::Foundation::PROPERTYKEY;
-        use windows::Win32::Storage::EnhancedStorage::{
-            PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
-            PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
-        };
+    mod window {
+        use windows::Win32::Foundation::{HWND, PROPERTYKEY};
         use windows::Win32::UI::Shell::PropertiesSystem::{
             IPropertyStore, SHGetPropertyStoreForWindow,
         };
@@ -171,58 +166,118 @@ mod tests {
         };
         use windows::core::{BSTR, w};
 
-        let exe = Path::new(r"C:\Tools\UTW\UTW.exe");
-        // SAFETY: a top-level window of the system's own STATIC class, with no
-        // parent, menu or creation data; it is never shown.
-        let window = unsafe {
-            CreateWindowExW(
-                WINDOW_EX_STYLE(0),
-                w!("STATIC"),
-                w!("relaunch values"),
-                WS_OVERLAPPED,
-                0,
-                0,
-                0,
-                0,
-                None,
-                None,
-                None,
-                None,
-            )
+        /// A top-level window that is never shown.
+        pub(super) fn hidden() -> HWND {
+            // SAFETY: a window of the system's own STATIC class, with no
+            // parent, menu or creation data.
+            unsafe {
+                CreateWindowExW(
+                    WINDOW_EX_STYLE(0),
+                    w!("STATIC"),
+                    w!("relaunch values"),
+                    WS_OVERLAPPED,
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            }
+            .expect("a window to hold the values")
         }
-        .expect("a window to hold the values");
 
-        set_relaunch_values(window, exe).expect("the values are set");
-
-        // SAFETY: `window` is this thread's live window.
-        let store: IPropertyStore =
-            unsafe { SHGetPropertyStoreForWindow(window) }.expect("the window's property store");
-        let held = |key: PROPERTYKEY| {
+        /// The string `window`'s property store holds under `key`.
+        pub(super) fn held(window: HWND, key: PROPERTYKEY) -> String {
+            // SAFETY: `window` is this thread's live window.
+            let store: IPropertyStore = unsafe { SHGetPropertyStoreForWindow(window) }
+                .expect("the window's property store");
             // SAFETY: `store` is live and `key` a static PROPERTYKEY; the
             // value read is an owned copy, freed when dropped.
             let value = unsafe { store.GetValue(&key) }.expect("the value is read");
             BSTR::try_from(&value)
                 .expect("the value is a string")
                 .to_string()
+        }
+
+        pub(super) fn destroy(window: HWND) {
+            // SAFETY: `window` is this thread's own window, used by nothing else.
+            unsafe { DestroyWindow(window) }.expect("the window is destroyed");
+        }
+    }
+
+    /// The four values read back off a real window's property store, which
+    /// also runs `set_relaunch_values` to its end on a live window: a value
+    /// freed twice there ends the process, and so this test's.
+    #[cfg(windows)]
+    // ST-WIN-05
+    #[test]
+    fn a_window_holds_the_relaunch_values_it_was_given() {
+        use windows::Win32::Storage::EnhancedStorage::{
+            PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
+            PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
         };
+
+        let exe = Path::new(r"C:\Tools\UTW\UTW.exe");
+        let window = window::hidden();
+
+        set_relaunch_values(window, exe).expect("the values are set");
+
         assert_eq!(
-            held(PKEY_AppUserModel_ID),
+            window::held(window, PKEY_AppUserModel_ID),
             "UnlimitedToolWorks.be6639c454fb3ede"
         );
         assert_eq!(
-            held(PKEY_AppUserModel_RelaunchCommand),
+            window::held(window, PKEY_AppUserModel_RelaunchCommand),
             r#""C:\Tools\UTW\UTW.exe""#
         );
         assert_eq!(
-            held(PKEY_AppUserModel_RelaunchDisplayNameResource),
+            window::held(window, PKEY_AppUserModel_RelaunchDisplayNameResource),
             crate::shell::APP_NAME
         );
         assert_eq!(
-            held(PKEY_AppUserModel_RelaunchIconResource),
+            window::held(window, PKEY_AppUserModel_RelaunchIconResource),
             r"C:\Tools\UTW\UTW.exe,0"
         );
-        drop(store);
-        // SAFETY: `window` is this thread's own window, used by nothing else.
-        unsafe { DestroyWindow(window) }.expect("the window is destroyed");
+        window::destroy(window);
+    }
+
+    /// `set_relaunch` gives a window the values of the program that runs,
+    /// here the test's own: the handle is taken from the window it is handed.
+    #[cfg(windows)]
+    // ST-WIN-05
+    #[test]
+    fn a_window_is_given_the_running_programs_values() {
+        use raw_window_handle::{
+            HandleError, HasWindowHandle, RawWindowHandle, Win32WindowHandle, WindowHandle,
+        };
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::Storage::EnhancedStorage::{
+            PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
+        };
+
+        struct Lent(HWND);
+        impl HasWindowHandle for Lent {
+            fn window_handle(&self) -> Result<WindowHandle<'_>, HandleError> {
+                let handle = std::num::NonZeroIsize::new(self.0.0 as isize)
+                    .expect("a created window's handle is not null");
+                let raw = RawWindowHandle::Win32(Win32WindowHandle::new(handle));
+                // SAFETY: the window is alive for as long as the test holds `self`.
+                Ok(unsafe { WindowHandle::borrow_raw(raw) })
+            }
+        }
+
+        let window = window::hidden();
+        set_relaunch(&Lent(window));
+
+        let exe = std::env::current_exe().expect("the test program's path");
+        assert_eq!(window::held(window, PKEY_AppUserModel_ID), app_id(&exe));
+        assert_eq!(
+            window::held(window, PKEY_AppUserModel_RelaunchCommand),
+            relaunch_command(&exe)
+        );
+        window::destroy(window);
     }
 }

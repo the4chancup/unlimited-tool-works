@@ -400,25 +400,12 @@ fn drop_stale_folder_keys(target: &mut Table, baseline: &Table, desired: &Table)
     else {
         return;
     };
-    let mut dropped = false;
-    merged.retain(|key, _| {
-        let drop = match common::written_folder_key(key) {
-            Some(written) if written != key => {
-                before.get(written.as_str()) != after.get(written.as_str())
-            }
-            _ => false,
-        };
-        dropped |= drop;
-        !drop
+    merged.retain(|key, _| match common::written_folder_key(key) {
+        Some(written) if written != key => {
+            before.get(written.as_str()) == after.get(written.as_str())
+        }
+        _ => true,
     });
-    // The pruning may empty a table the merge filled with kept keys alone: it goes
-    // with its rows, as a file with no per-version folder has none.
-    if dropped
-        && merged.is_empty()
-        && let Some(section) = target.get_mut(COMMON_KEY).and_then(Value::as_table_mut)
-    {
-        section.remove("pes_folders");
-    }
 }
 
 fn assert_reserved_free(tool_id: &str) {
