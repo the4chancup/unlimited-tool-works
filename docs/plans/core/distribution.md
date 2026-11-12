@@ -420,8 +420,8 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
 shape: `## [Unreleased]` on top, then one `## [1.4.0] — 2026-10-02` section per release. Inside a
-section, bullets are grouped by tool (`**Team compiler** — …`, `**Save editor** — …`,
-`**General** — …` for what every tool shares), because that is how a member reads it even
+section, bullets are grouped by tool (`**Team compiler**: …`, `**Save editor**: …`,
+`**General**: …` for what every tool shares), because that is how a member reads it even
 though the version axis is one.
 
 A fix for a corner case few members ever reach (a rare sequence of steps, such as a popover
