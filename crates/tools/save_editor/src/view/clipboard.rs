@@ -188,11 +188,19 @@ pub(super) fn copy(ctx: &egui::Context, view: &SaveView) {
 /// Gameplan is the `[tactics]` table; a preset is `[tactics.preset_1]`
 /// and a formation `[tactics.preset_1.formation_1]`, whichever was shown,
 /// since the paste goes onto the one shown there. `None` when the target
-/// names nothing the save holds; a `from_team` refusal, unreachable on a
-/// team of the save, is logged, not shown.
+/// names nothing the save holds, or when the Team TOML export refuses the
+/// team (a stored byte outside its version's list, such as a playing
+/// style or an instruction): then nothing is copied, and the refusal is
+/// logged, not shown.
 fn copied(file: &EditFile, target: &Target, shown: (usize, usize)) -> Option<(String, TeamToml)> {
     let team = file.team(target.team_id())?;
-    let players: Vec<&PlayerEntry> = file.players().iter().collect();
+    // Only a stats copy keeps a player table. The other kinds export the
+    // team without its players, so a player whose record the export
+    // refuses does not stop his team's tactics from being copied.
+    let players: Vec<&PlayerEntry> = match target {
+        Target::Player(..) => file.players().iter().collect(),
+        Target::Team(_) | Target::Preset(_) | Target::Formation(_) => Vec::new(),
+    };
     let mut exported = match TeamToml::from_team(file.version(), team, &players) {
         Ok(document) => document,
         Err(error) => {
