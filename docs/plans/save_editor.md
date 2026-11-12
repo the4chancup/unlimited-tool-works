@@ -242,8 +242,8 @@ side.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
-  The place, not the shirt number, because it is the `NN` of his export's `NN - Name` folder
-  and of his id, and General info shows the shirt number.
+  The row shows the place, not the shirt number, because the place is the `NN` of his export's
+  `NN - Name` folder and of his id, and General info shows the shirt number.
 
   The rows' text, as every name the views draw (the lineup lists, the popover, the view's
   title), is the body text, 12.5 as the drafts', not egui's 14-point default font, at which
@@ -585,9 +585,9 @@ side.
     the flag, and the Team menu's Set edited flag covers a team, which is what a member sets it
     for.
 - **Contents 1:1 with 4ccEditor's tabs**, which are the parity contract, but for stronger
-  hand. 4ccEditor draws it on its Appearance tab, and the player view in General info, beside
-  the gameplay values it is one of. Star and playing attitude stay with Appearance, in its
-  Cutscenes group.
+  hand. 4ccEditor draws it on its Appearance tab; the player view draws it in General info,
+  beside the gameplay values it is one of. Star and playing attitude stay with Appearance, in
+  its Cutscenes group.
   - **The numbers** are the game's, in 4ccEditor's ranges: abilities 40 to 99, form 1 to 8,
     injury resistance 1 to 3, weak foot usage and accuracy 1 to 4 (these four stored one
     lower), and the Cutscenes group's star 0 to 7 and playing attitude 0 to 3, each inside the
@@ -1257,11 +1257,11 @@ Win32 original hurt the most):
   - the right end lists only the teams from the left one on and follows the left one when it
     passes it, so the range is never reversed.
 
-  Under the combo boxes stand a count line ("4 teams"), the folder row with Browse,
-  the same checkbox, and the file-name line, which follows it. The dialog is as wide as its
-  longer state, the file-name line sized for both of the checkbox's, so it keeps its width when
-  the checkbox flips, and its labels and fields sit on one grid. An existing file is replaced,
-  the file-name line saying so.
+  Under the combo boxes stand a count line ("4 teams"), the folder row with Browse, the same
+  checkbox, and the file-name line, which follows it. The dialog is as wide as its longer
+  state, the file-name line sized for both of the checkbox's, so it keeps its width when the
+  checkbox flips, and its labels and fields sit on one grid. An existing file is replaced, the
+  file-name line saying so.
 
   The dialog then turns into the run's progress ("Writing 2 of 4: /f/ (718)", a ProgressBar,
   Stop, which keeps the pictures written so far) and then its result ("4 pictures written to
