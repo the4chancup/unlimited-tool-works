@@ -2349,7 +2349,11 @@ points there.
   (`4ccEditor-1/main.cpp`, "Update the numbers in attack combo boxes with the correct
   labels"). The maintainer's ruling (2026-11-12): the bytes being the same, nothing is
   relabelled yet; once the study says whether PES 17 uses them, and how, the two controls
-  are relabelled or disabled there.
+  are relabelled or disabled there. A claim to test in the study (heard by the maintainer,
+  2026-11-12, no source checked): PES 17 does read the two numbers, but only while the
+  team's automatic attack and defence levels are on, which would also explain the
+  unofficial editor's labels. So the readers are looked for on the paths the automatic
+  levels take, not only the game plan's.
 - open 2026-11-11 (the worklog's collapse) — What the collapse left for the lead, from its
   report (`.tmp/sidelead/sk_wl.report.md`): (1) the closed issues' in-game results, Tests 2,
   4, 4b, 4c and 5 (the BootsList and GloveList rows, the referee collars on PES 17 and 21),
