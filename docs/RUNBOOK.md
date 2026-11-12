@@ -182,7 +182,10 @@ local half, no split threshold; the last local `mutants.out` set aside as
 the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
 while a mutants half is running or uncollected; the transient service `studio-gates`,
 memory-capped and CPU-idle, run synchronously). The VPS's `just` is installed in
-`~/.cargo/bin` at this machine's version, as cargo-mutants is. The lead uses
+`~/.cargo/bin` at this machine's version, as cargo-mutants is. Its Python has Pillow from
+Debian's `python3-pil` package (11.1.0 on Debian 13, where CI installs the pinned 12.3.0
+through pip): `just test` runs the drafts tooling's tests, which read images through it, and
+without it the recipe stopped there with the tests after it unrun. The lead uses
 `just gates-remote` for its review gates while the switch is on, and a sidekick's runs go
 there one command at a time, `just remote cargo test -p <crate>` (`cargo` or `just` only; a
 brief says so, and that the run refuses while a mutation half or other gates use the clone,
