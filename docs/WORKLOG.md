@@ -1706,7 +1706,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] SWE-2's round over Astra's fixes, 2026-11-12: 2 of 4 concerns accepted, both in
       the new tests (the notice test read the machine's own settings; no test kept a
       failure a failure after Cancel), which ends the subloop
-    - [ ] the review loops' rest: Carbon's loop (its login resets on 2026-11-15)
+    - [x] Carbon's round 1, 2026-11-12 (on Devin `work`; `a1b233ea`, Opus; merge
+      `067f5222`): 7 of 11 concerns accepted: Restart now started the new program before
+      the closing one released its lock, so it opened as a second instance (seen in the
+      three manual runs' `utw.2.lock`); a succeeded update whose temp folder could not be
+      deleted refused every later one; Cancel read before each request; the offer tests
+      survive the version bump of the release cut; ST-CLI-05's stderr half asserted
+      (DECISIONS 2026-11-12 "An update that succeeded marks its leftovers")
+    - [ ] the review loops' rest: a SWE-2 subloop over `a1b233ea`, then Carbon's round 2 by
+      the rule (`work` at 97% of its week: after the Sunday reset, 2026-11-15)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [ ] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -1770,14 +1778,15 @@ briefs, review loops, gates and mutation runs as for any step.
       Not looked at, by the maintainer's choice: two copies as two groups, and a pin made
       by an earlier version beside the new window (the changelog says nothing of old pins)
     - [ ] review rounds (tier 2). SWE-2 "S-inst r1", 2026-11-12: 3 of 4 concerns accepted,
-      none of them the crash, which the look found. Owed: one SWE-2 round over `33a6275c`,
-      then one paid round (Carbon, on Devin `work`)
+      none of them the crash, which the look found. "S-inst r2" over the fix: 1 of 3,
+      its loop ended; the checkpoint's survivor (`set_relaunch` replaced by nothing) got
+      its test (`9d12e100`). Owed: one paid round (Carbon, after the Sunday reset)
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
     had changed; a save now writes only what its own session changed, a default not being
     a change (ST-SET-05). Not looked at in two built windows
-    - [ ] review rounds (tier 2). SWE-2 "S-drift r1", 2026-11-12: 1 of 3 concerns
+    - [x] review rounds (tier 2). SWE-2 "S-drift r1", 2026-11-12: 1 of 3 concerns
       accepted (two windows each filling a per-version PES folder row lost one, the
       table being absent from the file while empty: a table a side lacks is merged as an
       empty one); its loop ended. The checkpoint's three survivors got two tests (the
@@ -1785,7 +1794,8 @@ briefs, review loops, gates and mutation runs as for any step.
       2026-11-12 (on Devin `work`): 3 of 7 concerns accepted (`5f1f8488`, SWE-2; merge
       `1e3fdf67`): a folder row written by hand under the four-digit year kept its old key
       beside a changed row and won the next start, and two tests for what none pinned;
-      the paid round is done. Owed: one SWE-2 round over the fixes
+      the paid round is done. SWE-2 "S-drift c1" over the fixes: one concern, a branch
+      no test reached removed (`9d12e100`). The review rounds are done
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03)
