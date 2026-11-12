@@ -811,6 +811,26 @@ side.
   the values as the view shows them. The table is computed when the prompt opens, not per
   frame; players through `pes_savefile`'s `compare_players`, teams through a team twin of it
   over the team, roster and tactics schemas.
+
+  **A player moved in the list is one row** (0.0.2-undo; until it is built a move lists every
+  field of every player it shifted). A move trades whole records between player ids, so
+  compared id by id every field of each player differs, and the rows say nothing a member
+  can read. The session therefore remembers, for each player id, whose record from the file
+  it now holds, through every move, undo and redo, and forgets it when the save is written
+  or another opened. The table then has one row for each group of players that traded places
+  among themselves: the item is the team's name, the label `Player order`, and the two values
+  list the group's places with the player on each, in the file and now (`04 SMITH, 07 JONES`
+  and `04 JONES, 07 SMITH`). The players' own rows are compared against the record each one
+  came from, so a moved player lists only what was edited on him, before or after the move.
+  One row per group, not per player, because the players between the two ends of a drag only
+  shifted by one place, and a row each would bury the one move the member made.
+- **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo): it writes
+  the row's old value back into its field as one undo step, so Undo brings the change back,
+  and the list stays open, a row shorter. It is no step taken out of the undo stack: later
+  steps may build on an earlier one, while a row is a field's difference from the file and
+  already holds the value to write. On a `Player order` row the X puts the whole group back on
+  their places in the file, each player keeping the edits made on him. The close prompt's
+  table has no X: it asks one question about all the changes.
 - The toolbar's `• unsaved changes` is a clickable label (Sense::click, the pointing-hand
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
   a popup under it holding the close prompt's table (the same rows, computed when the popup
@@ -2344,6 +2364,26 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
                 Team compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
+SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto place 07
+           WHEN the unsaved changes list or the close prompt is opened
+           THEN the move is one row, item team 701's name, label `Player order`, its old value
+                the places 04 to 07 with the players the file has on them and its new value
+                the same places with the players now on them, and no player has a row;
+                GIVEN the moved player's Height then edited THEN the list holds that row
+                and his one Height row, old and new values his own; GIVEN the move undone
+                THEN the list holds the Height row alone, under the player it was edited on;
+                GIVEN a second, separate pair of the team swapped THEN the list holds two
+                `Player order` rows; GIVEN the save written THEN the list is empty and a
+                later move's row compares against the written order
+SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a team's Support
+           range row and a `Player order` row
+           WHEN the X at the end of the Height row is clicked
+           THEN the player's Height is the file's again, the list stays open without that
+                row, and one Undo sets the Height back to the edited value; the same for the
+                Support range row; GIVEN the X of the `Player order` row clicked THEN every
+                player of that group is back on his place in the file, an edit made on one of
+                them after the move still his; the close prompt's table has no X; GIVEN the
+                last row's X clicked THEN the list closes and the save is clean
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked

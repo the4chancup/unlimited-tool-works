@@ -16985,3 +16985,27 @@ versions and the document's import already converts, and because it is a format 
 reads and writes today. One path for a paste, not the in-memory copy kept beside the text,
 because two paths would have to be kept writing the same thing.
 Plan: `plans/save_editor.md` "Editing UI" (the Ctrl+C and Ctrl+V bullet), SE-GUI-72.
+
+## 2026-11-12 — save_editor — a player moved in the list is one row of the unsaved changes; each row of the toolbar's list gets an X
+Decision (the maintainer, answering `QUESTIONS.md` "An X on a row of the unsaved changes
+list, after a player was moved": "It should be shown as a single row"; the rest the lead's):
+the session remembers, for each player id, whose record from the file it now holds, through
+every move, undo and redo, until the save is written or another opened. The changes table,
+the close prompt's and the toolbar list's alike, shows one `Player order` row for each group
+of players that traded places among themselves, under the team's name, its values the
+group's places with the player on each, in the file and now; a moved player's own rows are
+compared against the record he came from, so only real edits are listed. In the toolbar's
+list every row ends with an X that writes its old value back as one undo step, the list
+staying open; on a `Player order` row it puts the group back on their places, edits kept. The
+close prompt's table has no X (SE-GUI-73, 74).
+Why: one row for a move, not the fields of every player it shifted, because a move trades
+whole records between ids and those rows tell a member nothing, and because an X on one of
+them would give one player a single value of another. The session tracks the records, not
+the list guessing a move from which records look alike, because a Copy stats or an edit
+after the move makes two records alike or unlike without any move. One row per group, not
+per shifted player, because a drag over twenty places shifts twenty players by one and the
+member made one move. The X writes the old value as a new step, not a step taken out of
+the undo stack, because later steps may build on an earlier one while a row already holds the
+value to write.
+Plan: `plans/save_editor.md` "Editing UI" (the two bullets after the changes table's),
+SE-GUI-73, SE-GUI-74.

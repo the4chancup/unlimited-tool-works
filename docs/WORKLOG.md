@@ -1811,12 +1811,16 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted; fixes `1c765193` and the commit after it). Carbon owed
     - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
-    if a design for changes spanning many fields holds (the maintainer, 2026-11-03).
-    Looked at 2026-11-12: a row holds its field and old value (`PlayerDiff`, `TeamDiff`), so
-    writing one back is a plain edit; a reorder trades two whole records between their ids
-    and fills the list with both players' fields, where one row written back mixes the two.
-    Waits on `QUESTIONS.md` "An X on a row of the unsaved changes list, after a player was
-    moved" (read from the plan and the code, no list opened after a move)
+    if a design for changes spanning many fields holds (the maintainer, 2026-11-03). It
+    holds once a move is one row (the maintainer, 2026-11-12; DECISIONS 2026-11-12;
+    `plans/save_editor.md` "Editing UI", the two bullets after the changes table's;
+    SE-GUI-73, 74): a move trades whole records between ids and filled the list with every
+    field of the players it shifted. Tier 2. After 0.0.2-clip merges (the same crate)
+    - [ ] a: the session remembers whose record each id holds; the `Player order` row in
+      the list and the close prompt; a moved player's rows against the record he came
+      from (SE-GUI-73). Opus
+    - [ ] b: the X on each row of the toolbar's list (SE-GUI-74); the draft's
+      `changesPopup` first (the lead)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
