@@ -270,10 +270,17 @@ side.
   A drop works on a row of the dragged player's own team, in one team's list or under ALL,
   where each team's rows run unbroken under its team row. A drop on another team's row does
   nothing, and drag is off while a filter is typed, where neighbouring rows are not one team's
-  neighbouring slots. While a drag is held over a row of his team other than his own, that
-  row, the slot the drop moves him to, is outlined in the selection colour (the draft's
-  `.dragover`), as the lineup lists outline theirs. A row the drop moves nothing onto (his
-  own, another team's, an empty slot's) gets no outline.
+  neighbouring slots. While a drag is held over a row of his team other than his own, the
+  place the drop moves him to is marked by a line between two rows, 2 points thick in the
+  selection colour, with a short serif at each end (the draft's `.dropabove` and
+  `.dropbelow`; until it is built that row is outlined, the draft's `.dragover`). The line is
+  on the row's lower edge when he comes from above, since the rows down to that one move up
+  and he lands under them, and on its upper edge when he comes from below. A line, not the
+  outline the lineup lists draw, because a drop here inserts the player and shifts the rows
+  between, where a lineup drop swaps two rows: an outline round one row promised a swap. A
+  row the drop moves nothing onto (his own, another team's, an empty slot's) gets no line.
+  A drop has one place to go, so the list never shows two lines, and a drag that ends
+  without a drop (a release outside the list, Esc) leaves none.
 
   The dragged row is drawn under the pointer while it is held, the point first pressed kept
   under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn as the
@@ -811,6 +818,26 @@ side.
   the values as the view shows them. The table is computed when the prompt opens, not per
   frame; players through `pes_savefile`'s `compare_players`, teams through a team twin of it
   over the team, roster and tactics schemas.
+
+  **A player moved in the list is one row** (0.0.2-undo; until it is built a move lists every
+  field of every player it shifted). A move trades whole records between player ids, so
+  compared id by id every field of each player differs, and the rows say nothing a member
+  can read. The session therefore remembers, for each player id, whose record from the file
+  it now holds, through every move, undo and redo, and forgets it when the save is written
+  or another opened. The table then has one row for each group of players that traded places
+  among themselves: the item is the team's name, the label `Player order`, and the two values
+  list the group's places with the player on each, in the file and now (`04 SMITH, 07 JONES`
+  and `04 JONES, 07 SMITH`). The players' own rows are compared against the record each one
+  came from, so a moved player lists only what was edited on him, before or after the move.
+  One row per group, not per player, because the players between the two ends of a drag only
+  shifted by one place, and a row each would bury the one move the member made.
+- **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo): it writes
+  the row's old value back into its field as one undo step, so Undo brings the change back,
+  and the list stays open, a row shorter. It is no step taken out of the undo stack: later
+  steps may build on an earlier one, while a row is a field's difference from the file and
+  already holds the value to write. On a `Player order` row the X puts the whole group back on
+  their places in the file, each player keeping the edits made on him. The close prompt's
+  table has no X: it asks one question about all the changes.
 - The toolbar's `• unsaved changes` is a clickable label (Sense::click, the pointing-hand
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
   a popup under it holding the close prompt's table (the same rows, computed when the popup
@@ -1720,7 +1747,7 @@ aesthetics** but through the switch:
   another save opened), not frozen at Open. A drag or a text edit in flight keeps the last
   preview drawn, since recomputing it every frame would slow the edit, and Apply recomputes a
   preview so held before it writes, never a list an edit since made stale. So after Apply the
-  list is empty and `Applied. The changes stay unsaved until Save.` stands in its place until
+  list is empty and `Applied. The changes stay unsaved until you click Save.` stands in its place until
   the next change. A patch whose values the save already holds lists nothing and says so, and
   Apply is disabled whenever the list is empty. An undo of the Apply brings the list back.
 
@@ -2344,6 +2371,26 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
                 Team compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
+SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto place 07
+           WHEN the unsaved changes list or the close prompt is opened
+           THEN the move is one row, item team 701's name, label `Player order`, its old value
+                the places 04 to 07 with the players the file has on them and its new value
+                the same places with the players now on them, and no player has a row;
+                GIVEN the moved player's Height then edited THEN the list holds that row
+                and his one Height row, old and new values his own; GIVEN the move undone
+                THEN the list holds the Height row alone, under the player it was edited on;
+                GIVEN a second, separate pair of the team swapped THEN the list holds two
+                `Player order` rows; GIVEN the save written THEN the list is empty and a
+                later move's row compares against the written order
+SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a team's Support
+           range row and a `Player order` row
+           WHEN the X at the end of the Height row is clicked
+           THEN the player's Height is the file's again, the list stays open without that
+                row, and one Undo sets the Height back to the edited value; the same for the
+                Support range row; GIVEN the X of the `Player order` row clicked THEN every
+                player of that group is back on his place in the file, an edit made on one of
+                them after the move still his; the close prompt's table has no X; GIVEN the
+                last row's X clicked THEN the list closes and the save is clean
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked
@@ -2584,9 +2631,10 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row cli
                 writes; GIVEN preset 1 copied from its selector and preset 2 shown WHEN
                 Ctrl+V is pressed THEN preset 2 equals preset 1, and likewise a formation;
                 GIVEN a preset copied WHEN a player row is selected and Ctrl+V pressed
-                THEN nothing changes; each Ctrl+C puts on the system clipboard a line naming
-                what it copied (`Unlimited Tool Works: the stats of <name>`, `… preset 2 of
-                <team>`, `… the Kick-off formation of <team>`), the last control pressed
+                THEN nothing changes; each Ctrl+C puts on the system clipboard a text whose
+                first line names what it copied (`# Unlimited Tool Works: the stats of
+                <name>`, `… preset 2 of <team>`, `… the Kick-off formation of <team>`;
+                SE-GUI-72 has the rest of the text), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
                 press not; GIVEN team 701's row copied and pasted onto itself THEN no undo
                 entry is pushed and the save stays clean;
@@ -2660,6 +2708,14 @@ SE-GUI-69  GIVEN a team's player list, row 03 pressed 20 points right of its nam
            THEN the row's name is drawn 30 points right and 40 below where it stood, on top
                 of the list; GIVEN a filter typed THEN a press and the same move draw nothing
                 there
+SE-GUI-75  GIVEN a team's player list and row 02 held dragged
+           WHEN the pointer is over row 06
+           THEN a line 2 points thick in the selection colour is drawn across row 06's lower
+                edge, a serif at each end, and no row is outlined; WHEN the pointer is over
+                row 01 instead THEN the line is across row 01's upper edge; the list draws
+                one line at most; GIVEN the pointer over his own row, an empty slot's or
+                another team's row THEN no line is drawn; GIVEN the drag released outside
+                the list THEN no line is left
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -2700,7 +2756,7 @@ SE-GUI-67  GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team
                 turned on THEN Apply writes no aesthetics, and once "Edit aesthetics anyway"
                 is on, Apply writes them; WHEN 713's file is picked after the first was
                 applied THEN the first's `Applied` line goes, and Apply writes 713's file
-                onto 701 and reads `Applied cm.toml. The changes stay unsaved until Save.`
+                onto 701 and reads `Applied cm.toml. The changes stay unsaved until you click Save.`
 SE-GUI-68  GIVEN a PES 17 save open on team 714 (/co/)
            WHEN team 714's Team TOML from a PES 21 save, its preset 1 attacking instructions
                 holding Wing Back, which PES 17 lacks, is picked; then the PES 19 squad file

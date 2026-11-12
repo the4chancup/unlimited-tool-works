@@ -19,7 +19,8 @@ is in `AGENTS.md` ("Working documents").
    formations pass them; the looks in game are running (a SWE-2 sidekick, 2026-11-12), then
    the slice.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
-   SE-GUI-72; its slice comes next), -undo (waits on `QUESTIONS.md`), and -inst, whose
+   SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
+   two slices follow -clip), and -inst, whose
    cause is being looked for with the maintainer; -drift and -statlbl are in.
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
 5. The cut. The library checkpoints (0.0.2-chk) are in.
@@ -1083,6 +1084,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (merged `1c1fb403`). The read in the built window was left open (look: Pending looks)
       - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
         chapters
+    - [ ] f a second read of every string a member reads, for how a person would say it
+      (the maintainer, 2026-11-12, after two lines of the Save editor's import panel that
+      a1 had passed or that came after it: "and the file decides the format", unnecessary,
+      and "one undoable edit; the changes stay unsaved until Save.", shorthand; both
+      reworded that day). A sidekick per surface, as a to c ran, each diff read line by
+      line by the lead; the Save editor's `view/` last, after 0.0.2-clip, -line and -undo,
+      which edit the same files. To settle in it: the `Applied. The changes stay unsaved
+      until Save.` notices beside the reworded line, which now says "until you click Save"
+      - [ ] f1 the shell (`studio_core`) and the drafts host
+      - [ ] f2 the Team compiler and the Export upgrader (window, CLI, catalogs, help)
+      - [ ] f3 the Save editor (window, CLI, catalog, help, draft)
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
     constant's row (`TOP_ROW_ONE_LINE`) measured in the draft and in the built window agree
@@ -1811,12 +1823,43 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted; fixes `1c765193` and the commit after it). Carbon owed
     - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
-    if a design for changes spanning many fields holds (the maintainer, 2026-11-03).
-    Looked at 2026-11-12: a row holds its field and old value (`PlayerDiff`, `TeamDiff`), so
-    writing one back is a plain edit; a reorder trades two whole records between their ids
-    and fills the list with both players' fields, where one row written back mixes the two.
-    Waits on `QUESTIONS.md` "An X on a row of the unsaved changes list, after a player was
-    moved" (read from the plan and the code, no list opened after a move)
+    if a design for changes spanning many fields holds (the maintainer, 2026-11-03). It
+    holds once a move is one row (the maintainer, 2026-11-12; DECISIONS 2026-11-12;
+    `plans/save_editor.md` "Editing UI", the two bullets after the changes table's;
+    SE-GUI-73, 74): a move trades whole records between ids and filled the list with every
+    field of the players it shifted. Tier 2. After 0.0.2-clip merges (the same crate)
+    - [ ] a: the session remembers whose record each id holds; the `Player order` row in
+      the list and the close prompt; a moved player's rows against the record he came
+      from (SE-GUI-73). Opus
+    - [ ] b: the X on each row of the toolbar's list (SE-GUI-74); the draft's
+      `changesPopup` first (the lead)
+  - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
+    round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
+    `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
+    (`.dropabove`, `.dropbelow`; renders of a drag each way, `.tmp/0_0_2/undo/dropline_down.png`
+    and `dropline_up.png`, by `shot_dropline.py` beside them); the maintainer looked at
+    the draft and its light approximation and approved both, serifs included (2026-11-12).
+    SE-GUI-75. A light theme in the drafts was weighed and left out: 175 colours of
+    `index.html` and `save_editor.js` are written as literals beside the variables, so it is
+    no cheap addition (`shot_dropline_light.py` overrides the variables for a one-off look)
+    - [ ] the slice (small: `view/player_list.rs`; after 0.0.2-clip), then the look in the
+      built window (Pending looks)
+  - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
+    2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
+    nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
+    the root, there is no real reason why there should be gaps between the choices in a
+    menu"). Read 2026-11-12: egui lays a menu's and a combo list's rows 18 points high and
+    3 apart (`item_spacing.y`); the earlier fix left the gap and gave each combo row a
+    click strip half the gap high above and below it (`studio_core`'s `widgets/combo.rs`,
+    ST-COMBO-01), which the toolbar menus, drawn through `widgets/menu_button.rs`, never
+    got. The root: the rows meet, each 21 high with no spacing, its text where it stood,
+    so no click can land between two; in the menus through `menu_button`'s one place, in
+    the combo lists through `combo_label` itself, whose strips then go; a separator keeps
+    its room. The highlight grows from 18 to 21 points, in the drafts' `.combo-pop` and
+    menus too (`docs/prototypes/index.html`, the comment "A menu as egui 0.37 draws one")
+    - [ ] the draft and the plan (`plans/core/gui.md`: the menus' and combos' rows,
+      ST-COMBO-01 reworded, a scenario for a toolbar menu); the lead
+    - [ ] the slice (`studio_core` alone, beside the Save editor's slices); Opus
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
@@ -2135,6 +2178,21 @@ briefs, review loops, gates and mutation runs as for any step.
   sidebar or Settings, the ring usable from the keyboard). Settled with the maintainer:
   the sidebar shows the current role as one compact control, not the six listed, the
   ring being where a role is chosen
+- [ ] after 0.2.0 (the maintainer, 2026-11-12: "no real need for it, but it's a nice to
+  have"): a shorter text for the Save editor's Ctrl+C. The copy is a Team TOML document
+  (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
+  for a player's stats, 143 for a preset. A form without the unset keys needs a writer
+  option in `pes_savefile`'s `team_toml`
+- [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
+  2026-11-12: "The draft should ideally use a palette like the app does"): every colour
+  that follows the theme is a variable of the host page named as `studio_core`'s
+  `theme.rs` names it, with a light value beside the dark one, and the settings' Theme
+  choice switches them; the colours that follow no theme (the pitch, the medals, a
+  name's own codes, the sample data) stay literals, marked as such. Measured 2026-11-12
+  (`.tmp/0_0_2/undo/colour_census.py`): 160 hex literals outside the 17 variables, 75
+  distinct, 116 of them in `save_editor.js`. A pure refactor first, proven by
+  `draft_shots.py` showing no changed shot on the dark theme; then the light values.
+  Opus, when no draft edit is in flight
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so

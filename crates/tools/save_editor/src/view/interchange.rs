@@ -951,9 +951,7 @@ fn contents(
         });
     });
     let Some(picked) = &interchange.picked else {
-        ui.weak(
-            "Team TOML, .4ccs, .4cct and Texport files open here, and the file decides the format.",
-        );
+        ui.weak("Team TOML, .4ccs, .4cct and Texport files are accepted.");
         return action;
     };
     let error = ui.visuals().error_fg_color;
@@ -1034,11 +1032,11 @@ fn contents(
         {
             action = Some(Action::Apply);
         }
-        ui.weak("one undoable edit; the changes stay unsaved until Save.");
+        ui.weak("The changes can be undone and stay unsaved until you click Save.");
     });
     if interchange.applied == Some(revision) {
         ui.weak(format!(
-            "Applied {}. The changes stay unsaved until Save.",
+            "Applied {}. The changes stay unsaved until you click Save.",
             file_name(&picked.path)
         ));
     } else if unchanged {

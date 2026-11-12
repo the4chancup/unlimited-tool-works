@@ -74,24 +74,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   on the same import; the manager id is not. Does the game mind two teams sharing one
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
-- **An X on a row of the unsaved changes list, after a player was moved** (worklog
-  0.0.2-undo). The list has one row per field that differs from the file, and each row
-  holds the field's old value, so an X that writes that value back (one undo step, the list
-  staying open) works for a stat, a name, a slider or a set-piece taker. A reorder is the
-  hard case: moving a player up or down the list trades two players' whole records between
-  their ids, so the list shows every field of both players as changed, and writing one of
-  those rows back would give one player a single value of the other. Three rows of one
-  formation spot (position, x, y) and the roster rows of a player moved between teams have
-  the same problem on a smaller scale. Which of these is wanted?
-  - Rows that only make sense together are undone together: an X on any row of a moved
-    player puts both players back as the file has them, and hovering it marks every row it
-    takes. Simple to build, but an edit made to either player after the move goes with it.
-  - The list learns to show a move as one row ("Place 04 → 07") with the player's real
-    edits beside it, each with its own X. This reads best, but the editor must then track
-    which record went where through every drag, undo and import, and the close prompt's
-    table changes with it.
-  - The X is drawn only on rows that stand alone, and a moved player's rows have none (Undo
-    is the way back for those).
 
 ## After the release
 

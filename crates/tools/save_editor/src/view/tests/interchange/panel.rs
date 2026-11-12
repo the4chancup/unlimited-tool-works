@@ -137,10 +137,8 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
     );
     assert_eq!(view.panel, Some(Panel::Interchange), "the panel opens");
     assert!(
-        panel_lines(&mut window, &mut view).contains(
-            &"Team TOML, .4ccs, .4cct and Texport files open here, and the file decides the format."
-                .to_owned()
-        ),
+        panel_lines(&mut window, &mut view)
+            .contains(&"Team TOML, .4ccs, .4cct and Texport files are accepted.".to_owned()),
         "the sentence before a pick"
     );
 }

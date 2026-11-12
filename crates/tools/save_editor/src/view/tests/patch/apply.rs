@@ -24,7 +24,7 @@ fn apply_is_one_undoable_edit_and_the_list_gives_way_to_the_applied_line() {
             "Open patch\u{2026}",
             "patch.toml: team 714 /co/, players 03",
             "Apply",
-            "Applied. The changes stay unsaved until Save.",
+            "Applied. The changes stay unsaved until you click Save.",
         ]
     );
     let apply = panel_button(&mut window, &mut view, "Apply").expect("the Apply button");
@@ -95,7 +95,7 @@ fn an_edit_after_apply_takes_the_applied_line_away() {
     click(&mut window, &apply, &mut view);
     assert_eq!(
         panel_lines(&mut window, &mut view)[3..],
-        ["Applied. The changes stay unsaved until Save."],
+        ["Applied. The changes stay unsaved until you click Save."],
         "premise: the Applied line stands"
     );
 
@@ -128,7 +128,7 @@ fn a_patch_opened_after_an_apply_says_the_save_holds_it() {
     click(&mut window, &apply, &mut view);
     assert_eq!(
         panel_lines(&mut window, &mut view)[3..],
-        ["Applied. The changes stay unsaved until Save."],
+        ["Applied. The changes stay unsaved until you click Save."],
         "premise: the Applied line stands"
     );
     let before = revision(&view);

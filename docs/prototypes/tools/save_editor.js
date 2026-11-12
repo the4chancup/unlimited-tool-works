@@ -185,6 +185,16 @@ input[type=range]:focus { outline: none; }
 /* A player row drags from anywhere on it, so the whole row shows the pointing hand, never
    the text I-beam. */
 .plist .rows .prow[draggable=true] { cursor: pointer; user-select: none; }
+/* Where a dragged player would be inserted: a line 2 thick in the selection colour across the
+   row's upper or lower edge, half on each of the two rows it parts, with a serif 7 high at each
+   end so it reads as a place between rows and not as a row's border. */
+.plist .rows .prow { position: relative; }
+.plist .rows .prow.dropabove::after, .plist .rows .prow.dropbelow::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 7px; pointer-events: none; z-index: 1;
+  border-left: 2px solid var(--sel-fg); border-right: 2px solid var(--sel-fg);
+  background: linear-gradient(var(--sel-fg), var(--sel-fg)) center / 100% 2px no-repeat; }
+.plist .rows .prow.dropabove::after { top: -4px; }
+.plist .rows .prow.dropbelow::after { bottom: -4px; }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
    (the row's padding) and 4 before the place or position (the row's gap of 5 less 1), so the
    names get the room. */
@@ -4316,6 +4326,11 @@ function teamRow(team) {
 }
 // The player row a drag started on (team and slot), while it is held.
 let playerDrag = null;
+// Takes the drop line off whichever player row holds it.
+function clearDropLine() {
+  for (const row of document.querySelectorAll(".plist .prow.dropabove, .plist .prow.dropbelow"))
+    row.classList.remove("dropabove", "dropbelow");
+}
 function playerRow(team, p) {
   const r = h("div", { class: "prow" + (S.sel && S.sel.team === team.id && S.sel.slot === p.slot ? " on" : ""),
       draggable: "true", "data-slot": p.slot, "data-team": team.id,
@@ -4332,17 +4347,26 @@ function playerRow(team, p) {
     e.dataTransfer.effectAllowed = "move";
     playerDrag = { team: team.id, slot: p.slot };
   });
-  r.addEventListener("dragend", () => { playerDrag = null; });
-  // The row a drop would move the dragged player to is outlined (egui's
-  // dnd_hover_payload); his own row and another team's, where the drop
-  // changes nothing, are not.
+  // A drag that ends anywhere, a drop, a release outside the list or Esc,
+  // takes the line away.
+  r.addEventListener("dragend", () => { playerDrag = null; clearDropLine(); });
+  // A drop inserts the dragged player at this row's place and shifts the rows
+  // between by one: it swaps no two rows. So the place is marked by a line
+  // between two rows, not by an outline round this one: on this row's lower
+  // edge when he comes from above (the rows down to this one move up, and he
+  // lands under them), on its upper edge when he comes from below. His own
+  // row and another team's, where the drop changes nothing, get no line.
+  // There is one place a drop can go, so there is one line at most: the line
+  // is taken off every row before it is drawn on this one.
   r.addEventListener("dragover", e => {
     e.preventDefault();
-    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot) r.classList.add("dragover");
+    clearDropLine();
+    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot)
+      r.classList.add(playerDrag.slot < p.slot ? "dropbelow" : "dropabove");
   });
-  r.addEventListener("dragleave", () => r.classList.remove("dragover"));
+  r.addEventListener("dragleave", clearDropLine);
   r.addEventListener("drop", e => {
-    e.preventDefault(); r.classList.remove("dragover");
+    e.preventDefault(); clearDropLine();
     const [tid, slot] = e.dataTransfer.getData("text/plain").split(":");
     if (Number(tid) === team.id) { movePlayer(team, Number(slot), p.slot); render(); }
   });
@@ -7735,7 +7759,7 @@ function patchPanel() {
     }
     c.append(h("div", { style: "max-height:400px; overflow:auto" }, table));
   }
-  if (S.pat.applied) c.append(h("div", { class: "row" }, weak("Applied. The changes stay unsaved until Save.")));
+  if (S.pat.applied) c.append(h("div", { class: "row" }, weak("Applied. The changes stay unsaved until you click Save.")));
   return c;
 }
 
@@ -8218,7 +8242,7 @@ function interchangePanel() {
   const d = S.ix.file && ixFile(S.ix.file);
   if (!d) {
     c.append(h("div", { class: "row weak" },
-      "Team TOML, .4ccs, .4cct and Texport files open here, and the file decides the format."
+      "Team TOML, .4ccs, .4cct and Texport files are accepted."
       + (version() < 18 ? "" : " A .ted you export this session is listed too.")));
     return c;
   }
@@ -8309,9 +8333,9 @@ function interchangePanel() {
     button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
       { disabled: !!refusal || !chosen || unchanged,
         title: "Write the chosen sections as one undoable edit" }),
-    weak("one undoable edit; the changes stay unsaved until Save.")));
+    weak("The changes can be undone and stay unsaved until you click Save.")));
   if (S.ix.applied)
-    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
+    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until you click Save.")));
   else if (unchanged)
     c.append(h("div", { class: "row" }, weak("The team already holds every value of the chosen sections.")));
   return c;
