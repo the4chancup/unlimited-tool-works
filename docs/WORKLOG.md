@@ -1740,6 +1740,17 @@ briefs, review loops, gates and mutation runs as for any step.
       (the cut's width bounded from below, the whole dragged row watched, the float gone
       after the release); its loop ended. One paid round is owed (Carbon, from
       2026-11-15)
+  - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
+    Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
+    and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
+    `Edit` (Undo, Redo) take the buttons' place, and with an event logo drawn the band ends
+    as far left of it as the logo stands from the window's edge (`plans/save_editor.md`
+    "The toolbar", "The event logo")
+    - [x] 2026-11-12: the Save editor's draft and plan, copied by hand from the branch
+      `ui/save-editor-polish` (cut afterwards), the band's stop corrected for a window
+      drawn scaled down; the Ruleset editor's draft already has the look
+    - [ ] the two apps (a sidekick), with the scenarios the menus restate (SE-GUI-03, 04,
+      26) and the tests re-cited; then the look in the built window
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
