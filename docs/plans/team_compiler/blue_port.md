@@ -15,15 +15,19 @@ Drawn as a Fox collar, the marker's static painting: the referee step checks tha
 FMDL is painted that way (the pre-Fox prop is unskinned, no bone and no weight, and is the
 game's own prop, so it is not checked).
 
-**Preparing the slot mapping is a separate tool's job.** The slots are not drawn uniformly — each
-PES version has measured slot appearance rates (flat per-slot chances on 17–21, a pattern table on
-15/16 that demands matchday rotation) — and on PES 18–21 the community's Fox referee hook overrides
-the draw from per-match lists. The [Refs arranger](../refs_arranger.md) edits `players.txt` inside the
-refs export (against those tables, or as one slot per referee plus a weighted fallback fill when
-the hook decides who appears) and, on Fox, the hook's `ref_lists.txt` beside it, then switches the
-user to this tool for the compile — the arranger never compiles, and this tool's referee behavior
-is unaffected by it: a saved `players.txt` arrives like any other file edit via the folder
-watcher, and `ref_lists.txt` is not this tool's concern.
+**Preparing the slot mapping is a separate tool's job.** The slots are not drawn uniformly. Each
+PES version has measured slot appearance rates: flat per-slot chances on 17–21, and on 15/16 a
+pattern table that demands matchday rotation. On PES 18–21, the community's Fox referee hook
+overrides the draw from per-match lists.
+
+The [Refs arranger](../refs_arranger.md) edits `players.txt` inside the refs export, either
+against those tables or, when the hook decides who appears, as one slot per referee plus a
+weighted fallback fill. On Fox it also edits the hook's `ref_lists.txt` beside it. Then it
+switches the user to this tool for the compile.
+
+The arranger never compiles, and this tool's referee behavior is unaffected by it: a saved
+`players.txt` arrives like any other file edit via the folder watcher, and `ref_lists.txt` is not
+this tool's concern.
 
 ### Features that disappear in a compiled GUI app
 

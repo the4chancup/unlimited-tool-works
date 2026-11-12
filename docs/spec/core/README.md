@@ -33,13 +33,15 @@ into the Team compiler, which converts models to the target PES version's format
 The plan documents form a standalone architectural plan derived from a feasibility analysis of the
 existing codebases.
 
-**Relationship to legacy tools:** Unlimited Tool Works is an independent reimplementation of their useful
-ideas and required observable results, not a translation of their source. Its implementation,
-internal data layout, module organization, and UI are designed anew around this plan. Legacy file
-and function names identify behavioral/format evidence, not code or application structure to copy.
-Required PES binary formats and game-facing output conventions remain compatible; a new internal
-layout does not mean changing formats the game must read. Normal third-party library reuse remains
-appropriate, with its own dependency/license checks.
+**Relationship to legacy tools:** Unlimited Tool Works is an independent reimplementation of their
+useful ideas and required observable results, not a translation of their source. Its
+implementation, internal data layout, module organization, and UI are designed anew around this
+plan. Legacy file and function names identify behavioral/format evidence, not code or application
+structure to copy.
+
+Required PES binary formats and game-facing output conventions remain compatible: a new internal
+layout does not mean changing formats the game must read. Normal third-party library reuse
+remains appropriate, with its own dependency/license checks.
 
 ### Project context
 
@@ -48,11 +50,12 @@ It takes user-submitted "exports" (folders, `.zip`, or `.7z` archives containing
 faces, kits, boots, gloves, portraits, logos) and compiles them into CPK archive files that the game
 can load.
 
-**PES 2020** (a recurring question): no official 4cc cup has used it. PES
-2021 is in theory the same game with a roster update, which does not matter to the 4cc, so 2020
-was skipped. It was used once, for a recent invitational, partly as a test, and Red gained a small
-addition to support it. Studio supports it like any version; where its game files have not been
-checked, it is taken to match 2021.
+**PES 2020** (a recurring question): no official 4cc cup has used it. PES 2021 is in theory the
+same game with a roster update, which does not matter to the 4cc, so 2020 was skipped. It was used
+once, for a recent invitational, partly as a test, and Red gained a small addition to support it.
+
+Studio supports it like any version. Where its game files have not been checked, it is taken to
+match 2021.
 
 Three prior compiler implementations exist:
 

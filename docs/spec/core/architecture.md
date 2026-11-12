@@ -151,26 +151,35 @@ crates/studio_core/src/
 ```
 
 Anything not on this list belongs in a lib crate or a tool crate. The two tempting misplacements:
-format knowledge (team IDs, teams-list parsing → `teams_list`; export conventions →
-`aesthetics_export`) and widgets used by one tool (→ that tool's `view/`).
+
+- format knowledge (team IDs, teams-list parsing → `teams_list`; export conventions →
+  `aesthetics_export`);
+- widgets used by one tool (→ that tool's `view/`).
 
 **The running-PES probe.** `pes_process::running_pes() -> Vec<RunningPes>` lists the PES games
 running now, each a `RunningPes { version: PesVersion, exe: Option<PathBuf> }`, matched by
 executable name: `PES2015.exe` to `PES2021.exe`, in any letter case (the names the games ship
-with; a renamed exe is not seen, and neither is the short `pes21.exe`). On Windows it walks a
-Toolhelp process snapshot and asks each match for its image path (the `unsafe` the code style
-allows here), `None` when the process refuses (another user's or a protected process; the
-limited query right is granted on an elevated game too); on Linux it reads each
-`/proc/<pid>/cmdline`, whose first argument under Wine or Proton is the exe's Windows path, and
-matches its last segment after a `\` or `/`; elsewhere it returns none. A process whose list
-entry cannot be read is skipped (on Linux, one whose `cmdline` cannot be read); a Windows match
-whose path cannot be read is kept with `exe: None`. Its callers today are the steps that must not run while the game of the save's
-version does: the compiler's savefile step and the Save editor's writing commands (a game of
-another version never writes that save); the GUI's version-selector poll calls it on a timer
-(Phase 8, `plans/core/gui.md` "Sidebar"). We match process names, not a lock file or a window
-title, because the game takes no lock on its save and its window title changes with its
-language. The module is split by `cfg` per OS, so a mutation run reports the other OS's arms
-as missed (`WORKLOG.md` "Current-state gotchas").
+with; a renamed exe is not seen, and neither is the short `pes21.exe`). How it finds them
+depends on the OS:
+
+- On Windows it walks a Toolhelp process snapshot and asks each match for its image path (the
+  `unsafe` the code style allows here). The path is `None` when the process refuses (another
+  user's or a protected process; the limited query right is granted on an elevated game too).
+- On Linux it reads each `/proc/<pid>/cmdline`, whose first argument under Wine or Proton is the
+  exe's Windows path, and matches its last segment after a `\` or `/`.
+- Elsewhere it returns none.
+
+A process whose list entry cannot be read is skipped (on Linux, one whose `cmdline` cannot be
+read). A Windows match whose path cannot be read is kept with `exe: None`.
+
+Its callers today are the steps that must not run while the game of the save's version does: the
+compiler's savefile step and the Save editor's writing commands (a game of another version never
+writes that save). The GUI's version-selector poll calls it on a timer (Phase 8,
+`plans/core/gui.md` "Sidebar").
+
+We match process names, not a lock file or a window title, because the game takes no lock on its
+save and its window title changes with its language. The module is split by `cfg` per OS, so a
+mutation run reports the other OS's arms as missed (`WORKLOG.md` "Current-state gotchas").
 
 **Tool crates** (`crates/tools/`) — each implements the `StudioTool` trait and owns:
 - Its processing logic (or orchestration over lib crates)
@@ -198,33 +207,43 @@ aesthetics editor, Music player, Music export editor) add their logic as flat mo
 (`compile.rs`, `arrange.rs`, …) and need no further prescription. The two flagship tools and the
 Match tracker elaborate below the skeleton; their trees are in their own plans ("Crate layout" in
 the [Team compiler](../team_compiler/README.md), [Save editor](../save_editor.md), and [Match
-tracker](../../plans/match_tracker/README.md) plans). Lib crates with a mandated layout are `pes_savefile`,
-`model_convert`, and `aesthetics_export` (in their plans) plus the `format/`–`ops/` split of `fmdl` and
-`pes_model` (in [libs](../libs/README.md)); the remaining libs are single-concern and get no prescription.
+tracker](../../plans/match_tracker/README.md) plans).
 
-**Lib crates** (`crates/libs/`) — shared functionality with no tool identity. Format and processing
-libs stay GUI-neutral; explicitly shared widget libs (`color_tools`, future `model_viewport`) may
-use egui/wgpu. Formats exclusive to one consumer still get their own crate when they are conceptually
-standalone formats (e.g. `uniparam`); single-consumer helpers stay with their owner (e.g. CRILAYLA
-lives inside `cpk`).
+Lib crates with a mandated layout are `pes_savefile`, `model_convert`, and `aesthetics_export` (in
+their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
+[libs](../libs/README.md)); the remaining libs are single-concern and get no prescription.
 
-**No per-tool companion libs.** Even the largest tool — the Team compiler, at an estimated 15–25k
-lines — stays a single crate, organized by internal modules mirroring its pipeline stages (`reader/`,
-`check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/` — the full tree and placement rules are
-the "Crate layout" section of the [Team compiler plan](../team_compiler/README.md)). A `team_compiler_lib` next to it
-would have exactly one consumer, which rule 3 below calls
-out, and it would buy nothing for navigation that the module tree doesn't already give. What *is*
-extracted is the part with real multiple consumers: `aesthetics_export` (the export format's object model,
-folder conventions, and validation) is shared by the Team compiler, the Export upgrader that writes
-the format, the Kit config editor that edits kit folders inside exports, the Refs arranger that
-edits referee slot allocations inside refs exports, and the Team creator — so all of them
-agree on what a valid export is. Should the Team compiler ever need splitting for compile times or a
-headless build, the principled seam is logic vs. egui view (see the trade-off note under "Workspace
-guardrails"), not a catch-all lib. This rule has already survived its first pressure test: the [Refs
-arranger](../../plans/refs_arranger.md) was initially conceived as a "refs compiler" owning its own compile
-step, which would have forced the engine extraction for one thin extra consumer; instead it only
-prepares the refs export's `players.txt` and hands compilation off to the Team compiler (see "Why an
-arranger, not a compiler" in its plan).
+**Lib crates** (`crates/libs/`) — shared functionality with no tool identity.
+
+- Format and processing libs stay GUI-neutral; explicitly shared widget libs (`color_tools`,
+  future `model_viewport`) may use egui/wgpu.
+- Formats exclusive to one consumer still get their own crate when they are conceptually
+  standalone formats (e.g. `uniparam`); single-consumer helpers stay with their owner (e.g.
+  CRILAYLA lives inside `cpk`).
+
+**No per-tool companion libs.** Even the largest tool, the Team compiler, at an estimated 15–25k
+lines, stays a single crate, organized by internal modules mirroring its pipeline stages
+(`reader/`, `check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/`; the full tree and
+placement rules are the "Crate layout" section of the [Team compiler
+plan](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
+consumer, which rule 3 below calls out, and it would buy nothing for navigation that the module
+tree doesn't already give.
+
+What *is* extracted is the part with real multiple consumers: `aesthetics_export` (the export
+format's object model, folder conventions, and validation). It is shared by the Team compiler, the
+Export upgrader that writes the format, the Kit config editor that edits kit folders inside
+exports, the Refs arranger that edits referee slot allocations inside refs exports, and the Team
+creator, so all of them agree on what a valid export is.
+
+Should the Team compiler ever need splitting for compile times or a headless build, the
+principled seam is logic vs. egui view (see the trade-off note under "Workspace guardrails"), not
+a catch-all lib.
+
+This rule has already survived its first pressure test. The [Refs
+arranger](../../plans/refs_arranger.md) was initially conceived as a "refs compiler" owning its own
+compile step, which would have forced the engine extraction for one thin extra consumer. Instead it
+only prepares the refs export's `players.txt` and hands compilation off to the Team compiler (see
+"Why an arranger, not a compiler" in its plan).
 
 `fmdl` and `pes_model` have a second consumer outside this workspace: the Blender addons (see
 "Blender integration" in the [Model conversion plan](../model_conversion/gltf.md)). Their mesh splitting,
@@ -234,14 +253,16 @@ that a same-format FMDL or .model round-trip in Blender is lossless and never ro
 crates do not depend on `model_convert`.
 
 `python_bindings` is a PyO3 shim crate that exposes `fmdl` and `pes_model` to Blender's bundled
-Python as a native extension (`.pyd`/`.so`). It is not imported by `studio` or any tool crate. Its
-wheel is built separately via `maturin`; the crate is a workspace member, so `cargo clippy
+Python as a native extension (`.pyd`/`.so`). It is not imported by `studio` or any tool crate.
+
+Its wheel is built separately via `maturin`. The crate is a workspace member, so `cargo clippy
 --workspace` and a bare `cargo build` at the root compile it too, but `cargo build -p studio` does
-not, and `cargo test` never links it. It exists in the workspace
-to enforce the PyO3-buildability guardrail below — if a change to `fmdl` or `pes_model` introduces a
-dependency that breaks the `cdylib` build, CI catches it at the PR rather than at a Blender user's
-runtime. It is a leaf crate: nothing depends on it, and it can be deleted in one commit when legacy
-FMDL/.model Blender support is retired.
+not, and `cargo test` never links it.
+
+It exists in the workspace to enforce the PyO3-buildability guardrail below: if a change to `fmdl`
+or `pes_model` introduces a dependency that breaks the `cdylib` build, CI catches it at the PR
+rather than at a Blender user's runtime. It is a leaf crate: nothing depends on it, and it can be
+deleted in one commit when legacy FMDL/.model Blender support is retired.
 
 **`studio`** — the single binary. With no arguments it launches the egui GUI; with arguments it
 dispatches to the named tool's CLI. The browser WASM build is Studio Web (`gui.md` "Browser
@@ -337,23 +358,26 @@ pub trait StudioTool {
 }
 ```
 
-`ToolContext` is the tool's one handle on the platform, cheap to clone. **Settings** are behind
-one lock shared with the shell (`Arc<Mutex<Settings>>`, one lock per concept): `ctx.common()`
-copies the common settings, `ctx.tool_settings(id)` copies the tool's own table, and
-`ctx.set_tool_settings(id, table)` replaces it and queues a `ShellRequest::SettingsChanged` so
-the shell saves best-effort at the end of the frame. Tools never see the file or its path.
-**Events** go through `ctx.emit(envelope)`, the one place a gone receiver is handled (logged at
-debug, dropped). Besides these, `ToolContext` exposes a **tool-switch
-request**: `ctx.switch_to_tool("team-compiler")` asks the shell to make the named
-tool the active view at the end of the frame. It is id-string based, so tools can
-link to each other (the Refs arranger's handoff to the Team compiler) without
-depending on each other's crates. It also exposes `ctx.notify(Notice)`, the one way a
-tool puts something in the status bar (see `gui.md` "Status bar"); `Notice` is a typed item,
-not a string, so the bar cannot become a free-text dumping ground. `ctx.paths()` gives the two
-base folders a tool resolves its relative path settings against: the executable's folder
-(`exports/`, `output/`) and the data directory (`teams_list.txt`), the latter `None` when no
-settings file exists yet (a CLI run before the first GUI start; `distribution.md` "Data
-location"). Tools still never see the settings file itself.
+`ToolContext` is the tool's one handle on the platform, cheap to clone. It exposes:
+
+- **Settings**, behind one lock shared with the shell (`Arc<Mutex<Settings>>`, one lock per
+  concept). `ctx.common()` copies the common settings, `ctx.tool_settings(id)` copies the tool's
+  own table, and `ctx.set_tool_settings(id, table)` replaces it and queues a
+  `ShellRequest::SettingsChanged` so the shell saves best-effort at the end of the frame. Tools
+  never see the file or its path.
+- **Events**, through `ctx.emit(envelope)`, the one place a gone receiver is handled (logged at
+  debug, dropped).
+- A **tool-switch request**: `ctx.switch_to_tool("team-compiler")` asks the shell to make the
+  named tool the active view at the end of the frame. It is id-string based, so tools can link to
+  each other (the Refs arranger's handoff to the Team compiler) without depending on each other's
+  crates.
+- `ctx.notify(Notice)`, the one way a tool puts something in the status bar (see `gui.md` "Status
+  bar"). `Notice` is a typed item, not a string, so the bar cannot become a free-text dumping
+  ground.
+- `ctx.paths()`, the two base folders a tool resolves its relative path settings against: the
+  executable's folder (`exports/`, `output/`) and the data directory (`teams_list.txt`), the
+  latter `None` when no settings file exists yet (a CLI run before the first GUI start;
+  `distribution.md` "Data location"). Tools still never see the settings file itself.
 
 ```rust
 // studio_core
@@ -379,16 +403,17 @@ pub struct AppPaths {
 ```
 
 The exit code is a `u8` returned by the tool, not an `anyhow` error the binary maps, because
-the meaning of each code is the tool's contract (the Team compiler's 0/1/2/3, `spec/team_compiler/settings.md`
-"CLI"); the binary adds only the codes no tool can see, in the same meanings, and prints an `Err`
-as `error: …` before exiting with its code: clap's own 2 for an argument error (and `run_cli`'s
-2 for a subcommand no registered tool owns), 2 when the settings file cannot be loaded (a
-configuration error: nothing ran), and 3 when the executable's folder cannot be found or the
-console printer stops (an environment failure; a lost printer may have lost findings, so the
-tool's own verdict cannot stand).
+the meaning of each code is the tool's contract (the Team compiler's 0/1/2/3,
+`spec/team_compiler/settings.md` "CLI"). The binary prints an `Err` as `error: …` before exiting
+with its code, and adds only the codes no tool can see, in the same meanings:
+
+- clap's own 2 for an argument error (and `run_cli`'s 2 for a subcommand no registered tool owns);
+- 2 when the settings file cannot be loaded (a configuration error: nothing ran);
+- 3 when the executable's folder cannot be found or the console printer stops (an environment
+  failure; a lost printer may have lost findings, so the tool's own verdict cannot stand).
 
 Today the `studio` binary's `tools()` registers the Team compiler, the Save editor and the
-Export upgrader, in that sidebar order, and takes no context; the `egui::Context` parameter
+Export upgrader, in that sidebar order, and takes no context. The `egui::Context` parameter
 arrives with the match feed (Phase 11), its first user. The full registry is the plan's
 (`plans/core/architecture.md` "Tool plugin interface").
 
@@ -423,43 +448,53 @@ rust-analyzer's crate graph). The following rules keep it healthy:
    outside this workspace (the Blender addons, via `python_bindings`). They may not depend on
    `studio_core`, `studio` (the binary), any tool crate, `model_convert`, or any crate from this
    denylist: `egui`, `eframe`, `wgpu`, `tokio`, `smol`, `async-std`, `pyo3`. Pure-logic dependencies
-   (`binrw`, `rayon`, `serde`, `nalgebra`, `anyhow`, etc.) are permitted. Enforce these exclusions
-   with a dependency-graph CI check; a successful `cdylib` build does not enforce architectural
-   boundaries. Separately build and smoke-test `python_bindings` to catch actual linking/Python
-   compatibility failures. Runtime exclusions are deliberate dependency policy, not a claim that
-   every async runtime necessarily fails in a Python extension. This rule and the `python_bindings`
-   crate retire together when legacy FMDL/.model Blender support is dropped. `model_convert` is not
-   subject to this rule — it is Studio-side and has no direct Blender consumer.
+   (`binrw`, `rayon`, `serde`, `nalgebra`, `anyhow`, etc.) are permitted.
+
+   Enforce these exclusions with a dependency-graph CI check; a successful `cdylib` build does not
+   enforce architectural boundaries. Separately build and smoke-test `python_bindings` to catch
+   actual linking/Python compatibility failures. Runtime exclusions are deliberate dependency
+   policy, not a claim that every async runtime necessarily fails in a Python extension.
+
+   This rule and the `python_bindings` crate retire together when legacy FMDL/.model Blender
+   support is dropped. `model_convert` is not subject to this rule: it is Studio-side and has no
+   direct Blender consumer.
 5. **`cargo clippy` is clean from the first commit.** Run clippy with `-D warnings` (warnings
    denied) on every change from the start of Phase 1, not as a pre-release cleanup. Clippy catches
-   the Rust-specific footguns that are expensive to retrofit across a workspace this size — needless
-   borrows, `clone`-on-Copy, manual `map`/`filter` chains that have idiomatic replacements,
-   `to_string()` in hot loops, holds kept across `.await`/locks — and enforcing it early means the
-   codebase never accumulates a backlog of suppressions that hide real issues. Workspace-wide lints
-   live in the root `Cargo.toml` `[workspace.lints.clippy]` table (inherited by every crate via
-   `[lints] workspace = true`), so the policy is declared once and applies uniformly; per-crate
-   `#[allow(...)]` opt-outs are exceptions that get called out in review, not the default. This
-   pairs with `rustfmt` for formatting: both run in CI on every PR. The toolchain is pinned in a
-   root `rust-toolchain.toml` (an exact stable version plus the `wasm32-unknown-unknown` target)
-   and bumped deliberately, not tracked as floating `stable`: every Rust release ships new clippy
-   lints, so with `-D warnings` a floating toolchain turns a `rustup update` into a red gate on
-   code nobody touched (EGG-Translator's gate broke this way on a single new 1.98 lint).
+   the Rust-specific footguns that are expensive to retrofit across a workspace this size:
+   needless borrows, `clone`-on-Copy, manual `map`/`filter` chains that have idiomatic
+   replacements, `to_string()` in hot loops, holds kept across `.await`/locks. Enforcing it early
+   means the codebase never accumulates a backlog of suppressions that hide real issues.
+
+   Workspace-wide lints live in the root `Cargo.toml` `[workspace.lints.clippy]` table (inherited
+   by every crate via `[lints] workspace = true`), so the policy is declared once and applies
+   uniformly. Per-crate `#[allow(...)]` opt-outs are exceptions that get called out in review, not
+   the default. This pairs with `rustfmt` for formatting: both run in CI on every PR.
+
+   The toolchain is pinned in a root `rust-toolchain.toml` (an exact stable version plus the
+   `wasm32-unknown-unknown` target) and bumped deliberately, not tracked as floating `stable`.
+   Every Rust release ships new clippy lints, so with `-D warnings` a floating toolchain turns a
+   `rustup update` into a red gate on code nobody touched (EGG-Translator's gate broke this way on
+   a single new 1.98 lint).
 6. **Every lib crate must stay `wasm32`-checkable.** CI runs
    `cargo check --target wasm32-unknown-unknown` over `crates/libs/` (and `studio_core`) on every
-   PR from Phase 1. Studio Web (see `gui.md` "Browser deployment") is a post-release deliverable, and the
-   cheapest way to keep it cheap is never letting a lib crate pick up a dependency that only builds
-   natively. Lib crates with legitimately native-only parts (`archives` on disk paths, `match_feed`'s
-   Win32 source, `audio_engine`'s cpal output) gate those behind
-   `#[cfg(not(target_arch = "wasm32"))]` or a cargo feature so the check still passes; the check is
-   compile-only — no test execution in WASM is required. Tool crates are exempt until the web tier
-   is scheduled, since their views may legitimately depend on native-only libs before adapters exist.
+   PR from Phase 1. Studio Web (see `gui.md` "Browser deployment") is a post-release deliverable,
+   and the cheapest way to keep it cheap is never letting a lib crate pick up a dependency that
+   only builds natively.
+
+   Lib crates with legitimately native-only parts (`archives` on disk paths, `match_feed`'s Win32
+   source, `audio_engine`'s cpal output) gate those behind `#[cfg(not(target_arch = "wasm32"))]`
+   or a cargo feature so the check still passes. The check is compile-only: no test execution in
+   WASM is required. Tool crates are exempt until the web tier is scheduled, since their views may
+   legitimately depend on native-only libs before adapters exist.
 
 Accepted trade-off: the `StudioTool` trait references egui types, so every tool crate compiles egui
 even in CLI use (dead code is stripped from the binary). If a truly headless build is ever needed
 (CI, server-side compilation), the escape hatch is splitting the trait into `StudioTool` (id,
 settings, CLI) and `StudioToolUi` (views) behind a `gui` cargo feature — deferred until that need is
-real. A cheap addition the registry enables: one cargo feature per tool in `studio`, allowing
-stripped single-tool builds.
+real.
+
+A cheap addition the registry enables: one cargo feature per tool in `studio`, allowing stripped
+single-tool builds.
 
 ### Event system
 
@@ -531,9 +566,9 @@ need a header to be read:
 - Warning no_exports_found (folder=C:\4cc\exports)
 ```
 
-The source name comes from the export's `ExportStarted` event; the scope is the folder or file
+The source name comes from the export's `ExportStarted` event. The scope is the folder or file
 path, `<file> line <n>` for a roster entry, and nothing for the export itself or a run-wide
-finding; the context fields follow in parentheses, in template order. Other events print
+finding. The context fields follow in parentheses, in template order. Other events print
 nothing, `Output` aside.
 
 **A command's result text.** `PipelineEvent::Output(String)` carries text a CLI command prints
@@ -545,13 +580,14 @@ because the printer thread owns stdout while a command runs: a second writer wou
 its lines.
 
 **GUI** receives events via channels and renders them as egui UI updates (the active tool's log
-lines today; grid cell colors and the run strip are Phase 8's). The line above is `studio_core`'s `EventLines` (in `events.rs`), shared by
-the console printer and the tools' plain logs, so a finding reads the same in the terminal and in
-the window. A tool whose view shows a run's events gives the run its own sink:
-`ctx.with_events(sender)` is the same handle (settings, paths, shell requests) with its events
-sent to `sender`, and the tool drains the receiver in `tick`. We do this, not route every event
-through the shell's receiver, because an envelope names no tool: the shell would have to guess
-whose log a finding belongs to.
+lines today; grid cell colors and the run strip are Phase 8's). The line above is `studio_core`'s
+`EventLines` (in `events.rs`), shared by the console printer and the tools' plain logs, so a
+finding reads the same in the terminal and in the window.
+
+A tool whose view shows a run's events gives the run its own sink: `ctx.with_events(sender)` is
+the same handle (settings, paths, shell requests) with its events sent to `sender`, and the tool
+drains the receiver in `tick`. We do this, not route every event through the shell's receiver,
+because an envelope names no tool: the shell would have to guess whose log a finding belongs to.
 
 ### Diagnostic logging
 
@@ -568,7 +604,7 @@ console, and a lib printing to stdout corrupts piped CLI output.
   lib changes.
 - The split: if a user should see it, it is a finding (`Message`); if a developer should see it, it
   is a log line. Never both for one fact. Libs never `error!` — a lib returns the error and the
-  caller decides what it means; libs use `debug!`/`trace!`, and `warn!` only for a recovered
+  caller decides what it means. Libs use `debug!`/`trace!`, and `warn!` only for a recovered
   anomaly that is not a finding.
 - Levels: `info` is one line per stage per run; `debug` is per export or per file; `trace` is per
   item, and never inside per-vertex or per-pixel loops (the arguments are not formatted when the
@@ -576,9 +612,10 @@ console, and a lib printing to stdout corrupts piped CLI output.
   in messages: the target carries the module path.
 - `log`, not `tracing`. The structured, timed data Studio needs (stage, elapsed, per-export
   outcome) already flows through `PipelineEvent`, so what remains is flat diagnostics, which is
-  `log`'s job; `tracing`'s subscriber layers are the type-level complexity the code style excludes.
+  `log`'s job. `tracing`'s subscriber layers are the type-level complexity the code style excludes.
   The choice is no-regret: should spans become worth having, `tracing` can be adopted in the binary
-  only, consuming the libs' `log` lines through `tracing-log`; the reverse migration is not clean.
+  only, consuming the libs' `log` lines through `tracing-log`, whereas the reverse migration is not
+  clean.
   Profiling is a separate question (`puffin` integrates with egui) and is not what logging is for.
 
 ---

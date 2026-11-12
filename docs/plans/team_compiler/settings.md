@@ -42,20 +42,25 @@ UTW --gui team-compiler compile [exports-root] [--mode normal|test|sideload]   #
 ```
 
 The `--gui` form (the core plan's "Launch modes") is what `quick_compile.bat` runs. The tool's
-`gui_run` implementation accepts `compile` only — `check` is meaningless in the GUI, where checking
-is live — and queues the compile until the initial exports check has completed, then triggers the
-same code path as the Compile button with the parsed `--mode`. `quick_compile_close_on_success`
-governs what happens when that run ends.
+`gui_run` implementation accepts `compile` only (`check` is meaningless in the GUI, where
+checking is live). It queues the compile until the initial exports check has completed, then
+triggers the same code path as the Compile button with the parsed `--mode`.
+`quick_compile_close_on_success` governs what happens when that run ends.
 
 `check` and `compile` take `--timestamps`, off by default, for profiling a run: each finding
 line on stdout starts with the seconds since the run started, to the millisecond, when the
-finding was made (`+12.345 - co Spring.zip: Warning …`). A task's findings were made when the
-task finished processing on its worker, every other finding when it was reported. A
-`duplicate_path` an `overrides/` file raises on one of a task's entries, found as its batch is
-written, is timed with that task's findings: it joins them, and splitting it out would carry
-a second list through the writer for one rare line of a profiling aid. The lines
-keep their order (findings are reported in manifest order, so the CPK and the log read the
-same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"), so their
-times need not increase: a task that waited behind a slower one shows when it was really
-done. A flag rather than a setting, since it serves one run being looked at; the GUI's log
-does not show the times.
+finding was made (`+12.345 - co Spring.zip: Warning …`).
+
+A task's findings were made when the task finished processing on its worker, every other
+finding when it was reported. A `duplicate_path` that an `overrides/` file raises on one of a
+task's entries, found as its batch is written, is timed with that task's findings. It joins
+them because splitting it out would carry a second list through the writer for one rare line
+of a profiling aid.
+
+The lines keep their order (findings are reported in manifest order, so the CPK and the log
+read the same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"), so
+their times need not increase. A task that waited behind a slower one shows when it was really
+done.
+
+`--timestamps` is a flag rather than a setting, since it serves one run being looked at. The
+GUI's log does not show the times.
