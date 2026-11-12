@@ -2117,7 +2117,13 @@ briefs, review loops, gates and mutation runs as for any step.
   against the rule that they never move (0.0.2-sel), so a role is a setting made once more
   than a switch; several roles at once, and an "every tool" choice as the default so no
   tool is hidden from a member who never picks; six rows above the list against one
-  control; the role to tools table itself, the Save editor falling in nearly every role
+  control; the role to tools table itself, the Save editor falling in nearly every role.
+  The maintainer's additions: Manager is Aesthetics maker and Tactician together, those
+  two being for members of a team's council who hold one part of it; and the program asks
+  "So who are you?" at startup, the roles on a ring with an icon each and a "Don't ask
+  again" checkbox in a corner (the lead's points on it: ask on the first start and while
+  no role is set rather than at every start, the same choice reachable later from the
+  sidebar or Settings, the ring usable from the keyboard)
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
