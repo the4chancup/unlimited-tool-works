@@ -3,7 +3,7 @@
 Covers the `model_convert` lib crate (the IR plus importers/exporters and skeleton
 data) and the format-extension algorithms that live in the `fmdl` and `pes_model`
 format crates (mesh splitting, split vertex encoding, anti-blur). Model format
-conversion is not a standalone tool — it runs inside the
+conversion is not a standalone tool: it runs inside the
 [Team compiler](../team_compiler/README.md) at compile time, converting models to the target
 PES version's format. The glTF + `materials.toml` authoring format that `gltf_to_ir`
 reads and `ir_to_gltf` writes (Phase 7) is specified in the [Unified model format
@@ -26,8 +26,8 @@ single-file plan.
 
 The crate is a hub: one IR in the middle, one importer/exporter pair per format around it, and
 IR-level operations that never know which format the data came from. The layout enforces the two
-boundaries the design depends on — **format code never touches the IR's internals beyond the public
-struct, and IR operations never touch a format** — and keeps the format crates (`fmdl`,
+boundaries the design depends on (**format code never touches the IR's internals beyond the public
+struct, and IR operations never touch a format**) and keeps the format crates (`fmdl`,
 `pes_model`) as dependencies, never dependents.
 
 ```

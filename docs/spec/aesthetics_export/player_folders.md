@@ -44,7 +44,7 @@ Players/
     └── ...
 ```
 
-**Player numbering** — a normal team player folder gets its number(s) in one of two ways:
+**Player numbering.** A normal team player folder gets its number(s) in one of two ways:
 
 1. **In the folder name**: `NN - Name` with NN in 01–23, as above.
 2. **Via a root `players.txt`**: lines of `NN <folder name>`; the listed folders then carry no
@@ -406,7 +406,7 @@ boots and gloves are separate ID'd folders with one model each: `boots`, `glove_
 every extra part has to be merged into one of those. Pre-Fox needs none of it: the typed
 `face.xml` absorbs any number of entries of any type, and `.common` links stay runtime references.
 
-**Exception — `ingame_face.toml`**: with no face folder emitted, non-face parts are relocated to
+**Exception (`ingame_face.toml`)**: with no face folder emitted, non-face parts are relocated to
 player-specific folders:
 
 - Multiple boots models are merged into one. On Fox this is `fmdl` mesh merging. On pre-Fox it is
@@ -416,7 +416,7 @@ player-specific folders:
   unmerged, on pre-Fox (see "ingame_face marker").
 
 **Model names: a free part plus a suffix.** A model file name is `<anything>_<suffix>` (or just
-`<suffix>`), and the **suffix is always at the end** — one rule for every source format and both
+`<suffix>`), and the **suffix is always at the end**: one rule for every source format and both
 engines. The suffix says what the model is; the compiler derives the Fox destination and the
 pre-Fox `face.xml` type from it through one table:
 
@@ -426,9 +426,9 @@ pre-Fox `face.xml` type from it through one table:
 | `boots` | the `boots` folder (`boots.fmdl`, merge if several) | `parts` (boots use the body skeleton; today's typing) |
 | `glove_l` / `gloveL` | the gloves folder, `glove_l.fmdl` | `gloveL` |
 | `glove_r` / `gloveR` | the gloves folder, `glove_r.fmdl` | `gloveR` |
-| `handL` / `handR` | the gloves folder (`glove_l`/`glove_r` — hand-skeleton models have nowhere else to go on Fox) | `handL` / `handR` |
+| `handL` / `handR` | the gloves folder (`glove_l`/`glove_r`: hand-skeleton models have nowhere else to go on Fox) | `handL` / `handR` |
 | `uniform`, `shirt`, `pants_nocloth`, `eye`, `mouth`, `face_neck`, `parts` | face: the `fcl_hair.fmdl` merge | as named (`uniform` → `uniform_sub` on PES15, Red's rule) |
-| `model_type_<x>` | face: the `fcl_hair.fmdl` merge | `<x>` verbatim — the escape hatch for a type this table does not know |
+| `model_type_<x>` | face: the `fcl_hair.fmdl` merge | `<x>` verbatim: the escape hatch for a type this table does not know |
 | *(none)* | face: the `fcl_hair.fmdl` merge (`fmdl_fcl_hair_fallback` reports each routed file) | `parts` (Red's default) |
 
 The first column's Fox allowed names and the pre-Fox type names are both native vocabularies, so
@@ -736,7 +736,7 @@ folder supports those model-less portrait exports. A player with a portrait in b
 an error when the two files differ (`portrait_conflict`, which skips the export); two
 byte-identical files are one portrait.
 
-**Root files** — the old Team Note txt is dismissed entirely. In its place:
+**Root files**: the old Team Note txt is dismissed entirely. In its place:
 
 ```
 <export root>/
@@ -836,12 +836,12 @@ At compile time, the pipeline:
    Only models step 1 makes face content are split: the body stays face content and the split
    parts join the player's gloves. A model named as boots or gloves, or in a shared
    `Boots/`/`Gloves/` folder, is never split.
-1. **Categorizes** each model file as face/boots/gloves — by filename convention or by
+1. **Categorizes** each model file as face/boots/gloves, by filename convention or by
    face.xml-style metadata (the same categorization problem the 16→21 converter already solves via
    `parseFaceXml` and filename matching). Anything the conventions don't claim is **face content by
    default**, so there is no "uncategorized model" failure.
 
-   Pre-Fox the category only picks the model's *type* attribute in the generated `face.xml` —
+   Pre-Fox the category only picks the model's *type* attribute in the generated `face.xml`:
    everything ships in the one face folder. Fox splits the categories into separate folders and
    merges each category's parts (see "Common model links and model merging")
 2. **Assigns IDs automatically** (Fox needs both pools; pre-Fox only the shared one, having no

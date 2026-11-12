@@ -134,7 +134,7 @@ that as an invariant.
   clock/counter reset and fresh live progression. A reset observed in place without that
   session boundary suspends for confirmation rather than finalizing immediately. A table
   address change alone triggers reacquisition, not a new match.
-- **Stat-table location — pointer chain first, scan as fallback** *(unverified for
+- **Stat-table location (pointer chain first, scan as fallback)** *(unverified for
   PES21; defined in the fork's PES17 profile but not wired into its operational reader,
   pending verification)*: the fork follows a static-RVA pointer chain
   (`moduleBase + rootRVA → … → stats-table base`) to a match/stat context from which

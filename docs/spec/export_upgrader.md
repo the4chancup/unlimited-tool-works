@@ -2,7 +2,7 @@
 
 The Export upgrader (`crates/tools/export_upgrader`) migrates exports from the old
 format (the AET layout, `GLOSSARY.md` "AET") to the Studio player-folder format defined in the
-[Team compiler plan](team_compiler/README.md) — the compiler only supports the Studio format,
+[Team compiler plan](team_compiler/README.md): the compiler only supports the Studio format,
 so this is the one-time migration path for every existing export.
 Platform context is in the [core plan](core/README.md).
 
@@ -15,7 +15,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
 1. **Reads the old export** (folders / .zip / .7z): Faces/Boots/Gloves item folders with embedded
    IDs, Kit Configs + Kit Textures folders, Common, Portraits, Collars, Logo, Other, Team Note
-   txt. (A bare folder of item folders is the other accepted input — see "Model-folder mode".)
+   txt. (A bare folder of item folders is the other accepted input; see "Model-folder mode".)
 
    Folder names are matched in any letter case, as Red matches them, while an item folder's `k`
    or `g` is lower case, as Red requires (a `K0430` folder is unmigrated content). A top folder
@@ -55,7 +55,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `refs.txt` and `Players/` alone) is reported as no old export, nothing written, exit 1, as
    Red refused it ("No usable files found"). Resolved from its name alone, it would become a
    Full export without kits, which compiles placeholder kits over the team's installed ones.
-2. **Reads the team's savefile data** (via `pes_savefile`) to map old boots/gloves IDs to players —
+2. **Reads the team's savefile data** (via `pes_savefile`) to map old boots/gloves IDs to players:
    the old format encodes "which player wears boots k0915" only in the savefile, so the savefile is
    the input for a faithful migration; without one, loose mode (step 11) infers the wearers from the
    IDs instead.
@@ -103,7 +103,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
       name, and what the folder is called today);
    2. the **worn boots/gloves folder's name part** (a player with boots/gloves but no face
       folder, or whose face folder has no name part: one order for every player);
-   3. the **savefile name** with its colour codes stripped (`pes_savefile`'s `display_name()` —
+   3. the **savefile name** with its colour codes stripped (`pes_savefile`'s `display_name()`,
       see "Name colour codes" in `spec/pes_savefile/model.md`). The raw codes are control
       characters, invalid in folder names. Any other character a folder name cannot hold, `/`,
       `?` or `:` among them, is dropped the same way, and a trailing `.` or space is trimmed,
@@ -243,8 +243,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    any letter case, as Red matches it: `_1st_` → `p1/`, … `_9th_` → `p9/`, `_GK1st_` → `g1/`).
 
    - The binary config is converted to `config.toml` via `libs/kit_config` (texture-name fields
-     dropped — the compiler re-derives them from the textures present; undecoded bits preserved
-     in the `[unknown]` table — see the [Kit config editor plan](kit_config_editor.md)).
+     dropped: the compiler re-derives them from the textures present; undecoded bits preserved
+     in the `[unknown]` table, see the [Kit config editor plan](kit_config_editor.md)).
    - Kit textures are renamed from the old `u0XXXp1_…` to `u0XXXp9_…` and `u0XXXg1_…` patterns
      (into `p1/` to `p9/` and `g1/`; a `u0XXXg2` and up, no Studio slot, is a leftover as below)
      to the generic `kit` prefix (`kit.dds`, `kit_mask.dds`, `kit_chest.dds`, …) that the
@@ -358,7 +358,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    content (`u0XXXp1.dds` before `u0XXXp1.ftex`, the DDS kept as Red's Fox mode converted the
    DDS over the FTEX of its stem).
 
-   Kit folders are written as bare slots (`p1/`) — the old format has no kit names to carry.
+   Kit folders are written as bare slots (`p1/`): the old format has no kit names to carry.
 
    **Copied textures.** A kit whose binary config names **another kit's texture** in its back,
    chest, leg or name field gets a copy of that texture in its own folder, under the generic
@@ -393,12 +393,12 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    goalkeeper config hoists nothing.
 
    Only the all-kits-identical case qualifies, because hoisting a stem that some kit lacks would
-   hand that kit a texture it never had and flip its config's texture-name field — a game-facing
+   hand that kit a texture it never had and flip its config's texture-name field, a game-facing
    change the upgrader must not make. So the upgraded export compiles byte-for-byte as before,
    just without nine copies of the same number font. A survey of the maintainer's 129 multi-kit
    old exports found `_back`/`_leg`/`_name` byte-identical across every kit in roughly a
    quarter of them; the rest share partially or were re-saved with different bytes, and stay as
-   they are — the author can hoist by hand once the `all/` folder exists.
+   they are: the author can hoist by hand once the `all/` folder exists.
 
    **No kit layout marker.** No kit layout marker (`pre-fox` / `fox`, see "Kit layout marker" in
    the [Aesthetics export plan](aesthetics_export/README.md)) is ever written. Old kits have
@@ -406,7 +406,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    they were drawn for, and a wrong guess would silently displace a correct kit's socks. Authors
    add the marker when they compile across engines.
 6. **Replaces the Team Note txt**: team colors are extracted into the root `colors.txt` and the
-   "Other Notes" section into the root `notes.txt` (both optional — only generated when the Note has
+   "Other Notes" section into the root `notes.txt` (both optional: only generated when the Note has
    the corresponding content).
 
    The section is every line after the first line starting with `Other Notes:`, in any letter
@@ -431,7 +431,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
       whose name holds `note` in any letter case, as Red finds it, the first by name when there
       are several. The line is the first holding `Team:` in that letter case, as Red reads it;
    2. the canonical `/xx/` first-word key derived from the export folder name as the fallback
-      when no Note, no `Team:` line or an empty one exists — an export named after something
+      when no Note, no `Team:` line or an empty one exists: an export named after something
       else than its team (e.g. "Numbers" for `/#/`) must still resolve.
 
    The key is the team's name, folded as the teams list folds one (`teams_list::TeamName`), and
@@ -452,7 +452,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    holds `/4ccg/` twice.
 
    The key is also the output's first word ("CLI"). The complete folder name remains the
-   display/source name, and the Studio output carries no Note (the format has no `Team:` line —
+   display/source name, and the Studio output carries no Note (the format has no `Team:` line;
    see the Team compiler plan's "Root files").
 7. **Carries over** Portraits, Collars, and Common, and **converts the Logo folder**.
 
@@ -516,7 +516,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    The number comes from measuring the 94 distinct `Logo/` pairs on the maintainer's machine
    with that resampler (`.tmp/phase_06/6_4/logo_share/`):
 
-   - the 77 downscales score 0–30 % — far above codec noise, because authors downscaled with
+   - the 77 downscales score 0–30 %, far above codec noise, because authors downscaled with
      nearest-neighbor or sharpening kernels, shifted or cut alpha edges differently, which the
      channel tolerance does not absorb;
    - the 17 deliberate variants score 53–97 %: a different drawing, a recolored crest (`/pmmm/`
@@ -530,7 +530,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    rounded to a whole percent (`share`, `30%`), so a wrong call is one look at the report away
    from being fixed by hand: the old file is still in the source export.
 
-   The `_r_l` (256²) file is dropped beside a usable `_r_ll` — the compiler regenerates it. A
+   The `_r_l` (256²) file is dropped beside a usable `_r_ll`: the compiler regenerates it. A
    folder without a usable `_r_ll` falls back to the largest usable member, `_r_l` before `_r`,
    its bytes becoming `logo.png`, reported on that file (`logo_fallback`, W). It then has
    nothing to compare the small image against, so no `logo_small.png` is written and the `_r`
@@ -550,7 +550,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    without it would reach the game without it.
 
    A reference that pointed into the team's Common folder by game path cannot simply become the
-   bare name `./hair.dds` — that would resolve in the player folder and fail — so the upgrader
+   bare name `./hair.dds` (that would resolve in the player folder and fail), so the upgrader
    writes the bare name **and creates the texture link** `hair.dds.common` (the `Common/` file's
    own name, whose extension the link names) at the root of the model's player folder, which is
    the Studio spelling of the same reference.
@@ -778,7 +778,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    becomes `team_folder` there too, the rest of the value kept
    (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
    `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that
-   reads the legacy spelling — the compiler has no notion of it.
+   reads the legacy spelling: the compiler has no notion of it.
 
    **The kit stand-in.** The kit stand-in's old spelling, the game's, becomes the Studio one
    (`spec/model_format.md` "Kit-dependent assets", which the compiler writes back for the exes
@@ -812,10 +812,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    **Model-type prefixes.** Pre-Fox **model-type prefixes become suffixes**. Red typed
    `face.xml` entries by a leading type (`gloveL_foo.model`, matched case-insensitively with
    underscores ignored, or a `model_type_<x>` token anywhere); the Studio format puts the type
-   last (`foo_gloveL.model`, `foo_model_type_<x>.model` — see "Model names: a free part plus a
+   last (`foo_gloveL.model`, `foo_model_type_<x>.model`; see "Model names: a free part plus a
    suffix" in the [Aesthetics export plan](aesthetics_export/README.md)).
 
-   The swap applies **only to folders without a `face.xml`** — filename typing exists to
+   The swap applies **only to folders without a `face.xml`**: filename typing exists to
    generate the xml, so a folder that ships its own xml carries the types there and its files
    are left exactly as named. The xml-less folders are a player folder with no `face.xml` of its
    own, its subfolders included, and a shared boots or gloves folder, which validation refuses a
@@ -910,7 +910,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 8. **Generates `settings.toml`** for each player folder steps 3 and 4 write (a rostered player
    with no face folder and no custom boots or gloves gets no folder, and his look stays where
    the game reads it now, his record or his installed row), populated from the savefile's
-   aesthetic data (physique, strip style, skin/iris color, etc.) — the same TOML-generation logic
+   aesthetic data (physique, strip style, skin/iris color, etc.): the same TOML-generation logic
    the save editor uses.
 
    A marked folder's `ingame_face.toml` is written beside it, filled the same way: the face run,
@@ -1000,13 +1000,13 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    a referee's, since four of the eleven real referee exports on the maintainer's machine,
    Winter to Summer 25, are that layout, with the same `Face/` and `Common/` per referee.
 
-   The old referee layout (`refs.txt` + per-referee face/boots/gloves/common subfolders — the
+   The old referee layout (`refs.txt` + per-referee face/boots/gloves/common subfolders, the
    prototype of the player-folder format) is refused by the compiler per referee folder
    (`player_layout_proto`, naming this tool; only the `refs.txt` alias is accepted), so it is
    upgraded to the fully unified layout:
 
    - `refs.txt` becomes a root `players.txt` carrying the slot mapping (including repeated
-     entries — the same model backing multiple of the 35 referee slots for rarity control) in
+     entries: the same model backing multiple of the 35 referee slots for rarity control) in
      `aesthetics_export`'s canonical UTF-8/LF roster grammar shared with the Refs arranger. Of
      every nonblank line, a line that parses is written as its slot in two digits, one space and
      the folder name, and one that does not is kept as written, so the shared validation reports
@@ -1019,12 +1019,12 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    - Each referee's subfolders are **flattened** into the player folder root (step 12).
 
    Either old `ingame_face` spelling becomes `ingame_face.toml` exactly as for team player
-   folders — empty, a referee export having no record to fill it from. No savefile needed —
+   folders: empty, a referee export having no record to fill it from. No savefile needed:
    referee IDs are compiler-generated. A Note txt in a referee export is a leftover (step 10):
    step 6 reads a team's colors, which referees have none of, so nothing compiled it, and the
    Warning names it for the author.
 10. **Reports** anything that couldn't be migrated automatically (e.g. contents of the Other folder,
-    unassigned model folders) for manual attention — the `UnmigratedContentFound` pipeline event;
+    unassigned model folders) for manual attention: the `UnmigratedContentFound` pipeline event;
     the tool defines its own message catalog on the shared `Message` structure (see the Team
     compiler plan's "Message catalog").
 
@@ -1222,7 +1222,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
 ## Model-folder mode
 
-The second input shape, alongside whole exports: **a folder of old-format model folders** — the
+The second input shape, alongside whole exports: **a folder of old-format model folders**: the
 item folders that used to live under `Faces/`, `Boots/`, `Gloves/` (`XXX15 - Snuffy`,
 `k0915 - Crocs`, …), placed loose in one directory, optionally with a `Common/` beside them.
 
@@ -1248,7 +1248,7 @@ Output naming follows steps 3–4 so the result is directly droppable:
 - a face folder becomes a player folder `NN - Name/` (NN from its `XXX` suffix, Name from its
   name part; without a suffix, the name part alone);
 - a boots/gloves folder becomes a shared-style folder named by its name part (`Crocs/`), or by
-  its old ID when it has no name — the user drops it into `Boots/`/`Gloves/` and adds the link
+  its old ID when it has no name: the user drops it into `Boots/`/`Gloves/` and adds the link
   file, or moves its contents into a player folder (renaming the model to `boots.fmdl` /
   `glove_*.fmdl` as the Studio format expects).
 
@@ -1298,11 +1298,11 @@ second face folder of a slot. A file directly in the input folder is unmigrated 
 10).
 
 Not in this mode: kits, portraits, logo, `settings.toml`, the savefile, loose mode, the roster. No
-savefile is read — there are no wearers to resolve.
+savefile is read: there are no wearers to resolve.
 
 A top-level folder that holds no file directly in it (OS artifacts aside; `Common/` included, an
 empty one having nothing to carry) is reported as unmigrated content (step 10) and left out. The
-converters' two-level `players/<player>/<model folders>/` layout is therefore *not* accepted —
+converters' two-level `players/<player>/<model folders>/` layout is therefore *not* accepted:
 one level, one folder per model, so that "what is a model folder" never has to be guessed. We do
 not ask for a model file directly in it, because a real Fox face folder may carry no model of
 its own (5 of the 23 face folders of the real /jp/ 2024 Winter Cup export hold `face_diff.bin`
@@ -1470,7 +1470,7 @@ severity (`spec/team_compiler/messages.md` "Catalog"):
 
 Uses:
 
-- `aesthetics_export` (the Studio format's object model, conventions, and validation — the
+- `aesthetics_export` (the Studio format's object model, conventions, and validation: the
   upgrader builds and verifies its output with the same crate the compiler consumes it with);
 - `pes_savefile` (savefile reading, TOML generation);
 - `archives` (old export loading);

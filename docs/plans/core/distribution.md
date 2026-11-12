@@ -10,9 +10,9 @@ What exists of this is in `spec/core/distribution.md` "Distribution: portable .7
 
 There is no installer. Each release is a `.7z` archive containing:
 
-- `UTW.exe` (or the `utw` Linux binary) — the single self-contained binary
+- `UTW.exe` (or the `utw` Linux binary), the single self-contained binary
   (`development_plan.md` "The project's name: Unlimited Tool Works")
-- `quick_compile.bat` (`quick_compile.sh` on Linux) — the double-click launcher: opens the GUI on
+- `quick_compile.bat` (`quick_compile.sh` on Linux), the double-click launcher: opens the GUI on
   the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture)
 - in the 0.0.2 preview only (0.0.1 is the Save editor's alone), until the two tools' views
   land: `quick_compile.bat` in its CLI form, `quick_upgrade.bat` and an empty `old_exports/`
@@ -363,7 +363,7 @@ may change in a minor release.
    close prompts.
 5. **Teams list reconciliation** (on the first start of the new binary, not during the swap): the
    new binary carries the new upstream list embedded. The working `data/teams_list.txt` may
-   contain user-added ID assignments (the grid's inline ID-cell writes — see the [Team compiler
+   contain user-added ID assignments (the grid's inline ID-cell writes; see the [Team compiler
    plan](../team_compiler/README.md)), so it can't just be overwritten.
 
    The `studio` coordinator calls `teams_list`'s reconciliation, not the generic core updater,
@@ -408,7 +408,7 @@ may change in a minor release.
 
 ### Rollback
 
-`old/UTW.exe` is kept (one version deep — each update replaces it). This covers the "new
+`old/UTW.exe` is kept (one version deep: each update replaces it). This covers the "new
 version is broken" case that Red handles by preserving the entire old folder: the member
 closes the program and copies the program file from `old/` over the one in the bundle's
 folder.
@@ -419,7 +419,7 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 ### Changelog and version display
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
-shape: `## [Unreleased]` on top, then one `## [1.4.0] — 2026-10-02` section per release. Inside a
+shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Inside a
 section, bullets are grouped by tool (`**Team compiler**: …`, `**Save editor**: …`,
 `**General**: …` for what every tool shares), because that is how a member reads it even
 though the version axis is one.
@@ -484,7 +484,7 @@ since releases are built from tags.
 Where the version string appears:
 
 - **Status bar empty state**: the one always-visible place, and the line to paste into a report.
-- **About** (logo click) — the detailed block with Copy (see `gui.md` "Sidebar" item 1).
+- **About** (logo click): the detailed block with Copy (see `gui.md` "Sidebar" item 1).
 - **`UTW --version`**: the same one-liner on stdout (CLI equivalence); built,
   `spec/core/distribution.md` "Versioning: one workspace version, one exception".
 - **Not the title bar**: the title is what the taskbar and alt-tab show, the surface for what

@@ -22,7 +22,7 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
   plan](../../plans/music_player.md).
 - The live-match event feed (`match_feed`) is specified in the [Match tracker
   plan](../../plans/match_tracker/README.md).
-- The kit config codec (`kit_config` — binary/TOML, reverse-engineered format documentation) is
+- The kit config codec (`kit_config`: binary/TOML, reverse-engineered format documentation) is
   specified in the [Kit config editor plan](../kit_config_editor.md).
 - The AATF rules engine (`aatf`) is specified in the [AATF rules](../aatf_rules.md).
 - The shared tactics/card widgets (`team_widgets`) are specified in the [Save editor
@@ -94,8 +94,8 @@ owns the format, looked up by version, never a `match` on `PesVersion` outside t
 | Tool | Current use | Rust replacement |
 |------|-------------|-----------------|
 | `7z.exe` | Extract `.7z` exports | `sevenz-rust2` crate (native, no external binary) |
-| `texconv.exe` | DDS DXT5 conversion (rare) | **Dropped** — in-process conversion (see below) |
-| `magick` (ImageMagick) | Texture conversion on Linux | **Dropped** — same in-process path on all platforms |
+| `texconv.exe` | DDS DXT5 conversion (rare) | **Dropped**: in-process conversion (see below) |
+| `magick` (ImageMagick) | Texture conversion on Linux | **Dropped**: same in-process path on all platforms |
 
 The `sevenz-rust2` crate eliminates the 7z subprocess and temp-folder extraction dance.
 

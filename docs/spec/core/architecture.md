@@ -8,7 +8,7 @@ Part of the [Core plan](README.md). Section headings are unchanged from the sing
 
 The suite follows a **platform + plugins** model with strict modularity rules:
 
-1. **`studio_core` is minimal**: only what is needed to run the program with zero tools installed —
+1. **`studio_core` is minimal**: only what is needed to run the program with zero tools installed,
    the app shell (sidebar; the settings menu and common widgets are Phase 8's), the tool plugin
    trait, the settings framework, and the common settings (PES version, paths, threads, memory cap).
 2. **Every tool is a separate crate**, no matter how small.
@@ -86,26 +86,26 @@ The suite follows a **platform + plugins** model with strict modularity rules:
 
 **Naming convention.** Directory names equal package names, exactly. Package names use underscores
 (Bevy style: `pes_savefile`, not `pes-savefile`), so the directory name, the `Cargo.toml` entry, and
-every `use` statement in Rust code share one identical spelling — no hyphen↔underscore mapping to
+every `use` statement in Rust code share one identical spelling: no hyphen↔underscore mapping to
 remember or grep around. Names are chosen by these rules (the workspace is not published to
 crates.io, so no blanket prefix is needed):
 
 - **Specific format names stay plain**: `cpk`, `fpk`, `fmdl`, `ftex`, `fox2`, `uniparam`, `wezlib`.
-  These are the formats' actual names — unambiguous as-is (`wezlib`: the WESYS header's "WE" is
+  These are the formats' actual names, unambiguous as-is (`wezlib`: the WESYS header's "WE" is
   Winning Eleven, PES's Japanese name, so the crate is WE + zlib and cannot be mistaken for a
   general zlib crate).
 - **Generic names get a disambiguating prefix**: `pes_savefile` (not `savefile`), `pes_model` (not
-  `model` — even FMDL files are "models"; the name also matches the existing `pes-model` Blender
+  `model`: even FMDL files are "models"; the name also matches the existing `pes-model` Blender
   addon, which the community already knows the format by).
 - **Community terms win over internal shorthand**: `aesthetics_export` (not `team_export`). Each
-  team submits three exports — tactics (PES's own team export, the Texport the save editor reads and
-  writes), aesthetics, and music — so "team export" is ambiguous, and it collides inside this very
+  team submits three exports: tactics (PES's own team export, the Texport the save editor reads and
+  writes), aesthetics, and music; so "team export" is ambiguous, and it collides inside this very
   codebase with `pes_savefile`'s Texport support. "Aesthetics export" is what the community calls
   the thing; the internal "team export" only ever existed to distinguish it from referee exports
   for a referee compiler that was never built (referee exports are aesthetics exports with the
   `/refs/` team name). The same logic named `music_export`.
 - **Role-descriptive names for non-format crates**: `model_convert`, `dds_convert` (it's a
-  conversion pipeline, not a DDS codec — avoids confusion with format-codec crates like crates.io's
+  conversion pipeline, not a DDS codec: avoids confusion with format-codec crates like crates.io's
   `ddsfile`), `python_bindings`, `archives`, `pipeline`, `vtree`, `music_export` (the format is
   ".4ccm", which can't start a crate name; "music export" is the community's term), `audio_engine`,
   `match_feed`, `color_tools`.
@@ -116,16 +116,16 @@ crates.io, so no blanket prefix is needed):
   project's name: Unlimited Tool Works"). It ships standalone and lands in download folders,
   where a bare `studio.exe` would say nothing about what it is. The crates keep
   `studio`/`studio_core`: no user sees crate names, and renaming them needs no migration.
-- **CLI subcommands and tool ids keep hyphens** (`UTW team-compiler ...`, id `"team-compiler"`) —
+- **CLI subcommands and tool ids keep hyphens** (`UTW team-compiler ...`, id `"team-compiler"`):
   that's CLI convention, independent of package names.
 
-**`studio_core`** — the platform, containing only what runs with zero tools:
+**`studio_core`** (the platform, containing only what runs with zero tools):
 - The `StudioTool` plugin trait (see below)
 - The settings framework: common settings + per-tool settings sections, TOML persistence
 - The `PipelineEvent` types its common widgets consume, using `vtree::ScopePath` for canonical
   tool-neutral event paths
 
-Its module tree is closed — "minimal" is enforced by there being no natural place to put anything
+Its module tree is closed; "minimal" is enforced by there being no natural place to put anything
 else:
 
 ```
@@ -181,7 +181,7 @@ We match process names, not a lock file or a window title, because the game take
 save and its window title changes with its language. The module is split by `cfg` per OS, so a
 mutation run reports the other OS's arms as missed (`WORKLOG.md` "Current-state gotchas").
 
-**Tool crates** (`crates/tools/`) — each implements the `StudioTool` trait and owns:
+**Tool crates** (`crates/tools/`). Each implements the `StudioTool` trait and owns:
 - Its processing logic (or orchestration over lib crates)
 - Its GUI view (rendered into the panel right of the tool selector)
 - Its settings struct + settings UI section
@@ -213,7 +213,7 @@ Lib crates with a mandated layout are `pes_savefile`, `model_convert`, and `aest
 their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
 [libs](../libs/README.md)); the remaining libs are single-concern and get no prescription.
 
-**Lib crates** (`crates/libs/`) — shared functionality with no tool identity.
+**Lib crates** (`crates/libs/`): shared functionality with no tool identity.
 
 - Format and processing libs stay GUI-neutral; explicitly shared widget libs (`color_tools`,
   future `model_viewport`) may use egui/wgpu.
@@ -264,7 +264,7 @@ or `pes_model` introduces a dependency that breaks the `cdylib` build, CI catche
 rather than at a Blender user's runtime. It is a leaf crate: nothing depends on it, and it can be
 deleted in one commit when legacy FMDL/.model Blender support is retired.
 
-**`studio`** — the single binary. With no arguments it launches the egui GUI; with arguments it
+**`studio`**: the single binary. With no arguments it launches the egui GUI; with arguments it
 dispatches to the named tool's CLI. The browser WASM build is Studio Web (`gui.md` "Browser
 deployment: Studio Web"), whose phase is after the first release; `studio_core` and the lib crates
 stay `wasm32`-checkable under guardrail 6 meanwhile.
@@ -428,7 +428,7 @@ UTW team-compiler check ./exports_folder
 ```
 
 (An argument-flag style like `UTW --team-compiler compile ...` would work too, but subcommands
-are what clap and CLI conventions are built around — better help output, completion support, and
+are what clap and CLI conventions are built around: better help output, completion support, and
 per-subcommand argument validation.)
 
 ### Workspace guardrails
@@ -437,7 +437,7 @@ The crate arrangement matches established Rust monorepo practice (Bevy's `Plugin
 rust-analyzer's crate graph). The following rules keep it healthy:
 
 1. **Tool crates never depend on tool crates.** If two tools need the same logic, it moves down into
-   a lib crate. This is the arrangement's main failure mode — a tool importing another tool drags in
+   a lib crate. This is the arrangement's main failure mode: a tool importing another tool drags in
    its whole pipeline and GUI, and creates hidden coupling.
 2. **All shared dependencies are declared once** in the root `Cargo.toml` via
    `[workspace.dependencies]`; crates inherit with `dep.workspace = true`. This prevents version
@@ -492,7 +492,7 @@ rust-analyzer's crate graph). The following rules keep it healthy:
 Accepted trade-off: the `StudioTool` trait references egui types, so every tool crate compiles egui
 even in CLI use (dead code is stripped from the binary). If a truly headless build is ever needed
 (CI, server-side compilation), the escape hatch is splitting the trait into `StudioTool` (id,
-settings, CLI) and `StudioToolUi` (views) behind a `gui` cargo feature — deferred until that need is
+settings, CLI) and `StudioToolUi` (views) behind a `gui` cargo feature, deferred until that need is
 real.
 
 A cheap addition the registry enables: one cargo feature per tool in `studio`, allowing stripped
@@ -593,8 +593,8 @@ because an envelope names no tool: the shell would have to guess whose log a fin
 
 ### Diagnostic logging
 
-Events and findings are for the *user*. Developer diagnostics — "opened cache at X", "FPK had 12
-entries, 34 ms", "watcher event dropped as stale" — go through the `log` facade, and nowhere else:
+Events and findings are for the *user*. Developer diagnostics ("opened cache at X", "FPK had 12
+entries, 34 ms", "watcher event dropped as stale") go through the `log` facade, and nowhere else:
 no `println!`/`eprintln!` outside `studio`'s CLI result output and `main` before the logger is
 installed. Where output goes is the binary's decision, not a lib's: a `windows_subsystem =
 "windows"` GUI has no stderr, `wasm32` has no stderr, `python_bindings` would print into Blender's
@@ -605,7 +605,7 @@ console, and a lib printing to stdout corrupts piped CLI output.
   `pyo3-log`, which forwards the libs' lines into Python's `logging` (Blender's console) with no
   lib changes.
 - The split: if a user should see it, it is a finding (`Message`); if a developer should see it, it
-  is a log line. Never both for one fact. Libs never `error!` — a lib returns the error and the
+  is a log line. Never both for one fact. Libs never `error!`: a lib returns the error and the
   caller decides what it means. Libs use `debug!`/`trace!`, and `warn!` only for a recovered
   anomaly that is not a finding.
 - Levels: `info` is one line per stage per run; `debug` is per export or per file; `trace` is per

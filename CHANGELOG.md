@@ -93,7 +93,7 @@ What changed for members, release by release, newest first.
   used badge no longer show the previous save's for a moment: they wait for the new save's own
   answer.
 
-## [0.0.1] — 2026-11-03
+## [0.0.1] - 2026-11-03
 
 - **Save editor**: the first preview, for the DBC7's managers on PES 2017: players, teams and
   tactics, the aesthetics patch, the roster sheet, Live and Multi-team AATF, the Comparator,

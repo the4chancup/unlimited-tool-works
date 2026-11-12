@@ -6,7 +6,7 @@ Part of the [Core plan](README.md). Section headings are unchanged from the sing
 
 ### License
 
-**`MIT OR Apache-2.0`** — the Rust ecosystem's dual license:
+**`MIT OR Apache-2.0`** (the Rust ecosystem's dual license):
 
 - declared once as `license = "MIT OR Apache-2.0"` in the workspace `Cargo.toml` and inherited
   by every crate;
@@ -20,17 +20,17 @@ nothing in Red's license binds Studio.
 Permissive rather than copyleft because the suite is *designed as libraries with tools on top*,
 for a community that writes its own tools in whatever language the author knows. A GPL
 `pes_savefile` or `cpk` could go into a GPL Blender add-on and nowhere else, which would cancel
-half the reason the crate boundaries exist. The copyleft threat — a closed fork — has never
+half the reason the crate boundaries exist. The copyleft threat, a closed fork, has never
 materialized in this community's tooling and would do it no harm if it did; the open version
 stays.
 
 Apache alongside MIT for the explicit patent grant and because it is what every dependency uses.
 The door MIT closes (absorbing GPL code) leads nowhere: Red is the author's own, 4ccEditor is
-zlib, and the other legacy tools carry no license at all — unusable verbatim under any license.
+zlib, and the other legacy tools carry no license at all, unusable verbatim under any license.
 
-What the license does **not** cover: game-derived data kept for interoperability — the skeletons
+What the license does **not** cover: game-derived data kept for interoperability (the skeletons
 in `resources/skeletons/`, `DpFileList.bin` and the other embedded `.bin` templates, the kit-icon
-reference sheet. They are Konami's; the README states it.
+reference sheet). They are Konami's; the README states it.
 
 `just deps-check` enforces the dependency side with a `cargo deny` license allowlist, so a
 copyleft crate cannot enter the dependency graph unnoticed. The list lives in `deny.toml`:
@@ -157,16 +157,16 @@ Stored with the settings (common settings, `studio_core`):
 | `last_update_check` | `state/update_check_last.txt` | - |
 | `skipped_version` | `state/update_skip_last.txt` | - |
 
-This closes out Red's entire `Engines/state/` folder — the remaining five files either became
+This closes out Red's entire `Engines/state/` folder. The remaining five files either became
 settings or lost their reason to exist:
 
 | Red state file | Fate |
 |---|---|
-| `dt00_write_allowed.txt` | Dropped — the Team compiler never writes `dt00_x64.cpk`: the Fox referee marker is a reserved collar inside the refs CPK (`spec/team_compiler/blue_port.md` "Referee export processing") |
+| `dt00_write_allowed.txt` | Dropped. The Team compiler never writes `dt00_x64.cpk`: the Fox referee marker is a reserved collar inside the refs CPK (`spec/team_compiler/blue_port.md` "Referee export processing") |
 | `first_run_done.txt` | Presence-based data-location resolution: the settings file's existence *is* the first-run marker (see "Data location") |
-| `admin_warned.txt` | Dropped — the one-time console explanation before Red's UAC relaunch becomes the `elevation` lib's GUI prompt, which explains itself every time it appears |
-| `sideload_warned.txt` | Dropped — the one-time sideload explanation becomes the per-run `overrides_active` Info message (Red's `sideload/` folder is the compiler's `overrides/`) (team compiler catalog) |
-| `ver_mismatch_warned.txt` | Dropped — the suppressible console notice becomes the plain per-run `pes_version_mismatch` warning (team compiler catalog) plus the version selector's live red/yellow exe check (see `plans/core/gui.md` "Sidebar") |
+| `admin_warned.txt` | Dropped: the one-time console explanation before Red's UAC relaunch becomes the `elevation` lib's GUI prompt, which explains itself every time it appears |
+| `sideload_warned.txt` | Dropped: the one-time sideload explanation becomes the per-run `overrides_active` Info message (Red's `sideload/` folder is the compiler's `overrides/`) (team compiler catalog) |
+| `ver_mismatch_warned.txt` | Dropped: the suppressible console notice becomes the plain per-run `pes_version_mismatch` warning (team compiler catalog) plus the version selector's live red/yellow exe check (see `plans/core/gui.md` "Sidebar") |
 
 ### Versioning: one workspace version, one exception
 
@@ -190,7 +190,7 @@ Rationale:
   downstream *crate* consumers, and there are none: every internal crate's only consumer is
   `studio` (or another internal crate), all compiled together in one binary.
 - **Tools are compile-time plugins**, statically registered in `studio`. A "team_compiler 2.0 vs.
-  studio 1.5" compatibility question is impossible by construction — a version mismatch can't ship.
+  studio 1.5" compatibility question is impossible by construction: a version mismatch can't ship.
 - **Changelog and rollback are per-Studio-release.** Release notes are "Unlimited Tool Works 1.4 adds the
   Balls compiler"; a rollback puts back the one binary kept in `old/`. Both only make sense on
   one version axis.
@@ -211,6 +211,6 @@ beside the executable's name (`UTW v0.0.1`), the line a bug report quotes.
 **One exception: `python_bindings`.** It is built via maturin into a wheel that Blender users
 install independently of the Studio binary, and its consumers are not Studio users. Its version is
 meaningful to them (which wheel matches their Blender / which `fmdl`+`pes_model` API), so it keeps
-its own `version = "..."` and its own release cadence — shipping on demand when the
+its own `version = "..."` and its own release cadence, shipping on demand when the
 `fmdl`/`pes_model` API surface it exposes changes. This is also why its wheel is built by
 `maturin` (`just bindings`) rather than as part of the Studio binary's build.

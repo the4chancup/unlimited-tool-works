@@ -66,7 +66,7 @@ a live game; they are collected in the "Verification" section under Testing.
 
 What the fork adds over the original, relevant to this plan:
 
-- **Partial PES 2021 profile**: a substantially mapped second game version — different
+- **Partial PES 2021 profile**: a substantially mapped second game version. Different
   process name (`PES2021.exe`, 64-bit), a pointer-chain stat-table locator, an 8500-byte
   stat entry, indicator-based entry validation, and player/team heatmap offsets. The fork
   declares a 269-slot stat catalog, but only 263 slots are explicitly initialized and the
@@ -86,10 +86,10 @@ What the fork adds over the original, relevant to this plan:
   content scan as its fallback; it had no pointer-chain fast path. **(unverified)**
 - **Substitution journal (PES2021)**: a per-match record at a fixed offset from the
   stats-table base that names *both* the incoming and outgoing player and the exact
-  minute — the original could only see the incoming player via first-minute-on-pitch.
+  minute. The original could only see the incoming player via first-minute-on-pitch.
   **(unverified)**
 - **Direct clock read (PES2021)**: a pointer chain yielding the current segment and a raw
-  tick count, converting directly to game minute + injury time — vs the original's
+  tick count, converting directly to game minute + injury time, vs the original's
   mode-of-last-minute reconstruction. **(unverified)**
 - **WebSocket remote ingest**: a push client to a remote server with a spectator share URL,
   alongside the original named pipe. Not adopted (see "External consumers"), but noted as a
@@ -205,7 +205,7 @@ Unlimited Tool Works behavior.
 
 The tracker follows the standard tool-crate skeleton (core plan, "Tool crates"). Its elaboration
 exists for one reason: the plan promises that live tracking is *Windows-only behind a trait* while
-everything else (match model, files, view, feed publishing) is portable — and that promise is a
+everything else (match model, files, view, feed publishing) is portable, and that promise is a
 placement rule, not a comment.
 
 ```
@@ -319,7 +319,7 @@ needed for `RawTableSnapshot` fixtures; it excludes unrelated process memory.
    per-player position grids that the old tool processed only as a hidden summed scalar
    gain an independent GUI viewer implemented from verified 10x14 grid semantics;
    otherwise the PES17 viewer remains hidden.
-7. **Suite integration**: settings, theme, logging, single binary — no separate Qt
+7. **Suite integration**: settings, theme, logging, single binary, no separate Qt
    runtime.
 
 ## Dropped features
@@ -333,7 +333,7 @@ needed for `RawTableSnapshot` fixtures; it excludes unrelated process memory.
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Naming | `match_tracker` crate; label "Match tracker" — no "(SEN:P-AI)" suffix | Suite naming convention; unlike still-active Rigdio/RigDJ, the old name has been out of use for years and carries no recognition value |
+| Naming | `match_tracker` crate; label "Match tracker" (no "(SEN:P-AI)" suffix) | Suite naming convention; unlike still-active Rigdio/RigDJ, the old name has been out of use for years and carries no recognition value |
 | Music player interface | In-process `libs/match_feed`: typed pub/sub + snapshot replay | Both tools live in one binary, so the in-process boundary needs no socket or serialization; the independent `watch` CLI serializes the same public model separately |
 | External consumers | No GUI server; `watch` runs an independent headless tracker and prints versioned JSON lines | The old pipe's only consumer is gone; a CLI stream covers scripts without inter-process GUI plumbing. A program that drives the Music player (the Rigdio fork's rigbot) joins the suite and calls it in-process, so the player serves no inbound API either (`core/development_plan.md` "Unscheduled tools") |
 | Match files | New versioned JSON format only; `.sen` dropped | Readable, diffable, schema-evolvable; old archives keep old SEN:P-AI |

@@ -107,7 +107,7 @@ export format.
      small required metadata. It validates virtual-path safety, folder and file naming, root shape,
      roster syntax and identity, link targets, source-format pairing, extension-based allowlists,
      and **texture stem conflicts** (two image files with the same stem but different extensions in
-     one model folder — `texture_stem_conflict`), without loading model, texture, or archive
+     one model folder: `texture_stem_conflict`), without loading model, texture, or archive
      payloads. This is the pass used by shallow archive checks.
    - **Deep format pass (format crates)**: runs over the sanitized export the structure pass
      leaves, before identity and planning. The Team compiler materializes each scope under the
@@ -761,7 +761,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    An in-memory conversion cache eliminates repeat conversion on the edit→compile→test loop;
    see the [library crates plan](../libs/README.md) for design and engagement rules (≤2-team
    limit, no disk persistence).
-6. **Texture relocation to common** (player folders only) — **all** textures of a player folder's
+6. **Texture relocation to common** (player folders only): **all** textures of a player folder's
    own models (and a referee's), whether used by one of its models or several, are moved to a
    **per-player common subfolder** in the packed output, and the texture paths inside the FMDL/MTL
    files are rewritten to match.
@@ -2653,7 +2653,7 @@ Resolved decisions:
 - **Missing savefile stays a warning**: deterministic ID allocation keeps a later savefile-inclusive
   recompile of the same exports consistent, so the CPK step may proceed.
 
-Open questions — **implementation/spec work** (no user preference involved; resolved during the
+Open questions, **implementation/spec work** (no user preference involved; resolved during the
 phase that owns them):
 
 - **Task-batch commit protocol.** The required guarantee is fixed: incremental CPK writing must

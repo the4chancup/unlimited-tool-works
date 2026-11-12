@@ -38,7 +38,7 @@ other shortcuts work while a button holds the keyboard) were accepted for 0.0.1 
 2026-11-02 (`DECISIONS.md` "A Fielded position row says where its click goes (P49)" and
 "Only a text field holds the shortcuts off (P50)").
 
-## P40 — The Music export editor reorders its players
+## P40: The Music export editor reorders its players
 
 From the RigDJ audit (10.0h, 2026-10-27). The editor lists and writes the players in the
 file's order, which is the order of Rigdio's buttons (`plans/music_export_editor.md` "What
@@ -51,7 +51,7 @@ order the streamer sees without leaving the editor. Costs: two buttons beside Re
 Delete, and the drag the song rows already plan reused for the slot list; nothing new in the
 format.
 
-## P41 — The Kit config editor shows what a collar, shorts model or pattern looks like
+## P41: The Kit config editor shows what a collar, shorts model or pattern looks like
 
 From the Kit Manager audit (12.0a, 2026-10-27). Kit Manager's preview was a catalogue: one
 prerendered picture per collar (1–106), shorts model (0–17), shirt pattern (0–13), sleeve
@@ -65,7 +65,7 @@ the pictures themselves, which Kit Manager's bitmaps cannot supply (PES 2016's m
 not ours to ship): renders of each version's stock collars and shorts, made once per version
 (up to 131 collars on PES 2021), plus a gallery widget.
 
-## P42 — The color picker's hex field takes Kit Manager's spellings too
+## P42: The color picker's hex field takes Kit Manager's spellings too
 
 From the Kit Manager audit (12.0a, 2026-10-27). Kit makers paste colors from the tools they
 used with Kit Manager, which accepted `0xRRGGBB` and bare `RRGGBB` (and nothing else, not
@@ -76,7 +76,7 @@ Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
 
-## P51 — A button that goes back to the version an update replaced
+## P51: A button that goes back to the version an update replaced
 
 From the first plan (2026-09-13, `plans/core/distribution.md` "Rollback"), written after Red,
 which keeps the whole old folder when it updates. The maintainer never asked for it, and on
@@ -102,7 +102,7 @@ file goes back: the launchers and the readme stay the newer version's, and a lau
 passes an option the older program lacks fails. A cheaper cover for the same case is one
 sentence in the help's Updates chapter giving the by-hand steps above.
 
-## P52 — The window checks for updates at every start
+## P52: The window checks for updates at every start
 
 From reading the check's schedule for the command line's notice (0.0.2-cli, 2026-11-12). The
 window checks when `last_update_check` is older than the interval (120 minutes by default),

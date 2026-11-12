@@ -25,7 +25,7 @@ the caller decodes, so the crate stays pure logic with no image dependency):
 1. **Decode** the kit's main texture (`kit.dds`) to RGBA via `dds_convert`, top
    mip only. That is the caller's step; the function takes the RGBA8 pixels.
 2. **Sample fixed template regions.** The community kit template has a fixed UV
-   layout (the same for every kit — the config's "shirt model" field does not
+   layout (the same for every kit: the config's "shirt model" field does not
    affect it, see the Kit config editor plan). Measured on the PES 19 colored
    template sheet (`Kit_col_template_pes19.png`):
    - the shirt, front and back, is the center band x 0.336–0.664, y 0.02–0.91 with the

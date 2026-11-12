@@ -81,13 +81,13 @@ with VGL27.
 What worklog 0.0.2-poc5 and poc7 built is in `spec/export_upgrader.md` "What it does",
 step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step:
 
-13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
+13. **Optional glTF conversion** (`--convert-to-gltf`, off by default): after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
     model files to glTF in place. Every `.fmdl` (Fox exports) or `.model`+`.mtl` (pre-Fox
     exports) in player folders, shared folders, and Common is imported to the IR and exported as
     one `.glb` per model via `model_convert`'s `ir_to_gltf`.
 
-    Old exports are always single-engine (Fox-only or pre-Fox-only — Red cannot handle mixed
+    Old exports are always single-engine (Fox-only or pre-Fox-only; Red cannot handle mixed
     states), so there is no dual-set superset merge to automate: each model converts plainly
     through one path. Skeleton transforms come from the FMDL's companion SKL or the embedded
     template skeleton, or from a `.model`'s inline bone table (see "Skeleton reconstruction from

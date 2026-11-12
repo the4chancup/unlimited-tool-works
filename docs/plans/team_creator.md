@@ -32,7 +32,7 @@ pages and four programs. Reduced to what the games and the rules actually requir
 
 | Side | Required | How it is done today |
 |---|---|---|
-| Savefile | 23 names, shirt names and numbers; a registered position each; the medal tiers (GGSS today — gold, gold, silver, silver; the rules file defines them); height-bracket quotas; base stats per tier; a legal formation; one captain, at least one GK; set-piece takers | 4ccEditor by hand, then Auto-ATF to find out what is wrong ("or you'll end up on the Fools page") |
+| Savefile | 23 names, shirt names and numbers; a registered position each; the medal tiers (GGSS today: gold, gold, silver, silver; the rules file defines them); height-bracket quotas; base stats per tier; a legal formation; one captain, at least one GK; set-piece takers | 4ccEditor by hand, then Auto-ATF to find out what is wrong ("or you'll end up on the Fools page") |
 | Export | team colors, a logo, at least one outfield kit and a GK kit (texture, config, menu colors), a portrait per player, and for every player either a face folder or an in-game-editor head | the AET template zip and its step-by-step guide; "download another team's export to see how it's laid out" |
 | Models ("blenders") | optional; the wiki's own on-ramp is *replace one texture in a template*: cardhead, boxhead, the anime "starter kit" | Blender, the `Aesthetic_Templates` page |
 
@@ -275,7 +275,7 @@ Starter set:
 
 | Starter | Input | Notes |
 |---|---|---|
-| In-game head | none | portrait + an empty `ingame_face.toml`, nothing else — the game's face editor supplies the head (the ingame-face workflow in the Player aesthetics editor plan) |
+| In-game head | none | portrait + an empty `ingame_face.toml`, nothing else: the game's face editor supplies the head (the ingame-face workflow in the Player aesthetics editor plan) |
 | Cardhead (mirrored) | image | one plane weighted to `sk_head`, two-sided material |
 | Cardhead (two-sided) | image | the same, with the back face duplicated so text reads correctly from both sides |
 | Boxhead | image | a cube, the image on every face |
@@ -343,7 +343,7 @@ the CLI never writes an illegal Team TOML.
 
 ## Settings
 
-- `show_explanations` (bool, default true) — the "Why?" disclosures start expanded.
+- `show_explanations` (bool, default true): the "Why?" disclosures start expanded.
 - `heights_system` (`red` | `green`, default `red`).
 
 ---

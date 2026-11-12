@@ -10,5 +10,5 @@ What exists of this is in `spec/pes_savefile/README.md` "Crate layout".
 
 Planned files that do not exist yet:
 
-- `src/ops/populate.rs` — the placeholder player section (Phase 19, DB generator;
+- `src/ops/populate.rs`: the placeholder player section (Phase 19, DB generator;
   `operations.md` "Player section population").

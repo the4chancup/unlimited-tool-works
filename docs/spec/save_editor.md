@@ -33,10 +33,10 @@ Midcupping (`Tools_4cc/Midcupping`) is a set of six standalone Python scripts
 (PES 15/16/17 variants of two tools) used mid-cup, when re-running full exports
 is too heavy:
 
-- **`transplant-aesthetics-*.py`** — copies player appearance data (boots/gloves
+- **`transplant-aesthetics-*.py`**: copies player appearance data (boots/gloves
   IDs, physique, strip style, ingame face) from a donor save into a base save,
   by player ID, ID pair, team, or team range; optionally in-place.
-- **`compare-saves-*.py`** — diffs two saves aesthetically: per player, decodes
+- **`compare-saves-*.py`**: diffs two saves aesthetically: per player, decodes
   boots/gloves/face IDs, taping, glasses, sleeves, inners, socks, undershorts,
   shirttail, winter gloves, skin color, plus a normalized hash of the ingame-face
   block, and prints what changed.
@@ -59,15 +59,15 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Save squad (`.4ccs`) | Replaced by **Team TOML export** (full-fidelity, human-readable — see the [Savefile plan](pes_savefile/README.md)) |
+| Save squad (`.4ccs`) | Replaced by **Team TOML export** (full-fidelity, human-readable; see the [Savefile plan](pes_savefile/README.md)) |
 
 ### Database operations
 
 | 4ccEditor | Fate |
 |-----------|------|
-| AATF: current team / select teams | Kept (rules become configurable — see below) |
+| AATF: current team / select teams | Kept (rules become configurable; see below) |
 | Compare EDITs | Kept, merged with Midcupping's aesthetics diff (see "Comparator") |
-| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses — added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
+| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses; added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
 
 ### New (from Midcupping)
 
@@ -80,7 +80,7 @@ implementation is measured against.
 
 | Feature | Notes |
 |---------|-------|
-| Apply aesthetics patch | The compiler's `aesthetics_patch.toml` → current save: on every engine the route by which a compiled team's whole look reaches the official save — each entry's `[appearance]` (the resolved look, motions included), `boots_id`/`gloves_id` and `base_copy_id`, and the resolved `name`/`shirt_name` entries (only from exports carrying the `write_names` marker). See "Read-only aesthetics" in the [Save editor plan](../plans/save_editor.md) |
+| Apply aesthetics patch | The compiler's `aesthetics_patch.toml` → current save: on every engine the route by which a compiled team's whole look reaches the official save. Each entry's `[appearance]` (the resolved look, motions included), `boots_id`/`gloves_id` and `base_copy_id`, and the resolved `name`/`shirt_name` entries (only from exports carrying the `write_names` marker). See "Read-only aesthetics" in the [Save editor plan](../plans/save_editor.md) |
 
 ---
 
@@ -128,7 +128,7 @@ The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping'
   [Savefile plan](pes_savefile/operations.md)); the lists below are the two references' rows,
   each a subset of ours.
 - **Gameplay scope** (from 4ccEditor): names, IDs, basics (age/height/weight),
-  every ability stat, playstyle, positions and ratings, COM styles, all skills —
+  every ability stat, playstyle, positions and ratings, COM styles, all skills,
   with old → new values.
 - **Aesthetics scope** (from Midcupping): boots/gloves/face IDs, taping, glasses,
   sleeves, inners, socks, undershorts, shirttail, winter gloves, skin color, and
@@ -266,8 +266,8 @@ What this editor adds on top of the lib:
 
 ## CLI
 
-The batch surface for the operations that came from scripts — Midcupping existed as
-Python scripts precisely because GUIs can't be looped:
+The batch surface for the operations that came from scripts (Midcupping existed as
+Python scripts precisely because GUIs can't be looped):
 
 ```
 UTW save-editor export-toml ./EDIT00000000 --team 701 -o ./aaa.toml   # single-team full-fidelity Team TOML dump
@@ -329,8 +329,8 @@ The commands:
   `spec/pes_savefile/operations.md` "Aesthetics patch (new)").
 
   It refuses a version or allocation-scheme mismatch before touching anything, prints the
-  per-team summary (applied / skipped: not in save), and is the batch form of the GUI action —
-  the savefile builder can apply a night's patches in one script. A team is listed as applied
+  per-team summary (applied / skipped: not in save), and is the batch form of the GUI action.
+  The savefile builder can apply a night's patches in one script. A team is listed as applied
   only when at least one of its players was written: a team the save holds whose patch players
   it all lacks prints only their skips.
 

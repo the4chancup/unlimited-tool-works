@@ -337,9 +337,9 @@ serialize (the save editor is just UI over them):
 
 A human-readable full-fidelity dump of one team: team entry (names, colors,
 manager/stadium IDs, kit slots), tactics (all 3 presets, formations, instructions,
-lineup), and every player with **all** known fields — gameplay stats, skills,
+lineup), and every player with **all** known fields (gameplay stats, skills,
 positions, motion, edit flags, and the complete aesthetics including the
-ingame-face parameters (which the legacy formats omit). Goals:
+ingame-face parameters (which the legacy formats omit)). Goals:
 
 - Readable and editable in a text editor without opening Unlimited Tool Works.
 - The per-player authorable appearance tables use the exact `PlayerSettings` schema from
@@ -349,7 +349,7 @@ ingame-face parameters (which the legacy formats omit). Goals:
 - Version-gated fields serialize as optional keys; importing into an older
   version applies the cross-version conversion (caps + playstyle maps) with
   warnings.
-- **Absent = untouched on import**, at every level (key, player, team section) — the rule the
+- **Absent = untouched on import**, at every level (key, player, team section): the rule the
   aesthetics patch follows for players and teams.
 
   An export writes every field, so a round trip is full-fidelity, the bench's last nine
@@ -857,7 +857,7 @@ Rules:
 - **Everything is resolved.** `name = true` is the derived string; `fpc_on`/`fpc_off` are the
   preset's concrete field values; the IDs are the resolved ones, already filtered by the compiler's
   "only for content that was actually packed" rule. The patch answers "what will the save contain",
-  never "what did the export say" — the export is not needed to apply it.
+  never "what did the export say": the export is not needed to apply it.
 - **Applying is `pes_savefile`'s operation** (`AestheticsPatch::apply`): for each player, apply
   what the file holds, through the same `apply_appearance` `settings_toml` shares. It is one
   path, so a patch applied by someone else yields the same bytes the DLC builder's machine
@@ -958,7 +958,7 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
 
 - **`.4ccs` squad files**, in order:
   - `"21a"` (3 ASCII bytes; the real files on this machine, written by an earlier build, carry
-    `"20a"` with the same record — both tags are accepted, decision entry 2.17h);
+    `"20a"` with the same record: both tags are accepted, decision entry 2.17h);
   - 2 ASCII digits of the exporting PES version;
   - one **356-byte `player_export` record per rostered player**, in the order the source save's
     player records hold them, not roster order;
@@ -1004,7 +1004,7 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
     defensive line, compactness, numbers in defence, fluid;
   - then starting XI (11), bench (21), 6 set-piece takers (FK long, FK short, FK 2, CK left, CK
     right, PK), 3 join-attack, 4 auto flags (substitution, offside trap, preset change,
-    attack/defence levels) — **no captain**.
+    attack/defence levels), **no captain**.
 
   The reference imports only into 16-18 and only from the same version (its x/y "conversion
   factor" is 1 for every pair). Here the block parses into `TeamToml.tactics`: `bench_order`
@@ -1187,7 +1187,7 @@ possession/aggression/physical contact to 77; here the target's values stand in 
 instead, per the 2.17f rule.
 
 Because the game itself consumes these, full compatibility matters in both directions: read
-(the reference already does) **and write** (new — the reference is import-only), so the editor
+(the reference already does) **and write** (new; the reference is import-only), so the editor
 can produce a file PES can import. Every player record's appearance id holds the player's own id
 in each export the game wrote (the 18-21 fixtures), so the writer writes it so, whatever the
 save's entry holds.

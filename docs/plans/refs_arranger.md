@@ -256,7 +256,7 @@ The compiler's Reader keeps its disabled-marker test to itself today; it moves i
     separately: sum the observed rates of patterns in which the referee holds
     each kind of slot. Exact for the supplied sample, not a claim about the game's
     true probabilities.
-  - **PES 17**: expected appearances per match — sum the assigned slots' marginal rates.
+  - **PES 17**: expected appearances per match. Sum the assigned slots' marginal rates.
     Label this as an expected count, not a probability of appearing at least once; joint
     slot observations would be needed for the latter.
   - **PES 18–21**: appearances across the lists (how many lists, and in which positions),
@@ -274,7 +274,7 @@ The compiler's Reader keeps its disabled-marker test to itself today; it moves i
 The editor switches on the **global PES version selector** (sidebar), like every
 version-dependent behavior in the suite:
 
-- **PES 18–21 mode — lists.** The referee hook decides who appears, so the editor is
+- **PES 18–21 mode: lists.** The referee hook decides who appears, so the editor is
   about *lists*, and the slot mapping is derived:
   - **Home slots.** Every referee in the storage box holds exactly one slot, 1..N in
     storage-box order (reorderable by drag; the order is saved, so a referee's slot,
@@ -313,8 +313,8 @@ version-dependent behavior in the suite:
     The fill is automatic and shown read-only under the lists; no Filler referee exists in
     this mode. Two referees whose expected counts tie are taken in storage-box order, so
     identical input gives identical output.
-- **PES 17 mode**: all 35 slots as editable rows — slot number, measured rate,
-  drop target with the assigned name. Dead slots (~0%) render grayed (filler by
+- **PES 17 mode**: all 35 slots as editable rows (slot number, measured rate,
+  drop target with the assigned name). Dead slots (~0%) render grayed (filler by
   default) but stay assignable. The slot list *is* the mapping; no preview needed.
   (The table was measured on the Fox side and is assumed to hold on 17, see Open
   questions; if it does not, this mode gets its own measurement, not a different UI.)

@@ -17,7 +17,7 @@ crate.
 2. Decode mesh splitting (reassemble sub-meshes)
 3. Decode split vertex encoding (restore vertex order)
 4. Decode anti-blur (strip duplicate meshes)
-5. Remap bones through `missingBones` table (FMDL has more bones than .model) — in the Studio, the
+5. Remap bones through `missingBones` table (FMDL has more bones than .model): in the Studio, the
    per-version retargeting pass (see "Skeleton retargeting and bone conformance")
 6. Convert vertices/faces (reverse face winding, Vector4→Vector3 normals)
 7. Convert materials (FMDL shader/technique → .model shader)
@@ -72,7 +72,7 @@ files carry"):
   it has a parent and at least one mesh. Any other listed group reads as an ordinary group,
   and a rewrite does not list it.
 
-This is O(V×F) in the worst case — tight loops over vertex arrays with per-iteration set operations.
+This is O(V×F) in the worst case: tight loops over vertex arrays with per-iteration set operations.
 This is where Rust's performance is essential:
 
 | Language | Estimated time per complex model |
@@ -121,7 +121,7 @@ them.
 **Provenance.** Every number comes from a game file, never from a transcription. The files
 themselves are checked in under `resources/skeletons/pes{15,16,17,18,19,21}/` (extracted once,
 stored decompressed; see the README there), embedded with `include_bytes!` and parsed once at first
-use with `fmdl::SklFile` — the Python literals are not copied. The one hand-maintained skeleton
+use with `fmdl::SklFile`; the Python literals are not copied. The one hand-maintained skeleton
 table is `render_parents.rs`, names only: `PesSkeletonData`'s render hierarchy (139 entries, body,
 hands and face), which no game file records. A bone outside that table is a render root, which is
 what every `dsk_*` bone already is in the games' own parent columns.
@@ -153,7 +153,7 @@ armatures).
 
 | Version | Bones | Compared with PES21 |
 |---|---|---|
-| PES15 | 76 | 12 exclusive bones (`dsk_belly`, `dsk_chest`, `dsk_upperarm_{b,m,t}_{l,r}`, `tip_belly`, `tip_chest`; `dsk_thigh_{l,r}`, which return in PES19); **lacks** `dsk_deltoid_*`, `dsk_trapezius_*`, `dsk_upperarm_long_*`; 20 shared bones have a different rest pose — `dsk_scapula_r` (1.89 max component delta), `dsk_scapula_l`, `dsk_pectoralis_*` (0.52), `dsk_belly_scale`, and the **whole forearm/hand chain** (`sk_forearm_*`, `sk_hand_*`, `dsk_wrist_*`, `dsk_forearm*_*`, `dsk_elbow_*`, 0.18–0.50) |
+| PES15 | 76 | 12 exclusive bones (`dsk_belly`, `dsk_chest`, `dsk_upperarm_{b,m,t}_{l,r}`, `tip_belly`, `tip_chest`; `dsk_thigh_{l,r}`, which return in PES19); **lacks** `dsk_deltoid_*`, `dsk_trapezius_*`, `dsk_upperarm_long_*`; 20 shared bones have a different rest pose: `dsk_scapula_r` (1.89 max component delta), `dsk_scapula_l`, `dsk_pectoralis_*` (0.52), `dsk_belly_scale`, and the **whole forearm/hand chain** (`sk_forearm_*`, `sk_hand_*`, `dsk_wrist_*`, `dsk_forearm*_*`, `dsk_elbow_*`, 0.18–0.50) |
 | PES16 | 70 | identical bone set and transforms to PES17 |
 | PES17 | 70 | `dsk_deltoid_*` rest pose differs (0.25) |
 | PES18 | 76 | PES17 + `dsk_belly_{f,o,ba}_{l,r}` (as roots; PES21 hangs them under `dsk_pos_belly_*`) |
@@ -173,7 +173,7 @@ which the legacy tools conflated:
 - **B. Bones the target has at a different rest pose.** The mesh is bound to the *source* pose:
   its inverse bind matrices (inline in a `.model`, in the glTF skin, in an FMDL's companion `.skl`
   or the template) describe where each bone was when the vertices were authored. If those matrices
-  do not match the target game's runtime skeleton, vertices rotate about the wrong pivots — fine at
+  do not match the target game's runtime skeleton, vertices rotate about the wrong pivots: fine at
   rest, wrong in any pose that flexes the joint.
 
 The `4cc-model-simplifier-15` (`Engines/python/simplify.py`) and the 19to16 converter are the
@@ -182,11 +182,11 @@ prototypes. Both solve A with a hand-written table (`missingBones`: `dsk_deltoid
 Neither solves B: both write **PES17's** matrices (`PesSkeletonData`) into models destined for other
 versions. The simplifier's "full" mode papers over the worst B cases by transferring weights away
 from the displaced bones (`movedBones`: `dsk_belly_scale` → `sk_belly`, `dsk_pectoralis_*` →
-`sk_chest`, `dsk_scapula_r` → `sk_shoulder_r`) — losing the deformation those bones provide.
+`sk_chest`, `dsk_scapula_r` → `sk_shoulder_r`), losing the deformation those bones provide.
 
 The forearm/hand chain, displaced just as much in PES15, was never handled, which is the probable
 cause of the **broken wrist pose in some PES15 animations (the pre-match entrance) on 17→15
-ports** — a pose-dependent error is exactly what wrong bind pivots produce. *Hypothesis; verify
+ports**: a pose-dependent error is exactly what wrong bind pivots produce. *Hypothesis; verify
 on a known-broken port once the pass exists.*
 
 The Studio runs one IR pass, `retarget(ir: CanonicalModel, target: PesVersion) ->
@@ -205,7 +205,7 @@ importers put it there); the pass rewrites the bones and vertices in place:
    only Fox versions in 4cc use are 18/19/21 and their shared bones differ by ≤0.25 on `dsk_deltoid`
    and the toe tips; FMDL files do not record their game version).
 2. **Fold bones the target lacks** (problem A). For each used bone absent from the target's body
-   table, transfer its weight to the bone named by the **fold table** for that bone — one table for
+   table, transfer its weight to the bone named by the **fold table** for that bone: one table for
    every version, name → name, in `skeletons/fold.rs`. It holds:
 
    - the two legacy tables verbatim;
@@ -299,7 +299,7 @@ importers put it there); the pass rewrites the bones and vertices in place:
 The two legacy tables become regression fixtures: PES19→PES16 and PES17→PES15 must fold exactly the
 `missingBones` those tools folded, and must *not* fold the `movedBones` (retargeting handles them).
 
-Retargeting is also what makes the **PES19→PES21** compile correct — today Red leaves PES19's eight
+Retargeting is also what makes the **PES19→PES21** compile correct: today Red leaves PES19's eight
 `dsk_pos_*` bones dangling in a PES21 FMDL; whether the game ignores or misrenders them is untested,
 and folding makes it moot.
 
@@ -310,7 +310,7 @@ settings. Revisit if a case turns up.
 **Cost.** Re-binding is linear-blend skinning evaluated once, offline. Per surviving bone one delta
 matrix `Dᵢ = B_target,ᵢ · B_source,ᵢ⁻¹` is precomputed (≤ 175 small matrix products); per vertex the
 position is `Σ wᵢ Dᵢ v` over at most four weights (≈ 50 multiply-adds) and the normal/tangent take
-the rotational part (≈ 40 more) — on the order of 100 flops per vertex, done in place. A 20k-vertex
+the rotational part (≈ 40 more): on the order of 100 flops per vertex, done in place. A 20k-vertex
 player model is ~2 M flops, well under a millisecond single-threaded; the largest 4cc models
 (~100k vertices) stay in single-digit milliseconds. It is not measurable next to mesh splitting
 (10–50 ms per model) or texture encoding (hundreds of ms).
@@ -359,7 +359,7 @@ model-space position per bone. The positions correspond to the `PesSkeletonData.
 reference, but template variants can differ numerically; do not require exact equality to that
 hardcoded reference. Preserve the SKL parent hierarchy separately from the render hierarchy.
 
-The `fmdl` crate owns the SKL codec alongside the FMDL codec (same format family — both are
+The `fmdl` crate owns the SKL codec alongside the FMDL codec (same format family: both are
 Fox-engine binary formats consumed together at pack time).
 
 ### SKL and glTF: native integration, not a companion
@@ -373,9 +373,9 @@ merges regardless of source format.
 ### GPU offloading
 
 **Not worth it.** The workload doesn't match GPU strengths:
-- Mesh splitting: branch-heavy, irregular memory access, set operations — GPUs perform poorly
+- Mesh splitting: branch-heavy, irregular memory access, set operations; GPUs perform poorly
 - Vertex conversion: 5K-20K vertices is too small to justify GPU dispatch overhead (~100μs)
-- Matrix inversion: ~100 tiny 3×4 matrices — CPU does this in microseconds
+- Matrix inversion: ~100 tiny 3×4 matrices; CPU does this in microseconds
 
 Keep model geometry conversion on the CPU and benchmark the port rather than promising specific
 latencies. Texture encoding is a separate workload: the [library crates plan](../libs/README.md) includes

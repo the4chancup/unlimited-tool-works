@@ -29,7 +29,7 @@ struct FmdlHeader {
 ### Layout of the format crates: `format/` and `ops/`
 
 The single-concern format crates (`cpk`, `fpk`, `ftex`, `fox2`, `uniparam`, `wezlib`, `kit_config`)
-need no prescribed layout — one module tree, read and write, tests. `fmdl` and `pes_model` are
+need no prescribed layout: one module tree, read and write, tests. `fmdl` and `pes_model` are
 different: each carries **format-native algorithms** on top of the codec (mesh splitting, split
 vertex encoding, anti-blur decode/encode, multi-model merging, path editing) and has a **second
 consumer outside the workspace** (the Blender extension via `python_bindings`). Both crates use the

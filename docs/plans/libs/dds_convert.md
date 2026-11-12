@@ -9,7 +9,7 @@
 What exists of this is in `spec/libs/dds_convert.md` "In-memory conversion cache".
 
 - The Studio creates one `Converter` at startup and passes it into each Team compiler run. The
-  cache lives for the application session and is dropped on exit — **no disk persistence**, so
+  cache lives for the application session and is dropped on exit: **no disk persistence**, so
   it never fills the user's drive with temporary files.
 - **Retention is separately bounded and budgeted.** Repeated edits or switching between teams must
   not accumulate every historical conversion for the whole session. Retained bytes count against

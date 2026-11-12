@@ -6,7 +6,7 @@
 
 What exists of this is in `spec/core/README.md` "Overview".
 
-2. **The save editor** (successor to 4ccEditor, absorbing the Midcupping scripts) — edits PES save
+2. **The save editor** (successor to 4ccEditor, absorbing the Midcupping scripts), edits PES save
    files (`EDIT00000000`): player stats, appearance, teams, tactics, AATF rule enforcement, save
    diffing, aesthetics transplant
 
@@ -25,7 +25,7 @@ rationale. Structural points worth noting here:
   player-folder format;
 - the three stream-side tools (Music player, Music export editor, Match tracker) operate on
   audio and game memory rather than game files, sharing only the platform and their own lib
-  crates — the tracker feeds live match events to the Music player, letting it run the match
+  crates: the tracker feeds live match events to the Music player, letting it run the match
   soundboard autonomously;
 - the **Refs arranger** prepares referee exports' `players.txt` and hands the compile off to the
   Team compiler, which owns referee compilation;
@@ -36,10 +36,10 @@ rationale. Structural points worth noting here:
   Compiler for every export kind");
 - the **Player aesthetics editor** hands model viewing to Blender (launched with a manifest
   consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
-  preview — it only gains a labeled approximate in-app preview if the Team compiler's future
+  preview: it only gains a labeled approximate in-app preview if the Team compiler's future
   3D-preview feature creates the shared `model_viewport` lib;
 - the **Team creator** is a wizard that takes a name and a list of players to a legal Team TOML
-  plus a compilable aesthetics export built from embedded starter heads — it owns no format and
+  plus a compilable aesthetics export built from embedded starter heads: it owns no format and
   keeps no state, writing only files the other tools already read, and shares its tactics and
   card widgets with the Save editor through `libs/team_widgets`;
 - the **Ruleset editor** builds AATF rulesets through forms, as data that a generic interpreter
@@ -82,7 +82,7 @@ match structures):
 What exists of this is in `spec/core/README.md` "GUI framework choice: egui".
 
 The suite also uses wgpu for first-release desktop GPU BC7 and the future 3D preview's
-`egui_wgpu` render callback — see the [Team compiler plan](../team_compiler/README.md).
+`egui_wgpu` render callback. See the [Team compiler plan](../team_compiler/README.md).
 
 Trade-offs accepted:
 - **No CSS transitions**: cell color changes are instant rather than smoothly fading. egui's
@@ -192,24 +192,24 @@ What exists of this is in `spec/core/README.md` "Key Decisions Summary".
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Universal model source | glTF (`.glb`, single file; `.gltf`+`.bin` accepted) with *optional* PES extensions (PES_bone/PES_mesh) + materials.toml — own plan: [Unified model format](../model_format.md) | Blender exports natively, mature Rust parser, extensible; material properties in comment-friendly TOML, not uncommented JSON. Design goal: one authored model converts to `.model` and FMDL with no loss of customizability in the simplest possible way, or users keep the native formats. Stock-Blender exports must compile (extensions have fallbacks, PBR material data is ignored), which is why a custom `.pes` extension was rejected — it would make the plugin mandatory |
-| glTF material files | `materials.toml` (catch-all) + `*.materials.toml` (name-matched) + `.common` links to Common's files, mirroring `.model`/`.mtl` and Red's `.mtl.common` | Materials never embedded in glTF JSON — glTF files need textures anyway, JSON has no comments, and tomls-as-siblings make sharing unambiguous; name-matching (startsWith/endsWith) ports Red's `.mtl` logic for the same modular copy-paste workflow; Common-linked models resolve materials in Common first with local overrides layered on top (Red's cascade); missing material = hard error (no safe defaults without texture paths) |
+| Universal model source | glTF (`.glb`, single file; `.gltf`+`.bin` accepted) with *optional* PES extensions (PES_bone/PES_mesh) + materials.toml; own plan: [Unified model format](../model_format.md) | Blender exports natively, mature Rust parser, extensible; material properties in comment-friendly TOML, not uncommented JSON. Design goal: one authored model converts to `.model` and FMDL with no loss of customizability in the simplest possible way, or users keep the native formats. Stock-Blender exports must compile (extensions have fallbacks, PBR material data is ignored), which is why a custom `.pes` extension was rejected: it would make the plugin mandatory |
+| glTF material files | `materials.toml` (catch-all) + `*.materials.toml` (name-matched) + `.common` links to Common's files, mirroring `.model`/`.mtl` and Red's `.mtl.common` | Materials never embedded in glTF JSON: glTF files need textures anyway, JSON has no comments, and tomls-as-siblings make sharing unambiguous; name-matching (startsWith/endsWith) ports Red's `.mtl` logic for the same modular copy-paste workflow; Common-linked models resolve materials in Common first with local overrides layered on top (Red's cascade); missing material = hard error (no safe defaults without texture paths) |
 | Stadium compiler | `tools/stadium_compiler` crate | Ports the Python stadium compiler; fox2 parser goes in `libs/fox2` |
 | GUI validation | Live, no Check/Refresh buttons | Folder watcher + deep checks for extracted folders, shallow (blue) for archives |
 | GUI actions | Single Compile button (becomes Cancel) | Staged operations superseded by the unified pipeline |
 | Export upgrader | Dedicated tool crate | Merges single-user model folders into player folders; shared folders + link files; savefile-driven ID mapping |
-| Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Team compiler for the compile — a compile-engine lib crate would have one thin extra consumer |
+| Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Team compiler for the compile: a compile-engine lib crate would have one thin extra consumer |
 | Balls tooling | Balls arranger + balls export, compiled by the Compiler | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the balls kind keeps its own pipeline and CPK inside the Compiler's run; balls become the third export kind in `exports/` (first word `balls`, skipped by the Team compiler until the kind lands) |
 | One Compiler | Every export kind (team, refs, balls, stadium, billboards) compiled in one run, each into its own CPK; stadiums one export per stadium (`stadium`), billboards their own kind (`billboards`) | The organizer compiles one DLC: one check pass, one deploy, one settings page, where three tools meant three; the kinds already share the pipeline, conversion and packing libs and the progress grid. Crate layout settled when Phase 9 opens (guardrail 3) |
-| Distribution | Portable `.7z` (binary + `quick_compile.bat` + exports/ + teams list + readme), no installer | Extract anywhere and run; no elevation, no registry. Extract-and-run with no external runtime is the requirement, not file count — Red's many-file bundle causes users no trouble |
+| Distribution | Portable `.7z` (binary + `quick_compile.bat` + exports/ + teams list + readme), no installer | Extract anywhere and run; no elevation, no registry. Extract-and-run with no external runtime is the requirement, not file count: Red's many-file bundle causes users no trouble |
 | Quick-compile launcher | `quick_compile.bat` → `UTW --gui team-compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
 | Studio Web | Post-release lite browser edition, not a first-release gate; lib crates `wasm32`-checked in CI from Phase 1 | Convenience for compiling/editing one's own team from another PC via a bookmark, never full-cup compilation (4 GB `wasm32` ceiling); the cheap file-picking tier ships first, the pipeline tier needs adapters + COOP/COEP hosting on the community server |
 | Self-update | In-place binary swap (move-running-exe pattern) + teams-list merge; previous binary kept in `old/` | Inverts Red's sibling-folder update: the folder is a few files, user data stays put; settings need no transfer (default-merge handles new keys); the `old/` subfolder keeps the previous binary out of misclick range |
 | Save editor scope | Full 4ccEditor parity + direct-manipulation tactics UI | Every 4ccEditor feature carried over; drag-and-drop replaces spinner/dropdown friction |
 | Midcupping tools | Absorbed into the save editor | The aesthetics diff as the comparator panel, its operation in `pes_savefile`; the save-to-save transplant is not ported, its successor writes the team's export (`save_editor.md` "Aesthetics transplant") |
 | Boots/gloves IDs | Automatic deterministic assignment for custom models; stock models (IDs 0–100) named in `settings.toml` | Player-exclusive: from (team_id, player_number); shared: per-team pool; a player wearing a game model has no folder, so `boots_id`/`gloves_id` name it; written to the savefile through the aesthetics patch at compile time |
-| Player settings | TOML in exports (`settings.toml`), merged at compile time; all fields optional; schema covers every savefile aesthetic field (tested) | Replaces manual savefile editing; editor can generate TOML from saves; name writing is opt-in (`name = true`/string — absent leaves the savefile name untouched), so shared folders act as generic model folders |
-| Aesthetics patch | `aesthetics_patch.toml` written to the output folder with the CPK (every compiled player's look, motions included, and a `write_names` export's names, on every engine); the compiler's only savefile write path (the local save is updated by applying it); applied to other saves by the save editor, whose own aesthetics fields are read-only by default (session unlock) | Separates the DLC builder from the savefile builder — the official save holds the teams' custom tactics, which the DLC builder must not receive; one write path means no drift between the two machines |
+| Player settings | TOML in exports (`settings.toml`), merged at compile time; all fields optional; schema covers every savefile aesthetic field (tested) | Replaces manual savefile editing; editor can generate TOML from saves; name writing is opt-in (`name = true`/string; absent leaves the savefile name untouched), so shared folders act as generic model folders |
+| Aesthetics patch | `aesthetics_patch.toml` written to the output folder with the CPK (every compiled player's look, motions included, and a `write_names` export's names, on every engine); the compiler's only savefile write path (the local save is updated by applying it); applied to other saves by the save editor, whose own aesthetics fields are read-only by default (session unlock) | Separates the DLC builder from the savefile builder: the official save holds the teams' custom tactics, which the DLC builder must not receive; one write path means no drift between the two machines |
 | FPC toggle | Empty `fpc_on`/`fpc_off` marker files in the player folder | Folder-level like link files; apply `libs/fpc`'s enable/disable presets (same as the editor's toggle); absent = no preset applied, the keys taking their defaults |
 | AATF rules | One self-contained Rhai file: the ruleset as data (`RULESET`), a generic interpreter carried in the file, optional hand-written custom checks; built without code in the Ruleset editor | Anyone can make an invitational's ruleset, and it need not resemble the official one; the interpreter in the file keeps a ruleset's meaning fixed across Studio builds; TOML+CEL, a two-file split, hand-written logic per ruleset and a Rust-interpreted TOML rejected ([AATF rules plan](../aatf_rules.md)) |
 | Music tools | Two tool crates (`music_player`, `music_export_editor`) + `music_export`/`audio_engine` libs | Rigdio/RigDJ successors; descriptive crate names, old names kept in the user-facing labels ("Music player (Rigdio)") and old icons in the icon rail |

@@ -23,7 +23,7 @@ then          description ┐
 
 - **Effective master key**: the 64-byte per-version master key with bytes reversed
   within each 8-byte block: `eff[i] = key[(i & ~7) + 7 - (i & 7)]`.
-- **File key recovery** (an involution — the same routine derives the key when
+- **File key recovery** (an involution; the same routine derives the key when
   writing a fresh random salt): `headerKey = eff ^ salt[256..320]`, decrypt
   `salt[0..256]` with it, then XOR the five 64-byte blocks of the result together.
 - **Keystream** (`cryptStream`):
@@ -221,7 +221,7 @@ Notes:
 - **The 15/16 counts.** On 15/16 the player-entry count is read at 0x34 (4ccEditor) and the
   appearance-entry count at 0x36 (the Midcupping scripts). The two are equal on the PES 16 save
   but differ on the PES 15 one (5060 players at 0x34, 5061 appearance records at 0x36, while
-  the player and appearance ID sets are equal at 5060). Each array reads its own count — the
+  the player and appearance ID sets are equal at 5060). Each array reads its own count: the
   extra appearance record is simply unreferenced.
 - **The 188-byte records.** PES 17, 18 and 19 all use a 188-byte player record but **not the
   same field layout**. The first ~250 bits (id, nation, physique bytes, the ability run to
@@ -230,7 +230,7 @@ Notes:
   version's own table decodes its own save with every 7-bit ability in 40..99, the other
   versions' tables do not.
 - **PES 20 and 21.** PES 20 shares the 312-byte player walk with 21 but has its own
-  roster/tactics offsets — the two versions' section offsets match only for team IDs. This was
+  roster/tactics offsets: the two versions' section offsets match only for team IDs. This was
   measured 2026-09-20 on a real PES 20 save: its payload is 31 300 bytes shorter than the 21
   save's, exactly the roster and tactics offset difference, and both saves rewrite byte for
   byte under the 20 and 21 tables respectively.

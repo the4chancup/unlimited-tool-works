@@ -251,7 +251,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
 
 ## Development phases
 
-- **Phase 3 — skeleton and shared export model (done 2026-10-02):**
+- **Phase 3, skeleton and shared export model (done 2026-10-02):**
   - `libs/aesthetics_export`'s structure parsing and format-level validation (on the
     `ExportIdentity` boundary, the sanitized validated-versus-eligible projection and the
     roster-entry semantics of "Validation semantics" in the
@@ -260,7 +260,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   - the reader/coordinator/writer over `libs/pipeline` compiling the subset in "Phase 3 scope"
     below;
   - the shell slice's view.
-- **Phase 4 — processing logic (done 2026-10-12):** the deep pass, model and non-model
+- **Phase 4, processing logic (done 2026-10-12):** the deep pass, model and non-model
   processing on both engines (cross-format conversion through the Phase 2 `model_convert`),
   packing, bins, referees, the output modes and deployment. Phase 4 delivered them on synthetic
   Studio-format fixtures, with planning fixing every output name and every model task's planned
@@ -269,7 +269,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   Phase 4's parity with Red covers the tracer export (Fox) and the pre-Fox reference (`testing.md`).
   The full Red parity gate over upgraded old exports depends on Phase 6's Export upgrader (and
   on Phase 5's savefile and ID integration), so it runs once those phases land.
-- **Phase 5 — savefile integration (done 2026-10-16):** on Fox, every compiled player's
+- **Phase 5, savefile integration (done 2026-10-16):** on Fox, every compiled player's
   `PlayerAppearance.bin`, `BootsList.bin` and `GloveList.bin` rows from his resolved
   `settings.toml`, the default-ID rows, the Midcup shared-IDs record, and the aesthetics patch,
   written beside the output and applied to the local save in one transaction with the CPKs.

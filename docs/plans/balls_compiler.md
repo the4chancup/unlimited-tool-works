@@ -5,8 +5,8 @@
 The Balls compiler (`crates/tools/balls_compiler`, tool id `balls-compiler`, sidebar
 label "Balls compiler") is the successor to the **4cc balls compiler 2.03**, a batch
 file from the same era as the original AET compiler batch. It compiles a **balls
-export** — the ball models, thumbnails, and menu list for PES's ball selection
-screen — into its own CPK. Platform context is in the [core plan](core/README.md).
+export** (the ball models, thumbnails, and menu list for PES's ball selection
+screen) into its own CPK. Platform context is in the [core plan](core/README.md).
 
 **It becomes two parts** (DECISIONS 2026-11-09, "one Compiler for every export kind"):
 
@@ -74,7 +74,7 @@ Balls move from a tool-private library to an **export**, the suite's third expor
 kind after team and referee exports. It lives in `exports/` with its siblings.
 
 The export name's first word being `balls` is the discriminant, exactly as `refs` is for
-referee exports (the Team compiler skips `balls` exports with an info message pointing here —
+referee exports (the Team compiler skips `balls` exports with an info message pointing here;
 see "Compilation walkthrough" step 2 in the [Team compiler plan](team_compiler/README.md)).
 **One balls export at a time**: the cup has one ball list, so finding several `balls*` exports
 is an error, like with referees.
@@ -105,10 +105,10 @@ Improvements over the 2.03 folder format:
   (`ball.gltf`/`.glb`, with the PES_bone/PES_mesh extensions) is accepted as a third source,
   like player models. Ball folders containing glTF also support the `materials.toml` material
   files from the [Unified model format plan](model_format.md) (catch-all + name-matched
-  `*.materials.toml`; no `.common` links — a balls export has no Common folder).
+  `*.materials.toml`; no `.common` links: a balls export has no Common folder).
 
   The compiler picks the target version's native format and **converts through
-  `model_convert`'s IR only when it is missing** — important for this library, where most
+  `model_convert`'s IR only when it is missing**: important for this library, where most
   balls exist in a single format. Textures convert per-target the same way (DDS→FTEX for Fox,
   FTEX→DDS for pre-Fox).
 - **Folder names may contain spaces** (a batch tokenization limit, not a format
@@ -121,7 +121,7 @@ Improvements over the 2.03 folder format:
   shipped `name.txt` has a second line or a mark, so nobody relies on either.
 - **`thumbnail.dds` at the folder root** replaces the `thumbnail/` subfolder with
   its any-name `.dds`; a legacy `thumbnail/*.dds` is still accepted with a warning
-  (used in memory, never rewritten — the message suggests renaming).
+  (used in memory, never rewritten; the message suggests renaming).
 
   More than one candidate (a root `thumbnail.dds` beside a legacy one, or two `.dds` in
   `thumbnail/`) is an error naming them: 2.03 silently took the last one its directory listing
@@ -148,7 +148,7 @@ crate transcribes it.
 ## Compilation pipeline
 
 Processed with rayon per ball, source export read-only (the one file this tool
-writes, `balls.txt`, is its *editor* function — see "Saving").
+writes, `balls.txt`, is its *editor* function; see "Saving").
 
 Ordinary ball folders are only a few MB, but archives, glTF data URIs, decoded images, and
 malformed inputs make an unbounded all-in-memory assumption unsafe. The tool therefore uses the
@@ -179,7 +179,7 @@ For each listed ball at 1-based position N (id `ball%03d`):
 2. **Fox path** (PES 18+):
    - convert target-compatible DDS textures to FTEX;
    - rewrite the FMDL's texture path table to the `ballXXX` id (paths of the form
-     `/Assets/pes16/model/ball/ballXXX/...` — segment 5, `fmdl` crate); a directory of any
+     `/Assets/pes16/model/ball/ballXXX/...`; segment 5, `fmdl` crate); a directory of any
      other form is left as authored, since it may name a texture the game itself ships;
    - pack `ball.fmdl` into `ball.fpk` (`fpk` crate) as its one entry, named `ball.fmdl` as
      2.03's manifest named it, paired with the embedded generic `ball.fpkd` template;
@@ -191,17 +191,17 @@ For each listed ball at 1-based position N (id `ball%03d`):
    never loads; the warning is also how a model that never names its own textures shows.
 3. **Pre-Fox path** (PES ≤17): convert FTEX textures to DDS; emit `ball.model`,
    `ball.mtl`, and the textures the `.mtl` names, loose to
-   `common/render/model/ball/ballXXX/`. No id rewriting — the `.mtl` uses relative
+   `common/render/model/ball/ballXXX/`. No id rewriting: the `.mtl` uses relative
    `./` texture paths. Any other file in the folder is `file_not_used` (W): 2.03 copied
    the whole folder, `name.txt` and stray files included.
 4. **Thumbnail**: emit as `common/render/thumbnail/ball/ball_%03d.dds` (missing:
-   warning, ball kept, slot has no menu image — 2.03's behavior).
+   warning, ball kept, slot has no menu image; 2.03's behavior).
 5. **Bins**: build `Ball.bin` (see the format reference below) with number = menu
    order = N and the display name; copy the embedded `BallCondition.bin` template
    verbatim; both to `common/etc/pesdb/`.
 6. **CPK**: validate the configured name as shared `pipeline::CpkStem`, pack everything into
    one CPK (`cpk` crate; default stem `4cc_38_balls`), deploy it to the download folder
-   (`elevation` lib when needed), and **check** the name is listed in `DpFileList.bin` — never
+   (`elevation` lib when needed), and **check** the name is listed in `DpFileList.bin`; never
    write to it.
 
    Deployment follows the Team compiler's model: staged under `output/.staging/`, always
@@ -243,14 +243,14 @@ The tool keeps number = menu order = list position, as 2.03 did (the fields *can
 diverge; nothing uses that).
 
 On the name field's encoding: 2.03's hex writer
-(CharLib's `str2hex`) turns out to be **byte-transparent** — its character map
+(CharLib's `str2hex`) turns out to be **byte-transparent**. Its character map
 covers the full 0x01–0xFF range, so `Ball.bin` received `name.txt`'s raw bytes
 unchanged, whatever encoding they were saved in, with the 135 limit counting
 bytes. A UTF-8 `name.txt` therefore produced UTF-8 in `Ball.bin`, but what
 encoding PES actually renders is unverified (see Open questions).
 
 **`BallCondition.bin`** is a static 1800-byte file the old tool never generates or
-edits — only copies. It is carried as an embedded template verbatim. Its structure:
+edits, only copies. It is carried as an embedded template verbatim. Its structure:
 225 little-endian 8-byte records `u16 ball, u16 index, u32 code`, where:
 
 - `ball` runs 1-50;
@@ -276,7 +276,7 @@ editable list, with live validation via the `pipeline` lib's folder watcher.
   - **Add all** (append every unlisted ball);
   - **Fill with random** (append randomly chosen unlisted balls until the list hits the 50-cap
     or the library runs out);
-  - **Sort A→Z** (by display name — ball names are usually prefixed by the owning team's name,
+  - **Sort A→Z** (by display name: ball names are usually prefixed by the owning team's name,
     so this groups by team);
   - **Reverse**;
   - **Remove all** (clear the list);
@@ -319,7 +319,7 @@ studio balls-compiler import-legacy "<path to old compiler folder>"
 **`import-legacy`** migrates a 2.03 installation into a balls export:
 
 - for each ball name in the union of `Balls_fmdl/` and `Balls_mtl/`, merge both folders'
-  contents into one `Balls/<name>/` (the sparse library makes the union essential — most balls
+  contents into one `Balls/<name>/` (the sparse library makes the union essential: most balls
   exist in only one tree);
 - move `thumbnail\*.dds` to `thumbnail.dds`;
 - drop `ball.fpk.xml`;

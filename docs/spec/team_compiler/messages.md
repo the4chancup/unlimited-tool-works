@@ -8,7 +8,7 @@ The warning/error messaging is overhauled, not ported (see `README.md` "Relation
 older compilers"). Red's ~150 messages (audited across `export_check.py`, `texture_check.py`,
 `xml_check.py`, `team_id_get.py`, `portraits_move.py`, `bins_update.py`, `referee_tools.py`,
 `cpk_tools.py` and the stage scripts) reduce to a structured catalog: every reportable condition
-gets a stable ID, and the pipeline emits it as **data** — the GUI, CLI, and log files decide
+gets a stable ID, and the pipeline emits it as **data**; the GUI, CLI, and log files decide
 presentation.
 
 ### Message structure
@@ -132,7 +132,7 @@ savefile messages are new.
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
 | `export_extract_failed` | E | archive cannot be extracted/parsed, or its listing is refused (a path escaping the root, two names that fold to one; context: the path) | export skipped (`DropExport`) |
-| `no_exports_found` | W | discovery finds no export folder, `.zip` or `.7z` in the exports folder (Run scope; context: the folder) — what a fresh install's created `exports/` reports until the user fills it | none; nothing is checked or compiled |
+| `no_exports_found` | W | discovery finds no export folder, `.zip` or `.7z` in the exports folder (Run scope; context: the folder), what a fresh install's created `exports/` reports until the user fills it | none; nothing is checked or compiled |
 | `export_disabled` | I | root `NO_USE` / `NO_USE.txt` marker disables this source | export skipped; omitted from duplicate-ref detection |
 | `export_identified` | I | the export's identity resolved (context: `team` and `id`, or `team` = `referees`) | none; how the CLI reports which team an export is |
 | `source_read_failed` | E/F | a pinned source entry cannot be read | optional root file: `DropFile`; folder/task producer: `DropFolder`; required export metadata or unusable source: `DropExport`; output/global source invariant: `AbortRun` |
@@ -155,7 +155,7 @@ savefile messages are new.
 | `team_id_out_of_range` | withdrawn | nothing produces it: `teams_list::TeamId` holds 701–920 only, and a list line whose ID is outside it is the list reader's own error, so no export resolves to an ID outside the range (converge 4.y-conv, 2026-10-09) | - |
 | `team_colors_missing` | I | no root `colors.txt` (it is optional) | the team's colors in `TeamColor.bin` are left as they are |
 | `color_entry_invalid` | W | a `colors.txt` line that does not parse as exactly one color (two colors on one line, the old Team Note kit entry, included), or a valid line past the file's color count (two for a kit, four for the team). Grammar: "Root files" (Colors) in `aesthetics_export/player_folders.md` | the line skipped |
-| `root_file_unexpected` | W | unknown file or folder at the export root (a folder other than the content folders — a stale `wrapper/` beside a usable root included), or a file directly inside `Players`, `Kits`, `Faces`, `Boots` or `Gloves`, which hold only folders (`Players/players.txt`) | file or folder ignored |
+| `root_file_unexpected` | W | unknown file or folder at the export root (a folder other than the content folders, a stale `wrapper/` beside a usable root included), or a file directly inside `Players`, `Kits`, `Faces`, `Boots` or `Gloves`, which hold only folders (`Players/players.txt`) | file or folder ignored |
 | `portrait_conflict` | E | a slot with a portrait in its player folder and one in `Portraits/` whose bytes differ (the deep pass compares the two files; byte-identical files are one portrait and no finding) | export skipped: the compiler cannot tell which one the manager means |
 | `notes_found` | I | non-empty valid root `notes.txt` present | collected into teamnotes.txt by `compile` |
 | `notes_encoding_invalid` | E | root `notes.txt` is not valid UTF-8 after optional BOM handling | note dropped; export otherwise continues (`DropFile`, not pass-through-eligible) |
@@ -193,7 +193,7 @@ savefile messages are new.
 | `fpc_taping_shows_pieces` | I | likewise | written as authored |
 | `fpc_gloves_checkbox_winter_gloves` | W | `libs/fpc`'s rule on any player: the gloves checkbox on with gloves ID 0, whatever the FPC marker (context: the player); the ID is the one `settings_toml.md` resolves, and a `Midcup` player whose gloves keep the save's ID is not checked, `check` reading no save | written as authored |
 | `material_texture_unused` | I | a texture role the target engine has no sampler for (e.g. `metalness` on pre-Fox); from a conversion, also a native sampler of the source engine's material table the target does not carry (context: `model`; `material`, the index; `texture`, the role or the sampler name) | role dropped for that engine |
-| `bone_folded_for_version` | I | a used bone the target PES version's skeleton lacks had its weights transferred to the fold table's (or nearest) bone — see "Skeleton retargeting" in the Model conversion plan; on the folder (context: `model`, the source as `model_conversion_failed` names it; `bone`, `<bone> -> <target>`) | none |
+| `bone_folded_for_version` | I | a used bone the target PES version's skeleton lacks had its weights transferred to the fold table's (or nearest) bone (see "Skeleton retargeting" in the Model conversion plan); on the folder (context: `model`, the source as `model_conversion_failed` names it; `bone`, `<bone> -> <target>`) | none |
 | `skeleton_retargeted` | I | the model's bind pose was re-bound from its source version's skeleton to the target's (bones moved more than tolerance); on the folder (context: `model`, the source as `model_conversion_failed` names it; `bones`, how many moved) | none |
 | `bone_matrix_unknown` | W | a converted model's bone has no companion `.skl` and a name in none of the target version's template tables, so its bind matrix is the identity: the mesh it skins sits where the identity puts it (context: `model`; `bone`, the index; `name`, the bone's) | none |
 | `bone_slot_dropped` | W | a mesh's vertex weighted a bone slot past the mesh's bone group; the slot was zeroed and the vertex's weights renormalized, so it skins differently (context: `model`; `mesh`, the index; `count`, the slots dropped) | none |
@@ -213,7 +213,7 @@ savefile messages are new.
 | `kit_variant_missing` | W | a folder's texture variant set (`pants_kit1`, `pants_kit3`), or on PES 15-17 a model set its face's `face.xml` lists, has no variant for a kit number the export defines and no `kitF` fallback; on the folder, once per set and number (context: `texture`, or `model` for a model set, the set's reference as `pants_kitN`, after its directory below the folder for a subfolder's set (`jessie/pants_kitN`); `kit`, the number; `copied`, the lowest variant's stem, after the same directory) | the lowest existing variant serves the gap: on PES 15-17 copied into it (for a model set, the files its entries name), on PES 18-21 written once under the reference's spelling, which FoxDen loads for a kit without a variant |
 | `kit_variant_model_left_out` | W | per-kit model variants (`*_kit1`, `*_kit2`, …; a `*_kitF` joins the set as its fallback) where no `face.xml` names the set, the set's fallback (`kitF`, else the lowest variant) used and a file left out: on a Fox target, which has no model-path indirection, and on PES 15-17 in a shared `Boots/` or `Gloves/` folder's own output (one `boots.model`, one `glove.xml` listing every glove) and under `ingame_face.toml` (his boots and gloves hold parts, not entries); on the folder, once per set, a shared folder's only while a mapped player links it (planning's glTF drop removes the shared folders it leaves with no linking player, with no finding of their own: the drop's names the cause, and such a folder gets no id and no task) (context: `model`, the set's reference with the fallback's extension, `pants_kitN.fmdl` or `pants_kitN.model`; `used`, the fallback's file name, the target's format when both formats hold it) | fallback used, others ignored; a variant in the other engine's format converts, a `.model` with its `.mtl` |
 | `kit_variant_mtl_differs` | W | on PES 15-17 a per-kit model variant whose `.mtl` (the one its search finds) is not the one its set's `face.xml` entry implies for its kit number (the entry's `material` respelled for it, directory included); on the folder (context: `model`, the variant's file name; `mtl`, the `.mtl` its search finds as the `face.xml` would write it, `./materials.mtl`; `expected`, the one the entry implies, `./pants_kit2.mtl`) | model packed; the game finds no `.mtl` for that kit |
-| `common_link_missing` | E | a `.common` link — model, material file or texture — names a file missing from the Common folder (a `kitN` stem or directory in it standing for its set, `spec/model_format.md` "Kit-dependent assets") (context: the link file, whose name shows its kind, and the Common path looked for); on PES 18-21 a texture link is satisfied by an installed CPK holding the texture at the team's Common path (`pipeline.md` "Resolved decisions", "A texture a model names must exist") | folder discarded |
+| `common_link_missing` | E | a `.common` link (model, material file or texture) names a file missing from the Common folder (a `kitN` stem or directory in it standing for its set, `spec/model_format.md` "Kit-dependent assets") (context: the link file, whose name shows its kind, and the Common path looked for); on PES 18-21 a texture link is satisfied by an installed CPK holding the texture at the team's Common path (`pipeline.md` "Resolved decisions", "A texture a model names must exist") | folder discarded |
 | `fpc_conflict` | E | both `fpc_on` and `fpc_off` present in a player folder | folder discarded |
 | `fmdl_name_invalid` | E | Fox: a model file of any format anywhere in a boots/gloves shared folder, or one a `.common` link there stands for (`spec/aesthetics_export/player_folders.md`), not resolving to that category's allowed names | folder discarded |
 | `shared_folder_no_model` | W | a shared boots or gloves folder a mapped player links plainly holds no model of its kind (textures only, or nothing; on PES 18-21 a `.common` link to a model of its kind counts as one, and a selected glTF counts as a model, the folder being dropped for it with `model_gltf_unsupported`), so it has nothing to load: it takes no ID and gets no task, and that player wears the game's own; linked beside his own model it is a texture source as any combined folder is, and a `Faces/` folder with no model is one too (context: `player`, the first folder linking it plainly, in roster order) | folder emits nothing (`Keep`) |
@@ -303,7 +303,7 @@ the face step's search finds (`spec/model_format.md` "Pre-Fox: the `.mtl` a `.mo
 
 - in model folders the folder fails, and so does a kit, whose config names its textures;
 - elsewhere (`Common/`, portraits) the file is dropped;
-- the logo sources are the exception — main and `_small` fail as one atomic producer of the
+- the logo sources are the exception: main and `_small` fail as one atomic producer of the
   game's three sizes.
 
 A file is `texture_type_mismatch` when its bytes open with the signature of another accepted
@@ -380,7 +380,7 @@ pass-through-eligible, and the logo goes as one unit.
 | `xml_element_unknown` | W | a child of `<config>` other than `<model>`/`<dif>` | kept verbatim |
 | `xml_attribute_unknown` | W | a `<model>` attribute other than `level`/`type`/`path`/`material`/`ratio` | kept verbatim |
 | `xml_type_unknown` | W | `type` not in the generated vocabulary (the type table plus `uniform_sub`) | kept verbatim |
-| `xml_level_lod` | I | `level` other than `0` — the model's LoD level; higher levels are uncommon but known to work | kept verbatim |
+| `xml_level_lod` | I | `level` other than `0`: the model's LoD level; higher levels are uncommon but known to work | kept verbatim |
 | `xml_ratio_invalid` | W | `ratio` that is not a number | kept verbatim |
 | `xml_path_unchecked` | W | `path`/`material` in a form the compiler cannot resolve (`model/character/face/common/…` or any other game path): not verified to exist | kept verbatim |
 | `xml_face_neck_multiple` | W | more than one `face_neck` entry | kept verbatim |
@@ -426,7 +426,7 @@ checks it carefully, and the severity line is drawn by evidence, not by taste:
   `.mtl`, a Warning for a texture: one of the compiler's pre-Fox gaps against Red, worklog
   "Issues". The value is **kept verbatim**: a warning is the compiler saying "I can't vouch for
   this", never "I changed this". A model file in the folder that the xml does not list is also a
-  warning — it will not be in the game, which is almost always a mistake and occasionally the
+  warning: it will not be in the game, which is almost always a mistake and occasionally the
   point.
 - **Info**: the compiler's own rewrites, which it performs on a user xml exactly as it would on a
   generated one and reports so the user knows the emitted file differs from the source: the
@@ -435,13 +435,13 @@ checks it carefully, and the severity line is drawn by evidence, not by taste:
   generated xml: the team ID in place of a Common path's `team_folder`, and the `<dif>`
   block from `face_diff.xml` when the xml has none; `kitN` tokens pass through. On a Fox target
   the xml is ignored with an info line and the folder's models compile by the normal route (Fox
-  has no `face.xml`). Also info, though not a rewrite: a `level` other than 0 — it is the model's
+  has no `face.xml`). Also info, though not a rewrite: a `level` other than 0. It is the model's
   LoD level, and higher levels are merely uncommon, not unverified (a value that has already made
   the move from warning to known).
 
 Rules that follow from "the xml is the authority in its folder":
 
-- filename typing is off — the suffix table is for generating an xml, and this folder has one;
+- filename typing is off: the suffix table is for generating an xml, and this folder has one;
 - `.common` model links are not needed (the xml names Common paths itself) and an unlisted one is
   just an unlisted file;
 - only what the xml references is emitted, plus the MTLs and textures those models bind, which go
@@ -449,7 +449,7 @@ Rules that follow from "the xml is the authority in its folder":
 
 The compiler always re-serializes the xml it emits (it has to, for the ID substitution and the
 appended entries), so comments, whitespace and the encoding declaration of the source never reach
-the game — the checks above are about content, not formatting.
+the game: the checks above are about content, not formatting.
 
 New knowledge moves a row: when an experiment shows a value works, it joins the generated
 vocabulary and stops warning; when one shows a value crashes, it becomes an error with the crash
@@ -643,7 +643,7 @@ deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
 | `kit_folder_invalid` | E | subfolder name doesn't parse as `<slot>[ - <label>]` with the slot in `p1`–`p9`, `g1`, `all` | kit discarded |
-| `kit_slot_duplicate` | E | two subfolders resolve to the same slot (`p1/` and `p1 - Lakers/`) | both discarded — never a pick |
+| `kit_slot_duplicate` | E | two subfolders resolve to the same slot (`p1/` and `p1 - Lakers/`) | both discarded, never a pick |
 | `kit_textures_inherited` | I | a kit lacks stems that `all/` provides; lists them (`p3: back, leg, name from all/`) | textures inherited |
 | `kit_all_file_ignored` | W | `all/` holds something other than kit textures (`config.toml`, `colors.txt`, an `icon_<N>` marker, anything else) | file ignored |
 | `kit_all_unused` | W | `all/` present but no kit folder to inherit from it | - |
@@ -651,7 +651,7 @@ deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice
 | `kit_config_invalid` | E | `config.toml` is not UTF-8 text or `kit_config` refuses it: not TOML, a key's value of the wrong type or outside its field's encoding, a key that must be a table holding something else; found by the deep pass (context: the file, the error). `kit_config`'s other findings (its two Infos, `kit_collar_zero`) are not reported yet (`pipeline.md` "Kit configs") | kit discarded (`DropFolder`, not pass-through-eligible) |
 | `kit_config_version_clamped` | W | a supplied config's field doesn't fit the target PES version's encoding (e.g. a Name Y over 33 before PES 21), found by the deep pass (context: the field, the value, the version's maximum); or an installed config of a kit slot a `Midcup` export does not hold, encoded again for the FPC values or the export's collar, holds such a value (the team export's; context: the slot, the field, the value, the version's maximum; `pipeline.md` "Bins accumulation") | value clamped when the config is emitted |
 | `kit_config_option_ignored` | W | a supplied config sets a sleeve or fit option its shirt model does not take (`kit_config`'s `kit_cut_out_requires_model_144_or_160`, `kit_undershirt_only_requires_model_144_or_160`, `kit_tight_requires_model_144_or_160`), found by the deep pass on the config as it is emitted, the FPC values applied when the team's kit-FPC status is On (context: the file, the option, the shirt model as emitted) | kept; the game ignores the option |
-| `kit_config_fpc_adjusted` | I | team kit-FPC status is On but a config lacks the FPC values — supplied configs and unexported slots' base entries (pre-Fox: their loose configs) alike, GK kit included; an unexported slot's is the team export's (context: the slot), the slots being the kits its `UniColor.bin` record holds (`pipeline.md` "Bins accumulation") | auto-fixed (values written; FPC values are never auto-reverted) |
+| `kit_config_fpc_adjusted` | I | team kit-FPC status is On but a config lacks the FPC values: supplied configs and unexported slots' base entries (pre-Fox: their loose configs) alike, GK kit included; an unexported slot's is the team export's (context: the slot), the slots being the kits its `UniColor.bin` record holds (`pipeline.md` "Bins accumulation") | auto-fixed (values written; FPC values are never auto-reverted) |
 | `kit_config_fpc_unpatched` | W | team kit-FPC status is On but an unexported kit slot has no base entry or config to patch, or its entry does not decode as a kit config (the team export's; context: the slot) | slot left alone; the team needs a kit export |
 | `kit_config_collar_unpatched` | W | the export has a collar but an unexported kit slot (one its `UniColor.bin` record holds) has no base entry or config to wear it, or its entry does not decode as a kit config, and `kit_config_fpc_unpatched` has not named the slot (the team export's; context: the slot; `pipeline.md` "Collars") | slot left alone, wearing its own collar; the team needs a kit export for it |
 | `kit_placeholder` | I | a `Full` export's kit whose effective textures lack `kit.dds` (an empty folder included); the bundled checkerboard stands in. A `Midcup` kit without `kit.dds` keeps the installed textures instead, emitting what it holds | placeholder kit emitted: checkerboard texture, template config unless supplied, UniColor entry per the colors fallback |
@@ -668,7 +668,7 @@ deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
 | `portrait_name_invalid` | E | a `Portraits/` file that is not a texture named `NN` with NN in 01–23 (alone or followed by ` - ` and any text, as a player folder is numbered) | file discarded |
-| `logo_file_invalid` | E | a root `logo*` file has an unknown tag in its stem, a disallowed format, or fails to decode in the deep pass | no logo emitted for the team (both files dropped as one unit — the game needs all three sizes) |
+| `logo_file_invalid` | E | a root `logo*` file has an unknown tag in its stem, a disallowed format, or fails to decode in the deep pass | no logo emitted for the team (both files dropped as one unit: the game needs all three sizes) |
 | `logo_role_duplicate` | E | two files claim the same role (two `logo*`, or two `logo_small*`) | no logo emitted for the team |
 | `logo_small_without_main` | E | `logo_small*` present with no main `logo*` | no logo emitted (the small image is not a source for the large sizes) |
 | `logo_fit_applied` | I | a non-square source was made square; names the file and the mode (`fit` by default, or the file's tag) (context: `file`, `mode`) | - |
@@ -677,7 +677,7 @@ deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice
 | `collar_id_conflict` | E | the stock collar ID is already claimed: by another export earlier in this run (canonical export order), or by the suite itself, which reserves 105 (FPC) and 77 (the referees' marker, `blue_port.md` "Referee export processing") (context: the claimant, an export's name or `FPC` / `referees`) | the collar is discarded and its team's configs are not rewritten |
 | `common_file_disallowed` | E/I | as `file_type_disallowed`, Common scope | files discarded / kept |
 
-**Referees** — referee exports use the same player-folder format (see `blue_port.md` "Referee
+**Referees**: referee exports use the same player-folder format (see `blue_port.md` "Referee
 export processing"), so all player-folder, texture, and XML/MTL messages above apply as-is.
 
 The referee marker needs no code of its own on a refs export. On both engines it is a model on
@@ -712,7 +712,7 @@ The one addition guards the reserved collar on regular teams:
 | `teamnotes_write_failed` | E | `teamnotes.txt` cannot be written, or a previous one cannot be removed, in the output folder (context: `path`, `error`) | the run's CPK stays in place; the notes file is left as it was |
 | `uniparam_compile_failed` | withdrawn | an installed `UniformParameter.bin` that does not parse is `installed_bin_unreadable` since 4.21c, and any failure writing the bin is `cpk_write_failed`; nothing between the two can fail (converge 4.y-conv, 2026-10-09) | - |
 | `pes_folder_not_found` | E | `pes_folder_path` invalid at deployment time (includes the no-PES-install machine; context: `path`, `output` the path the CPK is promoted to) | deployment skipped; staged CPKs promoted to `output/`; savefile step skipped |
-| `pes_version_mismatch` | W | `pes_folder_path` exists but holds no `PES20{pes_version}.exe` — a different-version exe suggests a wrong `pes_version` setting (Red's suppressible console notice becomes a plain per-run warning, dropping `state/ver_mismatch_warned.txt`; the GUI also surfaces this live via the version selector's red/yellow state — see the core plan's Sidebar; context: `path` the PES folder, `exe` the file looked for) | none; deployment proceeds |
+| `pes_version_mismatch` | W | `pes_folder_path` exists but holds no `PES20{pes_version}.exe`. A different-version exe suggests a wrong `pes_version` setting (Red's suppressible console notice becomes a plain per-run warning, dropping `state/ver_mismatch_warned.txt`; the GUI also surfaces this live via the version selector's red/yellow state, see the core plan's Sidebar; context: `path` the PES folder, `exe` the file looked for) | none; deployment proceeds |
 | `dpfilelist_missing` | E/W | no `DpFileList.bin` in download folder: an Error in a compile that deploys, a Warning in sideload and test mode and with `--no-deploy` (a clean run, "Post-processing"), which deploy nothing, so the user knows no bin from the download folder was used | E: deployment skipped; staged CPKs promoted to `output/`; savefile step skipped. W: none; the bins are built on the bundled bases (`bin_source` `bundled`) |
 | `dpfilelist_not_official` | W | the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW team-compiler upgrade-dpfl`) | none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list |
 | `dpfilelist_cpk_missing` | W | the installed DpFileList names CPKs with no file in the download folder, other than this run's own target (context: `path` the download folder, `files` the file names in list order, `command` as `dpfilelist_not_official`'s). The game then rejects the whole download folder and runs vanilla | none: the run compiles and deploys; the savefile step is skipped; `upgrade-dpfl` writes a placeholder for each |

@@ -24,11 +24,11 @@ Unlimited Tool Works is a Rust-based **suite of all the tools used by the 4cc co
 tightly integrated main tools. The second, the Save editor, is built in part
 (`spec/save_editor.md`; the rest is in `plans/core/README.md` "Overview"). The first:
 
-1. **The Team compiler** (successor to the AET Compiler) — compiles aesthetics exports into CPK archives,
+1. **The Team compiler** (successor to the AET Compiler): compiles aesthetics exports into CPK archives,
    with compile-time model format conversion and compile-time aesthetics (the aesthetics patch,
    written to the savefile on every engine)
 
-Model format conversion (pre-Fox ↔ Fox) is **not** offered as a standalone tool — it is integrated
+Model format conversion (pre-Fox ↔ Fox) is **not** offered as a standalone tool: it is integrated
 into the Team compiler, which converts models to the target PES version's format at compile time.
 
 The plan documents form a standalone architectural plan derived from a feasibility analysis of the
@@ -47,7 +47,7 @@ remains appropriate, with its own dependency/license checks.
 ### Project context
 
 The 4cc AET Compiler is a modding tool for the Pro Evolution Soccer (PES) game series (PES 15–21).
-It takes user-submitted "exports" (folders, `.zip`, or `.7z` archives containing team assets —
+It takes user-submitted "exports" (folders, `.zip`, or `.7z` archives containing team assets:
 faces, kits, boots, gloves, portraits, logos) and compiles them into CPK archive files that the game
 can load.
 
@@ -138,7 +138,7 @@ Key reasons:
   layout", "Scaling with the width"), with egui's keyboard zoom off. No custom DPI code is
   needed.
 - **Browser deployment path**: the same Rust codebase compiles to a browser-served WASM build,
-  Studio Web (see `gui.md` "Browser deployment: Studio Web"). Tauri cannot serve to browsers — its web
+  Studio Web (see `gui.md` "Browser deployment: Studio Web"). Tauri cannot serve to browsers: its web
   frontend is coupled to the Tauri runtime.
 
 ---
@@ -158,7 +158,7 @@ Key reasons:
 | `clap` | CLI argument parsing | Production-ready |
 | `thiserror` | Ergonomic error enums for the lib crates' error types | Production-ready |
 | `anyhow` | Error propagation in tool crates and the binary (`StudioTool::cli_run`'s `CliError` wraps an `anyhow::Error`) | Production-ready |
-| `log` | Diagnostic logging facade — the one logging front-end a lib or tool crate uses (see `architecture.md` "Diagnostic logging") | Production-ready |
+| `log` | Diagnostic logging facade: the one logging front-end a lib or tool crate uses (see `architecture.md` "Diagnostic logging") | Production-ready |
 | `env_logger` | CLI-mode log sink in `studio` (`default-features = false`) | Production-ready |
 | `pyo3` | The Python extension module of `python_bindings` (`abi3-py311`, `extension-module`); built into a wheel by `maturin`, a developer tool installed with pip like `just` is with cargo | Production-ready |
 | `pyo3-log` | Forwards `log` lines to Python's `logging` in `python_bindings` | Production-ready |
@@ -171,7 +171,7 @@ Key reasons:
 | `directories` | User config dir resolution (data-location choice) and `pes_savefile`'s save discovery under the user's Documents folder | Production-ready |
 | `toml` | Export text formats (`settings.toml`, `config.toml`; `materials.toml` joins with glTF), app settings | Production-ready |
 | `toml_edit` | Comment/formatting-preserving edits to the auto-generated tomls (`settings.toml`, `config.toml`; `materials.toml` joins with glTF); comments are app-injected (predefined per-field documentation) and preserved across edits | Production-ready (the `toml` crate's own foundation) |
-| `image` | Raster source decoding (PNG, JPEG, BMP, WebP, TGA, TIFF) for texture conversion — all formats interchangeable as sources for any model format | Production-ready (pure-Rust default formats) |
+| `image` | Raster source decoding (PNG, JPEG, BMP, WebP, TGA, TIFF) for texture conversion: all formats interchangeable as sources for any model format | Production-ready (pure-Rust default formats) |
 | `jxl` | JPEG XL source decoding for texture conversion: Google's pure-Rust decoder (BSD-3-Clause), through its own API rather than a process-wide `image` decoding hook | 0.8.0 in use, pinned (`=0.8.0`); its default SIMD levels minus AVX-512 |
 | `tiff` | TIFF tag access `image` does not reach (the premultiplied-alpha metadata for `dds_convert`) | 0.11.3 in use |
 | `block_compression` | CPU BC1/BC3/BC7 encoding and BC1–BC7 decoding (one crate for both directions); first-release desktop GPU BC7 | 0.10.0 in use (features `bc15`, `bc7`; `wgpu` feature native-only, for `dds_convert`'s GPU encoder); decode verified exact against texconv; GPU cold start, throughput and fallback measured on one AMD GPU (`plans/libs/README.md` "First-release desktop GPU BC7") |
@@ -183,11 +183,11 @@ Key reasons:
 | `rhai` | `aatf`'s ruleset files: the `RULESET` data block and the engine every script runs on (sandboxed; [AATF rules](../aatf_rules.md)) | 1.26.1 in use, no default features (`std`, `serde`; its RNG does not build for `wasm32`), plus `only_i64`: every value the host registers is an `i64`, so the operators for the other integer types are code no script reaches (627 KiB of the release exe) |
 | `syn` (3.x; `full`, `visit`, `parsing`, `printing`, no default features) + `proc-macro2` (`span-locations`) | The dev tool `crates/dev/extra_mutants` alone (step 5.0b), linked into no release binary: it parses a crate's sources to list the mutants `cargo-mutants` lacks, and `span-locations` gives each node's position in the file for the text patch | Both already in the build with these features (`binrw_derive`, `serde_derive`), so nothing new compiles |
 
-No frontend dependencies — the entire GUI is Rust, compiled to both native and WASM from the same
+No frontend dependencies: the entire GUI is Rust, compiled to both native and WASM from the same
 codebase.
 
 The Rust code will be more verbose per line than the Python/C++ it replaces across the source
-projects, but dramatically less duplicated — especially with the IR eliminating the N×N converter
+projects, but dramatically less duplicated, especially with the IR eliminating the N×N converter
 pattern and the schema-driven save codec collapsing 4ccEditor's six per-version files.
 
 ---
@@ -216,7 +216,7 @@ pattern and the schema-driven save codec collapsing 4ccEditor's six per-version 
 | Testing | Upgrader+compile parity + IR roundtrips; CPU reproducibility + GPU quality checks | CPU mode is the byte-reproducible reference. GPU texture bytes and containing CPKs may differ across devices/drivers; decoded quality and all non-texture identities/ordering remain constrained |
 | Suite scope | Team compiler + save editor first | Shared `libs/pes_savefile` crate; other tools build on the same libs later |
 | Crate architecture | Minimal core + tool crates + lib crates | `studio_core` = shell/trait/settings only; every tool its own crate; all shared functionality in lib crates |
-| Tool crate granularity | One crate per tool, no companion libs | Even the Team compiler (15–25k lines) stays one crate with internal modules; only genuinely shared parts move down — hence `libs/aesthetics_export` (compiler + upgrader + kit config editor + refs arranger + future tools), not a single-consumer `team_compiler_lib` |
+| Tool crate granularity | One crate per tool, no companion libs | Even the Team compiler (15–25k lines) stays one crate with internal modules; only genuinely shared parts move down, hence `libs/aesthetics_export` (compiler + upgrader + kit config editor + refs arranger + future tools), not a single-consumer `team_compiler_lib` |
 | Tool modularity | Tools own their GUI, settings, CLI, and help | `StudioTool` trait: view, settings section (injected into settings menu), clap subcommand, help chapter (injected into the help window, Messages topic generated from the catalog) |
 | CLI shape | `UTW <tool-id> <command>` subcommands | Standard clap subcommands; better help/completion than flag-style dispatch |
 | License | `MIT OR Apache-2.0`; game-derived data excluded and named as Konami's | The suite is libraries first, for a community that writes tools in every language; copyleft would confine the libs to GPL consumers for a protection this community has never needed. See `distribution.md` "License" |

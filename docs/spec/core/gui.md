@@ -110,7 +110,7 @@ default. Rules:
     versions).
 
   Missing common keys load as their defaults the same way; unknown keys in a tool's table are
-  kept as read. The file's location — `data/` next to the exe or the user config dir — is the
+  kept as read. The file's location (`data/` next to the exe or the user config dir) is the
   user's first-run choice (see `distribution.md` "Data location" under Distribution and updates).
 
 ### Help window
@@ -122,7 +122,7 @@ default. Rules:
   the help can never describe a tool the build lacks.
 - **Authoring rule.** Topics are written for members, not maintainers: what to put where, what a
   message means and what to do about it, never how the code works (that is `docs/`). A behavior
-  change that a member can observe is not done until its topic says so — the help lives in the
+  change that a member can observe is not done until its topic says so: the help lives in the
   tool's crate precisely so the same diff carries both.
 
 ### Status bar
@@ -132,7 +132,7 @@ Three slots, each admitting one typed item kind from `studio_core::status`:
 | Slot | Item | Admits |
 |---|---|---|
 | Left | `ShellCondition` | Persistent environment states the **shell** computes itself: `data_dir_read_only`, `update_available`. Not a PES folder that is missing or holds no exe or another version's: the version selector's coloring already owns that, in every tool's sidebar, so no condition repeats it |
-| Middle | `ToolActivity` | Tools working in the background while a **different** tool's view is shown — `activity()` polled each frame for every registered tool except the active one, e.g. `Team compiler · 12/48 · 01:12` while the save editor is open. The active tool's own run strip is unchanged, so nothing shows twice |
+| Middle | `ToolActivity` | Tools working in the background while a **different** tool's view is shown: `activity()` polled each frame for every registered tool except the active one, e.g. `Team compiler · 12/48 · 01:12` while the save editor is open. The active tool's own run strip is unchanged, so nothing shows twice |
 | Right | `Notice` | The most recent one-off event, published by a tool through `ctx.notify(Notice)` or by the shell: `Switched to PES 2021 · [Fix PES path]`, `Compiled 48 teams · [Open output]`, `Teams list is read-only`. Text plus at most one action |
 
 Rules that keep it worth the row:
@@ -161,7 +161,7 @@ impl eframe::App for StudioApp {
 ### Cancellation
 
 Rust's rayon scopes or spawned tasks support cancellation via a flag; the pipeline's lives in the
-run's `MemoryBudget` (`cancel` wakes every waiter, `is_cancelled` checked before each task —
+run's `MemoryBudget` (`cancel` wakes every waiter, `is_cancelled` checked before each task;
 `spec/libs/pipeline.md`).
 
 ### Browser deployment: Studio Web

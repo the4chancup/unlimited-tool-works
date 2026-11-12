@@ -258,7 +258,7 @@ Packed archives receive their deferred deep check at compile start (see "Live va
 the time the process-or-skip decision is made their error list is complete rather than
 first-error-only.
 
-egui renders cells with `painter.rect_filled` — direct GPU drawing, no DOM:
+egui renders cells with `painter.rect_filled` (direct GPU drawing, no DOM):
 
 ```rust
 // Check-phase and compile-outcome colors. Processing reuses the retained

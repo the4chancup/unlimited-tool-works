@@ -89,7 +89,7 @@ DXT5` was handling, or failing to handle, in practice. Benefits over the subproc
 - Much faster for batches (no process spawn per texture)
 
 Any texture in a format outside the accepted set fails with a clear error asking the user to
-resave it — the same behavior the current compilers have for unsupported codecs.
+resave it: the same behavior the current compilers have for unsupported codecs.
 
 ### Target codecs and CPU encoder
 
@@ -231,7 +231,7 @@ features and AVIF backends vary by release):
 | OpenEXR | Film/VFX HDR; not used in game modding |
 | Farbfeld | Obscure pure-Rust format; no community use |
 | PNM (PPM/PGM/PBM) | Simple academic format; no community use |
-| QOI | Modern pure-Rust format; no community adoption yet — can be added if demand arises |
+| QOI | Modern pure-Rust format; no community adoption yet (can be added if demand arises) |
 
 ### `dds_convert` API
 
@@ -426,13 +426,13 @@ CPU texture conversion is reusable for a given source hash and complete conversi
 converted once is not converted again in that run. While an entry is retained, unchanged
 textures reuse its converted bytes; eviction may require conversion again.
 
-This targets the edit→compile→test loop — the hot path, where the same export is compiled dozens
+This targets the edit→compile→test loop: the hot path, where the same export is compiled dozens
 of times with minor edits to one or two files. Carrying the cache across runs is
 `plans/libs/dds_convert.md`.
 
 **Design:**
 - A `Converter` struct in `dds_convert` holds an internal `HashMap<CacheKey, Arc<[u8]>>` mapping
-  to the finished DDS/FTEX bytes (not the decoded RGBA — the output is what the packing step
+  to the finished DDS/FTEX bytes (not the decoded RGBA: the output is what the packing step
   needs).
 - The cache key includes the source content hash and every output-affecting conversion choice:
   target codec/container, texture role and channel swizzle, and mip/color-space settings, all
@@ -446,7 +446,7 @@ of times with minor edits to one or two files. Carrying the cache across runs is
   a Fox BC7 compile (different `target_codec` → different key → separate entry).
 - **Engagement limit:** the cache engages only when compiling **≤2 teams**. The build manifest
   knows the team count at planning time; for larger compiles (3+ teams, e.g. a 48-team DLC),
-  the cache is bypassed entirely — entries are never inserted.
+  the cache is bypassed entirely: entries are never inserted.
 
   Rationale: a large compile has mostly first-seen textures (no cache benefit), and caching
   thousands of converted DDS/FTEX buffers would consume a sizeable amount of memory for no gain,
@@ -474,7 +474,7 @@ source textures, not the corner case. The conversion pipeline is designed for th
 - the in-memory cache (above) keeps the edit→compile→test loop fast.
 
 The worst-case first-compile cost is accepted as the price of dropping the texconv.exe dependency
-and enabling glTF authoring — strictly better than the current workflow (manual texconv runs or
+and enabling glTF authoring: strictly better than the current workflow (manual texconv runs or
 no PNG support at all).
 
 ---

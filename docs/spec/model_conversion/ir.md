@@ -14,7 +14,7 @@ per format, instead of N×N direct converters.
 
 - **Same format as target**: ordinary processing skips the IR; hand auto-split, pre-Fox
   `ingame_face` merging, and skeleton retargeting across PES versions (only when a native-format
-  pre-check finds a used bone the target lacks or poses differently — see "Skeleton retargeting and
+  pre-check finds a used bone the target lacks or poses differently; see "Skeleton retargeting and
   bone conformance") are the explicit IR-operation exceptions described in `conversion.md`.
 - **FMDL → .model**: FMDL → IR → .model
 - **.model → FMDL**: .model → IR → FMDL
@@ -216,7 +216,7 @@ compiler's byte-reproducible Rust-output contract.
 The three formats keep material data (shader, texture paths, render states) in
 different places; the IR's `Material` is the merge point:
 
-- **FMDL** embeds materials in the model binary — `fmdl_to_ir` reads them from
+- **FMDL** embeds materials in the model binary: `fmdl_to_ir` reads them from
   the file itself. FMDL texture path tables carry names the game resolves by stem,
   appending `.ftex` at load time whatever a stored name's extension, so FMDL has
   always been extension-agnostic.
@@ -387,7 +387,7 @@ implementation:
 | Split vertex encoding (.model) | `pes_model` | `model_to_ir` | `ir_to_model` |
 
 A bug fix in FMDL mesh splitting decode benefits every path starting from FMDL, regardless of target
-format — and also benefits the Blender addon's direct FMDL round-trip, which calls the same `fmdl`
+format, and also benefits the Blender addon's direct FMDL round-trip, which calls the same `fmdl`
 function without going through the IR at all.
 
 The split vertex encoding is a property of the vertex *order* (loops of one vertex are consecutive

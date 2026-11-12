@@ -13,11 +13,11 @@ the [Team compiler](team_compiler/README.md)'s compile-time aesthetics (written 
 through the aesthetics patch).
 
 The savefile codec, the data model, and all interchange formats live in the `pes_savefile` lib
-crate — see the [Savefile plan](pes_savefile/README.md). Platform context is in the
+crate; see the [Savefile plan](pes_savefile/README.md). Platform context is in the
 [core plan](core/README.md).
 
 The porting stance: **full feature parity with 4ccEditor, improved wherever the
-Win32 UI imposed friction** — but only with improvements that are actually
+Win32 UI imposed friction**, but only with improvements that are actually
 useful, never decoration. Concrete improvements are listed per section.
 
 ---
@@ -43,9 +43,9 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save) — see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
-| Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new — PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
+| Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
 ### Player operations
 
@@ -57,7 +57,7 @@ implementation is measured against.
 | Swap player stats (two PIDs; the same field set as Copy) | Kept, the other player picked as for Copy |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
 | Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
-| Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates — the buttons and the checker can never disagree |
+| Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates: the buttons and the checker can never disagree |
 | Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving from team row to team row, or 7 rows with one team listed ("Editing UI" below, SE-GUI-53) |
 | Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
 | Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the Open menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
@@ -112,10 +112,10 @@ What exists of this is in `spec/save_editor.md` "Crate layout".
 
 Planned files that do not exist yet:
 
-- `src/session/undo.rs` — field-level undo/redo stack over model edits
-- `src/session/selection.rs` — team/player selection, cross-team filter query
-- `src/session/recent.rs` — discovered saves (`pes_savefile::discovery`) + recent files list
-- `src/view/` — the view, in the pre-move tree's shape:
+- `src/session/undo.rs`: field-level undo/redo stack over model edits
+- `src/session/selection.rs`: team/player selection, cross-team filter query
+- `src/session/recent.rs`: discovered saves (`pes_savefile::discovery`) + recent files list
+- `src/view/`, the view, in the pre-move tree's shape:
   - `mod.rs` (master-detail layout, open/save actions, unsaved-changes prompt)
   - `player_list.rs` (drag-to-reorder, dirty dots, colour-coded names)
   - `info_strip.rs` (General info and Other stats)
@@ -123,7 +123,7 @@ Planned files that do not exist yet:
   - the player view's other panels (`abilities.rs`: the positions, skills, COM styles and
     ability stats; `appearance/`)
   - the team view (`team.rs`, `tactics.rs`)
-  - `panels/` (`aatf.rs`, `comparator.rs`, `transplant.rs`, `interchange.rs` — Team TOML /
+  - `panels/` (`aatf.rs`, `comparator.rs`, `transplant.rs`, `interchange.rs`: Team TOML /
     `.4ccs` / `.4cct` / Texport import-export dialogs)
   - `widgets.rs` (editor-local reusable widgets: version-gated control, ID picker). A color is
     drawn by how the save stores it:
@@ -181,7 +181,7 @@ side.
 ```
 
 - **Team selector** with an "ALL" entry (as in 4ccEditor), plus a **filter box
-  that searches across all teams** (name, shirt name, ID) — finding a player no
+  that searches across all teams** (name, shirt name, ID): finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
   `display_name()` (see the pes_savefile plan's "Name colour codes"), a team's own name
   included. A team whose name matches lists all its players under its row: a search for a
@@ -640,7 +640,7 @@ side.
     ids, enums and checkboxes four, motion two):
     - edit flags (face, hair, physique, strip, motion, base copy + copy-from ID),
     - physique sliders (14 values),
-    - strip style (boots ID, gloves ID — any player's, 0 = normal hands — taping,
+    - strip style (boots ID, gloves ID (any player's, 0 = normal hands), taping,
       spectacles, sleeves, inners, socks, undershorts, shirttail, the player-gloves checkbox
       with its gloves colour, the wrist tape L/R and spectacles colours),
     - motion (hunching, arm movement, kick motions, gc1/gc2, randomize; dribbling motion
@@ -648,7 +648,7 @@ side.
     - colours (skin, iris),
     - then the Full Player Customization group.
 
-    Editable, as in 4ccEditor, unless the "Aesthetics from exports" setting is on — see
+    Editable, as in 4ccEditor, unless the "Aesthetics from exports" setting is on; see
     "Read-only aesthetics" below.
 
     The motion fields' ranges are the version's measured ones (`pes_savefile`'s `motion_top`:
@@ -692,7 +692,7 @@ side.
   team), not the 21 bench-order entries with 9 `(empty)`.
 - Version-gated widgets render disabled with a tooltip ("PES 19+") rather than
   disappearing, so the UI stays spatially stable across versions.
-- **Undo/redo** across all edits — the single biggest safety upgrade over
+- **Undo/redo** across all edits: the single biggest safety upgrade over
   4ccEditor. An undo entry holds the before and after of each model entry it changed (a
   `PlayerEntry`, a `TeamEntry`): the model is plain data, an entry is a few hundred bytes, and
   one mechanism serves every widget, since a widget edits a copy and reports only that it
@@ -1162,7 +1162,7 @@ Win32 original hurt the most):
   The arrow-button ordering UI is gone.
 - **Click-to-assign roles**: "players to join attack" (and other
   pick-N-players settings) are set by clicking players on the pitch in an
-  assignment mode — the three dropdowns are gone.
+  assignment mode; the three dropdowns are gone.
   - Join the attack shows its three players as three rows (`Unassigned` where fewer join), and
     any row arms the one join mode, all three highlighted, in which pitch clicks add and
     remove up to three.
@@ -1480,7 +1480,7 @@ The tactics editor above, the skill/COM/playstyle pickers of the player view, an
 violations list are not this tool's alone: the [Team creator](team_creator.md) shows the same
 formation, cards and instructions to a new manager over a team that does not exist in any save
 yet. Tool crates never depend on tool crates (core plan, guardrail 1), so the widgets live in a
-lib — `libs/team_widgets`, an egui widget crate in the class the core plan already allows for
+lib, `libs/team_widgets`, an egui widget crate in the class the core plan already allows for
 `color_tools` and `model_viewport`: egui-dependent, `wasm32`-clean, and nothing else but
 `studio_core`'s shared widgets (the checkbox every view draws), so its controls look as the
 host's do.
@@ -1499,17 +1499,17 @@ the creator writes it into its draft.
 
 Contents:
 
-- `pitch` — the drag-and-drop formation canvas, position labels and snapping, the per-slot detail
+- `pitch`: the drag-and-drop formation canvas, position labels and snapping, the per-slot detail
   popover, lineup and bench lists with swap-by-drag.
-- `tactics` — preset selector, sliders, style toggles, advanced instructions (with target-player
+- `tactics`: preset selector, sliders, style toggles, advanced instructions (with target-player
   pick), set-piece role palette, auto flags, click-to-assign modes.
-- `cards` — skill, COM-style and playstyle pickers, version-gated, with one remaining-count badge:
+- `cards`: skill, COM-style and playstyle pickers, version-gated, with one remaining-count badge:
   the player's own tier as the host's AATF rules file reads him (`player_tier`, then that tier's
   `card_limits`), or `No tier matches`; the host computes both and passes the one badge, so the
   widget never recognizes a tier itself. The playing styles are listed in the order the
   version stores them, which is the game's own Edit-mode list, not the canonical order the
   Team TOML names them in: a member compares the combo against the game's list.
-- `violations` — the AATF results list grouped per player, emitting a "selected" event for the
+- `violations`: the AATF results list grouped per player, emitting a "selected" event for the
   host's jump-to that names the row's player and its violation (the host lands a
   `FieldedNotA` one on the team row, its preset shown).
 
@@ -1540,9 +1540,9 @@ Contents:
   kind and each field. A height row's players (a bracket's, the pool's draws) are lines under
   it, wrapping in the plain text colour (`plans/aatf_rules.md` "The height findings name their
   players").
-- `names` — a savefile name drawn with its colour codes applied as text colours, the in-game
+- `names`: a savefile name drawn with its colour codes applied as text colours, the in-game
   look, for the player list, the view titles and the lineup rows alike.
-- `event_logo` — a ruleset's event logo decoded into a texture (through `dds_convert`'s PNG
+- `event_logo`: a ruleset's event logo decoded into a texture (through `dds_convert`'s PNG
   decoder, the one the portraits use) and its size, fitted proportions kept in the box 28
   high and up to 84 wide. The Save editor's top-right logo and the Ruleset editor's General
   field both draw it, so the two show it alike; each host decodes it once per logo, not per
@@ -1622,7 +1622,7 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
 A player's aesthetics are owned by the team's export: `settings.toml` and the models decide them.
 On every engine the Team compiler resolves them into an **aesthetics patch** (format in
 "Aesthetics patch" of the [Savefile plan](pes_savefile/operations.md)), and the save editor
-applies the patch. Hand-editing the same fields here would create the two-sources problem —
+applies the patch. Hand-editing the same fields here would create the two-sources problem:
 the next patch silently overwrites the hand edit, or the hand edit silently diverges from the
 DLC.
 
@@ -1676,14 +1676,14 @@ aesthetics** but through the switch:
   the next change. A patch whose values the save already holds lists nothing and says so, and
   Apply is disabled whenever the list is empty. An undo of the Apply brings the list back.
 
-  Patches apply cleanly in sequence — a midcup patch carries only the teams it recompiled and
+  Patches apply cleanly in sequence: a midcup patch carries only the teams it recompiled and
   only the fields their compile resolved.
 - **Unlock: "Edit aesthetics anyway"**, a switch in the Appearance section, drawn only while the
   setting is on, off at every start of the tool. Turning it on re-enables all the paths above
   for the session, with the note that a later patch overwrites whatever is edited by hand.
 
-  It exists for the cases the rule does not cover — a team with no export, a cup-night fix when
-  recompiling is not an option — and it is a session switch rather than a second setting so
+  It exists for the cases the rule does not cover (a team with no export, a cup-night fix when
+  recompiling is not an option), and it is a session switch rather than a second setting so
   that a machine set to "Aesthetics from exports" cannot quietly stay unlocked.
 
   The setting is off by default because the cup the suite serves first (DBC7) keeps its looks
@@ -1917,7 +1917,7 @@ the editor exposes them as:
   full-fidelity save interchange.
 
   Name handling: the editor generates without a folder, so it writes the save's strings
-  (`name = true` is the Export upgrader's rule) — in particular a name carrying colour codes
+  (`name = true` is the Export upgrader's rule). In particular a name carrying colour codes
   is always emitted as the explicit string, so the next compile preserves the codes.
 
   The face, hair and iris keys are not in it. A second action, **Generate in-game face**,
@@ -2188,8 +2188,8 @@ The build is split across three phases (see the
 [core plan](core/development_plan.md#development-plan)):
 - `pes_savefile` (codec, model, conversions, fingerprint ops, interchange formats, comparator,
   FPC invisibility) is built in Phase 2 as a standalone lib;
-- the editor's non-UI substance a command drives — the tool crate's settings, CLI and the
-  `session/` operations its commands run, plus the `aatf` rules engine — lands in Phase 5;
+- the editor's non-UI substance a command drives (the tool crate's settings, CLI and the
+  `session/` operations its commands run, plus the `aatf` rules engine) lands in Phase 5;
 - the view lands in Phase 8 with the `session/` wiring only it drives (undo, selection, recent
   files, the FPC toggle, AATF quick actions), each built in the slice that uses it.
 
@@ -2204,10 +2204,10 @@ second's (the team bar above every tab, the Player / Team tab groups) was built 
 and 8.9f's slice 4, and is ported to the third in step 0.0.1s3. The arrangements' panels and
 dialogs are the same, function for function. The view builds up as:
 
-1. Open/save + the player's fields (abilities and skills, appearance) — the card pickers as the
+1. Open/save + the player's fields (abilities and skills, appearance), the card pickers as the
    first `team_widgets` content
 2. The team's fields + batch operations + FPC
-3. Tactics editor in `team_widgets` (pitch canvas last — everything else works without it)
+3. Tactics editor in `team_widgets` (pitch canvas last: everything else works without it)
 4. The Comparator panel and Live AATF (the transplant after Release 0.1.0)
 5. Interchange format dialogs (Team TOML, legacy import, Texport, settings.toml)
 

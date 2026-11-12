@@ -30,20 +30,20 @@ settings** live in the Team compiler's own settings section.
 
 ### Team compiler settings
 
-"Old default" is Red's value (— for settings Red did not have); "New default" is the Studio's. A
+"Old default" is Red's value ("-" for settings Red did not have); "New default" is the Studio's. A
 differing new default is a deliberate decision, explained in the Controls column.
 
 | Setting | Old default | New default | Controls |
 |---|---|---|---|
 | `cpk_name` | `4cc_90_test` | `4cc_99_test` | Single-CPK output `CpkStem` (shared validation contract in the Writer section); the new default is the official DpFileList's test entry (`pipeline.md` "DpFileList upgrade") |
 | `output_folder_path` | `patches_output/` (hardcoded) | `output/` | Root for promoted CPKs (degraded runs and `--no-deploy`), the `.staging/` folder, `test_output/`, and `teamnotes.txt`. Relative paths resolve **beside the executable** (Red's `patches_output/` in its new place; `%APPDATA%` is no place to look for a CPK) |
-| `savefile_path` | - | auto | `EDIT00000000` to update. `auto` runs `pes_savefile`'s discovery under the user's **Documents\KONAMI** folder for the selected version (the savefile is never inside the PES install, so `pes_folder_path` plays no part — see "Savefile discovery" in the Savefile spec); newest account wins when several exist (`savefile_autodetected`); nothing found → `savefile_missing` (Red never touches the savefile) |
+| `savefile_path` | - | auto | `EDIT00000000` to update. `auto` runs `pes_savefile`'s discovery under the user's **Documents\KONAMI** folder for the selected version (the savefile is never inside the PES install, so `pes_folder_path` plays no part; see "Savefile discovery" in the Savefile spec); newest account wins when several exist (`savefile_autodetected`); nothing found → `savefile_missing` (Red never touches the savefile) |
 | `multicpk_mode` | 0 | same | Cup DLC mode: team content into size-split `teams` parts + the bins CPK (see "Multi-CPK mode: teams parts"); replaces Red's faces/uniform/bins content split |
 | `teams_cpk_name` | `4cc_40_faces` + `4cc_45_uniform` | `teams` | Stem of the teams part slots; the slots themselves are every DpFileList entry matching `{prefix}_{NN}_{stem}` (`4cc_41_teams`, `4cc_42_teams`, …), ordered by number. A stem that is the bins CPK's own (`bins` for `4cc_08_bins`) is refused (exit code 2): the bins CPK would be a part too. Replaces `faces_cpk_name` and `uniform_cpk_name` |
-| `cpk_part_max_size` | - | `3221225472` (3 GiB) | Cap per teams part (TOC included); the writer places whole teams, rolling to the next slot when the next team would not fit — teams are never split across parts. Chosen comfortably under Git for Windows' 4 GiB object ceiling; five slots give 15 GiB. Written as a whole number of bytes, not as text like `3 GB`: a count needs no unit parser and leaves no doubt between GB and GiB, and the findings show it in KiB, MiB or GiB. Single-CPK runs are not split, only warned (`cpk_size_over_limit`) |
+| `cpk_part_max_size` | - | `3221225472` (3 GiB) | Cap per teams part (TOC included); the writer places whole teams, rolling to the next slot when the next team would not fit: teams are never split across parts. Chosen comfortably under Git for Windows' 4 GiB object ceiling; five slots give 15 GiB. Written as a whole number of bytes, not as text like `3 GB`: a count needs no unit parser and leaves no doubt between GB and GiB, and the findings show it in KiB, MiB or GiB. Single-CPK runs are not split, only warned (`cpk_size_over_limit`) |
 | `bins_cpk_name` | `4cc_08_bins` | same | Multi-CPK bins name |
 | `refs_cpk_name` | `4cc_35_referees` | `4cc_18_referees` | Referee CPK name, the new default the official DpFileList's. A name equal to `cpk_name`, or in multi-CPK mode to `bins_cpk_name` or one of the teams stem's slots (letter case aside), is refused as an invalid configuration (exit code 2): two writers on one file |
-| `dds_compression` | 0 | **auto** | WESYS-zlib every emitted DDS. Tri-state `auto` / `1` / `0`; `auto` **follows `multicpk_mode`**, since multi-CPK is the cup DLC workflow and containing the full-cup DLC's size is the whole point of the setting — a manager compiling one team gets no compression and no cost, a cup maintainer gets it without remembering a second switch. **Pre-Fox only (PES ≤17)**: on Fox versions the setting is ignored whatever its value, because FTEX conversion already provides the size reduction there and the game does not expect zlibbed FTEX. Cheap in-process either way (see "DDS compression cost" below) |
+| `dds_compression` | 0 | **auto** | WESYS-zlib every emitted DDS. Tri-state `auto` / `1` / `0`; `auto` **follows `multicpk_mode`**, since multi-CPK is the cup DLC workflow and containing the full-cup DLC's size is the whole point of the setting: a manager compiling one team gets no compression and no cost, a cup maintainer gets it without remembering a second switch. **Pre-Fox only (PES ≤17)**: on Fox versions the setting is ignored whatever its value, because FTEX conversion already provides the size reduction there and the game does not expect zlibbed FTEX. Cheap in-process either way (see "DDS compression cost" below) |
 | `strict_file_type_check` | 1 | same | Disallowed file types are errors vs info notes (`file_type_disallowed`) |
 | `pass_through` | 0 | same | Keep folders with errors instead of discarding them (cup DLC workflow) |
 | `teams_list_path` | `teams_list.txt` (hardcoded, beside the exe) | `teams_list.txt` | Location of the working teams list; relative paths resolve in the data directory (see "Path resolution"). Created from the embedded list on first run |
@@ -69,7 +69,7 @@ dropdown in the GUI and a flag on the CLI subcommand, as in Blue's `--mode` argu
 **DDS compression cost.** Red's `dds_compression` is a separate pass at the end of its
 extraction stage: walk `extracted_teams/` (team exports only; referee content is never
 compressed), read each DDS, Python `zlib.compress` at level 6, wrap in the 16-byte WESYS
-header, write it back — I/O-bound and serial. In the Studio it is one more step in the texture
+header, write it back (I/O-bound and serial). In the Studio it is one more step in the texture
 task, on bytes already in memory, running on rayon workers like everything else.
 
 Rough budget for a 200 MB pre-Fox export that is mostly DDS: `flate2` deflate at level 6 runs
@@ -108,10 +108,10 @@ is only ever paid on cup-DLC compiles, where a few seconds against a 48-team run
 | Relative `exports_folder_path` | Executable directory in both data-location modes, so `exports/` sits beside `quick_compile.bat`; created when missing, before a run reads it, so a fresh install has a folder to put exports in. An exports folder named any other way (an absolute setting, the CLI's positional root) is never created: a missing one is refused before the run (`messages.md`, the fourth paragraph after "Output stage and savefile", "Fatal settings/environment problems") |
 | Relative `output_folder_path` | Executable directory in both data-location modes (`output/` beside the exe, created on demand); holds `.staging/{run_id}/` during a run |
 | `overrides/` input (Red's `sideload/`) | Selected data directory (an explicit setting may be added later) |
-| Relative `teams_list_path` | Selected data directory — the file is user data once the grid writes ID assignments into it, so it follows the settings file (see `pipeline.md` "Resolved decisions", "Teams list"); nothing is bundled beside the binary |
+| Relative `teams_list_path` | Selected data directory: the file is user data once the grid writes ID assignments into it, so it follows the settings file (see `pipeline.md` "Resolved decisions", "Teams list"); nothing is bundled beside the binary |
 | `templates/` override directory | Selected data directory; each file shadows the matching embedded template/fallback-bin resource (see `pipeline.md` "Resolved decisions") |
 | `pes_folder_path` | Absolute PES installation path (after expanding its documented `**` version placeholder) |
-| `savefile_path` | Absolute when explicitly set, a relative one beside the executable as `output_folder_path`; `auto` resolves under the shell's Documents folder → `KONAMI\{game folder}[\{account id}]\save\EDIT00000000` per the Savefile spec's discovery table — independent of `pes_folder_path` |
+| `savefile_path` | Absolute when explicitly set, a relative one beside the executable as `output_folder_path`; `auto` resolves under the shell's Documents folder → `KONAMI\{game folder}[\{account id}]\save\EDIT00000000` per the Savefile spec's discovery table, independent of `pes_folder_path` |
 | Generated CPKs, `test_output/`, `teamnotes.txt` | Resolved `output_folder_path` |
 | Installed CPKs | `{pes_folder_path}/download/` |
 | Sideload-mode output | `{pes_folder_path}/livecpk/`, the root the game-side runtime serves; no setting (`pipeline.md` "5. Writer", output modes) |
@@ -141,7 +141,7 @@ UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList w
 
 `upgrade-dpfl` prints what the override changes (entries that will no longer be loaded, with the
 sizes of any matching `.cpk` files found in `download/`) and stops unless `--yes` is given. It
-never deletes CPK files non-interactively — those are listed for the user to remove. See
+never deletes CPK files non-interactively: those are listed for the user to remove. See
 "DpFileList upgrade" under "Post-processing".
 
 It prints as the other commands do, one finding per line (`dpfilelist_cpk_renamed`,
@@ -179,7 +179,7 @@ step is skipped (`savefile_skipped_pes_running`; `pipeline.md` "6. Post-processi
   member's word about Edit mode is not wrong there, only unused, and refusing it would break a
   launcher line that always passes it.
 
-`--export <path>` (repeatable) restricts the run to the named exports — a path to an export
+`--export <path>` (repeatable) restricts the run to the named exports: a path to an export
 folder or archive, anywhere on disk, not necessarily under the exports root. A path that does not
 exist, or is a file other than a `.zip`/`.7z`, is an invalid invocation (exit code 2, naming the
 path), and nothing runs.
@@ -187,7 +187,7 @@ path), and nothing runs.
 This is the contract for **external callers driving a sideloading prototyping loop**, first of
 all the `pes-models` Blender extension's "export model and compile for sideloading" button: it
 saves the model into the player folder it was loaded from (it knows the export from the launch
-manifest — see the Player aesthetics editor plan), then runs
+manifest; see the Player aesthetics editor plan), then runs
 
 ```text
 UTW team-compiler compile --mode sideload --export "D:\exports\aaa_export"

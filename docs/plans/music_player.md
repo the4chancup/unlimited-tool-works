@@ -47,8 +47,8 @@ build) via the `python-mpv` binding. Loudness analysis shells out to a custom-mi
 
 ### Relationship to the old codebase
 
-As with the Team compiler, Rigdio defines *what* the new tool must do — the `.4ccm`
-format, the selection semantics, the soundboard behavior — not *how*. The codebase is
+As with the Team compiler, Rigdio defines *what* the new tool must do (the `.4ccm`
+format, the selection semantics, the soundboard behavior), not *how*. The codebase is
 the product of years of accretion and is not a porting reference:
 
 - **Two near-duplicate `ConditionList` implementations** (`legacy.py` and
@@ -56,14 +56,14 @@ the product of years of accretion and is not a porting reference:
 - **Conditions evaluated by string-built `eval()`** (`ArithCondition` formats a Python
   expression and evals it).
 - **tkinter dialogs opened from inside condition checks** (`TimeCondition` pops a modal
-  during evaluation — domain logic directly drives UI).
+  during evaluation: domain logic directly drives UI).
 - **Five polling threads** with `sleep()` loops (song-end checker, chant-end checker,
   title-log timer, fade stepper, loudness-wait spin), plus tkinter `after()` polling
   loops for the load progress and the VA timer.
 - **Global mutable module state**: position cache, loudness cache, pending/logged sets,
   `titleThread`/`titleCheck` globals shared across instances.
 - **A half-finished YAML successor format** (`toYML()` methods, `InstructionList`,
-  "DEPRECATED: PLEASE USE EVENT: IN YOUR .YML") that never shipped — the `.4ccm` parser
+  "DEPRECATED: PLEASE USE EVENT: IN YOUR .YML") that never shipped: the `.4ccm` parser
   is called "legacy" throughout even though it is the only format.
 - **Parser hacks**: RigDJ strips `[...]` brackets on load and `rigparse` re-adds them
   with a special-case loop the comments themselves call "very messy".
@@ -300,7 +300,7 @@ pub struct EventClip {
 - The serializer regenerates RigDJ's canonical layout (section comments
   `# team identifier` / `# reserved names` / `# regular players`, plus a fourth,
   `# event clips`, when the export has any; flags written only
-  when opted out). Comments in hand-written files are not preserved — same as RigDJ.
+  when opted out). Comments in hand-written files are not preserved, same as RigDJ.
 
 The rest of the crate as built (10.0a-d, ahead of Phase 10). The code is the source and
 these blocks its copy: a change to one is a change to both, and a shape not here is not
@@ -888,7 +888,7 @@ New implementation, all in-process:
   turn that into infinite gain. Leave normalization gain at 0 dB and report the unavailable measurement.
 - **Chant loud-part analysis**: R128 momentary loudness (400ms windows) is produced by
   the same measurement pass; the chant reference is the mean of the loudest N% of
-  windows (N = `chant_loud_part_percent`, default 20) — same idea as Rigdio's
+  windows (N = `chant_loud_part_percent`, default 20), same idea as Rigdio's
   1-second-window RMS ranking, without the second ffmpeg decode.
 - **Gain**: `target − reference`, target configurable (default −14 LUFS, the streaming
   standard and Rigdio's numeric default). A **limiter engages when
@@ -907,7 +907,7 @@ New implementation, all in-process:
   ```
 
   Sliders are dB-native (master ±20 dB perceptual scale with colored knobs, mute at
-  the bottom). The mpv cubic-volume conversion (`100·10^(dB/60)`) disappears — the
+  the bottom). The mpv cubic-volume conversion (`100·10^(dB/60)`) disappears: the
   engine takes dB directly. With normalization off the formula degenerates as in
   Rigdio: no master slider exists, the Chants Volume slider sets chant volume
   directly, and the per-goalhorn sliders control the rest.
@@ -966,19 +966,19 @@ uses of mpv:
 | Duration/position | `duration`, `time_pos` | track position/duration accessors |
 
 - **`kira`** is the recommended mixer (game-audio oriented: tweens, loop regions,
-  playback rate, per-sound effects, cpal output, WASM support — the suite's browser
+  playback rate, per-sound effects, cpal output, WASM support; the suite's browser
   build keeps working). `rodio` is the simpler fallback if kira's abstractions fight
   the requirements; the `audio_engine` API insulates the tools from this choice.
 - **Opus**: symphonia's own Opus decoder is still work-in-progress, so Opus decode
   goes through a pure-Rust decoder crate (e.g. `opus-decoder`, RFC 8251-conformant)
   registered into symphonia's codec registry behind its OGG demuxer. If the pure-Rust
   decoders prove immature at implementation time, the escape hatch is a statically
-  linked `libopus` binding (`audiopus`) — still a single binary, no DLL. This is the
+  linked `libopus` binding (`audiopus`), still a single binary, no DLL. This is the
   one open verification item; everything else in the stack is production-proven.
 - One playback difference to accept or fix: mpv's speed control is pitch-corrected
   (scaletempo) by default, while a mixer playback-rate change is varispeed (pitch
-  shifts with speed). Default to varispeed initially — the speed slider is a meme
-  feature — and add a time-stretch stage (e.g. `signalsmith-stretch`) only if users
+  shifts with speed). Default to varispeed initially (the speed slider is a meme
+  feature) and add a time-stretch stage (e.g. `signalsmith-stretch`) only if users
   ask for pitch-corrected speed.
 - The loudness analyzer (`ebur128` + the decode loop) lives in this crate too, since
   it shares the symphonia decode path with playback. The R128 measurement, chant
@@ -1119,7 +1119,7 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
 
 1. **Single binary**: libmpv-2.dll, ffmpeg.exe, the ffmpeg build script, PyInstaller
    spec files, and UPX compression all disappear.
-2. **One typed condition model** with pure evaluation — no duplicate class hierarchies,
+2. **One typed condition model** with pure evaluation: no duplicate class hierarchies,
    no `eval()`, no UI calls inside domain logic, exceptions replaced by verdicts.
 3. **Event-driven engine**: the polling threads and `after()` loops become tweens,
    callbacks, and frame-driven state checks; no global thread flags.
@@ -1150,7 +1150,7 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
   workflow that produced them (Riglevel) stays retired.
 - Legacy quirks kept: team names are lowercased on load, `opponent` names are written
   without slashes, and the comparison is case-insensitive (see the correctness notes
-  under Conditions — Rigdio's own comparison only matched lowercase-written names).
+  under Conditions; Rigdio's own comparison only matched lowercase-written names).
 - **Where Studio reads a file as Rigdio does, and where it departs.** A member's `.4ccm` was
   written and tested against Rigdio, so wherever Rigdio's reading decides which song plays,
   Studio's matches it (the walk in "Song selection", the condition order, `once`, the shared
@@ -1192,7 +1192,7 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
   semantic equality (model-level), plus golden-file stability for editor-written files.
 - **Selection-logic scenario tests**: scripted match timelines (goals, undo, match
   types, warcries, randomise groups, once/time unloads, advance chains) asserting
-  which entry plays — pure functions over `MatchState`, no audio needed.
+  which entry plays (pure functions over `MatchState`, no audio needed).
 - **Loudness**: compare integrated/momentary loudness and true peak against ffmpeg `ebur128`
   with true-peak measurement enabled on the same decoded samples, within a documented tolerance.
   `volumedetect` measures RMS/sample peak, not LUFS/true peak, so its old values are behavior-change

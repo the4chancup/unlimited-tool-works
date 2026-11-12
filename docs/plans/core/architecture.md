@@ -91,7 +91,7 @@ What exists of this is in `spec/core/architecture.md` "Launch modes".
 Besides the tools' subcommands, the shell owns `UTW help`, `UTW update` and `UTW
 --version` (see `gui.md` "Help window", `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version display").
 
-The `--gui` form exists for the release bundle's **`quick_compile.bat`** — the successor to Red's
+The `--gui` form exists for the release bundle's **`quick_compile.bat`**, the successor to Red's
 `0_all_in_one.bat`, the one script almost every user runs: copy an export into `exports/`,
 double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui team-compiler
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
@@ -108,7 +108,7 @@ its view exists. Commands a tool does not implement in `gui_run` fail at startup
 message rather than silently opening the GUI.
 
 A tool decides its own readiness. The Team compiler queues the autorun until the initial
-exports check has completed, then fires it — the same precondition as a manual Compile click,
+exports check has completed, then fires it: the same precondition as a manual Compile click,
 so the grid never compiles unchecked state.
 
 **A run's log file.** `--log-file <FILE>` is a global option, accepted before or after the
@@ -341,7 +341,7 @@ These notes extend the spec's `PipelineEvent` enum, the first at `Progress`, the
 What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 
 - In GUI mode `studio` installs a small `log::Log` impl writing `utw.log` in the data
-  directory — the file a user attaches to a bug report. The GUI `gui.md` "Log panel" shows
+  directory: the file a user attaches to a bug report. The GUI `gui.md` "Log panel" shows
   findings, not this file; an in-app diagnostic view is not planned for the first release.
 - `utw.log` is a bug report's attachment, so the GUI sink also:
   - installs a panic hook that writes the panic message, its location and a backtrace to the

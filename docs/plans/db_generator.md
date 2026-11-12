@@ -116,7 +116,7 @@ Outputs (each an independent action, all three in one run by default):
    to the scripts' output for the same teams list (see "Verification"), plus the Konami tables
    when an install is available.
 2. **Database CPK**: the tree packed with `libs/cpk`; file name is an Open question.
-3. **Populated EDIT** (19–21) — the given EDIT with the player section filled and the count set,
+3. **Populated EDIT** (19–21): the given EDIT with the player section filled and the count set,
    written next to the input with the suite's `.bak` rule (`pes_savefile::EditFile::save`).
 
 Switches:
@@ -133,7 +133,7 @@ with per-version layouts. Consumers:
 
 - this tool (`Team`, `Player`, `PlayerAppearance`, `PlayerAssignment`, `Coach`,
   `CompetitionEntry`);
-- the [Balls compiler](balls_compiler.md) (`Ball`, `BallCondition` — the plan's "format
+- the [Balls compiler](balls_compiler.md) (`Ball`, `BallCondition`; the plan's "format
   knowledge lives inside the tool crate" sentence is superseded by this crate; the Ball.bin
   format reference stays in that plan and the record layout is transcribed from it);
 - the [Stadium compiler](stadium_compiler.md) (`Stadium`).
@@ -190,7 +190,7 @@ The placeholder is the version's **base player** (`PlayerEntry` decoded from the
 `Player_Edit_Base_NN.bin` + `PlayerAppearance_Base_16.bin` assembly, committed as a fixture),
 with `id`, `base_copy_id` and, from Phase 5, the appearance-block id patched.
 
-`EditFile` gains the one thing its API refuses today — adding player records — behind this
+`EditFile` gains the one thing its API refuses today, adding player records, behind this
 operation only; the record order and count rules of `to_bytes` otherwise stand.
 
 ## Tool crate layout
@@ -230,7 +230,7 @@ CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out .
 
 ## Open questions
 
-- **Database CPK file name and DpFileList position** in the 4cc DLC — take from the current
+- **Database CPK file name and DpFileList position** in the 4cc DLC: take from the current
   cup's DLC layout when the Team compiler's deployment stage is specified (Phase 4); until
   then the CPK is written under the name the user gives.
 - **Whether PES 20/21 also need the populated EDIT**: the scripts' README says the quirk starts

@@ -5,7 +5,7 @@
 ### glTF export (`ir_to_gltf`) and dual-set superset merge
 
 **Skeleton reconstruction from FMDL.** The FMDL bone data carries only local and global positions
-(Vector4) — not the 3×3 rotation matrix. The full bind-pose transform (rotation + translation)
+(Vector4), not the 3×3 rotation matrix. The full bind-pose transform (rotation + translation)
 lives in the companion `.skl` file. `fmdl_to_ir` resolves the bone transforms as follows:
 
 1. If the FMDL has a companion `.skl` (same basename, per the Aesthetics export plan's SKL pairing rule),
@@ -15,7 +15,7 @@ lives in the companion `.skl` file. `fmdl_to_ir` resolves the bone transforms as
 
 **Skeleton in `.model`.** The pre-Fox format needs no sidecar: a `.model` stores its bone name
 table and, per bone, a 3×4 **inverse bind matrix** inline (section 0's first entry, one 12-float
-record per bone in name order — `ModelFile.parseBoneGroups` in the `pes-model` addon), which is
+record per bone in name order; `ModelFile.parseBoneGroups` in the `pes-model` addon), which is
 exactly the data an FMDL keeps in its `.skl`. What it lacks is the hierarchy: parents are resolved
 by looking each bone name up in the template skeleton's render parents (the addon's `addBone`), so
 a bone unknown to the template is a root.
@@ -23,8 +23,8 @@ a bone unknown to the template is a root.
 `model_to_ir` inverts the stored matrices into `Bone.matrix`; `ir_to_model` writes the inverse of
 `Bone.matrix` back. What ends up in `Bone.matrix` at export time is decided by the skeleton
 retargeting pass (see "Skeleton retargeting and bone conformance"): standard bones carry the
-**target version's** bind pose — which is what a `.model` must contain to skin correctly against
-that game's runtime skeleton — and only bones unknown to the target's tables (a genuine custom
+**target version's** bind pose, which is what a `.model` must contain to skin correctly against
+that game's runtime skeleton, and only bones unknown to the target's tables (a genuine custom
 skeleton) keep the model's own matrices. **This deviates from the 19to16 converter**, which
 always wrote PES17's matrices (`fmdl2model.py`, identity for unknown bones) regardless of target
 and flattened custom skeletons.
@@ -39,7 +39,7 @@ template injection stands.
 `merge_ir_superset` (Phase 7) merges *one part across two formats*; it never adds geometry. Assembling
 *several parts into one model* is a different operation, and it is **format-native on both
 engines**: `fmdl::ops::merge` for Fox, `pes_model::ops::merge` for pre-Fox (the `ingame_face`
-boots merge, and a shared link combined with local parts under `ingame_face` — see the [Aesthetics
+boots merge, and a shared link combined with local parts under `ingame_face`; see the [Aesthetics
 export plan](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
 same-format merge never round-trips through the IR.
 
@@ -73,7 +73,7 @@ The compiler detects the model format by file extension (`.fmdl`, `.model`, `.gl
 routes accordingly. A glTF selected for a stem drops its folder as `model_gltf_unsupported` until
 the importer lands.
 
-PES-native sources skip the IR for same-format targets — **except** when an IR-level operation
+PES-native sources skip the IR for same-format targets, **except** when an IR-level operation
 applies:
 
 - hand auto-split (models with `skh_` bone weights are imported, partitioned, and exported back

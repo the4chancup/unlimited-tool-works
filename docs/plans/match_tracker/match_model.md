@@ -72,7 +72,7 @@ non-scoring soundboard actions.
 |-------|--------------------|--------------------|-----------------------------|-------------------------|
 | `TeamsDetected` | No | No | No | Snapshot retained/replaced; prior watch cleared |
 | `MatchLive` | Yes | - | No | Retains |
-| `MatchResumed` | Yes | - | Conditional — preserves only when the snapshot proves the same stopped `stop_epoch`; otherwise cancels | Retains |
+| `MatchResumed` | Yes | - | Conditional: preserves only when the snapshot proves the same stopped `stop_epoch`; otherwise cancels | Retains |
 | `MatchSuspended { SourceLoss }` | - | No (retains if was Live) | No (pauses) | Retains |
 | `MatchSuspended { UserStopped }` | - | Yes | Yes | Retains |
 | `MatchFinalized` | - | Yes | Yes | Retains terminal snapshot/watch unless followed atomically by new-match `TeamsDetected`, which replaces the snapshot and clears the old watch |
@@ -359,9 +359,9 @@ cycle.
   minutes); the segment maps to the period base minute and even segments flag injury time.
   The direct read supersedes the reconstruction where available; the reconstruction
   remains the PES17 path and the fallback if the PES21 clock chain breaks.
-- **Stop reasons**: inferred from which counters moved around the stop — offside
+- **Stop reasons**: inferred from which counters moved around the stop (offside
   beats foul, a goal or own goal is its own reason, a save implies a corner, an off-target
-  shot implies a goal kick — replicating the original's heuristic table.
+  shot implies a goal kick), replicating the original's heuristic table.
 
   A half-end reason (the original defined it but never actually inferred it) falls out of
   the clock model instead: a stop landing on a phase boundary.

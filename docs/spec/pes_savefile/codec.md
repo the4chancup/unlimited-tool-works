@@ -12,7 +12,7 @@ players.loftpass = read_data(7, 7, current_byte, pDescriptorNew);
 players.finish   = read_data(6, 7, current_byte, pDescriptorNew);
 ```
 
-In Rust this becomes a declarative schema — one field table per version, one generic codec engine.
+In Rust this becomes a declarative schema: one field table per version, one generic codec engine.
 Every bit run is LSB-first little-endian: field bit `i` is bit `(offset + i) % 8` of record byte
 `(offset + i) / 8`, which is what the reference's byte-crossing reader computes and what the
 hand-shifted PES 18 walk computes too.
@@ -245,7 +245,7 @@ not just player blocks.
 The consumer-facing entry point wraps the container crypto and the schema codec:
 `EditFile::load` (version auto-detected by trying master keys / container shape;
 decrypt, parse) and `EditFile::save` (serialize, re-encrypt, and preserve the original in a `.bak`
-before replacement — the shared convention behind the save editor's save action and the Team
+before replacement, the shared convention behind the save editor's save action and the Team
 compiler's savefile update stage).
 
 An open `EditFile` keeps its detected version; changing the suite selector cannot reinterpret it.
@@ -306,7 +306,7 @@ RESULT\x11d WAS GOOD`). `display_name` strips both; any other `0x11` sequence is
 
 ### Savefile discovery
 
-The savefile does **not** live in the PES install folder — it is always under the user's
+The savefile does **not** live in the PES install folder: it is always under the user's
 **Documents** folder, in a per-game KONAMI subfolder. Discovery therefore never looks at
 `pes_folder_path`; it is a function of the PES version and the user profile, provided by this crate
 (`discover_savefiles(version) -> Vec<SavefileCandidate>`) and used by the Team compiler's savefile

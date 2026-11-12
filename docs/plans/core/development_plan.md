@@ -415,7 +415,7 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
   Save editor's team color fields; the Kit config editor and the Team creator later)
 - Implement each tool's `view()`:
   - Team compiler grid (live validation)
-  - save editor (player/team/tactics editing, AATF checks, comparator — build order in the
+  - save editor (player/team/tactics editing, AATF checks, comparator; build order in the
     [Save editor plan](../save_editor.md)). The `session/` wiring only the view drives (undo,
     selection, recent files, the FPC toggle and AATF quick actions) lands with it. The tactics
     editor, card pickers and violations list are built as `libs/team_widgets`, which the Team
@@ -508,7 +508,7 @@ the Python stadium compiler on real stadium exports.
 
 ### Phase 10: Music tools (`tools/music_player`, `tools/music_export_editor`)
 
-The music tools are independent of phases 2–9 — they touch none of the game-file lib crates and need
+The music tools are independent of phases 2–9: they touch none of the game-file lib crates and need
 only `studio_core` and the app shell, so this phase can run in parallel with (or before) the others
 once the shell exists.
 
@@ -539,7 +539,7 @@ autopilot on.
 
 ### Phase 12: Kit config editor (`tools/kit_config_editor`)
 
-Small: the format logic already exists in `libs/kit_config` from Phase 2/4 — this phase adds the GUI
+Small: the format logic already exists in `libs/kit_config` from Phase 2/4; this phase adds the GUI
 form, the preview, and the container-editing mode.
 
 - Editing form with constraint gating; export-folder tabs and loose-file mode
@@ -551,7 +551,7 @@ edits against Kit Manager on the same file.
 
 ### Phase 13: Refs arranger (`tools/refs_arranger`)
 
-Small: the export knowledge already lives in `libs/aesthetics_export` — this phase adds
+Small: the export knowledge already lives in `libs/aesthetics_export`; this phase adds
 the slot-allocation editor and the players.txt writer. Needs Phase 3 (`aesthetics_export`)
 and Phase 8 (the shell).
 
@@ -593,7 +593,7 @@ boundary tests; in-game menu check.
 
 ### Phase 15: Player aesthetics editor (`tools/player_aesthetics_editor`)
 
-Small and non-essential (a convenience tool — schedule freely once its dependencies exist):
+Small and non-essential (a convenience tool; schedule freely once its dependencies exist):
 Phase 2 (format libs, `model_convert`, `pes_savefile` settings and FPC presets), Phase 3
 (`aesthetics_export`), Phase 7 (glTF support), and Phase 8 (the shell).
 
@@ -660,7 +660,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 ### Phase 17: Team creator (`tools/team_creator`, post-release)
 
 Not a first-release gate: its users are the *next* cup's new managers, and it depends on the
-widest set of finished pieces — `libs/team_widgets` and `libs/aatf` with `apply_tier` (Phases 5
+widest set of finished pieces, `libs/team_widgets` and `libs/aatf` with `apply_tier` (Phases 5
 and 8), the compiler's kit placeholder (Phase 3, its UniColor entry Phase 4) and layout-marker rules (Phase 4), `aesthetics_export`
 writing, and the Player aesthetics editor to hand off to (Phase 15). Plan: [Team
 creator](../team_creator.md).

@@ -104,7 +104,7 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   `pes_version`, CPK names, `multicpk_mode`), and whenever the PES process poll changes state.
 
   Results show on the Compile button as a warning badge with the reason in the tooltip and a
-  line in the run strip: *"PES 2019 is running — close it before compiling"* / *"The download
+  line in the run strip: *"PES 2019 is running: close it before compiling"* / *"The download
   folder needs administrator rights"* with a **Relaunch as administrator** action (the
   `elevation` lib).
 
@@ -276,7 +276,7 @@ Resolved decisions:
 - **Source snapshot**: The GUI watcher (Phase 8) keys its stale-result envelopes on
   the same value.
 
-Open questions — **implementation/spec work** (no user preference involved; resolved during the
+Open questions, **implementation/spec work** (no user preference involved; resolved during the
 phase that owns them):
 
 - **Shared/Common dependency graph.** Define cache ownership when a player task needs shared or
