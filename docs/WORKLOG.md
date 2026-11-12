@@ -1900,7 +1900,12 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-03). Possible, as text: Ctrl+C puts a Team TOML document of the copy on the
     system clipboard, which Ctrl+V parses (DECISIONS 2026-11-12; `plans/save_editor.md`
     "Editing UI", SE-GUI-72; SE-GUI-56 lost its "another save empties the clipboard" case)
-    - [ ] the slice (Opus, `.tmp/0_0_2/clip/brief_clip.md`), then its review rounds (tier 2)
+    - [x] the slice 2026-11-12 (Opus, `ec8fe910`, merge `ef487589`): the copy as text, the
+      paste through the import panel's path, the in-memory clipboard and its three session
+      helpers gone; six tests for SE-GUI-72, one from PES 2019 to PES 2021. Both of the
+      brief's doubts held: a stats document writes what Copy stats writes, a preset and a
+      formation survive the document. Not tried in two real windows (look: Pending looks)
+    - [ ] its review rounds (tier 2): SWE-2, then Carbon after 2026-11-15
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2448,6 +2453,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - Reset window on the 1280 x 800 Linux virtual machine: after one click that leaves the
   window as it was the button is gone, and a resize brings it back; the pointer is a hand
   over it; no PES; `da241022`; maintainer (needs a Linux bundle built from main)
+- Ctrl+C in one Save editor window and Ctrl+V in a second, through the real system
+  clipboard: a player's stats, a team's Gameplan, a preset and a formation, the second
+  window on a save of another PES version; and the copied text pasted into a text editor
+  (two comment lines, then the Team TOML); no PES; 0.0.2-clip; maintainer
 
 ---
 
