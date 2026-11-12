@@ -16423,3 +16423,26 @@ Not chosen: a severity filter and a log as two options; a log the exe truncates 
 launcher would keep only its last export).
 Plan: `plans/core/architecture.md` "Launch modes" ("A run's log file"), ST-CLI-04;
 `plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2-log.
+
+## 2026-11-12 — export_upgrader — One `upgrade` run takes a folder of exports and prints the launcher's tally
+Decision: the maintainer asked that the upgrade launcher's progress line count every export
+(`[ 0/1 exports ]` per export showed the launcher starting the exe once each). Beside the
+planned `upgrade <export>...` the lead chose, where the plan was silent: `--all <DIR>`, every
+export directly inside DIR in name order; in a run of several (or of `--all`), a line
+`Upgrading <file name>` before each export, a refused or aborted export's `error:` line as
+the last of its block, and the closing tally `Upgraded: <n>. Not upgraded: <m>.`, all printed
+by the exe; a new event, `ExportsExpected { total }`, so the progress line knows the total
+before the first export starts; each export a run of its own in the event stream.
+`quick_upgrade.bat` starts the exe once.
+Why: a folder argument, not 50 paths built in a bat, because `cmd` cuts a line at 8,191
+characters and the maintainer prefers logic in the exe to logic in `cmd`; the tally in the
+exe because one run gives the launcher one exit code to count from; the naming and error
+lines as plain lines through the event stream, not as findings and not on stderr, because
+they must keep their order among the findings and reach the log file; a run id per export,
+not new export ids, because fifteen functions name the input and the output by the constants
+`INPUT` and `OUTPUT`, and the events already say ids restart with each run.
+Not chosen: every finding line naming its export and no naming line (the plan asks for the
+line, and the launcher already printed one); a parts counter summed over the run (a later
+export's file count is unknown until it is opened).
+Plan: `plans/export_upgrader.md` "CLI" ("Several exports at once", "The progress line"),
+EU-CLI-11 and EU-CLI-13 to 15; worklog 0.0.2-upgall.
