@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Savefile plan: Operations
+# Unlimited Tool Works: Savefile spec: Operations
 
-Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Savefile spec](README.md).
 
 ## Cross-version player conversion
 
@@ -731,7 +731,7 @@ backup replaced each time. The write happens once the run's outputs are in place
 publishes nothing leaves the previous CPK and its patch alone.
 
 The compiler's own savefile stage is "apply the patch just produced to the local save" (see
-"Savefile update" in the [Team compiler plan](../team_compiler/pipeline.md)). It is one path,
+"Savefile update" in the [Team compiler spec](../team_compiler/pipeline.md)). It is one path,
 so a patch applied a week later by someone else yields the same bytes the DLC builder's machine
 wrote.
 

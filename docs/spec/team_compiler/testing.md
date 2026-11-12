@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler plan: Testing
+# Unlimited Tool Works: Team compiler spec: Testing
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Team compiler spec](README.md).
 
 ## Testing: parity against Red (adapted from Blue)
 
@@ -91,7 +91,7 @@ Intentional differences must be accounted for:
 - **Dropped features** (Other folder) are excluded.
 - **Kit-dependent path magic**: Red emits the legacy `u0XXXp0`/`u0XXXp1`… spelling (with the `XXX`
   placeholder or a baked-in team ID, as the author wrote it), the compiler emits `kitN`/`kit1`…
-  (see "Kit-dependent assets" in the [Unified model format plan](../model_format.md)). The
+  (see "Kit-dependent assets" in the [Unified model format spec](../model_format.md)). The
   compiler gets no switch to emit the legacy spelling, because parity is a file-tree comparison,
   not an in-game test, and the exes can be modded to `kitN` at any time, so a switch would be a
   second output format maintained for nothing.

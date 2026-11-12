@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Aesthetics export plan: settings.toml
+# Unlimited Tool Works: Aesthetics export spec: settings.toml
 
-Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Aesthetics export spec](README.md).
 
 ## Player settings in exports (settings.toml)
 
@@ -55,7 +55,7 @@ the compiler-owned edit flags and base-copy ID. That is:
 
 About one cup player in twenty relies on in-game hair rather than a face model. Every bit of the
 run is a key or measured unused ("The ingame-face run, decoded" in the [Savefile
-plan](../pes_savefile/model.md), whose spec part holds the completeness test). Completeness
+spec](../pes_savefile/model.md), whose spec part holds the completeness test). Completeness
 matters here because these files are the **only** route by which a team's aesthetics reach the
 game: the save editor's own appearance fields are read-only by default (see "Read-only
 aesthetics" in the [Save editor plan](../../plans/save_editor.md)).
@@ -486,13 +486,13 @@ Compile-time flow:
 4. Resolve the settings and the IDs of content that was actually written: each compiled player's
    look, his resolved IDs and a `write_names` export's names go into the **aesthetics patch**
    written with the CPKs (see "Post-processing" in the [Team compiler
-   plan](../team_compiler/pipeline.md)).
+   spec](../team_compiler/pipeline.md)).
 
 If a local savefile is configured, the compiler applies that patch to it through `pes_savefile`
 (decrypt, apply, re-encrypt, `.bak`). An entry's `[appearance]` also makes the record the
 player's own, his appearance id and base copy set to his own id. The patch is what a DLC builder
 hands to the savefile builder, who applies it in the save editor; the compiler has no other
 savefile write path (see "Post-processing" in the [Team compiler
-plan](../team_compiler/pipeline.md)).
+spec](../team_compiler/pipeline.md)).
 
 ---

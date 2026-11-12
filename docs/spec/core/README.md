@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Core plan
+# Unlimited Tool Works: Core spec
 
 This is the core architectural plan for Unlimited Tool Works: the goals, the platform (crate
 structure, tool plugin system, GUI shell, parallelism), and the cross-cutting
@@ -68,7 +68,7 @@ Three prior compiler implementations exist:
 
 All three are stopgaps towards Unlimited Tool Works: they define *what* the compiler must produce (Red's CPK
 output is the golden standard for parity), not *how* the new implementation works (see "Relationship
-to the older compilers" in the [Team compiler plan](../team_compiler/README.md)).
+to the older compilers" in the [Team compiler spec](../team_compiler/README.md)).
 
 The save editor exists as a Win32 C++ application, accompanied by a set of standalone savefile
 scripts:

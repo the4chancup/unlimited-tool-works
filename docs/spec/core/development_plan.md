@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Core plan: Development plan
+# Unlimited Tool Works: Core spec: Development plan
 
-Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Core spec](README.md).
 
 ## Development Plan
 
@@ -161,7 +161,7 @@ implementations translated:
 - `teams_list` (`TeamName` fold, `TeamId` range, `teams_list.txt` parse/write/reconcile with the
   embedded upstream list; dependency-free; fixture: Red's current file; spec in [libs](../libs/README.md))
 - `kit_config` (binary ↔ TOML kit config codec, applies `fpc::kit` values; format documentation
-  in the [Kit config editor plan](../kit_config_editor.md))
+  in the [Kit config editor spec](../kit_config_editor.md))
 - `color_tools`: dominant kit-color extraction only; the picker widget is Phase 8
 - `elevation`
 
@@ -349,7 +349,7 @@ Cross-format model conversion goes through Phase 2's `model_convert`; savefile w
 5's, and a glTF model source is refused until Phase 7.
 
 The work is organized by the Team compiler's stages, each specified in "Crate layout" and the
-"Per-export pipeline walkthrough" of the [Team compiler plan](../team_compiler/pipeline.md).
+"Per-export pipeline walkthrough" of the [Team compiler spec](../team_compiler/pipeline.md).
 What `compile` builds and refuses is that plan's "Phase 4 scope" (in its "Acceptance"), whose TC
 scenarios are the behavior contract, every automated one cited by a test. Red module names in
 parentheses locate reference *behavior*; they prescribe nothing about the Rust code.

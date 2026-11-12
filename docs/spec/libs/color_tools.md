@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: color_tools
+# Unlimited Tool Works: Library crates spec: color_tools
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## `libs/color_tools`
 

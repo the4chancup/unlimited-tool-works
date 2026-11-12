@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Unified model format plan
+# Unlimited Tool Works: Unified model format spec
 
 ## A model folder
 
@@ -8,7 +8,7 @@ pre-Fox `face.xml` type (`gloveL`, `handL`, `uniform`, `eye`, …, or `model_typ
 table doesn't know).
 
 The compiler maps it to a Fox destination and a pre-Fox type through one table ("Model names: a
-free part plus a suffix" in the [Aesthetics export plan](aesthetics_export/README.md)); the type
+free part plus a suffix" in the [Aesthetics export spec](aesthetics_export/README.md)); the type
 is used only when targeting pre-Fox. Nothing about the part type lives inside the glTF or the
 material toml, so the same `.glb` compiles typed on pre-Fox and merged into its Fox slot.
 
@@ -33,7 +33,7 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
   ICO) that are not accepted because they serve no game-texture use case (animation, HDR, icons,
   obscure academic formats). AVIF remains outside the initial decoder set; its backend requirements
   depend on the selected library/version. QOI can be added if community demand arises. See the
-  [library crates plan](libs/README.md) for the full format matrix and the PES texture boundary (which
+  [library crates spec](libs/README.md) for the full format matrix and the PES texture boundary (which
   codecs each PES version gets).
 - **Stem-based texture references.** Material references name textures by **stem** (filename
   without extension), as do Studio-format `.mtl` files and FMDL path tables (whose stored names
@@ -60,7 +60,7 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
   below the folder, not a missing `/`.
 - **PNG is the expected norm.** Blender cannot write DDS natively, so glTF-authored models naturally
   carry PNG textures; conversion to the target texture format happens at compile time (see the
-  [library crates plan](libs/README.md)).
+  [library crates spec](libs/README.md)).
 
 ---
 
@@ -477,6 +477,6 @@ expects, and order states `ztest, zwrite, twosided, alphatest, alpharef, alphabl
 | `kit_variant_model_left_out` | W | per-kit model variants on a Fox target (the set's fallback used: `kitF`, else the lowest variant) |
 
 Consequences follow the Team compiler's disposition rules (E → folder discarded). The full
-catalog is in the [Team compiler plan](team_compiler/README.md).
+catalog is in the [Team compiler spec](team_compiler/README.md).
 
 ---

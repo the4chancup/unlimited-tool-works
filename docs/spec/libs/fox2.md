@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: fox2
+# Unlimited Tool Works: Library crates spec: fox2
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## `libs/fox2`: Fox Engine entity files
 

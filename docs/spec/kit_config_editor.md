@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Kit config editor plan
+# Unlimited Tool Works: Kit config editor spec
 
 This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
 shared by:
@@ -9,7 +9,7 @@ shared by:
 - the [Export upgrader](export_upgrader.md) (binary → TOML migration).
 
 One crate owns the format so all three agree on what a valid config is. Platform context is in
-the [core plan](core/README.md).
+the [core spec](core/README.md).
 
 ---
 
@@ -134,7 +134,7 @@ Notes:
   established it. In game the field only selects the model used for the **wrist-end of the long
   sleeves** when a player wears them. It does not change the shirt mesh, and the kit texture's
   UV layout is identical for all three values, which is what lets `color_tools` sample fixed
-  shirt/shorts regions (see the [library crates plan](libs/README.md)). The old editor does gate
+  shirt/shorts regions (see the [library crates spec](libs/README.md)). The old editor does gate
   other fields on it, as noted below.
 - **Collar IDs** index the game's stock collar model set (`nocloth`). Exports can
   replace a stock collar with a custom model (the Team compiler's pass-through
@@ -150,7 +150,7 @@ Notes:
   - Tight requires 144 or 160 (a warning likewise).
 
   The FPC kit values (shirt 176, shorts 16, collar and winter collar 105; see "FPC toggle" in
-  the [Aesthetics export plan](aesthetics_export/README.md)) are ordinary values of these
+  the [Aesthetics export spec](aesthetics_export/README.md)) are ordinary values of these
   fields.
 - **Version differences**: PES2021 widens Name Y by one low bit, as noted (the only
   difference the 2021 patch makes). `name.y` is PES 2021's value on every version: the bytes are

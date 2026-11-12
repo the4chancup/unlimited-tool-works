@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler plan: Pipeline
+# Unlimited Tool Works: Team compiler spec: Pipeline
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Team compiler spec](README.md).
 
 ## Per-export pipeline walkthrough
 
@@ -115,7 +115,7 @@ export format.
      `settings.toml` parsing to their owning crates. What they find goes back to
      `aesthetics_export` as content findings, and the sanitized export is derived again with
      them ("Content findings" in the [Aesthetics export
-     plan](../aesthetics_export/object_model.md)). So a content finding follows the structure
+     spec](../aesthetics_export/object_model.md)). So a content finding follows the structure
      pass's rules: it drops the folder or file it names before any ID is planned for it, a
      dropped shared folder or `Common/` file takes the players linking it down, and
      `pass_through` keeps what is eligible.
@@ -222,13 +222,13 @@ export format.
      - `all/` textures are merged into every kit lacking the stem (`kit_textures_inherited`),
        and `all/` itself may hold nothing else (`kit_all_file_ignored`) and must have kits to
        serve (`kit_all_unused`); grammar and merge in "Kits" in the [Aesthetics export
-       plan](../aesthetics_export/README.md);
+       spec](../aesthetics_export/README.md);
      - a `Full` export's missing `config.toml` is auto-generated from the template
        (`kit_config_generated`; a `Midcup` kit without one keeps its slot's installed config
        instead, see "Bins accumulation");
      - a `Full` export's missing `colors.txt` has its two menu colors derived from the main kit
        texture (`kit_colors_derived`: dominant-color extraction via `libs/color_tools`, see the
-       [library crates plan](../libs/README.md); a `Midcup` kit without one keeps its installed
+       [library crates spec](../libs/README.md); a `Midcup` kit without one keeps its installed
        `UniColor.bin` entry, the colors it does not resend, as the old compile did), and a
        present file that yields fewer than two valid colors falls back to the same derivation
        after its `color_entry_invalid` warnings;
@@ -237,7 +237,7 @@ export format.
      - a `Full` export's kit whose effective textures lack `kit.dds` (an empty folder included)
        is a **placeholder kit** (`kit_placeholder`, I): it gets the bundled checkerboard texture
        and is otherwise a normal kit (see "Kits" in the [Aesthetics export
-       plan](../aesthetics_export/README.md); a `Midcup` kit emits the textures it holds and
+       spec](../aesthetics_export/README.md); a `Midcup` kit emits the textures it holds and
        keeps the installed ones for the rest, mask included);
      - a kit holds at most one `icon_<N>` marker, numbered 0–23 (`kit_icon_invalid` warns and
        falls back to the default);
@@ -246,12 +246,12 @@ export format.
      - textures named with the `kit` prefix (`kit.dds`, `kit_mask.dds`, `kit_chest.dds`, …);
      - supplied configs' FPC fields are checked against the team's FPC status (reconciled at
        compile time, see "FPC toggle" in the
-       [Aesthetics export plan](../aesthetics_export/fpc_toggle.md)).
+       [Aesthetics export spec](../aesthetics_export/fpc_toggle.md)).
    - **Portraits/Logo/Common/Collars**:
      - portrait naming (`NN.*`, NN in 01–23, as a player folder is numbered);
      - root logo files (stem grammar `logo[_small][_<fit>]`, one file per role, main present
        whenever `_small` is, format in the raster allowlist: see "Root files" in the
-       [Aesthetics export plan](../aesthetics_export/README.md); decodability is checked in the
+       [Aesthetics export spec](../aesthetics_export/README.md); decodability is checked in the
        deep pass);
      - texture integrity (`texture_check`);
      - file-type allowlists per mode.
@@ -292,7 +292,7 @@ export format.
    An `ingame_face` marker emits **no face folder at all**, its boots and gloves parts going to
    player-specific folders on both engines (the categorization, rerouting and merge rules are
    "`ingame_face` marker" in the [Aesthetics export
-   plan](../aesthetics_export/player_folders.md)).
+   spec](../aesthetics_export/player_folders.md)).
 
    Without `ingame_face`, a player with boots/gloves but no face models still gets a (blank)
    face folder: the absence of the default PES face is the final element of FPC, so the folder
@@ -385,7 +385,7 @@ export format.
 
    Normal teams receive boots/gloves IDs from the **hardcoded per-team block scheme**; referee
    tasks receive their fixed slot-derived `k99XX`/`g99XX` IDs instead (see "Player folders" in
-   the [Aesthetics export plan](../aesthetics_export/object_model.md)). Assigned IDs travel in
+   the [Aesthetics export spec](../aesthetics_export/object_model.md)). Assigned IDs travel in
    the `aesthetics_patch.toml`'s `boots_id`/`gloves_id` keys, on every engine.
 
    A missing local savefile stays a **warning** that skips only the savefile step: the patch is
@@ -395,7 +395,7 @@ export format.
    CPK-now/savefile-later split remains consistent.
 
    A face-content FMDL with positive `skh_*_l`/`skh_*_r` weights is **hand auto-split** ("Hand
-   auto-split" in the [Model conversion plan](../model_conversion/hand_split.md)), which makes
+   auto-split" in the [Model conversion spec](../model_conversion/hand_split.md)), which makes
    the folder a gloves input even when no file is named as a glove. Categorization works from
    file names, before anything is compiled, and a gloves ID and a gloves task exist only for a
    folder planning sees with gloves, so the weights are read before planning. The deep pass,
@@ -478,7 +478,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    `boots.model` + `boots.glb`), selection is **target-native first, then glTF, then conversion
    from the opposite native format**. If the selected model's format doesn't
    match the target PES version, convert via the IR (see the [Model conversion
-   plan](../model_conversion/README.md)). Until glTF support lands (Phase 7, after Release
+   spec](../model_conversion/README.md)). Until glTF support lands (Phase 7, after Release
    0.1.0), a selected glTF representation drops the folder with an error rather than falling
    through to the opposite native format, so the same export never compiles differently once
    glTF is read. Selection is per model stem, each stem on its own: a `hair_high.model` beside
@@ -642,7 +642,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
      the `fcl_hair.fmdl` merge, Red's fallback generalized);
    - all models resolving to the same allowed name (including `.common` links to Common models,
      which Fox cannot load at runtime) **merged into one FMDL** (see "Common model links and
-     model merging" in the [Team export plan](../aesthetics_export/README.md));
+     model merging" in the [Team export spec](../aesthetics_export/README.md));
    - missing template files injected (`face_diff.bin`, `fcl_hair_sim.fclo` when
      `fcl_hair.fmdl` exists, and the default `boots.skl`/`fcl_hair_sim.skl` skeletons from
      template `body.skl` when no part brings a custom SKL for that slot; see "SKL pairing"
@@ -720,7 +720,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    ID padding, `g567` → `g0567`, has no equivalent: the Studio format has no ID-named folders,
    since IDs are auto-assigned. The Export upgrader normalizes old IDs when parsing them.)
 5. **Texture conversion**: all image formats are interchangeable as texture sources (see the
-   [library crates plan](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG
+   [library crates spec](../libs/README.md)): DDS, FTEX, PNG, JPEG, BMP, WebP, TGA, TIFF, JPEG
    XL. Material references (FMDL path tables, `.mtl`, `.materials.toml`) name textures by
    **stem** (filename without extension). The compiler resolves each stem to the actual file
    in the model folder and converts according to the selected PES version, not just the
@@ -749,7 +749,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 
    A texture's role comes from its stem: one ending in `_nrm` (any case) is a normal map, any
    other is color, the suffix of the role table in the [Unified model format
-   plan](../model_format.md) and of the game's own maps (`skin_nrm`, `oral_nrm`, `dummy_nrm`).
+   spec](../model_format.md) and of the game's own maps (`skin_nrm`, `oral_nrm`, `dummy_nrm`).
    It is not read from the sampler of the model naming it: a stem is converted once per folder,
    whichever models and samplers name it, by a task that reads no model.
 
@@ -759,7 +759,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    ≤17), chosen by the `dds_compression` setting (`settings.md`).
 
    An in-memory conversion cache eliminates repeat conversion on the edit→compile→test loop;
-   see the [library crates plan](../libs/README.md) for design and engagement rules (≤2-team
+   see the [library crates spec](../libs/README.md) for design and engagement rules (≤2-team
    limit, no disk persistence).
 6. **Texture relocation to common** (player folders only): **all** textures of a player folder's
    own models (and a referee's), whether used by one of its models or several, are moved to a
@@ -859,7 +859,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 
    The rule in one line: *resolved in the player folder → the player's; resolved in Common →
    the team's* (format side: "Link files" in the [Unified model format
-   plan](../model_format.md)). **Intentional deviation from Red's packed layout for teams**
+   spec](../model_format.md)). **Intentional deviation from Red's packed layout for teams**
    (verified extensively in-game for players as well as referees, across versions): see the
    parity test section.
 7. **Packing**: pre-Fox faces are packed into a per-model nested CPK, whose entries repeat
@@ -928,9 +928,9 @@ not a serial scheduling requirement.
   whatever the team's FPC status). A `Midcup` kit without one emits no config of its own, its
   slot's installed config standing (see "Bins accumulation"). The kit's two-color `colors.txt`
   (grammar: "Root files", "Colors" in the [Aesthetics export
-  plan](../aesthetics_export/player_folders.md)) feeds only `UniColor.bin`, not the config's
+  spec](../aesthetics_export/player_folders.md)) feeds only `UniColor.bin`, not the config's
   distinct five RGB fields. Supplied configs' FPC fields are reconciled with the team's status
-  (see "FPC toggle" in the [Aesthetics export plan](../aesthetics_export/fpc_toggle.md)).
+  (see "FPC toggle" in the [Aesthetics export spec](../aesthetics_export/fpc_toggle.md)).
 
   The kit's *effective* textures (own files plus the `all/` files it inherits, already merged
   by `aesthetics_export`) are renamed by replacing the `kit` prefix with the kit's ID,
@@ -979,7 +979,7 @@ not a serial scheduling requirement.
 
   **Layout conversion**: when the kit's layout marker names the other engine than the target
   (`pre-fox` compiled for 18–21, `fox` for 15–17; see "Kit layout marker" in the [Aesthetics
-  export plan](../aesthetics_export/README.md)), the kit's emitted textures that the uniform
+  export spec](../aesthetics_export/README.md)), the kit's emitted textures that the uniform
   models map (the effective `kit`, and its `kit_mask` / `kit_srm` where the target takes one)
   are decoded, **re-laid out** and re-encoded before the rename/convert step, reported once per
   kit (`kit_layout_converted`, I). This applies to the kit's own or inherited textures only: the
@@ -1086,7 +1086,7 @@ not a serial scheduling requirement.
   The TOML config is compiled to the game's 120-byte binary via `libs/kit_config`
   (texture-name fields derived from the effective texture set, version-specific bit packing
   applied, including the PES 15 shirt-pattern clamp; see the [Kit config editor
-  plan](../kit_config_editor.md)) and emitted under the game's kit-config name for its slot
+  spec](../kit_config_editor.md)) and emitted under the game's kit-config name for its slot
   (old `XXX_DEF_1st_realUni.bin` pattern with the team ID applied).
 
   A supplied config's value that does not fit the target version is reported by the deep pass,
@@ -1304,7 +1304,7 @@ not a serial scheduling requirement.
   its own. Per-kit *model* sets collapse to one `face.xml` entry on pre-Fox or to the fallback
   on Fox (`kit_variant_model_left_out`), until the compiler builds the per-kit packages FoxDen
   reads. Rules and rationale: "Kit-dependent assets" in the [Unified model format
-  plan](../model_format.md).
+  spec](../model_format.md).
 
   How the compiler finds a set: a *variant* is a file whose stem holds the token `kit1` to
   `kit9` (delimited by `_`, `-`, `.` or the stem's ends, spelled exactly so), and the files of
@@ -1426,7 +1426,7 @@ not a serial scheduling requirement.
     kit's optional `icon_<N>` marker, default 3.
 
   The `colors.txt` grammar is "Root files", "Colors" in the [Aesthetics export
-  plan](../aesthetics_export/player_folders.md).
+  spec](../aesthetics_export/player_folders.md).
 
   A kit's entry goes into its team's `UniColor.bin` record by kit number (p1 to p9 are 0 to 8,
   g1 is 0x10): it replaces the entry of that number or joins the others, and the record is
@@ -1493,7 +1493,7 @@ not a serial scheduling requirement.
   template tree's among them when a refs export commits ("Referee export processing" in
   `blue_port.md`). When the team's kit-FPC status is On, kit slots absent from the export are
   FPC-patched from the installed cup content (see "FPC toggle" in the [Aesthetics export
-  plan](../aesthetics_export/fpc_toggle.md)).
+  spec](../aesthetics_export/fpc_toggle.md)).
 
   The slots patched are the kits the team's working `UniColor.bin` record holds, the ones the
   game offers, that the export has no kit folder for (a placeholder record holds none, and a
@@ -1999,7 +1999,7 @@ not a serial scheduling requirement.
   `aesthetics_patch.toml`, one per run in every output mode, its header naming the CPKs the run
   publishes (none for a sideload tree). It holds the resolved savefile writes for the compiled
   players (format and rules in "Aesthetics patch" in the [Savefile
-  plan](../pes_savefile/operations.md)), on every version:
+  spec](../pes_savefile/operations.md)), on every version:
   - each compiled player's `[appearance]` (his `settings.toml` and `ingame_face.toml` resolved
     to concrete values, `name = true` and the FPC markers included);
   - his resolved boots and gloves IDs: the authored stock ID, else the marker's or the
@@ -2313,7 +2313,7 @@ Resolved decisions:
   `spec/pes_savefile/operations.md` "Aesthetics patch (new)"), which the run's patch carries.
   Permanent per scheme version but upgradeable: the sizing, the upgrade mechanism and a
   scheme change's cost on each engine live in "Assigns IDs automatically" of the
-  [Aesthetics export plan](../aesthetics_export/player_folders.md).
+  [Aesthetics export spec](../aesthetics_export/player_folders.md).
 - **Root normalization**: exactly one usable nested root is flattened; multiple usable roots
   (`nested_root_ambiguous`) and loose-root/nested collisions (`nested_root_conflict`) reject the
   export, an intentional deviation from Red's first-match rule.
@@ -2338,7 +2338,7 @@ Resolved decisions:
   appears.
 - **`colors.txt` grammar and TeamColor capacity**: one grammar for the root and the kit files,
   one color per line, written in "Root files", "Colors" in the [Aesthetics export
-  plan](../aesthetics_export/player_folders.md); the root file fills up to four team colors, the
+  spec](../aesthetics_export/player_folders.md); the root file fills up to four team colors, the
   `TeamColor.bin` record's capacity.
 - **Per-player common path templates**: the referee rows of "Game paths reference" carry Red's
   name-keyed per-referee common layout on both engines, the shape of "Texture relocation to
@@ -2352,7 +2352,7 @@ Resolved decisions:
   auto-reverts FPC values. Kit slots absent from the export are FPC-patched from the installed
   cup content (`kit_config_fpc_adjusted`), so a midcup export can add an FPC player without
   resending untouched kits (see "FPC toggle" in the [Aesthetics export
-  plan](../aesthetics_export/fpc_toggle.md)).
+  spec](../aesthetics_export/fpc_toggle.md)).
 - **Bins updating is unconditional**: Red's `bins_updating` setting is dropped: it only existed
   before "fetch the latest installed bins and update those" was a thing, and skipping bins
   updates is never useful now that recompiles patch the current cup state.
@@ -2441,10 +2441,10 @@ Resolved decisions:
 - **Pre-Fox local boots/gloves get no ID of their own**: they ride as typed face-XML entries, so
   only shared folders get compiler-assigned IDs, `ingame_face` the exception. The routing is
   "A link plus local models combines" and "`ingame_face` marker" in the [Aesthetics export
-  plan](../aesthetics_export/player_folders.md); the ID a local-only category gets is steps 2
+  spec](../aesthetics_export/player_folders.md); the ID a local-only category gets is steps 2
   and 3 of "Player settings in exports" ([`settings_toml.md`](../aesthetics_export/settings_toml.md)).
 - **Virtual-path safety** is specified on the shared `vtree::ScopePath` type (see the [library
-  crates plan](../libs/README.md)): traversal/absolute paths rejected, separators normalized,
+  crates spec](../libs/README.md)): traversal/absolute paths rejected, separators normalized,
   case/Unicode collisions detected before extraction or packing. `aesthetics_export` uses the
   shared type.
 - **Source snapshot**: a source's revision is taken when the reader lists it:
@@ -2542,7 +2542,7 @@ Resolved decisions:
   **Output** `.mtl` files (written at compile time) keep `.dds` extensions on texture paths, as
   the game expects; FMDL output path tables remain stem-based. Omitted or blank texture roles
   are auto-named from the material name + role suffix (fixed table; see "Textures" in the
-  [Unified model format plan](../model_format.md)); this happens during deep parsing, not the
+  [Unified model format spec](../model_format.md)); this happens during deep parsing, not the
   structure pass.
 
   A stem resolves in the folder of the material file that set it, so material files linked from
@@ -2628,7 +2628,7 @@ Resolved decisions:
   warning for an FMDL with no team ID in its texture paths (`fmdl_no_texture_ids`) has no
   equivalent, since nothing is found by ID here.
 - **Conversion cache engages only for ≤2 teams**: the in-memory texture conversion cache is
-  bypassed for compiles of 3+ teams; see the [library crates plan](../libs/README.md) for rationale.
+  bypassed for compiles of 3+ teams; see the [library crates spec](../libs/README.md) for rationale.
 - **Output-mode artifact routing**: `teamnotes.txt` is written under `output_folder_path` in
   every mode.
   - In sideload mode the bins, the `overrides/` files and referee content land at their game
@@ -2693,7 +2693,7 @@ phase that owns them):
 
 **Pre-Phase-3 gates** (the normal-team versus referee `ExportIdentity` boundary, sanitized
 validated-versus-eligible projection, roster-entry scope/disposition semantics): confirmed
-2026-09-30 in the [Aesthetics export plan](../aesthetics_export/object_model.md), "Validation
+2026-09-30 in the [Aesthetics export spec](../aesthetics_export/object_model.md), "Validation
 semantics".
 
 **Pre-Phase-4 gates:** finalize analyzed-output enumeration and namespace allocation (including

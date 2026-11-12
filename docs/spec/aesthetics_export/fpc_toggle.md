@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Aesthetics export plan: FPC toggle
+# Unlimited Tool Works: Aesthetics export spec: FPC toggle
 
-Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Aesthetics export spec](README.md).
 
 ## FPC toggle (`fpc_on` / `fpc_off` marker files)
 
@@ -84,7 +84,7 @@ An export's **team kit-FPC status** is two-state (`EffectiveTeamKitFpc::{On, Unk
   - Fox: the team's entries in the working `UniformParameter` get the FPC values. The working
     bins come from the installed cup CPKs (the bundled bases only serve from-scratch compiles),
     so a midcup compile patches the current cup state. The `uniparam` container format is fully
-    parsed (see the [library crates plan](../libs/README.md)), so locating a team's entries is
+    parsed (see the [library crates spec](../libs/README.md)), so locating a team's entries is
     routine.
   - Pre-Fox: the team's current kit-config bins are located in the same installed CPKs,
     patched, and re-emitted. The walk that finds the working bins gathers them as it passes
@@ -98,7 +98,7 @@ An export's **team kit-FPC status** is two-state (`EffectiveTeamKitFpc::{On, Unk
   needs a kit export. The slots are the kits the game offers the team (its `UniColor.bin`
   record), not all ten (`spec/team_compiler/pipeline.md` "Bins accumulation").
 - **A custom collar wins over the FPC collar value**: collar rewriting (see "Collars" in the
-  [Team compiler plan](../team_compiler/README.md)) runs after FPC reconciliation, so an FPC team
+  [Team compiler spec](../team_compiler/README.md)) runs after FPC reconciliation, so an FPC team
   with a custom collar keeps its replacement collar ID while the other FPC kit values stand.
 
 The kit-config field logic this needs (reading/writing the shirt/shorts/collar model fields, plus

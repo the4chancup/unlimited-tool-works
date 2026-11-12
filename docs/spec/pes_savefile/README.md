@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Savefile plan
+# Unlimited Tool Works: Savefile spec
 
 Covers the `pes_savefile` lib crate: the EDIT00000000 file codec (container crypto,
 schema-driven payload codec, player/team/tactics model), the cross-version player
@@ -8,7 +8,7 @@ readers, Texport, the aesthetics patch). Shared by the [Save editor](../save_edi
 [Team compiler](../team_compiler/README.md), the integrated
 [model conversion](../model_conversion/README.md), and the
 [Export upgrader](../export_upgrader.md). Platform context is in the
-[core plan](../core/README.md).
+[core spec](../core/README.md).
 
 ---
 

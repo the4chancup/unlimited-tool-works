@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Intermediate representation
+# Unlimited Tool Works: Model conversion spec: Intermediate representation
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Intermediate Representation (IR)
 
@@ -422,9 +422,9 @@ since nothing encodes anti-blur after a merge.
 The merge is not an IR operation: the Team compiler calls it directly to assemble multi-part
 models and to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot
 load models from the Common folder (see "Common model links and model merging" in the [Team
-compiler plan](../team_compiler/README.md)). The pre-Fox counterpart is
+compiler spec](../team_compiler/README.md)). The pre-Fox counterpart is
 `pes_model::ops::merge`, native over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in
-the [Libraries plan](../libs/format_crates.md)), which follows the same rules.
+the [Libraries spec](../libs/format_crates.md)), which follows the same rules.
 
 ### Conversion routing
 

@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: dds_convert
+# Unlimited Tool Works: Library crates spec: dds_convert
 
-Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Library crates spec](README.md).
 
 ## In-process DDS conversion (replaces texconv)
 
@@ -247,13 +247,13 @@ The crate is three pure steps and one stateful wrapper:
 
 `encode_dds` is the one exception to choosing by version: a file every engine reads as a DDS in
 a codec the plan fixes (a player portrait, BC3: "Portraits" in the [player folders
-plan](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets
+spec](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS on Fox targets
 too.
 
 `resize` is the suite's one resampler (Lanczos3, through the `image` crate this crate already
 decodes rasters with, so no tool crate depends on `image` for it). The Team compiler resamples a
 sock band of a kit and a number atlas's digit glyphs with it ("Layout conversion" in the
-[pipeline plan](../team_compiler/pipeline.md)), and sizes the logo with it.
+[pipeline spec](../team_compiler/pipeline.md)), and sizes the logo with it.
 
 `encode_png` is the one raster this crate writes: the game reads a team's logo as three PNGs
 ("Logo" in the pipeline plan), and it lives here for `resize`'s reason.

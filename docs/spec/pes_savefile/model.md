@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Savefile plan: Data model
+# Unlimited Tool Works: Savefile spec: Data model
 
-Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Savefile spec](README.md).
 
 ## Player/team/tactics model
 
@@ -134,7 +134,7 @@ the game fields after reloading a save it was switched on in is not measured.
 
 The crate owns the `PlayerSettings` model behind the export format's
 `settings.toml` files (see "Player settings in exports" in the
-[Aesthetics export plan](../aesthetics_export/README.md)): parsing the TOML, applying it to a
+[Aesthetics export spec](../aesthetics_export/README.md)): parsing the TOML, applying it to a
 `PlayerEntry`, and the reverse, generating `settings.toml` from an existing
 savefile (used by the save editor's migration feature and the Export upgrader).
 Keeping both directions next to the codec ensures the TOML schema and the
@@ -460,7 +460,7 @@ Cross-version conversion converts the run field by field between the layouts (`o
   authored, and "absent = untouched" stays true for the unset ones.
 
 The key table, its order, its comments and its ranges are the block in the
-[Aesthetics export plan](../aesthetics_export/settings_toml.md) ("Player settings in exports"),
+[Aesthetics export spec](../aesthetics_export/settings_toml.md) ("Player settings in exports"),
 which the code reproduces literally. This matters because the patch workflow below makes
 `settings.toml` the *only* route by which a team's aesthetics reach the official save: a field the
 file cannot express is a field nobody can set.
@@ -493,11 +493,11 @@ through `from_player`'s stock-band rule.
 
 The crate also applies the **FPC enable/disable presets**, which `libs/fpc` owns: Full Player
 Customization invisibility, made of nonexistent boots/gloves IDs plus strip settings (their
-fields are listed in the [libs/fpc plan](../libs/fpc.md)). Both the save editor's FPC toggle and
+fields are listed in the [libs/fpc spec](../libs/fpc.md)). Both the save editor's FPC toggle and
 the Team compiler's `fpc_on`/`fpc_off` marker files use the same preset values.
 
 The compiler composes the boots/gloves ID fields with asset outcomes by the precedence rule in
-the [Aesthetics export plan](../aesthetics_export/settings_toml.md)'s "Player settings in
+the [Aesthetics export spec](../aesthetics_export/settings_toml.md)'s "Player settings in
 exports"; the other preset fields apply as they are.
 
 ---

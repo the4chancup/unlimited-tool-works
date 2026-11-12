@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler plan: Blue features to port
+# Unlimited Tool Works: Team compiler spec: Blue features to port
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Team compiler spec](README.md).
 
 ## Unimplemented Blue Features to Port
 
@@ -43,7 +43,7 @@ Referee player folders therefore carry no numbers in their names: the mapping li
 
 In every other respect a referee folder is a player folder, its `face.xml` included. On pre-Fox
 its local boots and gloves are typed entries of that `face.xml` ("A link plus local models
-combines" in the [Aesthetics export plan](../aesthetics_export/player_folders.md)), so no
+combines" in the [Aesthetics export spec](../aesthetics_export/player_folders.md)), so no
 `k99XX`/`g99XX` folder is written for them, and the game, modded to load `k99XX`/`g99XX` for
 slot XX, shows none there. Fox writes them as the slot's `k99XX`/`g99XX` folders.
 

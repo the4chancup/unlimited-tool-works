@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Core plan: Distribution and updates
+# Unlimited Tool Works: Core spec: Distribution and updates
 
-Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Core spec](README.md).
 
 ## Distribution and updates
 
@@ -50,7 +50,7 @@ question for the maintainer.
 
 The current teams list is not a bundle file: it is embedded in the binary and materialized as
 `data/teams_list.txt` by the first `compile` that has a data directory (a `check` never writes it;
-see the [Team compiler plan](../team_compiler/README.md), "Resolved
+see the [Team compiler spec](../team_compiler/README.md), "Resolved
 decisions", "Teams list").
 
 **Size budget:** the release binary stays under about 30 MB, and up to 50 MB is acceptable where
@@ -131,7 +131,7 @@ directory (`AppPaths::data_dir` is `None`). Data-dir cargo is then read from its
 start (the dialog is Phase 8's).
 
 `data/teams_list.txt` *is* data-dir cargo (member-edited; the grid's inline ID writes are the
-[Team compiler plan](../team_compiler/pipeline.md)'s, "Resolved decisions", "Teams list"). Writes
+[Team compiler spec](../team_compiler/pipeline.md)'s, "Resolved decisions", "Teams list"). Writes
 to it are best-effort: an unwritable data directory makes the list read-only, never triggers
 elevation.
 

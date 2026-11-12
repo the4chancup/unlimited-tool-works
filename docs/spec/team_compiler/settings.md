@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler plan: Settings
+# Unlimited Tool Works: Team compiler spec: Settings
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Team compiler spec](README.md).
 
 ## Settings
 
@@ -137,7 +137,7 @@ UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList w
 ```
 
 (Refreshing `teams_list.txt` from a savefile is the Save editor's `export-teams-list`; see the
-[Save editor plan](../save_editor.md) "CLI".)
+[Save editor spec](../save_editor.md) "CLI".)
 
 `upgrade-dpfl` prints what the override changes (entries that will no longer be loaded, with the
 sizes of any matching `.cpk` files found in `download/`) and stops unless `--yes` is given. It

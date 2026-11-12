@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Model format conversion
+# Unlimited Tool Works: Model conversion spec: Model format conversion
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Model Format Conversion
 
@@ -378,7 +378,7 @@ merges regardless of source format.
 - Matrix inversion: ~100 tiny 3×4 matrices; CPU does this in microseconds
 
 Keep model geometry conversion on the CPU and benchmark the port rather than promising specific
-latencies. Texture encoding is a separate workload: the [library crates plan](../libs/README.md) includes
+latencies. Texture encoding is a separate workload: the [library crates spec](../libs/README.md) includes
 first-release desktop GPU BC7 for PNG-heavy PES 19–21 builds, with CPU fallback. That texture-only
 exception does not change this plan's CPU geometry processing or deterministic model output.
 

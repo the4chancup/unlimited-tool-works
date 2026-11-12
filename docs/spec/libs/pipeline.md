@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Library crates plan: `libs/pipeline`
+# Unlimited Tool Works: Library crates spec: `libs/pipeline`
 
-Part of the [Library crates plan](README.md). The shared scaffolding every compiling tool (Team
+Part of the [Library crates spec](README.md). The shared scaffolding every compiling tool (Team
 compiler, Balls compiler, Stadium compiler) runs on. The reasons behind each piece are in the core
 plan's [Parallelism](../core/parallelism.md) section and the Team compiler's
 [pipeline walkthrough](../team_compiler/pipeline.md); this part is the crate's contract.

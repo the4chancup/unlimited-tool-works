@@ -1,4 +1,4 @@
-# Unlimited Tool Works: AATF rules plan
+# Unlimited Tool Works: AATF rules spec
 
 The AATF rules (the 4cc player rules a team's savefile data must satisfy; the community calls the
 check "Auto-ATF") are checked and applied by `libs/aatf`. A ruleset is **data**: one Rhai map
@@ -14,7 +14,7 @@ Consumers:
 - the [Team creator](../plans/team_creator.md) (legal defaults, the check before writing);
 - the [Ruleset editor](../plans/ruleset_editor.md) (which writes the data).
 
-Platform context is in the [core plan](core/README.md).
+Platform context is in the [core spec](core/README.md).
 
 ---
 

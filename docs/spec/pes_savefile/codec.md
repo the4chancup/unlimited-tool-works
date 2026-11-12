@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Savefile plan: Save codec
+# Unlimited Tool Works: Savefile spec: Save codec
 
-Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Savefile spec](README.md).
 
 ## Schema-driven save codec
 

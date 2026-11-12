@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Core plan: Architecture
+# Unlimited Tool Works: Core spec: Architecture
 
-Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Core spec](README.md).
 
 ## Architecture
 
@@ -225,7 +225,7 @@ their plans) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
 lines, stays a single crate, organized by internal modules mirroring its pipeline stages
 (`reader/`, `check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/`; the full tree and
 placement rules are the "Crate layout" section of the [Team compiler
-plan](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
+spec](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
 consumer, which rule 3 below calls out, and it would buy nothing for navigation that the module
 tree doesn't already give.
 
@@ -246,7 +246,7 @@ only prepares the refs export's `players.txt` and hands compilation off to the T
 "Why an arranger, not a compiler" in its plan).
 
 `fmdl` and `pes_model` have a second consumer outside this workspace: the Blender addons (see
-"Blender integration" in the [Model conversion plan](../model_conversion/gltf.md)). Their mesh splitting,
+"Blender integration" in the [Model conversion spec](../model_conversion/gltf.md)). Their mesh splitting,
 split vertex encoding, and anti-blur logic lives inside the format crate, not in `model_convert`, so
 that a same-format FMDL or .model round-trip in Blender is lossless and never routes through the IR.
 `model_convert` calls these format-native algorithms during cross-format conversion; the format

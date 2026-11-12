@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Aesthetics export plan: Player folders
+# Unlimited Tool Works: Aesthetics export spec: Player folders
 
-Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Aesthetics export spec](README.md).
 
 ## Player folders (the Studio export format)
 
@@ -13,7 +13,7 @@ without the old split into separate Faces/Boots/Gloves item folders. Red's refer
 was the prototype of this idea, tested only on referees. Its per-referee face/boots/gloves/common
 subfolders are not kept: the Export upgrader flattens them ("Subfolders" below). The unified
 format is used by team and referee exports alike (see "Referee export processing" in the [Team
-compiler plan](../team_compiler/README.md)).
+compiler spec](../team_compiler/README.md)).
 
 ```
 Players/
@@ -66,7 +66,7 @@ stages:
 - The results are then rendered and packed per mapped slot (IDs, paths, portraits, savefile
   entries). The folder's relocated textures are emitted once, into their name-keyed common
   subfolder shared by all mapped slots (see "Texture relocation to common" in the [Team compiler
-  plan](../team_compiler/README.md)).
+  spec](../team_compiler/README.md)).
 
 Both stages commit as one atomic unit, so a partial set of slot instances is never written.
 Referees use this same mechanism with their `refereeXXX`/`k99XX`/`g99XX` rendering.
@@ -385,7 +385,7 @@ packed once in the team's Common output and referenced there; one that resolves 
 folder is the player's own and travels with it.
 
 Rules, same-stem layering, texture-stem resolution and the packing rule are in the [Unified model
-format plan](../model_format.md)'s "Link files". The pre-Fox XML points at the Common MTL path when
+format spec](../model_format.md)'s "Link files". The pre-Fox XML points at the Common MTL path when
 the MTL was found in or linked from Common, as Red does.
 
 Merging is driven by name resolution. Red's prefix convention (a prefixed allowed name is renamed
@@ -444,7 +444,7 @@ interpreted for typing. A user-written `face.xml` is accepted as a second-class 
 way to experiment with what the pre-Fox engines can do beyond this table. The compiler checks it,
 with errors for what is known to break and warnings for everything outside the vocabulary it
 generates itself ("User-supplied `face.xml`" in the [Team compiler
-plan](../team_compiler/README.md)).
+spec](../team_compiler/README.md)).
 
 Fox has nothing resembling designable model types, so on Fox a type maps to a destination and
 nothing more. glTF models follow the same table: the type lives in the file name, not in the glTF
@@ -478,9 +478,9 @@ being left out silently.
 - an `.fmdl` in a companion `.skl` file named after the model's source basename (`commander.skl`
   for `commander.fmdl`, `kit_boots.skl` for `kit_boots.fmdl`);
 - a glTF in its native `skin` (see "Skeleton: native glTF skin" in the [Unified model format
-  plan](../model_format.md));
+  spec](../model_format.md));
 - a `.model` **inline**, in its per-bone matrix table, because pre-Fox has no sidecar to pair (see
-  "Skeleton in `.model`" in the [Model conversion plan](../model_conversion/README.md)).
+  "Skeleton in `.model`" in the [Model conversion spec](../model_conversion/README.md)).
 
 The `.skl` pairing is recognized in **Common folders, shared (Faces/Boots/Gloves) folders, and
 player folders** alike. When a model is pulled in (via a `.common` link, a shared link, or used
@@ -497,7 +497,7 @@ common case needs no SKL and the compiler's template skeletons suffice.
 Independently of custom skeletons, every model is **retargeted to the target version's body
 skeleton** at compile time. The games' `body.skl` files differ per version in bone set and rest
 pose (PES15 markedly), and the compiler ships all of them; see "Skeleton retargeting and bone
-conformance" in the [Model conversion plan](../model_conversion/README.md). This absorbs the
+conformance" in the [Model conversion spec](../model_conversion/README.md). This absorbs the
 standalone `4cc-model-simplifier-15` step.
 
 Only two output destinations have SKL slots, both full-body-skeleton models: **`fcl_hair`** (the
@@ -621,7 +621,7 @@ inherit from. It still declares that the slot exists, and the compiler fills it 
 - the template `config.toml`;
 - a `UniColor` entry as for any kit (colors from the kit's `colors.txt`, else the loud
   magenta/black "no colors chosen" pair; see "Kit colors fallback" in the [Team compiler
-  plan](../team_compiler/README.md)).
+  spec](../team_compiler/README.md)).
 
 Teams whose whole roster is full-body models never render a kit texture (except a pre-Fox player
 given the `uniform` model type), yet the game expects every kit slot the team uses to have a
@@ -651,7 +651,7 @@ layout the kit's `kit.dds` and its `kit_mask.dds` / `kit_srm.dds` are drawn for.
 
 - When the marker names the other engine than the compile target, the compiler re-lays those
   textures out (see "Kits" under "Processing" in the [Team compiler
-  plan](../team_compiler/README.md)).
+  spec](../team_compiler/README.md)).
 - When it names the target's engine, or is absent, nothing is edited: **no marker means "drawn for
   whatever you compile for"**, which is today's behavior.
 - Both markers in one folder is an error (`kit_layout_conflict`, kit discarded), like
@@ -668,7 +668,7 @@ unknowable from the files, and a wrong guess would silently displace a correct k
 The only authored kit config is the TOML file `config.toml`. The binary game format is never part
 of an export and exists only as compile output; old exports' binary configs are converted by the
 [Export upgrader](../export_upgrader.md) (schema and binary layout in the [Kit config editor
-plan](../kit_config_editor.md)). Each kit folder also has:
+spec](../kit_config_editor.md)). Each kit folder also has:
 
 - a `colors.txt` with the kit's two menu colors (the grammar is under "Root files", "Colors");
 - optionally, an empty `icon_<N>` marker whose name carries the kit's menu icon number (0–23,
@@ -830,7 +830,7 @@ At compile time, the pipeline:
    positive `skh_*_l`/`skh_*_r` weights, grow the selection once along the mesh topology, and
    separate it into `glove_l`/`glove_r`, leaving the body. This is equivalent to Blender's select
    → `Ctrl +` → `P` workflow, not an invocation of Blender (see "Hand auto-split" in the [Model
-   conversion plan](../model_conversion/README.md)). Models without such weights pass through
+   conversion spec](../model_conversion/README.md)). Models without such weights pass through
    unchanged.
 
    Only models step 1 makes face content are split: the body stays face content and the split
@@ -952,7 +952,7 @@ compiled on another machine reads the same one. We do not require a Midcup to ca
 folder, which would make members copy folders they did not change.
 
 **The old export format is not supported by the compiler.** Old exports are migrated once with the
-Export upgrader tool (see the [Export upgrader plan](../export_upgrader.md)), which also resolves old
+Export upgrader tool (see the [Export upgrader spec](../export_upgrader.md)), which also resolves old
 embedded IDs to the new name-based structure.
 
 ---

@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Model conversion plan: glTF source
+# Unlimited Tool Works: Model conversion spec: glTF source
 
 ## glTF as the universal model source
 
@@ -40,7 +40,7 @@ template injection stands.
 *several parts into one model* is a different operation, and it is **format-native on both
 engines**: `fmdl::ops::merge` for Fox, `pes_model::ops::merge` for pre-Fox (the `ingame_face`
 boots merge, and a shared link combined with local parts under `ingame_face`; see the [Aesthetics
-export plan](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
+export spec](../aesthetics_export/README.md)'s "ingame_face marker"), with the same rules, so a
 same-format merge never round-trips through the IR.
 
 An earlier version of this plan routed the pre-Fox cases through the IR-level `merge_ir_parts`.
@@ -53,7 +53,7 @@ gain (the `.mtl` merge is a material-name merge either way).
   independently of the model's source format. BC7 is supported on PES 19–21, not PES18 despite
   its Fox model format. PES 15–18 convert BC7/raster inputs to BC3 or eligible opaque-color BC1;
   PES 19–21 retain supported BC7 and encode ordinary raster sources to BC7. The [library
-  crates plan](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
+  crates spec](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
   Already-compatible blocks are retained where only DDS/FTEX container adaptation is needed.
   `model_convert` supplies pixels and material roles, not final player/team paths; the run-level
   `BuildManifest` and texture-relocation step own those destinations.

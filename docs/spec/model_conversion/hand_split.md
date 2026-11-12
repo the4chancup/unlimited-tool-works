@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Model conversion plan: Hand auto-split
+# Unlimited Tool Works: Model conversion spec: Hand auto-split
 
-Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Model conversion spec](README.md).
 
 ## Hand auto-split
 
@@ -84,7 +84,7 @@ native weight check needs no IR import or re-export; the original model is retai
 ### Pipeline integration
 
 The auto-split applies to the models categorization makes **face content** (see "Player folder
-categorization" in the [Team compiler plan](../team_compiler/README.md)): the body stays face
+categorization" in the [Team compiler spec](../team_compiler/README.md)): the body stays face
 content, and the gloves join the player's `glove_l`/`glove_r` parts as if they were authored as
 separate files. The rest of the pipeline (merge, ID assignment, packing) is transparent to
 whether the gloves were auto-split or authored.

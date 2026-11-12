@@ -1,14 +1,14 @@
-# Unlimited Tool Works: Team compiler plan
+# Unlimited Tool Works: Team compiler spec
 
 The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK
 archives. Model format conversion happens at compile time (see the
-[Model conversion plan](../model_conversion/README.md)), and so do the aesthetics: the run
+[Model conversion spec](../model_conversion/README.md)), and so do the aesthetics: the run
 writes `aesthetics_patch.toml` with its CPKs and applies it to the save, on every version (see
-the [Savefile plan](../pes_savefile/README.md)).
+the [Savefile spec](../pes_savefile/README.md)).
 
 Platform context (crate structure, tool plugin trait, GUI shell, parallelism) is in the
-[core plan](../core/README.md).
+[core spec](../core/README.md).
 
 ### Relationship to the older compilers
 
@@ -27,7 +27,7 @@ None of them is followed to the letter:
   artifacts and normalized semantic parity for intentional ID/path/layout changes (see
   `testing.md` "Testing: parity against Red"). *How* that output is produced is free to change.
 - **The implementation is built around the object model** (typed structs representing each
-  element of an export: see the [Aesthetics export plan](../aesthetics_export/README.md)), not
+  element of an export: see the [Aesthetics export spec](../aesthetics_export/README.md)), not
   around Red's disk-shuffling stages or Blue's path-string processing functions. References to
   Red/Blue modules in this document identify *where the behavior to reproduce is specified*,
   not code to translate.
@@ -234,7 +234,7 @@ Placement rules:
 
 ## Object model and export format
 
-The [Aesthetics export plan](../aesthetics_export/README.md) specifies:
+The [Aesthetics export spec](../aesthetics_export/README.md) specifies:
 
 - the export object model and its validation progression (`ParsedAestheticsExport` →
   `ValidatedAestheticsExport` → `ResolvedAestheticsExport`);
@@ -255,7 +255,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   - `libs/aesthetics_export`'s structure parsing and format-level validation (on the
     `ExportIdentity` boundary, the sanitized validated-versus-eligible projection and the
     roster-entry semantics of "Validation semantics" in the
-    [Aesthetics export plan](../aesthetics_export/object_model.md));
+    [Aesthetics export spec](../aesthetics_export/object_model.md));
   - the Team compiler settings/CLI surface;
   - the reader/coordinator/writer over `libs/pipeline` compiling the subset in "Phase 3 scope"
     below;

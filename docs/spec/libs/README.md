@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Library crates plan
+# Unlimited Tool Works: Library crates spec
 
 Covers the small shared lib crates: the binary format parsers (`cpk`, `fpk`, `fmdl`,
 `pes_model`, `ftex`, `fox2`, `uniparam`, `wezlib`), `dds_convert`, `color_tools`,
@@ -10,28 +10,28 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
 - The aesthetics export format's object model, folder conventions, and validation live in
   `aesthetics_export` (shared by the Team compiler, Export upgrader, Kit config editor, Refs
   arranger, and Team creator), specified in the [aesthetics export
-  plan](../aesthetics_export/README.md).
+  spec](../aesthetics_export/README.md).
 - The two big libs have their own plans: [Model conversion](../model_conversion/README.md)
   (`model_convert` + the mesh algorithms in `fmdl`/`pes_model`) and
   [Savefile](../pes_savefile/README.md) (`pes_savefile`).
 - The `pipeline` crate (reader/writer scaffolding, memory budget, folder watcher, check cache,
   shared `CpkStem` validation) has its contract in [pipeline](pipeline.md); the reasons are in
-  the [core plan](../core/README.md) (Parallelism) and the [Team compiler
-  plan](../team_compiler/README.md) (walkthrough, live validation).
+  the [core spec](../core/README.md) (Parallelism) and the [Team compiler
+  spec](../team_compiler/README.md) (walkthrough, live validation).
 - The music lib crates (`music_export`, `audio_engine`) are specified in the [Music player
   plan](../../plans/music_player.md).
 - The live-match event feed (`match_feed`) is specified in the [Match tracker
   plan](../../plans/match_tracker/README.md).
 - The kit config codec (`kit_config`: binary/TOML, reverse-engineered format documentation) is
-  specified in the [Kit config editor plan](../kit_config_editor.md).
+  specified in the [Kit config editor spec](../kit_config_editor.md).
 - The AATF rules engine (`aatf`) is specified in the [AATF rules](../aatf_rules.md).
 - The shared tactics/card widgets (`team_widgets`) are specified in the [Save editor
-  plan](../save_editor.md).
+  spec](../save_editor.md).
 - The fox2 parser is specified in [fox2](fox2.md).
 - The Konami database tables (`pesdb`) are specified in the [DB generator
   plan](../../plans/db_generator.md).
 
-Platform context is in the [core plan](../core/README.md).
+Platform context is in the [core spec](../core/README.md).
 
 ---
 

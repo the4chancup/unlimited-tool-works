@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Aesthetics export plan: Object model
+# Unlimited Tool Works: Aesthetics export spec: Object model
 
-Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Aesthetics export spec](README.md).
 
 ## Object Model
 
@@ -24,10 +24,10 @@ on this parser, and the Refs arranger supplies a plain-filesystem listing.
 
 The Team compiler is the crate's biggest consumer, and the compile-time behavior (processing
 steps, packing, bins, GUI, CLI) stays in it. The Team compiler itself is deliberately *not* split
-into a companion lib crate. See "Lib crates" in the [core plan](../core/README.md).
+into a companion lib crate. See "Lib crates" in the [core spec](../core/README.md).
 
 `TeamName`, `TeamId` and the `teams_list.txt` parse/reconcile logic live in the leaf crate
-`libs/teams_list` (see the [library crates plan](../libs/README.md)). This crate depends on it
+`libs/teams_list` (see the [library crates spec](../libs/README.md)). This crate depends on it
 for identity resolution and contributes only the export-format half: splitting the display name
 into the token that `TeamName::new` folds. `studio_core` never parses the list or interprets
 team IDs.
@@ -458,7 +458,7 @@ pub struct ResolvedAestheticsExport {
 The compiler supports **only the Studio export format**. The old format (separate Faces/Boots/Gloves
 item folders with embedded IDs, Kit Configs/Kit Textures folders, the Other folder) is not
 supported. Old exports are migrated with the Export upgrader tool (see the [Export upgrader
-plan](../export_upgrader.md)).
+spec](../export_upgrader.md)).
 
 An old-layout export that reaches the compiler anyway is one finding, `export_layout_old`, and
 is skipped. A root folder named `Kit Configs`, `Kit Textures` or `Other`, which the Studio format

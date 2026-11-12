@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Model conversion plan
+# Unlimited Tool Works: Model conversion spec
 
 Covers the `model_convert` lib crate (the IR plus importers/exporters and skeleton
 data) and the format-extension algorithms that live in the `fmdl` and `pes_model`
@@ -7,7 +7,7 @@ conversion is not a standalone tool: it runs inside the
 [Team compiler](../team_compiler/README.md) at compile time, converting models to the target
 PES version's format. The glTF + `materials.toml` authoring format that `gltf_to_ir`
 reads and `ir_to_gltf` writes (Phase 7) is specified in the [Unified model format
-plan](../model_format.md). Platform context is in the [core plan](../core/README.md).
+spec](../model_format.md). Platform context is in the [core spec](../core/README.md).
 
 ---
 
