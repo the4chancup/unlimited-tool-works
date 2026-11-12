@@ -947,8 +947,10 @@ Win32 original hurt the most):
      pitch's width.
 
      While the shown preset's Fluid formation is off (PES 2015 has no switch, so always), the
-     formation selector is disabled and on Kick-off, its hover `Formations 2 and 3 are used
-     only while Fluid formation is on`. The game fields the other two only while it is on, so
+     formation selector is disabled and on Kick-off, Kick-off on a grey rectangle rather
+     than the selection's blue, as the stored choice of a disabled numbers toggle is
+     ("Tactics editor"'s second bullet), its hover `Formations 2 and 3 are used only while
+     Fluid formation is on`. The game fields the other two only while it is on, so
      editing them there edits nothing a match uses, and switching Fluid formation off moves
      the view back to Kick-off. While it is enabled, its hover is `The game uses formations 2
      and 3 only while the preset's fluid formation is on`, so a member editing the other two
