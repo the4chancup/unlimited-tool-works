@@ -2109,6 +2109,15 @@ briefs, review loops, gates and mutation runs as for any step.
     release build: Red's and ours on the same export, wall time, three runs, the median; our
     time split by stage (validation, planning, each task kind, the CPK write) with a
     sampling profiler; each stage that costs more than Red's whole run gets a worklog step
+- [ ] later, once enough tools ship for it to filter anything (the maintainer's idea,
+  2026-11-12, to design then, not ruled): roles in the sidebar. Above the tool list, with
+  a separator between, a member's role (Manager, Aesthetics maker, Aesthetics helper,
+  Tactician, Organizer, Streamer), and the list then shows only that role's tools. Open
+  points from the first discussion: a filtered list moves the icons when the role changes,
+  against the rule that they never move (0.0.2-sel), so a role is a setting made once more
+  than a switch; several roles at once, and an "every tool" choice as the default so no
+  tool is hidden from a member who never picks; six rows above the list against one
+  control; the role to tools table itself, the Save editor falling in nearly every role
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
