@@ -31,12 +31,12 @@ mod wheel;
 
 pub use choice::{checkbox, checkbox_without_text, radio, radio_value};
 pub use collapsing_header::collapsing_header;
-pub use combo::{combo_item, combo_label};
+pub use combo::{combo_item, combo_label, combo_separator};
 pub use dock::BottomDock;
 pub use enabled::{add_enabled, add_enabled_ui};
 pub use ink::ink_span;
 pub use log_panel::{LogLine, LogPanel, well_frame};
-pub use menu_button::menu_button;
+pub use menu_button::{menu_button, menu_separator};
 pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap};
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use text_box::{text_box, text_box_border};

@@ -1,13 +1,13 @@
 use super::*;
 
-// A click in the gap between two rows of the team dropdown picks the
-// nearer row, as a native list's rows meet (the popup's `Area` is the
-// widget a click landing between rows would otherwise hit). A touch
-// event first, so the scroll background's drag sense is on as on a
-// machine with a touch screen.
+// The team dropdown's rows meet, so a click on the line between two
+// of them picks one of the two (the popup's `Area` is the widget a
+// click landing between rows would otherwise hit). A touch event
+// first, so the scroll background's drag sense is on as on a machine
+// with a touch screen.
 // ST-COMBO-01
 #[test]
-fn a_gap_click_in_the_team_dropdown_picks_the_nearer_team() {
+fn a_click_where_two_team_rows_meet_in_the_dropdown_picks_one() {
     let (mut view, mut window) = open_734_with("combo_gap_team", &[73401], 183);
     window.frame(
         vec![egui::Event::Touch {
@@ -19,15 +19,22 @@ fn a_gap_click_in_the_team_dropdown_picks_the_nearer_team() {
         }],
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
-    let (a_name, b_name, b_id) = {
+    let (a_name, b_name, a_id, b_id) = {
         let file = view.session.as_ref().expect("the save opened").file();
         let (a, b) = (&file.teams()[3], &file.teams()[4]);
         (
             display_name(&a.name).to_owned(),
             display_name(&b.name).to_owned(),
+            a.id,
             b.id,
         )
     };
+    let picked = [TeamChoice::Team(a_id), TeamChoice::Team(b_id)];
+    assert!(
+        !picked.contains(&view.team),
+        "premise: neither team is current ({:?})",
+        view.team
+    );
     let nodes = draw(&mut window, &mut view);
     let combo = nodes
         .iter()
@@ -44,22 +51,22 @@ fn a_gap_click_in_the_team_dropdown_picks_the_nearer_team() {
             .unwrap_or_else(|| panic!("no popup row {label:?}"))
     };
     let (a_bounds, b_bounds) = (bounds_of(&a_name), bounds_of(&b_name));
-    assert!(
-        a_bounds.y1 < b_bounds.y0 && b_bounds.y0 - a_bounds.y1 < 6.0,
-        "premise: two adjacent rows ({a_bounds:?}, {b_bounds:?})"
+    assert_eq!(
+        a_bounds.y1, b_bounds.y0,
+        "the two rows meet ({a_bounds:?}, {b_bounds:?})"
     );
     press_release(
         &mut window,
         egui::pos2(
             ((b_bounds.x0 + b_bounds.x1) / 2.0) as f32,
-            (b_bounds.y0 - 0.5) as f32,
+            b_bounds.y0 as f32,
         ),
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
-    assert_eq!(
-        view.team,
-        TeamChoice::Team(b_id),
-        "the nearer (lower) row picked"
+    assert!(
+        picked.contains(&view.team),
+        "one of the two teams picked, not {:?}",
+        view.team
     );
 }
 

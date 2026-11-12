@@ -13,8 +13,8 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, combo_item, menu_button, modal, modal_buttons, modal_fit_contents,
-    modal_sentence_gap, radio_value, step_choice, step_number, wheel_steps,
+    add_enabled, add_enabled_ui, combo_item, menu_button, menu_separator, modal, modal_buttons,
+    modal_fit_contents, modal_sentence_gap, radio_value, step_choice, step_number, wheel_steps,
 };
 
 use crate::session::Session;
@@ -84,7 +84,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.names_to_positions(team_id);
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if add_enabled(
             ui,
             unlocked,
@@ -112,7 +112,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.team_fpc(team_id, fpc::Preset::Unhide, ids);
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if ui.button("Import / export team file\u{2026}").clicked() {
             view.panel = Some(Panel::Interchange);
             ui.close();
@@ -188,7 +188,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.toggle_fpc(player_id, ids);
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if ui.button("Copy stats from\u{2026}").clicked() {
             view.copy_swap = Some(CopySwap::new(
                 session,
@@ -207,7 +207,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ));
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if ui.button("Generate settings.toml\u{2026}").clicked() {
             view.generate = Some(generate::Generate::new(
                 player_id,
@@ -270,7 +270,7 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             view.panel = Some(Panel::Patch);
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if ui.button("Output rosters to TSV\u{2026}").clicked() {
             let written = (view.rosters_dialog)("EDIT.tsv").map(|path| {
                 refuse_save_being_read(&path, session.path(), "roster sheet", session.recorder())
@@ -290,7 +290,7 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             view.multi_aatf.open(session.file());
             ui.close();
         }
-        ui.separator();
+        menu_separator(ui);
         if add_enabled(ui, unlocked, egui::Button::new("Fix database\u{2026}"))
             .on_disabled_hover_text(OWNERSHIP_TIP)
             .clicked()
