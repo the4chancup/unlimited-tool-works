@@ -865,14 +865,23 @@ fn a_number_field_being_typed_starts_no_check() {
         "no check while the field holds the keyboard"
     );
 
-    // Escape lets the keyboard go: the next frame's check starts.
+    // Escape lets the keyboard go and the check starts on that frame, so
+    // a quick worker has replied by the next one: in flight or already
+    // back for the edit, it started.
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
+    let revision = view.session.as_ref().expect("the save").revision();
     draw(&mut window, &mut view);
     assert!(
-        view.live.check.pending.is_some(),
+        view.live.check.pending.is_some()
+            || view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.revision == revision),
         "the settled edit's check started"
     );
     live_checked(&mut window, &mut view, &[734]);
