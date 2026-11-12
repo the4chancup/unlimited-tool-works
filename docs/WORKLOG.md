@@ -1831,8 +1831,12 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] a: the session remembers whose record each id holds; the `Player order` row in
       the list and the close prompt; a moved player's rows against the record he came
       from (SE-GUI-73). Opus
-    - [ ] b: the X on each row of the toolbar's list (SE-GUI-74); the draft's
-      `changesPopup` first (the lead)
+    - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
+      one place per line, and the X as each row's first cell (at the row's end it left
+      the view under a wide row); renders `.tmp/0_0_2/undo/x_list.png`,
+      `x_after_height.png` by `shot_x.py` beside them. The maintainer's look is pending
+    - [ ] b: the X on each row of the toolbar's list (SE-GUI-74), as the draft's
+      `changesTable` and `undoChange`
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12

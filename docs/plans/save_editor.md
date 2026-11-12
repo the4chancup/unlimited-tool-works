@@ -826,12 +826,16 @@ side.
   it now holds, through every move, undo and redo, and forgets it when the save is written
   or another opened. The table then has one row for each group of players that traded places
   among themselves: the item is the team's name, the label `Player order`, and the two values
-  list the group's places with the player on each, in the file and now (`04 SMITH, 07 JONES`
-  and `04 JONES, 07 SMITH`). The players' own rows are compared against the record each one
+  list the group's places with the player on each, in the file and now, one place per line
+  (`04 SMITH` over `07 JONES`, beside `04 JONES` over `07 SMITH`), so the two read side by
+  side and a long move makes the row taller, not wider. The players' own rows are compared against the record each one
   came from, so a moved player lists only what was edited on him, before or after the move.
   One row per group, not per player, because the players between the two ends of a drag only
   shifted by one place, and a row each would bury the one move the member made.
-- **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo): it writes
+- **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
+  draft's `changesTable`). It is the row's first cell, before the item: the table scrolls
+  sideways under a wide row, and an X at the row's end would leave the view. Its tooltip is
+  "Undoes this change alone". It writes
   the row's old value back into its field as one undo step, so Undo brings the change back,
   and the list stays open, a row shorter. It is no step taken out of the undo stack: later
   steps may build on an earlier one, while a row is a field's difference from the file and
@@ -2384,7 +2388,7 @@ SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto pl
                 later move's row compares against the written order
 SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a team's Support
            range row and a `Player order` row
-           WHEN the X at the end of the Height row is clicked
+           WHEN the X at the start of the Height row is clicked
            THEN the player's Height is the file's again, the list stays open without that
                 row, and one Undo sets the Height back to the edited value; the same for the
                 Support range row; GIVEN the X of the `Player order` row clicked THEN every

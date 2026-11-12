@@ -109,11 +109,11 @@ input[type=range]:focus { outline: none; }
   box-sizing: border-box; padding: 0 4px; text-align: center; background: var(--widget);
   border-radius: 2px; color: #b4b4b4; }
 #unsaved-changes { width: 100%; }
-#unsaved-changes th:nth-child(n+2), #unsaved-changes td:nth-child(n+2) { width: 30%; }
+#unsaved-changes th:nth-last-child(-n+2), #unsaved-changes td:nth-last-child(-n+2) { width: 30%; }
 /* The prompt is as wide as its widest row, up to nine tenths of the window: a long player's
    name and its values read without scrolling sideways (save_editor.md, the closing bullet). */
 .window[data-dlg="unsaved-changes"] { max-width: 90%; }
-#unsaved-changes td, #unsaved-changes th { white-space: nowrap; }
+#unsaved-changes td, #unsaved-changes th { white-space: pre; vertical-align: baseline; }
 /* A colour's old and new value: a 12-point swatch before the hex. */
 /* A dialog's labels and fields on egui::Grid's two columns (formGrid): the
    fields start at one x, item spacing 8 x 3 as the theme's. */
@@ -3086,6 +3086,7 @@ const unescName = t => t.replaceAll("\\x11", "\x11");
 // openSave loads a sample save.
 function openSave(key, path) {
   const data = clone(SAVES[key]);
+  markOrigins(data.teams);
   S.save = data;
   S.saveKey = key;
   S.path = path || SAMPLE_PATH[key];
@@ -3204,6 +3205,7 @@ function saveFile(then) {
 }
 function writeSave(path) {
   S.path = path;
+  markOrigins(S.save.teams);
   S.baseline = JSON.stringify(S.save.teams);
   S.basePlayers = {};
   S.baseTeams = {};
@@ -3250,6 +3252,58 @@ function changeLabel(path) {
   if (named.includes("presets")) return "Preset " + index[0] + " · " + (CHANGE_LABELS[key] || titleCase(key));
   return titleCase(key) + (index.length ? " " + index.join(".") : "");
 }
+// The session's memory of whose record of the file each player id holds
+// (0.0.2-undo), as the draft keeps it: `origin`, the id the record had in the
+// file, set when a save opens or is written and carried with the record by a
+// move (it is none of SLOT_KEEPS), an undo and a redo.
+function markOrigins(teams) {
+  for (const t of teams) for (const p of t.players) p.origin = p.id;
+}
+// What the file holds for the player now on `p`'s place: the record he came
+// from, with what a place keeps through a move (SLOT_KEEPS, the face and the
+// hair) taken from the place's own record.
+function fileRecord(baseTeam, p) {
+  const own = baseTeam.players.find(x => x.id === p.id);
+  const from = baseTeam.players.find(x => x.id === p.origin);
+  if (!own || !from) return null;
+  const was = { ...from };
+  for (const k of SLOT_KEEPS) was[k] = own[k];
+  if (was.appearance && own.appearance)
+    was.appearance = { ...was.appearance, face: own.appearance.face, hair: own.appearance.hair };
+  return was;
+}
+// The groups of a team's players that traded places among themselves, each
+// in the list's order: a drag from 04 to 07 is one group of four, a second
+// pair swapped elsewhere a second group.
+function orderGroups(t) {
+  const groups = [], seen = new Set();
+  for (const p of t.players) {
+    if (p.origin === p.id || seen.has(p)) continue;
+    const group = [];
+    for (let q = p; q && !seen.has(q); q = t.players.find(x => x.id === q.origin)) {
+      seen.add(q);
+      group.push(q);
+    }
+    groups.push(group.sort((a, b) => a.slot - b.slot));
+  }
+  return groups;
+}
+// Puts a group back on its places in the file, each player keeping the
+// edits made on him: every place of the group takes the record that came
+// from it.
+function restoreOrder(t, group) {
+  const arr = t.players;
+  placeRecords(arr, arr.map(p => group.includes(p) ? arr.find(q => q.origin === p.id) : p));
+}
+// Writes `value` at `path` inside `obj` (a value the file did not have is
+// removed).
+function setAt(obj, path, value) {
+  const at = path.slice(0, -1).reduce((o, k) => o[k], obj);
+  const last = path[path.length - 1];
+  if (value === undefined) delete at[last]; else at[last] = value;
+}
+// The rows of the unsaved changes: the item, its old and new values, and
+// what the row's X does (the old value written back).
 function unsavedChanges() {
   const base = JSON.parse(S.baseline);
   const rows = [];
@@ -3257,22 +3311,34 @@ function unsavedChanges() {
     const bt = base.find(x => x.id === t.id);
     if (!bt) continue;
     for (const p of t.players) {
-      const bp = bt.players.find(x => x.id === p.id);
+      // Against the record he came from, so a moved player lists only what
+      // was edited on him.
+      const bp = fileRecord(bt, p);
       if (!bp) continue;
       const out = []; flatDiff(bp, p, [], out);
       for (const [path, o, n] of out)
-        rows.push([displayName(p.name) + " · " + changeLabel(path), o, n]);
+        rows.push([displayName(p.name) + " · " + changeLabel(path), o, n, () => setAt(p, path, o)]);
     }
   }
   for (const t of S.save.teams) {
     const bt = base.find(x => x.id === t.id);
     if (!bt) continue;
+    // A move is one row per group that traded places: its places with the
+    // players the file has on them, then with the players now on them, one
+    // place per line, so the two values read side by side.
+    for (const group of orderGroups(t)) {
+      const places = name => group.map(p => String(p.slot).padStart(2, "0") + " " + name(p)).join("\n");
+      rows.push([t.name + " · Player order",
+        places(p => displayName(bt.players.find(x => x.id === p.id).name)),
+        places(p => displayName(p.name)), () => restoreOrder(t, group)]);
+    }
     // A colour is one row with the hex the team view shows, not a row per
     // stored channel.
     const skip = { players: undefined, color_1: undefined, color_2: undefined };
     for (const [key, label] of [["color_1", "Colour 1"], ["color_2", "Colour 2"]])
       if (shownHex(bt[key]) !== shownHex(t[key]))
-        rows.push([t.name + " · " + label, shownHex(bt[key]).toUpperCase(), shownHex(t[key]).toUpperCase()]);
+        rows.push([t.name + " · " + label, shownHex(bt[key]).toUpperCase(), shownHex(t[key]).toUpperCase(),
+          () => { t[key] = clone(bt[key]); }]);
     const out = [];
     flatDiff({ ...bt, ...skip }, { ...t, ...skip }, [], out);
     for (const [path, o, n] of out) {
@@ -3284,18 +3350,29 @@ function unsavedChanges() {
         const marker = rosterPlayer(t, t.tactics.starting_eleven[Number(path[at + 1])]);
         const marked = v => v === 255 ? "None" : "Opponent's starter " + (v + 1);
         rows.push([t.name + " · Preset " + (Number(path[at - 1]) + 1) + " · Man marking · "
-          + playerName(marker), marked(o), marked(n)]);
+          + playerName(marker), marked(o), marked(n), () => setAt(t, path, o)]);
         continue;
       }
-      rows.push([t.name + " · " + changeLabel(path), o, n]);
+      rows.push([t.name + " · " + changeLabel(path), o, n, () => setAt(t, path, o)]);
     }
   }
   return rows;
 }
 // The table of unsaved changes, the close prompt's and the toolbar label's
 // popup's alike: one row per changed field, a checkbox read as on or off,
-// scrolling past 240 points.
-function changesTable() {
+// scrolling past 240 points. `undoable` (the popup's) starts each row with
+// an X that undoes that change alone (SE-GUI-74; first, because a wide row
+// scrolls sideways and its end leaves the view): the old value written back as
+// one edit, so Undo brings the change back, and the list stays open a row
+// shorter, closing with its last row. The prompt's table has none: it asks
+// one question about all the changes. sample wording: the X's tooltip and
+// the edit's name.
+function undoChange(item, revert) {
+  edit("Revert " + item, revert);
+  S.changesPop = dirty();
+  render();
+}
+function changesTable(undoable) {
   const show = v => v === undefined || v === null ? "" : typeof v === "boolean" ? (v ? "on" : "off")
     : typeof v === "object" ? JSON.stringify(v) : String(v);
   // A colour's value draws its swatch before the hex (the app's rows carry the
@@ -3304,8 +3381,12 @@ function changesTable() {
     return h("td", { class: "mono" }, /^#[0-9A-F]{6}$/i.test(s)
       ? h("span", { class: "chswatch", style: "background:" + s }) : null, s); };
   const changes = h("table", { class: "grid", id: "unsaved-changes" },
-    h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value")),
-    unsavedChanges().map(([item, o, n]) => h("tr", {}, h("td", {}, item), cell(o), cell(n))));
+    h("tr", {}, undoable ? h("th", {}) : null,
+      h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value")),
+    unsavedChanges().map(([item, o, n, revert]) => h("tr", {},
+      undoable ? h("td", {}, button("×", () => undoChange(item, revert),
+        { frame0: true, title: "Undoes this change alone" })) : null,
+      h("td", {}, item), cell(o), cell(n))));
   return h("div", { style: "max-height:240px; overflow:auto" }, changes);
 }
 function drawUnsavedPrompt(then) {
@@ -3367,22 +3448,33 @@ function set(p, get, put, v, label) {
 // step. Its exported record has no face structure or hairstyle, so each slot
 // also keeps its appearance's face and hair (skin, iris and gloves move).
 const SLOT_KEEPS = ["slot", "id", "base_copy_id", "number"];
+// Lays `records` (the team's players, one per place in the list's order) on
+// the places: each place keeps its SLOT_KEEPS, its face and its hair. A
+// place's keys end in its record's order, so a record put back where it came
+// from reads as the file's again (the unsaved mark compares the two as text).
+function placeRecords(arr, records) {
+  const next = records.map((r, k) => {
+    const p = arr[k], n = { ...r };
+    for (const key of SLOT_KEEPS) n[key] = p[key];
+    if (n.appearance && p.appearance)
+      n.appearance = { ...n.appearance, face: p.appearance.face, hair: p.appearance.hair };
+    return n;
+  });
+  arr.forEach((p, k) => {
+    for (const key of Object.keys(p)) delete p[key];
+    Object.assign(p, next[k]);
+  });
+}
 function movePlayer(team, fromSlot, toSlot) {
   if (fromSlot === toSlot) return;
   edit("Reorder", () => {
     const arr = team.players;
     const i = arr.findIndex(p => p.slot === fromSlot);
     const j = arr.findIndex(p => p.slot === toSlot);
-    const records = arr.map(p => Object.fromEntries(
-      Object.entries(p).filter(([k]) => !SLOT_KEEPS.includes(k))));
-    const looks = arr.map(p => p.appearance && { face: p.appearance.face, hair: p.appearance.hair });
+    const records = arr.slice();
     const [m] = records.splice(i, 1);
     records.splice(j, 0, m);
-    arr.forEach((p, k) => {
-      for (const key of Object.keys(p)) if (!SLOT_KEEPS.includes(key)) delete p[key];
-      Object.assign(p, records[k]);
-      if (p.appearance && looks[k]) p.appearance = { ...p.appearance, ...looks[k] };
-    });
+    placeRecords(arr, records);
   });
   // The selection follows the dragged player, now on the target slot.
   S.sel = { team: team.id, slot: toSlot };
@@ -3533,7 +3625,7 @@ function unsavedLabel() {
     S.changesPop ? changesPopup() : null);
 }
 function changesPopup() {
-  const pop = h("div", { class: "chpop", id: "changes-popup" }, changesTable());
+  const pop = h("div", { class: "chpop", id: "changes-popup" }, changesTable(true));
   // Measured once drawn: the label sits late in the toolbar, so a wide
   // table under it can pass the window's edge (egui's Area is constrained
   // to the screen; here the popup slides left by the overhang).
