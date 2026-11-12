@@ -90,7 +90,9 @@ TREE = {
 
 class Census(unittest.TestCase):
     def setUp(self):
-        self.folder = Path(tempfile.mkdtemp())
+        # Resolved, as the index stores its roots file: a temp folder is not always named by
+        # its real path (a CI runner's `RUNNER~1` short name, a symlinked `/tmp`).
+        self.folder = Path(tempfile.mkdtemp()).resolve()
         self.addCleanup(shutil.rmtree, self.folder)
         self.root = self.folder / "library"
         for name, data in TREE.items():

@@ -322,10 +322,12 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
         fs::read_to_string(&log).unwrap(),
         format!(
             "the run before\n\
-             $ UTW team-compiler check --export \"exports/co Midcup Kit\" --log-file run_log.txt\n\
+             $ {} team-compiler check --export \"exports/co Midcup Kit\" --log-file run_log.txt\n\
              {warning}\n\
              - co Midcup Kit: Info export_identified (team=/co/, id=714)\n\
-             exit 0\n"
+             exit 0\n",
+            // The program's own name: `UTW` on Windows, `utw` on Linux.
+            studio_core::EXE_NAME
         )
     );
 
