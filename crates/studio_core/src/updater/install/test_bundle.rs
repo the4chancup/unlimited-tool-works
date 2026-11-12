@@ -3,6 +3,7 @@ use std::io::Cursor;
 use std::time::Duration;
 
 use crossbeam_channel::{Receiver, RecvTimeoutError};
+use semver::Version;
 
 use super::*;
 
@@ -16,7 +17,8 @@ pub(super) const NEW_FOLDER: &str = "exports";
 pub(crate) type Files = Vec<(String, &'static str)>;
 
 /// The new bundle's files, relative to its folder: the program, the readme,
-/// the default settings, a license and a launcher.
+/// the default settings, a license, a launcher, and a second launcher the old
+/// bundle lacks.
 pub(crate) fn new_files() -> Files {
     vec![
         (exe_file_name(), "new program"),
@@ -24,11 +26,13 @@ pub(crate) fn new_files() -> Files {
         ("data/settings.toml".to_owned(), "# the default settings"),
         ("licenses/LICENSE-MIT".to_owned(), "new license"),
         ("quick_compile.bat".to_owned(), "new launcher"),
+        ("quick_upgrade.bat".to_owned(), "new second launcher"),
     ]
 }
 
-/// The program's folder before the update: the same files with the old
-/// version's bytes, and the member's own settings.
+/// The program's folder before the update: the new bundle's first files with
+/// the old version's bytes, the member's own settings, and two files of the
+/// member's the new bundle lacks, one at the root and one in `data/`.
 pub(crate) fn old_files() -> Files {
     vec![
         (exe_file_name(), "old program"),
@@ -36,6 +40,8 @@ pub(crate) fn old_files() -> Files {
         ("data/settings.toml".to_owned(), "pes_version = 21"),
         ("licenses/LICENSE-MIT".to_owned(), "old license"),
         ("quick_compile.bat".to_owned(), "old launcher"),
+        ("compile_log.txt".to_owned(), "a member's compile log"),
+        ("data/teams_list.txt".to_owned(), "a member's teams list"),
     ]
 }
 
@@ -46,12 +52,17 @@ pub(crate) fn folder_with(name: &str, files: &Files) -> PathBuf {
     if root.exists() {
         fs::remove_dir_all(&root).unwrap();
     }
+    write_files(&root, files);
+    root
+}
+
+/// Writes `files` under `root`, creating the folders they need.
+pub(crate) fn write_files(root: &Path, files: &Files) {
     for (relative, text) in files {
         let path = root.join(relative);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, text).unwrap();
     }
-    root
 }
 
 /// Every folder (`None`) and file (its text) under `root`, by its path

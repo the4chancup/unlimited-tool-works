@@ -29,7 +29,7 @@ pub(super) fn exe_file_name() -> String {
 /// The step of the swap that failed, for the member-readable error. Paths are
 /// relative to the program's folder.
 #[derive(Debug)]
-pub enum SwapStep {
+pub(crate) enum SwapStep {
     /// Creating a folder the new bundle has and the old one lacks.
     MakeFolder(PathBuf),
     /// Moving an old file out of the way of its replacement.
@@ -171,8 +171,7 @@ impl Swap<'_> {
     }
 
     /// Every move of the swap, in order, stopping at the first that fails.
-    /// Returns where the previous program went.
-    fn apply(&mut self, staged: &StagedBundle) -> Result<PathBuf, (SwapStep, io::Error)> {
+    fn apply(&mut self, staged: &StagedBundle) -> Result<(), (SwapStep, io::Error)> {
         let exe = PathBuf::from(exe_file_name());
         let old_exe = Path::new(OLD_FOLDER).join(&exe);
         self.make_folder(Path::new(OLD_FOLDER))?;
@@ -198,7 +197,7 @@ impl Swap<'_> {
                 SwapStep::PlaceFile(file.clone()),
             )?;
         }
-        Ok(self.bundle.join(old_exe))
+        Ok(())
     }
 
     /// Undoes every recorded move, newest first. A move that cannot be undone
@@ -221,21 +220,20 @@ impl Swap<'_> {
 
 /// Swaps the bundle unpacked at `staged` into the program's folder `bundle`,
 /// replaced files waiting in `backup` (on the same volume, so every move is a
-/// rename) until the swap is done. Returns where the previous program went.
-/// On a failure every move already made is undone, and the error names the
-/// step that failed.
+/// rename) until the swap is done. On a failure every move already made is
+/// undone, and the error names the step that failed.
 pub(super) fn swap(
     staged: &StagedBundle,
     bundle: &Path,
     backup: &Path,
-) -> Result<PathBuf, InstallError> {
+) -> Result<(), InstallError> {
     let mut swap = Swap {
         bundle,
         backup,
         journal: Vec::new(),
     };
     let (step, source) = match swap.apply(staged) {
-        Ok(old_exe) => return Ok(old_exe),
+        Ok(()) => return Ok(()),
         Err(failure) => failure,
     };
     match swap.undo() {
@@ -246,5 +244,48 @@ pub(super) fn swap(
             restore,
             kept: backup.to_owned(),
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::updater::test_bundle::folder_with;
+
+    #[test]
+    fn an_undo_that_fails_still_undoes_the_older_moves() {
+        let bundle = folder_with(
+            "undo_fails",
+            &vec![
+                ("README.txt".to_owned(), "old readme"),
+                ("quick_compile.bat".to_owned(), "old launcher"),
+            ],
+        );
+        let backup = bundle.join(".update").join("backup");
+        let mut swap = Swap {
+            bundle: &bundle,
+            backup: &backup,
+            journal: Vec::new(),
+        };
+        swap.set_aside(Path::new("README.txt")).unwrap();
+        swap.set_aside(Path::new("quick_compile.bat")).unwrap();
+        // The newest move's file is gone, so its undo fails.
+        fs::remove_file(backup.join("quick_compile.bat")).unwrap();
+
+        let outcome = swap.undo();
+        assert!(
+            outcome
+                .as_ref()
+                .is_err_and(|error| error.kind() == io::ErrorKind::NotFound),
+            "{outcome:?}"
+        );
+        assert_eq!(
+            fs::read_to_string(bundle.join("README.txt"))
+                .ok()
+                .as_deref(),
+            Some("old readme"),
+            "the older move is undone"
+        );
+        fs::remove_dir_all(bundle).unwrap();
     }
 }

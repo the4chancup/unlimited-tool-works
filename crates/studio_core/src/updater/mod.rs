@@ -15,8 +15,9 @@ mod swap;
 
 #[cfg(test)]
 pub(crate) use install::test_bundle;
-pub use install::{InstallError, Installed, OpenUrl, Progress, install};
-pub use swap::SwapStep;
+pub(crate) use install::{InstallError, OpenUrl, ProgramStamp, Progress, install};
+#[cfg(test)]
+pub(crate) use swap::SwapStep;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -154,7 +155,7 @@ pub fn newest_release(body: &str) -> Result<Option<Release>, UpdateError> {
 /// Whether the offer is made for `release`: it is newer than `own`, the
 /// built-in version, and not the version the member chose to skip
 /// (`skipped_version`; a value that does not parse skips nothing).
-pub fn offers(release: &Release, own: &Version, skipped: Option<&str>) -> bool {
+pub(crate) fn offers(release: &Release, own: &Version, skipped: Option<&str>) -> bool {
     release.version > *own
         && skipped
             .and_then(|version| version.parse::<Version>().ok())
@@ -163,9 +164,11 @@ pub fn offers(release: &Release, own: &Version, skipped: Option<&str>) -> bool {
 }
 
 /// The interval in seconds, `check_interval_minutes` minutes, written once:
-/// the next-check instant and the failure backoff share it.
+/// the next-check instant and the failure backoff share it. A value under 1
+/// (a settings file edited by hand) reads as 1, so checks never run back to
+/// back.
 pub(crate) fn interval_secs(common: &CommonSettings) -> u64 {
-    u64::from(common.check_interval_minutes) * 60
+    u64::from(common.check_interval_minutes.max(1)) * 60
 }
 
 /// The epoch second the next check may start at, or `None` while
@@ -187,7 +190,7 @@ pub(crate) fn next_check_at(common: &CommonSettings, retry_at: u64) -> Option<u6
 /// Seconds since the Unix epoch, the unit `last_update_check` stores. A clock
 /// set before the epoch reads 0: a check that always reads due beats one that
 /// can never run.
-pub fn now_secs() -> u64 {
+pub(crate) fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |elapsed| elapsed.as_secs())
@@ -298,10 +301,11 @@ pub(crate) fn program_path(bundle: &Path) -> PathBuf {
 /// The body is unbounded, where ureq's convenience readers stop at 10 MB,
 /// under a release archive's size. No global timeout: a slow line takes
 /// longer than `FETCH_TIMEOUT` over a whole archive, so the timeouts bound
-/// the connection and each read instead, and a download that stalls that long
-/// fails.
-pub fn open_url(url: &str) -> Result<Box<dyn Read + Send>, ureq::Error> {
+/// the server's name lookup, the connection and each read instead, and a
+/// download that stalls that long fails.
+pub(crate) fn open_url(url: &str) -> Result<Box<dyn Read + Send>, ureq::Error> {
     let agent = agent_config()
+        .timeout_resolve(Some(FETCH_TIMEOUT))
         .timeout_connect(Some(FETCH_TIMEOUT))
         .timeout_per_read(Some(FETCH_TIMEOUT))
         .build()
@@ -310,12 +314,19 @@ pub fn open_url(url: &str) -> Result<Box<dyn Read + Send>, ureq::Error> {
     Ok(Box::new(response.into_body().into_reader()))
 }
 
-/// The releases list the updater's and the shell's tests share: `v0.0.2`
-/// first (GitHub's `prerelease` flag on, which `releases/latest` would skip),
-/// then a `nightly` tag that is no semver and `v0.0.1` last, so the newest by
-/// semver is neither the first nor the last entry.
+/// The releases list the updater's and the shell's tests share: `v0.0.1`
+/// first, then `v0.0.2` (GitHub's `prerelease` flag on, which
+/// `releases/latest` would skip) and a `nightly` tag that is no semver last,
+/// so the newest by semver is neither the first nor the last entry.
 #[cfg(test)]
 pub(crate) const RELEASES_FIXTURE: &str = r#"[
+    {
+        "tag_name": "v0.0.1",
+        "prerelease": false,
+        "body": "The preview.\n",
+        "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.1",
+        "assets": []
+    },
     {
         "tag_name": "v0.0.2",
         "prerelease": true,
@@ -344,13 +355,6 @@ pub(crate) const RELEASES_FIXTURE: &str = r#"[
         "prerelease": false,
         "body": null,
         "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/nightly",
-        "assets": []
-    },
-    {
-        "tag_name": "v0.0.1",
-        "prerelease": false,
-        "body": "The preview.\n",
-        "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.1",
         "assets": []
     }
 ]"#;
@@ -502,6 +506,12 @@ mod tests {
         assert_eq!(interval_secs(&common), 7200);
         common.check_interval_minutes = 1;
         assert_eq!(interval_secs(&common), 60);
+        common.check_interval_minutes = 0;
+        assert_eq!(
+            interval_secs(&common),
+            60,
+            "a hand-edited 0 reads as 1 minute"
+        );
     }
 
     // ST-UPD-01
