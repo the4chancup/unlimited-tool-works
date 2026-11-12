@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Model conversion plan: glTF source
+# Unlimited Tool Works: Model conversion plan: glTF source
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -178,7 +178,7 @@ hosts the [Player aesthetics editor](../player_aesthetics_editor.md)'s loader mo
 standalone ported `pes-fmdl`/`pes-model` addons at its release** (plan:
 `blender_project/pes_models_plan.md`, kept with the Blender project outside this repo):
 
-**Path A — legacy FMDL/.model import-export (lossless, direct).** The existing `pes-fmdl` and
+**Path A: legacy FMDL/.model import-export (lossless, direct).** The existing `pes-fmdl` and
 `pes-model` addons have working Blender 5.2 ports; `pes-models` vendors them as its `fmdl` and
 `pes_model` codec modules, minimally modified (packaging consolidation, not a rewrite: the ported
 code is the battle-tested asset). This path serves members editing existing `.fmdl`/`.model`
@@ -207,7 +207,7 @@ The SKL format is simple enough (3-u32 header, 56-byte fixed records, null-termi
 needed. When the PyO3 wheel arrives, the Python reader is replaced by the `fmdl` crate's SKL codec
 alongside the other hot paths.
 
-**Path B — unified glTF authoring format (new, IR-routed).** The extension's PES glTF codec wraps
+**Path B: unified glTF authoring format (new, IR-routed).** The extension's PES glTF codec wraps
 Blender's native glTF exporter and emits glTF with name-only material objects **plus the folder's
 `materials.toml`**; it does not inject PES material data into the glTF JSON. On import, it reads
 the tomls from the model's folder and maps each material's PES properties to Blender custom

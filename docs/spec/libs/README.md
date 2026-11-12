@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan
+# Unlimited Tool Works: Library crates plan
 
 Covers the small shared lib crates: the binary format parsers (`cpk`, `fpk`, `fmdl`,
 `pes_model`, `ftex`, `fox2`, `uniparam`, `wezlib`), `dds_convert`, `color_tools`,
@@ -22,7 +22,7 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
   plan](../../plans/music_player.md).
 - The live-match event feed (`match_feed`) is specified in the [Match tracker
   plan](../../plans/match_tracker/README.md).
-- The kit config codec (`kit_config` — binary/TOML, reverse-engineered format documentation) is
+- The kit config codec (`kit_config`: binary/TOML, reverse-engineered format documentation) is
   specified in the [Kit config editor plan](../kit_config_editor.md).
 - The AATF rules engine (`aatf`) is specified in the [AATF rules](../aatf_rules.md).
 - The shared tactics/card widgets (`team_widgets`) are specified in the [Save editor
@@ -56,7 +56,7 @@ single-file plan.
 |--------|-----------|------|-------|
 | CPK (CRI archive) | `utils/cpk.py` | 550 lines | UTF table with XOR encryption, read + write |
 | FMDL (Fox Model) | `utils/FmdlFile.py` | 1700 lines | Largest parser; segmented binary format |
-| SKL (Fox Skeleton) | — | ~150 lines | Bone list + bind-pose transforms; reference parser at `examples/skl.py`; lives in the `fmdl` crate (same Fox format family) |
+| SKL (Fox Skeleton) | - | ~150 lines | Bone list + bind-pose transforms; reference parser at `examples/skl.py`; lives in the `fmdl` crate (same Fox format family) |
 | FPK/FPKD | `utils/fpk.py` | 137 lines | Fox package with MD5 checksums |
 | FTEX | `utils/ftex.py` | 400 lines | PES texture with mipmap/BCn block math |
 | UniformParameter | `utils/uniparam.py` | 91 lines | Kit config container |
@@ -94,8 +94,8 @@ owns the format, looked up by version, never a `match` on `PesVersion` outside t
 | Tool | Current use | Rust replacement |
 |------|-------------|-----------------|
 | `7z.exe` | Extract `.7z` exports | `sevenz-rust2` crate (native, no external binary) |
-| `texconv.exe` | DDS DXT5 conversion (rare) | **Dropped** — in-process conversion (see below) |
-| `magick` (ImageMagick) | Texture conversion on Linux | **Dropped** — same in-process path on all platforms |
+| `texconv.exe` | DDS DXT5 conversion (rare) | **Dropped**: in-process conversion (see below) |
+| `magick` (ImageMagick) | Texture conversion on Linux | **Dropped**: same in-process path on all platforms |
 
 The `sevenz-rust2` crate eliminates the 7z subprocess and temp-folder extraction dance.
 

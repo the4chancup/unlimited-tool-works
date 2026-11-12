@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Savefile plan: Verification
+# Unlimited Tool Works: Savefile plan: Verification
 
 Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -35,8 +35,8 @@ Part of the [Savefile plan](README.md). Section headings are unchanged from the 
   - each player field in the schema tables is marked `settings`, `compiler_owned` or
     `gameplay` (an `Ownership` match with no wildcard arm);
   - the `settings` set equals `PlayerSettings`' fields;
-  - every bit of the appearance block has exactly one carrier — a `PlayerField` row, an
-    `INGAME_FACE_FIELDS` row, or an `UNUSED_FACE_BITS` row — with none of it `gameplay`;
+  - every bit of the appearance block has exactly one carrier (a `PlayerField` row, an
+    `INGAME_FACE_FIELDS` row, or an `UNUSED_FACE_BITS` row), with none of it `gameplay`;
   - the generated template contains every `PlayerSettings` key (a commented line for each
     unset one; `boots_id`/`gloves_id` as `""`, which parses back to unset).
 - **Cross-implementation parity**: field values must match 4ccEditor's for the same save. The

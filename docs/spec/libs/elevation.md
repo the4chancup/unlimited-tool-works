@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan: elevation
+# Unlimited Tool Works: Library crates plan: elevation
 
 Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -13,8 +13,8 @@ install directory need an elevation path.
   command line (`ShellExecuteExW` with `runas`, i.e. the UAC consent prompt), Red's
   `admin_tools.py` replacement. The relaunch re-attaches to the same workspace state via
   ordinary startup (settings file, CLI args preserved).
-- **CLI behavior**: an access-denied output path fails cleanly — a clear error and
-  a non-zero exit — instead of half-written CPKs.
+- **CLI behavior**: an access-denied output path fails cleanly (a clear error and
+  a non-zero exit) instead of half-written CPKs.
 
 POSIX builds get an euid check in place of UAC. Consumers: `team_compiler`.
 

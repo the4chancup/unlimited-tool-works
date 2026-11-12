@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Savefile plan: Data model
+# Unlimited Tool Works: Savefile plan: Data model
 
 Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -49,7 +49,7 @@ Version-gated fields are `Option<T>` (`None` = this save's version has no such f
 | `mo_drib`, `tight_pos`, `aggres`, `play_attit`, `strong_hand` | 20+ |
 | available skills | 22 (15, mapped into 28 canonical slots), 28 (16–18), 39 (19), 41 (20/21) |
 
-The model favors readable field names — e.g. `tight_possession` where the schema
+The model favors readable field names, e.g. `tight_possession` where the schema
 tables quote 4ccEditor's source identifier `tight_pos` verbatim; the schema layer
 maps between the two spellings.
 
@@ -135,7 +135,7 @@ the game fields after reloading a save it was switched on in is not measured.
 The crate owns the `PlayerSettings` model behind the export format's
 `settings.toml` files (see "Player settings in exports" in the
 [Aesthetics export plan](../aesthetics_export/README.md)): parsing the TOML, applying it to a
-`PlayerEntry`, and the reverse — generating `settings.toml` from an existing
+`PlayerEntry`, and the reverse, generating `settings.toml` from an existing
 savefile (used by the save editor's migration feature and the Export upgrader).
 Keeping both directions next to the codec ensures the TOML schema and the
 savefile fields cannot drift apart.
@@ -447,11 +447,11 @@ Cross-version conversion converts the run field by field between the layouts (`o
 - `settings_toml` classifies every `PlayerField` and every `IngameFaceField` exhaustively (an
   `Ownership::{Settings, CompilerOwned, Gameplay}` match with no wildcard arm, so a new field
   fails to compile until classified), and one test asserts that the `Settings` set equals the
-  set of fields the `SettingKey` table reaches — a field added to a schema cannot be silently
+  set of fields the `SettingKey` table reaches: a field added to a schema cannot be silently
   left out of the authorable set.
 - A second test asserts, per version, that every bit of the appearance block has exactly one
-  carrier — a `PlayerField` row of the block's record, an `INGAME_FACE_FIELDS` row, or an
-  `UNUSED_FACE_BITS` row — and that none of it is `Gameplay`, so no undecoded bit lies outside
+  carrier (a `PlayerField` row of the block's record, an `INGAME_FACE_FIELDS` row, or an
+  `UNUSED_FACE_BITS` row) and that none of it is `Gameplay`, so no undecoded bit lies outside
   the run.
 - The generated template (the Export upgrader's and the save editor's `settings.toml` output,
   and the blank template for a new player folder) lists **every** `SettingKey`, one per line,

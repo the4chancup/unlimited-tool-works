@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Music player plan
+# Unlimited Tool Works: Music player plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -47,8 +47,8 @@ build) via the `python-mpv` binding. Loudness analysis shells out to a custom-mi
 
 ### Relationship to the old codebase
 
-As with the Team compiler, Rigdio defines *what* the new tool must do — the `.4ccm`
-format, the selection semantics, the soundboard behavior — not *how*. The codebase is
+As with the Team compiler, Rigdio defines *what* the new tool must do (the `.4ccm`
+format, the selection semantics, the soundboard behavior), not *how*. The codebase is
 the product of years of accretion and is not a porting reference:
 
 - **Two near-duplicate `ConditionList` implementations** (`legacy.py` and
@@ -56,14 +56,14 @@ the product of years of accretion and is not a porting reference:
 - **Conditions evaluated by string-built `eval()`** (`ArithCondition` formats a Python
   expression and evals it).
 - **tkinter dialogs opened from inside condition checks** (`TimeCondition` pops a modal
-  during evaluation — domain logic directly drives UI).
+  during evaluation: domain logic directly drives UI).
 - **Five polling threads** with `sleep()` loops (song-end checker, chant-end checker,
   title-log timer, fade stepper, loudness-wait spin), plus tkinter `after()` polling
   loops for the load progress and the VA timer.
 - **Global mutable module state**: position cache, loudness cache, pending/logged sets,
   `titleThread`/`titleCheck` globals shared across instances.
 - **A half-finished YAML successor format** (`toYML()` methods, `InstructionList`,
-  "DEPRECATED: PLEASE USE EVENT: IN YOUR .YML") that never shipped — the `.4ccm` parser
+  "DEPRECATED: PLEASE USE EVENT: IN YOUR .YML") that never shipped: the `.4ccm` parser
   is called "legacy" throughout even though it is the only format.
 - **Parser hacks**: RigDJ strips `[...]` brackets on load and `rigparse` re-adds them
   with a special-case loop the comments themselves call "very messy".
@@ -106,9 +106,9 @@ Plain text, one entry per line, `;`-separated fields:
     lenient on purpose, since it loses nothing.
 - Every other significant line is a song entry:
   `<slot>;<filename>;<condition-or-instruction>;<...>`
-  - **slot** — `anthem`, `victory`, `goal` (default goalhorn), `chant`, or a player
+  - **slot**: `anthem`, `victory`, `goal` (default goalhorn), `chant`, or a player
     name (free text; commas in a name render as line breaks on the button).
-  - **filename** — path relative to the `.4ccm`'s folder. If the line has only a slot,
+  - **filename**: path relative to the `.4ccm`'s folder. If the line has only a slot,
     a default is assumed: `{team} - {Label}.mp3` for reserved slots (Anthem, Victory
     Anthem, Goalhorn, Chant) or `{team} - {player} Goalhorn.mp3` for players.
   - Each further `;`-field is one condition or instruction: the first whitespace-token
@@ -140,10 +140,10 @@ Entries are checked top-down per slot; the first passing entry plays (priority o
 | `every` | n | player's goal count is divisible by n |
 | `opponent` | team names | the opponent is one of the listed teams |
 | `match` | type list | match type is one of: Group, Survival, RO16, Quarterfinal, Semifinal, Final, Third-Place, Boss, Consolation; `knockouts`, as the only argument, expands to RO16…Third-Place; beside other types it is refused (Rigdio reads it there as a type no match has) |
-| `home` | — | the team is in the home slot |
-| `once` | — | the first time the check reaches it; the entry is unloaded the next time (`goals >= 2;once` plays on the second goal) |
-| `first` | — | this is the team's first goal (score == 1 after increment) |
-| `comeback` | — | after scoring, still level or behind, and the opponent has scored |
+| `home` | - | the team is in the home slot |
+| `once` | - | the first time the check reaches it; the entry is unloaded the next time (`goals >= 2;once` plays on the second goal) |
+| `first` | - | this is the team's first goal (score == 1 after increment) |
+| `comeback` | - | after scoring, still level or behind, and the opponent has scored |
 | `mostgoals` | [player] | this (or the named) player has the most goals on the team (ties count) |
 | `special` | [label] | never auto-plays; marks a victory anthem selectable from the VA dropdown |
 | `time` | op, minute | the goal minute compares true; the minute is prompted from the streamer when the check reaches it |
@@ -173,13 +173,13 @@ Instructions modify playback rather than gate it:
 |-------------|-----------|--------|
 | `start` | time (`[[d:]h:]m:s` or seconds) | begin playback at this offset; looping returns to it |
 | `speed` | 0.25–4.00 | fixed playback speed for this entry (the parser takes any positive rate; the range is the editor's check, DECISIONS 2026-10-14) |
-| `randomise` | — | when all of a player's (non-warcry) entries have it: pick uniformly at random instead of by priority |
+| `randomise` | - | when all of a player's (non-warcry) entries have it: pick uniformly at random instead of by priority |
 | `pause` | `continue`\|`restart` [`every` n] | on pause: keep position, or restart (every nth pause) |
 | `end` | `stop` | do not loop; stop and reload at song end (`end loop` is a legacy no-op, silently accepted) |
-| `warcry` | — | play this entry to completion first, then fall through to the next non-warcry entry |
-| `unrandom` | — | exclude this chant from random chant selection |
-| `advance` | — | at song end, play the next valid entry instead of looping |
-| `louder` | — | mark for the team's volume-boost slider |
+| `warcry` | - | play this entry to completion first, then fall through to the next non-warcry entry |
+| `unrandom` | - | exclude this chant from random chant selection |
+| `advance` | - | at song end, play the next valid entry instead of looping |
+| `louder` | - | mark for the team's volume-boost slider |
 | `event` | `red`\|`yellow`\|`owngoal`\|`sub` | play this clip once (no loop; `start` honoured) when the Match tracker reports the event for this player (see "Autopilot"); inert without the tracker. The entry leaves its slot's goalhorn list: it is never in the priority order, the `randomise` all-entries check or the `goal` fallback, and its conditions are never evaluated (see "Model") |
 
 ### File resolution
@@ -280,7 +280,7 @@ pub struct EventClip {
   all-entries check and the `goal` fallback append need no exclusion either. Rigdio's parser
   routes them the same way (its `events` dict beside `players`); RigDJ drops them on load,
   so the editor's round trip keeps what RigDJ loses.
-- **One model, one parser, one serializer** — replaces the two divergent
+- **One model, one parser, one serializer**: replaces the two divergent
   `ConditionList` implementations. RigDJ's bracket-stripping/re-adding hack disappears
   because tokens survive the round trip typed instead of as strings.
 - Evaluation is pure: `Condition::eval(&self, state: &MatchState, side: Side, player: &str)
@@ -300,7 +300,7 @@ pub struct EventClip {
 - The serializer regenerates RigDJ's canonical layout (section comments
   `# team identifier` / `# reserved names` / `# regular players`, plus a fourth,
   `# event clips`, when the export has any; flags written only
-  when opted out). Comments in hand-written files are not preserved — same as RigDJ.
+  when opted out). Comments in hand-written files are not preserved, same as RigDJ.
 
 The rest of the crate as built (10.0a-d, ahead of Phase 10). The code is the source and
 these blocks its copy: a change to one is a change to both, and a shape not here is not
@@ -888,7 +888,7 @@ New implementation, all in-process:
   turn that into infinite gain. Leave normalization gain at 0 dB and report the unavailable measurement.
 - **Chant loud-part analysis**: R128 momentary loudness (400ms windows) is produced by
   the same measurement pass; the chant reference is the mean of the loudest N% of
-  windows (N = `chant_loud_part_percent`, default 20) — same idea as Rigdio's
+  windows (N = `chant_loud_part_percent`, default 20), same idea as Rigdio's
   1-second-window RMS ranking, without the second ffmpeg decode.
 - **Gain**: `target − reference`, target configurable (default −14 LUFS, the streaming
   standard and Rigdio's numeric default). A **limiter engages when
@@ -896,7 +896,7 @@ New implementation, all in-process:
   limiter DSP stage in `audio_engine`). Output protection also accounts for the final mixed
   signal after master/boost/chant gains: individually safe tracks can clip when they overlap.
   Normalization opt-out does not disable that protection.
-- **Volume model** — one formula instead of scattered slider/filter interactions.
+- **Volume model**: one formula instead of scattered slider/filter interactions.
   A track's effective gain in dB:
 
   ```
@@ -907,7 +907,7 @@ New implementation, all in-process:
   ```
 
   Sliders are dB-native (master ±20 dB perceptual scale with colored knobs, mute at
-  the bottom). The mpv cubic-volume conversion (`100·10^(dB/60)`) disappears — the
+  the bottom). The mpv cubic-volume conversion (`100·10^(dB/60)`) disappears: the
   engine takes dB directly. With normalization off the formula degenerates as in
   Rigdio: no master slider exists, the Chants Volume slider sets chant volume
   directly, and the per-goalhorn sliders control the rest.
@@ -966,19 +966,19 @@ uses of mpv:
 | Duration/position | `duration`, `time_pos` | track position/duration accessors |
 
 - **`kira`** is the recommended mixer (game-audio oriented: tweens, loop regions,
-  playback rate, per-sound effects, cpal output, WASM support — the suite's browser
+  playback rate, per-sound effects, cpal output, WASM support; the suite's browser
   build keeps working). `rodio` is the simpler fallback if kira's abstractions fight
   the requirements; the `audio_engine` API insulates the tools from this choice.
 - **Opus**: symphonia's own Opus decoder is still work-in-progress, so Opus decode
   goes through a pure-Rust decoder crate (e.g. `opus-decoder`, RFC 8251-conformant)
   registered into symphonia's codec registry behind its OGG demuxer. If the pure-Rust
   decoders prove immature at implementation time, the escape hatch is a statically
-  linked `libopus` binding (`audiopus`) — still a single binary, no DLL. This is the
+  linked `libopus` binding (`audiopus`), still a single binary, no DLL. This is the
   one open verification item; everything else in the stack is production-proven.
 - One playback difference to accept or fix: mpv's speed control is pitch-corrected
   (scaletempo) by default, while a mixer playback-rate change is varispeed (pitch
-  shifts with speed). Default to varispeed initially — the speed slider is a meme
-  feature — and add a time-stretch stage (e.g. `signalsmith-stretch`) only if users
+  shifts with speed). Default to varispeed initially (the speed slider is a meme
+  feature) and add a time-stretch stage (e.g. `signalsmith-stretch`) only if users
   ask for pitch-corrected speed.
 - The loudness analyzer (`ebur128` + the decode loop) lives in this crate too, since
   it shares the symphonia decode path with playback. The R128 measurement, chant
@@ -1095,7 +1095,7 @@ relaunch that loses the match). Rigdio's first-run offer to open its settings is
 | `write_song_title_log` | 0 | 0 off, N seconds, −1 whole song |
 | `fade` (per type + duration) | all on, 2s | |
 | default match type | Group | |
-| `music_library_folder` | — | autopilot team lookup (see "Autopilot") |
+| `music_library_folder` | - | autopilot team lookup (see "Autopilot") |
 | `autopilot_mode` | full | `full` / `co-pilot` / `assist` (highlight only) / `off` |
 | `autopilot_horn_delay` | 8s | announcement window between a detected goal and the horn |
 | `autopilot_horn_stop` | on | fade the goalhorn at the post-goal kickoff |
@@ -1117,20 +1117,20 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
 
 ## Improvements over Rigdio (summary)
 
-1. **Single binary** — libmpv-2.dll, ffmpeg.exe, the ffmpeg build script, PyInstaller
+1. **Single binary**: libmpv-2.dll, ffmpeg.exe, the ffmpeg build script, PyInstaller
    spec files, and UPX compression all disappear.
-2. **One typed condition model** with pure evaluation — no duplicate class hierarchies,
+2. **One typed condition model** with pure evaluation: no duplicate class hierarchies,
    no `eval()`, no UI calls inside domain logic, exceptions replaced by verdicts.
-3. **Event-driven engine** — the polling threads and `after()` loops become tweens,
+3. **Event-driven engine**: the polling threads and `after()` loops become tweens,
    callbacks, and frame-driven state checks; no global thread flags.
-4. **R128 loudness in-process** — better measurement (integrated LUFS + true peak) at
+4. **R128 loudness in-process**: better measurement (integrated LUFS + true peak) at
    zero subprocess cost, with a persistent cross-session cache and CLI pre-warming.
-5. **dB-native volume pipeline** — one composition formula; no mpv cubic conversion,
+5. **dB-native volume pipeline**: one composition formula; no mpv cubic conversion,
    no filter-string reapplication races.
 6. **Undo, reset, and team-slot swaps as plain state snapshots** on model data.
-7. **Suite integration** — settings section, theme, logging, and (via WASM) the
+7. **Suite integration**: settings section, theme, logging, and (via WASM) the
    browser build come from the platform.
-8. **Autopilot** — with the Match tracker running, team loading, scoring, goalhorns,
+8. **Autopilot**: with the Match tracker running, team loading, scoring, goalhorns,
    goal minutes, and event clips are driven by the game itself (manual override
    always available); upstream Rigdio at its most automated only had event clips, and
    the Rigdio fork adds team loading, the scorer's horn and stoppage chants over HTTP,
@@ -1150,7 +1150,7 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
   workflow that produced them (Riglevel) stays retired.
 - Legacy quirks kept: team names are lowercased on load, `opponent` names are written
   without slashes, and the comparison is case-insensitive (see the correctness notes
-  under Conditions — Rigdio's own comparison only matched lowercase-written names).
+  under Conditions; Rigdio's own comparison only matched lowercase-written names).
 - **Where Studio reads a file as Rigdio does, and where it departs.** A member's `.4ccm` was
   written and tested against Rigdio, so wherever Rigdio's reading decides which song plays,
   Studio's matches it (the walk in "Song selection", the condition order, `once`, the shared
@@ -1192,7 +1192,7 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
   semantic equality (model-level), plus golden-file stability for editor-written files.
 - **Selection-logic scenario tests**: scripted match timelines (goals, undo, match
   types, warcries, randomise groups, once/time unloads, advance chains) asserting
-  which entry plays — pure functions over `MatchState`, no audio needed.
+  which entry plays (pure functions over `MatchState`, no audio needed).
 - **Loudness**: compare integrated/momentary loudness and true peak against ffmpeg `ebur128`
   with true-peak measurement enabled on the same decoded samples, within a documented tolerance.
   `volumedetect` measures RMS/sample peak, not LUFS/true peak, so its old values are behavior-change

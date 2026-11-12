@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Aesthetics export plan: Object model
+# Unlimited Tool Works: Aesthetics export plan: Object model
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -24,7 +24,7 @@ on this parser, and the Refs arranger supplies a plain-filesystem listing.
 
 The Team compiler is the crate's biggest consumer, and the compile-time behavior (processing
 steps, packing, bins, GUI, CLI) stays in it. The Team compiler itself is deliberately *not* split
-into a companion lib crate — see "Lib crates" in the [core plan](../core/README.md).
+into a companion lib crate. See "Lib crates" in the [core plan](../core/README.md).
 
 `TeamName`, `TeamId` and the `teams_list.txt` parse/reconcile logic live in the leaf crate
 `libs/teams_list` (see the [library crates plan](../libs/README.md)). This crate depends on it
@@ -275,7 +275,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 - **Kits, portraits, logo.** A `kit_folder_invalid` folder gets no other finding: which
   allowlist its contents answer to is unknown (it may be a misspelled `all`), and it is dropped
   whole anyway. `all` counts as a slot for `kit_slot_duplicate`. `all/` textures follow a kit's
-  `kit` prefix rule (`kit_texture_name_invalid`). `kit_all_unused` (an `all/` no kit inherits —
+  `kit` prefix rule (`kit_texture_name_invalid`). `kit_all_unused` (an `all/` no kit inherits;
   a `Full` export's mandatory empty `p1`/`g1` count as kits) changes nothing (`Keep`).
   `kit_textures_inherited` lists the inherited stems without their `kit_` prefix, alphabetically
   (`back, leg, name`). A kit's icon is the number in its one `icon_<N>` marker's name: one
@@ -478,7 +478,7 @@ Consequences of supporting only the Studio export format:
   player gets that ID (written to the savefile through his patch entry's
   `boots_id`/`gloves_id`, and only if the shared folder's output actually commits).
   Shared *face* folders take no ID: pre-Fox copies the shared face folder per linked player (local
-  files layered on top), and Fox merges the parts into each player's own FMDL — see "A link plus
+  files layered on top), and Fox merges the parts into each player's own FMDL. See "A link plus
   local models combines" below.
 
 ```rust
@@ -750,7 +750,7 @@ pub struct FileDescriptor {
 - **Enums over trait objects.** Use `enum`s with pattern matching (`FileKind` here, the compiler's
   `PlayerFile`), not `Box<dyn ...>`. Exhaustive matching catches missing cases at compile time.
 - **Pass-through files stay simple.** A file the compiler moves without processing stays a
-  `FileDescriptor` — no behavior-bearing wrapper even when the file is semantically rich (the
+  `FileDescriptor`: no behavior-bearing wrapper even when the file is semantically rich (the
   Collars folder's contents are model files, but the compiler never parses them). Only files with
   processing logic get rich types.
 

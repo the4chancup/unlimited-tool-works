@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Message catalog
+# Unlimited Tool Works: Team compiler plan: Message catalog
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -12,7 +12,7 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
   rendered from the same events. Display layers may group repeated (code, scope) pairs; the logs
   stay complete.
 - **No blocking console prompts**: unknown team ID becomes the grid's inline-editable ID cell
-  (including its reassignment confirmation — see the GUI section).
+  (including its reassignment confirmation; see the GUI section).
 - **A failed name lookup names the nearest existing name**: `link_target_missing`,
   `players_txt_target_missing`, `common_link_missing`, `kit_folder_invalid`, and
   `file_type_disallowed` on a misspelled marker (`fpc-on`, `ingameface`), carry a `closest`
@@ -82,7 +82,7 @@ paragraph), three rows join "Player folders and shared model folders", beside
 |---|---|---|---|
 | `legacy_ids_invalid` | E | a team export's root `legacy_ids.toml` is not UTF-8 text or does not parse as the upgrader writes it (context: the file, the error) (`pipeline.md` "Legacy boots and gloves IDs (VGL27)") | file ignored: the export compiles on Studio's IDs |
 | `legacy_id_out_of_block` | E | in a legacy export, an old ID outside its team's block in `legacy_boots_blocks.txt`, or of a team the table does not list (context: the ID, the folder, the block or "none") | the folder not packed under that ID, its wearers' patch entries still carrying it (the check is on what the export packs, not on what players wear); the output's other old IDs are packed |
-| `teams_list_read_only` | W | a teams-list write (ID cell, updater merge) failed because the data directory is not writable | write dropped; the in-memory list is unchanged (no elevation — see `pipeline.md` "Resolved decisions", "Teams list") |
+| `teams_list_read_only` | W | a teams-list write (ID cell, updater merge) failed because the data directory is not writable | write dropped; the in-memory list is unchanged (no elevation; see `pipeline.md` "Resolved decisions", "Teams list") |
 | `export_disabled` | I | as the spec's row | GUI: a greyed row with **Enable** (`gui.md` "Row actions") |
 | `export_tag_missing` | E | as the spec's row | GUI: the row offers the two tags as buttons |
 | `team_name_unknown` | E | as the spec's row | GUI: ID cell becomes editable for inline assignment |

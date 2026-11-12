@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan: color_tools
+# Unlimited Tool Works: Library crates plan: color_tools
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -84,18 +84,18 @@ the next frame, is that commit, which still joins the recents on close.
 
 ### Kit menu icon rendering (Phase 8)
 
-The 24 kit menu icons (`icon_<N>`, 0–23) are simple two-color kit icon patterns —
+The 24 kit menu icons (`icon_<N>`, 0–23) are simple two-color kit icon patterns:
 plain, striped, hooped, sashed, halved, contrast-sleeves, and so on. In game they
 only ever appear in the PES 15/16 prematch gameplan screens, but suite-side they
 make a great compact kit-color visual, so the crate recreates them as **vector
 draw routines** (egui painter) parameterized by the icon number, a size, and the
-kit's two menu colors — no game bitmaps shipped, tintable with any colors, crisp
+kit's two menu colors: no game bitmaps shipped, tintable with any colors, crisp
 at any size.
 
 Two render modes:
 
 - the **full shirt shape** (the editor's icon gallery);
-- **pattern-only** — just the two-color fill pattern as a flat square swatch, for sizes where
+- **pattern-only**: just the two-color fill pattern as a flat square swatch, for sizes where
   a shirt silhouette would turn to mush (the Team compiler's grid cells).
 
 The pattern shapes are transcribed from the PES 15 settings reference sheet (`Kiticons.png`,

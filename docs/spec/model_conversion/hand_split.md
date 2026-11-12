@@ -1,10 +1,10 @@
-# Unlimited Tool Works — Model conversion plan: Hand auto-split
+# Unlimited Tool Works: Model conversion plan: Hand auto-split
 
 Part of the [Model conversion plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
 ## Hand auto-split
 
-PES glove models use the **hand skeleton**, which has bones only up to the wrists and forearms —
+PES glove models use the **hand skeleton**, which has bones only up to the wrists and forearms,
 separate from the body skeleton used by face and boots models, though they share wrist/forearm
 bones.
 
@@ -12,7 +12,7 @@ On Fox, the hand skeleton is inaccessible from the face folder, so users must pr
 separate model files. On pre-Fox, gloves can coexist in the face folder (typed as
 `gloveL`/`gloveR` in `face.xml`), but the hand geometry still has to be a separate model loaded
 with the hand skeleton. In both cases, the user must manually cut the hands at the wrist from a
-full-body model and export them separately — the one remaining authoring annoyance that the
+full-body model and export them separately: the one remaining authoring annoyance that the
 unified player folder format doesn't otherwise address.
 
 The compiler eliminates this by **auto-splitting** any model whose vertices carry
@@ -22,13 +22,13 @@ model plus `glove_l` and `glove_r` models automatically.
 
 ### Detection
 
-The check reads bone assignments **directly from the native format** — FMDL bone groups, `.model`
+The check reads bone assignments **directly from the native format** (FMDL bone groups, `.model`
 bone mappings, and in Phase 7 glTF `JOINTS_n`/`WEIGHTS_n` accessors resolved through
-`skin.joints` — without importing to the IR.
+`skin.joints`) without importing to the IR.
 
 The **hand-skeleton-exclusive bones** are identified by name convention: they are prefixed with
 `skh_` (the finger bones: `skh_thumb_mata_l`, `skh_index_dip_r`, ...) and suffixed with `_l` or
-`_r` for laterality. No pre-defined list or `PES_SKELETON` lookup is needed — the prefix/suffix
+`_r` for laterality. No pre-defined list or `PES_SKELETON` lookup is needed: the prefix/suffix
 match is the complete identification.
 
 The games' own `hand_l.skl`/`hand_r.skl` (PES 18, 19, 21) hold 19 `skh_` bones each plus five
@@ -50,7 +50,7 @@ compiling hundreds of models must not require a Blender installation or per-mode
    counts from half of Fox's 1/255 step, the threshold the conversion pre-check uses: community
    exporters leave float noise (2^-24) on unused slots, and one such slot on a hand bone must
    not make a body a hand model.
-2. **Grow once** along the mesh topology — equivalent to one Blender **Select More** (`Ctrl +`)
+2. **Grow once** along the mesh topology, equivalent to one Blender **Select More** (`Ctrl +`)
    step in vertex mode, bringing in the neighboring row at the wrist. This is not a distance-based
    cut, and shared wrist/forearm weights do not exclude a vertex from the expanded selection.
 
@@ -59,7 +59,7 @@ compiling hundreds of models must not require a Blender installation or per-mode
    for selection and growth, and a UV or normal seam at the wrist does not stop the growth.
 3. **Separate the selection** into `glove_l` or `glove_r`, equivalent to Blender's `P` → Selection.
    Fully selected faces move with it; the remaining faces stay with the body, retaining copies of
-   boundary vertices where needed. Preserve positions, weights, UVs, normals, and materials — no
+   boundary vertices where needed. Preserve positions, weights, UVs, normals, and materials: no
    geometric cutting, invented wrist plane, or reweighting.
 
 The hands are separated in turn, the left first, as a user in Blender would. The right hand's
@@ -145,7 +145,7 @@ semantic transformation, not a same-format round-trip, so it does not belong in 
 
 ### Scope
 
-Gloves only. Boots use the same body skeleton as the face model — there is no skeleton-exclusivity
+Gloves only. Boots use the same body skeleton as the face model: there is no skeleton-exclusivity
 problem to solve, so no auto-split is needed or offered for boots.
 
 ---

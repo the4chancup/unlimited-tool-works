@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Plan index
+# Unlimited Tool Works: Plan index
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -12,13 +12,13 @@ compiler, the libraries, the savefile) holds only its unbuilt parts here.
 |------|--------|
 | [Core](core/README.md) | Platform architecture and cross-cutting decisions |
 | [Team compiler](team_compiler/README.md) | The flagship tool: pipeline, planning, processing, packing, deployment, GUI grid, referee support |
-| [Aesthetics export](aesthetics_export/README.md) | The `aesthetics_export` lib and the Studio aesthetics export format: object model + validation progression, player folders, `settings.toml`, FPC markers — shared by the compiler, upgrader, kit config editor, refs arranger, and Team creator |
+| [Aesthetics export](aesthetics_export/README.md) | The `aesthetics_export` lib and the Studio aesthetics export format: object model + validation progression, player folders, `settings.toml`, FPC markers (shared by the compiler, upgrader, kit config editor, refs arranger, and Team creator) |
 | [Save editor](save_editor.md) | 4ccEditor + Midcupping successor: editing UI, tactics editor, AATF checks, comparator, transplant; also specs the `team_widgets` lib shared with the Team creator |
-| [AATF rules](aatf_rules.md) | The `aatf` lib: the ruleset schema (tiers, heights, cards, conditional specials), the generic Rhai interpreter carried in every rules file, suggestions, the host API, the official Autumn 26 and VGL26 rulesets — shared by the Save editor, Team creator and Ruleset editor |
+| [AATF rules](aatf_rules.md) | The `aatf` lib: the ruleset schema (tiers, heights, cards, conditional specials), the generic Rhai interpreter carried in every rules file, suggestions, the host API, the official Autumn 26 and VGL26 rulesets (shared by the Save editor, Team creator and Ruleset editor) |
 | [Ruleset editor](ruleset_editor.md) | Forms over the ruleset schema for invitational organizers: tiers, heights, cards, specials, suggestions; rules file open/save with logic identity, rules summary |
 | [Stadium compiler](stadium_compiler.md) | Stadium export compilation, fox2, billboards |
 | [Export upgrader](export_upgrader.md) | Old-format → Studio-format export migration: the optional glTF pass (Phase 7) and the tool's view (Phase 8) |
-| [Music player](music_player.md) | Rigdio successor: match-day soundboard — .4ccm exports, conditional goalhorns, chants, loudness normalization (also specs the `music_export`/`audio_engine` libs) |
+| [Music player](music_player.md) | Rigdio successor: match-day soundboard, .4ccm exports, conditional goalhorns, chants, loudness normalization (also specs the `music_export`/`audio_engine` libs) |
 | [Music export editor](music_export_editor.md) | RigDJ successor: .4ccm editing UI, condition forms, validation, audition playback |
 | [Match tracker](match_tracker/README.md) | SEN:P-AI successor: live match stats/events read from the game's memory, match records, and the `match_feed` lib driving the Music player's autopilot |
 | [Kit config editor](kit_config_editor.md) | Kit Manager successor: kit config format reference (recovered by disassembly), TOML configs in exports, editing UI with preview and kit menu colors, and the `kit_config` lib |

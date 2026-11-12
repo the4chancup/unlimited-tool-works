@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team creator plan
+# Unlimited Tool Works: Team creator plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -32,7 +32,7 @@ pages and four programs. Reduced to what the games and the rules actually requir
 
 | Side | Required | How it is done today |
 |---|---|---|
-| Savefile | 23 names, shirt names and numbers; a registered position each; the medal tiers (GGSS today — gold, gold, silver, silver; the rules file defines them); height-bracket quotas; base stats per tier; a legal formation; one captain, at least one GK; set-piece takers | 4ccEditor by hand, then Auto-ATF to find out what is wrong ("or you'll end up on the Fools page") |
+| Savefile | 23 names, shirt names and numbers; a registered position each; the medal tiers (GGSS today: gold, gold, silver, silver; the rules file defines them); height-bracket quotas; base stats per tier; a legal formation; one captain, at least one GK; set-piece takers | 4ccEditor by hand, then Auto-ATF to find out what is wrong ("or you'll end up on the Fools page") |
 | Export | team colors, a logo, at least one outfield kit and a GK kit (texture, config, menu colors), a portrait per player, and for every player either a face folder or an in-game-editor head | the AET template zip and its step-by-step guide; "download another team's export to see how it's laid out" |
 | Models ("blenders") | optional; the wiki's own on-ramp is *replace one texture in a template*: cardhead, boxhead, the anime "starter kit" | Blender, the `Aesthetic_Templates` page |
 
@@ -83,16 +83,16 @@ collapses it once (a per-tool setting).
 
 ### 1. Team
 
-- **Name** — the `/xx/` token, picked from the teams list (`libs/teams_list`) or typed. A typed
+- **Name**: the `/xx/` token, picked from the teams list (`libs/teams_list`) or typed. A typed
   name not in the list is allowed with a warning: a fake team for an invitational gets its ID from
   the host, who adds it to the list. The creator does not invent IDs. The export folder's first
   word is this token, which is how the compiler resolves the team (see "Team identity" in the
   [Aesthetics export plan](aesthetics_export/README.md)).
-- **PES version** — defaults to the common setting; decides the Team TOML's version and which
+- **PES version**: defaults to the common setting; decides the Team TOML's version and which
   version-gated fields the later steps show.
-- **Colors** — two, through the `color_tools` picker. They become the root `colors.txt` and the
+- **Colors**: two, through the `color_tools` picker. They become the root `colors.txt` and the
   default menu colors of the kits.
-- **Logo** — one image, any accepted format and size; the compiler squares and resizes it (root
+- **Logo**: one image, any accepted format and size; the compiler squares and resizes it (root
   `logo.<ext>`, see "Logo" in the Aesthetics export plan). Optional.
 
 ### 2. Players
@@ -129,20 +129,20 @@ The step that makes the team legal. On entering it, everything not yet set is fi
 `legal_defaults` from the AATF rules file; the user changes what they want, and an AATF panel
 (the same rendering as the Save editor's) shows what is still wrong.
 
-- **Formation** — a picker of **stock formations** (4-4-2, 4-4-2 diamond, 4-3-3, 4-2-3-1,
+- **Formation**: a picker of **stock formations** (4-4-2, 4-4-2 diamond, 4-3-3, 4-2-3-1,
   3-5-2, 3-4-3, 5-3-2), their coordinates recorded as constants from a reference save whose
   provenance the constants file names. The pitch (from `team_widgets`) shows it and allows
   dragging, but nobody has to drag.
-- **Positions** — the first eleven take the formation's slots in number order (1 = GK); 12 is a
+- **Positions**: the first eleven take the formation's slots in number order (1 = GK); 12 is a
   GK; 13–22 mirror the formation's outfield slots again; 23 is a third GK. Registered position
   rated A, everything else C (AATF: no B ratings). All editable per player.
-- **Medals** — the tiers are the ones the rules file defines (gold and silver today; a bronze tier
+- **Medals**: the tiers are the ones the rules file defines (gold and silver today; a bronze tier
   appears if a cup brings GSSBB back). None by default, since they are the manager's core choice,
   and a blocking violation until the counts match the rules file.
 
   **Suggest medals** assigns them in one click: gold to the most attacking starters (CF, SS,
   AMF, then wide forwards, then CMF), silver to the next in the same order, never a GK.
-- **Heights** — from the active ruleset's height systems: under the official one the **Red**
+- **Heights**: from the active ruleset's height systems: under the official one the **Red**
   system by default (no giants; simpler quotas), switchable to Green.
 
   Bracket quotas are filled in position order (GKs and defenders take the tallest bracket
@@ -153,9 +153,9 @@ The step that makes the team legal. On entering it, everything not yet set is fi
 
   Weight defaults to the midpoint of the rules' allowed window for the height. Age is not set
   (the save's value stays).
-- **Stats** — per tier through `aatf::apply_tier` (the function behind the Save editor's Make
+- **Stats**: per tier through `aatf::apply_tier` (the function behind the Save editor's Make
   Gold/Silver/Regular buttons): rates, form, injury resistance, weak foot, height bonuses.
-- **Captain** — the first gold unless set. **Set-piece takers** by the wiki's rule of thumb: PK
+- **Captain**: the first gold unless set. **Set-piece takers** by the wiki's rule of thumb: PK
   and long FK to a gold, short FK to a silver attacking midfielder, corners to the silvers.
 
 ### 4. Cards and instructions
@@ -275,7 +275,7 @@ Starter set:
 
 | Starter | Input | Notes |
 |---|---|---|
-| In-game head | none | portrait + an empty `ingame_face.toml`, nothing else — the game's face editor supplies the head (the ingame-face workflow in the Player aesthetics editor plan) |
+| In-game head | none | portrait + an empty `ingame_face.toml`, nothing else: the game's face editor supplies the head (the ingame-face workflow in the Player aesthetics editor plan) |
 | Cardhead (mirrored) | image | one plane weighted to `sk_head`, two-sided material |
 | Cardhead (two-sided) | image | the same, with the back face duplicated so text reads correctly from both sides |
 | Boxhead | image | a cube, the image on every face |
@@ -343,7 +343,7 @@ the CLI never writes an illegal Team TOML.
 
 ## Settings
 
-- `show_explanations` (bool, default true) — the "Why?" disclosures start expanded.
+- `show_explanations` (bool, default true): the "Why?" disclosures start expanded.
 - `heights_system` (`red` | `green`, default `red`).
 
 ---

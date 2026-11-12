@@ -1,9 +1,9 @@
-# Unlimited Tool Works — Unified model format plan
+# Unlimited Tool Works: Unified model format plan
 
 ## A model folder
 
-**The file name carries the part type.** A model's stem is `<anything>_<suffix>`, and the suffix —
-always last — says what the model is: a Fox allowed name (`face_high`, `boots`, `glove_l`, …) or a
+**The file name carries the part type.** A model's stem is `<anything>_<suffix>`, and the suffix,
+always last, says what the model is: a Fox allowed name (`face_high`, `boots`, `glove_l`, …) or a
 pre-Fox `face.xml` type (`gloveL`, `handL`, `uniform`, `eye`, …, or `model_type_<x>` for one the
 table doesn't know).
 
@@ -15,7 +15,7 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
 ### Dependencies and images
 
 - **Accepted image formats.** Any of these may be used as a texture source for any model format
-  (FMDL, .model, glTF) — they are fully interchangeable:
+  (FMDL, .model, glTF). They are fully interchangeable:
 
   | Format | Decoder | Extensions |
   |--------|---------|------------|
@@ -35,14 +35,14 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
   depend on the selected library/version. QOI can be added if community demand arises. See the
   [library crates plan](libs/README.md) for the full format matrix and the PES texture boundary (which
   codecs each PES version gets).
-- **Stem-based texture references.** Material references name textures by **stem** — filename
-  without extension — as do Studio-format `.mtl` files and FMDL path tables (whose stored names
+- **Stem-based texture references.** Material references name textures by **stem** (filename
+  without extension), as do Studio-format `.mtl` files and FMDL path tables (whose stored names
   can carry a decorative extension, `.tga` in Konami's files; it is ignored, the game appending
   `.ftex` either way). The compiler scans the model folder for image files, builds a stem→file
   map, and resolves each referenced stem to the actual file.
 
   Two image files with the same stem but different extensions (e.g. `face.dds` and `face.png`)
-  is a conflict (`texture_stem_conflict`) — both would claim the same reference, and the
+  is a conflict (`texture_stem_conflict`): both would claim the same reference, and the
   compiler can't pick one. The rule applies within a single model folder; different folders may
   reuse the same stem independently.
 
@@ -66,10 +66,10 @@ material toml, so the same `.glb` compiles typed on pre-Fox and merged into its 
 
 ## Kit-dependent assets (`kitN`)
 
-Some parts of a player model must change with the kit the user picks in the pre-match menu — a
+Some parts of a player model must change with the kit the user picks in the pre-match menu: a
 shirt's cloth texture, undershorts, tape matching the socks. The community's modded exes (Fox and
-pre-Fox alike) implement this with a **path magic**: a texture path — or, in a pre-Fox `face.xml`, a
-model path — containing a reference token is rewritten at load time to the variant spelling for the
+pre-Fox alike) implement this with a **path magic**: a texture path (or, in a pre-Fox `face.xml`, a
+model path) containing a reference token is rewritten at load time to the variant spelling for the
 selected kit slot, and the game loads whichever variant file that names. The token may sit anywhere
 in the path, including a folder name.
 
@@ -99,10 +99,10 @@ the paragraph starting "**Kits** live"), not `kitF`, because it is a kit slot, a
 mechanism from a variant set, and one name for both would suggest a tie between them that does
 not exist.
 
-**The historical `u0XXXp0` magic is legacy.** It is what the exes matched so far — `u0XXXp0`
-rewritten to `u0XXXp1`, `u0XXXp2`, … — and the Studio compiler does **not** know it: the token is
+**The historical `u0XXXp0` magic is legacy.** It is what the exes matched so far (`u0XXXp0`
+rewritten to `u0XXXp1`, `u0XXXp2`, …), and the Studio compiler does **not** know it: the token is
 just another stem fragment, so a leftover reference fails the ordinary texture-existence checks like
-any other missing texture. There is no dedicated finding for it — a specific error would be partial
+any other missing texture. There is no dedicated finding for it: a specific error would be partial
 support, complexity for no gain, since every existing export goes through the Export upgrader before
 Studio can use it.
 
@@ -125,8 +125,8 @@ the legacy magic was the exes' spelling, not an "outfielders only" restriction.)
 
 Rules:
 
-- The token is a stem fragment delimited by `_`, `-`, `.`, or the ends of the name — `pants_kitN`,
-  `kitN_pants`, `kitN` — anywhere in a texture stem or a model file name. The conventional place is
+- The token is a stem fragment delimited by `_`, `-`, `.`, or the ends of the name (`pants_kitN`,
+  `kitN_pants`, `kitN`), anywhere in a texture stem or a model file name. The conventional place is
   the suffix. `skitN` is not a token. `kitF` is a token as `kitN` is, spelled exactly so.
 
   A whole folder name may be the token instead, in any folder: `kit1/armor_bsm.dds`,
@@ -173,7 +173,7 @@ Rules:
   On Fox the compiler builds the base package alone and reports `kit_variant_model_left_out` (W)
   when that leaves out a numbered variant.
 - **Output naming.** The token (but `kitF`, which names no output file) passes through
-  unchanged into emitted file names and into every path the compiler writes — FMDL path
+  unchanged into emitted file names and into every path the compiler writes: FMDL path
   tables, `.mtl` sampler paths, `face.xml` model paths. Nothing in
   Studio, the Blender side included, ever produces `u0XXX`, and the compiler refuses it in an
   export's names and in the paths to its files (`kit_token_old`); only the Export upgrader reads it.
@@ -220,7 +220,7 @@ Rules:
 
 Like models, material files and textures can be loaded from the export's `Common` folder instead of
 being copied into every player folder: an empty link file named after the Common file plus a
-`.common` extension (a stray `.txt` suffix is accepted silently, as with every link file — Windows
+`.common` extension (a stray `.txt` suffix is accepted silently, as with every link file; Windows
 hides known extensions by default). This is Red's existing `.mtl.common` convention (its
 `find_mtl_file` resolves `.mtl.common` names) extended to the Studio format and to textures; Studio
 supports all of these:
@@ -228,14 +228,14 @@ supports all of these:
 | Link file | Resolves to | Serves |
 |---|---|---|
 | `body.mtl.common` | `Common/body.mtl` | this folder's `body*`/`*body` `.model` files, via Red's MTL cascade |
-| `hair.png.common` | `Common/hair.png` | the texture stem `hair` in this folder — for auto-detection, `""`, and explicit stems in any material file, and for native `.mtl`/FMDL references alike |
+| `hair.png.common` | `Common/hair.png` | the texture stem `hair` in this folder: for auto-detection, `""`, and explicit stems in any material file, and for native `.mtl`/FMDL references alike |
 | `kitN/armor_bsm.dds.common` | `Common/kitN/armor_bsm.dds` | the texture `./kitN/armor_bsm` a model names, as `hair.png.common` serves `hair`; in a kit-token folder, so the set `Common/kit1/armor_bsm.dds`, `Common/kit2/armor_bsm.dds`, … |
 
 There is no in-toml spelling for "this texture is in Common" (a `<common>/hair` tag was considered):
 
 - one link mechanism covers models, material files and textures;
-- a texture link works with auto-detection, so the common case — a shared normal map or hair
-  texture — needs no toml editing at all, only a file that can be copied between player folders;
+- a texture link works with auto-detection, so the common case, a shared normal map or hair
+  texture, needs no toml editing at all, only a file that can be copied between player folders;
 - it works for native-format models too, which a toml tag could not;
 - Explorer shows where a texture comes from.
 
@@ -248,8 +248,8 @@ Rules:
   below its player or shared folder (`jessie/body.fmdl.common` for `Common/jessie/body.fmdl`),
   so a model names the same path whether the file is local or linked, and Explorer shows
   where every link points: nothing is written inside a link.
-- A link whose target does not exist in Common — model, material file or texture, a `kitN`
-  directory or stem in it standing for its set ("Kit-dependent assets") — is
+- A link whose target does not exist in Common (model, material file or texture, a `kitN`
+  directory or stem in it standing for its set ("Kit-dependent assets")) is
   `common_link_missing` (E, folder discarded), except, on PES 18-21, a texture link an
   installed CPK satisfies (`team_compiler/pipeline.md` "Resolved decisions"). The finding's
   context names the link kind and the Common path it looked for.
@@ -312,7 +312,7 @@ conversion pre-check reads.
 ### Comments are app-injected
 
 All auto-generated tomls across the suite ship with predefined inline comments that serve as
-simplified per-field documentation — the user never writes comments from scratch. `toml_edit`-based
+simplified per-field documentation: the user never writes comments from scratch. `toml_edit`-based
 edits preserve these comments and can inject comments for newly added keys. This principle applies to
 `materials.toml`, `settings.toml` and `config.toml` alike (the AATF rules file is Rhai, not a
 toml; the Ruleset editor writes its data block without per-field comments).
@@ -340,7 +340,7 @@ Ordinary authoring never needs them.
 |---|---|---|---|
 | `family` | string | `"shaded"` | Shader family; selects both engines' shader and defaults. One of `shaded`, `shadeless`, `metal`, `glass`. |
 | `two_sided` | bool | `false` | Render both faces. Fox: alpha flag bit 32. Pre-Fox: state `twosided`. |
-| `transparent` | bool | `false` | Alpha-blended (semi-transparent) rendering. Fox: alpha flag bit 128 on top of the family's default bits. Pre-Fox: the transparent state set (`zwrite 0`, `alphatest 0`, `alphablend 1`). Omitted = off (no texture inspection — deciding transparency from texture alpha, as the 19to16 converter does, is expensive and surprising). |
+| `transparent` | bool | `false` | Alpha-blended (semi-transparent) rendering. Fox: alpha flag bit 128 on top of the family's default bits. Pre-Fox: the transparent state set (`zwrite 0`, `alphatest 0`, `alphablend 1`). Omitted = off (no texture inspection: deciding transparency from texture alpha, as the 19to16 converter does, is expensive and surprising). |
 | `textures` | table | see "Textures" | Canonical role → stem. |
 | `parameters` | table | family default | Shader parameter name → `[x, y, z, w]` (four numbers). Passed to whichever engine defines the name (Fox material parameters, pre-Fox `<vector>` elements); names the target engine's shader doesn't know are dropped. |
 
@@ -349,7 +349,7 @@ Ordinary authoring never needs them.
 The family is the format's main friendliness device: it captures what the converters' mapping tables
 know about which Fox and pre-Fox shaders correspond, so the author picks one word and both engines
 get a working material. `shaded` and `shadeless` cover the vast majority of models and are named as
-the community knows them (not after either engine's shader — `blin`, `constant`, `Basic_C`, and
+the community knows them (not after either engine's shader: `blin`, `constant`, `Basic_C`, and
 `Shadeless` are the native spellings the families map to). Native imports infer the family from the
 shader (right-hand column).
 
@@ -364,14 +364,14 @@ a family substring also matches, as `3ddf` does in `pes_3ddf_basic_color_translu
 
 | Family | Use | Fox shader / technique | Fox defaults | Pre-Fox shader | Pre-Fox defaults | Inferred from |
 |---|---|---|---|---|---|---|
-| `shaded` | Skin, hair, cloth, boots — the standard lit material (Fox "blin") | `fox3ddf_blin` / `fox3DDF_Blin` | alpha `128`, shadow `0`; `MatParamIndex_0 = [0,0,0,0]`; `normal`/`specular` fall back to the game's `dummy_nrm`/`dummy_srm` | `Basic_C` + the letters of the roles that resolve (see the `Basic_*` ladder below) | opaque state set | Fox shaders containing `blin`/`3ddf`/`hair`; pre-Fox `Basic_*`, `Boots`, `Shirt_*`, `Pants_*` |
-| `shadeless` | Unlit (eyes, decals baked into the texture, emissive parts) (Fox "constant") | `fox3dfw_constant_srgb_ndr_solid` / `fox3DFW_ConstantSRGB_NDR_Solid` | alpha `16`, shadow `5`; no parameters | `Shadeless` — the community-made shader combining the advantages of the stock `Constant` and `Overlay`, which is why both of those infer this family | opaque state set | Fox shaders containing `constant`/`lambert` (or any other `3dfw` shader, with a warning); pre-Fox `Shadeless`, `Constant`, `Overlay` |
-| `metal` | Metallic surfaces | `fox3ddf_ggx` / `fox3DDF_GGX` | as `shaded`; `metalness` role available | `Basic_CNSR` | opaque state set; `Reflection = [1,1,1,0]`, `Shininess = [0.9,0,0,1]`; `environment` falls back to the compiler's **template environment map** (a real cubemap shipped with the templates, taken from a working export's `env.dds`), so `Basic_CNSR` always has its `R` — a metal without a reflection isn't metal | Fox shaders containing `ggx` |
+| `shaded` | Skin, hair, cloth, boots: the standard lit material (Fox "blin") | `fox3ddf_blin` / `fox3DDF_Blin` | alpha `128`, shadow `0`; `MatParamIndex_0 = [0,0,0,0]`; `normal`/`specular` fall back to the game's `dummy_nrm`/`dummy_srm` | `Basic_C` + the letters of the roles that resolve (see the `Basic_*` ladder below) | opaque state set | Fox shaders containing `blin`/`3ddf`/`hair`; pre-Fox `Basic_*`, `Boots`, `Shirt_*`, `Pants_*` |
+| `shadeless` | Unlit (eyes, decals baked into the texture, emissive parts) (Fox "constant") | `fox3dfw_constant_srgb_ndr_solid` / `fox3DFW_ConstantSRGB_NDR_Solid` | alpha `16`, shadow `5`; no parameters | `Shadeless`: the community-made shader combining the advantages of the stock `Constant` and `Overlay`, which is why both of those infer this family | opaque state set | Fox shaders containing `constant`/`lambert` (or any other `3dfw` shader, with a warning); pre-Fox `Shadeless`, `Constant`, `Overlay` |
+| `metal` | Metallic surfaces | `fox3ddf_ggx` / `fox3DDF_GGX` | as `shaded`; `metalness` role available | `Basic_CNSR` | opaque state set; `Reflection = [1,1,1,0]`, `Shininess = [0.9,0,0,1]`; `environment` falls back to the compiler's **template environment map** (a real cubemap shipped with the templates, taken from a working export's `env.dds`), so `Basic_CNSR` always has its `R`: a metal without a reflection isn't metal | Fox shaders containing `ggx` |
 | `glass` | Visors, lenses | `pes3dfw_glass2` / `pes3DFW_Glass2` | alpha `16`, shadow `5`; `MatParamIndex_0 = [54,0,0,0]`, `ReflectionIntensity = [1,0,0,0]`, `GlassRoughness = [0,0,0,0]`, `GlassFlatness = [0,0,0,0]`, `PCBoxCenter = [0,15,0,0]`, `PCBoxSize = [250,80,250,0]` | `Basic_C` | transparent state set | Fox shaders containing `glass` |
 
 **The pre-Fox `Basic_*` ladder.** The `Basic_` shader's suffix letters spell the maps it samples:
 `C`olor, `N`ormal, `S`pecular, `R`eflection (an `EnvironmentMap` cubemap plus the `Reflection` and
-`Shininess` vectors — see the AUO lab export's `fbm*.mtl`, where every `Basic_CNSR` material with
+`Shininess` vectors; see the AUO lab export's `fbm*.mtl`, where every `Basic_CNSR` material with
 an `env.dds` also carries those two vectors). For `shaded`, the compiler picks the shortest rung
 covering the roles that resolve for the material: `Basic_C` → `Basic_CN` (normal) → `Basic_CNS`
 (normal + specular) → `Basic_CNSR` (+ `environment`). Higher rungs tolerate missing lower maps (the
@@ -423,29 +423,29 @@ are dropped for that engine (`material_texture_unused`, I):
 | `base` | `Base_Tex_SRGB` (`Base_Tex_LIN` when `[fox] base_linear = true`) | `DiffuseMap` (`srgb="1"`) | required: `material_texture_not_found` |
 | `normal` | `NormalMap_Tex_NRM` | `NormalMap` (`srgb="0"`) | Fox, `shaded` and `metal`: game `dummy_nrm`; pre-Fox: no sampler |
 | `specular` | `SpecularMap_Tex_LIN` | `SpecularMap` (`srgb="1"`) | Fox, `shaded` and `metal`: game `dummy_srm`; pre-Fox: no sampler |
-| `metalness` | `MetalnessMap_Tex_LIN` | — | none |
-| `environment` | — | `EnvironmentMap` (`srgb="0"`, `minfilter="anisotropic"`, wrap addressing, `maxaniso="2"`) — the `R` in `Basic_CNSR` | `metal` family: the template environment map, emitted into the player's common textures like any other fallback texture; else none |
-| `reflection` | `GlassReflection_Tex_SRGB` | — | none |
-| `reflection_mask` | `GlassReflectionMask_Tex_LIN` | — | none |
-| `detail_material` | — | `DetailMaterialMap` | none |
-| `detail_normal` | — | `DetailNormalMap` | none |
+| `metalness` | `MetalnessMap_Tex_LIN` | - | none |
+| `environment` | - | `EnvironmentMap` (`srgb="0"`, `minfilter="anisotropic"`, wrap addressing, `maxaniso="2"`): the `R` in `Basic_CNSR` | `metal` family: the template environment map, emitted into the player's common textures like any other fallback texture; else none |
+| `reflection` | `GlassReflection_Tex_SRGB` | - | none |
+| `reflection_mask` | `GlassReflectionMask_Tex_LIN` | - | none |
+| `detail_material` | - | `DetailMaterialMap` | none |
+| `detail_normal` | - | `DetailNormalMap` | none |
 
 The one set of **reserved stems** a toml may name without a file behind them is the kit
 stand-in, the `team_kit*` and `team_gk_kit*` family, substituted by the modded exes (see
 "Kit-dependent assets"); the existence check skips them.
 
-### `[mat.fox]` — Fox (FMDL) table
+### `[mat.fox]`: Fox (FMDL) table
 
 | Key | Type | Meaning |
 |---|---|---|
 | `shader` | string | FMDL shader name (`fox3ddf_blin`, …). Default: family's. Setting it without `technique` keeps the family's technique. |
 | `technique` | string | FMDL technique name (`fox3DDF_Blin`, …). Default: family's. |
-| `alpha_flags` | integer 0–255 | Raw per-mesh alpha flags. Default: family's. Known bits: 32 two-sided, 128 transparent — owned by `two_sided`/`transparent` when those are set explicitly; the other bits are applied verbatim. |
-| `shadow_flags` | integer 0–255 | Raw per-mesh shadow flags. Default: family's. Known bits: 1 no shadow cast, 2 invisible — owned by `cast_shadow`/`invisible` when those are set explicitly; the other bits are applied verbatim. |
+| `alpha_flags` | integer 0–255 | Raw per-mesh alpha flags. Default: family's. Known bits: 32 two-sided, 128 transparent (owned by `two_sided`/`transparent` when those are set explicitly); the other bits are applied verbatim. |
+| `shadow_flags` | integer 0–255 | Raw per-mesh shadow flags. Default: family's. Known bits: 1 no shadow cast, 2 invisible (owned by `cast_shadow`/`invisible` when those are set explicitly); the other bits are applied verbatim. |
 | `cast_shadow` | bool | Shadow flag bit 1 *clear*. Default `true`. Fox-only and practically never changed, hence here rather than engine-neutral. |
 | `invisible` | bool | Shadow flag bit 2: the mesh renders nothing but still casts a shadow if enabled. Default `false`. Same remark. |
 | `base_linear` | bool | Bind the `base` role as `Base_Tex_LIN` instead of `Base_Tex_SRGB`. Default `false`. |
-| `textures` | table | Native sampler name → stem, for samplers outside the canonical role table (custom shaders). Same value grammar as canonical roles except no auto-name suffix (absent = no sampler). A native name that *is* a canonical role's Fox sampler is `material_value_invalid` — use the role. |
+| `textures` | table | Native sampler name → stem, for samplers outside the canonical role table (custom shaders). Same value grammar as canonical roles except no auto-name suffix (absent = no sampler). A native name that *is* a canonical role's Fox sampler is `material_value_invalid`: use the role. |
 | `parameters` | table | Fox-only parameters, name → `[x, y, z, w]`; merged over the engine-neutral `parameters`. |
 
 FMDL stores alpha/shadow flags **per mesh**, not per material. Export writes the material's
@@ -454,13 +454,13 @@ material instance whose meshes carry differing flags into one material per disti
 `(alpha_flags, shadow_flags)` pair, suffixed `_2`, `_3`, …. The `pes-fmdl` add-on's rule also
 splits by the meshes' anti-blur request; ours does not, since nothing downstream reads it.
 
-### `[mat.prefox]` — pre-Fox (.model/.mtl) table
+### `[mat.prefox]`: pre-Fox (.model/.mtl) table
 
 | Key | Type | Meaning |
 |---|---|---|
 | `shader` | string | `.mtl` shader name (`Basic_C`, `Basic_CN`, `Basic_CNSR`, `Shadeless`, `Constant`, `Overlay`, `Boots`, `Shirt_NB`, `Pants_NB`, …). Default: family's (texture-dependent for `shaded`). |
 | `states` | table | `<state>` name → integer: `ztest`, `zwrite`, `twosided`, `alphatest`, `alpharef`, `alphablend`, `blendmode`. Default: family's state set, with `twosided`/`transparent` applied. Validated exactly like a `.mtl`: `mtl_state_invalid` (`ztest` ≠ 1, `blendmode`/`alphablend` ∉ {0,1}), `mtl_blendmode_nonzero`, `mtl_state_nonrecommended`. Unknown state names → `material_key_unknown`. |
-| `samplers` | table of tables | Per-sampler `<sampler>` attributes, keyed by **native sampler name**: `srgb` (0/1), `minfilter`/`maxfilter`/`magfilter`/`mipfilter` (`linear`, `point`, `anisotropic`), `uaddr`/`vaddr`/`waddr` (`wrap`, `clamp`, `repeat`), `maxaniso` (integer). Defaults: `srgb` per the role table, `minfilter = magfilter = "linear"`, nothing else emitted. A `path` key here is `material_value_invalid` — paths come from `textures`. Extra native samplers (no canonical role) are declared here with a `stem` key. |
+| `samplers` | table of tables | Per-sampler `<sampler>` attributes, keyed by **native sampler name**: `srgb` (0/1), `minfilter`/`maxfilter`/`magfilter`/`mipfilter` (`linear`, `point`, `anisotropic`), `uaddr`/`vaddr`/`waddr` (`wrap`, `clamp`, `repeat`), `maxaniso` (integer). Defaults: `srgb` per the role table, `minfilter = magfilter = "linear"`, nothing else emitted. A `path` key here is `material_value_invalid`: paths come from `textures`. Extra native samplers (no canonical role) are declared here with a `stem` key. |
 | `parameters` | table | Pre-Fox-only `<vector>` parameters, name → `[x, y, z, w]`; merged over the engine-neutral `parameters`. |
 
 Output `.mtl` files written at compile time keep the `.dds` extension on texture paths, as the game

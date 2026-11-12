@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Development plan
+# Unlimited Tool Works: Core plan: Development plan
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -119,8 +119,8 @@ worklog when the first push happens.
 
 ### Phase 2: Library crates
 
-Every lib crate that can be verified on its own — against real-file fixtures, the legacy tools'
-reference outputs, or documented data — exists, built before any tool: leaf crates first, then
+Every lib crate that can be verified on its own (against real-file fixtures, the legacy tools'
+reference outputs, or documented data) exists, built before any tool: leaf crates first, then
 their dependents, `python_bindings` last. Libs whose API is shaped by a consumer
 (`aesthetics_export`, `pipeline`, `aatf`, `music_export`, `audio_engine`, `match_feed`) wait for
 the phase of the tool that first needs them. Each crate went through a converge audit (worklog
@@ -145,39 +145,39 @@ implementations translated:
   would be shaped without its caller and reshaped once. The cold-start and upload/readback
   measurements are the first thing the GPU step does, before relying on it.
 
-  BC7 output is PES 19–21 only; PES 15–18 use BC3 or eligible opaque-color BC1 — see
+  BC7 output is PES 19–21 only; PES 15–18 use BC3 or eligible opaque-color BC1. See
   [libs](../libs/README.md).
-- `fmdl` — `format/` (read/write, byte-identical round-trip), `ops/` (mesh splitting, split vertex
+- `fmdl`: `format/` (read/write, byte-identical round-trip), `ops/` (mesh splitting, split vertex
   encoding, anti-blur, multi-FMDL merging, path-table editing), `check.rs`
-- `pes_model` — `format/` (.model + sibling .mtl), `ops/` (mesh splitting, split vertex encoding,
+- `pes_model`: `format/` (.model + sibling .mtl), `ops/` (mesh splitting, split vertex encoding,
   merging, texture stem rewriting), `check.rs`
 - `uniparam`
 - `fox2` (+ CityHash64, verified against fixtures)
 - `archives` (.zip/.7z via `zip` and `sevenz-rust2`)
 
 **Data and rule leaves:**
-- `fpc` (Full Player Customization as data: kit values, player presets, interference rules —
+- `fpc` (Full Player Customization as data: kit values, player presets, interference rules;
   dependency-free, so it precedes `kit_config` and `pes_savefile`; spec in [libs](../libs/README.md))
 - `teams_list` (`TeamName` fold, `TeamId` range, `teams_list.txt` parse/write/reconcile with the
-  embedded upstream list — dependency-free; fixture: Red's current file; spec in [libs](../libs/README.md))
-- `kit_config` (binary ↔ TOML kit config codec, applies `fpc::kit` values — format documentation
+  embedded upstream list; dependency-free; fixture: Red's current file; spec in [libs](../libs/README.md))
+- `kit_config` (binary ↔ TOML kit config codec, applies `fpc::kit` values; format documentation
   in the [Kit config editor plan](../kit_config_editor.md))
-- `color_tools` — dominant kit-color extraction only; the picker widget is Phase 8
+- `color_tools`: dominant kit-color extraction only; the picker widget is Phase 8
 - `elevation`
 
-**`model_convert`** (spec: [Model conversion](../model_conversion/README.md)) — native formats only; glTF
+**`model_convert`** (spec: [Model conversion](../model_conversion/README.md)). Native formats only; glTF
 is Phase 7:
 - The `CanonicalModel` IR
 - Importers `fmdl_to_ir`, `model_to_ir`; exporters `ir_to_fmdl`, `ir_to_model`, calling the format
   crates' `ops/` for splitting, encoding and anti-blur rather than reimplementing them
 - Hand auto-split in the IR, in-process without Blender: select weighted hand vertices, grow once,
-  separate — see [Model conversion](../model_conversion/hand_split.md#hand-auto-split)
+  separate (see [Model conversion](../model_conversion/hand_split.md#hand-auto-split))
 - The games' skeleton files embedded and exposed per version (`resources/skeletons/`), the render
   hierarchy and fold table beside them, and the retargeting pass
 - Material conversion logic
 - Cross-version player save data (`convertPlayerSaveData`) belongs to `pes_savefile` below
 
-**`pes_savefile`** (spec: [Savefile](../pes_savefile/README.md)) — the codec and its operations, no tool
+**`pes_savefile`** (spec: [Savefile](../pes_savefile/README.md)). The codec and its operations, no tool
 wiring:
 - Crypto for all versions 15–21 (MT19937 stream cipher + PES15 LCG/MD5 chunk format, from the
   Midcupping scripts and the converters' `save*.py`; PES 18/20 master keys from pesXdecrypter
@@ -193,7 +193,7 @@ wiring:
   gameplay + aesthetics diff), FPC invisibility; the aesthetics transplant built here was
   removed at step 8.9j5c (aesthetics live in the exports)
 
-**`python_bindings`** — PyO3 shim over `fmdl` and `pes_model`, built via `maturin`; proves
+**`python_bindings`**: PyO3 shim over `fmdl` and `pes_model`, built via `maturin`; proves
 guardrail 4 with a real `cdylib` build and a smoke test from Blender's Python. Its Phase 2 surface
 is the four codecs' entry points, enough to load the wheel from Python and run every fixture
 through a byte-identical round trip; the Blender-facing accessors (vertices, faces, the `ops/`)
@@ -359,15 +359,15 @@ folder-internal deep-derived names included, without a run phase or type of its 
 every model `BuildTask`'s planned model IDs before any task runs; these were the phase's entry
 gates.
 
-- **Deep validation** — the compiler's `deep/` pass: content-level rules on top of
+- **Deep validation**: the compiler's `deep/` pass: content-level rules on top of
   `aesthetics_export`'s structural ones (that crate reads no file content: the Aesthetics export
   plan's "Content findings"), and the `fmdl`/`pes_model` `check.rs` findings, all mapped through
   the Team compiler's message catalog (`export_check`, `xml_check`, `texture_check`). `check`
   and `compile` run the same pass. Live-grid scheduling in `check/` waits for Phase 8.
-- **`plan/`** — `BuildManifest` from a `ResolvedAestheticsExport`, `PlannedModelIds` (40-ID team
-  blocks, deterministic boots/gloves assignment — assignment only; the savefile write is Phase 5),
+- **`plan/`**: `BuildManifest` from a `ResolvedAestheticsExport`, `PlannedModelIds` (40-ID team
+  blocks, deterministic boots/gloves assignment: assignment only; the savefile write is Phase 5),
   duplicate-refs preflight, `overrides/` precedence (`team_id_get`).
-- **`processing/`** — per-task work over `rayon` with memory permits:
+- **`processing/`**: per-task work over `rayon` with memory permits:
   - model format selection, cross-format conversion via `model_convert`, multi-model merging and
     SKL pairing (`fmdl_editing`);
   - hand auto-split (`model_convert::ops::hand_split`) on every model carrying
@@ -396,7 +396,7 @@ gates.
     `fmdl_editing`/`export_move`);
   - `materialize.rs` as the single output-mode seam: relocation to game paths and Fox FPK
     packing (`contents_packing`, `export_move`).
-- **`bins/`** — UniColor / TeamColor / UniformParameter accumulation via `uniparam`, DpFileList
+- **`bins/`**: UniColor / TeamColor / UniformParameter accumulation via `uniparam`, DpFileList
   read/write and slot discovery (`bins_update`).
 
   On Fox, the player appearance tables were read from the installed CPKs by the same walk and
@@ -411,12 +411,12 @@ gates.
   `PlayerAppearance.bin` passed through with no row changed. Phase 5 added the stock and
   default-ID rows and the appearance rows from `settings.toml`: this split was the only one in
   which Phase 4's CPK was game-correct for what it compiled without reading `settings.toml`.
-- **`output/`** — Phase 3's canonical-order writer, staging and promotion to `output/`, with
+- **`output/`**: Phase 3's canonical-order writer, staging and promotion to `output/`, with
   the output folder's writability preflight (TC-OUT-*, TC-CLI-06), behind `OutputSink` (CPK, or
   a loose folder for test and sideload), the `.partial` copy into `download/` for deployment,
   and multi-CPK; access-denied output paths fail cleanly via `libs/elevation` (the GUI's
   elevated-relaunch prompt is Phase 8). `output/savefile.rs` is Phase 5.
-- `dummy_kit_replace` is not ported — `dummy_kit*` stems are reserved game-substituted names, see
+- `dummy_kit_replace` is not ported: `dummy_kit*` stems are reserved game-substituted names, see
   the Unified model format plan's "Kit-dependent assets".
 
 **Verification (done):**
@@ -453,7 +453,7 @@ integration and Phase 6's Export upgrader.
   The table rows and the pre-Fox deferral of this paragraph went at step 8.36c: the full-look
   patch carries the resolved settings, the boots and gloves IDs (commit-conditioned, as the
   deferred design asked) and the names on every engine. The allocation scheme is fixed (40-ID
-  per-team blocks — see the Team compiler plan).
+  per-team blocks, see the Team compiler plan).
 - `libs/aatf`: the ruleset schema and its load-time validation, the generic Rhai interpreter, the
   host and `apply_tier`, logic identity, and the Autumn 26, Autumn 25, Spring 26, VGL25, VGL26,
   VGL27, VTL10 and VTL11 rulesets as data with their fixtures ([AATF rules](../aatf_rules.md),
@@ -485,7 +485,7 @@ In game on PES 21 (worklog 5.5):
   `aesthetics_export/settings_toml.md`, the ingame-face run's rules).
 
 The gloves half waits on a FoxDen change that keeps the table's value (worklog issue; the table
-itself went at 8.36c, the gloves ID now travelling in the patch — its in-game check is 8.36d's).
+itself went at 8.36c, the gloves ID now travelling in the patch; its in-game check is 8.36d's).
 
 Converge ran a whole-crate mutation run and a Clef scan over `pes_savefile`, `aatf`,
 `save_editor`, `studio_core`, `aesthetics_export` and `team_compiler`, every survivor and flag

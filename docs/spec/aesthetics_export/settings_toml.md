@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Aesthetics export plan: settings.toml
+# Unlimited Tool Works: Aesthetics export plan: settings.toml
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -10,7 +10,7 @@ compile carries them to the game:
 - **On every engine: in the savefile, through the aesthetics patch.** The compile resolves the
   player's two settings files into the one `[appearance]` entry of `aesthetics_patch.toml`
   (the motions inside it), beside his resolved boots and gloves IDs and a `write_names`
-  export's names, and the patch is applied to the save — by the compile itself on a
+  export's names, and the patch is applied to the save: by the compile itself on a
   configured local savefile, by the save editor on the official one
   (`spec/pes_savefile/operations.md` "Aesthetics patch (new)"). The compiler writes no
   `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin` rows, and no save is stripped.
@@ -434,7 +434,7 @@ player into a `settings.toml` refuses the value, as any value past the widest ra
 The four `undershorts` labels name the summer/winter pair the game stores (the reference editor
 shows them as "S: Off / W: Off", "S: Short / W: Short", "S: Off / W: Long", "S: Short / W: Long").
 
-Name-writing rules, in full — **not writing is the default**; writing is opt-in:
+Name-writing rules, in full. **Not writing is the default**; writing is opt-in:
 
 1. `name` absent → no name is written, ever. The savefile name stays whatever the save editor set.
    This is also what makes multi-mapped `players.txt` folders work as **generic model folders**:

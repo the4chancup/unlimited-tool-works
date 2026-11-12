@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Parallelism
+# Unlimited Tool Works: Core plan: Parallelism
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -7,7 +7,7 @@ Part of the [Core plan](README.md). Section headings are unchanged from the sing
 ### Design
 
 **One model: `rayon` for parallel work, `crossbeam-channel` for hand-off, plain threads for
-background tasks (update check, folder watching). No async runtime anywhere in the workspace — and
+background tasks (update check, folder watching). No async runtime anywhere in the workspace, and
 "anywhere" includes dependencies: a crate that starts its own Tokio/smol runtime internally (as
 `reqwest` does even in blocking mode) is not approved, because the rule is about what runs in the
 process, not about which module wrote `async`. The reasons: every I/O-bound thing the suite does
@@ -64,7 +64,7 @@ fn thread_count_detect(requested: usize) -> usize {
 
 ### Memory budget
 
-Blue's `MemoryBudget` with backpressure exists because exports are large — approximately 200MB on
+Blue's `MemoryBudget` with backpressure exists because exports are large: approximately 200MB on
 average, meaning a full 48-team compilation has ~9.6GB of raw export data in flight. With 7 parallel
 workers, that's 1.4GB minimum just for in-flight exports, before counting the writer's CPK buffers,
 texture conversion temporaries, and the OS. Users with 8GB RAM (common in the modding community)

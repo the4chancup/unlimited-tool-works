@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Match tracker plan: Match model
+# Unlimited Tool Works: Match tracker plan: Match model
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -46,8 +46,8 @@ save, finalization, or discard does not restore the cleared state.
 | `Suspended { SourceLoss }` | Read failure past debounce grace, or saved `Live` draft normalized during recovery before source reacquisition | Yes (if previously Live) | Current Match (paused) | Yes |
 | `Suspended { UserStopped }` | User pressed Stop tracking | No | Current Match (paused) | Yes |
 | `Finalized` | Finish after reaching `Live` / different-team boundary / verified rematch boundary | No | Finished tab | Yes after standalone feed-bound Finish; transient and replaced by the new `TeamsDetected` snapshot in a session-boundary batch; otherwise no |
-| (no draft) | Idle / searching | No | — | No |
-| (abandoned) | `MatchAbandoned` published | No | — | No (cleared) |
+| (no draft) | Idle / searching | No | - | No |
+| (abandoned) | `MatchAbandoned` published | No | - | No (cleared) |
 | (offline draft) | `FeedReleased { ProfileChanged }` | No | Offline draft tab | No retained snapshot/watch; the released match's terminal reliable cursor remains until replacement |
 
 Table loss triggers `Suspended`, not immediate finalization. A source/read-loss
@@ -71,13 +71,13 @@ non-scoring soundboard actions.
 | Event | Acquires authority? | Releases authority? | Cancels pending automation? | Retains snapshot/watch? |
 |-------|--------------------|--------------------|-----------------------------|-------------------------|
 | `TeamsDetected` | No | No | No | Snapshot retained/replaced; prior watch cleared |
-| `MatchLive` | Yes | — | No | Retains |
-| `MatchResumed` | Yes | — | Conditional — preserves only when the snapshot proves the same stopped `stop_epoch`; otherwise cancels | Retains |
-| `MatchSuspended { SourceLoss }` | — | No (retains if was Live) | No (pauses) | Retains |
-| `MatchSuspended { UserStopped }` | — | Yes | Yes | Retains |
-| `MatchFinalized` | — | Yes | Yes | Retains terminal snapshot/watch unless followed atomically by new-match `TeamsDetected`, which replaces the snapshot and clears the old watch |
-| `MatchAbandoned` | — | Yes | Yes | Clears |
-| `FeedReleased` | — | Yes | Yes | Clears retained snapshot/watch; retains the terminal reliable cursor until replacement |
+| `MatchLive` | Yes | - | No | Retains |
+| `MatchResumed` | Yes | - | Conditional: preserves only when the snapshot proves the same stopped `stop_epoch`; otherwise cancels | Retains |
+| `MatchSuspended { SourceLoss }` | - | No (retains if was Live) | No (pauses) | Retains |
+| `MatchSuspended { UserStopped }` | - | Yes | Yes | Retains |
+| `MatchFinalized` | - | Yes | Yes | Retains terminal snapshot/watch unless followed atomically by new-match `TeamsDetected`, which replaces the snapshot and clears the old watch |
+| `MatchAbandoned` | - | Yes | Yes | Clears |
+| `FeedReleased` | - | Yes | Yes | Clears retained snapshot/watch; retains the terminal reliable cursor until replacement |
 
 While the feed is score authority, no manual soundboard action may alter authoritative
 score, scorer totals, discipline, or participation state. Undo, per-team Reset, and team
@@ -359,9 +359,9 @@ cycle.
   minutes); the segment maps to the period base minute and even segments flag injury time.
   The direct read supersedes the reconstruction where available; the reconstruction
   remains the PES17 path and the fallback if the PES21 clock chain breaks.
-- **Stop reasons**: inferred from which counters moved around the stop — offside
+- **Stop reasons**: inferred from which counters moved around the stop (offside
   beats foul, a goal or own goal is its own reason, a save implies a corner, an off-target
-  shot implies a goal kick — replicating the original's heuristic table.
+  shot implies a goal kick), replicating the original's heuristic table.
 
   A half-end reason (the original defined it but never actually inferred it) falls out of
   the clock model instead: a stop landing on a phase boundary.

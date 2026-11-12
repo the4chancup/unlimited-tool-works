@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Match tracker plan: GUI view
+# Unlimited Tool Works: Match tracker plan: GUI view
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -25,7 +25,7 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
 
 - **Stats table**: rows = players (home/away tints; benched players hidden unless
   toggled), columns = the stat catalog with a column picker (show/hide + order,
-  persisted). Changed cells flash and fade back — the original's red-fade effect,
+  persisted). Changed cells flash and fade back: the original's red-fade effect,
   done as a time-based color lerp in the update loop. Ctrl+C copies the selection as
   TSV. A **heatmap** button on each player row opens the heatmap viewer (available
   for live in-memory data and saved match files that carry heatmap grids).
@@ -56,8 +56,8 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
     `MatchAbandoned`; for an offline draft it removes only the local draft.
   - **Stop tracking** only suspends acquisition; it does not finalize or discard match data.
 - **QR sync** (opt-in): a small QR code of the current wall-clock milliseconds,
-  regenerated at a capped cadence of approximately 30 Hz while enabled — the original's
-  stream-latency measurement aid, kept via the `qrcode` crate.
+  regenerated at a capped cadence of approximately 30 Hz while enabled (the original's
+  stream-latency measurement aid, kept via the `qrcode` crate).
 - **Export…**: a small menu offering the wiki footballbox export (copies
   `{{Football box}}` wikitext to the clipboard or saves as `.wiki.txt`). It is enabled
   only when the match is finalized and `score.classification_complete` is true. If

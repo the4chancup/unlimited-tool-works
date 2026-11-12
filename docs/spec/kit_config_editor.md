@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Kit config editor plan
+# Unlimited Tool Works: Kit config editor plan
 
 This plan specifies **`libs/kit_config`**, the lib crate holding the format knowledge. It is
 shared by:
@@ -36,7 +36,7 @@ is the same).
 
 There is no old codebase: no sources, no format specification anywhere. The format
 below was **recovered by disassembling the editor** (capstone scripting over the
-~50KB of actual program code — the other 51MB of the exe is prerendered preview
+~50KB of actual program code; the other 51MB of the exe is prerendered preview
 bitmaps). Every access to the loaded config buffer was cross-referenced with the
 control-creation and message-handler code, giving field offsets, bit packing, value
 ranges (combo item counts), and cross-field constraints. Diffing the PES2021 patch
@@ -44,7 +44,7 @@ ranges (combo item counts), and cross-field constraints. Diffing the PES2021 pat
 byte-level behaviors Red/Blue already implemented (texture-name rewriting at 0x28+,
 the PES15 shirt-pattern tweak) agree with the recovered layout.
 
-**This section is now the format's reference documentation** — the tool exists so
+**This section is now the format's reference documentation**: the tool exists so
 nobody has to do that archaeology again.
 
 ## The format
@@ -52,7 +52,7 @@ nobody has to do that archaeology again.
 120 bytes, little-endian, no header. Multi-bit fields packed across byte boundaries
 are noted explicitly; bit 0 = LSB.
 
-"?" bits are undecoded — the old editor never reads them and writes none but 0x19's bits
+"?" bits are undecoded: the old editor never reads them and writes none but 0x19's bits
 6–7, which its Back number spacing control clears. Some are **set in real configs**, so they
 must be preserved on rewrite.
 
@@ -61,7 +61,7 @@ must be preserved on rewrite.
 | 0x00 | 0–1 | Short sleeves type | 1 = normal, 2 = cut-out (shirt models 144/160 only); 13 PES 2021 stock configs (referees) carry 3, preserved as a raw value; a TOML value above 3 is kept, reported by `validate` and clamped to 3 on emission like every other packed field |
 | 0x00 | 2–7 | ? | 0 in samples |
 | 0x01 | all | Shirt model | literal: 144 (0x90), 160 (0xA0), 176 (0xB0) |
-| 0x02 | all | Long sleeves type | two values (verified): 0x3E = "Normal & U-Shirt" — one combo entry, the editor's default; 0xBB = "Only-Undershirt" (shirt models 144/160 only; the old editor forces 0x3E on any model but 144) |
+| 0x02 | all | Long sleeves type | two values (verified): 0x3E = "Normal & U-Shirt", one combo entry, the editor's default; 0xBB = "Only-Undershirt" (shirt models 144/160 only; the old editor forces 0x3E on any model but 144) |
 | 0x03 | all | Shorts model | 0–17 |
 | 0x04–0x12 | | Five RGB triplets | shirt1, shirt2, undershirt, shorts, socks |
 | 0x13 | all | ? | 0 in samples |
@@ -138,7 +138,7 @@ Notes:
   other fields on it, as noted below.
 - **Collar IDs** index the game's stock collar model set (`nocloth`). Exports can
   replace a stock collar with a custom model (the Team compiler's pass-through
-  Collars folder) and point every kit config's collar at the replaced ID — the
+  Collars folder) and point every kit config's collar at the replaced ID: the
   quick way to put a custom model on the whole team.
 - **Cross-field constraints** (enforced by the old editor with modal errors, by ours
   inline as warnings):
@@ -149,11 +149,11 @@ Notes:
     `kit_config` warns only when they appear on model 176, which no stock config does.
   - Tight requires 144 or 160 (a warning likewise).
 
-  The FPC kit values (shirt 176, shorts 16, collar and winter collar 105 — see "FPC toggle" in
+  The FPC kit values (shirt 176, shorts 16, collar and winter collar 105; see "FPC toggle" in
   the [Aesthetics export plan](aesthetics_export/README.md)) are ordinary values of these
   fields.
-- **Version differences**: PES2021 widens Name Y by one low bit, as noted — the only
-  difference the 2021 patch makes. `name.y` is PES 2021's value on every version: the bytes are
+- **Version differences**: PES2021 widens Name Y by one low bit, as noted (the only
+  difference the 2021 patch makes). `name.y` is PES 2021's value on every version: the bytes are
   the same, an older game reading half of it (30 is its 15), so a config moves between versions
   with the name in the same place and nothing is converted. Only the range differs: an older
   game's Y stops at 16, so a `name.y` over 33 is over its maximum there.
@@ -171,7 +171,7 @@ Notes:
 
 ## TOML form (`config.toml`)
 
-In the Studio export format, kit configs are canonically authored as **TOML files** —
+In the Studio export format, kit configs are canonically authored as **TOML files**,
 editable without this tool, exactly like the player folders' `settings.toml`.
 The compiler emits the game binary at compile time; no binary config ever appears
 inside a Studio-format export. Old exports' binary configs are converted to
@@ -290,7 +290,7 @@ The format knowledge as a lib crate:
   `apply_fpc` / `matches_fpc`, used by the Team compiler's reconciliation
   (`kit_config_fpc_adjusted`) and by this tool's FPC indicator. The FPC values
   themselves come from the leaf crate `libs/fpc` (see [libs](libs/README.md)), which also holds the
-  player-side presets `pes_savefile` applies — one description of the system for every tool.
+  player-side presets `pes_savefile` applies: one description of the system for every tool.
 - `KitSlot`, the game's ten kit slots (`p1`–`p9`, `g1`):
   - `KitSlot::parse` reads a slot name ASCII-case-insensitively (the kit folder grammar's slot
     part, `aesthetics_export`'s parse);
@@ -302,7 +302,7 @@ The format knowledge as a lib crate:
 - Texture-name derivation from a kit's *effective* texture set (own files plus what it inherits
   from `Kits/all/`, as resolved by `aesthetics_export`) + team id + `KitSlot`. The team id stays a
   plain `u16` whose range is the caller's: the crate does not depend on `teams_list`.
-- Validation: range checks, cross-field constraints, version-fit warnings — one
+- Validation: range checks, cross-field constraints, version-fit warnings. One
   implementation for the editor's inline hints, the compiler's checks, and the CLI.
 
 Consumers: this tool, `team_compiler` (generation, reconciliation, compile-time
@@ -313,7 +313,7 @@ kit sections defer to this crate.
 
 - **Roundtrips**: binary → model → binary bit-identical on the three real sample
   configs, the compiler template, and **every entry of the bundled
-  `UniformParameter` bins (PES 18, 19 and 21)** — thousands of real configs exercising the full
+  `UniformParameter` bins (PES 18, 19 and 21)**, thousands of real configs exercising the full
   value space; decoded fields are also asserted against the documented ranges,
   which doubles as a check of the recovered format itself.
 - **TOML roundtrips** including the `[unknown]` preservation path, export-mode derivation of texture
@@ -324,9 +324,9 @@ kit sections defer to this crate.
 
 ## Improvements over Kit Manager (summary)
 
-1. **The format is documented** — recovered once, written down here, implemented in
+1. **The format is documented**: recovered once, written down here, implemented in
    an open lib instead of a dead closed-source exe.
-2. **TOML configs in exports** — hand-editable, diffable, self-describing; binary
+2. **TOML configs in exports**: hand-editable, diffable, self-describing; binary
    only exists as a compile output and game-file import.
 
 ## Key decisions

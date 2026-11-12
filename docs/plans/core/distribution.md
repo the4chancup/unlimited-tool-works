@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: Distribution and updates
+# Unlimited Tool Works: Core plan: Distribution and updates
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -10,9 +10,9 @@ What exists of this is in `spec/core/distribution.md` "Distribution: portable .7
 
 There is no installer. Each release is a `.7z` archive containing:
 
-- `UTW.exe` (or the `utw` Linux binary) — the single self-contained binary
+- `UTW.exe` (or the `utw` Linux binary), the single self-contained binary
   (`development_plan.md` "The project's name: Unlimited Tool Works")
-- `quick_compile.bat` (`quick_compile.sh` on Linux) — the double-click launcher: opens the GUI on
+- `quick_compile.bat` (`quick_compile.sh` on Linux), the double-click launcher: opens the GUI on
   the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture)
 - in the 0.0.2 preview only (0.0.1 is the Save editor's alone), until the two tools' views
   land: `quick_compile.bat` in its CLI form, `quick_upgrade.bat` and an empty `old_exports/`
@@ -363,7 +363,7 @@ may change in a minor release.
    close prompts.
 5. **Teams list reconciliation** (on the first start of the new binary, not during the swap): the
    new binary carries the new upstream list embedded. The working `data/teams_list.txt` may
-   contain user-added ID assignments (the grid's inline ID-cell writes — see the [Team compiler
+   contain user-added ID assignments (the grid's inline ID-cell writes; see the [Team compiler
    plan](../team_compiler/README.md)), so it can't just be overwritten.
 
    The `studio` coordinator calls `teams_list`'s reconciliation, not the generic core updater,
@@ -408,7 +408,7 @@ may change in a minor release.
 
 ### Rollback
 
-`old/UTW.exe` is kept (one version deep — each update replaces it). This covers the "new
+`old/UTW.exe` is kept (one version deep: each update replaces it). This covers the "new
 version is broken" case that Red handles by preserving the entire old folder: the member
 closes the program and copies the program file from `old/` over the one in the bundle's
 folder.
@@ -419,9 +419,9 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 ### Changelog and version display
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
-shape: `## [Unreleased]` on top, then one `## [1.4.0] — 2026-10-02` section per release. Inside a
-section, bullets are grouped by tool (`**Team compiler** — …`, `**Save editor** — …`,
-`**General** — …` for what every tool shares), because that is how a member reads it even
+shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Inside a
+section, bullets are grouped by tool (`**Team compiler**: …`, `**Save editor**: …`,
+`**General**: …` for what every tool shares), because that is how a member reads it even
 though the version axis is one.
 
 A fix for a corner case few members ever reach (a rare sequence of steps, such as a popover
@@ -452,14 +452,14 @@ whole, in one bullet, as 0.0.1 did the Save editor.
 Nothing else describes releases; the three places a user meets release notes all read this
 file:
 
-1. **The help window's "What's new" chapter** — the file embedded at build time, newest first,
+1. **The help window's "What's new" chapter**: the file embedded at build time, newest first,
    without its title line: the chapter's one topic is titled "Changelog" already, and the
    window would draw the same heading twice.
-2. **The GitHub release body** — the release process copies the released version's section
+2. **The GitHub release body**: the release process copies the released version's section
    verbatim into the release notes. The updater dialog shows that body inline (see "Distribution
    and updates" step 2), so the dialog, the release page and the in-app chapter are the same text
    by construction rather than by discipline.
-3. **The post-update notice** — `Updated to v1.4.0 · [What's new]` in the status bar on the first
+3. **The post-update notice**: `Updated to v1.4.0 · [What's new]` in the status bar on the first
    start of a new version, opening reader 1 (see `spec/core/gui.md` "Status bar").
 
 **One version string, shown in one place.** `v{CARGO_PKG_VERSION}`, then the release stage
@@ -483,9 +483,9 @@ since releases are built from tags.
 
 Where the version string appears:
 
-- **Status bar empty state** — the one always-visible place, and the line to paste into a report.
-- **About** (logo click) — the detailed block with Copy (see `gui.md` "Sidebar" item 1).
-- **`UTW --version`** — the same one-liner on stdout (CLI equivalence); built,
+- **Status bar empty state**: the one always-visible place, and the line to paste into a report.
+- **About** (logo click): the detailed block with Copy (see `gui.md` "Sidebar" item 1).
+- **`UTW --version`**: the same one-liner on stdout (CLI equivalence); built,
   `spec/core/distribution.md` "Versioning: one workspace version, one exception".
 - **Not the title bar**: the title is what the taskbar and alt-tab show, the surface for what
   the Studio is *doing* while the window is not in front (see `gui.md` "Window title"), and it

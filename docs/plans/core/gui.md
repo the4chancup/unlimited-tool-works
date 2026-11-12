@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Core plan: GUI design
+# Unlimited Tool Works: Core plan: GUI design
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -210,7 +210,7 @@ is each tool's.
 
 Top to bottom:
 
-1. **4cc logo** — the 4cc clover (the maintainer's `4cc-cloverleaf-logo.svg`: a dark green
+1. **4cc logo**: the 4cc clover (the maintainer's `4cc-cloverleaf-logo.svg`: a dark green
    ring, `#129648`, around four light green leaves, `#8cc642`, the inside left clear), 28
    points across in the 32-point square the hover fills, the same in both themes since it
    is the cup's mark. The square keeps its place when the sidebar opens, centred in the
@@ -239,7 +239,7 @@ Top to bottom:
    No version is shown beside the logo itself: the status bar already shows it 300 px away, and
    the icon rail has no room for it, so it would be the one element that came and went with the
    hover.
-2. **PES version selector** — a *global* setting, not per-tool: the Team compiler targets it, the
+2. **PES version selector**: a *global* setting, not per-tool: the Team compiler targets it, the
    save editor uses it as a selection/default hint (an open save keeps its detected schema), and
    integrated conversion uses it as the destination format.
 
@@ -253,28 +253,28 @@ Top to bottom:
    Changing it is blocked with a tooltip while any tool reports a `version_change_blocker` (e.g.
    a running compilation, or the match tracker holding live memory addresses).
    - **Live exe check**: the selector is colored against the exe actually present in the resolved
-     `pes_folder_path` — **red** when the folder exists but holds a `PES20XX.exe` of a *different*
+     `pes_folder_path`, **red** when the folder exists but holds a `PES20XX.exe` of a *different*
      version (wrong selection or wrong path), **orange** when the folder is missing or holds no PES
      exe at all (likely invalid path); the tooltip names what was found. Re-checked on version/path
-     changes and on window focus — a cheap single directory listing. This is the GUI rendering of
+     changes and on window focus (a cheap single directory listing). This is the GUI rendering of
      the same condition the team compiler's `pes_version_mismatch` warning reports at compile time
      (the warning remains for the CLI).
    - **Auto-switch to the running PES** (desktop, wherever the running-PES probe reads processes:
      Windows, and Linux under Wine or Proton): a lightweight background poll watches for
      running `PES20XX.exe` processes. **Once per program life**, when a running PES's version
-     differs from the selection, the selector switches to it automatically — primarily so the match
-     tracker attaches to the right game without ceremony — announced via a status-bar notice.
+     differs from the selection, the selector switches to it automatically, primarily so the match
+     tracker attaches to the right game without ceremony, announced via a status-bar notice.
 
      Once-per-life means a user who then switches away is never fought. A manual version change
      also consumes the auto-switch. If a `version_change_blocker` is active at detection time
      the switch is deferred until it clears (not consumed). If several PES versions are running,
-     the first detected wins. The switch writes the ordinary persisted setting — the selector
+     the first detected wins. The switch writes the ordinary persisted setting: the selector
      always reflects the setting, no shadow session state.
 
      The poll also knows the running exe's *path*. When it differs from the resolved
      `pes_folder_path` (e.g. the selector sits red/orange while the real install runs from
      elsewhere), the same notice offers a **"Fix PES path"** action that rewrites the PES folder
-     from the running process — strictly opt-in via the notice's button, never applied
+     from the running process, strictly opt-in via the notice's button, never applied
      automatically. It rewrites:
      - the main row, `pes_folder_path`, with the `**` placeholder put back where the folder's
        own name holds the running version's year (Browse's rule, so the fix keeps working
@@ -284,7 +284,7 @@ Top to bottom:
 
      The action is offered only when the exe's folder is a folder on this system: under Wine or
      Proton the probe reports the game's Windows path, which a Linux setting cannot use.
-3. **Tool list** — vertical nav, one entry per tool: its icon at **24 points**, its label in the
+3. **Tool list**: vertical nav, one entry per tool: its icon at **24 points**, its label in the
    body text beside it once the sidebar opens (item 4), 6 points after the icon's 24-point box
    with 6 points of the row after the longest label (the draft's `.sidebar .tool` gap and
    `.rail .sel` padding), populated from the registered `StudioTool` list.
@@ -316,7 +316,7 @@ Top to bottom:
 
    The mark is the registry's, in `studio`, not a `StudioTool` method: which tools a build
    shows is the build's choice, and the preview's list goes when the views land.
-4. **A rail that opens on hover** — the sidebar is always an icon-only rail (~56 px) beside the
+4. **A rail that opens on hover**: the sidebar is always an icon-only rail (~56 px) beside the
    tool's view, which takes the rest of the window.
 
    The pointer resting on the rail opens the full sidebar (the labels, the version dropdown)
@@ -342,7 +342,7 @@ Top to bottom:
    the expanded width, because the expanded sidebar is needed only to read a label or pick a
    version, and reserving ~104 more points cost every tool that width all the time (at the
    default window a tab's area grows from 904 to about 1008 points).
-5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points — open the
+5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points: open the
    help window and the settings menu. F1 opens the help too. Their labels read "Help (WIP)"
    and "Settings (WIP)" (the visible and the accessible name) until the maintainer calls the
    help and the settings menu complete, and the two windows' titles carry the same suffix.
@@ -432,7 +432,7 @@ The settings menu is assembled from injected sections:
   move), the folder as it is, else the main row as before.
 - Saving is **best-effort**: if the write fails (typically a portable install unpacked somewhere
   unwritable), the in-memory settings keep working for the session and the shell raises the
-  `data_dir_read_only` condition in the status bar — one condition covering settings and the
+  `data_dir_read_only` condition in the status bar, one condition covering settings and the
   teams list, since both live there. No elevation, no retry prompt.
 
   A save edits the file in place (`toml_edit`), changing only the values that changed: until
@@ -446,18 +446,18 @@ The settings menu is assembled from injected sections:
 
 What exists of this is in `spec/core/gui.md` "Help window".
 
-The help window is the user documentation — it replaces both of Red's readmes (the 114-line
+The help window is the user documentation: it replaces both of Red's readmes (the 114-line
 README and the 913-line `readme_advanced.md`), and the bundled readme shrinks to a pointer at it.
 Like the settings menu it is **assembled from the tools**, not written centrally:
 
 - **Chapters.** `studio_core` contributes the core chapters (setting up, first run and data
-  location, updates, and "What's new" — the repository's `CHANGELOG.md` embedded at build time,
+  location, updates, and "What's new": the repository's `CHANGELOG.md` embedded at build time,
   see `distribution.md` "Changelog and version display"), which come first in the chapter
   tree; the tools' chapters follow in sidebar order. Red's `readme_advanced.md` maps onto
   this almost one-to-one: its refs, format, texture-handling and special-files headings become
   Team compiler topics, its updater and first-run headings core topics.
 - **The Messages topic is generated.** Each chapter ends with a "Messages" topic rendered from the
-  tool's `messages.rs` catalog — ID, severity, condition, consequence — so it is always complete
+  tool's `messages.rs` catalog (ID, severity, condition, consequence) so it is always complete
   and never hand-maintained; `help()` carries prose only. This is Red's "Message Types" chapter
   done once, for every tool.
 
@@ -477,7 +477,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   subheading's hit reads "Saving", not "\*\*Saving\*\*".
 
   No index and no fuzzy matching: the whole corpus is tens of kilobytes, and a linear scan per
-  keystroke costs nothing. Its first job is the one Red's users did by hand — paste a message
+  keystroke costs nothing. Its first job is the one Red's users did by hand: paste a message
   ID from the log and find out what it means.
 - **Opening.** The sidebar's `?` button or F1 opens the window on the **active tool's chapter**
   (as the settings menu opens on the active tool's section). A **message ID in the log panel is a
@@ -485,7 +485,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   the same target type search results and in-doc links resolve to). In-doc links use the form
   `[text](tool-id#topic-slug)` so a topic can point at another tool's topic without knowing where
   it renders.
-- **Window.** An in-app egui window — non-modal and resizable, chapter tree left, rendered topic
+- **Window.** An in-app egui window: non-modal and resizable, chapter tree left, rendered topic
   right, the search box above both. The tree is 220 points wide, its padding included (the
   drafts' `.help-tree`), so the longest chapter and topic names (`First run and data
   location`, `Running from a terminal`) show whole.
@@ -521,7 +521,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   and the eye lose the next line's start. The Messages table keeps the pane's width (the
   drafts' `.help-topic` `max-width`).
 - **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
-  `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
+  `UTW help --export <dir>` writes every chapter out as `.md` files: the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release
   process publishes.
 
@@ -575,7 +575,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 What exists of this is in `spec/core/gui.md` "Status bar".
 
 One row, 24px, full width under sidebar and tool view, present in every tool. It is the home for
-everything that is *about the environment or about another tool* — the things that previously
+everything that is *about the environment or about another tool*: the things that previously
 had no home and were described as "toasts" in three places. It is not a second log: a message
 about the current tool's own work (an export, a scope, a run) goes to that tool's Log panel or
 run strip, never here.
@@ -586,7 +586,7 @@ Each item kind stays in the bar for its lifetime:
 |---|---|
 | `ShellCondition` | While the condition holds; disappears by itself |
 | `ToolActivity` | While the tool reports it |
-| `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept — an event worth keeping is also a finding in a log |
+| `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept: an event worth keeping is also a finding in a log |
 | Standing notice | While the active tool returns it; it ends when clicked, dismissed, or replaced by another notice while shown, and the tool is told |
 
 `update_available` carries a Details action, and its text `Update available: v<version>` is in
@@ -669,7 +669,7 @@ More rules that keep it worth the row:
   would read as a broken button.
 - **Never modal, never a question.** Anything needing a decision (updater consent, the teams-list
   merge review) is a dialog. The bar announces; it does not ask.
-- **Empty state is static, not blank**: `v1.2.0` in small text — the one always-visible version
+- **Empty state is static, not blank**: `v1.2.0` in small text, the one always-visible version
   number, the line a user pastes into a bug report (see `distribution.md` "Changelog and version display"),
   then a frameless **Reset window** button in the same small weak text, and nothing else.
 
@@ -705,8 +705,8 @@ More rules that keep it worth the row:
 
 ### Window title
 
-The title bar is the one surface a user sees **while the window is not in front** — the taskbar
-button, alt-tab, a second monitor — so it carries what matters then: whether the Studio is
+The title bar is the one surface a user sees **while the window is not in front** (the taskbar
+button, alt-tab, a second monitor) so it carries what matters then: whether the Studio is
 still working, and what it just finished. Red did this with the console title (`1 - …`, `2 - …`,
 `Done - …`); the Studio does the same with more detail, from the same typed items the status bar
 uses, so it costs no new API:
@@ -742,12 +742,12 @@ Rules:
 - **Every tool's activity counts, the active one included.** The status bar's middle slot hides
   the active tool's activity because its run strip already shows it; the title has no such
   duplicate, so the shell polls `activity()` for all registered tools. Several at once: the
-  active tool's first, then sidebar order, joined with ` · ` — in practice one, since almost
-  every activity is a compile.
+  active tool's first, then sidebar order, joined with ` · ` (in practice one, since almost
+  every activity is a compile).
 - **The "Done" state is the last `Notice`, held while unfocused.** The shell keeps the latest
   notice's text in the title from the moment it arrives until the window next gains focus, then
   returns to idle. That is Red's `Done -` with the result in it, and it falls out of the notice
-  the tool already publishes (`Compiled 48 teams · [Open output]` — the action is not in the
+  the tool already publishes (`Compiled 48 teams · [Open output]`; the action is not in the
   title). While focused the notice is in the status bar and the title stays idle.
 - **Never the version, never a condition.** The version lives in the status bar (see
   `distribution.md` "Changelog and version display"); a `ShellCondition` is an environment fact
@@ -1241,7 +1241,7 @@ What exists of this is in `spec/core/gui.md` "Browser deployment: Studio Web".
 
 The same `studio` binary crate compiles to WebAssembly (the eframe `wasm32` target), producing
 **Studio Web**: a browser-served, deliberately *lite* edition of the suite. Its purpose is
-convenience, not parity — a regular user on a PC other than their usual one opens a bookmark and
+convenience, not parity: a regular user on a PC other than their usual one opens a bookmark and
 compiles their own team or edits its settings, without hunting for the tool's download link. It is
 never meant to compile a full cup's worth of DLC; that stays the desktop binary's job. Studio
 Web is its codename; members know it as **Limited Tool Works** (LTW), a name chosen so nobody
@@ -1254,9 +1254,9 @@ via the browser's File System Access API (`showDirectoryPicker`).
 
 | Tier | Tools | Web cost |
 |---|---|---|
-| Web-eligible, cheap | Save editor, Kit config editor, Music export editor, Export upgrader checks — tools that read a few user-picked files and write results back | Only the async file-access adapter; the lib crates and the egui shell compile unchanged |
+| Web-eligible, cheap | Save editor, Kit config editor, Music export editor, Export upgrader checks: tools that read a few user-picked files and write results back | Only the async file-access adapter; the lib crates and the egui shell compile unchanged |
 | Web-eligible, pipeline-bound | Team compiler (single team), Balls compiler, Stadium compiler | The pipeline adapters below; single-export scale only |
-| Desktop-only by construction | Match tracker (Win32 memory), Player aesthetics editor's Blender launch, self-update, elevation, live folder watching | Not offered; the WASM build hides them (saved-match viewing stays available — see the Match tracker plan) |
+| Desktop-only by construction | Match tracker (Win32 memory), Player aesthetics editor's Blender launch, self-update, elevation, live folder watching | Not offered; the WASM build hides them (saved-match viewing stays available; see the Match tracker plan) |
 
 Differences from the desktop build:
 - **A window on the page, not the page.** The browser is usually maximized, and the views are
@@ -1331,7 +1331,7 @@ machine: nginx on Debian, admin access available), which can set the COOP/COEP h
 GitHub Pages cannot; the `coi-serviceworker` workaround stays as a fallback for header-less hosts.
 Deployment is a static directory (`.wasm`, JS glue, `index.html`) under an HTTPS location; the
 build runs `trunk`/`wasm-bindgen` in CI and the release job copies the output over. Suitability is
-evaluated when the web tier is scheduled — the requirements are just static files, HTTPS, and two
+evaluated when the web tier is scheduled; the requirements are just static files, HTTPS, and two
 response headers.
 
 ### Acceptance

@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Settings
+# Unlimited Tool Works: Team compiler plan: Settings
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -10,9 +10,9 @@ What exists of this is in `spec/team_compiler/settings.md` "Common settings (stu
 
 | Setting | Old default | Notes |
 |---|---|---|
-| `fpc_hide_boots_id` | — (new default 55) | The boots ID an `fpc_on` marker writes where the folder sets none (`plans/save_editor.md` "Full Player Customization (FPC)"); 1 to 100. A run with a value outside is refused as an invalid configuration (exit code 2), as `memory_cap_percent` is |
-| `fpc_hide_gloves_id` | — (new default 11) | The same for gloves; 11 to 100 |
-| `invert_value_scrolling` | — (new default off) | The wheel's steps over a value turned the other way, in every tool (`plans/core/gui.md` "The wheel over a value") |
+| `fpc_hide_boots_id` | - (new default 55) | The boots ID an `fpc_on` marker writes where the folder sets none (`plans/save_editor.md` "Full Player Customization (FPC)"); 1 to 100. A run with a value outside is refused as an invalid configuration (exit code 2), as `memory_cap_percent` is |
+| `fpc_hide_gloves_id` | - (new default 11) | The same for gloves; 11 to 100 |
+| `invert_value_scrolling` | - (new default off) | The wheel's steps over a value turned the other way, in every tool (`plans/core/gui.md` "The wheel over a value") |
 
 ### Team compiler settings
 
@@ -21,7 +21,7 @@ What exists of this is in `spec/team_compiler/settings.md` "Team compiler settin
 | Setting | Old default | New default | Controls |
 |---|---|---|---|
 | `run_pes` | 0 | same | Launch PES after compiling (only after a successful deployment; a degraded run never launches) |
-| `quick_compile_close_on_success` | — | 0 | After a compile started by GUI autorun (`quick_compile.bat` → `UTW --gui team-compiler compile`), close the window when the run completes with no Error-level findings and nothing skipped for errors; stay open on errors, failed deployment, or cancellation so the grid/log can be reviewed. Warnings alone still close (they are in the logs, as Red's `pause_allow = 0` reasoned). Never applies to a manual Compile click |
+| `quick_compile_close_on_success` | - | 0 | After a compile started by GUI autorun (`quick_compile.bat` → `UTW --gui team-compiler compile`), close the window when the run completes with no Error-level findings and nothing skipped for errors; stay open on errors, failed deployment, or cancellation so the grid/log can be reviewed. Warnings alone still close (they are in the logs, as Red's `pause_allow = 0` reasoned). Never applies to a manual Compile click |
 
 ### Path resolution
 

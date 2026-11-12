@@ -1,10 +1,10 @@
-# Unlimited Tool Works — Aesthetics export plan: FPC toggle
+# Unlimited Tool Works: Aesthetics export plan: FPC toggle
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
 ## FPC toggle (`fpc_on` / `fpc_off` marker files)
 
-FPC (Full Player Customization — see the [Save editor plan](../../plans/save_editor.md)) makes the default
+FPC (Full Player Customization, see the [Save editor plan](../../plans/save_editor.md)) makes the default
 player model invisible via a specific mix of appearance settings, so that an FBM (Full Body
 Model) replaces the player entirely. The mix is blank-model boots/gloves IDs plus strip
 settings: the savefile appearance record's fields, which the aesthetics patch writes on every
@@ -14,11 +14,11 @@ Setting it through individual `settings.toml` keys would be error-prone. Instead
 folder-level toggle, consistent with the principle that the folder view tells the whole story
 about how the player's models render:
 
-- **`fpc_on`** — an empty marker file in a player folder. When present, the compile applies the
+- **`fpc_on`**: an empty marker file in a player folder. When present, the compile applies the
   **FPC enable preset** from `libs/fpc` to the player's settings (the same
-  preset the save editor's FPC toggle uses — one implementation, so the two tools can never drift);
+  preset the save editor's FPC toggle uses: one implementation, so the two tools can never drift);
   they reach the game like every other setting, through the aesthetics patch.
-- **`fpc_off`** — applies the disable preset (visible defaults) instead. Since an absent key takes
+- **`fpc_off`**: applies the disable preset (visible defaults) instead. Since an absent key takes
   its default, it differs from no marker only in these cases:
   - where an authored strip key, or an authored custom skin (7, PES 15 to 17, which the preset
     resets to 1), would otherwise apply;
@@ -57,7 +57,7 @@ are therefore strictly **player-level**: `fpc_off` says "this player needs its b
 team's kits must not be FPC". Mixed teams (some `fpc_on` folders, some `fpc_off` or unmarked)
 are ordinary, supported usage; `fpc_conflict` only rejects both markers inside *one* folder.
 
-An export's **team kit-FPC status** is two-state — `EffectiveTeamKitFpc::{On, Unknown}`:
+An export's **team kit-FPC status** is two-state (`EffectiveTeamKitFpc::{On, Unknown}`):
 
 - **On** when at least one player folder of the validated export carries `fpc_on`. A folder
   validation dropped compiles no player, so its marker does not count. The configs must then

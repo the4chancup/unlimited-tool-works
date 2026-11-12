@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Savefile plan
+# Unlimited Tool Works: Savefile plan
 
 Covers the `pes_savefile` lib crate: the EDIT00000000 file codec (container crypto,
 schema-driven payload codec, player/team/tactics model), the cross-version player
@@ -29,7 +29,7 @@ The crate consolidates savefile knowledge that today is spread across four codeb
 
 | Source | Location | Contributes |
 |--------|----------|-------------|
-| 4ccEditor | `Tools_4cc/4ccEditor-1` (an unofficial fork of the main `Tools_4cc/4ccEditor` with added functionality — strictly better despite being cloned first; use the fork as the reference) | Per-version payload schemas (`pes15.cpp`–`pes20.cpp`), player/team/tactics model (`editor.h`), bit engine (`data_util.cpp`), playstyle conversion tables (`menu_lists.cpp`), `.4ccs`/`.4cct`/Texport formats |
+| 4ccEditor | `Tools_4cc/4ccEditor-1` (an unofficial fork of the main `Tools_4cc/4ccEditor` with added functionality, strictly better despite being cloned first; use the fork as the reference) | Per-version payload schemas (`pes15.cpp`–`pes20.cpp`), player/team/tactics model (`editor.h`), bit engine (`data_util.cpp`), playstyle conversion tables (`menu_lists.cpp`), `.4ccs`/`.4cct`/Texport formats |
 | Midcupping | `Tools_4cc/Midcupping` | Pure-Python reference implementations of the container crypto (PES 15's keyless scheme; PES 16/17 incl. their master keys), aesthetics block layout, transplant and aesthetics-diff logic |
 | The converters | `Tools_4cc/4cc-aet-converter-19to16`, `Tools_4cc/aes_converter_16to21` | Container crypto for PES 16/19/21 (`save16.py`/`save19.py`/`save21.py`, incl. master keys), `convertPlayerSaveData` cross-version bitfield surgery |
 | pesXdecrypter / libpesXcrypter | `Tools_4cc/pesXdecrypter` (the source of the DLLs; built copies in `Lab/4ccEditor/lib` and `Saves/4ccEditor_betaM/lib`) | All seven master keys (`src/masterkey.c`, incl. the PES 16 myClub variant) and the authoritative container spec (`src/crypt.c`) |
@@ -38,7 +38,7 @@ The crate consolidates savefile knowledge that today is spread across four codeb
 
 ## Crate layout
 
-The crate is organized in layers — bytes → fields → model → operations — and the layout exists to
+The crate is organized in layers (bytes → fields → model → operations), and the layout exists to
 keep per-version knowledge in exactly one layer. Everything version-specific (keys, container
 shapes, bit offsets, payload section offsets) lives under `schema/` and `container/` as *data*; the
 codec, the model, and every operation above them are version-generic and take a `&VersionSchema`.

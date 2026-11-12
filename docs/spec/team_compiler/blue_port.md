@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Blue features to port
+# Unlimited Tool Works: Team compiler plan: Blue features to port
 
 Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -13,8 +13,8 @@ Blue explicitly skips referee exports (`coordinator.py:218`); Red's
 `fmdl_editing.py` and export routing in `export_move.py`, is the authoritative behavioral
 specification.
 
-**The referee export format changes only in name.** Red's current referee layout — `refs.txt` for
-number→name mappings plus per-referee face/boots/gloves/common subfolders — was the prototype of the
+**The referee export format changes only in name.** Red's current referee layout (`refs.txt` for
+number→name mappings plus per-referee face/boots/gloves/common subfolders) was the prototype of the
 player-folder format, tested only on referees. Referee exports adopt the **unified player-folder
 format**: a `refs` export contains `Players/` folders exactly like a team's aesthetics export,
 with shared models in named shared folders + link files.
@@ -38,7 +38,7 @@ The unified format keeps the mechanism as the required root **`players.txt`** sl
 folder, with the same folder free to appear under any number of slots. The general multi-mapped
 player rule performs shared preparation once per distinct source folder and slot instantiation
 once per listed referee slot, rendering that slot's `refereeXXX`/`k99XX`/`g99XX` IDs and paths.
-Referee player folders therefore carry no numbers in their names — the mapping lives in
+Referee player folders therefore carry no numbers in their names: the mapping lives in
 `players.txt`.
 
 In every other respect a referee folder is a player folder, its `face.xml` included. On pre-Fox
@@ -94,7 +94,7 @@ there. On PES 18-21 the body waits for a Fox refkit the maintainer will make (wo
 What carries over from Red as compiler-internal behavior (invisible in the format):
 - `ExportIdentity::Referees`, rendered as fixed numeric ID 999 only inside game paths/templates (999
   is not a normal `TeamId`); per-referee IDs generated as `refereeXXX` / `k99XX` / `g99XX`
-- Per-referee common structures and XML/MTL/FMDL path updates — no longer referee-specific: the
+- Per-referee common structures and XML/MTL/FMDL path updates, no longer referee-specific: the
   standard texture relocation step moves **every** player's textures to a per-player common
   subfolder (see `pipeline.md` "Per-model-folder parallel steps"), which is released Red's
   preprocessing for referees generalized to every player (its unreleased development branch had
@@ -190,7 +190,7 @@ Rust + GUI architecture:
 
 | Feature | Red location | Why it disappears |
 |---------|-------------|-------------------|
-| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions") — no missing files or packages |
+| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions"): no missing files or packages |
 | Admin privilege elevation | `admin_tools.py` | The shared `elevation` lib (manifest execution level + elevated relaunch) |
 | Step-by-step run modes | `compiler_main.py:72-93` | CLI subcommands for automation |
 | `pes_uniparam_edit` standalone tool | `pes_uniparam_edit.py` | Covered by `uniparam` format parser |

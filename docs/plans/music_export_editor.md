@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Music export editor plan
+# Unlimited Tool Works: Music export editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -60,7 +60,7 @@ Feature parity with RigDJ, restated on the shared model:
 - **Team fields**: team name; the `sync` and `normalize` opt-out checkboxes with
   explanatory tooltips (defaults on; only written to the file when opted out).
 - **Slot list**: the four reserved slots (Anthem, Victory Anthem, Goalhorn, chant) plus
-  arbitrary player slots — add, rename (in place, keeping selection and order), delete.
+  arbitrary player slots; add, rename (in place, keeping selection and order), delete.
 
   The players are listed and written in the file's order, which is Rigdio's button order;
   a new player goes before the first one whose name sorts after it (plain string order,

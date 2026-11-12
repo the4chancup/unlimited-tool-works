@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Unified model format plan
+# Unlimited Tool Works: Unified model format plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -27,13 +27,13 @@ Instead of parsing `.blend` files directly (Blender's binary format changes betw
 mature Rust parser) or using FBX (proprietary, immature Rust support), the format is **glTF with PES
 extensions**:
 
-- **Blender exports glTF natively** — no addon needed for base mesh/skeleton/UV data; it has been a
+- **Blender exports glTF natively**: no addon needed for base mesh/skeleton/UV data; it has been a
   stock exporter since Blender 2.80
-- **Rust has a mature parser** — the `gltf` crate is production-quality
-- **Other 3D tools support glTF** — Maya, 3ds Max, Godot, Sketchfab, Windows 3D Viewer, etc.
-- **Extension mechanism** — PES-specific structural metadata (bones, mesh splitting) stored as
+- **Rust has a mature parser**: the `gltf` crate is production-quality
+- **Other 3D tools support glTF**: Maya, 3ds Max, Godot, Sketchfab, Windows 3D Viewer, etc.
+- **Extension mechanism**: PES-specific structural metadata (bones, mesh splitting) stored as
   custom JSON extensions; material properties live in TOML files alongside the model
-- **Binary bulk data** — vertex/face data is binary, not text; the JSON scene description is ~5-10%
+- **Binary bulk data**: vertex/face data is binary, not text; the JSON scene description is ~5-10%
   of total size.
 
 **Stock Blender is enough.** The plugin (`pes-models`, see the [Model conversion
@@ -160,8 +160,8 @@ with these fallbacks, which are the same ones native models without the data alr
 
 | Extension | Carries | When absent |
 |---|---|---|
-| `PES_bone` | `sklParent` (the SKL parent hierarchy, distinct from the render hierarchy) and `globalPosition` per bone | Looked up by bone name in the template skeleton; a bone name unknown to the template with no `PES_bone` is `gltf_bone_unknown` (E) — a custom skeleton must carry its metadata |
-| `PES_mesh` | Mesh-splitting group identity, so a same-format round-trip re-splits meshes identically | The compiler splits from scratch at compile time (it must be able to anyway — hardware limits are checked on every model); only byte-stability of round-trips is lost |
+| `PES_bone` | `sklParent` (the SKL parent hierarchy, distinct from the render hierarchy) and `globalPosition` per bone | Looked up by bone name in the template skeleton; a bone name unknown to the template with no `PES_bone` is `gltf_bone_unknown` (E): a custom skeleton must carry its metadata |
+| `PES_mesh` | Mesh-splitting group identity, so a same-format round-trip re-splits meshes identically | The compiler splits from scratch at compile time (it must be able to anyway: hardware limits are checked on every model); only byte-stability of round-trips is lost |
 
 The extensions are listed in `extensionsUsed`, never in `extensionsRequired`, so every glTF-aware
 tool opens a Studio-written file (unknown extensions are skipped on import). A plugin-less
@@ -234,8 +234,8 @@ Material files are identified by extension, not by name reservation:
 
 | File | Role | Pre-Fox equivalent |
 |------|------|-------------------|
-| `materials.toml` | base layer — applies to every glTF in the folder, including those with name-matched files | `materials.mtl` |
-| `body.materials.toml` | name-matched (example) — applies to glTFs whose stem startsWith or endsWith `body` | `body.mtl` |
+| `materials.toml` | base layer: applies to every glTF in the folder, including those with name-matched files | `materials.mtl` |
+| `body.materials.toml` | name-matched (example): applies to glTFs whose stem startsWith or endsWith `body` | `body.mtl` |
 | `body.materials.toml.common` | link to `Common/body.materials.toml`, participating as if it were local (see "Link files") | `body.mtl.common` |
 
 The `.materials.toml` double extension is the structural marker:
@@ -447,13 +447,13 @@ versions.
 
 ### Examples
 
-Minimal — a face with `face.png` and `face_nrm.png` beside it:
+Minimal, a face with `face.png` and `face_nrm.png` beside it:
 
 ```toml
 [face]
 ```
 
-Typical — as `ir_to_gltf` writes it for a plain FMDL face, comments included:
+Typical, as `ir_to_gltf` writes it for a plain FMDL face, comments included:
 
 ```toml
 [face]
@@ -473,7 +473,7 @@ alpha_flags = 128
 shadow_flags = 0
 ```
 
-Advanced — a two-sided hair card with tweaked pre-Fox states and a Fox-only parameter, and an eye
+Advanced, a two-sided hair card with tweaked pre-Fox states and a Fox-only parameter, and an eye
 occlusion decal using a shader no family covers (the AUO lab export's `eyeocclusion_lambert`):
 
 ```toml

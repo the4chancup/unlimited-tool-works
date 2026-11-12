@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Aesthetics export plan: Object model
+# Unlimited Tool Works: Aesthetics export plan: Object model
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -29,10 +29,10 @@ Placement rules:
 - **Conventions are data.** Two rules that read like compiler behavior are conventions and live
   here, because a second consumer already depends on them:
   - the **model source selection rule** (target-native first, then glTF, then the convertible
-    opposite native format — the Player aesthetics editor uses it to decide which set opens
+    opposite native format; the Player aesthetics editor uses it to decide which set opens
     visible and why leftover natives must be removed after a glTF conversion);
   - the **structural file-kind classification** of a model folder's files (model, texture,
-    `GltfBuffer`, `PotentialGltfImage`, link file, marker, disallowed — from names alone;
+    `GltfBuffer`, `PotentialGltfImage`, link file, marker, disallowed, from names alone;
     `model_convert`'s glTF dependency contract takes this classification as its input and only
     *promotes* candidates during deep URI resolution).
 

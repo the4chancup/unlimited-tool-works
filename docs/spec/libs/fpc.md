@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan: fpc
+# Unlimited Tool Works: Library crates plan: fpc
 
 Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -23,7 +23,7 @@ either duplicate the knowledge or make one format crate depend on the other. So 
 knowledge is a **leaf crate whose only dependencies are `pes_version` and `thiserror`** (for the
 hide IDs' error type), holding data and pure rules only:
 
-- `kit.rs` — the kit-config FPC values per PES version (the modern system: PES 19+ and the 2024
+- `kit.rs`: the kit-config FPC values per PES version (the modern system: PES 19+ and the 2024
   reimplementation for 16/17; the retro 16/17 system is documented as legacy and not supported).
   `kit_values()` returns the four values (shirt model 176, shorts model 16, collar 105, winter
   collar 105), each a `u8`, the width a kit config stores it in. They are the same on every
@@ -49,14 +49,14 @@ hide IDs' error type), holding data and pure rules only:
   config to count; its FPC CPK holds the same files as PES 19's, and the maintainer confirmed it
   uses the same four values. The PES 20 install (a base DLC only) holds no team kit config
   either; its FPC CPK supplies the same empty `collar_105` and `pants_016`.
-- `player.rs` — the three appearance presets above, expressed in the crate's own small vocabulary
+- `player.rs`: the three appearance presets above, expressed in the crate's own small vocabulary
   (`Sleeves`, `Tuck`, `Socks`, boots/gloves IDs, skin color), not in `pes_savefile` field terms;
   and `custom_skin_available(version) -> bool`, true for PES 15 to 17 only (the Fox games dropped
   the Custom skin; the reference editor resets it to the default there), so the partial-hide
   preset's one version-dependent fact lives with the rest of the FPC knowledge.
-- `interference.rs` — the settings that break or bend FPC, as findings with severity:
+- `interference.rs`: the settings that break or bend FPC, as findings with severity:
   - inners ≠ None and undershorts ≠ Off/Off break hiding (error on an FPC player);
-  - wrist/ankle taping ≠ None selectively shows pieces (info — deliberate in custom setups);
+  - wrist/ankle taping ≠ None selectively shows pieces (info: deliberate in custom setups);
   - the Gloves checkbox with gloves ID 0 causes winter gloves in winter conditions (warning);
   - skin color Custom on a non-FPC player hides the body but not the jersey (warning).
 

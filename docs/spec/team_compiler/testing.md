@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Team compiler plan: Testing
+# Unlimited Tool Works: Team compiler plan: Testing
 
 Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -16,7 +16,7 @@ The parity harness supplies the reference-fixture location; it is not a custom `
 passed through to Rust's standard test harness, which does not accept that option.
 
 The reference tree is the **extracted contents** of Red's output CPK (Blue's `Singlecpk_files`
-convention) — Red itself emits `patches_output/{cpk_name}.cpk`, so the fixture is produced by a
+convention): Red itself emits `patches_output/{cpk_name}.cpk`, so the fixture is produced by a
 one-time extraction step.
 
 A reference tree small enough to commit is committed as the tree itself. These three run their
@@ -74,7 +74,7 @@ scripts and the order of a rerun are under `scripts/library_parity/` (its `READM
 
 Intentional differences must be accounted for:
 
-- **Auto-assigned boots/gloves IDs** may differ from the old embedded IDs — the comparison
+- **Auto-assigned boots/gloves IDs** may differ from the old embedded IDs: the comparison
   normalizes ID-dependent paths and embedded references.
 - **Texture locations**: every player's textures are relocated to per-player common subfolders
   (see "Texture relocation to common" in the walkthrough). Red instead packs an AET-layout

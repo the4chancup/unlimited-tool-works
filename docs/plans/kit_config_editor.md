@@ -1,12 +1,12 @@
-# Unlimited Tool Works — Kit config editor plan
+# Unlimited Tool Works: Kit config editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-What exists of this is in `spec/kit_config_editor.md` "Unlimited Tool Works — Kit config editor plan".
+What exists of this is in `spec/kit_config_editor.md` "Unlimited Tool Works: Kit config editor plan".
 
 The Kit config editor (`crates/tools/kit_config_editor`, tool id `kit-config-editor`,
 sidebar label "Kit config editor") is the successor to **Kit Manager PES2016** by
-GOALARG — the closed-source, long-abandoned tool used by the 4cc community to edit kit
+GOALARG, the closed-source, long-abandoned tool used by the 4cc community to edit kit
 config files, in its original form and in a hex-patched "PES2021" variant. As with
 the Match tracker, the old name carries no recognition value and does not stay in
 the label.
@@ -23,8 +23,8 @@ Two ways in, per the suite's export-first philosophy:
 
   The tool walks the selected source, supplies a canonical `vtree::ScopePath` listing and
   required small metadata to `aesthetics_export::parse_listing`, then consumes the resulting
-  `ParsedAestheticsExport` plus kit-scoped validation—not a whole-export
-  `ValidatedAestheticsExport`—so an unrelated roster/player error never prevents opening and
+  `ParsedAestheticsExport` plus kit-scoped validation, not a whole-export
+  `ValidatedAestheticsExport`, so an unrelated roster/player error never prevents opening and
   repairing a kit. The shared crate still owns locating and validating the folders (see the
   [Team compiler plan](team_compiler/README.md)), so this tool never carries its own idea of
   the export layout.
@@ -33,8 +33,8 @@ Two ways in, per the suite's export-first philosophy:
   configs).
 - **Open UniformParameter bin** (secondary, via `uniparam`): lists the container's
   entries with a filter box; picking one edits it and saves back into the
-  container — covers the cup keeper's "fix one team's config in the compiled bins"
-  case without a compile round.
+  container (covers the cup keeper's "fix one team's config in the compiled bins"
+  case without a compile round).
 
 In the loose-file and container modes the five texture names (the `.bin`'s 16-byte
 fields) are editable text, ASCII and at most 15 characters, refused at entry otherwise:
@@ -61,7 +61,7 @@ the load, not at edits, and its Save as left later Saves on the original file.
 The form groups the fields as the format does:
 
 - Shirt (models, collars, sleeves, tight, pattern);
-- Colors (the five config fields, via the shared `color_tools` picker — no more JCPicker
+- Colors (the five config fields, via the shared `color_tools` picker: no more JCPicker
   subprocess and hex-paste dance);
 - Name;
 - Numbers (back/chest/shorts);
@@ -87,24 +87,24 @@ Team compiler's reconciliation rather than leaving it as four magic numbers.
 **Kit menu colors**: in export-folder mode each tab also edits the kit folder's
 `colors.txt` (the two `UniColor.bin` menu colors that drive the match-UI
 scoreboard and the kit-selection color dots) and its optional `icon_<N>` marker
-(the menu icon number, 0–23, carried in the empty file's name — written only when
+(the menu icon number, 0–23, carried in the empty file's name, written only when
 it differs from the default 3, so the marker stays optional).
 
 Same picker, with its suggestion swatches pre-loaded from `color_tools`' dominant-color
-extraction on the kit's textures — the manager sees what the compiler would derive on its own
+extraction on the kit's textures: the manager sees what the compiler would derive on its own
 (its fallback when `colors.txt` is missing) and either accepts it with a click or picks
 something better. Suggestions **preview live**: hovering a swatch (or dragging inside the
-picker) temporarily applies the candidate color to everything it tints — the menu-UI mockup
-and the icon gallery below — and reverts on mouse-out, so a suggestion is judged in context
+picker) temporarily applies the candidate color to everything it tints (the menu-UI mockup
+and the icon gallery below) and reverts on mouse-out, so a suggestion is judged in context
 before the click commits it.
 
 A small **menu-UI mockup** sits next to the color fields, showing the two menu colors as PES
-actually uses them: the kit-selection color-dot pair and a scoreboard strip — not just bare
+actually uses them: the kit-selection color-dot pair and a scoreboard strip, not just bare
 swatches.
 
 The **icon is picked visually**: a gallery of all 24 kit icon patterns (`color_tools`' vector
-renditions — the `icon_<N>` space, not the config's Shirt pattern field), each tinted live with
-the kit's current menu colors — never a bare number. A hint notes that only PES 15/16 display
+renditions, the `icon_<N>` space, not the config's Shirt pattern field), each tinted live with
+the kit's current menu colors, never a bare number. A hint notes that only PES 15/16 display
 the icon in game (the prematch gameplan screens); the tinted pattern still doubles as a preview
 of the menu colors themselves.
 
@@ -122,7 +122,7 @@ tool's 51MB of prerendered bitmaps is neither reusable nor worth recreating. The
 preview is for orientation; the game remains the ground truth.
 
 Unknown bits get a collapsible **raw view** row (hex per unknown region) for
-curious users — the raw material for decoding the remaining bits someday.
+curious users: the raw material for decoding the remaining bits someday.
 
 ## Settings (tool section)
 
@@ -153,21 +153,21 @@ What exists of this is in `spec/kit_config_editor.md` "Testing".
 
 What exists of this is in `spec/kit_config_editor.md` "Improvements over Kit Manager (summary)".
 
-3. **Whole-team editing** — all of an export's kits in tabs, plus direct
+3. **Whole-team editing**: all of an export's kits in tabs, plus direct
    UniformParameter container editing; the original opened one file at a time.
 4. **Live preview from the kit's real textures** instead of 51MB of canned bitmaps.
-5. **Suite integration** — global PES version drives the encoding; FPC values are
+5. **Suite integration**: global PES version drives the encoding; FPC values are
    shared constants with the Team compiler, not folklore numbers; built-in color
    pickers with texture-derived suggestions.
-6. **Kit menu colors in the same place** — each kit's `colors.txt` (UniColor menu
+6. **Kit menu colors in the same place**: each kit's `colors.txt` (UniColor menu
    colors) and `icon_<N>` marker (menu icon, picked from a live-tinted visual gallery)
    are edited alongside its config, seeded by the same dominant-color extraction
    the compiler falls back on.
 
 ## Dropped features
 
-- **Prerendered preview bitmaps** — replaced by the schematic + texture composite.
-- **JCPicker integration** — replaced by the shared `color_tools` picker widget.
+- **Prerendered preview bitmaps**: replaced by the schematic + texture composite.
+- **JCPicker integration**: replaced by the shared `color_tools` picker widget.
 
 ## Key decisions
 

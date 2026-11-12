@@ -1,4 +1,4 @@
-# Unlimited Tool Works — DB generator plan
+# Unlimited Tool Works: DB generator plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -43,7 +43,7 @@ What the scripts produce, per version 15–21, into `database_NN/`:
 | `common/etc/pesdb/PlayerAssignment.bin` | 23 per team | assignment index, player id, team id, order (0-based on 19+, 1-based before) |
 | `common/etc/pesdb/Coach.bin` | one per team | manager id = team id, nationality 231, `マネージャー` / `MANAGER` |
 | `common/etc/pesdb/CompetitionEntry.bin` | one per team | team id, entry index, competition id and the team's order within it; competition 9 = the cup, 10 = Invitational, 11 = VGL, 12 = Backup, classified by the team's name |
-| blank files | — | every other table the version's game expects to find, as an empty file, so Konami's rows are cleared (the numbered `Team1.bin`..`Team6.bin` siblings included on 15–20; the myClub and Weekly tables where the version has them) |
+| blank files | - | every other table the version's game expects to find, as an empty file, so Konami's rows are cleared (the numbered `Team1.bin`..`Team6.bin` siblings included on 15–20; the myClub and Weekly tables where the version has them) |
 
 The scripts stop short of a complete database on purpose: `Country*.bin`, `Competition*.bin`,
 `CompetitionKind*.bin`, `CompetitionRegulation*.bin` are Konami's and must be copied from the
@@ -111,12 +111,12 @@ Inputs:
 
 Outputs (each an independent action, all three in one run by default):
 
-1. **Database tree** — `database_NN/common/etc/pesdb/*.bin` and
+1. **Database tree**: `database_NN/common/etc/pesdb/*.bin` and
    `database_NN/common/character0/model/character/appearance/PlayerAppearance.bin`, byte-identical
    to the scripts' output for the same teams list (see "Verification"), plus the Konami tables
    when an install is available.
-2. **Database CPK** — the tree packed with `libs/cpk`; file name is an Open question.
-3. **Populated EDIT** (19–21) — the given EDIT with the player section filled and the count set,
+2. **Database CPK**: the tree packed with `libs/cpk`; file name is an Open question.
+3. **Populated EDIT** (19–21): the given EDIT with the player section filled and the count set,
    written next to the input with the suite's `.bak` rule (`pes_savefile::EditFile::save`).
 
 Switches:
@@ -133,7 +133,7 @@ with per-version layouts. Consumers:
 
 - this tool (`Team`, `Player`, `PlayerAppearance`, `PlayerAssignment`, `Coach`,
   `CompetitionEntry`);
-- the [Balls compiler](balls_compiler.md) (`Ball`, `BallCondition` — the plan's "format
+- the [Balls compiler](balls_compiler.md) (`Ball`, `BallCondition`; the plan's "format
   knowledge lives inside the tool crate" sentence is superseded by this crate; the Ball.bin
   format reference stays in that plan and the record layout is transcribed from it);
 - the [Stadium compiler](stadium_compiler.md) (`Stadium`).
@@ -190,7 +190,7 @@ The placeholder is the version's **base player** (`PlayerEntry` decoded from the
 `Player_Edit_Base_NN.bin` + `PlayerAppearance_Base_16.bin` assembly, committed as a fixture),
 with `id`, `base_copy_id` and, from Phase 5, the appearance-block id patched.
 
-`EditFile` gains the one thing its API refuses today — adding player records — behind this
+`EditFile` gains the one thing its API refuses today, adding player records, behind this
 operation only; the record order and count rules of `to_bytes` otherwise stand.
 
 ## Tool crate layout
@@ -230,7 +230,7 @@ CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out .
 
 ## Open questions
 
-- **Database CPK file name and DpFileList position** in the 4cc DLC — take from the current
+- **Database CPK file name and DpFileList position** in the 4cc DLC: take from the current
   cup's DLC layout when the Team compiler's deployment stage is specified (Phase 4); until
   then the CPK is written under the name the user gives.
 - **Whether PES 20/21 also need the populated EDIT**: the scripts' README says the quirk starts

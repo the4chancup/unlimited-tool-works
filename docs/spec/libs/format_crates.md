@@ -1,4 +1,4 @@
-# Unlimited Tool Works — Library crates plan: Format crates
+# Unlimited Tool Works: Library crates plan: Format crates
 
 Part of the [Library crates plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -29,7 +29,7 @@ struct FmdlHeader {
 ### Layout of the format crates: `format/` and `ops/`
 
 The single-concern format crates (`cpk`, `fpk`, `ftex`, `fox2`, `uniparam`, `wezlib`, `kit_config`)
-need no prescribed layout — one module tree, read and write, tests. `fmdl` and `pes_model` are
+need no prescribed layout: one module tree, read and write, tests. `fmdl` and `pes_model` are
 different: each carries **format-native algorithms** on top of the codec (mesh splitting, split
 vertex encoding, anti-blur decode/encode, multi-model merging, path editing) and has a **second
 consumer outside the workspace** (the Blender extension via `python_bindings`). Both crates use the
@@ -96,7 +96,7 @@ Rules:
   Instead each mirrored file names its twin in its header, and a change to one goes to the other
   in the same commit. The duplication check's keep list holds each pair, so a diff that changes
   one copy alone shows in review.
-- **`check.rs` returns findings, not messages** — stable codes with context, mapped to catalog
+- **`check.rs` returns findings, not messages**: stable codes with context, mapped to catalog
   entries by the consuming tool, mirroring `aesthetics_export`'s rule.
 - **Geometry far from the origin is an Error in both crates' `check`**
   (`fmdl_vertex_far_from_origin`, `model_vertex_far_from_origin`, one finding per mesh, `count` =
