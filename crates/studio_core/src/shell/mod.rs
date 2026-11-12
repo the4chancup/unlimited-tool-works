@@ -12,6 +12,7 @@ mod launch;
 mod settings_menu;
 mod sidebar;
 mod status_bar;
+mod taskbar;
 #[cfg(test)]
 mod test_harness;
 mod title;
@@ -988,6 +989,8 @@ pub fn run_gui(mut app: StudioApp) -> anyhow::Result<()> {
         Box::new(|creation| {
             #[cfg(windows)]
             window_size::hide_title_bar_icon(creation);
+            #[cfg(windows)]
+            taskbar::set_relaunch(creation);
             crate::theme::install(&creation.egui_ctx);
             // The context's clones share the wake slot, so a `with_events` sink made before
             // the window exists still wakes it.
