@@ -14,9 +14,6 @@ Setting it through individual `settings.toml` keys would be error-prone. Instead
 folder-level toggle, consistent with the principle that the folder view tells the whole story
 about how the player's models render:
 
-- Tolerances, in the same spirit as link files: `fpc_on.txt`, and a bare `fpc` or `fpc.txt`,
-  read as `fpc_on` (presence reads as "on"); `fpc_off.txt` reads as `fpc_off`.
-- Both markers in the same folder raise `fpc_conflict` (error; folder discarded).
 - **`fpc_on`** — an empty marker file in a player folder. When present, the compile applies the
   **FPC enable preset** from `libs/fpc` to the player's settings (the same
   preset the save editor's FPC toggle uses — one implementation, so the two tools can never drift);
@@ -33,6 +30,9 @@ about how the player's models render:
   settings in exports" in [settings.toml](settings_toml.md)). The exception is a `Midcup`
   export, where a boots or gloves ID the folder does not set keeps the save's current ID, so
   `fpc_off` is what resets a hidden player's IDs there. Model-derived ID assignments still apply.
+- Tolerances, in the same spirit as link files: `fpc_on.txt`, and a bare `fpc` or `fpc.txt`,
+  read as `fpc_on` (presence reads as "on"); `fpc_off.txt` reads as `fpc_off`.
+- Both markers in the same folder raise `fpc_conflict` (error; folder discarded).
 - Either preset **overrides** the keys it sets (the strip keys and `skin_color`) in the folder's
   `settings.toml`; explicitly-set keys that get overridden raise `fpc_strip_conflict`.
 - In a `players.txt` multi-mapped folder, the preset applies to all mapped players (like the rest of

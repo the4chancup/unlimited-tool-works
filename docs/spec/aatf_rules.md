@@ -533,7 +533,7 @@ All seven are the ones the parity runs checked ("Development phase and verificat
 `libs/aatf` keeps the latest two rulesets of each kind of cup with an organization of its own,
 the 4cc's own (the official AATF), VGL (/vg/ League) and VTL (/vt/ League), and DBC7
 (Divegrass Before Christmas). A cup's new edition joins the list, and its kind keeps its
-latest two; the older one leaves the list and stays in `rulesets/` as a test ruleset with its
+latest two. The older one leaves the list and stays in `rulesets/` as a test ruleset with its
 fixtures (`src/fixtures/`), built into the tests alone, as Autumn 25 and VGL25 do. Minor
 invitationals (VTLA, UnityCup) get no built-in ruleset.
 
@@ -645,10 +645,13 @@ const RULESET = #{
 };
 ```
 
-Where the data reads differently from `aatf.cpp`, on purpose: `aatf.cpp` prints its two height
-warnings for gold (above 194, and at 194) separately; here they are one. A player whose rating fits
-no tier's target is placed by expected rating rather than by `aatf.cpp`'s thresholds, so an illegal
-player can be reported against a different tier; both report the player.
+Where the data reads differently from `aatf.cpp`, on purpose:
+
+- `aatf.cpp` prints its two height warnings for gold (above 194, and at 194) separately; here
+  they are one.
+- A player whose rating fits no tier's target is placed by expected rating rather than by
+  `aatf.cpp`'s thresholds, so an illegal player can be reported against a different tier; both
+  report the player.
 
 Where the transcription's reading and the cup's written rules differ, the file follows the wiki's
 Appendix:Rules as edited on 2026-10-06 (`DECISIONS.md`, 2026-10-21):
@@ -817,8 +820,8 @@ registered position.
 
 The VTL wiki's VTL10 page found in 2026-10 describes another ruleset entirely (medals rated 89,
 94 and 99, eighteen regulars, heights 185, 180 and 175). The checker is followed, and the cup
-save bears it out: the 43 teams the checker passes are the ones the data
-block passes, and every other team fails both.
+save bears it out: the 43 teams the checker passes are the ones the data block passes, and every
+other team fails both.
 
 ---
 
@@ -938,10 +941,12 @@ The map names the variant in `kind` (`"Stat"`) and carries its fields under thei
 sets as the labels the file uses (`stat: "speed"`, `position: "CB"`, `card: "malicia"`), ids as
 their strings, `shape` as an array of three. `slot` is the roster slot, absent or `()` for the
 team; `severity` is `"error"`, `"warning"` or `"suggestion"`, absent meaning an error, so a
-custom check can return `#{ kind: "Custom", text: "…" }`. A map the host cannot convert (an
-unknown kind, a missing or extra key, a number past its field's range, an unknown label) fails
-the check with the map's index in the returned list. It is not dropped: it is a bug in the logic
-or a custom check, and a check that skipped it would pass a team the file means to flag.
+custom check can return `#{ kind: "Custom", text: "…" }`.
+
+A map the host cannot convert (an unknown kind, a missing or extra key, a number past its
+field's range, an unknown label) fails the check with the map's index in the returned list. It
+is not dropped: it is a bug in the logic or a custom check, and a check that skipped it would
+pass a team the file means to flag.
 
 **Suggestions** need no authoring. Every allowance named in `suggestions` that a player does not
 use up yields an `Unused` suggestion: paid cards under the limit, a group's free cards not all
@@ -993,11 +998,13 @@ engine.set_max_expr_depths(64, 64);              // rhai's debug and release def
 
 rhai is built with its `sync` feature, so a loaded `Rules` is `Send + Sync`: the whole-save
 check runs its teams in parallel on one `Rules`, and a worker checks a team on the ruleset the
-window loaded rather than loading its own. Measured 2026-10-22 (release, the official ruleset
-on a PES 2017 save's 220 cup teams): one team's check takes about 56 ms, of which building the
-team's view, copying it and calling into the script take under 1%; the rest is the script's
-own work, `read_player`'s profile of each tier the most of it. `sync` costs about 3% per team;
-the parallel check takes 1.8 s on 16 threads where one thread took 12.8 s.
+window loaded rather than loading its own.
+
+Measured 2026-10-22 (release, the official ruleset on a PES 2017 save's 220 cup teams): one
+team's check takes about 56 ms, of which building the team's view, copying it and calling into
+the script take under 1%. The rest is the script's own work, `read_player`'s profile of each
+tier the most of it. `sync` costs about 3% per team, and the parallel check takes 1.8 s on 16
+threads where one thread took 12.8 s.
 
 Since Rhai copies every map a call passes, the logic computes once what does not change between
 the calls that would repeat it: a choice's card summary, targets and weak-foot limits once per
@@ -1071,13 +1078,13 @@ read against whichever team is played) or `0xFF` for none. The bytes sit in the 
 Man marking is not an advanced instruction: Tight Marking is a stronger, separate instruction.
 
 Auto substitution is off at 0 on PES 15, 16 and 21 (measured in-game: Very Late 1, Flexible 2,
-and on PES 21 Very Early 3); on PES 15 it is the tactics record's +0x1FE, followed by the
+and on PES 21 Very Early 3). On PES 15 it is the tactics record's +0x1FE, followed by the
 offside trap (+0x1FF) and the automatic preset change (+0x200), each 0 or 1. 482 of the 483
 teams of the PES 16 and 21 saves measured hold 0.
 
 `apply_tier(player, tier, rules)` is the lib's one *writing* operation. It calls `tier_values`
 and writes the result into the player (stats; form; injury resistance and weak foot at their
-maximum), and the tier's `name_color` over the name's leading colour code; under a tier that
+maximum), and the tier's `name_color` over the name's leading colour code. Under a tier that
 sets none, it removes a leading code that another tier sets and keeps any other. A name the
 code pushes past its field fails the save's write, as any name too long for it does.
 
@@ -1110,8 +1117,8 @@ refuses one that fails, and the Save editor refuses to import one):
 
 A failure is a finding with the file's line and column for parse errors and the key path
 (`tiers[2].free.tricks`) for schema errors, before any real check runs. The schema error's path
-comes from `serde_path_to_error` wrapping the deserializer, not a wrapper of our own: its whole
-job, and it depends only on `serde` and `itoa`.
+comes from `serde_path_to_error` wrapping the deserializer, not a wrapper of our own: that is
+its whole job, and it depends only on `serde` and `itoa`.
 
 **Logic identity.** `libs/aatf` embeds the current logic and the SHA-256 of every logic section
 it has ever shipped, by version (`LOGIC_VERSIONS`), hashed with line endings normalized to LF
@@ -1278,14 +1285,15 @@ Verification:
 - **Parity, VGL27.** The same against `vgl27`'s `aatf_single_vgl` (`VGL27.B`) on the VGL26 cup
   save's teams: built for VGL26, most fail, and what is compared is the findings, not legality.
   A VGL27 cup save replaces it when one exists.
-- **Differences every legacy checker shows, on purpose.** A player of no tier is reported once,
-  as `NoTier`, where the checkers go on to report his tier-free checks too (a weight, a required
-  card): the member fixes the player's type first and the next check reports the rest, one more
-  run rather than a missed error, since a team with an error gets a person's attention anyway.
-  The checkers' "Illegal Ability scores" line (the overall rating off the tier's) has no kind:
-  every stat off its target is reported itself. A tier over its count is reported on the team
-  (`TierCount`), where the official checker also names one of the excess players, an arbitrary
-  choice among them.
+- **Differences every legacy checker shows, on purpose.**
+  - A player of no tier is reported once, as `NoTier`, where the checkers go on to report his
+    tier-free checks too (a weight, a required card). The member fixes the player's type first
+    and the next check reports the rest: one more run rather than a missed error, since a team
+    with an error gets a person's attention anyway.
+  - The checkers' "Illegal Ability scores" line (the overall rating off the tier's) has no kind:
+    every stat off its target is reported itself.
+  - A tier over its count is reported on the team (`TierCount`), where the official checker also
+    names one of the excess players, an arbitrary choice among them.
 - Per ruleset, known-legal teams report nothing; each known-violating fixture reports exactly its
   violation. Every special of the official file is exercised by at least one fixture.
   - VGL26's and VGL27's include a starting-eleven player fielded in preset 1 at a position he is

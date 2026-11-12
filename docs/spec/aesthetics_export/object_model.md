@@ -8,11 +8,11 @@ The pipeline operates on typed objects, not a flat dict of path strings to bytes
 canonicalizes a flat `CanonicalListing` into a `vtree::VirtualTree`, and `vtree::ScopePath` spells
 every path and issue scope the model carries.
 
-**The model and its validation live in `libs/aesthetics_export`, not in the Team compiler.** The export format is
-shared knowledge: the Export upgrader writes it, the Kit config editor edits kit folders inside it,
-and the Team creator generates it from scratch — so one crate owns the object model, the
-folder conventions described under "Player folders (the export format)", and the check rules behind
-the format-level messages in the catalog.
+**The model and its validation live in `libs/aesthetics_export`, not in the Team compiler.** The
+export format is shared knowledge: the Export upgrader writes it, the Kit config editor edits kit
+folders inside it, and the Team creator generates it from scratch. So one crate owns the object
+model, the folder conventions described under "Player folders (the export format)", and the
+check rules behind the format-level messages in the catalog.
 
 That includes the **structure parser**: canonical folder/file listing, names/sizes, supplied
 small metadata such as raw `players.txt`, and link files → `ParsedAestheticsExport`, with no
@@ -114,11 +114,13 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 - **Sanitized versus eligible.** `ValidatedAestheticsExport` holds exactly the eligible content:
   every item no issue drops. `ValidationReport.parsed` still holds everything and `issues` every
   finding, so a dropped folder stays renderable and a broken roster repairable. `validated` is
-  `None` exactly when some issue's effective disposition is `DropExport`. `pass_through` turns an
-  eligible `DropFile`/`DropFolder` into `Keep`: the item stays in the validated export and its
-  issue stays in the report, marked as passed through, so the tool reports it at its severity and
-  finishes that scope as `DoneWithErrors`. `DropSlot`, `DropExport` and the codes the catalog
-  marks not eligible are never kept. The deep pass applies the same rule ("Content findings").
+  `None` exactly when some issue's effective disposition is `DropExport`.
+
+  `pass_through` turns an eligible `DropFile`/`DropFolder` into `Keep`: the item stays in the
+  validated export and its issue stays in the report, marked as passed through, so the tool
+  reports it at its severity and finishes that scope as `DoneWithErrors`. `DropSlot`,
+  `DropExport` and the codes the catalog marks not eligible are never kept. The deep pass applies
+  the same rule ("Content findings").
 - **Content findings.** This crate reads no file content, so the deep pass's findings come from
   the consumer, which checks the files of the first report's `validated` (what the structure
   pass dropped is not read). `ValidationReport::with_content_findings` takes them and returns
@@ -252,8 +254,8 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   other drop it decides belongs to one of the not-eligible classes in `team_compiler/messages.md`
   "Message structure".
 - **Drop order.** A folder's own findings come first, then `link_target_dropped` for each player
-  or shared folder whose link target was dropped, then `shared_folder_orphaned` over the players still eligible
-  and roster-mapped: a shared folder linked only by a dropped player is orphaned.
+  or shared folder whose link target was dropped, then `shared_folder_orphaned` over the players
+  still eligible and roster-mapped: a shared folder linked only by a dropped player is orphaned.
 - **Export findings of `validate`.** A stem with no token is `team_name_unknown` with an empty
   name, and an export holding no content-folder entry and no root `logo*` texture is
   `export_empty`, both `DropExport`.
@@ -454,8 +456,8 @@ pub struct ResolvedAestheticsExport {
 ```
 
 The compiler supports **only the Studio export format**. The old format (separate Faces/Boots/Gloves
-item folders with embedded IDs, Kit Configs/Kit Textures folders, the Other folder) is not supported
-— old exports are migrated with the Export upgrader tool (see the [Export upgrader
+item folders with embedded IDs, Kit Configs/Kit Textures folders, the Other folder) is not
+supported. Old exports are migrated with the Export upgrader tool (see the [Export upgrader
 plan](../export_upgrader.md)).
 
 An old-layout export that reaches the compiler anyway is one finding, `export_layout_old`, and
