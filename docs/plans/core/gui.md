@@ -1447,7 +1447,9 @@ ST-WIN-05   GIVEN the program at `C:\Tools\UTW\UTW.exe`
             WHEN the taskbar's relaunch values are made for it
             THEN the command is `"C:\Tools\UTW\UTW.exe"`, the icon `C:\Tools\UTW\UTW.exe,0`,
                  and the application ID `UnlimitedToolWorks.` and sixteen hex digits, the
-                 same for `c:\tools\utw\utw.exe`, another for `D:\Other\UTW.exe`
+                 same for `c:\tools\utw\utw.exe`, another for `D:\Other\UTW.exe`; GIVEN a
+                 window on Windows WHEN the values are set on it THEN its property store
+                 gives back the ID, the command, the program's name and the icon
 ST-WIN-06  manual  GIVEN the release bundle on Windows, started from its exe, no shortcut
                  to it anywhere
             WHEN its taskbar button is Shift+clicked, then middle-clicked

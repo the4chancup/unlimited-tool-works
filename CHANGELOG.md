@@ -81,7 +81,8 @@ What changed for members, release by release, newest first.
   undone when the other saves something else: each window writes only the settings it
   changed itself. A window shows what another one changed once it is started again.
 - **Windows**: a Shift+click or a middle click on the program's taskbar button opens another
-  window, as it does for most programs. It did nothing unless the program was pinned.
+  window, as it does for most programs. It did nothing unless Windows
+  had a shortcut for the program, such as a taskbar pin.
 
 ### Minor fixes
 

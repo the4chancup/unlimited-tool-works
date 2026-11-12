@@ -51,18 +51,6 @@ fn icon_resource(exe: &Path) -> String {
 pub(super) fn set_relaunch(window: &impl raw_window_handle::HasWindowHandle) {
     use raw_window_handle::RawWindowHandle;
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::Storage::EnhancedStorage::{
-        PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
-        PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
-    };
-    use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
-    use windows::Win32::System::Variant::VT_LPWSTR;
-    use windows::Win32::UI::Shell::PropertiesSystem::{
-        IPropertyStore, SHGetPropertyStoreForWindow,
-    };
-    use windows::core::PWSTR;
-
-    use super::APP_NAME;
 
     let handle = match window.window_handle().map(|handle| handle.as_raw()) {
         Ok(RawWindowHandle::Win32(handle)) => handle,
@@ -82,37 +70,56 @@ pub(super) fn set_relaunch(window: &impl raw_window_handle::HasWindowHandle) {
             return;
         }
     };
-    // SAFETY: `handle.hwnd` is the live window eframe just created, valid
-    // while the creation context that lent it is borrowed here; the call
-    // hands out the window's own property store as a COM object.
-    let store = match unsafe {
-        SHGetPropertyStoreForWindow::<IPropertyStore>(HWND(
-            handle.hwnd.get() as *mut std::ffi::c_void
-        ))
-    } {
-        Ok(store) => store,
-        Err(error) => {
-            log::warn!("the taskbar's new-instance clicks stay as Windows has them: {error}");
-            return;
-        }
+    let window = HWND(handle.hwnd.get() as *mut std::ffi::c_void);
+    if let Err(error) = set_relaunch_values(window, &exe) {
+        log::warn!("the taskbar's new-instance clicks stay as Windows has them: {error}");
+    }
+}
+
+/// Writes `exe`'s four relaunch values to `window`'s property store.
+/// `window` must be a live top-level window of this thread.
+#[cfg(windows)]
+fn set_relaunch_values(
+    window: windows::Win32::Foundation::HWND,
+    exe: &Path,
+) -> windows::core::Result<()> {
+    use std::mem::ManuallyDrop;
+
+    use windows::Win32::Storage::EnhancedStorage::{
+        PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
+        PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
     };
+    use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
+    use windows::Win32::System::Variant::VT_LPWSTR;
+    use windows::Win32::UI::Shell::PropertiesSystem::{
+        IPropertyStore, SHGetPropertyStoreForWindow,
+    };
+    use windows::core::PWSTR;
+
+    use super::APP_NAME;
+
+    // SAFETY: the caller hands a live window of this thread; the call hands
+    // out the window's own property store as a COM object.
+    let store: IPropertyStore = unsafe { SHGetPropertyStoreForWindow(window) }?;
     for (key, text) in [
-        (PKEY_AppUserModel_ID, app_id(&exe)),
-        (PKEY_AppUserModel_RelaunchCommand, relaunch_command(&exe)),
+        (PKEY_AppUserModel_ID, app_id(exe)),
+        (PKEY_AppUserModel_RelaunchCommand, relaunch_command(exe)),
         (
             PKEY_AppUserModel_RelaunchDisplayNameResource,
             APP_NAME.to_owned(),
         ),
-        (PKEY_AppUserModel_RelaunchIconResource, icon_resource(&exe)),
+        (PKEY_AppUserModel_RelaunchIconResource, icon_resource(exe)),
     ] {
         let mut wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
-        let mut value = PROPVARIANT::default();
+        // Never dropped: the `windows` crate gives a PROPVARIANT a destructor
+        // (`PropVariantClear`) that frees the string it holds as memory COM
+        // allocated. This one only borrows `wide`, so the destructor would
+        // free the `Vec`'s buffer and the `Vec` free it again: that double
+        // free ended the program at every start with a corrupted heap.
+        let mut value = ManuallyDrop::new(PROPVARIANT::default());
         // SAFETY: a PROPVARIANT's `Anonymous` union member is the one to fill
-        // for a plain value, and `wide` outlives the SetValue call below,
-        // which copies the string into the store, so nothing is left dangling.
-        // The value only borrows `wide`: this struct has no destructor, and
-        // it must never be handed to `PropVariantClear`, which would free
-        // the pointer as memory COM allocated, which a `Vec`'s is not.
+        // for a plain value; the pointer is to `wide`, NUL-ended and alive
+        // until the SetValue call below has copied the string into the store.
         unsafe {
             (*value.Anonymous.Anonymous).vt = VT_LPWSTR;
             (*value.Anonymous.Anonymous).Anonymous.pwszVal = PWSTR::from_raw(wide.as_mut_ptr());
@@ -120,18 +127,12 @@ pub(super) fn set_relaunch(window: &impl raw_window_handle::HasWindowHandle) {
         // SAFETY: `store` is the window's live property store, `key` a static
         // PROPERTYKEY and `value` a VT_LPWSTR PROPVARIANT pointing at `wide`,
         // which is alive for the call.
-        if let Err(error) = unsafe { store.SetValue(&key, &value) } {
-            log::warn!("the taskbar's new-instance clicks stay as Windows has them: {error}");
-            return;
-        }
+        unsafe { store.SetValue(&key, &*value) }?;
     }
     // SAFETY: `store` is the window's live property store.
-    if let Err(error) = unsafe { store.Commit() } {
-        log::warn!("the taskbar's new-instance clicks stay as Windows has them: {error}");
-    }
+    unsafe { store.Commit() }
 }
 
-// set_relaunch has no test: it needs a real window.
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -144,17 +145,84 @@ mod tests {
         let exe = Path::new(r"C:\Tools\UTW\UTW.exe");
         assert_eq!(relaunch_command(exe), r#""C:\Tools\UTW\UTW.exe""#);
         assert_eq!(icon_resource(exe), r"C:\Tools\UTW\UTW.exe,0");
-        assert_eq!(app_id(exe), "UnlimitedToolWorks.be6639c454fb3ede");
         let id = app_id(exe);
-        assert!(id.starts_with("UnlimitedToolWorks."));
-        let suffix = &id["UnlimitedToolWorks.".len()..];
-        assert_eq!(suffix.len(), 16);
-        assert!(
-            suffix
-                .chars()
-                .all(|digit| digit.is_ascii_digit() || ('a'..='f').contains(&digit))
-        );
+        assert_eq!(id, "UnlimitedToolWorks.be6639c454fb3ede");
         assert_eq!(app_id(Path::new(r"c:\tools\utw\utw.exe")), id);
         assert_ne!(app_id(Path::new(r"D:\Other\UTW.exe")), id);
+    }
+
+    /// The four values read back off a real window's property store, which
+    /// also runs `set_relaunch_values` to its end on a live window: a value
+    /// freed twice there ends the process, and so this test's.
+    // ST-WIN-05
+    #[cfg(windows)]
+    #[test]
+    fn a_window_holds_the_relaunch_values_it_was_given() {
+        use windows::Win32::Foundation::PROPERTYKEY;
+        use windows::Win32::Storage::EnhancedStorage::{
+            PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
+            PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
+        };
+        use windows::Win32::UI::Shell::PropertiesSystem::{
+            IPropertyStore, SHGetPropertyStoreForWindow,
+        };
+        use windows::Win32::UI::WindowsAndMessaging::{
+            CreateWindowExW, DestroyWindow, WINDOW_EX_STYLE, WS_OVERLAPPED,
+        };
+        use windows::core::{BSTR, w};
+
+        let exe = Path::new(r"C:\Tools\UTW\UTW.exe");
+        // SAFETY: a top-level window of the system's own STATIC class, with no
+        // parent, menu or creation data; it is never shown.
+        let window = unsafe {
+            CreateWindowExW(
+                WINDOW_EX_STYLE(0),
+                w!("STATIC"),
+                w!("relaunch values"),
+                WS_OVERLAPPED,
+                0,
+                0,
+                0,
+                0,
+                None,
+                None,
+                None,
+                None,
+            )
+        }
+        .expect("a window to hold the values");
+
+        set_relaunch_values(window, exe).expect("the values are set");
+
+        // SAFETY: `window` is this thread's live window.
+        let store: IPropertyStore =
+            unsafe { SHGetPropertyStoreForWindow(window) }.expect("the window's property store");
+        let held = |key: PROPERTYKEY| {
+            // SAFETY: `store` is live and `key` a static PROPERTYKEY; the
+            // value read is an owned copy, freed when dropped.
+            let value = unsafe { store.GetValue(&key) }.expect("the value is read");
+            BSTR::try_from(&value)
+                .expect("the value is a string")
+                .to_string()
+        };
+        assert_eq!(
+            held(PKEY_AppUserModel_ID),
+            "UnlimitedToolWorks.be6639c454fb3ede"
+        );
+        assert_eq!(
+            held(PKEY_AppUserModel_RelaunchCommand),
+            r#""C:\Tools\UTW\UTW.exe""#
+        );
+        assert_eq!(
+            held(PKEY_AppUserModel_RelaunchDisplayNameResource),
+            crate::shell::APP_NAME
+        );
+        assert_eq!(
+            held(PKEY_AppUserModel_RelaunchIconResource),
+            r"C:\Tools\UTW\UTW.exe,0"
+        );
+        drop(store);
+        // SAFETY: `window` is this thread's own window, used by nothing else.
+        unsafe { DestroyWindow(window) }.expect("the window is destroyed");
     }
 }
