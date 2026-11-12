@@ -164,6 +164,14 @@ fn folders_from_number_keys<'de, D: serde::Deserializer<'de>>(
         .collect()
 }
 
+/// The `[common.pes_folders]` key `key` reads as, spelled the way the program writes
+/// it (`2019` reads as PES 2019, written `19`), or `None` for a key
+/// `folders_from_number_keys` would refuse.
+pub(crate) fn written_folder_key(key: &str) -> Option<String> {
+    let version = PesVersion::try_from(key.parse::<u16>().ok()?).ok()?;
+    Some(version.number().to_string())
+}
+
 /// The main row's text for a folder picked or found for `version`: the folder with
 /// `version`'s year in its own name (the last path segment) written `20**`, so the
 /// version selector keeps switching folders; any other folder unchanged.

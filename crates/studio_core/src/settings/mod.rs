@@ -134,10 +134,6 @@ impl Settings {
     pub fn save(&mut self, path: &Path) -> io::Result<()> {
         static SAVE_COUNTER: AtomicU64 = AtomicU64::new(0);
         let desired = self.to_table().map_err(io::Error::other)?;
-        let regenerated = toml::to_string_pretty(&desired).map_err(io::Error::other)?;
-        let written = regenerated
-            .parse::<DocumentMut>()
-            .expect("`toml`'s own output is valid TOML");
         // A file with nothing to keep is written fresh: none yet, one that is not text, or one that
         // is not TOML (broken by hand since the session loaded it). The fresh text is the
         // `template`'s edited to the session's values when one is set and its own edit reads back —
@@ -147,18 +143,25 @@ impl Settings {
         // would not read back as the settings: a shape the in-place edit cannot carry, such as a
         // section written inline under a comment, which would come out as a table header `load`
         // refuses and the next start could not open.
-        let fresh = |why: &str| match self
-            .template
-            .and_then(|template| fresh_from_template(template, &desired, written.as_table()))
-        {
-            Some(edited) => {
-                debug!("{}: written fresh from the template, {why}", path.display());
-                edited
-            }
-            None => {
-                debug!("{}: written fresh, {why}", path.display());
-                regenerated.clone()
-            }
+        let fresh = |why: &str| -> io::Result<String> {
+            let regenerated = toml::to_string_pretty(&desired).map_err(io::Error::other)?;
+            let written = regenerated
+                .parse::<DocumentMut>()
+                .expect("`toml`'s own output is valid TOML");
+            Ok(
+                match self.template.and_then(|template| {
+                    fresh_from_template(template, &desired, written.as_table())
+                }) {
+                    Some(edited) => {
+                        debug!("{}: written fresh from the template, {why}", path.display());
+                        edited
+                    }
+                    None => {
+                        debug!("{}: written fresh, {why}", path.display());
+                        regenerated
+                    }
+                },
+            )
         };
         let text = match fs::read_to_string(path) {
             Ok(existing) => match (existing.parse::<DocumentMut>(), toml::from_str(&existing)) {
@@ -166,11 +169,14 @@ impl Settings {
                     // What the save leaves behind: with a baseline, the file's own values
                     // with this session's changes laid over them; the session's whole
                     // state otherwise.
-                    let target = self
-                        .baseline
-                        .as_ref()
-                        .map(|baseline| merge_desired(&held, baseline, &desired))
-                        .unwrap_or_else(|| desired.clone());
+                    let target = match self.baseline.as_ref() {
+                        Some(baseline) => {
+                            let mut target = merge_desired(&held, baseline, &desired);
+                            drop_stale_folder_keys(&mut target, baseline, &desired);
+                            target
+                        }
+                        None => desired.clone(),
+                    };
                     let regenerated = toml::to_string_pretty(&target).map_err(io::Error::other)?;
                     let written = regenerated
                         .parse::<DocumentMut>()
@@ -184,9 +190,9 @@ impl Settings {
                         regenerated
                     })
                 }
-                _ => fresh("not TOML"),
+                _ => fresh("not TOML")?,
             },
-            Err(error) => fresh(&format!("not edited: {error}")),
+            Err(error) => fresh(&format!("not edited: {error}"))?,
         };
         let mut temp_name = path.file_name().unwrap_or_default().to_owned();
         let sequence = SAVE_COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -363,6 +369,55 @@ fn table_or_empty<'a>(value: Option<&'a Value>, empty: &'a Table) -> Option<&'a 
         None => Some(empty),
         Some(Value::Table(table)) => Some(table),
         Some(_) => None,
+    }
+}
+
+/// Removes the keys `target`'s `[common.pes_folders]` holds in a spelling the program
+/// never writes. A member may write a row under the four-digit year (`2019`) the
+/// reader also takes, but the program writes two digits (`19`), and a changed row kept
+/// under both spellings reads back with the old one winning: the reader keeps a
+/// version's later key in key order. A key drops only when the session changed that
+/// version's row, the row under the written key differing between `baseline` and
+/// `desired`, its absence in one included; a row the session did not touch stays as
+/// the member wrote it.
+fn drop_stale_folder_keys(target: &mut Table, baseline: &Table, desired: &Table) {
+    fn folders_of(root: &Table) -> Option<&Table> {
+        root.get(COMMON_KEY)
+            .and_then(Value::as_table)
+            .and_then(|section| section.get("pes_folders"))
+            .and_then(Value::as_table)
+    }
+    let empty = Table::new();
+    let (before, after) = (
+        folders_of(baseline).unwrap_or(&empty),
+        folders_of(desired).unwrap_or(&empty),
+    );
+    let Some(merged) = target
+        .get_mut(COMMON_KEY)
+        .and_then(Value::as_table_mut)
+        .and_then(|section| section.get_mut("pes_folders"))
+        .and_then(Value::as_table_mut)
+    else {
+        return;
+    };
+    let mut dropped = false;
+    merged.retain(|key, _| {
+        let drop = match common::written_folder_key(key) {
+            Some(written) if written != key => {
+                before.get(written.as_str()) != after.get(written.as_str())
+            }
+            _ => false,
+        };
+        dropped |= drop;
+        !drop
+    });
+    // The pruning may empty a table the merge filled with kept keys alone: it goes
+    // with its rows, as a file with no per-version folder has none.
+    if dropped
+        && merged.is_empty()
+        && let Some(section) = target.get_mut(COMMON_KEY).and_then(Value::as_table_mut)
+    {
+        section.remove("pes_folders");
     }
 }
 
@@ -907,6 +962,111 @@ mod tests {
             line(&text, "dt00_overwrite_allow"),
             line(&after_a, "dt00_overwrite_allow")
         );
+
+        // The second session then changes `thread_count` too and saves; the file holds
+        // its `thread_count` over the first's.
+        session_b.common.thread_count = 2;
+        session_b.save(&path).unwrap();
+        let loaded = Settings::load(&path).unwrap();
+        assert_eq!(loaded.common.thread_count, 2);
+        assert_eq!(loaded.common.theme, Theme::Light);
+        assert_eq!(
+            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            Value::Boolean(true)
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A settings file whose `[common.pes_folders]` table a member wrote by hand, the
+    /// PES 2019 row under the four-digit year the reader also takes.
+    const HAND_FOLDER_FILE: &str = "[common]\n\
+                                    \n\
+                                    [common.pes_folders]\n\
+                                    2019 = 'D:\\PES 2019'\n\
+                                    21 = 'F:\\PES2021'\n";
+
+    // A row the member wrote under the four-digit year reads as the two-digit one, but
+    // a save writes two digits. A changed row's old spelling must go with the save:
+    // kept beside the new `19` row it would win the next load, the reader keeping a
+    // version's later key in key order.
+    #[test]
+    fn a_changed_folder_row_drops_its_four_digit_key() {
+        let dir = test_dir("studio_core_settings_year_key_changed");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, HAND_FOLDER_FILE).unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes19, r"E:\PES 2019".to_owned());
+        settings.save(&path).unwrap();
+
+        let (folders, text) = folders_in(&path);
+        assert_eq!(
+            folders,
+            BTreeMap::from([
+                (PesVersion::Pes19, r"E:\PES 2019".to_owned()),
+                (PesVersion::Pes21, r"F:\PES2021".to_owned()),
+            ]),
+            "{text}"
+        );
+        assert!(
+            !text.contains("2019 ="),
+            "the old-spelling key went with the save: {text}"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The same when the session empties the row: a kept `2019` would read back as the
+    // row the session removed.
+    #[test]
+    fn an_emptied_folder_row_drops_its_four_digit_key() {
+        let dir = test_dir("studio_core_settings_year_key_emptied");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, HAND_FOLDER_FILE).unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings.common.pes_folders.remove(&PesVersion::Pes19);
+        settings.save(&path).unwrap();
+
+        let (folders, text) = folders_in(&path);
+        assert_eq!(
+            folders,
+            BTreeMap::from([(PesVersion::Pes21, r"F:\PES2021".to_owned())]),
+            "PES 2019's row is gone: {text}"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A four-digit row whose version the session did not touch is not the session's
+    // change: it stays in the file exactly as the member wrote it.
+    #[test]
+    fn an_untouched_folder_row_keeps_its_four_digit_key() {
+        let dir = test_dir("studio_core_settings_year_key_untouched");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, HAND_FOLDER_FILE).unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes21, r"G:\PES2021".to_owned());
+        settings.save(&path).unwrap();
+
+        let (folders, text) = folders_in(&path);
+        assert!(
+            text.contains("2019 = 'D:\\PES 2019'"),
+            "the member's line is kept byte for byte: {text}"
+        );
+        assert_eq!(
+            folders.get(&PesVersion::Pes21).map(String::as_str),
+            Some(r"G:\PES2021"),
+            "{text}"
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -1029,6 +1189,20 @@ mod tests {
             Settings::load(&path).unwrap().common.thread_count,
             2,
             "A's second save still keeps B's value"
+        );
+
+        // A writes a key and B then writes another value to it: A's next save must not
+        // write A's stale copy back over B's value.
+        session_a.common.last_tool = Some("save-editor".to_owned());
+        session_a.save(&path).unwrap();
+        session_b.common.last_tool = Some("export-upgrader".to_owned());
+        session_b.save(&path).unwrap();
+        session_a.common.check_interval_minutes = 30;
+        session_a.save(&path).unwrap();
+        assert_eq!(
+            Settings::load(&path).unwrap().common.last_tool,
+            Some("export-upgrader".to_owned()),
+            "A's third save kept B's value"
         );
         fs::remove_dir_all(&dir).unwrap();
     }
