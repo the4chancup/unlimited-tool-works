@@ -102,12 +102,12 @@ hook's folder beside the compiled CPK by hand.
 - An empty authoritative normal-team roster is allowed for a kit-only export; any present player
   folders are then unlisted and follow `player_unlisted`.
 
-**`ingame_face` marker.** `ingame_face.toml` is the marker, the old bare marker's successor:
+**`ingame_face` marker.** `ingame_face.toml` is the marker:
 
 - its presence does all the marker did;
 - its content sets the in-game face;
 - an empty file is the game's default face (`settings_toml.md` "The defaults are the game's
-  default face").
+  default face"), the old bare marker's successor.
 
 The old spellings, bare `ingame_face` and the tolerated Notepad form `ingame_face.txt`, are
 recognized only to be reported `ingame_face_marker_renamed` (E, the file). They mark nothing, and
@@ -484,12 +484,12 @@ being left out silently.
 
 The `.skl` pairing is recognized in **Common folders, shared (Faces/Boots/Gloves) folders, and
 player folders** alike. When a model is pulled in (via a `.common` link, a shared link, or used
-locally), its skeleton travels with it into the destination output, for every source format:
+locally), its skeleton travels with it into the destination output:
 
 - on Fox targets as the destination's `.skl`: pass-through bytes for `.fmdl` inputs the
   retargeting leaves unchanged, generated from the IR for glTF and `.model` inputs that carry
   bones outside the target's skeleton tables;
-- on pre-Fox targets inside the written `.model`'s bone table.
+- on pre-Fox targets inside the written `.model`'s bone table, for every source format.
 
 This covers the rare case where a model has a custom pose that depends on a custom skeleton; the
 common case needs no SKL and the compiler's template skeletons suffice.

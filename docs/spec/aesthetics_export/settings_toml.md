@@ -103,10 +103,10 @@ The template writes both keys uncommented as `""`, the only keys shown with a va
 nothing. Every other key has a neutral value to display, while any boots/gloves ID is a real
 model, and TOML has no bare `key =`.
 
-They sit at the file's top level, next to `name`, rather than in `[appearance]`. Team TOML embeds
-the `[appearance]` tables and has its own player-level `boots_id`/`gloves_id` over the full stored
-range (save interchange), which two keys of the same name inside `[appearance]` would collide
-with.
+Both keys sit at the file's top level, next to `name`, rather than in `[appearance]`. Team TOML
+embeds the `[appearance]` tables and has its own player-level `boots_id`/`gloves_id` over the full
+stored range (save interchange), which two keys of the same name inside `[appearance]` would
+collide with.
 
 ```toml
 # settings.toml, inside a player folder. Every key is optional: an absent key takes the
@@ -395,9 +395,9 @@ key's default (a face type 0, a motion the template's value), as a cross-version
 conversion resets a face type (`spec/pes_savefile/operations.md` "Cross-version player
 conversion"), and a custom skin (7) the target has none of as 1.
 
-It is not written as authored, because a motion beyond the target's range may not fit its field's
-bits (PES 18's two for `hunching_dribbling`), and one that fits is shown as the list's top and may
-be rewritten to the list's first entry by the player's next in-game save
+The value is not written as authored, because a motion beyond the target's range may not fit its
+field's bits (PES 18's two for `hunching_dribbling`), and one that fits is shown as the list's top
+and may be rewritten to the list's first entry by the player's next in-game save
 (`spec/pes_savefile/operations.md` "Cross-version player conversion").
 
 A key the target has no field for (`dribbling` before PES 20) is not written, with no finding: an
