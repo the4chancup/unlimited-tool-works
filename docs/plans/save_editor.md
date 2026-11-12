@@ -340,7 +340,10 @@ side.
   style, its buttons unframed, the band edge to edge over the view's margin. With an event
   logo drawn at the view's right, the band ends as far left of it as the logo stands from
   the window's edge, the two margins the same; the logo is then always drawn, because the
-  band cannot reach it, and its menus wrap inside it instead. The bar's pieces (the bar,
+  band cannot reach it. The bar is one row and does not wrap: its contents fit in the band
+  at the design width, with Live AATF on, `Show suggestions` shown and unsaved changes,
+  and under that width the shell scales the whole UI down rather than lay a view out
+  narrower (`spec/core/gui.md` "Shell layout"). The bar's pieces (the bar,
   its separator, a menu's button) are
   `studio_core`'s widgets rather than this tool's, so every tool's toolbar takes them when it
   is built (this is the first tool with a finished UI). A menu item with its shortcut is
@@ -356,7 +359,9 @@ side.
     clickable (the changes list).
 
   `File` is the opens first (the discovered saves by version, the session's recent files,
-  the picker), then `Save` and `Save as`; `Edit` is `Undo` and `Redo`.
+  the picker), then under a separator `Save` (`Ctrl+S`) and `Save as`, both dead with no
+  save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
+  undo or redo.
 
   With one menu open, the pointer entering another menu's button opens that one instead, as a
   menu bar does (`MenuBar` switches on hover).
@@ -791,7 +796,7 @@ side.
   460 to 640 points wide, its whole box.
 
   The popup closes on a click outside it, Esc, a second click on the label, or any edit, undo
-  or redo (its rows would otherwise go stale under it); the toolbar's Undo is a click outside,
+  or redo (its rows would otherwise go stale under it); the Edit menu's Undo is a click outside,
   so the label reopens the list one row shorter. A popup, not a window: the list is a glance
   at what Save would write, read and dismissed, where the panels hold results a member works
   against. Its left edge is the label's, slid left when it would pass the window's edge.
@@ -2291,12 +2296,15 @@ SE-GUI-46  GIVEN the PES 17 save open on team 701, ALL picked in the team select
 SE-GUI-03  GIVEN the save open
            WHEN a player's ability value is edited in the player view
            THEN his list entry carries the unsaved-changes dot, the file is unchanged until Save
-                (Ctrl+S or the button), and after Save the reopened file holds the value with
-                the dot gone
+                (Ctrl+S or the File menu's Save), and after Save the reopened file holds the
+                value with the dot gone
 SE-GUI-04  GIVEN two edits made in order
-           WHEN Undo is invoked, then Redo
+           WHEN Undo is invoked (the Edit menu's Undo or Ctrl+Z), then Redo (its Redo or
+                Ctrl+Y)
            THEN the second edit's field returns to its earlier value and the first's stays,
-                then the second is reapplied; the file changes only on Save
+                then the second is reapplied; the file changes only on Save; GIVEN nothing
+                to undo THEN the Edit menu's Undo is disabled, and its Redo with nothing to
+                redo
 SE-GUI-05  GIVEN the save open with unsaved changes
            WHEN the window is closed, or another save opened
            THEN a prompt offers to save, discard or cancel over a table of the changes, one
@@ -2314,7 +2322,7 @@ SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 
                 with the player, old and new values as the view shows them, and the colour
                 whose old and new values each draw their swatch before the hex) and none of
                 the prompt's save, discard and cancel; a click outside it, Esc, a second click
-                on the label or another edit closes it; GIVEN the toolbar's Undo clicked
+                on the label or another edit closes it; GIVEN the Edit menu's Undo chosen
                 THEN it closes and a click on the label reopens it two rows long; a row's
                 item takes no click; GIVEN the pointer over the label THEN it is the pointing
                 hand, the tooltip `Lists the changes since the save was opened or last
@@ -2744,10 +2752,12 @@ SE-GUI-25  GIVEN the team view's Tactics on preset 1
                 as one undoable edit
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
                  selector at PES 21, and one of the three opened earlier in the session
-           WHEN the Open menu is drawn
+           WHEN the File menu is drawn
            THEN it lists the three discovered saves, each labelled by its version alone, the
                 first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
-                recent file above the file picker; WHEN the menu is closed and Ctrl+9 is pressed
+                recent file above the file picker, then under a separator Save with Ctrl+S
+                beside it and Save as, both disabled while no save is open; WHEN the menu is
+                closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN
@@ -2922,9 +2932,11 @@ SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the acti
                 and its top 8 from the view's, and every other widget stands where it does
                 under the same ruleset without a logo; its tooltip reads DBC7's name, a blank line, "Click
                 here to open the event's page:" and its page, each on its line, and a click
-                opens the page; GIVEN a ruleset without a logo THEN nothing is drawn there;
-                GIVEN a window narrow enough for the toolbar to reach it THEN it is not
-                drawn
+                opens the page; the toolbar's band, the panel's fill with a line under it,
+                runs from the view's left edge to 14 points left of the logo, and with Live
+                AATF on, Show suggestions shown and unsaved changes the bar's last widget
+                ends inside the band; GIVEN a ruleset without a logo THEN nothing is drawn
+                there and the band runs to the view's right edge
 SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding no file
                 named `vgl27`
            WHEN check-aatf is run with --rules vgl27, then with --rules nosuch, then with

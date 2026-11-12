@@ -16834,3 +16834,15 @@ written, the next update takes the backup for leftovers and deletes the only cop
 old files; a missing success mark only refuses an update that could have run.
 Plan: `plans/core/distribution.md` "Self-update: in-place binary swap", step 4 and the
 Restart now paragraph.
+
+## 2026-11-12 — save_editor — The toolbar is one row that never wraps; the event logo is always drawn
+Decision: the Save editor's toolbar stays one row inside its band, which ends 14 points left of
+the event logo; nothing wraps onto a second row and the logo is no longer hidden when the bar
+comes near it. Its contents are pinned to fit the band at the design width, with Live AATF on,
+`Show suggestions` shown and unsaved changes.
+Why: one row, not the draft's wrapping row, because the shell never lays a view out narrower
+than its design width (it scales the whole UI down instead), so a wrap could only be reached by
+contents too wide for 1280 points, which a test now refuses; a second row would push every pane
+down and egui's `MenuBar` lays out one row only. With File and Edit as menus the row is shorter
+than the one the hiding rule was written for.
+Plan: plans/save_editor.md "The toolbar" and SE-GUI-44 edited.
