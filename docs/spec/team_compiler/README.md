@@ -208,10 +208,10 @@ crates/tools/team_compiler/
 Placement rules:
 
 - **If it validates an export, it is not here**: it belongs in `libs/aesthetics_export`.
-- **If two tools need it, it is not here**: it moves to a lib, `pipeline` for scaffolding such
-  as `MemoryBudget` and `CpkStem`, `aesthetics_export` for format knowledge. The same rule works
-  in reverse: `bins/dpfl.rs` stays here until a second consumer appears. The Balls compiler only
-  *checks* the DPFL, via a read helper that can move to `pipeline` when needed.
+- **If two tools need it, it is not here**: it moves to a lib, either `pipeline` for scaffolding
+  such as `MemoryBudget` and `CpkStem` or `aesthetics_export` for format knowledge. The same rule
+  works in reverse: `bins/dpfl.rs` stays here until a second consumer appears (the Balls
+  compiler only *checks* the DPFL, via a read helper that can move to `pipeline` when needed).
 - **`processing/materialize.rs` is the single output-mode seam.** No task's output asks which
   output mode is active. The mode decides only *where bytes go*, never *what a task produces*:
   `compile` picks the `OutputSink`, the promotion target and whether `overrides/` applies, and
@@ -312,7 +312,7 @@ gate skipped, with the Error `content_not_yet_compiled`, every export holding an
 `compile` could not build yet, so that no CPK differing from the finished compiler's was
 written. The gate is withdrawn with its finding (TC-OUT-06).
 
-What becomes of a file is its role's. A file no package reads is not read and is reported
+What becomes of a file is decided by its role. A file no package reads is not read and is reported
 `file_not_used` (`pipeline.md` "2. Per-export serial steps", the face-file paragraph). The one
 refusal left is a model folder whose selected representation is glTF (`model_gltf_unsupported`,
 Phase 7).
@@ -721,16 +721,22 @@ proven headless (`egui::Context::run_ui`, the frame's AccessKit nodes).
 deploys the CPKs into the PES install, degrading to `output/` when it cannot. `check` runs the
 structure pass and the deep pass on every source kind.
 
-The run plans IDs (the 40-ID blocks; `duplicate_aesthetics_export` is the validation pass's,
-`duplicate_path` the writer's). It reads the working bins from the installed CPKs and writes:
+The run plans IDs, the 40-ID blocks (`duplicate_aesthetics_export` is the validation pass's
+finding, `duplicate_path` the writer's). It reads the working bins from the installed CPKs and
+writes:
 
 - `UniColor.bin` and `TeamColor.bin`;
 - on Fox, `UniformParameter.bin`, and the `BootsList.bin` and `GloveList.bin` rows for the
   compiled players whose custom boots or gloves committed.
 
-In those two tables a failed output keeps the installed row, a compiled player of a `Full`
-export whose folder holds no boots or no gloves loses that installed row, and every other row
-is kept. `PlayerAppearance.bin` passes through unchanged until Phase 5 builds its rows from
+In the `BootsList.bin` and `GloveList.bin` tables:
+
+- a failed output keeps the installed row;
+- a compiled player of a `Full` export whose folder holds no boots or no gloves loses that
+  installed row;
+- every other row is kept.
+
+`PlayerAppearance.bin` passes through unchanged until Phase 5 builds its rows from
 `settings.toml`. The three tables went at step 8.36c, and their rows have been carried in the
 patch since.
 
@@ -2612,8 +2618,8 @@ the local savefile. On every version, the patch carries:
 - a `write_names` export's names.
 
 The CPK carries no player table. The `PlayerAppearance.bin`, `BootsList.bin` and
-`GloveList.bin` rows this phase built on Fox went at step 8.36c, which also brought the patch
-to PES 15-17; before that step, those compiles wrote none.
+`GloveList.bin` rows this phase built on Fox went at step 8.36c. That step also brought the
+patch to PES 15-17, whose compiles wrote none before it.
 
 A compiled player is every player a kept player folder of a team export maps to
 ("Player settings in exports" in the Aesthetics export plan). A referee export's settings
