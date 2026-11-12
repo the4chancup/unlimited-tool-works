@@ -12,8 +12,8 @@ is in `AGENTS.md` ("Working documents").
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
 (VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
 0.0.2 step"), worked in this order:
-1. Update now (0.0.2-upd, its slices below), then the command line's notice (0.0.2-cli) and
-   the TLS provider (0.0.2-tls).
+1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in),
+   then the TLS provider (0.0.2-tls).
 2. The illegal formation check (0.0.2c): its six clauses are set; the game's own formations
    and the cup saves are still to run under them.
 3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -statlbl, -inst, -drift,
@@ -1725,11 +1725,13 @@ briefs, review loops, gates and mutation runs as for any step.
     naming line, with the tally at the end, and `quick_upgrade.bat` starts the exe once, so
     the progress line counts every export (EU-CLI-11, 13 to 15). The launcher run under a
     pseudo-console over two exports, one refused, drew `[ 0/2 exports ]` first and showed
-    both blocks, the `error:` line and `Upgraded: 1. Not upgraded: 1.`. Owed once the
-    readability pass releases the files: `plans/core/architecture.md` "A run's log file"
-    and `plans/core/development_plan.md` still say the launcher runs the exe once per export
-  - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
-    status bar"): from 0.0.2 a command prints one line when a newer release exists
+    both blocks, the `error:` line and `Upgraded: 1. Not upgraded: 1.`
+  - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
+    `check_for_updates` on, a tool command starts the check on its own thread and, when a
+    newer release has answered by the run's end, prints one line last on stderr and in the
+    log file; it never waits and stores nothing (ST-CLI-05,
+    `plans/core/distribution.md` "The command line's notice"). Not run: a command against a
+    served releases list printing a real offer (the tests cover the line in process)
   - [x] 0.0.2-se19 dropped 2026-11-11 (the maintainer: the tester's save is lost; DECISIONS
     "0.0.2 holds every open 0.0.2 step"): the writer was found sound, and what the edit
     flags gate in game is in `spec/pes_savefile/model.md` "What the player's edit flags gate

@@ -48,7 +48,9 @@ What changed for members, release by release, newest first.
   beside it. Restart now then starts the new version; Later leaves `Update ready` on the
   status bar until the next start. When an update fails, the dialog says whether anything
   was changed and where to download the version by hand. The first start of a new version
-  shows `Updated to` and its number on the status bar, with What's new beside it.
+  shows `Updated to` and its number on the status bar, with What's new beside it. The
+  launchers and every command typed in a terminal also tell of a newer version, in one line
+  after their report, without waiting for the check.
 - **Help** — two new chapters: Updates explains the check, the offer and each step of an
   update, and What's new holds this list of changes, version by version.
 - **Save editor** — the Comparator lists each difference in three columns, Item, Old value
