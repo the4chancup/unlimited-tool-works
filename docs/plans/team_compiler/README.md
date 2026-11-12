@@ -22,10 +22,11 @@ Placement rules:
 
 - `check/` only schedules the export validations of `libs/aesthetics_export` for the live grid.
   The folder watcher (`notify` + debouncing) and the check cache (the manifest fingerprint and
-  what it keys) are `libs/pipeline`'s (`spec/libs/pipeline.md`), not this crate's: the Balls
+  what it keys) are `libs/pipeline`'s (`spec/libs/pipeline.md`), not this crate's. The Balls
   compiler's list view watches its folder the same way (`plans/balls_compiler.md` "GUI"), and a
-  watcher in this crate would be copied there, tool crates never depending on tool crates. The
-  design of both is `gui.md` "Live validation", since the grid is what they exist for.
+  watcher in this crate would be copied there, tool crates never depending on tool crates.
+
+  The design of both is `gui.md` "Live validation", since the grid is what they exist for.
 - The view is drafted first (`core/gui.md` "Prototypes before implementation"):
   `docs/prototypes/tools/team_compiler.js` shows the grid with sample rows in every cell state, the
   toolbar with its split button, badge and run strip, and the log panel, and is refined with the
@@ -36,11 +37,14 @@ Placement rules:
 ## First-release GPU BC7
 
 Desktop GPU BC7 for PES 19–21 uses `block_compression`'s library backend in the first release.
-Auto is the default, with CPU fallback and an explicit CPU mode for reproducible builds. The
-[library crates plan](../libs/README.md) owns backend selection, startup, batching, memory, and fallback requirements; the
-the reproducibility paragraph in `spec/team_compiler/testing.md` "Testing: parity against Red (adapted from Blue)" records the accepted texture-byte exception. Phase 4
-builds the texture step CPU-only and Release 0.1.0 ships that way; the GPU backend is integrated
-into it in Phase 16, rather than waiting for 3D preview.
+Auto is the default, with CPU fallback and an explicit CPU mode for reproducible builds.
+
+The [library crates plan](../libs/README.md) owns backend selection, startup, batching, memory,
+and fallback requirements. The reproducibility paragraph in `spec/team_compiler/testing.md`
+"Testing: parity against Red (adapted from Blue)" records the accepted texture-byte exception.
+
+Phase 4 builds the texture step CPU-only and Release 0.1.0 ships that way. The GPU backend is
+integrated into it in Phase 16, rather than waiting for 3D preview.
 
 ## Future Features
 
@@ -52,18 +56,20 @@ the shared library backend does not have to be replaced merely because it shippe
 A future enhancement to the GUI: when the user clicks a player on the progress grid, a 3D viewport
 shows a preview of the model.
 
-Scope note: this stays a quick *glance* ("is this the right model") — for actually inspecting a
-player folder there is the [Player aesthetics editor](../player_aesthetics_editor.md), which launches
-Blender instead of rendering in-app. When this feature is built, the viewport widget goes into a
-shared **`libs/model_viewport`** crate (created then, not before — until this feature lands, no
-viewport code exists anywhere): the Player aesthetics editor embeds the same widget as a quick
-approximate preview beside its launcher, labeled as a preview with Blender as the accurate view,
-which gives the crate its second consumer per the core plan's workspace guardrails.
+Scope note: this stays a quick *glance* ("is this the right model"). For actually inspecting a
+player folder there is the [Player aesthetics editor](../player_aesthetics_editor.md), which
+launches Blender instead of rendering in-app.
+
+When this feature is built, the viewport widget goes into a shared **`libs/model_viewport`**
+crate (created then, not before: until this feature lands, no viewport code exists anywhere).
+The Player aesthetics editor embeds the same widget as a quick approximate preview beside its
+launcher, labeled as a preview with Blender as the accurate view, which gives the crate its
+second consumer per the core plan's workspace guardrails.
 
 **Feasibility:** High. egui renders via `wgpu`, which supports custom rendering alongside the
 immediate-mode UI. The selected folder's structure descriptor can lazily load and parse its model
-under the normal memory budget; the resulting vertex/face data is uploaded as GPU buffers and drawn
-in the egui painter's render pass.
+under the normal memory budget. The resulting vertex/face data is uploaded as GPU buffers and
+drawn in the egui painter's render pass.
 
 **Architecture:**
 
@@ -117,7 +123,7 @@ let callback_state: Arc<dyn egui_wgpu::CallbackTrait> = Arc::new(ModelPreviewCal
 ui.painter().add(make_paint_callback(rect, callback_state));
 ```
 
-**Performance:** A 20K-vertex model is ~640KB of vertex data — uploaded to GPU once, rendered at
+**Performance:** A 20K-vertex model is ~640KB of vertex data, uploaded to GPU once, rendered at
 negligible cost. `wgpu` handles millions of vertices trivially. Texture conversion (one 2K DDS → raw
 RGBA via `dds_convert`) takes ~10ms. Only one model is previewed at a time, so memory is not a
 concern.
@@ -163,13 +169,19 @@ TC-SRC-11  GIVEN an exports root holding "co Full Spring.upgrading", a folder an
 
 **Phase 8 scope.** Phase 8 delivers the view: the live-validating grid (`gui.md`), the toolbar
 with its split Compile button, the run strip, the log panel's cross-links, cancellation
-(`spec/core/gui.md` "Cancellation") and the tool's settings section. What a scenario observes
-is what a frame draws, through the headless harness (the frame's AccessKit nodes and the
-painted cells' colors, read back from the tool's row state the view paints from; a click as
-press and release frames), the files written, and the events the run emits; `manual` marks
-only what needs a display or a running game. "The exports folder" is one under the test's
-own folder, named by the test's settings; the shell's own behavior (sidebar, settings menu,
-status bar, help) is `ST`'s (`plans/core/gui.md` "Acceptance").
+(`spec/core/gui.md` "Cancellation") and the tool's settings section.
+
+What a scenario observes is:
+
+- what a frame draws, through the headless harness (the frame's AccessKit nodes and the
+  painted cells' colors, read back from the tool's row state the view paints from; a click as
+  press and release frames);
+- the files written;
+- the events the run emits.
+
+`manual` marks only what needs a display or a running game. "The exports folder" is one under
+the test's own folder, named by the test's settings. The shell's own behavior (sidebar,
+settings menu, status bar, help) is `ST`'s (`plans/core/gui.md` "Acceptance").
 
 ```
 TC-GUI-04  GIVEN an exports folder holding a plain-folder export with players 01, 03 and kits p1,

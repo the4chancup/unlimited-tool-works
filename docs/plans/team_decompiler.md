@@ -18,21 +18,28 @@ version through the compiler's own conversions).
 A DLC's CPK holds many teams, and the organizer rarely needs a whole export: often one
 player's folder, one kit or a logo. So the tool opens a CPK and shows a tree of every export
 it can recreate inside it (team, then the export's own folders: player folders, kit folders,
-model folders, logos and the rest, down to single files), each node with a tick box; the
-organizer ticks a whole export, a folder, a subfolder or single files, and extracts the
+model folders, logos and the rest, down to single files), each node with a tick box.
+
+The organizer ticks a whole export, a folder, a subfolder or single files, and extracts the
 selection into a folder of their choice, laid out as in the export (a player folder comes out
-as a player folder, ready to drop into another export). The tree is the same for both paths
-below: from a manifest it holds the exports' real names, from the heuristic the names it could
-recover or invent, marked as such.
+as a player folder, ready to drop into another export).
+
+The tree is the same for both paths below: from a manifest it holds the exports' real names,
+from the heuristic the names it could recover or invent, marked as such.
 
 ## From a recovery manifest
 
 A CPK the Team compiler wrote since the manifest shipped holds one per export
 (`plans/team_compiler/pipeline.md` "Recovery manifest"). The decompiler recreates the export
-folder under its recorded name: each packed file back at its recorded source path, a file
-packed as it was taken as it is, a converted one in its compiled form (an FTEX unwrapped to
-its DDS, a converted model kept as the game's format), and the TOML files copied out as packed.
-The result recompiles to the same CPK; the report says, per file, whether it is the source
+folder under its recorded name:
+
+- each packed file back at its recorded source path;
+- a file packed as it was, taken as it is;
+- a converted one in its compiled form (an FTEX unwrapped to its DDS, a converted model kept as
+  the game's format);
+- the TOML files copied out as packed.
+
+The result recompiles to the same CPK. The report says, per file, whether it is the source
 itself or its compiled form.
 
 ## Without one: the heuristic
