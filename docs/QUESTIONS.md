@@ -53,6 +53,16 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   all, or does this need a match to show whether Fox games write them into an uncompressed
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
+- **The two numbers' labels on PES 17 to 21.** The Tactics view draws `Numbers in attack`
+  and `Numbers in defence` on every version. The unofficial 4ccEditor, whose Tactics tab
+  the view was ported from (the official one has none), keeps those names on PES 16 only:
+  on PES 17 to 21 it labels the same two combos `Auto Atk. level:` and `Auto Def. level:`,
+  with the same save bytes and the same Few, Medium and Many (`4ccEditor-1/main.cpp`,
+  "Update the numbers in attack combo boxes with the correct labels"). Its maker says the
+  PES 16 names are wrong for PES 17. Whether his names are right is not known either: PES
+  21's executable ignores both bytes, and PES 17's is unread (`spec/pes_savefile/model.md`
+  "Player/team/tactics model"; worklog "Issues", the memory dump). Should the view take
+  his labels on PES 17 to 21, keep its own, or hide or mark the two controls there?
 
 ## After the release
 

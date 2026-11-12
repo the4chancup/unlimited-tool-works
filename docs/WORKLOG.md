@@ -2333,6 +2333,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-12 (the maintainer; queued for after 0.0.2): who reads the attack and
+  defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
+  shows them, PES 17's does not, and PES 21's executable ignores them
+  (`spec/pes_savefile/model.md` "Player/team/tactics model"). `E:\PES2017\PES2017.exe` is
+  packed on disk, so reading it takes a memory dump of the running game, then the analysis
+  the PES 2016 executable got (`4cc-studio-temp/pes16_re`): find the tactics sheet's five
+  slider bytes per preset and every reader of bytes 1 and 4. A dumping tool attached to
+  the game is a change on the maintainer's machine: ask before. The labels' question
+  waits in `docs/QUESTIONS.md` ("The two numbers' labels on PES 17 to 21").
 - open 2026-11-11 (the worklog's collapse) — What the collapse left for the lead, from its
   report (`.tmp/sidelead/sk_wl.report.md`): (1) the closed issues' in-game results, Tests 2,
   4, 4b, 4c and 5 (the BootsList and GloveList rows, the referee collars on PES 17 and 21),
