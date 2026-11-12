@@ -300,7 +300,7 @@ so it draws from the first export and clears the line when the stream ends witho
 than leaving a count that reads as unfinished.
 
 We draw it with `indicatif` (`default-features = false`) rather than a hand-written `\r` line
-because it already handles the terminal width, the Windows console and the draw-rate cap; it adds
+because it already handles the terminal width, the Windows console and the draw-rate cap. It adds
 four small crates and about 145 KiB to a release binary (measured 2026-10-16, 0.18.6).
 
 The progress grid has no terminal version, because its value is the GUI's per-folder colours
@@ -383,8 +383,8 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   exe's load base.
 
   We do not ship the `.pdb`, deflated beside or inside the exe, because either costs every
-  member's download for a file only the maintainer reads: about 3.8 MB deflated for the 17 MB
-  `.pdb` without line tables, and the release's own, with them, is 117 MB (measured at
+  member's download for a file only the maintainer reads. The `.pdb` without line tables is
+  17 MB, about 3.8 MB deflated, and the release's own, with them, is 117 MB (measured at
   0.0.1k2). The inside variant also has the crash write it out and point the backtrace at it.
 - A session that ends without a word is reported at the next start. The window's normal
   close writes a closing line as the log's last, and so does a crash after its dialog. At
@@ -521,7 +521,7 @@ there is. A repro bundle is that traceback: every step that changed what a tool 
 the window opened, the files it started from and the ones it wrote, in one zip a member saves
 from a button and posts.
 
-Every tool takes part that opens a member's files: the Save editor first, then the Team
+Every tool that opens a member's files takes part: the Save editor first, then the Team
 compiler and the Export upgrader, then the rest as they are built.
 
 - **The journal records model steps, not input events.** Each step is what a tool's model

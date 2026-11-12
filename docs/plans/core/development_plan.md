@@ -234,8 +234,8 @@ The readme's VGL section says two things more:
 
 - The patch is the last write to the official save, since a `.ted` imported after it writes
   that team's players over their looks and needs the patch again. A later matchday's compile
-  means a new patch and so a new official save sent out, not only new CPKs, the looks living in
-  the save.
+  means a new patch and so a new official save sent out, not only new CPKs, because the looks
+  live in the save.
 - The official save is checked against the built-in VGL 27 ruleset (Live AATF, or the Savefile
   menu's Multi-team AATF) before it goes out.
 
@@ -347,8 +347,8 @@ alone. Three files under `resources/icon/` carry it:
   The title bar needs the tight crop. Whether the taskbar's button, about 24 pixels at 100%,
   is better served by it or by the whole picture is checked on the built window. Giving the
   two icons different pictures would mean setting them past eframe, through winit's own calls
-  on the first frame (a direct `winit` dependency, since eframe does not re-export it), which
-  waits for that check to show the need.
+  on the first frame (a direct `winit` dependency, since eframe does not re-export it). That
+  waits for the check to show the need.
 
   The title bar itself draws no icon: `studio_core` turns it off as the window opens, with
   `SetWindowThemeAttribute`'s `WTNCA_NODRAWICON` (one `unsafe` call through the `windows`
@@ -415,8 +415,8 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
 - Implement each tool's `view()`:
   - Team compiler grid (live validation)
   - save editor (player/team/tactics editing, AATF checks, comparator — build order in the
-    [Save editor plan](../save_editor.md)). The `session/` wiring only the view drives, undo,
-    selection, recent files, the FPC toggle and AATF quick actions, lands with it. The tactics
+    [Save editor plan](../save_editor.md)). The `session/` wiring only the view drives (undo,
+    selection, recent files, the FPC toggle and AATF quick actions) lands with it. The tactics
     editor, card pickers and violations list are built as `libs/team_widgets`, which the Team
     creator later reuses
   - export upgrader
@@ -483,12 +483,13 @@ tester told in person does not:
   --export` wired into the release process
 - The updater's check and notice (`distribution.md` "Self-update: in-place binary swap", step 1,
   and step 2 reduced to a notice): the release notes and a link to the release page, with *Skip
-  this version* / *Remind me later*; the CLI one-line notice. Plus step 5, the teams-list
-  reconciliation on the first start of a new version: it runs on a new binary's first start
-  however the binary arrived, so a manual update needs it as much as the swap does. Until it
-  ships, a new build does not replace a tester's working `data/teams_list.txt`, so a team added
-  upstream is missing until the tester takes the new list by hand, which the release's notice
-  says
+  this version* / *Remind me later*; the CLI one-line notice.
+
+  Plus step 5, the teams-list reconciliation on the first start of a new version: it runs on a
+  new binary's first start however the binary arrived, so a manual update needs it as much as
+  the swap does. Until it ships, a new build does not replace a tester's working
+  `data/teams_list.txt`, so a team added upstream is missing until the tester takes the new
+  list by hand, which the release's notice says
 
 **Verification:** the update notice shown against a test release with a higher tag, and the
 teams-list merge's summary on a new binary's first start over a working list with a local row.
@@ -624,7 +625,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
   display"); Linux tested on a real machine. Brought forward to right after 0.0.1's cut, with a
   CI workflow that builds the bundles on a version tag into a draft GitHub Release, the Windows
   asset checked against the locally checked exe before publishing (DECISIONS 2026-11-01 "CI
-  release builds right after 0.0.1's cut, Windows first"); its design is written into
+  release builds right after 0.0.1's cut, Windows first"). Its design is written into
   `distribution.md` before it is built
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update`, rollback button (see `distribution.md` "Distribution and updates")
@@ -725,10 +726,11 @@ database and EDIT (manual, per version).
 ### Phase 20: Ruleset editor (`tools/ruleset_editor`, post-release)
 
 Not a first-release gate: its users are invitational organizers, who use 4ccEditor forks until
-then. Its remaining forms run after Release 0.1.0; 0.0.1 ships what it built while it was
+then. Its remaining forms run after Release 0.1.0. 0.0.1 ships what it built while it was
 pulled forward (the writer, the CLI, the window's frame and its Tiers section, worklog 20.3
-to 20.6a2a) as "Ruleset editor (WIP)" ("Divegrass Before Christmas" above). Depends on `libs/aatf` with the schema and the
-interpreter (Phase 5) and the shell (Phase 8).
+to 20.6a2a) as "Ruleset editor (WIP)" ("Divegrass Before Christmas" above).
+
+Depends on `libs/aatf` with the schema and the interpreter (Phase 5) and the shell (Phase 8).
 Plan: [Ruleset editor](../ruleset_editor.md).
 
 - `libs/aatf`'s writer (`Ruleset` → `RULESET` block, deterministic) and the schema-migration hook
@@ -746,8 +748,9 @@ preset.
 
 The suite takes in every tool the community uses, those released after it as well, so an
 outside tool that would talk to a Studio tool is planned into the suite and calls it
-in-process; we do not give Studio tools inbound APIs for outside programs, because each one
+in-process. We do not give Studio tools inbound APIs for outside programs, because each one
 is a server and a wire contract to keep for a consumer the suite is going to absorb anyway.
+
 Tools the suite will take in, with no phase or plan yet:
 
 - **Aesthetics ATF bot** (the maintainer's `Tools_Marco/4cc-aes-atf-bot`, Python; the Aesthetics
@@ -761,14 +764,14 @@ Tools the suite will take in, with no phase or plan yet:
   drives the Rigdio fork's local API (`music_player.md` "Autopilot": team loads, the anthems,
   the victory anthem, the chant, goals), passing SEN:P-AI `--no-rigdio` because it drives
   Rigdio itself. Not published: its author wants to work on it further before publishing the
-  source (2026-10-18), so it waits; nothing scheduled depends on it, and until then what it does
+  source (2026-10-18), so it waits. Nothing scheduled depends on it, and until then what it does
   is known only from the forks' READMEs.
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 
 - **A cup's submission server**, on the community's server (the wiki's host or `bonfire`): a
   script that runs the export checks on every export a manager submits and rejects it, with
-  the findings, when they hold an Error; when the deadline hits, it compiles the DLC and the
+  the findings, when they hold an Error. When the deadline hits, it compiles the DLC and the
   savefile and gives the organizer one download link per group of outputs (the DLC, the
   savefile, the pack of the teams' music exports, "Complete export" in
   `plans/aesthetics_export/player_folders.md`), some of which the organizer passes on to the
@@ -776,7 +779,7 @@ Not a tool of the suite but a way to run it, also with no phase yet:
 
   It needs nothing the suite does not already aim for: the CLI runs every check and compile
   with no display, Linux is a first-class target, and findings carry stable codes that a script
-  can sort. Keeping those three true is what keeps the server cheap when it comes; a design that
+  can sort. Keeping those three true is what keeps the server cheap when it comes. A design that
   only works with the GUI, or only on Windows, is a cost to it.
 
   After the compile it can also check the result in game: install the DLC and the savefile into
@@ -784,11 +787,11 @@ Not a tool of the suite but a way to run it, also with no phase yet:
   publish the captures on a page per team for managers and organizers.
 
   That half cannot run on the community server itself, which has no graphics card (`bonfire`:
-  8 virtual cores, 15 GB, a virtual display adapter): PES needs a real GPU on Windows, the bot's
-  virtual pad a Windows driver (ViGEmBus) and its recording OBS. So it runs on a Windows machine
-  with a GPU and that PES version installed, which takes the job from the server, plays it and
-  uploads the captures. One machine plays one version at a time, and a whole cup's pass takes
-  hours (the bot records each player's clips in real time).
+  8 virtual cores, 15 GB, a virtual display adapter). PES needs a real GPU on Windows, the
+  bot's virtual pad needs a Windows driver (ViGEmBus), and its recording needs OBS. So it runs
+  on a Windows machine with a GPU and that PES version installed, which takes the job from the
+  server, plays it and uploads the captures. One machine plays one version at a time, and a
+  whole cup's pass takes hours (the bot records each player's clips in real time).
 
   The pieces exist: the bot (PES 15 and 21 so far) and the in-game harness that already
   launches a version, puts a compiled CPK in its test slot and takes it out again (PES 17, 19
