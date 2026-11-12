@@ -1369,7 +1369,11 @@ def collect(host: str) -> int:
         print("no uncollected remote half")
         if remote_pending().exists():
             remote_pending().unlink()
-            print("the record of a launch that left no half to collect is removed")
+            print(
+                "the launch record is removed: its half is not on the host (it never "
+                "started, or another tree collected it, and then a local half's "
+                "results in this tree's mutants.out are in no summary)"
+            )
         return 1
     try:
         if state == "died":

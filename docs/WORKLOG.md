@@ -2391,8 +2391,9 @@ points there.
   SWE-2 round, five parts, 2026-11-12, "S-vps r1" in `.tmp/duck_rulings.md`): 8 of 27
   accepted. A `mutants-collect` from a tree with no launch record counted that tree's stale
   results as the run's local half and is now the remote half alone; four tests tightened;
-  three RUNBOOK sentences corrected. Open: one SWE-2 round over those fixes and the floor's
-  change (a vital script). Then, as a second slice: a stopped run
+  three RUNBOOK sentences corrected (`9e38f13e`). The SWE-2 round over those fixes and the
+  floor's change ("S-vps f1"): one concern, a message, accepted; the review is closed.
+  Then, as a second slice: a stopped run
   resumes where it stopped (the VPS needing an update mid-run is the case), its tested
   mutants kept, never retested and never lost from the summary; first check whether
   cargo-mutants' `--iterate` (skips mutants an earlier run caught) does this for a half
