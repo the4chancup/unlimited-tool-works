@@ -29,6 +29,18 @@ past the gate. We do not keep the last gated commit as a typed note, nor the two
 separate steps to remember: three loops once closed with neither run, and a push went red on
 a broken pointer.
 
+**The checkpoint runs beside the work, not in front of it.** `just pipeline` runs the
+checkpoint and then `just gates-remote` on the commit main's HEAD is on, from the gate
+worktree (`../4cc-studio-temp/gate`, with its own `target/`), so main's tree stays free:
+the lead commits, merges and briefs the next slice while it runs, and reads its log when it
+ends (`scripts/gates/pipeline.py`; started detached and logged, one run at a time). A pass
+moves the same ref. A failure is fixed by a commit on top and the next run gates it, as a
+red CI run is handled. We do not run `just checkpoint` in main's own tree while there is
+other work to do: it froze the tree for the gates' length after every slice, with the
+Linux gates' wait behind it, and the next slice stood still for both. What still waits for
+a green run is the sentence "main can be pushed": the last run must have gated the latest
+commit that touches code, on both systems.
+
 **One home per event.** What happened is written once:
 
 | Event | Its one home |

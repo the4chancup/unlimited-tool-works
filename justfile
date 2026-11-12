@@ -55,6 +55,11 @@ commit-messages base="HEAD":
 checkpoint *args:
     {{python}} scripts/gates/checkpoint.py run {{args}}
 
+# The checkpoint, then the Linux gates, on HEAD's commit in the gate worktree, so this tree stays free
+# meanwhile (scripts/gates/pipeline.py; start it detached and logged)
+pipeline *args:
+    {{python}} scripts/gates/pipeline.py {{args}}
+
 # How far HEAD is past the last gated commit, what is not pushed, and CI's verdict on the pushed head
 checkpoint-status *args:
     {{python}} scripts/gates/checkpoint.py status {{args}}

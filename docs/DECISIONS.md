@@ -16930,3 +16930,16 @@ test: a time assertion under `cargo test` fails at random beside other builds. N
 opening a save reads as instant on the maintainer's machine. Plan:
 plans/core/development_plan.md "Release 0.2.0" gained the item and its verification;
 worklog step added.
+
+## 2026-11-12 — process — The checkpoint and the Linux gates run in a worktree of their own, beside the work
+
+The maintainer: waiting for the checkpoint and the Linux gates after every slice slows the
+work noticeably; can they run in parallel, as a pipeline? They can: the gates read the tree
+they are started in, and every script finds its root from its own path, so `just pipeline`
+(`scripts/gates/pipeline.py`) checks main's HEAD out in a gate worktree and runs `just
+checkpoint`, then `just gates-remote`, there, with that worktree's own `target/`. The gated
+ref is the repository's, so a pass moves it as before. Main's tree is no longer frozen while
+gates run; only "main can be pushed" still waits for a green run over the latest code
+commit. The cost is disk, a second full `target/`: the maintainer lowered the floor of free
+space on C: from 60 to 40 GiB for it. `RUNBOOK.md` "How the work runs" gained the
+paragraph.
