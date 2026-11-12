@@ -176,17 +176,13 @@ impl Settings {
                         .parse::<DocumentMut>()
                         .expect("`toml`'s own output is valid TOML");
                     apply_desired(document.as_table_mut(), &held, written.as_table(), &target);
-                    let edited = document.to_string();
-                    match toml::from_str::<Table>(&edited) {
-                        Ok(read_back) if read_back == target => edited,
-                        _ => {
-                            debug!(
-                                "{}: written fresh, the edit did not read back",
-                                path.display()
-                            );
-                            regenerated
-                        }
-                    }
+                    reads_back(document.to_string(), &target).unwrap_or_else(|| {
+                        debug!(
+                            "{}: written fresh, the edit did not read back",
+                            path.display()
+                        );
+                        regenerated
+                    })
                 }
                 _ => fresh("not TOML"),
             },
@@ -274,9 +270,16 @@ fn fresh_from_template(template: &str, desired: &Table, written: &EditTable) -> 
         return None;
     };
     apply_desired(document.as_table_mut(), &held, written, desired);
-    let edited = document.to_string();
+    reads_back(document.to_string(), desired)
+}
+
+/// `edited` when it reads back as `values`, what its edit meant to leave; `None` for text
+/// that is not TOML or that holds other values, which the caller then writes another way.
+/// The in-place edit is trusted only as far as this check: a file that came out wrong
+/// costs the next start, a file written fresh costs its comments.
+fn reads_back(edited: String, values: &Table) -> Option<String> {
     match toml::from_str::<Table>(&edited) {
-        Ok(read_back) if read_back == *desired => Some(edited),
+        Ok(read_back) if read_back == *values => Some(edited),
         _ => None,
     }
 }
@@ -322,30 +325,45 @@ fn apply_desired(document: &mut EditTable, held: &Table, written: &EditTable, de
 /// save writes. `baseline` is what the session last read or wrote, `desired` its values
 /// now. A `desired` value that still equals `baseline`'s is no change of the session's,
 /// so the file's own value stands, its absence included; one that differs is the
-/// session's and is written, its absence included. A key all three hold as a table
-/// recurses, so a change inside one does not take over its other values.
+/// session's and is written, its absence included. A changed key that is a table recurses,
+/// so a change inside one does not take over its other values. A side that lacks the table
+/// counts as an empty one there: `[common.pes_folders]` is left out of the file while it
+/// is empty, and two windows that each fill a row, or one that empties its only row, must
+/// still be merged row by row, not table by table.
 fn merge_desired(held: &Table, baseline: &Table, desired: &Table) -> Table {
+    let empty = Table::new();
     let mut merged = Table::new();
-    for (key, wanted) in desired {
-        let value = match (wanted, baseline.get(key), held.get(key)) {
-            (wanted, Some(base), file) if wanted == base => file.cloned(),
-            (Value::Table(wanted), Some(Value::Table(base)), Some(Value::Table(file))) => {
-                Some(Value::Table(merge_desired(file, base, wanted)))
-            }
-            (wanted, _, _) => Some(wanted.clone()),
+    let held_alone = held.keys().filter(|key| !desired.contains_key(*key));
+    for key in desired.keys().chain(held_alone) {
+        let (wanted, base, file) = (desired.get(key), baseline.get(key), held.get(key));
+        let value = if wanted == base {
+            file.cloned()
+        } else if let (Some(wanted_table), Some(base), Some(file)) = (
+            table_or_empty(wanted, &empty),
+            table_or_empty(base, &empty),
+            table_or_empty(file, &empty),
+        ) {
+            let inner = merge_desired(file, base, wanted_table);
+            // A table the session no longer holds is gone once nothing else is in it.
+            (wanted.is_some() || !inner.is_empty()).then_some(Value::Table(inner))
+        } else {
+            wanted.cloned()
         };
         if let Some(value) = value {
             merged.insert(key.clone(), value);
         }
     }
-    // A key the session dropped leaves the file; one another writer added while the
-    // session was away (`held` alone has it) stays.
-    for (key, file_value) in held {
-        if !desired.contains_key(key) && !baseline.contains_key(key) {
-            merged.insert(key.clone(), file_value.clone());
-        }
-    }
     merged
+}
+
+/// `value` as a table for `merge_desired`: an absent one stands for an empty table, and a
+/// value that is no table is `None`.
+fn table_or_empty<'a>(value: Option<&'a Value>, empty: &'a Table) -> Option<&'a Table> {
+    match value {
+        None => Some(empty),
+        Some(Value::Table(table)) => Some(table),
+        Some(_) => None,
+    }
 }
 
 fn assert_reserved_free(tool_id: &str) {
@@ -1099,6 +1117,123 @@ mod tests {
         );
         assert_eq!(loaded.tool("save-editor"), Some(&table("speed = 3")));
         assert_eq!(loaded.common.theme, Theme::Light);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // An edit is kept only when it reads back as the values it meant to leave.
+    #[test]
+    fn an_edit_that_reads_back_otherwise_or_not_at_all_is_not_kept() {
+        let values = table("[common]\nthread_count = 4");
+        let good = "# kept\n[common]\nthread_count = 4\n".to_owned();
+        assert_eq!(reads_back(good.clone(), &values), Some(good));
+        assert_eq!(
+            reads_back("[common]\nthread_count = 8\n".to_owned(), &values),
+            None,
+            "valid TOML holding another value"
+        );
+        assert_eq!(
+            reads_back("[common\n".to_owned(), &values),
+            None,
+            "not TOML"
+        );
+    }
+
+    // Equality is what the settings hold: one loaded from a file equals one built to the
+    // same values, whatever it remembers of the file, and a difference in the common
+    // section, a tool's table or the template is a difference.
+    #[test]
+    fn settings_compare_by_what_they_hold() {
+        let loaded = Settings::parse("[common]\nthread_count = 4\n").unwrap();
+        let mut built = Settings::default();
+        built.common.thread_count = 4;
+        assert_eq!(loaded, built);
+
+        built.common.thread_count = 8;
+        assert_ne!(loaded, built, "the common section");
+        let mut with_tool = loaded.clone();
+        with_tool.set_tool("team-compiler", table("label = 'x'"));
+        assert_ne!(loaded, with_tool, "a tool's table");
+        assert_ne!(loaded, loaded.clone().with_template(""), "the template");
+    }
+
+    /// The file at `path` read back: its per-version PES folders and its text.
+    fn folders_in(path: &Path) -> (BTreeMap<PesVersion, String>, String) {
+        let text = fs::read_to_string(path).unwrap();
+        (Settings::parse(&text).unwrap().common.pes_folders, text)
+    }
+
+    // A table one side lacks is still merged key by key. `[common.pes_folders]` is left
+    // out of the file while it is empty, so two sessions that each fill a row start from
+    // no table at all: the second's row must not replace the first's.
+    #[test]
+    fn two_sessions_each_filling_a_folder_row_keep_both() {
+        let dir = test_dir("studio_core_settings_folder_rows");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "[common]\ntheme = \"dark\"\n").unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        let (pes19, pes21) = (r"G:\PES 2019".to_owned(), r"F:\PES2021".to_owned());
+        session_a
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes19, pes19.clone());
+        session_a.save(&path).unwrap();
+        session_b
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes21, pes21.clone());
+        session_b.save(&path).unwrap();
+
+        let (folders, text) = folders_in(&path);
+        assert_eq!(
+            folders,
+            BTreeMap::from([(PesVersion::Pes19, pes19), (PesVersion::Pes21, pes21)]),
+            "{text}"
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The other way round: a session that empties its only row removes that row, not
+    // the row another session added meanwhile; and with no other row the table goes
+    // with it, as a file with no per-version folder has none.
+    #[test]
+    fn a_session_emptying_its_folder_row_keeps_the_other_sessions_row() {
+        let dir = test_dir("studio_core_settings_folder_emptied");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        let original = "[common]\ntheme = \"dark\"\n\n[common.pes_folders]\n19 = 'G:\\PES 2019'\n";
+        fs::write(&path, original).unwrap();
+
+        let mut session_a = Settings::load(&path).unwrap();
+        let mut session_b = Settings::load(&path).unwrap();
+        let mut alone = Settings::load(&path).unwrap();
+        let pes21 = r"F:\PES2021".to_owned();
+        session_a
+            .common
+            .pes_folders
+            .insert(PesVersion::Pes21, pes21.clone());
+        session_a.save(&path).unwrap();
+        session_b.common.pes_folders.clear();
+        session_b.save(&path).unwrap();
+
+        let (folders, text) = folders_in(&path);
+        assert_eq!(
+            folders,
+            BTreeMap::from([(PesVersion::Pes21, pes21)]),
+            "{text}"
+        );
+
+        fs::write(&path, original).unwrap();
+        alone.common.pes_folders.clear();
+        alone.save(&path).unwrap();
+        let (folders, text) = folders_in(&path);
+        assert!(folders.is_empty(), "{text}");
+        assert!(
+            !text.contains("pes_folders"),
+            "no empty table is left: {text}"
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 

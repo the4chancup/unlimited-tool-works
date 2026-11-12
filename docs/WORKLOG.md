@@ -1746,8 +1746,12 @@ briefs, review loops, gates and mutation runs as for any step.
     the window's whole copy, so the last of two windows to save undid every value the other
     had changed; a save now writes only what its own session changed, a default not being
     a change (ST-SET-05). Not looked at in two built windows
-    - [ ] review rounds (tier 2): SWE-2's loop, then one paid round (Carbon, from
-      2026-11-15)
+    - [ ] review rounds (tier 2). SWE-2 "S-drift r1", 2026-11-12: 1 of 3 concerns
+      accepted (two windows each filling a per-version PES folder row lost one, the
+      table being absent from the file while empty: a table a side lacks is merged as an
+      empty one); its loop ended. The checkpoint's three survivors got two tests (the
+      settings' equality; the read-back check, now one helper). One paid round is owed
+      (Carbon, from 2026-11-15)
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03)
