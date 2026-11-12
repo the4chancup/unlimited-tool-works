@@ -152,15 +152,18 @@ LOCAL_ONLY_CRATES: frozenset[str] = frozenset()
 REMOTE_TMPDIR = "$HOME/studio-mutants/tmp"
 # The most of the host's disk `REMOTE_BASE` may hold when a run that uses the
 # remote starts: the maintainer affords about 40 GB, and a running half adds its
-# two build copies (about 4 GiB each) on top. On 2026-10-22 it held 50 GB (28.6 of
+# two build copies on top (`REMOTE_FREE_FLOOR` has their size). On 2026-10-22 it held 50 GB (28.6 of
 # them tests' leftovers in `REMOTE_TMPDIR`, 22 the clone's build cache), the host's
 # disk was at 99%, and a half lost five mutants to it (RUNBOOK "The scratch folder").
 REMOTE_DISK_BUDGET = 30 * 2**30
 # The least free space the host's disk must have when such a run starts, whatever
-# this project holds: a half's build copies and tests take about 10 GiB of it, and 2
-# more stay for the host's own system (its logs, its other services, idle since
-# 2026-10-29). At 10 a run could end on a full disk, which kills the half.
-REMOTE_FREE_FLOOR = 12 * 2**30
+# this project holds: a half's two build copies take 24 GiB of it (measured on
+# 2026-11-12: a `save_editor` half's peaked at 23.6 GiB in `REMOTE_TMPDIR`; no
+# other crate's is measured), and 2 more stay for the host's own system (its logs,
+# its other services, idle since 2026-10-29). At 12, the floor before that
+# measurement, a `save_editor` half that started with 19.5 GiB free filled the disk
+# and lost a mutant.
+REMOTE_FREE_FLOOR = 26 * 2**30
 # Where the local half's cargo-mutants makes its copies of the tree (and its
 # builds and tests their temporary files): one fixed folder, so a single
 # antivirus exclusion covers every run's randomly named copy, whose tests write
@@ -352,7 +355,8 @@ def unlock(handle) -> None:
 
 @contextlib.contextmanager
 def run_lock(path: Path = RUN_LOCK):
-    """Hold the mutation runs' lock for a run's whole length: a run launched while another
+    """Hold the mutation runs' lock, for a run's whole length except a whole run's wait on the
+    remote (`whole_run`, `collect`): a run launched while another
     is under way waits for it rather than racing it for `mutants.out`, `mutants.diff/`, the
     remote and the build slots. Every entry point snapshots the tree first, so a waiting run
     measures the tree as it stood when its command started, whatever is edited or merged
@@ -642,8 +646,8 @@ def remote_pending() -> Path:
 def pending_record() -> dict | None:
     """The `remote_pending` record as a dict, or None when there is none or it
     is not one this version wrote: before the record carried fields it held the
-    host's name alone, which `local_refusal` treats as a local half's and
-    `collect` as a run launched elsewhere."""
+    host's name alone, which `local_refusal` and `collect` treat as a split's
+    with a local half."""
     pending = remote_pending()
     if not pending.exists():
         return None
@@ -1286,9 +1290,10 @@ def summarize(
     # (split_run_record): whichever method shared them, the two halves'
     # merged outcomes must name each listed mutant exactly once — anything
     # else means a mutant went untested or got tested twice. A run with no
-    # record (a diff, REMOTE_ONLY, a local run) skips the check.
+    # record (a diff, REMOTE_ONLY, a local run) skips the check, and so does
+    # one with no local half: a record this tree holds is an earlier run's.
     record_path = split_run_record()
-    if record_path.exists():
+    if local_half and record_path.exists():
         record = json.loads(record_path.read_text(encoding="utf-8"))
         tested: Counter = Counter()
         for base in (local, remote):
@@ -1349,9 +1354,11 @@ def collect(host: str) -> int:
     and summary take it. The half's launch record (`remote_pending`), read
     before the fetch removes it, tells whether its run had a local half (whose
     summary reads the local `mutants.out`, which no run since can have
-    replaced: `local_refusal`) and ran the extra pass; with no record this
-    version reads (a half launched from another tree, or one an earlier version
-    wrote) it summarizes as a split and says so. A died half's partial results
+    replaced: `local_refusal`) and ran the extra pass. With no record (a half
+    launched from another tree) it summarizes the remote half alone, the extra
+    pass counted when the fetch brings its record, and says so: nothing this
+    tree holds is that run's. A record an earlier version wrote summarizes as a
+    split. A died half's partial results
     are fetched too, whether it died before or during the wait, and the run
     exits 1."""
     state = remote_run_state(host)
@@ -1380,10 +1387,21 @@ def collect(host: str) -> int:
             # The half's own run fetched it while this collect waited.
             print("the remote half is already collected")
             return 1
-        if record is None:
+        extra_if_fetched = False
+        if not remote_pending().exists():
+            # Launched from another tree: this tree's `mutants.out` and extra
+            # record are some earlier run's, never this half's.
             print(
-                "no launch record in this tree: summarizing the run as a split "
-                "with a local half"
+                "no launch record in this tree: summarizing the remote half alone "
+                "(a local half's results are in the tree that launched it)"
+            )
+            local_half = False
+            extra_run = None
+            extra_if_fetched = True
+        elif record is None:
+            print(
+                "the launch record is not one this version wrote: summarizing the "
+                "run as a split with a local half"
             )
             local_half = True
             extra_run = extra_run_record() if extra_run_record().exists() else None
@@ -1414,6 +1432,7 @@ def collect(host: str) -> int:
         return finish_remote_run(
             host, local_code, remote_code, (None, remote_seconds),
             local_half=local_half, extra_run=extra_run, partial=partial,
+            extra_if_fetched=extra_if_fetched,
         )
 
 
@@ -1771,14 +1790,19 @@ def finish_remote_run(
     host: str, local_code: int, remote_code: int,
     seconds: tuple[float | None, float | None], *,
     local_half: bool, extra_run: Path | None, partial: bool = False,
+    extra_if_fetched: bool = False,
 ) -> int:
     """A remote run's end (the caller holds the run lock): fold the halves'
     measured costs into the cost table — the local table only when the run had
     a local half — fetch the remote half's results (`partial`: it died, so it
-    may have left none) and summarize."""
+    may have left none) and summarize. With `extra_if_fetched` (a collect with
+    no launch record) the extra pass is the fetched record when the fetch
+    brought one: every launch empties the host's, so one there is this half's."""
     if local_half:
         update_cost_cache()
     fetch_remote(host, partial=partial)
+    if extra_if_fetched and remote_extra_record().exists():
+        extra_run = remote_extra_record()
     update_cost_cache(
         ROOT / "mutants.out" / "remote" / "mutants.out", "remote_mutant"
     )

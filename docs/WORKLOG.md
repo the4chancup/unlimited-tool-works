@@ -2248,17 +2248,15 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
-- open 2026-11-12 (`just mutants-diff 33fe81f0`, `.tmp/process/mutants_1112h.log`) — the
-  VPS's disk filled during `save_editor`'s remote half ("No space left on device"), which
-  stopped with one of its 16 mutants unrun, although the guard had passed: 26.8 GiB in the
-  project's folder (budget 30) and 19.5 GiB free (floor 12). So a `save_editor` half needs
-  more than the 10 GiB `REMOTE_FREE_FLOOR` allows for (`scripts/mutation/mutants.py`), or
-  the host's own use grew meanwhile. The clone's build cache was then 28 GB of the folder;
-  `remote_clean_target.sh` removed it (47 GB free, the disk at 70%), so the next
-  `just remote` builds cold. To do: measure a `save_editor` half's peak in
-  `~/studio-mutants/tmp` and set the floor from it (a vital script: its SWE-2 rounds). The
-  unrun mutant (`comparator.rs`, `column_offsets -> [0.0; 3]`) was applied by hand here:
-  two comparator tests fail on it.
+- open 2026-11-12 — the VPS's disk during a whole-crate run is not measured. A diff run's
+  `save_editor` half filled the disk from 19.5 GiB free (floor 12 then), and a sampled half
+  of three mutants peaked at 23.6 GiB in `~/studio-mutants/tmp`, so `REMOTE_FREE_FLOOR` is
+  26 GiB now (`DECISIONS.md`, "The VPS free-space floor for a mutation half is 26 GiB").
+  That covers the two build copies. A whole run adds, over days, the scratch folder each
+  caught mutant's test leaves in the same folder (28.6 GB of them on 2026-10-22), which the
+  floor does not count. To do at the next `just mutants <crate>`: sample the host beside it
+  (`.tmp/process/vps_peak.sh <log> <out file>`, read-only, 30 s; lengthen its 60-minute
+  limit) and stop the half the RUNBOOK's way if the disk nears full.
 - open 2026-11-12 (the readability findings): `spec/aatf_rules.md`'s sentence that a VGL25
   goalkeeper rated A at GK is still told of an unused A position comes from reading
   `crates/libs/aatf/logic/logic.rhai` (`a_positions` makes no goalkeeper exception): no
@@ -2389,8 +2387,12 @@ points there.
   run refuses without a host, runs every mutant there, its extra kinds first in the same
   service (`--remote-extra`) and fetched with the rest; the launch record says whether a
   local half exists, which the summary, `collect` and `local_refusal` read; the wait holds
-  no run lock, and `mutants-diff` runs here while the VPS is busy. Open: its SWE-2 loop (a
-  vital script), Astra after it (it reshapes how a run measures). Then, as a second slice: a stopped run
+  no run lock, and `mutants-diff` runs here while the VPS is busy. Its review (tier 3: one
+  SWE-2 round, five parts, 2026-11-12, "S-vps r1" in `.tmp/duck_rulings.md`): 8 of 27
+  accepted. A `mutants-collect` from a tree with no launch record counted that tree's stale
+  results as the run's local half and is now the remote half alone; four tests tightened;
+  three RUNBOOK sentences corrected. Open: one SWE-2 round over those fixes and the floor's
+  change (a vital script). Then, as a second slice: a stopped run
   resumes where it stopped (the VPS needing an update mid-run is the case), its tested
   mutants kept, never retested and never lost from the summary; first check whether
   cargo-mutants' `--iterate` (skips mutants an earlier run caught) does this for a half

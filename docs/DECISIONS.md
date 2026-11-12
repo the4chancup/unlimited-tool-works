@@ -16638,3 +16638,23 @@ hidden flag that makes a CLI run panic, to test the hook through the exe (the ho
 in process, its one-line install in `run_cli_mode` is read, not run).
 Plan: `plans/core/architecture.md` "Launch modes" ("A run's log file"); `plans/core/gui.md`
 ST-CLI-04.
+
+## 2026-11-12 — tooling — The VPS free-space floor for a mutation half is 26 GiB
+
+Decision: a mutation run starts on the VPS only with at least 26 GiB free on its disk
+(`REMOTE_FREE_FLOOR`), where it took 12.
+Why: the 12 stood on "a half's own build copies and tests take about 10", which no run had
+measured. Sampled every 30 s through a `save_editor` half of three mutants (2026-11-12), the
+host's `~/studio-mutants/tmp` (cargo-mutants' two copies of the tree, each with its own
+build) peaked at 23.6 GiB, and the disk went from 34.0 GiB free to 10.4. A half that started at the old floor would
+have filled the disk, as one did the same day from 19.5 GiB free (a mutant lost). 26 is that
+peak rounded up to 24 plus the 2 the earlier decision keeps for the host's system. The cost:
+the guard refuses sooner as the clone's build cache grows, and `remote_clean_target.sh`
+answers it (the next `just remote` then builds cold).
+Not chosen: lowering `REMOTE_DISK_BUDGET` as well, so the project's folder stays under the
+40 GB the maintainer affords while a half runs (it peaked at 35.7 GiB in this run, and would
+pass 50 with the cache at the budget): the budget would have to sit under the size of one
+cold build cache, so every run would refuse. Whether the 40 GB figure still stands is asked
+in `QUESTIONS.md`. No other crate's half is measured; a whole run's leftovers over days are
+not either.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.

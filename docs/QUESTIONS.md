@@ -75,6 +75,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   the stadiums from their bins, the referees from their slots). That path is the larger half
   of the tool. For which kinds are there old DLCs whose exports are lost and wanted back:
   teams only, or the balls, the stadiums, the billboards and the referees too?
+- **The 40 GB this project may hold on the VPS** (`RUNBOOK.md` "The scratch folder"; the
+  decision "The VPS free-space floor for a mutation half is 26 GiB"). A mutation half's two
+  build copies were measured at 23.6 GiB for `save_editor`, where the scripts assumed about 8.
+  The folder may hold 30 GiB when a run starts (`REMOTE_DISK_BUDGET`), so it can reach about
+  54 GiB while a half runs; in the measured run it peaked at 35.7. The free-space floor now
+  keeps the disk from filling whatever the folder holds. Does the 40 GB limit still matter
+  while that floor holds? If it does, the budget drops to about 13 GiB, under one cold build
+  cache, and the clone's cache is removed before nearly every run that uses the host.
 
 ## Sentences the plans and the spec leave open
 

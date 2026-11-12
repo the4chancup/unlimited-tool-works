@@ -86,7 +86,8 @@ cargo-mutants and their results come home with the fetch. It holds the run lock 
 while it launches and while it fetches and summarizes, never while it waits
 (`just mutants-collect` waits the same way), so `just mutants-diff` runs while a whole
 run is under way: it keeps the split below, a round's diff being minutes and its result
-waited on, except while the VPS is busy or unreachable, when it runs entirely on this
+waited on, except while a mutation half is on the VPS (running, or ended and not collected)
+or the VPS cannot be reached, when it runs entirely on this
 machine instead of waiting days for its turn there. What follows
 describes the split: a diff uses it, and the whole-crate file split it describes is kept
 for when a whole run needs this machine again.
@@ -111,7 +112,8 @@ roughly halves a whole-crate run whose sides rate the same, and it moves part of
 the home machine either way.
 Agent and IDE shells started before the variable was set do not see it, so the script also
 reads it from the user's registry environment; the run's first line says which mode it took
-("splitting the run with bonfire" or "running every mutant on this machine"). An agent
+("splitting the run with bonfire", "running every mutant on bonfire" or, from `mutants-diff`,
+"running here"). An agent
 shell without the variable once ran all 806 `pes_savefile` mutants locally, over three
 hours. An empty value in the process opts out. `mutants-diff` runs one cargo-mutants per crate
 the diff mutates, one after the other, each with its own baseline and so its own timeout, not
@@ -161,7 +163,8 @@ edits and merges are safe once the run has started, every crate of one `mutants-
 included. **One run at a time, each queued with its snapshot**: `just mutants`,
 `mutants-diff` and `extra-mutants` snapshot first, then take the user's lock (`mutants.lock`
 beside the cost table, so a worktree's run queues too) for the run's whole length
-(`mutants.run_lock`; `mutants-collect` holds it as well), so a run launched while another is under way waits
+(`mutants.run_lock`; a whole run and `mutants-collect` let go of it while they wait on the
+VPS, above), so a run launched while another is under way waits
 its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
 are launched as separate commands, never chained: a chain's later run snapshots only when
 the one before ends, and a run queued that way once snapshotted a half-edited crate and had
@@ -216,7 +219,7 @@ build is killed at the cap, the run fails and lists the untested mutants (`repor
 and the fix is then memory freed on the host (the maintainer's) or a lower
 `REMOTE_BUILD_JOBS`; past one job, the crate joins `LOCAL_ONLY_CRATES` in
 `scripts/mutation/mutants.py`, whose mutants never go to the VPS (a whole-crate run of one
-refuses, and any diff holding one of them runs locally whole). The remote half builds
+refuses, and a diff's mutants of such a crate run here). The remote half builds
 under `~/studio-mutants/tmp` on disk (`REMOTE_TMPDIR`), not in the host's `/tmp`: that is a
 7.8 GiB tmpfs, cargo-mutants' default place for its two copies of the tree, so each copy's
 `target/` (4 GiB with egui linked) lived in the unit's memory and the per-mutant rebuilds of
@@ -232,7 +235,9 @@ service.
 `pid`, `log`, `exit`, `memory_peak`), and the script polls it every 15 s with short ssh calls.
 A dropped link costs a poll, not the run: a remote half that hung off one long ssh session
 once died with it. If `just mutants` itself stops, `just mutants-collect` waits for the remote half
-and fetches it, including a died half's partial results. A run that uses the VPS refuses to start while a
+and fetches it, including a died half's partial results. It is run from the tree that
+launched the half, whose `.tmp/mutants-remote-pending` says what the run was: from another
+tree it summarizes the remote half alone and says so. A run that uses the VPS refuses to start while a
 remote half is running or uncollected, or while `just gates-remote` runs there: both rewrite
 the remote clone. A run on this machine alone refuses only while this tree's launch record
 (`.tmp/mutants-remote-pending`, kept until the fetch) names a half whose run also had a local
@@ -329,8 +334,9 @@ production services share. Every run that uses the host passes a guard first (`r
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when `~/studio-mutants` still holds over 30 GiB
-(`REMOTE_DISK_BUDGET`, leaving room for a half's two build copies) or the disk has under
-12 GiB free (`REMOTE_FREE_FLOOR`: a half's own copies and tests take about 10, and 2 stay for
+(`REMOTE_DISK_BUDGET`) or the disk has under
+26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
+`save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
 the host's system; when this project's cleanup cannot lift it, the maintainer is asked).
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
 editor's pid-named copies of a fixture save), the disk was at 99% and a half lost five
