@@ -214,9 +214,12 @@ side.
   colours 1-2 as swatches and its name, then `[click for gameplan]` in the weak colour at the
   normal weight (nothing else says where the tactics are; on a narrow row it is elided before
   the name is), and a dot when the team's own fields (name, short name, colours, ids, kit
-  slots, tactics) have unsaved changes. A click selects the team, and the detail shows the
-  team view; a team row never drags and is no drop target. ALL lists every team's row and
-  players; under a filter a team's row stays while its own name or any of its players matches.
+  slots, tactics) have unsaved changes.
+
+  A click on a team row selects the team, and the detail shows the team view. A team row never
+  drags and is no drop target. ALL lists every team's row and players. Under a filter a team's
+  row stays while its own name or any of its players matches.
+
   The team row replaces the team bar above the old tabs: the team is one click away from its
   players, where a manager looks for it, rather than a strip that took a row from every
   player. A save opens on ALL with the list's first player row selected.
@@ -232,8 +235,9 @@ side.
   (ALL, or a filter several teams match), one per press, PgUp from a player to his own team's
   row first. With one team row (a team picked) they move it 7 rows at a time. The first and
   last rows, or team rows, stop them. The team rows counted are the list's as filtered,
-  wherever it is scrolled, so a press does the same whatever the window's height; a page of
-  rows, as a list box's keys move, crossed into the next team at a place that depended on it.
+  wherever it is scrolled, so a press does the same whatever the window's height. A page of
+  rows, as a list box's keys move, crossed into the next team at a place that depended on the
+  window's height.
 
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
@@ -253,26 +257,29 @@ side.
 
   The list's **drag-and-drop reordering** replaces the up/down spinner, and moves what the
   spinner moves: the players' records trade places between the ids, each id staying in its
-  roster slot (`base_copy_id` traded so each matches its new slot, and the in-game face run's
-  face structure and hairstyle staying too: the spinner's record, the `.4ccs` one, holds of
-  that run only the skin, iris and player gloves). The shirt numbers, held by the roster's
-  slots, stay where they are, as does the captain mark. The roster's own order is never
-  changed: by 4cc rule slot `NN` holds player `team id × 100 + NN` (`plans/aatf_rules.md` "The
-  host"), and reordering the roster itself would break it. A drop several rows away is the
-  spinner pressed that many times, so the players in between shift one slot along.
+  roster slot. `base_copy_id` is traded so each matches its new slot, and the in-game face
+  run's face structure and hairstyle stay too, since the spinner's record, the `.4ccs` one,
+  holds of that run only the skin, iris and player gloves. The shirt numbers, held by the
+  roster's slots, stay where they are, as does the captain mark.
+
+  The roster's own order is never changed: by 4cc rule slot `NN` holds player
+  `team id × 100 + NN` (`plans/aatf_rules.md` "The host"), and reordering the roster itself
+  would break it. A drop several rows away is the spinner pressed that many times, so the
+  players in between shift one slot along.
 
   A drop works on a row of the dragged player's own team, in one team's list or under ALL,
   where each team's rows run unbroken under its team row. A drop on another team's row does
   nothing, and drag is off while a filter is typed, where neighbouring rows are not one team's
   neighbouring slots. While a drag is held over a row of his team other than his own, that
   row, the slot the drop moves him to, is outlined in the selection colour (the draft's
-  `.dragover`), as the lineup lists outline theirs; a row the drop moves nothing onto (his
-  own, another team's, an empty slot's) gets none. The dragged row is drawn under the pointer
-  while it is held, the point first pressed kept under it, as a dragged lineup row is
-  (SE-GUI-65), and its place in the list is drawn as the lineup draws a dragged row's place. A
-  draggable row shows the pointing hand wherever the pointer is on it (egui leaves a row that
-  also takes clicks on the arrow, so the row asks for it); the lineup rows keep the move
-  cross, which Windows draws for egui's grab hand.
+  `.dragover`), as the lineup lists outline theirs. A row the drop moves nothing onto (his
+  own, another team's, an empty slot's) gets no outline.
+
+  The dragged row is drawn under the pointer while it is held, the point first pressed kept
+  under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn as the
+  lineup draws a dragged row's place. A draggable row shows the pointing hand wherever the
+  pointer is on it (egui leaves a row that also takes clicks on the arrow, so the row asks for
+  it). The lineup rows keep the move cross, which Windows draws for egui's grab hand.
 
   A dot marks players with unsaved changes. Names render with their savefile colour codes
   applied as text colours (the in-game look; 4ccEditor shows the raw control characters), and
@@ -358,13 +365,14 @@ side.
     panel) and Save a picture of the formations (after 0.0.1).
 
   There is no Panels menu: that the Comparator, the patch and the interchange open as floating
-  panels says nothing a member looks for them by. A floating panel first opens where the
-  drafts' `.panel` stands, 620 points wide, its top 90 below the window's and its right edge 1
-  inside the window's, over the views' right columns rather than the player list a member
-  picks from while it is open (egui's own first place put the Comparator at the bottom left,
-  over the list); then where the member leaves it, while the program runs. One floating panel
-  is open at a time, as in the drafts: opening one closes the other, which would otherwise open
-  on top of it.
+  panels says nothing a member looks for them by.
+
+  A floating panel first opens where the drafts' `.panel` stands: 620 points wide, its top 90
+  below the window's and its right edge 1 inside the window's. That puts it over the views'
+  right columns rather than the player list a member picks from while it is open (egui's own
+  first place put the Comparator at the bottom left, over the list). After that it opens where
+  the member leaves it, while the program runs. One floating panel is open at a time, as in
+  the drafts: opening one closes the other, which would otherwise open on top of it.
 
   A menu item's shortcut is drawn right of its label in the weak colour
   (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
@@ -382,13 +390,15 @@ side.
 
   Each view's first line titles what it shows, `<id> <name>`: the player view's `70101 QUADS
   ONLY`, the team view's `701 /3/`, the id in the weak colour, as the list draws ids, and the
-  name with its colours. Its ink stands as far below the toolbar's buttons as the view's first
-  row's ink is below its own (about 11 points each on the maintainer's screen), not close
-  under the buttons. The gaps are even in what the eye sees, not in boxes. A line box holds
-  more room under the baseline than over the capitals, so equal box gaps of 7 read as 9 above
-  and 11 below, and the gaps are evened in ink instead: the drafts set the title 2 lower, and
-  the app, whose title sat low instead, takes a 6-point margin over it and room under it (11
-  and 11 measured).
+  name with its colours.
+
+  The title's ink stands as far below the toolbar's buttons as the view's first row's ink is
+  below its own (about 11 points each on the maintainer's screen), not close under the
+  buttons. The gaps are even in what the eye sees, not in boxes. A line box holds more room
+  under the baseline than over the capitals, so equal box gaps of 7 read as 9 above and 11
+  below. The gaps are evened in ink instead: the drafts set the title 2 lower, and the app,
+  whose title sat low instead, takes a 6-point margin over it and room under it (11 and 11
+  measured).
 - **The player view**: three columns side by side, then the Appearance section. The room the
   fixed columns leave is split into four equal gaps: after the player list, between the
   columns, and after Ability stats (30.4 points each at the 1280 × 780 window). The first
@@ -411,10 +421,12 @@ side.
   points apart:
   1. **General info**, its column 350 points wide: the title at the column's left edge, the
      fields and their labels 6 in from it, as the ability stats stand in from theirs (their
-     cells' padding), so a panel's title heads its body; Other stats the same. The fields are
-     344 points wide (the draft's: room for the longest pair label, "Injury resistance",
-     beside its box on each half, and for the label-left rows, 339 points in the body font;
-     no wider, so the three columns stay on one row beside the 255-point list).
+     cells' padding), so a panel's title heads its body. Other stats stands the same way.
+
+     The fields are 344 points wide, the draft's width. That is room for the longest pair
+     label, "Injury resistance", beside its box on each half, and for the label-left rows,
+     339 points in the body font. They are no wider, so the three columns stay on one row
+     beside the 255-point list.
 
      They are laid out as 4ccEditor's General Info:
      - Name, then Shirt, each a row with its label on the left and its field on the right.
@@ -450,14 +462,19 @@ side.
 
      Under that **Playable positions**: the 13 positions with C/B/A ratings in five rows by
      line of the pitch, each left wing to right wing (LWF CF SS RWF / LMF AMF RMF / CMF DMF /
-     LB CB RB / GK, the midfield in two, GK alone below the others), each row centred in the
-     panel, each position's label centred over its ratings (over the B). The registered one is
-     outlined, its corners rounded as the widgets' are (every frame and field in the view is
-     rounded; the theme's own radius, not a second one). The chosen rating is filled: A a deep
-     green (`#129648`) under a white letter, B the selection's blue, C a grey square, so the
-     three tell apart at a glance and an unrated position still shows its C. A click on a
-     position's label makes it the registered position, the same undoable edit as General
-     info's combo, where the eye already is when choosing among the ratings.
+     LB CB RB / GK, the midfield in two, GK alone below the others). Each row is centred in
+     the panel, and each position's label centred over its ratings (over the B).
+
+     The registered position is outlined, its corners rounded as the widgets' are (every
+     frame and field in the view is rounded; the theme's own radius, not a second one). The
+     chosen rating is filled, so the three tell apart at a glance and an unrated position
+     still shows its C:
+     - A a deep green (`#129648`) under a white letter,
+     - B the selection's blue,
+     - C a grey square.
+
+     A click on a position's label makes it the registered position, the same undoable edit
+     as General info's combo, where the eye already is when choosing among the ratings.
 
      A field's label in these panels and in Ability stats is drawn in the normal text colour,
      as the checkboxes' labels are, not the weak one: the weak grey read too dark beside them.
@@ -484,10 +501,15 @@ side.
      A skill's, COM style's or playing style's name, here and wherever one is named (the
      playing-style combo, the AATF rows, the Comparator, the changes lists, the team file
      dialog's notes and the Ruleset editor's summary), is its id's title case read as an
-     English title, from one function in `pes_savefile`: GK in capitals, `&` for and, in, on,
-     the and to in lower case after the first word, and `No. 10` (`GK Long Throw`,
-     `Cut Behind & Turn`, `Fox in the Box`, `Classic No. 10`; the drafts' `cardName`). The
-     bare title case drew `Gk Long Throw` and `Classic No 10`.
+     English title, from one function in `pes_savefile`:
+     - GK in capitals;
+     - `&` for and;
+     - in, on, the and to in lower case after the first word;
+     - and `No. 10`.
+
+     So the names read `GK Long Throw`, `Cut Behind & Turn`, `Fox in the Box` and
+     `Classic No. 10` (the drafts' `cardName`), where the bare title case drew
+     `Gk Long Throw` and `Classic No 10`.
   3. **Ability stats**, ~25 in one column in the game's order, each label beside its number.
      Each stat is named as the save's PES version names it, from one per-version table in
      `pes_savefile` that every surface naming a stat reads (this view, the AATF rows, the
@@ -562,10 +584,10 @@ side.
     4ccEditor's "Edited/created player" checkbox is not kept: the name and shirt name edits set
     the flag, and the Team menu's Set edited flag covers a team, which is what a member sets it
     for.
-- **Contents 1:1 with 4ccEditor's tabs**, which are the parity contract, but for stronger hand,
-  which 4ccEditor draws on its Appearance tab and the player view in General info, beside the
-  gameplay values it is; star and playing attitude stay with Appearance, in its Cutscenes
-  group:
+- **Contents 1:1 with 4ccEditor's tabs**, which are the parity contract, but for stronger
+  hand. 4ccEditor draws it on its Appearance tab, and the player view in General info, beside
+  the gameplay values it is one of. Star and playing attitude stay with Appearance, in its
+  Cutscenes group.
   - **The numbers** are the game's, in 4ccEditor's ranges: abilities 40 to 99, form 1 to 8,
     injury resistance 1 to 3, weak foot usage and accuracy 1 to 4 (these four stored one
     lower), and the Cutscenes group's star 0 to 7 and playing attitude 0 to 3, each inside the
@@ -578,9 +600,9 @@ side.
     foot`, the stats' `Ball Winning`), not the checkboxes' light grey: a card reads as a
     player's field, not a setting. A hovered card's label still brightens.
   - **The skills' Cards used badge** is the active ruleset's, the toolbar's ruleset dropdown's
-    ("Configurable AATF rules"), and reads the player's own tier alone: the tier his stats,
-    registered position and height match under that ruleset, as `check-aatf` recognizes it,
-    not one badge per tier, which a member had to match to the player by eye. It reads
+    ("Configurable AATF rules"). It reads the player's own tier alone: the tier his stats,
+    registered position and height match under that ruleset, as `check-aatf` recognizes it.
+    It is not one badge per tier, which a member had to match to the player by eye. It reads
     `Cards used for Gold: 2 of 8`, the tier, the paid cards and the limit in a chip (the
     draft's `.badge`: the widget fill, corners rounded 2, 4 points of margin across and none
     down), with no `cards` after the count, which the label before it already says. When no
@@ -596,19 +618,20 @@ side.
     A tier check that fails on the player shows `Tier check failed, click for more
     information.` in the error colour in the badge's place, its click opening a dialog titled
     `The tier check failed` with the error. The AATF check never runs the two functions the
-    badge asks, so a member's edit that breaks only them would otherwise show nowhere. That
-    error names a roster place as the player list numbers it (`place 04`), and the quick
+    badge asks, so a member's edit that breaks only them would otherwise show nowhere.
+
+    That error names a roster place as the player list numbers it (`place 04`). The quick
     actions' refusal `Cannot apply the tier` names a tier by its label (`Gold`), not by the
-    ruleset's id; an id no tier of the ruleset carries is quoted as the id, the only name it
+    ruleset's id. An id no tier of the ruleset carries is quoted as the id, the only name it
     has.
 
     The badge is computed on a worker thread, as the pitch's medal letters are, once per edit,
     player or ruleset, a new run starting only when none is in flight. Its two script calls
     each read the whole team under every candidate height system (a team no quota system
-    takes runs every candidate's checks), 50 to 70 ms apiece on the maintainer's PES 2017 save
-    in a release build, and on the UI thread they made each wheel notch over a stat box cost
-    over 100 ms, three times that under CPU load. Until the new badge lands the same player's
-    kept one stays drawn, and another player's or ruleset's draws nothing.
+    takes runs every candidate's checks), and take 50 to 70 ms apiece on the maintainer's
+    PES 2017 save in a release build. On the UI thread they made each wheel notch over a stat
+    box cost over 100 ms, three times that under CPU load. Until the new badge lands the same
+    player's kept one stays drawn, and another player's or ruleset's draws nothing.
   - **Appearance** — first a **Cutscenes** group, star (19+) and playing attitude (20+),
     outside the aesthetics lock: they change only cutscenes, so they are no aesthetic the
     export owns. Then the ownership line, the switch and the locked groups, each group's
@@ -655,8 +678,8 @@ side.
   The row's units stand 8 points apart, egui's item spacing, as in every row of the drafts
   (the Name and Short labels are units of their own, 8 from their boxes). A colour's label,
   picker and hex (in the weak grey, the picker's swatch carrying the colour), or an id's label
-  and its box, stand a space apart (3 points), the ids' grid cells padded 4 points on each
-  side (so 12 before Manager ID, 8 between the ids), each id's box 46 wide (the draft's
+  and its box, stand a space apart (3 points). The ids' grid cells are padded 4 points on each
+  side (so 12 before Manager ID, 8 between the ids), and each id's box is 46 wide (the draft's
   `.info-grid` number box; egui's is 40).
 
   A stroke line under the row sets the team's fields apart from the Tactics (the draft's
@@ -707,10 +730,10 @@ side.
 
   These, Ctrl+B, Undo and Redo (Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z) and Open's keys (Ctrl+O,
   Ctrl+5 to Ctrl+1) are held off only while a text field holds the keyboard (a number being
-  typed is one: its own undo is the field's) or a dialog is open, as Ctrl+C and Ctrl+V are;
+  typed is one: its own undo is the field's) or a dialog is open, as Ctrl+C and Ctrl+V are.
   Ctrl+S is held off by a dialog alone. A button, checkbox or rating cell reached with Tab
-  keeps the keyboard after Space, and holding them off there too left Undo dead until Escape,
-  the Space's edit already settled.
+  keeps the keyboard after Space, and holding the shortcuts off there too left Undo dead until
+  Escape, the Space's edit already settled.
 - **Ctrl+C and Ctrl+V** copy and paste what was clicked last of three kinds, while no text
   field holds the keyboard (a text field keeps its own copy and paste):
   - a player row copies his stats and pastes onto the selected player what Copy stats
@@ -813,14 +836,18 @@ unnecessary. A PES of another version asks nothing, since a game only writes its
 version's save.
 
 - **The window.** Save, Save as and the unsaved-changes prompt's Save, with the save's own PES
-  running, first show a dialog naming the game: if its Edit mode is open, use Data Management >
-  Load after saving, before leaving Edit mode, since leaving it after changing anything there
-  writes the game's own copy over the save; if Edit mode is closed, the changes show when it
-  is opened. Its buttons are Save, which writes, and Cancel, which writes nothing (and, under the
+  running, first show a dialog naming the game:
+  - if its Edit mode is open, use Data Management > Load after saving, before leaving Edit
+    mode, since leaving it after changing anything there writes the game's own copy over the
+    save;
+  - if Edit mode is closed, the changes show when it is opened.
+
+  Its buttons are Save, which writes, and Cancel, which writes nothing (and, under the
   unsaved-changes prompt, keeps that prompt open).
 - **The command line**, which cannot ask, takes `--edit-mode-closed`, the member's word that
-  Edit mode is closed: the one state that keeps the write with no step in game after it, which
-  a run from a script or a launcher cannot remind the member of (`spec/save_editor.md` "CLI", "Writing a save").
+  Edit mode is closed. That is the one state that keeps the write with no step in game after
+  it, which a run from a script or a launcher cannot remind the member of
+  (`spec/save_editor.md` "CLI", "Writing a save").
 - The Team compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
   "Savefile update").
 - Scenario: SE-GUI-21 (the Acceptance section).
@@ -849,24 +876,28 @@ Win32 original hurt the most):
 - **The pitch is the editor**: an egui painter canvas draws the formation;
   players are **dragged** to reposition (x/y), with position labels and snapping.
   4ccEditor's per-slot dropdown + coordinate fields remain as a detail popover on
-  click, not the primary interface. Its header is the starter's name and `player <n>` (his
-  roster slot counted from 1). Under it stand the position dropdown, with no label (its
-  abbreviations say what it holds), and Make GK beside it at its own width, the two filling
-  the popover's width. The popover's top-right corner sits on the marker's bottom-left corner
-  as it stood at the click, and there it stays while his X and Y change, so the fields' arrows
-  stay under the pointer rather than moving off with the marker. A press outside it closes it,
-  as Close does.
+  click, not the primary interface.
+
+  The popover's header is the starter's name and `player <n>` (his roster slot counted from
+  1). Under it stand the position dropdown, with no label (its abbreviations say what it
+  holds), and Make GK beside it at its own width, the two filling the popover's width. The
+  popover's top-right corner sits on the marker's bottom-left corner as it stood at the click,
+  and there it stays while his X and Y change, so the fields' arrows stay under the pointer
+  rather than moving off with the marker. A press outside the popover closes it, as Close
+  does.
 
   X (0 to 104) and Y (4 to 48, the outfielders' rows: below the drop's bullet, "A pitch player
   dropped on another"; 0 to 48 under a ruleset that allows illegal formations, "Illegal
   formations" below) are steppers: the number with an arrow either side, `⏴` stepping it down
   by one and `⏵` up, each click one edit, clamped into the range (a stored spot past it steps
-  back in), each arrow disabled at its end of the range and both for the keeper. The arrows
-  take clicks, never the keyboard's focus, as a system spinner's do: Tab goes from X to Y, and
-  a focused number steps with the arrow keys already. A nudge by one is a click there, where a
-  drag of egui's `DragValue`, which has no arrows of its own, overshoots it. The three are
-  joined into one box as wide as the number box was (52 points: each arrow 12, the number 28,
-  room for `104`), so the popover is no wider (`slotPopover`'s `num`, the draft's `.spin`).
+  back in), each arrow disabled at its end of the range and both for the keeper.
+
+  The arrows take clicks, never the keyboard's focus, as a system spinner's do: Tab goes from
+  X to Y, and a focused number steps with the arrow keys already. A nudge by one is a click
+  there, where a drag of egui's `DragValue`, which has no arrows of its own, overshoots it.
+  The number and its two arrows are joined into one box as wide as the number box was (52
+  points: each arrow 12, the number 28, room for `104`), so the popover is no wider
+  (`slotPopover`'s `num`, the draft's `.spin`).
 
   The position dropdown lists only the positions his spot offers, as the game's Select
   Position menu does: the two of the drop rule below ("A pitch player dropped on another"), his
@@ -937,12 +968,13 @@ Win32 original hurt the most):
      Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21. PES 17's screen lists Off, Very
      late, Flexible and Very early, PES 21's four in PES 21's order, so its stored values are
      read as PES 21's and it offers the four. PES 18 to 20, between the two, offer the four
-     too, taken rather than looked at, a look at each game's Substitution choices still to
-     come. A stored value outside them is shown as its number, so the combo never misreports
-     the save.
-  The grid is laid out at the design width; a narrower window scales the whole UI with its
-  width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid has
-  no narrow fallback. A shorter window scrolls the team view to reach its last row rather
+     too. That is taken rather than looked at: a look at each game's Substitution choices is
+     still to come. A stored value outside them is shown as its number, so the combo never
+     misreports the save.
+
+  The grid is laid out at the design width. A narrower window scales the whole UI with its
+  width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
+  has no narrow fallback. A shorter window scrolls the team view to reach its last row rather
   than squeezing it in.
 - **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
   Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
@@ -996,14 +1028,15 @@ Win32 original hurt the most):
 
   - **A slot's spot** is its marker's badge centre, at (12.8 + 2.827 x, 363.8 - 6.793 y) on
     the canvas: x 0 to 104 across the width, the halfway line (canvas y 192) at y 25.3, the
-    attack end up. This
-    is the screen's own mapping, fitted on the ten outfield slots of /3/ (the 4chan Cup save)
-    within half a pixel, and PES 2017's (twenty badges of two screenshots, each within 0.06
-    of a whole stored y). A drop snaps through the same mapping. The keeper's marker is drawn
-    where the screen draws him, badge centre at canvas (159.5, 358.5) on both (PES 2021's
-    goal-area line, 7.5 above PES 2017's), not
-    through the mapping, which would put his stored spot 15 px higher; that spot is (52, 3)
-    in every one of the PES 2021 save's 1,890 formations, and the editor never moves it.
+    attack end up. This is the screen's own mapping, fitted on the ten outfield slots of /3/
+    (the 4chan Cup save) within half a pixel, and PES 2017's (twenty badges of two
+    screenshots, each within 0.06 of a whole stored y). A drop snaps through the same
+    mapping.
+
+    The keeper's marker is drawn where the screen draws him, badge centre at canvas
+    (159.5, 358.5) on both (PES 2021's goal-area line, 7.5 above PES 2017's), not through the
+    mapping, which would put his stored spot 15 px higher. That stored spot is (52, 3) in
+    every one of the PES 2021 save's 1,890 formations, and the editor never moves it.
   - **A marker**, top to bottom: the portrait, the whole 128 x 128 texture drawn 50 x 50
     standing on the badge (the cup's portraits carry their own padding and any ribbon); the
     badge, 50 x 14 under the 50-point portrait, `#242b2d`, corners 2, the position's
@@ -1059,10 +1092,11 @@ Win32 original hurt the most):
 
     The DpFileList reader is `cpk`'s and the portrait path `pes_savefile`'s, shared with the
     Team compiler, so the editor finds a portrait wherever the compiler put it.
-  - **The screen's selection marks** are reused for the editor's states: the open popover's marker gets the selected
-    player's corner brackets (`#14fbff`), and every marker the armed assignment mode can take
-    gets the candidates' (`#ff4e7f`), each a 50 x 50 box of corners around the portrait; a
-    join member while join mode is armed has its badge filled `#005c80`.
+  - **The screen's selection marks** are reused for the editor's states: the open popover's
+    marker gets the selected player's corner brackets (`#14fbff`), and every marker the armed
+    assignment mode can take gets the candidates' (`#ff4e7f`), each a 50 x 50 box of corners
+    around the portrait. A join member while join mode is armed has its badge filled
+    `#005c80`.
   - **The formation's name** sits in the pitch's bottom-left corner as the screen writes it
     (`3-3-1-3`): the ten outfield slots counted by the row of the playable positions grid
     their position belongs to, back to front, an empty row left out: LB CB RB, then DMF CMF,
@@ -1078,15 +1112,18 @@ Win32 original hurt the most):
     capture), drawn after the markers so a low marker never covers it.
 
     The typeface need not be the game's, but the stroke must match the game's label, about 3 px
-    on its 15 px digits. It is the body font's semibold (`resources/fonts/RobotoFlex-Semibold.ttf`,
-    Roboto Flex cut at weight 600 and the regular's optical size, SIL OFL 1.1 as the regular),
-    a font family of its own (the semibold, then the body chain's fallbacks), at 20.5 pt
-    (digits 15.2 pt tall), the text placed 6.5 pt in for the face's 0.6 pt left bearing. We use
-    Semibold, not Bold, because egui's dark-mode text alpha (`2c - c²`) thickens strokes:
-    drawn so, Selawik Semibold's verticals measured 2.97 px against the game's 3.01 and Bold's
-    3.41. Roboto Flex's semibold stem is 3% wider than Selawik's, so about 3.05 drawn (inferred
-    from the outlines, not measured on a render). It is the one text in the suite not in the
-    regular weight. The formation pictures (worklog 8.33, after 0.0.1) carry it in every cell.
+    on its 15 px digits. The label is in the body font's semibold
+    (`resources/fonts/RobotoFlex-Semibold.ttf`, Roboto Flex cut at weight 600 and the
+    regular's optical size, SIL OFL 1.1 as the regular). That is a font family of its own (the
+    semibold, then the body chain's fallbacks), at 20.5 pt (digits 15.2 pt tall), the text
+    placed 6.5 pt in for the face's 0.6 pt left bearing.
+
+    We use Semibold, not Bold, because egui's dark-mode text alpha (`2c - c²`) thickens
+    strokes: drawn so, Selawik Semibold's verticals measured 2.97 px against the game's 3.01
+    and Bold's 3.41. Roboto Flex's semibold stem is 3% wider than Selawik's, so about 3.05
+    drawn (inferred from the outlines, not measured on a render). It is the one text in the
+    suite not in the regular weight. The formation pictures (worklog 8.33, after 0.0.1) carry
+    it in every cell.
   - **Set PES path**: while the sidebar's PES selector is orange or red (`plans/core/gui.md`
     "Live exe check": no folder, no PES exe in it, or another version's exe), a `Set PES
     path` button stands in the pitch's bottom-right corner, in the room the bottom penalty
@@ -1102,10 +1139,11 @@ Win32 original hurt the most):
     Its tooltip reads `The players' portraits are read from the PES folder` (the selector's own
     names what the check found). The portraits come from the PES folder, and a member who
     never notices the selector's colour, or reads the readme, would see only placeholders and
-    take them for the editor's best. It shows on red too: a folder
-    holding another version's exe gives the wrong game's portraits or none. The button reads
-    the selector's own check, never one of its own, so the two cannot disagree, and it is gone
-    as soon as the check passes.
+    take them for the editor's best.
+
+    The button shows on red too: a folder holding another version's exe gives the wrong
+    game's portraits or none. It reads the selector's own check, never one of its own, so the
+    two cannot disagree, and it is gone as soon as the check passes.
 
     It opens `rfd`'s native folder picker and stores the pick as the running-PES notice's Fix
     PES path stores its folder (`plans/core/gui.md` "Settings menu", one function):
@@ -1200,22 +1238,26 @@ Win32 original hurt the most):
   with its row, in the Tactics editor's order: the Formation settings' offensive then
   defensive half, the Advanced instructions (PES 2017 on). Each target stands on a line of its
   own under its instruction, at the value's x after `↳` (the symbols font's), where on the
-  instruction's line after an arrow a name had only the room the instruction left. A label is
-  in the text colour and its value strong at 120 points, values named as the editor's controls
-  name them, full length. The column holds the widest fixed value (Attacking Full-Backs) with
-  a few points to spare, and a target's name longer than that is cut with an ellipsis, rather
-  than every picture widened for the few long names (up to 282 points among the sample saves'
-  players) and left with empty room on the right. The team's Automatic settings, which no
-  preset owns, are one line under the grid. The pitch painter is one function the view and the
-  picture share, taking the formation it paints.
+  instruction's line after an arrow a name had only the room the instruction left.
+
+  A label is in the text colour and its value strong at 120 points, values named as the
+  editor's controls name them, full length. The column holds the widest fixed value
+  (Attacking Full-Backs) with a few points to spare, and a target's name longer than that is
+  cut with an ellipsis, rather than every picture widened for the few long names (up to 282
+  points among the sample saves' players) and left with empty room on the right.
+
+  The team's Automatic settings, which no preset owns, are one line under the grid. The pitch
+  painter is one function the view and the picture share, taking the formation it paints.
 
   **A range of teams.** The Savefile menu's "Save formation pictures for a range of teams…"
   writes one such picture per team whose id lies between two teams picked in combo boxes on
   one row, `Teams`, the first, `to`, the last. It picks them as Multi-team AATF picks its range:
-  the save's teams by name as the player list's selector lists them, the save's first and last
-  by default; not typed ids, which a member would have to look up; the right end lists only the
-  teams from the left one on and follows the left one when it passes it, so the range is never
-  reversed. Under the combo boxes stand a count line ("4 teams"), the folder row with Browse,
+  - the save's teams by name as the player list's selector lists them, the save's first and
+    last by default, not typed ids, which a member would have to look up;
+  - the right end lists only the teams from the left one on and follows the left one when it
+    passes it, so the range is never reversed.
+
+  Under the combo boxes stand a count line ("4 teams"), the folder row with Browse,
   the same checkbox, and the file-name line, which follows it. The dialog is as wide as its
   longer state, the file-name line sized for both of the checkbox's, so it keeps its width when
   the checkbox flips, and its labels and fields sit on one grid. An existing file is replaced,
@@ -1328,14 +1370,16 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   The overall is PES 2016's formula on every version, no other version's being read. PES
   2021's differs from it by up to 2 (93 of 201 points read in game differ, 12 of them by 2),
   so where the two candidates' overalls are within 2 the editor's pick can differ from the
-  game's. The formula is `pes_savefile`'s, on its player model (a player's abilities and
-  positions and a position in, the overall out): twenty abilities weighted per position,
-  the position's bonus (registered, A, B; C none), and at the registered position, a
-  keeper's aside, a blend with the first nineteen abilities' mean through a lookup table,
-  clamped to 40-109. The two keeper terms are each the mean of a few keeper abilities. PES
-  2015 stores no clearing, reflexes or coverage, so its means take the ones it stores rather
-  than counting the missing ones as 0, which would sink every PES 2015 keeper (one keeper
-  ability at 0 takes a 70 keeper to the floor of 40).
+  game's.
+
+  The formula is `pes_savefile`'s, on its player model (a player's abilities and positions and
+  a position in, the overall out): twenty abilities weighted per position, the position's
+  bonus (registered, A, B; C none), and at the registered position, a keeper's aside, a blend
+  with the first nineteen abilities' mean through a lookup table, clamped to 40-109. The two
+  keeper terms are each the mean of a few keeper abilities. PES 2015 stores no clearing,
+  reflexes or coverage, so its means take the ones it stores rather than counting the missing
+  ones as 0, which would sink every PES 2015 keeper (one keeper ability at 0 takes a 70 keeper
+  to the floor of 40).
 
   Its weights, bonuses and lookup are PES 2016's tables, a measurement hand-written by the
   lead. Which ability each weight reads is inferred from its profile (the code reads them
@@ -1424,7 +1468,7 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   stays who he was, as in 4ccEditor.
 
 Version quirks (advanced-instruction ranges differ 17 vs 18+) are enforced by the
-`pes_savefile` model, not the UI; a `.4cct` imports into any version `TeamToml::apply`'s
+`pes_savefile` model, not the UI. A `.4cct` imports into any version `TeamToml::apply`'s
 version rule admits (`spec/pes_savefile/operations.md` "Team TOML"), not only into 16-18 as
 4ccEditor's did.
 
@@ -1473,11 +1517,11 @@ Contents:
   - the team header `Team <id> <name>` while editing (a report's `<id> <name>`);
   - a group's head `Player <id> - <number> - <name>` (`Team-wide issues` for the team's own).
 
-  `Player <id>` and the hyphens are in the weak colour and the number and name, the team
-  header and `Team-wide issues` in the strong text, every name in its colour codes as the
-  player list draws it, the number in the body font: the grey id steps back, and the name
-  reads as the list shows it. Suggestions are drawn only when the host asks, in their own group
-  after the violations.
+  `Player <id>` and the hyphens are in the weak colour. The number and name, the team header
+  and `Team-wide issues` are in the strong text, every name in its colour codes as the player
+  list draws it, the number in the body font: the grey id steps back, and the name reads as
+  the list shows it. Suggestions are drawn only when the host asks, in their own group after
+  the violations.
 
   A row is the rule's name in words and a sentence saying what is wrong, each stat, card,
   playing style and allowance in it named as the game names it (Attacking Prowess, never the
@@ -1526,11 +1570,13 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   hides the body; 55 and 11 are the 4cc convention, not a game fact. So the two IDs are
   common settings (`fpc_hide_boots_id`, `fpc_hide_gloves_id`, defaults 55 and 11; core plan
   "Settings menu"), and `libs/fpc`'s hide preset takes them as an `fpc::HideIds` value rather
-  than reading constants. The editor's Hide default body, Show default body, Ctrl+I, the
-  team's Set and Remove FPC invisibility and the classifier (`is_fpc_player`) read the
-  setting, and so do the compiler's `fpc_on` marker and its default-ID rule. One setting, not
-  one per tool: a compiler writing 60 for a marker and an editor reading only 55 as hidden
-  would show every compiled FPC player as "The default body is currently shown".
+  than reading constants.
+
+  The editor's Hide default body, Show default body, Ctrl+I, the team's Set and Remove FPC
+  invisibility and the classifier (`is_fpc_player`) read the setting, and so do the
+  compiler's `fpc_on` marker and its default-ID rule. One setting, not one per tool: a
+  compiler writing 60 for a marker and an editor reading only 55 as hidden would show every
+  compiled FPC player as "The default body is currently shown".
 
   A hide ID is valid in the stock band only, boots 1 to 100 and gloves 11 to 100: above 100
   the compiler allocates its per-team blocks (an ID there would be another player's real
@@ -1547,10 +1593,12 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   preset's boots or gloves ID only where the record holds 0 or the hide preset's ID, and keeps
   any other: hiding turns 0 into 55 and keeps 627, showing turns 55 into 0 and keeps 627
   (55 standing for the configured hide ID, above).
+
   4ccEditor's `enable_fpc_invis_for_player` and `disable_fpc_invis_for_player` do the same.
-  On PES 15 to 17 they also set the Custom skin when hiding; Hide default body does not, since the
-  wiki's full hide sets no skin and the Custom skin is its partial hide's setting (both tools'
-  Show default body give such a player the Light skin back, so the two converge).
+  On PES 15 to 17 they also set the Custom skin when hiding. Hide default body does not,
+  since the wiki's full hide sets no skin and the Custom skin is its partial hide's setting
+  (both tools' Show default body give such a player the Light skin back, so the two
+  converge).
 - **Hide and Show, not a checkbox.** A player hidden by his model's own boots ID reads as not
   hidden to `is_fpc_player`, which sees only the save (the hide ID or a custom skin),
   so a checkbox drawn from it would stay unticked after a click and could never show him
@@ -1583,9 +1631,10 @@ did. So the lock is a setting of the Save editor's section, **"Aesthetics from e
 4ccEditor's did, with no ownership line and no switch drawn. On, the editor **does not edit
 aesthetics** but through the switch:
 
-- The Appearance section renders its values below the Cutscenes group disabled, with one line of explanation ("The team's
-  export owns the aesthetics, so edit its `settings.toml` (the face, hair and iris: its
-  `ingame_face.toml`) and recompile, then apply the patch", and a link to the apply action).
+- The Appearance section renders its values below the Cutscenes group disabled, with one
+  line of explanation ("The team's export owns the aesthetics, so edit its `settings.toml`
+  (the face, hair and iris: its `ingame_face.toml`) and recompile, then apply the patch", and
+  a link to the apply action).
 - The same lock covers every other aesthetics write path: the team operations that write
   appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of
@@ -1615,7 +1664,9 @@ aesthetics** but through the switch:
   out as the unsaved-changes table: the columns Item, Old value and New value, the item the
   player's display name and the field's label in the views' terms (`TAKUMI · Free kick`), the
   values in monospace, the item's click selecting the player (its tooltip `Click to switch to
-  this player`). It is recomputed when the save changes (an edit once it has settled, an undo,
+  this player`).
+
+  The preview is recomputed when the save changes (an edit once it has settled, an undo,
   another save opened), not frozen at Open. A drag or a text edit in flight keeps the last
   preview drawn, since recomputing it every frame would slow the edit, and Apply recomputes a
   preview so held before it writes, never a list an edit since made stale. So after Apply the
@@ -1659,12 +1710,17 @@ The panel over the spec's `diff` report:
   colours (the `violations` widget's paragraph): one head for a player wherever a list names
   him.
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
-  that view shows it (a free-kick motion 15, where the save stores 14). A field no view shows
-  is named in words from the report's name with its stored value: its words in sentence case,
-  Id as ID, Com as COM (the views' "COM playing styles") and Color as Colour, a PES 2015-only
-  field marked so (`NoseHeight` is "Nose height", `Color1Red` "Colour 1 red", `Pes15JawDepth`
-  "Jaw depth (PES 2015)"), the face's unnamed bits "Other face data" (the draft's `fieldTerm`
-  and `fieldWords`). The same words label the unsaved-changes prompt's, the toolbar's changes
+  that view shows it (a free-kick motion 15, where the save stores 14).
+
+  A field no view shows is named in words from the report's name with its stored value (the
+  draft's `fieldTerm` and `fieldWords`):
+  - its words in sentence case;
+  - Id as ID, Com as COM (the views' "COM playing styles") and Color as Colour;
+  - a PES 2015-only field marked so;
+  - the face's unnamed bits "Other face data".
+
+  So `NoseHeight` is "Nose height", `Color1Red` "Colour 1 red" and `Pes15JawDepth` "Jaw depth
+  (PES 2015)". The same words label the unsaved-changes prompt's, the toolbar's changes
   list's and the aesthetics patch preview's rows.
 
   The changes list and the prompt also list team and tactics rows, which the Comparator never
@@ -1683,16 +1739,18 @@ The panel over the spec's `diff` report:
   each field as the views label it (Header on PES 2017, where the save's schema says
   `Heading`), while `--json` keeps the schema's name, a key a script can match that no
   rewording moves. Not the report's values on screen, because a member reads a row against the
-  view it jumps to, and a motion one lower than the view's reads as a wrong row; not view
-  values in the report, because the report is what the compare scripts it replaces print.
+  view it jumps to, and a motion one lower than the view's reads as a wrong row. Not view
+  values in the report either, because the report is what the compare scripts it replaces
+  print.
 - The picked save is the report's first and the open save its second, so a row reads picked,
-  then open: what the member's edits changed against the save he compares with. A row stands
-  in three columns, Item, Old value and New value, named by a head row above the list, as
-  the unsaved changes list names its own (not one `old → new` text: values of every length
-  then start at one place, and the eye runs down a column). Item is 190 points wide and Old
-  value 200, each cut with an ellipsis where its text is longer, and New value takes the
-  rest; a row that cuts a value shows the whole row's text on hover, above the hint of what
-  its click does. The team and player heads are as they were.
+  then open: what the member's edits changed against the save he compares with.
+
+  A row stands in three columns, Item, Old value and New value, named by a head row above the
+  list, as the unsaved changes list names its own (not one `old → new` text: values of every
+  length then start at one place, and the eye runs down a column). Item is 190 points wide
+  and Old value 200, each cut with an ellipsis where its text is longer, and New value takes
+  the rest. A row that cuts a value shows the whole row's text on hover, above the hint of
+  what its click does. The team and player heads are as they were.
 - Export writes the report of the toggled scope over the whole save, the text `save-editor diff
   <picked> <open>` prints with `--gameplay` or `--aesthetics` (All: neither); the team filter
   narrows the screen only. Not the rows shown, because the command has no team filter, and an
@@ -1793,16 +1851,18 @@ the editor exposes them as:
 
   The warning list draws each note code's text from the catalog once (its when and its
   effect, the Messages topic's words too, written for any team file rather than for
-  `import-toml`), the code's groups under it. A group is one key in words (its last part as
-  the views name it: a stat at the save's version, a skill by its card name, a motion, an edit
-  flag and a preset's instructions with what they belong to: `Manager ID`,
-  `Tight Possession`, `Dribbling motion`, `Preset 1 attacking instructions`) with its number
-  of players, and lists each player's place, name and what the note carries (an instruction's
-  or a style's name, a lowered value's `19 → 0`). A team key's group lists nothing, its
-  notes' details following its subject on its one line
-  (`Preset 1 attacking instructions: Wing Back`), since a tactics key's note is the only place
-  the instruction it writes off is named (the drafts' `ixWarningGroups`). The console's line,
-  code and key path
+  `import-toml`), the code's groups under it.
+
+  A group is one key in words (its last part as the views name it: a stat at the save's
+  version, a skill by its card name, a motion, an edit flag and a preset's instructions with
+  what they belong to: `Manager ID`, `Tight Possession`, `Dribbling motion`,
+  `Preset 1 attacking instructions`) with its number of players. It lists each player's place,
+  name and what the note carries (an instruction's or a style's name, a lowered value's
+  `19 → 0`). A team key's group lists nothing, its notes' details following its subject on
+  its one line (`Preset 1 attacking instructions: Wing Back`), since a tactics key's note is
+  the only place the instruction it writes off is named (the drafts' `ixWarningGroups`).
+
+  The console's line, code and key path
   (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's, not the
   dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
@@ -1824,14 +1884,15 @@ the editor exposes them as:
   stay.
 
   Export writes PES 17-21 files from `Texport::new`'s templates and the open save
-  (`plans/pes_savefile/operations.md` "Texport (read + write)"); on a PES 2015-2016 save it is
-  disabled, its tooltip saying `PES 2015 and 2016 have no Texport template`. The Save dialog
-  suggests `<short name>.ted` on 18-21. On 17 it suggests the name the game reads from the
-  save's folder: `TEXPORT` and an eight-digit hexadecimal number in upper case, no extension
-  (`TEXPORT0000000A` follows `TEXPORT00000009`; real cup folders hold `TEXPORT0000000D` and
-  `TEXPORT00000013`), the first number from `00000000` that folder lacks, so the dialog opens
-  on a name that writes over nothing. A decimal count would suggest `TEXPORT00000010` after
-  `00000009`, a name the game reads as number 16.
+  (`plans/pes_savefile/operations.md` "Texport (read + write)"). On a PES 2015-2016 save it
+  is disabled, its tooltip saying `PES 2015 and 2016 have no Texport template`.
+
+  The Save dialog suggests `<short name>.ted` on 18-21. On 17 it suggests the name the game
+  reads from the save's folder: `TEXPORT` and an eight-digit hexadecimal number in upper
+  case, no extension (`TEXPORT0000000A` follows `TEXPORT00000009`; real cup folders hold
+  `TEXPORT0000000D` and `TEXPORT00000013`), the first number from `00000000` that folder
+  lacks, so the dialog opens on a name that writes over nothing. A decimal count would suggest
+  `TEXPORT00000010` after `00000009`, a name the game reads as number 16.
 
   PES 2017's own import differs in two ways the panel keeps:
   - the game offers only the Texport's own team as the target (measured 2026-10-30), where
@@ -1894,12 +1955,12 @@ What this editor adds on top of the lib:
   keeping its own.
 - **Multi-team AATF counts the teams under each system.** One line above the list, and the
   same line first in its copied text, gives how many of the checked teams were read under
-  each medal system and each height system of the ruleset. The systems come in the ruleset's
-  order, a system no team was read under left out, the two kinds after each other with a
-  ` · ` between them (DBC6's 47 teams under DBC7: "Medal systems: GGG 4, GGSS 21, GSSSS 20,
-  SSSSSS 1 · Height systems: Height 8, Manlet 14, Universal 11, GigaHeight 14"; team 868
-  matches no medal system and counts toward none), so an organizer sees a cup's mix without
-  counting.
+  each medal system and each height system of the ruleset, so an organizer sees a cup's mix
+  without counting. The systems come in the ruleset's order, a system no team was read under
+  left out, the two kinds after each other with a ` · ` between them (DBC6's 47 teams under
+  DBC7: "Medal systems: GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height systems: Height 8,
+  Manlet 14, Universal 11, GigaHeight 14"; team 868 matches no medal system and counts toward
+  none).
 
   One line rather than one per kind: the list below is what the dialog is for, and the counts
   fit the dialog's width. The check reports the systems each team was read under (`aatf`'s
@@ -1965,10 +2026,11 @@ What this editor adds on top of the lib:
   it shows, as Multi-team AATF's copy words a team: a line naming the ruleset as that copy
   does, the team and its error and warning counts, then the team's groups, then under
   `Suggestions` the suggestions while Show suggestions is on (a member who wants them out
-  switches them off). A team that passes reads `All clean` there, as the list does. It is
-  never greyed out: before a list is held it copies the line the panel shows
-  (`Checking <team>…`, or `No team is open.`), a failed check its message as the list words
-  it. A notice `Copied the Live AATF list of <id> <name>.` says it was done
+  switches them off). A team that passes reads `All clean` there, as the list does.
+
+  The button is never greyed out: before a list is held it copies the line the panel shows
+  (`Checking <team>…`, or `No team is open.`), and after a failed check its message as the
+  list words it. A notice `Copied the Live AATF list of <id> <name>.` says the copy was done
   (`Copied the Live AATF list.` with no team open).
 
   **Its own window**: the pop-out icon at the header's right end (the icon font's arrow out of
@@ -1979,9 +2041,9 @@ What this editor adds on top of the lib:
   Right of the icon, in the corner the window's close button holds in the window, the dock
   has a close button of its own, drawn as egui draws a window's (the same cross, size and
   stroke) and spaced from the icon as the window's is from its dock icon, with the same
-  tooltip and effect: `Turn Live AATF off`, as the toolbar toggle does. One way to put the
-  list away wherever it stands, where the dock alone had none but the toolbar's toggle, a
-  long way from it; the dock's chevron only collapses it.
+  tooltip and effect: `Turn Live AATF off`, as the toolbar toggle does. It is one way to put
+  the list away wherever it stands, where the dock alone had none but the toolbar's toggle, a
+  long way from it. The dock's chevron only collapses it.
 
   The window's title is `Live AATF`, its title bar holding left of the close button the dock
   icon (the arrow into a square, U+E5DF, Phosphor's arrow-square-in; `Put Live AATF back in
@@ -2003,9 +2065,10 @@ What this editor adds on top of the lib:
 
   The header reads `N issues · <ruleset>`, counting errors and warnings, or
   `<team> passes <ruleset> with no issues.` once neither is left, the list then reading
-  `All clean` (Multi-team AATF's word) above any suggestions. Clicking a row selects that player (a
-  `FieldedNotA` row selects his team's row instead, the named preset shown on the first of
-  its formations that carries the cross, since the pitch its mark is on is the team view's).
+  `All clean` (Multi-team AATF's word) above any suggestions. Clicking a row selects that
+  player (a `FieldedNotA` row selects his team's row instead, the named preset shown on the
+  first of its formations that carries the cross, since the pitch its mark is on is the team
+  view's).
 
   The team is re-checked after every edit to it, undo and redo included, and when another team
   is opened, so the list shrinks as the member fixes it. One team's check takes about 56 ms in
@@ -2111,9 +2174,10 @@ What this editor adds on top of the lib:
     team-level ones the team's. A field the view does not show (the Appearance section closed,
     another preset's pitch) carries its mark when shown.
   - While a check is in flight the marks keep the previous result, as the list does, and
-    like it drop a result checked under another ruleset. A check
-    that fails (a script error in the rules file) clears every mark: the dock shows the
-    failure, and a mark from an older result would claim a check that no longer ran.
+    like it drop a result checked under another ruleset. A check that fails (a script error
+    in the rules file) clears every mark: the dock shows the failure, and a mark from an older
+    result would claim a check that no longer ran.
+
 ---
 
 ## Build order and verification
