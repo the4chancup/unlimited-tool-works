@@ -3451,8 +3451,8 @@ const V2_REMARKS = [
 const WALK = [
   ["SE-GUI-01", "the selector lists the sample's teams and ALL; the list shows number, position, the coloured name; the player header shows the selected player"],
   ["SE-GUI-02", "type a name, shirt name or id of another team's player in the filter: matches across all teams, on the colour-code-free name"],
-  ["SE-GUI-03", "edit an ability: the dot appears on his row and the save's state stays unwritten until Save (Ctrl+S or the button) clears it"],
-  ["SE-GUI-04", "make two edits, then Undo and Redo in the toolbar"],
+  ["SE-GUI-03", "edit an ability: the dot appears on his row and the save's state stays unwritten until Save (Ctrl+S or the File menu's entry) clears it"],
+  ["SE-GUI-04", "make two edits, then Undo and Redo in the Edit menu"],
   ["SE-GUI-05", "edit, then open the other sample save from the draft control: the prompt offers save, discard, cancel"],
   ["SE-GUI-06", "PES 17 sample: star and playing attitude in the Appearance section's Cutscenes group and stronger hand in General info sit disabled in place, tooltips naming PES 19+/20+; PES 21: enabled"],
   ["SE-GUI-07", "the Appearance section below the Cutscenes group is disabled under the ownership line; the switch unlocks it; the switch is off on every open"],
@@ -3467,7 +3467,7 @@ const WALK = [
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
-  ["SE-GUI-26", "the Open menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O); Save as keeps the replaced file as .bak"],
+  ["SE-GUI-26", "the File menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O), then Save and Save as; Save as keeps the replaced file as .bak"],
   ["SE-GUI-28", "PES selector at 2019 with the PES 21 sample open: the warning names both; the save keeps its version"],
   ["SE-GUI-13", "Savefile, Comparator: pick the PES 21 sample (refused), then Autumn24Q; the toggles and the team filter narrow the rows, Export writes their report lines, a row click selects the player"],
   ["SE-GUI-15", "the toolbar's ruleset dropdown, left of Live AATF: pick Divegrass Before Christmas 7 (the quick actions and the card counts follow); Import rules file...: the broken samples are refused with their errors, autumn26.4ccrules is refused for a built-in's name, autumn25.4ccrules joins the list under a line and becomes the ruleset; import it again: a confirmation replaces it; its × asks, then removes it and falls back to 4cc Autumn 26; reload the page: the choice and the imports stay"],
@@ -3491,11 +3491,11 @@ function openDiscovered(d) {
   const key = d.version === "2017" ? "pes17" : d.version === "2021" ? "pes21" : null;
   if (key) requestOpen(key, d.path); else dlgOpenSave(d);
 }
-// The Open menu (SE-GUI-26): the discovered saves labelled by version alone
-// (the tooltip holds the path), the first of each version with its shortcut,
-// the session's recent files, then the picker (Ctrl+O).
-// sample wording: the menu's labels and the picker's entry.
-function openMenu() {
+// The File menu (SE-GUI-26 restated): the discovered saves labelled by
+// version alone (the tooltip holds the path), the first of each version with
+// its shortcut, the session's recent files, then the picker (Ctrl+O), then
+// the writes. sample wording: the menu's labels and the picker's entry.
+function fileMenu() {
   const items = DISCOVERED.map((d, i) => {
     const first = DISCOVERED.findIndex(o => o.version === d.version) === i;
     const label = "PES " + d.version + (first ? "\tCtrl+" + openKeyOf(d.version) : "");
@@ -3510,28 +3510,33 @@ function openMenu() {
   items.push("-");
   items.push(["Choose file\u2026\tCtrl+O", dlgChooseFile, false,
     "Opens in the selected version's save folder when it exists"]);
-  return menu("Open", items);
+  items.push("-");
+  items.push(["Save\tCtrl+S", () => { saveFile(); render(); }, !S.save]);
+  items.push(["Save as", saveAs, !S.save]);
+  return menu("File", items, { frame0: true });
+}
+// The Edit menu: Undo and Redo, each dead with nothing to do, its tooltip
+// the button's own (the last step's label).
+function editMenu() {
+  return menu("Edit", [
+    ["Undo\tCtrl+Z", () => { doUndo(); render(); }, !S.undo.length,
+      S.undo.length ? "Undo: " + S.undo[S.undo.length - 1].label : "Nothing to undo"],
+    ["Redo\tCtrl+Y", () => { doRedo(); render(); }, !S.redo.length,
+      S.redo.length ? "Redo: " + S.redo[S.redo.length - 1].label : "Nothing to redo"],
+  ], { frame0: true });
 }
 
-// The toolbar: file actions and undo/redo (Ctrl+S also works), the open
-// save's path and the unsaved-changes marker. sample wording: the marker and
-// the buttons' tooltips.
+// The toolbar: the menus, unframed as the menu bar draws them, then after a
+// separator the ruleset picker and Live AATF, and the unsaved-changes
+// marker (Ctrl+S also works). The bar is a top-panel band: it reaches the
+// window's edges over the view's padding, the panel fill and the border
+// under it the ruleset editor's. sample wording: the marker and the menus'
+// tooltips.
 function renderToolbar() {
-  const undoBtn = button("Undo", () => { doUndo(); render(); },
-    { disabled: !S.undo.length, title: S.undo.length ? "Undo: " + S.undo[S.undo.length - 1].label : "Nothing to undo" });
-  undoBtn.id = "undo-btn";
-  const redoBtn = button("Redo", () => { doRedo(); render(); },
-    { disabled: !S.redo.length, title: S.redo.length ? "Redo: " + S.redo[S.redo.length - 1].label : "Nothing to redo" });
-  redoBtn.id = "redo-btn";
-  const saveBtn = button("Save", () => { saveFile(); render(); }, { title: "Ctrl+S" });
-  saveBtn.id = "save-btn";
-  // The file's buttons, then Undo and Redo, then the menus, each group after a
-  // separator, and one more before the ruleset picker and Live AATF.
   const tsep = () => h("span", { class: "tsep" });
-  return h("div", { class: "toolbar", "data-panel": "toolbar" },
-    openMenu(), saveBtn, button("Save as", saveAs), tsep(),
-    undoBtn, redoBtn, tsep(),
-    playerMenu(), teamMenu(), databaseMenu(), tsep(),
+  return h("div", { class: "toolbar top", "data-panel": "toolbar",
+    style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -8px" },
+    fileMenu(), editMenu(), playerMenu(), teamMenu(), databaseMenu(), tsep(),
     rulesetPicker(), liveButton(), LIVE.on ? suggestionsToggle() : null,
     // The save's path is in the window title (`titleDetail`): beside the
     // unsaved mark it could wrap the toolbar onto a second row.
@@ -3781,7 +3786,7 @@ function playerMenu() {
     "-",
     ["Generate settings.toml\u2026", dlgSettings, off, tip],
     ["Generate in-game face\u2026", dlgIngameFace, off, tip],
-  ]);
+  ], { frame0: true });
 }
 function teamMenu() {
   const t = selTeam();
@@ -3802,7 +3807,7 @@ function teamMenu() {
     // team, as the entries above do.
     ["Import / export team file\u2026", () => { S.panel = "interchange"; render(); }],
     ["Save a picture of the formations\u2026", dlgPictureSave],
-  ]);
+  ], { frame0: true });
 }
 // The whole save's work: first what reads another file against it (a second
 // save, a Team compiler's patch, both floating panels), then the reports it
@@ -3820,7 +3825,7 @@ function databaseMenu() {
     ["Multi-team AATF\u2026", dlgMultiAatf],
     "-",
     ["Fix database\u2026", dlgFixDb, !aesUnlocked(), ownershipTip()],
-  ]);
+  ], { frame0: true });
 }
 // ---- Multi-team AATF (the Savefile menu) ----
 // An organizer's check of a range of teams under the toolbar's ruleset, in a
@@ -4201,20 +4206,32 @@ function renderView(center) {
 // The active ruleset's event logo at the view's top right, or null when its
 // file carries none. With a page it is a link: a click opens the page in the
 // browser, the tooltip naming the event and the address. Measured once
-// drawn: a toolbar reaching within 8 of it (a narrow window) hides it rather
-// than letting it cover a control. sample wording: the tooltip.
+// drawn: the toolbar's band stops as far left of it as it stands from the
+// window's edge, so the bar never covers it and it is always drawn. sample
+// wording: the tooltip.
 function eventLogo() {
   const rs = RULESETS[D.ruleset];
   if (!rs || !rs.logo) return null;
   const img = h("img", { class: "event-logo" + (rs.page ? " link" : ""), id: "event-logo", src: rs.logo,
     alt: rs.label, title: rs.page ? rs.label + "\n\nClick here to open the event's page:\n" + rs.page : rs.label,
     onclick: rs.page ? () => window.open(rs.page, "_blank", "noopener") : null });
-  requestAnimationFrame(() => {
+  // The band stops as far left of the logo as the logo stands from the
+  // window's edge (14), the margins on its two sides the same. Its
+  // contents wrap inside it rather than reaching the logo, which is
+  // always drawn. Measured once the picture is loaded: before it the img
+  // has no width, and the band would stop short of where the logo lands.
+  const stopBand = () => {
     const bar = document.querySelector(".toolbar");
-    if (!img.isConnected || !bar) return;
-    const end = Math.max(...[...bar.children].map(e => e.getBoundingClientRect().right));
-    if (end + 8 * winScale() > img.getBoundingClientRect().left) img.style.visibility = "hidden";
-  });
+    if (!img.isConnected || !bar || !img.getBoundingClientRect().width) return;
+    // The rectangles are in screen pixels and the margin in the window's
+    // points, which a narrow window draws smaller (`winScale`).
+    const scale = winScale();
+    const stop = img.getBoundingClientRect().left - 14 * scale;
+    const margin = parseFloat(getComputedStyle(bar).marginRight);
+    bar.style.marginRight = (margin + (bar.getBoundingClientRect().right - stop) / scale) + "px";
+  };
+  img.addEventListener("load", stopBand);
+  requestAnimationFrame(stopBand);
   return img;
 }
 

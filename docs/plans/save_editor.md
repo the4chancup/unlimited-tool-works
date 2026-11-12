@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -60,7 +60,7 @@ implementation is measured against.
 | Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates: the buttons and the checker can never disagree |
 | Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving from team row to team row, or 7 rows with one team listed ("Editing UI" below, SE-GUI-53) |
 | Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
-| Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the Open menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
+| Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the File menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
 | Hidden shortcut: Ctrl+Shift+T on the team selector (empties the team's slots past 23; its team index looks one off) | Dropped: cups no longer trim a roster to 23 this way |
 | Is a copy? (Appearance; ticking it also sets the ability, COM, motion, playable-position, registered-position, skill and playing-style edit flags) | Kept, the same flags set |
 
@@ -325,10 +325,10 @@ side.
   blends it into the edge as a dark fringe. The Ruleset editor's logo field draws it the same
   way.
 
-  It is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
-  column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
-  1280-wide window, and the right column's title starts under it). Where the toolbar reaches
-  within 8 points of it (a narrow window) it is not drawn, rather than covering a control.
+  It is drawn over the toolbar band's end and moves nothing: no row is pushed down, no
+  column narrowed. Where a logo is drawn the band ends as far left of it as the logo stands
+  from the window's edge ("The toolbar"), so the bar never covers it; without one the band
+  runs to the edge.
 
   With a page it is a link: the pointing-hand cursor, a click opening the page in the browser,
   and its tooltip the event (the ruleset's name), then a blank line, then "Click here to open
@@ -336,25 +336,34 @@ side.
   alone. One look on both themes: an event's logo is made for any background. The picture is
   decoded once per ruleset, not per frame; one that fails to decode is not drawn (its bytes
   passed the load check, its pixels did not).
-- **The toolbar**, in egui's `MenuBar` (0.37), its style left as the toolbar's so the
-  buttons keep their frames. The bar's pieces (the bar, its separator, a menu's button) are
+- **The toolbar**, a top panel holding egui's `MenuBar` (0.37) with the menu bar's own
+  style, its buttons unframed, the band edge to edge over the view's margin. With an event
+  logo drawn at the view's right, the band ends as far left of it as the logo stands from
+  the window's edge, the two margins the same; the logo is then always drawn, because the
+  band cannot reach it, and its menus wrap inside it instead. The bar's pieces (the bar,
+  its separator, a menu's button) are
   `studio_core`'s widgets rather than this tool's, so every tool's toolbar takes them when it
   is built (this is the first tool with a finished UI). A menu item with its shortcut is
   egui's own `Button::shortcut_text`, which every tool already shares through egui, not a
   `studio_core` wrapper that would only forward to it.
 
   Its contents, in order:
-  - `Open`, `Save`, `Save as`; a separator;
-  - `Undo`, `Redo`; a separator;
-  - the `Player`, `Team` and `Savefile` menus; a separator;
+  - the `File`, `Edit`, `Player`, `Team` and `Savefile` menus; a separator;
   - the ruleset dropdown and Live AATF (with `Show suggestions` while it is on);
   - then `• unsaved changes`, in the link blue (`Visuals::hyperlink_color`, the blue of Live
     AATF's suggestion marks), not the weak grey, which hid the one piece saying the save
     differs from its file among the toolbar's quieter text; the blue also tells it is
     clickable (the changes list).
 
+  `File` is the opens first (the discovered saves by version, the session's recent files,
+  the picker), then `Save` and `Save as`; `Edit` is `Undo` and `Redo`.
+
   With one menu open, the pointer entering another menu's button opens that one instead, as a
-  menu bar does (`MenuBar` switches on hover; a plain button such as `Save` opens nothing).
+  menu bar does (`MenuBar` switches on hover).
+
+  The dropdown and the Live AATF toggle keep their frames beside the unframed menus: a flat
+  combo reads as a menu named for a ruleset, and an unframed toggle off reads as a label,
+  and the toggle is how a manager finds the check.
 
   Menus group by what an entry acts on, not by what it opens:
   - the `Savefile` menu holds the whole save's work: the Comparator and Apply aesthetics patch
