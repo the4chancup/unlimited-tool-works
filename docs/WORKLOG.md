@@ -1084,6 +1084,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (merged `1c1fb403`). The read in the built window was left open (look: Pending looks)
       - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
         chapters
+    - [ ] f a second read of every string a member reads, for how a person would say it
+      (the maintainer, 2026-11-12, after two lines of the Save editor's import panel that
+      a1 had passed or that came after it: "and the file decides the format", unnecessary,
+      and "one undoable edit; the changes stay unsaved until Save.", shorthand; both
+      reworded that day). A sidekick per surface, as a to c ran, each diff read line by
+      line by the lead; the Save editor's `view/` last, after 0.0.2-clip, -line and -undo,
+      which edit the same files. To settle in it: the `Applied. The changes stay unsaved
+      until Save.` notices beside the reworded line, which now says "until you click Save"
+      - [ ] f1 the shell (`studio_core`) and the drafts host
+      - [ ] f2 the Team compiler and the Export upgrader (window, CLI, catalogs, help)
+      - [ ] f3 the Save editor (window, CLI, catalog, help, draft)
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
     constant's row (`TOP_ROW_ONE_LINE`) measured in the draft and in the built window agree

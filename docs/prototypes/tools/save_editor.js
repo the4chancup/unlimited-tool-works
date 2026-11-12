@@ -8242,7 +8242,7 @@ function interchangePanel() {
   const d = S.ix.file && ixFile(S.ix.file);
   if (!d) {
     c.append(h("div", { class: "row weak" },
-      "Team TOML, .4ccs, .4cct and Texport files open here, and the file decides the format."
+      "Team TOML, .4ccs, .4cct and Texport files are accepted."
       + (version() < 18 ? "" : " A .ted you export this session is listed too.")));
     return c;
   }
@@ -8333,7 +8333,7 @@ function interchangePanel() {
     button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
       { disabled: !!refusal || !chosen || unchanged,
         title: "Write the chosen sections as one undoable edit" }),
-    weak("one undoable edit; the changes stay unsaved until Save.")));
+    weak("The changes can be undone and stay unsaved until you click Save.")));
   if (S.ix.applied)
     c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
   else if (unchanged)
