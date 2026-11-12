@@ -160,6 +160,9 @@ pub struct StudioApp {
     /// Index into `tools` of the active view.
     active: usize,
     sidebar: Sidebar,
+    /// The window's focus last frame: a regain drops the context's per-version
+    /// exe checks, as it re-lists the sidebar's own.
+    was_focused: bool,
     status_bar: StatusBar,
     settings_menu: SettingsMenu,
     /// The help window, built over the registered tools' chapters; drawn only while
@@ -288,6 +291,7 @@ impl StudioApp {
             requests,
             active,
             sidebar: Sidebar::default(),
+            was_focused: false,
             status_bar: StatusBar::default(),
             settings_menu: SettingsMenu::default(),
             help_window,
@@ -881,6 +885,14 @@ impl eframe::App for StudioApp {
         if let Some(effect) = effect {
             self.apply_notice_effect(effect);
         }
+        // The context's per-version exe checks keep the sidebar's rule of a re-list
+        // on the window's regained focus: the drop runs here, where the sidebar's
+        // own check learns of the focus on this same frame.
+        let focused = ui.input(|input| input.focused);
+        if focused && !self.was_focused {
+            self.ctx.clear_pes_exe_checks();
+        }
+        self.was_focused = focused;
         let clicked = egui::Panel::left("sidebar")
             .resizable(false)
             .exact_size(sidebar::RAIL_WIDTH)
@@ -997,6 +1009,7 @@ mod tests {
 
     use crossbeam_channel::{TryRecvError, unbounded};
     use eframe::App;
+    use pes_version::PesVersion;
 
     use super::test_harness::*;
     use super::*;
@@ -1119,6 +1132,41 @@ mod tests {
         frame(&egui_ctx, &mut app, Vec::new(), true);
         assert_eq!(app.active, 1, "the GUI reopens on the second tool");
         assert_eq!(calls[1].views(), 1);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The context's per-version exe checks re-list on the window's regained
+    // focus, the sidebar's own rule: a folder that gains its exe between two
+    // asks reads Found only after the focused frame.
+    #[test]
+    fn the_contexts_exe_checks_are_dropped_on_the_windows_regained_focus() {
+        let egui_ctx = test_context();
+        let dir = test_dir("studio_core_shell_exe_focus");
+        fs::create_dir_all(&dir).unwrap();
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = Settings::default();
+        settings.common.pes_version = PesVersion::Pes21;
+        settings.common.pes_folder_path = dir.display().to_string();
+        let Shell { mut app, ctx, .. } =
+            shell_with(settings, vec![a], &[], Some(dir.clone()), vec![calls_a]);
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            crate::ExeCheck::NoExe,
+            "an empty folder"
+        );
+        fs::write(dir.join("PES2021.exe"), b"").unwrap();
+        frame(&egui_ctx, &mut app, Vec::new(), false);
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            crate::ExeCheck::NoExe,
+            "cached: an unfocused frame does not re-list"
+        );
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            crate::ExeCheck::Found,
+            "the regained focus re-lists"
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 

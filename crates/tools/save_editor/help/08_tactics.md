@@ -25,10 +25,11 @@ The badge's right end shows his overall at the position he plays there, as the
 game's does, and a gold, silver or bronze outline round the badge names his
 medal tier under the active ruleset, where he has one.
 
-The portraits come from the game picked at the top of the sidebar, out of the
-`download` folder inside the **PES folder** setting. When that folder is
-missing, or a file it lists is missing, the starters show the game's blank
-portrait instead.
+The portraits come from the save's own game, out of the `download` folder
+inside that version's **PES folder** setting. When that folder is missing, or
+a file it lists is missing, the starters show the game's blank portrait
+instead, and a **Set PES path** button stands on the pitch's bottom right for
+picking the right folder.
 
 The formation's name in the pitch's bottom-left corner (such as 3-4-2-1) counts
 the players in each line by their positions, back to front, as the game's

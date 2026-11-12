@@ -2788,8 +2788,8 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
     let scratch = path.parent().expect("the save's folder").to_path_buf();
     let mut view = SaveView::new();
     view.open(&path);
-    view.pes_version = PesVersion::Pes17;
     view.pes_exe_check = Some(ExeCheck::NoFolder);
+    view.pes_folder = Some(scratch.join("missing"));
     let mut window = Headless::sized(1600.0, 1400.0);
     // The folder the check found missing: the portraits worker reads nothing.
     view.select_portraits(&window.ctx, &scratch.join("missing"), PesVersion::Pes17);
@@ -2868,8 +2868,8 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
     );
     assert_eq!(
         view.picked_pes_folder,
-        Some(picked),
-        "the picked folder is the view's ask"
+        Some((PesVersion::Pes17, picked)),
+        "the save's version and the picked folder are the view's ask"
     );
 
     // PES 2021's wider box leaves the narrower corner.
@@ -2880,6 +2880,181 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
     view.selected = Some(Selection::Team(701));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_set_path_margins(&nodes, 241.0, 1.5, "PES 2021");
+}
+
+/// One frame of the tool over `ctx` (the shell's own call, so the context's
+/// per-version reads drive the view), returning the frame's nodes and shapes.
+fn tool_frame(
+    window: &mut Headless,
+    tool: &mut crate::Tool,
+    ctx: &studio_core::ToolContext,
+) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+    use studio_core::StudioTool;
+
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+    (nodes, shapes)
+}
+
+// The editor reads the sidebar's selector for nothing: over a PES 2017 save
+// and a selector on PES 2019, the button and the placeholders follow PES
+// 2017's folder, the tooltip names PES 2017, and a picked folder is stored
+// for PES 2017 with the selector unmoved.
+// SE-GUI-50
+#[test]
+fn the_editor_follows_the_open_saves_version_not_the_selectors() {
+    use studio_core::StudioTool;
+
+    let dir = crate::test_support::scratch("tactics_sel_pes");
+    // `games`: PES 2019's folder holds its exe; PES 2017's does not exist.
+    // `games_ok`: PES 2017's folder holds it. `games_wrong`: it holds PES
+    // 2019's.
+    let games = dir.join("games");
+    std::fs::create_dir_all(games.join("PES 2019")).unwrap();
+    std::fs::write(games.join("PES 2019/PES2019.exe"), b"").unwrap();
+    let games_ok = dir.join("games_ok");
+    std::fs::create_dir_all(games_ok.join("PES 2017")).unwrap();
+    std::fs::write(games_ok.join("PES 2017/PES2017.exe"), b"").unwrap();
+    let games_wrong = dir.join("games_wrong");
+    std::fs::create_dir_all(games_wrong.join("PES 2017")).unwrap();
+    std::fs::write(games_wrong.join("PES 2017/PES2019.exe"), b"").unwrap();
+    let mut settings = studio_core::Settings::default();
+    settings.common.pes_version = PesVersion::Pes19;
+    let (ctx, shared, _events_rx, _requests_rx) =
+        crate::test_support::shared_tool_context(&dir, settings);
+    let set_pattern = |pattern: &std::path::Path| {
+        shared.lock().unwrap().common.pes_folder_path =
+            pattern.join("PES 20**").display().to_string();
+    };
+    set_pattern(&games);
+
+    let mut tool = crate::Tool::new();
+    let path = fixture(PesVersion::Pes17, "tactics_sel_pes_save");
+    tool.view.open(&path);
+    tool.view.selected = Some(Selection::Team(718));
+    let mut window = Headless::sized(1600.0, 1400.0);
+
+    // PES 2017's folder missing: the button stands in its corner, the
+    // tooltip names PES 2017's folder, and every starter paints the
+    // placeholder.
+    let (nodes, shapes) = tool_frame(&mut window, &mut tool, &ctx);
+    assert_eq!(
+        tool.view.pes_exe_check,
+        Some(ExeCheck::NoFolder),
+        "the save's version's check, not the selector's Found"
+    );
+    assert_eq!(
+        tool.view.portrait_folder(),
+        Some(games.join("PES 2017").as_path()),
+        "the portraits read PES 2017's folder, not PES 2019's"
+    );
+    assert_set_path_margins(&nodes, 226.0, 9.0, "PES 2017");
+    let canvas = canvas_of(&nodes);
+    let canvas_rect = egui::Rect::from_min_max(
+        egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
+        egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
+    );
+    let portraits: Vec<egui::TextureId> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Mesh(mesh) => {
+                Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
+            }
+            _ => None,
+        })
+        .filter(|(rect, _)| {
+            canvas_rect.contains_rect(*rect)
+                && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
+        })
+        .map(|(_, texture)| texture)
+        .collect();
+    assert_eq!(
+        portraits.len(),
+        11,
+        "every starter's marker paints a portrait"
+    );
+    assert!(
+        portraits.iter().all(|texture| *texture == portraits[0]),
+        "every starter paints the one placeholder texture"
+    );
+
+    // The tooltip: where the portraits are read from, then what the check
+    // found.
+    let at = centre(node_labeled(&nodes, Role::Button, "Set PES path"));
+    window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        tool.view(ui, &ctx)
+    });
+    let mut tip = None;
+    for _ in 0..90 {
+        let (nodes, _) = tool_frame(&mut window, &mut tool, &ctx);
+        if let Some(value) = nodes
+            .iter()
+            .filter_map(|node| node.value())
+            .find(|value| value.contains("PES 2017 folder"))
+        {
+            tip = Some(value.to_owned());
+            break;
+        }
+    }
+    assert_eq!(
+        tip.as_deref(),
+        Some(
+            format!(
+                "The players' portraits are read from the PES 2017 folder. {} does not \
+                 exist.",
+                games.join("PES 2017").display()
+            )
+            .as_str()
+        ),
+        "the button's tooltip"
+    );
+
+    // PES 2017's folder found: the button is gone and the portraits are read
+    // from it, not from PES 2019's.
+    set_pattern(&games_ok);
+    let (nodes, _) = tool_frame(&mut window, &mut tool, &ctx);
+    assert_eq!(
+        set_path_button(&nodes),
+        None,
+        "PES2017.exe found: no button"
+    );
+    assert_eq!(
+        tool.view.portrait_folder(),
+        Some(games_ok.join("PES 2017").as_path()),
+        "the portraits read the folder PES 2017 resolves, not PES 2019's"
+    );
+
+    // Another version's exe in it: the button is back.
+    set_pattern(&games_wrong);
+    let (nodes, _) = tool_frame(&mut window, &mut tool, &ctx);
+    assert_eq!(
+        tool.view.pes_exe_check,
+        Some(ExeCheck::OtherVersion(PesVersion::Pes19)),
+        "PES2019.exe found: another version's"
+    );
+    assert!(set_path_button(&nodes).is_some(), "the button is back");
+
+    // Its pick is stored for the save's version, the selector unmoved.
+    let picked = dir.join("Pro Evolution Soccer 2017");
+    tool.view.pick_folder_dialog = {
+        let picked = picked.clone();
+        Box::new(move || Some(picked.clone()))
+    };
+    press_release(
+        &mut window,
+        centre(node_labeled(&nodes, Role::Button, "Set PES path")),
+        |ui| tool.view(ui, &ctx),
+    );
+    let common = shared.lock().unwrap().common.clone();
+    assert_eq!(
+        PathBuf::from(common.pes_folder_path),
+        dir.join("Pro Evolution Soccer 20**"),
+        "the picked folder stored as the setting with its year as 20**"
+    );
+    assert_eq!(
+        common.pes_version,
+        PesVersion::Pes19,
+        "the selector's setting unchanged"
+    );
 }
 
 // The Automatic settings row wraps inside the settings column (the

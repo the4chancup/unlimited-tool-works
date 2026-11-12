@@ -2800,22 +2800,8 @@ SE-GUI-27  GIVEN the save open
                 Fix database is chosen THEN a
                 confirmation dialog precedes it, its question naming only the repairs the
                 save's version has, and cancelling changes nothing
-SE-GUI-28  GIVEN the selector at PES 19
-           WHEN a PES 21 save is opened
-           THEN the status bar shows a Warning notice naming both versions, the save keeps its
-                own version (its codec and its widgets' gating are PES 21's), and the selector's
-                setting is unchanged; WHEN the notice's "Switch to PES 2021" is clicked THEN the
-                selector's setting is PES 21 and the notice is gone, and the selector set back
-                to PES 19 by hand shows nothing; WHEN instead the selector is set to PES 17 by
-                hand THEN the notice names PES 2017 and PES 2021, set to PES 21 by hand it is
-                gone, and set back to PES 19 it shows again; WHEN instead its dismiss is
-                clicked THEN the notice is gone and the setting unchanged, and no selector
-                change brings it back until another save is opened; GIVEN the selector at
-                PES 21 WHEN the PES 21 save is opened, saved (its save notice taking the bar)
-                and the selector then set to PES 19 THEN the warning shows; GIVEN another
-                registered tool reporting a version-change blocker THEN "Switch to PES 2021" is
-                drawn disabled, its hover the blocking tool's "<label>: <reason>", and the
-                setting stays PES 19 and the notice stays
+SE-GUI-28  withdrawn: the editor reads the selector for nothing, so no
+           version warning shows (0.0.2-sel)
 SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17 save, and (after
            0.0.1) from a PES 18, 19, 20 and 21 save
            WHEN it is imported through the game's own team import, in that version

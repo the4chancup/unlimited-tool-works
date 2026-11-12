@@ -1,10 +1,13 @@
-//! The Save editor's section of the settings file: its six keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its seven keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
-//! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting) and
-//! `scroll_names` (the Tactics formation bar's checkbox). A key enters with the code that reads
+//! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
+//! `scroll_names` (the Tactics formation bar's checkbox) and `last_folder` (the folder the file
+//! picker starts in). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
+
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +40,10 @@ pub(crate) struct SaveEditorSettings {
     /// changes it, as `live_aatf` is written.
     #[serde(default = "default_scroll_names")]
     pub(crate) scroll_names: bool,
+    /// The folder the last save was opened from, by whichever of the opens: the file
+    /// picker starts there while it exists, so a member who keeps his saves in a folder
+    /// of his own is taken back to it. Written on every open, as `scroll_names` is.
+    pub(crate) last_folder: Option<PathBuf>,
 }
 
 impl Default for SaveEditorSettings {
@@ -48,6 +55,7 @@ impl Default for SaveEditorSettings {
             live_window: false,
             aesthetics_from_exports: false,
             scroll_names: default_scroll_names(),
+            last_folder: None,
         }
     }
 }

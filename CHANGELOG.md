@@ -90,6 +90,10 @@ What changed for members, release by release, newest first.
 - **Windows**: a Shift+click or a middle click on the program's taskbar button opens another
   window, as it does for most programs. It did nothing unless Windows
   had a shortcut for the program, such as a taskbar pin.
+- **Save editor**: a save is edited as its own version, whatever the sidebar's selector
+  shows: the portraits and the Set PES path button read the PES folder of the save's
+  version, and the editor no longer warns that the save is not the sidebar's version.
+  The file picker starts in the folder the last save was opened from.
 
 ### Minor fixes
 
