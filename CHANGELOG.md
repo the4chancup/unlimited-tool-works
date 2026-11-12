@@ -77,6 +77,9 @@ What changed for members, release by release, newest first.
   written from the save's own records, as the game writes one: the team keeps its manager and
   coach (a Manager ID changed in the editor brings that manager's coach), and every value the
   editor does not show keeps the save's.
+- **Settings**: with two windows of the program open, a setting changed in one is no longer
+  undone when the other saves something else: each window writes only the settings it
+  changed itself. A window shows what another one changed once it is started again.
 
 ### Minor fixes
 

@@ -508,7 +508,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
             "no empty table appears: {original}"
         );
 
-        let loaded = crate::settings::Settings::load(&path).unwrap();
+        let mut loaded = crate::settings::Settings::load(&path).unwrap();
         assert!(loaded.common.pes_folders.is_empty());
         loaded.save(&path).unwrap();
         assert_eq!(
@@ -681,7 +681,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // inside `[common]`.
     #[test]
     fn a_window_place_loads_from_five_numbers_and_saves_as_six() {
-        let settings =
+        let mut settings =
             crate::settings::Settings::parse("[common]\nwindow_main = [100, 50, 1100, 700, 1]\n")
                 .expect("parses");
         let place = WindowPlace {
@@ -730,7 +730,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
         let path = dir.join("settings.toml");
         for (flag, maximized) in [(1, true), (0, false)] {
             let text = format!("[common]\nwindow_main = [100, 50, 1100, 700, 1, {flag}]\n");
-            let settings = crate::settings::Settings::parse(&text).expect("parses");
+            let mut settings = crate::settings::Settings::parse(&text).expect("parses");
             assert_eq!(
                 settings.common.window_main,
                 Some(WindowPlace {
