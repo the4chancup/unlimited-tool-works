@@ -1750,11 +1750,17 @@ briefs, review loops, gates and mutation runs as for any step.
     command, name, icon and an application ID per copy, at every start
     (`plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05; DECISIONS
     2026-11-12 "the window tells the Windows taskbar how to start it again" and "set at
-    every start, pinned or not"). Open until seen working:
-    - [ ] the four properties read back off the built window (harness), then ST-WIN-06,
-      the maintainer's clicks and how a pin made by an earlier version stands beside the
-      window (Pending looks); the changelog says nothing of old pins until then
-    - [ ] review rounds (tier 2: a SWE-2 loop, then one paid round, Carbon from 2026-11-15)
+    every start, pinned or not"). The first build ended at every start with a corrupted
+    heap (the `windows` crate's `PROPVARIANT` has a destructor, so the borrowed string was
+    freed twice); fixed in `33a6275c`, with a Windows test that sets the values on a real
+    hidden window and reads them back
+    - [x] 2026-11-12: the four properties read back off the built window, and ST-WIN-06's
+      clicks by the maintainer: a Shift+click and a middle click each open another window.
+      Not looked at, by the maintainer's choice: two copies as two groups, and a pin made
+      by an earlier version beside the new window (the changelog says nothing of old pins)
+    - [ ] review rounds (tier 2). SWE-2 "S-inst r1", 2026-11-12: 3 of 4 concerns accepted,
+      none of them the crash, which the look found. Owed: one SWE-2 round over `33a6275c`,
+      then one paid round (Carbon, on Devin `work`)
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -2243,11 +2249,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   pre-Fox texture the compile block-compresses"); harness
 - Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
   0.0.1y's y7c (`QUESTIONS.md` "After the release"); harness
-- ST-WIN-06: the built program started from its exe with no shortcut to it, its taskbar
-  button Shift+clicked and middle-clicked (each opens another window); two copies in two
-  folders are two groups; how a button pinned by an earlier version stands beside the
-  running window; Windows 10, no PES; 0.0.2-inst; maintainer (the lead does not click the
-  taskbar)
 - The Ability stats column on a PES 17 save in the built window: Tight Possession's and
   Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the
