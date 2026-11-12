@@ -1848,8 +1848,11 @@ briefs, review loops, gates and mutation runs as for any step.
     SE-GUI-75. A light theme in the drafts was weighed and left out: 175 colours of
     `index.html` and `save_editor.js` are written as literals beside the variables, so it is
     no cheap addition (`shot_dropline_light.py` overrides the variables for a one-off look)
-    - [ ] the slice (small: `view/player_list.rs`; after 0.0.2-clip), then the look in the
-      built window (Pending looks)
+    - [x] the slice 2026-11-13 (`da849d2a`, SWE-2 and the lead's rerun: 823 and 54 tests,
+      clippy, fmt): three painter calls in `player_row`, the SE-GUI-75 test reading the
+      line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
+      of the line outside a row flush with the view's edge. Look: Pending looks
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/line/swe_line.md`)
   - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
@@ -2500,6 +2503,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   clipboard: a player's stats, a team's Gameplan, a preset and a formation, the second
   window on a save of another PES version; and the copied text pasted into a text editor
   (two comment lines, then the Team TOML); no PES; 0.0.2-clip; maintainer
+- The player list's drop line in the built window: a player dragged down and up a team's
+  list, the line with its serifs under or over the row, none left after a release or Esc;
+  and on the first and last row in view, where the list's clip cuts the line's outer half;
+  no PES; 0.0.2-line; maintainer
 
 ---
 
