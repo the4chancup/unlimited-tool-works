@@ -1674,10 +1674,16 @@ briefs, review loops, gates and mutation runs as for any step.
       download's progress and Cancel, `Update failed`, `Update ready` (ST-UPD-03)
     - [x] slice 2b, 2026-11-12 (`62b92662`, Opus): `Update ready` on the status bar, Restart
       now, `UTW_RELEASES_URL` (ST-UPD-05); the tests for slice 1's five mutation gaps
-    - [ ] the dialogs and a real restart looked at in the built exe, against a releases list
-      served from this PC (`UTW_RELEASES_URL`, plain http by ureq's defaults, read not run):
-      each stage's look, which log slot the restarted program takes while the old one is
-      still closing (ST-RUN-12), and whether it clears the old files
+    - [x] the dialogs and a real restart looked at in the built exe, 2026-11-12, against a
+      releases list served from this PC over plain http (`UTW_RELEASES_URL`): every stage
+      drawn (the offer with a release's real notes, the download, `Update failed` on a
+      checksum that does not match and on a program another window replaced, Cancel,
+      `Update ready`, Later and the next start, What's new and the help's Updates chapter).
+      The restarted program takes log slot 2 (`utw.2.log`) while the old one is still
+      closing, and slot 1 again at the next start alone; the swap leaves no temp folder
+      and keeps `old/UTW.exe`. Found and fixed (`a19cc7b5`): the offer back after a Cancel
+      or a failure was wrapped to the download's narrower dialog. Captures:
+      `4cc-studio-temp/st-upd-04{,b,c}/shot_*.png`; the scripts: `.tmp/0_0_2/upd/rc/`
     - [x] slice 3, 2026-11-12 (`d617bf3a`, Opus): the `Updated to` notice
       (`last_run_version`), the help's Updates and What's new chapters (ST-UPD-06), the
       offer's tooltip naming the app and the version
@@ -1701,7 +1707,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] the review loops' rest: Carbon's loop (its login resets on 2026-11-15)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
-    - [ ] ST-UPD-04 by hand, on Windows and on Linux
+    - [ ] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
+      `0.0.2-rc.1` updated itself to `0.0.2-rc.2` and reopened on `Updated to v0.0.2-rc.2
+      pre-alpha`, the settings, a file inside `exports/` and a root log file as they were
+      (both bundles built by `just release` on the throwaway branch `test/upd-rc`, worktree
+      `4cc-studio-temp/rc`, never merged or pushed). Linux: open
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
     Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,
     the shipped graph's one crate that does. Candidates, each measured before one is proposed
@@ -2266,6 +2276,14 @@ points there.
   dragged while the wheel scrolls its place out of view stops floating until the release
   (the drop still lands). Harmless on a team's list, which fits the window; a fix would
   paint the float from outside the rows.
+- open 2026-11-12 (0.0.2-upd, the look in the built exe) — a dialog whose button row is
+  wider than its body draws the buttons out past the body's left edge
+  (`widgets::modal_buttons` lays them out from the right in the body's width). Seen on the
+  update offer with one-line notes and versions long enough to wrap, where the notes' box
+  also hugs its text instead of spanning the dialog as the draft's does; a release's real
+  notes fill the width and show neither. A fix would measure the row and widen the body.
+  `Update ready`'s sentence now wraps with two words on its second line (the dialog is as
+  wide as a fresh one, about 600 points): a look for the maintainer.
 - open 2026-11-11 (the census index, `.tmp/sidelead/sk_census.report.md`) — (1) 603 upgraded
   or Studio FMDLs still carry an old Common path in their strings that no texture reference
   uses (a raw-bytes search finds 8,783 files, the references 8,180): which tool leaves the
