@@ -713,7 +713,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             logo,
         });
     }
-    let band_end = event_logo::rect(ui, view).map(|logo| logo.left() - event_logo::RIGHT);
+    // The logo's rect once, before the toolbar: a save the toolbar itself
+    // opens this frame (a File menu entry or a shortcut) then draws no
+    // logo over a band still running to the view's right edge, and gets
+    // it on the next frame, the band already ending short.
+    let logo_rect = event_logo::rect(ui, view);
+    let band_end = logo_rect.map(|logo| logo.left() - event_logo::RIGHT);
     toolbar(ui, view, running, band_end);
     if view.session.is_none() {
         ui.weak("No save is open.");
@@ -814,7 +819,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     }
     // After the panes, so the logo paints over their frames' fill where
     // the right column's frame starts under it.
-    event_logo::show(ui, view);
+    event_logo::show(ui, view, logo_rect);
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
