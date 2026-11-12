@@ -17,8 +17,8 @@ is in `AGENTS.md` ("Working documents").
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
 2. The illegal formation check (0.0.2c): its six clauses are set and the game's own
    formations pass them; the looks in game come next, then the slice.
-3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -statlbl, -inst, -drift,
-   -clip).
+3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -clip, and -inst, whose
+   cause is being looked for with the maintainer); -drift and -statlbl are in.
 4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
 5. The library checkpoints (0.0.2-chk), then the cut.
 
@@ -1761,12 +1761,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03)
-  - [ ] 0.0.2-statlbl the label of an ability stat the save's version does not have (Tight
-    Possession, Aggression, ...) in the same darker colour as a greyed card's label (the
-    maintainer, 2026-11-03). Drafted 2026-11-12 (the draft's `abilityPanel`; the plan's
-    sentence under "A field's label in these panels" and SE-GUI-70); the code is a SWE-2
-    slice, brief `.tmp/0_0_2/statlbl/brief_statlbl.md`. The same rule for the editor's other
-    gated fields is `PROPOSALS.md` P53, unruled
+  - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
+    and draft `43770f93`): the name of an ability stat the save's version does not store is
+    dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
+    looked at in the built window (look: Pending looks). The same rule for the editor's
+    other gated fields is `PROPOSALS.md` P53, unruled
+    - [ ] review round (tier 3: one SWE-2 round)
   - [x] 0.0.2-log 2026-11-12 (`d61750cb`, Opus; tier 2, reviewed with 0.0.2-upgall
     below): `--log-file <FILE>` appends a run's whole output to the file and leaves Info
     findings out of stdout, and the two launchers pass it (ST-CLI-04); the upgrade launcher
@@ -2233,6 +2233,8 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   pre-Fox texture the compile block-compresses"); harness
 - Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
   0.0.1y's y7c (`QUESTIONS.md` "After the release"); harness
+- The Ability stats column on a PES 17 save in the built window: Tight Possession's and
+  Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the
   record then holds; PES 2021; 8.23a; harness
 - SE-GUI-29: each Texport the panel exports, imported by the game's team import; PES 2018 to
