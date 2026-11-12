@@ -1881,8 +1881,8 @@ ST-CORNER-01 GIVEN the dark theme, then the light one
             WHEN a toolbar menu, a combo's list, a dialog, a tooltip, a button at rest,
                  hovered and pressed, and a text field are drawn
             THEN every corner of each has a radius of 2 points; and no source file outside
-                 `theme.rs` passes a number as a corner radius, the bottom dock's grip
-                 and the captain's mark on the pitch aside
+                 `theme.rs` writes a corner radius as a number in `CornerRadius::same(…)`
+                 or `.corner_radius(…)` (the captain's mark names its two as constants)
 ST-COMBO-02 GIVEN a toolbar menu of three entries and a separator open
             WHEN it is drawn
             THEN each entry is 21 points high, two entries with no separator between them
