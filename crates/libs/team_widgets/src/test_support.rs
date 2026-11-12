@@ -15,11 +15,13 @@ use crate::tactics::{
 
 /// `tactics_settings`' two context knobs: the tactics as the file was
 /// opened (Advanced instructions' baseline for the target bytes) and
-/// the active ruleset's illegal-formations flag (the combos' lists).
+/// the active ruleset's illegal-formations flag (the combos' lists and
+/// the numbers' lock).
 pub(crate) struct SettingsContext<'a> {
     /// `advanced_instructions`' `opened`.
     pub(crate) opened: Option<&'a TeamTactics>,
-    /// `advanced_instructions`' `illegal_formations`.
+    /// `advanced_instructions`' and `formation_settings`'
+    /// `illegal_formations`.
     pub(crate) illegal_formations: bool,
 }
 
@@ -51,21 +53,20 @@ pub(crate) fn tactics_settings(
         }
         // `|` evaluates every panel: a `||` chain would skip the rest on
         // the frame the first reports a change.
-        cell(ui, |ui| formation_settings(ui, tactics, view))
-            | advanced_instructions(
-                ui,
-                version,
-                tactics,
-                context.opened,
-                view,
-                roster,
-                context.illegal_formations,
-            )
-            | cell(ui, |ui| {
-                player_assignments(ui, tactics, view, roster);
-                false
-            })
-            | automatic_settings(ui, version, tactics)
+        cell(ui, |ui| {
+            formation_settings(ui, version, tactics, view, context.illegal_formations)
+        }) | advanced_instructions(
+            ui,
+            version,
+            tactics,
+            context.opened,
+            view,
+            roster,
+            context.illegal_formations,
+        ) | cell(ui, |ui| {
+            player_assignments(ui, tactics, view, roster);
+            false
+        }) | automatic_settings(ui, version, tactics)
     })
     .inner
 }
@@ -470,6 +471,32 @@ pub(crate) fn pointer_at(pos: egui::Pos2, pressed: bool) -> Vec<egui::Event> {
             modifiers: egui::Modifiers::default(),
         },
     ]
+}
+
+/// The fill of the last rect shape painted over `at` (what a member
+/// sees there).
+pub(crate) fn last_rect_fill(
+    shapes: &[egui::epaint::ClippedShape],
+    at: egui::Pos2,
+) -> Option<egui::Color32> {
+    shapes
+        .iter()
+        .rev()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.rect.contains(at) => Some(shape.fill),
+            _ => None,
+        })
+}
+
+/// Whether `fill` is `blue` at any alpha: a disabled scope paints the
+/// selection's fill halved, and `to_opaque` restores its hue within the
+/// bit the premultiplied channels round.
+pub(crate) fn is_selection(fill: egui::Color32, blue: egui::Color32) -> bool {
+    let fill = fill.to_opaque();
+    [fill.r(), fill.g(), fill.b()]
+        .into_iter()
+        .zip([blue.r(), blue.g(), blue.b()])
+        .all(|(a, b)| a.abs_diff(b) <= 1)
 }
 
 /// The color `shape`'s text paints in: a section's own color when one was

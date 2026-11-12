@@ -8,7 +8,8 @@ use super::drops::badge_texts;
 use super::*;
 use crate::tactics::{FieldedMark, Medal};
 use crate::test_support::{
-    Headless, centre, entry, fixture_rows, fixture_tactics, painted_color, pointer_at, roster_rows,
+    Headless, centre, entry, fixture_rows, fixture_tactics, is_selection, last_rect_fill,
+    painted_color, pointer_at, roster_rows,
 };
 use crate::violations::CROSS;
 
@@ -3035,6 +3036,78 @@ fn the_formation_selector_is_locked_on_kick_off_while_fluid_formation_is_off() {
     assert_eq!(
         view.formation, 0,
         "a click on In-possession changes nothing"
+    );
+}
+
+// The locked selector's Kick-off, the choice it stays on, reads as the
+// locked numbers choices do: on the quiet grey a locked choice carries,
+// not the selection's blue a disabled scope fades but a member still
+// reads as live. With Fluid formation on, Kick-off is the selection's
+// blue again and no locked grey is painted.
+#[test]
+fn the_locked_formation_selector_marks_kick_off_on_grey() {
+    let mut window = Headless::sized(900.0, 1100.0);
+    let visuals = window.ctx.global_style().visuals.clone();
+    let (grey, blue) = (
+        studio_core::theme::palette(&visuals).locked_choice_fill,
+        visuals.selection.bg_fill,
+    );
+    let rect_of = |node: &accesskit::Node| {
+        let b = node.bounds().expect("choice bounds");
+        egui::Rect::from_min_max(
+            egui::pos2(b.x0 as f32, b.y0 as f32),
+            egui::pos2(b.x1 as f32, b.y1 as f32),
+        )
+    };
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+
+    // Fluid formation off: the three disabled, Kick-off picked and on
+    // the quiet grey.
+    tactics.presets[0].style.fluid = Some(false);
+    let (nodes, shapes) = window.frame(vec![], |ui| {
+        formation_selector(ui, &tactics, &mut view);
+    });
+    for label in FORMATIONS {
+        let node = entry(&nodes, Role::Button, label);
+        assert!(node.is_disabled(), "{label} is disabled");
+        let rect = rect_of(node);
+        assert!(
+            !shapes.iter().any(|clipped| matches!(&clipped.shape,
+                egui::Shape::Rect(shape)
+                    if is_selection(shape.fill, blue) && shape.rect.intersects(rect))),
+            "{label}: no selection blue on it"
+        );
+    }
+    let kick_off = entry(&nodes, Role::Button, "Kick-off");
+    assert_eq!(
+        kick_off.toggled(),
+        Some(accesskit::Toggled::True),
+        "Kick-off stays picked"
+    );
+    assert_eq!(
+        last_rect_fill(&shapes, rect_of(kick_off).center()),
+        Some(grey),
+        "Kick-off reads on the quiet grey"
+    );
+
+    // Fluid formation on: Kick-off on the selection's blue, the grey
+    // rectangle gone.
+    tactics.presets[0].style.fluid = Some(true);
+    let (nodes, shapes) = window.frame(vec![], |ui| {
+        formation_selector(ui, &tactics, &mut view);
+    });
+    let kick_off = entry(&nodes, Role::Button, "Kick-off");
+    assert!(!kick_off.is_disabled(), "enabled: Kick-off is live");
+    assert_eq!(
+        last_rect_fill(&shapes, rect_of(kick_off).center()),
+        Some(blue),
+        "the picked choice on the selection's blue"
+    );
+    assert!(
+        !shapes.iter().any(|clipped| matches!(&clipped.shape,
+            egui::Shape::Rect(shape) if shape.fill == grey)),
+        "no locked grey painted"
     );
 }
 

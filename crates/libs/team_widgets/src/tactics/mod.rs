@@ -15,7 +15,8 @@ use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
 use studio_core::widgets::{
-    add_enabled, checkbox, combo_item, cycle_choice, step_choice, step_number, wheel_steps,
+    add_enabled, add_enabled_ui, checkbox, combo_item, cycle_choice, step_choice, step_number,
+    wheel_steps,
 };
 
 use crate::pitch::{FORMATIONS, position_label};
@@ -349,6 +350,10 @@ const NUMBERS: [PresetField; 2] = [PresetField::NumbersInAttack, PresetField::Nu
 /// for the stored 1, 2 and 3.
 const TRI_CHOICES: [&str; 3] = ["Few", "Medium", "Many"];
 
+/// The locked numbers toggle's hover: the versions whose own game plan
+/// no longer offers the two numbers.
+const NUMBERS_LOCKED_TIP: &str = "Not editable in the game from PES 2017 on";
+
 /// The two halves' gap in the settings rows (the draft's `.tacrows`
 /// `column-gap: 16px`).
 const HALVES_GAP: f32 = 16.0;
@@ -417,6 +422,29 @@ pub(crate) fn bar_selector_spacing(ui: &mut egui::Ui) {
     spacing.interact_size.y = 17.0;
 }
 
+/// The choice a disabled toggle or selector still holds, marked over
+/// the widget it was drawn disabled with (the drafts' `.sel.on` inside
+/// `.off`): a `locked_choice_fill` rectangle in the widget's corner
+/// radius, its label centred in the readouts' grey in the button's
+/// font. Painted after, outside the disabled scope, which would fade
+/// the choice's own mark: a selected button's selection blue at half
+/// still reads as a control live.
+pub(crate) fn locked_choice(ui: &egui::Ui, rect: egui::Rect, label: &str) {
+    let palette = studio_core::theme::palette(ui.visuals());
+    ui.painter().rect_filled(
+        rect,
+        ui.visuals().widgets.inactive.corner_radius,
+        palette.locked_choice_fill,
+    );
+    ui.painter().text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        label,
+        egui::TextStyle::Button.resolve(ui.style()),
+        palette.readout,
+    );
+}
+
 /// The Fluid formation switch of the preset bar (the draft's `fluid`,
 /// moved out of Formation settings onto the bar beside the preset
 /// selector): the shown preset's flag. A version that stores none keeps
@@ -446,14 +474,25 @@ pub fn fluid_formation(ui: &mut egui::Ui, tactics: &mut TeamTactics, view: &Tact
 /// pair at the right, the draft's `TAC_OFFENSIVE` / `TAC_DEFENSIVE`
 /// order — each cell its label over its control in a box 24 points
 /// tall. The frame fills the cell the host gives the panel (the
-/// pitch's height). Edits the preset on screen; answers `true` only
-/// when `tactics` changed this frame.
+/// pitch's height). From PES 2017 on the game's own game plan no longer
+/// shows the two numbers, so on the stock game their toggles are
+/// locked, the stored choice still marked: a member cannot set a value
+/// the game never offers, while a cup whose ruleset allows illegal
+/// formations already edits past the game's menus and keeps them.
+/// `illegal_formations` is the active ruleset's flag, as
+/// `advanced_instructions` takes it. Edits the preset on screen;
+/// answers `true` only when `tactics` changed this frame.
 pub fn formation_settings(
     ui: &mut egui::Ui,
+    version: PesVersion,
     tactics: &mut TeamTactics,
     view: &TacticsView,
+    illegal_formations: bool,
 ) -> bool {
     let preset = &mut tactics.presets[view.preset.min(2)];
+    // The lock is the version's and the ruleset's, not the preset's:
+    // every preset's two toggles lock alike.
+    let numbers_locked = version >= PesVersion::Pes17 && !illegal_formations;
     // The answer is the deep compare, not the responses' `changed()`: a
     // control re-picked at its own value reports nothing.
     let before = preset.clone();
@@ -488,7 +527,7 @@ pub fn formation_settings(
                 // The cell's content at its top (`align-items: start`),
                 // the control 2 under the label (`.tset`).
                 cell_ui.spacing_mut().item_spacing.y = CELL_GAP;
-                setting_cell(&mut cell_ui, preset, field);
+                setting_cell(&mut cell_ui, preset, field, numbers_locked);
             }
         }
     });
@@ -498,12 +537,17 @@ pub fn formation_settings(
 /// One setting's cell of the rows (the draft's `setting` for a key): a
 /// slider, a numbers toggle or a style pair — never the fluid switch,
 /// which lives on the preset bar.
-fn setting_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, field: &PresetField) {
+fn setting_cell(
+    ui: &mut egui::Ui,
+    preset: &mut TacticsPreset,
+    field: &PresetField,
+    numbers_locked: bool,
+) {
     if let Some(spec) = SLIDERS.iter().find(|spec| spec.field == *field) {
         ui.label(spec.label);
         control_box(ui, |ui| {
             if NUMBERS.contains(field) {
-                number_choices(ui, &mut preset.sliders, spec);
+                number_choices(ui, &mut preset.sliders, spec, !numbers_locked);
             } else {
                 slider(ui, &mut preset.sliders, spec);
             }
@@ -600,27 +644,60 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 /// and down to the left, wrapping round to the other end past the last.
 /// A stored value outside 1-3 (a hand-edited save) selects none and
 /// writes nothing until a choice is clicked; the wheel leaves it too.
-fn number_choices(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
+/// Locked (the stock game of a version whose game plan drops the two
+/// numbers, the draft's `.rate.tri.off`): the choices draw disabled, a
+/// click or a wheel step changing nothing, their hover
+/// `NUMBERS_LOCKED_TIP`; the stored choice stays marked through
+/// `locked_choice`, since the selection's blue would read as a control
+/// still live.
+fn number_choices(
+    ui: &mut egui::Ui,
+    sliders: &mut TacticSliders,
+    spec: &SliderSpec,
+    editable: bool,
+) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - 2.0 * CHOICE_GAP) / 3.0;
     let mut value = (spec.get)(sliders);
+    let mut picked = None;
     // The three choices as one control, so the wheel over any moves it.
-    let control = TRI_CHOICES
-        .iter()
-        .zip(1u8..=3)
-        .map(|(name, choice)| {
-            let response = ui.add_sized(
-                egui::vec2(width, ui.spacing().interact_size.y),
-                egui::Button::selectable(value == choice, *name).truncate(),
-            );
-            if response.clicked() {
-                value = choice;
-            }
-            response
-        })
-        .reduce(|left, right| left | right)
-        .expect("a numbers toggle has three choices");
+    let control = add_enabled_ui(ui, editable, |ui| {
+        // A disabled selected button fills with the selection's blue
+        // faded, which a member still reads as a live control: inside
+        // the disabled scope the held choice fills with the locked grey
+        // `locked_choice` marks solid.
+        if !editable {
+            ui.visuals_mut().selection.bg_fill =
+                studio_core::theme::palette(ui.visuals()).locked_choice_fill;
+        }
+        TRI_CHOICES
+            .iter()
+            .zip(1u8..=3)
+            .map(|(name, choice)| {
+                let response = ui.add_sized(
+                    egui::vec2(width, ui.spacing().interact_size.y),
+                    egui::Button::selectable(value == choice, *name).truncate(),
+                );
+                if value == choice {
+                    picked = Some((*name, response.rect));
+                }
+                if response.clicked() {
+                    value = choice;
+                }
+                response
+            })
+            .reduce(|left, right| left | right)
+            .expect("a numbers toggle has three choices")
+    })
+    .inner;
+    if !editable {
+        control.on_disabled_hover_text(NUMBERS_LOCKED_TIP);
+        if let Some((name, rect)) = picked {
+            locked_choice(ui, rect, name);
+        }
+        return;
+    }
     // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
     // so it takes the steps negated over the choices in drawn order.
     if let Some(next) = cycle_choice(1u8..=3, &value, -wheel_steps(ui, &control)) {

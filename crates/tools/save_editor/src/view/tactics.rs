@@ -309,7 +309,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // stretches them to its row), their frames level with it.
         let row2_bottom = row2_top + pitch::PITCH_BOX.y;
         let mut settings_ui = cell(ui, top_left.x, row2_top, SETTINGS_WIDTH, row2_bottom);
-        changed[1] = tactics::formation_settings(&mut settings_ui, &mut edited, tactics);
+        changed[1] = tactics::formation_settings(
+            &mut settings_ui,
+            version,
+            &mut edited,
+            tactics,
+            illegal_formations,
+        );
         let mut pitch_ui = cell(ui, pitch_left, row2_top, pitch::PITCH_BOX.x, bottom);
         changed[2] = pitch::pitch(
             &mut pitch_ui,

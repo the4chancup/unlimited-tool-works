@@ -68,6 +68,9 @@ What changed for members, release by release, newest first.
   Open menu, Save and Save as are now in a **File** menu, and Undo and Redo in an **Edit**
   menu; every shortcut works as before. The event logo is always shown, the bar ending
   short of it.
+- **Save editor**: on a PES 2017 to 2021 save, the Tactics tab's Numbers in attack and
+  Numbers in defence are disabled, since the game no longer lets them be set, unless the
+  active ruleset allows illegal formations: a cup playing a patched game keeps them.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES
