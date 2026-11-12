@@ -1770,8 +1770,11 @@ briefs, review loops, gates and mutation runs as for any step.
       accepted (two windows each filling a per-version PES folder row lost one, the
       table being absent from the file while empty: a table a side lacks is merged as an
       empty one); its loop ended. The checkpoint's three survivors got two tests (the
-      settings' equality; the read-back check, now one helper). One paid round is owed
-      (Carbon, from 2026-11-15)
+      settings' equality; the read-back check, now one helper). Carbon "C-drift r1",
+      2026-11-12 (on Devin `work`): 3 of 7 concerns accepted (`5f1f8488`, SWE-2; merge
+      `1e3fdf67`): a folder row written by hand under the four-digit year kept its old key
+      beside a changed row and won the next start, and two tests for what none pinned;
+      the paid round is done. Owed: one SWE-2 round over the fixes
   - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03)
