@@ -149,13 +149,33 @@ order of dropping, so it is refused only when each starter's spot lies in the ot
 more than 8 units apart across and no more than 2 up or down. The keeper's marker takes no swap
 and is left out.
 
+What the game ships passes all six, as it must, being no tool's work: PES 2017's own data
+holds 3,198 formations (the per-team tables `TacticsFormation.bin` and
+`TacticsFormation4.bin`: 533 teams, two tactics each, three sets a tactics) and none breaks a
+clause. Neither does any formation of the cup's teams in the ten PES 2017 saves of the cup
+library (1,706 distinct) or, read under the same tables, the ten PES 2021 saves (1,658). The
+tables' layout was established by matching: 92 teams of a PES 2018 save reproduce all nine of
+their formations from it, since no PES 2017 save in the library holds a team outside the
+cup's slots. Under PES 2017's tables the cup's PES 2016 and 2019 saves do hold formations
+breaking clause 3, 4 or 2 (5 and 30 distinct ones, 12 teams); neither version's exe is read,
+so whether a tool made them or those versions' screens differ is not known, and the check
+does not run there.
+
 Still open before anything is built:
 
-- whether the game's own formations (each team's in its data, the preset list) pass the
-  clauses, since what the game ships is no tool's work;
+- the Game Plan menu's preset list, which is in neither table and was not found in the game's
+  data: each preset picked into a team in game, and the save then run under the clauses
+  (Pending looks);
+- clause 6's distance. No formation in any source comes near its box: two outfield starters
+  within 8 across are never nearer than 5 up or down (PES 2017, 2019 and 2021 saves), and
+  members' formations stack a column at exactly 5 many times over. So the stock screen seems
+  to keep starters further apart than the editor's swap box, which is itself larger near the
+  top of the pitch, where a marker's centre is clamped inside the canvas. As worded the
+  clause warns on nothing a screen can make, which is safe, and on less than it could; the
+  screen's own distance is a look's to find (Pending looks);
 - what the stock screen does with a formation breaking one clause (Pending looks).
 
-Until they are read and each is looked at in game under the stock exe, nothing here is built.
+Until each is looked at in game under the stock exe, nothing here is built.
 
 The check is the `libs/aatf` host's, in Rust beside the checks the host runs around the file's
 logic, never in the logic: the rule is the game's, the same for every cup, and in the logic it
