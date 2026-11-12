@@ -349,6 +349,10 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .rate .sel.on.ra { background: #129648; color: #fff; }
 .rate .sel.on.rc { background: #5a5a5a; color: var(--text); }
 .rate.off .sel { color: #5a5a5a; }
+/* The two numbers' toggle disabled (SE-GUI-71): faded as .fsel.off is, the picked choice
+   keeping its text so the stored value still reads. */
+.rate.tri.off { opacity: .6; }
+.rate.tri.off .sel.on { color: var(--text); }
 .rate.off .sel:hover { background: none; color: #5a5a5a; }
 /* The formation picker while the preset's Fluid formation is off, drawn as egui draws a
    disabled widget: the selected entry in the selection's colours faded, an entry's text in
@@ -3462,6 +3466,7 @@ const WALK = [
   ["SE-GUI-35", "the 'Aesthetics from exports' draft control off (the default): the Appearance section draws no ownership line and no switch and every path edits; on, the lock draws"],
   ["SE-GUI-12", "a team row's view, the tactics: drag a pitch marker (it snaps to the stored grid, undoable), drop a bench row on a marker to swap, arm a set-piece chip and click a marker, arm Join attack and click two markers"],
   ["SE-GUI-45", "illegal formations: under 4cc Autumn 26 or Divegrass Before Christmas 7 a dragged starter keeps his position wherever he lands, down to y 0, and his popover lists every outfield position with Y from 0; under /vg/ League 27 the game's drop rule and the y 4 floor are back"],
+  ["SE-GUI-71", "PES 17 or 21 sample under /vg/ League 27: Numbers in attack and Numbers in defence are disabled, the stored choice shown, the tooltip saying why; under DBC7 or 4cc Autumn 26 they are editable"],
   ["SE-GUI-48", "Live AATF on: the icon at the dock header's right end opens the list in a window of its own (one column, its dock icon left of the close button); the dock icon puts it back; the close button turns Live AATF off, and turning it on again opens the window again"],
   ["SE-GUI-49", "Live AATF on, the list in the dock: the ✕ right of the pop-out icon turns Live AATF off; turned on again, the list is back in the dock"],
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
@@ -6071,11 +6076,17 @@ function tacticsTab(t) {
       h("span", { class: "sel" + (pre.style[key] === v ? " on" : ""),
         onclick: () => { if (pre.style[key] !== v) { edit(label, () => { pre.style[key] = v; }); render(); } },
         title: titleCase(v) }, STYLE_SHORT[v] || titleCase(v)))));
+  // From PES 2017 on the game's own game plan no longer shows the two numbers:
+  // their toggles are disabled, the stored choice still shown, unless the
+  // active ruleset allows illegal formations (SE-GUI-71).
+  const triOff = version() >= 17 && !illegalFormations();
   const tri = (key, label) => h("div", { class: "tset" }, h("div", {}, label),
-    h("span", { class: "rate tri wheel" }, TRI_CHOICES.map((name, i) =>
-      h("span", { class: "sel" + (pre.sliders[key] === i + 1 ? " on" : ""),
-        onclick: () => { if (pre.sliders[key] !== i + 1) {
-          edit(label, () => { pre.sliders[key] = i + 1; }); render(); } } }, name))));
+    h("span", { class: "rate tri" + (triOff ? " off" : " wheel"),
+      title: triOff ? "Not editable in the game from PES 2017 on" : null },
+      TRI_CHOICES.map((name, i) =>
+        h("span", { class: "sel" + (pre.sliders[key] === i + 1 ? " on" : ""),
+          onclick: () => { if (!triOff && pre.sliders[key] !== i + 1) {
+            edit(label, () => { pre.sliders[key] = i + 1; }); render(); } } }, name))));
   const setting = key => {
     const three = TRI_SETTINGS.find(([k]) => k === key);
     if (three) return tri(...three);
