@@ -1844,6 +1844,22 @@ briefs, review loops, gates and mutation runs as for any step.
     no cheap addition (`shot_dropline_light.py` overrides the variables for a one-off look)
     - [ ] the slice (small: `view/player_list.rs`; after 0.0.2-clip), then the look in the
       built window (Pending looks)
+  - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
+    2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
+    nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
+    the root, there is no real reason why there should be gaps between the choices in a
+    menu"). Read 2026-11-12: egui lays a menu's and a combo list's rows 18 points high and
+    3 apart (`item_spacing.y`); the earlier fix left the gap and gave each combo row a
+    click strip half the gap high above and below it (`studio_core`'s `widgets/combo.rs`,
+    ST-COMBO-01), which the toolbar menus, drawn through `widgets/menu_button.rs`, never
+    got. The root: the rows meet, each 21 high with no spacing, its text where it stood,
+    so no click can land between two; in the menus through `menu_button`'s one place, in
+    the combo lists through `combo_label` itself, whose strips then go; a separator keeps
+    its room. The highlight grows from 18 to 21 points, in the drafts' `.combo-pop` and
+    menus too (`docs/prototypes/index.html`, the comment "A menu as egui 0.37 draws one")
+    - [ ] the draft and the plan (`plans/core/gui.md`: the menus' and combos' rows,
+      ST-COMBO-01 reworded, a scenario for a toolbar menu); the lead
+    - [ ] the slice (`studio_core` alone, beside the Save editor's slices); Opus
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
     does for most apps (the maintainer, 2026-11-03). Found 2026-11-12 with the maintainer
     at the taskbar: Explorer starts a new instance on those clicks only through a shortcut,
@@ -2162,6 +2178,11 @@ briefs, review loops, gates and mutation runs as for any step.
   sidebar or Settings, the ring usable from the keyboard). Settled with the maintainer:
   the sidebar shows the current role as one compact control, not the six listed, the
   ring being where a role is chosen
+- [ ] after 0.2.0 (the maintainer, 2026-11-12: "no real need for it, but it's a nice to
+  have"): a shorter text for the Save editor's Ctrl+C. The copy is a Team TOML document
+  (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
+  for a player's stats, 143 for a preset. A form without the unset keys needs a writer
+  option in `pes_savefile`'s `team_toml`
 - [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
   2026-11-12: "The draft should ideally use a palette like the app does"): every colour
   that follows the theme is a variable of the host page named as `studio_core`'s
