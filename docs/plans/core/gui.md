@@ -1574,8 +1574,10 @@ ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` m
                  the old files back THEN `Update failed` leaves "Nothing was changed." out;
                  GIVEN the program's file replaced since the window started THEN `Update
                  failed` says the program was already replaced, no request is made and every
-                 file is as it was; GIVEN Cancel clicked after the download's last byte and
-                 before the swap THEN the offer's dialog is back and every file as it was;
+                 file is as it was; GIVEN the program's file replaced while the download
+                 ran THEN the same failure, and every file is as it was but that one;
+                 GIVEN Cancel clicked after the download's last byte and before the swap
+                 THEN the offer's dialog is back and every file as it was;
                  GIVEN Cancel clicked THEN the Cancel button is disabled until the offer's
                  dialog is back
 ST-UPD-04  manual  GIVEN the release bundle of a test version, `0.0.2-rc.1`, started with

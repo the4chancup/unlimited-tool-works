@@ -314,8 +314,9 @@ may change in a minor release.
    other. That other window still runs the previous version and still offers the release, and
    its Update now would swap a second time: the new program moved into `old/` in place of the
    previous one, the way back lost. So a window notes its program file's size and date when it
-   starts, and Update now is refused, before the download, when the file in the folder is no
-   longer that one. It is a failure like the others, its sentence "The program was already
+   starts, and Update now is refused when the file in the folder is no longer that one: before
+   the download, and once more before the swap, because the other window's update can end
+   while this one downloads. It is a failure like the others, its sentence "The program was already
    replaced while this window was open, most likely by an update from another window. Close
    this window and start the program again to use the new version."
 
