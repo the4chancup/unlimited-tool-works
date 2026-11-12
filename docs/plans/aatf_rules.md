@@ -161,21 +161,31 @@ breaking clause 3, 4 or 2 (5 and 30 distinct ones, 12 teams); neither version's 
 so whether a tool made them or those versions' screens differ is not known, and the check
 does not run there.
 
-Still open before anything is built:
+Looked at in PES 2017 under the stock exe (pad and screen captures, a 4-4-2 changed in one
+starter by a tool for each clause):
 
-- the Game Plan menu's preset list, which is in neither table and was not found in the game's
-  data: each preset picked into a team in game, and the save then run under the clauses
-  (Pending looks);
-- clause 6's distance. No formation in any source comes near its box: two outfield starters
-  within 8 across are never nearer than 5 up or down (PES 2017, 2019 and 2021 saves), and
-  members' formations stack a column at exactly 5 many times over. So the stock screen seems
-  to keep starters further apart than the editor's swap box, which is itself larger near the
-  top of the pitch, where a marker's centre is clamped inside the canvas. As worded the
-  clause warns on nothing a screen can make, which is safe, and on less than it could; the
-  screen's own distance is a look's to find (Pending looks);
-- what the stock screen does with a formation breaking one clause (Pending looks).
+- **The game takes a broken formation as it is.** Team Sheet draws every starter on his stored
+  spot, the LB at x 2 beyond the pitch's line, a CF among the centre-backs and a second LMF
+  alike, and a save written from Edit mode holds every formation byte for byte. Only the keeper
+  is drawn elsewhere: his marker stands on the keeper's spot whatever y is stored, and the
+  stored y stays. So the game refuses nothing and repairs nothing by itself, and a tool-made
+  formation lives on until a member moves that starter.
+- **A drop repairs the starter it moves.** Picked up and released where he stood, the LB at
+  x 2 is stored at x 5, the range's edge; the CF at (52, 10) becomes a CB and the second LMF a
+  CMF, the positions their spots offer. The keeper cannot be picked up at all: the button
+  starts a swap. These are clauses 2, 3 and 4 seen from the screen.
+- **The Game Plan menu's presets pass.** Its Change Formation list holds fifteen formations,
+  the game's own; a pick writes the one set on screen. Each was picked into a team and
+  saved, and none breaks a clause.
+- **The screen's swap box is larger than clause 6's.** A held starter shows the swap sign
+  while he is up to 11 units from another across, and 3 up or down (4 on one side); he drops
+  alone from 12 across or 5 up or down. The clause keeps its 8 by 2 all the same: the game's
+  own formations hold pairs inside the screen's box (two DMFs 9 apart on one line), which no
+  drag made, so the screen's box would warn on formations the game ships. At 8 by 2 it warns
+  on none of them, and on none of the cup's.
 
-Until each is looked at in game under the stock exe, nothing here is built.
+Run under the clauses, the saves those looks kept flag each of the four changed formations
+under the clause it was made to break, and none of the formations a drop repaired.
 
 The check is the `libs/aatf` host's, in Rust beside the checks the host runs around the file's
 logic, never in the logic: the rule is the game's, the same for every cup, and in the logic it

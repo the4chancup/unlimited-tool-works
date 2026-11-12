@@ -15,9 +15,9 @@ is in `AGENTS.md` ("Working documents").
 1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c): its six clauses are set and the game's own
-   formations pass them; the looks in game are running (a SWE-2 sidekick, 2026-11-12), then
-   the slice.
+2. The illegal formation check (0.0.2c): its six clauses are set, the game's own
+   formations pass them and each was looked at in game (2026-11-12); next its Acceptance
+   and the slice.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
    SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
    two slices follow -clip), and -inst, whose
@@ -2176,8 +2176,16 @@ briefs, review loops, gates and mutation runs as for any step.
       PES 2021 saves breaks a clause; PES 2016 and 2019 saves hold 35 distinct breaks
       under PES 2017's tables; the preset list was not found in the game's data, and
       clause 6's box catches nothing anywhere (the plan's "Still open")
-    - [ ] each clause looked at in game under the stock exe, with the presets and clause
-      6's distance (Pending looks)
+    - [x] each clause looked at in game under the stock exe, 2026-11-12 (SWE-2, pad and
+      OBS; `.tmp/0_0_2/formation/ingame/findings.md`, the kept saves under the clauses in
+      `.tmp/0_0_2/formation/census/looks/`): the game draws and saves a broken formation
+      as stored (the keeper drawn on his own spot); a drop repairs the starter it moves;
+      the fifteen presets pass; the screen swaps up to 11 across and 3 or 4 up or down,
+      and clause 6 keeps 8 by 2 because the game's own formations hold pairs inside that
+      box. The Whack Patch's exe is back as `E:/PES2017/PES2017.exe`. Ten other teams of
+      the live cup save break clause 2 or 3 (made under the patch or a tool: what the
+      warning is for)
+    - [ ] the plan's Acceptance, then the slice
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
@@ -2413,15 +2421,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The 0.0.2-poc.5 bundle from a fresh extract (it replaced poc.4): its launchers' upgrade
   and compile, the teams in Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11).
   The Linux bundle 0.0.2-poc.6 beside it has never been started; no PES; maintainer
-- The illegal formation test's clauses under PES 2017's stock exe (`PES2017.exe.old5`), a
-  4-4-2 changed in one starter each time by a tool (the base formation is in section 6 of
-  `.tmp/0_0_2/formation/research/report2.md`): the keeper at (52, 1); the LB at (2, 10); a CF at (52, 10); a second LMF at
-  (14, 30): does Team Sheet show each as stored, move the starter or change his position,
-  and what does the save the game then writes hold. With it: each preset of the Game Plan
-  menu's formation list picked into a team and saved (the saves are then run under the
-  clauses), and how near the stock screen lets one starter be dropped above or beside
-  another before it swaps them (clause 6: the saves show none nearer than 5 up or down in
-  one column); PES 2017; 0.0.2c; harness
 - A team's home stadium id (the u16 at +6) edited by the Save editor shows as that stadium in
   game; PES 2015 and 2016; 0.0.2-st15 (DECISIONS 2026-11-11); harness
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
