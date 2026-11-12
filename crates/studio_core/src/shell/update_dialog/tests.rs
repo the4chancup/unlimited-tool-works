@@ -589,6 +589,52 @@ fn cancel_during_the_download_brings_the_offer_back() {
     assert_eq!(snapshot(&bundle), before, "every file as it was");
 }
 
+/// Release notes of one paragraph, wider than the download's dialog.
+const LONG_NOTES: &str = "Team compiler and Export upgrader: the launchers show warnings and \
+                          errors only, and write the whole report, Info messages included, to \
+                          a log file beside them, so a long run's findings can be read after \
+                          the window is closed.";
+
+// Every stage draws in one modal, whose area keeps the last stage's width:
+// the offer back after the narrower download must be laid out as it first
+// was, not with its notes wrapped to the width the download left.
+// ST-UPD-03
+#[test]
+fn the_offer_back_after_a_cancel_is_laid_out_as_it_first_was() {
+    let (mut shell, _bundle, go_on) = update_shell("dialog_cancel_layout", running_assets(None));
+    shell.app.update_fetch =
+        Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.replace("Fixes and polish.", LONG_NOTES)));
+    let egui_ctx = test_context();
+    // The dialog's left and right ends: its first and last buttons' bounds.
+    let ends = |nodes: &[accesskit::Node]| {
+        ["Update now", "Remind me later"].map(|label| entry(nodes, label).bounds())
+    };
+    let nodes = open_details(&egui_ctx, &mut shell.app);
+    let first = ends(&nodes);
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Update now"));
+    frame_until(&egui_ctx, &mut shell.app, "the download's bar", |_, out| {
+        out.nodes
+            .iter()
+            .any(|node| node.role() == accesskit::Role::ProgressIndicator)
+    });
+    let nodes = idle(&egui_ctx, &mut shell.app, 3).nodes;
+    let cancel = entry(&nodes, "Cancel");
+    let (narrow, wide) = (cancel.bounds().unwrap(), first[1].unwrap());
+    assert!(
+        narrow.x1 < wide.x1,
+        "the premise: the download's dialog ends left of the offer's ({narrow:?} vs {wide:?})"
+    );
+    click(&egui_ctx, &mut shell.app, cancel);
+    drop(go_on);
+    frame_until_text(&egui_ctx, &mut shell.app, SENTENCE);
+    let nodes = idle(&egui_ctx, &mut shell.app, 10).nodes;
+    assert_eq!(
+        ends(&nodes),
+        first,
+        "the offer's buttons stand where they first did"
+    );
+}
+
 // A stray click or key must neither cancel a download nor hide one that runs.
 // ST-UPD-03
 #[test]

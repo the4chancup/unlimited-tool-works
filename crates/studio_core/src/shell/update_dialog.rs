@@ -302,7 +302,14 @@ fn stage_modal(
     dismiss: Option<Click>,
     body: impl FnOnce(&mut egui::Ui) -> Option<Click>,
 ) -> Option<Click> {
-    let modal = modal(ctx, egui::Id::unique("update-available"), title, body);
+    let modal = modal(ctx, egui::Id::unique("update-available"), title, |ui| {
+        // Every stage draws in this one modal, and its area offers a stage the
+        // width the stage before it took: the offer back after the narrower
+        // download would wrap its notes to the download's width. So each
+        // stage wraps at the width egui gives an area opened fresh.
+        ui.set_max_width(ui.spacing().default_area_size.x);
+        body(ui)
+    });
     let dismissed = modal.should_close();
     modal.inner.or(dismiss.filter(|_| dismissed))
 }
