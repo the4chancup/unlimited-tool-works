@@ -43,97 +43,124 @@ The window's opening size and fit, and its scaling under the design width, are b
 width".
 
 **The graphics backend.** On Windows the window draws through Direct3D 12, with OpenGL as the
-fallback where it is missing; Vulkan is not asked for. eframe's wgpu would try Vulkan first, and
-a driver whose Vulkan crashes takes the program down before the window shows, beyond any
-fallback: Intel's HD Graphics 620 driver (31.0.101.2137) faults in `igvk64.dll` while wgpu
-creates its first descriptor pool, on every start (0.0.1's clean-machine check, 2026-11-02),
-where Direct3D 12 and OpenGL start on the same laptop every time. Direct3D 12 is the
-interface Windows 10 and 11 graphics drivers are built and tested against first. The
-`WGPU_BACKEND` variable still picks one (`vulkan`, `dx12`, `gl`), for a member asked to try
+fallback where it is missing; Vulkan is not asked for.
+
+eframe's wgpu would try Vulkan first, and a driver whose Vulkan crashes takes the program down
+before the window shows, beyond any fallback. Intel's HD Graphics 620 driver (31.0.101.2137)
+faults in `igvk64.dll` while wgpu creates its first descriptor pool, on every start (0.0.1's
+clean-machine check, 2026-11-02), where Direct3D 12 and OpenGL start on the same laptop every
+time. Direct3D 12 is the interface Windows 10 and 11 graphics drivers are built and tested
+against first.
+
+The `WGPU_BACKEND` variable still picks one (`vulkan`, `dx12`, `gl`), for a member asked to try
 another. Elsewhere the backends stay wgpu's defaults.
 
 **Window size classes.** The main tools share one window size: switching between them never
 resizes the window. A special tool, one whose use calls for another size, declares its own
 (`StudioTool::window_size`, `None` for the main tools): today only the Music player, compact so
-a streamer places it beside the PES window, its design size set with its view's draft. The
-shell remembers each class's last size and position, across runs as most desktop programs do:
-switching from a tool of one class to a tool of the other restores the other's (its declared
-size, centered, the first time), so a streamer's compact window comes back where they left
-it, and the window opens in the class of the tool it opens on (the last active one,
-ST-RUN-02) at that class's remembered place. A remembered size larger than every monitor
-reopens at the largest monitor's size: eframe's creation clamp
-(`clamp_size_to_monitor_size`, on by default) is kept, so a window stretched over two
-monitors reopens no wider than the largest monitor once one is unplugged (it may still stand
-partly past that monitor's edge; the title-bar check below keeps it within reach). A class never used
-opens at its design size
-(1280 × 780 for the main class, a special tool's declared size), fitted and centered as a
-first start is (`spec/core/gui.md` "The window's size"). A remembered place whose title bar lies on no monitor now (a second monitor
-unplugged) is dropped for the fit, so the window is never opened out of reach. `monitor_size`
-names only the window's own monitor, without its origin, and eframe 0.37 reaches winit's list
-of monitors only once the window exists (`DECISIONS.md`, "eframe 0.37 gives the shell the
-monitor list only once the window exists"), through the frame's window
-(`Frame::winit_window`, then `available_monitors`), so the check runs on the first frame: the
-window is created at the
-remembered place unchecked, and the first frame tests it against every monitor's rectangle, in
-the screen's pixels. A window created off every monitor is out of sight, so its move to the fit
-is not seen as a jump; the exception is a desk whose scales changed with the unplugging (a
-place on a 200% monitor, a 100% primary left), where winit's conversion of the creation
-position with the primary's scale lands the window on a monitor for that one frame, the same
-one-frame correction a mixed-scale desk sees below. The check is one pure function the first frame calls with the window's
-list and the tests call with a list of their own (a function pointer on the shell, the one seam,
-since a test's frame has no window): the title bar, the window's width over the top 32 pixels
-at 100%, scaled by each monitor's own scale (the window's size in pixels once it sits there),
-overlaps that monitor's rectangle; an empty list, a frame with no window to ask, trusts the
-place. Both places are shell state in the
-settings file, `window_main` and `window_special`, each a list of six numbers
-`[x, y, width, height, scale, maximized]`: the outer position in the screen's physical pixels, because a
-point is a different number of pixels on each monitor and Windows and X11 place windows in
-pixels; the inner size in points at zoom 1 (its pixels over the monitor's scale), the size a
-window keeps when the OS moves it to a monitor of another scale, never in the shell's zoomed
-points, which would reopen a window closed under the design width wider by the zoom; and the
-monitor's scale factor when the place was recorded; and whether the window was maximized
-(below). The shell reads the place every frame (the
-last normal one: not minimized, maximized or fullscreen, the rects known, and not the frame
-where a queued zoom lands, which reports its rects at the zoom before it: its inner rect and
-`screen_rect` differ there by a pixel or more, against a rounding error on every other frame),
-writes it when the class is left and when the window closes (`App::on_exit`), and opens the
-window at it: created there (`with_position` with the pixels over the record's scale,
-`with_inner_size`, not centered), and the first frame, the place on a monitor, sends the outer
-position again in its own points, the pixels over the frame's pixels per point, which is a
-no-op where the creation landed right and the correction on a mixed-scale desk, where winit
-converts the creation position with the primary monitor's scale. Not a move from a centered
-creation: eframe shows the window after the first frame's paint and applies that frame's
-viewport commands after the show, so the member would see the jump. Not eframe's own window
-persistence, whose `persistence` feature writes a file of its own outside the data location
-(a portable install keeps everything beside the exe), knows one window size, not two, and
-stores the size in zoomed points. A window closed maximized reopens maximized, as most desktop
-programs do, and its restore button gives back the normal place it had before: the record
-gains a sixth number, 1 when the window was maximized on its last frame that was not minimized
-(a member who minimizes a maximized window and closes it from the taskbar closed it
-maximized), else 0, while its first five stay the last normal frame's place; the window is
-created at that place and maximized (`ViewportBuilder::with_maximized`), so the OS keeps the
-place as the size to restore to; and the first frame, after it sends the position again
-(above), sends the maximize again, on every platform: winit moves a maximized window by
-restoring it first (on Windows `set_outer_position` clears the maximized flag, a
-`ShowWindow(SW_RESTORE)`), and an X11 window manager ignores the maximize asked of the window
-eframe keeps hidden until its first paint (egui-winit's own persistence maximizes after the
-first show for that reason). For a maximized place the position is sent again only when the
-creation can have landed wrong: when the record's scale differs from the primary monitor's
-(the scale winit converts the creation position with) or from the frame's pixels per point
-(the window sits on a monitor of another scale than the record's). Elsewhere the resend moves
-nothing and only restores the shown window and maximizes it again, a faint but visible
-flicker; the maximize is still sent, a no-op on Windows for a
-window already maximized and the needed one on X11. Not the resend skipped for every maximized
-place: on a mixed-scale desk the restore place, and the monitor the window maximizes on, would
-stay wrong; there the window may be seen restoring and maximizing again once. A record of five numbers, written before the sixth existed,
-reads as not maximized. A place the first frame finds on no monitor ends fitted and not
-maximized: the window was created maximized before that check could run, so the first frame
-sends `Maximized(false)` ahead of the fit, a visible jump we accept for a case as rare as an
-unplugged monitor (kept maximized, its restore button would put the window back off every
-monitor). On Wayland, where winit reports
-no window position and ignores a set one, nothing is recorded and the window always opens
-fitted. A special tool's design width is its declared width, and its minimum its
-own.
+a streamer places it beside the PES window, its design size set with its view's draft. A
+special tool's design width is its declared width, and its minimum its own.
+
+The shell remembers each class's last size and position, across runs, as most desktop programs
+do. Switching from a tool of one class to a tool of the other restores the other class's place
+(its declared size, centered, the first time), so a streamer's compact window comes back where
+they left it. The window opens in the class of the tool it opens on (the last active one,
+ST-RUN-02), at that class's remembered place. A class never used opens at its design size
+(1280 × 780 for the main class, a special tool's declared size), fitted and centered as a first
+start is (`spec/core/gui.md` "The window's size").
+
+**A place out of reach.** A remembered size larger than every monitor reopens at the largest
+monitor's size. eframe's creation clamp (`clamp_size_to_monitor_size`, on by default) is kept,
+so a window stretched over two monitors reopens no wider than the largest monitor once one is
+unplugged. The window may still stand partly past that monitor's edge; the title-bar check
+below keeps it within reach.
+
+A remembered place whose title bar lies on no monitor now (a second monitor unplugged) is
+dropped for the fit, so the window is never opened out of reach. The check runs on the first
+frame, because `monitor_size` names only the window's own monitor, without its origin, and
+eframe 0.37 reaches winit's list of monitors only once the window exists (`DECISIONS.md`,
+"eframe 0.37 gives the shell the monitor list only once the window exists"), through the
+frame's window (`Frame::winit_window`, then `available_monitors`). So the window is created at
+the remembered place unchecked, and the first frame tests it against every monitor's
+rectangle, in the screen's pixels.
+
+A window created off every monitor is out of sight, so its move to the fit is not seen as a
+jump. The exception is a desk whose scales changed with the unplugging (a place on a 200%
+monitor, a 100% primary left): there winit's conversion of the creation position with the
+primary's scale lands the window on a monitor for that one frame, the same one-frame correction
+a mixed-scale desk sees below.
+
+The check is one pure function, which the first frame calls with the window's list and the
+tests call with a list of their own (a function pointer on the shell, the one seam, since a
+test's frame has no window). It asks whether the title bar overlaps a monitor's rectangle, the
+title bar being the window's width over the top 32 pixels at 100%, scaled by that monitor's own
+scale (the window's size in pixels once it sits there). An empty list, a frame with no window to
+ask, trusts the place.
+
+**The record.** Both places are shell state in the settings file, `window_main` and
+`window_special`, each a list of six numbers `[x, y, width, height, scale, maximized]`:
+
+- the outer position in the screen's physical pixels, because a point is a different number of
+  pixels on each monitor and Windows and X11 place windows in pixels;
+- the inner size in points at zoom 1 (its pixels over the monitor's scale), the size a window
+  keeps when the OS moves it to a monitor of another scale, never in the shell's zoomed points,
+  which would reopen a window closed under the design width wider by the zoom;
+- the monitor's scale factor when the place was recorded;
+- whether the window was maximized (below).
+
+The shell reads the place every frame, keeping the last normal one: not minimized, maximized or
+fullscreen, the rects known, and not the frame where a queued zoom lands. That frame reports its
+rects at the zoom before it: its inner rect and `screen_rect` differ there by a pixel or more,
+against a rounding error on every other frame.
+
+The shell writes the place when the class is left and when the window closes (`App::on_exit`),
+and opens the window at it:
+
+- the window is created there (`with_position` with the pixels over the record's scale,
+  `with_inner_size`, not centered);
+- the first frame, the place on a monitor, sends the outer position again in its own points,
+  the pixels over the frame's pixels per point. That is a no-op where the creation landed right,
+  and the correction on a mixed-scale desk, where winit converts the creation position with the
+  primary monitor's scale.
+
+Not a move from a centered creation: eframe shows the window after the first frame's paint and
+applies that frame's viewport commands after the show, so the member would see the jump. Not
+eframe's own window persistence either: its `persistence` feature writes a file of its own
+outside the data location (a portable install keeps everything beside the exe), knows one
+window size, not two, and stores the size in zoomed points.
+
+**A maximized window.** A window closed maximized reopens maximized, as most desktop programs
+do, and its restore button gives back the normal place it had before:
+
+- the record gains a sixth number, 1 when the window was maximized on its last frame that was
+  not minimized (a member who minimizes a maximized window and closes it from the taskbar closed
+  it maximized), else 0, while its first five stay the last normal frame's place;
+- the window is created at that place and maximized (`ViewportBuilder::with_maximized`), so the
+  OS keeps the place as the size to restore to;
+- the first frame, after it sends the position again (above), sends the maximize again, on
+  every platform. winit moves a maximized window by restoring it first (on Windows
+  `set_outer_position` clears the maximized flag, a `ShowWindow(SW_RESTORE)`), and an X11
+  window manager ignores the maximize asked of the window eframe keeps hidden until its first
+  paint (egui-winit's own persistence maximizes after the first show for that reason).
+
+For a maximized place the position is sent again only when the creation can have landed wrong,
+that is when the record's scale differs from the primary monitor's (the scale winit converts
+the creation position with) or from the frame's pixels per point (the window sits on a monitor
+of another scale than the record's). Elsewhere the resend moves nothing and only restores the
+shown window and maximizes it again, a faint but visible flicker. The maximize is still sent, a
+no-op on Windows for a window already maximized and the needed one on X11. The resend is not
+skipped for every maximized place, because on a mixed-scale desk the restore place, and the
+monitor the window maximizes on, would stay wrong; there the window may be seen restoring and
+maximizing again once.
+
+A record of five numbers, written before the sixth existed, reads as not maximized. A place the
+first frame finds on no monitor ends fitted and not maximized. The window was created maximized
+before that check could run, so the first frame sends `Maximized(false)` ahead of the fit, a
+visible jump we accept for a case as rare as an unplugged monitor (kept maximized, its restore
+button would put the window back off every monitor).
+
+On Wayland, where winit reports no window position and ignores a set one, nothing is recorded
+and the window always opens fitted.
 
 The shell draws only what is its own. Panels claim space in call order, so the status bar is
 added first to span the full width, the sidebar next, and the central panel, whatever is left,
@@ -188,30 +215,43 @@ Top to bottom:
    points across in the 32-point square the hover fills, the same in both themes since it
    is the cup's mark. The square keeps its place when the sidebar opens, centred in the
    icon cell in the rail and in the opened layer alike, so the hover that opens the layer
-   moves nothing under the pointer. It is two glyphs of the symbols font, the ring at U+F100 and the
-   leaves at U+F101 (private use; each one em across and centred on the line, so the font
-   size is its diameter), drawn on one place in the palette's two clover greens: the font
-   draws it sharp at every scale the UI takes and needs no image decoder, where a picture
-   is one resolution, and the drafts draw the same glyphs from the same file. It replaced
-   the word "4cc" in the accent colour, which stood in for it until the file was found.
-   The logo doubles as the About click target. About is a small popup holding the
-   *detailed* version block — `<app> v1.4.0` (the display name, "Window title"), build kind (release, or `debug` from
-   `cfg!(debug_assertions)`), target triple, data location, selected PES version — with a
-   **Copy** button that puts exactly that block on the clipboard for a bug report, and links to
-   the release page, the repository and the help. No version is shown beside the logo itself: the
-   status bar already shows it 300 px away, and the icon rail has no room for it, so it would be
-   the one element that came and went with the hover.
+   moves nothing under the pointer.
+
+   It is two glyphs of the symbols font, the ring at U+F100 and the leaves at U+F101 (private
+   use; each one em across and centred on the line, so the font size is its diameter), drawn
+   on one place in the palette's two clover greens. The font draws it sharp at every scale the
+   UI takes and needs no image decoder, where a picture is one resolution, and the drafts draw
+   the same glyphs from the same file. It replaced the word "4cc" in the accent colour, which
+   stood in for it until the file was found.
+
+   The logo doubles as the About click target. About is a small popup holding the *detailed*
+   version block:
+
+   - `<app> v1.4.0` (the display name, "Window title");
+   - build kind (release, or `debug` from `cfg!(debug_assertions)`);
+   - target triple;
+   - data location;
+   - selected PES version.
+
+   The popup has a **Copy** button that puts exactly that block on the clipboard for a bug
+   report, and links to the release page, the repository and the help.
+
+   No version is shown beside the logo itself: the status bar already shows it 300 px away, and
+   the icon rail has no room for it, so it would be the one element that came and went with the
+   hover.
 2. **PES version selector** — a *global* setting, not per-tool: the Team compiler targets it, the
    save editor uses it as a selection/default hint (an open save keeps its detected schema), and
-   integrated conversion uses it as the destination format. Compact dropdown: in the rail its
-   year alone (`21`), centred under the logo, with no arrow, the rail's 44 points holding the
-   number alone; in the opened sidebar the full name (`PES 2021`) at the left with the
-   dropdown's arrow. A press on the rail's opens the sidebar at once (the hover delay
-   skipped) and drops the list from the opened selector, so the list always shows the full
-   names; the rail's own list, with two digits, would differ with how soon the press came
-   after the hover. Changing it is blocked with a tooltip while any tool reports a
-   `version_change_blocker` (e.g. a running compilation, or the match tracker holding live memory
-   addresses).
+   integrated conversion uses it as the destination format.
+
+   It is a compact dropdown. In the rail it shows its year alone (`21`), centred under the
+   logo, with no arrow, the rail's 44 points holding the number alone; in the opened sidebar
+   it shows the full name (`PES 2021`) at the left with the dropdown's arrow. A press on the
+   rail's selector opens the sidebar at once (the hover delay skipped) and drops the list from
+   the opened selector, so the list always shows the full names; the rail's own list, with two
+   digits, would differ with how soon the press came after the hover.
+
+   Changing it is blocked with a tooltip while any tool reports a `version_change_blocker` (e.g.
+   a running compilation, or the match tracker holding live memory addresses).
    - **Live exe check**: the selector is colored against the exe actually present in the resolved
      `pes_folder_path` — **red** when the folder exists but holds a `PES20XX.exe` of a *different*
      version (wrong selection or wrong path), **orange** when the folder is missing or holds no PES
@@ -224,66 +264,82 @@ Top to bottom:
      running `PES20XX.exe` processes. **Once per program life**, when a running PES's version
      differs from the selection, the selector switches to it automatically — primarily so the match
      tracker attaches to the right game without ceremony — announced via a status-bar notice.
-     Once-per-life means a user who then switches away is never fought; a manual version change also
-     consumes the auto-switch. If a `version_change_blocker` is active at detection time the switch
-     is deferred until it clears (not consumed). If several PES versions are running, the first
-     detected wins. The switch writes the ordinary persisted setting — the selector always reflects
-     the setting, no shadow session state. The poll also knows the running exe's *path*: when it
-     differs from the resolved `pes_folder_path` (e.g. the selector sits red/orange while the real
-     install runs from elsewhere), the same notice offers a **"Fix PES path"** action that rewrites
-     the PES folder from the running process — strictly opt-in via the notice's button, never
-     applied automatically: the main row, `pes_folder_path`, with the `**` placeholder put back
-     where the folder's own name holds the running version's year (Browse's rule, so the fix
-     keeps working across versions), or, once any version has a folder of its own, the running
-     version's own row, the folder stored as it is (an override row is taken as written;
-     "Settings menu"). The action is offered only
-     when the exe's folder is a folder on this system: under Wine or Proton the probe reports the
-     game's Windows path, which a Linux setting cannot use.
+
+     Once-per-life means a user who then switches away is never fought. A manual version change
+     also consumes the auto-switch. If a `version_change_blocker` is active at detection time
+     the switch is deferred until it clears (not consumed). If several PES versions are running,
+     the first detected wins. The switch writes the ordinary persisted setting — the selector
+     always reflects the setting, no shadow session state.
+
+     The poll also knows the running exe's *path*. When it differs from the resolved
+     `pes_folder_path` (e.g. the selector sits red/orange while the real install runs from
+     elsewhere), the same notice offers a **"Fix PES path"** action that rewrites the PES folder
+     from the running process — strictly opt-in via the notice's button, never applied
+     automatically. It rewrites:
+     - the main row, `pes_folder_path`, with the `**` placeholder put back where the folder's
+       own name holds the running version's year (Browse's rule, so the fix keeps working
+       across versions);
+     - or, once any version has a folder of its own, the running version's own row, the folder
+       stored as it is (an override row is taken as written; "Settings menu").
+
+     The action is offered only when the exe's folder is a folder on this system: under Wine or
+     Proton the probe reports the game's Windows path, which a Linux setting cannot use.
 3. **Tool list** — vertical nav, one entry per tool: its icon at **24 points**, its label in the
    body text beside it once the sidebar opens (item 4), 6 points after the icon's 24-point box
    with 6 points of the row after the longest label (the draft's `.sidebar .tool` gap and
-   `.rail .sel` padding), populated from the registered
-   `StudioTool` list. The rail shows the icons alone, so they are drawn at about twice the body
-   text (12.5) for the rail by itself to tell the tools apart, and at the same size and place in
-   the opened sidebar, so nothing moves when it opens. 24 rather than larger because the rail
-   is 56 points wide and every entry is in it: at 24 the fourteen entries take 459 points
-   of the 756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the
-   logo, the version dropdown, the help and the gear their room; at 32 they would take 571
-   (38-point rows) with 12-point side margins, and a
-   rail that overflows scrolls its entries out of sight. The active tool is highlighted with an
-   accent-colored left border bar plus a filled background, the bar 3 points wide with its two
-   left corners rounded as the entry's (2 points; the draft's `.tool.on` border), the right
-   ones square against the fill. The suite's planned tools not in
-   this build (the registry's, `architecture.md` "Tool plugin interface") are listed after the
-   registered ones, grayed and not clickable, each tooltip saying "Coming soon™" and nothing
-   more: the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
-   (in the 0.0.1 preview the Team compiler and the Export upgrader, whose views come later;
-   `development_plan.md` "Divegrass Before Christmas") is drawn as its planned entry, grayed
-   and not clickable, its tooltip the same "Coming soon™" (its window is what is coming; the
-   command line is the help's to explain, not a tooltip's), and it is never the active tool (a `last_tool` naming it opens the first
+   `.rail .sel` padding), populated from the registered `StudioTool` list.
+
+   The rail shows the icons alone, so they are drawn at about twice the body text (12.5) for
+   the rail by itself to tell the tools apart, and at the same size and place in the opened
+   sidebar, so nothing moves when it opens. 24 rather than larger because the rail is 56
+   points wide and every entry is in it. At 24 the fourteen entries take 459 points of the
+   756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the logo,
+   the version dropdown, the help and the gear their room. At 32 they would take 571 (38-point
+   rows) with 12-point side margins, and a rail that overflows scrolls its entries out of
+   sight.
+
+   The active tool is highlighted with an accent-colored left border bar plus a filled
+   background, the bar 3 points wide with its two left corners rounded as the entry's (2
+   points; the draft's `.tool.on` border), the right ones square against the fill.
+
+   The suite's planned tools not in this build (the registry's, `architecture.md` "Tool plugin
+   interface") are listed after the registered ones, grayed and not clickable, each tooltip
+   saying "Coming soon™" and nothing more: the list communicates the suite roadmap.
+
+   A registered tool the registry marks **CLI-only** (in the 0.0.1 preview the Team compiler
+   and the Export upgrader, whose views come later; `development_plan.md` "Divegrass Before
+   Christmas") is drawn as its planned entry, grayed and not clickable, its tooltip the same
+   "Coming soon™" (its window is what is coming; the command line is the help's to explain,
+   not a tooltip's). It is never the active tool (a `last_tool` naming it opens the first
    window tool). It stays registered for everything else: its CLI commands, its help chapter
-   and its settings section, which the command line reads. The mark is the registry's, in
-   `studio`, not a `StudioTool` method: which tools a build shows is the build's choice, and
-   the preview's list goes when the views land.
+   and its settings section, which the command line reads.
+
+   The mark is the registry's, in `studio`, not a `StudioTool` method: which tools a build
+   shows is the build's choice, and the preview's list goes when the views land.
 4. **A rail that opens on hover** — the sidebar is always an icon-only rail (~56 px) beside the
-   tool's view, which takes the rest of the window. The pointer resting on the rail (a short
-   delay, 100 ms, so a pointer crossing it on its way elsewhere opens nothing; 150 and 120
-   felt slow, and a pointer that enters the rail and turns back out opens it at 120 as at
-   100, so the longer delay buys nothing) opens the full
-   sidebar (the labels, the version dropdown; as wide as the longest label needs on one line,
-   "Player aesthetics editor", since its width costs the view nothing) **over** the tool's left
-   edge, as a
-   floating layer edged by the rail's own 1-point line on its right, without a shadow, never
-   pushing or resizing the view under it; it closes when
-   the pointer leaves it, except while a popup it opened (the version dropdown, the About
-   block) is open. A click on a rail entry switches tools without waiting for the hover, so the
-   rail alone is enough to work with, and keyboard users get the same overlay on focus. While a
-   modal is open (Settings, About, a tool's dialog) the opened sidebar is drawn under the
-   modal's dimmed backdrop and takes no input, as the view does: above the view, below menus
-   and modals (the draft's `#sb-open`). Drawn over the backdrop, its entries would switch tools
-   or open Help behind a dialog that asks for an answer first. There
-   is no collapse button and no expanded state to persist. We overlay rather than reserve the
-   expanded width, because the expanded sidebar is needed only to read a label or pick a
+   tool's view, which takes the rest of the window.
+
+   The pointer resting on the rail opens the full sidebar (the labels, the version dropdown)
+   **over** the tool's left edge, as a floating layer edged by the rail's own 1-point line on
+   its right, without a shadow, never pushing or resizing the view under it.
+   - The hover delay is short, 100 ms, so a pointer crossing the rail on its way elsewhere
+     opens nothing. 150 and 120 felt slow, and a pointer that enters the rail and turns back
+     out opens it at 120 as at 100, so the longer delay buys nothing.
+   - The opened sidebar is as wide as the longest label needs on one line, "Player aesthetics
+     editor", since its width costs the view nothing.
+   - The opened sidebar closes when the pointer leaves it, except while a popup it opened (the
+     version dropdown, the About block) is open.
+
+   A click on a rail entry switches tools without waiting for the hover, so the rail alone is
+   enough to work with, and keyboard users get the same overlay on focus.
+
+   While a modal is open (Settings, About, a tool's dialog) the opened sidebar is drawn under
+   the modal's dimmed backdrop and takes no input, as the view does: above the view, below
+   menus and modals (the draft's `#sb-open`). Drawn over the backdrop, its entries would switch
+   tools or open Help behind a dialog that asks for an answer first.
+
+   There is no collapse button and no expanded state to persist. We overlay rather than reserve
+   the expanded width, because the expanded sidebar is needed only to read a label or pick a
    version, and reserving ~104 more points cost every tool that width all the time (at the
    default window a tab's area grows from 904 to about 1008 points).
 5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points — open the
@@ -299,76 +355,92 @@ The settings menu is assembled from injected sections:
 
 - **Common settings** (defined by `studio_core`): PES version, PES folder path, exports folder path,
   thread count, memory cap, theme, Invert value scrolling ("The wheel over a value"), the
-  update check and its interval, and the FPC hide boots and
-  gloves IDs (`plans/save_editor.md` "Full Player Customization (FPC)": number rows bounded to
-  the stock band, boots 1 to 100 and gloves 11 to 100). The update check's two rows are drawn
-  from 0.0.1, whose updater reads them (`core/distribution.md` "Self-update", step 1). The
-  state the shell writes
-  itself (`last_tool`, `last_update_check`, `skipped_version`) has no row. The PES version row
-  is the sidebar selector's twin: the same blocker, and a pick spends the running-PES
-  auto-switch as the selector's does.
+  update check and its interval, and the FPC hide boots and gloves IDs (`plans/save_editor.md`
+  "Full Player Customization (FPC)": number rows bounded to the stock band, boots 1 to 100 and
+  gloves 11 to 100).
+
+  The update check's two rows are drawn from 0.0.1, whose updater reads them
+  (`core/distribution.md` "Self-update", step 1). The state the shell writes itself
+  (`last_tool`, `last_update_check`, `skipped_version`) has no row. The PES version row is the
+  sidebar selector's twin: the same blocker, and a pick spends the running-PES auto-switch as
+  the selector's does.
 - **One collapsible section per registered tool that has settings**, provided by that tool's
   `settings_view(ui, ctx)` (each tool defines its own settings struct and UI, and writes it
-  through `ctx.set_tool_settings`). A tool has settings when it says it draws a form
-  (`StudioTool::has_settings_view`, false unless the tool overrides it), not when its
-  `default_settings()` table is not empty: the table also holds state the tool writes itself
-  (the Ruleset editor's last folder and recent files, its only keys), so a non-empty table can
-  still draw nothing, and a header over nothing would be a dead end. A tool the
-  registry marks CLI-only has no section either, whatever its table holds: its window is not
-  built, so its section would draw a placeholder or nothing (its table holding only state the
-  tool writes itself), and its keys are edited in the settings file, as the readme says.
+  through `ctx.set_tool_settings`).
+
+  A tool has settings when it says it draws a form (`StudioTool::has_settings_view`, false
+  unless the tool overrides it), not when its `default_settings()` table is not empty: the
+  table also holds state the tool writes itself (the Ruleset editor's last folder and recent
+  files, its only keys), so a non-empty table can still draw nothing, and a header over nothing
+  would be a dead end.
+
+  A tool the registry marks CLI-only has no section either, whatever its table holds: its
+  window is not built, so its section would draw a placeholder or nothing (its table holding
+  only state the tool writes itself), and its keys are edited in the settings file, as the
+  readme says.
 - Opening the settings menu shows the **currently selected tool's section expanded** and all other
   sections collapsed.
 - **No Save or Apply**: a change applies as it is made and saves at the end of the frame. A text
   row (a path, a name) commits when it loses focus or Enter is pressed, not per keystroke: a
-  half-typed folder path would otherwise reach every tool reading it. A path row (the common
-  folders, a tool's file) is that text edit and a Browse button opening `rfd`'s native picker
-  of its kind (a folder, or a file filtered to the type the tool reads), a pick committing at
-  once; `studio_core` owns the row, so every section's path rows commit the same way. A path's
-  edit is wide enough to show a usual install path whole: Steam's `C:\Program Files
+  half-typed folder path would otherwise reach every tool reading it.
+
+  A path row (the common folders, a tool's file) is that text edit and a Browse button opening
+  `rfd`'s native picker of its kind (a folder, or a file filtered to the type the tool reads),
+  a pick committing at once. `studio_core` owns the row, so every section's path rows commit
+  the same way.
+
+  A path's edit is wide enough to show a usual install path whole: Steam's `C:\Program Files
   (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019`, 71 characters, at the body font,
-  so a member reads which folder is set without scrolling inside the box. In egui the edit is 472 points
-  with its 8-point margins (a test measures the path's galley inside the drawn edit at the
-  body font; the draft's box is 440, its 660-point body leaving no room for 472 beside the
-  label and Browse), and the menu is 676 points: the common grid's widest row (its label column, the edit and Browse) needs
-  about 674 since the update check's "Check interval (minutes)" label. A tool section's row sits indented under its header with that tool's own label
-  column, so a section whose labels are long widens the menu while it is open, rather than
-  narrowing its path box below the path.
+  so a member reads which folder is set without scrolling inside the box. In egui the edit is
+  472 points with its 8-point margins (a test measures the path's galley inside the drawn edit
+  at the body font; the draft's box is 440, its 660-point body leaving no room for 472 beside
+  the label and Browse).
+
+  The menu is 676 points: the common grid's widest row (its label column, the edit and Browse)
+  needs about 674 since the update check's "Check interval (minutes)" label. A tool section's
+  row sits indented under its header with that tool's own label column, so a section whose
+  labels are long widens the menu while it is open, rather than narrowing its path box below
+  the path.
 - **The PES folder** is one main row for every version, `pes_folder_path`, whose `**` stands
   for the selected version's two digits (the default on Windows `C:\Program Files (x86)\Pro
-  Evolution Soccer 20**`, empty elsewhere). Its
-  Browse stores a picked folder whose own name holds the selected version's year with that
+  Evolution Soccer 20**`, empty elsewhere).
+
+  Its Browse stores a picked folder whose own name holds the selected version's year with that
   year written `20**` (`D:\Games\Pro Evolution Soccer 2019` becomes `D:\Games\Pro Evolution
-  Soccer 20**`), so the selector keeps switching folders as it does for the default; any other
-  folder is stored as picked, and the row's tooltip says which. It is the rule the
-  running-PES notice's Fix PES path already applies (the year anywhere in the folder's own
-  name), and the Save editor's Set PES path button over its pitch (`plans/save_editor.md`
-  "Tactics editor"), one function all three call, so every way to set the folder stores the
-  same text. The
-  rule is a pure function, tested alone: the native picker cannot be driven headlessly.
+  Soccer 20**`), so the selector keeps switching folders as it does for the default. Any other
+  folder is stored as picked, and the row's tooltip says which. It is the rule the running-PES
+  notice's Fix PES path already applies (the year anywhere in the folder's own name), and the
+  Save editor's Set PES path button over its pitch (`plans/save_editor.md` "Tactics editor"):
+  one function all three call, so every way to set the folder stores the same text. The rule is
+  a pure function, tested alone: the native picker cannot be driven headlessly.
+
   Under it, an **A folder per version** toggle shows one path row per version (PES 2015 to
-  2021), for a member whose installs do not share a pattern: a filled row is that version's
+  2021), for a member whose installs do not share a pattern. A filled row is that version's
   folder, taken as written, overriding the main row, and an empty one falls back to it. The
-  overrides are a `[common.pes_folders]` table keyed by the version's number as
-  `pes_version` stores it (`21 = '…'`), an entry only for a filled row;
-  `CommonSettings::pes_folder`, which every reader calls, resolves the selected version's
-  override first. The toggle is the view's alone, not a setting: it is on while any override
-  exists and cannot be switched off until the rows are emptied, since a hidden override would
-  still apply and hide why a folder is used. Emptying the last row leaves the toggle on, now
-  free to switch off, rather than switching it off with the rows: the rows would vanish under
-  the edit that emptied them. Fix PES path ("Sidebar") writes the running
-  version's own row whenever any override exists (a member who keeps folders per version,
-  whose other versions a rewritten main row would move), the folder as it is, else the main
-  row as before.
+  overrides are a `[common.pes_folders]` table keyed by the version's number as `pes_version`
+  stores it (`21 = '…'`), an entry only for a filled row. `CommonSettings::pes_folder`, which
+  every reader calls, resolves the selected version's override first.
+
+  The toggle is the view's alone, not a setting. It is on while any override exists and cannot
+  be switched off until the rows are emptied, since a hidden override would still apply and
+  hide why a folder is used. Emptying the last row leaves the toggle on, now free to switch
+  off, rather than switching it off with the rows: the rows would vanish under the edit that
+  emptied them.
+
+  Fix PES path ("Sidebar") writes the running version's own row whenever any override exists
+  (a member who keeps folders per version, whose other versions a rewritten main row would
+  move), the folder as it is, else the main row as before.
 - Saving is **best-effort**: if the write fails (typically a portable install unpacked somewhere
   unwritable), the in-memory settings keep working for the session and the shell raises the
   `data_dir_read_only` condition in the status bar — one condition covering settings and the
-  teams list, since both live there. No elevation, no retry prompt. A save edits the file in
-  place (`toml_edit`), changing only the values that changed: until the settings menu exists
-  members edit the file by hand, and a tool switch saving `last_tool` must not drop their
-  comments, blank lines or key order. Where the edit would not read back as the settings (a
-  section written inline turned into a table header) or the file is not TOML, the save writes
-  it fresh: a file the next start could not open costs more than the comments.
+  teams list, since both live there. No elevation, no retry prompt.
+
+  A save edits the file in place (`toml_edit`), changing only the values that changed: until
+  the settings menu exists members edit the file by hand, and a tool switch saving
+  `last_tool` must not drop their comments, blank lines or key order. Where the edit would
+  not read back as the settings (a section written inline turned into a table header) or the
+  file is not TOML, the save writes it fresh: a file the next start could not open costs more
+  than the comments.
 
 ### Help window
 
@@ -387,20 +459,26 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 - **The Messages topic is generated.** Each chapter ends with a "Messages" topic rendered from the
   tool's `messages.rs` catalog — ID, severity, condition, consequence — so it is always complete
   and never hand-maintained; `help()` carries prose only. This is Red's "Message Types" chapter
-  done once, for every tool. The two text cells, *When* and *Effect*, sit in the catalog's row
-  beside the code and its severity, written for members; they start as the spec's catalog
-  table's cells, and that table stays the design record (dispositions, context fields, the
-  why), so the two diverge only by a wording pass. Not a Markdown table in the tool's `help/`
-  folder: the row in `messages.rs` is the one the tests already hold to the codes the tool
-  emits, so a text beside it cannot miss a code or outlive one. A tool lists the shared
-  structure pass's codes it reports (the Export upgrader's) with its own severity and text.
+  done once, for every tool.
+
+  The two text cells, *When* and *Effect*, sit in the catalog's row beside the code and its
+  severity, written for members. They start as the spec's catalog table's cells, and that
+  table stays the design record (dispositions, context fields, the why), so the two diverge
+  only by a wording pass. Not a Markdown table in the tool's `help/` folder: the row in
+  `messages.rs` is the one the tests already hold to the codes the tool emits, so a text
+  beside it cannot miss a code or outlive one.
+
+  A tool lists the shared structure pass's codes it reports (the Export upgrader's) with its
+  own severity and text.
 - **Search.** One text box above the chapter tree, case-insensitive substring over every topic's
   paragraphs and every catalog row; results list as *Chapter › Topic › matching line*, click to
   jump with the hit highlighted. The line is shown as plain text without its Markdown marks
   (`**`, backticks, a list item's leading dash and indent), since a label draws none: a
-  subheading's hit reads "Saving", not "\*\*Saving\*\*". No index and no fuzzy matching: the whole corpus is tens of
-  kilobytes, and a linear scan per keystroke costs nothing. Its first job is the one Red's users
-  did by hand — paste a message ID from the log and find out what it means.
+  subheading's hit reads "Saving", not "\*\*Saving\*\*".
+
+  No index and no fuzzy matching: the whole corpus is tens of kilobytes, and a linear scan per
+  keystroke costs nothing. Its first job is the one Red's users did by hand — paste a message
+  ID from the log and find out what it means.
 - **Opening.** The sidebar's `?` button or F1 opens the window on the **active tool's chapter**
   (as the settings menu opens on the active tool's section). A **message ID in the log panel is a
   link**: clicking it opens the help at that catalog row (`HelpTarget { tool, topic, anchor }`,
@@ -410,63 +488,80 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 - **Window.** An in-app egui window — non-modal and resizable, chapter tree left, rendered topic
   right, the search box above both. The tree is 220 points wide, its padding included (the
   drafts' `.help-tree`), so the longest chapter and topic names (`First run and data
-  location`, `Running from a terminal`) show whole. It first opens at 1000 × 600 points (its
-  whole frame, title bar included), or, each side on its own, at 90% of Studio's window in
-  whole points where that is smaller, centered in it. 1000 holds the tree and the topic's
-  720-point text column (below) with a scroll bar beside it, where 90% of the default 1280 × 800
-  window drew a pane far wider than the text it holds; the 90% cap keeps it inside whatever
-  size Studio's window has (`spec/core/gui.md` "Shell layout", "The window's size"), where a
-  small window would cut off a fixed size. Its position and size hold while the program runs (egui
-  keeps a window's rectangle by its id, across a close and a reopen), not across restarts: a
-  settings field written at every drag's end is a settings save per move for a reader opened
-  now and then. Opening it closes a shell modal (the settings menu, the About popup), which
-  would otherwise cover it. Not a second OS window: egui's multi-viewport support
-  exists, but it adds a class of platform bugs that a text reader does not need (re-checked
-  2026-10-21 at egui 0.37: about 130 open issues mention viewports, among them child windows
-  lost on a macOS Space switch, deferred ones not redrawing on Windows, and focus across
-  windows on Wayland), and no headless test reaches it, since a test draws the embedded
-  fallback. Rendering is
-  `egui_commonmark` (CommonMark subset with tables, code blocks and links); a hand-rolled
-  renderer was considered and rejected as a permanent maintenance item for a solved problem.
-  A topic's paragraphs stand 8 points apart (the drafts' `.help-topic p` margin): the
-  window renders each paragraph on its own, so search can highlight it, and with only egui's
-  3 points of item spacing between them a paragraph break read as a line break.
-  A topic's paragraphs, lists and code blocks wrap at 720 points (about 110 characters at
-  the body size), left in the pane, where the pane's width made a line run about 200
-  characters and the eye lose the next line's start; the Messages table keeps the pane's
-  width (the drafts' `.help-topic` `max-width`).
+  location`, `Running from a terminal`) show whole.
+
+  It first opens at 1000 × 600 points (its whole frame, title bar included), or, each side on
+  its own, at 90% of Studio's window in whole points where that is smaller, centered in it.
+  1000 holds the tree and the topic's 720-point text column (below) with a scroll bar beside
+  it, where 90% of the default 1280 × 800 window drew a pane far wider than the text it holds.
+  The 90% cap keeps it inside whatever size Studio's window has (`spec/core/gui.md` "Shell
+  layout", "The window's size"), where a small window would cut off a fixed size.
+
+  Its position and size hold while the program runs (egui keeps a window's rectangle by its
+  id, across a close and a reopen), not across restarts: a settings field written at every
+  drag's end is a settings save per move for a reader opened now and then. Opening it closes a
+  shell modal (the settings menu, the About popup), which would otherwise cover it.
+
+  Not a second OS window: egui's multi-viewport support exists, but it adds a class of
+  platform bugs that a text reader does not need (re-checked 2026-10-21 at egui 0.37: about
+  130 open issues mention viewports, among them child windows lost on a macOS Space switch,
+  deferred ones not redrawing on Windows, and focus across windows on Wayland), and no
+  headless test reaches it, since a test draws the embedded fallback.
+
+  Rendering is `egui_commonmark` (CommonMark subset with tables, code blocks and links); a
+  hand-rolled renderer was considered and rejected as a permanent maintenance item for a
+  solved problem.
+
+  A topic's paragraphs stand 8 points apart (the drafts' `.help-topic p` margin): the window
+  renders each paragraph on its own, so search can highlight it, and with only egui's 3 points
+  of item spacing between them a paragraph break read as a line break.
+
+  A topic's paragraphs, lists and code blocks wrap at 720 points (about 110 characters at the
+  body size), left in the pane, where the pane's width made a line run about 200 characters
+  and the eye lose the next line's start. The Messages table keeps the pane's width (the
+  drafts' `.help-topic` `max-width`).
 - **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
   `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release
-  process publishes. A chapter prints as `# <title>`, then each topic as `## <title>` and its
-  body, the Messages topic last as one table, so a topic file carries no title of its own and
-  its subheadings start at `###`; `help` alone lists the chapters (id, title, topic
-  slugs), `help <id> messages` prints the Messages topic alone, and the export writes
-  `<id>.md` per chapter. Core chapters have ids of their own (`setting-up`, `first-run`), in
-  the tools' namespace, so `help` is no tool's id. An unknown id or slug is refused with exit
-  code 2, naming the ones that exist.
+  process publishes.
+
+  A chapter prints as `# <title>`, then each topic as `## <title>` and its body, the Messages
+  topic last as one table, so a topic file carries no title of its own and its subheadings
+  start at `###`. `help` alone lists the chapters (id, title, topic slugs),
+  `help <id> messages` prints the Messages topic alone, and the export writes `<id>.md` per
+  chapter.
+
+  Core chapters have ids of their own (`setting-up`, `first-run`), in the tools' namespace, so
+  `help` is no tool's id. An unknown id or slug is refused with exit code 2, naming the ones
+  that exist.
 
 ### Log panel
 
 - Fixed-height region below the toolbar, monospace, colored lines (info/warning/error mapped from
   `PipelineEvent`); its chevron collapses it to its header row and back, and dragging its
-  divider resizes it, the height kept across frames. The divider carries a grip at its middle,
-  a line 24 points long and 2 high, rounded, in the plain text grey (the noninteractive
-  widgets' text colour, the drafts' `--text`, in `.log-divider::after`): egui's resize edge shows only under the pointer, so an open dock gave
-  no sign it could be resized. It lies just inside the dock, its top on the dock's top edge,
-  where the drafts centre it on their 4-point divider: a panel shown after the dock (the
-  view above it) paints over anything drawn above that edge, as egui's own separator line
-  stays inside its panel for the same reason. That frame (header row, chevron, divider and its grip)
-  is the widget's own part, apart from the lines it holds: the Save editor's Live AATF list
-  (`plans/save_editor.md` "Configurable AATF rules") docks in it too.
+  divider resizes it, the height kept across frames.
+
+  The divider carries a grip at its middle, a line 24 points long and 2 high, rounded, in the
+  plain text grey (the noninteractive widgets' text colour, the drafts' `--text`, in
+  `.log-divider::after`): egui's resize edge shows only under the pointer, so an open dock
+  gave no sign it could be resized. The grip lies just inside the dock, its top on the dock's
+  top edge, where the drafts centre it on their 4-point divider: a panel shown after the dock
+  (the view above it) paints over anything drawn above that edge, as egui's own separator
+  line stays inside its panel for the same reason.
+
+  That frame (header row, chevron, divider and its grip) is the widget's own part, apart from
+  the lines it holds: the Save editor's Live AATF list (`plans/save_editor.md` "Configurable
+  AATF rules") docks in it too.
 - **Capped display**: only the last few hundred lines are rendered (egui text rendering is not
   optimized for thousands of lines). Full logs are written to disk (`issues.log`, `suggestions.log`)
   as before.
 - **Auto-scroll with interruption**: sticks to the bottom until the user scrolls up, which pauses
-  auto-scroll and shows a "↓ N new" jump-back indicator. While paused, the panel draws the
-  lines it held when the pause began, and the arrivals are counted, not drawn, until the jump
-  back or a scroll to the bottom: past the cap, a window sliding with each arrival would move
-  the text under the reader at an unchanged scroll offset.
+  auto-scroll and shows a "↓ N new" jump-back indicator.
+
+  While paused, the panel draws the lines it held when the pause began, and the arrivals are
+  counted, not drawn, until the jump back or a scroll to the bottom: past the cap, a window
+  sliding with each arrival would move the text under the reader at an unchanged scroll
+  offset.
 - **No wrapping**: a line longer than the panel scrolls sideways, as the draft's `white-space:
   pre` does; a wrapped line breaks the one-line-per-finding reading.
 - **Filter toggles**: All; Warnings (the warning, error and fatal lines); Errors (the error and
@@ -497,21 +592,26 @@ Each item kind stays in the bar for its lifetime:
 `update_available` carries a Details action, and its text `Update available: v<version>` is in
 the link blue and opens Details too, as the toolbar's unsaved-changes label opens its list: an
 update has to catch the eye without a dialog opening by itself (`plans/core/distribution.md`
-"Self-update"); each condition shows a tooltip and at most one action.
+"Self-update"). Each condition shows a tooltip and at most one action.
 
 More rules that keep it worth the row:
 
 - **A notice is seen, not found.** The notice sits in the middle of the bar and the
   `ToolActivity` of another tool on its right (the spec's table had them the other way round):
   the eye goes to the centre of a row, and the activity is the rarer item, shown only while
-  another tool's view is up. Each notice carries a kind, `NoticeKind::{Success, Info,
-  Warning}`, set by its publisher, and is drawn in that kind's bright colour: success bright
-  green (`theme::SUCCESS_FG`, a file written, a compile done), information the link blue
-  (`Switched to PES 2021`, `Updated to v1.4.0`), a warning the theme's warning orange (`Teams
-  list is read-only`, a switch whose `Fix PES path` action points at a wrong exe). One plain
-  colour for every notice was how a member missed a "Wrote settings.toml" line at the bar's
-  edge; a single green for every notice would paint a warning as a success. What needs a
-  decision now is a dialog, never a notice (next rule).
+  another tool's view is up.
+
+  Each notice carries a kind, `NoticeKind::{Success, Info, Warning}`, set by its publisher,
+  and is drawn in that kind's bright colour:
+
+  - success bright green (`theme::SUCCESS_FG`, a file written, a compile done);
+  - information the link blue (`Switched to PES 2021`, `Updated to v1.4.0`);
+  - a warning the theme's warning orange (`Teams list is read-only`, a switch whose
+    `Fix PES path` action points at a wrong exe).
+
+  One plain colour for every notice was how a member missed a "Wrote settings.toml" line at
+  the bar's edge; a single green for every notice would paint a warning as a success. What
+  needs a decision now is a dialog, never a notice (next rule).
 - **The middle takes what the sides leave.** The left slot (the version and any held conditions) and
   the right one (another tool's activity) are as wide as what they hold, and the notice's middle
   slot gets the rest, its text centred in it and cut with an ellipsis only past that, the whole
@@ -541,19 +641,26 @@ More rules that keep it worth the row:
   a standing notice is about that tool's view, and another tool's view does not show it.
   When it appears (none the frame before, the tool newly active, or the tool returning one
   again) it takes the middle slot as a new notice does, the notice shown before it dropped.
-  While it is shown, a notice published by anyone replaces it and ends it, and the tool is
-  told before it is next asked; a notice published while it is not shown ends nothing. A
-  switch of tool takes it out of the bar without ending it, as a withdrawal does, so a notice
-  published after the switch ends nothing, even within one frame's requests; one published
-  before it, while it was still shown, ends it, and its own tool is told, never the tool
-  switched to (the switching click's own frame may still draw it: the bar is drawn before
-  the sidebar; a tool switched to by a request is first asked the frame after). It never expires by time, since
-  its tool withdraws it, and it never reaches the window title: it is a state of the view,
-  seen when the member looks, where the title keeps an event that happened while the window
-  was unfocused ("Window title"). Polled, not published with a handle the tool asks about:
-  the tool already knows its state every frame, as it does for `activity()`, so rewording
-  and withdrawing need no messages and no id can go stale between a publish and the frame
-  that draws it. It is the GUI's alone: the CLI has no selector to follow.
+
+  While the standing notice is shown, a notice published by anyone replaces it and ends it, and
+  the tool is told before it is next asked; a notice published while it is not shown ends
+  nothing.
+
+  A switch of tool takes the standing notice out of the bar without ending it, as a withdrawal
+  does, so a notice published after the switch ends nothing, even within one frame's requests.
+  One published before the switch, while the standing notice was still shown, ends it, and its
+  own tool is told, never the tool switched to. (The switching click's own frame may still draw
+  it, because the bar is drawn before the sidebar. A tool switched to by a request is first
+  asked the frame after.)
+
+  The standing notice never expires by time, since its tool withdraws it, and it never reaches
+  the window title: it is a state of the view, seen when the member looks, where the title
+  keeps an event that happened while the window was unfocused ("Window title").
+
+  Polled, not published with a handle the tool asks about: the tool already knows its state
+  every frame, as it does for `activity()`, so rewording and withdrawing need no messages and
+  no id can go stale between a publish and the frame that draws it. It is the GUI's alone:
+  the CLI has no selector to follow.
 - **A notice can switch the PES version.** `ActionEffect::SwitchVersion(PesVersion)` makes
   the change a manual pick in the sidebar's selector makes (the same function: the setting
   written, the once-per-life auto-switch spent, the settings saved). While a tool reports a
@@ -565,29 +672,36 @@ More rules that keep it worth the row:
 - **Empty state is static, not blank**: `v1.2.0` in small text — the one always-visible version
   number, the line a user pastes into a bug report (see `distribution.md` "Changelog and version display"),
   then a frameless **Reset window** button in the same small weak text, and nothing else.
+
   Reset window puts the window back to its class's design size (1280 × 780 for the main
   class, a special tool's declared size), fitted to its monitor and centered on it as a first
   start is, a maximized window restored first: one click back from a window dragged half off
   a monitor or stretched over two, where finding the edges to drag is the chore. It changes
-  nothing else, and the remembered place follows as after any resize. The button is drawn
-  only while the window is maximized or its size differs from the active tool's class's
-  design size fitted to the monitor: at that size the click would change nothing a member
-  set out to change, so the bar shows the version alone. Its position does not count, as a
-  window moved at its default size is one the member placed. The data location is not shown: it is a choice made once and on purpose, its one
-  failure mode already has the `data_dir_read_only` condition, and the About block carries it for
-  the rare report that needs it. The row is always present at a fixed height, so a notice never
-  shifts the tool view; auto-hiding was rejected for that reason.
+  nothing else, and the remembered place follows as after any resize.
+
+  The button is drawn only while the window is maximized or its size differs from the active
+  tool's class's design size fitted to the monitor: at that size the click would change
+  nothing a member set out to change, so the bar shows the version alone. The window's
+  position does not count, as a window moved at its default size is one the member placed.
+
+  The data location is not shown: it is a choice made once and on purpose, its one failure
+  mode already has the `data_dir_read_only` condition, and the About block carries it for the
+  rare report that needs it.
+
+  The row is always present at a fixed height, so a notice never shifts the tool view.
+  Auto-hiding was rejected for that reason.
 - **After an update**, the first start of a new version publishes the shell notice `Updated to
   v1.4.0 · [What's new]`, whose action opens the help window at the "What's new" chapter. No
   popup: a notice can be ignored and dismissed; a what's-new dialog is read by nobody who did
   not ask for it.
 - **CLI equivalence:** conditions print once at startup on stderr, notices print on stderr as
-  they occur (stdout is the findings'); the same items, rendered as lines. The CLI writes no
-  settings, so its `data_dir_read_only` comes from a probe at startup: the settings file
-  opened for writing, nothing written, which fails where the file is read-only, as it is in a
-  portable copy on read-only media or in a folder the user may not write. The GUI does not
-  probe: the first save that fails raises the condition, and the next save that succeeds
-  drops it.
+  they occur (stdout is the findings'); the same items, rendered as lines.
+
+  The CLI writes no settings, so its `data_dir_read_only` comes from a probe at startup: the
+  settings file opened for writing, nothing written, which fails where the file is read-only,
+  as it is in a portable copy on read-only media or in a folder the user may not write. The
+  GUI does not probe: the first save that fails raises the condition, and the next save that
+  succeeds drops it.
 
 ### Window title
 
@@ -690,25 +804,31 @@ impl StudioTool for team_compiler::Tool {
 }
 ```
 
-egui repaints only on input, so a run's events wake the GUI themselves: the shell installs a
-wake callback in the `ToolContext` it hands out (`Arc<dyn Fn(Duration) + Send + Sync>`
-calling `egui::Context::request_repaint_after`: GUI-neutral like the match feed's `wake` in
-`architecture.md` "Tool plugin interface", but taking a delay; the feed's own stays `Fn()`,
-since a publish always wants the next frame), and `ToolContext::emit` calls it with no delay
-after each send, on every sink `with_events` makes. The next frame's `tick` then drains the
-event whichever view is drawn, or none while the window is hidden, so a compile behind the Save
-editor's view still ends its activity and updates the window title (ST-TTL-03). A tool's own
-deadlines (the music player's chant and VA timers) go through the same callback, as
-`ToolContext::request_repaint_after(delay)` called from `tick`, which is what keeps them firing
-while another tool is in view. We wake from the context, not from the tool's view
-(`request_repaint_after` while a run is in flight, as the Phase 3 slice does), because a view
-not drawn requests nothing: the run's last events, or a hidden tool's next deadline, would wait
-for unrelated input. A run's end wakes it the same way: its verdict (the exit code, or a
-refusal that emitted no event at all) reaches the view as the last message on the run's own
-channel, sent before the wake, not read from the thread's `JoinHandle`, whose `is_finished`
-can still be false when the frame the last event woke runs (TC-GUI-22). In the CLI the
-callback does nothing. The match feed wakes the GUI the same
-way, on publish.
+egui repaints only on input, so a run's events wake the GUI themselves. The shell installs a
+wake callback in the `ToolContext` it hands out, an `Arc<dyn Fn(Duration) + Send + Sync>`
+calling `egui::Context::request_repaint_after`. It is GUI-neutral like the match feed's `wake`
+in `architecture.md` "Tool plugin interface", but takes a delay; the feed's own stays `Fn()`,
+since a publish always wants the next frame.
+
+`ToolContext::emit` calls the callback with no delay after each send, on every sink
+`with_events` makes. The next frame's `tick` then drains the event whichever view is drawn, or
+none while the window is hidden, so a compile behind the Save editor's view still ends its
+activity and updates the window title (ST-TTL-03).
+
+A tool's own deadlines (the music player's chant and VA timers) go through the same callback,
+as `ToolContext::request_repaint_after(delay)` called from `tick`, which is what keeps them
+firing while another tool is in view.
+
+We wake from the context, not from the tool's view (`request_repaint_after` while a run is in
+flight, as the Phase 3 slice does), because a view not drawn requests nothing: the run's last
+events, or a hidden tool's next deadline, would wait for unrelated input.
+
+A run's end wakes the GUI the same way: its verdict (the exit code, or a refusal that emitted
+no event at all) reaches the view as the last message on the run's own channel, sent before
+the wake, not read from the thread's `JoinHandle`, whose `is_finished` can still be false when
+the frame the last event woke runs (TC-GUI-22).
+
+In the CLI the callback does nothing. The match feed wakes the GUI the same way, on publish.
 
 The grid, log panel, and run strip are all views over the same tool state, updated from the
 same receivers. The stadium compiler view reuses the same grid rendering code with rows =
@@ -731,89 +851,120 @@ stadiums and cells = components.
 The mouse wheel over a closed combo box or a drag value steps its value, as Windows' own
 controls do, which members know from 4ccEditor: wheel up takes the item above or one more,
 wheel down the item below or one less, clamped at the ends (no wrap), one step per notch, by 1
-in the units the box shows. The same goes for a slider, over its rail or the value box
-beside it, and for a sliding toggle of two or three choices (the Tactics styles, Few/Medium/
-Many), where wheel up takes the choice to the right and wheel down the one to the left: right is
-a slider's and a number's "more" (Many), and one direction for every toggle beats a direction per
-meaning that no member can see. A toggle wraps round instead of clamping (up from the rightmost
-takes the leftmost, down from the leftmost the rightmost): clamped, a toggle at an end answers
-only one direction, so a two-choice toggle ignores every notch but one way and a member who
-wheels the other sees nothing happen, where a combo's long list does need its ends to stop a
-fast turn. A checkbox and a row of plain buttons (the
-C/B/A ratings, Left and Right) are not stepped: a checkbox has no order to step along, and a
-button reads as a press, not a value under the pointer. A notch is one line (or page) of a mouse wheel's events, and 50
-points of a touchpad's, which come as a stream of small deltas added up, so a touchpad steps
-once per notch's worth: counting a mouse line in points would not step until the second notch,
-egui's line being 40 points on the desktop. One step a frame at most, the rest of a fast turn
-stepping on the next frames, so each notch is its own undo step in an editor, which seals its
-entry between frames. A notch first takes the keyboard from whatever widget holds it (a text
-field being typed in, a drag value in typing mode, the stepped control itself included) and steps
-two frames later, as a press on another control ends the focused one's gesture in an editor:
-an editor seals only once no widget holds the keyboard, so a notch stepped while a field kept it
-would join the field's undo entry, and every later notch with it. Two frames, not one: a field
-that commits its value on losing the keyboard (the Ruleset editor's tier id, whose typing would
-otherwise carry through another tier's id; egui's drag value commits each keystroke) learns of a
-loss in the middle of a frame only on the next, so its commit lands there, sealed at that
-frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
-and an open combo's list scrolls as a list. The step goes through the control's own change path
-(a combo's selection, a drag value's commit), so it is the edit a click or a typed value makes:
-the same validation, one undo step per notch in an editor, or one per run of notches in one
-that merges a run of steps to one value (`plans/save_editor.md`, the undo bullet). The step takes the wheel's delta, so
-the scroll area around the control does not scroll too. A wheel that began by scrolling a pane
-keeps scrolling it while the pointer sweeps over such controls, until the wheel has rested 500
-ms: a control sees the wheel only by being hovered, so without the rest rule scrolling the
-player view would edit every box that passed under the pointer. One function in `studio_core`'s
-widgets applies it to a control's response, and every combo box and drag value of the suite
-calls it, the shared libs' included (`team_widgets` and `color_tools` depend on `studio_core`):
-a wrapper per widget kind would leave out every control built with egui's own constructor. The
-drafts do the same for every `select` and number input (`docs/prototypes/index.html`, the
-wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
+in the units the box shows.
+
+The same goes for a slider, over its rail or the value box beside it, and for a sliding
+toggle of two or three choices (the Tactics styles, Few/Medium/Many), where wheel up takes the
+choice to the right and wheel down the one to the left: right is a slider's and a number's
+"more" (Many), and one direction for every toggle beats a direction per meaning that no member
+can see.
+
+A toggle wraps round instead of clamping (up from the rightmost takes the leftmost, down from
+the leftmost the rightmost). Clamped, a toggle at an end answers only one direction, so a
+two-choice toggle ignores every notch but one way and a member who wheels the other sees
+nothing happen, where a combo's long list does need its ends to stop a fast turn.
+
+A checkbox and a row of plain buttons (the C/B/A ratings, Left and Right) are not stepped: a
+checkbox has no order to step along, and a button reads as a press, not a value under the
+pointer.
+
+**The notch.** A notch is one line (or page) of a mouse wheel's events, and 50 points of a
+touchpad's. A touchpad's events come as a stream of small deltas added up, so a touchpad steps
+once per notch's worth. A mouse line is not counted in points, because egui's line is 40 points
+on the desktop, so counted in points it would not step until the second notch.
+
+The wheel steps once a frame at most, the rest of a fast turn stepping on the next frames, so
+each notch is its own undo step in an editor, which seals its entry between frames.
+
+**The keyboard first.** A notch first takes the keyboard from whatever widget holds it (a text
+field being typed in, a drag value in typing mode, the stepped control itself included) and
+steps two frames later, as a press on another control ends the focused one's gesture in an
+editor. An editor seals only once no widget holds the keyboard, so a notch stepped while a
+field kept it would join the field's undo entry, and every later notch with it.
+
+Two frames, not one, because a field that commits its value on losing the keyboard learns of a
+loss in the middle of a frame only on the next frame. (Such a field is the Ruleset editor's tier
+id, whose typing would otherwise carry through another tier's id; egui's drag value commits
+each keystroke.) The field's commit lands on that next frame, sealed at that frame's end, and a
+step on the same frame would join it.
+
+**The step.** A disabled control ignores the wheel, and an open combo's list scrolls as a
+list. The step goes through the control's own change path (a combo's selection, a drag
+value's commit), so it is the edit a click or a typed value makes: the same validation, one
+undo step per notch in an editor, or one per run of notches in one that merges a run of steps
+to one value (`plans/save_editor.md`, the undo bullet). The step takes the wheel's delta, so
+the scroll area around the control does not scroll too.
+
+**The rest rule.** A wheel that began by scrolling a pane keeps scrolling it while the pointer
+sweeps over such controls, until the wheel has rested 500 ms: a control sees the wheel only by
+being hovered, so without the rest rule scrolling the player view would edit every box that
+passed under the pointer.
+
+One function in `studio_core`'s widgets applies it to a control's response, and every combo
+box and drag value of the suite calls it, the shared libs' included (`team_widgets` and
+`color_tools` depend on `studio_core`): a wrapper per widget kind would leave out every control
+built with egui's own constructor. The drafts do the same for every
+`select` and number input (`docs/prototypes/index.html`, the wheel listener), so a draft can
+be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
 
 **Invert value scrolling**, a common setting (`invert_value_scrolling`, off by default, a
 checkbox after Theme), turns every step above the other way, in every tool: wheel down takes
 the item above or one more, moves a slider and a toggle to the right, and steps a selector
 forward; wheel up the reverse. Only the direction changes: the notch, the rest rule, the
-clamping and wrapping and the undo steps stay, and a pane scrolls as before. A member whose
-wheel or touchpad scrolls the "natural" way (content follows the fingers) reads wheel down as
-"more"; a direction per control would split the suite, so the setting is one switch. It is
-read where the steps are counted (`wheel_steps`), so no control can miss it.
+clamping and wrapping and the undo steps stay, and a pane scrolls as before.
+
+A member whose wheel or touchpad scrolls the "natural" way (content follows the fingers)
+reads wheel down as "more"; a direction per control would split the suite, so the setting is
+one switch. It is read where the steps are counted (`wheel_steps`), so no control can miss it.
 
 ### No two widgets overlap
 
 A headless test draws every screen of the Save editor at the default pane, on a PES 21 and a
 PES 17 save: the player view with Appearance closed and open, the team view, and every dialog,
 prompt and window the views open (each opened as its own tests open it). It fails when two
-widgets' rectangles intersect. It reads the frame's AccessKit nodes of the widget and label
-roles (those the pane-fit test reads), each at egui's own rectangle for it clipped to what its
-scroll area shows, not at AccessKit's bounds: those are the whole rectangle, so a list row
-laid out past its list's edge, which nobody sees, would collide with the buttons under the
-list. It compares every pair on one egui layer of which neither contains the other: a dialog,
-a window or a popup covers the view by design, and the view under it is still checked on its
-own layer; a node drawn inside another (a lineup row's labels, a marker on the pitch) is part
-of it, not a collision. An intersection counts once it is more than one point deep in both directions, the
-draft tolerance (two rows touching share an edge). An overlap a screen means (a marker's badge
-over the pitch) is listed in the test by role and label, with why, never by position: a
-position would excuse whatever moved there next. Why a test and not the overlay alone: the
-overlay shows a mismatch where a capture of the screen exists and someone looks at it, while a
-collision a later change brings (a longer label, a widened field) shows on no capture until the
-next look, and egui draws a row too wide for its room over its neighbour rather than refusing
-it. Another tool's views join the test when they are built.
+widgets' rectangles intersect.
+
+It reads the frame's AccessKit nodes of the widget and label roles (those the pane-fit test
+reads), each at egui's own rectangle for it clipped to what its scroll area shows, not at
+AccessKit's bounds: those are the whole rectangle, so a list row laid out past its list's
+edge, which nobody sees, would collide with the buttons under the list.
+
+It compares every pair on one egui layer of which neither contains the other:
+
+- a dialog, a window or a popup covers the view by design, and the view under it is still
+  checked on its own layer;
+- a node drawn inside another (a lineup row's labels, a marker on the pitch) is part of it,
+  not a collision.
+
+An intersection counts once it is more than one point deep in both directions, the draft
+tolerance (two rows touching share an edge). An overlap a screen means (a marker's badge over
+the pitch) is listed in the test by role and label, with why, never by position: a position
+would excuse whatever moved there next.
+
+Why a test and not the overlay alone: the overlay shows a mismatch where a capture of the
+screen exists and someone looks at it, while a collision a later change brings (a longer
+label, a widened field) shows on no capture until the next look, and egui draws a row too
+wide for its room over its neighbour rather than refusing it. Another tool's views join the
+test when they are built.
 
 ### Prototypes before implementation
 
 Every tool's GUI, and every new shell element, is drafted first as an interactive web page and
 refined with the maintainer (and shown to the members who asked to help shape it) before any
 egui code is written: a page is quicker to change than a view, and a member can open it without
-building anything. Before a draft is refined with the maintainer, the lead reviews it for
-usability (a step a member repeats, a choice the view could make for them, a dead end after a
-run), each idea a `PROPOSALS.md` entry ruled beside the page: a flow problem shows on a
-page, not in a spec, and moved after implementation it costs a view and its GUI scenarios
-instead of a page edit. The draft then becomes the view's specification, so it uses only the CSS
-and HTML elements the UI crates we plan to use can represent: `egui`/`eframe` and the UI crates
-of the dependency table in `README.md` "External Dependencies" (today `egui_commonmark`,
-`egui_animation`, `egui_extras`, `rfd`), and the shell's icon font. Anything else would promise a screen the
-implementation cannot deliver. An element only an unlisted crate can draw needs that crate added
-to the table first (a new dependency, asked for first):
+building anything.
+
+Before a draft is refined with the maintainer, the lead reviews it for usability (a step a
+member repeats, a choice the view could make for them, a dead end after a run), each idea a
+`PROPOSALS.md` entry ruled beside the page: a flow problem shows on a page, not in a spec, and
+moved after implementation it costs a view and its GUI scenarios instead of a page edit.
+
+The draft then becomes the view's specification, so it uses only the CSS and HTML elements the
+UI crates we plan to use can represent: `egui`/`eframe` and the UI crates of the dependency
+table in `README.md` "External Dependencies" (today `egui_commonmark`, `egui_animation`,
+`egui_extras`, `rfd`), and the shell's icon font. Anything else would promise a screen the
+implementation cannot deliver. An element only an unlisted crate can draw needs that crate
+added to the table first (a new dependency, asked for first):
 
 - **Representable, for example:** egui's widgets (label, button, checkbox, radio button,
   selectable label, combo box, slider, drag value, single- and multi-line text edit, hyperlink,
@@ -833,115 +984,152 @@ to the table first (a new dependency, asked for first):
 - **Look:** one shared stylesheet in Studio's dark theme, so every draft looks like Studio and
   the drafts look like one another, its body text at regular weight (400), not the light weight
   of egui's default font, which reads too thin. Drafts are not reviewed in the light theme,
-  which is second-class. A control the browser would draw itself is drawn as egui draws it,
-  measured in the built window, not left to the browser, whose look is the system's: the
-  checkbox and radio button (a 14-point box or circle on the widget fill, the tick a
-  polyline), the slider, a combo's open list (egui's popup under its button, opened by the
-  draft's own code over the `select`; a click between two of its rows picks the nearer row,
-  as a native list's rows meet, rather than closing the list on nothing), and a scroll bar where the app reserves a band for its
-  floating one (the browser's hidden, the band kept clear). Spacing starts from the theme's
-  the same way: a draft's margins, gaps and paddings are the ones egui draws with the suite's
-  theme (a panel's margin 8, the item spacing 8 across and 3 down, a menu's margin 6 with its
-  entries a control's 18 high), so a view built from the draft needs no override. A draft
-  that wants another value says why in the stylesheet's comment, and the app takes it as one
-  theme or shared widget value, never as a margin each view adds by hand: the drafts first
-  padded a view 12, spaced the toolbar 6 and drew their own menus, which the built views
-  either made up for pane by pane or missed, and both looked equally fine.
+  which is second-class.
+
+  A control the browser would draw itself is drawn as egui draws it, measured in the built
+  window, not left to the browser, whose look is the system's:
+
+  - the checkbox and radio button (a 14-point box or circle on the widget fill, the tick a
+    polyline);
+  - the slider;
+  - a combo's open list (egui's popup under its button, opened by the draft's own code over
+    the `select`; a click between two of its rows picks the nearer row, as a native list's
+    rows meet, rather than closing the list on nothing);
+  - a scroll bar where the app reserves a band for its floating one (the browser's hidden,
+    the band kept clear).
+
+  Spacing starts from the theme's the same way: a draft's margins, gaps and paddings are the
+  ones egui draws with the suite's theme (a panel's margin 8, the item spacing 8 across and 3
+  down, a menu's margin 6 with its entries a control's 18 high), so a view built from the
+  draft needs no override. A draft that wants another value says why in the stylesheet's
+  comment, and the app takes it as one theme or shared widget value, never as a margin each
+  view adds by hand: the drafts first padded a view 12, spaced the toolbar 6 and drew their
+  own menus, which the built views either made up for pane by pane or missed, and both looked
+  equally fine.
 - **Behaviour:** what a control does beyond its look (the wheel stepping a value, a drag, a
   key) is written in the plan with an acceptance scenario, not left to the draft alone: a
   comparison of the built window with the draft sees pixels, so a behaviour only the draft
   shows is lost without anyone noticing.
-- **Fonts:** a draft draws text only in the app's own font files, loaded by `@font-face` from
-  `docs/prototypes/assets/fonts/` in the app's fallback order (the Dark/light theme row in
-  "Other UI components"), naming no system font and no generic family, canvas text included; no bold (egui has no bold face),
-  but for the one text that imitates a game label in a bundled heavier face, the Tactics pitch's
-  formation name (`--font-label`, `FONT_LABEL`: `plans/save_editor.md`, "The formation's name");
-  every line at egui's row height, 1.2 times the font size, set explicitly, since egui rounds
-  the font's `hhea` height (1.17 times the size for Roboto Flex) to whole pixels, 15 at 12.5
-  and 18 at 15, where a browser keeps the fraction (and with Selawik took the Windows metrics,
-  16 at 12.5); and egui's floor under a widget's height, `interact_size.y` (18: a button,
-  combo, drag value, checkbox row or list row), stated as a `min-height`, which the browser's
-  16-point line plus the padding used to supply by accident. A font named but not installed falls back silently: the drafts
-  named Ubuntu, which no machine they were opened on had, and every layout was reviewed and
-  calibrated in Segoe UI. `scripts/drafts/draft_fonts.py` (Chromium's `CSS.getPlatformFontsForNode`
-  over every text node of every page) lists the fonts the drafts really draw in and fails on
-  any other; it runs after every draft edit. Two things are no glyph of the app's: a member's
-  own text (the sample saves' names, ♂ and fullwidth letters), which eframe's system fallback
-  draws in the app too and which the script knows by its characters, and the simulated
-  window's title bar, the OS's in the app, which draws its title in the system's caption font
-  (`--font-os`, Segoe UI) and its caption buttons' glyphs rather than typing them.
+- **Fonts:** in a draft:
+
+  - text is drawn only in the app's own font files, loaded by `@font-face` from
+    `docs/prototypes/assets/fonts/` in the app's fallback order (the Dark/light theme row in
+    "Other UI components"), naming no system font and no generic family, canvas text
+    included;
+  - no bold (egui has no bold face), but for the one text that imitates a game label in a
+    bundled heavier face, the Tactics pitch's formation name (`--font-label`, `FONT_LABEL`:
+    `plans/save_editor.md`, "The formation's name");
+  - every line is at egui's row height, 1.2 times the font size, set explicitly, since egui
+    rounds the font's `hhea` height (1.17 times the size for Roboto Flex) to whole pixels, 15
+    at 12.5 and 18 at 15, where a browser keeps the fraction (and with Selawik took the
+    Windows metrics, 16 at 12.5);
+  - egui's floor under a widget's height, `interact_size.y` (18: a button, combo, drag value,
+    checkbox row or list row), is stated as a `min-height`, which the browser's 16-point line
+    plus the padding used to supply by accident.
+
+  A font named but not installed falls back silently: the drafts named Ubuntu, which no
+  machine they were opened on had, and every layout was reviewed and calibrated in Segoe UI.
+  `scripts/drafts/draft_fonts.py` (Chromium's `CSS.getPlatformFontsForNode` over every text
+  node of every page) lists the fonts the drafts really draw in and fails on any other; it
+  runs after every draft edit.
+
+  Two things are no glyph of the app's: a member's own text (the sample saves' names, ♂ and
+  fullwidth letters), which eframe's system fallback draws in the app too and which the script
+  knows by its characters, and the simulated window's title bar, the OS's in the app, which
+  draws its title in the system's caption font (`--font-os`, Segoe UI) and its caption
+  buttons' glyphs rather than typing them.
 - **Size:** the UI is drawn inside a simulated window of the window's default size ("Shell
   layout": 1280 × 780, fitted to 90% of the browser's `screen` size as Studio fits the
-  monitor; CSS pixels are logical pixels, as egui's points are; every size is the client
-  area's, as the app's are, the drawn title bar and border outside it), on a desktop-colored page,
-  with the draft controls in one column on its left, in sections: the window (a size choice:
-  the default, the smallest default of 1264 × 648, the minimum of 960 × 600, the whole
+  monitor), on a desktop-colored page. CSS pixels are logical pixels, as egui's points are, and
+  every size is the client area's, as the app's are, the drawn title bar and border outside it.
+
+  The draft controls stand in one column on the page's left, in sections: the window (a size
+  choice: the default, the smallest default of 1264 × 648, the minimum of 960 × 600, the whole
   monitor), the shell's controls grouped by surface, then the active tool's. A column rather
   than strips above the window, so the window starts at the page's top at every tool and a
-  tool with many controls does not push it down the page. Narrower
-  than the tool's design width the simulated window scales its content down with the width,
-  as Studio does (`spec/core/gui.md` "Shell layout", "Scaling with the width"), so a narrow size shows what a
-  member sees rather than a layout Studio never draws. Its title bar is the app's on Windows 10
-  as captured (30 points tall, the title in white after a 30-point gap, three 46-point caption
-  buttons with Windows' hover fills), so the window's top reads as the app's does. Like Studio Web's window ("Browser deployment: Studio Web") it resizes
-  from its bottom-right corner and maximizes to the page from its title bar (a button, or a
-  double-click on the bar); it also minimizes to its title bar alone at the desktop's bottom
-  left (Windows' place for a window with no taskbar to go to), Restore bringing it back as it
-  was, and its close asks the tools as the window's close does (the Save editor's unsaved
-  prompt, an upgrade running), then takes the window off the page until a reload: an easter
-  egg, which a draft's walkthrough never needs. The column's window section reads its size live, in pixels and as a
-  share of the monitor, which is how the default size is tuned. A full-page draft in a maximized browser shows room the real window
-  does not have. The frame is the harness, not the UI, like the draft controls; its CSS
-  transform makes the fixed-position menus and dialogs place themselves inside it, as egui's
-  do in the window.
+  tool with many controls does not push it down the page.
+
+  Narrower than the tool's design width the simulated window scales its content down with the
+  width, as Studio does (`spec/core/gui.md` "Shell layout", "Scaling with the width"), so a
+  narrow size shows what a member sees rather than a layout Studio never draws.
+
+  Its title bar is the app's on Windows 10 as captured (30 points tall, the title in white
+  after a 30-point gap, three 46-point caption buttons with Windows' hover fills), so the
+  window's top reads as the app's does. Like Studio Web's window
+  ("Browser deployment: Studio Web") it resizes from its bottom-right corner and maximizes to
+  the page from its title bar (a button, or a double-click on the bar). It also minimizes to
+  its title bar alone at the desktop's bottom left (Windows' place for a window with no taskbar
+  to go to), Restore bringing it back as it was, and its close asks the tools as the window's
+  close does (the Save editor's unsaved prompt, an upgrade running), then takes the window off
+  the page until a reload: an easter egg, which a draft's walkthrough never needs.
+
+  The column's window section reads its size live, in pixels and as a share of the monitor,
+  which is how the default size is tuned. A full-page draft in a maximized browser shows room
+  the real window does not have. The frame is the harness, not the UI, like the draft
+  controls; its CSS transform makes the fixed-position menus and dialogs place themselves
+  inside it, as egui's do in the window.
 
 The drafts are one host page and a page per tool, in `docs/prototypes/`. The host,
-`index.html`, holds what every tool shares, once: the simulated window above (size choice,
-resize, maximize, the size readout), the shell's own elements (the sidebar listing every tool,
-the status bar, the settings menu, the help window, the first-run dialog), the shared
-stylesheet and the drawing helpers. Its sidebar switches the tool view, which draws the picked
-tool's page: `tools/<tool>.js` (`save_editor.js`, `ruleset_editor.js`, `team_compiler.js`,
-`export_upgrader.js`), a script that registers the tool with the host and draws only its view,
-loaded by a `<script>` tag; its images are files under `assets/`. A script, not an HTML page
-the host fetches or frames: a page opened from disk cannot fetch another file, and an iframe
-would hold a tool's menus and dialogs inside the tool area, where egui's span the whole window.
+`index.html`, holds what every tool shares, once:
+
+- the simulated window above (size choice, resize, maximize, the size readout);
+- the shell's own elements (the sidebar listing every tool, the status bar, the settings menu,
+  the help window, the first-run dialog);
+- the shared stylesheet and the drawing helpers.
+
+The host's sidebar switches the tool view, which draws the picked tool's page: `tools/<tool>.js`
+(`save_editor.js`, `ruleset_editor.js`, `team_compiler.js`, `export_upgrader.js`), a script
+that registers the tool with the host and draws only its view, loaded by a `<script>` tag. Its
+images are files under `assets/`.
+
+A script, not an HTML page the host fetches or frames: a page opened from disk cannot fetch
+another file, and an iframe would hold a tool's menus and dialogs inside the tool area, where
+egui's span the whole window.
+
 A tool with a script is listed among the registered tools, as it will be once built; the
 others keep their stub or their grayed name. The view uses the shell as the built one will: the
 sidebar's PES selector is the one it reads, and what it reports in the status bar is a notice,
-with a notice's lifetime. The host opens on the tool its address names (`index.html#save_editor`, the tool script's name),
-so a pointer to one draft is one link.
+with a notice's lifetime. The host opens on the tool its address names
+(`index.html#save_editor`, the tool script's name), so a pointer to one draft is one link.
+
 One host is what keeps the drafts easy to change: the window's size, the sidebar or the theme
 is edited once, not in every draft. Behavior is faked with sample data, never wired to the
-real libs. A draft that must travel as one attachment is bundled by `scripts/drafts/bundle_drafts.py`
-(the host, every tool script and its images inlined into one HTML file); easy prototyping comes
-first, so the bundle is a convenience, not the format. Each tool page is the first step of its view's build: Phase 8's
-list in `development_plan.md` names it ahead of every view, and each tool plan says where its
-draft sits in that tool's build order. A draft is drawn whole, every screen the tool's plan
-describes with sample data, before the first slice of the view is coded; a slice that changes
-what the draft shows changes the draft first, so the draft stays the specification the view
-is checked against.
+real libs. A draft that must travel as one attachment is bundled by
+`scripts/drafts/bundle_drafts.py` (the host, every tool script and its images inlined into one
+HTML file); easy prototyping comes first, so the bundle is a convenience, not the format.
+
+Each tool page is the first step of its view's build: Phase 8's list in `development_plan.md`
+names it ahead of every view, and each tool plan says where its draft sits in that tool's
+build order. A draft is drawn whole, every screen the tool's plan describes with sample data,
+before the first slice of the view is coded; a slice that changes what the draft shows changes
+the draft first, so the draft stays the specification the view is checked against.
 
 **Layout edit.** The host's draft controls carry a "Layout edit" toggle, so the maintainer
 tunes an arrangement by hand instead of describing it. While it is on, every panel a tool
 script names (`data-panel="<name>"`: group boxes, columns, sidebars, bars; never a single
 control) shows an outline, a handle that moves it and a corner that resizes it, and the
-panels' own controls take no input. Each panel is tuned on its own. A moved panel is pinned
-where it was dropped, in window points: no later resize of another panel moves it, and its
-own slot in the layout stays as it was, so the move pushes nothing either. (Not an offset
-from where the layout puts it: a neighbour's resize then dragged the moved panel along,
-2026-10-26.) A resize sets the panel's width and height, and the panels around it that are not
-pinned reflow, as they do in the window; a panel laid out in columns (the stats, the
-positions, a grid of fields) can be narrowed past its columns' width, and then reflows into
-fewer columns rather than stopping at its widest row (a draft aid alone: the built views never
-narrow, `spec/core/gui.md` "Scaling with the width"). "Copy layout" puts one line per changed panel on the clipboard (the
-tool, its screen or tab, the simulated window's size and the browser zoom, and each panel's
-name with its rectangle in window points before and after); the tweaks survive a reload, and
-"Reset" clears them. The string is evidence for the lead, not a layout file: the views lay out
-by width rules (rows picked by width, caps, fixed cells), so the
-lead turns a tweak into width constants and rules in the plan and the code, and reports one no
-rule expresses (an overlap, a panel placed freely) rather than placing it by coordinates.
-Panel names are the readable, stable half of the string: a draft renames a panel only with
-its plan section.
+panels' own controls take no input. Each panel is tuned on its own.
+
+A moved panel is pinned where it was dropped, in window points: no later resize of another
+panel moves it, and its own slot in the layout stays as it was, so the move pushes nothing
+either. (Not an offset from where the layout puts it: a neighbour's resize then dragged the
+moved panel along, 2026-10-26.)
+
+A resize sets the panel's width and height, and the panels around it that are not pinned
+reflow, as they do in the window. A panel laid out in columns (the stats, the positions, a
+grid of fields) can be narrowed past its columns' width, and then reflows into fewer columns
+rather than stopping at its widest row (a draft aid alone: the built views never narrow,
+`spec/core/gui.md` "Scaling with the width").
+
+"Copy layout" puts one line per changed panel on the clipboard (the tool, its screen or tab,
+the simulated window's size and the browser zoom, and each panel's name with its rectangle in
+window points before and after). The tweaks survive a reload, and "Reset" clears them.
+
+The string is evidence for the lead, not a layout file. The views lay out by width rules (rows
+picked by width, caps, fixed cells), so the lead turns a tweak into width constants and rules
+in the plan and the code, and reports one no rule expresses (an overlap, a panel placed
+freely) rather than placing it by coordinates. Panel names are the readable, stable half of
+the string: a draft renames a panel only with its plan section.
 
 **The host's other review aids**, each built once in the host for every tool's draft:
 
@@ -960,11 +1148,10 @@ its plan section.
   (player and team names from the fixture saves and `teams_list.txt`, the longest option of
   each list, the widest numbers), extracted once by a script into `assets/longest.js` (a script
   the host loads with a `<script>` tag, not a JSON file: a page opened from disk cannot fetch
-  one); each
-  tool script draws its texts through a host helper that picks the sample or the longest
-  value. Short sample names hide clipping: a real 26-character name ("3DSMAX HAS STOPPED
-  WORKING") overflowed the Tactics instruction combos at the default window in the built view,
-  where the draft had shown no overflow.
+  one); each tool script draws its texts through a host helper that picks the sample or the
+  longest value. Short sample names hide clipping: a real 26-character name ("3DSMAX HAS
+  STOPPED WORKING") overflowed the Tactics instruction combos at the default window in the
+  built view, where the draft had shown no overflow.
 - **The app's font.** The host loads the font files the app bundles by `@font-face`, at egui's
   sizes, so a text's width in the draft predicts the app's to within hinting; with the
   browser's own font a row that fits in the draft wraps in the app, and a width constant
@@ -979,22 +1166,30 @@ its plan section.
   borders apart, and chasing the last pixel costs code a maintainer then owns); a larger one
   is a mismatch, fixed or ruled. A layout test pinning a draft measure may allow the same.
 - **Draft measure.** `scripts/drafts/draft_compare.py SCREEN` measures a screen open in the built
-  window against its draft (`--modal` one dialog, `--menu` one open toolbar menu): every
-  element named on both sides (the app's through UI
-  Automation, `scripts/drafts/uia_dump.ps1`; the draft's from its DOM in Chromium) is paired by its
-  text, and each pair's largest offset is sorted into the tolerance's bands, over 2 px (a
-  mismatch), 1 to 2 px (accepted only where matching closer costs code, so each is looked at)
-  and within 1 px; a pair whose boxes differ by design (a text's ink against the widget
-  holding it, a collapsing header's button with its arrow) is listed apart, and a checkbox's
-  width is not compared (the draft's label spans its cell). Every text's ink is measured in
-  both windows' captures too, its glyphs' colour and its weight against the screen's others,
-  and a colour or weight apart is listed: a colour reads as weight to the eye, and a box's
-  place says nothing of either (the titles' white against the drafts' grey went unseen until
-  it was measured); a pair of two widgets (a button, an input, a selectable label, a
-  checkbox) is measured for its fill and its text's colour as well, since a button's grey or
-  a selected row's highlight passes every geometry and ink check; the whole table lands in
-  `.tmp/draft_compare/`. A closed menu or a popup
-  shows no elements, so it is measured open, as its own screen.
+  window against its draft (`--modal` one dialog, `--menu` one open toolbar menu).
+
+  Every element named on both sides (the app's through UI Automation,
+  `scripts/drafts/uia_dump.ps1`; the draft's from its DOM in Chromium) is paired by its text,
+  and each pair's largest offset is sorted into the tolerance's bands:
+
+  - over 2 px (a mismatch);
+  - 1 to 2 px (accepted only where matching closer costs code, so each is looked at);
+  - within 1 px.
+
+  A pair whose boxes differ by design (a text's ink against the widget holding it, a
+  collapsing header's button with its arrow) is listed apart, and a checkbox's width is not
+  compared (the draft's label spans its cell).
+
+  Every text's ink is measured in both windows' captures too, its glyphs' colour and its
+  weight against the screen's others, and a colour or weight apart is listed: a colour reads
+  as weight to the eye, and a box's place says nothing of either (the titles' white against
+  the drafts' grey went unseen until it was measured). A pair of two widgets (a button, an
+  input, a selectable label, a checkbox) is measured for its fill and its text's colour as
+  well, since a button's grey or a selected row's highlight passes every geometry and ink
+  check.
+
+  The whole table lands in `.tmp/draft_compare/`. A closed menu or a popup shows no elements,
+  so it is measured open, as its own screen.
 - **Draft shots.** `scripts/drafts/draft_shots.py` captures every screen of every tool (the list from
   the tool scripts' registrations, reached through their links) at the default and the
   smallest default size with Playwright, and lists those whose pixels changed since its last
@@ -1013,21 +1208,30 @@ state (the run wrote nothing of theirs, so nothing is "done"), and the log's las
 run was cancelled, so a later reader of the log does not take a short run for a finished one.
 
 **Closing the window** asks every tool, not only the one in view, and so does every close the
-shell performs itself (the Team compiler's quick-compile close on success included): a tool
-holding unsaved work (the Save editor's edits) reports it through a `StudioTool` hook beside
-`version_change_blocker`, `fn hold_close(&mut self) -> bool` (default `false`): the shell calls
-it in sidebar order until a tool returns `true`, which also opens that tool's prompt in its
-view, and the shell then cancels the close (`ViewportCommand::CancelClose`) and makes that tool
-the active view. The tools after it are not asked, so only one prompt shows at a time. Save or
-discard sends a close request back to the shell (`ToolContext::request_close`, a
+shell performs itself (the Team compiler's quick-compile close on success included).
+
+A tool holding unsaved work (the Save editor's edits) reports it through a `StudioTool` hook
+beside `version_change_blocker`, `fn hold_close(&mut self) -> bool` (default `false`). The
+shell calls it in sidebar order until a tool returns `true`, which also opens that tool's
+prompt in its view, and the shell then cancels the close (`ViewportCommand::CancelClose`) and
+makes that tool the active view. The tools after it are not asked, so only one prompt shows at
+a time.
+
+Save or discard sends a close request back to the shell (`ToolContext::request_close`, a
 `ShellRequest`, as a tool switch is), which closes the window through the same path, asking
-every tool again, so a second tool with unsaved work gets its own prompt in turn; cancel sends
-nothing, which keeps the window and ends the close. A
-close the shell decided alone would drop the edits of a tool whose view was not drawn. A tool
-with a run in flight (a compile, an upgrade) reports it through the same hook, and its prompt
-offers to close once the run has ended, cancelling it first where the tool has a Cancel (the
-Team compiler's, above; an upgrade has none and runs to its end), the close request going back
-when the run ends, or to keep the window: an exit cannot discard the run's staging as a cancel
+every tool again, so a second tool with unsaved work gets its own prompt in turn. Cancel sends
+nothing, which keeps the window and ends the close. A close the shell decided alone would drop
+the edits of a tool whose view was not drawn.
+
+A tool with a run in flight (a compile, an upgrade) reports it through the same hook, and its
+prompt offers two choices:
+
+- to close once the run has ended, cancelling it first where the tool has a Cancel (the Team
+  compiler's, above; an upgrade has none and runs to its end), the close request going back
+  when the run ends;
+- or to keep the window.
+
+The prompt offers these two because an exit cannot discard the run's staging as a cancel
 does, and a run killed while writing leaves a torn output (an upgrade's half-written folder
 then blocks the next run, EU-CLI-05) (ST-RUN-05, ST-RUN-06, TC-GUI-23, EU-GUI-07).
 
@@ -1061,28 +1265,34 @@ Differences from the desktop build:
   `egui::Window` titled with the edition's display name (`<app>` is Limited Tool Works here,
   "Window title") over a plain backdrop, open as the page loads, at the desktop window's default
   size, centered, movable and resizable, with the desktop window's three caption buttons in
-  its title bar, as the drafts' simulated window has them: minimize parks it at the page's
-  bottom left as its title bar alone (Restore brings it back as it was, maximized or not),
-  maximize pins it to the whole page (`fixed_rect`) and restores the earlier rectangle, and
-  close asks the tools as the desktop window's close does (`StudioTool::hold_close`: the
-  unsaved prompts, a run in flight), then ends the session as closing the desktop app does
-  and leaves the backdrop with one small `Reopen LTW` button at the page's centre (the
-  only way the page ever shows it: a page always loads with the window open), which starts a
-  fresh session, the settings kept (they live in the browser's storage, as the desktop's in
-  `settings.toml`). Ending rather than hiding: the prompts that guard the close have already
-  saved or discarded the work, so a window that came back holding it would make the prompt's
-  Discard a lie; and a member who wants it back as it was minimizes instead. The browser tab's
-  own close or reload asks too while a tool would hold the close (the page's `beforeunload`,
-  whose prompt is the browser's generic one, since a page may not draw its own): without it,
-  closing the tab would drop unsaved work with no question, where the window's close asks.
-  One shell function draws
-  into either host: the desktop's root `Ui`, or this window's (`Panel::show` takes any `Ui`
-  since egui 0.34). Not a window manager of one window per tool: on the desktop the system's
-  window manager already does that job and Studio shows one tool at a time, and the page
-  keeps the same one-tool shell. The floating windows (the shell's help and settings, the
-  Save editor's panels) are the egui context's, not Studio's window's, so they float over the
-  whole page rather than inside it, as a second desktop window would; a modal dims the whole
-  page.
+  its title bar, as the drafts' simulated window has them:
+
+  - minimize parks it at the page's bottom left as its title bar alone (Restore brings it
+    back as it was, maximized or not);
+  - maximize pins it to the whole page (`fixed_rect`) and restores the earlier rectangle;
+  - close asks the tools as the desktop window's close does (`StudioTool::hold_close`: the
+    unsaved prompts, a run in flight), then ends the session as closing the desktop app does
+    and leaves the backdrop with one small `Reopen LTW` button at the page's centre (the only
+    way the page ever shows it: a page always loads with the window open), which starts a
+    fresh session, the settings kept (they live in the browser's storage, as the desktop's in
+    `settings.toml`).
+
+  Ending rather than hiding: the prompts that guard the close have already saved or discarded
+  the work, so a window that came back holding it would make the prompt's Discard a lie; and a
+  member who wants it back as it was minimizes instead.
+
+  The browser tab's own close or reload asks too while a tool would hold the close (the page's
+  `beforeunload`, whose prompt is the browser's generic one, since a page may not draw its
+  own): without it, closing the tab would drop unsaved work with no question, where the
+  window's close asks.
+
+  One shell function draws into either host: the desktop's root `Ui`, or this window's
+  (`Panel::show` takes any `Ui` since egui 0.34). Not a window manager of one window per tool:
+  on the desktop the system's window manager already does that job and Studio shows one tool
+  at a time, and the page keeps the same one-tool shell. The floating windows (the shell's
+  help and settings, the Save editor's panels) are the egui context's, not Studio's window's,
+  so they float over the whole page rather than inside it, as a second desktop window would; a
+  modal dims the whole page.
 - **No folder watching**: browsers don't support `notify`. The user picks their exports folder
   manually; a "Rescan" button replaces the automatic watcher.
 - **File access is permission-gated**: the user must grant access to each folder (exports, output,
@@ -1090,12 +1300,13 @@ Differences from the desktop build:
   `showDirectoryPicker` requires a secure context (HTTPS) and is Chromium-only at the time of
   writing; Firefox/Safari users get single-file picking, which covers the cheap tier but not
   folder-based exports.
-- **Pipeline adapters are the real cost**: filesystem access is asynchronous and handle-based;
-  blocking I/O, ordinary threads, and the `Condvar`-based `MemoryBudget` backpressure are not
-  drop-in browser APIs. The pure format/domain logic is reused as-is; `libs/pipeline`'s scheduling
-  and I/O get browser variants. Parallel WASM (`wasm-bindgen-rayon`) needs `SharedArrayBuffer`,
-  which requires the server to send COOP/COEP headers (`Cross-Origin-Opener-Policy: same-origin`,
-  `Cross-Origin-Embedder-Policy: require-corp`). Once built, every pipeline change carries a
+- **Pipeline adapters are the real cost**: filesystem access is asynchronous and handle-based,
+  and blocking I/O, ordinary threads, and the `Condvar`-based `MemoryBudget` backpressure are
+  not drop-in browser APIs. The pure format/domain logic is reused as-is, while
+  `libs/pipeline`'s scheduling and I/O get browser variants. Parallel WASM
+  (`wasm-bindgen-rayon`) needs `SharedArrayBuffer`, which requires the server to send COOP/COEP
+  headers (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy:
+  require-corp`). Once built, every pipeline change carries a
   dual-target tax (`#[cfg(target_arch = "wasm32")]` forks in the scaffolding), which is why this
   tier ships after the desktop pipeline has settled, not alongside it.
 - **Memory ceiling**: `wasm32` addresses at most 4 GB, and browsers typically grant less. Exports
@@ -1107,10 +1318,10 @@ Differences from the desktop build:
   and resident in a `.wasm`. The template accessor (embedded → shadowed by the `templates/` override
   directory) is the single seam: the web build may swap the embedded source for lazy fetches behind
   it if the download size matters.
-- **Transfer size:** a target, not a limit. The first load should stay at
-  a few MB as the browser receives it (brotli or gzip compressed), so a member on an ordinary
-  home connection waits seconds, not minutes; Phase 18 measures it. Past that, the embedded
-  resources are the first thing to fetch lazily (the bullet above).
+- **Transfer size:** a target, not a limit. The first load should stay at a few MB as the
+  browser receives it (brotli or gzip compressed), so a member on an ordinary home connection
+  waits seconds, not minutes. Phase 18 measures it. Past that, the embedded resources are the
+  first thing to fetch lazily (the bullet above).
 - **Native-only features stay unavailable**: live process tracking, Blender/PES launch, elevation,
   and binary self-update. Confirm archive and audio support on the chosen browser target before
   promising desktop parity.
@@ -1132,17 +1343,20 @@ The shell is not a tool, so its scenarios live here, beside the sections they pr
 **Phase 8 scope.** Phase 8 completes the shell the Phase 3 slice started: the sidebar, the
 settings menu, the status bar, the window title, the help window and `UTW help`, the
 log panel widget, the first-run data-location dialog, the `last_tool` reopening, the
-`--gui` autorun and the window's opening size. What a scenario observes is what a frame draws (through the headless harness
-of `studio_core/src/shell/mod.rs`: the frame's AccessKit nodes, a click as press and release
+`--gui` autorun and the window's opening size.
+
+What a scenario observes is what a frame draws (through the headless harness of
+`studio_core/src/shell/mod.rs`: the frame's AccessKit nodes, a click as press and release
 frames, the viewport and output commands a frame emits, a title or a clipboard copy; a color,
-which no AccessKit node carries, is read
-back from the shell state the frame paints from), the settings file, and what the binary
-prints; `manual` marks only what needs a display, a native dialog or a running game. The tools in a
-scenario are stub tools registered with the test's shell unless a real one is named; "the
-settings file" is one under the test's own folder (`AppPaths` pointed there), never the
-developer's. The Team compiler's own toolbar, grid and cancellation are `TC-GUI` scenarios
-(`plans/team_compiler/README.md` "Acceptance"), the Save editor's view `SE-GUI` and the Export
-upgrader's `EU-GUI`.
+which no AccessKit node carries, is read back from the shell state the frame paints from), the
+settings file, and what the binary prints; `manual` marks only what needs a display, a native
+dialog or a running game.
+
+The tools in a scenario are stub tools registered with the test's shell unless a real one is
+named; "the settings file" is one under the test's own folder (`AppPaths` pointed there),
+never the developer's. The Team compiler's own toolbar, grid and cancellation are `TC-GUI`
+scenarios (`plans/team_compiler/README.md` "Acceptance"), the Save editor's view `SE-GUI` and
+the Export upgrader's `EU-GUI`.
 
 **Window** (ST-WIN-01 and ST-WIN-02 are built: `spec/core/gui.md` "Acceptance")
 

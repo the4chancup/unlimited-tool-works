@@ -2,16 +2,16 @@
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-The match tracker (`crates/tools/match_tracker`, tool id `match-tracker`, sidebar
-label "Match tracker" — unlike Rigdio/RigDJ the old name has been out of use for years
-and does not stay in the label) is the successor to **SEN:P-AI**, the live
-match-stats extractor used on stream alongside PES 2017.
+The match tracker (`crates/tools/match_tracker`, tool id `match-tracker`, sidebar label
+"Match tracker") is the successor to **SEN:P-AI**, the live match-stats extractor used on
+stream alongside PES 2017. Unlike Rigdio/RigDJ, the old name has been out of use for years
+and does not stay in the label.
 
 This plan also specifies **`libs/match_feed`**, the small lib crate through which the
-tracker publishes live match events to the rest of the suite — primarily to the
-[Music player](../music_player.md), which uses the feed to run the soundboard
-autonomously (its "Autopilot" section specifies that behavior). Platform context is
-in the [core plan](../core/README.md).
+tracker publishes live match events to the rest of the suite. The events go primarily to the
+[Music player](../music_player.md), which uses the feed to run the soundboard autonomously
+(its "Autopilot" section specifies that behavior). Platform context is in the
+[core plan](../core/README.md).
 
 Unlike every other tool in the suite, the tracker's primary input is not files but the
 **memory of the running game process**. Live tracking is Windows-desktop-only (see
@@ -37,14 +37,16 @@ single-file plan.
 SEN:P-AI (`Tools_4cc/SEN_P-AI`, C++/Qt, v1.2.6) attaches to a running PES 2017,
 locates the in-memory team and stat tables, and turns raw stat changes into a live
 match view: score, reconstructed game clock, an event log (goals, cards, subs), and a
-full per-player stats table. It saves matches, including in-progress manual or timed
-autosaves, as binary `.sen` files and broadcasts events as length-prefixed JSON over a
-named pipe — the protocol Rigdio
-v1.9–v1.10 consumed for automatic event clips, until Rigdio removed its client in
-v1.11 (2020); the 1.3.0 rebuild keeps the pipe and posts the same events to the Rigdio
-fork's local HTTP API. It has not been used on stream in a while, but it is the original
-map of the game's in-memory match structures (the 1.3.0 rebuild's `docs/measurements/` is
-the newer).
+full per-player stats table.
+
+It saves matches, including in-progress manual or timed autosaves, as binary `.sen` files.
+It broadcasts events as length-prefixed JSON over a named pipe, the protocol Rigdio
+v1.9–v1.10 consumed for automatic event clips until Rigdio removed its client in v1.11
+(2020). The 1.3.0 rebuild keeps the pipe and posts the same events to the Rigdio fork's local
+HTTP API.
+
+SEN:P-AI has not been used on stream in a while, but it is the original map of the game's
+in-memory match structures (the 1.3.0 rebuild's `docs/measurements/` is the newer).
 
 | Tool | Role | Location |
 |------|------|----------|
@@ -56,11 +58,13 @@ the newer).
 A community-made unofficial update of SEN:P-AI exists at `Tools_4cc/SEN_P-AI-Unofficial`.
 Below and in this plan's parts, "the fork" without a qualifier means this one; the ATF
 bot author's is "the 1.3.0 rebuild".
-Its quality and stability are not trusted, so it is **not** an architectural reference —
+
+Its quality and stability are not trusted, so it is **not** an architectural reference,
 only a source of reverse-engineered game knowledge to mine and then verify independently.
 The findings below are attributed to it and marked **(unverified)** until confirmed against
-a live game; they are collected in the "Verification" section under Testing. What the fork
-adds over the original, relevant to this plan:
+a live game; they are collected in the "Verification" section under Testing.
+
+What the fork adds over the original, relevant to this plan:
 
 - **Partial PES 2021 profile**: a substantially mapped second game version — different
   process name (`PES2021.exe`, 64-bit), a pointer-chain stat-table locator, an 8500-byte
@@ -104,39 +108,47 @@ rather than porting a supposedly complete generator (see `match_files.md` "Match
 
 **Priority.** The first implementation registers PES 2019, then PES 2021, then the other
 versions, PES 2017 among them (the maintainer's order; "Key decisions", Game versions): the
-cup plays 19 and 21, and both layouts are measured ("Independent measurements"). The
-unofficial fork's PES21 claims (pointer chains, substitution journal, direct clock read)
-stay inactive reference data until verified (see "Verifying source-derived findings"); the
-measured layout registers without them. PES 2017 registers once its own open points are
-closed: bucket 8 of its phase map, the fork's PES17 pointer chain (refuted on the measured
-executable, so the scan-only path stands), and the heatmap viewer over its measured grid
-(see "Game structures"); extra time stays `Phase::Unknown` on every version until recorded
-and gates none of them. Heatmaps ship for a version once its grid is measured (PES 2017 and PES 2021
-are; PES 2019's is not); the new footballbox exporter does not depend on the fork's heatmap
-or PES21 findings.
+cup plays 19 and 21, and both layouts are measured ("Independent measurements").
+
+- The unofficial fork's PES21 claims (pointer chains, substitution journal, direct clock
+  read) stay inactive reference data until verified (see "Verifying source-derived
+  findings"). The measured layout registers without them.
+- PES 2017 registers once its own open points are closed: bucket 8 of its phase map, the
+  fork's PES17 pointer chain (refuted on the measured executable, so the scan-only path
+  stands), and the heatmap viewer over its measured grid (see "Game structures"). Extra time
+  stays `Phase::Unknown` on every version until recorded and gates none of them.
+- Heatmaps ship for a version once its grid is measured (PES 2017 and PES 2021 are; PES
+  2019's is not).
+- The new footballbox exporter does not depend on the fork's heatmap or PES21 findings.
 
 ### Independent measurements (PES 2017, PES 2019 and PES 2021)
 
 A second, unrelated rebuild of SEN:P-AI, [`zocram4cc/SEN_P-AI`](https://github.com/zocram4cc/SEN_P-AI)
 1.3.0, keeps the original's algorithm and adds PES 2019 and PES 2021 as data: a per-version
-layout (`src/GameLayout.cpp`) and a stat catalog per version (`src/catalogs/`). Unlike the
-unofficial fork's claims, every value was measured, and the measurement is written down so
-it can be repeated
+layout (`src/GameLayout.cpp`) and a stat catalog per version (`src/catalogs/`).
+
+Unlike the unofficial fork's claims, every value was measured, and the measurement is written
+down so it can be repeated
 ([`docs/measurements/`](https://github.com/zocram4cc/SEN_P-AI/tree/8b5bc8e/docs/measurements)):
 regions found with a read-only scanner, each offset the same in two matches, each mapped
 stat matched against the game's own Team Stats, Player Ratings or Match Events page in
-both. Its acceptance runs
+both.
+
+Its acceptance runs
 ([`docs/verification/`](https://github.com/zocram4cc/SEN_P-AI/tree/8b5bc8e/docs/verification),
 summary in `SUMMARY.md`) are out-of-sample matches whose events, scores, scorers, cards,
 substitutions and Team Stats totals match the game's screens, and on PES 2017 it reproduces
-the original's events and `.sen` statistics byte for byte. Later matches in fresh game
-launches (`docs/verification/2026-10-11/`), one per version, sampled the stats blocks every
-three seconds against the HUD clock and read the full-time pages: they give the bucket
-boundaries, Player Rating, the heatmap grids' layout on PES 2017 and PES 2021, a check of the
-unofficial fork's PES 2017 pointer chain, and the one layout value that did not survive a
-relaunch, PES 2019's team table offset. The reader only reads: its process handle is
-`PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`. The runs were on one member's cup installs
-under Wine (Linux), against these executables (SHA-256):
+the original's events and `.sen` statistics byte for byte.
+
+Later matches in fresh game launches (`docs/verification/2026-10-11/`), one per version,
+sampled the stats blocks every three seconds against the HUD clock and read the full-time
+pages. They give the bucket boundaries, Player Rating, the heatmap grids' layout on PES 2017
+and PES 2021, a check of the unofficial fork's PES 2017 pointer chain, and the one layout
+value that did not survive a relaunch, PES 2019's team table offset.
+
+The reader only reads: its process handle is `PROCESS_QUERY_INFORMATION | PROCESS_VM_READ`.
+The runs were on one member's cup installs under Wine (Linux), against these executables
+(SHA-256):
 
 | Game | Executable | FileVersion |
 |---|---|---|
@@ -150,17 +162,17 @@ the same PE timestamp and section layout, so the measured addresses are expected
 there; the first live run re-checks them.
 
 What it settles and what it leaves open is recorded per claim under Testing, "Verifying
-source-derived findings"; the measured values are in "Game structures". It reads the stats
+source-derived findings". The measured values are in "Game structures". It reads the stats
 table by scanning only, so the unofficial fork's PES 2021 pointer chains, substitution
 journal and direct clock read stay unverified, and no match reached extra time, so buckets
 6 and 7 are unobserved on every version.
 
 ### Relationship to the old codebase
 
-As with the other tools, SEN:P-AI defines *what* the tracker must do — the memory
-signatures, the event derivation rules, the clock reconstruction — and its structure
-headers (`TeamDataTable.h`, `StatsInfo.cpp`) are reverse-engineering leads for a separately
-documented, independently verified layout specification. It is not an architectural
+As with the other tools, SEN:P-AI defines *what* the tracker must do: the memory
+signatures, the event derivation rules, the clock reconstruction. Its structure headers
+(`TeamDataTable.h`, `StatsInfo.cpp`) are reverse-engineering leads for a separately
+documented, independently verified layout specification. SEN:P-AI is not an architectural
 reference:
 
 - **Qt signal/slot coupling throughout**: the memory reader emits UI strings
@@ -178,7 +190,7 @@ reference:
 
 **Licensing constraint.** Both SEN:P-AI repositories are GPLv3. Unlimited Tool Works uses an
 independent reimplementation based on independently verified factual layouts and observable
-behavior; the legacy source is a reverse-engineering reference, not a code source. Do not
+behavior. The legacy source is a reverse-engineering reference, not a code source. Do not
 copy or adapt the fork's rendering or reducer code. The core plan's future
 project-wide licensing section must reflect the same constraint; this plan does not change
 that file.
@@ -267,10 +279,11 @@ studio match-tracker dump-fixture <out> --duration <seconds>
 
 `watch` doubles as the external integration point: anything that wants live match
 events (overlay scripts, third-party tools) runs this headless tracker session and pipes
-its versioned JSON envelope (wire contract under `match_feed.md` "The match feed") instead of speaking a
-bespoke protocol. `dump-fixture` records only the profile ID, monotonic
-sample timing, and target-table bytes needed for `RawTableSnapshot` fixtures; it excludes
-unrelated process memory.
+its versioned JSON envelope (wire contract under `match_feed.md` "The match feed") instead
+of speaking a bespoke protocol.
+
+`dump-fixture` records only the profile ID, monotonic sample timing, and target-table bytes
+needed for `RawTableSnapshot` fixtures; it excludes unrelated process memory.
 
 ---
 

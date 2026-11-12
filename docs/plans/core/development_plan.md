@@ -8,112 +8,158 @@ What exists of this is in `spec/core/development_plan.md` "Development Plan".
 
 **Releases.** The suite first ships as **0.1.0 at the end of Phase 8** ("Release 0.1.0" below):
 the Team compiler with compile-time aesthetics (written to the savefile through the
-aesthetics patch), the Save editor and the Export upgrader, on
-Windows, with the CPU texture encoder and the native model formats only. Phase 8 is the line
-because it is the first point where the two main tools exist with a GUI, and because its own
-verification (community feedback) needs a distributed build; every later tool replaces a legacy
-tool that keeps working until then. The phases therefore run in the order 1–6, 8, Release 0.1.0,
-7, 9–16: glTF (Phase 7) moves after the release, since no current export carries glTF and it
-depends on the Blender `pes-models` codec outside this workspace. Phase numbers are kept, since
-every pointer names them. Releases stay `0.x` until Phase 16 closes with **1.0.0**; "first
-release" in the plans means 1.0.0, so a "first-release" feature may land after 0.1.0.
+aesthetics patch), the Save editor and the Export upgrader, on Windows, with the CPU texture
+encoder and the native model formats only.
+
+Phase 8 is the line because it is the first point where the two main tools exist with a GUI,
+and because its own verification (community feedback) needs a distributed build. Every later
+tool replaces a legacy tool that keeps working until then.
+
+The phases therefore run in the order 1–6, 8, Release 0.1.0, 7, 9–16. glTF (Phase 7) moves
+after the release, since no current export carries glTF and it depends on the Blender
+`pes-models` codec outside this workspace. Phase numbers are kept, since every pointer names
+them.
+
+Releases stay `0.x` until Phase 16 closes with **1.0.0**. "First release" in the plans means
+1.0.0, so a "first-release" feature may land after 0.1.0.
 
 **`0.x` releases are test releases.** They go to a restricted group of testers, who are told in
-person of every change that reaches them, so everything can still change: no released surface
+person of every change that reaches them, so everything can still change. No released surface
 (export layout, `settings.toml`/`config.toml` keys, CLI flags and exit codes, finding codes) is
 a compatibility contract before 1.0.0, and the maintenance-mode procedure that would hold them
-to one is written for 1.0.0 (Phase 16). What a tester would notice still gets its
-`CHANGELOG.md` line, which is what the personal notice is written from. The help chapters
-beyond the per-view topics, the update check and the teams-list merge, which a wide audience
-needs and a tester told in person does not, ship in Release 0.2.0 or later.
+to one is written for 1.0.0 (Phase 16).
+
+What a tester would notice still gets its `CHANGELOG.md` line, which is what the personal
+notice is written from. The help chapters beyond the per-view topics, the update check and the
+teams-list merge, which a wide audience needs and a tester told in person does not, ship in
+Release 0.2.0 or later.
 
 **What the version number means.** The suite's version is semver-shaped, because Cargo
 requires that shape, the update check compares the release tag with `CARGO_PKG_VERSION` as
 semver (`distribution.md`), and the milestones above are written in it. The meaning is an
 application's, not semver's API contract: nothing compiles against the suite, so there is no
-API for a major number to protect. The major marks an era: 1.0.0 is the feature-complete
-release whose surfaces are contracts, and a later major is for a change of that weight (support
-for a PES generation dropped), so it stays 1 for a long time. The minor is a feature release,
-the patch fixes only. Compatibility is promised per surface instead, each with its own rule:
-the export layout stays readable by every later release (the format the cups rely on is never
-broken; a new layout would arrive through the Export upgrader), the AATF logic carries its own
-version (a change of verdicts is a new logic version, never the same one rewritten), the
-aesthetics patch its allocation scheme version, the Team TOML only ever gains keys (an absent
-key leaves the team's value untouched, so an older file still applies), and the
-settings keys, CLI flags and exit codes, finding codes and `.4ccm` follow the maintenance
-mode's rule from 1.0.0 (a migration or a clear refusal, never a silent reinterpretation). A
-release's number never stands in for one of these: a member reads a surface's own version,
+API for a major number to protect.
+
+- The major marks an era: 1.0.0 is the feature-complete release whose surfaces are contracts,
+  and a later major is for a change of that weight (support for a PES generation dropped), so
+  it stays 1 for a long time.
+- The minor is a feature release.
+- The patch fixes only.
+
+Compatibility is promised per surface instead, each with its own rule:
+
+- the export layout stays readable by every later release (the format the cups rely on is
+  never broken; a new layout would arrive through the Export upgrader);
+- the AATF logic carries its own version (a change of verdicts is a new logic version, never
+  the same one rewritten);
+- the aesthetics patch carries its allocation scheme version;
+- the Team TOML only ever gains keys (an absent key leaves the team's value untouched, so an
+  older file still applies);
+- the settings keys, CLI flags and exit codes, finding codes and `.4ccm` follow the maintenance
+  mode's rule from 1.0.0 (a migration or a clear refusal, never a silent reinterpretation).
+
+A release's number never stands in for one of these: a member reads a surface's own version,
 not the app's, to know whether a file still works. Calendar versions (2026.11) would match the
 cup seasons but drop the milestones the plans are written in.
 
 **Divegrass Before Christmas (DBC).** The invitational (exports due 2026-11-18) is the first
 test ground for the Save editor, which members should have as early as the usual rigor allows,
 to get used to it before the deadline. What matters most there is a working editor whose AATF
-check is rock solid (`libs/aatf`), so after Phase 6 closes the work runs: the DBC ruleset's
-coverage (worklog 20.0d), Phase 8's usability pass (8.4) and its shell, the Save editor's draft
-and view first among Phase 8's tool views, then Phase 8's other views and Release 0.1.0 as
-above. Members get the Save editor as a **preview build, 0.0.1**, cut once its view is done:
-the shell with that tool active, and the Team compiler, the Export upgrader and the Ruleset
-editor, whose views come later, greyed out on the sidebar as the planned tools are. The exe
-embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), DBC7 and VGL27
-among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset` and PES
-2017, DBC's game, as the sidebar's `pes_version`: 0.0.1 is DBC's alone, its testers DBC's
-managers, whose first open shows no version warning (the app's own default stays PES 2019).
-Only the Save editor serves DBC7: the event's aesthetics are compiled with Red, as before, so
-nothing of the Team compiler's output (its CPKs, its aesthetics patch) reaches DBC7's save.
-No rules file rides beside the exe: one in the data folder's `rules/` would list as an
-import, the same ruleset twice in the dropdown, its copy one × from deleted. The settings file
-lives in the bundle's `data/` folder, `data/settings.toml`, which makes the bundle portable
-(`spec/core/distribution.md` "Data location: asked on first run"), so 0.0.1's first start asks
-nothing: the location choice is what a preview's testers lose, against a check that is DBC's
-from the first open. The settings file also carries the Team compiler's
+check is rock solid (`libs/aatf`), so after Phase 6 closes the work runs in this order:
+
+1. the DBC ruleset's coverage (worklog 20.0d);
+2. Phase 8's usability pass (8.4) and its shell;
+3. the Save editor's draft and view, first among Phase 8's tool views;
+4. Phase 8's other views and Release 0.1.0 as above.
+
+Members get the Save editor as a **preview build, 0.0.1**, cut once its view is done: the shell
+with that tool active, and the Team compiler, the Export upgrader and the Ruleset editor, whose
+views come later, greyed out on the sidebar as the planned tools are.
+
+The exe embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), DBC7
+and VGL27 among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset`
+and PES 2017, DBC's game, as the sidebar's `pes_version`. 0.0.1 is DBC's alone, its testers
+DBC's managers, whose first open shows no version warning (the app's own default stays PES
+2019). Only the Save editor serves DBC7: the event's aesthetics are compiled with Red, as
+before, so nothing of the Team compiler's output (its CPKs, its aesthetics patch) reaches
+DBC7's save.
+
+No rules file rides beside the exe: one in the data folder's `rules/` would list as an import,
+the same ruleset twice in the dropdown, its copy one × from deleted.
+
+The settings file lives in the bundle's `data/` folder, `data/settings.toml`, which makes the
+bundle portable (`spec/core/distribution.md` "Data location: asked on first run"), so 0.0.1's
+first start asks nothing: the location choice is what a preview's testers lose, against a
+check that is DBC's from the first open. The settings file also carries the Team compiler's
 `multicpk_mode` and `cpk_name` at their defaults, the two lines VGL's organizer changes in
-0.0.2 (below), so that readme can say which line to edit rather than what to add. It needs from Release 0.1.0's list the Windows
-bundle (`just release`, the `.7z` and its checksum), and from Phase 8's the GUI-subsystem exe
-(`architecture.md` "Windows subsystem": no console window beside the window, ST-RUN-04) with
-the window's diagnostic log (`architecture.md` "Diagnostic logging"), since without a console
-a panic would leave nothing a member could post; nothing else: no updater, since 0.1.0
-replaces it by hand, and no `CHANGELOG.md`, which starts with 0.1.0 (0.0.1's few testers are
-told in person what it holds). We do not shorten the Save editor's phase to meet the date: a
-tool members learn on is one whose behavior they will keep relying on, and a rushed rule check
-that passes a team the organizers' check refuses costs the invitational more than a later tool.
+0.0.2 (below), so that readme can say which line to edit rather than what to add.
+
+From Release 0.1.0's list, 0.0.1 needs the Windows bundle (`just release`, the `.7z` and its
+checksum). From Phase 8's it needs the GUI-subsystem exe (`architecture.md` "Windows
+subsystem": no console window beside the window, ST-RUN-04) with the window's diagnostic log
+(`architecture.md` "Diagnostic logging"), since without a console a panic would leave nothing
+a member could post. It needs nothing else: no updater, since 0.1.0 replaces it by hand, and
+no `CHANGELOG.md`, which starts with 0.1.0 (0.0.1's few testers are told in person what it
+holds).
+
+We do not shorten the Save editor's phase to meet the date: a tool members learn on is one
+whose behavior they will keep relying on, and a rushed rule check that passes a team the
+organizers' check refuses costs the invitational more than a later tool.
+
 The Ruleset editor (Phase 20) ships in 0.0.1 as far as it is built, its sidebar label and
 window title "Ruleset editor (WIP)": opening and saving, the start page and templates, the
-preview, General, Tiers, Custom checks and Summary. Heights, Cards, Universal rules, Specials
-and Suggestions draw their heading and one line saying they cannot be edited yet, that
-Summary shows what they hold and that saving leaves them unchanged; a save keeps them as the
-file held them. Under that line, a link reading "Check out a demo of the planned section
-online" opens the section in the drafts (`docs/prototypes/`, published by GitHub Pages:
+preview, General, Tiers, Custom checks and Summary.
+
+Heights, Cards, Universal rules, Specials and Suggestions draw their heading and one line
+saying they cannot be edited yet, that Summary shows what they hold and that saving leaves
+them unchanged. A save keeps them as the file held them.
+
+Under that line, a link reading "Check out a demo of the planned section online" opens the
+section in the drafts, in the drafts' demo mode. The drafts are `docs/prototypes/`, published
+by GitHub Pages:
 `https://the4chancup.github.io/unlimited-tool-works/prototypes/#ruleset_editor/<section>?demo=1&start=0`,
-`<section>` the drafts' id: `heights`, `cards`, `universal`, `specials`, `suggestions`), in
-the drafts' demo mode: no draft controls, the window at its default size on a page it can be
-moved and resized over (a page smaller than that is the monitor the window is fitted to, as
-the app fits its window to a small one); the tools whose drafts are too early to show (the
-Team compiler, the Export upgrader) are greyed there, "Not in the demo yet", and the title ends
-"(Demo)", so a visitor in the Save editor knows no save is edited. The drafts are not held to these addresses: a section
-renamed there leaves the link opening the tool's first section. A demo link, not nothing, because the drafts of these sections are
-finished but for polish, and seeing one beats reading the Summary; only a section whose draft
-is that far along gets one (the other tools' drafts are not yet). The github.io address, not
-a custom domain, until one is live: the old address redirects to it, and a 0.0.1 build keeps
-its links. Its other forms (the condition and effects editors among them), Randomize
-and its close run after Release 0.1.0. Not the whole tool before the cut: those forms are
-the hardest left, and building them would split the time the check needs. Not left out
-either: what is built has been reviewed, and it lets an organizer change a ruleset's tiers
-and General settings in a window rather than in the rules file's text.
+`<section>` being the drafts' id: `heights`, `cards`, `universal`, `specials`, `suggestions`.
+In the demo mode:
+
+- there are no draft controls;
+- the window is at its default size on a page it can be moved and resized over (a page smaller
+  than that is the monitor the window is fitted to, as the app fits its window to a small
+  one);
+- the tools whose drafts are too early to show (the Team compiler, the Export upgrader) are
+  greyed there, "Not in the demo yet";
+- the title ends "(Demo)", so a visitor in the Save editor knows no save is edited.
+
+The drafts are not held to these addresses: a section renamed there leaves the link opening
+the tool's first section.
+
+A demo link, not nothing, because the drafts of these sections are finished but for polish,
+and seeing one beats reading the Summary. Only a section whose draft is that far along gets
+one (the other tools' drafts are not yet). The github.io address, not a custom domain, until
+one is live: the old address redirects to it, and a 0.0.1 build keeps its links.
+
+The Ruleset editor's other forms (the condition and effects editors among them), Randomize and
+its close run after Release 0.1.0. Not the whole tool before the cut: those forms are the
+hardest left, and building them would split the time the check needs. Not left out either:
+what is built has been reviewed, and it lets an organizer change a ruleset's tiers and General
+settings in a window rather than in the rules file's text.
 
 **The /vg/ League 27 (VGL): preview 0.0.2.** The league starts in late November 2026 on PES
-2019 with FoxDen, and its organizer tests the Team compiler there: managers send their exports
+2019 with FoxDen, and its organizer tests the Team compiler there. Managers send their exports
 in the old format, as for any cup; the maintainer and the organizer upgrade them with the
 Export upgrader, compile them, and fall back to Red if a major issue surfaces. So a second
-preview, 0.0.2, carries those two tools through their CLI. 0.0.1 goes out without them: the
-Save editor reaches DBC's managers before the two tools are tested for the league, and a
-launcher nobody tested for the release has no place in its bundle. Its bundle therefore has
-neither launcher, nor the `exports/` and `old_exports/` folders, nor the readme's VGL section;
-0.0.2 adds them back, as they are written now, with a readme that has the organizer pick PES
-2019. The tools' CLI is in 0.0.1's exe all the same, as every tool's is. They need no view
-for it, and the window stays as above, the two greyed out. The bundle's launchers run the CLI
-in their console window, as Red's own bat runs its CLI, and wait for a key at the end so the
-report can be read:
+preview, 0.0.2, carries those two tools through their CLI.
+
+0.0.1 goes out without them: the Save editor reaches DBC's managers before the two tools are
+tested for the league, and a launcher nobody tested for the release has no place in its
+bundle. Its bundle therefore has neither launcher, nor the `exports/` and `old_exports/`
+folders, nor the readme's VGL section. 0.0.2 adds them back, as they are written now, with a
+readme that has the organizer pick PES 2019.
+
+The tools' CLI is in 0.0.1's exe all the same, as every tool's is. They need no view for it,
+and the window stays as above, the two greyed out.
+
+The bundle's launchers run the CLI in their console window, as Red's own bat runs its CLI, and
+wait for a key at the end so the report can be read:
 
 - `quick_compile.bat` runs `team-compiler compile` over the bundle's `exports/` (through
   `UTW.exe`, "The project's name" below).
@@ -121,58 +167,77 @@ report can be read:
   lands.
 - `quick_upgrade.bat` upgrades every export in the bundle's `old_exports/` (folders, `.zip`,
   `.7z`) into `exports/` against the savefile dropped onto it, then prints how many were
-  upgraded and how many were not. It passes `--legacy-ids` (`plans/export_upgrader.md`
-  "What it does"): the bundle exists for VGL27, whose exports keep the managers' old boots
-  and gloves IDs, and a bat without it would compile the cup on the compiler's own IDs.
-  A team export needs `--savefile` or `--loose` (`spec/export_upgrader.md` "CLI"),
-  and loose mode is an assumption the user opts into, so the bat asks for the save rather than
-  falling back to loose; with no file dropped it says how to drop one and stops. An export
-  already upgraded is refused on a second run, its folder in `exports/` existing (replacing
-  it would lose edits made since), and counted as not upgraded; the bat cannot tell that
-  refusal from another, so the readme tells the member to move upgraded old exports out of
-  `old_exports/`, which an organizer receiving exports over several days needs. The bat goes
-  when the Export upgrader's view lands.
-- Both pass `--log-file` (`architecture.md` "Launch modes"): the window shows the warnings
+  upgraded and how many were not.
+
+  It passes `--legacy-ids` (`plans/export_upgrader.md` "What it does"): the bundle exists for
+  VGL27, whose exports keep the managers' old boots and gloves IDs, and a bat without it would
+  compile the cup on the compiler's own IDs.
+
+  A team export needs `--savefile` or `--loose` (`spec/export_upgrader.md` "CLI"), and loose
+  mode is an assumption the user opts into, so the bat asks for the save rather than falling
+  back to loose. With no file dropped it says how to drop one and stops.
+
+  An export already upgraded is refused on a second run, its folder in `exports/` existing
+  (replacing it would lose edits made since), and counted as not upgraded. The bat cannot tell
+  that refusal from another, so the readme tells the member to move upgraded old exports out of
+  `old_exports/`, which an organizer receiving exports over several days needs.
+
+  The bat goes when the Export upgrader's view lands.
+- Both pass `--log-file` (`architecture.md` "Launch modes"). The window shows the warnings
   and errors alone, and `compile_log.txt` or `upgrade_log.txt` beside the launcher holds the
   whole run, Info findings included, for reading afterwards and for posting when something
   fails. Each launcher deletes its log before its first run, and `quick_upgrade.bat` adds its
   tally line to it. Each ends by saying that Info messages were left out and where the full
   report is.
 
-The organizer's PES 2019 install carries the official DpFileList (an install with another
-list takes it with `team-compiler upgrade-dpfl`, run once from a console in the bundle's
-folder; no launcher runs it, so the readme gives the line), and the league's initial DLC compiles in multi-CPK mode
-(`multicpk_mode` set in the settings file, as the readme shows): the team content fills
-`4cc_41_teams` and the slots after it by size, the bins go to `4cc_08_bins`, and a later
-matchday compiles single-CPK into its `midcup` slot (`spec/team_compiler/pipeline.md`
-"Multi-CPK mode: teams parts"). The defaults stay as they are: the official list is what every
-install is meant to carry, and `dpfilelist_outdated` already names the upgrade.
+The organizer's PES 2019 install carries the official DpFileList. An install with another list
+takes it with `team-compiler upgrade-dpfl`, run once from a console in the bundle's folder; no
+launcher runs it, so the readme gives the line.
+
+The league's initial DLC compiles in multi-CPK mode (`multicpk_mode` set in the settings file,
+as the readme shows): the team content fills `4cc_41_teams` and the slots after it by size, the
+bins go to `4cc_08_bins`, and a later matchday compiles single-CPK into its `midcup` slot
+(`spec/team_compiler/pipeline.md` "Multi-CPK mode: teams parts").
+
+The defaults stay as they are: the official list is what every install is meant to carry, and
+`dpfilelist_outdated` already names the upgrade.
 
 The full-look aesthetics patch (worklog 8.36c) and its in-game check on PES 2019 (8.36d) come
-before 0.0.2, though 8.36 itself is scheduled after 0.0.1: VGL plays on a Fox version, and
-no save is stripped any more, so a compiled player's face, boots and gloves reach the game
-only through the patch (DECISIONS "Every engine carries a player's looks in the savefile
-patch; no stripped saves"); with today's Fox-only patch of motions and names, the game shows
-the official save's record over the compiled look (`savefile_player_not_stripped`). So
-8.36c and 8.36d are the first work after 0.0.1's cut, and once they hold in game on PES 2019
-the organizer gets a proof of concept ahead of 0.0.2: no release (a bundle is fine, as it
-costs little next to the rest), only meant to upgrade and compile a couple of example teams
-and show their players in game, so the league's pipeline is tried on its own install while
-0.0.2's other steps are built. The `<id>.copy` link (8.36c3) waits until after it, since no
-player of the example teams uses a copy id; the Save editor's PES 2019 writes are checked in
-game before it goes out, as the organizer's order below runs the official save through
-them. 0.0.1
-alone could not stand in for it: its compile on PES 2019 shows the save's looks rather than
-the compiled ones, failing on exactly what the league needs. The organizer's order is: the managers' tactical exports (`.ted`) imported into the base save,
-by the Save editor or by PES (whose import leaves the team names to rewrite), making the
-official save; the old exports upgraded against it; the exports compiled; the patch applied to
-the official save, by the compile itself when the save is the configured one or by the Save
-editor's `apply-patch`. The readme's VGL section says two things more: the patch is the last
-write to the official save, since a `.ted` imported after it writes that team's players over
-their looks and needs the patch again, and a later matchday's compile means a new patch and so
-a new official save sent out, not only new CPKs, the looks living in the save; and the
-official save is checked against the built-in VGL 27 ruleset (Live AATF, or the Savefile
-menu's Multi-team AATF) before it goes out.
+before 0.0.2, though 8.36 itself is scheduled after 0.0.1. VGL plays on a Fox version, and no
+save is stripped any more, so a compiled player's face, boots and gloves reach the game only
+through the patch (DECISIONS "Every engine carries a player's looks in the savefile patch; no
+stripped saves"). With today's Fox-only patch of motions and names, the game shows the official
+save's record over the compiled look (`savefile_player_not_stripped`).
+
+So 8.36c and 8.36d are the first work after 0.0.1's cut, and once they hold in game on PES 2019
+the organizer gets a proof of concept ahead of 0.0.2. It is no release (a bundle is fine, as it
+costs little next to the rest), only meant to upgrade and compile a couple of example teams and
+show their players in game, so the league's pipeline is tried on its own install while 0.0.2's
+other steps are built.
+
+The `<id>.copy` link (8.36c3) waits until after the proof of concept, since no player of the
+example teams uses a copy id. The Save editor's PES 2019 writes are checked in game before the
+proof of concept goes out, as the organizer's order below runs the official save through them.
+0.0.1 alone could not stand in for the proof of concept: its compile on PES 2019 shows the
+save's looks rather than the compiled ones, failing on exactly what the league needs.
+
+The organizer's order is:
+
+1. the managers' tactical exports (`.ted`) imported into the base save, by the Save editor or
+   by PES (whose import leaves the team names to rewrite), making the official save;
+2. the old exports upgraded against it;
+3. the exports compiled;
+4. the patch applied to the official save, by the compile itself when the save is the
+   configured one or by the Save editor's `apply-patch`.
+
+The readme's VGL section says two things more:
+
+- The patch is the last write to the official save, since a `.ted` imported after it writes
+  that team's players over their looks and needs the patch again. A later matchday's compile
+  means a new patch and so a new official save sent out, not only new CPKs, because the looks
+  live in the save.
+- The official save is checked against the built-in VGL 27 ruleset (Live AATF, or the Savefile
+  menu's Multi-team AATF) before it goes out.
 
 The console's progress line and run summary (`architecture.md`, ST-CLI-02) come with them,
 pulled forward from Phase 8's progress-grid step: a whole league compiled with nothing on the
@@ -189,12 +254,15 @@ either.
 **The project's name: Unlimited Tool Works.** The suite is Unlimited Tool Works, UTW for
 short, wherever a user sees it: the window title, the About box, the first-run prompt, the
 CLI's `--help` header and its usage examples, the help pages (and their `help --export`
-files), the readme, the log, the executable and the bundle. The name began as the 0.0.1
-preview's codename, meant to give way to "4cc Studio" at 1.0.0, and is the project's own from
-0.0.1 on: the first release fixes the executable's name, the settings folder and the bundle's
-name, which a later rename would have to migrate on every member's machine. The reference
-(Fate/stay night's reality marble, where every sword once seen is traced) is the community's
-own and fits a suite that traces every tool its cups have used. Its spellings:
+files), the readme, the log, the executable and the bundle.
+
+The name began as the 0.0.1 preview's codename, meant to give way to "4cc Studio" at 1.0.0, and
+is the project's own from 0.0.1 on, because the first release fixes the executable's name, the
+settings folder and the bundle's name, which a later rename would have to migrate on every
+member's machine. The reference (Fate/stay night's reality marble, where every sword once seen
+is traced) is the community's own and fits a suite that traces every tool its cups have used.
+
+Its spellings:
 
 - **`Unlimited Tool Works`**, the display name: the window title, the About box, the log's
   first line, the exe's version details, and a written CPK's `Tvers` field
@@ -215,74 +283,86 @@ own and fits a suite that traces every tool its cups have used. Its spellings:
 
 Nothing is read under the old names (`4cc-studio`, `4cc_studio/shared_ids/`,
 `studio_version`): no release wrote them, 0.0.1 being the first, and the maintainer's test
-installs are compiled again. The code reads the display name and the executable's from two
-constants in `studio_core`. The help pages, the launchers, the readme and `studio`'s build
-script spell them as text, since a Markdown page, a batch file and a build script cannot read
-a Rust constant; a test over the `help --export` files and the CLI's `--help` output fails on
-any "4cc Studio", `4cc-studio`, `UnlimitedToolWorks` or bare "Studio" left. Text a file
-format keeps names no product at all (a ruleset file's header and its logic banner, the
-shared-IDs file's comment: "written by the Ruleset editor", "by the Team compiler"; the
-aesthetics patch's `tool_version` key, `studio_version` until the rename): the logic banner is
+installs are compiled again.
+
+The code reads the display name and the executable's from two constants in `studio_core`. The
+help pages, the launchers, the readme and `studio`'s build script spell them as text, since a
+Markdown page, a batch file and a build script cannot read a Rust constant. A test over the
+`help --export` files and the CLI's `--help` output fails on any "4cc Studio", `4cc-studio`,
+`UnlimitedToolWorks` or bare "Studio" left.
+
+Text a file format keeps names no product at all (a ruleset file's header and its logic banner,
+the shared-IDs file's comment: "written by the Ruleset editor", "by the Team compiler"; the
+aesthetics patch's `tool_version` key, `studio_version` until the rename). The logic banner is
 hashed into the ruleset's identity, and a product's name in a format ties every file to it.
 
 **The browser edition's name: Limited Tool Works.** The browser build (`gui.md` "Browser
 deployment: Studio Web", Studio Web its codename) is Limited Tool Works, LTW for short,
 wherever a user sees it: its window title, its About box, its page's title. The About box
 alone adds that it is the lite browser edition of Unlimited Tool Works: wherever the page is
-linked for members says so already, so the app does not repeat it elsewhere. "Limited" is a
-joke on the suite's name the community has made before, and it says what a name must say
-here: the edition does less than the desktop one (the Match tracker cannot read a game's
-memory from a browser, and multi-team compiles stay the desktop's), so nobody comes to it
-expecting the desktop's features. Not "Unlimited Tool Works Online": "Online" says where it
+linked for members says so already, so the app does not repeat it elsewhere.
+
+"Limited" is a joke on the suite's name the community has made before, and it says what a
+name must say here: the edition does less than the desktop one (the Match tracker cannot read
+a game's memory from a browser, and multi-team compiles stay the desktop's), so nobody comes to
+it expecting the desktop's features. Not "Unlimited Tool Works Online": "Online" says where it
 runs, not that it does less, and suggests that files are uploaded, where the edition works on
 the member's own files and sends none anywhere.
 
-What users never see keeps the working name, Studio, as the project's codename for good:
-the crates `studio_core` and `studio`, their types (`StudioApp`, `StudioTool`) and the
-developers' environment variables (`STUDIO_*`); the local checkout's folder (`4cc-studio`)
-keeps it until 1.0.0. A rename would buy a member nothing (the exe, the data folder, the
-logs and the bundle already carry the product's names) and would touch the crate names'
-268 lines in 129 files, colliding with every slice in flight. The repository is
-`the4chancup/unlimited-tool-works` (GitHub redirects the old `4cc-studio` address), and
-`Cargo.toml`'s `repository` names it. The docs spell the product's names where they
-name what a member sees (the titles, the CLI's examples, the folders, the log); in their prose
-and the code's comments "Studio", the working name, stays the suite's shorthand, as the crates
-carry it, and the glossary says so. Rewriting the prose's ~250 "Studio" (the Studio format, a
-Studio export) would buy a member nothing and set the docs apart from the code they describe.
+What users never see keeps the working name, Studio, as the project's codename for good: the
+crates `studio_core` and `studio`, their types (`StudioApp`, `StudioTool`) and the developers'
+environment variables (`STUDIO_*`). The local checkout's folder (`4cc-studio`) keeps it until
+1.0.0. A rename would buy a member nothing (the exe, the data folder, the logs and the bundle
+already carry the product's names) and would touch the crate names' 268 lines in 129 files,
+colliding with every slice in flight.
 
-**The icon** goes with the name: Archer, the reality marble's caster, from the
-maintainer's picture, on a transparent background: the whole picture at 32 pixels and up, and
-at 24 and 16 a tighter square on the head, above the outfit, so the smallest sizes show the
-face alone. Three files under `resources/icon/` carry it:
+The repository is `the4chancup/unlimited-tool-works` (GitHub redirects the old `4cc-studio`
+address), and `Cargo.toml`'s `repository` names it.
+
+The docs spell the product's names where they name what a member sees (the titles, the CLI's
+examples, the folders, the log). In their prose and the code's comments "Studio", the working
+name, stays the suite's shorthand, as the crates carry it, and the glossary says so. Rewriting
+the prose's ~250 "Studio" (the Studio format, a Studio export) would buy a member nothing and
+set the docs apart from the code they describe.
+
+**The icon** goes with the name: Archer, the reality marble's caster, from the maintainer's
+picture, on a transparent background. The whole picture shows at 32 pixels and up, and at 24
+and 16 a tighter square on the head, above the outfit, so the smallest sizes show the face
+alone. Three files under `resources/icon/` carry it:
 - `icon.ico`, the six sizes (16, 24 tight; 32, 48, 64, 256 whole), the executable's file icon
   (Explorer, a shortcut, the bundle's exe before it runs). Windows draws only what an exe's
   resources hold there, so `studio`'s build script compiles it in on Windows with
-  `winresource`, a build dependency, which calls the Windows SDK's `rc.exe`. Its resource
-  also carries the exe's version details, whose file description is the name Task Manager
-  lists the running program under and whose product name Explorer's Details tab shows: both
-  say Unlimited Tool Works, not `winresource`'s default, the package's name `studio`. The
-  build script spells the name as text, like the launchers, since it runs before any
-  crate's constant exists.
+  `winresource`, a build dependency, which calls the Windows SDK's `rc.exe`.
+
+  Its resource also carries the exe's version details. Their file description is the name
+  Task Manager lists the running program under, and their product name is what Explorer's
+  Details tab shows. Both say Unlimited Tool Works, not `winresource`'s default, the package's
+  name `studio`. The build script spells the name as text, like the launchers, since it runs
+  before any crate's constant exists.
 - `small.png`, the tight crop at 64 pixels: the window's icon on Windows
-  (`eframe::icon_data::from_png_bytes`). eframe makes both of the window's icons from this
-  one image, resized: the small one (`ICON_SMALL`: the title bar, 16 pixels at 100% scaling,
-  24 at 150%) and the big one (`ICON_BIG`, 32 and 48: the taskbar's). The title bar needs the
-  tight crop; whether the taskbar's button, about 24 pixels at 100%, is better served by it or
-  by the whole picture is checked on the built window. Giving the two icons different
-  pictures would mean setting them past eframe, through winit's own calls on the first frame
-  (a direct `winit` dependency, since eframe does not re-export it), which waits for that
-  check to show the need. The title bar itself draws no icon: `studio_core` turns it off as
-  the window opens, with `SetWindowThemeAttribute`'s `WTNCA_NODRAWICON` (one `unsafe` call
-  through the `windows` crate, the window's handle from eframe's creation context), which
-  leaves the icon to the taskbar and Alt+Tab. Windows 10 keeps the title where it stood,
-  after the icon's slot, now blank (Windows 11 is not measured yet). Adding `WTNCA_NOSYSMENU` would move the title to the bar's
-  edge but takes the window menu away (Alt+Space no longer opens it, measured on Windows
-  10), so the slot stays blank and the menu stays. Not a title bar of our own (eframe's
-  decorations off, egui drawing the title, the drag area and the caption buttons), which
-  needs no `unsafe` but is far more code and loses the system's snapping and caption
-  behaviour.
+  (`eframe::icon_data::from_png_bytes`). eframe makes both of the window's icons from this one
+  image, resized: the small one (`ICON_SMALL`: the title bar, 16 pixels at 100% scaling, 24 at
+  150%) and the big one (`ICON_BIG`, 32 and 48: the taskbar's).
+
+  The title bar needs the tight crop. Whether the taskbar's button, about 24 pixels at 100%,
+  is better served by it or by the whole picture is checked on the built window. Giving the
+  two icons different pictures would mean setting them past eframe, through winit's own calls
+  on the first frame (a direct `winit` dependency, since eframe does not re-export it). That
+  waits for the check to show the need.
+
+  The title bar itself draws no icon: `studio_core` turns it off as the window opens, with
+  `SetWindowThemeAttribute`'s `WTNCA_NODRAWICON` (one `unsafe` call through the `windows`
+  crate, the window's handle from eframe's creation context), which leaves the icon to the
+  taskbar and Alt+Tab. Windows 10 keeps the title where it stood, after the icon's slot, now
+  blank (Windows 11 is not measured yet).
+
+  Adding `WTNCA_NOSYSMENU` would move the title to the bar's edge but takes the window menu
+  away (Alt+Space no longer opens it, measured on Windows 10), so the slot stays blank and the
+  menu stays. Not a title bar of our own (eframe's decorations off, egui drawing the title,
+  the drag area and the caption buttons), which needs no `unsafe` but is far more code and
+  loses the system's snapping and caption behaviour.
 - `window.png`, the whole picture at 256: the window's icon elsewhere, where one image serves
-  every size. On Linux that holds under X11; a Wayland compositor ignores a window's own icon
+  every size. On Linux that holds under X11. A Wayland compositor ignores a window's own icon
   and shows the one its desktop entry names (matched by the app id), which a Linux package
   installs. The preview's archive installs none, so on Wayland its window shows the
   compositor's default until a package does.
@@ -314,10 +394,9 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
 - Before any view or shell element is coded, its draft (`gui.md` "Prototypes before
   implementation"): the shell in the host page, `docs/prototypes/index.html`, first, then one
   script per tool as its view comes up (`tools/team_compiler.js`, `tools/save_editor.js`,
-  `tools/export_upgrader.js`), each reviewed for
-  usability by the lead first (ideas to `PROPOSALS.md`), then refined with the maintainer and
-  kept as the view's specification; each tool plan says where its draft sits in that tool's
-  build order
+  `tools/export_upgrader.js`). Each is reviewed for usability by the lead first (ideas to
+  `PROPOSALS.md`), then refined with the maintainer and kept as the view's specification. Each
+  tool plan says where its draft sits in that tool's build order
 - Before the first tool's draft, one usability pass over what members already touch, built in
   Phases 1-6 (the export format and folder conventions, the message catalogs' texts and what
   each asks of the member, defaults, the handoffs from upgrade to compile to install), its
@@ -333,11 +412,14 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
 - Build `color_tools`' Phase 8 widgets (`plans/libs/color_tools.md`): the kit menu icon
   rendering (the grid's kit-cell miniatures, pattern-only mode) and the color-picker popup (the
   Save editor's team color fields; the Kit config editor and the Team creator later)
-- Implement each tool's `view()`: Team compiler grid (live validation), save editor
-  (player/team/tactics editing, AATF checks, comparator — build order in the [Save
-  editor plan](../save_editor.md); the `session/` wiring only the view drives, undo,
-  selection, recent files, the FPC toggle and AATF quick actions, lands with it; the tactics editor, card pickers and violations list are built as
-  `libs/team_widgets`, which the Team creator later reuses), export upgrader
+- Implement each tool's `view()`:
+  - Team compiler grid (live validation)
+  - save editor (player/team/tactics editing, AATF checks, comparator — build order in the
+    [Save editor plan](../save_editor.md)). The `session/` wiring only the view drives (undo,
+    selection, recent files, the FPC toggle and AATF quick actions) lands with it. The tactics
+    editor, card pickers and violations list are built as `libs/team_widgets`, which the Team
+    creator later reuses
+  - export upgrader
 - Implement the exports folder watcher (`notify` + debouncing) and the check cache in
   `libs/pipeline` (`spec/libs/pipeline.md`; the design is `plans/team_compiler/gui.md` "Live
   validation"), and the Team compiler's `check/` scheduling its two-tier check over them
@@ -368,9 +450,11 @@ pulled forward.
 compile-time aesthetics, written to the savefile through the aesthetics patch),
 the Save editor (Phase 5 logic and the full Phase 8 view), and the
 Export upgrader (Phase 6, structural migration; its glTF pass waits for Phase 7), as the Windows
-portable bundle. Old-format exports reach the compiler through the upgrader; Red's Pre-Studio
-preview layout gets no dedicated input path, since few members are expected to use it; an AET
-referee export's per-referee `face/`, `boots/`, `gloves/` and `common/` subfolders reach it
+portable bundle.
+
+Old-format exports reach the compiler through the upgrader. Red's Pre-Studio preview layout
+gets no dedicated input path, since few members are expected to use it. An AET referee
+export's per-referee `face/`, `boots/`, `gloves/` and `common/` subfolders reach the compiler
 through the upgrader too (`player_layout_proto`).
 
 **Does not ship:** glTF (Phase 7), desktop GPU BC7, the Linux bundle, and the updater's
@@ -399,12 +483,13 @@ tester told in person does not:
   --export` wired into the release process
 - The updater's check and notice (`distribution.md` "Self-update: in-place binary swap", step 1,
   and step 2 reduced to a notice): the release notes and a link to the release page, with *Skip
-  this version* / *Remind me later*; the CLI one-line notice. Plus step 5, the teams-list
-  reconciliation on the first start of a new version: it runs on a new binary's first start
-  however the binary arrived, so a manual update needs it as much as the swap does. Until it
-  ships, a new build does not replace a tester's working `data/teams_list.txt`, so a team added
-  upstream is missing until the tester takes the new list by hand, which the release's notice
-  says
+  this version* / *Remind me later*; the CLI one-line notice.
+
+  Plus step 5, the teams-list reconciliation on the first start of a new version: it runs on a
+  new binary's first start however the binary arrived, so a manual update needs it as much as
+  the swap does. Until it ships, a new build does not replace a tester's working
+  `data/teams_list.txt`, so a team added upstream is missing until the tester takes the new
+  list by hand, which the release's notice says
 
 **Verification:** the update notice shown against a test release with a higher tag, and the
 teams-list merge's summary on a new binary's first start over a working list with a local row.
@@ -507,12 +592,14 @@ boundary tests; in-game menu check.
 
 ### Phase 15: Player aesthetics editor (`tools/player_aesthetics_editor`)
 
-Small and non-essential (a convenience tool — schedule freely once its
-dependencies exist): Phase 2 (format libs, `model_convert`, `pes_savefile` settings and FPC
-presets), Phase 3 (`aesthetics_export`), Phase 7 (glTF support), and Phase 8 (the shell). The dual-set superset merge lands here if not already built. The Blender-side
-counterpart (the `pes-models` extension's loader module) is the Blender
-project's deliverable, not this workspace's; the launch manifest is the
-contract between them.
+Small and non-essential (a convenience tool — schedule freely once its dependencies exist):
+Phase 2 (format libs, `model_convert`, `pes_savefile` settings and FPC presets), Phase 3
+(`aesthetics_export`), Phase 7 (glTF support), and Phase 8 (the shell).
+
+The dual-set superset merge lands here if not already built.
+
+The Blender-side counterpart (the `pes-models` extension's loader module) is the Blender
+project's deliverable, not this workspace's; the launch manifest is the contract between them.
 
 - Plain-folder player browser/launcher + manifest writing + Blender launch; archives require
   explicit extraction before launch, editing, or conversion
@@ -538,7 +625,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
   display"); Linux tested on a real machine. Brought forward to right after 0.0.1's cut, with a
   CI workflow that builds the bundles on a version tag into a draft GitHub Release, the Windows
   asset checked against the locally checked exe before publishing (DECISIONS 2026-11-01 "CI
-  release builds right after 0.0.1's cut, Windows first"); its design is written into
+  release builds right after 0.0.1's cut, Windows first"). Its design is written into
   `distribution.md` before it is built
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update`, rollback button (see `distribution.md` "Distribution and updates")
@@ -558,15 +645,18 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 - Maintenance mode: the `AGENTS.md` section on how the project changes once released is written
   here, for 1.0.0, the first release whose surfaces are compatibility contracts (the `0.x`
   releases go to testers told of every change in person; "Releases"), and not earlier: a
-  procedure written far ahead of its use goes stale. Agreed outline: the plans stay the spec, edited in place, and `DECISIONS.md` stays the
-  decision (ADR) log, split per year past about 4-5k lines, with no per-file ADRs or ADR
-  tooling. A fix is a failing regression test first, a plan edit only if behavior changes, and
-  `mutants-diff`. A feature runs the phase procedure at small scale (acceptance scenarios,
-  converge, present-tense rewrite), as Phases 17-18 already do. Released surfaces become
-  compatibility contracts (`settings.toml`/`config.toml` keys, CLI flags and exit codes, the
-  export layout, finding codes, `.4ccm`): breaking one needs an Export upgrader migration or a
-  clear refusal, never a silent reinterpretation. Converge runs per release over the commits
-  since the last tag: the plan sections they touched, and `mutants-diff <last tag>`
+  procedure written far ahead of its use goes stale. Agreed outline:
+  - the plans stay the spec, edited in place, and `DECISIONS.md` stays the decision (ADR) log,
+    split per year past about 4-5k lines, with no per-file ADRs or ADR tooling
+  - a fix is a failing regression test first, a plan edit only if behavior changes, and
+    `mutants-diff`
+  - a feature runs the phase procedure at small scale (acceptance scenarios, converge,
+    present-tense rewrite), as Phases 17-18 already do
+  - released surfaces become compatibility contracts (`settings.toml`/`config.toml` keys, CLI
+    flags and exit codes, the export layout, finding codes, `.4ccm`): breaking one needs an
+    Export upgrader migration or a clear refusal, never a silent reinterpretation
+  - converge runs per release over the commits since the last tag: the plan sections they
+    touched, and `mutants-diff <last tag>`
 
 ### Phase 17: Team creator (`tools/team_creator`, post-release)
 
@@ -636,10 +726,11 @@ database and EDIT (manual, per version).
 ### Phase 20: Ruleset editor (`tools/ruleset_editor`, post-release)
 
 Not a first-release gate: its users are invitational organizers, who use 4ccEditor forks until
-then. Its remaining forms run after Release 0.1.0; 0.0.1 ships what it built while it was
+then. Its remaining forms run after Release 0.1.0. 0.0.1 ships what it built while it was
 pulled forward (the writer, the CLI, the window's frame and its Tiers section, worklog 20.3
-to 20.6a2a) as "Ruleset editor (WIP)" ("Divegrass Before Christmas" above). Depends on `libs/aatf` with the schema and the
-interpreter (Phase 5) and the shell (Phase 8).
+to 20.6a2a) as "Ruleset editor (WIP)" ("Divegrass Before Christmas" above).
+
+Depends on `libs/aatf` with the schema and the interpreter (Phase 5) and the shell (Phase 8).
 Plan: [Ruleset editor](../ruleset_editor.md).
 
 - `libs/aatf`'s writer (`Ruleset` → `RULESET` block, deterministic) and the schema-migration hook
@@ -657,8 +748,9 @@ preset.
 
 The suite takes in every tool the community uses, those released after it as well, so an
 outside tool that would talk to a Studio tool is planned into the suite and calls it
-in-process; we do not give Studio tools inbound APIs for outside programs, because each one
+in-process. We do not give Studio tools inbound APIs for outside programs, because each one
 is a server and a wire contract to keep for a consumer the suite is going to absorb anyway.
+
 Tools the suite will take in, with no phase or plan yet:
 
 - **Aesthetics ATF bot** (the maintainer's `Tools_Marco/4cc-aes-atf-bot`, Python; the Aesthetics
@@ -672,34 +764,38 @@ Tools the suite will take in, with no phase or plan yet:
   drives the Rigdio fork's local API (`music_player.md` "Autopilot": team loads, the anthems,
   the victory anthem, the chant, goals), passing SEN:P-AI `--no-rigdio` because it drives
   Rigdio itself. Not published: its author wants to work on it further before publishing the
-  source (2026-10-18), so it waits; nothing scheduled depends on it, and until then what it does
+  source (2026-10-18), so it waits. Nothing scheduled depends on it, and until then what it does
   is known only from the forks' READMEs.
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 
 - **A cup's submission server**, on the community's server (the wiki's host or `bonfire`): a
   script that runs the export checks on every export a manager submits and rejects it, with
-  the findings, when they hold an Error; when the deadline hits, it compiles the DLC and the
+  the findings, when they hold an Error. When the deadline hits, it compiles the DLC and the
   savefile and gives the organizer one download link per group of outputs (the DLC, the
   savefile, the pack of the teams' music exports, "Complete export" in
   `plans/aesthetics_export/player_folders.md`), some of which the organizer passes on to the
-  streamer. It needs nothing the suite does not already aim for: the CLI runs every check and
-  compile with no display, Linux is a first-class target, and findings carry stable codes
-  that a script can sort. Keeping those three true is what keeps the server cheap when it
-  comes; a design that only works with the GUI, or only on Windows, is a cost to it.
+  streamer.
+
+  It needs nothing the suite does not already aim for: the CLI runs every check and compile
+  with no display, Linux is a first-class target, and findings carry stable codes that a script
+  can sort. Keeping those three true is what keeps the server cheap when it comes. A design that
+  only works with the GUI, or only on Windows, is a cost to it.
 
   After the compile it can also check the result in game: install the DLC and the savefile into
   the cup's PES version, run the Aesthetics ATF bot over every team (its stills and clips) and
-  publish the captures on a page per team for managers and organizers. That half cannot run on
-  the community server itself, which has no graphics card (`bonfire`: 8 virtual cores, 15 GB,
-  a virtual display adapter): PES needs a real GPU on Windows, the bot's virtual pad a Windows
-  driver (ViGEmBus) and its recording OBS. So it runs on a Windows machine with a GPU and that
-  PES version installed, which takes the job from the server, plays it and uploads the
-  captures; one machine plays one version at a time, and a whole cup's pass takes hours (the
-  bot records each player's clips in real time). The pieces exist: the bot (PES 15 and 21 so
-  far) and the in-game harness that already launches a version, puts a compiled CPK in its
-  test slot and takes it out again (PES 17, 19 and 21), drives the pad and captures through OBS
-  (`scripts/ingame/`); installing the savefile beside it, with the player's own save kept
-  aside, is the step still missing.
+  publish the captures on a page per team for managers and organizers.
+
+  That half cannot run on the community server itself, which has no graphics card (`bonfire`:
+  8 virtual cores, 15 GB, a virtual display adapter). PES needs a real GPU on Windows, the
+  bot's virtual pad needs a Windows driver (ViGEmBus), and its recording needs OBS. So it runs
+  on a Windows machine with a GPU and that PES version installed, which takes the job from the
+  server, plays it and uploads the captures. One machine plays one version at a time, and a
+  whole cup's pass takes hours (the bot records each player's clips in real time).
+
+  The pieces exist: the bot (PES 15 and 21 so far) and the in-game harness that already
+  launches a version, puts a compiled CPK in its test slot and takes it out again (PES 17, 19
+  and 21), drives the pad and captures through OBS (`scripts/ingame/`). Installing the savefile
+  beside it, with the player's own save kept aside, is the step still missing.
 
 ---

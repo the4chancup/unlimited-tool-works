@@ -100,6 +100,7 @@ double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui te
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
 the equivalent `quick_compile.sh`. Red's other staged bats (`1_`–`3_`) have no successor: the
 unified pipeline has no stages to run separately. Users who want the plain GUI double-click the exe.
+
 Until the Team compiler's view exists, the 0.0.2 bundle's `quick_compile.bat` runs the plain CLI
 compile in its console instead, beside an interim `quick_upgrade.bat` (`development_plan.md`
 "The /vg/ League 27 (VGL)").
@@ -107,46 +108,62 @@ compile in its console instead, beside an interim `quick_upgrade.bat` (`developm
 The shell reuses the tool's own CLI parser for the arguments (one grammar for both
 modes) and hands the parsed `ArgMatches` to the tool's `gui_run` hook (see the trait below) once
 its view exists. Commands a tool does not implement in `gui_run` fail at startup with a clear
-message rather than silently opening the GUI. A tool decides its own readiness: the Team compiler
-queues the autorun until the initial exports check has completed, then fires it — the same
-precondition as a manual Compile click, so the grid never compiles unchecked state.
+message rather than silently opening the GUI.
+
+A tool decides its own readiness. The Team compiler queues the autorun until the initial
+exports check has completed, then fires it — the same precondition as a manual Compile click,
+so the grid never compiles unchecked state.
 
 **A run's log file.** `--log-file <FILE>` is a global option, accepted before or after the
-tool's id as `-v` is. With it a CLI run appends everything it prints to FILE, between a first
+tool's id as `-v` is. With it, a CLI run appends everything it prints to FILE, between a first
 line `$ UTW <the arguments>` and a last line `exit <code>`, and its stdout leaves the Info
-findings out: a compile prints hundreds of them around the few Warnings and Errors a member
-has to act on, and the file is where the rest is read. The file takes every finding line as
-stdout prints it without the option, and what the run writes to stderr (a notice, the run's
-summary whether or not a terminal draws it, the `error:` line); the progress line, redrawn in
-place, is not in it, nor are the diagnostics `-v` raises, which stay on stderr. The option is the exe's, not the launchers': started from a bat, this
-exe's output cannot be redirected or piped (`UTW.exe ... > file` and `UTW.exe ... | findstr`
-both received nothing when measured, the "Windows subsystem" arrangement below: a
-GUI-subsystem exe that attaches to its parent's console writes to that console, whatever
-`cmd` redirected), so a bat can neither keep nor filter what the exe prints. The file is
-appended to, so that `quick_upgrade.bat`, which runs the exe once per export, has one log of
-its whole run; a launcher deletes the file before its first run. A FILE that cannot be opened
-refuses the run before it starts (exit 2), and a write to it that fails ends the run as a
-failed console write does (exit 3): a log that silently stops is worse than none.
+findings out. A compile prints hundreds of them around the few Warnings and Errors a member
+has to act on, and the file is where the rest is read.
+
+The file takes:
+
+- every finding line, as stdout prints it without the option;
+- what the run writes to stderr (a notice, the run's summary whether or not a terminal draws
+  it, the `error:` line).
+
+The progress line, redrawn in place, is not in it, nor are the diagnostics `-v` raises, which
+stay on stderr.
+
+The option is the exe's, not the launchers', because a bat can neither keep nor filter what
+the exe prints: started from a bat, this exe's output cannot be redirected or piped.
+`UTW.exe ... > file` and `UTW.exe ... | findstr` both received nothing when measured. That is
+the "Windows subsystem" arrangement below: a GUI-subsystem exe that attaches to its parent's
+console writes to that console, whatever `cmd` redirected.
+
+The file is appended to, so that `quick_upgrade.bat`, which runs the exe once per export, has
+one log of its whole run. A launcher deletes the file before its first run.
+
+A FILE that cannot be opened refuses the run before it starts (exit 2), and a write to it that
+fails ends the run as a failed console write does (exit 3): a log that silently stops is worse
+than none.
 
 **Windows subsystem.** A Rust exe is either a console or a GUI application, and this binary is both.
 It is built as a GUI-subsystem exe (`#![windows_subsystem = "windows"]`) so double-clicking it, or
-`quick_compile.bat`, never flashes a console window; when CLI arguments are present it calls
+`quick_compile.bat`, never flashes a console window. When CLI arguments are present it calls
 `AttachConsole(ATTACH_PARENT_PROCESS)` so console output reaches the terminal it was started from.
+
 Known caveat of this standard arrangement: an *interactive* `cmd.exe` prompt does not wait for
 GUI-subsystem processes, so output can interleave with the returned prompt (batch files,
 `start /wait`, and PowerShell pipelines are unaffected). The caveat is accepted rather than
-fixed with a console-subsystem shim exe beside the main one: a second exe in the bundle would
-confuse the members who only double-click, and the command line is second-class to the window.
-So no command reads the keyboard; a command that would need an answer takes it as a flag
-(`--yes`, `--edit-mode-closed`). Linux has no subsystem split.
+fixed with a console-subsystem shim exe beside the main one, because a second exe in the
+bundle would confuse the members who only double-click, and the command line is second-class
+to the window. So no command reads the keyboard; a command that would need an answer takes it
+as a flag (`--yes`, `--edit-mode-closed`). Linux has no subsystem split.
 
 Debug builds are GUI-subsystem too, not only releases: the gates' CLI tests then run the
 binary's piped commands with the subsystem the bundle ships, so a redirected run losing its
 output fails a test. The binary's unit-test harness, built from the same `main.rs`, keeps the
-console subsystem (`cfg_attr(not(test), …)`): a GUI-subsystem test binary's output never
-reaches the test runner, so its failing assertions would print nothing. Running the window with no arguments attaches to no console, so what the
-window mode would print (a settings file that does not load, a window that cannot open) shows
-in a message dialog instead, with the same text and exit code: printed, nobody would see it.
+console subsystem (`cfg_attr(not(test), …)`), because a GUI-subsystem test binary's output
+never reaches the test runner, so its failing assertions would print nothing.
+
+Running the window with no arguments attaches to no console. So what the window mode would
+print (a settings file that does not load, a window that cannot open) shows in a message
+dialog instead, with the same text and exit code: printed, nobody would see it.
 
 ### Tool plugin interface
 
@@ -190,23 +207,27 @@ That is the full registry; the three tools registered today are the first, secon
 
 **The PES folder's check and setting.** `ctx.pes_exe_check()` returns the verdict that colours
 the sidebar's selector (`ExeCheck`: `Found`, `OtherVersion(version)`, `NoExe`, `NoFolder`;
-`gui.md` "Live exe check"), which the sidebar stores in the context each frame it draws it,
-before the active view, so a tool reads that frame's verdict. A tool never lists the folder
-itself: a check of its own could disagree with the selector, and a per-frame one would list
-the folder at every repaint. `ctx.set_pes_folder(folder)` stores a picked folder for the
-selected version as the running-PES notice's Fix PES path does
-(`CommonSettings::fix_pes_folder`) and queues `ShellRequest::SettingsChanged`; the sidebar's
-check then runs again, since the resolved folder changed. The Save editor's Set PES path
-button is their first caller (`save_editor.md` "Tactics editor").
+`gui.md` "Live exe check"). The sidebar stores the verdict in the context each frame it draws
+it, before the active view, so a tool reads that frame's verdict. A tool never lists the folder
+itself, because a check of its own could disagree with the selector, and a per-frame one would
+list the folder at every repaint.
+
+`ctx.set_pes_folder(folder)` stores a picked folder for the selected version as the
+running-PES notice's Fix PES path does (`CommonSettings::fix_pes_folder`), and queues
+`ShellRequest::SettingsChanged`. The sidebar's check then runs again, since the resolved folder
+changed. The Save editor's Set PES path button is the first caller of both methods
+(`save_editor.md` "Tactics editor").
 
 The sidebar lists the planned tools a build does not register (`gui.md` "Sidebar", item 3), so
 `studio` also keeps the full registry as data: one `PlannedTool { id, label, icon }` per tool
-above, in that order, handed to the shell with the registered tools; the shell lists, after the
+above, in that order, handed to the shell with the registered tools. The shell lists, after the
 registered ones, every entry whose `id` no registered tool has. A tool's icon on the sidebar's
 rail is a trait method, `fn icon(&self) -> &'static str`, one glyph of the shell's icon font
-(`README.md` "GUI framework choice: egui"), and the
-planned entry repeats it. Not a second `Vec<Box<dyn StudioTool>>` of disabled tools, because a
-planned tool has no crate to construct; not the labels alone, because the rail draws icons.
+(`README.md` "GUI framework choice: egui"), and the planned entry repeats it.
+
+The planned tools are kept as this data, not as a second `Vec<Box<dyn StudioTool>>` of
+disabled tools, because a planned tool has no crate to construct; and not as the labels alone,
+because the rail draws icons.
 
 A tool whose use calls for its own window size declares it with a provided trait method,
 `fn window_size(&self) -> Option<egui::Vec2> { None }`: `None` puts the tool in the main
@@ -237,51 +258,69 @@ results from a stale filesystem snapshot cannot overwrite newer checks.
 
 **The console's progress line and run summary.** When stderr is a terminal
 (`std::io::IsTerminal`), the console printer draws one progress line on stderr
-(`[ 37/120 exports | 1,284/4,010 parts | 0:42 ]`, the stage once `Progress` carries it), redrawn
-at most ten times a second and cleared while a finding line goes to stdout, then drawn again; on
-`Complete` it leaves one summary line in its place (files written, exports skipped, folders
-skipped, folders with errors, elapsed time; each a count of distinct exports or folders, never
-of findings, since one folder often has several). Exports skipped are counted apart from
-folders: an export refused whole (two exports of one team, a disabled one) names no folder,
-and counting it as none would end a run that left a team out on "0 folders skipped". When stderr is not a terminal (piped, redirected, a script or CI) neither is
-drawn, and stdout carries exactly the finding lines and result text it carries without them, so
-the CLI tests and any script reading stdout see no change; no flag turns it on or off. The printer
-is tool-neutral, so every tool that emits `Progress` gets the line; the Team compiler is the first.
+(`[ 37/120 exports | 1,284/4,010 parts | 0:42 ]`, the stage once `Progress` carries it). The
+line is redrawn at most ten times a second, and cleared while a finding line goes to stdout,
+then drawn again. On `Complete` it leaves one summary line in its place: files written, exports
+skipped, folders skipped, folders with errors, elapsed time. Each is a count of distinct
+exports or folders, never of findings, since one folder often has several. Exports skipped are
+counted apart from folders, because an export refused whole (two exports of one team, a
+disabled one) names no folder, and counting it as none would end a run that left a team out on
+"0 folders skipped".
+
+When stderr is not a terminal (piped, redirected, a script or CI) neither is drawn, and stdout
+carries exactly the finding lines and result text it carries without them, so the CLI tests and
+any script reading stdout see no change. No flag turns it on or off. The printer is
+tool-neutral, so every tool that emits `Progress` gets the line; the Team compiler is the first.
+
 The exports counter is the printer's own count of the run's `ExportStarted` (the total: every
 export starts in the validation pass, before any is compiled) and `ExportProcessed` events, so it
-needs no event of its own and draws from the first export. The parts counter is `Progress`, which
-the Team compiler emits as each task of its build manifest commits (`spec/team_compiler/pipeline.md`
-"3. Per-model-folder parallel steps (rayon)", its first paragraph: a model folder, a kit, the logo, a Common directory, the collars, the
-portraits, the referee marker), `total` being the manifest's task count; "parts", not "folders",
-because a task is not always a folder, and a counter that named folders would not add up to the
-export's folders. The Export upgrader draws the same line: its exports are the inputs the
-command names, every input's `ExportStarted` sent before the first is read so the total is
-whole from the start (an upgrade's output half is named for its findings' lines by
-`PipelineEvent::ExportNamed`, which the counter does not count, so one upgrade reads `0/1`,
-never `0/2`), its input's `ExportProcessed` comes once its output is validated, and its parts
-are the files it writes into the staging folder (`total` once steps 3 to 10 have planned
-them, so the parts counter appears after the reading and planning, where the clock alone
-moves). A run whose stream ends with no `Complete` (a `check`, an upgrade, a compile
-stopped before it compiled) leaves no line: the printer cannot know a `Complete` is coming
-until the stream ends, so it draws from the first export and clears the line when the stream
-ends without one, rather than leaving a count that reads as unfinished.
-We draw it with `indicatif` (`default-features = false`) rather than a hand-written `\r` line
-because it already handles the terminal width, the Windows console and the draw-rate cap; it adds
-four small crates and about 145 KiB to a release binary (measured 2026-10-16, 0.18.6). The
-progress grid has no terminal version: its value is the GUI's per-folder colours and click-through
-to the findings, a cup's grid is wider than a terminal, and a terminal grid would need a TUI
-library; the finding lines already name each failing folder, and the summary gives the counts.
+needs no event of its own and draws from the first export.
+
+The parts counter is `Progress`, which the Team compiler emits as each task of its build
+manifest commits (`spec/team_compiler/pipeline.md` "3. Per-model-folder parallel steps
+(rayon)", its first paragraph: a model folder, a kit, the logo, a Common directory, the
+collars, the portraits, the referee marker), `total` being the manifest's task count. The
+counter says "parts", not "folders", because a task is not always a folder, and a counter that
+named folders would not add up to the export's folders.
+
+The Export upgrader draws the same line:
+
+- Its exports are the inputs the command names, every input's `ExportStarted` sent before the
+  first is read, so the total is whole from the start. An upgrade's output half is named for
+  its findings' lines by `PipelineEvent::ExportNamed`, which the counter does not count, so one
+  upgrade reads `0/1`, never `0/2`.
+- Its input's `ExportProcessed` comes once its output is validated.
+- Its parts are the files it writes into the staging folder, with `total` once steps 3 to 10
+  have planned them. So the parts counter appears after the reading and planning, where the
+  clock alone moves.
+
+A run whose stream ends with no `Complete` (a `check`, an upgrade, a compile stopped before it
+compiled) leaves no line. The printer cannot know a `Complete` is coming until the stream ends,
+so it draws from the first export and clears the line when the stream ends without one, rather
+than leaving a count that reads as unfinished.
+
+We draw the line with `indicatif` (`default-features = false`) rather than a hand-written `\r` line
+because it already handles the terminal width, the Windows console and the draw-rate cap. It adds
+four small crates and about 145 KiB to a release binary (measured 2026-10-16, 0.18.6).
+
+The progress grid has no terminal version, because its value is the GUI's per-folder colours
+and click-through to the findings, a cup's grid is wider than a terminal, and a terminal grid
+would need a TUI library. The finding lines already name each failing folder, and the summary
+gives the counts.
 
 **Every finding line says what was lost.** `EventLines`' finding line
 (`<export>: <Severity> <code> at <path> (<context>)`) ends with a fixed phrase per effective
 disposition: `folder left out`, `file left out`, `slot skipped`, `export skipped`, `run stopped`,
-and `kept anyway` for a finding passed through; a finding whose disposition drops nothing
+and `kept anyway` for a finding passed through. A finding whose disposition drops nothing
 (an Info, a kept Warning) gets none. The same phrase ends the finding in a grid cell's tooltip.
+
 Severity alone does not say it: two Warnings drop a whole folder (`player_unlisted`,
 `shared_folder_orphaned`), so a manager reading only the Errors, or skimming the yellow lines,
-never learns the folder is gone. One disposition-to-phrase mapping in `studio_core`, never a
-phrase in each catalog text, so a text cannot contradict the disposition the run applied; the
-CLI tests that pin whole lines change with it.
+never learns the folder is gone.
+
+There is one disposition-to-phrase mapping in `studio_core`, never a phrase in each catalog
+text, so a text cannot contradict the disposition the run applied. The CLI tests that pin
+whole lines change with it.
 
 These notes extend the spec's `PipelineEvent` enum, the first at `Progress`, the second at `Complete`:
 
@@ -306,126 +345,173 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 - In GUI mode `studio` installs a small `log::Log` impl writing `utw.log` in the data
   directory — the file a user attaches to a bug report. The GUI `gui.md` "Log panel" shows
   findings, not this file; an in-app diagnostic view is not planned for the first release.
-- `utw.log` is a bug report's attachment, so the GUI sink also: installs a panic hook that
-  writes the panic message, its location and a backtrace to the log before the process ends, and
-  tells the user (a dialog when the GUI is up) to post the file, since a GUI binary has no
-  console to show the panic in; renames the previous run's log to `utw.old.log` at start,
-  replacing the older one, so a crash followed by a relaunch keeps the crash's log; writes the
-  Studio version as the log's first line; and writes the user's home directory as `~` in every
-  line, because findings carry absolute paths and the file is posted on the cup's server.
+- `utw.log` is a bug report's attachment, so the GUI sink also:
+  - installs a panic hook that writes the panic message, its location and a backtrace to the
+    log before the process ends, and tells the user (a dialog when the GUI is up) to post the
+    file, since a GUI binary has no console to show the panic in;
+  - renames the previous run's log to `utw.old.log` at start, replacing the older one, so a
+    crash followed by a relaunch keeps the crash's log;
+  - writes the Studio version as the log's first line;
+  - writes the user's home directory as `~` in every line, because findings carry absolute
+    paths and the file is posted on the cup's server.
 - Two copies of the exe may run at once, each on its own save (the maintainer,
   2026-11-02). The first takes an exclusive lock on `utw.lock` in the data directory for its
-  session (`File::try_lock`) and logs to `utw.log`; a copy that finds it held takes the next
+  session (`File::try_lock`) and logs to `utw.log`. A copy that finds it held takes the next
   free of `utw.2.lock`, `utw.3.lock`... and logs to the matching `utw.2.log`, its previous
-  run's renamed to `utw.2.old.log`, a crash's dump written as `utw.2.dmp`. Each start reads and rotates its own log alone, so a
-  second start no longer renames the first copy's live log away and reports it as a session
-  that ended without its closing line, and the crash monitor appends to its own window's
-  log. A lock, not a look at the running processes: the system frees it however the copy
-  ends, a crash included, so a stale lock never makes the next start a second copy. The
-  settings stay one file, written by whichever copy changes them last.
+  run's renamed to `utw.2.old.log`, a crash's dump written as `utw.2.dmp`.
+
+  Each start reads and rotates its own log alone. So a second start no longer renames the
+  first copy's live log away and reports it as a session that ended without its closing line,
+  and the crash monitor appends to its own window's log. A lock, not a look at the running
+  processes, because the system frees it however the copy ends, a crash included, so a stale
+  lock never makes the next start a second copy. The settings stay one file, written by
+  whichever copy changes them last.
 - The backtrace is written as each frame's module base and offset (`0x7ff6a1230000+0x59c4`,
-  through the `backtrace` crate), not as names: a release exe names its frames only with its
-  `.pdb` beside it, and the bundle does not ship the `.pdb` (`distribution.md`, the release
-  recipe). `scripts/release/symbolize_log.py <utw.log> <symbols folder>` turns a posted log's frames
+  through the `backtrace` crate), not as names, because a release exe names its frames only
+  with its `.pdb` beside it, and the bundle does not ship the `.pdb` (`distribution.md`, the
+  release recipe).
+
+  `scripts/release/symbolize_log.py <utw.log> <symbols folder>` turns a posted log's frames
   of the exe's module into function, file and line through `llvm-symbolizer` (MSVC's toolset
-  ships it), against the release's kept exe and `.pdb`; frames of other modules (the system's
-  DLLs) stay as offsets. Off Windows the `backtrace` crate reports no module base (its
-  `libunwind` backend's `module_base_address` is `None`), so a frame is an absolute address,
-  which a position-independent exe loaded at a random base leaves unnamed; before the Linux
-  bundle (1.0.0) the hook also writes one known function's address, from which the script
-  finds the exe's load base. We do not ship the `.pdb`, deflated beside or inside the exe, because
-  either costs every member's download for a file only the maintainer reads: about 3.8 MB
-  deflated for the 17 MB `.pdb` without line tables, and the release's own, with them, is
-  117 MB (measured at 0.0.1k2); the inside variant also has the crash write it out and point
-  the backtrace at it.
+  ships it), against the release's kept exe and `.pdb`. Frames of other modules (the system's
+  DLLs) stay as offsets.
+
+  Off Windows the `backtrace` crate reports no module base (its `libunwind` backend's
+  `module_base_address` is `None`), so a frame is an absolute address, which a
+  position-independent exe loaded at a random base leaves unnamed. Before the Linux bundle
+  (1.0.0) the hook also writes one known function's address, from which the script finds the
+  exe's load base.
+
+  We do not ship the `.pdb`, deflated beside or inside the exe, because either costs every
+  member's download for a file only the maintainer reads. The `.pdb` without line tables is
+  17 MB, about 3.8 MB deflated, and the release's own, with them, is 117 MB (measured at
+  0.0.1k2). The inside variant also has the crash write it out and point the backtrace at it.
 - A session that ends without a word is reported at the next start. The window's normal
-  close writes a closing line as the log's last, and so does a crash after its dialog; at
+  close writes a closing line as the log's last, and so does a crash after its dialog. At
   start, a previous log (`utw.old.log` once renamed) that does not end with one of the two
   shows a dialog before the window opens: "The last session did not close normally. If it
   crashed, please post this file where you report problems: <path>", naming the home folder's
   `~`. This catches what the panic hook cannot see (a stack overflow, a failed allocation, a
-  crash in native code), and the crash dump below, where one was written, adds its stacks;
-  when the old log holds the monitor's line naming a dump (anywhere, not only last: the
-  window's other threads may log after it while the crashed one waits for the monitor's
-  reply; a closing line last still wins, since a second window's monitor may append into
-  the log the second start opened) and that file is still there, the same dialog
-  names it beside the old log, asking for both files and saying that the dump, unlike the
-  log, may still show the member's user name (its module list holds the exe's full path).
+  crash in native code), and the crash dump below, where one was written, adds its stacks.
+
+  When the old log holds the monitor's line naming a dump, and that file is still there, the
+  same dialog names it beside the old log. It asks for both files and says that the dump,
+  unlike the log, may still show the member's user name (its module list holds the exe's full
+  path). The monitor's line counts anywhere in the log, not only last, because the window's
+  other threads may log after it while the crashed one waits for the monitor's reply. A
+  closing line last still wins, since a second window's monitor may append into the log the
+  second start opened.
+
   A log left empty, by a session that ended before its first line, counts as not closed. We
-  read the monitor's line rather than compare times: the monitor writes the dump before it
-  appends that line, so the log is always the newer file. The wording is neutral because
-  the dialog also follows a session Windows
-  ended: winit 0.30 handles neither `WM_QUERYENDSESSION` nor `WM_ENDSESSION`, so a shutdown
-  with the window open ends the process with no closing line, as a kill from Task Manager
-  or a power cut does. We do not tell the two apart through the boot time: a crash followed
-  by a restart before the next start would then go unreported.
+  read the monitor's line rather than compare times, because the monitor writes the dump
+  before it appends that line, so the log is always the newer file.
+
+  The wording is neutral because the dialog also follows a session Windows ended: winit 0.30
+  handles neither `WM_QUERYENDSESSION` nor `WM_ENDSESSION`, so a shutdown with the window
+  open ends the process with no closing line, as a kill from Task Manager or a power cut
+  does. We do not tell the two apart through the boot time, because a crash followed by a
+  restart before the next start would then go unreported.
 - The level is `info`, with no `-v` or `RUST_LOG` (a double-click passes neither). Each line is
   flushed as it is written, so a crash keeps everything before it.
 - A first run writes no log: the file lives in the data location, which does not exist until
   the first-run dialog's choice, and a log written anywhere else would leave a folder behind
   that a portable choice promised not to. The next run logs.
 - The hook logs every panic, but the dialog shows only for the panic that ends the window, caught
-  around the GUI run in `main`; the process then exits with 101, the code an unguarded panic
-  exits with. A panic on another thread is logged without a dialog: the hook cannot tell a
-  panic that will be recovered (the GPU encoder's, which `dds_convert` turns into a fallback
-  to the CPU encoder) from one that will not, and a dialog over a recovered panic would ask a
-  member to report a run that went fine. The dialog repeats the panic's message, so a first
-  run's crash, which has no file, still leaves something to post.
+  around the GUI run in `main`. The process then exits with 101, the code an unguarded panic
+  exits with.
+
+  A panic on another thread is logged without a dialog. The hook cannot tell a panic that will
+  be recovered (the GPU encoder's, which `dds_convert` turns into a fallback to the CPU
+  encoder) from one that will not, and a dialog over a recovered panic would ask a member to
+  report a run that went fine.
+
+  The dialog repeats the panic's message, so a first run's crash, which has no file, still
+  leaves something to post.
 - **A crash dump for what the hook never sees**: a stack overflow (the runtime prints one line
   to a stderr the GUI exe does not have) and an access violation in native code (a GPU driver
   under the encoder or the renderer, a shell extension under a file dialog) each leave a log
-  that simply stops. A failed allocation stops the log too, and on Windows gets no dump: the
-  runtime's abort is `__fastfail` there, which ends the process without any exception handler
-  of its own seeing it, so the dump below cannot catch it; the next start's dialog still
-  reports the session, and a dump for it waits for a capture route proven by a test. On Linux
-  the abort raises `SIGABRT`, which the handler does see, so a dump is written and named as
-  any other. The window's process is watched by
-  a monitor, the same exe started again with a hidden argument (no second exe in the bundle),
-  because a crashed process cannot reliably write its own dump; on a crash the monitor writes
-  `utw.dmp` beside the log (every thread's stack, a few MB), replacing the previous one,
-  appends a line naming it to the log (the crashed thread waits in the hook for the
-  monitor's reply, sent after the line, so no closing line follows it), and exits with the
-  window's process; a monitor that cannot bind its socket or serve appends its error to the
-  log instead, since the window sees only its exit code;
-  on a normal close it writes nothing, so the closing line stays the log's last. Through
-  Embark's `crash-handler` (the hook in the window's process) and `minidumper` (the link to
-  the monitor), and `minidump-writer` (the dump, under `minidumper`); the
-  maintainer reads a dump with `minidump-stackwalk` against the release's kept `.pdb`, the
-  exe's symbols the log's offsets are named from too, converted first: `minidump-stackwalk`
-  reads Breakpad symbol files, not a `.pdb`, so `dump_syms <pdb> --store <dir>` writes them
-  and `minidump-stackwalk --symbols-path <dir> utw.dmp` reads them (both `cargo install`). The window's log is opened for
-  appending, as the monitor's line is: a window thread still writing at its own offset would
-  overwrite the monitor's line. The link is a socket file named after
-  the window's process id in the system's temp folder, its path passed in the hidden
-  argument after the data location's (`--crash-monitor <data location> <socket>`): not in
-  the data location, because a Windows socket path holds at most 107 bytes, which a data
-  location deep in folders can pass, and not one fixed name, because a second window's
-  monitor removes the socket file and binds the name again, so one of the two windows would
-  go unwatched. The window waits at most two seconds for the monitor to answer. The
-  three crates were accepted on a growth of at most 10 MB, and add 221 KiB to a probe exe
-  built with the release profile (measured at 0.0.1k4, with and without the monitor, the
-  hook and a stack overflow wired); ours should grow less, since it already holds the
-  standard library and several of their dependencies, and is measured when they land. The
+  that simply stops.
+
+  A failed allocation stops the log too, and on Windows gets no dump. The runtime's abort is
+  `__fastfail` there, which ends the process without any exception handler of its own seeing
+  it, so the dump below cannot catch it. The next start's dialog still reports the session,
+  and a dump for it waits for a capture route proven by a test. On Linux the abort raises
+  `SIGABRT`, which the handler does see, so a dump is written and named as any other.
+
+  **The monitor.** The window's process is watched by a monitor, the same exe started again
+  with a hidden argument (no second exe in the bundle), because a crashed process cannot
+  reliably write its own dump. On a crash the monitor:
+
+  1. writes `utw.dmp` beside the log (every thread's stack, a few MB), replacing the previous
+     one;
+  2. appends a line naming it to the log (the crashed thread waits in the hook for the
+     monitor's reply, sent after the line, so no closing line follows it);
+  3. exits with the window's process.
+
+  A monitor that cannot bind its socket or serve appends its error to the log instead, since
+  the window sees only its exit code. On a normal close the monitor writes nothing, so the
+  closing line stays the log's last.
+
+  This works through Embark's `crash-handler` (the hook in the window's process) and
+  `minidumper` (the link to the monitor), and `minidump-writer` (the dump, under
+  `minidumper`). The maintainer reads a dump with `minidump-stackwalk` against the release's
+  kept `.pdb`, the exe's symbols the log's offsets are named from too. The `.pdb` is converted
+  first, because `minidump-stackwalk` reads Breakpad symbol files, not a `.pdb`:
+  `dump_syms <pdb> --store <dir>` writes them and
+  `minidump-stackwalk --symbols-path <dir> utw.dmp` reads them (both `cargo install`).
+
+  The window's log is opened for appending, as the monitor's line is, because a window thread
+  still writing at its own offset would overwrite the monitor's line.
+
+  **The link** is a socket file named after the window's process id in the system's temp
+  folder, its path passed in the hidden argument after the data location's
+  (`--crash-monitor <data location> <socket>`).
+
+  - It is not in the data location, because a Windows socket path holds at most 107 bytes,
+    which a data location deep in folders can pass.
+  - It is not one fixed name, because a second window's monitor removes the socket file and
+    binds the name again, so one of the two windows would go unwatched.
+
+  The window waits at most two seconds for the monitor to answer.
+
+  **The size.** The three crates were accepted on a growth of at most 10 MB, and add 221 KiB
+  to a probe exe built with the release profile (measured at 0.0.1k4, with and without the
+  monitor, the hook and a stack overflow wired). Ours should grow less, since it already holds
+  the standard library and several of their dependencies, and is measured when they land. The
   probe's overflow left a dump the `minidump` crate reads as five threads and exception
-  `0xC00000FD`. Attaching the hook is one `unsafe` call of ours: `crash-handler`'s
-  `make_crash_event` is an `unsafe fn`, because its closure runs in the crashed process, where
-  it must do as little as possible (on Linux inside a signal handler, so nothing that
-  allocates or locks), and ours only asks the connected monitor for the dump (`minidumper`'s
-  `Client::request_dump`, which writes a stack buffer to the socket and waits for the reply).
-  That call is the one `unsafe` block, in `studio`, with its `// SAFETY:` comment saying why
-  the closure is sound to run in a crashed process: it allocates and locks nothing and only
-  sends the request. We do not take `minidumper-child`, which holds the same
-  block for us, because it marks the monitor by an environment variable rather than an
-  argument, starts only the running exe (so the start's failure cannot be tested on a program
-  that is not an exe), and pins the crates' previous versions. A monitor that does not start leaves the window running with the
-  log alone, a warning logged: the dump is a diagnostic, never a reason the window does not
-  open. The monitor starts once the data location exists, as the log does: a first run's
-  crash leaves neither, a panic's dialog its one trace and the crashes this bullet is for
-  none. The crash test's trigger is a hidden argument of the exe (`--crash-test stack`),
-  handled once the monitor runs and before the window is created, so the test needs no
-  display; the start's failure is tested on the start function, given a program that is not
-  an exe. A CLI command installs none: its crash prints to the console it runs in, and a script
+  `0xC00000FD`.
+
+  **The one `unsafe` call.** Attaching the hook is one `unsafe` call of ours.
+  `crash-handler`'s `make_crash_event` is an `unsafe fn`, because its closure runs in the
+  crashed process, where it must do as little as possible (on Linux inside a signal handler,
+  so nothing that allocates or locks). Ours only asks the connected monitor for the dump
+  (`minidumper`'s `Client::request_dump`, which writes a stack buffer to the socket and waits
+  for the reply). That call is the one `unsafe` block, in `studio`, with its `// SAFETY:`
+  comment saying why the closure is sound to run in a crashed process: it allocates and locks
+  nothing and only sends the request.
+
+  We do not take `minidumper-child`, which holds the same block for us, because it:
+
+  - marks the monitor by an environment variable rather than an argument;
+  - starts only the running exe, so the start's failure cannot be tested on a program that is
+    not an exe;
+  - pins the crates' previous versions.
+
+  **When there is no monitor.** A monitor that does not start leaves the window running with
+  the log alone, a warning logged: the dump is a diagnostic, never a reason the window does
+  not open.
+
+  The monitor starts once the data location exists, as the log does. A first run's crash
+  therefore leaves neither: a panic's dialog is its one trace, and the crashes this bullet is
+  for leave none.
+
+  A CLI command installs none: its crash prints to the console it runs in, and a script
   calling it in a loop would start a monitor per call.
+
+  **The crash test.** Its trigger is a hidden argument of the exe (`--crash-test stack`),
+  handled once the monitor runs and before the window is created, so the test needs no
+  display. The start's failure is tested on the start function, given a program that is not
+  an exe.
 
 ### Repro bundles
 
@@ -433,72 +519,115 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 the member did something, the result surprised them, and their account of the steps is all
 there is. A repro bundle is that traceback: every step that changed what a tool holds since
 the window opened, the files it started from and the ones it wrote, in one zip a member saves
-from a button and posts. Every tool takes part that opens a member's files: the Save editor
-first, then the Team compiler and the Export upgrader, then the rest as they are built.
+from a button and posts.
+
+Every tool that opens a member's files takes part: the Save editor first, then the Team
+compiler and the Export upgrader, then the rest as they are built.
 
 - **The journal records model steps, not input events.** Each step is what a tool's model
-  saw: a file opened (path, size, SHA-256, format version), an edit (the entry, the field, its
-  value before and after), an import, a patch applied, an undo or redo, a file written (path,
-  SHA-256), a compile started and its findings. We do not record clicks and keys: they are
-  large, cannot be replayed on another machine's layout, and add nothing, since every effect
-  passes through the model. The journal is taken at the one point each tool already changes
-  its model through, so a step cannot reach the model unrecorded: in the Save editor,
-  `Session::changed` (`session/mod.rs`), which every edit, undo, redo, import and patch
-  calls with its field lines, not the undo stack's push, which import and patch bypass;
-  plus the session's open and write. A test per tool pins that every model change goes
-  through it.
+  saw:
+
+  - a file opened (path, size, SHA-256, format version);
+  - an edit (the entry, the field, its value before and after);
+  - an import, a patch applied, an undo or redo;
+  - a file written (path, SHA-256);
+  - a compile started and its findings.
+
+  We do not record clicks and keys, because they are large, cannot be replayed on another
+  machine's layout, and add nothing, since every effect passes through the model.
+
+  The journal is taken at the one point each tool already changes its model through, so a
+  step cannot reach the model unrecorded. In the Save editor the journal is taken at
+  `Session::changed` (`session/mod.rs`), which every edit, undo, redo, import and patch calls
+  with its field lines, and at the session's open and write. It is not taken at the undo
+  stack's push, which import and patch bypass. A test per tool pins that every model change
+  goes through it.
 - **The inputs are kept as they were opened.** Saving over the file it came from destroys
   the bundle's most important part, so the tool keeps the bytes it read in memory for the
-  session (a PES save is 7 to 11 MB), and the bytes of each file it imported. An aesthetics
-  export is not kept whole (a team's runs to hundreds of MB): the bundle takes its TOML
-  files and a list of every other file (path, size, SHA-256), and a tick box in the save
-  dialog adds the whole export when the problem is a texture or a model.
-- **The bundle** is one zip (the workspace's `zip` crate): `journal.toml`, the kept inputs,
-  the tool's current state written as its format (the save as it would be saved now), the
-  last file each tool wrote, `utw.log`, the Studio version as the window shows it, the OS, the settings
-  and the game installs found, and the member's own words from a text box in the dialog,
-  for what happened outside Studio (a step in game, another tool touching the save). The
-  dialog says the bundle holds the member's whole save and paths, written as `~` as in the
-  log; nothing is ever sent, the member posts the file.
+  session (a PES save is 7 to 11 MB), and the bytes of each file it imported.
+
+  An aesthetics export is not kept whole (a team's runs to hundreds of MB). The bundle takes
+  its TOML files and a list of every other file (path, size, SHA-256), and a tick box in the
+  save dialog adds the whole export when the problem is a texture or a model.
+- **The bundle** is one zip (the workspace's `zip` crate) holding:
+
+  - `journal.toml`;
+  - the kept inputs;
+  - the tool's current state written as its format (the save as it would be saved now);
+  - the last file each tool wrote;
+  - `utw.log`;
+  - the Studio version as the window shows it, the OS, the settings and the game installs
+    found;
+  - the member's own words from a text box in the dialog, for what happened outside Studio
+    (a step in game, another tool touching the save).
+
+  The dialog says the bundle holds the member's whole save and paths, written as `~` as in
+  the log. Nothing is ever sent: the member posts the file.
 - **Always recording, written on request.** The journal and the kept inputs live in memory
-  from the first open; "Report a problem" in the sidebar's tail, above Help, opens the
-  dialog that writes the bundle (the draft: `docs/prototypes/index.html` `drawReport`; in
-  the tail, not beside the log, because the Save editor has no log panel and a member
-  looks for it wherever they are), and the panic hook writes one beside the crash's log, since a crash is where a member is least able
-  to say what they did. A journal is never cleared while the window is open: a second open
-  adds to the first's record, and a file that fails to open is recorded with its bytes like
-  one that succeeds, since the file that failed is the one a member reports.
+  from the first open. A bundle is written in two ways:
+
+  - "Report a problem" in the sidebar's tail, above Help, opens the dialog that writes the
+    bundle (the draft: `docs/prototypes/index.html` `drawReport`). It sits in the tail, not
+    beside the log, because the Save editor has no log panel and a member looks for it
+    wherever they are.
+  - The panic hook writes one beside the crash's log, since a crash is where a member is
+    least able to say what they did.
+
+  A journal is never cleared while the window is open: a second open adds to the first's
+  record. A file that fails to open is recorded with its bytes like one that succeeds, since
+  the file that failed is the one a member reports.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
-  inputs and compares the result with the bundle's written files, byte for byte. A match puts
-  the problem in what we write or in the game; a mismatch in a step the model took
-  unrecorded or a model change the journal reads differently. A log alone cannot tell the two
-  apart (the 0.0.2 Save editor tester's "placeholders and default stats", 2026-11-07: an
-  in-game run reproduced the placeholders and not the stats, and only their own files and
-  steps can say why).
+  inputs and compares the result with the bundle's written files, byte for byte.
+
+  - A match puts the problem in what we write or in the game.
+  - A mismatch puts it in a step the model took unrecorded or a model change the journal
+    reads differently.
+
+  A log alone cannot tell the two apart (the 0.0.2 Save editor tester's "placeholders and
+  default stats", 2026-11-07: an in-game run reproduced the placeholders and not the stats,
+  and only their own files and steps can say why).
 - **Replay reads a typed change beside each line, never the line.** A step is a line for the
   reader (`player 70101: Height 180 → 190`) and, when it changes the model, an `op`: a table
-  written beside it in `journal.toml`. The lines stay as they are; reading them back would
-  make their wording a wire format that a rewording breaks silently, a name may hold ` → `
-  itself, a roster or tactics field's name carries its slot in its own syntax, and an
-  ingame-face run's unused bits are shown only as a fingerprint, which nothing can apply. In
-  the Save editor the op of a field line is the comparator row it was printed from
-  (`pes_savefile`'s `PlayerDiff` or `TeamDiff`, which derive serde for it, with the entry's
-  id; the face run's row carries the two runs' unused bits beside their fingerprints, so it
-  applies like the others); the session's open names the kept input it read by its index,
-  and a save written the kept output by its index. A step with no op (a pick, a refusal, an import's heading line, the comparator's
-  second open) is a note replay skips. Replay applies each row through `pes_savefile` after
-  checking that the entry holds the row's old value: the first step whose old value differs
-  is where the model changed unrecorded, and replay stops there, naming the step and both
-  values. Each save write is compared at its step: the replayed save encrypted under the
-  kept output's own salt (every write salts afresh, so under any other salt no byte could
-  match), byte for byte; a write a later one to the same path replaced was not kept and is
-  listed as not compared. A mismatch lists the fields that differ between the replayed save
-  and the written one, entry by entry (the comparator again), or, when every entry matches,
-  the first differing byte; the bundle's current state, once the dialog writes one, is
-  compared last the same way. The command exits 0 when every compared write matches, 1 when
-  one differs or a step's old value does, and 2 for a file it cannot read as a bundle (not a
-  zip, no journal, a kept file whose bytes do not match the journal's SHA-256). A bundle from another Studio version replays with both versions named, and a
-  step whose op this build cannot read fails, naming the step.
+  written beside it in `journal.toml`. The lines stay as they are, and are not read back:
+
+  - reading them back would make their wording a wire format that a rewording breaks
+    silently;
+  - a name may hold ` → ` itself;
+  - a roster or tactics field's name carries its slot in its own syntax;
+  - an ingame-face run's unused bits are shown only as a fingerprint, which nothing can
+    apply.
+
+  **What carries an op.** In the Save editor the op of a field line is the comparator row it
+  was printed from (`pes_savefile`'s `PlayerDiff` or `TeamDiff`, which derive serde for it,
+  with the entry's id). The face run's row carries the two runs' unused bits beside their
+  fingerprints, so it applies like the others. The session's open names the kept input it
+  read by its index, and a save written names the kept output by its index. A step with no op
+  (a pick, a refusal, an import's heading line, the comparator's second open) is a note
+  replay skips.
+
+  **Applying the rows.** Replay applies each row through `pes_savefile` after checking that
+  the entry holds the row's old value. The first step whose old value differs is where the
+  model changed unrecorded, and replay stops there, naming the step and both values.
+
+  **Comparing the writes.** Each save write is compared at its step: the replayed save
+  encrypted under the kept output's own salt (every write salts afresh, so under any other
+  salt no byte could match), byte for byte. A write a later one to the same path replaced was
+  not kept and is listed as not compared.
+
+  A mismatch lists the fields that differ between the replayed save and the written one,
+  entry by entry (the comparator again), or, when every entry matches, the first differing
+  byte. The bundle's current state, once the dialog writes one, is compared last the same
+  way.
+
+  **The exit code.** The command exits:
+
+  - 0 when every compared write matches;
+  - 1 when one differs or a step's old value does;
+  - 2 for a file it cannot read as a bundle (not a zip, no journal, a kept file whose bytes
+    do not match the journal's SHA-256).
+
+  A bundle from another Studio version replays with both versions named, and a step whose op
+  this build cannot read fails, naming the step.
 - **One facility in `studio_core`**: the journal's type, the bundle writer, the button and the
-  dialog are the platform's; each tool contributes its steps and its kept inputs through the
+  dialog are the platform's. Each tool contributes its steps and its kept inputs through the
   tool interface, so the bundle and its rules are the same in every tool.

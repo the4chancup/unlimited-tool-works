@@ -14,137 +14,181 @@ Migration builds a separate output draft and leaves the original source intact. 
 to moving, flattening, or removing files describe that draft, not destructive edits to the input.
 
 1. **Reads the old export** (folders / .zip / .7z): Faces/Boots/Gloves item folders with embedded
-   IDs, Kit Configs + Kit Textures folders, Common, Portraits, Collars, Logo, Other, Team Note txt; folder
-   names are matched in any letter case, as Red matches them, while an item folder's `k` or `g`
-   is lower case, as Red requires (a `K0430` folder is unmigrated content), and a top folder
+   IDs, Kit Configs + Kit Textures folders, Common, Portraits, Collars, Logo, Other, Team Note
+   txt. (A bare folder of item folders is the other accepted input — see "Model-folder mode".)
+
+   Folder names are matched in any letter case, as Red matches them, while an item folder's `k`
+   or `g` is lower case, as Red requires (a `K0430` folder is unmigrated content). A top folder
    holding nothing but one subfolder of its own name, letter case aside (`Faces/Faces/`; Other
-   and Common aside), is read as that subfolder, one level, as Red flattens it. A file the game stores zlib-wrapped (a WESYS `.mtl` or
-   `face.xml`; 48 wrapped `face.xml` files on the maintainer's machine) is unwrapped for the
-   rewrites below. A rewritten `.mtl` is written back wrapped, the compiler reading either. A
-   `face.xml` is written unwrapped, rewritten or not: the compiler parses a member's `face.xml`
-   as plain XML and refuses a wrapped one (`xml_broken`, the folder discarded), so a wrapped one
-   carried as it was would cost the player his face at the first compile. OS artifacts (`Thumbs.db`, `desktop.ini`,
-   `.DS_Store`, at any depth) are left out of the output and not reported: Red's copy drops
-   `*.db` and `*.ini` files, the compiler ignores the three ("OS artifacts" in
-   `spec/aesthetics_export/object_model.md`), and the maintainer's old exports hold 670 of them,
-   which step 10 would otherwise list one by one. A Fox model folder's `*.fpk.xml` (`face.fpk.xml`,
-   `boots.fpk.xml`, `glove.fpk.xml`, about 5,400 in the maintainer's export folders) is left out
-   the same way, in both modes: it is the source-side list of an FPK's members, which the
-   compiler writes from the folder's own files, so carried it would only make a `file_not_used`
-   Warning per model at every compile, while Red packed it into the CPK as a file no game reads
-   (the parity tracer's `boots.fpk.xml` rows, "Not produced" there). (A bare
-   folder of item folders is the other accepted input — see "Model-folder mode".) An archive's
-   name is its file's stem, the name of the folder inside it aside, as Red named an export
-   (a member's renamed `day5.zip` holding `co Spring/` is `day5`). The export's root is the
-   input's own, or, when that holds none of the files and folders this step and step 9 read
-   but exactly one folder and no other file (OS artifacts aside), that folder: the AET page
-   packs an export inside one main folder, and a folder input wrapped the same way reads the
-   same, so the two are one rule. An input holding no Note,
-   none of the folders above and none of a referee export's `refs.txt`, `Refs list.txt` and `Players/` (step
-   9; the real `refs lan party` export holds `refs.txt` and `Players/` alone) is reported as no old export, nothing written, exit 1, as Red
-   refused it ("No usable files found"): resolved from its name alone, it would become a Full
-   export without kits, which compiles placeholder kits over the team's installed ones.
+   and Common aside), is read as that subfolder, one level, as Red flattens it.
+
+   A file the game stores zlib-wrapped (a WESYS `.mtl` or `face.xml`; 48 wrapped `face.xml`
+   files on the maintainer's machine) is unwrapped for the rewrites below:
+
+   - A rewritten `.mtl` is written back wrapped, the compiler reading either.
+   - A `face.xml` is written unwrapped, rewritten or not. The compiler parses a member's
+     `face.xml` as plain XML and refuses a wrapped one (`xml_broken`, the folder discarded), so a
+     wrapped one carried as it was would cost the player his face at the first compile.
+
+   OS artifacts (`Thumbs.db`, `desktop.ini`, `.DS_Store`, at any depth) are left out of the
+   output and not reported, because Red's copy drops `*.db` and `*.ini` files, the compiler
+   ignores the three ("OS artifacts" in `spec/aesthetics_export/object_model.md`), and the
+   maintainer's old exports hold 670 of them, which step 10 would otherwise list one by one.
+
+   A Fox model folder's `*.fpk.xml` (`face.fpk.xml`, `boots.fpk.xml`, `glove.fpk.xml`, about
+   5,400 in the maintainer's export folders) is left out the same way, in both modes. It is the
+   source-side list of an FPK's members, which the compiler writes from the folder's own files,
+   so carried it would only make a `file_not_used` Warning per model at every compile, while Red
+   packed it into the CPK as a file no game reads (the parity tracer's `boots.fpk.xml` rows,
+   "Not produced" there).
+
+   An archive's name is its file's stem, the name of the folder inside it aside, as Red named an
+   export (a member's renamed `day5.zip` holding `co Spring/` is `day5`).
+
+   The export's root is the input's own. When that holds none of the files and folders this
+   step and step 9 read, but exactly one folder and no other file (OS artifacts aside), the root
+   is that folder instead. The AET page packs an export inside one main folder, and a folder
+   input wrapped the same way reads the same, so the two are one rule.
+
+   An input holding no Note, none of the folders above and none of a referee export's
+   `refs.txt`, `Refs list.txt` and `Players/` (step 9; the real `refs lan party` export holds
+   `refs.txt` and `Players/` alone) is reported as no old export, nothing written, exit 1, as
+   Red refused it ("No usable files found"). Resolved from its name alone, it would become a
+   Full export without kits, which compiles placeholder kits over the team's installed ones.
 2. **Reads the team's savefile data** (via `pes_savefile`) to map old boots/gloves IDs to players —
    the old format encodes "which player wears boots k0915" only in the savefile, so the savefile is
    the input for a faithful migration; without one, loose mode (step 11) infers the wearers from the
    IDs instead.
+
+   The team is the save's team of the export's name (step 6), whatever ID the save gives it. Its
+   roster is read by player ID (`team_id * 100 + NN`, that ID, "Savefile identity" in
+   `spec/aesthetics_export/player_folders.md`), never by position, because a real save's roster
+   need not be in slot order.
+
    A face folder whose slot the save's roster leaves empty (a roster of 22 with a `XXX23`
    folder) still becomes its player folder, with no `settings.toml`, and is reported (W,
-   `roster_slot_empty`, the slot in its context): the compiler's validation then rules on the
-   slot as for any export. The team is the save's team of the export's name (step 6), whatever
-   ID the save gives it, and its roster is read by player ID (`team_id * 100 + NN`, that ID,
-   "Savefile identity" in `spec/aesthetics_export/player_folders.md`), never by position: a
-   real save's roster need not be in slot order.
-3. **Builds player folders**: each player's face folder contents move into `Players/NN - Name/` (NN
-   from the face folder's `XXXxx` suffix: its first three characters are the `XXX` placeholder
-   or a baked-in team ID, any three characters, and NN the two after them, as Red reads them;
-   1,034 of the 3,641 face folders on the maintainer's machine carry an ID, `73921 - Dorifto`).
-   NN must be two digits making 01 to 23, as Red requires; a face folder without them is
-   unmigrated content as a whole. The name part is what follows, its leading spaces and hyphens trimmed (`XXX15 - Snuffy`,
-   `XXX15 Snuffy` and `XXX15- Snuffy` all give `Snuffy`), and the same rule reads a boots or
-   gloves folder's (`k2101 UNIFORM` → `UNIFORM`). Two face folders of one slot are one too many:
-   the second by name is unmigrated content, as Red kept the first. A face folder holding
-   the game's own path to its face (`Faces/81401/common/character0/model/character/face/real/81401/`,
-   an extracted face CPK: FGOG VGL6 and minipatch, /co/'s fetus export, 2016-2018), every file
-   of it below `common/character0/model/character/face/real/` and one folder there (letter
-   case aside, OS artifacts aside), has that innermost folder's contents moved instead, the
-   files directly in it as a face folder's are:
-   the folder is the member's face for the slot, an extracted face CPK of their own. Red does
-   not deliver it: its face CPK nests the tree below the player's own path
+   `roster_slot_empty`, the slot in its context). The compiler's validation then rules on the
+   slot as for any export.
+3. **Builds player folders**: each player's face folder contents move into `Players/NN - Name/`.
+   NN comes from the face folder's `XXXxx` suffix: its first three characters are the `XXX`
+   placeholder or a baked-in team ID, any three characters, and NN the two after them, as Red
+   reads them (1,034 of the 3,641 face folders on the maintainer's machine carry an ID,
+   `73921 - Dorifto`). NN must be two digits making 01 to 23, as Red requires; a face folder
+   without them is unmigrated content as a whole. The name part is what follows, its leading
+   spaces and hyphens trimmed (`XXX15 - Snuffy`, `XXX15 Snuffy` and `XXX15- Snuffy` all give
+   `Snuffy`), and the same rule reads a boots or gloves folder's (`k2101 UNIFORM` → `UNIFORM`).
+   Two face folders of one slot are one too many: the second by name is unmigrated content, as
+   Red kept the first.
+
+   A face folder holding the game's own path to its face
+   (`Faces/81401/common/character0/model/character/face/real/81401/`, an extracted face CPK:
+   FGOG VGL6 and minipatch, /co/'s fetus export, 2016-2018) has that innermost folder's
+   contents moved instead, when every file of it is below
+   `common/character0/model/character/face/real/` and in one folder there (letter case aside,
+   OS artifacts aside). The files directly in that innermost folder are moved as a face
+   folder's are. The folder is the member's face for the slot, an extracted face CPK of their
+   own. Moved as it is, the tree would sit below the player folder, where the compile refuses
+   its `face.xml` (`file_type_disallowed`) and drops the player.
+
+   Red does not deliver that face. Its face CPK nests the tree below the player's own path
    (`face/real/79501.cpk` holding `.../real/79501/common/character0/.../real/81401/face.mtl`),
    and the `face.xml` it generates at that path, finding none at the folder's top, names models
    that are not beside it (FGOG VGL6's Red output; a CPK listing, not checked in game). We
    migrate the member's face rather than reproduce that output, because it is what the export
-   was made to show. Moved as it is, the tree would sit below the player folder, where the
-   compile refuses its `face.xml` (`file_type_disallowed`) and drops the player. Name comes, in order of preference, from the **face
-   folder's own name part** (`XXX15 - Snuffy` → `Snuffy`; the author's curated name, and what the
-   folder is called today), then from the **worn boots/gloves folder's name part** (a player with
-   boots/gloves but no face folder, or whose face folder has no name part: one order for every
-   player), then from the **savefile name** with its colour codes stripped
-   (`pes_savefile`'s `display_name()` — see "Name colour codes" in `spec/pes_savefile/model.md`; the raw codes are
-   control characters, invalid in folder names; any other character a folder name cannot hold,
-   `/`, `?` or `:` among them, is dropped the same way, and a trailing `.` or space is trimmed,
-   which a folder name cannot end in either: `T.O.M.` → `T.O.M`; a source left empty counts as
-   absent), then NN alone. Red's Pre-Studio upgrader uses this
-   same order. A face folder's portrait stays with the player folder, named `portrait.dds`: the
-   AET allows a prefix (any file whose name ends in `portrait.dds`, letter case aside, as Red
-   matches it), while the Studio format reads the exact stem `portrait`, so a prefixed one is
-   renamed. A folder holding two such files is reported as unmigrated content and both are
-   left in the player folder as named. A Fox hair's skeleton is renamed the same way: the old
-   format names it after its game slot, `fcl_hair_sim.skl`, while the Studio format pairs a
-   skeleton with its model by the model's stem ("SKL pairing" in
-   `spec/aesthetics_export/player_folders.md`), so beside an `fcl_hair.fmdl` it becomes
-   `fcl_hair.skl` (letter case aside, in both modes): kept as named, the compile reports it
-   `file_not_used` and injects the template skeleton in its place, and 15 of the 84
-   `fcl_hair_sim.skl` beside an FMDL on the maintainer's machine are custom ones the hair would
-   lose. A folder holding `fcl_hair.skl` already keeps both as named, the compile's pairing
-   taking its own. Old `ingame_face` and
-   tolerated `ingame_face.txt` markers become `ingame_face.toml`, the file the marker is now
-   (filled from the record at step 8); a player whose savefile record wears boots/gloves but who
-   has **no face folder** also gets a player folder with an `ingame_face.toml`, since a stray
-   boots/gloves folder is exactly the ingame-face case. An empty face folder is never that case: it is how a player with an FBM
-   removes the placeholder face, as part of the FPC system (Red packs an empty face package for
-   it, so the player's own face never shows). It migrates to nothing of its own: its player
-   folder is written as any face folder's is, holding no face file and no marker (its
-   `settings.toml` alone when the player wears nothing custom), and the compiler writes the
-   blank face for a player folder with no face model (`spec/team_compiler/pipeline.md` step 1). The upgrader only has to see
-   it, which a listing of files alone does not; the real PMMM, GIG VGL26 exports hold 18 and
-   10 such folders. A boots or gloves
-   folder holding no model (nothing, or a `boots.skl` alone) is how a member hid a player's
-   boots or hands: Red packed an empty package under its ID, and any ID naming no model looks
-   the same in game, as the FPC preset's IDs do. Each player wearing one gets the `fpc_on`
-   marker, which gives him the preset's blank-model IDs (`spec/aesthetics_export/fpc_toggle.md`),
-   rather than an empty package, and the folder's files are leftovers (step 10), so its name
-   part names no player (`k2176 - EMPTY` would name its wearer `EMPTY`); the real EGG
-   VGL26 export's `Boots/k2176 - EMPTY` and `Gloves/g2177 - EMPTY`, 9 exports in all. On a Fox export, model folders used by exactly **one** player are merged
-   into that player's folder (a boots folder used only by player 15 becomes `boots.fmdl` +
-   textures inside `15 - Name/`). A file path the two folders share is kept once when the
-   bytes match; with different bytes the model folder is not merged but kept shared with a
-   link, as in step 4, and reported (I, `merge_kept_shared`, the first clashing path in its
-   context), since one path cannot hold both. A boots folder's name is `k` and four digits, a
-   gloves folder's `g` and four digits (or three alone, below), then its name part, as Red
-   requires; any other is unmigrated content as a whole. A model folder no save record names,
-   and that no pairing below gives a wearer, is a leftover (step 10): no player wore it in
-   game. A wearer's player folder takes the boots folder's name part before the
-   gloves folder's when the name falls to them. Two item folders
-   carrying one ID (`k0430 - A`, `k0430 - B`) are one too many: the second by name is
-   unmigrated content, as Red skipped it (`folder_error_num_repeated`). On a pre-Fox export they stay shared folders with a link, as
-   in step 4: pre-Fox packs a player folder's every model into his face folder, where a
-   member's own `face.xml`, which names only his face's parts, would drop the merged model
-   (`spec/team_compiler/messages.md` "User-supplied `face.xml`"), while a link keeps loading
-   the folder by its ID as the old export did.
+   was made to show.
+
+   Name comes, in order of preference, from:
+
+   1. the **face folder's own name part** (`XXX15 - Snuffy` → `Snuffy`; the author's curated
+      name, and what the folder is called today);
+   2. the **worn boots/gloves folder's name part** (a player with boots/gloves but no face
+      folder, or whose face folder has no name part: one order for every player);
+   3. the **savefile name** with its colour codes stripped (`pes_savefile`'s `display_name()` —
+      see "Name colour codes" in `spec/pes_savefile/model.md`). The raw codes are control
+      characters, invalid in folder names. Any other character a folder name cannot hold, `/`,
+      `?` or `:` among them, is dropped the same way, and a trailing `.` or space is trimmed,
+      since a folder name cannot end in either (`T.O.M.` → `T.O.M`). A source left empty counts
+      as absent;
+   4. NN alone.
+
+   Red's Pre-Studio upgrader uses this same order.
+
+   A face folder's portrait stays with the player folder, named `portrait.dds`. The AET allows a
+   prefix (any file whose name ends in `portrait.dds`, letter case aside, as Red matches it),
+   while the Studio format reads the exact stem `portrait`, so a prefixed one is renamed. A
+   folder holding two such files is reported as unmigrated content and both are left in the
+   player folder as named.
+
+   A Fox hair's skeleton is renamed the same way. The old format names it after its game slot,
+   `fcl_hair_sim.skl`, while the Studio format pairs a skeleton with its model by the model's
+   stem ("SKL pairing" in `spec/aesthetics_export/player_folders.md`), so beside an
+   `fcl_hair.fmdl` it becomes `fcl_hair.skl` (letter case aside, in both modes). Kept as named,
+   the compile reports it `file_not_used` and injects the template skeleton in its place, and 15
+   of the 84 `fcl_hair_sim.skl` beside an FMDL on the maintainer's machine are custom ones the
+   hair would lose. A folder holding `fcl_hair.skl` already keeps both as named, the compile's
+   pairing taking its own.
+
+   Old `ingame_face` and tolerated `ingame_face.txt` markers become `ingame_face.toml`, the file
+   the marker is now (filled from the record at step 8). A player whose savefile record wears
+   boots/gloves but who has **no face folder** also gets a player folder with an
+   `ingame_face.toml`, since a stray boots/gloves folder is exactly the ingame-face case.
+
+   An empty face folder is never that case. It is how a player with an FBM removes the
+   placeholder face, as part of the FPC system (Red packs an empty face package for it, so the
+   player's own face never shows). It migrates to nothing of its own: its player folder is
+   written as any face folder's is, holding no face file and no marker (its `settings.toml`
+   alone when the player wears nothing custom), and the compiler writes the blank face for a
+   player folder with no face model (`spec/team_compiler/pipeline.md` step 1). The upgrader only
+   has to see it, which a listing of files alone does not; the real PMMM, GIG VGL26 exports
+   hold 18 and 10 such folders.
+
+   A boots or gloves folder holding no model (nothing, or a `boots.skl` alone) is how a member
+   hid a player's boots or hands. Red packed an empty package under its ID, and any ID naming no
+   model looks the same in game, as the FPC preset's IDs do. Each player wearing one gets the
+   `fpc_on` marker, which gives him the preset's blank-model IDs
+   (`spec/aesthetics_export/fpc_toggle.md`), rather than an empty package. The folder's files
+   are leftovers (step 10), so its name part names no player (`k2176 - EMPTY` would name its
+   wearer `EMPTY`). Examples are the real EGG VGL26 export's `Boots/k2176 - EMPTY` and
+   `Gloves/g2177 - EMPTY`, 9 exports in all.
+
+   On a Fox export, model folders used by exactly **one** player are merged into that player's
+   folder (a boots folder used only by player 15 becomes `boots.fmdl` + textures inside
+   `15 - Name/`). A file path the two folders share is kept once when the bytes match. With
+   different bytes the model folder is not merged but kept shared with a link, as in step 4, and
+   reported (I, `merge_kept_shared`, the first clashing path in its context), since one path
+   cannot hold both.
+
+   On a pre-Fox export those folders stay shared folders with a link, as in step 4. Pre-Fox
+   packs a player folder's every model into his face folder, where a member's own `face.xml`,
+   which names only his face's parts, would drop the merged model
+   (`spec/team_compiler/messages.md` "User-supplied `face.xml`"), while a link keeps loading the
+   folder by its ID as the old export did.
+
+   A boots folder's name is `k` and four digits, a gloves folder's `g` and four digits (or three
+   alone, below), then its name part, as Red requires; any other is unmigrated content as a
+   whole. Two item folders carrying one ID (`k0430 - A`, `k0430 - B`) are one too many: the
+   second by name is unmigrated content, as Red skipped it (`folder_error_num_repeated`).
+
+   A model folder no save record names, and that no pairing below gives a wearer, is a leftover
+   (step 10): no player wore it in game.
+
+   When the name of a wearer's player folder falls to his item folders, it takes the boots
+   folder's name part before the gloves folder's.
 
    **When the save and the folders disagree** (with a roster only): a *missing ID* is a
    rostered player's worn custom boots or gloves ID (above 100) that no folder of its kind
    carries; an *unworn folder* is a folder of the kind no save record wears, a modelless one
-   included. Saves get renumbered and folders renamed, so the two drift apart (VGL26's /omg/
-   saved six boots IDs 400 below the folders named after their players, `k2952 - BANISHED`
-   for 2552), and without a pairing the player gets the hide ID (step 8) while his folder is
-   dropped as a leftover, which loses his body. A pairing pairs an ID with a folder,
-   whatever rule makes it: every player wearing that ID wears the folder as if its number
-   were the ID (merged into his folder, or shared as any worn folder), and its finding names
-   the folder, the slot and the save's ID once per wearer. Each is a Warning, since the save
-   says otherwise and the member checks it. In order:
+   included.
+
+   Saves get renumbered and folders renamed, so the two drift apart (VGL26's /omg/ saved six
+   boots IDs 400 below the folders named after their players, `k2952 - BANISHED` for 2552), and
+   without a pairing the player gets the hide ID (step 8) while his folder is dropped as a
+   leftover, which loses his body.
+
+   A pairing pairs an ID with a folder, whatever rule makes it: every player wearing that ID
+   wears the folder as if its number were the ID (merged into his folder, or shared as any worn
+   folder), and its finding names the folder, the slot and the save's ID once per wearer. Each
+   is a Warning, since the save says otherwise and the member checks it. In order:
    1. **By name.** An unworn folder of the ID's kind whose name part, folded to lowercase
       letters and digits, equals one of the player's names folded the same way (his face
       folder's whole name, its name part, or his save name) pairs with it, when exactly one
@@ -168,490 +212,659 @@ to moving, flattening, or removing files describe that draft, not destructive ed
       nothing says which folder is his; one left with no unworn folder gets the hide ID
       (step 8).
 
-   On VGL26, /fg/, a renumbered save, upgrades with its
-   bodies (its boots in order, its gloves following by number, `g2451 - EMPTY` hiding the
-   hands of the player `k2451 - Acknowledged` names); /@/, /lcg/, /skg/, /smbg/, /sora/ and
-   six /fng/ players are not wearing an item of a kind; /bag/ (boots 3460 beside two `_Back`
-   folders) and /fgog/ (gloves 8447 beside two folders) are refused.
+   On VGL26:
+
+   - /fg/, a renumbered save, upgrades with its bodies (its boots in order, its gloves
+     following by number, `g2451 - EMPTY` hiding the hands of the player
+     `k2451 - Acknowledged` names);
+   - /@/, /lcg/, /skg/, /smbg/, /sora/ and six /fng/ players are not wearing an item of a kind;
+   - /bag/ (boots 3460 beside two `_Back` folders) and /fgog/ (gloves 8447 beside two folders)
+     are refused.
 4. **Keeps shared folders**: a model folder used by **two or more** players stays as a named shared
    folder (`Boots/Crocs/`), and each of those players' folders gets a link file (`Crocs.boots`).
-   Naming: nearly all model folders in current exports already carry a descriptive name after their
-   ID (`k0915 - Crocs`), so migration uses that name part when present (`Boots/Crocs/`) and falls
-   back to the old ID (`Boots/k0915/`) for folders named by ID alone; either way users can rename
-   them (and their link files) afterwards. Two shared folders of one kind whose names match,
-   letter case aside (`k0430 - Crocs`, `k0431 - crocs`), would be one folder. When they hold
-   the same files (the same paths, letter case aside, each byte for byte), they are one model
-   under two IDs and become that one folder, under the lowest ID's spelling, every wearer of
-   either linking it. Otherwise the lowest ID keeps the name and every other takes its ID
-   (`Boots/k0431/`), the links following, so no wearer loads another's model. A gloves folder named by a three-digit ID alone
-   is read as four digits (`g567` → `g0567`), as Red reads it (its `export_move.py`, gloves
-   only).
+
+   Naming: nearly all model folders in current exports already carry a descriptive name after
+   their ID (`k0915 - Crocs`), so migration uses that name part when present (`Boots/Crocs/`)
+   and falls back to the old ID (`Boots/k0915/`) for folders named by ID alone; either way users
+   can rename them (and their link files) afterwards. A gloves folder named by a three-digit ID
+   alone is read as four digits (`g567` → `g0567`), as Red reads it (its `export_move.py`,
+   gloves only).
+
+   Two shared folders of one kind whose names match, letter case aside (`k0430 - Crocs`,
+   `k0431 - crocs`), would be one folder:
+
+   - When they hold the same files (the same paths, letter case aside, each byte for byte), they
+     are one model under two IDs and become that one folder, under the lowest ID's spelling,
+     every wearer of either linking it.
+   - Otherwise the lowest ID keeps the name and every other takes its ID (`Boots/k0431/`), the
+     links following, so no wearer loads another's model.
 5. **Restructures kits**: Kit Configs + Kit Textures are reorganized into `Kits/` subfolders, one
    per kit slot (a config named `???_DEF_<ordinal>_realUni.bin`, any three ID characters and
-   any letter case, as Red matches it: `_1st_` → `p1/`, … `_9th_` → `p9/`, `_GK1st_` → `g1/`); the binary
-   config is converted to `config.toml` via `libs/kit_config` (texture-name fields dropped — the
-   compiler re-derives them from the textures present; undecoded bits preserved in the `[unknown]`
-   table — see the [Kit config editor plan](kit_config_editor.md)); kit textures are renamed from
-   the old `u0XXXp1_…` to `u0XXXp9_…` and `u0XXXg1_…` patterns (into `p1/` to `p9/` and `g1/`; a
-   `u0XXXg2` and up, no Studio slot, is a leftover as below) to the generic `kit` prefix (`kit.dds`, `kit_mask.dds`,
-   `kit_chest.dds`, …) that the compiler re-expands at compile time; kit colors are extracted from
-   the Team Note txt into per-kit `colors.txt` files, one color per line (the Note's kit entry
-   holds both on one line, `211 74 79 - 162 62 77 - 3` or `#D34A4F - #A23E4D - 3`; its trailing icon number, when present,
-   from 0 to 23 and not the default 3, becomes that kit's icon marker (one past 23, which Red
-   replaced by the default, writes none), `icon_<N>`: "Marker names" in the
-   Aesthetics export plan). The Note's bytes are read as UTF-8, a byte sequence that is not
-   UTF-8 reading as the replacement character: every token the grammar below reads is ASCII,
-   and real Notes carry Shift-JIS in their other lines (`JP`'s Summer 18, `poland`, `nijiura`),
-   on which Red's strict read (`encoding="utf8"`, no error handler) raises. The Note is read as Red reads it (`bins_update.py`): a line whose
-   first word is `team` and whose second starts with `co` (`Team Colours:`, any letter case)
-   opens the team colors, one whose first word is `kit` likewise opens the kit colors, a line
-   starting with `player`, `other` or `notes` ends the reading, and an entry is a line whose
-   first non-blank character is `-`, its colors what follows its last `:`, as `#RRGGBB` or three decimal components,
-   each written to `colors.txt` as the Note spells it, which is the "Colors" grammar
-   (`spec/aesthetics_export/player_folders.md`); a
-   kit entry holding `gk:` in any letter case is a goalkeeper's (the AET template spells
-   `- 1st GK:`). A kit entry's colors split at each `-` into its two colors, each read as a
-   team color is, and an optional third part, the icon: a whole number from 0 to 23 other than
-   3 gives `icon_<N>`, any other third part none, as Red read it (`bins_update.py` ignores
-   what is no such number); an entry of one part or of more than three does not read. An entry whose colors do not read is reported
-   (step 10) and keeps its slot, which gets no `colors.txt`, the later entries keeping theirs: Red dropped it and shifted
-   every later kit's colors one slot down, onto another kit's config. A mistyped color
-   (`##8C96C5`) is not repaired: the ways a manager can mistype a line have no end, and a
-   Warning that let the rest upgrade would mostly go unread, so the refusal makes the manager
-   fix the Note (DECISIONS 2026-11-09). The Note's kit-entry order maps
-   entries to slots (player entries → `p1`…, `gk:` entries → `g1`…), matching how Red numbered them
-   in `UniColor.bin`. An entry whose slot has no config still becomes its kit folder, holding
-   its `colors.txt` alone, which the compiler builds as a placeholder kit in a `Full` export
-   and, in a `Midcup` one, as an update of the kit's colors alone, its installed textures and
-   config staying (Red wrote the colors to `UniColor.bin` and packed nothing else), because a Note's
-   kit lines are what told Red how many kits the team has (the AET page: "The amount of lines
-   will let PES understand how many kits you have"); it is reported (`kit_without_config`, W,
-   naming the slot), since the page also tells authors to delete lines of kits they lack. Both
-   this Warning and the next keep what they name (the finding on the Note's file, or on the
-   config's, context `slot`): neither loses anything, so a run whose only findings they are is
-   clean. The
-   other way round, a config whose slot no Note entry gives (a `XXX_DEF_4th_realUni.bin`
+   any letter case, as Red matches it: `_1st_` → `p1/`, … `_9th_` → `p9/`, `_GK1st_` → `g1/`).
+
+   - The binary config is converted to `config.toml` via `libs/kit_config` (texture-name fields
+     dropped — the compiler re-derives them from the textures present; undecoded bits preserved
+     in the `[unknown]` table — see the [Kit config editor plan](kit_config_editor.md)).
+   - Kit textures are renamed from the old `u0XXXp1_…` to `u0XXXp9_…` and `u0XXXg1_…` patterns
+     (into `p1/` to `p9/` and `g1/`; a `u0XXXg2` and up, no Studio slot, is a leftover as below)
+     to the generic `kit` prefix (`kit.dds`, `kit_mask.dds`, `kit_chest.dds`, …) that the
+     compiler re-expands at compile time.
+   - Kit colors are extracted from the Team Note txt into per-kit `colors.txt` files, one color
+     per line. The Note's kit entry holds both on one line, `211 74 79 - 162 62 77 - 3` or
+     `#D34A4F - #A23E4D - 3`. Its trailing icon number, when present, from 0 to 23 and not the
+     default 3, becomes that kit's icon marker, `icon_<N>` ("Marker names" in the Aesthetics
+     export plan). One past 23, which Red replaced by the default, writes none.
+
+   **Reading the Note.** The Note's bytes are read as UTF-8, a byte sequence that is not UTF-8
+   reading as the replacement character. Every token the grammar below reads is ASCII, and real
+   Notes carry Shift-JIS in their other lines (`JP`'s Summer 18, `poland`, `nijiura`), on which
+   Red's strict read (`encoding="utf8"`, no error handler) raises.
+
+   The Note is read as Red reads it (`bins_update.py`):
+
+   - a line whose first word is `team` and whose second starts with `co` (`Team Colours:`, any
+     letter case) opens the team colors;
+   - one whose first word is `kit` likewise opens the kit colors;
+   - a line starting with `player`, `other` or `notes` ends the reading;
+   - an entry is a line whose first non-blank character is `-`, its colors what follows its last
+     `:`, as `#RRGGBB` or three decimal components, each written to `colors.txt` as the Note
+     spells it, which is the "Colors" grammar (`spec/aesthetics_export/player_folders.md`);
+   - a kit entry holding `gk:` in any letter case is a goalkeeper's (the AET template spells
+     `- 1st GK:`).
+
+   A kit entry's colors split at each `-` into its two colors, each read as a team color is,
+   and an optional third part, the icon. A whole number from 0 to 23 other than 3 gives
+   `icon_<N>`, any other third part none, as Red read it (`bins_update.py` ignores what is no
+   such number). An entry of one part or of more than three does not read.
+
+   An entry whose colors do not read is reported (step 10) and keeps its slot, which gets no
+   `colors.txt`, the later entries keeping theirs; Red dropped it and shifted every later kit's
+   colors one slot down, onto another kit's config. A mistyped color (`##8C96C5`) is not
+   repaired: the ways a manager can mistype a line have no end, and a Warning that let the rest
+   upgrade would mostly go unread, so the refusal makes the manager fix the Note (DECISIONS
+   2026-11-09).
+
+   **Entries and configs.** The Note's kit-entry order maps entries to slots (player entries →
+   `p1`…, `gk:` entries → `g1`…), matching how Red numbered them in `UniColor.bin`.
+
+   An entry whose slot has no config still becomes its kit folder, holding its `colors.txt`
+   alone, because a Note's kit lines are what told Red how many kits the team has (the AET page:
+   "The amount of lines will let PES understand how many kits you have"). The compiler builds
+   that folder as a placeholder kit in a `Full` export and, in a `Midcup` one, as an update of
+   the kit's colors alone, its installed textures and config staying (Red wrote the colors to
+   `UniColor.bin` and packed nothing else). It is reported (`kit_without_config`, W, naming the
+   slot), since the page also tells authors to delete lines of kits they lack.
+
+   The other way round, a config whose slot no Note entry gives (a `XXX_DEF_4th_realUni.bin`
    beside three player entries) still becomes its kit folder, reported
-   (`config_without_kit_entry`, W, naming the slot), as Red warned on the mismatch: Red packed
-   the config but, counting the Note's entries, never offered the kit, which the upgraded
-   export offers; the author deletes the folder if the kit was dropped. A second or later
-   goalkeeper kit (a second `gk:` entry, a `u0XXXg2` texture, a `XXX_DEF_GK2nd_realUni.bin`
-   config) has no Studio slot and is a leftover (step 10): no version the cup plays shows a
-   goalkeeper kit past the first (Red wrote the entry to `UniColor.bin` as kit 0x11). The slot
-   names leave room for one: a version that shows a `g2` gets a new slot, not a new format.
-   Player entries past the ninth have no Studio slot either (Red wrote them as kits past 9) and
-   are unmigrated content (step 10). A Kit Textures file inside a subfolder, which Red did not
-   read (step 1's same-named subfolder aside), is a leftover, and so, in a `Full` export, is a
-   file naming a slot (`p1`-`p9`, `g1`; a `u0XXXg2` and up is a leftover in either kind) that
-   no config and no Note entry of the export gives (a `u0XXXp5.dds` beside configs and Note
-   entries for kits 1 to 3): Red packed it, but no kit row named it. In
-   a `Midcup` export such a file is the kit's texture update and becomes its kit folder with no
-   `config.toml`, which keeps the slot's installed config (`spec/team_compiler/pipeline.md`
-   "Bins accumulation"); so does a slot whose Note entry has no config. A `Kit Configs` subfolder
-   (the AET page's old `Kit Configs/<team id>/` layout, 953 configs on the maintainer's machine)
-   is read as if its files sat at the folder's root, as Red flattens it (`export_check.py`); a
-   name found at both places is one config when the bytes match and unmigrated content
-   otherwise, and the same holds for any second config of one slot (`714_DEF_1st_realUni.bin`
-   beside `XXX_DEF_1st_realUni.bin`): one config with the kit's when the bytes match,
-   unmigrated content otherwise, the kit's config being the root's before a subfolder's, then
-   the first by name: two configs of one slot cannot both reach the game. A file deeper than one
-   subfolder, which Red's flatten left a folder and refused, and a config that does not decode
-   (its error named in the report), are unmigrated content too. A Kit Textures file is read by
-   position, as Red reads it: `u`, four characters, `p` or `g` with the kit's digit, then the
-   rest of the stem, empty or starting with `_`, which the generic name keeps
-   (`u0XXXp1_back.dds` → `p1/kit_back.dds`), and the extension `.dds`, in any letter case; a
-   file of that shape with the extension `.ftex` is converted to the DDS it holds
+   (`config_without_kit_entry`, W, naming the slot), as Red warned on the mismatch. Red packed
+   the config but, counting the Note's entries, never offered the kit, which the upgraded export
+   offers; the author deletes the folder if the kit was dropped.
+
+   Both these Warnings keep what they name (the finding on the Note's file, or on the config's,
+   context `slot`). Neither loses anything, so a run whose only findings they are is clean.
+
+   A second or later goalkeeper kit (a second `gk:` entry, a `u0XXXg2` texture, a
+   `XXX_DEF_GK2nd_realUni.bin` config) has no Studio slot and is a leftover (step 10), because no
+   version the cup plays shows a goalkeeper kit past the first (Red wrote the entry to
+   `UniColor.bin` as kit 0x11). The slot names leave room for one: a version that shows a `g2`
+   gets a new slot, not a new format. Player entries past the ninth have no Studio slot either
+   (Red wrote them as kits past 9) and are unmigrated content (step 10).
+
+   **Files that do not migrate as kits.** A Kit Textures file inside a subfolder, which Red did
+   not read (step 1's same-named subfolder aside), is a leftover.
+
+   In a `Full` export, a file naming a slot (`p1`-`p9`, `g1`; a `u0XXXg2` and up is a leftover
+   in either kind) that no config and no Note entry of the export gives (a `u0XXXp5.dds` beside
+   configs and Note entries for kits 1 to 3) is a leftover too: Red packed it, but no kit row
+   named it. In a `Midcup` export such a file is the kit's texture update and becomes its kit
+   folder with no `config.toml`, which keeps the slot's installed config
+   (`spec/team_compiler/pipeline.md` "Bins accumulation"). So does a slot whose Note entry has
+   no config.
+
+   A `Kit Configs` subfolder (the AET page's old `Kit Configs/<team id>/` layout, 953 configs on
+   the maintainer's machine) is read as if its files sat at the folder's root, as Red flattens
+   it (`export_check.py`). A name found at both places is one config when the bytes match and
+   unmigrated content otherwise. The same holds for any second config of one slot
+   (`714_DEF_1st_realUni.bin` beside `XXX_DEF_1st_realUni.bin`): it is one config with the
+   kit's when the bytes match, and unmigrated content otherwise. The kit's config is the root's
+   before a subfolder's, then the first by name: two configs of one slot cannot both reach the
+   game. A file deeper than one subfolder, which Red's flatten left a folder and
+   refused, and a config that does not decode (its error named in the report), are unmigrated
+   content too.
+
+   **Reading a Kit Textures file.** A Kit Textures file is read by position, as Red reads it:
+   `u`, four characters, `p` or `g` with the kit's digit, then the rest of the stem, empty or
+   starting with `_`, which the generic name keeps (`u0XXXp1_back.dds` → `p1/kit_back.dds`), and
+   the extension `.dds`, in any letter case.
+
+   A file of that shape with the extension `.ftex` is converted to the DDS it holds
    (`ftex::ftex_to_dds`) and migrated as that `.dds`, since Red's Fox mode packed a member's
    `.ftex` kit texture as it was (13 exports on the maintainer's machine ship them, /fgog/'s from
-   VGL15 to VGL18 among them), and one that does not convert is unmigrated content, its error
-   named. A converted texture stays its own kit's file: the copy between kits and the hoist to
-   `all/` below read the copied textures alone, which no real export misses (the 13 ship base
-   textures and `_srm` ones, no copy field's stem, but for Red's own `VP Test` folder); any
-   other file directly in the folder is a leftover (step 10), in any export kind, since none
-   reached the game: Red's check deleted a name not starting `u` with `p` or `g` sixth
-   (`back.dds`), its move packed only `.dds` and `.ftex` files (`u0XXXp1.png` stayed behind),
-   and a rest neither empty nor `_`-led names a texture no kit row names (`u0XXXp2 -
-   Copy.dds`). The
-   second by name of two that would land on one name, letter case aside, is unmigrated content
-   (`u0XXXp1.dds` before `u0XXXp1.ftex`, the DDS kept as Red's Fox mode converted the DDS over
-   the FTEX of its stem). Kit folders are written as bare slots (`p1/`) — the old format has no kit
-   names to carry. A kit whose binary config names **another kit's texture** in its back,
+   VGL15 to VGL18 among them). One that does not convert is unmigrated content, its error named.
+   A converted texture stays its own kit's file: the copy between kits and the hoist to `all/`
+   below read the copied textures alone, which no real export misses (the 13 ship base textures
+   and `_srm` ones, no copy field's stem, but for Red's own `VP Test` folder).
+
+   Any other file directly in the folder is a leftover (step 10), in any export kind, since none
+   reached the game:
+
+   - Red's check deleted a name not starting `u` with `p` or `g` sixth (`back.dds`);
+   - its move packed only `.dds` and `.ftex` files (`u0XXXp1.png` stayed behind);
+   - a rest neither empty nor `_`-led names a texture no kit row names (`u0XXXp2 -
+     Copy.dds`).
+
+   The second by name of two that would land on one name, letter case aside, is unmigrated
+   content (`u0XXXp1.dds` before `u0XXXp1.ftex`, the DDS kept as Red's Fox mode converted the
+   DDS over the FTEX of its stem).
+
+   Kit folders are written as bare slots (`p1/`) — the old format has no kit names to carry.
+
+   **Copied textures.** A kit whose binary config names **another kit's texture** in its back,
    chest, leg or name field gets a copy of that texture in its own folder, under the generic
-   name, reported (`kit_texture_copied`, I, naming the kit, the stem and the kit it came from):
-   makers copy kit 1's config for the others, so kits 2-4 (and often the GK) wear kit 1's number
+   name, reported (`kit_texture_copied`, I, naming the kit, the stem and the kit it came from).
+   Makers copy kit 1's config for the others, so kits 2-4 (and often the GK) wear kit 1's number
    and name fonts without shipping their own (59 of the 1041 distinct old configs on the
    maintainer's machine, in 23 exports, nearly all VGL26). Red rewrites only the team ID in those
    fields and keeps the kit the maker wrote, while the compiler re-derives the fields from the
    kit's own folder, so without the copy those kits would compile without numbers or names.
+
    The same holds for a field naming a texture of **another stem** than its own, the kit's own
    included (MGGG VGL26's leg fields name `u0811p1_back`, `JP Aesthetics Export World`'s chest
-   field its own `u0728p1_front`, a stem the compiler does not use): the copy goes under the
-   naming field's generic name (`kit_leg.dds` from `p1/kit_back.dds`), so one rule covers
-   every field that names something other than its own kit's own texture (162 fields of the
-   1,038 distinct configs, the named texture shipped for 43). A field is read as Red read it:
-   by position, `u`, four characters, the kit (`p0` meaning the config's own), the rest
-   naming the stem; the source is the named kit's migrated texture of that rest, and no copy
-   is made when it is not in the output, or when the kit holds its own file of the field's
-   name: the maker shipped that one (MGGG's goalkeeper holds its own back and name textures
-   while its config, copied from kit 1, names kit 1's). The finding is on the config's file,
-   its context the kit, the field's stem and the source (`kit=p2`, `stem=kit_back`,
-   `from=p1/kit_back`). Then the shared textures are **hoisted into `Kits/all/`** (a copied texture moves too when
-   every kit now holds it): a stem present in
-   *every* kit folder with byte-identical contents (two or more kits) moves to `all/` and the copies
-   are deleted (`kit_texture_hoisted`, I, naming the stem). Every kit counts, the empty `p1` or
-   `g1` a Full team export is given when it has no player or no goalkeeper kit included (it
-   inherits `all/`, `spec/aesthetics_export/player_folders.md` "Kits"), so an export without a
-   goalkeeper config hoists nothing. Only the all-kits-identical case
-   qualifies: hoisting a stem that some kit lacks would hand that kit a texture it never had and
-   flip its config's texture-name field — a game-facing change the upgrader must not make. So the
-   upgraded export compiles byte-for-byte as before, just without nine copies of the same number
-   font. A survey of the maintainer's 129 multi-kit old exports found `_back`/`_leg`/`_name`
-   byte-identical across every kit in roughly a quarter of them; the rest share partially or were
-   re-saved with different bytes, and stay as they are — the author can hoist by hand once the
-   `all/` folder exists. No kit layout marker (`pre-fox` / `fox`, see "Kit layout marker" in the
-   [Aesthetics export plan](aesthetics_export/README.md)) is ever written: old kits have passed through
-   several export converters unchanged, so nothing in the files says which engine they were drawn
-   for, and a wrong guess would silently displace a correct kit's socks. Authors add the
-   marker when they compile across engines.
+   field its own `u0728p1_front`, a stem the compiler does not use). The copy goes under the
+   naming field's generic name (`kit_leg.dds` from `p1/kit_back.dds`), so one rule covers every
+   field that names something other than its own kit's own texture (162 fields of the 1,038
+   distinct configs, the named texture shipped for 43).
+
+   A field is read as Red read it: by position, `u`, four characters, the kit (`p0` meaning the
+   config's own), the rest naming the stem. The source is the named kit's migrated texture of
+   that rest. No copy is made when it is not in the output. Nor is one made when the kit holds
+   its own file of the field's name, because the maker shipped that one (MGGG's goalkeeper
+   holds its own back and name textures while its config, copied from kit 1, names kit 1's).
+   The finding is on the config's file, its context the kit, the field's stem and the source
+   (`kit=p2`, `stem=kit_back`, `from=p1/kit_back`).
+
+   **Hoisting into `all/`.** Then the shared textures are **hoisted into `Kits/all/`** (a copied
+   texture moves too when every kit now holds it): a stem present in *every* kit folder with
+   byte-identical contents (two or more kits) moves to `all/` and the copies are deleted
+   (`kit_texture_hoisted`, I, naming the stem). Every kit counts, the empty `p1` or `g1` a Full
+   team export is given when it has no player or no goalkeeper kit included (it inherits
+   `all/`, `spec/aesthetics_export/player_folders.md` "Kits"), so an export without a
+   goalkeeper config hoists nothing.
+
+   Only the all-kits-identical case qualifies, because hoisting a stem that some kit lacks would
+   hand that kit a texture it never had and flip its config's texture-name field — a game-facing
+   change the upgrader must not make. So the upgraded export compiles byte-for-byte as before,
+   just without nine copies of the same number font. A survey of the maintainer's 129 multi-kit
+   old exports found `_back`/`_leg`/`_name` byte-identical across every kit in roughly a
+   quarter of them; the rest share partially or were re-saved with different bytes, and stay as
+   they are — the author can hoist by hand once the `all/` folder exists.
+
+   **No kit layout marker.** No kit layout marker (`pre-fox` / `fox`, see "Kit layout marker" in
+   the [Aesthetics export plan](aesthetics_export/README.md)) is ever written. Old kits have
+   passed through several export converters unchanged, so nothing in the files says which engine
+   they were drawn for, and a wrong guess would silently displace a correct kit's socks. Authors
+   add the marker when they compile across engines.
 6. **Replaces the Team Note txt**: team colors are extracted into the root `colors.txt` and the
    "Other Notes" section into the root `notes.txt` (both optional — only generated when the Note has
-   the corresponding content). The section is every line after the first line starting with
-   `Other Notes:`, in any letter case, as the color sections' headers are read (step 5); Red
-   took `Other Notes:` in that case alone, and a real Note's `Other notes:` would lose its text.
-   A team-color entry is one color; one holding two, its colors split at its one `-` into two
-   parts that each read as one color (a kit entry's spelling, `- 1st: 048 146 082 - 255 255
-   255`), keeps the first, written as the Note spells it, and its second is a leftover (step
-   10) reported on the Note with the line, Red having kept the first; any other entry that
-   does not read as one color (no color, three parts, a second part that is no color) is
-   unmigrated content (EU-ROOT-06). The rest of the Note is dropped. Team identity for the migration is
-   resolved the way Red's compiler does, since old exports carry the authoritative name in the Note:
-   the Note txt's `Team:` line first (the Note txt being a `.txt` at the flattened export root
-   whose name holds `note` in any letter case, as Red finds it; with several, the first by name;
-   the line is the first holding `Team:` in that letter case, as Red reads it), the
-   canonical `/xx/` first-word key derived from the export folder name as the fallback when no
-   Note, no `Team:` line or an empty one exists — an export named after something else than its team (e.g.
-   "Numbers" for `/#/`) must still resolve. The key is the team's name, folded as the teams
-   list folds one (`teams_list::TeamName`), and is checked against **no list**: the upgrader
-   reads no `teams_list.txt`, so a team the current list no longer holds (a historical one, a
-   team of another league) upgrades, its ID being the compiler's business at compile time
-   (DECISIONS 2026-11-09). A `Team:` value, or a first word, that is no team name (empty, or
-   holding a space or an inner `/`) is `team_name_unknown`, naming the line or the export, and
-   nothing is written: it is not skipped for the folder name, since a Note whose `Team:` line
-   does not read says the export may be another team's than its folder name suggests. The
-   save's team (step 2) is the first in the save's record order whose name, its colour codes
-   stripped (`display_name()`), folds to the key, whatever ID the save gives it: the save the
-   export was made against may number the team otherwise than the current list. A later team
+   the corresponding content).
+
+   The section is every line after the first line starting with `Other Notes:`, in any letter
+   case, as the color sections' headers are read (step 5). Red took `Other Notes:` in that case
+   alone, and a real Note's `Other notes:` would lose its text.
+
+   A team-color entry is one color:
+
+   - One holding two, its colors split at its one `-` into two parts that each read as one color
+     (a kit entry's spelling, `- 1st: 048 146 082 - 255 255 255`), keeps the first, written as
+     the Note spells it, and its second is a leftover (step 10) reported on the Note with the
+     line, Red having kept the first.
+   - Any other entry that does not read as one color (no color, three parts, a second part that
+     is no color) is unmigrated content (EU-ROOT-06).
+
+   The rest of the Note is dropped.
+
+   **Team identity.** Team identity for the migration is resolved the way Red's compiler does,
+   since old exports carry the authoritative name in the Note:
+
+   1. the Note txt's `Team:` line first. The Note txt is a `.txt` at the flattened export root
+      whose name holds `note` in any letter case, as Red finds it, the first by name when there
+      are several. The line is the first holding `Team:` in that letter case, as Red reads it;
+   2. the canonical `/xx/` first-word key derived from the export folder name as the fallback
+      when no Note, no `Team:` line or an empty one exists — an export named after something
+      else than its team (e.g. "Numbers" for `/#/`) must still resolve.
+
+   The key is the team's name, folded as the teams list folds one (`teams_list::TeamName`), and
+   is checked against **no list**. The upgrader reads no `teams_list.txt`, so a team the current
+   list no longer holds (a historical one, a team of another league) upgrades, its ID being the
+   compiler's business at compile time (DECISIONS 2026-11-09).
+
+   A `Team:` value, or a first word, that is no team name (empty, or holding a space or an inner
+   `/`) is `team_name_unknown`, naming the line or the export, and nothing is written. It is not
+   skipped for the folder name, since a Note whose `Team:` line does not read says the export
+   may be another team's than its folder name suggests.
+
+   The save's team (step 2) is the first in the save's record order whose name, its colour codes
+   stripped (`display_name()`), folds to the key, whatever ID the save gives it, because the save
+   the export was made against may number the team otherwise than the current list. A later team
    of the save folding to the same name is reported (`save_team_name_repeated`, W, on the
    export, the two teams' IDs in its context, `team` and `kept`) and left out: a real cup save
-   holds `/4ccg/` twice. The key is also the output's first word ("CLI"); the
-   complete folder name remains the display/source name, and the Studio output carries no Note (the format has no `Team:` line —
+   holds `/4ccg/` twice.
+
+   The key is also the output's first word ("CLI"). The complete folder name remains the
+   display/source name, and the Studio output carries no Note (the format has no `Team:` line —
    see the Team compiler plan's "Root files").
-7. **Carries over** Portraits, Collars, and Common, and **converts the Logo folder**. An old
-   portrait is named `player_???NN.dds` (the AET page's `player_XXXNN.dds`, the `???` the
-   placeholder or a baked-in team ID as with the kit magic below: 2,248 of the 2,271 old
-   portraits on the maintainer's machine; Red read NN as the two characters before `.dds`
-   whatever stands between, so `player_736917.dds`, in four real `/o/` exports, is slot 17's); it is renamed `NN.dds`, a name the compiler
-   accepts (`portrait_name_invalid`: `NN`, alone or followed by ` - ` and any text, as a
-   player folder is named). Red also packed a portrait of another texture format, renaming it
-   to the game's `.dds` name with its bytes unchanged (BAG VGL18.5's `player_XXX08.jpg`, packed
-   as `78808.dds`); a `player_???NN` portrait in a format the compiler converts (`png`, `jpg`,
-   ...) migrates as well, renamed `NN` and keeping its format, which the compiler's
-   `Portraits/` converts as it converts any texture: the portrait its author meant, now
-   readable by the game whether or not Red's rename was. Red's check refused, and discarded, a name not starting
-   `player_` (in that letter case) or whose two characters before a three-letter extension
-   are not a slot 01 to 23 (it reads `file_name[-6:-4]`; `XXX17.jpg`, `Vanilla vitamins.png`,
-   `player_73906-.dds`, `Player_XXX05.dds`, `player_XXX05.jpeg`): such a portrait never
-   reached the game and is a leftover (step 10; Red's own output for BAG VGL18.5 holds no
-   `78817.dds`), and so is every other file under `Portraits/`, a subfolder's included, which
-   Red's check failed too. The upgrader reads the name as Red's check did, so what migrates
-   is what the game showed. A slot
-   with a portrait here and a different one in its face folder is kept both ways, and the
-   upgrader compares the two files' bytes and reports `portrait_conflict` (E, exit 1; on the
+7. **Carries over** Portraits, Collars, and Common, and **converts the Logo folder**.
+
+   **Portraits.** An old portrait is named `player_???NN.dds` (the AET page's
+   `player_XXXNN.dds`, the `???` the placeholder or a baked-in team ID as with the kit magic
+   below: 2,248 of the 2,271 old portraits on the maintainer's machine). Red read NN as the two
+   characters before `.dds` whatever stands between, so `player_736917.dds`, in four real `/o/`
+   exports, is slot 17's. It is renamed `NN.dds`, a name the compiler accepts
+   (`portrait_name_invalid`: `NN`, alone or followed by ` - ` and any text, as a player folder
+   is named).
+
+   Red also packed a portrait of another texture format, renaming it to the game's `.dds` name
+   with its bytes unchanged (BAG VGL18.5's `player_XXX08.jpg`, packed as `78808.dds`). A
+   `player_???NN` portrait in a format the compiler converts (`png`, `jpg`, ...) migrates as
+   well, renamed `NN` and keeping its format, which the compiler's `Portraits/` converts as it
+   converts any texture: the portrait its author meant, now readable by the game whether or not
+   Red's rename was.
+
+   Red's check refused, and discarded, a name not starting `player_` (in that letter case) or
+   whose two characters before a three-letter extension are not a slot 01 to 23 (it reads
+   `file_name[-6:-4]`; `XXX17.jpg`, `Vanilla vitamins.png`, `player_73906-.dds`,
+   `Player_XXX05.dds`, `player_XXX05.jpeg`). Such a portrait never reached the game and is a
+   leftover (step 10; Red's own output for BAG VGL18.5 holds no `78817.dds`), and so is every
+   other file under `Portraits/`, a subfolder's included, which Red's check failed too. The
+   upgrader reads the name as Red's check did, so what migrates is what the game showed.
+
+   A slot with a portrait here and a different one in its face folder is kept both ways, and
+   the upgrader compares the two files' bytes and reports `portrait_conflict` (E, exit 1; on the
    `Portraits/` file, the slot in the context, `slot`; both files stay where they are), as Red
-   refused the export: the compiler's comparison belongs to its deep pass
-   (`spec/aesthetics_export/object_model.md`), which the structural validation the upgrader
-   runs does not include, so without its own the upgrade would report clean an export no
-   compile accepts. The Logo
-   folder becomes the Studio root files. Its members are the files directly in it whose names end,
-   in any case, in `_r_ll.png`, `_r_l.png` or `_r.png` (the AET page's `emblem_0XXX_r_ll.png`; 148
-   of the 149 such folders on the maintainer's machine hold exactly those three, the other a
-   `Thumbs.db` beside them, an OS artifact the listing skips); any other file, and a second member of one role, is unmigrated
-   content (step 10). A member is usable when it decodes as a PNG. The old `_r_ll` (512²)
-   image becomes root `logo.png`, its bytes as they are; the old `_r` (128²) image becomes root `logo_small.png` **only
-   when it is clearly a different picture** — most old small logos are plain downscales, which the
-   compiler now regenerates, but some are deliberate menu variants (simplified, joke), and the
-   upgrader must tell the two apart rather than always carry or always drop. The test: downscale
-   `_r_ll` to 128² with the suite's one resampler, the compiler's (`dds_convert::resize`:
-   Lanczos3, straight alpha), resample the old `_r` to 128² too if it is not already, and compare
-   the two pixel by pixel over RGBA. A pixel *differs*
-   when any channel differs by more than 32 (of 255); two pixels that are both fully transparent
-   are equal whatever their color channels hold (authors leave garbage behind alpha 0). The small
-   image is a distinct variant, and is carried, when **more than 40 % of pixels differ**
-   (`LOGO_SMALL_DISTINCT_SHARE`); at or below that it is a downscale and is dropped. The number comes
-   from measuring the 94 distinct `Logo/` pairs on the maintainer's machine with that resampler
-   (`.tmp/phase_06/6_4/logo_share/`): the 77 downscales score 0–30 % — far above codec noise, because authors downscaled with
-   nearest-neighbor or sharpening kernels, shifted or cut alpha edges differently, which the channel
-   tolerance does not absorb — and the 17 deliberate variants score 53–97 %: a different
-   drawing, a recolored crest (`/pmmm/` VGL26), a crop (`/tf2g/` VGL26). 40 % sits in the empty
-   band, so neither mistake has a real pair behind it, and the one nearer (a redundant file the
-   user deletes) is the harmless one, not a lost drawing. Both outcomes are reported on the
-   `_r` file with the measured share, rounded to a whole percent (`share`, `30%`)
-   (`logo_small_carried`, `logo_small_dropped`; both I, and neither drops anything the compile
-   would miss), so a wrong call is one look at the report
-   away from being fixed by hand: the old file is still in the source export. The `_r_l` (256²)
-   file is dropped beside a usable `_r_ll` — the compiler regenerates it. A folder without
-   a usable `_r_ll` falls back to the largest usable member, `_r_l` before `_r`, its bytes
-   becoming `logo.png`, reported on that file (`logo_fallback`, W), and then has nothing to
-   compare the small image against, so no `logo_small.png` is written and the `_r` beside it is
-   dropped. A member that does not decode is unmigrated content, its error in the context. `Common/` is carried over, its
-   files as they are save the kit magic below. An old `.mtl`'s texture references mostly stay
-   as written: the Studio format ignores a reference's extension, so a name in the model's own
-   folder (`./face_srm.dds`) already resolves nearest first, and a game directory other than
-   the team's Common (`model/character/boots/k0002/ek0062_n.dds`, in the `/o/` 2024 Spring
-   export's `Dorifto/realkit/apc.mtl`, with no local copy) keeps its meaning ("Stem-based
-   texture references" in `spec/model_format.md`). We do not strip the `.dds`, because the
-   compiler puts it back only on a reference it resolves to a file of the export: a game path
-   written without it would reach the game without it. A reference that pointed into the team's Common folder by game path
-   (`model/character/uniform/common/???/hair.dds` in an `.mtl`, the Fox common directory in an FMDL
-   path table; `???` is the `XXX` placeholder or a baked-in team ID, as with the kit magic below;
-   in a pre-Fox `.mtl` or `face.xml` it is any folder name, letter case aside: the team's name
-   without its slashes (`common/o/env.dds`, `common/vg/oral_shirt_*.model`, in /o/'s 2017-2024
-   and VG's 2017-2018 faces, since the 2016 batch compiler wrote a pre-Fox export's `Common/` to
-   `model/character/uniform/common/<team name>/` and those faces loaded the files there) or
-   another team's (`common/refs/refkit/texture.dds`, a referee kit's `.mtl` copied into ASP's
-   4CCC face), because a Studio export names no Common but its own and the compiler refuses any
-   folder after `common/` but `team_folder`, so any other reading lets the upgrade end clean and
-   the compile fail; a reference that stays a game path is written in the Studio spelling of
-   the team's Common, `team_common_folder/` followed by the rest of the path, in every
-   mode and for a referee export too (`spec/team_compiler/messages.md` "User-supplied
-   `face.xml`": no team ID of any kind, and one folder, `team_common_folder/`, not
-   `common/team_folder/`, `common` being the CPK's root folder). In an FMDL path table it is any folder after the Fox common directory
-   `/Assets/pes16/model/character/common/` but the game's own `sourceimages/` (`000`, the 4cc
-   community's placeholder in its model templates, in 3,744 of the maintainer's 10,727 real
-   FMDLs; `999`, `XXX`, team IDs and team names such as `biz` and `vg` in the rest), the same
-   rule, since the compiler refuses all of them (`fmdl_common_path_invalid`), and one kept as a
-   game path is written in the same short form as a `.mtl`'s, `team_common_folder/` then its
-   subfolder path, `sourceimages/` left out (`spec/team_compiler/pipeline.md` "ID
-   replacement"; the long form `/Assets/pes16/model/character/common/team_folder/…` only for
-   a directory the short form cannot spell, one not ending `sourceimages/`))
-   cannot simply become the bare name `./hair.dds` — that would resolve in the player folder and fail — so the
-   upgrader writes the bare name **and creates the texture link** `hair.dds.common` (the
-   `Common/` file's own name, whose extension the link names) at the root of the
-   model's player folder, which is the Studio spelling of the same reference. A shared
-   `Boots/` or `Gloves/` folder's `.mtl`, and a `.mtl` in `Common/` (343 such references in
-   the maintainer's 1,489 `Common/` `.mtl` files, the compiler emitting a member's `.mtl` as
-   written), keeps its Common references as game paths, respelled `team_common_folder/` as above, with no finding when the input's
-   `Common/` holds the texture (one it lacks is reported as below): the pre-Fox compile does not read a shared folder's links
-   (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox alone, while
-   the game path is supplied from the carried `Common/` (a link
-   stands for the `Common/` file at its own path below that root, so one beside a subfolder's
-   `.mtl` would name a file in a `Common/` subfolder; a bare name from a subfolder finds the
-   root's link, nearest first) (see "Link files" in the [Unified model format
-   plan](model_format.md)). Every old `.mtl` is read with `pes_model`'s
-   `read_dropping_stray_text`: text between its elements (a `\` typed after a `<sampler/>` in
-   G Autumn 25's `72117 - Lisa/apc.mtl`, which Red's parser ignored) is dropped and the file
-   reported (I, `mtl_stray_text_dropped`), since the compiler's reader refuses it. One that
-   names nothing to change and had no such text is copied as it is; one that does not parse
-   even so is unmigrated content (its parse error in the context): the compile would drop its
-   folder as `mtl_broken`, so the output would not be clean. A rewritten one is written in the
-   reader's layout, wrapped again when it was (step 1). A reference into a Common subfolder becomes a path below the
-   model's folder and a link at that path (`common/???/u0???p0/sourceimages/armor_bsm` becomes
-   the FMDL texture `./kitN/` `armor_bsm` and the link `kitN/armor_bsm.dds.common` in the
-   model's folder, the kit magic below respelled in the folder name as in a file name; a kit
-   reference counts as present when a variant folder holds the file). The game path's
-   `sourceimages/` level is the compiler's, not the export's: Red inserts it when it places a
-   `Common/` subfolder's files, so that reference names the old file `Common/u0XXXp1/armor_bsm.dds`,
-   which becomes `Common/kit1/armor_bsm.dds`, where the link resolves. A Common-path
-   reference whose texture is not in the input's `Common/` (a texture of its stem in the
-   directory it names; two there conflict in `Common/` and are both dropped, so they count as
-   none), or which no link can spell — the
-   model's folder already holding a texture or link of that stem on the reference's
-   nearest-first way up (the link would conflict with it, `texture_stem_conflict`, or lose to
-   it; the kept game path loses to it too, the compiler looking a game path's file name up in
-   the folder first, so the warning's text says the folder's texture of that stem is the one
-   the model will wear), or a Common subfolder named from a `.mtl` in a subfolder (the path below that `.mtl`
-   and the link mirroring `Common/` cannot agree) — is reported (`common_reference_kept`, W,
-   on the `.mtl`, the reference as written in the context, `reference`: an installed CPK may
-   hold it, so it is no unmigrated content) and left a game path, its Common respelled
-   `team_common_folder/` as above: the
-   compiler then finds the file in an installed CPK's Common when a midcup export ships without
-   it (`fmdl_texture_not_found`'s lookup), reading `team_folder` as the team's ID there. An
-   FMDL texture whose stem is **not in the model's folder but is in the input's `Common/`** gets
-   the same stem and link, whatever directory the FMDL named: Red's referee pass points such a
-   texture at the team's Common folder, and its team pass pointed it at the model's folder,
-   where the file was missing; the link widens the referee rule to teams, giving the model the
-   texture its author shipped. The game's own directory below the Fox common directory,
-   `common/sourceimages/` (where the game's shared textures such as `zero.dds` sit, used by the
-   real `CIV4XG` VGL26 `k2071`), keeps its meaning, as Red keeps that whole prefix and as the
-   compiler leaves a game directory unlooked-for, written in its short form `common_folder/`
-   (a directory below it, which the short form cannot spell, is kept as written). Every other FMDL texture directory becomes the model's own folder
-   (the bare stem), as Red repoints it
-   (`fmdl_model_folder_paths_fix`: a model copied between folders, a boots FMDL in a face
-   folder, still names its old folder's directory); unlike a `.mtl`'s game directory, an FMDL
-   one is not kept. A stem that resolves nowhere stays that bare stem, as Red wrote it: the
+   refused the export. The compiler's comparison belongs to its deep pass
+   (`spec/aesthetics_export/object_model.md`), which the structural validation the upgrader runs
+   does not include, so without its own the upgrade would report clean an export no compile
+   accepts.
+
+   **Logo.** The Logo folder becomes the Studio root files. Its members are the files directly
+   in it whose names end, in any case, in `_r_ll.png`, `_r_l.png` or `_r.png` (the AET page's
+   `emblem_0XXX_r_ll.png`; 148 of the 149 such folders on the maintainer's machine hold exactly
+   those three, the other a `Thumbs.db` beside them, an OS artifact the listing skips). Any
+   other file, and a second member of one role, is unmigrated content (step 10). A member is
+   usable when it decodes as a PNG.
+
+   The old `_r_ll` (512²) image becomes root `logo.png`, its bytes as they are. The old `_r`
+   (128²) image becomes root `logo_small.png` **only when it is clearly a different picture**.
+   Most old small logos are plain downscales, which the compiler now regenerates, but some are
+   deliberate menu variants (simplified, joke), and the upgrader must tell the two apart rather
+   than always carry or always drop.
+
+   The test:
+
+   1. downscale `_r_ll` to 128² with the suite's one resampler, the compiler's
+      (`dds_convert::resize`: Lanczos3, straight alpha);
+   2. resample the old `_r` to 128² too if it is not already;
+   3. compare the two pixel by pixel over RGBA.
+
+   A pixel *differs* when any channel differs by more than 32 (of 255); two pixels that are both
+   fully transparent are equal whatever their color channels hold (authors leave garbage behind
+   alpha 0). The small image is a distinct variant, and is carried, when **more than 40 % of
+   pixels differ** (`LOGO_SMALL_DISTINCT_SHARE`); at or below that it is a downscale and is
+   dropped.
+
+   The number comes from measuring the 94 distinct `Logo/` pairs on the maintainer's machine
+   with that resampler (`.tmp/phase_06/6_4/logo_share/`):
+
+   - the 77 downscales score 0–30 % — far above codec noise, because authors downscaled with
+     nearest-neighbor or sharpening kernels, shifted or cut alpha edges differently, which the
+     channel tolerance does not absorb;
+   - the 17 deliberate variants score 53–97 %: a different drawing, a recolored crest (`/pmmm/`
+     VGL26), a crop (`/tf2g/` VGL26).
+
+   40 % sits in the empty band, so neither mistake has a real pair behind it, and the one nearer
+   (a redundant file the user deletes) is the harmless one, not a lost drawing.
+
+   Both outcomes are reported on the `_r` file, `logo_small_carried` and `logo_small_dropped`,
+   both I, and neither drops anything the compile would miss. Each carries the measured share,
+   rounded to a whole percent (`share`, `30%`), so a wrong call is one look at the report away
+   from being fixed by hand: the old file is still in the source export.
+
+   The `_r_l` (256²) file is dropped beside a usable `_r_ll` — the compiler regenerates it. A
+   folder without a usable `_r_ll` falls back to the largest usable member, `_r_l` before `_r`,
+   its bytes becoming `logo.png`, reported on that file (`logo_fallback`, W). It then has
+   nothing to compare the small image against, so no `logo_small.png` is written and the `_r`
+   beside it is dropped. A member that does not decode is unmigrated content, its error in the
+   context.
+
+   **Common and `.mtl` references.** `Common/` is carried over, its files as they are save the
+   kit magic below.
+
+   An old `.mtl`'s texture references mostly stay as written. The Studio format ignores a
+   reference's extension, so a name in the model's own folder (`./face_srm.dds`) already
+   resolves nearest first, and a game directory other than the team's Common
+   (`model/character/boots/k0002/ek0062_n.dds`, in the `/o/` 2024 Spring export's
+   `Dorifto/realkit/apc.mtl`, with no local copy) keeps its meaning ("Stem-based texture
+   references" in `spec/model_format.md`). We do not strip the `.dds`, because the compiler
+   puts it back only on a reference it resolves to a file of the export: a game path written
+   without it would reach the game without it.
+
+   A reference that pointed into the team's Common folder by game path cannot simply become the
+   bare name `./hair.dds` — that would resolve in the player folder and fail — so the upgrader
+   writes the bare name **and creates the texture link** `hair.dds.common` (the `Common/` file's
+   own name, whose extension the link names) at the root of the model's player folder, which is
+   the Studio spelling of the same reference.
+
+   Such a reference is `model/character/uniform/common/???/hair.dds` in an `.mtl`, or the Fox
+   common directory in an FMDL path table:
+
+   - `???` is the `XXX` placeholder or a baked-in team ID, as with the kit magic below. In a
+     pre-Fox `.mtl` or `face.xml` it is any folder name, letter case aside: the team's name
+     without its slashes (`common/o/env.dds`, `common/vg/oral_shirt_*.model`, in /o/'s
+     2017-2024 and VG's 2017-2018 faces, since the 2016 batch compiler wrote a pre-Fox export's
+     `Common/` to `model/character/uniform/common/<team name>/` and those faces loaded the files
+     there) or another team's (`common/refs/refkit/texture.dds`, a referee kit's `.mtl` copied
+     into ASP's 4CCC face). This is because a Studio export names no Common but its own and the
+     compiler refuses any folder after `common/` but `team_folder`, so any other reading lets
+     the upgrade end clean and the compile fail.
+   - In an FMDL path table it is any folder after the Fox common directory
+     `/Assets/pes16/model/character/common/` but the game's own `sourceimages/` (`000`, the 4cc
+     community's placeholder in its model templates, in 3,744 of the maintainer's 10,727 real
+     FMDLs; `999`, `XXX`, team IDs and team names such as `biz` and `vg` in the rest), the same
+     rule, since the compiler refuses all of them (`fmdl_common_path_invalid`).
+
+   A reference that stays a game path is written in the Studio spelling of the team's Common,
+   `team_common_folder/` followed by the rest of the path, in every mode and for a referee
+   export too (`spec/team_compiler/messages.md` "User-supplied `face.xml`": no team ID of any
+   kind, and one folder, `team_common_folder/`, not `common/team_folder/`, `common` being the
+   CPK's root folder).
+
+   One kept as a game path in an FMDL path table is written in the same short form as a
+   `.mtl`'s, `team_common_folder/` then its subfolder path, `sourceimages/` left out
+   (`spec/team_compiler/pipeline.md` "ID replacement"). The long form
+   `/Assets/pes16/model/character/common/team_folder/…` is only for a directory the short form
+   cannot spell, one not ending `sourceimages/`.
+
+   A shared `Boots/` or `Gloves/` folder's `.mtl`, and a `.mtl` in `Common/` (343 such
+   references in the maintainer's 1,489 `Common/` `.mtl` files, the compiler emitting a
+   member's `.mtl` as written), keeps its Common references as game paths, respelled
+   `team_common_folder/` as above, with no finding when the input's `Common/` holds the texture
+   (one it lacks is reported as below). The pre-Fox compile does not read a shared folder's
+   links (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox alone,
+   while the game path is supplied from the carried `Common/`.
+
+   A link stands for the `Common/` file at its own path below the root of the model's player
+   folder, so one beside a subfolder's `.mtl` would name a file in a `Common/` subfolder; a bare
+   name from a subfolder finds the root's link, nearest first (see "Link files" in the
+   [Unified model format plan](model_format.md)).
+
+   Every old `.mtl` is read with `pes_model`'s `read_dropping_stray_text`. Text between its
+   elements (a `\` typed after a `<sampler/>` in G Autumn 25's `72117 - Lisa/apc.mtl`, which
+   Red's parser ignored) is dropped and the file reported (I, `mtl_stray_text_dropped`), since
+   the compiler's reader refuses it. One that names nothing to change and had no such text is
+   copied as it is. One that does not parse even so is unmigrated content (its parse error in
+   the context), because the compile would drop its folder as `mtl_broken`, so the output would
+   not be clean. A rewritten one is written in the reader's layout, wrapped again when it was
+   (step 1).
+
+   **Common subfolders.** A reference into a Common subfolder becomes a path below the model's
+   folder and a link at that path (`common/???/u0???p0/sourceimages/armor_bsm` becomes the FMDL
+   texture `./kitN/` `armor_bsm` and the link `kitN/armor_bsm.dds.common` in the model's folder,
+   the kit magic below respelled in the folder name as in a file name; a kit reference counts as
+   present when a variant folder holds the file). The game path's `sourceimages/` level is the
+   compiler's, not the export's: Red inserts it when it places a `Common/` subfolder's files, so
+   that reference names the old file `Common/u0XXXp1/armor_bsm.dds`, which becomes
+   `Common/kit1/armor_bsm.dds`, where the link resolves.
+
+   **References kept as game paths.** A Common-path reference is reported
+   (`common_reference_kept`, W, on the `.mtl`, the reference as written in the context,
+   `reference`: an installed CPK may hold it, so it is no unmigrated content) and left a game
+   path, its Common respelled `team_common_folder/` as above, when:
+
+   - its texture is not in the input's `Common/` (a texture of its stem in the directory it
+     names; two there conflict in `Common/` and are both dropped, so they count as none); or
+   - no link can spell it:
+     - the model's folder already holds a texture or link of that stem on the reference's
+       nearest-first way up (the link would conflict with it, `texture_stem_conflict`, or lose
+       to it; the kept game path loses to it too, the compiler looking a game path's file name
+       up in the folder first, so the warning's text says the folder's texture of that stem is
+       the one the model will wear);
+     - or it is a Common subfolder named from a `.mtl` in a subfolder (the path below that
+       `.mtl` and the link mirroring `Common/` cannot agree).
+
+   The compiler then finds the file in an installed CPK's Common when a midcup export ships
+   without it (`fmdl_texture_not_found`'s lookup), reading `team_folder` as the team's ID there.
+
+   **FMDL texture directories.** An FMDL texture whose stem is **not in the model's folder but
+   is in the input's `Common/`** gets the same stem and link, whatever directory the FMDL named.
+   Red's referee pass points such a texture at the team's Common folder, and its team pass
+   pointed it at the model's folder, where the file was missing; the link widens the referee
+   rule to teams, giving the model the texture its author shipped.
+
+   The game's own directory below the Fox common directory, `common/sourceimages/` (where the
+   game's shared textures such as `zero.dds` sit, used by the real `CIV4XG` VGL26 `k2071`),
+   keeps its meaning, as Red keeps that whole prefix and as the compiler leaves a game directory
+   unlooked-for. It is written in its short form `common_folder/`; a directory below it, which
+   the short form cannot spell, is kept as written.
+
+   Every other FMDL texture directory becomes the model's own folder (the bare stem), as Red
+   repoints it (`fmdl_model_folder_paths_fix`: a model copied between folders, a boots FMDL in a
+   face folder, still names its old folder's directory); unlike a `.mtl`'s game directory, an
+   FMDL one is not kept. A stem that resolves nowhere stays that bare stem, as Red wrote it. The
    compiler's `fmdl_texture_not_found` then warns about it, the package packed without its
    texture as Red packed it ("A texture a model names must exist" in
    `spec/team_compiler/pipeline.md`), and keeping the old directory would only hide the same
-   missing file (19 of the 5,921 FMDLs on the maintainer's machine name such a texture). The
-   FMDL rules in full, per texture entry, a census of the 6,053 real FMDLs in export folders
-   behind them (its directories tallied by `python scripts/census/query.py fmdl-dirs . --examples 200`): a `dummy_` stem keeps its directory,
-   as the compiler never looks one up, but for a team's Common folder there, respelled
-   `team_common_folder/` (`000/` in the community's templates, which name `dummy_kit` there:
-   the compiler refuses any other folder, a dummy's too) and the game's `common/sourceimages/`
-   respelled `common_folder/`; a kit stand-in's stem among them is respelled too, as in a
-   `.mtl` (below: `dummy_kit` → `team_kit`); a directory starting `./` is the Studio spelling already, its
-   kit magic alone respelled, as a `.mtl`'s; the game's kit texture folder
-   `/Assets/pes16/model/character/uniform/texture/` is kept as written (25 real FMDLs), as the
-   compiler keeps it (`fmdl_texture_kit_path`): repointing it at the model's folder would lose
-   the kit texture to `fmdl_texture_not_found`; the team's Common is
-   `/Assets/pes16/model/character/common/` + any folder but `sourceimages` + `/`, an optional
-   subfolder path, then `sourceimages/` (`common/000/Boots/sourceimages/` names `Common/Boots/`,
-   117 real boots FMDLs), linked as a `.mtl`'s Common reference is, and written
-   `team_common_folder/<sub>` when kept; the game's `common/sourceimages/` is written
-   `common_folder/`; any other directory below the Fox common directory, one
-   not ending `sourceimages/` (`common/000/foo/`), is kept with its folder respelled
-   `team_folder`, unlinked and unreported, since the compiler refuses the old folder; every
-   other directory becomes `./`, the stem linked to the
-   `Common/` root's texture when the model's folder, nearest first from the FMDL's own folder,
-   holds none of it. A shared folder's FMDL is linked as a player folder's, the Fox compile
-   reading a shared folder's links; a `Common/` FMDL gets the shared `.mtl` rule (its Common
-   references kept, respelled `team_folder`, reported when `Common/` lacks the texture, its other
-   directories kept). An FMDL that does not read is copied as it is. This applies to structural migration, not only optional glTF conversion.
-   In the same pass, the legacy kit-dependent path magic is rewritten to the Studio spelling:
-   `u0???p1`…`u0???p9` → `kit1`…`kit9`, in file and folder names and in `.mtl`/`face.xml` paths
-   and FMDL path tables alike, and `u0???p0` → `kitN` in those paths but → `kitF` in a file or
-   folder name (`u0875p0.dds` → `kitF.dds`, `Common/u0XXXp0/` → `Common/kitF/`), see
-   "Kit-dependent assets" in the [Unified model format plan](model_format.md). A `u0???p0` path
-   is the reference, while a `u0???p0` file is what a kit without a variant of its own loads,
-   FoxDen's kit swapper keeping a path whose variant is missing: that is `kitF`'s role, and a
-   file named `kitN` would be no file of the set, the compiler filling the gaps from the lowest
-   variant instead (71 real `u0???p0` files, `MARISA`'s `k4465` holding `u0875p0` to `p4`). The `???` matches any three characters: authors wrote the
-   `XXX` placeholder literally or baked the real team ID in (`u0872p1.dds`), and both forms mean the
-   same thing. The token is matched as Red's `path_id_change` matches it: `u0`, three ASCII
-   letters or digits, then `p` or `g` and a digit, in that letter case, anywhere in a name or
-   path and every occurrence (`skin_u0771p3.dds`, `Common/ltd/u0XXXp5/`). The names renamed
-   are those below a player folder, below a shared `Boots/`/`Gloves/` folder and below
-   `Common/` (the kit folders have their own naming, `Kit Textures/` step 6's); an output path,
-   renamed or not, that another output path already takes, letter case aside, is the second
-   input's, not written, and reported `unmigrated_content` (a face folder's `u0XXXp1.dds` beside
-   the same name in a boots folder merged into its player folder; `A.dds` beside `a.dds`), where a
-   second write would silently replace the first. Inputs of one folder whose paths differ only in
-   their tokens' three characters (`u0XXXp2.dds` beside `u0731p2.dds` in a /jp/ export) are the
-   exception: they were one file to the old compile, whose rename (`filenames_id_replace`) gave
+   missing file (19 of the 5,921 FMDLs on the maintainer's machine name such a texture).
+
+   The FMDL rules in full, per texture entry, a census of the 6,053 real FMDLs in export folders
+   behind them (its directories tallied by
+   `python scripts/census/query.py fmdl-dirs . --examples 200`):
+
+   - a `dummy_` stem keeps its directory, as the compiler never looks one up, with two
+     exceptions. A team's Common folder there is respelled `team_common_folder/` (`000/` in the
+     community's templates, which name `dummy_kit` there), since the compiler refuses any other
+     folder, a dummy's too. The game's `common/sourceimages/` is respelled `common_folder/`. A
+     kit stand-in's stem among those `dummy_` stems is respelled too, as in a `.mtl` (below:
+     `dummy_kit` → `team_kit`);
+   - a directory starting `./` is the Studio spelling already, its kit magic alone respelled, as
+     a `.mtl`'s;
+   - the game's kit texture folder `/Assets/pes16/model/character/uniform/texture/` is kept as
+     written (25 real FMDLs), as the compiler keeps it (`fmdl_texture_kit_path`): repointing it
+     at the model's folder would lose the kit texture to `fmdl_texture_not_found`;
+   - the team's Common is `/Assets/pes16/model/character/common/` + any folder but
+     `sourceimages` + `/`, an optional subfolder path, then `sourceimages/`
+     (`common/000/Boots/sourceimages/` names `Common/Boots/`, 117 real boots FMDLs), linked as a
+     `.mtl`'s Common reference is, and written `team_common_folder/<sub>` when kept;
+   - the game's `common/sourceimages/` is written `common_folder/`;
+   - any other directory below the Fox common directory, one not ending `sourceimages/`
+     (`common/000/foo/`), is kept with its folder respelled `team_folder`, unlinked and
+     unreported, since the compiler refuses the old folder;
+   - every other directory becomes `./`, the stem linked to the `Common/` root's texture when
+     the model's folder, nearest first from the FMDL's own folder, holds none of it.
+
+   A shared folder's FMDL is linked as a player folder's, the Fox compile reading a shared
+   folder's links. A `Common/` FMDL gets the shared `.mtl` rule (its Common references kept,
+   respelled `team_folder`, reported when `Common/` lacks the texture, its other directories
+   kept). An FMDL that does not read is copied as it is. This applies to structural migration,
+   not only optional glTF conversion.
+
+   **Kit magic.** In the same pass, the legacy kit-dependent path magic is rewritten to the
+   Studio spelling (see "Kit-dependent assets" in the
+   [Unified model format plan](model_format.md)):
+
+   - `u0???p1`…`u0???p9` → `kit1`…`kit9`, in file and folder names and in `.mtl`/`face.xml`
+     paths and FMDL path tables alike;
+   - `u0???p0` → `kitN` in those paths but → `kitF` in a file or folder name (`u0875p0.dds` →
+     `kitF.dds`, `Common/u0XXXp0/` → `Common/kitF/`).
+
+   A `u0???p0` path is the reference, while a `u0???p0` file is what a kit without a variant of
+   its own loads, FoxDen's kit swapper keeping a path whose variant is missing. That is `kitF`'s
+   role, and a file named `kitN` would be no file of the set, the compiler filling the gaps from
+   the lowest variant instead (71 real `u0???p0` files, `MARISA`'s `k4465` holding `u0875p0` to
+   `p4`).
+
+   The `???` matches any three characters: authors wrote the `XXX` placeholder literally or
+   baked the real team ID in (`u0872p1.dds`), and both forms mean the same thing. The token is
+   matched as Red's `path_id_change` matches it: `u0`, three ASCII letters or digits, then `p`
+   or `g` and a digit, in that letter case, anywhere in a name or path and every occurrence
+   (`skin_u0771p3.dds`, `Common/ltd/u0XXXp5/`).
+
+   The names renamed are those below a player folder, below a shared `Boots/`/`Gloves/` folder
+   and below `Common/` (the kit folders have their own naming, `Kit Textures/` step 6's).
+
+   When an output path, renamed or not, is one another output path already takes, letter case
+   aside, it is the second input's: it is not written, and it is reported `unmigrated_content`
+   (a face folder's `u0XXXp1.dds` beside the same name in a boots folder merged into its player
+   folder; `A.dds` beside `a.dds`), where a second write would silently replace the first.
+
+   **Copies differing only in the token.** Inputs of one folder whose paths differ only in their
+   tokens' three characters (`u0XXXp2.dds` beside `u0731p2.dds` in a /jp/ export) are the
+   exception. They were one file to the old compile, whose rename (`filenames_id_replace`) gave
    each the team's ID and replaced the file already under the new name, in the folder's listing
-   order, Windows's case-folded name order, digits before letters. A copy whose three
-   characters are not all digits (`u0XXXp2`) is renamed whatever the team, and lists after
-   every numbered copy, so the last of those in that order is what the game loaded, whatever
-   the team's ID: it is kept, in every mode, save or none, and the others are leftovers (step
-   10), since no compile shipped them. We do not refuse these, because the old compile's pick
-   was neither a refusal nor arbitrary: the real JP Genso Cup exports' `k0860` holds an older
-   `u0731p2.dds` beside the newer `u0XXXp2.dds` the cup showed, and GBPEN VGL26's `g2336`
-   copies spelled `u0799` (another team's ID) and `u0XXX`. Only numbered copies (`u0731p2.dds`
-   beside `u0799p2.dds`) are each `unmigrated_content`, but the first in that order: which one
-   shipped depended on the team's ID (a copy already spelled with it is never renamed, so it
-   loses to the other), and an export holding two is too broken to repair by rule. No export
-   on the maintainer's machine holds one. So the upgrader reads no team ID for this rule; the
-   save's ID is read for the roster alone (step 6).
-   The kit folder token is a texture set's alone (`spec/model_format.md` "Kit-dependent
-   assets"): a `face.xml` naming a model in a `u0???p0/` folder is respelled `./kitN/…` as
-   written, which the compile does not resolve; no real export holds one.
-   The paths respelled are those the export resolves, a model folder's own (`./`) and the
-   team's Common; a game directory's are kept as written, the file there being the game's own
+   order, Windows's case-folded name order, digits before letters. A copy whose three characters
+   are not all digits (`u0XXXp2`) is renamed whatever the team, and lists after every numbered
+   copy, so the last of those in that order is what the game loaded, whatever the team's ID. It
+   is kept, in every mode, save or none, and the others are leftovers (step 10), since no
+   compile shipped them.
+
+   We do not refuse these, because the old compile's pick was neither a refusal nor arbitrary:
+   the real JP Genso Cup exports' `k0860` holds an older `u0731p2.dds` beside the newer
+   `u0XXXp2.dds` the cup showed, and GBPEN VGL26's `g2336` copies spelled `u0799` (another
+   team's ID) and `u0XXX`.
+
+   When the copies are numbered ones only (`u0731p2.dds` beside `u0799p2.dds`), each but the
+   first in that order is `unmigrated_content`, because which one shipped depended on the team's
+   ID (a copy already spelled with it is never renamed, so it loses to the other), and an export
+   holding two is too broken to repair by rule. No export on the maintainer's machine holds
+   one. So the upgrader reads no team ID for this rule; the save's ID is read for the roster
+   alone (step 6).
+
+   **What is respelled.** The kit folder token is a texture set's alone (`spec/model_format.md`
+   "Kit-dependent assets"): a `face.xml` naming a model in a `u0???p0/` folder is respelled
+   `./kitN/…` as written, which the compile does not resolve; no real export holds one.
+
+   The paths respelled are those the export resolves, a model folder's own (`./`) and the team's
+   Common. A game directory's are kept as written, the file there being the game's own
    (`model/character/uniform/texture/u0814p1.dds` is team 814's compiled kit texture; no real
-   export names one, 176 references in one model-test folder do). A Common-path reference
-   whose respelled name is a `kitN` reference (`common/XXX/u0XXXp0.dds`, `Common/` holding
-   `u0XXXp1.dds` to `p3`: /vg/'s Autumn 24 export) links like any other, the link named after
-   the reference's respelled name (`kitN.dds.common`) and present when `Common/`'s directory
-   holds a member of its set, as the shared validation resolves such a link. A name segment
-   holding a legacy `p` or `g` token and also a Studio token of the author's (`kit1_u0827p0.dds`, five
-   VGL26 exports) has that token's `kit` written `kit_tex` (`kit_tex1_kitN.dds`,
-   `Common/kit_tex1_kit1.dds`, `kit1_u0XXXg2.dds` → `kit_tex1_gk_kit2.dds`, since `gk_kit2`
-   holds the token `kit2`), in names and references alike: a stem's first token is its kit
-   token, so `kit1_kitN` would read as variant 1 and its set would never link. `kit_tex1` holds
-   no token (`kit` must be followed by the digit, `N` or `F` itself) and says what the file is,
-   a texture its author named `kit1`; a capital `Kit1`, the first spelling, differed only in
-   letter case, which Windows does not tell apart and the upgrader's own collision check folds
-   away. A path whose directory segment holds a legacy `p` or `g` token gives the Studio tokens of
-   its file name the same respelling (`Common/u0XXXp2/kit1.dds` → `Common/kit2/kit_tex1.dds`,
-   the FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` → `./kitN/` `kit_tex1`; GBPEN's
-   post-VGL26 export, 45 references in 19 models): a file name's
-   token wins over every directory segment (`aesthetics_export`'s `kit_path_token`), so
-   `kit2/kit1.dds` would read as variant 1 in a `kit2` folder, the reference `kitN/kit1` as no
-   reference at all, and the per-kit folder set would neither link nor pack. A reference whose
-   directory and file name are stored apart (an FMDL path-table entry, a `.mtl` texture) is
-   one path for this rule. In a
-   `face.xml`, only the `path` and `material` attributes' values change, the rest of the file
-   byte for byte as written, `<dif>` included; a Common path's folder after `common/` becomes
-   `team_folder` there too, the rest of the value kept
+   export names one, 176 references in one model-test folder do).
+
+   A Common-path reference whose respelled name is a `kitN` reference (`common/XXX/u0XXXp0.dds`,
+   `Common/` holding `u0XXXp1.dds` to `p3`: /vg/'s Autumn 24 export) links like any other. The
+   link is named after the reference's respelled name (`kitN.dds.common`) and present when
+   `Common/`'s directory holds a member of its set, as the shared validation resolves such a
+   link.
+
+   **Author tokens beside legacy ones.** A name segment holding a legacy `p` or `g` token and
+   also a Studio token of the author's (`kit1_u0827p0.dds`, five VGL26 exports) has that token's
+   `kit` written `kit_tex` (`kit_tex1_kitN.dds`, `Common/kit_tex1_kit1.dds`, `kit1_u0XXXg2.dds`
+   → `kit_tex1_gk_kit2.dds`, since `gk_kit2` holds the token `kit2`), in names and references
+   alike. A stem's first token is its kit token, so `kit1_kitN` would read as variant 1 and its
+   set would never link. `kit_tex1` holds no token (`kit` must be followed by the digit, `N` or
+   `F` itself) and says what the file is, a texture its author named `kit1`. A capital `Kit1`,
+   the first spelling, differed only in letter case, which Windows does not tell apart and the
+   upgrader's own collision check folds away.
+
+   A path whose directory segment holds a legacy `p` or `g` token gives the Studio tokens of its
+   file name the same respelling (`Common/u0XXXp2/kit1.dds` → `Common/kit2/kit_tex1.dds`, the
+   FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` → `./kitN/` `kit_tex1`; GBPEN's
+   post-VGL26 export, 45 references in 19 models). A file name's token wins over every directory
+   segment (`aesthetics_export`'s `kit_path_token`), so `kit2/kit1.dds` would read as variant 1
+   in a `kit2` folder, the reference `kitN/kit1` as no reference at all, and the per-kit folder
+   set would neither link nor pack. A reference whose directory and file name are stored apart
+   (an FMDL path-table entry, a `.mtl` texture) is one path for this rule.
+
+   In a `face.xml`, only the `path` and `material` attributes' values change, the rest of the
+   file byte for byte as written, `<dif>` included. A Common path's folder after `common/`
+   becomes `team_folder` there too, the rest of the value kept
    (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
-   `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that reads the legacy spelling — the
-   compiler has no notion of it. The kit stand-in's old spelling, the game's, becomes the
-   Studio one (`spec/model_format.md` "Kit-dependent assets", which the compiler writes back
-   for the exes and refuses in the old spelling, `dummy_kit_name_old`): a texture stem that,
-   folded, is `dummy_kit` or `dummy_gk_kit`, alone or followed by `_` and anything, is written
-   in lowercase with `dummy_` replaced by `team_` (`Dummy_Kit_SRM.dds` → `team_kit_srm.dds`,
-   `dummy_gk_kit` → `team_gk_kit`), the extension kept, in `.mtl` paths and FMDL texture
-   tables alike, in both modes and with no finding; the game's own `dummy_nrm`, `dummy_srm`
-   and `dummy_bsm`, and any other `dummy_` stem, keep their names. A `dummy_` stem is looked
-   up nowhere and reported never, the stand-in's included; in a `.mtl`'s Common path
-   (`model/character/uniform/common/XXX/dummy_kit.dds`, the real /jp/ Summer 25 export's
-   `XXX15 - Sister`) its Common is respelled with it
-   (`team_common_folder/team_kit.dds`), since
-   the compiler emits a member's `.mtl` as written but for those two spellings. The goalkeeper token **`u0???g`** and a
-   digit (`u0XXXg1.dds` in a `Common/`, which a keeper's model names) becomes `gk_kit` and that
-   digit, in both modes, in file and folder names and in `.mtl`/`face.xml` paths and FMDL path
-   tables alike (`u0714g1` → `gk_kit1`), `u0???g0` → `gk_kitN` in those paths but → `gk_kitF`
-   in a file or folder name, as `u0???p0` does; its three characters are any, as the `p`
-   token's, so a model and a file that spelled them differently (`XXX` in one, the ID in the
-   other) match again. Studio has one kit number for every player ("Kit-dependent assets"):
-   outfield and keeper textures are picked together, so `g1` is what a keeper wears with kit 1,
-   and `gk_kit1` holds the token `kit1`, a variant of the set `gk_kitN`. We do not write `kitN`,
-   the `p` token's spelling, because six real exports hold `u0XXXg1.dds` beside `u0XXXp1.dds`
-   in one `Common/` (/jp/ Summer 24 among them), which would become one name (DECISIONS
-   2026-11-09). A `u0???g` followed by no digit is no token and stays as written. Pre-Fox **model-type prefixes become suffixes**:
-   Red typed `face.xml` entries by a leading type (`gloveL_foo.model`, matched case-insensitively
-   with underscores ignored, or a `model_type_<x>` token anywhere); the Studio format puts the type
+   `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that
+   reads the legacy spelling — the compiler has no notion of it.
+
+   **The kit stand-in.** The kit stand-in's old spelling, the game's, becomes the Studio one
+   (`spec/model_format.md` "Kit-dependent assets", which the compiler writes back for the exes
+   and refuses in the old spelling, `dummy_kit_name_old`). A texture stem that, folded, is
+   `dummy_kit` or `dummy_gk_kit`, alone or followed by `_` and anything, is written in lowercase
+   with `dummy_` replaced by `team_` (`Dummy_Kit_SRM.dds` → `team_kit_srm.dds`, `dummy_gk_kit` →
+   `team_gk_kit`), the extension kept, in `.mtl` paths and FMDL texture tables alike, in both
+   modes and with no finding. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any
+   other `dummy_` stem, keep their names.
+
+   A `dummy_` stem is looked up nowhere and reported never, the stand-in's included. In a
+   `.mtl`'s Common path (`model/character/uniform/common/XXX/dummy_kit.dds`, the real /jp/
+   Summer 25 export's `XXX15 - Sister`) its Common is respelled with it
+   (`team_common_folder/team_kit.dds`), since the compiler emits a member's `.mtl` as written
+   but for those two spellings.
+
+   **The goalkeeper token.** The goalkeeper token **`u0???g`** and a digit (`u0XXXg1.dds` in a
+   `Common/`, which a keeper's model names) becomes `gk_kit` and that digit, in both modes, in
+   file and folder names and in `.mtl`/`face.xml` paths and FMDL path tables alike (`u0714g1` →
+   `gk_kit1`). `u0???g0` → `gk_kitN` in those paths but → `gk_kitF` in a file or folder name, as
+   `u0???p0` does. Its three characters are any, as the `p` token's, so a model and a file that
+   spelled them differently (`XXX` in one, the ID in the other) match again.
+
+   Studio has one kit number for every player ("Kit-dependent assets"): outfield and keeper
+   textures are picked together, so `g1` is what a keeper wears with kit 1, and `gk_kit1` holds
+   the token `kit1`, a variant of the set `gk_kitN`. We do not write `kitN`, the `p` token's
+   spelling, because six real exports hold `u0XXXg1.dds` beside `u0XXXp1.dds` in one `Common/`
+   (/jp/ Summer 24 among them), which would become one name (DECISIONS 2026-11-09). A `u0???g`
+   followed by no digit is no token and stays as written.
+
+   **Model-type prefixes.** Pre-Fox **model-type prefixes become suffixes**. Red typed
+   `face.xml` entries by a leading type (`gloveL_foo.model`, matched case-insensitively with
+   underscores ignored, or a `model_type_<x>` token anywhere); the Studio format puts the type
    last (`foo_gloveL.model`, `foo_model_type_<x>.model` — see "Model names: a free part plus a
-   suffix" in the [Aesthetics export plan](aesthetics_export/README.md)). The swap applies **only to folders
-   without a `face.xml`** — filename typing exists to generate the xml, so a folder that ships its
-   own xml carries the types there and its files are left exactly as named. In xml-less folders (a
-   player folder with no `face.xml` of its own, its subfolders included, and a shared boots or
-   gloves folder, which validation refuses a model of when its name does not end in its type:
-   `oral_boots_win32.model` is `model_name_invalid`, `boots.model` is not) and in `Common/`, the
-   upgrader moves a recognized leading type to the end of the stem: one of Red's types
-   (`face_neck`, `handL`, `handR`, `gloveL`, `gloveR`, `uniform`, `shirt`, `pants_nocloth`, `eye`,
-   `mouth`, tried in that order) followed by `_` and more of the name (`gloveL_foo` →
-   `foo_gloveL`, `glove_l_foo` → `foo_glove_l`, the type kept as written). A type glued to the
-   next word is no type here (`eyebrow_x` stays, where Red typed it `eye`): none of the 856
-   models in the xml-less face folders of the maintainer's exports is named so, and moving
-   letters off a word makes a name nobody wrote. A name holding a `model_type_` token is left as
-   written: Red and the compiler both read everything after the token as the type, so it is in
-   place wherever it stands, and moving it would change the type. A name with no leading type is
-   untouched, one already ending in a type included, and so is a name that is a type alone
-   (`gloveL.model`). It also drops the `oral_` prefix
-   and `_win32` suffix from a model named with both (`oral_parts_body_win32.model` →
+   suffix" in the [Aesthetics export plan](aesthetics_export/README.md)).
+
+   The swap applies **only to folders without a `face.xml`** — filename typing exists to
+   generate the xml, so a folder that ships its own xml carries the types there and its files
+   are left exactly as named. The xml-less folders are a player folder with no `face.xml` of its
+   own, its subfolders included, and a shared boots or gloves folder, which validation refuses a
+   model of when its name does not end in its type (`oral_boots_win32.model` is
+   `model_name_invalid`, `boots.model` is not). In them and in `Common/`, the upgrader moves a
+   recognized leading type to the end of the stem: one of Red's types (`face_neck`, `handL`,
+   `handR`, `gloveL`, `gloveR`, `uniform`, `shirt`, `pants_nocloth`, `eye`, `mouth`, tried in
+   that order) followed by `_` and more of the name (`gloveL_foo` → `foo_gloveL`, `glove_l_foo`
+   → `foo_glove_l`, the type kept as written).
+
+   What it leaves alone:
+
+   - A type glued to the next word is no type here (`eyebrow_x` stays, where Red typed it
+     `eye`). None of the 856 models in the xml-less face folders of the maintainer's exports is
+     named so, and moving letters off a word makes a name nobody wrote.
+   - A name holding a `model_type_` token is left as written. Red and the compiler both read
+     everything after the token as the type, so it is in place wherever it stands, and moving it
+     would change the type.
+   - A name with no leading type is untouched, one already ending in a type included, and so is
+     a name that is a type alone (`gloveL.model`).
+
+   **The `oral_` and `_win32` wrapper.** The upgrader also drops the `oral_` prefix and
+   `_win32` suffix from a model named with both (`oral_parts_body_win32.model` →
    `parts_body.model`), in `Common/` too, a link of that name following its target
-   (`oral_x_win32.model.common` → `x.model.common`): the compiler adds them back to the name it packs, and Red matched a
-   `.mtl` against the name without them (its `xml_editing.py`), which the compiler's search,
-   matching the literal stem, would not (`/jp/`'s Winter 2025 `XXX17 - Dekinai` holds that
-   model beside `parts_body.mtl` and `materials.mtl`). Each renamed model keeps the `.mtl`
-   Red chose for it: in the type swap, a `.mtl` in the model's folder named after the old stem
-   alone (the stem the swap starts from, compared case-folded) is renamed with
-   it (`gloveL_foo.mtl` → `foo_gloveL.mtl`), since the search matches a stem that starts or
-   ends the model's ("Pre-Fox: the `.mtl` a `.model` uses" in `spec/model_format.md`); the
-   wrapper drop renames no `.mtl`, Red having matched against the unwrapped name already. A
-   `.mtl.common` link is not renamed with a model of its own folder: it follows its target in
+   (`oral_x_win32.model.common` → `x.model.common`). The compiler adds them back to the name it
+   packs, and Red matched a `.mtl` against the name without them (its `xml_editing.py`), which
+   the compiler's search, matching the literal stem, would not (`/jp/`'s Winter 2025
+   `XXX17 - Dekinai` holds that model beside `parts_body.mtl` and `materials.mtl`).
+
+   **What follows a renamed model.** Each renamed model keeps the `.mtl` Red chose for it. In
+   the type swap, a `.mtl` in the model's folder named after the old stem alone (the stem the
+   swap starts from, compared case-folded) is renamed with it (`gloveL_foo.mtl` →
+   `foo_gloveL.mtl`), since the search matches a stem that starts or ends the model's ("Pre-Fox:
+   the `.mtl` a `.model` uses" in `spec/model_format.md`). The wrapper drop renames no `.mtl`,
+   Red having matched against the unwrapped name already.
+
+   A `.mtl.common` link is not renamed with a model of its own folder. It follows its target in
    `Common/`, keeping its name unless that `.mtl` is renamed with a `Common/` model, since a link
-   to a name that moved would name a file that is not there. In
-   either rename, a `.model.common` link follows its target's new name (`gloveL_foo.model.common` →
-   `foo_gloveL.model.common` with `Common/gloveL_foo.model` → `foo_gloveL.model`). A renamed
-   output that an earlier output already takes (compared case-folded) is left out and its input
-   reported `unmigrated_content`, as for the kit magic's renames. A `Common/`
-   file that a member `face.xml` names (a `path` or `material` value below
+   to a name that moved would name a file that is not there. In either rename, a `.model.common`
+   link follows its target's new name (`gloveL_foo.model.common` → `foo_gloveL.model.common`
+   with `Common/gloveL_foo.model` → `foo_gloveL.model`). A renamed output that an earlier output
+   already takes (compared case-folded) is left out and its input reported
+   `unmigrated_content`, as for the kit magic's renames.
+
+   A `Common/` file that a member `face.xml` names (a `path` or `material` value below
    `model/character/uniform/common/<segment>/`, the file name's `*` read as `win32`, as the
    compiler reads it) keeps its name through both renames, and so does one that a link in a
-   folder with a `face.xml` names, that link being left as written: the xml's `path` is
-   packed as written, and on a PES 16 target one without the `oral_` prefix is refused
+   folder with a `face.xml` names, that link being left as written. The xml's `path` is packed
+   as written, and on a PES 16 target one without the `oral_` prefix is refused
    (`xml_oral_prefix_missing`, `spec/team_compiler/messages.md`), so following the rename would
    lose the face folder where keeping the name loses nothing (the real `/o/` Winter 18 export's
    `73602 - Don't panic/face.xml` names `Common/oral_hand_l_win32.model`).
@@ -664,262 +877,346 @@ to moving, flattening, or removing files describe that draft, not destructive ed
      camera sees: it is how templates made before the Blender add-on could delete a game mesh
      hid the default face or hair, by moving it away. The compiler's
      `vertex_too_far_from_origin` stays an Error, since far geometry lags the match all day, so
-     without this cleanup the template's player folder would be dropped at compile time. A
-     face folder the drop leaves with no face model compiles to the blank face, which hides the
-     default face as the far model did ("2. Per-export serial steps" in
+     without this cleanup the template's player folder would be dropped at compile time.
+
+     A face folder the drop leaves with no face model compiles to the blank face, which hides
+     the default face as the far model did ("2. Per-export serial steps" in
      `spec/team_compiler/pipeline.md`); a gloves folder it leaves with no model is a hidden
      hand, as any modelless gloves folder is (step 3). A `.model`'s `.mtl` stays: no community
      `.model` is far, and telling which `.mtl` only the far model used would repeat the
      compiler's whole `.mtl` search, subfolders and links included. A model with only some
-     meshes or vertices far stays as it is, and the compiler refuses it. A census of the
-     maintainer's machine (2026-11-05: 49,122 `.fmdl` and `.model` files, 14,688 distinct)
-     found 23 far in every vertex (the VGL26 faces and hairs, three old gloves files, two
-     stadium models) and none partly far but two synthetic test fixtures; in VGL26, 89 files (9
-     distinct) in 47 folders across 7 exports, the most common a `face_high.fmdl` of 739
-     vertices in 29 folders.
+     meshes or vertices far stays as it is, and the compiler refuses it.
+
+     A census of the maintainer's machine (2026-11-05: 49,122 `.fmdl` and `.model` files,
+     14,688 distinct) found 23 far in every vertex (the VGL26 faces and hairs, three old gloves
+     files, two stadium models) and none partly far but two synthetic test fixtures. In VGL26
+     they are 89 files (9 distinct) in 47 folders across 7 exports, the most common a
+     `face_high.fmdl` of 739 vertices in 29 folders.
    - **Anti-blur duplicates dropped.** Every `.fmdl` of the export carrying anti-blur meshes
      (the copies on a fuzzblock shader the Blender add-on added, flagged `Is-Antiblur-Meshes`)
      is written without them (`fmdl::ops::antiblur::decode`: the copies and the materials only
      they used go, the file's anti-blur extension is cleared), and every mesh's request for
      them (`Has-Antiblur-Meshes`) is cleared too, so no later conversion or merge adds them
-     back; `antiblur_dropped` (I: the file, how many meshes) names each file. FoxDen's TAA
-     removal script keeps models on Forward shaders sharp without them, which leaves the
-     copies bloat that draws every mesh twice: 3,566 of the 6,374 distinct readable FMDLs on
-     the maintainer's machine carried them. A mesh on a fuzzblock shader without the flag (6
-     files) is left as it is: nothing tells a copy from a mesh drawn that way on purpose. A
-     file the format crate cannot lift keeps its texture-path rewrite and is written as it
-     was. The compiler's side is in `spec/model_conversion/ir.md` "Anti-blur duplicates".
+     back; `antiblur_dropped` (I: the file, how many meshes) names each file.
+
+     FoxDen's TAA removal script keeps models on Forward shaders sharp without them, which
+     leaves the copies bloat that draws every mesh twice: 3,566 of the 6,374 distinct readable
+     FMDLs on the maintainer's machine carried them.
+
+     A mesh on a fuzzblock shader without the flag (6 files) is left as it is: nothing tells a
+     copy from a mesh drawn that way on purpose. A file the format crate cannot lift keeps its
+     texture-path rewrite and is written as it was. The compiler's side is in
+     `spec/model_conversion/ir.md` "Anti-blur duplicates".
 8. **Generates `settings.toml`** for each player folder steps 3 and 4 write (a rostered player
    with no face folder and no custom boots or gloves gets no folder, and his look stays where
-   the game reads it now, his record or his installed row), populated from the savefile's aesthetic data
-   (physique, strip style, skin/iris color, etc.) — the same TOML-generation logic the save editor
-   uses. A marked folder's `ingame_face.toml` is written beside it, filled the same way: the face
-   run, the hair and the iris, every key the save's version holds (`settings_value_refused`
-   covers both files); a folder without the marker gets a
-   `settings.toml` alone, without those keys, and without a record to generate from (a failed
-   `settings_not_generated`) the file is written empty, so the marker's effect survives.
-   Custom boots/gloves IDs (above 100) are omitted: old IDs help resolve the wearers during
-   migration, but the migrated models/links determine Studio's automatic assignments. A stock ID
-   (1 to 100: a game model, which no folder carries) is kept as `boots_id`/`gloves_id`, or the
-   player would lose it. A stored 0 is left unset, its default, except in a Midcup output, where
-   it is written (`boots_id = 0`): an unset key there keeps the installed ID
-   (`spec/aesthetics_export/settings_toml.md`), which may not be the default his record holds;
-   a Full output keeps it unset, since an explicit 0 would also override the hide preset an
+   the game reads it now, his record or his installed row), populated from the savefile's
+   aesthetic data (physique, strip style, skin/iris color, etc.) — the same TOML-generation logic
+   the save editor uses.
+
+   A marked folder's `ingame_face.toml` is written beside it, filled the same way: the face run,
+   the hair and the iris, every key the save's version holds (`settings_value_refused` covers
+   both files). A folder without the marker gets a `settings.toml` alone, without those keys.
+   Without a record to generate from (a failed `settings_not_generated`) the file is written
+   empty, so the marker's effect survives.
+
+   **Boots and gloves IDs.** Custom boots/gloves IDs (above 100) are omitted: old IDs help
+   resolve the wearers during migration, but the migrated models/links determine Studio's
+   automatic assignments. A stock ID (1 to 100: a game model, which no folder carries) is kept
+   as `boots_id`/`gloves_id`, or the player would lose it.
+
+   A stored 0 is left unset, its default, except in a Midcup output, where it is written
+   (`boots_id = 0`), because an unset key there keeps the installed ID
+   (`spec/aesthetics_export/settings_toml.md`), which may not be the default his record holds.
+   A Full output keeps it unset, since an explicit 0 would also override the hide preset an
    author who switches to the `fpc_on` marker expects. A player step 3 marks `fpc_on` (a
    modelless boots or gloves folder) is the exception: the category no folder of his decides
    keeps a stored 0 as an explicit `= 0`, since under the marker an unset key gives the hide
-   preset's blank-model ID and he would lose the stock boots or the hands he wore (EU-PLY-17). An ID a migrated boots or gloves folder
-   claims (his worn ID, merged into his folder or linked from it) is left out whatever its
-   value, a stock-band one included: the folder decides that category, and a number beside it
-   would be ignored at every compile (`settings_model_id_conflict`). A custom ID (above 100)
-   worn by a player that no model folder of the export claims was never packed, so the game
-   drew no model for it, and members set such IDs on purpose for a player whose face folder
-   carries his whole body (VGL26: /skg/ and five more exports, step 3's "Not worn"). Step 3
-   first pairs what it can of such IDs with unworn folders; what it leaves is this case. A
-   player the output gives a folder gets the FPC hide preset's ID of the kind in his file
-   (`boots_id = 55`, `gloves_id = 11`, `fpc::HideIds::CONVENTION`), which shows the same
-   no-model, and `custom_model_hidden` (W: the slot, the player's name, the key, the ID and
-   `written`, the ID written) names it, since the folder may also be one the member forgot
-   (`custom_model_not_worn`, I, with the same context, in its place when the ID is the number
-   of a folder of the other kind, step 3); the number itself
-   would point at whatever Studio's block scheme later assigns there. A rostered player of a
-   Full output the output gives no folder has no file to carry the ID, and the patch would
-   leave his record's number as it is: for him the content is missing (step 10),
-   `custom_model_missing` (E, the slot, the player's name, the key and the ID). A Midcup
-   output reports neither for a folderless player: its compile leaves him as installed, his
-   content included, while a Full one rebuilds the team from the export alone. Since name writing is opt-in, the upgrader emits `name = true` when the
-   player name the compiler derives from the output folder's name (`aesthetics_export`'s rule,
-   the name part of `NN - Name`) equals the savefile name, or the explicit string otherwise — which is the case whenever the
-   folder was named from the face folder rather than the savefile, and whenever the savefile name
-   can't be expressed in a folder name (filesystem-invalid characters, **including name colour
-   codes**, which the explicit string preserves byte-for-byte so a compile never strips them).
-   A stored value is written as stored, since the player must look the same; real saves hold
-   values past the ranges assumed for versions no game measured (79 players of the PES 18
-   fixture save, `cheek_type` 4 or 5 among them), and those ranges become the fields' bits
-   ("Player settings in exports" in the [Aesthetics export plan](aesthetics_export/settings_toml.md)).
+   preset's blank-model ID and he would lose the stock boots or the hands he wore (EU-PLY-17).
+
+   An ID a migrated boots or gloves folder claims (his worn ID, merged into his folder or linked
+   from it) is left out whatever its value, a stock-band one included. The folder decides that
+   category, and a number beside it would be ignored at every compile
+   (`settings_model_id_conflict`).
+
+   **Custom IDs no folder claims.** A custom ID (above 100) worn by a player that no model folder
+   of the export claims was never packed, so the game drew no model for it, and members set such
+   IDs on purpose for a player whose face folder carries his whole body (VGL26: /skg/ and five
+   more exports, step 3's "Not worn"). Step 3 first pairs what it can of such IDs with unworn
+   folders; what it leaves is this case.
+
+   - A player the output gives a folder gets the FPC hide preset's ID of the kind in his file
+     (`boots_id = 55`, `gloves_id = 11`, `fpc::HideIds::CONVENTION`), which shows the same
+     no-model, and `custom_model_hidden` (W: the slot, the player's name, the key, the ID and
+     `written`, the ID written) names it, since the folder may also be one the member forgot
+     (`custom_model_not_worn`, I, with the same context, in its place when the ID is the number
+     of a folder of the other kind, step 3). The number itself would point at whatever Studio's
+     block scheme later assigns there.
+   - A rostered player of a Full output the output gives no folder has no file to carry the ID,
+     and the patch would leave his record's number as it is. For him the content is missing
+     (step 10), `custom_model_missing` (E, the slot, the player's name, the key and the ID).
+   - A Midcup output reports neither for a folderless player: its compile leaves him as
+     installed, his content included, while a Full one rebuilds the team from the export alone.
+
+   **The name.** Since name writing is opt-in, the upgrader emits `name = true` when the player
+   name the compiler derives from the output folder's name (`aesthetics_export`'s rule, the name
+   part of `NN - Name`) equals the savefile name, or the explicit string otherwise. That is the
+   case whenever the folder was named from the face folder rather than the savefile, and
+   whenever the savefile name can't be expressed in a folder name (filesystem-invalid
+   characters, **including name colour codes**, which the explicit string preserves
+   byte-for-byte so a compile never strips them).
+
+   **Stored values.** A stored value is written as stored, since the player must look the same.
+   Real saves hold values past the ranges assumed for versions no game measured (79 players of
+   the PES 18 fixture save, `cheek_type` 4 or 5 among them), and those ranges become the fields'
+   bits ("Player settings in exports" in the
+   [Aesthetics export plan](aesthetics_export/settings_toml.md)).
+
    A value past even a key's widest range cannot be written, the parser refusing it (a PES 16
-   cup player stores `goal_celebration_2` 183, `spec/aesthetics_export/settings_toml.md`): that
-   key is left out of his file and reported (W, `settings_value_refused`: the slot, the
-   player's name, the dotted key and the stored value). A record whose file cannot be generated
-   at all (a field read that fails) leaves his folder without one, reported
-   `settings_not_generated` (E, the slot, the name and the error). No `fpc_on` marker is written from the record
-   (step 3's modelless item folder writes one from the folder): an FPC player's record holds the hide strip
+   cup player stores `goal_celebration_2` 183, `spec/aesthetics_export/settings_toml.md`). That
+   key is left out of his file and reported (W, `settings_value_refused`: the slot, the player's
+   name, the dotted key and the stored value). A record whose file cannot be generated at all (a
+   field read that fails) leaves his folder without one, reported `settings_not_generated` (E,
+   the slot, the name and the error).
+
+   **No `fpc_on` from the record.** No `fpc_on` marker is written from the record (step 3's
+   modelless item folder writes one from the folder). An FPC player's record holds the hide strip
    and either the stock hide IDs, kept as any stock ID is, or, as the cup's FPC teams mostly do,
    a blank boots ID of his own whose folder migrates like any other (the 2023 Winter Cup save's
-   `/a/`: boots and gloves 126 to 148, one per player), so the raw settings reproduce him, while
+   `/a/`: boots and gloves 126 to 148, one per player). So the raw settings reproduce him, while
    matching them against `libs/fpc`'s enable preset would miss those players and mark a dressed
    player with long sleeves, tucked shirt and short socks. The author switches to the marker by
    hand.
-9. **Migrates referee exports**, those whose name's first word is `refs` (in any letter case;
-   `refs.txt` and the referee subfolders below are matched so too, as real exports spell them
-   `Refs.txt`, `Face/`; a `refs` export without a `refs.txt` holds no roster to migrate and is
-   reported, nothing written, exit 1: `refs_txt_missing`, E, on the export; the roster file's
-   older spelling `Refs list.txt`, the refs compiler's, is read when there is no `refs.txt`, and
-   that layout's referee folders stand directly at the export root instead of under `Players/`:
-   when the export has no `Players/`, every root folder step 1 does not know is a referee's,
-   since four of the eleven real referee exports on the maintainer's machine, Winter to Summer
-   25, are that layout, with the same `Face/` and `Common/` per referee), as the compiler tells
-   them apart ("Identity boundary" in `spec/aesthetics_export/object_model.md`): the old referee layout (`refs.txt` + per-referee
-   face/boots/gloves/common subfolders — the prototype of the player-folder format) is refused by
-   the compiler per referee folder (`player_layout_proto`, naming this tool; only the `refs.txt`
-   alias is accepted), so it is upgraded to the fully unified layout: `refs.txt` becomes a root `players.txt`
-   carrying the slot mapping (including repeated entries — the same model backing multiple of the 35
-   referee slots for rarity control) in `aesthetics_export`'s canonical UTF-8/LF roster grammar shared with
-   the Refs arranger (every nonblank line, a line that parses written as its slot in two digits,
-   one space and the folder name, one that does not kept as written, so the shared validation
-   reports it on the output rather than the upgrader deciding what it meant; a `refs.txt` that is
-   not UTF-8 is unmigrated content and no `players.txt` is written, the validation then dropping
-   the output for the missing roster), and the `refs.txt` is removed; a root `ref_marker.dds` is carried as it is
-   (the format admits it, `spec/aesthetics_export/object_model.md`); each referee's subfolders are **flattened** into
-   the player folder root (step 12). Either old `ingame_face` spelling becomes `ingame_face.toml`
-   exactly as for team player folders — empty, a referee export having no record to fill it from.
-   No savefile needed — referee IDs are compiler-generated. A Note txt in a
-   referee export is a leftover (step 10): step 6 reads a team's colors, which referees have none
-   of, so nothing compiled it, and the Warning names it for the author.
+9. **Migrates referee exports**, those whose name's first word is `refs` (in any letter case),
+   as the compiler tells them apart ("Identity boundary" in
+   `spec/aesthetics_export/object_model.md`). `refs.txt` and the referee subfolders below are
+   matched so too, as real exports spell them `Refs.txt`, `Face/`.
+
+   A `refs` export without a `refs.txt` holds no roster to migrate and is reported, nothing
+   written, exit 1: `refs_txt_missing`, E, on the export.
+
+   The roster file's older spelling `Refs list.txt`, the refs compiler's, is read when there is
+   no `refs.txt`, and that layout's referee folders stand directly at the export root instead of
+   under `Players/`. When the export has no `Players/`, every root folder step 1 does not know is
+   a referee's, since four of the eleven real referee exports on the maintainer's machine,
+   Winter to Summer 25, are that layout, with the same `Face/` and `Common/` per referee.
+
+   The old referee layout (`refs.txt` + per-referee face/boots/gloves/common subfolders — the
+   prototype of the player-folder format) is refused by the compiler per referee folder
+   (`player_layout_proto`, naming this tool; only the `refs.txt` alias is accepted), so it is
+   upgraded to the fully unified layout:
+
+   - `refs.txt` becomes a root `players.txt` carrying the slot mapping (including repeated
+     entries — the same model backing multiple of the 35 referee slots for rarity control) in
+     `aesthetics_export`'s canonical UTF-8/LF roster grammar shared with the Refs arranger. Of
+     every nonblank line, a line that parses is written as its slot in two digits, one space and
+     the folder name, and one that does not is kept as written, so the shared validation reports
+     it on the output rather than the upgrader deciding what it meant. A `refs.txt` that is not
+     UTF-8 is unmigrated content and no `players.txt` is written, the validation then dropping
+     the output for the missing roster.
+   - The `refs.txt` is removed.
+   - A root `ref_marker.dds` is carried as it is (the format admits it,
+     `spec/aesthetics_export/object_model.md`).
+   - Each referee's subfolders are **flattened** into the player folder root (step 12).
+
+   Either old `ingame_face` spelling becomes `ingame_face.toml` exactly as for team player
+   folders — empty, a referee export having no record to fill it from. No savefile needed —
+   referee IDs are compiler-generated. A Note txt in a referee export is a leftover (step 10):
+   step 6 reads a team's colors, which referees have none of, so nothing compiled it, and the
+   Warning names it for the author.
 10. **Reports** anything that couldn't be migrated automatically (e.g. contents of the Other folder,
     unassigned model folders) for manual attention — the `UnmigratedContentFound` pipeline event;
     the tool defines its own message catalog on the shared `Message` structure (see the Team
-    compiler plan's "Message catalog"). Content is reported entry by entry: where Red discarded a
-    whole folder for one bad entry (every `Kit Configs/` config when one name breaks the
-    grammar, as the real `CIV4XG` VGL26 export's `XXX_DEF_GK2nd_realUni.bin` does; `Kit
-    Textures/` for one failing texture; `Logo/` when it holds other than three emblems), the
-    other entries migrate and the bad one is reported, since the author can then fix one file
-    rather than lose the team's kits silently, as Red's compile did. An entry is a file, or a
-    folder no step migrates as a whole (a second face folder of one slot, one without a slot),
-    reported once by its path; a file a step leaves in the output as named (a second portrait)
-    is reported all the same.
-    Two kinds of entry, since only one keeps the run from being clean ("Verification"): a
-    **leftover**, content that never reached a player in game, is dropped with a Warning naming
-    it (`leftover_dropped`). It is content outside the old format's layout that nothing
-    compiled (a top-level folder the AET does not define, such as the real KFG VGL26 export's
-    `FMDL Boots/` of `.model` copies; a file at the root other than the Note; `Other/`'s files,
-    which the AET keeps for the author alone), or content inside it that Red never read or that
-    the game never loaded: a file directly in `Faces/`, `Boots/` or `Gloves/`, where Red's walks
-    list subfolders only (`Faces/73606 - Civic cool.7z`, `Boots/boots.fmdl`: archives made to
-    share model folders, removed before a compile); a `Full` export's kit texture whose slot no
-    config and no Note entry gives, and in any export a Kit Textures file that is no kit
-    texture of a given slot (step 5: `u0XXXp2 - Copy.dds`, `back.dds`, `u0XXXp1.png`); a
-    portrait Red's check refused (step 7); a file the old compile's ID rename replaced (step 7:
-    `u0731p2.dds` beside `u0XXXp2.dds` in one folder); the second color of a team-color entry holding two
-    (Red kept the first); an item folder no save record names (VG Summer 20's misspelled
-    second set `k2501`-`k2523`); a second or later goalkeeper kit (step 5: no version the cup
-    plays shows one); and two kinds of stray file, which the compile would otherwise refuse a
-    folder for or misread: a file the shared `classify` reads as no known kind and that is no
-    `.txt` note, wherever it sits in the old format's folders (a model folder, `Common/`,
-    `Collars/`, `Kit Configs/`, `Logo/`: `face.mtl.backup`, `materials.mtl.bak`, M Winter 18 and
-    two other exports; `file_type_disallowed` or `common_file_disallowed`, Errors under the
-    default `strict_file_type_check`; Red's `common_check` deleted such a file and went on, its
-    other checks discarded the folder), and in a Fox boots or gloves folder an FMDL under no
-    name the game loads, Red's names being `boots`, `glove_l` and `glove_r`, each alone or after a
-    prefix and `_` (`boots - Copy.fmdl` beside `boots.fmdl`), which in the wearer's player
-    folder would be merged into his hair (`fmdl_fcl_hair_fallback`). Red discards the whole
-    folder over such a file ("is not allowed", "is not a valid fmdl name for fox mode"); we
-    drop the file and keep the folder, the member's content, which the stray copy never
-    belonged to. A file of a known kind that sits where the format refuses it (a `face.xml`
-    in a subfolder, EU-REP-02) is no stray: it is left for the output's strict check to name,
-    since it is the member's content in the wrong place, not a copy. A `.dds` and a `.ftex`
-    of one stem in one folder of the output, which the shared validation refuses
-    (`texture_stem_conflict`), are resolved by use before the output is written: when no
-    model of the export uses the stem (no material's texture reference resolves to it, a
-    `dummy_` stem counting as unused since the game substitutes it, "A texture a model names
-    must exist" in `spec/team_compiler/pipeline.md`), both are leftovers; otherwise the
-    `.ftex` is dropped and the `.dds` kept, `texture_duplicate_dropped` (W: the dropped file,
-    `kept` the `.dds`), and the run stays clean, the `.dds` it duplicated being written
-    (VGL26's /akg/ held `Common/dummy_srm.dds` and `dummy_srm.ftex`, its one refusal). Other
-    pairs of extensions stay refused. An entry inside the format's folders that reached the game but that no step migrates
-    (a texture that does not decode, a folder loose mode cannot place) is
+    compiler plan's "Message catalog").
+
+    Content is reported entry by entry. Where Red discarded a whole folder for one bad entry
+    (every `Kit Configs/` config when one name breaks the grammar, as the real `CIV4XG` VGL26
+    export's `XXX_DEF_GK2nd_realUni.bin` does; `Kit Textures/` for one failing texture; `Logo/`
+    when it holds other than three emblems), the other entries migrate and the bad one is
+    reported, since the author can then fix one file rather than lose the team's kits silently,
+    as Red's compile did. An entry is a file, or a folder no step migrates as a whole (a second
+    face folder of one slot, one without a slot), reported once by its path; a file a step
+    leaves in the output as named (a second portrait) is reported all the same.
+
+    Two kinds of entry, since only one keeps the run from being clean ("Verification").
+
+    **Leftovers.** A **leftover**, content that never reached a player in game, is dropped with a
+    Warning naming it (`leftover_dropped`). It is content outside the old format's layout that
+    nothing compiled (a top-level folder the AET does not define, such as the real KFG VGL26
+    export's `FMDL Boots/` of `.model` copies; a file at the root other than the Note; `Other/`'s
+    files, which the AET keeps for the author alone), or content inside it that Red never read or
+    that the game never loaded:
+
+    - a file directly in `Faces/`, `Boots/` or `Gloves/`, where Red's walks list subfolders only
+      (`Faces/73606 - Civic cool.7z`, `Boots/boots.fmdl`: archives made to share model folders,
+      removed before a compile);
+    - a `Full` export's kit texture whose slot no config and no Note entry gives, and in any
+      export a Kit Textures file that is no kit texture of a given slot (step 5:
+      `u0XXXp2 - Copy.dds`, `back.dds`, `u0XXXp1.png`);
+    - a portrait Red's check refused (step 7);
+    - a file the old compile's ID rename replaced (step 7: `u0731p2.dds` beside `u0XXXp2.dds` in
+      one folder);
+    - the second color of a team-color entry holding two (Red kept the first);
+    - an item folder no save record names (VG Summer 20's misspelled second set
+      `k2501`-`k2523`);
+    - a second or later goalkeeper kit (step 5: no version the cup plays shows one);
+    - and two kinds of stray file, which the compile would otherwise refuse a folder for or
+      misread:
+      - a file the shared `classify` reads as no known kind and that is no `.txt` note, wherever
+        it sits in the old format's folders (a model folder, `Common/`, `Collars/`,
+        `Kit Configs/`, `Logo/`: `face.mtl.backup`, `materials.mtl.bak`, M Winter 18 and two
+        other exports). Kept, it would be `file_type_disallowed` or `common_file_disallowed`,
+        Errors under the default `strict_file_type_check`. Red's `common_check` deleted such a
+        file and went on, while its other checks discarded the folder;
+      - in a Fox boots or gloves folder, an FMDL under no name the game loads, Red's names being
+        `boots`, `glove_l` and `glove_r`, each alone or after a prefix and `_`
+        (`boots - Copy.fmdl` beside `boots.fmdl`), which in the wearer's player folder would be
+        merged into his hair (`fmdl_fcl_hair_fallback`).
+
+    Red discards the whole folder over such a stray file ("is not allowed", "is not a valid fmdl
+    name for fox mode"); we drop the file and keep the folder, the member's content, which the
+    stray copy never belonged to. A file of a known kind that sits where the format refuses it
+    (a `face.xml` in a subfolder, EU-REP-02) is no stray: it is left for the output's strict
+    check to name, since it is the member's content in the wrong place, not a copy.
+
+    **A `.dds` and a `.ftex` of one stem.** A `.dds` and a `.ftex` of one stem in one folder of
+    the output, which the shared validation refuses (`texture_stem_conflict`), are resolved by
+    use before the output is written:
+
+    - when no model of the export uses the stem (no material's texture reference resolves to
+      it, a `dummy_` stem counting as unused since the game substitutes it, "A texture a model
+      names must exist" in `spec/team_compiler/pipeline.md`), both are leftovers;
+    - otherwise the `.ftex` is dropped and the `.dds` kept, `texture_duplicate_dropped` (W: the
+      dropped file, `kept` the `.dds`), and the run stays clean, the `.dds` it duplicated being
+      written (VGL26's /akg/ held `Common/dummy_srm.dds` and `dummy_srm.ftex`, its one
+      refusal).
+
+    Other pairs of extensions stay refused.
+
+    **Unmigrated content.** An entry inside the format's folders that reached the game but that
+    no step migrates (a texture that does not decode, a folder loose mode cannot place) is
     `unmigrated_content`, an Error. So is content Red kept out that the author evidently meant
-    for the game, where a leftover would lose it over a slip: two candidates for one place, of
-    which only the author knows the meant one (a second face folder of one slot, a second item
-    folder of one ID, two kit textures landing on one name, two portraits in one face folder,
-    two old `Portraits/` files of one slot), Red's pick being a refusal or arbitrary, and a
-    whole model folder under a name Red refused (a face folder without a valid slot, a `K0430`
-    folder), which would drop a player's face over a typo. A single file under a name Red's
-    per-file name checks refused (`portraits_check`, `kittextures_check`) is a leftover; a
-    model folder's file of a known kind under a name the format refuses (a `face_edithair.xml`,
-    a model's name) is not, the author's content in the wrong form, which the output's check or
-    the compile names. A team color's second color is no such choice, Red always keeping the
-    first. We do not refuse a run over a leftover,
-    because the game never showed it, so the Studio export is complete without it and the
-    Warning tells the author what was left behind; we do refuse one over an unmigrated entry,
-    because the compile would miss what the old export compiled.
-    Each `unmigrated_content` names its cause in a `reason`, one value of a closed set per
-    cause (`slot_taken`, `id_invalid`, `texture_undecodable`, `loose_unplaceable`, ...: the
-    crate's `UnmigratedReason`, about thirty), and, where two candidates claim one place, the
-    other's input path in `other`: one code covers every cause, and a manager whose upgrade is
-    not clean, the one outcome where the input must be edited, could not otherwise tell from
-    the line what to fix. A closed set rather than free text, because the message text
-    (Phase 8) branches on it, a sentence per cause. Every site builds the finding through one
-    constructor that requires the reason, so a new site cannot leave it out.
+    for the game, where a leftover would lose it over a slip:
+
+    - two candidates for one place, of which only the author knows the meant one (a second face
+      folder of one slot, a second item folder of one ID, two kit textures landing on one name,
+      two portraits in one face folder, two old `Portraits/` files of one slot), Red's pick
+      being a refusal or arbitrary;
+    - a whole model folder under a name Red refused (a face folder without a valid slot, a
+      `K0430` folder), which would drop a player's face over a typo.
+
+    A single file under a name Red's per-file name checks refused (`portraits_check`,
+    `kittextures_check`) is a leftover. A model folder's file of a known kind under a name the
+    format refuses (a `face_edithair.xml`, a model's name) is not: it is the author's content in
+    the wrong form, which the output's check or the compile names. A team color's second color is no
+    such choice, Red always keeping the first.
+
+    We do not refuse a run over a leftover, because the game never showed it, so the Studio
+    export is complete without it and the Warning tells the author what was left behind. We do
+    refuse one over an unmigrated entry, because the compile would miss what the old export
+    compiled.
+
+    **The `reason`.** Each `unmigrated_content` names its cause in a `reason`, one value of a
+    closed set per cause (`slot_taken`, `id_invalid`, `texture_undecodable`,
+    `loose_unplaceable`, ...: the crate's `UnmigratedReason`, about thirty), and, where two
+    candidates claim one place, the other's input path in `other`. One code covers every cause,
+    and a manager whose upgrade is not clean, the one outcome where the input must be edited,
+    could not otherwise tell from the line what to fix. A closed set rather than free text,
+    because the message text (Phase 8) branches on it, a sentence per cause. Every site builds
+    the finding through one constructor that requires the reason, so a new site cannot leave it
+    out.
 11. **Loose mode** (no savefile available): step 2 needs the savefile only to learn which player
     wears which old boots/gloves ID. When no savefile is given, the upgrader offers loose mode,
-    which infers the wearer from the **ID's position inside the team's Red block** instead —
-    exports being upgraded were made for the cup's per-team ranges of **25** IDs (`101 + 25 × n`,
-    the "reserved set of ID slots" the AET page links to), not Studio's 40-ID blocks, so the block is inferred from the lowest
-    folder ID of each kind on its own, the boots folders' from the lowest `k` ID and the gloves
-    folders' from the lowest `g` ID (`range_start = 101 + 25 × ⌊(min_id − 101) / 25⌋`; a lowest
-    folder of 0128 still infers the 126 block): the two kinds are numbered apart, and one
-    kind's numbering cannot move the other's pairings. `k0126` → player 01, `k0128` → player 03. IDs on
-    the block's spare positions (24–25), and IDs past the block, belong to nobody: such a folder
-    is unmigrated content as a whole (step 10), unlike one no save record names (step 3, a
-    leftover): without a save the pairing is a guess, so a folder it cannot place may be
-    anyone's. It is reported rather than paired by its position within its own block (the ID modulo 25): an
-    ID in another block is in another team's range, so its folder may be anyone's, and the author
-    places it by hand or upgrades with the save (the real GBFG VGL26 export numbers two gloves
-    folders `g2522` and `g2523` beside `g2301` to `g2320`, the same players' boots being `k2322`
-    and `k2323`: loose mode reports the two). An ID on a slot
-    without a face folder still yields a player folder with an `ingame_face.toml`, as in step 3.
-    Every other ID maps to exactly one slot, so its folder is always merged in on a Fox export
-    (unless a byte clash keeps it shared, `merge_kept_shared`),
-    and kept shared with a link on a pre-Fox one (step 3). Loose mode is a documented
-    assumption, never a cross-check: it is offered only when the savefile is absent, the report
-    states each assumed pairing (I, `wearer_assumed`, on the item folder, its four-digit ID and
-    the slot in its context: `id=0128, slot=03`), and no `settings.toml` aesthetic data can be generated (step 8 is
-    skipped, apart from `name` handling, which needs no savefile: a folder with a name part gets a
-    `settings.toml` holding `name = true` alone, one named by its number alone none), every
-    `ingame_face.toml` written empty, the bare marker's effect. Red's Pre-Studio upgrader
-    implements this same mode (its `export_upgrade.py`).
+    which infers the wearer from the **ID's position inside the team's Red block** instead.
+
+    Exports being upgraded were made for the cup's per-team ranges of **25** IDs
+    (`101 + 25 × n`, the "reserved set of ID slots" the AET page links to), not Studio's 40-ID
+    blocks, so the block is inferred from the lowest folder ID of each kind on its own: the
+    boots folders' from the lowest `k` ID and the gloves folders' from the lowest `g` ID
+    (`range_start = 101 + 25 × ⌊(min_id − 101) / 25⌋`; a lowest folder of 0128 still infers the
+    126 block). The two kinds are numbered apart, and one kind's numbering cannot move the
+    other's pairings. `k0126` → player 01, `k0128` → player 03.
+
+    IDs on the block's spare positions (24–25), and IDs past the block, belong to nobody. Such a
+    folder is unmigrated content as a whole (step 10), unlike one no save record names (step 3,
+    a leftover), because without a save the pairing is a guess, so a folder it cannot place may
+    be anyone's. It is reported rather than paired by its position within its own block (the ID
+    modulo 25): an ID in another block is in another team's range, so its folder may be
+    anyone's, and the author places it by hand or upgrades with the save (the real GBFG VGL26
+    export numbers two gloves folders `g2522` and `g2523` beside `g2301` to `g2320`, the same
+    players' boots being `k2322` and `k2323`: loose mode reports the two).
+
+    An ID on a slot without a face folder still yields a player folder with an
+    `ingame_face.toml`, as in step 3. Every other ID maps to exactly one slot, so its folder is
+    always merged in on a Fox export (unless a byte clash keeps it shared, `merge_kept_shared`),
+    and kept shared with a link on a pre-Fox one (step 3).
+
+    Loose mode is a documented assumption, never a cross-check:
+
+    - it is offered only when the savefile is absent;
+    - the report states each assumed pairing (I, `wearer_assumed`, on the item folder, its
+      four-digit ID and the slot in its context: `id=0128, slot=03`);
+    - no `settings.toml` aesthetic data can be generated: step 8 is skipped, apart from `name`
+      handling, which needs no savefile. A folder with a name part gets a `settings.toml`
+      holding `name = true` alone, and one named by its number alone gets none. Every
+      `ingame_face.toml` is written empty, the bare marker's effect.
+
+    Red's Pre-Studio upgrader implements this same mode (its `export_upgrade.py`).
 12. **Flattens the AET referee layout's subfolders**: `face/`, `boots/`, `gloves/` and `common/`
     directly inside a referee's player folder (the layout the compiler refuses with
-    `player_layout_proto`, `spec/aesthetics_export/player_folders.md` "Subfolders") are folded into the player folder
-    root; no file is renamed (the census of 2026-10-10 found every such `boots/` holding files
-    named as the root would name them: `boots.fmdl`, `boots.model`, `oral_boots_win32.model`).
+    `player_layout_proto`, `spec/aesthetics_export/player_folders.md` "Subfolders") are folded
+    into the player folder root. No file is renamed (the census of 2026-10-10 found every such
+    `boots/` holding files named as the root would name them: `boots.fmdl`, `boots.model`,
+    `oral_boots_win32.model`).
+
     Each folder's subfolders keep their place below the root (`face/kit/x` becomes `kit/x`),
-    save one that would land as a `face/`, `boots/`, `gloves/` or `common/` subfolder of the root,
-    the refused layout again (the real `refs for Autumn Q 25 Day 1` referee `galosengen` holds
-    `Face/face/`): it is reported as unmigrated content and the referee folder left as it was.
-    A file name present in two locations with identical bytes is deduplicated; with different
+    save one that would land as a `face/`, `boots/`, `gloves/` or `common/` subfolder of the
+    root, the refused layout again (the real `refs for Autumn Q 25 Day 1` referee `galosengen`
+    holds `Face/face/`). That one is reported as unmigrated content and the referee folder left
+    as it was.
+
+    A file name present in two locations with identical bytes is deduplicated. With different
     bytes it is reported as unmigrated content (step 10) and the folder is left as it was, for
-    the author to resolve, and so is one stem two files share with different extensions
+    the author to resolve. So is one stem two files share with different extensions
     (`texture_stem_conflict` once folded) when the two come from different locations, the
-    folder's root counting as one: that conflict is the fold's making, while one already inside
-    a location is the compile's to report as for any folder. A folder left as it was is copied
-    at its old paths, and step 7's renames and rewrites skip it: it is the author's to repair by
-    hand, and names moved under him would hide what the report named. A model of `common/` that no reference of the referee
-    names (a `face.xml` of his, wherever it stands in his folder, whose `path` value's file
-    name, its `*` read as `win32`, is the model's, letter case aside) is reported as unmigrated content and left out: Red kept `common/` in the referee's
-    own common directory, where a model loads only when a reference names it, while at the root
-    it would become a part of the face (the real `galosengen` holds such a
-    `Common/parts_body.model`). References follow the files: in a referee's `.mtl`, `face.xml` or
-    FMDL, a `./x` or `common/???/x` reference whose file the flattened folder holds at that
-    path (from its `common/`, or from any other of its subfolders: the compiler looks a folder's
-    own file up before a game path either way, so one rule covers both) names it
-    where the flatten puts it (the bare stem, or `./<sub>/x` for a file in a subfolder of
-    `common/`), with no link and no finding (from a `.mtl` or FMDL in a subfolder of his, a
-    reference into a `common/` subfolder follows step 7's subfolder rule instead: `./<sub>`
-    from there would name a path below that subfolder), and a `./x` whose file is in neither the referee's subfolders nor its `common/`
-    but in the export's `Common/` gets step 7's stem and link when it is an `.mtl`'s or an
-    FMDL's texture (a `face.xml`'s `./x` is left as written: the compiler resolves a `path`
-    among the folder's own files, no link stands in for a model there, and it reports the miss
-    itself, `xml_model_not_found`; every `./` value of the 69 real referee `face.xml` files on
-    the maintainer's machine names a file of its own face folder, and their 64 Common-path
-    values name the export's `Common/refkit/`, which step 7 keeps as written); the referee's `common/` is checked
-    before the export's `Common/`, as Red's referee pass checks them (`referee_tools.py`
-    `update_file_paths`, which pointed them at the referee's own common directory), and step 7's
-    other rules apply to the rest. The 15 referee exports on the maintainer's machine hold 693
-    `common/???/` references into a referee's own `common/`, which step 7's Common rule alone
-    would report and break. Any other subfolder of a player folder, in a team export or a referee
-    export, is a player folder of its own under the Studio rule and is carried over unchanged.
+    folder's root counting as one. That conflict is the fold's making, while one already inside a
+    location is the compile's to report as for any folder.
+
+    A folder left as it was is copied at its old paths, and step 7's renames and rewrites skip
+    it: it is the author's to repair by hand, and names moved under him would hide what the
+    report named.
+
+    A model of `common/` that no reference of the referee names (a `face.xml` of his, wherever it
+    stands in his folder, whose `path` value's file name, its `*` read as `win32`, is the
+    model's, letter case aside) is reported as unmigrated content and left out. Red kept
+    `common/` in the referee's own common directory, where a model loads only when a reference
+    names it, while at the root it would become a part of the face (the real `galosengen` holds
+    such a `Common/parts_body.model`).
+
+    **References follow the files.** In a referee's `.mtl`, `face.xml` or FMDL:
+
+    - a `./x` or `common/???/x` reference whose file the flattened folder holds at that path
+      names it where the flatten puts it (the bare stem, or `./<sub>/x` for a file in a
+      subfolder of `common/`), with no link and no finding. The file may come from its
+      `common/` or from any other of its subfolders: the compiler looks a folder's own file up
+      before a game path either way, so one rule covers both. From a `.mtl` or FMDL in a
+      subfolder of his, a reference into a `common/` subfolder follows step 7's subfolder rule
+      instead, because `./<sub>` from there would name a path below that subfolder;
+    - a `./x` whose file is in neither the referee's subfolders nor its `common/` but in the
+      export's `Common/` gets step 7's stem and link when it is an `.mtl`'s or an FMDL's
+      texture. A `face.xml`'s `./x` is left as written: the compiler resolves a `path` among the
+      folder's own files, no link stands in for a model there, and it reports the miss itself,
+      `xml_model_not_found`. Every `./` value of the 69 real referee `face.xml` files on the
+      maintainer's machine names a file of its own face folder, and their 64 Common-path values
+      name the export's `Common/refkit/`, which step 7 keeps as written.
+
+    The referee's `common/` is checked before the export's `Common/`, as Red's referee pass
+    checks them (`referee_tools.py` `update_file_paths`, which pointed them at the referee's own
+    common directory), and step 7's other rules apply to the rest. The 15 referee exports on the
+    maintainer's machine hold 693 `common/???/` references into a referee's own `common/`, which
+    step 7's Common rule alone would report and break.
+
+    Any other subfolder of a player folder, in a team export or a referee export, is a player
+    folder of its own under the Studio rule and is carried over unchanged.
 13. **Optional glTF conversion** (`--convert-to-gltf`): not built (Phase 7); its design is
     `plans/export_upgrader.md` "What it does", step 13.
 
@@ -927,75 +1224,105 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
 The second input shape, alongside whole exports: **a folder of old-format model folders** — the
 item folders that used to live under `Faces/`, `Boots/`, `Gloves/` (`XXX15 - Snuffy`,
-`k0915 - Crocs`, …), placed loose in one directory, optionally with a `Common/` beside them. This
-is what the community's export converters accept in their "player folders" mode, and it exists
-for the same reason here: once a team's export has been upgraded, new models keep arriving in the
-old spelling (a face made in an old workflow, a boots folder from a previous cup), and the
-kit-dependent magic in particular (`u0???pN` → `kitN`) is not something an author should hand-edit
-inside FMDL path tables. The user upgrades the folder and drops the results into their Studio
-export.
+`k0915 - Crocs`, …), placed loose in one directory, optionally with a `Common/` beside them.
 
-Each top-level folder is migrated as **one model folder** with the per-folder rules of step 7 —
-`kitN` rewriting in names and path tables, `.mtl` stem normalization, pre-Fox type prefix → suffix
-and the `oral_`/`_win32` drop with their `.mtl` rule (xml-less folders only), `ingame_face`/`ingame_face.txt` → `ingame_face.toml` normalization, `.mtl.common` → kept as is (a `Common/` in the
-input is upgraded with the Common rules and carried over, so the links keep resolving). Output
-naming follows steps 3–4 so the result is directly droppable: a face folder becomes a player folder
-`NN - Name/` (NN from its `XXX` suffix, Name from its name part; without a suffix, the name part
-alone); a boots/gloves folder becomes a shared-style folder named by its name part (`Crocs/`), or
-by its old ID when it has no name — the user drops it into `Boots/`/`Gloves/` and adds the link
-file, or moves its contents into a player folder (renaming the model to `boots.fmdl` /
-`glove_*.fmdl` as the Studio format expects). The report lists, per output folder, where it goes
-(`model_folder_destination`, I, on the output folder, `into` = `Players`, `Boots`, `Gloves`, or
-`root` for `Common/`).
-The shared validation ("Verification") runs on the output as it would sit once dropped in,
-not on the published layout, which no export reads as player or shared folders: the upgrader
-validates a listing that places each player folder under `Players/`, each boots or gloves
-folder under `Boots/` or `Gloves/` and the upgraded `Common/` beside them, as a Midcup export
-(which needs no kits), and reports the findings against the published folders. The findings
-about where a folder will sit rather than what it holds are left out, since the mode has no
-destination export: the identity findings (the listing is named `models Midcup`, so none
-arises), the roster's numbering (`player_folder_number_invalid`, `player_number_duplicate`: the
-folder's number, and its siblings', are the destination's, and a `players.txt` there may name a
-folder without one) and `shared_folder_orphaned` (the link naming a boots or gloves folder is
-the user's to add). We do not keep them, because every boots or gloves folder would then drop
-(`shared_folder_orphaned` is a `DropFolder`) and no run holding one could exit 0. The listing's
-version is "Verification"'s: PES 16 when the output holds a `.model` file, PES 21 otherwise.
+This is what the community's export converters accept in their "player folders" mode, and it
+exists for the same reason here. Once a team's export has been upgraded, new models keep
+arriving in the old spelling (a face made in an old workflow, a boots folder from a previous
+cup), and the kit-dependent magic in particular (`u0???pN` → `kitN`) is not something an author
+should hand-edit inside FMDL path tables. The user upgrades the folder and drops the results into
+their Studio export.
 
-The input is read as it is: a folder (no archive), its top level the model folders, so step 1's
-root rules (the one wrapper folder, the same-named subfolder) do not apply: they would read a
-folder holding one model folder as that model folder. A top-level folder's kind is its name's:
-`Common` in any letter case; a boots or gloves folder by steps 3-4's item grammar (`k` or `g`,
-lower case, four digits, then the name part; `g` and three digits); any other name a face
-folder. A face folder's name is step 3's: a slot (characters 4-5 making 01 to 23) gives `NN -
-Name`, or `NN` alone with no name part; without one the folder keeps its own name (`Snuffy`).
-Every name is cleaned as step 3 cleans a candidate. In a face folder only the `ingame_face`
-spellings are normalized (either becomes `ingame_face.toml`); its other files keep their names,
-the portrait included (no `Portraits/` to compare it with). Two folders whose output names match, letter case aside (`XXX15 - A` and `71415 - A`,
-or a face folder `Crocs` beside `k0430 - Crocs`, both published at the output's top level), keep
-the first by input name; the later is unmigrated content as a whole folder (`DropFolder`), as
-step 3's second face folder of a slot. A file directly in the input folder is unmigrated content
-(step 10).
+Each top-level folder is migrated as **one model folder** with the per-folder rules of step 7:
+
+- `kitN` rewriting in names and path tables;
+- `.mtl` stem normalization;
+- pre-Fox type prefix → suffix and the `oral_`/`_win32` drop with their `.mtl` rule (xml-less
+  folders only);
+- `ingame_face`/`ingame_face.txt` → `ingame_face.toml` normalization;
+- `.mtl.common` → kept as is (a `Common/` in the input is upgraded with the Common rules and
+  carried over, so the links keep resolving).
+
+Output naming follows steps 3–4 so the result is directly droppable:
+
+- a face folder becomes a player folder `NN - Name/` (NN from its `XXX` suffix, Name from its
+  name part; without a suffix, the name part alone);
+- a boots/gloves folder becomes a shared-style folder named by its name part (`Crocs/`), or by
+  its old ID when it has no name — the user drops it into `Boots/`/`Gloves/` and adds the link
+  file, or moves its contents into a player folder (renaming the model to `boots.fmdl` /
+  `glove_*.fmdl` as the Studio format expects).
+
+The report lists, per output folder, where it goes (`model_folder_destination`, I, on the output
+folder, `into` = `Players`, `Boots`, `Gloves`, or `root` for `Common/`).
+
+The shared validation ("Verification") runs on the output as it would sit once dropped in, not
+on the published layout, which no export reads as player or shared folders. The upgrader
+validates a listing that places each player folder under `Players/`, each boots or gloves folder
+under `Boots/` or `Gloves/` and the upgraded `Common/` beside them, as a Midcup export (which
+needs no kits), and reports the findings against the published folders. The listing's version
+is "Verification"'s: PES 16 when the output holds a `.model` file, PES 21 otherwise.
+
+The findings about where a folder will sit rather than what it holds are left out, since the
+mode has no destination export:
+
+- the identity findings (the listing is named `models Midcup`, so none arises);
+- the roster's numbering (`player_folder_number_invalid`, `player_number_duplicate`: the
+  folder's number, and its siblings', are the destination's, and a `players.txt` there may name
+  a folder without one);
+- `shared_folder_orphaned` (the link naming a boots or gloves folder is the user's to add).
+
+We do not keep them, because every boots or gloves folder would then drop
+(`shared_folder_orphaned` is a `DropFolder`) and no run holding one could exit 0.
+
+The input is read as it is: a folder (no archive), its top level the model folders. So step 1's
+root rules (the one wrapper folder, the same-named subfolder) do not apply, because they would
+read a folder holding one model folder as that model folder.
+
+A top-level folder's kind is its name's:
+
+- `Common` in any letter case;
+- a boots or gloves folder by steps 3-4's item grammar (`k` or `g`, lower case, four digits,
+  then the name part; `g` and three digits);
+- any other name a face folder.
+
+A face folder's name is step 3's: a slot (characters 4-5 making 01 to 23) gives `NN - Name`, or
+`NN` alone with no name part; without one the folder keeps its own name (`Snuffy`). Every name
+is cleaned as step 3 cleans a candidate. In a face folder only the `ingame_face` spellings are
+normalized (either becomes `ingame_face.toml`); its other files keep their names, the portrait
+included (no `Portraits/` to compare it with).
+
+Two folders whose output names match, letter case aside (`XXX15 - A` and `71415 - A`, or a face
+folder `Crocs` beside `k0430 - Crocs`, both published at the output's top level), keep the first
+by input name. The later is unmigrated content as a whole folder (`DropFolder`), as step 3's
+second face folder of a slot. A file directly in the input folder is unmigrated content (step
+10).
 
 Not in this mode: kits, portraits, logo, `settings.toml`, the savefile, loose mode, the roster. No
-savefile is read — there are no wearers to resolve. A top-level folder that holds no file directly
-in it (OS artifacts aside; `Common/` included, an empty one having nothing to carry) is reported
-as unmigrated content (step 10) and left out; the converters'
-two-level `players/<player>/<model folders>/` layout is therefore *not* accepted — one level, one
-folder per model, so that "what is a model folder" never has to be guessed. We do not ask for a
-model file directly in it, because a real Fox face folder may carry no model of its own (5 of the
-23 face folders of the real /jp/ 2024 Winter Cup export hold `face_diff.bin` and a portrait
-only), and `upgrade` carries such a folder: the two modes agree on what a face folder is.
+savefile is read — there are no wearers to resolve.
 
-Verification: fixtures with one face folder carrying `u0XXXp1` textures and path-table references
-(asserting `kit1` everywhere, folder renamed `NN - Name`), one boots folder with a prefix-typed
-pre-Fox model (asserting the suffix form and the `Crocs/` output name), and a `Common/` with an
-`.mtl` whose references stay as written (step 7: a `Common/` `.mtl` keeps them, extension
-included) while the player folder's `.mtl.common` link still
-resolves against the migrated Common through `aesthetics_export`'s validation; plus one player
-`.mtl` referencing `model/character/uniform/common/XXX/hair.dds` (asserting `./hair.dds` in the
-migrated `.mtl`, a `hair.dds.common` link beside it, and the stem resolving into Common through
-validation) and one such reference whose file is absent from `Common/` (asserting it is reported
-and kept a game path, written `team_common_folder/hair.dds`).
+A top-level folder that holds no file directly in it (OS artifacts aside; `Common/` included, an
+empty one having nothing to carry) is reported as unmigrated content (step 10) and left out. The
+converters' two-level `players/<player>/<model folders>/` layout is therefore *not* accepted —
+one level, one folder per model, so that "what is a model folder" never has to be guessed. We do
+not ask for a model file directly in it, because a real Fox face folder may carry no model of
+its own (5 of the 23 face folders of the real /jp/ 2024 Winter Cup export hold `face_diff.bin`
+and a portrait only), and `upgrade` carries such a folder: the two modes agree on what a face
+folder is.
+
+Verification: fixtures with
+
+- one face folder carrying `u0XXXp1` textures and path-table references (asserting `kit1`
+  everywhere, folder renamed `NN - Name`);
+- one boots folder with a prefix-typed pre-Fox model (asserting the suffix form and the `Crocs/`
+  output name);
+- a `Common/` with an `.mtl` whose references stay as written (step 7: a `Common/` `.mtl` keeps
+  them, extension included) while the player folder's `.mtl.common` link still resolves against
+  the migrated Common through `aesthetics_export`'s validation;
+- plus one player `.mtl` referencing `model/character/uniform/common/XXX/hair.dds` (asserting
+  `./hair.dds` in the migrated `.mtl`, a `hair.dds.common` link beside it, and the stem
+  resolving into Common through validation);
+- and one such reference whose file is absent from `Common/` (asserting it is reported and kept
+  a game path, written `team_common_folder/hair.dds`).
 
 ## CLI
 
@@ -1006,72 +1333,103 @@ UTW export-upgrader upgrade-models <folder> [-o <dir>]
 
 `upgrade` takes one old export (folder, `.zip` or `.7z`); the output is a folder beside the
 input, or inside the directory `-o` names (created when missing), as `upgrade-models` writes
-into its `-o`. Its name,
-wherever it is written, is the one the compiler reads a team export by: the resolved team's key
-(step 6), then the coverage tag (`Midcup` when the old name holds `midcup` or `additions` in any
-letter case, the two ways old midcup exports were named; `Full` otherwise; the Aesthetics export
-plan's "Coverage tag"), then the rest of the old name (`co - Spring` → `co Full - Spring`). An old
-name whose first word is not the key keeps that word in the rest (`Numbers` resolved from its
-Note to `/co/` → `co Full Numbers`), because the compiler takes the team from the first word
-alone; one whose second word is already `Full` or `Midcup` keeps it rather than doubling it; a
-referee export takes no tag. A name equal to the export's own (a folder's name, an archive's
-stem), letter case aside, gets ` upgraded` appended (`refs Spring` → `refs Spring upgraded`), so
-the input is never written into: Windows names ignore case, so `CO Full Spring`'s output
-`co Full Spring` would be the input folder itself, and an archive's output takes the same name its folder form
-would. Every `upgrade` of a team export reports the tag it used, an Info
-`coverage_tag_chosen` with the `tag` and its `source`, the first of these that holds: `name`
-when the old name's second word is already `Full` or `Midcup` in any letter case; `flag`;
-`midcup` or `additions`, the text the name was found to hold (a substring, the first in the
-name if both); `default` when it holds neither. `--coverage full|midcup` sets the tag in
-place of the name's guess, which stays the default: a manager upgrading an old mid-cup export
-named neither way ("co day 5 fix") would get `Full`, whose first compile rebuilds the team from
-the export alone, everything it does not carry becoming the default or a placeholder, and the
-Info says so before that compile. A flag naming the other tag than a second word the name
-already carries is refused (exit 2): the member wrote that word, and renaming it under them
-would surprise more than the refusal. A referee export takes no tag and refuses the flag
-(exit 2). An output folder
-that already exists is refused, naming it: replacing it would lose edits made since an earlier
-upgrade. A team export takes `--savefile` or `--loose`, exactly one: loose mode is an assumption
-the user opts into (step 11), never a silent fallback; a referee export takes neither, and is refused with either. A
-savefile that holds no team of the export's name (step 6) is refused naming the team; an
-export whose Note's `Team:` value or name gives no team name is reported (`team_name_unknown`,
-the compiler's code) and nothing is written. `upgrade-models` is model-folder mode; its output is one
-folder per migrated input folder under the output directory, by default a sibling folder named
-after the input with ` upgraded` appended, or the directory `-o` names. That directory is the
-output folder, refused like `upgrade`'s when it exists: we do not write into an existing one,
-because an earlier run's folders, edited since, would sit beside this run's with nothing telling
-them apart. Both print step 10's report, one line per finding
-naming its code and, for a finding about a file or folder, its path (the input's, or the
-output's for a check run on the output), and exit with the Team compiler's mapping
-(`spec/team_compiler/settings.md` "CLI"): **0** clean (Warning and Info findings allowed when
-they drop nothing but a leftover, step 10), **1** not clean (unmigrated content, an Error
-finding, a finding that drops something else, the unknown team, or an archive that does not
-extract, reported `export_extract_failed` as the compiler does; nothing is written,
-"Verification"), **2** invalid invocation (a missing input path, an
-`upgrade` input that is a file other than a `.zip` or `.7z`, an `upgrade-models` input that is
-not a folder, the flags above, a savefile that
-does not read as a save or lacks the team; nothing is written), **3** aborted: before anything
-is written (the output folder exists, or it or its staging folder below cannot be created), or when a file
-of the output cannot be written, the error naming it and the incomplete staging folder. Both
-commands write into a **staging folder**, the output's name with `.upgrading` appended, beside
-where the output goes; the shared validation reads it there, and the verdict then renames it
-to the output when the run is clean or removes it when not ("Verification": nothing is
-written). A staging folder an earlier run left (a write that failed, a rename or removal the
-verdict could not finish) is removed by the next run of the same output, reported as an Info
+into its `-o`.
+
+**The output's name.** Its name, wherever it is written, is the one the compiler reads a team
+export by:
+
+1. the resolved team's key (step 6);
+2. then the coverage tag (`Midcup` when the old name holds `midcup` or `additions` in any
+   letter case, the two ways old midcup exports were named; `Full` otherwise; the Aesthetics
+   export plan's "Coverage tag");
+3. then the rest of the old name (`co - Spring` → `co Full - Spring`).
+
+An old name whose first word is not the key keeps that word in the rest (`Numbers` resolved
+from its Note to `/co/` → `co Full Numbers`), because the compiler takes the team from the first
+word alone. One whose second word is already `Full` or `Midcup` keeps it rather than doubling
+it. A referee export takes no tag.
+
+A name equal to the export's own (a folder's name, an archive's stem), letter case aside, gets
+` upgraded` appended (`refs Spring` → `refs Spring upgraded`), so the input is never written
+into. Windows names ignore case, so `CO Full Spring`'s output `co Full Spring` would be the
+input folder itself, and an archive's output takes the same name its folder form would.
+
+**The coverage tag.** Every `upgrade` of a team export reports the tag it used, an Info
+`coverage_tag_chosen` with the `tag` and its `source`, the first of these that holds:
+
+- `name` when the old name's second word is already `Full` or `Midcup` in any letter case;
+- `flag`;
+- `midcup` or `additions`, the text the name was found to hold (a substring, the first in the
+  name if both);
+- `default` when it holds neither.
+
+`--coverage full|midcup` sets the tag in place of the name's guess, which stays the default. A
+manager upgrading an old mid-cup export named neither way ("co day 5 fix") would get `Full`,
+whose first compile rebuilds the team from the export alone, everything it does not carry
+becoming the default or a placeholder, and the Info says so before that compile.
+
+A flag naming the other tag than a second word the name already carries is refused (exit 2):
+the member wrote that word, and renaming it under them would surprise more than the refusal. A
+referee export takes no tag and refuses the flag (exit 2).
+
+**Refusals.**
+
+- An output folder that already exists is refused, naming it: replacing it would lose edits
+  made since an earlier upgrade.
+- A team export takes `--savefile` or `--loose`, exactly one: loose mode is an assumption the
+  user opts into (step 11), never a silent fallback.
+- A referee export takes neither, and is refused with either.
+- A savefile that holds no team of the export's name (step 6) is refused naming the team.
+- An export whose Note's `Team:` value or name gives no team name is reported
+  (`team_name_unknown`, the compiler's code) and nothing is written.
+
+**`upgrade-models`.** `upgrade-models` is model-folder mode. Its output is one folder per
+migrated input folder under the output directory, by default a sibling folder named after the
+input with ` upgraded` appended, or the directory `-o` names. That directory is the output
+folder, refused like `upgrade`'s when it exists: we do not write into an existing one, because
+an earlier run's folders, edited since, would sit beside this run's with nothing telling them
+apart.
+
+**Report and exit codes.** Both print step 10's report, one line per finding naming its code
+and, for a finding about a file or folder, its path (the input's, or the output's for a check
+run on the output), and exit with the Team compiler's mapping (`spec/team_compiler/settings.md`
+"CLI"):
+
+- **0** clean (Warning and Info findings allowed when they drop nothing but a leftover, step
+  10);
+- **1** not clean (unmigrated content, an Error finding, a finding that drops something else,
+  the unknown team, or an archive that does not extract, reported `export_extract_failed` as
+  the compiler does; nothing is written, "Verification");
+- **2** invalid invocation (a missing input path, an `upgrade` input that is a file other than a
+  `.zip` or `.7z`, an `upgrade-models` input that is not a folder, the flags above, a savefile
+  that does not read as a save or lacks the team; nothing is written);
+- **3** aborted: before anything is written (the output folder exists, or it or its staging
+  folder below cannot be created), or when a file of the output cannot be written, the error
+  naming it and the incomplete staging folder.
+
+**The staging folder.** Both commands write into a **staging folder**, the output's name with
+`.upgrading` appended, beside where the output goes. The shared validation reads it there, and
+the verdict then renames it to the output when the run is clean or removes it when not
+("Verification": nothing is written). We stage rather than validate an in-memory listing
+because the validation reads files from disk, as the compile does, and a rename is one step: no
+reader ever sees a half-written output under the output's name.
+
+A staging folder an earlier run left (a write that failed, a rename or removal the verdict
+could not finish) is removed by the next run of the same output, reported as an Info
 `staging_folder_removed` naming it, rather than aborting: a staging folder is never a finished
 output, and the member who meets it never made it. A removal that fails (on Windows a file of
 it held open, by another run writing it at that moment) aborts as above (exit 3), naming the
-folder; a second upgrade of one export started while the first writes, the one way to meet a
-live staging folder, then loses at most that run, never a finished output. We
-stage rather than validate an in-memory listing because the validation reads files from disk,
-as the compile does, and a rename is one step: no reader ever sees a half-written output under
-the output's name. The rename and the removal retry for about two seconds while Windows
-refuses them with "access denied", then abort: a folder whose files were just written can stay
-open for a moment in another process (an antivirus scan), which the crate's test suite met in
-about one run in three, and a member whose long run ended clean should not lose it
-to a lock that clears by itself. `--convert-to-gltf` is step 13's, not built (Phase 7): it is
-an unknown argument (exit 2). The view over both commands is not built either (Phase 8,
-`plans/export_upgrader.md` "GUI").
+folder. A second upgrade of one export started while the first writes, the one way to meet a
+live staging folder, then loses at most that run, never a finished output.
+
+The rename and the removal retry for about two seconds while Windows refuses them with "access
+denied", then abort. A folder whose files were just written can stay open for a moment in
+another process (an antivirus scan), which the crate's test suite met in about one run in
+three, and a member whose long run ended clean should not lose it to a lock that clears by
+itself.
+
+`--convert-to-gltf` is step 13's, not built (Phase 7): it is an unknown argument (exit 2). The
+view over both commands is not built either (Phase 8, `plans/export_upgrader.md` "GUI").
 
 ## GUI
 
@@ -1100,76 +1458,100 @@ validation's findings on what was written.
 | `staging_folder_removed` | I | an earlier run's staging folder for this output removed before the write ("CLI") | `path` |
 
 The shared validation's codes (`aesthetics_export::ISSUE_CODES`) keep the Team compiler's
-severity (`spec/team_compiler/messages.md` "Catalog"), each run-dependent one taken as for a
-compile that deploys with pass-through and the strict file-type check on (the output's check
-runs with it, "Verification", so `file_type_disallowed` and `common_file_disallowed` are
-Errors), and an `E/F` one as
-an Error, since the run it would abort is the upgrade of this one export, already written: the
-output is judged as its first compile will judge it.
+severity (`spec/team_compiler/messages.md` "Catalog"):
+
+- each run-dependent one is taken as for a compile that deploys with pass-through and the
+  strict file-type check on (the output's check runs with it, "Verification", so
+  `file_type_disallowed` and `common_file_disallowed` are Errors);
+- an `E/F` one is taken as an Error, since the run it would abort is the upgrade of this one
+  export, already written: the output is judged as its first compile will judge it.
 
 ## Dependencies
 
-Uses `aesthetics_export` (the Studio format's object model, conventions, and validation — the upgrader builds
-and verifies its output with the same crate the compiler consumes it with), `pes_savefile` (savefile
-reading, TOML generation), `archives` (old export loading), `vtree`, `kit_config` (binary → TOML kit
-config conversion), `fpc` (the hide preset's boots and gloves IDs, step 8), `dds_convert` (the
-logo comparison's decoding and resampling, step 7, the
-compiler's own resampler so the test judges what the compile would regenerate), the format
-lib crates for content inspection, and `roxmltree` (already the workspace's XML reader, the
-compiler's for a member `face.xml`) for the `face.xml` attribute values step 7 respells. The
-format lib crates it inspects content with are `fmdl` and `pes_model` (the models step 7
+Uses:
+
+- `aesthetics_export` (the Studio format's object model, conventions, and validation — the
+  upgrader builds and verifies its output with the same crate the compiler consumes it with);
+- `pes_savefile` (savefile reading, TOML generation);
+- `archives` (old export loading);
+- `vtree`;
+- `kit_config` (binary → TOML kit config conversion);
+- `fpc` (the hide preset's boots and gloves IDs, step 8);
+- `dds_convert` (the logo comparison's decoding and resampling, step 7, the compiler's own
+  resampler so the test judges what the compile would regenerate);
+- the format lib crates for content inspection;
+- `roxmltree` (already the workspace's XML reader, the compiler's for a member `face.xml`) for
+  the `face.xml` attribute values step 7 respells.
+
+The format lib crates it inspects content with are `fmdl` and `pes_model` (the models step 7
 renames and whose texture paths it rewrites; `pes_model`'s tolerant `.mtl` read is the
 upgrader's alone), `ftex` (a kit texture's FTEX decoded, step 5) and `wezlib` (a wrapped
-`face.xml` read, step 7); `teams_list`'s `TeamName` folds the team's name (step 6; its list
-is not read), and `studio_core`,
-`pes_version`, `clap`, `anyhow`, `toml` (the settings table) and `egui` are the tool-crate
-skeleton's (`core/architecture.md` "Crate structure"). Old-format knowledge stays in
-this tool. The structural migration (steps 1–12) does no model-format conversion, but does rewrite
-text metadata, kit configs, and legacy MTL texture references. `model_convert` is not a
-dependency: only step 13, the glTF pass, needs it (`plans/export_upgrader.md`).
+`face.xml` read, step 7). `teams_list`'s `TeamName` folds the team's name (step 6; its list is
+not read). `studio_core`, `pes_version`, `clap`, `anyhow`, `toml` (the settings table) and
+`egui` are the tool-crate skeleton's (`core/architecture.md` "Crate structure").
+
+Old-format knowledge stays in this tool. The structural migration (steps 1–12) does no
+model-format conversion, but does rewrite text metadata, kit configs, and legacy MTL texture
+references. `model_convert` is not a dependency: only step 13, the glTF pass, needs it
+(`plans/export_upgrader.md`).
 
 ## Verification
 
 For each migration the upgrader lists the staging folder it wrote ("CLI") into canonical
-`vtree::ScopePath` entries plus the small metadata files read from it, parses that listing back through
-`aesthetics_export::parse_listing` as `ParsedAestheticsExport`, runs the shared validation, and reports every
-scoped issue. The validation is for the savefile's version (in loose mode, PES 21, or PES 16 when
-the export holds a `.model` file outside its leftovers, step 10: old exports are single-engine,
-and the version decides only which model names are allowed; a leftover does not decide it,
-because the real KFG VGL26 export, a Fox one, keeps `.model` copies of its boots in a side
-folder `FMDL Boots/`, and counted they made it migrate as pre-Fox, where item folders never
-merge, its 23 single-wearer boots folders kept shared past the block's 17 shared IDs) in a
-fixed context, not the compiler's settings: no
-pass-through, the strict file-type check on, as the compiler's default has it, no installed
-Common textures. The strict check is what holds the clean-output promise for a file type no
-step expected: off, a disallowed file was an Info and the output written, and the compile then
-refused the player's folder (6.12c: the nested `face.xml` of step 3's game-path face folders);
-on, the run is not clean and the file is named. Shared validation may produce a sanitized `ValidatedAestheticsExport` with ineligible
+`vtree::ScopePath` entries plus the small metadata files read from it, parses that listing back
+through `aesthetics_export::parse_listing` as `ParsedAestheticsExport`, runs the shared
+validation, and reports every scoped issue.
+
+The validation is for the savefile's version (in loose mode, PES 21, or PES 16 when the export
+holds a `.model` file outside its leftovers, step 10) in a fixed context, not the compiler's
+settings: no pass-through, the strict file-type check on, as the compiler's default has it, no
+installed Common textures.
+
+Old exports are single-engine, and the version decides only which model names are allowed. A
+leftover does not decide the version, because the real KFG VGL26 export, a Fox one, keeps
+`.model` copies of its boots in a side folder `FMDL Boots/`. Counted, they made it migrate as
+pre-Fox, where item folders never merge, so its 23 single-wearer boots folders were kept shared
+past the block's 17 shared IDs.
+
+The strict check is what holds the clean-output promise for a file type no step expected. Off,
+a disallowed file was an Info and the output written, and the compile then refused the
+player's folder (6.12c: the nested `face.xml` of step 3's game-path face folders). On, the run
+is not clean and the file is named.
+
+Shared validation may produce a sanitized `ValidatedAestheticsExport` with ineligible
 files/folders omitted, but the upgrader applies a stricter publication rule: **it writes its
 output only when the migration is clean**, no Error finding and no finding that drops anything
 but a leftover (step 10's `leftover_dropped` Warnings, content that never reached a player in
-game).
-Otherwise nothing is written and the report is the run's whole result: either the input is not
-a clean old export and is fixed first, or the upgrader failed to migrate a clean one and is
-fixed. We do not write a draft for manual repair, because every Studio export is upgraded once,
-from a clean Red export, and a half-migrated one handed on would be compiled as if it were whole,
-the losses the report named forgotten. Fixtures cover both old
-`ingame_face` spellings and assert one canonical `ingame_face.toml` in the migrated player
-folder; savefile names with colour codes (see the pes_savefile plan) and assert a plain folder name plus an
-explicit `name = "..."` preserving the codes; a Red-era referee export, asserting that its
-face/boots/gloves/common subfolders are flattened, `refs.txt` becomes `players.txt` and is removed,
-and the result compiles to Red's output for the unflattened original, each difference
-tabulated (the referee tracer, `team_compiler/testing.md`); a flattening collision (same file
-name, different bytes, in two subfolders) left in place and reported; loose mode on an export
-whose Red block starts mid-range (lowest folder 0128 → block 126, 0128 → player 03, 0149 → spare,
-reported); and team identity — an export whose Note `Team:` line differs from its folder name
-resolves from the Note (e.g. a folder "Numbers" whose Note names `/co/`), one without any Note falls back to the first-word
-key; and the logo comparison — the two real pairs closest to the 40 % line from the survey behind
-step 7: the worst-scoring downscale (`/omg/` VGL26, a shifted `_r` at 30 %) asserting no
-`logo_small.png` and `logo_small_dropped`, and the closest deliberate variant (`/vrg/` VGL26, a
-different drawing at 53 %) asserting `logo_small.png` and `logo_small_carried`. Real files, not synthesized
-ones, so the threshold is checked against what authors actually shipped; the asserted shares are
-the measured ones, so a change to the resampler or the tolerance shows up as a failing number.
+game). Otherwise nothing is written and the report is the run's whole result: either the input
+is not a clean old export and is fixed first, or the upgrader failed to migrate a clean one and
+is fixed. We do not write a draft for manual repair, because every Studio export is upgraded
+once, from a clean Red export, and a half-migrated one handed on would be compiled as if it were
+whole, the losses the report named forgotten.
+
+Fixtures cover:
+
+- both old `ingame_face` spellings, asserting one canonical `ingame_face.toml` in the migrated
+  player folder;
+- savefile names with colour codes (see the pes_savefile plan), asserting a plain folder name
+  plus an explicit `name = "..."` preserving the codes;
+- a Red-era referee export, asserting that its face/boots/gloves/common subfolders are
+  flattened, `refs.txt` becomes `players.txt` and is removed, and the result compiles to Red's
+  output for the unflattened original, each difference tabulated (the referee tracer,
+  `team_compiler/testing.md`);
+- a flattening collision (same file name, different bytes, in two subfolders) left in place and
+  reported;
+- loose mode on an export whose Red block starts mid-range (lowest folder 0128 → block 126,
+  0128 → player 03, 0149 → spare, reported);
+- team identity: an export whose Note `Team:` line differs from its folder name resolves from
+  the Note (e.g. a folder "Numbers" whose Note names `/co/`), one without any Note falls back to
+  the first-word key;
+- the logo comparison: the two real pairs closest to the 40 % line from the survey behind
+  step 7. The worst-scoring downscale (`/omg/` VGL26, a shifted `_r` at 30 %) asserts no
+  `logo_small.png` and `logo_small_dropped`, and the closest deliberate variant (`/vrg/` VGL26,
+  a different drawing at 53 %) asserts `logo_small.png` and `logo_small_carried`. Real files,
+  not synthesized ones, so the threshold is checked against what authors actually shipped; the
+  asserted shares are the measured ones, so a change to the resampler or the tolerance shows up
+  as a failing number.
 
 The upgrader is exercised end-to-end by the parity tests (`team_compiler/testing.md`): each
 tracer's old export is upgraded and compiled against Red's committed output, and the
@@ -1180,25 +1562,33 @@ compiler (`scripts/library_parity/`).
 ## Acceptance
 
 Format and rules: `CONTRIBUTING.md` "Testing". IDs are never reused; later phases append.
+
 In every phase's scenarios, an old export is an AET export folder of a Fox team, upgraded with
 `upgrade --savefile` naming a PES 21 save that holds its team, its team resolving from its
-Note's `Team:` line, unless the scenario says otherwise (one naming pre-Fox files, `.model`
-and `.mtl`, is a pre-Fox export upgraded with a PES 16 save); its folders and files are named as the
+Note's `Team:` line, unless the scenario says otherwise (one naming pre-Fox files, `.model` and
+`.mtl`, is a pre-Fox export upgraded with a PES 16 save). Its folders and files are named as the
 AET page names them (`XXX15 - Snuffy`, `k0430 - Crocs`, `g0432 - Mitts`,
-`XXX_DEF_1st_realUni.bin`, `u0XXXp1.dds`). A GIVEN names the files that decide its outcome.
-"The output" is the folder `upgrade` or `upgrade-models` writes; "the report" is step 10's,
-printed on stdout, one line per finding naming its code and, for a finding about a file or
-folder, its path.
+`XXX_DEF_1st_realUni.bin`, `u0XXXp1.dds`).
+
+A GIVEN names the files that decide its outcome. "The output" is the folder `upgrade` or
+`upgrade-models` writes; "the report" is step 10's, printed on stdout, one line per finding
+naming its code and, for a finding about a file or folder, its path.
 
 **Phase 6 scope.** Phase 6 delivered the structural migration (steps 1 to 12) and model-folder
 mode, through the CLI: the GUI's two drop targets are Phase 8's, and step 13, the glTF pass, is
-Phase 7's, their scenarios with them in `plans/export_upgrader.md`. Observed are the output's files, the report and the exit code.
+Phase 7's, their scenarios with them in `plans/export_upgrader.md`. Observed are the output's
+files, the report and the exit code.
+
 That a migrated export compiles to Red's output for the old one is the parity test's (Team
-compiler plan, `testing.md`), not a scenario's, and so is a converted kit config's content beyond
-the keys named here (`kit_config`'s fixtures). Test data: old exports are fixtures cut from real
-AET exports of the maintainer's library; the team is `/co/` (714, Red block 426 to 450) unless a
-scenario names another, and its save is `pes_savefile`'s PES 21 fixture save with that team's
-records set as the scenario needs; the logo pairs are the two real ones "Verification" names.
+compiler plan, `testing.md`), not a scenario's, and so is a converted kit config's content
+beyond the keys named here (`kit_config`'s fixtures).
+
+Test data:
+
+- old exports are fixtures cut from real AET exports of the maintainer's library;
+- the team is `/co/` (714, Red block 426 to 450) unless a scenario names another, and its save
+  is `pes_savefile`'s PES 21 fixture save with that team's records set as the scenario needs;
+- the logo pairs are the two real ones "Verification" names.
 
 **Input**
 

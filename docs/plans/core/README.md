@@ -13,33 +13,41 @@ What exists of this is in `spec/core/README.md` "Overview".
 The tight integration between the two is a primary design driver: aesthetic settings that currently
 live only in the savefile (boots IDs, gloves IDs, physique, strip style, etc.) move into the
 aesthetic exports as text files (TOML) and reach the game at compile time, **written to the
-savefile** through the aesthetics patch on every engine. This
-eliminates the manual coordination between the save editor and the compiler, and enables automatic
-boots/gloves ID assignment.
+savefile** through the aesthetics patch on every engine. This eliminates the manual coordination
+between the save editor and the compiler, and enables automatic boots/gloves ID assignment.
 
 The remaining tools are listed in the plan table above; each plan carries its own scope and
-rationale. Structural points worth noting here: the **Stadium compiler**'s codebase contributes the
-in-process DDS conversion that eliminates the texconv.exe dependency; the **Export upgrader** exists
-because the Team compiler only supports the Studio player-folder format; the three stream-side tools
-(Music player, Music export editor, Match tracker) operate on audio and game memory rather than game
-files, sharing only the platform and their own lib crates — the tracker feeds live match events to
-the Music player, letting it run the match soundboard autonomously; the **Refs arranger** prepares
-referee exports' `players.txt` and hands the compile off to the Team compiler, which owns referee
-compilation; the **balls export** is the suite's third export kind, compiled into its own CPK; the
-Team compiler grows into the suite's one **Compiler** for every export kind (team, refs, balls,
-stadium and billboard exports, each into its own CPK in one run), with a Balls arranger editing
-the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one Compiler for
-every export kind"); and the **Player aesthetics editor** hands model viewing to Blender (launched with
-a manifest consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
-preview — it only gains a labeled approximate in-app preview if the Team compiler's future
-3D-preview feature creates the shared `model_viewport` lib; and the **Team creator** is a wizard
-that takes a name and a list of players to a legal Team TOML plus a compilable aesthetics export
-built from embedded starter heads — it owns no format and keeps no state, writing only files the
-other tools already read, and shares its tactics and card widgets with the Save editor through
-`libs/team_widgets`; and the **Ruleset editor** builds AATF rulesets through forms, as data that
-a generic interpreter in the rules file evaluates, so an invitational's organizer can make rules
-that need not resemble the official ones. Additional tools (CPK toolkit/decompiler; other
-utilities) will build on the same lib crates and be specified later.
+rationale. Structural points worth noting here:
+
+- the **Stadium compiler**'s codebase contributes the in-process DDS conversion that eliminates
+  the texconv.exe dependency;
+- the **Export upgrader** exists because the Team compiler only supports the Studio
+  player-folder format;
+- the three stream-side tools (Music player, Music export editor, Match tracker) operate on
+  audio and game memory rather than game files, sharing only the platform and their own lib
+  crates — the tracker feeds live match events to the Music player, letting it run the match
+  soundboard autonomously;
+- the **Refs arranger** prepares referee exports' `players.txt` and hands the compile off to the
+  Team compiler, which owns referee compilation;
+- the **balls export** is the suite's third export kind, compiled into its own CPK;
+- the Team compiler grows into the suite's one **Compiler** for every export kind (team, refs,
+  balls, stadium and billboard exports, each into its own CPK in one run), with a Balls arranger
+  editing the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one
+  Compiler for every export kind");
+- the **Player aesthetics editor** hands model viewing to Blender (launched with a manifest
+  consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
+  preview — it only gains a labeled approximate in-app preview if the Team compiler's future
+  3D-preview feature creates the shared `model_viewport` lib;
+- the **Team creator** is a wizard that takes a name and a list of players to a legal Team TOML
+  plus a compilable aesthetics export built from embedded starter heads — it owns no format and
+  keeps no state, writing only files the other tools already read, and shares its tactics and
+  card widgets with the Save editor through `libs/team_widgets`;
+- the **Ruleset editor** builds AATF rulesets through forms, as data that a generic interpreter
+  in the rules file evaluates, so an invitational's organizer can make rules that need not
+  resemble the official ones.
+
+Additional tools (CPK toolkit/decompiler; other utilities) will build on the same lib crates and
+be specified later.
 
 ### Project context
 
@@ -80,53 +88,70 @@ Trade-offs accepted:
 - **Styling is code, not CSS**: egui's default look is plain, so the suite ships a curated theme
   instead of defaults. One curated dark `Visuals` preset in `studio_core` (accent color,
   `CornerRadius`, `Shadow`, per-widget style overrides), the default and the theme every view
-  is designed and reviewed in, applied by every tool. Light is a second-class alternative for
-  the few members who want it, chosen by the common `theme` setting and switched live: egui's
-  light `Visuals` with the same accent, rounding and status colors applied, checked once for
-  legibility rather than per view. Views take their colors from the preset's semantic palette
-  (status, warning, accent), never a hard-coded color, which is what keeps light readable at no
-  per-view cost (the Team compiler's grid derives its label contrast from the cell for the same
-  reason). Icon glyphs for sidebar/toolbar/status icons from the suite's own single-colour
-  icon font, registered through `FontDefinitions` like any font: one SVG per icon, each tool's
-  drawn to say what the tool does (the Team compiler's: the maintainer's running stickman
-  dropping into an open box drawn from the front, flaps out; a box in perspective reads as a
-  pedestal at 24 px, and an arrow does not show there; the stickman is a filled outline traced from the maintainer's drawing, which the build
-  takes as it is). A tool's kind shows as one mark on its icon:
-  an editor's carries a pencil (Phosphor's note-and-pencil pencil, redrawn smaller), a
-  creator's or generator's a plus, each one shape at one size and place, the bottom-right
-  corner, and a compiler's the open box of the Team compiler's, across the icon's foot; a mark
-  hides what lies under it
-  with a 12-unit gap cut around it, as Phosphor's note-and-pencil does, so a member reads the
-  kind before the subject and no line runs through the mark. Each icon is one filled outline
-  (the strokes outlined, the cut subtracted, the mark added), the form the font takes, kept
-  as `resources/icons/<tool id>.svg` (its README says how they were drawn), the font build's
-  input. The icons: the Save editor a floppy disk, the Export upgrader (c)'s two chevrons on an upright
-  folder, its tab at the bottom right, the Music player Phosphor's music notes and the Music
-  export editor the same with the pencil, the Match tracker a live feed on a monitor, the Kit
-  config editor a shirt and the Refs arranger the same shirt striped its full length with a
-  refresh sign (two arrows bending along half a circle each) as its mark, hiding the disc
-  inside its ring too, the Balls compiler a ball dropping
-  into the box, the Player aesthetics editor the stickman, the Team creator Phosphor's three
-  figures, the Ruleset editor a clipboard of ticks, the DB generator a database; the Stadium
-  compiler keeps Phosphor's buildings for now. They are built into `resources/fonts/` by a
-  fontTools script, the
-  general ones (help, settings, dismiss, warning, download) copied from Phosphor (MIT). A glyph
-  takes the text colour, so hover and selection need no code of their own; multi-colour icons
-  (SVG drawn at run time, `egui_extras`' `svg` feature) wait until after 1.0.0. Not the
-  `egui-phosphor` crate: its one tie to egui, a font-registration helper, made every egui
-  upgrade wait on its release (0.37's by weeks), and its stock glyphs say little about a
-  tool. Custom fonts via `FontDefinitions`, and rounded,
-  shadowed `Frame` chrome for panels and cards. A 2026 re-evaluation of the Rust GUI landscape
-  against this suite's requirements (pure-Rust desktop rendering, same-codebase WASM, embedded
-  wgpu viewport, ecosystem maturity for LLM-assisted coding) reconfirmed egui; the visual gap is
-  closed with this theme work, not a framework change.
+  is designed and reviewed in, applied by every tool.
+
+  Light is a second-class alternative for the few members who want it, chosen by the common
+  `theme` setting and switched live: egui's light `Visuals` with the same accent, rounding and
+  status colors applied, checked once for legibility rather than per view. Views take their
+  colors from the preset's semantic palette (status, warning, accent), never a hard-coded color,
+  which is what keeps light readable at no per-view cost (the Team compiler's grid derives its
+  label contrast from the cell for the same reason).
+
+  Icon glyphs for sidebar/toolbar/status icons come from the suite's own single-colour icon font,
+  registered through `FontDefinitions` like any font: one SVG per icon, each tool's drawn to say
+  what the tool does. The Team compiler's is the maintainer's running stickman dropping into an
+  open box drawn from the front, flaps out: a box in perspective reads as a pedestal at 24 px,
+  and an arrow does not show there. The stickman is a filled outline traced from the
+  maintainer's drawing, which the build takes as it is.
+
+  A tool's kind shows as one mark on its icon:
+  - an editor's carries a pencil (Phosphor's note-and-pencil pencil, redrawn smaller), and a
+    creator's or generator's a plus, each one shape at one size and place, the bottom-right
+    corner;
+  - a compiler's the open box of the Team compiler's, across the icon's foot.
+
+  A mark hides what lies under it with a 12-unit gap cut around it, as Phosphor's
+  note-and-pencil does, so a member reads the kind before the subject and no line runs through
+  the mark. Each icon is one filled outline (the strokes outlined, the cut subtracted, the mark
+  added), the form the font takes, kept as `resources/icons/<tool id>.svg` (its README says how
+  they were drawn), the font build's input.
+
+  The icons:
+  - the Save editor a floppy disk;
+  - the Export upgrader (c)'s two chevrons on an upright folder, its tab at the bottom right;
+  - the Music player Phosphor's music notes and the Music export editor the same with the
+    pencil;
+  - the Match tracker a live feed on a monitor;
+  - the Kit config editor a shirt and the Refs arranger the same shirt striped its full length
+    with a refresh sign (two arrows bending along half a circle each) as its mark, hiding the
+    disc inside its ring too;
+  - the Balls compiler a ball dropping into the box;
+  - the Player aesthetics editor the stickman;
+  - the Team creator Phosphor's three figures;
+  - the Ruleset editor a clipboard of ticks;
+  - the DB generator a database;
+  - the Stadium compiler keeps Phosphor's buildings for now.
+
+  They are built into `resources/fonts/` by a fontTools script, the general ones (help,
+  settings, dismiss, warning, download) copied from Phosphor (MIT). A glyph takes the text
+  colour, so hover and selection need no code of their own; multi-colour icons (SVG drawn at
+  run time, `egui_extras`' `svg` feature) wait until after 1.0.0. Not the `egui-phosphor`
+  crate: its one tie to egui, a font-registration helper, made every egui upgrade wait on its
+  release (0.37's by weeks), and its stock glyphs say little about a tool.
+
+  Custom fonts via `FontDefinitions`, and rounded, shadowed `Frame` chrome for panels and cards.
+
+  A 2026 re-evaluation of the Rust GUI landscape against this suite's requirements (pure-Rust
+  desktop rendering, same-codebase WASM, embedded wgpu viewport, ecosystem maturity for
+  LLM-assisted coding) reconfirmed egui; the visual gap is closed with this theme work, not a
+  framework change.
 - **3D preview requires `wgpu`**: the future model preview viewport (see Future Features in the
-  [Team compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui rather than
-  Three.js in a webview. More work, but it's a post-MVP feature: three.js would bring the glTF
-  loader, the orbit camera and the skeleton overlay for free, where egui needs a small
-  renderer of our own (shaders, a depth target, the camera), a one-off cost on one widget
-  kept small by the preview's glance-only scope; PES's own shaders or posing would be custom
-  work under either.
+  [Team compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui
+  rather than Three.js in a webview. More work, but it's a post-MVP feature: three.js would bring
+  the glTF loader, the orbit camera and the skeleton overlay for free, where egui needs a small
+  renderer of our own (shaders, a depth target, the camera), a one-off cost on one widget kept
+  small by the preview's glance-only scope. PES's own shaders or posing would be custom work
+  under either.
 - **Log viewer performance**: egui's text rendering can be slow with thousands of lines. Mitigated
   by capping displayed lines to the last few hundred (full logs go to disk regardless).
 

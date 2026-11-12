@@ -6,10 +6,11 @@ The DB generator (`crates/tools/db_generator`, tool id `db-generator`, sidebar l
 generator") is the successor to **pes-db-generator** (`Tools_4cc/pes-db-generator`, Python 3.12),
 the scripts that build the cup's **game database**: the `common/etc/pesdb/*.bin` tables that
 define which teams and players exist at all. Every other tool in the suite edits or dresses what
-the database declares; this one declares it. It runs once per cup (and again when the teams list
-changes) and its output is what a fresh game install turns into the day-0 savefile. Platform
-context is in the [core plan](core/README.md); the table record formats live in a new lib crate,
-`pesdb`, specified below.
+the database declares; this one declares it.
+
+It runs once per cup (and again when the teams list changes) and its output is what a fresh game
+install turns into the day-0 savefile. Platform context is in the [core plan](core/README.md);
+the table record formats live in a new lib crate, `pesdb`, specified below.
 
 As with the other legacy tools, the scripts define *what* to produce (the bytes the game accepts),
 not *how* the Rust code is organized.
@@ -21,9 +22,12 @@ not *how* the Rust code is organized.
 PES reads its static data from fixed-size-record tables under `common/etc/pesdb/` inside the
 game's data CPKs (`dt10.cpk` on 15, `dt10_win.cpk` on 16/17, `dt00_x64.cpk` on 18–21). A DLC
 CPK that carries the same paths overrides them. The 4cc database replaces Konami's teams and
-players wholesale with the cup's own: one team per `teams_list.txt` row (ids 701–920), 23
-placeholder players per team (ids `team*100 + 1..=23`), one manager per team, and the
-competition entries that put every team into one of four competitions.
+players wholesale with the cup's own:
+
+- one team per `teams_list.txt` row (ids 701–920);
+- 23 placeholder players per team (ids `team*100 + 1..=23`);
+- one manager per team;
+- the competition entries that put every team into one of four competitions.
 
 | Tool | Language | Status | Location |
 |---|---|---|---|
@@ -49,14 +53,21 @@ tables must *not* be shipped (the game crashes).
 **The 19+ savefile quirk.** From PES 19 the game generates a fresh `EDIT00000000` from the
 database *without* the player records (5060 players declared, none stored), so the game falls
 back to the database for every player and 4ccEditor crashes on the empty section. The scripts'
-answer is a manual procedure: decrypt the EDIT with pesXdecrypter, set the player count at
-`0x60`, paste a generated `Player_Edit.bin` (one EDIT-layout player record per placeholder:
-gameplay template + appearance template, id patched in three places) at `0x7C`, re-encrypt.
+answer is a manual procedure:
+
+1. decrypt the EDIT with pesXdecrypter;
+2. set the player count at `0x60`;
+3. paste a generated `Player_Edit.bin` (one EDIT-layout player record per placeholder: gameplay
+   template + appearance template, id patched in three places) at `0x7C`;
+4. re-encrypt.
+
 Measured 2026-09-20 on the PES 20 invitational save this database produced: player record
 70101 of that EDIT is byte-identical to the record `player_edit.py` assembles for id 70101, and
-every one of its 5060 records decodes under `pes_savefile`'s PES 20 tables. The EDIT-layout
-record and the `Player.bin` record are **different layouts** of the same player (the gameplay
-block is not byte-shared between them), so the two are two formats, owned by two crates.
+every one of its 5060 records decodes under `pes_savefile`'s PES 20 tables.
+
+The EDIT-layout record and the `Player.bin` record are **different layouts** of the same player
+(the gameplay block is not byte-shared between them), so the two are two formats, owned by two
+crates.
 
 ## Relationship to the scripts
 
@@ -90,8 +101,13 @@ Replicate the game-facing bytes, not the mechanism:
 
 ## Inputs and outputs
 
-Inputs: the PES version; a `teams_list.txt` (the suite's); the output folder; optionally the
-PES install path (Konami tables) and, for the savefile step, the path of a fresh EDIT.
+Inputs:
+
+- the PES version;
+- a `teams_list.txt` (the suite's);
+- the output folder;
+- optionally the PES install path (Konami tables) and, for the savefile step, the path of a
+  fresh EDIT.
 
 Outputs (each an independent action, all three in one run by default):
 
@@ -103,19 +119,27 @@ Outputs (each an independent action, all three in one run by default):
 3. **Populated EDIT** (19–21) — the given EDIT with the player section filled and the count set,
    written next to the input with the suite's `.bak` rule (`pes_savefile::EditFile::save`).
 
-Switches: `--no-konami` (skip the table copy even with an install configured), `--cpk` /
-`--tree`, `--players-per-team N` (23 by default; the scripts hard-code it and the roster width
-is 32 or 40 by version, so the tool caps at the version's roster width and reports).
+Switches:
+
+- `--no-konami` (skip the table copy even with an install configured);
+- `--cpk` / `--tree`;
+- `--players-per-team N` (23 by default; the scripts hard-code it and the roster width is 32
+  or 40 by version, so the tool caps at the version's roster width and reports).
 
 ## The `pesdb` lib crate
 
 `crates/libs/pesdb`: the Konami database tables the suite writes, as typed fixed-size records
-with per-version layouts. Consumers: this tool (`Team`, `Player`, `PlayerAppearance`,
-`PlayerAssignment`, `Coach`, `CompetitionEntry`), the [Balls compiler](balls_compiler.md)
-(`Ball`, `BallCondition` — the plan's "format knowledge lives inside the tool crate" sentence is
-superseded by this crate; the Ball.bin format reference stays in that plan and the record layout
-is transcribed from it), and the [Stadium compiler](stadium_compiler.md) (`Stadium`). Three
-writers of one family of tables is what earns the crate (core plan, workspace guardrail 3).
+with per-version layouts. Consumers:
+
+- this tool (`Team`, `Player`, `PlayerAppearance`, `PlayerAssignment`, `Coach`,
+  `CompetitionEntry`);
+- the [Balls compiler](balls_compiler.md) (`Ball`, `BallCondition` — the plan's "format
+  knowledge lives inside the tool crate" sentence is superseded by this crate; the Ball.bin
+  format reference stays in that plan and the record layout is transcribed from it);
+- the [Stadium compiler](stadium_compiler.md) (`Stadium`).
+
+Three writers of one family of tables is what earns the crate (core plan, workspace guardrail
+3).
 
 Shape (future tense; the implementing step copies these blocks):
 
@@ -145,11 +169,15 @@ pub fn expected_tables(version: PesVersion) -> &'static [&'static str];
 pub fn konami_tables(version: PesVersion) -> (&'static [&'static str], &'static str);
 ```
 
-Rules: a byte offset appears in the crate's per-version layout tables or nowhere; `Player` and
-`PlayerAppearance` carry their unmodeled bytes verbatim (the scripts' templates are the only
-source for them, and the game's own tables are the parity check when a real one is read); the
-crate reads as well as writes so a real Konami table round-trips byte for byte (the fixture for
-each table is the smallest real one the game ships); no tool identity, `wasm32`-checkable.
+Rules:
+
+- a byte offset appears in the crate's per-version layout tables or nowhere;
+- `Player` and `PlayerAppearance` carry their unmodeled bytes verbatim (the scripts' templates
+  are the only source for them, and the game's own tables are the parity check when a real one
+  is read);
+- the crate reads as well as writes so a real Konami table round-trips byte for byte (the
+  fixture for each table is the smallest real one the game ships);
+- no tool identity, `wasm32`-checkable.
 
 ## `pes_savefile::ops::populate`
 
@@ -157,11 +185,13 @@ The savefile side of the 19+ quirk, specified with the other operations in
 [`pes_savefile/operations.md`](pes_savefile/operations.md) "Player section population": given a
 loaded `EditFile` whose player section is empty (or shorter than the teams × players the list
 implies), write one placeholder `PlayerEntry` per (team, slot) in id order and set the count.
+
 The placeholder is the version's **base player** (`PlayerEntry` decoded from the scripts'
 `Player_Edit_Base_NN.bin` + `PlayerAppearance_Base_16.bin` assembly, committed as a fixture),
-with `id`, `base_copy_id` and, from Phase 5, the appearance-block id patched. `EditFile` gains the one thing its API refuses today —
-adding player records — behind this operation only; the record order and count rules of
-`to_bytes` otherwise stand.
+with `id`, `base_copy_id` and, from Phase 5, the appearance-block id patched.
+
+`EditFile` gains the one thing its API refuses today — adding player records — behind this
+operation only; the record order and count rules of `to_bytes` otherwise stand.
 
 ## Tool crate layout
 
@@ -186,7 +216,7 @@ CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out .
 
 - **Byte parity with the scripts**: run pes-db-generator once per version on a three-team list
   (one cup team, one Invitational, one Backup row) and commit its seven output trees as
-  fixtures (a few kilobytes each); the tool's tree for the same list must be byte-identical,
+  fixtures (a few kilobytes each). The tool's tree for the same list must be byte-identical,
   file for file, blank files included. The full 220-row list is checked as sizes and a sampled
   record per table (a full-list Player.bin is 1.5 MB per version, too large to commit).
 - **`pesdb` round trips**: each real Konami table fixture reads and writes back byte for byte.
@@ -204,7 +234,7 @@ CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out .
   cup's DLC layout when the Team compiler's deployment stage is specified (Phase 4); until
   then the CPK is written under the name the user gives.
 - **Whether PES 20/21 also need the populated EDIT**: the scripts' README says the quirk starts
-  at 19 and was seen to persist on 20+; the invitational save on the reference machine has
+  at 19 and was seen to persist on 20+. The invitational save on the reference machine has
   its players, but whether the game or the manual procedure put them there is not recorded.
   Ask the maintainer; the operation is harmless on a save that already has them (it refuses
   a non-empty section unless told to overwrite).
