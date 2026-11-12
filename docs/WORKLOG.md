@@ -1838,8 +1838,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `--loose` refuses the whole run before reading anything, the usage lines, the
       readme's Linux note, and three test gaps (the launchers' quoting, `--legacy-ids`, a
       referee export beside a team export)
-    - [ ] eight accepted, so the loop goes on: one SWE-2 round over `27f7b59a`, then
-      Carbon's round 2 (from 2026-11-15)
+    - [x] the SWE-2 round over `27f7b59a`, 2026-11-12: 2 of 4 concerns accepted, both
+      wording (the help and the plan name the `.upgrading` folder `--all` passes over),
+      which ends SWE-2's loop
+    - [ ] Carbon's round 2, eight having been accepted in its first (from 2026-11-15)
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the

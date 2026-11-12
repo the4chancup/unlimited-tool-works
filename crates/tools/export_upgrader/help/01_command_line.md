@@ -10,7 +10,8 @@ UTW export-upgrader upgrade-models <folder> [-o <dir>]
 `upgrade` takes one or more old exports, `--all <DIR>`, or both. Each export
 is a folder, a `.zip` or a `.7z`. `--all <DIR>` adds every export in the
 folder DIR after the ones named: its folders and its `.zip` and `.7z` files,
-in the order of their names. Any other file in DIR is passed over. A team export
+in the order of their names. Any other file in DIR is passed over, and so is a
+`<name>.upgrading` folder an interrupted run left there. A team export
 takes `--savefile`, naming the save (`EDIT00000000`) that says which player
 wears which boots and gloves, or `--loose` to guess the wearer of each boots
 or gloves folder from its ID alone. A referee export (a name whose first word

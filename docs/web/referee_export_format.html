@@ -207,8 +207,9 @@ out of the copy;</li>
 <li>rewrites the paths inside the referee's <code>face.xml</code>, <code>.mtl</code> and
 model files so they still point at the moved files;</li>
 <li>moves referee folders that stood directly in the export into <code>Players/</code>;</li>
-<li>gives a referee a link file (<code>whistle.dds.common</code>) for a texture it takes
-from the export's <code>Common/</code>, as a team player's folder has;</li>
+<li>when a referee uses a texture from the export's <code>Common/</code>, adds a small
+link file for it in the referee's folder (<code>whistle.dds.common</code>), as a team
+player's folder has;</li>
 <li>carries <code>ref_marker.dds</code> and <code>Common/</code> over, and drops a Team
 Note file with a warning, since nothing ever read one in a referee export.</li>
 </ul>
@@ -223,7 +224,8 @@ content, or two textures of the same name in different formats (<code>hair.dds</
 which.</td></tr>
 <tr><td>A <code>face</code>, <code>boots</code>, <code>gloves</code> or <code>common</code>
 folder inside one of those four (<code>Face/face/</code>)</td>
-<td>Folded, it would be the old layout again.</td></tr>
+<td>Once folded, the referee's folder would again hold a subfolder of one of the four
+names, which is the old layout.</td></tr>
 <tr><td>A model in a referee's <code>common</code> that none of the referee's
 <code>face.xml</code> files names</td>
 <td>It was never shown in game, and in a flat folder it would become part of the
@@ -234,8 +236,8 @@ face.</td></tr>
 <td>The referees' names cannot be read.</td></tr>
 </table>
 <p>The compile does not read the old layout. A referee folder that still has one of the
-four subfolders is refused there by name (<code>player_layout_proto</code>), with a
-pointer to the upgrade.</p>
+four subfolders is refused there with the error <code>player_layout_proto</code>, which
+tells you to upgrade the export.</p>
 
 <h2>Making one directly in the new format</h2>
 <p>Build each referee's folder as you would a team player's: every model and texture
@@ -248,24 +250,27 @@ beside it. Three things differ from a team player's folder:</p>
 player in the same case gets a blank face.</li>
 <li><strong>On PES 15-17, a referee whose face is a head only needs a body.</strong> Put
 an empty file named <code>fpc_off</code> in the folder and the compile dresses the referee
-in the refkit (shirt, shorts, socks, arms, and the boots and hands when the referee has
-none of its own). A referee whose <code>face.xml</code> already lists the body needs
+in the refkit, the body in <code>Common/refkit/</code> (shirt, shorts, socks, arms, and
+the boots and hands when the referee has no boots or gloves of their own). A referee whose <code>face.xml</code> already lists the body needs
 nothing.</li>
 </ul>
 
 <h2>The referee marker</h2>
-<p><code>ref_marker.dds</code> is the picture the referees wear so they are told apart
-from the players. It stays in the export, but it reaches the game differently:</p>
+<p><code>ref_marker.dds</code> is the picture the game draws flat on the ground with each
+referee. It stays in the export, in the same place, but it reaches the game
+differently:</p>
 <ul>
 <li><strong>PES 15-17:</strong> as before, it replaces a texture inside the referees'
 CPK.</li>
-<li><strong>PES 18-21:</strong> it is carried by collar <strong>77</strong>, which the
-referees' CPK provides. The game's own <code>dt00_x64.cpk</code> is no longer written, so
-there is no question to answer and nothing to back up.</li>
+<li><strong>PES 18-21:</strong> the referees' kits are given collar <strong>77</strong>,
+and the referees' CPK holds a model for that collar which draws the marker. The game's
+own <code>dt00_x64.cpk</code> is no longer written, so there is no question to answer
+and nothing to back up.</li>
 </ul>
 <p>Collar 77 is therefore reserved for the referees on every version. A team's kit that
 uses it is left out at compile time and reported (<code>kit_collar_reserved</code>),
-because its players would wear the referees' marker.</p>
+because its players would be drawn with the referees' marker.</p>
+<p>An export without <code>ref_marker.dds</code> simply has no marker.</p>
 
 </main>
 <script>

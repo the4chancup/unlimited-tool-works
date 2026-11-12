@@ -35,7 +35,7 @@ enum ExportUpgraderCommand {
     UpgradeModels(UpgradeModelsArgs),
 }
 
-/// `upgrade <export>... [--all <DIR>] (--savefile <EDIT> | --loose) [--coverage full|midcup] [--legacy-ids] [-o <dir>]`.
+/// `upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]`.
 #[derive(Debug, Args)]
 pub(crate) struct UpgradeArgs {
     /// The old exports: each a folder, a .zip or a .7z file.

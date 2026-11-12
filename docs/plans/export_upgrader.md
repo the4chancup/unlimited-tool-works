@@ -135,7 +135,9 @@ built: `spec/export_upgrader.md` "CLI"):
 
   **Which exports.** The ones named, then, with `--all <DIR>`, every export directly inside
   DIR: its folders and its `.zip` and `.7z` files, sorted by file name without regard to
-  letter case. Any other file in DIR is passed over without a line. At least one of the two
+  letter case. Any other file in DIR is passed over without a line, and so is a folder
+  whose name ends in `.upgrading`, the staging folder an interrupted run left: it is no
+  export, and the export's own turn removes it. At least one of the two
   is given. `--all` exists for the launcher: a `cmd` line holds 8,191 characters, which 50
   full paths can pass, and listing a folder is logic we keep in the exe, not in a bat.
 
