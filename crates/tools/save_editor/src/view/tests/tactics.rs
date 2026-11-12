@@ -2132,6 +2132,177 @@ fn a_numbers_choice_click_is_one_undo_entry() {
     );
 }
 
+/// One locked-numbers leg of the numbers test below: under `draw` (the
+/// window's `show`, or `tactics::show` alone for a leg no `show` frame
+/// can draw) both toggles' three choices are disabled with the stored
+/// one marked, and a click on Many and a wheel step over it write
+/// nothing.
+fn numbers_locked(
+    window: &mut Headless,
+    view: &mut SaveView,
+    team_id: u32,
+    draw: impl Fn(&mut egui::Ui, &mut SaveView),
+) {
+    let frame = |window: &mut Headless, view: &mut SaveView, events: Vec<egui::Event>| {
+        window.frame(events, |ui| draw(ui, view))
+    };
+    let (_, nodes, _) = frame(window, view, Vec::new());
+    for (label, index, picked) in [
+        ("Numbers in attack", 1usize, "Medium"),
+        ("Numbers in defence", 0usize, "Few"),
+    ] {
+        let choices = widgets_below(&nodes, label, Role::Button);
+        assert_eq!(choices.len(), 3, "{label}: the three choices");
+        for choice in &choices {
+            assert!(choice.is_disabled(), "{label}: the choice is locked");
+        }
+        assert_eq!(
+            choices[index].label(),
+            Some(picked),
+            "premise: {label}'s stored choice is {picked}"
+        );
+        assert_eq!(
+            choices[index].toggled(),
+            Some(accesskit::Toggled::True),
+            "{label}: the stored choice still marked"
+        );
+    }
+    let before = team_entry(view, team_id).tactics;
+    let many = centre(choice_below(&nodes, "Numbers in attack", "Many"));
+    frame(window, view, pointer_at(many, true));
+    frame(window, view, pointer_at(many, false));
+    assert_eq!(
+        team_entry(view, team_id).tactics,
+        before,
+        "a click on Many writes nothing"
+    );
+    frame(
+        window,
+        view,
+        vec![
+            egui::Event::PointerMoved(many),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, 1.0),
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+                modifiers: egui::Modifiers::default(),
+            },
+        ],
+    );
+    assert_eq!(
+        team_entry(view, team_id).tactics,
+        before,
+        "a wheel step over it writes nothing"
+    );
+}
+
+// SE-GUI-71
+#[test]
+fn the_numbers_are_disabled_from_pes17_on_a_stock_game() {
+    let mut window = Headless::sized(1600.0, 1400.0);
+
+    // The PES 17 save under /vg/ League 27, which does not allow illegal
+    // formations.
+    let path = fixture(PesVersion::Pes17, "tactics_numbers_17");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
+    file.team_mut(701).unwrap().tactics.presets[0]
+        .sliders
+        .numbers_in_attack = 2;
+    file.team_mut(701).unwrap().tactics.presets[0]
+        .sliders
+        .numbers_in_defence = 1;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "vgl27".to_owned();
+    open_team_view(&mut window, &mut view, 701);
+    numbers_locked(&mut window, &mut view, 701, |ui, view| {
+        show(ui, view, &|| Vec::new())
+    });
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let many = centre(choice_below(&nodes, "Numbers in attack", "Many"));
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, many, "Not editable"),
+        Some("Not editable in the game from PES 2017 on".to_owned()),
+        "the locked toggle's hover"
+    );
+
+    // The same with no ruleset active: the window resolves one on its
+    // first frame, so this leg draws the editor alone with `rules` unset.
+    view.rules = None;
+    numbers_locked(&mut window, &mut view, 701, |ui, view| {
+        crate::view::tactics::show(ui, view)
+    });
+
+    // Under DBC7, which allows illegal formations, a click on Many of
+    // Numbers in attack stores 3.
+    view.aatf_ruleset = "dbc7".to_owned();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        choice_below(&nodes, "Numbers in attack", "Many"),
+        &mut view,
+    );
+    assert_eq!(
+        team_entry(&view, 701).tactics.presets[0]
+            .sliders
+            .numbers_in_attack,
+        3,
+        "Many stored under DBC7"
+    );
+
+    // The same lock on a PES 21 save under /vg/ League 27.
+    let path = fixture(PesVersion::Pes21, "tactics_numbers_21");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.team_mut(701).unwrap().tactics.presets[0]
+        .sliders
+        .numbers_in_attack = 2;
+    file.team_mut(701).unwrap().tactics.presets[0]
+        .sliders
+        .numbers_in_defence = 1;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "vgl27".to_owned();
+    open_team_view(&mut window, &mut view, 701);
+    numbers_locked(&mut window, &mut view, 701, |ui, view| {
+        show(ui, view, &|| Vec::new())
+    });
+
+    // On a PES 16 save under /vg/ League 27, whose game plan still shows
+    // the two numbers, the choices are enabled and a click on Many of
+    // Numbers in attack stores 3.
+    let path = fixture(PesVersion::Pes16, "tactics_numbers_16");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes16)).unwrap();
+    file.team_mut(701).unwrap().tactics.presets[0]
+        .sliders
+        .numbers_in_attack = 1;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "vgl27".to_owned();
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let attack = widgets_below(&nodes, "Numbers in attack", Role::Button);
+    let defence = widgets_below(&nodes, "Numbers in defence", Role::Button);
+    for choice in attack.iter().chain(defence.iter()) {
+        assert!(!choice.is_disabled(), "PES 16: the choices are enabled");
+    }
+    click(
+        &mut window,
+        choice_below(&nodes, "Numbers in attack", "Many"),
+        &mut view,
+    );
+    assert_eq!(
+        team_entry(&view, 701).tactics.presets[0]
+            .sliders
+            .numbers_in_attack,
+        3,
+        "Many stored on PES 16"
+    );
+}
+
 // The Substitution combo's pick writes the stored byte — Flexible stores
 // 2 — as one undo entry.
 #[test]

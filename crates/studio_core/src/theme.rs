@@ -57,6 +57,12 @@ pub struct Palette {
     pub rating_a_fill: egui::Color32,
     /// The letter on a chosen A rating's fill.
     pub rating_a_text: egui::Color32,
+    /// The rectangle under the choice a disabled toggle or selector still
+    /// holds (the drafts' `.sel.on` inside `.off`): quieter than the C
+    /// rating's square, so it does not read as a control still live, where
+    /// the selection's blue would. Its light value keeps the dark one's
+    /// contrast, 1.23, on the light panel.
+    pub locked_choice_fill: egui::Color32,
     /// The dark frame drawn inside a player appearance palette entry's square
     /// (the draft's `.swatch`), around the entry's own colour.
     pub swatch_edge: egui::Color32,
@@ -152,6 +158,7 @@ impl Palette {
         rating_c_fill: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
+        locked_choice_fill: egui::Color32::from_rgb(0x2c, 0x2c, 0x2c),
         swatch_edge: egui::Color32::BLACK,
         pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
         badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
@@ -195,6 +202,7 @@ impl Palette {
         rating_c_fill: egui::Color32::from_gray(0x9f),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
+        locked_choice_fill: egui::Color32::from_gray(225),
         swatch_edge: egui::Color32::BLACK,
         pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
         badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
@@ -581,6 +589,7 @@ mod tests {
             rating_c_fill,
             rating_a_fill,
             rating_a_text,
+            locked_choice_fill,
             swatch_edge,
             pitch_lines,
             badge_fill,
@@ -617,6 +626,7 @@ mod tests {
             ("rating_c_fill", *rating_c_fill),
             ("rating_a_fill", *rating_a_fill),
             ("rating_a_text", *rating_a_text),
+            ("locked_choice_fill", *locked_choice_fill),
             ("swatch_edge", *swatch_edge),
             ("pitch_lines", *pitch_lines),
             ("badge_fill", *badge_fill),
@@ -651,12 +661,13 @@ mod tests {
     // their own; every other is on a surface both themes share.
     #[test]
     fn only_the_panel_colours_differ_between_the_themes() {
-        const THEMED: [&str; 9] = [
+        const THEMED: [&str; 10] = [
             "success",
             "readout",
             "count_grey",
             "disabled_text",
             "rating_c_fill",
+            "locked_choice_fill",
             "lineup_keeper",
             "lineup_defender",
             "lineup_midfielder",
@@ -818,6 +829,28 @@ mod tests {
             );
             assert_eq!(state.bg_fill, egui::Color32::from_gray(grey), "{name}");
         }
+    }
+
+    // The locked choice's rectangle keeps the dark grey's contrast on the
+    // light panel: the matched grey, no step (it is read beside the other
+    // choices' quiet grey, not against white text boxes as the widget
+    // fills are).
+    #[test]
+    fn the_light_locked_choice_fill_keeps_the_dark_ones_contrast() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let (dark, light) = (
+            ctx.style_of(egui::Theme::Dark),
+            ctx.style_of(egui::Theme::Light),
+        );
+        let dark_contrast = contrast(Palette::DARK.locked_choice_fill, dark.visuals.panel_fill);
+        let matched = grey_at_contrast(dark_contrast, light.visuals.panel_fill);
+        assert_eq!(
+            Palette::LIGHT.locked_choice_fill,
+            egui::Color32::from_gray(matched),
+            "the dark fill reads at {dark_contrast:.2} on the dark panel, as \
+             grey {matched} does on the light one"
+        );
     }
 
     // The light warning colour reads at 4.5 on the light panel, as the light
