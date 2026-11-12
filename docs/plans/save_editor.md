@@ -406,9 +406,11 @@ side.
   ONLY`, the team view's `701 /3/`, the id in the weak colour, as the list draws ids, and the
   name with its colours.
 
-  The title's ink stands as far below the toolbar's buttons as the view's first row's ink is
+  The title's ink stands as far below the toolbar's band as the view's first row's ink is
   below its own (about 11 points each on the maintainer's screen), not close under the
-  buttons. The gaps are even in what the eye sees, not in boxes. A line box holds more room
+  band. The upper gap is measured from the band's line, the bar's lower edge as the eye
+  sees it, not from its buttons, which stand 4 points higher inside the band. The gaps are
+  even in what the eye sees, not in boxes. A line box holds more room
   under the baseline than over the capitals, so equal box gaps of 7 read as 9 above and 11
   below. The gaps are evened in ink instead: the drafts set the title 2 lower, and the app,
   whose title sat low instead, takes a 6-point margin over it and room under it (11 and 11

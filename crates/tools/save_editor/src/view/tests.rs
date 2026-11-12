@@ -333,12 +333,18 @@ fn open_menu(
     nodes
 }
 
-/// The Open menu opened and its `Choose file…` clicked, discovery stubbed
+/// The File menu opened and its `Choose file…` clicked, discovery stubbed
 /// to find no save, so the menu holds the recent files and the picker.
 fn choose_file(window: &mut Headless, view: &mut SaveView) {
     view.discover = Box::new(|_| Vec::new());
-    let nodes = open_menu(window, view, "Open", "Choose file");
-    click(window, menu_item(&nodes, "Choose file"), view);
+    choose(window, view, "File", "Choose file");
+}
+
+/// `menu`'s entry `item` chosen: the menu opened (`open_menu`), then a
+/// click on the entry.
+fn choose(window: &mut Headless, view: &mut SaveView, menu: &str, item: &str) {
+    let nodes = open_menu(window, view, menu, item);
+    click(window, menu_item(&nodes, item), view);
 }
 
 /// Replaces the focused text control's contents with `text`: End moves the
@@ -1047,7 +1053,8 @@ fn assert_resizable_window(nodes: &[accesskit::Node], title: &str) {
 
 /// `menu`'s entries top to bottom, and the y of each separator line
 /// between them (the horizontal lines in the panel's stroke colour across
-/// the entries' column).
+/// the entries' column, under the first entry's top: the toolbar band's
+/// line above the menu crosses the column too).
 fn menu_entries(
     window: &mut Headless,
     view: &mut SaveView,
@@ -1081,6 +1088,7 @@ fn menu_entries(
             egui::Shape::LineSegment { points, stroke: s }
                 if *s == stroke
                     && points[0].y == points[1].y
+                    && f64::from(points[0].y) >= first.y0
                     && f64::from(points[0].x.min(points[1].x)) <= first.x0 + 8.0
                     && f64::from(points[0].x.max(points[1].x)) >= first.x1 - 8.0 =>
             {
@@ -1718,13 +1726,13 @@ mod changes_popup;
 mod clipboard;
 mod comparator;
 mod event_logo;
+mod file_menu;
 mod generate;
 mod interchange;
 mod interchange_export;
 mod list;
 mod live_aatf;
 mod live_marks;
-mod open_menu;
 mod overlap;
 mod patch;
 mod player;

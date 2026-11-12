@@ -21,7 +21,10 @@ use std::path::{Path, PathBuf};
 
 use aatf::Ruleset;
 use studio_core::ToolContext;
-use studio_core::widgets::{add_enabled, add_enabled_ui, menu_button, modal_buttons, modal_frame};
+use studio_core::widgets::{
+    add_enabled, add_enabled_ui, menu_button, modal_buttons, modal_frame, toolbar_framed,
+    toolbar_separator,
+};
 
 pub(crate) use prompt::Pending;
 pub(crate) use sections::Section;
@@ -531,9 +534,20 @@ fn remember_path(ctx: &ToolContext, path: &Path) {
     ctx.set_tool_settings(TOOL_ID, table);
 }
 
+/// The room around the toolbar's row inside its panel (the draft's `.top`
+/// padding): 3 points over and under the row, 8 at its sides. egui's own
+/// top panel keeps 2 over and under.
+const TOOLBAR_MARGIN: egui::Margin = egui::Margin {
+    left: 8,
+    right: 8,
+    top: 3,
+    bottom: 3,
+};
+
 /// The toolbar (the draft's top bar): the File, Edit and Randomize
-/// menus, the document's name with the unsaved dot, and right-aligned
-/// the **Show preview** toggle.
+/// menus, unframed in a menu bar, so with one open the pointer entering
+/// another opens it; the document's name with the unsaved dot, and
+/// right-aligned the framed **Show preview** toggle.
 fn toolbar(
     ui: &mut egui::Ui,
     view: &mut RulesetView,
@@ -561,8 +575,10 @@ fn toolbar(
         && !typing
         && !redo_key
         && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::Z));
-    egui::Panel::top("ruleset_toolbar").show(ui, |ui| {
-        ui.horizontal(|ui| {
+    let bar = egui::Panel::top("ruleset_toolbar")
+        .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(TOOLBAR_MARGIN));
+    bar.show(ui, |ui| {
+        studio_core::widgets::toolbar(ui, |ui| {
             menu_button(ui, "File", |ui| {
                 // "New from template…" opens the start page over the
                 // document at once: it loses nothing (Close returns to
@@ -605,7 +621,7 @@ fn toolbar(
             add_enabled_ui(ui, false, |ui| {
                 menu_button(ui, "Randomize", |_| ());
             });
-            ui.separator();
+            toolbar_separator(ui);
             if let Some(document) = view.document.as_ref() {
                 let marker = if view.has_unsaved_changes() {
                     " •"
@@ -615,13 +631,7 @@ fn toolbar(
                 ui.strong(format!("{}{marker}", document.ruleset.name));
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui
-                    .add(egui::Button::selectable(view.show_preview, "Show preview"))
-                    .on_hover_text("Show the rules file's data block as the editor writes it")
-                    .clicked()
-                {
-                    view.show_preview = !view.show_preview;
-                }
+                preview_toggle(ui, view);
             });
         });
     });
@@ -634,6 +644,21 @@ fn toolbar(
     if redo_key {
         history_step(view, Document::redo);
     }
+}
+
+/// The toolbar's **Show preview** toggle, in the bar's framed scope: the
+/// bar's own style would narrow its padding and drop its outline under the
+/// pointer.
+fn preview_toggle(ui: &mut egui::Ui, view: &mut RulesetView) {
+    toolbar_framed(ui, |ui| {
+        if ui
+            .add(egui::Button::selectable(view.show_preview, "Show preview"))
+            .on_hover_text("Show the rules file's data block as the editor writes it")
+            .clicked()
+        {
+            view.show_preview = !view.show_preview;
+        }
+    });
 }
 
 /// One menu item: added enabled or not, the menu closed on a click, the

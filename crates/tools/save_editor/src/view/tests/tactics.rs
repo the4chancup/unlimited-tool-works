@@ -3453,13 +3453,13 @@ fn scroll_names_survives_opening_another_save() {
         "premise: the setting is off"
     );
 
-    // Open the other save through the Open menu's Choose file…, its
+    // Open the other save through the File menu's Choose file…, its
     // picker stubbed — the open lands inside the `tool.view` frame.
     let picked = other_path.clone();
     tool.view.open_dialog = Box::new(move |_| Some(picked.clone()));
     tool.view.discover = Box::new(|_| Vec::new());
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let open = menu_button(&nodes, "Open");
+    let open = menu_button(&nodes, "File");
     press_release(&mut window, centre(open), |ui| tool.view(ui, &ctx));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
     let choose = menu_item(&nodes, "Choose file");

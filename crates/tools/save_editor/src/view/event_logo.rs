@@ -1,48 +1,51 @@
 //! The active ruleset's event logo at the view's top right (the draft's
-//! `.event-logo`), the sidebar clover mirrored: drawn over the toolbar
-//! row's empty end, moving nothing, and with an event page a link to it.
+//! `.event-logo`), the sidebar clover mirrored: drawn past the toolbar
+//! band's end, moving nothing, and with an event page a link to it.
 
 use team_widgets::event_logo::HEIGHT;
 
 use super::SaveView;
 
 /// The logo's right edge from the window's, in points: as far as the
-/// clover's ink stands from the left.
-const RIGHT: f32 = 14.0;
+/// clover's ink stands from the left. The toolbar's band ends as far left
+/// of the logo, so the logo has the same room on both sides.
+pub(super) const RIGHT: f32 = 14.0;
 
 /// The logo's top below the view's, in points: as far as the clover's ink
 /// stands below the window's top.
 const TOP: f32 = 8.0;
 
-/// The room the toolbar's last widget keeps before the logo, in points;
-/// nearer (a narrow window), the logo is not drawn rather than cover it.
-const CLEARANCE: f32 = 8.0;
-
-/// Draws the logo while the active ruleset carries one: 28 points high,
-/// its right edge `RIGHT` from the window's, its top `TOP` below the
-/// view's. `toolbar_end` is the x where the toolbar's last widget ends;
-/// one reaching within `CLEARANCE` of the logo hides it.
-pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, toolbar_end: f32) {
-    let Some(active) = view.rules.as_mut() else {
-        return;
-    };
-    let Some(logo) = active.logo.as_mut() else {
-        return;
-    };
-    let size = logo.size();
+/// Where the logo stands while a save is open and the active ruleset
+/// carries one: 28 points high, its right edge `RIGHT` from the window's,
+/// its top `TOP` below the view's. It depends on the window and the
+/// picture alone, so the toolbar's band can end short of it before either
+/// is drawn.
+pub(super) fn rect(ui: &egui::Ui, view: &SaveView) -> Option<egui::Rect> {
+    view.session.as_ref()?;
+    let size = view.rules.as_ref()?.logo.as_ref()?.size();
     let right = ui.ctx().content_rect().max.x - RIGHT;
     // `ui` is the shell's central panel inside its margin: the view's top
     // is the panel's.
     let top = ui.max_rect().top()
         - f32::from(egui::Frame::central_panel(ui.style()).inner_margin.top)
         + TOP;
-    let rect = egui::Rect::from_min_max(
+    Some(egui::Rect::from_min_max(
         egui::pos2(right - size.x, top),
         egui::pos2(right, top + HEIGHT),
-    );
-    if toolbar_end + CLEARANCE > rect.left() {
+    ))
+}
+
+/// Draws the logo where `rect` places it, if anywhere.
+pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
+    let Some(rect) = rect(ui, view) else {
         return;
-    }
+    };
+    let Some(active) = view.rules.as_mut() else {
+        return;
+    };
+    let Some(logo) = active.logo.as_mut() else {
+        return;
+    };
     let ruleset = active.rules.ruleset();
     // A child placed by rect allocates nothing in `ui`, so no row moves.
     // Right to left, centred: a picture wider than 3:1 is less than 28

@@ -605,9 +605,14 @@ fn the_arrows_wait_while_a_pointer_button_is_held() {
     view.selected = Some(Selection::Team(701));
     let mut window = Headless::new();
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The topmost: the frame lists its nodes in no screen order.
     let first = nodes
         .iter()
-        .find(|node| player_row(node))
+        .filter(|node| player_row(node))
+        .min_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().map_or(f64::MAX, |r| r.y0);
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
         .expect("the list's first player row");
     window.frame(pointer_at(centre(first), true), |ui| {
         show(ui, &mut view, &|| Vec::new())

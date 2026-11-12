@@ -64,6 +64,10 @@ What changed for members, release by release, newest first.
 - **Save editor**: a team's Stadium ID can be seen and edited on every version and its
   Manager ID from PES 2017 on, not only from PES 2019 on, and a Team TOML carries them
   wherever the save stores them.
+- **Save editor and Ruleset editor**: the toolbar is a menu bar. In the Save editor the
+  Open menu, Save and Save as are now in a **File** menu, and Undo and Redo in an **Edit**
+  menu; every shortcut works as before. The event logo is always shown, the bar ending
+  short of it.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES

@@ -1,8 +1,8 @@
-//! The Open menu's and Save as's tests (SE-GUI-26): the discovered saves,
-//! the recent files and the picker in the menu, discovery run once per
-//! opening, the picker's starting folder, an entry under unsaved changes,
-//! the version shortcuts and Ctrl+O, and Save as's write, `.bak` and
-//! running-game question.
+//! The File menu's and Save as's tests (SE-GUI-26): the discovered saves,
+//! the recent files and the picker in the menu, then Save and Save as,
+//! discovery run once per opening, the picker's starting folder, an open
+//! under unsaved changes, the version shortcuts and Ctrl+O, and Save as's
+//! write, `.bak` and running-game question.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -83,7 +83,7 @@ fn discover_counted(view: &mut SaveView, documents: &Path) -> Rc<Cell<usize>> {
     calls
 }
 
-/// The Open menu's picker stubbed to cancel, recording the folder each
+/// The File menu's picker stubbed to cancel, recording the folder each
 /// call starts in.
 fn picker_starts(view: &mut SaveView) -> Rc<RefCell<Vec<Option<PathBuf>>>> {
     let starts = Rc::new(RefCell::new(Vec::new()));
@@ -95,7 +95,7 @@ fn picker_starts(view: &mut SaveView) -> Rc<RefCell<Vec<Option<PathBuf>>>> {
     starts
 }
 
-/// The open menu's entries top to bottom: the buttons in the column of
+/// The File menu's entries top to bottom: the buttons in the column of
 /// `first`, from it down.
 fn entries<'a>(nodes: &'a [accesskit::Node], first: &str) -> Vec<&'a accesskit::Node> {
     let first = menu_item(nodes, first).bounds().expect("bounds");
@@ -122,7 +122,7 @@ fn press_ctrl(window: &mut Headless, view: &mut SaveView, pressed: egui::Key) {
     });
 }
 
-/// Whether the frame's nodes hold the Open menu's popup.
+/// Whether the frame's nodes hold the File menu's popup.
 fn menu_shown(nodes: &[accesskit::Node]) -> bool {
     nodes.iter().any(|node| {
         node.role() == Role::Button
@@ -134,7 +134,7 @@ fn menu_shown(nodes: &[accesskit::Node]) -> bool {
 
 // SE-GUI-26
 #[test]
-fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
+fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save() {
     let tree = tree("open_menu_entries");
     let mut view = SaveView::new();
     view.open(&tree.elsewhere);
@@ -142,7 +142,7 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
     view.pes_version = PesVersion::Pes21;
     let mut window = Headless::new();
 
-    let nodes = open_menu(&mut window, &mut view, "Open", PES19_ENTRY);
+    let nodes = open_menu(&mut window, &mut view, "File", PES19_ENTRY);
     // The scratch folder's name, then the save's folder and file name.
     let recent = "open_menu_entries\\elsewhere\\EDIT00000000";
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
@@ -158,10 +158,32 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
             "PES 2021",
             recent,
             "Choose file\u{2026} Ctrl+O",
+            "Save Ctrl+S",
+            "Save as",
         ],
         "the discovered saves in version order, each named by its version, the newest PES 21 \
          first and the first of each version with its shortcut, then the recent file, then the \
-         picker"
+         picker, then Save with its shortcut and Save as"
+    );
+    for entry in ["Save Ctrl+S", "Save as"] {
+        assert!(
+            !node_labeled(&nodes, Role::Button, entry).is_disabled(),
+            "{entry} is enabled with a save open"
+        );
+    }
+    let (entries_at, lines) = menu_entries(&mut window, &mut view, "File", PES19_ENTRY);
+    assert_eq!(lines.len(), 3, "three separators: {lines:?}");
+    assert!(
+        separated(&entries_at, &lines, 2, 3) && separated(&entries_at, &lines, 3, 4),
+        "the saves, the recent file and the picker apart"
+    );
+    assert!(
+        separated(&entries_at, &lines, 4, 5),
+        "a separator between Choose file… and Save"
+    );
+    assert!(
+        !separated(&entries_at, &lines, 5, 6),
+        "Save and Save as together"
     );
 
     // Each entry's tooltip is its own full path, found by its place in
@@ -198,11 +220,11 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
 }
 
 // A separator stands between the discovered saves and the recents when
-// both lists exist, and before Choose file… when either does — never
-// elsewhere (SE-GUI-26's grouped entries).
+// both lists exist, before Choose file… when either does, and always
+// before Save; never elsewhere (SE-GUI-26's grouped entries).
 #[test]
-fn the_open_menus_separators_stand_only_between_its_groups() {
-    /// The open menu: `documents` discovered (None stubs empty) and
+fn the_file_menus_separators_stand_only_between_its_groups() {
+    /// The File menu: `documents` discovered (None stubs empty) and
     /// `recent` opened first if given; `first` is the menu's top entry.
     /// Its entries and separator ys.
     fn case(
@@ -221,36 +243,49 @@ fn the_open_menus_separators_stand_only_between_its_groups() {
             view.open(&recent);
         }
         let mut window = Headless::new();
-        menu_entries(&mut window, &mut view, "Open", first)
+        menu_entries(&mut window, &mut view, "File", first)
     }
 
-    // Neither list: Choose file… alone, no separator.
+    // Neither list: Choose file… alone, then the separator before Save.
     let (entries, lines) = case(None, None, "Choose file");
-    assert_eq!(entries.len(), 1, "Choose file… alone: {entries:?}");
-    assert!(lines.is_empty(), "no separator: {lines:?}");
+    assert_eq!(entries.len(), 3, "Choose file…, Save, Save as: {entries:?}");
+    assert_eq!(lines.len(), 1, "one separator: {lines:?}");
+    assert!(separated(&entries, &lines, 0, 1), "before Save");
 
-    // Discovered only: the separator before Choose file… alone.
+    // Discovered only: the separator before Choose file… alone, then the
+    // one before Save.
     let tree = tree("open_menu_sep_discovered");
     let (entries, lines) = case(Some(&tree.documents), None, PES19_ENTRY);
-    assert_eq!(entries.len(), 4, "three saves, the picker: {entries:?}");
-    assert_eq!(lines.len(), 1, "one separator: {lines:?}");
+    assert_eq!(
+        entries.len(),
+        6,
+        "three saves, the picker, Save, Save as: {entries:?}"
+    );
+    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
     assert!(
         separated(&entries, &lines, 2, 3),
         "between the saves and Choose file…"
     );
+    assert!(separated(&entries, &lines, 3, 4), "before Save");
 
-    // Recents only: the separator before Choose file… alone.
+    // Recents only: the separator before Choose file… alone, then the one
+    // before Save.
     let (entries, lines) = case(
         None,
         Some(tree.elsewhere.clone()),
         "open_menu_sep_discovered\\elsewhere\\EDIT00000000",
     );
-    assert_eq!(entries.len(), 2, "the recent, the picker: {entries:?}");
-    assert_eq!(lines.len(), 1, "one separator: {lines:?}");
+    assert_eq!(
+        entries.len(),
+        4,
+        "the recent, the picker, Save, Save as: {entries:?}"
+    );
+    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
     assert!(separated(&entries, &lines, 0, 1), "before Choose file…");
+    assert!(separated(&entries, &lines, 1, 2), "before Save");
 
-    // Both: a separator between the lists and one before Choose file…,
-    // none between the saves.
+    // Both: a separator between the lists, one before Choose file… and
+    // one before Save, none between the saves.
     let (entries, lines) = case(
         Some(&tree.documents),
         Some(tree.elsewhere.clone()),
@@ -258,10 +293,10 @@ fn the_open_menus_separators_stand_only_between_its_groups() {
     );
     assert_eq!(
         entries.len(),
-        5,
-        "the saves, the recent, the picker: {entries:?}"
+        7,
+        "the saves, the recent, the picker, Save, Save as: {entries:?}"
     );
-    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
+    assert_eq!(lines.len(), 3, "three separators: {lines:?}");
     assert!(
         !separated(&entries, &lines, 0, 1) && !separated(&entries, &lines, 1, 2),
         "none between the discovered saves"
@@ -271,6 +306,11 @@ fn the_open_menus_separators_stand_only_between_its_groups() {
         "between the saves and the recents"
     );
     assert!(separated(&entries, &lines, 3, 4), "before Choose file…");
+    assert!(separated(&entries, &lines, 4, 5), "before Save");
+    assert!(
+        !separated(&entries, &lines, 5, 6),
+        "none between Save and Save as"
+    );
 }
 
 // SE-GUI-26
@@ -283,12 +323,10 @@ fn choose_file_starts_in_the_selected_versions_save_folder() {
     let mut window = Headless::new();
 
     view.pes_version = PesVersion::Pes21;
-    let nodes = open_menu(&mut window, &mut view, "Open", "Choose file");
-    click(&mut window, menu_item(&nodes, "Choose file"), &mut view);
+    choose(&mut window, &mut view, "File", "Choose file");
     // PES 18 has no save under the test's Documents.
     view.pes_version = PesVersion::Pes18;
-    let nodes = open_menu(&mut window, &mut view, "Open", "Choose file");
-    click(&mut window, menu_item(&nodes, "Choose file"), &mut view);
+    choose(&mut window, &mut view, "File", "Choose file");
 
     assert_eq!(
         *starts.borrow(),
@@ -297,8 +335,9 @@ fn choose_file_starts_in_the_selected_versions_save_folder() {
     );
 }
 
-// SE-GUI-05, SE-GUI-26: an Open menu entry under unsaved changes asks
-// first; Discard opens the entry's save and leaves the open file as it was.
+// SE-GUI-05, SE-GUI-26: one of the File menu's opens under unsaved changes
+// asks first; Discard opens the entry's save and leaves the open file as
+// it was.
 #[test]
 fn an_entry_clicked_with_unsaved_changes_prompts_and_discard_opens_it() {
     let tree = tree("open_menu_dirty");
@@ -313,8 +352,7 @@ fn an_entry_clicked_with_unsaved_changes_prompts_and_discard_opens_it() {
     discover_counted(&mut view, &tree.documents);
     let mut window = Headless::new();
 
-    let nodes = open_menu(&mut window, &mut view, "Open", PES19_ENTRY);
-    click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
+    choose(&mut window, &mut view, "File", PES19_ENTRY);
     let nodes = draw(&mut window, &mut view);
     assert!(
         label_value(&nodes, "Unsaved changes"),
@@ -395,8 +433,8 @@ fn a_shortcut_with_no_save_found_opens_the_picker() {
     assert!(view.session.is_none(), "a cancelled picker opens nothing");
 }
 
-// SE-GUI-05, SE-GUI-26: a shortcut under unsaved changes asks first, as an
-// Open menu entry does; Discard opens the version's save.
+// SE-GUI-05, SE-GUI-26: a shortcut under unsaved changes asks first, as
+// the File menu's opens do; Discard opens the version's save.
 #[test]
 fn a_shortcut_with_unsaved_changes_prompts_first() {
     let tree = tree("open_shortcut_dirty");
@@ -490,9 +528,11 @@ fn ctrl_shift_and_a_digit_opens_nothing() {
 }
 
 /// The open save edited (player 70101's height), `target` the path Save
-/// as's picker returns.
+/// as's picker returns, discovery stubbed to find no save (the File menu
+/// runs it when it opens).
 fn edited_view(path: &Path, target: &Path) -> SaveView {
     let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
     view.open(path);
     let mut edited = player_entry(&view, 70101);
     edited.basic.height = 170;
@@ -522,12 +562,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     let mut tool = crate::Tool::new();
     tool.view = edited_view(&path, &target);
     let mut window = Headless::new();
-    let nodes = draw(&mut window, &mut tool.view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Save as"),
-        &mut tool.view,
-    );
+    choose(&mut window, &mut tool.view, "File", "Save as");
 
     let session = tool.view.session.as_ref().unwrap();
     let reopened = Session::open(&target, Recorder::default()).expect("the target holds a save");
@@ -564,12 +599,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     let fresh = dir.join("fresh").join("EDIT00000000");
     std::fs::create_dir_all(fresh.parent().unwrap()).unwrap();
     let mut view = edited_view(&path, &fresh);
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Save as"),
-        &mut view,
-    );
+    choose(&mut window, &mut view, "File", "Save as");
     assert!(fresh.is_file(), "the save is written");
     assert!(!bak_of(&fresh).exists(), "no .bak for a fresh path");
 }
@@ -590,8 +620,8 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let mut view = edited_view(&path, &target);
     let mut window = Headless::new();
 
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &running_own));
-    let save_as = centre(node_labeled(&nodes, Role::Button, "Save as"));
+    let nodes = open_menu(&mut window, &mut view, "File", "Save as");
+    let save_as = centre(menu_item(&nodes, "Save as"));
     press_release(&mut window, save_as, |ui| show(ui, &mut view, &running_own));
     assert!(!target.exists(), "nothing written while the question waits");
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &running_own));

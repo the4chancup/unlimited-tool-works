@@ -539,9 +539,10 @@ fn the_lists_frame_stands_where_the_drafts_does() {
 }
 
 // The list's column stands where the draft's `.plist` does at the
-// 1280 x 780 window: the team combo's top 30, 4 under the toolbar's
-// buttons, then the filter box and the rows' frame each 3 under the
-// last, egui's item spacing, the frame's top at 72.
+// 1280 x 780 window: the team combo's top 29, 4 under the toolbar band's
+// line (the band runs 0 to 25: 3, the 18-point row, 3 and the 1-point
+// line), then the filter box and the rows' frame each 3 under the last,
+// egui's item spacing, the frame's top at 71.
 #[test]
 fn the_lists_controls_stand_3_apart_from_the_drafts_top() {
     let path = fixture(PesVersion::Pes21, "list_column_tops");
@@ -565,10 +566,10 @@ fn the_lists_controls_stand_3_apart_from_the_drafts_top() {
         top_of(Role::TextInput),
         f64::from(frame.min.y),
     ];
-    for (top, draft) in tops.iter().zip([30.0, 51.0, 72.0]) {
+    for (top, draft) in tops.iter().zip([29.0, 50.0, 71.0]) {
         assert!(
             (top - draft).abs() <= 0.5,
-            "the combo, the filter and the frame at the draft's 30, 51 and 72 ({tops:?})"
+            "the combo, the filter and the frame at the draft's 29, 50 and 71 ({tops:?})"
         );
     }
 }

@@ -17,6 +17,7 @@ mod changes_popup;
 mod clipboard;
 mod comparator;
 mod event_logo;
+mod file_menu;
 mod generate;
 mod info_strip;
 mod interchange;
@@ -24,7 +25,6 @@ mod live_aatf;
 mod live_marks;
 mod menus;
 mod multi_aatf;
-mod open_menu;
 mod patch;
 mod player_list;
 mod portraits;
@@ -45,7 +45,8 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, collapsing_header, modal, modal_buttons, step_number, toolbar_separator,
+    add_enabled, collapsing_header, menu_button, modal, modal_buttons, step_number, toolbar_framed,
+    toolbar_separator,
 };
 use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, Recorder, RunningPes};
 
@@ -125,18 +126,19 @@ pub(crate) struct SaveView {
     /// The Discard-on-close answer's ask to close again, drained by
     /// `Tool::view` into `ctx.request_close()` (the shell owns the send).
     pub(crate) request_close: bool,
-    /// The Open menu's `Choose file…` picker (`rfd`, stubbed in tests).
-    open_dialog: open_menu::OpenDialog,
+    /// The File menu's `Choose file…` picker (`rfd`, stubbed in tests).
+    open_dialog: file_menu::OpenDialog,
     /// Save as's picker (`rfd`, stubbed in tests).
     save_as_dialog: SaveAsDialog,
-    /// The Open menu's discovery (`discover_savefiles`, stubbed in tests).
-    discover: open_menu::Discover,
-    /// What discovery found when the Open menu opened, each save with its
+    /// The File menu's discovery (`discover_savefiles`, stubbed in tests).
+    discover: file_menu::Discover,
+    /// What discovery found when the File menu opened, each save with its
     /// version, in `PesVersion::ALL`'s order; `None` while the menu is
     /// closed, so the next opening looks again.
     discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
     /// The files opened or written by Save as in this run of the program,
-    /// the most recent first: the Open menu's middle group. Not a setting.
+    /// the most recent first: the File menu's opens' middle group. Not a
+    /// setting.
     recents: Vec<PathBuf>,
     /// The sidebar's PES version, refreshed from the common settings each
     /// `Tool::view` frame: `Choose file…` starts in its save folder. PES 21
@@ -443,9 +445,9 @@ impl SaveView {
             changes_list: None,
             edit_mode_question: None,
             request_close: false,
-            open_dialog: open_menu::default_open_dialog(),
+            open_dialog: file_menu::default_open_dialog(),
             save_as_dialog: default_save_as_dialog(),
-            discover: open_menu::default_discover(),
+            discover: file_menu::default_discover(),
             discovered: None,
             recents: Vec::new(),
             pes_version: PesVersion::Pes21,
@@ -549,7 +551,7 @@ impl SaveView {
                         selection::ListRow::Team(_) => None,
                     });
                 self.comparator.reset(session.version(), &self.recorder);
-                open_menu::push_recent(&mut self.recents, path);
+                file_menu::push_recent(&mut self.recents, path);
                 self.session = Some(session);
                 self.generation += 1;
                 self.version_warning = true;
@@ -624,8 +626,8 @@ pub(super) const NUMBER_BOX: f32 = 52.0;
 const TITLE_MARGIN: i8 = 6;
 
 /// The player list's margin over its team combo. The panes start one item
-/// spacing (3 points) under the toolbar, so the combo stands 4 under the
-/// toolbar's buttons, the draft's toolbar margin.
+/// spacing (3 points) under the toolbar band's line, so the combo stands 4
+/// under it, the draft's margin under the band.
 const LIST_TOP_MARGIN: i8 = 1;
 
 /// The room between the panes' bottom and the status bar (the draft's
@@ -711,7 +713,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             logo,
         });
     }
-    let toolbar_end = toolbar(ui, view, running);
+    let band_end = event_logo::rect(ui, view).map(|logo| logo.left() - event_logo::RIGHT);
+    toolbar(ui, view, running, band_end);
     if view.session.is_none() {
         ui.weak("No save is open.");
     } else {
@@ -756,7 +759,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             .show(ui, |ui| player_list::show(ui, view));
         let frame_right = list_panel.inner;
         // 6 points over the view, not egui's 8: a view's title then stands
-        // as far below the toolbar's buttons as its first row stands below
+        // as far below the toolbar band's line as its first row stands below
         // the title, in ink (`info_strip::view_title`). None at the right:
         // the shell's own margin past the pane is the view's edge.
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
@@ -811,9 +814,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     }
     // After the panes, so the logo paints over their frames' fill where
     // the right column's frame starts under it.
-    if view.session.is_some() {
-        event_logo::show(ui, view, toolbar_end);
-    }
+    event_logo::show(ui, view);
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
@@ -957,14 +958,22 @@ fn set_surrender_on_press(ctx: &egui::Context) {
     });
 }
 
-/// The toolbar (the draft's toolbar row), its groups apart by separators:
-/// the Open menu, Save and Save as; Undo and Redo; the menus; the ruleset
-/// dropdown, the Live AATF toggle and the unsaved-changes marker. A menu
-/// bar, so with one menu open the pointer entering another's button opens
-/// that one. The open save's path rides the idle window title
+/// The toolbar (the draft's toolbar row): the File, Edit, Player, Team and
+/// Savefile menus; a separator; the ruleset dropdown, the Live AATF toggle
+/// and the unsaved-changes marker. A menu bar, so with one menu open the
+/// pointer entering another's button opens that one, and its menus are
+/// unframed; the dropdown and the toggle keep their frames, since a flat
+/// combo reads as one more menu and a flat toggle off as a label. The
+/// open save's path rides the idle window title
 /// (`Tool::title_detail`), not this row, which never takes a second row.
-/// Returns the x where the row's last widget ends.
-fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -> f32 {
+/// The row stands on its band (`toolbar_band`), which ends at `band_end`,
+/// short of the event logo, or with `None` at the view's right edge.
+fn toolbar(
+    ui: &mut egui::Ui,
+    view: &mut SaveView,
+    running: &dyn Fn() -> Vec<RunningPes>,
+    band_end: Option<f32>,
+) {
     // Every dialog holds every shortcut dead while up (its own buttons
     // are the way out): egui's top modal layer covers whatever opened one,
     // and the two fields cover the prompt and the running-game question on
@@ -1000,13 +1009,13 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
-    // Ctrl+O and a version's Ctrl+digit open as the Open menu does. Not
-    // while a text field holds the keyboard: the menu's click ends the
+    // Ctrl+O and a version's Ctrl+digit open as the File menu's opens do.
+    // Not while a text field holds the keyboard: the menu's click ends the
     // field's edit first, and a key would not.
     let open_key = if typing {
         None
     } else {
-        ui.input_mut(open_menu::consume_shortcut)
+        ui.input_mut(file_menu::consume_shortcut)
     };
     // Ctrl+C and Ctrl+V copy and paste what the last click named (the
     // selected row, the shown preset, the shown formation). They arrive
@@ -1075,70 +1084,67 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             }
         })
     };
-    let end = studio_core::widgets::toolbar(ui, |ui| {
-        open_menu::show(ui, view);
-        if add_enabled(ui, view.session.is_some(), egui::Button::new("Save")).clicked() || save_key
-        {
-            save(view, running);
+    toolbar_band(ui, band_end, |ui| {
+        let write = file_menu::show(ui, view);
+        match write.or(save_key.then_some(file_menu::Write::Save)) {
+            Some(file_menu::Write::Save) => {
+                save(view, running);
+            }
+            Some(file_menu::Write::SaveAs) => save_as(view, running),
+            None => {}
         }
-        if add_enabled(ui, view.session.is_some(), egui::Button::new("Save as")).clicked() {
-            save_as(view, running);
-        }
-        toolbar_separator(ui);
-        let (can_undo, can_redo) = view
-            .session
-            .as_ref()
-            .map(|session| (session.can_undo(), session.can_redo()))
-            .unwrap_or((false, false));
-        if (add_enabled(ui, can_undo, egui::Button::new("Undo")).clicked() || undo_key)
+        let (undo, redo) = edit_menu(ui, view);
+        if (undo || undo_key)
             && let Some(session) = view.session.as_mut()
         {
             session.undo();
         }
-        if (add_enabled(ui, can_redo, egui::Button::new("Redo")).clicked() || redo_key)
+        if (redo || redo_key)
             && let Some(session) = view.session.as_mut()
         {
             session.redo();
         }
-        toolbar_separator(ui);
         menus::player_menu(ui, view);
         menus::team_menu(ui, view);
         menus::savefile_menu(ui, view);
         toolbar_separator(ui);
-        // The ruleset beside the check it drives, whether the check is on
-        // or not: the quick actions and the card counts use it too.
-        ruleset_picker::show(ui, view);
-        // The Live AATF toggle as a framed button, since the toggle is how
-        // a manager finds the check at all: the play sign (`▶`) then the
-        // name — a check mark beside it read as on while it was off — the
-        // selection fill while on; a selectable label read as a label
-        // beside the menus.
-        if ui
-            .add(egui::Button::new("\u{25b6} Live AATF").selected(view.live_aatf))
-            .on_hover_text("Check the open team after every edit (the setting is remembered)")
-            .clicked()
-        {
-            surrender_focus(ui);
-            view.live_aatf = !view.live_aatf;
-        }
-        // What the check asks for, so only while it runs.
-        if view.live_aatf
-            && studio_core::widgets::checkbox(ui, &mut view.live_suggestions, "Show suggestions")
+        toolbar_framed(ui, |ui| {
+            // The ruleset beside the check it drives, whether the check is
+            // on or not: the quick actions and the card counts use it too.
+            ruleset_picker::show(ui, view);
+            // The Live AATF toggle as a framed button, since the toggle is
+            // how a manager finds the check at all: the play sign (`▶`)
+            // then the name (a check mark beside it read as on while it
+            // was off), the selection fill while on; a selectable label
+            // read as a label beside the menus.
+            if ui
+                .add(egui::Button::new("\u{25b6} Live AATF").selected(view.live_aatf))
+                .on_hover_text("Check the open team after every edit (the setting is remembered)")
+                .clicked()
+            {
+                surrender_focus(ui);
+                view.live_aatf = !view.live_aatf;
+            }
+            // What the check asks for, so only while it runs. In the framed
+            // scope too: the bar's style strips the box's outline.
+            if view.live_aatf
+                && studio_core::widgets::checkbox(
+                    ui,
+                    &mut view.live_suggestions,
+                    "Show suggestions",
+                )
                 .on_hover_text(
                     "Also list each player's unused allowances (cards, free tricks, weak foot...)",
                 )
                 .clicked()
-        {
-            surrender_focus(ui);
-        }
+            {
+                surrender_focus(ui);
+            }
+        });
         // The save's path is in the window title (`title_detail`): beside the
         // unsaved mark it could wrap the toolbar onto a second row.
         changes_popup::show(ui, view);
-        // The bar spans the view's width; its last widget ends one item
-        // spacing before the cursor.
-        ui.cursor().min.x - ui.spacing().item_spacing.x
-    })
-    .inner;
+    });
     if clear_flags_key
         && !view.aesthetics_locked()
         && let Some(team_id) = selected_team_id(view)
@@ -1161,7 +1167,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         view.stat_num = Some(menus::StatNum::bump(session, player_id, view.bump));
     }
     if let Some(shortcut) = open_key {
-        open_menu::open_shortcut(view, shortcut);
+        file_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
         && player_list::page_selection(view, forward)
@@ -1184,10 +1190,73 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     if paste_key {
         clipboard::paste(view);
     }
-    end
 }
 
-/// The window's Save (the toolbar's, Ctrl+S's and the prompt's): `save_to`
+/// The room around the toolbar's row inside its band (the draft's `.top`
+/// padding): 3 points over and under the row, 8 before it and after it.
+const BAND_MARGIN: egui::Margin = egui::Margin {
+    left: 8,
+    right: 8,
+    top: 3,
+    bottom: 3,
+};
+
+/// The toolbar's band (the draft's `.top`) holding the toolbar, `row`
+/// drawn in `studio_core`'s menu bar: the panel's fill with a 1-point line
+/// under it in the panel's stroke, from the view's left and top edges,
+/// over the shell's margin, to `end` (the view's right edge with `None`),
+/// the row `BAND_MARGIN` inside it. The band is a child placed by rect, so
+/// its width moves nothing under it; `ui` goes on under its line.
+fn toolbar_band(ui: &mut egui::Ui, end: Option<f32>, row: impl FnOnce(&mut egui::Ui)) {
+    let inside = ui.max_rect();
+    let view = inside + egui::Frame::central_panel(ui.style()).inner_margin;
+    let right = end.unwrap_or(view.right());
+    let band = egui::Rect::from_min_max(view.min, egui::pos2(right, view.bottom()));
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(band));
+    let filled = egui::Frame::side_top_panel(ui.style())
+        .inner_margin(BAND_MARGIN)
+        .show(&mut child, |ui| studio_core::widgets::toolbar(ui, row))
+        .response
+        .rect;
+    // Under the fill, as a top panel draws its separator line.
+    let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+    let line_y = filled.bottom() + 0.5 * stroke.width;
+    ui.painter().hline(filled.x_range(), line_y, stroke);
+    let under = egui::Rect::from_min_max(
+        inside.min,
+        egui::pos2(inside.left(), filled.bottom() + stroke.width),
+    );
+    ui.advance_cursor_after_rect(under);
+}
+
+/// The Edit menu: Undo and Redo with their shortcuts' text, each disabled
+/// with nothing to undo or redo (both with no save open); the menu button
+/// itself is always enabled. Returns whether Undo, then Redo, was clicked
+/// this frame: the toolbar steps the history, for a click as for a key.
+fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> (bool, bool) {
+    let (can_undo, can_redo) = view
+        .session
+        .as_ref()
+        .map(|session| (session.can_undo(), session.can_redo()))
+        .unwrap_or((false, false));
+    let entry = |ui: &mut egui::Ui, enabled: bool, label: &str, shortcut: &str| {
+        let button = egui::Button::new(label).shortcut_text(shortcut);
+        let clicked = add_enabled(ui, enabled, button).clicked();
+        if clicked {
+            ui.close();
+        }
+        clicked
+    };
+    menu_button(ui, "Edit", |ui| {
+        let undo = entry(ui, can_undo, "Undo", "Ctrl+Z");
+        let redo = entry(ui, can_redo, "Redo", "Ctrl+Y");
+        (undo, redo)
+    })
+    .inner
+    .unwrap_or((false, false))
+}
+
+/// The window's Save (the File menu's, Ctrl+S's and the prompt's): `save_to`
 /// the open file. Answers whether the file was written — `false` while the
 /// question waits or a write failed, so a prompt stays up.
 pub(super) fn save(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -> bool {
@@ -1197,7 +1266,7 @@ pub(super) fn save(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -
     save_to(view, running, path)
 }
 
-/// The toolbar's Save as: the picker, on the open file's folder and name,
+/// The File menu's Save as: the picker, on the open file's folder and name,
 /// then `save_to` the picked path. A cancelled picker does nothing.
 fn save_as(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
     let Some(current) = view.save_path().map(Path::to_path_buf) else {
@@ -1226,9 +1295,9 @@ fn save_to(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>, target: P
 }
 
 /// `session.save_to(target)` and the refusal its error takes (the draft's
-/// `writeSave`); a written file goes to the top of the Open menu's recent
+/// `writeSave`); a written file goes to the top of the File menu's recent
 /// files. `edit_mode_closed` lets the write go ahead while the save's own
-/// PES runs: the toolbar's Save passes `false` (the own-game check ran
+/// PES runs: the window's Save passes `false` (the own-game check ran
 /// first), the running-game dialog's Save `true`, the dialog having told
 /// the member how to keep the write.
 pub(super) fn write_now(
@@ -1243,7 +1312,7 @@ pub(super) fn write_now(
     match session.save_to(target, &running(), edit_mode_closed) {
         Ok(()) => {
             view.refusal = None;
-            open_menu::push_recent(&mut view.recents, target);
+            file_menu::push_recent(&mut view.recents, target);
             true
         }
         Err(error) => {
