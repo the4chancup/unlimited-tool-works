@@ -16617,3 +16617,24 @@ and Windows, as documented and not measured here, the path the program started f
 two would need two rules).
 Plan: `plans/core/distribution.md` "Self-update: in-place binary swap" step 4;
 `plans/core/gui.md` ST-UPD-03.
+
+## 2026-11-12 — core — A run's log file takes a panic's text; a command line that does not parse writes none
+Decision: two rules the plan was silent on, from the first review round of `--log-file`
+(`.tmp/duck_rulings.md` "S-logall r1"). (1) A CLI run with a log file writes a panic's
+message, its location and its stack frames to the file, after the terminal has printed the
+panic as it always did; no `exit` line follows. (2) A command line clap refuses (an unknown
+flag, a missing value) starts no run: nothing is written to the file, which is not created
+either. The code already did (2); the plan and ST-CLI-04 now say so.
+Why: (1) the bundle's readme tells a member to post the launcher's log when it fails, and a
+crash left the log ending mid-run with nothing of the crash in it, the one failure where the
+log is all we get. The frames are written as the window's log writes them, unnamed;
+`scripts/release/symbolize_log.py` finds frames by their line's shape, so it should name
+these too (read from the script, not run on such a file). (2) the file is a run's record, and a line that does not parse is not
+a run; logging it would mean opening the file before the arguments are known to be valid,
+`--log-file`'s own among them.
+Not chosen: an `exit 101` line written by the panic hook (the hook cannot know the code the
+process ends with: a panic on a thread that is joined ends the run with its own code); a
+hidden flag that makes a CLI run panic, to test the hook through the exe (the hook is tested
+in process, its one-line install in `run_cli_mode` is read, not run).
+Plan: `plans/core/architecture.md` "Launch modes" ("A run's log file"); `plans/core/gui.md`
+ST-CLI-04.

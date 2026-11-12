@@ -235,10 +235,12 @@ fn upgrade_counts_a_refused_export_and_leaves_the_existing_folder() {
     );
 }
 
-/// With nothing in `old_exports/` the launcher says there is no export and exits 1.
+/// With nothing in `old_exports/` the launcher says there is no export and exits 1, and the
+/// last run's `upgrade_log.txt` stays as it was, since no run replaces it.
 #[test]
 fn upgrade_over_an_empty_old_exports_says_there_is_no_export() {
     let sandbox = Sandbox::new("upgrade_empty");
+    sandbox.write("upgrade_log.txt", b"the run before\n");
     let save = sandbox.save("save/EDIT00000000");
 
     let output = sandbox.run_bat("quick_upgrade.bat", &[save.as_path()]);
@@ -252,6 +254,7 @@ fn upgrade_over_an_empty_old_exports_says_there_is_no_export() {
         "{stdout}"
     );
     assert_eq!(output.status.code(), Some(1), "{stdout}");
+    assert_eq!(upgrade_log(&sandbox), "the run before\n", "{stdout}");
 }
 
 /// `quick_upgrade.bat` passes `upgrade_log.txt` to its run: the log holds every finding

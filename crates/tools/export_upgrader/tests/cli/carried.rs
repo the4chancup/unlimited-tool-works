@@ -99,12 +99,18 @@ fn only_a_portrait_the_old_check_passed_migrates_the_refused_are_leftovers() {
     assert!(!stdout.contains("unmigrated_content"), "{stdout}");
 }
 
+/// An export at `relative`, named for /co/ (714), holding two portraits of its player 5:
+/// the second is unmigrated content, so its upgrade ends with exit 1.
+pub(crate) fn two_portraits_of_one_slot(sandbox: &Sandbox, relative: &str) {
+    sandbox.write(&format!("{relative}/Portraits/player_71405.dds"), b"714");
+    sandbox.write(&format!("{relative}/Portraits/player_XXX05.dds"), b"xxx");
+}
+
 // EU-MDL-20
 #[test]
 fn two_portraits_of_one_slot_keep_the_first_and_report_the_second() {
     let sandbox = Sandbox::new("mdl_portraits_one_slot");
-    sandbox.write("co Kits/Portraits/player_71405.dds", b"714");
-    sandbox.write("co Kits/Portraits/player_XXX05.dds", b"xxx");
+    two_portraits_of_one_slot(&sandbox, "co Kits");
     sandbox.save("EDIT");
 
     let run = upgrade(&sandbox, "co Kits", "EDIT");

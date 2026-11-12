@@ -35,7 +35,7 @@ use studio_core::{
     run_gui, run_help, settings_file_writable, user_config_dir,
 };
 
-use crate::console::{RunLog, spawn_notice_printer, spawn_printer};
+use crate::console::{RunLog, log_panics, spawn_notice_printer, spawn_printer};
 use crate::crash_dump::{
     HiddenLaunch, hidden_launch, overflow_the_stack, run_monitor, watch_crashes,
 };
@@ -237,6 +237,9 @@ fn run_cli_mode(
             }
         },
     };
+    if let Some(log) = &log {
+        log_panics(log.clone());
+    }
     let result = log_line(log.as_deref(), &command_line(std::env::args_os().skip(1)))
         .and_then(|()| run_command(tools, tool, matches, log.clone()))
         .and_then(|code| log_line(log.as_deref(), &format!("exit {code}")).map(|()| code));

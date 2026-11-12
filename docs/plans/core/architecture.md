@@ -122,10 +122,15 @@ The file takes:
 
 - every finding line, as stdout prints it without the option;
 - what the run writes to stderr (a notice, the run's summary whether or not a terminal draws
-  it, the `error:` line).
+  it, the `error:` line);
+- a panic's message and its stack frames, written as the window's log writes them: the file
+  is what a member posts when a launcher fails, and a crash is the failure that most needs
+  it. No `exit` line follows them.
 
 The progress line, redrawn in place, is not in it, nor are the diagnostics `-v` raises, which
-stay on stderr.
+stay on stderr. A command line that does not parse (an unknown flag, a missing value) starts
+no run: its `error:` line is clap's, on stderr alone, and the file is neither created nor
+written.
 
 The option is the exe's, not the launchers', because a bat can neither keep nor filter what
 the exe prints: started from a bat, this exe's output cannot be redirected or piped.

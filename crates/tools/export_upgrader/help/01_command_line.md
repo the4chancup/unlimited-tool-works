@@ -112,8 +112,8 @@ stops, the reason is the last line of its part of the report, starting with
 (`Upgraded: 48. Not upgraded: 2.`), and an export counts as upgraded when its
 migration is clean. A run with `--all` prints these lines even when the folder
 holds one export. A bad argument, a savefile that does not read as a save, or
-an `--all` folder that is missing or holds no export refuses the whole run
-before any export is read.
+an `--all` folder that is missing, is not a folder or holds no export refuses
+the whole run before any export is read.
 
 **Exit codes**
 
