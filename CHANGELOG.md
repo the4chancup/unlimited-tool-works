@@ -60,7 +60,8 @@ What changed for members, release by release, newest first.
   and New value, under one head row, as the unsaved changes list does; a value too long for
   its column is cut, and hovering the row shows it whole.
 - **Save editor**: a player dragged in a team's player list moves with the pointer, as a
-  dragged lineup row does.
+  dragged lineup row does, and the list shows a line where he will land instead of an
+  outline round a row.
 - **Save editor**: a team's Stadium ID can be seen and edited on every version and its
   Manager ID from PES 2017 on, not only from PES 2019 on, and a Team TOML carries them
   wherever the save stores them.

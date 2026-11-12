@@ -611,10 +611,15 @@ fn team_row(
 /// filter typed) also makes it a drag source and a drop target: a drop on
 /// a row of the dragged player's own team moves him to it
 /// (`Session::move_player`, SE-GUI-08), a drop on another team's row does
-/// nothing. While a drag holds over the row, it is outlined in the
-/// selection colour (the draft's `.dragover`) where the drop would move a
-/// record (`Session::moves_player`), so a member sees which slot the drop
-/// takes; a row the drop writes nothing on gets none. While held dragged,
+/// nothing. While a drag holds over the row and the drop would move a
+/// record (`Session::moves_player`), the place it moves him to is marked
+/// by a line 2 points thick in the selection colour, a serif at each end
+/// (the draft's `.dropabove` and `.dropbelow`): on the row's lower edge
+/// when he comes from above (the rows down to it move up and he lands
+/// under them), on its upper edge when he comes from below. A line, not
+/// an outline round the row, because the drop inserts him at that place
+/// and shifts the rows between, where an outline would promise a swap; a
+/// row the drop writes nothing on gets none. While held dragged,
 /// the row's handle, place, position and name float above the list with
 /// the point pressed under the pointer, its own place left blank. The row
 /// shows the grab hand wherever the pointer is on it (egui leaves a row
@@ -776,18 +781,26 @@ fn player_row(
         // for the pointing hand itself.
         let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         response.dnd_set_drag_payload(*row);
-        // The outline sits outside the band, as a CSS outline sits outside
-        // the box; only a row whose release would move a record gets one.
+        // The line sits where the drop lands: centred on the row's lower
+        // edge when he comes from above, on its upper edge when he comes
+        // from below, its serifs' outer sides on the row's edges so it
+        // reads as a place between two rows, not the row's border. Only a
+        // row whose release would move a record gets one.
         if let Some(dropped) = response.dnd_hover_payload::<Row>()
             && dropped.team_id == row.team_id
             && session.moves_player(row.team_id, dropped.slot, row.slot)
         {
-            ui.painter().rect_stroke(
-                rect,
-                egui::CornerRadius::ZERO,
-                egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
-                egui::StrokeKind::Outside,
-            );
+            let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
+            let y = if dropped.slot < row.slot {
+                rect.max.y
+            } else {
+                rect.min.y
+            };
+            ui.painter().hline(rect.min.x..=rect.max.x, y, stroke);
+            ui.painter()
+                .vline(rect.min.x + 1.0, y - 3.5..=y + 3.5, stroke);
+            ui.painter()
+                .vline(rect.max.x - 1.0, y - 3.5..=y + 3.5, stroke);
         }
         if let Some(dropped) = response.dnd_release_payload::<Row>()
             && dropped.team_id == row.team_id

@@ -271,53 +271,139 @@ fn under_a_filter_a_drag_moves_nothing() {
     assert!(!session.can_undo(), "no undo entry");
 }
 
-// The draft's `.dragover`: the row a drop on it would move the dragged
-// player to is outlined in the selection colour while the drag is held
-// over it. His own row (the drop moves nothing) and a row of another
-// team under ALL get none; released off the list, no row is.
-// SE-GUI-64
+// The place a drop on the held row moves the dragged player to is marked
+// by a line between two rows, 2 thick in the selection colour with a
+// serif at each end (the draft's `.dropabove` and `.dropbelow`): on the
+// row's lower edge when he comes from above, on its upper edge when he
+// comes from below. His own row (the drop moves nothing) and a row of
+// another team under ALL get none; released off the list, none is left.
+// SE-GUI-75
 #[test]
-fn a_held_drag_outlines_only_the_row_it_would_land_on() {
-    /// The bands `shapes` outline in `selection` inside `frame` (the
-    /// list's): the unfilled rects stroked in it (a selected or hovered
-    /// row's frame is filled, so it cannot pass for the outline).
-    fn outlined(
+fn a_held_drag_marks_where_the_drop_would_land() {
+    /// The drop marks `shapes` draw in `selection` inside `frame` (the
+    /// list's): the line's and serifs' segments with their stroke widths,
+    /// and any unfilled rect stroked in the colour (a row's outline; a
+    /// selected or hovered row's frame is filled, so it cannot pass for
+    /// one).
+    fn drop_marks(
         shapes: &[egui::epaint::ClippedShape],
         selection: egui::Color32,
         frame: egui::Rect,
-    ) -> Vec<egui::Rect> {
-        shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
+    ) -> (Vec<([egui::Pos2; 2], f32)>, Vec<egui::Rect>) {
+        let mut segments = Vec::new();
+        let mut outlines = Vec::new();
+        for clipped in shapes {
+            match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if stroke.color == selection
+                        && frame.contains_rect(egui::Rect::from_points(points)) =>
+                {
+                    segments.push((*points, stroke.width));
+                }
                 egui::Shape::Rect(shape)
                     if shape.fill == egui::Color32::TRANSPARENT
                         && shape.stroke.color == selection
                         && frame.contains_rect(shape.rect) =>
                 {
-                    Some(shape.rect)
+                    outlines.push(shape.rect);
                 }
-                _ => None,
-            })
-            .collect()
+                _ => {}
+            }
+        }
+        (segments, outlines)
     }
 
-    let path = fixture(PesVersion::Pes21, "drag_outline");
+    /// Asserts `shapes`' drop marks are the one line across `target`'s
+    /// edge at `edge_y`, 2 thick, a serif 2 wide and 7 high centred on it
+    /// at each of the row's edges, and no outlined row.
+    fn assert_line(
+        shapes: &[egui::epaint::ClippedShape],
+        selection: egui::Color32,
+        frame: egui::Rect,
+        target: egui::Rect,
+        edge_y: f32,
+        when: &str,
+    ) {
+        let (segments, outlines) = drop_marks(shapes, selection, frame);
+        let horizontals: Vec<([egui::Pos2; 2], f32)> = segments
+            .iter()
+            .filter(|(points, _)| points[0].y == points[1].y)
+            .copied()
+            .collect();
+        let [(line, width)] = horizontals[..] else {
+            panic!("one line across the row's edge {when}, got {segments:?}")
+        };
+        assert_eq!(width, 2.0, "the line is 2 thick {when}");
+        let y = (line[0].y + line[1].y) / 2.0;
+        assert!(
+            (y - edge_y).abs() < 0.01,
+            "the line centred on the edge {when} ({y} vs {edge_y})"
+        );
+        let (x0, x1) = (line[0].x.min(line[1].x), line[0].x.max(line[1].x));
+        assert!(
+            (x0 - target.min.x).abs() < 0.01 && (x1 - target.max.x).abs() < 0.01,
+            "the line spans the row {when} ({x0}..{x1} vs {target:?})"
+        );
+        let mut serif_xs: Vec<f32> = segments
+            .iter()
+            .filter(|(points, _)| points[0].x == points[1].x && points[0].y != points[1].y)
+            .map(|(points, width)| {
+                let height = (points[0].y - points[1].y).abs();
+                let mid = (points[0].y + points[1].y) / 2.0;
+                assert!(
+                    *width == 2.0 && (height - 7.0).abs() < 0.01 && (mid - y).abs() < 0.01,
+                    "a serif 2 wide and 7 high centred on the line {when}, got {points:?} {width} thick"
+                );
+                points[0].x
+            })
+            .collect();
+        serif_xs.sort_by(|a, b| a.partial_cmp(b).expect("ordered"));
+        let [left, right] = serif_xs[..] else {
+            panic!("a serif at each end {when}, got {segments:?}")
+        };
+        assert!(
+            (left - (target.min.x + 1.0)).abs() < 0.01
+                && (right - (target.max.x - 1.0)).abs() < 0.01,
+            "the serifs' outer sides on the row's edges {when} ({left}, {right} vs {target:?})"
+        );
+        assert!(
+            outlines.is_empty(),
+            "no row outlined {when}, got {outlines:?}"
+        );
+    }
+
+    /// Asserts `shapes` draw no drop mark `when`.
+    fn assert_no_marks(
+        shapes: &[egui::epaint::ClippedShape],
+        selection: egui::Color32,
+        frame: egui::Rect,
+        when: &str,
+    ) {
+        let (segments, outlines) = drop_marks(shapes, selection, frame);
+        assert!(
+            segments.is_empty() && outlines.is_empty(),
+            "no line and no outline {when}, got {segments:?} and {outlines:?}"
+        );
+    }
+
+    let path = fixture(PesVersion::Pes21, "drag_line");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     file.player_mut(70101).unwrap().name = "FIRST".to_owned();
-    file.player_mut(70103).unwrap().name = "THIRD".to_owned();
-    // Team 702's second rostered player renamed too: a row's label
+    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
+    file.player_mut(70106).unwrap().name = "SIXTH".to_owned();
+    // Team 702's third rostered player renamed too: a row's label
     // carries no team name, so the next team's row cannot pass for one of
-    // 701's. The second, not the first, so the drop's slot is not the
-    // dragged row's slot 0 — a coincidence that would make the drop a
-    // no-op whatever the team check.
+    // 701's. The third, so the drop's slot is not the dragged row's slot
+    // 1 — a coincidence that would make the drop a no-op whatever the
+    // team check.
     let other_id = file
         .team(702)
         .unwrap()
         .roster
         .iter()
         .filter(|slot| slot.player_id != 0)
-        .nth(1)
-        .expect("team 702 rosters two players")
+        .nth(2)
+        .expect("team 702 rosters three players")
         .player_id;
     file.player_mut(other_id).unwrap().name = "OTHER".to_owned();
     file.save(&path).unwrap();
@@ -328,7 +414,7 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
         .iter()
         .position(|slot| slot.player_id == other_id)
         .expect("the renamed slot");
-    assert_ne!(other_slot, 0, "premise: not the dragged row's slot 0");
+    assert_ne!(other_slot, 1, "premise: not the dragged row's slot 1");
     let other_label = {
         let player = file.player(other_id).unwrap();
         format!(
@@ -351,62 +437,84 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
         .selection
         .stroke
         .color;
+    let bounds = |node: &accesskit::Node| {
+        let bounds = node.bounds().expect("a row has bounds");
+        egui::Rect::from_min_max(
+            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+        )
+    };
 
-    // Player 01's drag held over player 03's row: that row's band alone
-    // is outlined.
+    // Player 02's drag held over player 06's row: a line across its lower
+    // edge (he comes from above: the rows down to it move up and he lands
+    // under them), a serif at each end, and no row outlined.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let target = row(&nodes, "03 CB THIRD")
-        .bounds()
-        .expect("player 03's row");
-    let row_height = (target.y1 - target.y0) as f32;
-    let from = centre(row(&nodes, "01 CB FIRST"));
-    let over = centre(row(&nodes, "03 CB THIRD"));
+    let sixth = bounds(row(&nodes, "06 CB SIXTH"));
+    let first = bounds(row(&nodes, "01 CB FIRST"));
+    let from = centre(row(&nodes, "02 CB SECOND"));
     window.frame(pointer_at(from, true), |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(sixth.center())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    let outlines = outlined(&shapes, selection, list_frame(&window, &shapes));
-    let [outline] = outlines.as_slice() else {
-        panic!("player 03's band alone is outlined, got {outlines:?}")
-    };
-    assert!(
-        outline.contains(over),
-        "the outline is the band under the pointer ({outline:?}, centre {over:?})"
+    assert_line(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        sixth,
+        sixth.max.y,
+        "over row 06",
     );
-    assert!(
-        outline.height() <= row_height + 1.0,
-        "the outline is one row, not a run of rows ({outline:?} vs {row_height})"
+
+    // Held over player 01's row instead: the line across its upper edge
+    // (he comes from below).
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(first.center())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_line(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        first,
+        first.min.y,
+        "over row 01",
     );
 
     // Held over his own row: the drop moves the record onto itself, so
-    // no row is outlined.
+    // no line and no outline.
     let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(from)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert!(
-        outlined(&shapes, selection, list_frame(&window, &shapes)).is_empty(),
-        "a drag over its own row outlines nothing"
+    assert_no_marks(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        "over the dragged row itself",
     );
 
-    // Released off the list, in the detail pane: no row is outlined and
-    // nothing moves.
+    // Held off the list, in the detail pane: no mark.
     let off = egui::pos2(600.0, 400.0);
     let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(off)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert!(
-        outlined(&shapes, selection, list_frame(&window, &shapes)).is_empty(),
-        "held off the list outlines no row"
+    assert_no_marks(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        "held off the list",
     );
+
+    // Released there: no mark left and nothing moved.
     window.frame(pointer_at(off, false), |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(
-        outlined(&shapes, selection, list_frame(&window, &shapes)).is_empty(),
-        "the drag ended: no row is outlined"
+    assert_no_marks(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        "after the release off the list",
     );
     let session = view.session.as_ref().unwrap();
     assert!(
@@ -416,10 +524,10 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
     assert!(!session.can_undo(), "no undo entry");
 
     // Under ALL, held over a row of the next team: a drop there moves
-    // nothing, so the row gets no outline.
+    // nothing, so the row gets no line.
     view.team = TeamChoice::All;
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let from = centre(row(&nodes, "01 CB FIRST"));
+    let from = centre(row(&nodes, "02 CB SECOND"));
     let other = centre(row(&nodes, &other_label));
     window.frame(pointer_at(from, true), |ui| {
         show(ui, &mut view, &|| Vec::new())
@@ -427,9 +535,11 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
     let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(other)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert!(
-        outlined(&shapes, selection, list_frame(&window, &shapes)).is_empty(),
-        "a drag over another team's row outlines nothing"
+    assert_no_marks(
+        &shapes,
+        selection,
+        list_frame(&window, &shapes),
+        "over another team's row under ALL",
     );
     window.frame(pointer_at(other, false), |ui| {
         show(ui, &mut view, &|| Vec::new())
