@@ -29,8 +29,9 @@ row): an organizer recovering a cup opens its DLC once and finds every export in
 
 The organizer opens one CPK, or the folder that holds a DLC's CPKs. A DLC is several CPKs (the
 teams' one or its parts in multi-CPK mode, the referees', the balls', the stadiums' and the
-billboards'), and a file a manifest names is looked up in every CPK opened, so a folder is the
-usual choice.
+billboards'), so a folder is the usual choice. A file a manifest names is looked up in the
+manifest's own CPK first and then in the others opened: a later matchday's CPK holds a team's
+newer files at the same paths, and each manifest must get its own.
 
 ## Picking what to extract
 
@@ -53,16 +54,19 @@ A CPK the Compiler wrote since a kind's manifest shipped holds one per export of
 (the sections the table above names). The Decompiler recreates the export folder under its
 recorded name:
 
-- each packed file back at its recorded source path;
-- a file packed as it was, taken as it is;
+- a file packed as it was, taken as it is, back at its recorded source path;
 - a converted one in its compiled form (an FTEX unwrapped to its DDS, a converted model kept as
-  the game's format);
+  the game's format), in its source's folder under its source's stem and the compiled form's
+  extension;
+- of a source packed more than once, the entry the manifest marks;
+- nothing for an entry recorded as generated: the next compile makes it again;
 - the files packed beside the manifest (the export's settings, lists, colours and notes)
   copied out as packed;
-- its link files recreated from the manifest's list of them.
+- its empty files (links and markers) recreated from the manifest's list of them.
 
-The result recompiles to the same CPK. The report says, per file, whether it is the source
-itself or its compiled form.
+The result recompiles to the same CPK, within the limits the manifest's section states (the
+same Studio version; a logo's smaller sizes derived again). The report says, per file, whether
+it is the source itself or its compiled form.
 
 ## Without one: the heuristic
 
@@ -79,7 +83,8 @@ invented.
   naming a folder per slot found.
 - **The balls**: `Ball.bin` gives each ball's slot, menu order and name, and the slot gives
   its model, textures and thumbnail, so the balls export comes back whole, its folders named by
-  the balls' names.
+  the balls' names. A ball whose name cannot be a folder's (a `:` or a `?` in it) gets a
+  cleaned folder name and keeps its own in `name.txt`.
 - **Stadiums and billboards**: the stadium bins give each stadium's ID and name, and the ID
   gives its files. What a stadium export's folders are is settled with the kind's own plan
   (`stadium_compiler.md`, before Phase 9), and this path with it.

@@ -61,8 +61,9 @@ list gave it) and, as files, the export's files that the CPK holds under no path
 A stadium's own `Billboards/` is packed into the billboards' CPK, while its manifest stays with
 the stadium: the Decompiler looks a manifest's paths up in every CPK it has open.
 
-Which files those are is settled with the export's format, when Phase 9 opens. The
-Decompiler (`decompiler.md`) rebuilds the exports from them.
+Which files those are is settled with the export's format, when Phase 9 opens, and so is
+where a decompiled stadium export carries its ID for the next compile, the list being no part
+of the export. The Decompiler (`decompiler.md`) rebuilds the exports from them.
 
 ## New formats to port
 

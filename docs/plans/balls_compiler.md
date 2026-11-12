@@ -218,9 +218,11 @@ reasons): a folder `4cc/exports/balls/<export folder name>/` holding
 
 - `manifest.toml`: the kind, the export's folder name, the Studio and PES versions, and every
   file packed, as its CPK path, its source path relative to the export folder
-  (`Balls/4CC Clover/ball.fmdl`) and the conversion it took;
-- the export's files that the CPK holds under no path of their own, as files: `balls.txt`,
-  and each ball's `name.txt` and `materials.toml`.
+  (`Balls/4CC Clover/ball.fmdl`) and the conversion it took (the bins and the FPK's parts are
+  generated, as that section has it);
+- the export's files that the CPK holds under no path of their own, as files, by that
+  section's general rule: `balls.txt`, and each ball's `name.txt`, `materials.toml` and
+  `*.materials.toml` files.
 
 `Ball.bin` already holds each ball's name and order, but not its folder's name, nor whether
 the name came from a `name.txt` or from the folder.

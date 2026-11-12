@@ -41,7 +41,8 @@ stadium and billboards exports from a DLC), and each kind's compile packs a reco
 (`plans/team_compiler/pipeline.md`, `plans/balls_compiler.md` and
 `plans/stadium_compiler.md`, "Recovery manifest"). The one Compiler those kinds are compiled
 by was already decided (DECISIONS 2026-11-09, `plans/core/README.md` "One Compiler"; its
-respelling of the plans is the issue of 2026-11-09 below). The plan's review is owed (tier 3).
+respelling of the plans is the issue of 2026-11-09 below). Reviewed in one SWE-2 round (tier
+3): twelve concerns accepted and in the plan.
 
 **Working mode.** `RUNBOOK.md` "How the work runs": the lead plans, briefs, reviews and
 writes what is correctness-critical; sidekicks implement, two or three at once; a review's

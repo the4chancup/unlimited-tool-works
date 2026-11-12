@@ -204,7 +204,8 @@ gone (a player folder's name survives in the save only sometimes), and so are it
 So the writer packs a folder per compiled export into the CPK that holds the export's files,
 at a path no game version reads: every version ignores files it does not look up, as the 7 KB
 placeholder CPKs holding only `placeholder.txt` show. The Decompiler (`plans/decompiler.md`)
-reads it back.
+reads it back. Only a CPK carries one: the test tree and the sideload tree are a member's own
+install, not a DLC anyone recovers an export from.
 
 - **Where**: `4cc/exports/<team id>/<export folder name>/` for a team's export, and
   `4cc/exports/refs/<export folder name>/` for the referee export, which has no team ID. The
@@ -212,19 +213,33 @@ reads it back.
   `billboards`), each planned with its kind (`plans/balls_compiler.md` and
   `plans/stadium_compiler.md`, "Recovery manifest"). A team ID is a number, so it never
   collides with a marker word.
-- **`manifest.toml`**: the export's kind and folder name, the Studio version and the PES
-  version it was compiled for; every file the export packed, as its CPK path, the source path
-  relative to the export folder, and the conversion it took (passthrough, rewrap, a texture
-  encoded with a named codec, a model converted, a portrait converted). It also lists the
-  export's link files by path: a link file is a name without content, so the list is all of
-  it.
+- **`manifest.toml`**: the export's kind and folder name (an archive's name without its
+  extension), the Studio version and the PES version it was compiled for; every file the
+  export packed, as its CPK path, the source path relative to the export folder, and the
+  conversion it took (passthrough, rewrap, a texture encoded with a named codec, a model
+  converted, a portrait converted).
+  - **A file the compile made with no source in the export** (the generated `face.xml`, an
+    injected skeleton template, a placeholder kit's textures, the bins) is recorded as
+    generated, with no source path, and is never written into a decompiled export: the next
+    compile makes it again. Written back under a source's name, a generated `face.xml` would
+    be read as the member's own and name files the export does not hold.
+  - **A path an override won** is not the export's file and is not listed.
+  - **A source packed more than once** (a kit texture in `Kits/all/` that several kits
+    inherit, a logo packed at three sizes) has one of its entries marked as the one the
+    Decompiler restores: the one packed as it was where there is one, else the largest.
+  - **The export's empty files** are listed by path, since a name without content has
+    nothing to pack: its link files, and its markers (`fpc_on`, `fpc_off`, `icon_<N>`,
+    `pre-fox`, `fox`, `write_names`).
 - **The export's files that the CPK holds under no path of their own, as files**: its
   settings (`settings.toml`, each kit's `config.toml`, each model folder's `materials.toml`),
   its lists (`players.txt`, a refs export's `ref_lists.txt`, `legacy_ids.toml`) and its
   `colors.txt`, `notes.txt` and `README.txt` files, at their paths relative to the export
-  folder, beside the manifest. The rule is the general one, not the list: every file the
-  export model knows travels here unless the manifest already maps it to a CPK path, or the
-  decompiled export would compile to something else, or lose what was written for people.
+  folder, beside the manifest. The rule is the general one, not the list: every file with
+  content that the export model knows travels here unless the manifest already maps it to a
+  CPK path, or the decompiled export would compile to something else, or lose what was
+  written for people. That includes `ref_lists.txt`, which the compile neither reads nor
+  packs into a path the game reads (`spec/aesthetics_export/player_folders.md`, whose
+  sentence gains this exception when the manifest is built).
 
   They are packed as files, not embedded in the manifest as strings, because their bytes then
   go in and come out as they are (comments, blank lines, line endings), where an embedded copy
@@ -233,8 +248,17 @@ reads it back.
   The `settings.toml` matters beyond the folder names: the savefile settings reach the game
   only through the aesthetics patch, so without it the save is the only place they survive.
 - **The replica it allows is the compiled one, not the sources**: a decompiled export
-  recompiles to the same CPK. A file packed as it was comes back exact; a converted one comes
-  back in its compiled form under its original name, which the next compile passes through.
+  recompiles, by the same Studio version, to the same CPK. A file packed as it was comes back
+  exact, under its source's name even when it was packed under another (a pre-Fox model's
+  affixed name). A converted one comes back in its compiled form, in its source's folder
+  under its source's stem and the compiled form's extension (`face_high.glb` as
+  `face_high.fmdl`, `skin.png` as `skin.dds`), which the next compile passes through.
+
+  One kind of file comes back close, not equal: what the compile derives from a source it
+  does not pack. A logo's 512² image is restored as the logo, so its 256² and 128² are
+  derived again from the 512² and not from the member's larger original, and can differ by
+  that resampling.
+
   We do not embed sources (an uncompressed texture before encoding, a glTF before conversion):
   they would grow every member's DLC download for a file only an organizer recovering a team
   ever needs. Leftovers the upgrader dropped are not recorded either: they never reached a
