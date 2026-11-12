@@ -152,10 +152,13 @@ crate-map:
 census-index *args:
     {{python}} scripts/census/index.py {{args}}
 
-# Guardrail 4 (fmdl/pes_model dependency denylist) and the license allowlist (deny.toml)
+# Guardrail 4 (fmdl/pes_model dependency denylist), the license allowlist (deny.toml) and the
+# crates allowed to compile C (scripts/gates/c_crates.py)
 deps-check:
     {{python}} scripts/gates/deps_check.py
     cargo deny check licenses
+    {{script_test}} scripts/gates/c_crates_test.py
+    {{python}} scripts/gates/c_crates.py
 
 # The portable release bundle of the platform it runs on, target/dist/unlimited-tool-works-<version>-
 # windows.7z or -linux.tar.gz, its .sha256 and the kept symbols' archive beside it

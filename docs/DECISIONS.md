@@ -16677,3 +16677,37 @@ converge: the tools hold what they read at start, and a value changing under an 
 is worse than one a restart brings. A lock file or one window owning the settings: a crash
 leaves the lock, and the second window would run without saving.
 Plan: `plans/core/gui.md` "Settings menu" (the paragraph on saving), ST-SET-05.
+
+## 2026-11-12 — core — `ring` stays as the first listed exception to the pure-Rust rule
+
+Decision: the update check's TLS keeps `rustls` on `ring`. "The shipped build is pure Rust
+by default" allows exceptions on these terms: the maintainer's ruling per crate, the reason a
+pure-Rust choice falls short, and a line in `scripts/gates/c_crates.py`, which `just
+deps-check` runs and which refuses a crate that depends on `cc` or `cmake` for a release
+target without being listed, and a listed crate nothing needs any more. Two crates are
+listed: `ring`, and `wayland-backend`, which declares `cc` and compiles nothing as built
+here. This entry is the lead's ruling for `ring`, applied because the evidence left one
+choice; the maintainer can reverse it.
+Why: each candidate was measured on a bench worktree (`.tmp/0_0_2/tls/out/report.md`: builds
+on both targets, what C or assembly remains, licences, the updater's tests, a live handshake
+with the releases list on Windows, exe size, Windows imports). The update path downloads and
+runs a new executable, and a TLS fault in a released version strands its members, since the
+fix cannot reach them by update, so a replacement has to be at least as proven as `ring`.
+None is. `rustls-rustcrypto` exists only as `0.1.0-pre.0`, its readme says "DO NOT USE THIS
+IN PRODUCTION", and it adds 49 packages and two advisories. `rustls-graviola` (Rust with
+inline assembly, +1.4 MB) needs AVX2 and ADX among other processor features and, read from
+its code, panics on a processor without them, where `ring` runs on every x86-64 one; its
+readme says "This project is very new, so exercise due caution". The system's TLS (`ureq`'s
+`native-tls`) is SChannel on Windows, with no compiled C and an exe 1.4 MB smaller, but
+OpenSSL on Linux, linked from the system: the Linux bundle would depend on the
+distribution's library (it did not build on the project's Linux host, which has no OpenSSL
+development files), and the two platforms would run two TLS stacks.
+Not chosen: SChannel on Windows with `ring` kept on Linux. It takes the C out of the Windows
+exe, which most members run, at the price of two TLS code paths to test and of new TLS code
+in 0.0.2, the first release whose own update members rely on. It is the alternative to take
+up if the C in the Windows build matters more than one code path. The gate as the worklog
+worded it (`cargo tree -i cc` empty) cannot be met on Linux by any candidate:
+`wayland-backend` keeps `cc` in the graph without compiling C, hence a list of allowed
+dependents instead.
+Plan: `plans/core/distribution.md` "Self-update" (the HTTP client); `CONTRIBUTING.md`
+"Dependencies".

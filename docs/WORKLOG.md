@@ -12,8 +12,9 @@ is in `AGENTS.md` ("Working documents").
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
 (VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
 0.0.2 step"), worked in this order:
-1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in),
-   then the TLS provider (0.0.2-tls).
+1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
+   ST-UPD-04's Linux half waits on the maintainer). The TLS provider (0.0.2-tls) is
+   settled: `ring` stays.
 2. The illegal formation check (0.0.2c): its six clauses are set and the game's own
    formations pass them; the looks in game come next, then the slice.
 3. The Save editor asks of 2026-11-03 still open (0.0.2-undo, -statlbl, -inst, -drift,
@@ -1714,19 +1715,15 @@ briefs, review loops, gates and mutation runs as for any step.
       `4cc-studio-temp/rc`, never merged or pushed). Linux: open, waits on the maintainer
       (`QUESTIONS.md` "0.0.2's Update now on Linux": no Linux desktop here, WSL does not
       start, and the bundles need `cargo-about` on the VPS)
-  - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
-    Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,
-    the shipped graph's one crate that does. Candidates, each measured before one is proposed
-    (maturity and audits, maintenance, licence against `deny.toml`, exe growth, the Windows and
-    Linux targets): a pure-Rust `rustls` provider (`rustls-rustcrypto`; `rustls-graviola`, Rust
-    with inline assembly); the system's own TLS where it needs no compiled C; keeping `ring` as
-    a ruled exception. Writing our own crypto is not a candidate. With it, whether the rule
-    allows exceptions and on what terms (the maintainer's ruling per crate, a reason a
-    pure-Rust choice falls short, listed where the gate reads them). Then `CONTRIBUTING.md`
-    states the rule and a gate refuses a shipped-target crate that builds C and is not a
-    listed exception (`cc` in its build graph, `cargo tree -i cc` per release target)
-    → verify: the gate red on an unlisted C crate; the update check's tests; a CI dry run's
-    Linux binary passes the path check
+  - [x] 0.0.2-tls 2026-11-12: the update check's TLS keeps `ring`, as the first listed
+    exception to "the shipped build is pure Rust by default" (DECISIONS 2026-11-12, the
+    lead's ruling for the maintainer to reverse; measurements by an Opus sidekick on a
+    bench worktree, `.tmp/0_0_2/tls/out/report.md`): `rustls-rustcrypto` is a pre-release
+    its readme bars from production, `rustls-graviola` panics on a processor without AVX2
+    and ADX, the system's TLS means OpenSSL on Linux. `CONTRIBUTING.md` "Dependencies"
+    states the rule, and `just deps-check` runs its gate (`scripts/gates/c_crates.py`,
+    seen red with `ring` unlisted). Not chosen and open to the maintainer: SChannel on
+    Windows alone, `ring` kept on Linux
   - [x] 0.0.2-cmp 2026-11-12 (`5412b447`): the comparator's field rows in three columns,
     Item, Old value and New value, under one head row (SE-GUI-13)
   - [x] 0.0.2-drag 2026-11-12 (`5412b447`): the player list's dragged row floats under the

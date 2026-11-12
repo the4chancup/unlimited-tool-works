@@ -227,6 +227,20 @@ and `platform-verifier`, `rustls` on `ring` handed to it as the crypto provider,
 certificate store, no gzip and a `User-Agent`. The pin is exact because `rustls-no-provider`
 may change in a minor release.
 
+`ring` compiles C and assembly, and stays, as an exception to "the shipped build is pure Rust
+by default" (`CONTRIBUTING.md` "Dependencies"): the update path downloads and runs a new
+executable, and a TLS fault in a released version strands its members, since the fix cannot
+reach them by update. No replacement measured on 2026-11-12 is fit for that. `rustls-rustcrypto`
+exists only as a pre-release whose readme says not to use it in production. `rustls-graviola`
+compiles no C, but needs AVX2 and ADX among other processor features ("most x86_64 CPUs made
+since around ~2014", its readme) and, read from its code, panics on a processor without
+them; its readme calls the project very new. The system's TLS through `ureq`'s
+`native-tls` is SChannel on Windows, with no compiled C and an exe 1.4 MB smaller, but
+OpenSSL on Linux, linked from the system, so the Linux bundle would depend on the
+distribution's library, and the two platforms would run two TLS stacks. The exception is
+looked at again when a pure-Rust provider has a stable release and runs on every x86-64
+processor.
+
 1. **Check** (at startup, and again while the window stays open, on a plain background
    thread): if `check_for_updates` is on and `last_update_check` is older than
    `check_interval_minutes` (120 by default, at least 1), read the repository's list of

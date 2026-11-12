@@ -260,7 +260,8 @@ so a later find costs a short search over a few small commits, while running eve
 tests on every commit cost minutes of the whole machine each time once the suite passed 5000
 tests (2026-10-27: one commit to `studio_core` ran all 32 packages' tests). The other recipes are
 the project's repeatable sequences, each of which the plan names somewhere: `just deps-check`
-(guardrail 4, the `fmdl`/`pes_model` denylist, plus the `cargo deny` license allowlist; see
+(guardrail 4, the `fmdl`/`pes_model` denylist, plus the `cargo deny` license allowlist and
+the crates allowed to compile C, "Dependencies" below; see
 "License" in the core spec; run it right after any change that adds a package to `Cargo.lock`, a
 transitive one included, because `just gates` does not run it: adding `eframe` once brought two
 `BSL-1.0` crates that only CI saw), `just acceptance strict` (the scanner's converge mode, under
@@ -495,6 +496,15 @@ Requirements:
 Only crates listed in `spec/core/README.md` "External Dependencies" are pre-approved. Anything else,
 including "just a small helper crate", is a question for the user, with the reason and the
 alternative considered. Prefer versions published at least a week ago; no floating ranges.
+
+**The shipped build is pure Rust by default.** A crate that compiles C or C++ for a release
+target (a build dependency on `cc` or `cmake`) needs the maintainer's ruling, with the
+reason a pure-Rust choice falls short, and is then listed with that reason in
+`scripts/gates/c_crates.py`, which `just deps-check` runs: it refuses a crate that is not
+listed, and a listed one nothing needs any more. The list holds `ring` (the update check's
+TLS crypto) and `wayland-backend` (which declares `cc` and compiles nothing as built here).
+A crate that links a system library instead of compiling one (OpenSSL through `openssl-sys`)
+is not caught by the gate and is asked about all the same.
 
 ## Commits
 
