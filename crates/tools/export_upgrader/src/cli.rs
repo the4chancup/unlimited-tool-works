@@ -35,11 +35,16 @@ enum ExportUpgraderCommand {
     UpgradeModels(UpgradeModelsArgs),
 }
 
-/// `upgrade <export> (--savefile <EDIT> | --loose) [--coverage full|midcup] [--legacy-ids] [-o <dir>]`.
+/// `upgrade <export>... [--all <DIR>] (--savefile <EDIT> | --loose) [--coverage full|midcup] [--legacy-ids] [-o <dir>]`.
 #[derive(Debug, Args)]
 pub(crate) struct UpgradeArgs {
-    /// The old export: a folder, a .zip or a .7z file.
-    pub(crate) export: PathBuf,
+    /// The old exports: each a folder, a .zip or a .7z file.
+    #[arg(required_unless_present = "all")]
+    pub(crate) exports: Vec<PathBuf>,
+    /// Also upgrade every old export in this folder (its folders and its
+    /// .zip and .7z files), in name order, after the ones named.
+    #[arg(long, value_name = "DIR")]
+    pub(crate) all: Option<PathBuf>,
     /// The save (EDIT00000000) that says which player wears which
     /// boots and gloves.
     #[arg(long, value_name = "EDIT")]

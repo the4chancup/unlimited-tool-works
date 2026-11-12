@@ -132,9 +132,16 @@ fn upgrade_without_a_dropped_file_says_how_to_drop_and_writes_nothing() {
     );
 }
 
+/// The run's `upgrade_log.txt`, empty when the run wrote none. The exe's lines never reach
+/// the bat's piped stdout, so its naming lines and tally are read here.
+fn upgrade_log(sandbox: &Sandbox) -> String {
+    fs::read_to_string(sandbox.root.join("upgrade_log.txt")).unwrap_or_default()
+}
+
 /// Every folder and archive in `old_exports/` is upgraded into `exports/` under the name
-/// the upgrader gives it; the tally line counts both. One input's name holds spaces and
-/// parentheses, as a real `co - Spring (VGL26)` does, so the launcher's quoting is tested.
+/// the upgrader gives it, by one start of the exe; the tally line counts both. One input's
+/// name holds spaces and parentheses, as a real `co - Spring (VGL26)` does, so the
+/// launcher's quoting is tested.
 #[test]
 fn upgrade_upgrades_every_old_export_and_tallies() {
     let sandbox = Sandbox::new("upgrade_two");
@@ -152,9 +159,22 @@ fn upgrade_upgrades_every_old_export_and_tallies() {
     let output = sandbox.run_bat("quick_upgrade.bat", &[save.as_path()]);
 
     let stdout = stdout(&output);
+    let log = upgrade_log(&sandbox);
+    let lines: Vec<&str> = log.lines().collect();
     for name in ["co - Spring (VGL26)", "co Spring.zip"] {
-        assert!(stdout.contains(&format!("Upgrading {name}")), "{stdout}");
+        assert!(
+            lines.contains(&format!("Upgrading {name}").as_str()),
+            "{log}"
+        );
     }
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.starts_with("$ UTW "))
+            .count(),
+        1,
+        "the exe is started once for both exports: {log}"
+    );
     assert!(
         sandbox
             .root
@@ -166,7 +186,7 @@ fn upgrade_upgrades_every_old_export_and_tallies() {
         sandbox.root.join("exports/co Full Spring").is_dir(),
         "{stdout}"
     );
-    assert!(stdout.contains("Upgraded: 2. Not upgraded: 0."), "{stdout}");
+    assert!(lines.contains(&"Upgraded: 2. Not upgraded: 0."), "{log}");
     assert_eq!(output.status.code(), Some(0), "{stdout}");
 }
 
@@ -192,7 +212,12 @@ fn upgrade_counts_a_refused_export_and_leaves_the_existing_folder() {
     let output = sandbox.run_bat("quick_upgrade.bat", &[save.as_path()]);
 
     let stdout = stdout(&output);
-    assert!(stdout.contains("Upgraded: 1. Not upgraded: 1."), "{stdout}");
+    let log = upgrade_log(&sandbox);
+    assert!(
+        log.lines()
+            .any(|line| line == "Upgraded: 1. Not upgraded: 1."),
+        "{log}"
+    );
     assert_eq!(output.status.code(), Some(1), "{stdout}");
     assert!(
         sandbox.root.join("exports/co Full day5").is_dir(),
@@ -223,10 +248,8 @@ fn upgrade_over_an_empty_old_exports_says_there_is_no_export() {
     assert_eq!(output.status.code(), Some(1), "{stdout}");
 }
 
-/// `quick_upgrade.bat` passes `upgrade_log.txt` to each export's run: the log holds every
-/// finding line of this run, Info ones included, and the tally, and nothing of the run
-/// before. The exe's lines never reach the bat's piped stdout, so only the bat's own lines
-/// can be read there.
+/// `quick_upgrade.bat` passes `upgrade_log.txt` to its run: the log holds every finding
+/// line of this run, Info ones included, and the tally, and nothing of the run before.
 #[test]
 fn upgrade_logs_every_line_of_its_run_in_upgrade_log_txt() {
     let sandbox = Sandbox::new("upgrade_log");
@@ -246,7 +269,7 @@ fn upgrade_logs_every_line_of_its_run_in_upgrade_log_txt() {
         stdout.contains("Info messages are left out above. The full report is in upgrade_log.txt."),
         "{stdout}"
     );
-    let log = fs::read_to_string(sandbox.root.join("upgrade_log.txt")).unwrap_or_default();
+    let log = upgrade_log(&sandbox);
     let lines: Vec<&str> = log.lines().collect();
     for line in [
         "- day5: Info coverage_tag_chosen (tag=Full, source=default)",
