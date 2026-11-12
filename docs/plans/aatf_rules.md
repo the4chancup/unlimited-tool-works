@@ -669,5 +669,5 @@ The illegal formation check (0.0.2c) is verified by fixtures, none of them a rul
   formation is off, and one when it is on.
 - **The flag and the version.** Under a ruleset with `illegal_formations` no team gets the
   warning; a PES 2021 save's team holding the same broken set gets none under any ruleset.
-- **A game-made repair passes.** The four saved sets the stock game wrote after a drop repaired
+- **A game-made repair passes.** The three saved sets the stock game wrote after a drop repaired
   each broken starter (the LB at x 5, the CF made a CB, the second LMF a CMF) have no break.
