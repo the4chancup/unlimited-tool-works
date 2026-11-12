@@ -206,7 +206,7 @@ For each listed ball at 1-based position N (id `ball%03d`):
 
    Deployment follows the Team compiler's model: staged under `output/.staging/`, always
    attempted, degraded to `output/{name}.cpk` with the reason when it cannot happen, CLI-only
-   `--no-deploy` for the deliberate case (see "Post-processing" in the Team compiler plan) — the
+   `--no-deploy` for the deliberate case (see "Post-processing" in the Team compiler plan). The
    shared `pipeline` crate carries the staging/promotion scaffolding so both compilers behave
    identically.
 
@@ -284,8 +284,8 @@ editable list, with live validation via the `pipeline` lib's folder watcher.
   the folder.
 - **Save**: writes `balls.txt` into the export. Same convention as the Refs
   arranger, for consistency: write a sibling temporary file, flush it, and
-  atomically replace the target so watchers never observe a half-written list;
-  overwriting an existing `balls.txt` asks for confirmation, creating a new one
+  atomically replace the target so watchers never observe a half-written list.
+  Overwriting an existing `balls.txt` asks for confirmation, creating a new one
   doesn't. Plain-folder exports only (archives can't be written into; a notice is
   shown).
 - **Compile**: saves first (same confirmation rules), then runs the pipeline

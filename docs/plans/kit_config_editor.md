@@ -42,10 +42,10 @@ a compiled config naming the wrong texture is a kit that does not load, and thes
 modes are where it gets fixed. In export mode they are derived from the kit folder and
 only shown. A loose-file mode with nothing open shows the picker.
 
-**Saving**, as in the suite's other editors: nothing is written until Save (Ctrl+S);
-unsaved changes are the difference from the file as opened or last saved, marked on the
-tab, and opening another file or closing the tool with unsaved changes asks to save,
-discard or cancel.
+**Saving**, as in the suite's other editors: nothing is written until Save (Ctrl+S).
+Unsaved changes are the difference from the file as opened or last saved, marked on the
+tab. Opening another file or closing the tool with unsaved changes asks to save, discard
+or cancel.
 
 What each mode writes:
 
@@ -113,11 +113,13 @@ editing inside an export.
 
 **Preview panel**: a schematic shirt/shorts/socks drawing (egui painter) filled
 with the config colors, overlaying markers for name arc, number positions, and
-badge positions; when editing inside an export, the kit's actual textures
+badge positions. When editing inside an export, the kit's actual textures
 (`kit.dds` and variants, decoded via `dds_convert`) are composited under the
-markers. Positions are relative — the game's exact pixel mapping is unknown, and
-the old tool's 51MB of prerendered bitmaps is neither reusable nor worth
-recreating; the preview is for orientation, the game remains the ground truth.
+markers.
+
+Positions are relative: the game's exact pixel mapping is unknown, and the old
+tool's 51MB of prerendered bitmaps is neither reusable nor worth recreating. The
+preview is for orientation; the game remains the ground truth.
 
 Unknown bits get a collapsible **raw view** row (hex per unknown region) for
 curious users — the raw material for decoding the remaining bits someday.

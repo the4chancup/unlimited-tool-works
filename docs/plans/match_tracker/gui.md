@@ -48,13 +48,13 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
     tracking restarts, the next successful team detection creates the new Current Match tab.
   - Save, Finish, and Discard act on the selected tab, but Finish or Discard of an offline
     draft never publishes to `match_feed`.
-- **Lifecycle controls**: **Finish match** finalizes the selected live, suspended, or
-  offline draft after confirmation, but is unavailable until that draft has reached
-  `Live`. **Discard draft** abandons the selected draft and is available from
-  `TeamsDetected`, `Live`, and `Suspended`, including offline drafts. For a feed-bound
-  draft it publishes `MatchAbandoned`; for an offline draft it removes only the local
-  draft. **Stop tracking** only suspends acquisition; it does not finalize or discard
-  match data.
+- **Lifecycle controls**:
+  - **Finish match** finalizes the selected live, suspended, or offline draft after
+    confirmation, but is unavailable until that draft has reached `Live`.
+  - **Discard draft** abandons the selected draft and is available from `TeamsDetected`,
+    `Live`, and `Suspended`, including offline drafts. For a feed-bound draft it publishes
+    `MatchAbandoned`; for an offline draft it removes only the local draft.
+  - **Stop tracking** only suspends acquisition; it does not finalize or discard match data.
 - **QR sync** (opt-in): a small QR code of the current wall-clock milliseconds,
   regenerated at a capped cadence of approximately 30 Hz while enabled — the original's
   stream-latency measurement aid, kept via the `qrcode` crate.
@@ -62,8 +62,7 @@ Part of the [Match tracker plan](README.md). Section headings are unchanged from
   `{{Football box}}` wikitext to the clipboard or saves as `.wiki.txt`). It is enabled
   only when the match is finalized and `score.classification_complete` is true. If
   `history_complete` is false or required minutes are missing, the exporter presents a
-  validation summary and either omits incomplete
-  scorer/card details or requires explicit user confirmation or editing; it never
-  invents minutes.
+  validation summary and either omits incomplete scorer/card details or requires explicit
+  user confirmation or editing; it never invents minutes.
 
 ---

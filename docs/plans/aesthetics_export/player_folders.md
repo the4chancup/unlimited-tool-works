@@ -35,8 +35,8 @@ Each refusal is an Error that drops the player folder, as the other link rules d
   a teammate's id is a valid copy).
 
 A file rather than a `settings.toml` key: the folder listing shows that a player wears a copy,
-where a key would leave a folder that looks empty until its settings are opened, and the export
-already names what a player wears by file (models, `.face`, `.boots` and `.gloves` links) while
+where a key would leave a folder that looks empty until its settings are opened. The export also
+already names what a player wears by file (models, `.face`, `.boots` and `.gloves` links), while
 Team TOML holds the ids they become (`boots_id`, `gloves_id`, `base_copy_id`).
 
 ## Complete export (an aesthetics export with its tactical file and its music)
@@ -53,17 +53,17 @@ a music export alone keep working as they do. The names follow every export's ru
 names capitalized and file names lower case (`Players/`, `Kits/`, `settings.toml`).
 
 - **Each half owns its fields, so no field has two sources.** The aesthetics half owns the
-  looks (the player folders, `settings.toml`, kits, the team's root files); `tactics.toml` owns
+  looks (the player folders, `settings.toml`, kits, the team's root files). `tactics.toml` owns
   names, gameplay and tactics, and carries no looks: an appearance table or a kit or colour key
-  in it is an export-check error naming the table, and the Save editor's export offers the
-  tactical file without them (Team TOML's "absent = untouched" makes such a file valid).
+  in it is an export-check error naming the table. The Save editor's export offers the tactical
+  file without them (Team TOML's "absent = untouched" makes such a file valid).
 - **Names come from the tactical file when there is one.** The aesthetics patch writes names
   only for an export without `tactics.toml`, which keeps the autopilot teams' route (the
-  `write_names` marker) as it is; a marker beside `tactics.toml` is a warning saying the
+  `write_names` marker) as it is. A marker beside `tactics.toml` is a warning saying the
   tactical file's names are used.
 - **One fixed name, recognized everywhere.** `tactics.toml` at the root is a known root file
   for the Team compiler, the Export upgrader (which carries it over untouched) and the export
-  checks (which parse it as a Team TOML, its texts against the portable limits); any other
+  checks (which parse it as a Team TOML, its texts against the portable limits). Any other
   `.toml` at the root stays `root_file_unexpected`, as now.
 - **`Music/` is the music export as it stands alone**: one `.4ccm` directly inside (its file
   name free, as music exports' are) and the songs it names, resolved against that folder as a

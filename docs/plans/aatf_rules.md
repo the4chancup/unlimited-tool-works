@@ -101,12 +101,16 @@ before the cup's own check does.
 
 The test is therefore what the stock screens can produce, read from PES 2017's executable. It is
 no refusal of the game's, which has none. Read where the Whack Patch differs from the exe it was
-made from (`E:\PES2017\PES2017.exe.old5`, 70 bytes in 25 runs), the patch switches off a
-match-time rewrite of a formation's line counts (one keeper in the first slot, two to five
-defenders, one to six midfielders, one to five forwards: positions outside them are changed, in
-slot order) and the drag's re-pick of a dropped starter's position, and no comparison of a
-starter's spot with his position's area. The one area test in the exe refuses a drop in one
-group of screens and is left as it was.
+made from (`E:\PES2017\PES2017.exe.old5`, 70 bytes in 25 runs), the patch switches off two
+things:
+
+- a match-time rewrite of a formation's line counts (one keeper in the first slot, two to five
+  defenders, one to six midfielders, one to five forwards: positions outside them are changed,
+  in slot order);
+- the drag's re-pick of a dropped starter's position.
+
+It switches off no comparison of a starter's spot with his position's area: the one area test
+in the exe refuses a drop in one group of screens and is left as it was.
 
 Its main clause is the drop rule's: every starter's position is one the game's drop offers at
 his spot, since the stock screens never leave a starter otherwise (the maintainer, 2026-11-12,
@@ -154,7 +158,7 @@ Still open before anything is built:
 Until they are read and each is looked at in game under the stock exe, nothing here is built.
 
 The check is the `libs/aatf` host's, in Rust beside the checks the host runs around the file's
-logic, never in the logic. The rule is the game's, the same for every cup, and in the logic it
+logic, never in the logic. The rule is the game's, the same for every cup. In the logic it
 would copy the game's tables into every file and take a logic version; the ruleset's flag only
 turns it off. The tables it reads live in `team_widgets` today (the drop rule's, taken from PES
 2016), which `libs/aatf` cannot depend on, so they move to `pes_savefile` for both.
@@ -180,9 +184,11 @@ together (two golds go with two silvers, never with four), which lists per tier 
 `any_player` holds and, with `by_quotas`, under which the team's quota and pool checks (step
 4's part for heights) find nothing, every player read under that system (step 2). Reading the
 team under each candidate is what lets an allowance or a tier that a special gives under one
-system count toward that system's quotas. DBC7's organizer and its editor tell the systems
-apart by how many players stand at each height; no condition on one player says that (a giga
-team can hold a 195 cm player, so "any player at 195" would misread it as the Height bracket).
+system count toward that system's quotas.
+
+DBC7's organizer and its editor tell the systems apart by how many players stand at each
+height. No condition on one player says that: a giga team can hold a 195 cm player, so "any
+player at 195" would misread it as the Height bracket.
 
 **A team no quota system takes.** The last system takes every other team (DBC7's
 GigaHeight), so step 1 never picks it: a team that meets none of the systems before it is read
@@ -194,13 +200,15 @@ pool (GigaHeight 4145 to 4195), and a total inside the span is 0 cm from it. A b
 a baseline at its height, an `exactly` bracket with several heights at the lowest, an `up_to`
 bracket at its top (no built-in ruleset has either).
 
-Every system within 15 cm of the team's total (each height read less its allowance, the team
-read under that candidate, since an allowance can depend on the system; a player with no tier
-at none) is a candidate. The team is read under the candidate whose check reports the fewest
-errors, every error of the team counted, its players' included, warnings not. Ties go to the
-nearer, then to the file's order. With no candidate, the team is read under the last system. A
-green team is unaffected: under the last system it has no error, and every other candidate,
-being a quota system it does not meet, has at least one.
+Every system within 15 cm of the team's total is a candidate. That total takes each height
+read less its allowance, with the team read under that candidate, since an allowance can depend
+on the system; a player with no tier is read at no allowance.
+
+The team is read under the candidate whose check reports the fewest errors, every error of the
+team counted, its players' included, warnings not. Ties go to the nearer, then to the file's
+order. With no candidate, the team is read under the last system. A green team is unaffected:
+under the last system it has no error, and every other candidate, being a quota system it does
+not meet, has at least one.
 
 15 cm is a constant, not a ruleset field. It decides only which errors a team that already
 fails is shown, never whether a team passes, and only a ruleset with several quota systems
@@ -215,10 +223,10 @@ Nor do we read it under the fewest errors alone: a team far from every quota sys
 read under whichever its errors happen to favour. The 15 cm keep the choice among the systems
 the team's heights could have meant.
 
-**The pool.** Under a system with `extra_height`, the quota brackets are filled tallest first:
-players taken by height less allowance, highest first, each into the tallest quota bracket with
-room whose height is at most his, the centimetres he stands above that height drawn from the
-pool. The findings:
+**The pool.** Under a system with `extra_height`, the quota brackets are filled tallest first.
+Players are taken by height less allowance, highest first, each into the tallest quota bracket
+with room whose height is at most his, and the centimetres he stands above that height are drawn
+from the pool. The findings:
 
 - A player above `max`, or below every quota bracket's height, is a `Height` violation and takes
   no bracket, as a height no bracket takes does under any system.
@@ -241,7 +249,7 @@ height checks, and the Manlet system's stat bonus needs the system that the pool
 with the tier's expected rating *before* its choices are resolved: an option only raises a
 target, so a player who rates the tier without it is that tier. Read after them, DBC7's optional
 Manlet bonus would make a silver at 92 (taking 4 of the 5) fall to regular, since the option,
-used, raises his expected rating to 93; three Manlet teams of the maintainer's PES 2017 save
+used, raises his expected rating to 93. Three Manlet teams of the maintainer's PES 2017 save
 carry such a silver, and VGL25's optional manlet bonus had the same gap with no cup save to show
 it. A mandatory effect still moves the threshold, as the Green silver giant's does.
 
@@ -287,8 +295,8 @@ players stood in a bracket or where GigaHeight's extra height went.
 
 `BracketQuota` gains `players: Vec<(u8, u8)>`, each player counted in the bracket as his roster
 slot and the height read (his own less his allowance); under a pool, the players its slots took.
-Under a pool, a player whom every quota bracket he reaches has no room for counts toward the
-tallest of them, past its quota, and still draws nothing. So seven 175s for the Manlet bracket's
+Under a pool, a player for whom no quota bracket he reaches has room counts toward the tallest
+of them, past its quota, and still draws nothing. So seven 175s for the Manlet bracket's
 six slots are a `BracketQuota` of 7 for 6 listing all seven, since any of them is the one left,
 where before only the bracket left short (a Mid at 9 of 10) said anything.
 
@@ -318,10 +326,12 @@ All three are the logic's (`height_findings`, `team_checks`), so they land befor
 
 **The stat band.** A `Stat` violation carries a severity: a warning while the stat is at most
 `stat_warning` above its target, an error past it, so a regular's 84 against 77 is one warning
-and his 85 one error. The band is the tier's, or the last `stat_warning` effect's; it applies to
-`at_most` ability stats only (a target that must be met exactly has no band), and recognition
-does not see it (a regular's 84 still rates under a silver's 88). We do not give the band to
-`at_most`'s list, per stat: DBC7's band differs by tier and by the Manlet bonus, not by stat.
+and his 85 one error.
+
+The band is the tier's, or the last `stat_warning` effect's. It applies to `at_most` ability
+stats only (a target that must be met exactly has no band), and recognition does not see it (a
+regular's 84 still rates under a silver's 88). We do not give the band to `at_most`'s list, per
+stat: DBC7's band differs by tier and by the Manlet bonus, not by stat.
 
 The stat total compares the player's values with his targets after every effect and chosen
 option, so a Manlet regular who takes the bonus is held to an all-82 sum.

@@ -100,7 +100,7 @@ Trade-offs accepted:
   Icon glyphs for sidebar/toolbar/status icons come from the suite's own single-colour icon font,
   registered through `FontDefinitions` like any font: one SVG per icon, each tool's drawn to say
   what the tool does. The Team compiler's is the maintainer's running stickman dropping into an
-  open box drawn from the front, flaps out; a box in perspective reads as a pedestal at 24 px,
+  open box drawn from the front, flaps out. A box in perspective reads as a pedestal at 24 px,
   and an arrow does not show there. The stickman is a filled outline traced from the
   maintainer's drawing, which the build takes as it is.
 

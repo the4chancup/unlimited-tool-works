@@ -16,21 +16,23 @@ dragged, the host gets the candidate color to live-preview in its own UI (the Ki
 tints its menu-UI mockup and icon gallery with it), reverting when the hover ends without a
 click.
 
-Its first host is the Save editor's team color fields (`plans/save_editor.md` "Crate layout";
-its other colors, skin or spectacles, are palette indices, chosen from their palettes, not
-picked), which is what puts it in Phase 8; then the Kit config editor (config colors and kit
-`colors.txt` colors) and the Team creator; any later tool that needs a color field uses it too.
+Its first host is the Save editor's team color fields (`plans/save_editor.md` "Crate layout"),
+which is what puts it in Phase 8. The Save editor's other colors, skin or spectacles, are
+palette indices, chosen from their palettes, not picked. Then come the Kit config editor (config
+colors and kit `colors.txt` colors) and the Team creator; any later tool that needs a color
+field uses it too.
 
-**The field** is a color button showing the color, 22 × 16 points as the drafts'
-colour input (egui's own color button is 40 wide, which pushed the Save editor's team row 31 to
-57 points right of the draft's), outlined as a resting text box is (the theme's quiet line,
-corners rounded by 3), so a color as dark as the panel still shows its box.
+**The field** is a color button showing the color, 22 × 16 points as the drafts' colour input,
+outlined as a resting text box is (the theme's quiet line, corners rounded by 3), so a color as
+dark as the panel still shows its box. egui's own color button is 40 wide, which pushed the Save
+editor's team row 31 to 57 points right of the draft's.
 
 **The popup.** A click on the field opens the popup, which holds, top to bottom:
 
 1. egui's saturation-value square and hue slider, opaque (no export or save stores an alpha);
-2. the hex field, committed on Enter or when it loses focus, a text that does not read as
-   `#RRGGBB` (the `#` optional, either case) put back to the current color when it loses focus;
+2. the hex field, committed on Enter or when it loses focus. A text that does not read as
+   `#RRGGBB` (the `#` optional, either case) is put back to the current color when it loses
+   focus;
 3. the R, G and B fields, 0-255;
 4. the host's suggestion swatches;
 5. the recent colors.
@@ -71,13 +73,13 @@ the swatch's color the one kept and joining the recents.
 
 **Color space.** The square and the slider work in HSV over sRGB values (the formula applied to
 the sRGB fractions, as the draft's `hsvToRgb` does), not over linear ones, egui's `Hsva`, nor
-egui's `HsvaGamma`, which re-encodes only the value: a renderer blends vertex colors as sRGB, so
-only then does the gradient show the color a click there picks. The working hue survives a
-gesture on white, gray or black, whose RGB holds no hue, so a hue chosen on the slider is still
-there for the square.
+egui's `HsvaGamma`, which re-encodes only the value. A renderer blends vertex colors as sRGB, so
+only over sRGB values does the gradient show the color a click there picks. The working hue
+survives a gesture on white, gray or black, whose RGB holds no hue, so a hue chosen on the
+slider is still there for the square.
 
 A color the host changes under the open popup (an undo) moves the popup to it and is not a
-pick; but the host's rounding of the widget's own commit (the Save editor's 6 bits), arriving
+pick. But the host's rounding of the widget's own commit (the Save editor's 6 bits), arriving
 the next frame, is that commit, which still joins the recents on close.
 
 ### Kit menu icon rendering (Phase 8)

@@ -163,7 +163,7 @@ the same PE timestamp and section layout, so the measured addresses are expected
 there; the first live run re-checks them.
 
 What it settles and what it leaves open is recorded per claim under Testing, "Verifying
-source-derived findings"; the measured values are in "Game structures". It reads the stats
+source-derived findings". The measured values are in "Game structures". It reads the stats
 table by scanning only, so the unofficial fork's PES 2021 pointer chains, substitution
 journal and direct clock read stay unverified, and no match reached extra time, so buckets
 6 and 7 are unobserved on every version.
@@ -191,7 +191,7 @@ reference:
 
 **Licensing constraint.** Both SEN:P-AI repositories are GPLv3. Unlimited Tool Works uses an
 independent reimplementation based on independently verified factual layouts and observable
-behavior; the legacy source is a reverse-engineering reference, not a code source. Do not
+behavior. The legacy source is a reverse-engineering reference, not a code source. Do not
 copy or adapt the fork's rendering or reducer code. The core plan's future
 project-wide licensing section must reflect the same constraint; this plan does not change
 that file.

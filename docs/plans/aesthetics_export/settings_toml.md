@@ -81,9 +81,9 @@ tools already reach, never a copy in a tool crate: the Team compiler finds and b
 edits, and one tool crate never depends on another.
 
 The in-game hair ranges of PES 16 to 20, which no game measured, are assumed from PES 21's. The
-spec's rule for an unmeasured range (its field's bits, for generation and the compiler's
-narrowing alike, built for the face types: `spec/pes_savefile/operations.md` "Cross-version
-player conversion") applies to them too.
+spec's rule for an unmeasured range applies to them too: its field's bits, for generation and
+the compiler's narrowing alike, as built for the face types (`spec/pes_savefile/operations.md`
+"Cross-version player conversion").
 
 They have no per-version table yet, every version sharing PES 21's measured range, and no real
 save holds a hair value past it (the fixture saves' round trip,

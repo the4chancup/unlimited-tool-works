@@ -13,7 +13,7 @@ integration, and fallback. It can remain the permanent GPU backend. BC1/BC3 stay
 initially; already-compatible compressed inputs and cache hits need no encoding at all.
 
 Until this lands, no compile encodes BC7 (`spec/libs/dds_convert.md` "Target codecs and CPU
-encoder"), and after it a machine with no usable GPU encodes BC3/BC1, not the CPU's BC7: CPU
+encoder"). After it, a machine with no usable GPU encodes BC3/BC1, not the CPU's BC7, so CPU
 mode below means the deterministic reference for tests, not a compile's fallback.
 
 - **Auto / CPU:** Auto is the desktop default, using the GPU when ready, supported, and beneficial.
@@ -61,7 +61,7 @@ timeout, which Vulkan's 2.8 s survived but is the same risk.
 So:
 
 - **The encoder is Vulkan's (Metal's on macOS), started on its own thread.** The warm start
-  costs less than one 1024² BC7 encode on the CPU, so a ready GPU takes every BC7 texture; a
+  costs less than one 1024² BC7 encode on the CPU, so a ready GPU takes every BC7 texture. A
   start not finished yet (the rare cold one) leaves the CPU encoding, and the GPU takes the
   textures still waiting once it is ready. Whether the GPU starts at all is decided by whether
   the version's compile has BC7 work (it starts with the Team compiler, below), not by a
@@ -71,10 +71,10 @@ So:
   timeout on the measured GPU, whatever the texture's size.
 - **A GPU failure is final:** the mip it happened on and everything after it are encoded on the
   CPU, the encoder reports itself unavailable with the reason, and the rest of the run stays on
-  the CPU; the mips the device encoded before it are kept (a texture of mixed GPU and CPU mips
+  the CPU. The mips the device encoded before it are kept (a texture of mixed GPU and CPU mips
   is valid BC7). A lost device is such a failure too, though wgpu panics on it rather than
-  returning an error, and a software adapter (a Vulkan driver running on the CPU) is refused
-  at the start, being slower than the CPU encoder.
+  returning an error. A software adapter (a Vulkan driver running on the CPU) is refused at the
+  start, being slower than the CPU encoder.
 - **A driver that crashes is found in a child process, once per driver.** A Vulkan driver can
   report full support and then fault inside an ordinary call, taking the whole process down
   with no error to fall back from: Intel's HD Graphics 620 driver 31.0.101.2137 does so in
@@ -103,7 +103,7 @@ So:
 
   What it saves depends on the driver's shader cache. On the measured GPU a cold cache, the
   first start after a driver install or update, costs 16.3 s, which the member then spends
-  looking at the tool rather than waiting on the compile; a warm one costs 25-27 ms of
+  looking at the tool rather than waiting on the compile. A warm one costs 25-27 ms of
   pipeline building plus the device's creation, a fraction of a second.
 
   A Compile clicked before it is ready goes on as above: the CPU encodes and the GPU joins.
