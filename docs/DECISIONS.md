@@ -16815,3 +16815,22 @@ Not settled: how a button pinned by an earlier version stands beside the window 
 to stand apart until pinned again; ST-WIN-06 looks at it, and an ID equal to the text
 Windows makes from the path is the thing to try if that matters).
 Plan: `plans/core/gui.md` "A new instance from the taskbar button".
+
+## 2026-11-12 — studio_core — An update that succeeded marks its leftovers; Restart now starts the program after the lock is released
+
+Decision: an update refuses to start over a backup folder only while that folder holds a
+file and no finished update marked it: a swap that succeeded writes a mark in `.update`
+before deleting the folder. Restart now starts the new program after the closing one has
+released its instance lock and closed its log, not from the window's exit hook.
+Why: Carbon's round over Update now (rulings "C-upd r1"). The refusal read any entry of the
+backup folder, so a backup a SUCCEEDED update could not delete (a file held by an antivirus
+or by a second window still running the program set aside) refused every later update, and
+the help then told the member to put obsolete files back over the new version; the empty
+folders left after a member moved the files of a failed update back refused it too. And the
+three ST-UPD-04 sandboxes hold `utw.2.lock` and `utw.2.log`: the restarted window had
+found the first slot's lock still held and opened as a second instance.
+Not chosen: a mark written when the old files could not be put back. If that mark cannot be
+written, the next update takes the backup for leftovers and deletes the only copies of the
+old files; a missing success mark only refuses an update that could have run.
+Plan: `plans/core/distribution.md` "Self-update: in-place binary swap", step 4 and the
+Restart now paragraph.

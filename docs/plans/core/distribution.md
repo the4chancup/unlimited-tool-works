@@ -324,6 +324,15 @@ processor.
    - the failure names that folder (and does not say nothing was changed);
    - no later update starts until the member has put them back or removed the folder.
 
+   That refusal is for this case alone. The folder counts only while it holds a file: the
+   empty folders left once the member has moved the files back refuse nothing. And an update
+   that succeeded leaves a mark in `.update` before it deletes the folder, so a backup it
+   could not delete (a file still held by an antivirus, or by another window running the
+   program set aside) is known for leftovers: the next update clears it, or fails as on a
+   folder it cannot write. The mark is written on success, not on failure, because a mark
+   that could not be written must err toward refusing: the other way round, the next
+   update would delete the only copies of the old files.
+
    A folder that isn't writable (e.g. Program Files) is found before the download starts and is
    a failure like the others, the release page its way out. There is no elevated relaunch,
    because the bundle is a folder the member unpacks wherever they can write.
@@ -377,8 +386,10 @@ processor.
    to roll back to.
 
    Restart now asks the window to close as its close button does. When the close goes through,
-   the program at the bundle's own path, now the new one, is started. A close that a tool's
-   prompt holds drops the restart.
+   the program at the bundle's own path, now the new one, is started, once the closing
+   program has released its instance lock and closed its log: started any earlier, the new
+   window finds the lock held and opens as a second instance, with the second instance's
+   log. A close that a tool's prompt holds drops the restart.
 
    A start whose version is newer than the one that last ran shows `Updated to v<new>`. The
    version that last ran is `last_run_version`, state the shell writes as it does `last_tool`;
