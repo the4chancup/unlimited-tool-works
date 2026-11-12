@@ -1217,18 +1217,20 @@ S.dataDirUnwritable = false;
 // at 24 px).
 // demo: false keeps a registered tool out of the demo (a link's demo=1), its draft too early
 // to show a visitor: the demo greys it like a planned tool.
+// pes: true marks a tool that targets the PES version (StudioTool::targets_pes_version): the
+// sidebar draws the selector only while such a tool is active (gui.md "Sidebar" item 2).
 const TOOLS = [
-  { id: "team-compiler", label: "Team compiler", icon: "\uE68E", registered: true, demo: false },
+  { id: "team-compiler", pes: true, label: "Team compiler", icon: "\uE68E", registered: true, demo: false },
   { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true },
   { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false },
-  { id: "export-upgrader", label: "Export upgrader", icon: "\uE52E", registered: true, demo: false },
+  { id: "export-upgrader", pes: true, label: "Export upgrader", icon: "\uE52E", registered: true, demo: false },
   { id: "music-player", label: "Music player", icon: "\uE33C", registered: false },
   { id: "music-export-editor", label: "Music export editor", icon: "\uE340", registered: false },
-  { id: "match-tracker", label: "Match tracker", icon: "\uE1D6", registered: false },
-  { id: "kit-config-editor", label: "Kit config editor", icon: "\uE670", registered: false },
-  { id: "refs-arranger", label: "Refs arranger", icon: "\uE244", registered: false },
+  { id: "match-tracker", pes: true, label: "Match tracker", icon: "\uE1D6", registered: false },
+  { id: "kit-config-editor", pes: true, label: "Kit config editor", icon: "\uE670", registered: false },
+  { id: "refs-arranger", pes: true, label: "Refs arranger", icon: "\uE244", registered: false },
   { id: "balls-compiler", label: "Balls compiler", icon: "\uE716", registered: false },
-  { id: "player-aesthetics-editor", label: "Player aesthetics editor", icon: "\uE436", registered: false },
+  { id: "player-aesthetics-editor", pes: true, label: "Player aesthetics editor", icon: "\uE436", registered: false },
   { id: "team-creator", label: "Team creator", icon: "\uE3D6", registered: false },
   { id: "ruleset-editor", label: "Ruleset editor (WIP)", icon: "\uEB7A", registered: false },
   { id: "db-generator", label: "DB generator", icon: "\uE1DE", registered: false },
@@ -1347,7 +1349,7 @@ function pesSelectorTip() {
     return folder + " holds PES" + S.exeFoundVersion + ".exe, which is a different version from the one selected";
   if (S.exeFound === "none") return "There is no PES exe in " + folder;
   if (S.exeFound === "no_folder") return folder + " does not exist";
-  return folder + "\nThe PES version every tool works with";
+  return folder + "\nThe PES version this tool works with";
 }
 // The one writer of pes_version (a common setting): a blocked change does not
 // take; a manual change consumes the auto-switch and is saved like any
@@ -2910,13 +2912,25 @@ function sidebarItems(full) {
   // A disabled control shows no tooltip in the browser (egui:
   // on_disabled_hover_text), so a blocked selector's reason sits on a
   // wrapper that still senses hover (ST-SIDE-04).
-  items.push(S.blocker ? h("span", { class: "sel-block", title: pesSelectorTip() }, pesSel) : pesSel);
+  // A tool that does not target the version (the Save editor follows its open
+  // save, a ruleset names no game) gets no selector: its box stays, empty and
+  // out of the Tab order, so the tool list under it never moves between tools
+  // (ST-SIDE-09).
+  const targets = (TOOLS.find(t => t.id === S.activeTool) || {}).pes;
+  if (!targets) {
+    pesSel.style.visibility = "hidden";
+    pesSel.tabIndex = -1;
+    pesSel.setAttribute("aria-hidden", "true");
+    pesSel.removeAttribute("title");
+  }
+  items.push(targets && S.blocker
+    ? h("span", { class: "sel-block", title: pesSelectorTip() }, pesSel) : pesSel);
   items.push(h("div", { class: "sep" }));
   // Registered entries take focus and switch on Enter or Space; the planned
   // ones take no focus in either state. While the layer is open the rail's
   // covered controls leave the Tab order.
   const ti = (!full && S.sidebarOpen) ? "-1" : "0";
-  if (!full && S.sidebarOpen) pesSel.tabIndex = -1;
+  if (!targets || (!full && S.sidebarOpen)) pesSel.tabIndex = -1;
   const open = t => t.registered && !(demo && t.demo === false);
   const pick = t => { if (open(t)) { S.activeTool = t.id; render(); } };
   for (const t of TOOLS.filter(open).concat(TOOLS.filter(t => !open(t)))) {

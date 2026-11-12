@@ -70,8 +70,7 @@
 // left unindented, as in tools/ruleset_editor.js.
 // Names this script uses without declaring them (render, h, row, weak, strong, button,
 // combo, selectable, collapsing, menu, window_, windowDrawer, closeWindow, cb, publishNotice,
-// openOutputStub, shellPesVersion, setPesVersion, pesSelectorClass, pickPesFolder,
-// PES_VERSIONS, folderOf, named, updateLink,
+// openOutputStub, pesSelectorClass, pickPesFolder, folderOf, named, updateLink,
 // layoutPanelW, winScale, registerTool) are the host's,
 // index.html.
 (() => {
@@ -2985,9 +2984,6 @@ const SAMPLE_PATH = {
 // ---- State ----
 // D: the draft controls' GIVENs. S: the session.
 const D = { sample: "pes17",
-  // The sidebar's selector is the shell's; the draft control writes it.
-  get selectorVersion() { return shellPesVersion(); },
-  set selectorVersion(v) { setPesVersion(v); },
   gameRunning: false,
   ruleset: "official", pickerSugg: false, liveTeamRows: true,
   portraits: true,
@@ -3106,37 +3102,8 @@ function openSave(key, path) {
     applied: null, exportText: null };
   S.tedFile = null;
   pushRecent(S.path);
-  // SE-GUI-28: the save's version governs its codec and widgets; a selector
-  // mismatch warns in the status bar, never reinterprets, and the setting is
-  // unchanged until the action makes the same change the selector would.
-  // A new save starts the warning's life over: the last save's, if still
-  // in the bar, goes first.
-  if (S.ver && S.ver.notice && noticeShown(S.ver.notice)) dismissNotice();
-  S.ver = { live: true, notice: null };
-  versionNoticeFollow(D.selectorVersion);
-}
-// The version warning follows the selector while it lives: shown on a
-// mismatch (its sentence naming the selector's version), gone while the
-// selector matches the save. Its life ends, until another save is opened,
-// when the member dismisses it or acts on it, or a newer notice replaces
-// it: either way they have seen it (SE-GUI-28).
-function versionNoticeFollow(sel) {
-  const ver = S.ver;
-  if (!S.save || !ver || !ver.live) return;
-  if (ver.notice && !noticeShown(ver.notice)) { ver.live = false; ver.notice = null; return; }
-  const save = "20" + version();
-  if (sel === save) {
-    if (ver.notice) { ver.notice = null; dismissNotice(); }
-    return;
-  }
-  if (ver.notice && ver.notice.sel === sel) return;
-  ver.notice = publishNotice("Although the sidebar is set to PES " + sel
-    + ", this save is from PES " + save
-    + ", so the editor will keep treating it as a PES " + save + " save.",
-    { label: "Switch to PES " + save, switchesVersion: true,
-      run: () => { ver.live = false; ver.notice = null; D.selectorVersion = save; render(); } },
-    "warning");
-  ver.notice.sel = sel;
+  // The picker next starts where this save was opened from (settings: last_folder).
+  S.lastFolder = folderOf(S.path);
 }
 function pushRecent(path) {
   const i = S.recents.indexOf(path);
@@ -3419,9 +3386,6 @@ function draftControls() {
       combo([["pes17", "PES 17 sample (the maintainer's save)"],
         ["pes21", "PES 21 sample"]], S.saveKey || D.sample,
         v => { D.sample = v; requestOpen(v); })),
-    h("label", { class: "cb", title: "SE-GUI-28" }, "PES selector",
-      combo(PES_VERSIONS.map(v => [v, "PES " + v]), D.selectorVersion,
-        v => D.selectorVersion = v)),
     h("span", { title: "SE-GUI-21" }, cb("The save's game is running", D.gameRunning,
       v => D.gameRunning = v)),
     h("span", { title: "The Tactics pitch's portraits" }, cb("The game's download folder has portraits",
@@ -3469,8 +3433,7 @@ const WALK = [
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
-  ["SE-GUI-26", "the File menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O), then Save and Save as; Save as keeps the replaced file as .bak"],
-  ["SE-GUI-28", "PES selector at 2019 with the PES 21 sample open: the warning names both; the save keeps its version"],
+  ["SE-GUI-26", "the File menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O, starting in the folder the last save was opened from), then Save and Save as; Save as keeps the replaced file as .bak"],
   ["SE-GUI-13", "Savefile, Comparator: pick the PES 21 sample (refused), then Autumn24Q; the toggles and the team filter narrow the rows, Export writes their report lines, a row click selects the player"],
   ["SE-GUI-15", "the toolbar's ruleset dropdown, left of Live AATF: pick Divegrass Before Christmas 7 (the quick actions and the card counts follow); Import rules file...: the broken samples are refused with their errors, autumn26.4ccrules is refused for a built-in's name, autumn25.4ccrules joins the list under a line and becomes the ruleset; import it again: a confirmation replaces it; its × asks, then removes it and falls back to 4cc Autumn 26; reload the page: the choice and the imports stay"],
   ["SE-GUI-30", "PES 17 sample, team 718, the Divegrass Before Christmas 7 ruleset: switch Live AATF on in the toolbar; the bottom panel lists the team's issues, errors first, under 'N issues · Divegrass Before Christmas 7'. Lower a stat over its maximum (a Stat row) to its target: the list dims, marked checking, then the row is gone and N is one less; Undo brings it back. Under the official ruleset on 718, untick the team-rows control and set each Height row's player to 180: '... passes ... with no issues'. Reload the page: Live AATF is still on"],
@@ -3768,10 +3731,12 @@ function dlgOpenSave(d) {
     [button("OK", closeWindow)]);
 }
 function dlgChooseFile() {
-  const found = DISCOVERED.find(d => d.version === D.selectorVersion);
+  // The folder the last save was opened from; with none, the newest discovered
+  // save's (the draft's list is in version order, so its last entry stands for it).
+  const start = S.lastFolder || folderOf(DISCOVERED[DISCOVERED.length - 1].path);
   dlg("choose-file", "Choose file",
-    weak("The native file picker (rfd) opens in the selected version's save folder when it exists: " +
-      (found ? folderOf(found.path) : "(none found)")),
+    weak("The native file picker (rfd) opens in the folder the last save was opened from, " +
+      "or the newest discovered save's: " + start),
     [button("OK", closeWindow)]);
 }
 function playerMenu() {
@@ -6148,12 +6113,14 @@ function tacticsTab(t) {
     " Fluid formation"), 16);
   // While the sidebar's selector is orange or red, a Set PES path button over
   // the pitch's bottom right, opposite the formation's name: the portraits come
-  // from the PES folder, and a member who never notices the selector's colour
-  // would see only placeholders. It hides once the folder holds the selected
-  // version's exe, the selector's own check.
+  // from the PES folder of the save's version, and the selector is not drawn in
+  // this tool, so the button is the one place the editor says the folder is
+  // wrong. It hides once that folder holds the save's version's exe. (The draft
+  // has one exe state, the shell's: here it stands for the save's version.)
   // sample wording: the button's label and tooltip.
   const setFolder = pesSelectorClass() ? h("button", { id: "set-pes-folder", onclick: pickPesFolder,
-    title: "The players' portraits are read from the PES folder" }, "Set PES path") : null;
+    title: "The players' portraits are read from the PES 20" + version() + " folder" },
+    "Set PES path") : null;
   const pitchWrap = h("div", { style: "position:relative; width:fit-content" },
     pitchCanvas(t), setFolder, slotPopover(t));
   if (setFolder) requestAnimationFrame(() => placeSetFolder(setFolder));
@@ -8489,7 +8456,7 @@ const DLGS = { "set-stats": dlgSetStats, "bump-stats": dlgBumpStats, "multi-aatf
   "choose-file": dlgChooseFile, "game-running": () => dlgGameRunning(),
   "save-as": saveAs, "export-toml": ixExportToml, "export-ted": ixExportTed,
   "open-save": () => dlgOpenSave(openStub
-    || DISCOVERED.find(d => d.version === D.selectorVersion) || DISCOVERED[0]) };
+    || DISCOVERED[DISCOVERED.length - 1]) };
 const linkWarn = what => console.warn("save-editor link: " + what);
 function linkOpen(scr, keys) {
   // The draft controls go first: an open save's faking reads them.
@@ -8552,7 +8519,7 @@ function linkOpen(scr, keys) {
   }
 }
 registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, closeRequest, screen, linkKeys, linkOpen,
-  pesVersionChanged: versionNoticeFollow, titleDetail: () => S.path ? "[" + S.path + "]" : null,
+  titleDetail: () => S.path ? "[" + S.path + "]" : null,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["save_editor/player", "save_editor/team?selteam=718",
     "save_editor/player?save=pes21&player=701.1&pes=2021",
