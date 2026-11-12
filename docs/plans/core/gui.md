@@ -1882,7 +1882,7 @@ ST-CORNER-01 GIVEN the dark theme, then the light one
                  hovered and pressed, and a text field are drawn
             THEN every corner of each has a radius of 2 points; and no source file outside
                  `theme.rs` passes a number as a corner radius, a round mark under 6 points
-                 aside
+                 and the captain's mark on the pitch aside
 ST-COMBO-02 GIVEN a toolbar menu of three entries and a separator open
             WHEN it is drawn
             THEN each entry is 21 points high, two entries with no separator between them
