@@ -343,8 +343,9 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `.ftex` kit texture as it was (13 exports on the maintainer's machine ship them, /fgog/'s from
    VGL15 to VGL18 among them). One that does not convert is unmigrated content, its error named.
    A converted texture stays its own kit's file: the copy between kits and the hoist to `all/`
-   below read the copied textures alone, which no real export misses (the 13 ship base textures
-   and `_srm` ones, no copy field's stem, but for Red's own `VP Test` folder).
+   below read only the textures the export shipped as `.dds`, and no real export loses a copy
+   or a hoist to that (the 13 ship base textures and `_srm` ones, no copy field's stem, but for
+   Red's own `VP Test` folder).
 
    Any other file directly in the folder is a leftover (step 10), in any export kind, since none
    reached the game:

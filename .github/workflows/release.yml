@@ -1,4 +1,4 @@
-# Release builds (plans/core/distribution.md "Release builds in CI"): each platform's bundle is
+# Release builds (spec/core/distribution.md "Release builds in CI"): each platform's bundle is
 # packed by the same `just release <version>` a developer runs, which builds with --locked and
 # refuses a binary holding the runner's paths, a Windows exe linking the C runtime dynamically,
 # or an archive whose listing differs from the staged files.

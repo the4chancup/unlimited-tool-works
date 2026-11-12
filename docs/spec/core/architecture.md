@@ -137,6 +137,10 @@ crates/studio_core/src/
 ├── status.rs         # ShellCondition, ToolActivity, Notice — the status bar's typed items
 ├── pes_process.rs    # the running-PES probe (below): which PES games run now, and from where
 ├── redact.rs         # the home folder written `~` in the log's lines and a repro bundle's text
+├── repro.rs          # the repro journal: the steps that changed a tool's model and the files it
+│                     #   read and wrote, for "Report a problem" to bundle
+├── icons.rs          # the icon font's glyphs the shell and the tools draw
+├── theme.rs          # the shared look: the fonts, the style, the `theme` setting applied
 ├── help/
 │   └── mod.rs        #   HelpSection/HelpTopic, HelpTarget (tool, topic, anchor)
 ├── settings/
@@ -144,10 +148,17 @@ crates/studio_core/src/
 │   ├── common.rs     #   CommonSettings (PES version, paths, threads, memory cap, theme, update
 │   │                 #   state, last tool)
 │   └── location.rs   #   data-location resolution (portable data/ vs config dir)
-└── shell/
-    ├── mod.rs        #   StudioApp: eframe::App, panel layout, logic/ui split, tool registry
-    └── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
-                      #   refused until Phase 8)
+├── shell/
+│   ├── mod.rs        #   StudioApp: eframe::App, panel layout, logic/ui split, tool registry
+│   └── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
+│                     #   refused until Phase 8)
+├── updater/
+│   ├── mod.rs        #   the update check: the newest release, whether it is offered, the notices
+│   ├── install.rs    #   Update now: download, checksum, unpack
+│   └── swap.rs       #   the unpacked release put in place of the running one, with its undo
+└── widgets/
+    └── mod.rs        #   the widgets several tools' views share: bottom dock, log panel,
+                      #   settings rows, checkbox and radio button, text box, toolbar, modal
 ```
 
 Anything not on this list belongs in a lib crate or a tool crate. The two tempting misplacements:

@@ -157,8 +157,8 @@ deps-check:
     {{python}} scripts/gates/deps_check.py
     cargo deny check licenses
 
-# The portable release bundle, target/dist/unlimited-tool-works-<version>-windows.7z, its .sha256
-# and the kept symbols' -symbols.7z beside it; Windows only
+# The portable release bundle of the platform it runs on, target/dist/unlimited-tool-works-<version>-
+# windows.7z or -linux.tar.gz, its .sha256 and the kept symbols' archive beside it
 release version:
     {{script_test}} scripts/release/release_test.py
     {{python}} scripts/release/release.py {{version}}
