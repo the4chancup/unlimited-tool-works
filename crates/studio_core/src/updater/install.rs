@@ -425,12 +425,19 @@ fn remove_temp_folder(temp: &Path) -> io::Result<()> {
     fs::remove_dir_all(temp)
 }
 
-/// Whether `folder` holds a file at any depth. A missing folder holds none;
-/// one that cannot be listed counts as holding one, so a doubt refuses.
+/// Whether `folder` holds a file at any depth. A missing folder holds none,
+/// and neither does a path that runs through a file (a plain file where the
+/// temp folder goes: Windows calls that not found, Linux not a directory).
+/// A folder that cannot be listed counts as holding one, so a doubt refuses.
 fn holds_a_file(folder: &Path) -> bool {
     let mut entries = match fs::read_dir(folder) {
         Ok(entries) => entries,
-        Err(error) => return error.kind() != io::ErrorKind::NotFound,
+        Err(error) => {
+            return !matches!(
+                error.kind(),
+                io::ErrorKind::NotFound | io::ErrorKind::NotADirectory
+            );
+        }
     };
     entries.any(|entry| {
         let Ok(entry) = entry else {
