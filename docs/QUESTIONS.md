@@ -95,13 +95,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
   "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
   does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.
-- **Which kinds the Decompiler must recover from old DLCs** (`plans/decompiler.md` "Without
-  one: the heuristic"). From a DLC compiled with recovery manifests every kind comes back
-  exactly. A DLC compiled by the old tools has none, and the plan gives each kind a second
-  path that works from the game's own files (a team by its ID, the balls from `Ball.bin`,
-  the stadiums from their bins, the referees from their slots). That path is the larger half
-  of the tool. For which kinds are there old DLCs whose exports are lost and wanted back:
-  teams only, or the balls, the stadiums, the billboards and the referees too?
 - **The 40 GB this project may hold on the VPS** (`RUNBOOK.md` "The scratch folder"; the
   decision "The VPS free-space floor for a mutation half is 26 GiB"). A mutation half's two
   build copies were measured at 23.6 GiB for `save_editor`, where the scripts assumed about 8.

@@ -16711,3 +16711,15 @@ worded it (`cargo tree -i cc` empty) cannot be met on Linux by any candidate:
 dependents instead.
 Plan: `plans/core/distribution.md` "Self-update" (the HTTP client); `CONTRIBUTING.md`
 "Dependencies".
+
+## 2026-11-12 — decompiler — every export kind is recovered from an old DLC, not teams alone
+Decision (maintainer, answering `QUESTIONS.md` "Which kinds the Decompiler must recover from
+old DLCs": "We should make it recover everything possible"): the Decompiler's second path,
+for a DLC that holds no recovery manifest, covers every kind the tool handles (teams,
+referees, balls, stadiums, billboards), and each recovers all that the DLC and the game's
+own files still tell.
+Why: the path is the larger half of the tool, so the lead asked whether a kind whose old
+DLCs nobody needs could leave it out. None is left out: an old cup's other exports are as
+lost as its teams.
+Plan: `plans/decompiler.md` "Without one: the heuristic" (its "Open questions" section,
+which held only this, is gone).

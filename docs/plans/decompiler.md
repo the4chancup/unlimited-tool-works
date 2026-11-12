@@ -72,8 +72,11 @@ it is the source itself or its compiled form.
 
 A CPK compiled by the old tools (Red, the balls compiler's batch, the PES Stadium Compiler),
 or by Studio before a kind's manifest, has none. The Decompiler then works from what the
-game's own files say, kind by kind. The report says which names were recovered and which
-invented.
+game's own files say, kind by kind. Every kind has this path, and each recovers all that the
+DLC and the game's files still tell, not teams alone: an old cup's balls, stadiums, billboards
+and referees are as lost as its teams when their exports are, and a tool that brought back
+only some kinds would leave the organizer to dig the others out of the CPK by hand. The
+report says which names were recovered and which invented.
 
 - **A team**: every file carrying the team's ID at the time (the organizer gives the ID, or
   picks it from the DLC's list). Player folders are named from a save of that cup when its
@@ -88,9 +91,3 @@ invented.
 - **Stadiums and billboards**: the stadium bins give each stadium's ID and name, and the ID
   gives its files. What a stadium export's folders are is settled with the kind's own plan
   (`stadium_compiler.md`, before Phase 9), and this path with it.
-
-## Open questions
-
-- Which kinds need the heuristic at all is asked of the maintainer (`docs/QUESTIONS.md`,
-  "After the release"): it is the larger half of the tool, and a kind whose old DLCs nobody
-  needs to recover can leave it out.
