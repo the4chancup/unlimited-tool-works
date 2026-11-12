@@ -74,8 +74,8 @@ referee id it drew (1..35). So a Fox match has **five** referee positions, not t
 referee, two linesmen, and (to be confirmed by forcing ids in-game) the fourth official and the
 substitution-board holder.
 
-The routine runs when the match menu opens, not at kickoff, so a force meant for a match is in
-place before its menu opens.
+The routine runs when the match menu opens, not at kickoff, so a force meant for a match must be
+in place before its menu opens.
 
 The hook offers two primitives, settable from Lua at any time and persistent across script
 reloads:

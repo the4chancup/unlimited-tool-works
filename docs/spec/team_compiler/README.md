@@ -210,7 +210,7 @@ Placement rules:
 - **If it validates an export, it is not here**: it belongs in `libs/aesthetics_export`.
 - **If two tools need it, it is not here**: it moves to a lib, either `pipeline` for scaffolding
   such as `MemoryBudget` and `CpkStem` or `aesthetics_export` for format knowledge. The same rule
-  works in reverse: `bins/dpfl.rs` stays here until a second consumer appears (the Balls
+  works in reverse: `bins/installed.rs` stays here until a second consumer appears (the Balls
   compiler only *checks* the DPFL, via a read helper that can move to `pipeline` when needed).
 - **`processing/materialize.rs` is the single output-mode seam.** No task's output asks which
   output mode is active. The mode decides only *where bytes go*, never *what a task produces*:
@@ -274,10 +274,11 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
   `settings.toml`, the default-ID rows, the Midcup shared-IDs record, and the aesthetics patch,
   written beside the output and applied to the local save in one transaction with the CPKs.
   The tables went at step 8.36c, and the patch has carried each player's whole look on every
-  version since. What `compile` builds is "Phase 5 scope" below. The pre-Fox patch is deferred
-  with pre-Fox's other gaps (it landed at step 8.36c).
+  version since. What `compile` builds is "Phase 5 scope" below. Phase 5 left the pre-Fox patch
+  with pre-Fox's other gaps; it landed at step 8.36c.
 
-This documents the dependency without changing the phase order in the core plan.
+This list documents the parity gate's dependency on Phases 5 and 6 without changing the phase
+order in the core plan.
 
 ---
 
@@ -366,8 +367,8 @@ TC-SRC-08  GIVEN --export given twice, naming an export outside the exports root
            it, beside a third export in the root
            WHEN check runs, then compile
            THEN each reports only the two named exports, and compile compiles only those two
-TC-SRC-09  GIVEN any export, one of them with its content nested one folder down
-           WHEN it is checked and then compiled
+TC-SRC-09  GIVEN an export of each source kind, one of them with its content nested one folder down
+           WHEN the root is checked and then compiled
            THEN every file of every source is byte-identical to before, and no file was added
 TC-SRC-10  GIVEN exports "co Midcup One", "dbg Midcup Two.7z" and "egg Midcup Three"
            WHEN the root is checked
@@ -749,7 +750,7 @@ Not in Phase 4, so not here:
 - the savefile step and the aesthetics patch (Phase 5; `compile` emits no `savefile_*` or
   `patch_written` finding and a configured savefile is left byte-identical);
 - `run_pes`, `FolderStatus`/`Progress`/`Complete`, live validation and the GUI's degraded-run
-  actions (Phase 8);
+  actions (all Phase 8);
 - the in-game effect of a `GloveList.bin` row (FoxDen's gloves patch, worklog "Issues") and of
   a sideload tree (FoxDen's LiveCPK gaps).
 
@@ -2785,7 +2786,7 @@ withdrawn. TC-BIN-37 (the bins CPK keeping installed rows in multi-CPK mode) and
 the stripped route are gone.
 
 Five scenarios hold unchanged: TC-BIN-04, and the four whose tests stopped installing the
-tables, TC-MOD-31, TC-MOD-83, TC-BIN-39 and the last, TC-BIN-40.
+tables, TC-MOD-31, TC-MOD-83, TC-BIN-39 and TC-BIN-40.
 
 ```
 TC-SAV-18  GIVEN a /co/ export with no write_names marker whose slot 05 holds a face model and

@@ -155,7 +155,7 @@ in it, the static C runtime on Windows, the listing equal to the staged set), th
   A draft is visible to the repository's maintainers alone. The maintainer downloads the
   Windows asset, gives it the look before the cut, writes the notes and publishes it. The notes
   are the release's body, the text the updater's dialog shows, taken from `CHANGELOG.md`'s
-  section once the file exists, after 0.0.1.
+  section, for every release after 0.0.1 (the file came the day after it).
 - **A push to `ci/release-dry-run`**, or a run started by hand once the workflow is on the
   default branch (GitHub offers its **Run workflow** button only for a workflow there), builds
   and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.
@@ -234,7 +234,7 @@ offers the versions found on the machine:
 - those whose `PES20xx.exe` sits in the default install path
   (`C:\Program Files (x86)\Pro Evolution Soccer 20xx`).
 
-The newest is preselected for `pes_version`, and for `pes_folder_path` the default `**` path
+The newest is preselected for `pes_version`, and for `pes_folder_path` the default install path
 when the exe is found there. The member confirms or changes the pick. With nothing found, the
 defaults stand (PES 19, the default path), as they do today.
 
@@ -342,8 +342,8 @@ may change in a minor release.
    hashing and counting bytes as it goes. That is where the dialog's progress comes from. It
    also sidesteps `ureq`'s 10 MB default in-memory body limit, which the convenience readers
    (`read_to_vec`/`read_to_string`/`read_json`) enforce and a release asset exceeds
-   (`into_reader()` is unbounded; `into_with_config().limit()` changes either). Both HTTP calls
-   run on a plain background thread.
+   (`into_reader()` is unbounded; `into_with_config().limit()` sets the limit of either kind of
+   reader). Both HTTP calls run on a plain background thread.
 4. **Swap**: first stage and verify the new bundle on the executable's volume. Move the running
    binary into `old/`, then put the new binary in place, and every other file of the bundle
    but `data/` (the readme, the licenses, the launchers a later bundle adds) over the old ones.

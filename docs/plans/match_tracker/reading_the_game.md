@@ -45,7 +45,7 @@ Signatures (process name, region sizes, offsets, entry layout, and the stat cata
 **claimed by the unofficial fork (unverified)** and add a substantially different layout:
 
 - 8500-byte entries (vs 4784);
-- a declared 269-slot catalog (vs 175) with only 263 explicit initializers, duplicate
+- a declared 269-slot catalog (vs 175): only 263 explicit initializers, duplicate
   `visualIndex` values, overlapping definitions, and an expanded set of named stats at
   different offsets;
 - a profile maximum of 40 player slots (vs 32; the fork's operational 32-slot limit leaves
@@ -58,9 +58,10 @@ Segmentation is per-stat, not per-version: most counters have 9 phase buckets on
 "Game Ticks Played" has 13 on both.
 
 Both versions define a 140×u32 field named "Play Area Grid": PES17 at entry+0x1034 and
-PES21 at entry+0x1938. These are candidate heatmap grids; spatial heatmap semantics remain
-unverified as described below. The original mapped the PES17 grid and processed it only
-through the generic stat path as a summed scalar column, hidden by default; it never
+PES21 at entry+0x1938 (on PES21 only the first 139 are cells, the 140th a sample count:
+`testing.md` "PES21 heatmaps"). These are candidate heatmap grids; spatial heatmap semantics
+remain unverified as described below. The original mapped the PES17 grid and processed it
+only through the generic stat path as a summed scalar column, hidden by default; it never
 interpreted or rendered the 10x14 grid as a heatmap. The fork added the reading and
 rendering code for PES21. The PES21 stats-table base also exposes 8 per-team grids in the
 fork.

@@ -493,7 +493,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   It first opens at 1000 × 600 points (its whole frame, title bar included), or, each side on
   its own, at 90% of Studio's window in whole points where that is smaller, centered in it.
   1000 holds the tree and the topic's 720-point text column (below) with a scroll bar beside
-  it, where 90% of the default 1280 × 800 window drew a pane far wider than the text it holds.
+  it, where 90% of the default 1280 × 780 window drew a pane far wider than the text it holds.
   The 90% cap keeps it inside whatever size Studio's window has (`spec/core/gui.md` "Shell
   layout", "The window's size"), where a small window would cut off a fixed size.
 
@@ -749,9 +749,9 @@ Rules:
   returns to idle. That is Red's `Done -` with the result in it, and it falls out of the notice
   the tool already publishes (`Compiled 48 teams · [Open output]` — the action is not in the
   title). While focused the notice is in the status bar and the title stays idle.
-- **Never the version, never a condition.** The version lives in the status bar (see "Changelog
-  and version display"); a `ShellCondition` is an environment fact that outlasts any glance at
-  the taskbar and would read as a stuck process.
+- **Never the version, never a condition.** The version lives in the status bar (see
+  `distribution.md` "Changelog and version display"); a `ShellCondition` is an environment fact
+  that outlasts any glance at the taskbar and would read as a stuck process.
 - Set through `ViewportCommand::Title` only when the string changes, once per frame at most.
   The Windows taskbar progress bar (`ITaskbarList3`) is **not** used: neither winit nor eframe
   exposes it, and a text title covers the need without platform code.
@@ -900,8 +900,8 @@ sweeps over such controls, until the wheel has rested 500 ms: a control sees the
 being hovered, so without the rest rule scrolling the player view would edit every box that
 passed under the pointer.
 
-One function in `studio_core`'s widgets applies it to a control's response, and every combo
-box and drag value of the suite calls it, the shared libs' included (`team_widgets` and
+One function in `studio_core`'s widgets applies these rules to a control's response, and every
+combo box and drag value of the suite calls it, the shared libs' included (`team_widgets` and
 `color_tools` depend on `studio_core`): a wrapper per widget kind would leave out every control
 built with egui's own constructor. The drafts do the same for every
 `select` and number input (`docs/prototypes/index.html`, the wheel listener), so a draft can

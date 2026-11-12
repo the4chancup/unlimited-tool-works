@@ -331,10 +331,10 @@ overrides. No material link is needed for this case: the link is for the reverse
 
 `ir_to_gltf` (the [Player aesthetics editor](player_aesthetics_editor.md)'s convert-to-glTF and the
 [Export upgrader](export_upgrader.md)'s optional glTF pass; the Team compiler never emits glTF)
-writes **one `materials.toml` per folder** (the catch-all), with app-injected comments: most users
-edit one file and have changes reflected across all models. The modular `*.materials.toml` layout and
-`.common` links are an advanced opt-in that users create manually; the exporter doesn't generate
-them.
+writes **one `materials.toml` per folder** (the catch-all), with app-injected comments, so that most
+users edit one file and have changes reflected across all models. The modular `*.materials.toml`
+layout and `.common` links are an advanced opt-in that users create manually; the exporter
+doesn't generate them.
 
 A native source's material is written with its `family` inferred from the native shader (see
 "Shader families") **and** its native fields verbatim in the matching engine table, so the same-format
@@ -393,7 +393,7 @@ What exists of this is in `spec/model_format.md` "Shader families".
 
 **Before glTF sources (Phase 7) make the `metal` and `glass` defaults reachable on Fox**
 (today only a Fox source reaches those families, and it keeps its own samplers), settle three
-against the same files:
+against the same files as the spec's (every FMDL and `.mtl` on the maintainer's machine):
 
 - `glass` binds `Base_Tex_LIN` in 39 of 42 real glass materials (all 28 of Konami's
   `fox_3dfw_glass`, 11 of 14 `pes3dfw_glass2`) and every `pes3dfw_glass2` carries a

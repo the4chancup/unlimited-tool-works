@@ -744,10 +744,10 @@ and lane contract live in the Match tracker plan).
   stream convention). `GoalAmended` updates the stored assist and kind for presentation but
   never re-triggers scoring or automation.
 
-  Manual goalhorn presses become pure soundboard (they play music without scoring), so
-  the two sources can't double-count, and a manual press during the delay cancels the
-  pending auto-play. **Undo Last Goal** restores only the pre-goal playback snapshot; it
-  does not decrement authoritative score or scorer totals while the feed is score
+  While the feed is live, manual goalhorn presses become pure soundboard (they play music
+  without scoring), so the two sources can't double-count, and a manual press during the
+  delay cancels the pending auto-play. **Undo Last Goal** restores only the pre-goal playback
+  snapshot; it does not decrement authoritative score or scorer totals while the feed is score
   authority. Tracker-side score correction is not supported in the first implementation.
 - **Scorer matching**: the feed's scorer name is matched to the side's player slots
   case-insensitively first. Failing that, it is matched, among the slots whose name has at
@@ -1059,7 +1059,7 @@ It reproduces Rigdio's proven three-column soundboard inside the suite shell:
 - The `time` condition's goal-minute prompt is a small modal opened by the view when
   a scored goal needs it (skipped while the Match tracker feed supplies the minute).
 - When the Match tracker feed is live, the center column gains a feed chip (detected
-  teams + game clock) and the Autopilot toggle (see "Autopilot").
+  teams + game clock) and the Autopilot mode selector (see "Autopilot").
 - Individual volume sliders (the pre-normalization UI, 0–200) survive only for the
   normalization-off configuration, matching Rigdio: one on every team button, anthem and
   VA included, on the row below it, each with a 🔊 toggle that shows or hides it;

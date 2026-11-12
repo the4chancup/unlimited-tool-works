@@ -135,8 +135,9 @@ are compiled from folders anyway, to the second decompression (about 2 s for a 0
 export).
 
 The free part bounds what the kept archives leave to everything that still has to acquire. A
-kept permit is released only when the coordinator reaches its export, and an `acquire` waits (a
-later `.7z`'s check, an earlier export's archive or a task's admission in the coordinator). So a
+kept permit is released only when the coordinator reaches its export, and an `acquire` (a later
+`.7z`'s check, an earlier export's archive or a task's admission in the coordinator) waits for
+the permits it needs to be free. So a
 run with an acquire larger than what the kept archives leave would wait forever on permits
 released only after it. The largest other archive's size is the largest acquire the run knows
 before any check runs (every archive's header is read by routing). An archive over the cap,

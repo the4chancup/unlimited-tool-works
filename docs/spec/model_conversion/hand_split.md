@@ -125,8 +125,9 @@ A split needs the model's `.mtl` bytes. A hand-weighted model whose `.mtl` is a 
 `.mtl.common` link, or a `Common/` `.mtl` its search finds) is split with that file, the hands'
 entries naming it as the body's does. The face task's files include that file, since the
 conversion pre-check reads it for every model (`team_compiler/pipeline.md` step 3 "Format
-conversion"). Until then the case was refused with `model_conversion_failed`, the face reading
-no Common file; the refusal's reason went with the pre-check, and one rule covers both.
+conversion"). Before the face task's files included it, the case was refused with
+`model_conversion_failed`, the face reading no Common file; the refusal's reason went with the
+pre-check, and one rule covers both.
 
 A split model goes through the IR and back (FMDL → IR → split → FMDL; on pre-Fox `.model` → IR →
 split → `.model`). Measured at 4.18 on that `fcl_hair.fmdl`, the round trip keeps the bones, the

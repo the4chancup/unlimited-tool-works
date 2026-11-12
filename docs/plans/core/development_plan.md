@@ -68,7 +68,7 @@ to get used to it before the deadline. What matters most there is a working edit
 check is rock solid (`libs/aatf`), so after Phase 6 closes the work runs in this order:
 
 1. the DBC ruleset's coverage (worklog 20.0d);
-2. Phase 8's usability pass (8.4) and its shell;
+2. Phase 8's usability pass (8.4) and Phase 8's shell;
 3. the Save editor's draft and view, first among Phase 8's tool views;
 4. Phase 8's other views and Release 0.1.0 as above.
 
@@ -85,12 +85,12 @@ before, so nothing of the Team compiler's output (its CPKs, its aesthetics patch
 DBC7's save.
 
 No rules file rides beside the exe: one in the data folder's `rules/` would list as an import,
-the same ruleset twice in the dropdown, its copy one × from deleted.
+the same ruleset twice in the dropdown, its copy one click on its × from being deleted.
 
 The settings file lives in the bundle's `data/` folder, `data/settings.toml`, which makes the
 bundle portable (`spec/core/distribution.md` "Data location: asked on first run"), so 0.0.1's
-first start asks nothing: the location choice is what a preview's testers lose, against a
-check that is DBC's from the first open. The settings file also carries the Team compiler's
+first start asks nothing: the location choice is what a preview's testers lose, in exchange
+for a check that is DBC's from the first open. The settings file also carries the Team compiler's
 `multicpk_mode` and `cpk_name` at their defaults, the two lines VGL's organizer changes in
 0.0.2 (below), so that readme can say which line to edit rather than what to add.
 
@@ -620,13 +620,11 @@ Closes with the **1.0.0** release. Release 0.1.0 already delivered the Windows `
 recipe and `CHANGELOG.md`, Release 0.2.0 the first help chapters and the update check and notice
 with the teams-list merge; this phase completes them and writes the maintenance-mode section.
 
-- Release bundling: the Linux bundle joins the `just release <version>` recipe (see
-  `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version
-  display"); Linux tested on a real machine. Brought forward to right after 0.0.1's cut, with a
-  CI workflow that builds the bundles on a version tag into a draft GitHub Release, the Windows
-  asset checked against the locally checked exe before publishing (DECISIONS 2026-11-01 "CI
-  release builds right after 0.0.1's cut, Windows first"). Its design is written into
-  `distribution.md` before it is built
+- Release bundling: Linux tested on a real machine. Both bundles have been built since 0.0.1,
+  by a CI workflow on a version tag into a draft GitHub Release, the Linux one's look so far
+  taken in WSLg (DECISIONS 2026-11-02 "0.0.1 is built by CI; the release profile stays the
+  default", which overrides 2026-11-01's; see `distribution.md` "Release builds in CI",
+  `distribution.md` "Changelog and version display")
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update` (see `distribution.md` "Distribution and updates")
 - Desktop GPU BC7 on Phase 4's texture step (`libs/README.md` "First-release desktop GPU BC7"):

@@ -21,7 +21,8 @@ single-file plan.
 ## Overview
 
 Unlimited Tool Works is a Rust-based **suite of all the tools used by the 4cc community**, built around two
-tightly integrated main tools, the first of which exists:
+tightly integrated main tools. The second, the Save editor, is built in part
+(`spec/save_editor.md`; the rest is in `plans/core/README.md` "Overview"). The first:
 
 1. **The Team compiler** (successor to the AET Compiler) — compiles aesthetics exports into CPK archives,
    with compile-time model format conversion and compile-time aesthetics (the aesthetics patch,

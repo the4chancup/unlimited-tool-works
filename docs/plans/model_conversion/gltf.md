@@ -85,7 +85,7 @@ What exists of this is in `spec/model_conversion/gltf.md` "IR part merge (`merge
 `merge_ir_parts` stays specified here as the IR-level equivalent, **deferred**:
 nothing in the plan calls it, and it is implemented only if a caller appears (a merge of parts
 that must stay in the IR, inside the Player aesthetics editor for instance). The rules below are
-the contract all three share.
+the contract all three share (`fmdl::ops::merge`, `pes_model::ops::merge` and `merge_ir_parts`).
 
 ```rust
 /// Assemble several parts into one model. `parts` is in canonical (alphabetical

@@ -574,8 +574,9 @@ DBC7's fields and data block (worklog 20.0d) are verified as the others are:
 
 - **Parity, DBC7.** The data block against the fork's `aatf_single` (built headless, as for
   5.2f) on the maintainer's PES 2017 saves (`Documents\KONAMI\Pro Evolution Soccer 2017\save`
-  and `C:\Data\4cc\Cups\Autumn24Q`), every team. Built for other rules, most teams fail, and
-  what is compared is the findings, each difference one listed under "DBC7" or a fix.
+  and `C:\Data\4cc\Cups\Autumn24Q`), every team. The saves' teams were built for other rules,
+  so most fail, and what is compared is the findings, each difference one listed under "DBC7"
+  or a fix.
 
   Run at 20.0d (2026-10-20, 220 teams each): every difference is one of those classes; the one
   fix it found is "Recognition before choices". The fork passes 29 and 36 teams, and the data

@@ -105,7 +105,7 @@ is only ever paid on cup-DLC compiles, where a few seconds against a 48-team run
 | Artifact/input | Base location |
 |---|---|
 | Logs and persistent state | Selected data directory |
-| Relative `exports_folder_path` | Executable directory in both data-location modes, so `exports/` sits beside `quick_compile.bat`; created when missing, before a run reads it, so a fresh install has a folder to put exports in. An exports folder named any other way (an absolute setting, the CLI's positional root) is never created: a missing one is refused before the run (`messages.md`, the paragraph after "Output stage and savefile") |
+| Relative `exports_folder_path` | Executable directory in both data-location modes, so `exports/` sits beside `quick_compile.bat`; created when missing, before a run reads it, so a fresh install has a folder to put exports in. An exports folder named any other way (an absolute setting, the CLI's positional root) is never created: a missing one is refused before the run (`messages.md`, the fourth paragraph after "Output stage and savefile", "Fatal settings/environment problems") |
 | Relative `output_folder_path` | Executable directory in both data-location modes (`output/` beside the exe, created on demand); holds `.staging/{run_id}/` during a run |
 | `overrides/` input (Red's `sideload/`) | Selected data directory (an explicit setting may be added later) |
 | Relative `teams_list_path` | Selected data directory — the file is user data once the grid writes ID assignments into it, so it follows the settings file (see `pipeline.md` "Resolved decisions", "Teams list"); nothing is bundled beside the binary |

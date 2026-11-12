@@ -116,7 +116,7 @@ cup plays 19 and 21, and both layouts are measured ("Independent measurements").
 - PES 2017 registers once its own open points are closed: bucket 8 of its phase map, the
   fork's PES17 pointer chain (refuted on the measured executable, so the scan-only path
   stands), and the heatmap viewer over its measured grid (see "Game structures"). Extra time
-  stays `Phase::Unknown` on every version until recorded and gates none of them.
+  stays `Phase::Unknown` on every version until recorded and gates no version's registration.
 - Heatmaps ship for a version once its grid is measured (PES 2017 and PES 2021 are; PES
   2019's is not).
 - The new footballbox exporter does not depend on the fork's heatmap or PES21 findings.

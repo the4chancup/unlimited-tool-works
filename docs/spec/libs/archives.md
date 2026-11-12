@@ -104,7 +104,7 @@ a `Kits/Réf.txt` with a non-ASCII name) packed seven ways:
 - PowerShell `Compress-Archive` (Deflate, UTF-8 flag);
 - 7-Zip encrypted `.7z` (header encrypted too);
 - `.7z` with the header readable and the entries encrypted;
-- encrypted `.zip`.
+- 7-Zip encrypted `.zip`.
 
 Beside these, a PPMd `.7z` and a BZip2 `.zip` cover the codecs the crate does not carry.
 

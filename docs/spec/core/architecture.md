@@ -122,7 +122,7 @@ crates.io, so no blanket prefix is needed):
 **`studio_core`** — the platform, containing only what runs with zero tools:
 - The `StudioTool` plugin trait (see below)
 - The settings framework: common settings + per-tool settings sections, TOML persistence
-- The `PipelineEvent` types these widgets consume, using `vtree::ScopePath` for canonical
+- The `PipelineEvent` types its common widgets consume, using `vtree::ScopePath` for canonical
   tool-neutral event paths
 
 Its module tree is closed — "minimal" is enforced by there being no natural place to put anything
@@ -146,7 +146,7 @@ crates/studio_core/src/
 │   └── location.rs   #   data-location resolution (portable data/ vs config dir)
 └── shell/
     ├── mod.rs        #   StudioApp: eframe::App, panel layout, logic/ui split, tool registry
-    └── launch.rs     #   argument parsing for the three launch modes (the --gui autorun is
+    └── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
                       #   refused until Phase 8)
 ```
 
@@ -271,12 +271,14 @@ stay `wasm32`-checkable under guardrail 6 meanwhile.
 
 #### Launch modes
 
-The binary has two launch modes, distinguished by its arguments:
+The binary has four launch modes, distinguished by its arguments:
 
 | Invocation | Behavior |
 |---|---|
-| `UTW` | GUI, the first registered tool active |
+| `UTW` | GUI, the tool the `last_tool` setting names active (the first window tool when it names none) |
 | `UTW <tool-id> <command> [args]` | Headless CLI: the tool's `cli_run`, console output, exit code |
+| `UTW help [<chapter> [<topic>]]`, `UTW help --export <folder>` | The help's Markdown: the chapter list, a chapter or a topic printed, or every chapter written under the folder |
+| `UTW --gui <tool-id> <command> [args]` | GUI autorun, refused with exit code 2 until it is built (`plans/core/architecture.md` "Launch modes") |
 
 `--gui` is a global flag parsed by `UTW` before tool dispatch, so no tool's `clap::Command`
 knows about it.

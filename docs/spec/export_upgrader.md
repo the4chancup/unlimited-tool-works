@@ -107,8 +107,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
       see "Name colour codes" in `spec/pes_savefile/model.md`). The raw codes are control
       characters, invalid in folder names. Any other character a folder name cannot hold, `/`,
       `?` or `:` among them, is dropped the same way, and a trailing `.` or space is trimmed,
-      since a folder name cannot end in either (`T.O.M.` → `T.O.M`). A source left empty counts
-      as absent;
+      since a folder name cannot end in either (`T.O.M.` → `T.O.M`). Any of the three sources
+      left empty counts as absent;
    4. NN alone.
 
    Red's Pre-Studio upgrader uses this same order.
@@ -202,11 +202,11 @@ to moving, flattening, or removing files describe that draft, not destructive ed
       until neither kind pairs another folder: an unworn folder whose same-numbered folder
       of the other kind is paired with an ID takes that ID, when it is a missing ID of its
       own kind (`g2452` takes 2227 from `k2452`), `wearer_by_number` (W, `from` the other
-      folder), until it pairs nothing more; then a kind left with as many missing IDs as
-      unworn folders pairs them in sorted order, ID rank to folder-number rank,
-      `wearer_by_order` (W). One kind at a time, not both at once: on /fg/ both kinds reach
-      equal counts in one round, and ordering the gloves there would pair them by rank,
-      where one step later each follows its boots folder by number.
+      folder), until it pairs nothing more for that kind in that round; then a kind left with
+      as many missing IDs as unworn folders pairs them in sorted order, ID rank to
+      folder-number rank, `wearer_by_order` (W). One kind at a time, not both at once: on
+      /fg/ both kinds reach equal counts in one round, and ordering the gloves there would
+      pair them by rank, where one step later each follows its boots folder by number.
    4. **Refused.** A missing ID still left beside an unworn folder of its kind refuses the
       export (`custom_model_unpaired`, E: the slot, the key and the ID, per wearer), since
       nothing says which folder is his; one left with no unworn folder gets the hide ID
@@ -589,9 +589,9 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    references in the maintainer's 1,489 `Common/` `.mtl` files, the compiler emitting a
    member's `.mtl` as written), keeps its Common references as game paths, respelled
    `team_common_folder/` as above, with no finding when the input's `Common/` holds the texture
-   (one it lacks is reported as below). The pre-Fox compile does not read a shared folder's
-   links (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox alone,
-   while the game path is supplied from the carried `Common/`.
+   (one it lacks is reported as below), because the pre-Fox compile does not read a shared
+   folder's links (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox
+   alone, while the game path is supplied from the carried `Common/`.
 
    A link stands for the `Common/` file at its own path below the root of the model's player
    folder, so one beside a subfolder's `.mtl` would name a file in a `Common/` subfolder; a bare
@@ -710,7 +710,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    (`skin_u0771p3.dds`, `Common/ltd/u0XXXp5/`).
 
    The names renamed are those below a player folder, below a shared `Boots/`/`Gloves/` folder
-   and below `Common/` (the kit folders have their own naming, `Kit Textures/` step 6's).
+   and below `Common/` (the kit folders have their own naming, `Kit Textures/` step 5's).
 
    When an output path, renamed or not, is one another output path already takes, letter case
    aside, it is the second input's: it is not written, and it is reported `unmigrated_content`
@@ -737,7 +737,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    ID (a copy already spelled with it is never renamed, so it loses to the other), and an export
    holding two is too broken to repair by rule. No export on the maintainer's machine holds
    one. So the upgrader reads no team ID for this rule; the save's ID is read for the roster
-   alone (step 6).
+   alone (steps 2 and 6).
 
    **What is respelled.** The kit folder token is a texture set's alone (`spec/model_format.md`
    "Kit-dependent assets"): a `face.xml` naming a model in a `u0???p0/` folder is respelled
@@ -991,8 +991,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `spec/aesthetics_export/object_model.md`). `refs.txt` and the referee subfolders below are
    matched so too, as real exports spell them `Refs.txt`, `Face/`.
 
-   A `refs` export without a `refs.txt` holds no roster to migrate and is reported, nothing
-   written, exit 1: `refs_txt_missing`, E, on the export.
+   A `refs` export without a `refs.txt` or `Refs list.txt` holds no roster to migrate and is
+   reported, nothing written, exit 1: `refs_txt_missing`, E, on the export.
 
    The roster file's older spelling `Refs list.txt`, the refs compiler's, is read when there is
    no `refs.txt`, and that layout's referee folders stand directly at the export root instead of
@@ -1502,10 +1502,10 @@ For each migration the upgrader lists the staging folder it wrote ("CLI") into c
 through `aesthetics_export::parse_listing` as `ParsedAestheticsExport`, runs the shared
 validation, and reports every scoped issue.
 
-The validation is for the savefile's version (in loose mode, PES 21, or PES 16 when the export
-holds a `.model` file outside its leftovers, step 10) in a fixed context, not the compiler's
-settings: no pass-through, the strict file-type check on, as the compiler's default has it, no
-installed Common textures.
+The validation is for the savefile's version (in loose mode, PES 16 when the export holds a
+`.model` file outside its leftovers, step 10, and PES 21 otherwise) in a fixed context, not the
+compiler's settings: no pass-through, the strict file-type check on, as the compiler's default
+has it, no installed Common textures.
 
 Old exports are single-engine, and the version decides only which model names are allowed. A
 leftover does not decide the version, because the real KFG VGL26 export, a Fox one, keeps

@@ -531,7 +531,7 @@ All seven are the ones the parity runs checked ("Development phase and verificat
 `plans/aatf_rules.md` "Development phase and verification").
 
 `libs/aatf` keeps the latest two rulesets of each kind of cup with an organization of its own,
-the 4cc's own (the official AATF), VGL (/vg/ League) and VTL (/vt/ League), and DBC7
+the 4cc's own (the official AATF), VGL (/vg/ League) and VTL (/vt/ League), and one more, DBC7
 (Divegrass Before Christmas). A cup's new edition joins the list, and its kind keeps its
 latest two. The older one leaves the list and stays in `rulesets/` as a test ruleset with its
 fixtures (`src/fixtures/`), built into the tests alone, as Autumn 25 and VGL25 do. Minor

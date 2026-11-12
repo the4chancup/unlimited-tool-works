@@ -118,8 +118,8 @@ pane is shown, the lines the last edit changed are highlighted.
   - the per-stat targets: all ability stats, each an "own target" checkbox and its number.
     Unticked, the stat follows the rate and has no entry. A number field cannot be left empty,
     which is how the draft says "the rate";
-  - the free cards per group, one number per group, COM styles first (as columns they would
-    widen the table past a laptop screen). 0 removes the group's entry, as an emptied draft
+  - the free cards per group (as columns they would widen the table past a laptop screen), one
+    number per group, COM styles first. 0 removes the group's entry, as an emptied draft
     field does;
   - the tier's conditions (the condition editor below).
 

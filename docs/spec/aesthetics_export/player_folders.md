@@ -312,7 +312,7 @@ At most one shared link per category (face, boots, and gloves) may appear in a p
 multiple links of any same kind are rejected. Multiple shared-face bases are ambiguous pre-Fox
 because copied trees can collide, and unnecessary on Fox because one shared base can already merge
 with all local parts. Fox merging therefore combines that one shared base with local parts, never
-several same-kind shared links:
+several same-kind shared links. A shared boots folder:
 
 ```
 Boots/
@@ -894,16 +894,16 @@ At compile time, the pipeline:
    IDs, letting each player's boots/gloves ID equal their player ID, and any such change is a new
    scheme version. The IDs are baked into distributed savefiles through the aesthetics patch on
    every engine, so a scheme change ships with a from-scratch savefile remake. Either way bumping
-   the version is a sanctioned path rather than a compatibility break
+   the version is a sanctioned path rather than a compatibility break.
 3. **Splits and packs** everything into the correct game structures (face folder with player ID,
-   boots/gloves folders with assigned IDs), rewriting FMDL/MTL/XML texture paths to match
+   boots/gloves folders with assigned IDs), rewriting FMDL/MTL/XML texture paths to match.
 
 A team export's root also admits the valueless `write_names` marker: the aesthetics patch writes
 its players' names ("Player settings in exports" in [`settings_toml.md`](settings_toml.md)).
 
-The block size is fixed for the lifetime of a scheme version — IDs are baked into distributed
-outputs — so the aesthetics patch records `allocation_scheme_version = 1` in its header, and applying a
-patch of another scheme is refused.
+Because the block size is fixed for a scheme version (step 2), the aesthetics patch records
+`allocation_scheme_version = 1` in its header, and applying a patch of another scheme is
+refused.
 
 **A `Midcup` export keeps the shared IDs the team already has** (step 2 above, "Assigns IDs
 automatically"). A cup's Midcup export carries only the shared boots and gloves folders that
