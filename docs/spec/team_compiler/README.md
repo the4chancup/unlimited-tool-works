@@ -2,30 +2,35 @@
 
 The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK
-archives, with compile-time model format conversion (see the
-[Model conversion plan](../model_conversion/README.md)) and compile-time aesthetics (the
-`aesthetics_patch.toml` the run writes with its CPKs and applies to the save, on every version —
-see the [Savefile plan](../pes_savefile/README.md)). Platform context (crate structure, tool
-plugin trait, GUI shell, parallelism) is in the [core plan](../core/README.md).
+archives. Model format conversion happens at compile time (see the
+[Model conversion plan](../model_conversion/README.md)), and so do the aesthetics: the run
+writes `aesthetics_patch.toml` with its CPKs and applies it to the save, on every version (see
+the [Savefile plan](../pes_savefile/README.md)).
+
+Platform context (crate structure, tool plugin trait, GUI shell, parallelism) is in the
+[core plan](../core/README.md).
 
 ### Relationship to the older compilers
 
-The older compilers are stopgaps, not templates. The original batch-file compiler
-was rudimentary; **Red** is a direct translation of it into Python — feature-complete
-and battle-tested, but slow at its core (it works by moving files around on
-storage); **Blue** is an LLM-made prototype demonstrating that an in-memory,
-parallel pipeline is possible. None of them is followed to the letter:
+The older compilers are stopgaps, not templates:
 
-- **The contract is output parity with Red** (still the golden standard): given the
-  same inputs, the game-facing CPK contents must match Red's — exact bytes for
-  unaffected artifacts and normalized semantic parity for intentional ID/path/layout
-  changes (see `testing.md` "Testing: parity against Red"). *How* that output
-  is produced is free to change.
-- **The implementation is built around the object model** (typed structs
-  representing each element of an export — see the [Aesthetics export plan](../aesthetics_export/README.md)), not around Red's
-  disk-shuffling stages or Blue's path-string processing functions. References to
-  Red/Blue modules in this document identify *where the behavior to reproduce is
-  specified*, not code to translate.
+- The original batch-file compiler was rudimentary.
+- **Red** is a direct translation of it into Python: feature-complete and battle-tested, but
+  slow at its core, because it works by moving files around on storage.
+- **Blue** is an LLM-made prototype demonstrating that an in-memory, parallel pipeline is
+  possible.
+
+None of them is followed to the letter:
+
+- **The contract is output parity with Red** (still the golden standard). Given the same
+  inputs, the game-facing CPK contents must match Red's, with exact bytes for unaffected
+  artifacts and normalized semantic parity for intentional ID/path/layout changes (see
+  `testing.md` "Testing: parity against Red"). *How* that output is produced is free to change.
+- **The implementation is built around the object model** (typed structs representing each
+  element of an export: see the [Aesthetics export plan](../aesthetics_export/README.md)), not
+  around Red's disk-shuffling stages or Blue's path-string processing functions. References to
+  Red/Blue modules in this document identify *where the behavior to reproduce is specified*,
+  not code to translate.
 - **Warning/error messaging is overhauled**, not ported: the pipeline emits
   structured `PipelineEvent`s (see the core plan) carrying export/folder identity,
   and the GUI/CLI decide presentation. Red's console-text messages serve only as a
@@ -202,25 +207,25 @@ crates/tools/team_compiler/
 
 Placement rules:
 
-- **If it validates an export, it is not here** — it belongs in `libs/aesthetics_export`.
-- **If two tools need it, it is not here** — it moves to a lib (`pipeline` for scaffolding such as
-  `MemoryBudget` and `CpkStem`; `aesthetics_export` for format knowledge). The same rule
-  in reverse: `bins/dpfl.rs` stays here until a second consumer appears (the Balls compiler only
-  *checks* the DPFL, via a read helper that can move to `pipeline` when needed).
+- **If it validates an export, it is not here**: it belongs in `libs/aesthetics_export`.
+- **If two tools need it, it is not here**: it moves to a lib, `pipeline` for scaffolding such
+  as `MemoryBudget` and `CpkStem`, `aesthetics_export` for format knowledge. The same rule works
+  in reverse: `bins/dpfl.rs` stays here until a second consumer appears. The Balls compiler only
+  *checks* the DPFL, via a read helper that can move to `pipeline` when needed.
 - **`processing/materialize.rs` is the single output-mode seam.** No task's output asks which
-  output mode is active; the mode decides only *where bytes go* — `compile` picks the
-  `OutputSink`, the promotion target and whether `overrides/` applies, `output/` writes through
-  them — never *what a task produces*.
+  output mode is active. The mode decides only *where bytes go*, never *what a task produces*:
+  `compile` picks the `OutputSink`, the promotion target and whether `overrides/` applies, and
+  `output/` writes through them.
 - **`reader/` is the only module that touches export sources.** `check`/`compile` ask it for the
-  current export set; `plan/` receives the resolved exports and `processing/` the files a task
-  read through `ContentSource`; nothing else opens a folder or archive.
+  current export set. `plan/` receives the resolved exports, and `processing/` the files a task
+  read through `ContentSource`. Nothing else opens a folder or archive.
 - **`view/` is render-only.** It reads tool state built from `PipelineEvent`s and emits the user
   intent (compile); it never calls into `processing/` or `output/` directly.
 - **Module names follow the walkthrough's stage names** (`reader`, `check`, `plan`, `processing`,
   `bins`, `output`) so the plan and the tree use one vocabulary. `pipeline` is deliberately *not*
   used for a tool-local module: it is the shared lib's name, and `pipeline::MemoryBudget` next to a
   `crate::pipeline::…` would be a permanent source of confusion.
-- **Files, not folders, until a module exceeds roughly a thousand lines** — then it becomes a
+- **Files, not folders, until a module exceeds roughly a thousand lines**: then it becomes a
   folder with a `mod.rs` and the same name, so paths in this plan stay valid.
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the stage that uses it; one used by
   several stages belongs to `pipeline`.
@@ -229,40 +234,48 @@ Placement rules:
 
 ## Object model and export format
 
-The export object model, its validation progression (`ParsedAestheticsExport` → `ValidatedAestheticsExport` →
-`ResolvedAestheticsExport`), the `aesthetics_export` crate layout, the player-folder format, `settings.toml` in
-exports, and the FPC marker files are specified in the [Aesthetics export plan](../aesthetics_export/README.md). The
-compiler consumes them; only the compile-time behavior — the loaded processing types
-(`ModelFolder` and friends, with their conversion and packing methods), the `BuildManifest`,
-planning, processing, packing, bins, GUI, and CLI — lives in this crate and this plan.
+The [Aesthetics export plan](../aesthetics_export/README.md) specifies:
+
+- the export object model and its validation progression (`ParsedAestheticsExport` →
+  `ValidatedAestheticsExport` → `ResolvedAestheticsExport`);
+- the `aesthetics_export` crate layout;
+- the player-folder format;
+- `settings.toml` in exports;
+- the FPC marker files.
+
+The compiler consumes them. Only the compile-time behavior lives in this crate and this plan:
+the loaded processing types (`ModelFolder` and friends, with their conversion and packing
+methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI.
 
 ---
 
 ## Development phases
 
-- **Phase 3 — skeleton and shared export model (done 2026-10-02):** `libs/aesthetics_export`'s
-  structure parsing and format-level validation (on the `ExportIdentity` boundary, the sanitized
-  validated-versus-eligible projection and the roster-entry semantics of "Validation semantics"
-  in the [Aesthetics export plan](../aesthetics_export/object_model.md)), the Team compiler
-  settings/CLI surface, the reader/coordinator/writer over `libs/pipeline` compiling the subset
-  in "Phase 3 scope" below, and the shell slice's view.
+- **Phase 3 — skeleton and shared export model (done 2026-10-02):**
+  - `libs/aesthetics_export`'s structure parsing and format-level validation (on the
+    `ExportIdentity` boundary, the sanitized validated-versus-eligible projection and the
+    roster-entry semantics of "Validation semantics" in the
+    [Aesthetics export plan](../aesthetics_export/object_model.md));
+  - the Team compiler settings/CLI surface;
+  - the reader/coordinator/writer over `libs/pipeline` compiling the subset in "Phase 3 scope"
+    below;
+  - the shell slice's view.
 - **Phase 4 — processing logic (done 2026-10-12):** the deep pass, model and non-model
   processing on both engines (cross-format conversion through the Phase 2 `model_convert`),
-  packing, bins, referees, the
-  output modes and deployment, on synthetic Studio-format fixtures, with planning fixing every
-  output name and every model task's planned IDs before processing; what `compile` builds is
-  "Phase 4 scope" below. Its parity with Red covers the tracer export (Fox) and the pre-Fox
-  reference (`testing.md`); the full Red parity gate over upgraded old exports depends on
-  Phase 6's Export upgrader (and on Phase 5's savefile and ID integration), so it runs once
-  those phases land.
+  packing, bins, referees, the output modes and deployment. Phase 4 delivered them on synthetic
+  Studio-format fixtures, with planning fixing every output name and every model task's planned
+  IDs before processing. What `compile` builds is "Phase 4 scope" below.
+
+  Its parity with Red covers the tracer export (Fox) and the pre-Fox reference (`testing.md`).
+  The full Red parity gate over upgraded old exports depends on Phase 6's Export upgrader (and
+  on Phase 5's savefile and ID integration), so it runs once those phases land.
 - **Phase 5 — savefile integration (done 2026-10-16):** on Fox, every compiled player's
   `PlayerAppearance.bin`, `BootsList.bin` and `GloveList.bin` rows from his resolved
-  `settings.toml` (the tables went at step 8.36c, the patch carrying each player's whole look
-  on every version since), the default-ID rows, the Midcup shared-IDs record, and the
-  aesthetics patch,
-  written beside the output and applied to the local save in one transaction with the CPKs;
-  what `compile` builds is "Phase 5 scope" below. The pre-Fox patch is deferred with
-  pre-Fox's other gaps (it landed at step 8.36c).
+  `settings.toml`, the default-ID rows, the Midcup shared-IDs record, and the aesthetics patch,
+  written beside the output and applied to the local save in one transaction with the CPKs.
+  The tables went at step 8.36c, and the patch has carried each player's whole look on every
+  version since. What `compile` builds is "Phase 5 scope" below. The pre-Fox patch is deferred
+  with pre-Fox's other gaps (it landed at step 8.36c).
 
 This documents the dependency without changing the phase order in the core plan.
 
@@ -270,38 +283,55 @@ This documents the dependency without changing the phase order in the core plan.
 
 ## Acceptance
 
-Format and rules: `CONTRIBUTING.md` "Testing". IDs are never reused; later phases append.
-In every phase's scenarios, a team export is a `Full` export, its name carrying the tag,
-unless the scenario says `Midcup` (the Aesthetics export plan's "Coverage tag"), and a
-scenario that names no PES version runs for PES 21. A GIVEN names the files that decide its
-outcome; a folder or export it names also holds the least ordinary content its THEN needs
-to be reachable (a face model in a player folder whose face compiles, a model in a shared
-folder, a `kit.dds` in a kit whose texture is used, a kit in an export whose bin entries
-are observed), as the cited test sets up.
+Format and rules: `CONTRIBUTING.md` "Testing". IDs are never reused: later phases append.
 
-**Phase 3 scope.** Phase 3 delivered discovery and export sources, `aesthetics_export`'s
-structure pass with its dispositions ("Validation semantics" in the Aesthetics export plan),
-export identity, the settings and CLI surface, the pipeline scaffolding compiling the tracer
-bullet's content (Fox player folders with face models, and kits) into a CPK, and the shell
-slice. Until step 4.20 a subset gate skipped, with the Error `content_not_yet_compiled`, every
-export holding anything `compile` could not build yet, so that no CPK differing from the
-finished compiler's was written; the gate is withdrawn with its finding (TC-OUT-06), and every
-export of either engine reaches processing whatever it holds. What becomes of a file is its
-role's: a file no package reads is not read and is reported `file_not_used` (`pipeline.md`
-"2. Per-export serial steps", the face-file paragraph), the one refusal left being a model
-folder whose selected representation is glTF (`model_gltf_unsupported`, Phase 7). A refs export
-plans no colors record (its `colors.txt` is not read), no `team_colors_missing`, no kits and no
-patch entries of its own: the game's referee hook loads slot NN's `k99NN`/`g99NN`
-by number, and the referees' kits are the template tree's (`blue_port.md` "Referee export
-processing"), so a refs export's kits, logo, portraits and collars are `file_not_used`.
-Findings are observed
-in `check`'s and `compile`'s console output, one line per finding naming its code and scope; the
-compiled CPK's content is the parity test's (`testing.md`), not a scenario's. Of the events,
-Phase 3 emits `ExportStarted`, `Message` and `ExportProcessed` only: `FolderStatus`, `Progress`
-and `Complete` wait for their consumers, the progress grid and the run strip (Phase 8), which
-is also when `Complete`'s placeholder fields are restructured ("Event system" in
-`core/architecture.md`), so a cell's outcome (`DoneWithErrors`, "Cell states" in `gui.md`) is
-not one of these scenarios.
+In every phase's scenarios:
+
+- a team export is a `Full` export, its name carrying the tag, unless the scenario says
+  `Midcup` (the Aesthetics export plan's "Coverage tag");
+- a scenario that names no PES version runs for PES 21.
+
+A GIVEN names the files that decide its outcome. A folder or export it names also holds the
+least ordinary content its THEN needs to be reachable, as the cited test sets up: a face model
+in a player folder whose face compiles, a model in a shared folder, a `kit.dds` in a kit whose
+texture is used, a kit in an export whose bin entries are observed.
+
+**Phase 3 scope.** Phase 3 delivered:
+
+- discovery and export sources;
+- `aesthetics_export`'s structure pass with its dispositions ("Validation semantics" in the
+  Aesthetics export plan);
+- export identity;
+- the settings and CLI surface;
+- the pipeline scaffolding compiling the tracer bullet's content (Fox player folders with face
+  models, and kits) into a CPK;
+- the shell slice.
+
+Every export of either engine reaches processing, whatever it holds. Until step 4.20 a subset
+gate skipped, with the Error `content_not_yet_compiled`, every export holding anything
+`compile` could not build yet, so that no CPK differing from the finished compiler's was
+written. The gate is withdrawn with its finding (TC-OUT-06).
+
+What becomes of a file is its role's. A file no package reads is not read and is reported
+`file_not_used` (`pipeline.md` "2. Per-export serial steps", the face-file paragraph). The one
+refusal left is a model folder whose selected representation is glTF (`model_gltf_unsupported`,
+Phase 7).
+
+A refs export plans no colors record (its `colors.txt` is not read), no `team_colors_missing`,
+no kits and no patch entries of its own. This is because the game's referee hook loads slot
+NN's `k99NN`/`g99NN` by number, and the referees' kits are the template tree's (`blue_port.md`
+"Referee export processing"). So a refs export's kits, logo, portraits and collars are
+`file_not_used`.
+
+Findings are observed in `check`'s and `compile`'s console output, one line per finding naming
+its code and scope. The compiled CPK's content is the parity test's (`testing.md`), not a
+scenario's.
+
+Of the events, Phase 3 emits `ExportStarted`, `Message` and `ExportProcessed` only.
+`FolderStatus`, `Progress` and `Complete` wait for their consumers, the progress grid and the
+run strip (Phase 8), which is also when `Complete`'s placeholder fields are restructured
+("Event system" in `core/architecture.md`). So a cell's outcome (`DoneWithErrors`,
+"Cell states" in `gui.md`) is not one of these scenarios.
 
 **Sources**
 
@@ -687,30 +717,48 @@ Only the first needs a display (`run_gui` opens the window); the rest of the Pha
 proven headless (`egui::Context::run_ui`, the frame's AccessKit nodes).
 
 **Phase 4 scope.** `compile` builds everything a validated export holds, for every target version
-(PES 15-21) and for referee exports, into the normal CPK, the test tree or the sideload tree, and
-deploys the CPKs into the PES install, degrading to `output/` when it cannot; `check` runs the
-structure pass and the deep pass on every source kind. The run plans IDs (the 40-ID blocks;
-`duplicate_aesthetics_export` is the validation pass's, `duplicate_path` the writer's), reads the
-working bins from the installed CPKs and writes `UniColor.bin` and `TeamColor.bin` and, on Fox,
-`UniformParameter.bin` and the `BootsList.bin` and `GloveList.bin` rows for the compiled players whose custom boots or gloves
-committed, a failed output keeping the installed row, a compiled player of a `Full`
-export whose folder holds no boots or no gloves losing that installed row, every other row kept,
-`PlayerAppearance.bin` passing through unchanged until Phase 5
-builds its rows from `settings.toml` (the three tables went at step 8.36c, their rows carried
-in the patch since). `content_not_yet_compiled` is withdrawn (step 4.20). What
-`compile` still refuses: a model folder whose selected representation is glTF, dropped with
-`model_gltf_unsupported` until Phase 7, never compiled from a native source beside it. Not in
-Phase 4, so not here: the savefile step and the aesthetics patch (Phase 5; `compile` emits no
-`savefile_*` or `patch_written` finding and a configured savefile is left byte-identical),
-`run_pes`, `FolderStatus`/`Progress`/`Complete`, live validation and the GUI's degraded-run
-actions (Phase 8), the in-game effect of a `GloveList.bin` row (FoxDen's gloves patch, worklog
-"Issues") and of a sideload tree (FoxDen's LiveCPK gaps). The areas `PRT`, `MOD`, `TEX`, `CHK`,
-`XML`, `CMN`, `BIN`, `PLN`, `REF` and `DEP` are new; `KIT`, `ROOT` and `OUT` continue their
-numbering. Scenarios observe the console findings, the exit code, the files of the output tree or
-of the CPK (read back with the `cpk` crate); byte parity with Red is the parity test's. Test
-data: `/co/` is team 714, so its 40-ID block is 621-660, slot 05 is player 71405 with exclusive
-boots/gloves ID 625 and the first shared ID is 644; `/egg/` is 792 (the tracer fixture); `/a/` is
-702 and `/b/` 707.
+(PES 15-21) and for referee exports, into the normal CPK, the test tree or the sideload tree. It
+deploys the CPKs into the PES install, degrading to `output/` when it cannot. `check` runs the
+structure pass and the deep pass on every source kind.
+
+The run plans IDs (the 40-ID blocks; `duplicate_aesthetics_export` is the validation pass's,
+`duplicate_path` the writer's). It reads the working bins from the installed CPKs and writes:
+
+- `UniColor.bin` and `TeamColor.bin`;
+- on Fox, `UniformParameter.bin`, and the `BootsList.bin` and `GloveList.bin` rows for the
+  compiled players whose custom boots or gloves committed.
+
+In those two tables a failed output keeps the installed row, a compiled player of a `Full`
+export whose folder holds no boots or no gloves loses that installed row, and every other row
+is kept. `PlayerAppearance.bin` passes through unchanged until Phase 5 builds its rows from
+`settings.toml`. The three tables went at step 8.36c, and their rows have been carried in the
+patch since.
+
+`content_not_yet_compiled` is withdrawn (step 4.20). What `compile` still refuses is a model
+folder whose selected representation is glTF: it is dropped with `model_gltf_unsupported` until
+Phase 7, and never compiled from a native source beside it.
+
+Not in Phase 4, so not here:
+
+- the savefile step and the aesthetics patch (Phase 5; `compile` emits no `savefile_*` or
+  `patch_written` finding and a configured savefile is left byte-identical);
+- `run_pes`, `FolderStatus`/`Progress`/`Complete`, live validation and the GUI's degraded-run
+  actions (Phase 8);
+- the in-game effect of a `GloveList.bin` row (FoxDen's gloves patch, worklog "Issues") and of
+  a sideload tree (FoxDen's LiveCPK gaps).
+
+The areas `PRT`, `MOD`, `TEX`, `CHK`, `XML`, `CMN`, `BIN`, `PLN`, `REF` and `DEP` are new.
+`KIT`, `ROOT` and `OUT` continue their numbering.
+
+Scenarios observe the console findings, the exit code, the files of the output tree or of the
+CPK (read back with the `cpk` crate). Byte parity with Red is the parity test's.
+
+Test data:
+
+- `/co/` is team 714, so its 40-ID block is 621-660, slot 05 is player 71405 with exclusive
+  boots/gloves ID 625, and the first shared ID is 644;
+- `/egg/` is 792 (the tracer fixture);
+- `/a/` is 702 and `/b/` 707.
 
 **Portraits**
 
@@ -2555,23 +2603,33 @@ TC-DEP-16  GIVEN no PES folder or no download/, a DpFileList.bin that cannot be 
                 file (exit code 3), and nothing in download/ is created, renamed or written
 ```
 
-**Phase 5 scope.** `compile` writes the aesthetics patch to the output folder — on every
-version, every compiled player's look (his resolved `settings.toml` and `ingame_face.toml`,
-motions included), his boots and gloves IDs (the default IDs included), and a `write_names`
-export's names — and applies it to the local savefile; the CPK carries no player table (the
-`PlayerAppearance.bin`, `BootsList.bin` and `GloveList.bin` rows this phase built on Fox went
-at step 8.36c, which also brought the patch to PES 15-17, before which those compiles wrote
-none). A compiled player is
-every player a kept player folder of a team export maps to ("Player settings in exports" in the Aesthetics export
-plan); a referee export's settings reach no patch. Phase 5
-withdrew TC-BIN-10, TC-BIN-17 and TC-BIN-22, whose player tables it changed, restating them
-as TC-BIN-25 to TC-BIN-27, themselves restated at step 8.36c. Test data as in Phase 4. A scenario naming no coverage tag compiles a `Full`
-export (a `Midcup` one keeps a player's current ID where a `Full` one writes the default,
-`aesthetics_export/settings_toml.md`). Unless a
-scenario says otherwise, the PES folder is a deployable fixture install whose DpFileList lists
-`4cc_08_bins` and the output CPK, and `savefile_path` names
-a fixture save of the compile's version carrying team 714 (a test never uses `auto`,
-which would find the developer's own save).
+**Phase 5 scope.** `compile` writes the aesthetics patch to the output folder and applies it to
+the local savefile. On every version, the patch carries:
+
+- every compiled player's look (his resolved `settings.toml` and `ingame_face.toml`, motions
+  included);
+- his boots and gloves IDs (the default IDs included);
+- a `write_names` export's names.
+
+The CPK carries no player table. The `PlayerAppearance.bin`, `BootsList.bin` and
+`GloveList.bin` rows this phase built on Fox went at step 8.36c, which also brought the patch
+to PES 15-17; before that step, those compiles wrote none.
+
+A compiled player is every player a kept player folder of a team export maps to
+("Player settings in exports" in the Aesthetics export plan). A referee export's settings
+reach no patch.
+
+Phase 5 withdrew TC-BIN-10, TC-BIN-17 and TC-BIN-22, because it changed their player tables,
+and restated them as TC-BIN-25 to TC-BIN-27. Those were themselves restated at step 8.36c.
+
+Test data as in Phase 4. A scenario naming no coverage tag compiles a `Full` export (a
+`Midcup` one keeps a player's current ID where a `Full` one writes the default,
+`aesthetics_export/settings_toml.md`).
+
+Unless a scenario says otherwise, the PES folder is a deployable fixture install whose
+DpFileList lists `4cc_08_bins` and the output CPK, and `savefile_path` names a fixture save of
+the compile's version carrying team 714. A test never uses `auto`, which would find the
+developer's own save.
 
 **Player tables**
 
@@ -2688,8 +2746,8 @@ TC-BIN-42  GIVEN the installed game holding team 714's TeamColor.bin and UniColo
 **Shared gloves on PES 15-17**
 
 Every `.mtl` of the output moves to its root (`pipeline.md` "3. Per-model-folder parallel
-steps (rayon)"), so TC-MOD-93 restates TC-MOD-74, whose packing it changes; TC-MOD-74 is
-marked withdrawn in the commit that rewires its test.
+steps (rayon)"), so TC-MOD-93 restates TC-MOD-74, whose packing that move changes. TC-MOD-74
+is marked withdrawn in the commit that rewires its test.
 
 ```
 TC-MOD-93  GIVEN Gloves/Keeper holding glove_l.model with glove_l.mtl, skin.dds, and
@@ -2712,14 +2770,16 @@ TC-REF-19  withdrawn: restated as TC-REF-20 (step 8.36c)
 
 The full-look aesthetics patch (`spec/pes_savefile/operations.md`
 "Aesthetics patch (new)"): every compiled player's look goes into the patch on every engine,
-and the CPK carries no player table. The scenarios above that observed `PlayerAppearance.bin`,
-`BootsList.bin` or `GloveList.bin` are restated below on the patch, each restatement naming
-the scenarios it restates, which are withdrawn; TC-BIN-37 (the bins CPK keeping
-installed rows in multi-CPK mode) and TC-SAV-07 (`savefile_player_not_stripped`) are
-withdrawn with nothing to restate, the tables and the stripped route being gone. "The patch"
-is `<output_folder_path>/aesthetics_patch.toml`. Five scenarios hold unchanged: TC-BIN-04,
-and the four whose tests stopped installing the tables, TC-MOD-31, TC-MOD-83, TC-BIN-39 and
-the last, TC-BIN-40.
+and the CPK carries no player table. "The patch" is `<output_folder_path>/aesthetics_patch.toml`.
+
+The scenarios above that observed `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin`
+are restated below on the patch. Each restatement names the scenarios it restates, which are
+withdrawn. TC-BIN-37 (the bins CPK keeping installed rows in multi-CPK mode) and TC-SAV-07
+(`savefile_player_not_stripped`) are withdrawn with nothing to restate, because the tables and
+the stripped route are gone.
+
+Five scenarios hold unchanged: TC-BIN-04, and the four whose tests stopped installing the
+tables, TC-MOD-31, TC-MOD-83, TC-BIN-39 and the last, TC-BIN-40.
 
 ```
 TC-SAV-18  GIVEN a /co/ export with no write_names marker whose slot 05 holds a face model and
