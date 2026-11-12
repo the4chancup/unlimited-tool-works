@@ -12,45 +12,54 @@ every path and issue scope the model carries.
 shared knowledge: the Export upgrader writes it, the Kit config editor edits kit folders inside it,
 and the Team creator generates it from scratch — so one crate owns the object model, the
 folder conventions described under "Player folders (the export format)", and the check rules behind
-the format-level messages in the catalog. That includes the **structure parser** — canonical
-folder/file listing, names/sizes, supplied small metadata such as raw `players.txt`, and link files
-→ `ParsedAestheticsExport`, with no model or texture contents. The consumer creates the canonical listing
-from a directory walk, ZIP central directory, or 7z entry table and chooses a source provider;
-`aesthetics_export` does not own filesystem/archive I/O. Lazy per-folder *content* loading,
-source-provider implementation, and the memory budget remain pipeline concerns. The Load step's
-eager structure loading builds on this parser, and the Refs arranger supplies a plain-filesystem
-listing. The Team compiler is the crate's biggest consumer, and the compile-time behavior
-(processing steps, packing, bins, GUI, CLI) stays here. The Team compiler itself is deliberately
-*not* split into a companion lib crate — see "Lib crates" in the [core plan](../core/README.md).
+the format-level messages in the catalog.
+
+That includes the **structure parser**: canonical folder/file listing, names/sizes, supplied
+small metadata such as raw `players.txt`, and link files → `ParsedAestheticsExport`, with no
+model or texture contents. The consumer creates the canonical listing from a directory walk, ZIP
+central directory, or 7z entry table and chooses a source provider; `aesthetics_export` does not
+own filesystem/archive I/O. Lazy per-folder *content* loading, source-provider implementation,
+and the memory budget remain pipeline concerns. The Load step's eager structure loading builds
+on this parser, and the Refs arranger supplies a plain-filesystem listing.
+
+The Team compiler is the crate's biggest consumer, and the compile-time behavior (processing
+steps, packing, bins, GUI, CLI) stays here. The Team compiler itself is deliberately *not* split
+into a companion lib crate — see "Lib crates" in the [core plan](../core/README.md).
 
 `TeamName`, `TeamId` and the `teams_list.txt` parse/reconcile logic live in the leaf crate
-`libs/teams_list` (see the [library crates plan](../libs/README.md)); this crate depends on it for identity
-resolution and contributes only the export-format half — splitting the display name into the
-token that `TeamName::new` folds. `studio_core` never parses the list or interprets team IDs.
+`libs/teams_list` (see the [library crates plan](../libs/README.md)). This crate depends on it
+for identity resolution and contributes only the export-format half: splitting the display name
+into the token that `TeamName::new` folds. `studio_core` never parses the list or interprets
+team IDs.
 
-The eager object model stores **structure descriptors, not loaded contents**: the coordinator
+The eager object model stores **structure descriptors, not loaded contents**. The coordinator
 later resolves each descriptor through the pipeline's source access (direct file, ZIP entry, or
-solid-7z buffer) and materializes the task's files under the permit its batch holds; loaded bytes
-stay charged until the writer commits their output, keeping the memory charge aligned with byte
-lifetime.
-`ParsedAestheticsExport`, `ValidatedAestheticsExport`, `ResolvedAestheticsExport`, `PlayerFolder`, and the descriptor
-types belong to `aesthetics_export`; processing types such as `ModelFolder` and their
-conversion/packing methods belong to `team_compiler`, avoiding inherent implementations of
-shared-lib types in the tool crate.
+solid-7z buffer) and materializes the task's files under the permit its batch holds. Loaded
+bytes stay charged until the writer commits their output, keeping the memory charge aligned with
+byte lifetime.
+
+`ParsedAestheticsExport`, `ValidatedAestheticsExport`, `ResolvedAestheticsExport`,
+`PlayerFolder`, and the descriptor types belong to `aesthetics_export`. Processing types such as
+`ModelFolder` and their conversion/packing methods belong to `team_compiler`, avoiding inherent
+implementations of shared-lib types in the tool crate.
 
 **Validation boundary.** Structural validation (folder tree, naming, roster, link-file references,
-file-type allowlists) lives in `aesthetics_export` and returns a `ValidationReport` containing the parsed
-draft, every issue, and an optional **sanitized** `ValidatedAestheticsExport`: a bad optional file or
-folder is omitted while valid siblings remain, with every original issue preserved for reporting.
-Foundational failures — unsafe virtual paths, roster-wide ambiguity, unparsable required metadata —
-never produce a valid affected scope and cannot be restored by `pass_through`; isolated malformed
-roster lines remain `RosterEntry`/`DropSlot` findings. Invalid drafts remain renderable and
-repairable in the GUI; unreadable sources and unsafe virtual paths are hard parser errors. Deep
-format validation (FMDL/XML/MTL/glTF/texture/kit-config content checks) lives in the respective
-format crates and applies the same sanitized-scope rule before planning. The consuming tool maps
-`ValidationIssue`s to `Message`s with its own catalog policy — so the Refs arranger and Kit config
-editor can consume the same structural checks without inheriting Team-compiler-specific catalog
-entries.
+file-type allowlists) lives in `aesthetics_export`. It returns a `ValidationReport` containing the
+parsed draft, every issue, and an optional **sanitized** `ValidatedAestheticsExport`: a bad
+optional file or folder is omitted while valid siblings remain, with every original issue
+preserved for reporting.
+
+Foundational failures (unsafe virtual paths, roster-wide ambiguity, unparsable required
+metadata) never produce a valid affected scope and cannot be restored by `pass_through`.
+Isolated malformed roster lines remain `RosterEntry`/`DropSlot` findings. Invalid drafts remain
+renderable and repairable in the GUI; unreadable sources and unsafe virtual paths are hard
+parser errors.
+
+Deep format validation (FMDL/XML/MTL/glTF/texture/kit-config content checks) lives in the
+respective format crates and applies the same sanitized-scope rule before planning. The
+consuming tool maps `ValidationIssue`s to `Message`s with its own catalog policy, so the Refs
+arranger and Kit config editor can consume the same structural checks without inheriting
+Team-compiler-specific catalog entries.
 
 The compile progression is **`ParsedAestheticsExport` → `ValidatedAestheticsExport` (structural + deep
 validation, sanitized) → `ResolvedAestheticsExport` (identity attached) → build manifest (run-level
@@ -73,29 +82,35 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   999 appears only where a game format writes it. An export stem with no token has no team name:
   it is reported as `team_name_unknown` with an empty name and dropped.
 - **Coverage tag.** A team export's name says what the export covers, as its second word, right
-  after the team name, in any letter case: `Full` (everything the team has: `co Full Spring
-  26`) or `Midcup` (changes to add to what is installed: `co Midcup Day 5`). The compiler needs
-  to know, because the game offers as many kits as the team's record counts and (Fox) reads a
-  player's boots from his row: only a full export may reset what the team had before, and
-  nothing in an export's content tells the two apart (a full export of a team with two kits
-  looks like a midcup export bringing two kits). It is in the name, not in a marker file, so
-  whoever handles the export sees it without opening it, and a name with neither word is an
-  error that drops the export (the Team compiler's `export_tag_missing`) rather than a guess:
-  a full export taken for a midcup one leaves the kits of a past cup on offer, and the
-  reverse wipes a team's kits. Only the second word counts, so a later `Full` in a
-  description changes nothing. A referee export carries no tag: it is always full.
+  after the team name, in any letter case:
+  - `Full` (everything the team has: `co Full Spring 26`);
+  - `Midcup` (changes to add to what is installed: `co Midcup Day 5`).
+
+  The compiler needs to know, because the game offers as many kits as the team's record counts
+  and (Fox) reads a player's boots from his row. Only a full export may reset what the team had
+  before, and nothing in an export's content tells the two apart (a full export of a team with
+  two kits looks like a midcup export bringing two kits).
+
+  The tag is in the name, not in a marker file, so whoever handles the export sees it without
+  opening it. A name with neither word is an error that drops the export (the Team compiler's
+  `export_tag_missing`) rather than a guess: a full export taken for a midcup one leaves the
+  kits of a past cup on offer, and the reverse wipes a team's kits. Only the second word counts,
+  so a later `Full` in a description changes nothing. A referee export carries no tag: it is
+  always full.
 - **Who decides a consequence.** This crate decides each structural issue's disposition, because
-  it builds the sanitized export from them: a `ValidationIssue` carries its code, scope, context,
+  it builds the sanitized export from them. A `ValidationIssue` carries its code, scope, context,
   effective disposition, and whether `pass_through` changed it. The consuming tool owns only
-  severity, text and hint (the Team compiler's catalog in `messages.md`); the tool tests that
+  severity, text and hint (the Team compiler's catalog in `messages.md`). The tool tests that
   every code in `ISSUE_CODES` has a catalog row, and its scenario tests observe the consequence
-  each row states. Settings that change a
-  consequence reach the crate through `ValidationContext`: the target `PesVersion` (Fox or pre-Fox
-  allowed names), `strict_file_type_check`, `pass_through`, and the texture stems the installed
-  CPKs hold in the team's Common output, which on PES 18-21 satisfy a texture `.common` link
-  whose target is
-  not in `Common/` (`spec/team_compiler/pipeline.md` "Resolved decisions", "A texture a model names
-  must exist").
+  each row states.
+
+  Settings that change a consequence reach the crate through `ValidationContext`:
+  - the target `PesVersion` (Fox or pre-Fox allowed names);
+  - `strict_file_type_check`;
+  - `pass_through`;
+  - the texture stems the installed CPKs hold in the team's Common output, which on PES 18-21
+    satisfy a texture `.common` link whose target is not in `Common/`
+    (`spec/team_compiler/pipeline.md` "Resolved decisions", "A texture a model names must exist").
 - **Sanitized versus eligible.** `ValidatedAestheticsExport` holds exactly the eligible content:
   every item no issue drops. `ValidationReport.parsed` still holds everything and `issues` every
   finding, so a dropped folder stays renderable and a broken roster repairable. `validated` is
@@ -107,72 +122,91 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 - **Content findings.** This crate reads no file content, so the deep pass's findings come from
   the consumer, which checks the files of the first report's `validated` (what the structure
   pass dropped is not read). `ValidationReport::with_content_findings` takes them and returns
-  the report validation would have made had they been its own. A `ContentFinding` carries the
-  consumer's code (its own; the one `ISSUE_CODES` member a consumer also reports is
-  `logo_file_invalid`, for a logo that does not decode), the scope, the context, the disposition asked
-  for, and whether `pass_through` may keep it; an eligible `DropFile`/`DropFolder` becomes
-  `Keep` under `pass_through`, marked as passed through, like the structure pass's own. In the
-  report's issues they stand after the model folders' and `Common/`'s own findings and before
-  the cascade (the kit, portrait and root-file findings follow the cascade), so a
-  player or shared folder linking a shared folder or `Common/` file that a content finding
-  drops gets
-  `link_target_dropped` naming that finding, and a shared folder left with no linking player
-  `shared_folder_orphaned`. What a scope drops: a `Folder` scope a player, shared or kit
-  folder, whole (a finding on a file below a subfolder is its root folder's, whose output the
-  subfolder's is merged into); a `File` scope that file alone, wherever it sits (a `Common/`, `Portraits/` or
-  `Collars/` file, a logo file, the logo going as one unit, a player or shared folder's own
-  file, `settings.toml` and `portrait.*` included), the folder keeping everything else; until
-  4.y-fix20 a player or shared folder's own file stayed in the folder's file list after its
-  `DropFile`, so a task still read it; `DropExport` on the `Export` scope leaves
-  `validated: None`.
+  the report validation would have made had they been its own.
+
+  A `ContentFinding` carries:
+  - the consumer's code (its own; the one `ISSUE_CODES` member a consumer also reports is
+    `logo_file_invalid`, for a logo that does not decode);
+  - the scope;
+  - the context;
+  - the disposition asked for;
+  - whether `pass_through` may keep it.
+
+  An eligible `DropFile`/`DropFolder` becomes `Keep` under `pass_through`, marked as passed
+  through, like the structure pass's own.
+
+  In the report's issues the content findings stand after the model folders' and `Common/`'s own
+  findings and before the cascade (the kit, portrait and root-file findings follow the cascade).
+  So a player or shared folder linking a shared folder or `Common/` file that a content finding
+  drops gets `link_target_dropped` naming that finding, and a shared folder left with no linking
+  player gets `shared_folder_orphaned`.
+
+  What a scope drops:
+  - a `Folder` scope: a player, shared or kit folder, whole (a finding on a file below a
+    subfolder is its root folder's, whose output the subfolder's is merged into);
+  - a `File` scope: that file alone, wherever it sits (a `Common/`, `Portraits/` or `Collars/`
+    file, a logo file, the logo going as one unit, a player or shared folder's own file,
+    `settings.toml` and `portrait.*` included), the folder keeping everything else. Until
+    4.y-fix20 a player or shared folder's own file stayed in the folder's file list after its
+    `DropFile`, so a task still read it;
+  - `DropExport` on the `Export` scope leaves `validated: None`.
 - **Roster entries.** A finding about one `players.txt` (or `refs.txt`) line is `RosterEntry`-scoped:
-  the file, the 1-based line number, and the slot when it parsed. Line-local findings
-  (`players_txt_line_invalid`, `players_txt_slot_invalid`, `players_txt_target_missing`) are
-  `DropSlot`: that assignment goes and the other lines stand. Duplicate slots are found first,
-  over every complete line (a slot and a folder name) whose slot is in range, before any target
-  is looked up (a bare `03` is `players_txt_line_invalid` and claims nothing): a stale
-  `03 OldName` above `03 NewName` is a duplicate even when `OldName` does not exist (both findings
-  are reported). Roster-wide findings drop the
-  export: a slot assigned twice (`players_txt_slot_duplicate`, on each later line), a file that is
-  not UTF-8, and a referee roster left with no valid assignment (`players_txt_invalid`,
-  `File`-scoped). A folder named by a line counts as listed even when that line is dropped, so it
-  gets no `player_unlisted` on top; a line whose slot does not parse names no folder. A folder no
+  the file, the 1-based line number, and the slot when it parsed.
+  - Line-local findings (`players_txt_line_invalid`, `players_txt_slot_invalid`,
+    `players_txt_target_missing`) are `DropSlot`: that assignment goes and the other lines
+    stand.
+  - Duplicate slots are found first, over every complete line (a slot and a folder name) whose
+    slot is in range, before any target is looked up (a bare `03` is `players_txt_line_invalid`
+    and claims nothing). So a stale `03 OldName` above `03 NewName` is a duplicate even when
+    `OldName` does not exist (both findings are reported).
+  - Roster-wide findings drop the export: a slot assigned twice (`players_txt_slot_duplicate`,
+    on each later line), a file that is not UTF-8, and a referee roster left with no valid
+    assignment (`players_txt_invalid`, `File`-scoped).
+
+  A folder named by a line counts as listed even when that line is dropped, so it gets no
+  `player_unlisted` on top; a line whose slot does not parse names no folder. A folder no
   remaining assignment maps is not compiled, and its links reference nothing: a shared folder
   counts as referenced only by an eligible, roster-mapped player (otherwise
-  `shared_folder_orphaned`). Without `players.txt`, number findings are
-  `Folder`-scoped `DropFolder`: `player_folder_number_invalid`, and `player_number_duplicate` on
-  every folder claiming the slot.
+  `shared_folder_orphaned`).
+
+  Without `players.txt`, number findings are `Folder`-scoped `DropFolder`:
+  `player_folder_number_invalid`, and `player_number_duplicate` on every folder claiming the
+  slot.
 - **Dropped link targets.** Sanitizing never leaves a reference to something it removed. A
-  player or shared folder whose shared-folder or `.common` link names a target a pass
-  dropped
+  player or shared folder whose shared-folder or `.common` link names a target a pass dropped
   (a shared folder discarded for a disallowed file, a Common file discarded as disallowed) is
   dropped too, with `link_target_dropped` naming the link and the target's own finding. The
   trigger is the target's effective disposition: under `pass_through` a kept target keeps its
-  dependants and no `link_target_dropped` is reported. A link a finding drops itself, with its
-  target (the deep pass's `model_hidden_dropped` on a `.common` link to a Common model that
-  draws nothing), is no link: nothing references the target, so no `link_target_dropped`, and
-  the folder holding the link stands with its other files. A texture `.common` link naming a
-  kit set (`kitN/armor_bsm.dds.common`) reaches every member of the set: a dropped member is an
-  absent one, a gap the set's completion fills as it fills any other, so the link's folder is
-  dropped only when every member is, `link_target_dropped` naming the first member, not when
-  one of several goes.
+  dependants and no `link_target_dropped` is reported.
+
+  A link a finding drops itself, with its target (the deep pass's `model_hidden_dropped` on a
+  `.common` link to a Common model that draws nothing), is no link. Nothing references the
+  target, so there is no `link_target_dropped`, and the folder holding the link stands with its
+  other files.
+
+  A texture `.common` link naming a kit set (`kitN/armor_bsm.dds.common`) reaches every member
+  of the set. A dropped member is an absent one, a gap the set's completion fills as it fills
+  any other. So the link's folder is dropped only when every member is, with
+  `link_target_dropped` naming the first member, not when one of several goes.
 - **Unread metadata.** The CLI's `check` and `compile` read every small metadata file, from a
   solid `.7z` too (the buffer that read decompresses is released before the next archive is
-  admitted; compiling decompresses again); only the GUI's shallow live check leaves a solid archive's roster unread, and
-  that state (a report that is neither valid nor refused) is designed with live validation in
-  Phase 8. `SmallMetadata` distinguishes a file that is absent from one that was not read, so
-  that addition changes no shape.
+  admitted; compiling decompresses again). Only the GUI's shallow live check leaves a solid
+  archive's roster unread, and that state (a report that is neither valid nor refused) is
+  designed with live validation in Phase 8. `SmallMetadata` distinguishes a file that is absent
+  from one that was not read, so that addition changes no shape.
 - **Refused listings.** A listing `vtree` refuses (a path escaping the root, two names that fold
   to one) is a `SourceError` from `parse_listing`: there is no draft to report on, and the
   consumer reports it as a source failure naming the path (the Team compiler's
   `export_extract_failed`).
 - **File-type allowlist.** What a file may be depends on where it sits; a file the row does not
-  admit gets the row's code. *Model content* is models (any format), textures, `.skl`, `.fclo`,
-  `.xml`, `.mtl`, material tomls and `.bin`, and `.txt` notes, which no package reads
-  (`file_not_used`): makers leave one beside a model, and dropping the folder for it would
-  lose a working model to a comment (step 5.0e). A note is a `.txt` whose name without it is no
-  known kind (`notes.txt`, `readme.txt`); `settings.toml.txt` or `skin.dds.txt`, a real file
-  saved with a hidden extension, stays disallowed, so the mistake is named.
+  admit gets the row's code.
+
+  *Model content* is models (any format), textures, `.skl`, `.fclo`, `.xml`, `.mtl`, material
+  tomls and `.bin`, and `.txt` notes. No package reads a `.txt` note (`file_not_used`), but
+  makers leave one beside a model, and dropping the folder for it would lose a working model to
+  a comment (step 5.0e). A note is a `.txt` whose name without it is no known kind
+  (`notes.txt`, `readme.txt`); `settings.toml.txt` or `skin.dds.txt`, a real file saved with a
+  hidden extension, stays disallowed, so the mistake is named.
 
   | Where the file sits | Admits | Otherwise |
   |---|---|---|
@@ -187,16 +221,18 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   | at the root | `players.txt`, `notes.txt`, `colors.txt`, `README.txt`, `logo*` textures; a referee export also `refs.txt`, `ref_lists.txt`, `ref_marker.dds` | `root_file_unexpected` |
 
   A file below a subfolder the table does not name takes the code of the folder holding that
-  subfolder (`Kits/p1/extra/x.dds` is `file_type_disallowed`). The list is the same for
-  every target: each model
-  format is a source for either engine through conversion, so what a target does not emit is the
-  deep pass's and processing's concern, not the allowlist's (Red's per-engine lists predate
-  conversion). With `strict_file_type_check` off, `file_type_disallowed` and
-  `common_file_disallowed` keep their item (`Keep`, which the consumer shows as Info) and the file
-  stays in the folder's files; a task reads only the files its roles name, so a kept file no
-  role takes is not emitted (a kit emits only its named textures; the Common tasks on PES 18-21 only the
-  files directly in `Common/` and those a link names or brings), and that finding is the one line the
-  member sees for it.
+  subfolder (`Kits/p1/extra/x.dds` is `file_type_disallowed`).
+
+  The list is the same for every target. Each model format is a source for either engine
+  through conversion, so what a target does not emit is the deep pass's and processing's
+  concern, not the allowlist's (Red's per-engine lists predate conversion).
+
+  With `strict_file_type_check` off, `file_type_disallowed` and `common_file_disallowed` keep
+  their item (`Keep`, which the consumer shows as Info) and the file stays in the folder's files.
+  A task reads only the files its roles name, so a kept file no role takes is not emitted (a kit
+  emits only its named textures; the Common tasks on PES 18-21 only the files directly in
+  `Common/` and those a link names or brings), and that finding is the one line the member sees
+  for it.
 - **OS artifacts.** `Thumbs.db`, `desktop.ini` and `.DS_Store` (any case, at any depth) are
   written by file browsers, never by authors: `parse_listing` leaves them out of the draft and
   reports nothing. On 2026-10-01 the maintainer's team exports held 209 `Thumbs.db` and 16
@@ -220,41 +256,44 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   and roster-mapped: a shared folder linked only by a dropped player is orphaned.
 - **Export findings of `validate`.** A stem with no token is `team_name_unknown` with an empty
   name, and an export holding no content-folder entry and no root `logo*` texture is
-  `export_empty`, both `DropExport`. No finding of `validate` is reported beside
-  `nested_root_ambiguous` or `nested_root_conflict`, which leave the root undecided (its
-  folders are the candidate roots and its files are not yet the export's root files) and skip
-  the export, as `export_layout_old` does: the export's name and root files are judged once
-  its root is. A name the teams list lacks is
-  `resolve_identity`'s `IdentityError`.
+  `export_empty`, both `DropExport`.
+
+  No finding of `validate` is reported beside `nested_root_ambiguous` or
+  `nested_root_conflict`. Those two leave the root undecided (its folders are the candidate
+  roots and its files are not yet the export's root files) and skip the export, as
+  `export_layout_old` does: the export's name and root files are judged once its root is. A
+  name the teams list lacks is `resolve_identity`'s `IdentityError`.
 - **Texture stems.** A lookup namespace (`team_compiler/messages.md` `texture_stem_conflict`)
-  holds its textures plus, in a player folder or, on PES 18-21, a shared one (a shared folder's
-  links stay unread on PES 15-17), each texture `.common` link under its linked name
-  (`hair.png.common` is `hair`), as a link counts as the linked file being local
-  (`spec/model_format.md` "Rules"). Each directory of `Common/` is a namespace of its own, as each
-  folder of a player's tree is: its conflicting files drop each other (`File`, `DropFile`),
-  and the cascade then drops the players linking them.
+  holds its textures. In a player folder or, on PES 18-21, a shared one (a shared folder's
+  links stay unread on PES 15-17), it also holds each texture `.common` link under its linked
+  name (`hair.png.common` is `hair`), as a link counts as the linked file being local
+  (`spec/model_format.md` "Rules"). Each directory of `Common/` is a namespace of its own, as
+  each folder of a player's tree is: its conflicting files drop each other (`File`,
+  `DropFile`), and the cascade then drops the players linking them.
 - **Kits, portraits, logo.** A `kit_folder_invalid` folder gets no other finding: which
   allowlist its contents answer to is unknown (it may be a misspelled `all`), and it is dropped
-  whole anyway. `all` counts as a slot for `kit_slot_duplicate`. `all/` textures
-  follow a kit's `kit` prefix rule (`kit_texture_name_invalid`). `kit_all_unused` (an `all/` no kit inherits —
-  a `Full` export's mandatory empty `p1`/`g1` count as kits) changes nothing (`Keep`). `kit_textures_inherited` lists the inherited stems without
-  their `kit_` prefix, alphabetically (`back, leg, name`). A kit's icon is the number in its one
-  `icon_<N>` marker's name: one numbered above 23 is `kit_icon_invalid`, and two or more are
-  each `kit_icon_invalid` whatever their numbers (`File`, `DropFile`; the kit keeps the default
-  icon).
-  `Portraits/NN.*` maps to slot NN, the name read as a player folder's (`NN`,
-  alone or followed by ` - ` and any text); two files of one slot there are
-  `texture_stem_conflict` (the context's `stem` the slot's `NN`), dropping both
-  files. Any other name is `portrait_name_invalid`, `player_NN` included: the folder already
-  says what the file is, and the `player_` prefix was the old format's, which the upgrader
-  rewrites. The rule is the player folder's (the stem split at its first `-`, both sides
-  trimmed, the head all digits making a slot), so `05-Bob.png` is slot 05 as a folder `05-Bob`
-  is and `081.dds` is no slot 08: one rule for the two places a member types a slot.
-  `portrait_conflict` compares contents, so it
-  belongs to the deep pass. Every root file whose stem starts with `logo` is a logo
-  candidate; `logo_file_invalid`, `logo_role_duplicate` and `logo_small_without_main` each drop
-  the logo as one unit (`File`-scoped on the offending file, `DropFile`, `logo: None`).
-  `team_colors_missing` belongs to the bins stage.
+  whole anyway. `all` counts as a slot for `kit_slot_duplicate`. `all/` textures follow a kit's
+  `kit` prefix rule (`kit_texture_name_invalid`). `kit_all_unused` (an `all/` no kit inherits —
+  a `Full` export's mandatory empty `p1`/`g1` count as kits) changes nothing (`Keep`).
+  `kit_textures_inherited` lists the inherited stems without their `kit_` prefix, alphabetically
+  (`back, leg, name`). A kit's icon is the number in its one `icon_<N>` marker's name: one
+  numbered above 23 is `kit_icon_invalid`, and two or more are each `kit_icon_invalid` whatever
+  their numbers (`File`, `DropFile`; the kit keeps the default icon).
+
+  `Portraits/NN.*` maps to slot NN, the name read as a player folder's (`NN`, alone or followed
+  by ` - ` and any text). Two files of one slot there are `texture_stem_conflict` (the
+  context's `stem` the slot's `NN`), dropping both files. Any other name is
+  `portrait_name_invalid`, `player_NN` included: the folder already says what the file is, and
+  the `player_` prefix was the old format's, which the upgrader rewrites. The rule is the player
+  folder's (the stem split at its first `-`, both sides trimmed, the head all digits making a
+  slot), so `05-Bob.png` is slot 05 as a folder `05-Bob` is and `081.dds` is no slot 08: one
+  rule for the two places a member types a slot. `portrait_conflict` compares contents, so it
+  belongs to the deep pass.
+
+  Every root file whose stem starts with `logo` is a logo candidate. `logo_file_invalid`,
+  `logo_role_duplicate` and `logo_small_without_main` each drop the logo as one unit
+  (`File`-scoped on the offending file, `DropFile`, `logo: None`). `team_colors_missing` belongs
+  to the bins stage.
 
 ### `aesthetics_export` crate layout
 
@@ -417,13 +456,16 @@ pub struct ResolvedAestheticsExport {
 The compiler supports **only the Studio export format**. The old format (separate Faces/Boots/Gloves
 item folders with embedded IDs, Kit Configs/Kit Textures folders, the Other folder) is not supported
 — old exports are migrated with the Export upgrader tool (see the [Export upgrader
-plan](../export_upgrader.md)). An old-layout export that reaches the compiler anyway is one
-finding, `export_layout_old`, and is skipped: a root folder named `Kit Configs`, `Kit Textures`
-or `Other`, which the Studio format never has, tells the two layouts apart with no other
-old-format knowledge, and the dozens of structure findings the old folders would otherwise
-earn (the converge census of 2026-10-09 ran 55 old exports: each a wall of
-`export_tag_missing`, `shared_folder_orphaned` and `portrait_name_invalid`) would only say
-the same thing badly. Consequences:
+plan](../export_upgrader.md)).
+
+An old-layout export that reaches the compiler anyway is one finding, `export_layout_old`, and
+is skipped. A root folder named `Kit Configs`, `Kit Textures` or `Other`, which the Studio format
+never has, tells the two layouts apart with no other old-format knowledge. The dozens of
+structure findings the old folders would otherwise earn would only say the same thing badly
+(the converge census of 2026-10-09 ran 55 old exports: each a wall of `export_tag_missing`,
+`shared_folder_orphaned` and `portrait_name_invalid`).
+
+Consequences of supporting only the Studio export format:
 
 - No `KitConfigFolder`/`KitTextureFolder`: kits live in the `Kits/` folder, one subfolder per kit.
 - No `Other` folder support.
@@ -698,11 +740,11 @@ pub struct FileDescriptor {
   `RefSlot` and `CpkStem` types at boundaries rather than passing unvalidated strings and integers
   through processing code. `KitSlot` is `kit_config`'s (the texture and config names it derives are
   format knowledge); this crate parses kit folder names into it.
-- **Shared charges.** Rayon's model-folder tasks are cross-thread by construction; nothing shares
-  file bytes (the coordinator reads each task's files as owned `Vec<u8>`), what tasks share is the
-  charge — a folder's group, or a `.7z` source's whole decompressed buffer, holds one `Arc<Permit>`
-  across its tasks' batches, so shared bytes stay charged to the memory budget until their last
-  consumer is written.
+- **Shared charges.** Rayon's model-folder tasks are cross-thread by construction. Nothing shares
+  file bytes (the coordinator reads each task's files as owned `Vec<u8>`); what tasks share is
+  the charge. A folder's group, or a `.7z` source's whole decompressed buffer, holds one
+  `Arc<Permit>` across its tasks' batches, so shared bytes stay charged to the memory budget
+  until their last consumer is written.
 - **Enums over trait objects.** Use `enum`s with pattern matching (`FileKind` here, the compiler's
   `PlayerFile`), not `Box<dyn ...>`. Exhaustive matching catches missing cases at compile time.
 - **Pass-through files stay simple.** A file the compiler moves without processing stays a

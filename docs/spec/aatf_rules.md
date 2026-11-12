@@ -6,11 +6,15 @@ naming the tiers, the heights, the card economy and a list of conditional "speci
 interpreter**, written in Rhai and carried inside every rules file, evaluates any such map. The
 official ruleset and every invitational's are the same kind of file, differing only in their data.
 
-Consumers: the [Save editor](save_editor.md) (the `check-aatf` command today; the Make
-Gold/Silver/… quick actions and the card pickers' remaining-count badges in `libs/team_widgets`
-come with the Phase 8 view), the [Team creator](../plans/team_creator.md) (legal defaults, the
-check before writing) and the [Ruleset editor](../plans/ruleset_editor.md) (which writes the
-data). Platform context is in the [core plan](core/README.md).
+Consumers:
+
+- the [Save editor](save_editor.md) (the `check-aatf` command today; the Make Gold/Silver/…
+  quick actions and the card pickers' remaining-count badges in `libs/team_widgets` come with
+  the Phase 8 view);
+- the [Team creator](../plans/team_creator.md) (legal defaults, the check before writing);
+- the [Ruleset editor](../plans/ruleset_editor.md) (which writes the data).
+
+Platform context is in the [core plan](core/README.md).
 
 ---
 
@@ -36,45 +40,57 @@ Invitationals already run their own rulesets on forks of the editor. VGL26 (4ccE
 `vgl26`, `stats.h` + `aatf_single_vgl`) is a complete one of a different shape: five tiers
 including a "buffed" one, per-stat targets per tier, one exact height per tier and no height
 brackets, a different rating stat set, free A positions per tier, all trick cards free, and a free
-extra card for the captain. It also reports *suggestions*: allowances a player does not use
-(fewer cards, COM styles or A positions than allowed, weak foot or injury resistance below the
-maximum, a captain without the free Captaincy card), shown only on request and never counted as
-errors. 4ccEditor has the same idea behind its `eCheck` warnings, hardcoded off.
+extra card for the captain.
+
+VGL26 also reports *suggestions*: allowances a player does not use (fewer cards, COM styles or A
+positions than allowed, weak foot or injury resistance below the maximum, a captain without the
+free Captaincy card), shown only on request and never counted as errors. 4ccEditor has the same
+idea behind its `eCheck` warnings, hardcoded off.
 
 The two VGL rulesets before it (VGL24, VGL25) add one shape: an *optional* manlet bonus. A manlet
 may carry the base rating or the base plus the bonus (a regular 77 or 82), and a suggestion names
 the bonus not taken.
 
-VTL11 (the VTLEditor fork, `VTL7/stats.h` + `aatf.cpp` at `ab5f0e2`) adds further shapes: tiers
-told apart by height and then by one stat (gold and silver share 195 cm and differ in swerve);
-stat bonuses by playing style for golds; exact weak foot; banned and required cards; free cards
-for some tiers, a free COM style (Long Ranger) and a cap of five COM styles; a minimum of three
-paid skill cards, each extra A position counting as one; B ratings allowed only for 188 cm players
-at CB, which also count toward the A-position allowance, and an A at CB or GK forbidden for them; medals'
-names required to carry a gold or silver colour code and other players' forbidden to; at most two
-registered positions among the 188 cm players, no 180 cm player sharing one (by user decision a
-custom check, not schema; as the cup's checker does, "one" is the first two such positions in
-roster order, since a third is already the too-many error); the skill card limit raised to 11 on every version (PES 21 loads
-more than the official rules' 10); two warnings for a player rated A at CF, whose playing style the
-league's exe treats differently there (a Goal Poacher's does not take effect, a Creative
-Playmaker's does); and, on PES 16
-only, team tactics settings (no man marking set up, auto substitution, offside trap and preset
-change off).
+VTL11 (the VTLEditor fork, `VTL7/stats.h` + `aatf.cpp` at `ab5f0e2`) adds further shapes:
+
+- tiers told apart by height and then by one stat (gold and silver share 195 cm and differ in
+  swerve);
+- stat bonuses by playing style for golds;
+- exact weak foot;
+- banned and required cards;
+- free cards for some tiers, a free COM style (Long Ranger) and a cap of five COM styles;
+- a minimum of three paid skill cards, each extra A position counting as one;
+- B ratings allowed only for 188 cm players at CB, which also count toward the A-position
+  allowance, and an A at CB or GK forbidden for them;
+- medals' names required to carry a gold or silver colour code and other players' forbidden to;
+- at most two registered positions among the 188 cm players, no 180 cm player sharing one (by
+  user decision a custom check, not schema; as the cup's checker does, "one" is the first two
+  such positions in roster order, since a third is already the too-many error);
+- the skill card limit raised to 11 on every version (PES 21 loads more than the official
+  rules' 10);
+- two warnings for a player rated A at CF, whose playing style the league's exe treats
+  differently there (a Goal Poacher's does not take effect, a Creative Playmaker's does);
+- on PES 16 only, team tactics settings (no man marking set up, auto substitution, offside trap
+  and preset change off).
 
 VGL27 (4ccEditor-VGL, branch `vgl27`, tag `VGL27.B`) reshapes VGL26 toward the official layout:
 no buffed tier and no per-stat targets, tiers recognized by rating alone, height brackets back
 (one exact height each, one set of quotas) and the official manlet bonus.
 
 The VGL26 and VGL27 rules pages (the VGL wiki's "Chapter III: Squad") state rules their checkers
-do not test, or test loosely: every position a player is fielded at in the first preset must be
-one of his A positions (VGL27's checker only asks that the registered position appear in the
-first preset);
-no man marking; every support setting off (the page's "switch preset tactic", which must be on,
-is the tactics menu's option offering all three presets, not a team setting); injury
-resistance exactly 2 for medals and 1 for non-medals (the checkers allow less, but for VGL27's
-medals); and, in VGL26, no
-formation of three defenders, four midfielders and three forwards (3-4-3 and its variants), fluid
-formations included. A VGL ruleset here follows its rules page where the two disagree.
+do not test, or test loosely:
+
+- every position a player is fielded at in the first preset must be one of his A positions
+  (VGL27's checker only asks that the registered position appear in the first preset);
+- no man marking;
+- every support setting off (the page's "switch preset tactic", which must be on, is the tactics
+  menu's option offering all three presets, not a team setting);
+- injury resistance exactly 2 for medals and 1 for non-medals (the checkers allow less, but for
+  VGL27's medals);
+- in VGL26, no formation of three defenders, four midfielders and three forwards (3-4-3 and its
+  variants), fluid formations included.
+
+A VGL ruleset here follows its rules page where the two disagree.
 
 The schema below is the union of what these rulesets and the specials history need, and the
 rulesets are its fixtures ("Development phase and verification").
@@ -109,16 +125,19 @@ fn custom_checks(team) { [] }
   someone who can, without a Studio release. `check_team` calls `custom_checks(team)` when the file
   defines it and appends what it returns.
 
-A rules file a member or an organizer handles is named `<name>.4ccrules`, not `.rhai`: the
-one ending every picker offers (the Save editor's Import rules file…, the Ruleset editor's
-Open and Save), the name the Ruleset editor's Save suggests, the CLI's examples. A member only loads the file, and `.rhai` tells them nothing; `.4ccrules` says
-it is the cup's rules and sits beside the suite's `.4ccm`. The content stays plain Rhai text,
-so an organizer still edits it in a text editor (the CUSTOM CHECKS section is hand-written by
-design): the file's first line says it is a Rhai script, for whoever wants their editor's Rhai
-highlighting on it. The loader reads the content, never the ending, so `check-aatf --rules`
-loads a file whatever it ends in. The repository's own sources keep `.rhai`
-(`libs/aatf/logic/logic.rhai`, `rulesets/*.rhai`): they are code, edited with that highlighting,
-and never handed to a member.
+A rules file a member or an organizer handles is named `<name>.4ccrules`, not `.rhai`. That is
+the one ending every picker offers (the Save editor's Import rules file…, the Ruleset editor's
+Open and Save), the name the Ruleset editor's Save suggests, and the CLI's examples. A member only
+loads the file, and `.rhai` tells them nothing; `.4ccrules` says it is the cup's rules and sits
+beside the suite's `.4ccm`.
+
+The content stays plain Rhai text, so an organizer still edits it in a text editor (the CUSTOM
+CHECKS section is hand-written by design). The file's first line says it is a Rhai script, for
+whoever wants their editor's Rhai highlighting on it. The loader reads the content, never the
+ending, so `check-aatf --rules` loads a file whatever it ends in.
+
+The repository's own sources keep `.rhai` (`libs/aatf/logic/logic.rhai`, `rulesets/*.rhai`):
+they are code, edited with that highlighting, and never handed to a member.
 
 Rhai is a small scripting language written in pure Rust for embedding: scripts reach only what the
 host registers, cannot touch the filesystem or network, and run under operation and call-depth
@@ -403,42 +422,56 @@ pub enum Severity {
 }
 ```
 
-**Every squad is 23.** No ruleset sets its squad's size: the load rules that read it (tier
+**Every squad is 23.** No ruleset sets its squad's size. The load rules that read it (tier
 counts and a medal system's counts fit the squad, a height pool's quotas add up to it) and
 the logic's "rest of the squad" count read `SQUAD_SIZE`, 23, one constant of `libs/aatf`.
+
 The Team compiler numbers a team's players 01 to 23 (player folders, `players.txt`,
 portraits) and gives each team 23 exclusive boots and gloves IDs in its 40-ID block, the
-blocks of teams 701 to 920 ending at 8900 below the referees' `99XX` band; so a ruleset of
+blocks of teams 701 to 920 ending at 8900 below the referees' `99XX` band. So a ruleset of
 another size could not be met by a compiled team, and widening the compiler would move
-every team's IDs. A file that holds a `squad_size` key, as the format's first drafts did,
-is refused as any key the schema lacks, with its key path.
+every team's IDs.
+
+A file that holds a `squad_size` key, as the format's first drafts did, is refused as any key
+the schema lacks, with its key path.
 
 A field left out of the file takes its empty value (0, `false`, an empty list or map, `None`),
-except `schema`, `name`, `universal` with its `max_skill_cards`, and each tier's,
-bracket's and system's `id`, `label` and (tiers) `rate`, and each special's and team
-settings entry's `label`, a present `weight`'s `floor`, `below` and `above`, and a present
-`weak_foot`'s `usage` and `accuracy` (a tier's or an effect's), which are
-required (an absent `universal` would otherwise default `max_skill_cards` to 0, a cap no file
-means; a weight rule missing a bound would demand a weight equal to the height; a weak foot
-missing a half would cap it at 0, below the game's 1; a violation
-shows its special's label, which an empty one would leave blank).
+except these, which are required:
 
-Rules the types cannot carry, checked on load ("Loading and validation"): no string is empty
-(an emptied name, id, label or `forbid` text names or says nothing), and a `name_colors` entry
-or a tier's `name_color` is eight bytes (a partial paste matches no name); ids unique within their
-kind, and every id a condition, effect, quota, `counts_as` or `suggestions` entry names exists; a
-tier with `counts_as` has no `count`, and the tier it names has no `counts_as` of its own (itself
-included); tier counts fit the squad of 23, and equal it when no tier is the rest of the squad (else
-no team can be legal); each bracket's heights lie above every height of the brackets before it
-(a reordered bracket would take no player); every height system but the last has a non-empty
-`any_player` and the last has none or an empty one (an absent or empty condition holds for
-every team, so the systems after it could never apply); a special with
-`height_allowance` names no bracket in its condition, nested `not` and `any` included, since
-brackets are computed from the allowance; a `choice` option holds only the effects its doc
-lists; `fielded_at_a` names presets 1 to 3; a forbidden shape's counts add up to 10; no card is
-in two `card_groups` and none holds a COM style (the built-in `com` group has them): a card in
-two groups would be made free by whichever group the allocation tries first, so a team's
-legality would hang on the groups' names (no shipped ruleset overlaps).
+- `schema`, `name`, and `universal` with its `max_skill_cards` (an absent `universal` would
+  otherwise default `max_skill_cards` to 0, a cap no file means);
+- each tier's, bracket's and system's `id`, `label` and (tiers) `rate`;
+- each special's and team settings entry's `label` (a violation shows its special's label,
+  which an empty one would leave blank);
+- a present `weight`'s `floor`, `below` and `above` (a weight rule missing a bound would demand
+  a weight equal to the height);
+- a present `weak_foot`'s `usage` and `accuracy`, a tier's or an effect's (a weak foot missing a
+  half would cap it at 0, below the game's 1).
+
+Rules the types cannot carry, checked on load ("Loading and validation"):
+
+- no string is empty (an emptied name, id, label or `forbid` text names or says nothing);
+- a `name_colors` entry or a tier's `name_color` is eight bytes (a partial paste matches no
+  name);
+- ids unique within their kind, and every id a condition, effect, quota, `counts_as` or
+  `suggestions` entry names exists;
+- a tier with `counts_as` has no `count`, and the tier it names has no `counts_as` of its own
+  (itself included);
+- tier counts fit the squad of 23, and equal it when no tier is the rest of the squad (else no
+  team can be legal);
+- each bracket's heights lie above every height of the brackets before it (a reordered bracket
+  would take no player);
+- every height system but the last has a non-empty `any_player` and the last has none or an
+  empty one (an absent or empty condition holds for every team, so the systems after it could
+  never apply);
+- a special with `height_allowance` names no bracket in its condition, nested `not` and `any`
+  included, since brackets are computed from the allowance;
+- a `choice` option holds only the effects its doc lists;
+- `fielded_at_a` names presets 1 to 3;
+- a forbidden shape's counts add up to 10;
+- no card is in two `card_groups` and none holds a COM style (the built-in `com` group has
+  them). A card in two groups would be made free by whichever group the allocation tries first,
+  so a team's legality would hang on the groups' names (no shipped ruleset overlaps).
 
 ### How a player is read
 
@@ -462,13 +495,20 @@ giant's target is 89, so a rating of 89 reads as silver, not bronze.
 A player's **paid cards** are their skills plus COM styles, less the free ones held: per group,
 up to that group's free count; every held card in `free_cards`. The **limit** is the tier's
 `cards` plus every `cards` effect, less one per A position beyond the allowance (`a_positions`
-plus effects; B ratings counted with the A positions under `b_uses_a_allowance`). Paid cards over
-the limit is a violation, the limit falling below zero when the extra A positions outnumber the
-cards (a regular with three cards and five A positions over one allowed is over it with no card at
-all); so are paid skill cards plus extra A positions under `min_cards`, a
-required card not held, more A positions than `max_a_positions`, more skill cards than
-`max_skill_cards` and more COM styles than `max_com_styles`. The version's valid
-registered-position and playing-style ranges are built in.
+plus effects; B ratings counted with the A positions under `b_uses_a_allowance`).
+
+Each of these is a violation:
+
+- paid cards over the limit, the limit falling below zero when the extra A positions outnumber
+  the cards (a regular with three cards and five A positions over one allowed is over it with
+  no card at all);
+- paid skill cards plus extra A positions under `min_cards`;
+- a required card not held;
+- more A positions than `max_a_positions`;
+- more skill cards than `max_skill_cards`;
+- more COM styles than `max_com_styles`.
+
+The version's valid registered-position and playing-style ranges are built in.
 
 ---
 
@@ -477,14 +517,18 @@ registered-position and playing-style ranges are built in.
 A shipped binary embeds every cup's current rulesets (`aatf::templates`, `aatf::builtin`), so a
 member picks their cup's rules from the Save editor's ruleset dropdown (`spec/save_editor.md`
 "Configurable AATF rules") rather than finding and importing a file, and a built-in ruleset is
-never a copy a member can lose. They are the Ruleset editor's templates too. In the
-dropdown's order, by description: `4cc Autumn 26`, `4cc Spring 26`, `/vg/ League 27`, `/vg/
-League 26`, `/vt/ League 11`, `/vt/ League 10`, `Divegrass Before Christmas 7`; the first is
-the default and the fallback. Each file's `name` is its description: for the 4cc's own cups
-`4cc` then the season and its year's last two digits; for VGL and VTL the league's name then
-its edition number, which counts editions, not years; for DBC7 the cup's name then its
-edition. All seven are the ones the parity runs checked ("Development phase and
-verification"; DBC7's, `plans/aatf_rules.md` "Development phase and verification").
+never a copy a member can lose. They are the Ruleset editor's templates too.
+
+In the dropdown's order, by description: `4cc Autumn 26`, `4cc Spring 26`, `/vg/ League 27`,
+`/vg/ League 26`, `/vt/ League 11`, `/vt/ League 10`, `Divegrass Before Christmas 7`; the first
+is the default and the fallback. Each file's `name` is its description:
+
+- for the 4cc's own cups, `4cc` then the season and its year's last two digits;
+- for VGL and VTL, the league's name then its edition number, which counts editions, not years;
+- for DBC7, the cup's name then its edition.
+
+All seven are the ones the parity runs checked ("Development phase and verification"; DBC7's,
+`plans/aatf_rules.md` "Development phase and verification").
 
 `libs/aatf` keeps the latest two rulesets of each kind of cup with an organization of its own,
 the 4cc's own (the official AATF), VGL (/vg/ League) and VTL (/vt/ League), and DBC7
@@ -607,25 +651,31 @@ no tier's target is placed by expected rating rather than by `aatf.cpp`'s thresh
 player can be reported against a different tier; both report the player.
 
 Where the transcription's reading and the cup's written rules differ, the file follows the wiki's
-Appendix:Rules as edited on 2026-10-06 (`DECISIONS.md`, 2026-10-21): a medal's free COM styles
-are trades, each kept as a free COM style or spent on a free extra A position (gold has two to
-trade, silver and bronze one, and an extra A at GK is already `gk_not_second_a`'s violation); a
-bronze has two free trick cards, not three; the Red CB allowance asks only the registered
-position, so a Red non-medal CB is tall at 189 and, like anyone, at 185, while 181 to 184 and 186
-to 188 stand outside every bracket, as the goalkeepers' heights do; and the deadline export's
-first preset fields every starter at one of his A positions. The 4cc organizer's answers
-(`DECISIONS.md`, 2026-10-22) confirmed those and took the wiki's wording on three more points
-where the official 4ccEditor reads otherwise: the middle bracket is exactly 180, so 176 to 179
-stand in no bracket; a gold or a goalkeeper at 194 is an error; and the Red 175 cm bonus is
-optional, a one-option `choice` for the tiers it names (a gold has none), so a manlet at his
-tier's base rate is legal too and the untaken bonus is suggested.
+Appendix:Rules as edited on 2026-10-06 (`DECISIONS.md`, 2026-10-21):
+
+- a medal's free COM styles are trades, each kept as a free COM style or spent on a free extra A
+  position (gold has two to trade, silver and bronze one, and an extra A at GK is already
+  `gk_not_second_a`'s violation);
+- a bronze has two free trick cards, not three;
+- the Red CB allowance asks only the registered position, so a Red non-medal CB is tall at 189
+  and, like anyone, at 185, while 181 to 184 and 186 to 188 stand outside every bracket, as the
+  goalkeepers' heights do;
+- the deadline export's first preset fields every starter at one of his A positions.
+
+The 4cc organizer's answers (`DECISIONS.md`, 2026-10-22) confirmed those and took the wiki's
+wording on three more points where the official 4ccEditor reads otherwise:
+
+- the middle bracket is exactly 180, so 176 to 179 stand in no bracket;
+- a gold or a goalkeeper at 194 is an error;
+- the Red 175 cm bonus is optional, a one-option `choice` for the tiers it names (a gold has
+  none), so a manlet at his tier's base rate is legal too and the untaken bonus is suggested.
 
 ## Autumn 25 and Spring 26
 
 Autumn 25 is a test ruleset and Spring 26 a template ("Embedded rulesets"); both are there so
-the official parity runs each 2026 cup save under the ruleset its teams were built for. Transcribed from `aatf.cpp` at 4ccEditor's `7e01541` (Autumn 25;
-its Version B, `aae4835` and `bb3e54a`, changed no rule) and `c92d535` (Spring 26). Both are the
-Autumn 26 file with:
+the official parity runs each 2026 cup save under the ruleset its teams were built for.
+Transcribed from `aatf.cpp` at 4ccEditor's `7e01541` (Autumn 25; its Version B, `aae4835` and
+`bb3e54a`, changed no rule) and `c92d535` (Spring 26). Both are the Autumn 26 file with:
 
 - no bronze tier; gold `count` 2; silver `rate` 88 and `cards` 4; gold `cards` 5;
 - the medals' COM styles free outright, no trade: `free: #{ tricks: 3, com: 2 }` for gold,
@@ -657,13 +707,16 @@ Finishing; it adds nothing to test and has no file. What VGL25 exercises that th
 | Injury resistance | exact: 2 for medals, 1 for non-medals (not in `at_most`) |
 | Suggestions | `cards`, `com`, `a_positions`, `weak_foot`, `height`, `free_cards`, `choices` |
 
-Where the data reads differently from `aatf_single_vgl`, on purpose: it lets a gold carry injury
-resistance below 2, where the VGL rules set it to 2 for medals (maintainer, from the VGL wiki); it
-repeats the bonus suggestion at team level for manlets under 175, here it is reported once; it
-checks no registered-position or playing-style range, which `libs/aatf` builds in; and two
-suggestions read differently: a goalkeeper rated A at GK is still told of an unused A position,
-and a captain without the Captaincy card is told through the `free_cards` suggestion rather than
-a team-level line.
+Where the data reads differently from `aatf_single_vgl`, on purpose:
+
+- the checker lets a gold carry injury resistance below 2, where the VGL rules set it to 2 for
+  medals (maintainer, from the VGL wiki);
+- the checker repeats the bonus suggestion at team level for manlets under 175; here it is
+  reported once;
+- the checker checks no registered-position or playing-style range, which `libs/aatf` builds in;
+- two suggestions read differently: a goalkeeper rated A at GK is still told of an unused A
+  position, and a captain without the Captaincy card is told through the `free_cards`
+  suggestion rather than a team-level line.
 
 ## VGL26
 
@@ -684,17 +737,24 @@ from the VGL26 rules page and 4ccEditor-VGL's `vgl26` branch (tip `ad378d2`; `st
 | Suggestions | `cards`, `com`, `a_positions`, `weak_foot`, `free_cards` |
 
 Where the data reads differently from `aatf_single_vgl`, on purpose (the rules page is stricter):
-injury resistance is exact, where the checker allows less; the first-preset A-position rule,
-the team settings and the formation ban are checked, where the checker tests none of them; a
-registered goalkeeper must be 185 cm (a special), where the checker reads one at 180 as a
-regular; and Heading is free beside the twelve tricks, where the checker counts it among them
-(a player holding all thirteen pays one card there). Goalkeepers' form is 8, as both say. The
-page's "medal and buffed players cannot be played as a goalkeeper at any time" is checked in
+
+- injury resistance is exact, where the checker allows less;
+- the first-preset A-position rule, the team settings and the formation ban are checked, where
+  the checker tests none of them;
+- a registered goalkeeper must be 185 cm (a special), where the checker reads one at 180 as a
+  regular;
+- Heading is free beside the twelve tricks, where the checker counts it among them (a player
+  holding all thirteen pays one card there).
+
+Goalkeepers' form is 8, as both say.
+
+The page's "medal and buffed players cannot be played as a goalkeeper at any time" is checked in
 preset 1 only (an outfielder cannot be rated A at GK, and preset 1 fields A positions alone):
-no condition reads the positions fielded in presets 2 and 3. The
-rules page's "support settings" are read as substitution, offside trap and preset change: its
-next rule allows auto attack/defence levels at fixed values, so that setting is left free.
-The page's "switch preset tactic", which must be on, is not one of them: it is the tactics
+no condition reads the positions fielded in presets 2 and 3.
+
+The rules page's "support settings" are read as substitution, offside trap and preset change:
+its next rule allows auto attack/defence levels at fixed values, so that setting is left free.
+The page's "switch preset tactic", which must be on, is not one of them. It is the tactics
 menu's option offering all three presets instead of one, a manager's own setting the save does
 not hold per team, so no ruleset checks it. `auto_preset_change` is the team's automatic preset
 change during a match (the 4cc wiki's Edit-file page calls the byte "Auto change Preset
@@ -716,17 +776,24 @@ others do not:
 | Injury resistance, universal, team settings | as VGL26, without the formation ban |
 | Rating stats, suggestions | as VGL26 |
 
-Where the data reads differently from `aatf_single_vgl`, on purpose: the rules page is followed
-where it is stricter (exact injury resistance for non-medals, which the checker lets go below 1;
-the team settings are checked; a goalkeeper at 185 is forbidden, since the page's tall bracket
-takes goalkeepers at 189 only, where the checker counts him as tall; a goalkeeper at 175 or 180
-is in those brackets, which name no position); the captain's extra allowance is the page's one
-of a card, a COM style or an A position (a `choice`), where the checker always grants a card;
-the checker's positional test (the registered position appears
-in the first preset) gives way to the page's first-preset A-position rule, which judges every
-position a player is fielded at there. A rating between two tiers' targets (96) is placed by
-expected rating, as in the official file, where `aatf_single_vgl` reports no tier. `VGL27.B`
-brought the checker to the page on the rest: Heading is a paid card, a medal's injury
+Where the data reads differently from `aatf_single_vgl`, on purpose:
+
+- the rules page is followed where it is stricter:
+  - exact injury resistance for non-medals, which the checker lets go below 1;
+  - the team settings are checked;
+  - a goalkeeper at 185 is forbidden, since the page's tall bracket takes goalkeepers at 189
+    only, where the checker counts him as tall;
+  - a goalkeeper at 175 or 180 is in those brackets, which name no position;
+- the captain's extra allowance is the page's one of a card, a COM style or an A position (a
+  `choice`), where the checker always grants a card;
+- the checker's positional test (the registered position appears in the first preset) gives way
+  to the page's first-preset A-position rule, which judges every position a player is fielded
+  at there.
+
+A rating between two tiers' targets (96) is placed by expected rating, as in the official file,
+where `aatf_single_vgl` reports no tier.
+
+`VGL27.B` brought the checker to the page on the rest: Heading is a paid card, a medal's injury
 resistance is exact, a height in no bracket is a violation for that player, and each quota
 message prints its own bracket's count (before it, the 185 cm count for every bracket).
 
@@ -746,9 +813,11 @@ VTL10's first matchday on 2026-03-13: `5b78e5b` ("small aatf changes", 2026-04-1
 - no name colours.
 
 Its custom checks are VTL11's, with 178 cm for the regulars who may not share a 188 cm player's
-registered position. The VTL wiki's VTL10 page found in 2026-10 describes another ruleset entirely
-(medals rated 89, 94 and 99, eighteen regulars, heights 185, 180 and 175); the checker is
-followed, and the cup save bears it out: the 43 teams the checker passes are the ones the data
+registered position.
+
+The VTL wiki's VTL10 page found in 2026-10 describes another ruleset entirely (medals rated 89,
+94 and 99, eighteen regulars, heights 185, 180 and 175). The checker is followed, and the cup
+save bears it out: the 43 teams the checker passes are the ones the data
 block passes, and every other team fails both.
 
 ---
@@ -836,23 +905,31 @@ catalog; only `Special` and `Custom` carry text, the ruleset author's.
 
 **Hints at a valid value.** A violation whose sentence would not otherwise name a value to
 reach carries one, computed by the logic so every surface (Live AATF's rows, the marks'
-tooltips, Multi-team AATF's copy, `check-aatf`'s lines) shows the same: most kinds already
+tooltips, Multi-team AATF's copy, `check-aatf`'s lines) shows the same. Most kinds already
 name theirs (a range, a target, a limit, a count); `Height`, `NoTier`, `RegisteredNotA`,
 `FieldedNotA`, `APositions`, `GkSecondA`, `BRating` and `TeamSetting` carry the fields above.
+
 Each hint reads what the check has already read, never a search for a value that passes every
-rule (each candidate height run through the whole check would be the expensive part); a
+rule (each candidate height run through the whole check would be the expensive part). A
 special can therefore still forbid a height the hint names (Autumn 26's goalkeepers between
 181 and 188 must be 189). `check_team` reads every player before checking any, so the
 brackets' room is counted once and handed to the per-player checks; `card_summary`, which
-walks every position's rating, collects the A and B lists. The sentences (`team_widgets`'
-`violations.rs` and the drafts' `violationSentence`): `height 183 takes no bracket (180 or 185
-have room)`, `(up to 175, 180 or 185)` without room, `(175 to 210)` under a pool; `fits no
-tier (the tiers take heights 180, 185, 190 or 195)`; `the registered position is not rated A (rated A
-at CF and SS)`, `(no position rated A)` when none; the same list after FieldedNotA's and
-APositions' sentences; `a second A rating at GK (also A at CB)`; `a B rating, which the rules
-refuse (B at LB and RB)`; `team setting No man marking: man marking should be off`, the
-setting in words. A range of one height prints once, one from the bottom `up to` its top. No
-hint for PositionRange and PlayingStyleRange (the editor's controls offer only valid values),
+walks every position's rating, collects the A and B lists.
+
+The sentences (`team_widgets`' `violations.rs` and the drafts' `violationSentence`):
+
+- `height 183 takes no bracket (180 or 185 have room)`, `(up to 175, 180 or 185)` without
+  room, `(175 to 210)` under a pool;
+- `fits no tier (the tiers take heights 180, 185, 190 or 195)`;
+- `the registered position is not rated A (rated A at CF and SS)`, `(no position rated A)`
+  when none; the same list after FieldedNotA's and APositions' sentences;
+- `a second A rating at GK (also A at CB)`;
+- `a B rating, which the rules refuse (B at LB and RB)`;
+- `team setting No man marking: man marking should be off`, the setting in words.
+
+A range of one height prints once, one from the bottom `up to` its top.
+
+No hint for PositionRange and PlayingStyleRange (the editor's controls offer only valid values),
 Captain, FormationShape (any other shape is valid), Special and Custom (the ruleset author's
 words) and UnusedChoice (naming a choice's options would need a sentence for every kind of
 effect). `check-aatf` prints the same sentence as its line's `problem`.
@@ -880,17 +957,20 @@ three functions on demand. What a script sees is registered by the host and noth
 as a `TeamView` built from `pes_savefile`'s model (`TeamView::new(&EditFile, team_id)`) and its
 roster as `PlayerView`s, every value on the game's own scale (form 1 to 8, injury resistance 1 to
 3, weak foot 1 to 4, where the save stores each less one). They are views, not `PlayerEntry` and
-`TeamEntry`, which are `pes_savefile`'s records. A team also comes from a Team TOML document
-(`TeamView::from_team_toml`, for the Team creator's check before it writes and for the sample
-team), of the version its `pes_version` names: the document is applied onto bare records, one
-roster slot per `players` key, with each player's `appearance` table left out, because no
-ruleset reads it and it applies only over a real player's face data. A bare record carries every
-field its version has, at zero (decoded from a zeroed record of the version's layout), so a key
-the document omits reads 0 like any other, never as a field the version lacks. The fields that
-name a roster slot (set-piece takers, man marking, the starting eleven, the bench order) are
-0xFF instead, the record's none, so an omitted taker reads as nobody rather than slot 0. With
-`PlayerEntry::default()`'s absent fields, an omitted `catching` would switch its check off while
-an omitted `speed` is reported.
+`TeamEntry`, which are `pes_savefile`'s records.
+
+A team also comes from a Team TOML document (`TeamView::from_team_toml`, for the Team creator's
+check before it writes and for the sample team), of the version its `pes_version` names. The
+document is applied onto bare records, one roster slot per `players` key, with each player's
+`appearance` table left out, because no ruleset reads it and it applies only over a real
+player's face data.
+
+A bare record carries every field its version has, at zero (decoded from a zeroed record of the
+version's layout), so a key the document omits reads 0 like any other, never as a field the
+version lacks. The fields that name a roster slot (set-piece takers, man marking, the starting
+eleven, the bench order) are 0xFF instead, the record's none, so an omitted taker reads as
+nobody rather than slot 0. With `PlayerEntry::default()`'s absent fields, an omitted `catching`
+would switch its check off while an omitted `speed` is reported.
 
 The engine's setup, in outline (`engine.rs` holds every registration, most of them returning a
 `Result` so a bad argument is a script error):
@@ -917,14 +997,15 @@ window loaded rather than loading its own. Measured 2026-10-22 (release, the off
 on a PES 2017 save's 220 cup teams): one team's check takes about 56 ms, of which building the
 team's view, copying it and calling into the script take under 1%; the rest is the script's
 own work, `read_player`'s profile of each tier the most of it. `sync` costs about 3% per team;
-the parallel check takes 1.8 s on 16 threads where one thread took 12.8 s. Since Rhai copies
-every map a call passes, the logic computes once what does not change between the calls that
-would repeat it: a choice's card summary, targets and weak-foot limits once per choice rather
-than per option, and a special's `when` that names no tier and no bracket once per player
-rather than per tier (`normalized` marks it `tier_free_when`). Measured 2026-10-25 (release,
-DBC7 on the 12 census saves with the most findings, the two builds alternated): `check-aatf`
-takes 0.85 of its earlier time, process start and the save's load included, and its output on
-all 424 census saves is identical.
+the parallel check takes 1.8 s on 16 threads where one thread took 12.8 s.
+
+Since Rhai copies every map a call passes, the logic computes once what does not change between
+the calls that would repeat it: a choice's card summary, targets and weak-foot limits once per
+choice rather than per option, and a special's `when` that names no tier and no bracket once per
+player rather than per tier (`normalized` marks it `tier_free_when`). Measured 2026-10-25
+(release, DBC7 on the 12 census saves with the most findings, the two builds alternated):
+`check-aatf` takes 0.85 of its earlier time, process start and the save's load included, and its
+output on all 424 census saves is identical.
 
 The script API, which `libs/aatf`'s crate doc lists too:
 
@@ -953,45 +1034,62 @@ The script API, which `libs/aatf`'s crate doc lists too:
 `MAX_OPERATIONS` is set from the measured cost of the heaviest embedded ruleset on a full team,
 with at least a tenfold margin (10 million against about 790,000 measured for DBC7 on the sample
 team, about 730,000 for the official ruleset; the test runs every embedded ruleset, holds each
-under a tenth of the limit and the limit under 30 times the heaviest). Closed sets cross the
-boundary as the labels the file uses (`"GK"`, `"A"`, `"malicia"`); the Rust side keeps its
-enums and converts at the registration functions, nowhere else. Tactics questions are answered in Rust from `pes_savefile`'s model, so the starting-eleven
-lookup and the formation count, both wrong upstream until `f5e7b3e`, live in one tested place: a
-formation's slot *i* holds the starting eleven's *i*th player (`TeamTactics::starting_eleven`
-holds roster slots; `aatf.cpp`'s `aatf_check_player_in_pos` reads them the same way), and a preset fields
-its three formations when fluid and its kick-off formation otherwise (PES 15 has no fluid
-formation). A data block alone (`Ruleset::from_data_block`) runs on the same engine. Adding an
-accessor is an edit to this section, never a silent addition.
+under a tenth of the limit and the limit under 30 times the heaviest).
+
+Closed sets cross the boundary as the labels the file uses (`"GK"`, `"A"`, `"malicia"`); the
+Rust side keeps its enums and converts at the registration functions, nowhere else.
+
+Tactics questions are answered in Rust from `pes_savefile`'s model, so the starting-eleven
+lookup and the formation count, both wrong upstream until `f5e7b3e`, live in one tested place:
+
+- a formation's slot *i* holds the starting eleven's *i*th player
+  (`TeamTactics::starting_eleven` holds roster slots; `aatf.cpp`'s `aatf_check_player_in_pos`
+  reads them the same way);
+- a preset fields its three formations when fluid and its kick-off formation otherwise (PES 15
+  has no fluid formation).
+
+A data block alone (`Ruleset::from_data_block`) runs on the same engine. Adding an accessor is
+an edit to this section, never a silent addition.
 
 The team settings (`man_marking` and the auto flags) read `pes_savefile`'s team model, which
-carries man marking. Edit mode offers no man marking on any version: a member sets it
-in a match's pre-game game plan, saves that as a copy preset and loads the preset into the team
-in Edit mode ("pre-made man marking", frowned upon, and the reason VTLEditor checks it). It lands
-as eleven bytes per preset, one per own formation slot, each the marked opponent's formation slot
-(its starting-eleven index, read against whichever team is played) or `0xFF` for none: in the
-tactics record at +0x73, +0xED and +0x167 on PES 15 (read back in-game from a match's Mark
-Settings, four assignments of a cup team matching its bytes), at +0x73, +0xEE and +0x169 on
-PES 16 (VTLEditor's `pes16.cpp` reads them; measured on the 2024 Summer Cup save, whose team 710
-has two set), at +0x95, +0x135 and +0x1D5 on PES 17 to 21 (the same shape after each preset's
-modeled fields, set on a few teams of the cup saves of 17, 18, 19 and 21; read back in-game on
-PES 21, a cup team's three preset-3 assignments matching its bytes). It is not an advanced instruction: Tight Marking is a stronger,
-separate instruction. Auto substitution is off at 0 on PES 15, 16 and 21 (measured in-game: Very
-Late 1, Flexible 2, and on PES 21 Very Early 3); on PES 15 it is the tactics record's +0x1FE,
-followed by the offside trap (+0x1FF) and the automatic preset change (+0x200), each 0 or 1.
-482 of the 483 teams of the PES 16 and 21 saves measured hold 0.
+carries man marking.
 
-`apply_tier(player, tier, rules)` is the lib's one *writing* operation: it calls `tier_values`
+Edit mode offers no man marking on any version: a member sets it in a match's pre-game game
+plan, saves that as a copy preset and loads the preset into the team in Edit mode ("pre-made man
+marking", frowned upon, and the reason VTLEditor checks it). It lands as eleven bytes per preset,
+one per own formation slot, each the marked opponent's formation slot (its starting-eleven index,
+read against whichever team is played) or `0xFF` for none. The bytes sit in the tactics record:
+
+- at +0x73, +0xED and +0x167 on PES 15 (read back in-game from a match's Mark Settings, four
+  assignments of a cup team matching its bytes);
+- at +0x73, +0xEE and +0x169 on PES 16 (VTLEditor's `pes16.cpp` reads them; measured on the
+  2024 Summer Cup save, whose team 710 has two set);
+- at +0x95, +0x135 and +0x1D5 on PES 17 to 21 (the same shape after each preset's modeled
+  fields, set on a few teams of the cup saves of 17, 18, 19 and 21; read back in-game on PES 21,
+  a cup team's three preset-3 assignments matching its bytes).
+
+Man marking is not an advanced instruction: Tight Marking is a stronger, separate instruction.
+
+Auto substitution is off at 0 on PES 15, 16 and 21 (measured in-game: Very Late 1, Flexible 2,
+and on PES 21 Very Early 3); on PES 15 it is the tactics record's +0x1FE, followed by the
+offside trap (+0x1FF) and the automatic preset change (+0x200), each 0 or 1. 482 of the 483
+teams of the PES 16 and 21 saves measured hold 0.
+
+`apply_tier(player, tier, rules)` is the lib's one *writing* operation. It calls `tier_values`
 and writes the result into the player (stats; form; injury resistance and weak foot at their
 maximum), and the tier's `name_color` over the name's leading colour code; under a tier that
 sets none, it removes a leading code that another tier sets and keeps any other. A name the
-code pushes past its field fails the save's write, as any name too long for it does. The values
-are resolved against what it writes, not what the player held: a special conditioned on a value
-the tier sets (form, a stat, the name colour) would otherwise see the old one, so `apply_tier`
-writes the name colour onto a copy first, then the values,
-recomputes `tier_values` on it and repeats until they stop changing (three passes at most) before
-committing; values still changing are an error and leave the player untouched. It backs the Save editor's quick actions (one button per tier, in list order; Phase 8) and
-the Team creator's default stats, so neither tool can produce a player the checker then rejects.
-AATF reports violations and never fixes them.
+code pushes past its field fails the save's write, as any name too long for it does.
+
+The values are resolved against what `apply_tier` writes, not what the player held, because a
+special conditioned on a value the tier sets (form, a stat, the name colour) would otherwise see
+the old one. So `apply_tier` writes the name colour onto a copy first, then the values,
+recomputes `tier_values` on it and repeats until they stop changing (three passes at most)
+before committing; values still changing are an error and leave the player untouched.
+
+`apply_tier` backs the Save editor's quick actions (one button per tier, in list order; Phase 8)
+and the Team creator's default stats, so neither tool can produce a player the checker then
+rejects. AATF reports violations and never fixes them.
 
 ## Loading and validation
 
@@ -1020,13 +1118,18 @@ it has ever shipped, by version (`LOGIC_VERSIONS`), hashed with line endings nor
 and trailing whitespace trimmed (the blank lines before the next banner are layout, not logic).
 The logic section runs from the start of the LOGIC banner line to the start of the CUSTOM CHECKS
 banner line, or to the end of a file without one; in an assembled file it is `logic/logic.rhai`
-whole. A file without the LOGIC banner has a modified logic. The current logic is the table's
-last entry: until the first release, its hash follows every edit of the logic; after it, a
-changed logic is a new version, in the banner and the table, since a file in the wild carries
-the released one. A
-file's logic section is *current*, an *older official* version (the Ruleset editor offers to
-update it), or *modified*: it still runs, and the Ruleset editor edits its data but says the
-specials depend on that logic.
+whole. A file without the LOGIC banner has a modified logic.
+
+The current logic is the table's last entry. Until the first release, its hash follows every
+edit of the logic; after it, a changed logic is a new version, in the banner and the table, since
+a file in the wild carries the released one.
+
+A file's logic section is one of:
+
+- *current*;
+- an *older official* version (the Ruleset editor offers to update it);
+- *modified*: it still runs, and the Ruleset editor edits its data but says the specials depend
+  on that logic.
 
 ## Crate layout
 
@@ -1062,7 +1165,7 @@ crates/libs/aatf/
 ```
 
 The data blocks hold only `const RULESET = …;`, followed, in a ruleset with custom checks (VTL10
-and VTL11), by its CUSTOM CHECKS section, banner included; a file is assembled from the data, the
+and VTL11), by its CUSTOM CHECKS section, banner included. A file is assembled from the data, the
 current logic and that section (or the empty stub), so the logic exists once in the repository and
 a custom check is kept beside the data it belongs to, not in a test.
 
@@ -1087,9 +1190,12 @@ a custom check is kept beside the data it belongs to, not in a test.
   Every rule in seven years of history is a condition and an effect, which forms express. A graph
   can come later as a `GRAPH` block beside `RULESET`, without changing the format.
 
-The costs accepted: `RULESET`'s syntax is denser than TOML (the Ruleset editor hides it, and
-schema errors carry a key path); each file carries a copy of the logic (a few hundred lines);
-and a rule the schema cannot express needs either the custom-checks hook or a schema extension.
+The costs accepted:
+
+- `RULESET`'s syntax is denser than TOML (the Ruleset editor hides it, and schema errors carry a
+  key path);
+- each file carries a copy of the logic (a few hundred lines);
+- a rule the schema cannot express needs either the custom-checks hook or a schema extension.
 
 ## Coverage of a plain-language proposal
 
@@ -1097,10 +1203,12 @@ A member proposed a plain-language rules format without knowing Studio: tier and
 groups, player variables, `IF`/`ELSE`/`AND`/`OR`/`NOT` blocks with comparisons, and additive
 `_mod` modifiers (the maintainer's copy is `.tmp/Clouds_proposal.txt`). The schema does not
 adopt it, since the Ruleset editor's forms are simpler to fill in than any text to write, but
-it expresses everything the proposal does. This table is that check, item by item; the fields
-it found missing (`ranges`, `strong_foot`, `any`, the `form` and `injury_resistance` effects)
-are in the schema above, and the two items left to custom checks are positional rules no
-ruleset has had, whose shape (which slot, which bound) varies too much for one form.
+it expresses everything the proposal does.
+
+This table is that check, item by item. The fields it found missing (`ranges`, `strong_foot`,
+`any`, the `form` and `injury_resistance` effects) are in the schema above, and the two items
+left to custom checks are positional rules no ruleset has had, whose shape (which slot, which
+bound) varies too much for one form.
 
 | Proposal | Schema |
 |---|---|
@@ -1149,11 +1257,14 @@ Verification:
 - **Parity, official.** Each official file flags the same players with the same violation kinds
   as `aatf.cpp` at its own commit, on the cup saves played under it; each difference is one of the
   deliberate ones above or a fix. In `C:\Data\4cc\Saves` on the maintainer's machine (matched to
-  rulesets by date): Autumn 25 on `2025 Autumn Babby Cup V2 Save.zip` and `2026 Winter Cup V2
-  Save.rar`, Spring 26 on `2026 Spring Babby Cup Save V3.rar` and `2026 4chan Summer Cup Save
-  V3.rar`; Autumn 26 on the same saves (findings compared, legality aside) until its own cup
-  saves exist. Most teams there were legal under their own ruleset, so this is also the check that
-  a real legal team reports nothing.
+  rulesets by date):
+  - Autumn 25 on `2025 Autumn Babby Cup V2 Save.zip` and `2026 Winter Cup V2 Save.rar`;
+  - Spring 26 on `2026 Spring Babby Cup Save V3.rar` and `2026 4chan Summer Cup Save V3.rar`;
+  - Autumn 26 on the same saves (findings compared, legality aside) until its own cup saves
+    exist.
+
+  Most teams there were legal under their own ruleset, so this is also the check that a real
+  legal team reports nothing.
 - **Parity, VGL26.** The same against `aatf_single_vgl` on the VGL26 cup save
   (`C:\Data\4cc\Saves\EDIT00000000_VGL26` on the maintainer's machine, 2026-10-06), every team;
   each difference is one recorded under "VGL26" (the rules page's stricter rules) or a fix.
@@ -1164,9 +1275,9 @@ Verification:
   VTLEditor skips them.
 - **Parity, VTL10.** The same against VTLEditor's `aatf_single` at `2cf222f` on the VTL10 cup save
   (`C:\Data\4cc\Saves\EDIT00000000_VTL10`, 2026-10-12, the size of VTL11's), every team.
-- **Parity, VGL27.** The same against `vgl27`'s `aatf_single_vgl` (`VGL27.B`) on the VGL26 cup save's teams:
-  built for VGL26, most fail, and what is compared is the findings, not legality. A VGL27 cup
-  save replaces it when one exists.
+- **Parity, VGL27.** The same against `vgl27`'s `aatf_single_vgl` (`VGL27.B`) on the VGL26 cup
+  save's teams: built for VGL26, most fail, and what is compared is the findings, not legality.
+  A VGL27 cup save replaces it when one exists.
 - **Differences every legacy checker shows, on purpose.** A player of no tier is reported once,
   as `NoTier`, where the checkers go on to report his tier-free checks too (a weight, a required
   card): the member fixes the player's type first and the next check reports the rest, one more
@@ -1176,13 +1287,14 @@ Verification:
   (`TierCount`), where the official checker also names one of the excess players, an arbitrary
   choice among them.
 - Per ruleset, known-legal teams report nothing; each known-violating fixture reports exactly its
-  violation. Every special of the official file is exercised by at least one fixture. VGL26's
-  and VGL27's include a starting-eleven player fielded in preset 1 at a position he is not rated
-  A at, one whose only such position is in preset 2 (legal), and a fluid preset 1 whose
-  out-of-possession formation alone breaks the rule; VGL26's add a 3-4-3 shape in one formation
-  of a fluid preset 3, and a 3-5-2 (legal). VGL25 has no cup save, so its
-  fixtures are hand-built: manlets at each legal rating (77 and 82), one between them, and one at
-  77 with `choices` suggested; a medal at 190; a gold at injury resistance 1.
+  violation. Every special of the official file is exercised by at least one fixture.
+  - VGL26's and VGL27's include a starting-eleven player fielded in preset 1 at a position he is
+    not rated A at, one whose only such position is in preset 2 (legal), and a fluid preset 1
+    whose out-of-possession formation alone breaks the rule.
+  - VGL26's add a 3-4-3 shape in one formation of a fluid preset 3, and a 3-5-2 (legal).
+  - VGL25 has no cup save, so its fixtures are hand-built: manlets at each legal rating (77 and
+    82), one between them, and one at 77 with `choices` suggested; a medal at 190; a gold at
+    injury resistance 1.
 - Suggestions: a fixture per allowance kind, and none for an allowance not listed in
   `suggestions`.
 - Validation: one failing file per load-time rule, each reporting its key path or line.
