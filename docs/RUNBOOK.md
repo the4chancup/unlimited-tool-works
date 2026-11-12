@@ -138,7 +138,11 @@ the transfer, polling and fetch. The local half runs at below-normal priority wi
 its two cargo processes given half the logical CPUs (`sized_config`, the remote half's
 sizing), not with two CPUs held back: the machine stays usable by priority, and the run gets
 what the user leaves idle (measured level with the old cap). A starved test can then time
-out, so a timeout that no infinite loop explains is rerun before it counts as caught. A build
+out, so a timeout that no infinite loop explains is rerun before it counts as caught, unless
+its log (`mutants.diff/<crate>/log/`) already shows tests reported `FAILED`: the mutant is
+then caught, and the run only outlasted its limit because several failing tests each waited
+out a bounded wait (the update dialog's tests wait up to 10 s for a frame, and a mutant of
+`updater::install` fails a dozen of them under a 20 s limit). A build
 killed for memory (the remote half's cap) is filed by cargo-mutants as unviable, which hides
 an untested mutant: eframe's dependency tree once outgrew a 6 GiB cap and 12 remote mutants
 went untested that way, so the scripts list every killed build and fail the run. A failed
