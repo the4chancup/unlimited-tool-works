@@ -63,14 +63,14 @@ Key by key, on a document from another version:
   lacks written as `None` with a `NotEncodable` note;
 - an appearance key the target lacks (a player field, or a face key of the other layout) is
   dropped with a `NotInThisVersion` note;
-- each with a `Capped` note:
+- each of these three comes with a `Capped` note:
   - a motion past the target's top is written as the top (below);
   - a face type past `schema::limits::face_type_cap(to, field)` is reset to 0, not clamped;
   - skin 7 is reset to 1 when `fpc::custom_skin_available(to)` is false.
 
-A 16 → 17 import therefore keeps a partial-hide FPC player's custom skin (both converters reset
-unconditionally, but each of their directions has a no-custom-skin side; the reference editor's
-import resets to 0, the converters to 1, and the converters are the verified path).
+A 16 → 17 import therefore keeps a partial-hide FPC player's custom skin. Both converters reset
+it unconditionally, but each of their directions has a no-custom-skin side. The reference
+editor's import resets to 0, the converters to 1, and the converters are the verified path.
 
 The motion ranges narrow from 20/21 to 19 and earlier (corner kick
 1–10 vs 1–6, free kick 1–20 vs 1–16, penalty 1–7 vs 1–4, see the `settings.toml` key table).
@@ -132,12 +132,14 @@ The `settings.toml` key table's widest range for each face key is derived from t
 maximum over versions), so the two cannot drift.
 
 **Playing styles.** The stored value is a per-version index. The canonical `PlayStyle` enum
-(`model/playstyle.rs`) has the 22 values of the PES 20/21 list (`None` plus 21 named styles);
+(`model/playstyle.rs`) has the 22 values of the PES 20/21 list (`None` plus 21 named styles).
 `schema/playstyle.rs` holds one list per version group and `decode(version, u8) ->
 Result<PlayStyle, CodecError>` / `encode(version, PlayStyle) -> Option<u8>` (`None` when the
-version has no such style). The lists, from the reference editor's twelve conversion arrays and
-checked against every fixture save (a census of style × registered position: goalkeepers sit at
-17/18 on PES 15/16, 16/17 on 17/18, 20/21 on 19–21):
+version has no such style).
+
+The lists come from the reference editor's twelve conversion arrays and are checked against
+every fixture save (a census of style × registered position: goalkeepers sit at 17/18 on PES
+15/16, 16/17 on 17/18, 20/21 on 19–21):
 
 | Index | PES 15/16 | PES 17/18 | PES 19 | PES 20/21 |
 |---|---|---|---|---|
@@ -654,10 +656,10 @@ Rules of `apply`:
 - A `bench_order` writes its twelve and refills the record's other nine as the game writes them
   (the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
   being the file's `starting_eleven` when it has one, the record's else).
-- The `appearance` table's keys alone, each as its stored value (a key the table lacks keeps its
-  value: "absent = untouched", where `settings.toml` and the patch write every field), go
-  through `settings_toml`'s shared writer, the run's measured-unused bits keeping the save's
-  values.
+- Only the `appearance` table's keys go through `settings_toml`'s shared writer, each as its
+  stored value. A key the table lacks keeps its value ("absent = untouched", where
+  `settings.toml` and the patch write every field), and the run's measured-unused bits keep the
+  save's values.
 - An import never sets a player's appearance id.
 - `base_copy_id` equal to the file's own player id (the file's team id × 100 + slot) becomes the
   target player's id.
@@ -708,12 +710,13 @@ bytes, the longest 59), and a cut nobody was told about renames the player.
 
 ### Aesthetics patch (new)
 
-The file the Team compiler writes to its output folder with its CPKs and the save editor applies: the resolved
-savefile writes for the compiled players, so that the people who build the DLC and the people who
-build the official savefile can be different people. The DLC builder compiles the cup's exports
-without ever seeing the savefile builder's data (the teams' custom tactics, which they send to the
-savefile builder alone), hands over the CPK and the patch, and the savefile builder applies the
-patch to the official save.
+The file the Team compiler writes to its output folder with its CPKs and the save editor
+applies: the resolved savefile writes for the compiled players, so that the people who build the
+DLC and the people who build the official savefile can be different people.
+
+The DLC builder compiles the cup's exports without ever seeing the savefile builder's data (the
+teams' custom tactics, which they send to the savefile builder alone), hands over the CPK and
+the patch, and the savefile builder applies the patch to the official save.
 
 `interchange/aesthetics_patch` holds the format; what is still planned is in
 [`plans/pes_savefile/operations.md`](../../plans/pes_savefile/operations.md) "Aesthetics patch
@@ -728,14 +731,16 @@ backup replaced each time. The write happens once the run's outputs are in place
 publishes nothing leaves the previous CPK and its patch alone.
 
 The compiler's own savefile stage is "apply the patch just produced to the local save" (see
-"Savefile update" in the [Team compiler plan](../team_compiler/pipeline.md)) — one path, so a
-patch applied a week later by someone else yields the same bytes the DLC builder's machine
+"Savefile update" in the [Team compiler plan](../team_compiler/pipeline.md)). It is one path,
+so a patch applied a week later by someone else yields the same bytes the DLC builder's machine
 wrote.
 
 **The patch is the one route by which a compiled player's look reaches the game, on every
 engine.** The compiler writes no `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin`
-rows and no save is stripped. A patch's `players.NN` is player id `team id × 100 + NN`, the
-export's savefile identity (`spec/aesthetics_export/player_folders.md` "Savefile identity"), whatever roster slot he
+rows and no save is stripped.
+
+A patch's `players.NN` is player id `team id × 100 + NN`, the export's savefile identity
+(`spec/aesthetics_export/player_folders.md` "Savefile identity"), whatever roster slot he
 holds, so the patch lands on the player whose models the CPK carries. Per compiled player an
 entry holds:
 
@@ -754,8 +759,8 @@ entry holds:
   The compiler plans the patch before its tasks run and fills these two keys once each task's
   outcome is known, then writes the file once: the file never holds an ID conditioned on a
   task.
-- **`base_copy_id`**, the id of the player whose face and hair he copies; `apply` writes it
-  as his base copy with the flag left as the save holds it, where an `[appearance]` entry
+- **`base_copy_id`**, the id of the player whose face and hair he copies. `apply` writes it
+  as his base copy with the flag left as the save holds it, whereas an `[appearance]` entry
   without one gets its copy cleared to his own id ("Applying a look", below). The
   player-folder link that fills it is the plan's.
 - **the `name` and `shirt_name` of the players of an export with the `write_names` marker**
@@ -775,9 +780,9 @@ a half look built from defaults. An invalid file is an Error a member reads and 
 partial table would need an `apply` that writes some keys and leaves others, a second write path
 for a case the next compile corrects.
 
-The file stays readable as the export's own files are: the same key names, tables and
+The file stays readable as the export's own files are. It uses the same key names, tables and
 values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
-shows it), the face, hair and iris under the player's `appearance` as the joined schema
+shows it), with the face, hair and iris under the player's `appearance` as the joined schema
 holds them, so a reader compares a patch with a player's files key by key. What differs is
 that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
 that there are no per-key range comments: the templates carry those.
@@ -816,29 +821,35 @@ skin_color = 2
 - writes it through `PlayerSettings::apply` (every key, the unused bits at the games' values);
 - sets the appearance block's player id to his own id, as real saves and `populate_players`
   hold it;
-- and clears his base copy: the base-copy id set to his own id (the record's "no copy") and the
-  base-copy flag, on the versions that hold one, cleared; unless the entry holds
-  `base_copy_id`, which `apply` writes as his base copy, the flag left as the save holds it.
+- and clears his base copy: it sets the base-copy id to his own id (the record's "no copy")
+  and clears the base-copy flag, on the versions that hold one. When the entry holds
+  `base_copy_id`, `apply` instead writes that id as his base copy and leaves the flag as the
+  save holds it.
 
-The id, because a save still at -1 from the old stripped route (the maintainer's test saves)
-would otherwise ignore the written look.
+The id is set because a save still at -1 from the old stripped route (the maintainer's test
+saves) would otherwise ignore the written look.
 
-The base copy, because a record whose base-copy id names another player shows that player's
-face and hair over his own. In PES 21's Edit mode (2026-10-15) a cup save's "MESSI" copying
-player 7511 and a teammate copying 114624 showed the copied faces. The game shows a copied face
-with the face edit flag clear as with it set (the same save, that flag alone cleared), and over
-the player's own `face.fpk` too (two players with one each, flag set and clear, given a base
-copy). A census of 125 Fox saves on the maintainer's machine (2026-10-14,
-`.tmp/phase_05/5_4/base_copy_census.txt`) found such an id on 0 to 26 players of each real
-PES 21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the
-player's own. A compiled player whose export describes no face of his own (no face model, no
-`ingame_face.toml`) then shows the Placeholder face, as his export says, where the copy
-showed someone else's.
+The base copy is cleared because a record whose base-copy id names another player shows that
+player's face and hair over his own:
+
+- In PES 21's Edit mode (2026-10-15) a cup save's "MESSI" copying player 7511 and a teammate
+  copying 114624 showed the copied faces.
+- The game shows a copied face with the face edit flag clear as with it set (the same save,
+  that flag alone cleared), and over the player's own `face.fpk` too (two players with one
+  each, flag set and clear, given a base copy).
+- A census of 125 Fox saves on the maintainer's machine (2026-10-14,
+  `.tmp/phase_05/5_4/base_copy_census.txt`) found such an id on 0 to 26 players of each real
+  PES 21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the
+  player's own.
+
+A compiled player whose export describes no face of his own (no face model, no
+`ingame_face.toml`) then shows the Placeholder face, as his export says, where the copy showed
+someone else's.
 
 A written name or shirt name sets the edited-player flag, as the Save editor's own name edit
 does: on PES 2019 a name edit shows in game only with that flag set, and alone it suffices (in
 game, 2026-11-08; `DECISIONS.md` "a written name sets the edited-player flag"). The other edit
-flags (the record's `Edited*` bits) but the base-copy flag are left as the save holds them.
+flags (the record's `Edited*` bits), except the base-copy flag, are left as the save holds them.
 
 Rules:
 
@@ -847,14 +858,17 @@ Rules:
   "only for content that was actually packed" rule. The patch answers "what will the save contain",
   never "what did the export say" — the export is not needed to apply it.
 - **Applying is `pes_savefile`'s operation** (`AestheticsPatch::apply`): for each player, apply
-  what the file holds, through the same `apply_appearance`
-  `settings_toml` shares — one path, so a patch applied by someone else yields the same bytes
-  the DLC builder's machine wrote.
-- `pes_version` must equal the save's (`VersionMismatch`); there is no cross-version application —
-  the compile targeted a version and its values are that version's. `allocation_scheme_version`
-  must equal the suite's `ALLOCATION_SCHEME_VERSION` (`SchemeMismatch`), so a patch from another
-  scheme is refused. A team or player ID absent from the save is skipped and reported in
-  `PatchSummary` while the rest applies; referees are team 999 like anywhere else.
+  what the file holds, through the same `apply_appearance` `settings_toml` shares. It is one
+  path, so a patch applied by someone else yields the same bytes the DLC builder's machine
+  wrote.
+- `pes_version` must equal the save's (`VersionMismatch`). There is no cross-version
+  application: the compile targeted a version and its values are that version's.
+
+  `allocation_scheme_version` must equal the suite's `ALLOCATION_SCHEME_VERSION`
+  (`SchemeMismatch`), so a patch from another scheme is refused.
+
+  A team or player ID absent from the save is skipped and reported in `PatchSummary` while the
+  rest applies; referees are team 999 like anywhere else.
 - **A patch is refused whole or applied whole, absences aside.** Every check that can fail
   (the two versions, a name longer than the version's field, an appearance key's value outside
   its range or its field's width, a key the version does not hold) runs before the first
@@ -992,9 +1006,9 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
     attack/defence levels) — **no captain**.
 
   The reference imports only into 16-18 and only from the same version (its x/y "conversion
-  factor" is 1 for every pair). Here the block parses into `TeamToml.tactics`, `bench_order`
-  taking the first 12 of its 21 and `apply` refilling the nine as a Team TOML import does, and
-  `apply`'s version rule decides, the header's version being `pes_version`.
+  factor" is 1 for every pair). Here the block parses into `TeamToml.tactics`: `bench_order`
+  takes the first 12 of its 21, and `apply` refills the nine as a Team TOML import does. The
+  header's version is `pes_version`, and `apply`'s version rule decides.
 
   No real `.4cct` exists on this machine. The fixture is transcribed from the reference's write
   walk over the PES 19 fixture save's team 713 (provenance in the fixtures README), and the
@@ -1026,8 +1040,8 @@ table (`schema/texport.rs`). Two eras:
 
   Player records are at `0x51065C` / `0x510660` / `0x510840`, each filled roster slot's record
   at that slot's position (`players_at` + slot × the record stride, as on 18-21), its id checked
-  against the slot's (`RosterMismatch`, as for 18-21). On 15/16 a player record then its
-  appearance record per player. That order is the roster's, not always the ids': one real
+  against the slot's (`RosterMismatch`, as for 18-21). On 15/16 each player has a player record
+  followed by its appearance record. That order is the roster's, not always the ids': one real
   PES 16 file (team 804) lists 80401, 80402, 80423, 80404, ..., which a consecutive-id scan
   reads as two players and loses the other 21. No real roster has an empty slot before a filled
   one (55 texports, 2026-10-15), so slot and packed positions agree on every file measured; a
@@ -1071,14 +1085,18 @@ Encoding onto zeros instead loses fields the game reads. A PES 2017 file written
 imports and lists its players in Edit, but the kick-off screen's "Starting Lineup" shows nobody
 (a tester's report, 2026-11-11), or players with blank names and stats.
 
-The field the game needs is the manager id. Of four files built from one game-made Texport of
-772, the zero-encoded one and that one with every player's id copy restored showed blank names
-and stats, while that one with only the team record's +4 restored worked like the game's own
-file, and so did a file from the writer that copies the save's records (PES 2017, in game,
-2026-11-11). The team record's u32 at +4 is the team's **manager id** (on PES 17 equal to the
-team id on 218 of 220 teams; on 19 the game's own coach ids), a field of the codec from PES 17
-on. Among the bytes no field models: tactics values, and each player record's second copy of the
-player id and the `ff ff` after it.
+The field the game needs is the manager id. Four files were built from one game-made Texport of
+772 (PES 2017, in game, 2026-11-11):
+
+- the zero-encoded one showed blank names and stats;
+- so did that one with every player's id copy restored;
+- that one with only the team record's +4 restored worked like the game's own file;
+- and so did a file from the writer that copies the save's records.
+
+The team record's u32 at +4 is the team's **manager id** (on PES 17 equal to the team id on 218
+of 220 teams; on 19 the game's own coach ids), a field of the codec from PES 17 on. Among the
+bytes no field models: tactics values, and each player record's second copy of the player id
+and the `ff ff` after it.
 
 The coach block is the save's **coach record** that manager id names: a section of 88-byte
 records sorted by coach id (the u32 at +0) and closed by an all-`ff` record, its count a u16 in
@@ -1163,9 +1181,9 @@ impl Texport {
 
 Import never trusts the file's player IDs: players map onto the target team's roster by slot
 order, which is `texport.to_team_toml()` then `TeamToml::apply`. That is one import path for
-every format, conversion included (the reference zeroes 15/16 skills 28-41 and sets tight
-possession/aggression/physical contact to 77: the target's values stand in for those instead,
-per the 2.17f rule).
+every format, conversion included. The reference zeroes 15/16 skills 28-41 and sets tight
+possession/aggression/physical contact to 77; here the target's values stand in for those
+instead, per the 2.17f rule.
 
 Because the game itself consumes these, full compatibility matters in both directions: read
 (the reference already does) **and write** (new — the reference is import-only), so the editor

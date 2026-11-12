@@ -44,8 +44,9 @@ is too heavy:
 The second is absorbed into the save editor as the `diff` command and the comparator panel (the
 operation lives in `pes_savefile`, "Save-to-save operations" in the [Savefile
 plan](pes_savefile/operations.md)). The first is not: aesthetics live in the exports now, so a
-look copied into a save is overwritten by the next compile. Its successor copies a donor save's looks into the team's export instead (after
-Release 0.1.0, "Aesthetics transplant" in the [Save editor plan](../plans/save_editor.md)).
+look copied into a save is overwritten by the next compile. Its successor copies a donor save's
+looks into the team's export instead (after Release 0.1.0, "Aesthetics transplant" in the [Save
+editor plan](../plans/save_editor.md)).
 
 ---
 
@@ -160,7 +161,7 @@ What this editor adds on top of the lib:
     (`aatf_rules.md` "The ruleset schema": `/vg/ League 27`, not a file name or a code);
   - then under a separator the imported ones the same way, each row with an × at its right end
     (a frameless small button: egui's combo popup holds any widget);
-  - then under another `Import rules file…`, a command rather than a value.
+  - then under another separator `Import rules file…`, a command rather than a value.
 
   The choice is the `aatf_ruleset` setting (an embedded ruleset's file stem, `autumn26`, or an
   imported copy's file name), remembered across restarts, and `check-aatf` without `--rules`
@@ -212,11 +213,11 @@ What this editor adds on top of the lib:
   opens a dialog, `Multi-team AATF (<ruleset>)`, for an organizer checking a cup's
   teams, who does not use a command line.
 
-  On one row `Teams`, the range's first team, `to`, its last: two combo boxes of the save's
-  teams by id and name, both on the save's first team when the dialog first opens (a whole
-  save's check is the long one, and an organizer checks a few teams at a time), the pick kept
-  while the save stays open. The last end lists only the teams from the first end on and
-  follows the first end when it passes it, so the range is never reversed and needs no
+  One row holds `Teams` (the range's first team) and `to` (its last): two combo boxes of the
+  save's teams by id and name. Both are on the save's first team when the dialog first opens (a
+  whole save's check is the long one, and an organizer checks a few teams at a time), and the
+  pick is kept while the save stays open. The last end lists only the teams from the first end
+  on and follows the first end when it passes it, so the range is never reversed and needs no
   warning.
 
   Under it, in order:
@@ -280,10 +281,12 @@ UTW save-editor export-teams-list ./EDIT00000000 [--yes]     # merge the save's 
 
 Rules every command shares:
 
-- **Exit codes**, the Team compiler's meanings: 0 done; 1 done with an error reported (a patch's
-  team the save lacks, an AATF error); 2 refused before anything was
-  written (a bad argument, a version mismatch, an unreadable file, a team or player the save
-  lacks); 3 a write failed (what was already written stands).
+- **Exit codes**, the Team compiler's meanings:
+  - 0 done;
+  - 1 done with an error reported (a patch's team the save lacks, an AATF error);
+  - 2 refused before anything was written (a bad argument, a version mismatch, an unreadable
+    file, a team or player the save lacks);
+  - 3 a write failed (what was already written stands).
 - **Writing a save.** A command that writes a save reads its source save (`--base`) and
   writes `--out`, which may be the same path; an existing output save is first copied to
   `<file>.bak` (one level, as every save does). There is no implicit base save and no command
@@ -341,10 +344,9 @@ The commands:
 
   The read-only lock is a GUI guard; a CLI command that writes aesthetics (an `import-toml`
   whose file holds aesthetics) is explicit by nature and is not gated.
-- `diff` prints the comparator's report to stdout, players paired by id, each changed field as
-  old → new, then the
-  players only in one save (human-readable by default, `--json` for
-  tooling), replacing the Midcupping compare scripts; `--aesthetics` and `--gameplay` keep one
+- `diff` prints the comparator's report to stdout, replacing the Midcupping compare scripts:
+  players paired by id, each changed field as old → new, then the players only in one save
+  (human-readable by default, `--json` for tooling). `--aesthetics` and `--gameplay` keep one
   scope. Saves of two versions are refused. Differences are its output, not an error: exit 0.
 - `check-aatf` runs the active ruleset (`--rules`, else the one the `aatf_ruleset` setting
   names) over the cup teams the save holds (701-920, or `--teams`) and prints each violation

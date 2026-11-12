@@ -11,9 +11,9 @@ Part of the [Savefile plan](README.md). Section headings are unchanged from the 
 - **Codec roundtrips**: read → write → byte-compare for every player and team
   block in real saves of all seven versions (`Midcupping/EDIT.bin` and friends
   are test fixtures; the user's KONAMI `eFootball PES 2021 SEASON UPDATE` save
-  is the 20/21 fixture — sanity anchors already verified there: player count
+  is the 20/21 fixture). Sanity anchors already verified on that save: player count
   u16 at 0x60, and every record's appearance playerID at +240 equals its player
-  ID at +0).
+  ID at +0.
 - **Name fields**: names read as null-terminated UTF-8 (the `♂` in a real PES 19
   name is the bytes `E2 99 82`, colour codes are the ASCII bytes `11 63` + hex)
   from real PES 19 (`PRO EVOLUTION SOCCER 2019` KONAMI save) and PES 21 cup

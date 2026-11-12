@@ -26,11 +26,14 @@ then          description ┐
 - **File key recovery** (an involution — the same routine derives the key when
   writing a fresh random salt): `headerKey = eff ^ salt[256..320]`, decrypt
   `salt[0..256]` with it, then XOR the five 64-byte blocks of the result together.
-- **Keystream** (`cryptStream`): seed MT19937 via the standard array-seeding
-  routine (`init_by_array`) with the 64-byte section key as 16 little-endian u32;
-  prime with four draws `c0..c3`; per output word: `c4 = next()`,
-  `out = c4^c3^c2^c1^c0`, then rotate `c0=ror(c1,15)`, `c1=rol(c2,11)`,
-  `c2=rol(c3,7)`, `c3=ror(c4,13)`. Data is XORed with the keystream.
+- **Keystream** (`cryptStream`):
+  1. Seed MT19937 via the standard array-seeding routine (`init_by_array`) with the 64-byte
+     section key as 16 little-endian u32.
+  2. Prime it with four draws `c0..c3`.
+  3. Per output word: `c4 = next()`, `out = c4^c3^c2^c1^c0`, then rotate `c0=ror(c1,15)`,
+     `c1=rol(c2,11)`, `c2=rol(c3,7)`, `c3=ror(c4,13)`.
+
+  Data is XORed with the keystream.
 - **Section keys**: `fileKey ^ (n as u64 LE)` where `n` = the header's byte length
   (176/208) for the header, then `0` description, `1` logo, `2` payload, `3` serial.
 - **Header layout** (measured on real 16/17/18/19/21 saves, 2026-09-14):
@@ -78,17 +81,20 @@ then          u32 logo length, logo
 then          u32 payload length, payload
 ```
 
-Cipher: a bytewise XOR stream driven by a 15-bit LCG state —
-`c = (c*21 + 7) % 32768; byte ^= c % 255`, with the seed byte as `c₀`. Integrity: the three MD5 digests must match the decrypted
-sections (recomputed on write; `md-5` crate).
+Cipher: a bytewise XOR stream driven by a 15-bit LCG state,
+`c = (c*21 + 7) % 32768; byte ^= c % 255`, with the seed byte as `c₀`.
+
+Integrity: the three MD5 digests must match the decrypted sections (recomputed on write;
+`md-5` crate).
 
 ### Master keys
 
 64 bytes per version, embedded as constants. `src/masterkey.c` is the single authoritative
-source for all of them (verified: the `MasterKeyPesNN` exports of both local `libpesXcrypter.dll`
-copies match the source byte-for-byte, and `save19.py`/`save21.py`'s inline arrays match the
-corresponding keys). The constants are the **raw** key — the per-8-byte reversal above is applied
-by the consumer:
+source for all of them. This is verified: the `MasterKeyPesNN` exports of both local
+`libpesXcrypter.dll` copies match the source byte-for-byte, and `save19.py`/`save21.py`'s inline
+arrays match the corresponding keys.
+
+The constants are the **raw** key: the per-8-byte reversal above is applied by the consumer.
 
 | Version | Key |
 |---------|-----|
@@ -250,10 +256,12 @@ Structural eras:
   +240, boots/gloves u32 +244, copy ID +248, physique +252, ingame-face run +262…+285, skin
   +285, iris +304, hair +304…+312. Verified empirically against a decrypted real PES 21 save
   (see Verification).
-- ⚠ `convertTeam21.py` (the 16→21 reference) writes physique to record +128, the ingame-face
-  run to +138…188, and the shirt name to +100 — stale PES 17/18/19 offsets — while its own
-  240-anchored writes (boots/gloves u32 +244, wrist +259, skin/facial +285…) are correct. In
-  the real layout those early offsets land in the name-section filler (`0xFE` padding and
+- ⚠ `convertTeam21.py` (the 16→21 reference) writes three fields at stale PES 17/18/19
+  offsets: physique to record +128, the ingame-face run to +138…188, and the shirt name to
+  +100. Its own 240-anchored writes (boots/gloves u32 +244, wrist +259, skin/facial +285…) are
+  correct.
+
+  In the real layout those early offsets land in the name-section filler (`0xFE` padding and
   zeros), so the intended fields silently keep their template values and long names can be
   corrupted. The Rust port must take all 20/21 offsets from `pes20.cpp`'s walk, not from the
   converter (shirt name is at +115, physique at +252, ingame face at +262).
