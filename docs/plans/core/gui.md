@@ -442,6 +442,17 @@ The settings menu is assembled from injected sections:
   file is not TOML, the save writes it fresh: a file the next start could not open costs more
   than the comments.
 
+  A save writes only what its own session changed since it read the file or last wrote it,
+  not the session's whole state: with two windows open, each holds its own copy of the
+  settings, and a save of the whole copy puts back every value the other window changed
+  meanwhile (the last to save undid the other's PES folder, its theme, a tool's settings). So
+  the session keeps the values it last read or wrote; at a save, a value that differs from
+  them is the session's change and is written, and every other value stays as the file has
+  it now, another window's change and a hand edit alike. Two windows changing the same value
+  leave the later save's. A window does not take over what another wrote until it starts
+  again: its tools hold what they read, and a value changing under an open form is worse
+  than one a restart brings.
+
 ### Help window
 
 What exists of this is in `spec/core/gui.md` "Help window".
@@ -1475,6 +1486,13 @@ ST-SET-04   GIVEN the selector at PES 2019 and the menu open
                  running process is manual) THEN [common.pes_folders] gains 19 and the main row is
                  unchanged; WHEN both rows are emptied THEN the entries are gone and the toggle
                  can be switched off
+ST-SET-05   GIVEN two sessions that read the same settings file, the first having since
+                 saved a new `thread_count` and a new value in a tool's table
+            WHEN the second changes `theme` and saves
+            THEN the file holds the first's two values and the second's theme; WHEN the
+                 second then changes `thread_count` too and saves THEN the file holds the
+                 second's `thread_count`; GIVEN a key the first session removed from a tool's
+                 table WHEN the second saves a change elsewhere THEN the key stays removed
 ```
 
 **Status bar and window title**

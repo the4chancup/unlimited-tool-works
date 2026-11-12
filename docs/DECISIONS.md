@@ -16658,3 +16658,22 @@ cold build cache, so every run would refuse. Whether the 40 GB figure still stan
 in `QUESTIONS.md`. No other crate's half is measured; a whole run's leftovers over days are
 not either.
 Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.
+
+## 2026-11-12 — studio_core — A settings save writes only what its session changed
+
+Decision: `Settings::save` writes the values its own session changed since it read the file
+or last wrote it, and leaves every other value as the file has it at that moment. The
+session keeps the values it last read or wrote to tell the two apart. A window does not take
+over another window's values until it starts again.
+Why: what happens today (worklog 0.0.2-drift, the maintainer's ask of 2026-11-03), read from
+`Settings::save`: a save brings the file to the session's whole copy, so with two windows
+open the last to save puts back every value the other changed meanwhile, not only a value
+both changed. Each window saves often (a tool switch stores `last_tool`, the update check
+`last_update_check`, the window its place), so a PES folder set in one window was undone by
+the other's next tool switch. Writing only the session's own changes ends that with no lock
+and no file watching, and a hand edit made while a window is open now survives too.
+Not chosen: reading the file back into the running session after each save, so both windows
+converge: the tools hold what they read at start, and a value changing under an open form
+is worse than one a restart brings. A lock file or one window owning the settings: a crash
+leaves the lock, and the second window would run without saving.
+Plan: `plans/core/gui.md` "Settings menu" (the paragraph on saving), ST-SET-05.
