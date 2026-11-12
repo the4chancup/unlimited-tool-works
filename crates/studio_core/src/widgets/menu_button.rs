@@ -224,6 +224,16 @@ mod tests {
                     menu.acted.contains(&true),
                     "a click at y = {y} acted on no entry ({first:?}, {second:?}, {third:?})"
                 );
+                for (index, entry) in [first, second, third].into_iter().enumerate() {
+                    if y > entry.min.y && y < entry.max.y {
+                        let mut alone = [false; 3];
+                        alone[index] = true;
+                        assert_eq!(
+                            menu.acted, alone,
+                            "a click inside entry {index}, at y = {y}"
+                        );
+                    }
+                }
             }
             y += 0.5;
         }

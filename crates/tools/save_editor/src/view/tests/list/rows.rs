@@ -68,6 +68,13 @@ fn a_click_where_two_team_rows_meet_in_the_dropdown_picks_one() {
         "one of the two teams picked, not {:?}",
         view.team
     );
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some(a_name.as_str())),
+        "the list closed"
+    );
 }
 
 // The team row's own paint, the draft's `trow`: the id in the weak
