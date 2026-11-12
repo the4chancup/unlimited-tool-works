@@ -473,6 +473,16 @@ mod tests {
                 "{case}"
             );
         }
+        // The command's own form measures against the program's version: a release past any
+        // version this crate will carry is offered, in the line `notice_line` gives for it.
+        let far = release("999.0.0");
+        let line = command_line_notice(far.as_ref(), None);
+        assert_eq!(line, notice_line(far.as_ref(), &own_version(), None));
+        assert!(
+            line.is_some_and(|line| line.contains("v999.0.0")),
+            "the line names the release"
+        );
+        assert_eq!(command_line_notice(None, None), None, "no release");
     }
 
     #[test]
