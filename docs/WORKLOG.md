@@ -1740,7 +1740,10 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
-    does for most apps (the maintainer, 2026-11-03)
+    does for most apps (the maintainer, 2026-11-03). Read 2026-11-12: no application ID is
+    set on Windows and nothing guards a second instance, so the code gives no reason it
+    would fail; what happens today is asked in `QUESTIONS.md` ("The 0.0.2 Save editor
+    report": the lead cannot click the taskbar)
   - [ ] 0.0.2-drift the risk of the settings drifting between two instances open at once
     checked: each saves its own copy, so the last to save may undo the other's change; find
     out what happens today and rule a fix (the maintainer, 2026-11-03)
