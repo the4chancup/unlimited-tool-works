@@ -2,6 +2,7 @@
 setlocal
 cd /d "%~dp0"
 if "%~1"=="" goto nodrop
+if exist "%~dp0upgrade_log.txt" del "%~dp0upgrade_log.txt"
 set "savefile=%~f1"
 set "upgraded=0"
 set "not_upgraded=0"
@@ -17,6 +18,8 @@ for %%F in ("%~dp0old_exports\*.zip" "%~dp0old_exports\*.7z") do (
 echo.
 if "%found%"=="0" goto noexports
 echo Upgraded: %upgraded%. Not upgraded: %not_upgraded%.
+>>"%~dp0upgrade_log.txt" echo Upgraded: %upgraded%. Not upgraded: %not_upgraded%.
+echo Info messages are left out above. The full report is in upgrade_log.txt.
 pause
 if "%not_upgraded%"=="0" (exit /b 0) else (exit /b 1)
 
@@ -35,6 +38,6 @@ exit /b 1
 :upgrade
 echo.
 echo Upgrading %~nx1
-"%~dp0UTW.exe" export-upgrader upgrade "%~1" --savefile "%savefile%" --legacy-ids -o "%~dp0exports"
+"%~dp0UTW.exe" --log-file "%~dp0upgrade_log.txt" export-upgrader upgrade "%~1" --savefile "%savefile%" --legacy-ids -o "%~dp0exports"
 if errorlevel 1 (set /a "not_upgraded+=1") else (set /a "upgraded+=1")
 exit /b

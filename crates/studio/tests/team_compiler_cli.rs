@@ -284,6 +284,80 @@ fn a_compile_with_stderr_piped_draws_no_line_and_leaves_stderr_empty() {
     assert!(stderr(&output).is_empty(), "{}", stderr(&output));
 }
 
+// ST-CLI-04
+#[test]
+fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_out() {
+    let sandbox = Sandbox::new("log_file", "");
+    sandbox.write(
+        "data/settings.toml",
+        &format!("[common]\npes_version = 21\n{}", sandbox.pes_folder_line()),
+    );
+    sandbox.write("data/teams_list.txt", "ID\tName\n714\t/co/\n");
+    let kit = Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "../tools/team_compiler/tests/fixtures/tracer/studio/egg Midcup Tracer/Kits/g1/kit.dds",
+    );
+    let folder = sandbox.root.join("exports/co Midcup Kit/Kits/p1");
+    fs::create_dir_all(&folder).unwrap();
+    fs::copy(&kit, folder.join("kit.dds")).unwrap();
+    sandbox.write("exports/co Midcup Kit/stray.txt", "stray");
+    sandbox.write("run_log.txt", "the run before\n");
+    let log = sandbox.root.join("run_log.txt");
+
+    let output = sandbox.run(&[
+        "team-compiler",
+        "check",
+        "--export",
+        "exports/co Midcup Kit",
+        "--log-file",
+        "run_log.txt",
+    ]);
+
+    assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
+    let warning = "- co Midcup Kit: Warning root_file_unexpected at stray.txt";
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        format!("{warning}\n")
+    );
+    assert_eq!(
+        fs::read_to_string(&log).unwrap(),
+        format!(
+            "the run before\n\
+             $ UTW team-compiler check --export \"exports/co Midcup Kit\" --log-file run_log.txt\n\
+             {warning}\n\
+             - co Midcup Kit: Info export_identified (team=/co/, id=714)\n\
+             exit 0\n"
+        )
+    );
+
+    // A refused command: its `error:` line ends the run's part of the file, then its code.
+    let refused = sandbox.run(&[
+        "team-compiler",
+        "compile",
+        "--no-deploy",
+        "--mode",
+        "test",
+        "--log-file",
+        "run_log.txt",
+    ]);
+    assert_refused(&refused, 2, &["--no-deploy"]);
+    let text = fs::read_to_string(&log).unwrap();
+    let last_two: Vec<&str> = text.lines().rev().take(2).collect();
+    let error_line = stderr(&refused)
+        .lines()
+        .last()
+        .unwrap_or_default()
+        .to_owned();
+    assert!(error_line.starts_with("error: "), "{error_line}");
+    assert_eq!(last_two, ["exit 2", error_line.as_str()], "{text}");
+
+    // A log file that cannot be opened refuses the run before anything is checked.
+    let missing = sandbox.root.join("missing").join("run_log.txt");
+    let missing_arg = missing.to_str().unwrap();
+    let output = sandbox.run(&["team-compiler", "check", "--log-file", missing_arg]);
+    assert_refused(&output, 2, &["cannot open the log file", missing_arg]);
+    assert!(output.stdout.is_empty(), "nothing was checked");
+}
+
 #[test]
 fn a_settings_file_that_is_not_toml_stops_the_binary_naming_it() {
     let sandbox = Sandbox::new("bad_settings", "this is = = not toml");

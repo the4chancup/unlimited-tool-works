@@ -32,6 +32,10 @@ pub struct Launch {
     /// Diagnostic verbosity: `0` warnings only, `1` (`-v`) info, `2` (`-vv`) debug, more is trace.
     /// `RUST_LOG`, when set, overrides it.
     pub verbosity: u8,
+    /// `--log-file`: the file a tool's command appends everything it prints to, its Info
+    /// findings included, which the console then leaves out. `UTW help` and the window
+    /// ignore it.
+    pub log_file: Option<PathBuf>,
 }
 
 /// How the binary was started.
@@ -100,6 +104,14 @@ fn root_command(tools: &[Box<dyn StudioTool>]) -> Command {
                 .global(true)
                 .help("More diagnostic output with each v: -v for info, -vv for debug, -vvv for trace"),
         )
+        .arg(
+            Arg::new("log-file")
+                .long("log-file")
+                .value_name("FILE")
+                .value_parser(clap::value_parser!(PathBuf))
+                .global(true)
+                .help("Append everything a tool's command prints to FILE, and leave Info findings out of the console"),
+        )
         .subcommand(
             Command::new("help")
                 .about("Print a help chapter, or export them all as Markdown")
@@ -162,7 +174,12 @@ pub fn parse_launch(
             matches: subcommand.clone(),
         },
     };
-    Ok(Launch { mode, verbosity })
+    let log_file = matches.get_one::<PathBuf>("log-file").cloned();
+    Ok(Launch {
+        mode,
+        verbosity,
+        log_file,
+    })
 }
 
 /// Runs a parsed CLI subcommand on the tool that owns it and returns what the tool returned
@@ -323,6 +340,18 @@ mod tests {
         let launch = parse_launch(&tools(), args(&["studio", "stub", "-v", "ping", "x"])).unwrap();
         assert_eq!(launch.verbosity, 1);
         assert!(matches!(launch.mode, LaunchMode::Cli { .. }));
+    }
+
+    #[test]
+    fn the_log_file_is_none_without_the_option_and_accepted_before_or_after_the_subcommand() {
+        let log_file = |list: &[&str]| parse_launch(&tools(), args(list)).unwrap().log_file;
+        assert_eq!(log_file(&["studio", "stub", "ping", "x"]), None);
+        for list in [
+            &["studio", "--log-file", "run.txt", "stub", "ping", "x"][..],
+            &["studio", "stub", "ping", "x", "--log-file", "run.txt"],
+        ] {
+            assert_eq!(log_file(list), Some(PathBuf::from("run.txt")), "{list:?}");
+        }
     }
 
     #[test]
