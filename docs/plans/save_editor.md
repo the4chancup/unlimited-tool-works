@@ -800,7 +800,10 @@ side.
   versions: the document names its version and its import already converts the values, where
   a record's bytes fit one version alone. It is also the one text form the editor already
   reads and writes, so the copy needs no format of its own, and a member can paste it into a
-  message or a file.
+  message or a file. A Gameplan, preset or formation copy is built from the team alone,
+  without its players' tables, so a player whose record the document cannot hold (a stored
+  playing style outside his version's list) does not stop his team's tactics from being
+  copied; a stats copy needs the players and is not made then.
 - In a number field being typed, **Up and Down** step the value by one, as a wheel notch
   does; egui steps a whole-number field by its drag speed (a quarter) and rounds the sum
   back, so a press changed nothing, and the drag's sensitivity stays as it is.
@@ -2661,7 +2664,9 @@ SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team
                 window after Ctrl+C WHEN Ctrl+V is pressed THEN the copy is pasted there too;
                 GIVEN a clipboard holding an image, text that is no such document, or a copy
                 of another kind than the target WHEN Ctrl+V is pressed THEN nothing changes
-                and no undo entry is pushed
+                and no undo entry is pushed; GIVEN a team one of whose players stores a
+                playing style outside the version's list WHEN Ctrl+C is pressed on its team
+                row, on a preset and on a formation THEN each puts its copy on the clipboard
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before
