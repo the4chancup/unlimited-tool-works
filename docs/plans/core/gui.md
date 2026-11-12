@@ -451,7 +451,10 @@ The settings menu is assembled from injected sections:
   it now, another window's change and a hand edit alike. Two windows changing the same value
   leave the later save's. A window does not take over what another wrote until it starts
   again: its tools hold what they read, and a value changing under an open form is worse
-  than one a restart brings.
+  than one a restart brings. A default is no change either, a tool's filled in at start
+  included: a key the file lacks stays out of it until a session sets it (a save used to
+  add every missing key), or one window's default would undo the value another had just
+  set for a key the file did not name yet.
 
 ### Help window
 
