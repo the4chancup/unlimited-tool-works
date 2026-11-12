@@ -180,6 +180,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // The team whose row was double-clicked, applied once the rows are
     // drawn: the rows borrow the selection and the session.
     let mut shown_team = None;
+    // The drop's mark, painted once after the rows: the first row to
+    // report it wins (a pointer on the edge two rows share hovers both,
+    // and the release there goes to the upper one).
+    let mut drop_mark = None;
     // Not shrunk: the frame takes the panel's height whatever few rows a
     // filter leaves. The scope clears the extreme background, which a
     // solid bar's track paints in at full opacity: the draft's `.vbar` has
@@ -228,7 +232,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                 }
                             }
                             ListRow::Player(row) => {
-                                player_row(
+                                drop_mark = drop_mark.or(player_row(
                                     ui,
                                     &mut view.selected,
                                     &mut view.click_kind,
@@ -240,9 +244,26 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                             live_marks::row_mark(violations, Some(row.slot))
                                         },
                                     ),
-                                );
+                                ));
                             }
                         }
+                    }
+                    // Painted once, after the rows: painted with its row,
+                    // the next row's background would cover its lower
+                    // half.
+                    if let Some(mark) = drop_mark {
+                        let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
+                        let y = if mark.lower {
+                            mark.rect.max.y
+                        } else {
+                            mark.rect.min.y
+                        };
+                        ui.painter()
+                            .hline(mark.rect.min.x..=mark.rect.max.x, y, stroke);
+                        ui.painter()
+                            .vline(mark.rect.min.x + 1.0, y - 3.5..=y + 3.5, stroke);
+                        ui.painter()
+                            .vline(mark.rect.max.x - 1.0, y - 3.5..=y + 3.5, stroke);
                     }
                 })
         })
@@ -606,6 +627,14 @@ fn team_row(
     response.double_clicked()
 }
 
+/// The mark a drop on a player row draws: the row's rect, and the edge
+/// the line stands on (`lower`: he comes from above). `player_row`
+/// reports it; `show` paints it once after the rows.
+struct DropMark {
+    rect: egui::Rect,
+    lower: bool,
+}
+
 /// One list row: place, position, and the name with its colour codes drawn.
 /// The whole row is one click target; a click selects it. `draggable` (no
 /// filter typed) also makes it a drag source and a drop target: a drop on
@@ -619,7 +648,11 @@ fn team_row(
 /// under them), on its upper edge when he comes from below. A line, not
 /// an outline round the row, because the drop inserts him at that place
 /// and shifts the rows between, where an outline would promise a swap; a
-/// row the drop writes nothing on gets none. While held dragged,
+/// row the drop writes nothing on gets none. The row only reports the
+/// mark: the list paints it once, after the rows, so the next row's
+/// background never covers its lower half, and one mark at most shows.
+/// A pointer on the edge two rows share hovers both, and the release
+/// there goes to the upper row, the first to report. While held dragged,
 /// the row's handle, place, position and name float above the list with
 /// the point pressed under the pointer, its own place left blank. The row
 /// shows the grab hand wherever the pointer is on it (egui leaves a row
@@ -632,7 +665,7 @@ fn player_row(
     row: &Row,
     layout: RowLayout,
     mark: Option<live_marks::RowMark>,
-) {
+) -> Option<DropMark> {
     let file = session.file();
     let player = file.player(row.player_id);
     let dirty = session.player_dirty(row.team_id, row.slot);
@@ -775,32 +808,23 @@ fn player_row(
     if pressed(ui, &response) {
         *click_kind = Some(ClickKind::List);
     }
+    let mut drop_mark = None;
     if layout.draggable {
         // `dnd_set_drag_payload` asks for the grab hand only on a drag
         // source that senses no click; the row takes clicks, so it asks
         // for the pointing hand itself.
         let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         response.dnd_set_drag_payload(*row);
-        // The line sits where the drop lands: centred on the row's lower
-        // edge when he comes from above, on its upper edge when he comes
-        // from below, its serifs' outer sides on the row's edges so it
-        // reads as a place between two rows, not the row's border. Only a
-        // row whose release would move a record gets one.
+        // A place between two rows, not the row's border; only a row
+        // whose release would move a record reports one.
         if let Some(dropped) = response.dnd_hover_payload::<Row>()
             && dropped.team_id == row.team_id
             && session.moves_player(row.team_id, dropped.slot, row.slot)
         {
-            let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
-            let y = if dropped.slot < row.slot {
-                rect.max.y
-            } else {
-                rect.min.y
-            };
-            ui.painter().hline(rect.min.x..=rect.max.x, y, stroke);
-            ui.painter()
-                .vline(rect.min.x + 1.0, y - 3.5..=y + 3.5, stroke);
-            ui.painter()
-                .vline(rect.max.x - 1.0, y - 3.5..=y + 3.5, stroke);
+            drop_mark = Some(DropMark {
+                rect,
+                lower: dropped.slot < row.slot,
+            });
         }
         if let Some(dropped) = response.dnd_release_payload::<Row>()
             && dropped.team_id == row.team_id
@@ -810,6 +834,7 @@ fn player_row(
             *selected = Some(Selection::Player(row.team_id, row.slot));
         }
     }
+    drop_mark
 }
 
 /// A player row's three columns' text.
