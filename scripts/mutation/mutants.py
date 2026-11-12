@@ -150,19 +150,17 @@ LOCAL_ONLY_CRATES: frozenset[str] = frozenset()
 # and counted against the unit's MemoryMax: the team_compiler kills were per-mutant
 # rebuilds of 1-2 GiB on top of two such trees, not the egui build itself.
 REMOTE_TMPDIR = "$HOME/studio-mutants/tmp"
-# The most of the host's disk `REMOTE_BASE` may hold when a run that uses the
-# remote starts: the maintainer affords about 40 GB, and a running half adds its
-# two build copies on top (`REMOTE_FREE_FLOOR` has their size). On 2026-10-22 it held 50 GB (28.6 of
-# them tests' leftovers in `REMOTE_TMPDIR`, 22 the clone's build cache), the host's
-# disk was at 99%, and a half lost five mutants to it (RUNBOOK "The scratch folder").
-REMOTE_DISK_BUDGET = 30 * 2**30
-# The least free space the host's disk must have when such a run starts, whatever
-# this project holds: a half's two build copies take 24 GiB of it (measured on
-# 2026-11-12: a `save_editor` half's peaked at 23.6 GiB in `REMOTE_TMPDIR`; no
-# other crate's is measured), and 2 more stay for the host's own system (its logs,
-# its other services, idle since 2026-10-29). At 12, the floor before that
-# measurement, a `save_editor` half that started with 19.5 GiB free filled the disk
-# and lost a mutant.
+# The least free space the host's disk must have when a run that uses the remote
+# starts, whatever this project holds: a half's two build copies take 24 GiB of it
+# (measured on 2026-11-12: a `save_editor` half's peaked at 23.6 GiB in
+# `REMOTE_TMPDIR`; no other crate's is measured), and 2 more stay for the host's own
+# system (its logs, its other services, idle since 2026-10-29). At 12, the floor
+# before that measurement, a `save_editor` half that started with 19.5 GiB free
+# filled the disk and lost a mutant. Nothing bounds what `REMOTE_BASE` itself holds:
+# the host can spare its whole disk but those 2, so only the free space is guarded.
+# On 2026-10-22 the folder held 50 GB (28.6 of them tests' leftovers in
+# `REMOTE_TMPDIR`, 22 the clone's build cache), the disk was at 99%, and a half
+# lost five mutants to it (RUNBOOK "The scratch folder").
 REMOTE_FREE_FLOOR = 26 * 2**30
 # Where the local half's cargo-mutants makes its copies of the tree (and its
 # builds and tests their temporary files): one fixed folder, so a single
@@ -612,8 +610,8 @@ def remote_refusal(host: str) -> str | None:
     while a remote half is running or finished but uncollected, whose
     collection summarizes the run's `mutants.out` with it; while the host
     cannot be reached or `just gates-remote` runs there, since each rewrites
-    the remote clone under the other; and past the disk guard (`disk_refusal`,
-    after `remote_disk_use` has emptied the tests' leftovers)."""
+    the remote clone under the other; and below the disk's free floor
+    (`disk_refusal`, after `remote_disk_use` has emptied the tests' leftovers)."""
     state = remote_run_state(host)
     if state is None:
         return f"cannot reach {host}"
@@ -703,23 +701,19 @@ def remote_disk_use(host: str) -> tuple[int, int]:
 
 
 def disk_refusal(used: int, free: int) -> str | None:
-    """A refusal when `REMOTE_BASE` holds more than `REMOTE_DISK_BUDGET` or its
-    disk has less than `REMOTE_FREE_FLOOR` free (`used` and `free` in bytes,
-    `remote_disk_use`), naming the cleanup; None, after printing both figures,
-    otherwise."""
+    """A refusal when `REMOTE_BASE`'s disk has less than `REMOTE_FREE_FLOOR` free
+    (`used`, what the folder holds, and `free` in bytes, `remote_disk_use`), naming
+    the cleanup and who to ask when it is not enough; None, after printing both
+    figures, otherwise."""
     figures = (
-        f"{used / 2**30:.1f} GiB in {REMOTE_BASE} (budget {REMOTE_DISK_BUDGET / 2**30:.0f} "
-        f"GiB), {free / 2**30:.1f} GiB free (floor {REMOTE_FREE_FLOOR / 2**30:.0f} GiB)"
+        f"{used / 2**30:.1f} GiB in {REMOTE_BASE}, {free / 2**30:.1f} GiB free "
+        f"(floor {REMOTE_FREE_FLOOR / 2**30:.0f} GiB)"
     )
-    if used > REMOTE_DISK_BUDGET:
-        return (
-            f"remote disk: {figures}: over the budget, run RUNBOOK \"The scratch folder\"'s "
-            "remote cleanup, then start the run"
-        )
     if free < REMOTE_FREE_FLOOR:
         return (
-            f"remote disk: {figures}: below the floor, which this project's cleanup alone may "
-            "not lift; ask the maintainer before starting the run"
+            f"remote disk: {figures}: below the floor. RUNBOOK \"The scratch folder\"'s remote "
+            "cleanup frees most of what the folder holds; if that cannot lift the floor, ask "
+            "the maintainer before starting the run"
         )
     print(f"remote disk: {figures}", flush=True)
     return None

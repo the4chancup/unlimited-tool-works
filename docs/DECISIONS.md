@@ -16723,3 +16723,22 @@ DLCs nobody needs could leave it out. None is left out: an old cup's other expor
 lost as its teams.
 Plan: `plans/decompiler.md` "Without one: the heuristic" (its "Open questions" section,
 which held only this, is gone).
+
+## 2026-11-12 — mutation — the VPS folder's 30 GiB budget goes; the free floor stays 26 GiB
+Decision (maintainer, answering `QUESTIONS.md` "The 40 GB this project may hold on the
+VPS": "The fluxer instance is dormient (running but used by no one) so the 40 GB limit
+doesn't really matter anymore. We can afford to reserve just 5 GB", then, told that 5 would
+raise the floor to 29 GiB, "We can set the floor back to 2 GiB if that helps"): the project
+may hold whatever the host's disk has, less 2 GiB of free space kept for the host. In
+`scripts/mutation/mutants.py`, `REMOTE_DISK_BUDGET` and its check are removed, and
+`REMOTE_FREE_FLOOR` stays 26 GiB (a half's two build copies, 24 measured, plus the 2). The
+guard's one refusal names both ways out: the remote cleanup, which frees most of what the
+folder holds, and the maintainer when that is not enough.
+Why: the budget existed to keep the folder under the 40 GB the host could spare beside its
+production service, and was already loose against it (30 GiB at a run's start plus 24 while
+a half runs). With the limit gone it only forced a cleanup of the clone's build cache that
+the free space did not need. The floor is what keeps the disk from filling, whatever the
+folder holds. 2 rather than 5 for the host because the disk had 33 GiB free with the clone
+at 13: at 29 the build cache could grow by 4 GiB before every run needed a cleanup first,
+at 26 by 7.
+Plan: `RUNBOOK.md` "The scratch folder" (the VPS paragraph).

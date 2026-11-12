@@ -1754,7 +1754,7 @@ class RemoteRefusal(unittest.TestCase):
     every caller does (`local_refusal` asks this tree's record alone)."""
 
     def refusal(
-        self, state: str | None, gates: int = 3, used: int = 2**30
+        self, state: str | None, gates: int = 3, free: int = 100 * 2**30
     ) -> str | None:
         def ssh(host, command, **kwargs):
             return subprocess.CompletedProcess([host, command], gates)
@@ -1762,7 +1762,7 @@ class RemoteRefusal(unittest.TestCase):
         with (
             mock.patch.object(mutants, "remote_run_state", lambda host: state),
             mock.patch.object(mutants, "ssh", ssh),
-            mock.patch.object(mutants, "remote_disk_use", lambda host: (used, 100 * 2**30)),
+            mock.patch.object(mutants, "remote_disk_use", lambda host: (2**30, free)),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             return mutants.remote_refusal("bonfire")
@@ -1785,8 +1785,8 @@ class RemoteRefusal(unittest.TestCase):
         self.assertEqual(self.refusal("none", gates=255), "cannot reach bonfire")
         self.assertIsNone(self.refusal("none", gates=3))
         self.assertIn(
-            "over the budget",
-            self.refusal("none", gates=3, used=mutants.REMOTE_DISK_BUDGET + 1),
+            "below the floor",
+            self.refusal("none", gates=3, free=mutants.REMOTE_FREE_FLOOR - 1),
         )
 
 
@@ -1932,28 +1932,28 @@ class ExtraExclusions(unittest.TestCase):
 
 
 class DiskRefusal(unittest.TestCase):
-    """The disk guard at its two bounds, with 2026-10-22's figures as the failing case."""
+    """The disk guard at its bound, with 2026-10-22's figures as the failing case."""
 
     def quiet(self, used: int, free: int) -> str | None:
         with contextlib.redirect_stdout(io.StringIO()):
             return mutants.disk_refusal(used, free)
 
-    def test_the_budget_and_the_floor_themselves_pass(self):
-        self.assertIsNone(self.quiet(mutants.REMOTE_DISK_BUDGET, mutants.REMOTE_FREE_FLOOR))
+    def test_the_floor_itself_passes(self):
+        self.assertIsNone(self.quiet(2**30, mutants.REMOTE_FREE_FLOOR))
 
-    def test_one_byte_over_the_budget_refuses_naming_the_cleanup(self):
-        refusal = self.quiet(mutants.REMOTE_DISK_BUDGET + 1, 60 * 2**30)
-        self.assertIn("over the budget", refusal)
-        self.assertIn("The scratch folder", refusal)
+    def test_what_the_folder_holds_refuses_nothing_while_the_floor_is_free(self):
+        self.assertIsNone(self.quiet(50 * 2**30, mutants.REMOTE_FREE_FLOOR))
 
-    def test_one_byte_below_the_floor_refuses_naming_the_maintainer(self):
-        refusal = self.quiet(2**30, mutants.REMOTE_FREE_FLOOR - 1)
+    def test_one_byte_below_the_floor_refuses_naming_the_cleanup_and_the_maintainer(self):
+        refusal = self.quiet(13 * 2**30, mutants.REMOTE_FREE_FLOOR - 1)
         self.assertIn("below the floor", refusal)
+        self.assertIn("13.0 GiB in", refusal)
+        self.assertIn("The scratch folder", refusal)
         self.assertIn("maintainer", refusal)
 
     def test_the_full_disk_of_2026_10_22_refuses(self):
         # 50 GB of this project's on a disk with 2.2 GB free.
-        self.assertIn("over the budget", self.quiet(50 * 2**30, 2 * 2**30))
+        self.assertIn("below the floor", self.quiet(50 * 2**30, 2 * 2**30))
 
 
 class DiffSurvivors(unittest.TestCase):

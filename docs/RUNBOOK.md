@@ -329,15 +329,17 @@ When C: fills, a finished tree's `target/` can go whole, and the main tree's `ta
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
 
-**On the VPS the project may hold about 40 GB** (the maintainer's figure), on a disk the host's
-production services share. Every run that uses the host passes a guard first (`remote_refusal`):
+**On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
+host's production service runs but is used by nobody, so the 40 GB the project's folder was
+once held to no longer applies, and nothing bounds the folder itself. Every run that uses the
+host passes a guard first (`remote_refusal`):
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
-tree copies, then refuses when `~/studio-mutants` still holds over 30 GiB
-(`REMOTE_DISK_BUDGET`) or the disk has under
+tree copies, then refuses when the disk has under
 26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
 `save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
-the host's system; when this project's cleanup cannot lift it, the maintainer is asked).
+the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
+most of that, and when it cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
 editor's pid-named copies of a fixture save), the disk was at 99% and a half lost five
 mutants. **At each phase's close**, after its last mutation run, the lead
@@ -345,7 +347,7 @@ removes the clone's build cache, `~/studio-mutants/tree/target` (22 GB after two
 `just gates-remote` builds there, which then starts cold) with `scripts/mutation/remote_clean_target.sh`
 (its header has the two ssh lines: a dry run first, then `--delete`); it refuses while a half,
 the gates or a cargo process runs. The same cleanup frees the folder whenever the guard refuses
-for the budget or the floor between closes (2026-10-29: 35 GB, the disk from 13 to 47 GB
+between closes (2026-10-29: 35 GB, the disk from 13 to 47 GB
 free). Claude Code's auto-mode classifier refuses the two ssh lines unless the project's
 `.claude/settings.local.json` allows them, which it does on the maintainer's machine, each
 exactly as the header writes it.

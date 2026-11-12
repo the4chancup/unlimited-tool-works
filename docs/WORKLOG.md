@@ -2274,7 +2274,8 @@ points there.
   26 GiB now (`DECISIONS.md`, "The VPS free-space floor for a mutation half is 26 GiB").
   That covers the two build copies. A whole run adds, over days, the scratch folder each
   caught mutant's test leaves in the same folder (28.6 GB of them on 2026-10-22), which the
-  floor does not count. To do at the next `just mutants <crate>`: sample the host beside it
+  floor does not count, and nothing bounds the folder itself any more (DECISIONS 2026-11-12
+  "the VPS folder's 30 GiB budget goes"). To do at the next `just mutants <crate>`: sample the host beside it
   (`.tmp/process/vps_peak.sh <log> <out file>`, read-only, 30 s; lengthen its 60-minute
   limit) and stop the half the RUNBOOK's way if the disk nears full.
 - open 2026-11-12 (the readability findings): `spec/aatf_rules.md`'s sentence that a VGL25
