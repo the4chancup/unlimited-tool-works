@@ -276,8 +276,11 @@ any script reading stdout see no change. No flag turns it on or off. The printer
 tool-neutral, so every tool that emits `Progress` gets the line; the Team compiler is the first.
 
 The exports counter is the printer's own count of the run's `ExportStarted` (the total: every
-export starts in the validation pass, before any is compiled) and `ExportProcessed` events, so it
-needs no event of its own and draws from the first export.
+export starts in the validation pass, before any is compiled) and `ExportProcessed` events, so
+the Team compiler needs no event of its own for it and the counter draws from the first
+export. A command that starts each export when its turn comes (the Export upgrader's
+`upgrade`) cannot give the total that way: it announces it first with
+`PipelineEvent::ExportsExpected`.
 
 The parts counter is `Progress`, which the Team compiler emits as each task of its build
 manifest commits (`spec/team_compiler/pipeline.md` "3. Per-model-folder parallel steps
@@ -288,8 +291,9 @@ named folders would not add up to the export's folders.
 
 The Export upgrader draws the same line:
 
-- Its exports are the inputs the command names, every input's `ExportStarted` sent before the
-  first is read, so the total is whole from the start. An upgrade's output half is named for
+- Its exports are the inputs the command names. Each is a run of its own, started when its
+  turn comes, so the command sends `ExportsExpected` with their number before the first,
+  and the total is whole from the start. An upgrade's output half is named for
   its findings' lines by `PipelineEvent::ExportNamed`, which the counter does not count, so one
   upgrade reads `0/1`, never `0/2`.
 - Its input's `ExportProcessed` comes once its output is validated.
