@@ -16799,3 +16799,19 @@ folder; one fixed ID for every copy, which would group copies in different folde
 button for no need; telling members to pin the program, which works today and stays the
 workaround for 0.0.1.
 Plan: `plans/core/gui.md` "A new instance from the taskbar button", ST-WIN-05 and ST-WIN-06.
+
+## 2026-11-12 — shell — the taskbar's relaunch properties are set at every start, pinned or not
+Decision (maintainer: "Let's set it always, then"): the window sets its relaunch properties
+and its application ID at every start on Windows, also when the member has the program
+pinned and the taskbar's clicks would work without them.
+Why: the maintainer asked whether a pinned program could skip the step, since it does not
+need it. Three reasons against, which they accepted. A pin made while the window carries
+the ID stores that ID, so a later start that skipped the step would no longer match its own
+pin: once an ID is set, it is set always. Windows offers no way to ask whether a shortcut to
+the program exists, so the program would have to read the shortcut files of the pins, the
+Start Menu and the desktop and compare their targets, more code than the step. And skipping
+removes no `unsafe` from the program: the call stays for every member who has no pin.
+Not settled: how a button pinned by an earlier version stands beside the window (expected
+to stand apart until pinned again; ST-WIN-06 looks at it, and an ID equal to the text
+Windows makes from the path is the thing to try if that matters).
+Plan: `plans/core/gui.md` "A new instance from the taskbar button".

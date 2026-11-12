@@ -792,6 +792,12 @@ properties on itself (`System.AppUserModel`, through the window's property store
   comes from the path alone, not from the version: an ID that changed with an update would
   part a pinned button from the window it starts.
 
+The properties are set at every start, not only when the program has no shortcut. A pin
+made while the window carries the ID stores that ID, so a start that skipped the step
+because a pin exists would bring up a window its own pin no longer matches; and Windows has
+no question for "is there a shortcut to me", so telling would mean reading the shortcut
+files of the pins, the Start Menu and the desktop, more code than the step it would spare.
+
 It does not create a shortcut, which would also make the clicks work: a portable program
 writes nothing outside its folder. This is platform code where the title's progress needed
 none, because no text and no setting makes the taskbar start a program. A failure to set
