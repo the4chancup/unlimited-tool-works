@@ -225,8 +225,8 @@ struct RunCounts {
     /// The `ExportsExpected` total (0 until one arrives): a command that starts its exports
     /// one after the other announces them all before the first starts.
     exports_expected: usize,
-    /// The current run's last `Progress` pair (`None` until one arrives): the manifest's
-    /// tasks done of all.
+    /// The current run's last `Progress` pair (`None` until one arrives): the run's parts
+    /// done of all, which are a compile's manifest tasks and an upgrade's files written.
     parts: Option<(usize, usize)>,
     /// The run of the last event observed. A command that runs its exports one after the
     /// other makes each a run of its own; a compile is one run.
@@ -245,8 +245,9 @@ impl RunCounts {
     }
 
     /// One event's effect on the counters. An event of another run than the last clears
-    /// the parts: they are the previous export's, and a refused export sends no
-    /// `ExportStarted` that could clear them instead.
+    /// the parts: they are the previous export's, and an export refused before its upgrade
+    /// starts (a path that does not exist) sends no `ExportStarted` that could clear them
+    /// instead.
     fn observe(&mut self, envelope: &PipelineEventEnvelope) {
         if self.run_id.is_some_and(|run_id| run_id != envelope.run_id) {
             self.parts = None;
