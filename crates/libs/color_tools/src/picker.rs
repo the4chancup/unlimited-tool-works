@@ -448,14 +448,11 @@ fn color_swatch(ui: &mut Ui, rgb: [u8; 3]) -> Response {
     if ui.is_rect_visible(rect) {
         let visuals = ui.style().interact(&response);
         let rect = rect.expand(visuals.expansion);
-        ui.painter().rect_filled(
-            rect.shrink(1.0),
-            visuals.corner_radius.at_most(2),
-            color32(rgb),
-        );
+        ui.painter()
+            .rect_filled(rect.shrink(1.0), visuals.corner_radius, color32(rgb));
         ui.painter().rect_stroke(
             rect,
-            visuals.corner_radius.at_most(2),
+            visuals.corner_radius,
             visuals.bg_stroke,
             StrokeKind::Inside,
         );

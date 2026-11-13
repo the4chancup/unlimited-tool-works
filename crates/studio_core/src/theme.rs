@@ -343,8 +343,8 @@ pub fn install(ctx: &egui::Context) {
 
 /// egui 0.36.1's `Widgets::dark()`, field for field but for the pressed
 /// state's text colour (the strong text colour, below) and the corner
-/// radii, `CORNER_RADIUS` on every state where 0.36 rounded a hovered
-/// widget to 3: the drafts' stylesheet draws widgets in these colors, and
+/// radii, `CORNER_RADIUS` on every state (0.36 rounded a hovered widget
+/// to 3): the drafts' stylesheet draws widgets in these colors, and
 /// 0.37's `Widgets::dark()` moved them (the buttons to grey 50 with text
 /// at 215, the radii to 4 to 6 points), so it cannot supply them.
 #[cfg(not(target_arch = "wasm32"))]
@@ -761,10 +761,12 @@ mod tests {
         rust_files(crates, &mut sources);
         let mut found = Vec::new();
         for path in sources {
-            let test_file = path
-                .file_name()
-                .is_some_and(|name| name == "theme.rs" || name == "tests.rs")
-                || path.components().any(|part| part.as_os_str() == "tests");
+            // Read under `crates/`, so a checkout inside a folder named
+            // `tests` skips nothing more.
+            let inside = path.strip_prefix(crates).unwrap_or(&path);
+            let test_file = inside == std::path::Path::new("studio_core/src/theme.rs")
+                || inside.file_name().is_some_and(|name| name == "tests.rs")
+                || inside.components().any(|part| part.as_os_str() == "tests");
             if test_file {
                 continue;
             }
