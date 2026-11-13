@@ -256,6 +256,30 @@ fn no_overalls_keep_the_position() {
     );
 }
 
+// The illegal formation rule reads "a position his spot offers" as one
+// row test, the position's `AREAS_A` row holding the spot. Inside the
+// movable range that is what the drop offers a starter while no wide
+// position is taken (a formation of eleven GK bytes), position by
+// position at every spot: were the tables or the drop's order to change
+// so that the two part, the rule would warn about what a drop makes.
+#[test]
+fn inside_the_movable_range_a_spot_offers_the_positions_whose_first_row_holds_it() {
+    let empty = Formation::default();
+    for y in 4..=47 {
+        for x in 5..=99 {
+            let choices = spot_choices(&empty, 1, x, y);
+            for position in 1..13u8 {
+                assert_eq!(
+                    pes_savefile::model::formation_rule::AREAS_A[usize::from(position)]
+                        .contains(x, y),
+                    choices.contains(&position),
+                    "position {position} at ({x}, {y})"
+                );
+            }
+        }
+    }
+}
+
 // Points only `AREAS_B` holds: a position's area holds the point when
 // either row does. Slot 6's CMF dropped at (104, 9), past `AREAS_A`'s
 // right edge where CB's second row alone reaches, is offered CB alone.

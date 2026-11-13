@@ -1,6 +1,7 @@
 //! The drag-and-drop tests: marker and row drops, the exchanges and
 //! swaps, and the grass, own-chip and off-pitch releases.
 
+use pes_savefile::model::formation_rule::{AREAS_A, CLOSE_ACROSS, CLOSE_UP_DOWN};
 use pes_savefile::model::instruction::Instruction;
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
@@ -475,6 +476,24 @@ fn under_illegal_formations_a_marker_dropped_on_another_lands_at_the_snapped_spo
     assert_eq!(
         tactics, expect,
         "he lands at the snapped spot with his position; the other's slot stays"
+    );
+}
+
+// The illegal formation rule's two starters on each other are this
+// pitch's swap box in stored units: the largest whole number of x units
+// within half the marker box's width, and of y units within the shorter
+// of its reaches above and below the badge's centre. A change to the box
+// fails here, where the two crates meet.
+#[test]
+fn the_swap_box_in_stored_units_is_the_illegal_formation_rules_close_reach() {
+    let units_within = |points: f32, unit: f32| (points / unit).floor();
+    assert_eq!(
+        units_within(BADGE_W / 2.0, SPOT_XS),
+        f32::from(CLOSE_ACROSS)
+    );
+    assert_eq!(
+        units_within(ABOVE_CENTRE.min(BELOW_CENTRE), SPOT_YS),
+        f32::from(CLOSE_UP_DOWN)
     );
 }
 
@@ -2166,7 +2185,7 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
     let row = &mut roster[usize::from(tactics.starting_eleven[8])];
     row.rated = [false; 13];
     row.rated[usize::from(position_byte("AMF"))] = true;
-    let area = crate::pitch::drop_rule::AREAS_A[usize::from(position_byte("AMF"))];
+    let area = AREAS_A[usize::from(position_byte("AMF"))];
     assert!(
         area.x_min > 5 && area.x_max < 99 && area.y_max < 47,
         "premise: AMF's area row reaches none of the pitch's edges"

@@ -36,6 +36,12 @@ the golden tests hold.
 | `pesNN_parity.4ccs` (NN = 15 to 21) | Real `.4ccs` files exported by the maintainer with 4ccEditor on 2026-09-30 from the saves the payload fixtures above hold (each save's decrypted payload has the fixture's SHA-256), one team each: `/a/` (team 702) on 15 to 19, team 857 on 20, team 782 on 21; 23 players, no tactics block. The PES 18 file is a second export from a freshly opened editor: the first repeated player 1, dropped player 23 and had 22 players' visual edit flags cleared. The parity evidence of `verification.md` "Cross-implementation parity" |
 | `pes19_tactics.4cct` | **Synthesized**: the reference editor's `save_tactical_data` write walk (transcribed in the script) over team 713's tactics record of the PES 19 payload fixture, header `001` + `19` + `713`; block MD5 `4985ec743656067c618235ef11e9a2a3`. No real `.4cct` exists on the machine |
 
+## The illegal formation rule's fixtures
+
+| File | Holds |
+|---|---|
+| `game_formations_pes17.txt`, `game_formations_pes19.txt` | Formations the stock game's own screens made, none of which may break a clause of `Formation::illegal_breaks`: one a line, eleven `POSITION x y` triples with the keeper first, `#` lines comments. Per version the fifteen formations of the Game Plan menu's Change Formation list and the sets the game wrote after a drop (each picked or dropped in game with the pad on 2026-11-12/13 and read from the save the game wrote); then PES 2017's 920 distinct formations of its own data (`TacticsFormation.bin`, `TacticsFormation4.bin`), and for PES 2019 the 484 distinct formations of the teams outside the cup's slots (IDs 100 to 420) in the cup library's PES 2019 saves. 938 and 506 formations. Built by the lead's scripts from those saves' Team TOML exports |
+
 ## The overall formula's fixture
 
 | File | Holds |
