@@ -1852,13 +1852,16 @@ briefs, review loops, gates and mutation runs as for any step.
       clippy, fmt): three painter calls in `player_row`, the SE-GUI-75 test reading the
       line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
       of the line outside a row flush with the view's edge. Look: Pending looks
-    - [ ] its SWE-2 review: "S-line r1" 2026-11-13, 5 of 7 accepted (`.tmp/duck_rulings.md`):
+    - [x] its SWE-2 review: "S-line r1" 2026-11-13, 5 of 7 accepted (`.tmp/duck_rulings.md`):
       the next row's fill covered the line's lower half (a team row under ALL, a selected
       row), and a pointer on the edge two rows share drew two lines; the mark is painted
       once after the rows; SE-GUI-75 loses its empty slot's row (there is none) and gains
       both clauses. Rework landed 2026-11-13 (`b7b67cc5`, SWE-2 and the lead's rerun: 825
-      and 54 tests, clippy, fmt). Round 2 running (`.tmp/0_0_2/line/swe_line_r2.md`,
-      worktree `review13`)
+      and 54 tests, clippy, fmt). "S-line r2": 4 of 5 accepted, the loop ends; its rework
+      landed 2026-11-13 (`57954310`; 826 and 54 tests, clippy, fmt): only a row that
+      accepts a drop takes it (on the edge under the dragged row the line showed a drop
+      that did nothing), and the line's ends stop inside the list's border, which was
+      stroked over each serif's outer point
   - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
     move to egui 0.37 rounded everything more, most were put back by hand and menus and
     dialogs kept slipping through; "a root solution", and the suite's own painted corners
@@ -1868,13 +1871,15 @@ briefs, review loops, gates and mutation runs as for any step.
     ST-CORNER-01)
     - [x] the plan and the drafts 2026-11-13 (the lead): the drafts' 6, 4 and 3 pixel
       radii are 2; pills and circles keep their shapes
-    - [ ] the slice (small, SWE-2; running 2026-11-13 in the worktree
-      `4cc-studio-temp/rad`, branch `sk/rad`, brief `.tmp/0_0_2/rad/brief_rad.md`; the
-      captain's mark on the pitch keeps its radii, the maintainer; at its review the lead adds
-      the update dialog's `ProgressBar` passing the style's radius, decided after the brief): one
-      constant in `theme.rs` for all seven, both themes; the literal radii in
-      `studio_core`, `team_widgets` and `save_editor` (about a dozen: `git grep -n
-      "CornerRadius::same(\|corner_radius(" crates`) read the style
+    - [x] the slice 2026-11-13 (`4bdfc5cf`, SWE-2 and the lead; merge `b1274e74`; the
+      lead's rerun of `studio_core`, `color_tools`, `team_widgets` and `save_editor`,
+      clippy, fmt): one constant in `theme.rs` for all seven radii, both themes; every
+      numbered radius reads the style, three bare numbers in painter calls with them;
+      the update download's bar passes the style's radius (untested: no test paints
+      that bar); the captain's mark keeps the game's radii as two constants. The walk
+      test reads `CornerRadius::same(n)` and `.corner_radius(n)` only, not a bare
+      number passed to a painter call. Look: Pending looks
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/rad/swe_rad.md`, worktree `review14`)
   - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
@@ -2542,6 +2547,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
   no PES; 0.0.2-line; maintainer
+- The corners in the built window, all 2 points: a toolbar menu, a dropdown list, a
+  dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
+  update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
+  0.0.2-rad; maintainer
 
 ---
 
