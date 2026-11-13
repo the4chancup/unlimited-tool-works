@@ -1953,7 +1953,7 @@ briefs, review loops, gates and mutation runs as for any step.
       accepts a drop takes it (on the edge under the dragged row the line showed a drop
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
-  - [ ] 0.0.2-cup only the cup's teams are shown (the maintainer, 2026-11-13, on a review
+  - [x] 0.0.2-cup only the cup's teams are shown (the maintainer, 2026-11-13, on a review
     concern about players shared between rosters: "there's no need to show the game's own
     clubs and national teams. We should filter them out, even"; asked, they chose the
     filter everywhere with no switch, and their players hidden too; DECISIONS 2026-11-13;
@@ -1971,7 +1971,9 @@ briefs, review loops, gates and mutation runs as for any step.
       whole. The tests' save is the fixture with /aco/ renumbered 300 and one player off
       every roster (`src/test_support/cup_save.rs`, shared with the CLI suite by `#[path]`).
       PES 2019's fixture already holds teams outside the cup (346 teams, ids 100 to 420)
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/cup/swe_cup.md`, worktree `review20`)
+    - [x] its SWE-2 review 2026-11-13 (S-cup r1, 3 of 6 accepted, the loop ends; its
+      sweep of the unchanged walks placed none differently): two help sentences and the
+      test save's doc (`4d3cda84`)
   - [x] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13: the tail's separator and Help drawn over the last tool entries)
     - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,
@@ -2376,10 +2378,15 @@ briefs, review loops, gates and mutation runs as for any step.
     `team_widgets/src/pitch/` use `GRID_X` 104 and `GRID_Y` 48)
     - [x] its Acceptance clauses 2026-11-13 (the lead): SE-GUI-42's last six, the range's
       four ends by a held marker and by the steppers, and a stored x 2 stepping in to 5
-    - [ ] the slice, after 0.0.2-cup merges (its tests reach `save_editor`); the same
-      brief moves PES 2015, PES 2016 and PES 2018 to PES 2017's pitch (the maintainer's pictures,
-      2026-11-13, measured: `plans/save_editor.md`, "Each version draws its own screen's
-      pitch"; `pitch_look` in the same file)
+    - [x] the slice 2026-11-13 (`cb1ee954`, SWE-2 and the lead's rerun: `team_widgets`
+      258, `save_editor` 852 + 57, clippy, fmt): `outfield_range` gives a drop's snap and
+      the popover's steppers their ends; the same commit moves PES 2015, PES 2016 and
+      PES 2018 to PES 2017's pitch (the maintainer's pictures, 2026-11-13, measured:
+      `plans/save_editor.md`, "Each version draws its own screen's pitch"). Nothing
+      else of the pitch treats PES 2017's screen apart: the keeper's marker and the
+      spot mapping are one set of constants for every version
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/formation/swe_range.md`, worktree
+      `review21`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
