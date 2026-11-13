@@ -30,7 +30,7 @@ pub(crate) use assignments::{Assign, OpenSlot};
 
 /// What the tactics editor shows that the record does not hold: the
 /// preset and the formation on screen, the armed assignment mode, the
-/// open slot popover and the pitch's name scrolling.
+/// open slot popover and the pitch's name scrolling and portraits.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TacticsView {
     /// The preset the controls edit, 0 to 2, shown 1 to 3.
@@ -47,11 +47,17 @@ pub struct TacticsView {
     /// closes it when the preset, the formation or the team it opened on
     /// changed since.
     pub(crate) popover: Option<OpenSlot>,
-    /// The formation bar's Scroll names checkbox: on, a name wider than
+    /// The formation bar's Scroll checkbox: on, a name wider than
     /// its badge scrolls; off, it is drawn still at the badge's left. A
     /// view setting — the host owns its persistence (`scroll_names`,
     /// remembered as Live AATF is); it never edits the record.
     pub scroll_names: bool,
+    /// The formation bar's Portraits checkbox: on, a starter's portrait
+    /// (or his placeholder) paints over his badge; off, a marker is his
+    /// badge and name alone, the captain's mark and Live AATF's cross
+    /// standing on the badge. A view setting like `scroll_names`
+    /// (`portraits` in the host's settings); it never edits the record.
+    pub portraits: bool,
 }
 
 impl TacticsView {
@@ -73,7 +79,7 @@ impl TacticsView {
 
 impl Default for TacticsView {
     /// The view as a save opens: preset 1, kick-off, nothing armed or
-    /// popped, names scrolling.
+    /// popped, names scrolling, portraits on.
     fn default() -> TacticsView {
         TacticsView {
             preset: 0,
@@ -81,6 +87,7 @@ impl Default for TacticsView {
             assign: None,
             popover: None,
             scroll_names: true,
+            portraits: true,
         }
     }
 }

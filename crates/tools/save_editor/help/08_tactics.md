@@ -18,8 +18,10 @@ The part is a grid of three columns and three rows:
 The **pitch** is where the formation takes shape, drawn like the game's own
 formation screen: each starter stands at his spot, shown as his portrait over a
 badge with his position and his name below it. A name too long for the badge
-scrolls now and then, as in the game; turning off the **Scroll names** checkbox,
-at the right of the formation bar, holds the names still, and the setting is
+scrolls now and then, as in the game; turning off the **Scroll** checkbox, at
+the right of the formation bar, holds the names still. The **Portraits**
+checkbox beside it hides the portraits, which leaves each starter as his badge
+and name and makes the formation's shape easier to see. Both settings are
 remembered.
 
 The badge's right end shows his overall at the position he plays there, as the

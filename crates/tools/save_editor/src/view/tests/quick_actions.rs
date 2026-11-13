@@ -454,7 +454,7 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
     for label in [
         "Set all stats",
         "Bump all stats",
-        "Toggle FPC settings",
+        "Hide default body (Enable FPC)",
         "Copy stats from",
         "Swap stats with",
         "Generate settings.toml",

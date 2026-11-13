@@ -32,12 +32,12 @@ row's, and writes every filled roster slot in one undoable step:
   registered position's full name.
 - **Clear visual flags** (Ctrl+F) clears the face, hair, physique and strip edit
   flags on every player of the team.
-- **Hide default body (FPC)** writes long sleeves, a tucked shirt and short
-  socks on every player of the team, and a boots or gloves ID of 0 takes the
-  hide ID from Settings (55 and 11 unless changed, while a model's own ID is
-  kept, as in the Appearance section).
-- **Show default body (FPC)** writes short sleeves, an untucked shirt and
-  standard socks on them all, and on PES 2015 to 2017 both FPC items also
+- **Hide default body (Enable FPC)** writes long sleeves, a tucked shirt and
+  short socks on every player of the team, and a boots or gloves ID of 0 takes
+  the hide ID from Settings (55 and 11 unless changed, while a model's own ID
+  is kept, as in the Appearance section).
+- **Show default body (Disable FPC)** writes short sleeves, an untucked shirt
+  and standard socks on them all, and on PES 2015 to 2017 both FPC items also
   turn a Custom skin into Light.
 - **Import / export team file…** opens a panel beside the views.
 

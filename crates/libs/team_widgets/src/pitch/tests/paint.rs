@@ -1587,6 +1587,181 @@ fn scroll_names_off_holds_wide_names_still_at_the_badges_left() {
     );
 }
 
+// `TacticsView::portraits` (the formation bar's checkbox): off, a
+// starter is his badge and name alone — no portrait paints, nor a
+// placeholder — his badge and name standing where they do with the
+// portraits on, the captain's mark on his badge's top edge at its left
+// end, Live AATF's cross standing on the badge, centred, its lower ends
+// touching it. (Both frames run at the same clock, so a scrolling
+// name's offset is 0 on each and the positions compare equal.)
+#[test]
+fn portraits_off_leaves_a_marker_his_badge_and_name_alone() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let mut roster = roster_rows(&rows);
+    let texture = window.ctx.load_texture(
+        "a portrait",
+        egui::ColorImage::new([4, 4], vec![egui::Color32::RED; 16]),
+        egui::TextureOptions::LINEAR,
+    );
+    // A non-identity eleven: a portrait, captaincy or mark looked up by
+    // the marker's index rather than its roster slot would look right
+    // on the fixture's [0, 1, ...].
+    tactics.starting_eleven.swap(4, 9);
+    tactics.starting_eleven.swap(2, 8);
+    let slot4 = usize::from(tactics.starting_eleven[4]);
+    roster[slot4].portrait = Some(texture.id());
+    tactics.set_pieces.captain = tactics.starting_eleven[2];
+    let players = tactics.presets[0].formations[0].players;
+    let marks = [fielded(
+        0,
+        players[4].position,
+        true,
+        "FieldedNotA: fielded at AMF in preset 1 without an A rating",
+    )];
+    roster[slot4].fielded = &marks;
+
+    let (nodes, shapes_on) =
+        window.pitch_paint_at(100.0, PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    view.portraits = false;
+    let (_, shapes_off) =
+        window.pitch_paint_at(100.0, PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+
+    // The portrait image (a mesh; the turf is a textured rect, not one).
+    let images = |shapes: &[egui::epaint::ClippedShape]| {
+        shapes
+            .iter()
+            .filter(|clipped| matches!(clipped.shape, egui::Shape::Mesh(_)))
+            .count()
+    };
+    assert_eq!(images(&shapes_on), 1, "premise: his portrait paints");
+    assert_eq!(
+        images(&shapes_off),
+        0,
+        "Portraits off: no portrait, and no placeholder either"
+    );
+
+    // The badge and the name stand where they do with the portraits on.
+    let badges = |shapes: &[egui::epaint::ClippedShape]| {
+        let mut rects: Vec<egui::Rect> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == Palette::DARK.badge_fill
+                        && shape.rect.size() == egui::vec2(50.0, 14.0) =>
+                {
+                    Some(shape.rect)
+                }
+                _ => None,
+            })
+            .collect();
+        rects.sort_by(|a, b| {
+            a.min
+                .y
+                .total_cmp(&b.min.y)
+                .then(a.min.x.total_cmp(&b.min.x))
+        });
+        rects
+    };
+    assert_eq!(
+        badges(&shapes_off),
+        badges(&shapes_on),
+        "every badge where it stands with the portraits on"
+    );
+    let texts = |shapes: &[egui::epaint::ClippedShape]| {
+        // The captain's "C" excluded: his mark moves. His badge texts,
+        // the names and the formation's name stay.
+        let mut found: Vec<(String, egui::Pos2)> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text != "C" => {
+                    Some((shape.galley.job.text.clone(), shape.pos))
+                }
+                _ => None,
+            })
+            .collect();
+        found.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.x.total_cmp(&b.1.x)));
+        found
+    };
+    assert_eq!(
+        texts(&shapes_off),
+        texts(&shapes_on),
+        "every name where it stands with the portraits on"
+    );
+
+    // The captain's mark: the badge-coloured outer box's left and bottom
+    // at the badge's left and top with the portraits off (a pixel in
+    // and 4 above with them on), same size either way.
+    let badge2 = egui::Rect::from_center_size(centres[2], egui::vec2(50.0, 14.0));
+    let outer_box = |shapes: &[egui::epaint::ClippedShape]| {
+        let boxes: Vec<egui::Rect> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == Palette::DARK.badge_fill
+                        && shape.rect.size() == egui::vec2(14.0, 13.0) =>
+                {
+                    Some(shape.rect)
+                }
+                _ => None,
+            })
+            .collect();
+        let [outer] = boxes.as_slice() else {
+            panic!("the captain's badge-coloured outer box alone")
+        };
+        *outer
+    };
+    assert_eq!(
+        outer_box(&shapes_on),
+        egui::Rect::from_min_max(
+            egui::pos2(badge2.left() + 1.0, badge2.top() - 17.0),
+            egui::pos2(badge2.left() + 15.0, badge2.top() - 4.0),
+        ),
+        "premise: the mark over the portrait, as the game's"
+    );
+    assert_eq!(
+        outer_box(&shapes_off),
+        egui::Rect::from_min_max(
+            egui::pos2(badge2.left(), badge2.top() - 13.0),
+            egui::pos2(badge2.left() + 14.0, badge2.top()),
+        ),
+        "the mark on the badge's top edge at its left end"
+    );
+
+    // Live AATF's cross keeps its size, centred over the badge with its
+    // lower ends touching the badge's top.
+    let badge4 = egui::Rect::from_center_size(centres[4], egui::vec2(50.0, 14.0));
+    let r = BADGE_W / 2.0 - CROSS_INSET;
+    let cross_centre = egui::pos2(
+        badge4.center().x,
+        badge4.top() - r - CROSS_WIDTH / 2.0 - CROSS_OUTLINE,
+    );
+    let strokes = cross_strokes(&shapes_off);
+    assert_eq!(strokes.len(), 4, "the one cross's four strokes");
+    let mut lowest = f32::MIN;
+    for (_, points, stroke) in &strokes {
+        let mid = (points[0].to_vec2() + points[1].to_vec2()) / 2.0;
+        near(egui::pos2(mid.x, mid.y), cross_centre, 0.01);
+        // The painted reach of a stroke's end: the point plus the round
+        // cap's disc, half the stroke's width.
+        lowest = lowest.max(points.iter().map(|p| p.y).fold(0.0, f32::max) + stroke.width / 2.0);
+    }
+    assert!(
+        lowest <= badge4.top() + 0.01,
+        "the cross's lowest painted point not below the badge's top ({lowest} vs {})",
+        badge4.top()
+    );
+    assert!(
+        (lowest - badge4.top()).abs() <= 0.01,
+        "its lower ends touching the badge ({lowest} vs {})",
+        badge4.top()
+    );
+}
+
 // The draft's `nameSpans`: the eleven rows, the bench rows and the
 // popover header draw the name with its colour codes.
 #[test]

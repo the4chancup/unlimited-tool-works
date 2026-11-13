@@ -724,7 +724,8 @@ pub fn pitch(
         // Live AATF's `FieldedNotA` crosses, painted after every marker
         // and the swap mark: markers overlap, and a mark that asks for a
         // fix must not hide under a later marker's portrait. Each is an X
-        // over the starter's portrait (`paint_portrait_cross`) in the
+        // over the starter's portrait (`paint_portrait_cross`) — standing
+        // on his badge while the portraits are off — in the
         // marks' highest severity's colour, its tooltip their lines over
         // the portrait. The shown formation is always one the preset
         // fields: `lock_to_fielded` keeps a non-fluid preset on Kick-off.
@@ -755,7 +756,7 @@ pub fn pitch(
             } else {
                 palette.pitch_warn
             };
-            paint_portrait_cross(&painter, portrait, color, palette);
+            paint_portrait_cross(&painter, cross_centre(portrait, view), color, palette);
             ui.interact(
                 portrait,
                 ui.scope_id().with(("live aatf pitch cross", index)),
@@ -890,19 +891,33 @@ fn portrait_rect(badge: egui::Rect) -> egui::Rect {
     )
 }
 
-/// Live AATF's pitch cross (the draft's `pitchCross`): an X over the
-/// whole `portrait`, `CROSS_INSET` in from its edges, its two strokes
+/// The cross's centre over `portrait`: its own while the portraits are
+/// on; standing on the badge with them off, centred over it with the
+/// cross's lower ends touching its top.
+fn cross_centre(portrait: egui::Rect, view: &TacticsView) -> egui::Pos2 {
+    if view.portraits {
+        return portrait.center();
+    }
+    let r = BADGE_W / 2.0 - CROSS_INSET;
+    let badge_top = portrait.bottom();
+    egui::pos2(
+        portrait.center().x,
+        badge_top - r - CROSS_WIDTH / 2.0 - CROSS_OUTLINE,
+    )
+}
+
+/// Live AATF's pitch cross (the draft's `pitchCross`): an X `CROSS_INSET`
+/// in from the portrait's edges about `centre`, its two strokes
 /// `CROSS_WIDTH` wide in `color` over the same strokes in black and
 /// `CROSS_OUTLINE` wider each side, so it stays seen over a red portrait.
 /// A disc at each stroke's end rounds it, as the draft's round caps do.
 fn paint_portrait_cross(
     painter: &egui::Painter,
-    portrait: egui::Rect,
+    centre: egui::Pos2,
     color: egui::Color32,
     palette: &Palette,
 ) {
-    let r = portrait.width() / 2.0 - CROSS_INSET;
-    let centre = portrait.center();
+    let r = BADGE_W / 2.0 - CROSS_INSET;
     let strokes = [
         [centre + egui::vec2(-r, -r), centre + egui::vec2(r, r)],
         [centre + egui::vec2(r, -r), centre + egui::vec2(-r, r)],
@@ -1199,7 +1214,8 @@ fn marker(
     response
 }
 
-/// One marker painted (the draft's `drawPitch` body): the portrait, the
+/// One marker painted (the draft's `drawPitch` body): the portrait
+/// (none while `view.portraits` is off), the
 /// badge with the position's abbreviation in its group's colour, the
 /// starter's overall at the slot's position at its right end in white
 /// and his medal's outline when he has a tier, the name in its colour
@@ -1230,9 +1246,10 @@ fn paint_marker(
         .noninteractive
         .corner_radius;
     let portrait = portrait_rect(badge);
-    if let Some(texture) = roster
-        .get(usize::from(roster_slot))
-        .and_then(|row| row.portrait)
+    if view.portraits
+        && let Some(texture) = roster
+            .get(usize::from(roster_slot))
+            .and_then(|row| row.portrait)
     {
         painter.image(
             texture,
@@ -1302,7 +1319,7 @@ fn paint_marker(
     let galley = painter.layout_job(job);
     let size = galley.size();
     let wide = !name_fits(size.x);
-    // Scroll names off: the scroll's resting phase — the name still at
+    // Scroll off: the scroll's resting phase — the name still at
     // the badge's left, cut to its width — and no repaint to ask for.
     let scroll = if wide && view.scroll_names {
         name_scroll(size.x, seconds)
@@ -1328,18 +1345,25 @@ fn paint_marker(
     }
     if roster_slot == tactics.set_pieces.captain {
         // The white box's 1 px outline in the badge's colour, as the
-        // game's: on a light portrait the box would have no edge.
+        // game's: on a light portrait the box would have no edge. With
+        // the portraits off the mark stands on the badge's top edge at
+        // its left end, where it would otherwise float over the turf.
+        let (left, bottom) = if view.portraits {
+            (badge.left() + 1.0, badge.top() - 4.0)
+        } else {
+            (badge.left(), badge.top())
+        };
         painter.rect_filled(
             egui::Rect::from_min_max(
-                egui::pos2(badge.left() + 1.0, badge.top() - 17.0),
-                egui::pos2(badge.left() + 15.0, badge.top() - 4.0),
+                egui::pos2(left, bottom - 13.0),
+                egui::pos2(left + 14.0, bottom),
             ),
             egui::CornerRadius::same(CAPTAIN_BOX_RADIUS),
             palette.badge_fill,
         );
         let mark = egui::Rect::from_min_max(
-            egui::pos2(badge.left() + 2.0, badge.top() - 16.0),
-            egui::pos2(badge.left() + 14.0, badge.top() - 5.0),
+            egui::pos2(left + 1.0, bottom - 12.0),
+            egui::pos2(left + 13.0, bottom - 1.0),
         );
         painter.rect_filled(
             mark,

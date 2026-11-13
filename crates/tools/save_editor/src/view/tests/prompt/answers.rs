@@ -45,8 +45,8 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
         "the re-asked close is not held"
     );
 
-    // Save writes it first, then goes on: the file holds the edit and the
-    // close follows.
+    // Save writes it first, then goes on: the file holds the edit, and
+    // the close and the write's notice follow.
     let mut tool = dirty_tool(&path);
     assert!(StudioTool::hold_close(&mut tool));
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| tool.view(ui, &ctx));
@@ -58,6 +58,17 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
     assert_eq!(
         requests.try_recv().expect("the close request"),
         ShellRequest::Close
+    );
+    assert_eq!(
+        requests
+            .try_recv()
+            .map(|request| match request {
+                ShellRequest::Notify(notice) => notice.text,
+                other => panic!("the save's notice, not {other:?}"),
+            })
+            .expect("the save's notice")
+            .as_str(),
+        "EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)"
     );
     let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(

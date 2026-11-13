@@ -162,12 +162,19 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
         node_labeled(&nodes, Role::Button, "Export\u{2026}"),
         &mut view,
     );
+    assert_eq!(
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some(("diff.txt written", studio_core::NoticeKind::Success)),
+        "the export's notice"
+    );
     let lines = window_lines(&mut window, &mut view, "Comparator");
     assert!(
         lines
             .iter()
-            .any(|line| line == &format!("Wrote {}", target.display())),
-        "the Wrote line: {lines:?}"
+            .any(|line| line == &format!("{} written", target.display())),
+        "the written line: {lines:?}"
     );
 
     // The export is a journal step and its bytes the kept output.
@@ -206,7 +213,7 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
 
 /// Export's dialog stubbed to `destination`, a spelling of one of the two
 /// saves, and Export clicked: the refusal names it in the export panel's
-/// sentence, the save's bytes are unchanged, no Wrote line shows and the
+/// sentence, the save's bytes are unchanged, no written line shows and the
 /// refused write records `could not write <path>`, keeping no output.
 fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination: PathBuf) {
     let dir = scratch_of(view);
@@ -237,7 +244,7 @@ fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination
     for text in ["Cannot export the differences", sentence.as_str()] {
         assert!(label_value(&nodes, text), "the refusal shows {text:?}");
     }
-    assert!(view.comparator.exported.is_none(), "no Wrote line");
+    assert!(view.comparator.exported.is_none(), "no written line");
     assert_write_refused(&view.recorder, &dir, &destination);
 }
 

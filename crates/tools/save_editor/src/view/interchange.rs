@@ -153,15 +153,35 @@ impl Export {
     }
 
     /// The suggested file name for `team` of a `version` save at `save`:
-    /// `<id>.toml`; a Texport's `<short name>.ted` (the id when the short
-    /// name is empty) on PES 2018 to 2021, and on 2015 to 2017 the name the
-    /// game's Import Team reads from the save's folder, `TEXPORT` and the
+    /// a Team TOML's `<name>.toml`, the team's display name less its
+    /// slashes (`/f/` gives `f.toml`; a name in another script stays),
+    /// a name left empty or holding a character a file name cannot hold
+    /// (`\ / : * ? " < > |`) giving way to the short name and that one,
+    /// failing the same, to the id; a Texport's `<short name>.ted` (the
+    /// id when the short name is empty) on PES 2018 to 2021, and on 2015
+    /// to 2017 the name the game's Import Team reads from the save's
+    /// folder, `TEXPORT` and the
     /// first eight-digit hexadecimal number from `00000000` that the folder
     /// has no file of (upper case, `0000000A` after `00000009`, as the game
     /// counts), so the dialog opens on a name that writes over nothing.
     fn file_name(self, team: &TeamEntry, version: PesVersion, save: &Path) -> String {
+        /// A file name's test: no character a name cannot hold.
+        fn fits(name: &str) -> bool {
+            !name.is_empty() && !name.chars().any(|c| "\\/:*?\"<>|".contains(c))
+        }
         match self {
-            Export::TeamToml => format!("{}.toml", team.id),
+            Export::TeamToml => {
+                let name = display_name(&team.name).replace('/', "");
+                let name = name.trim();
+                let file = if fits(name) {
+                    name.to_owned()
+                } else if fits(&team.short_name) {
+                    team.short_name.clone()
+                } else {
+                    team.id.to_string()
+                };
+                format!("{file}.toml")
+            }
             Export::Texport => match version {
                 PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0..=u32::MAX)
                     .map(|number| format!("TEXPORT{number:08X}"))
@@ -317,28 +337,28 @@ pub(super) struct Import {
     pub(super) changes: bool,
     /// The notes grouped by code and, for a key's notes, its path, in
     /// first-seen order; every empty slot's note is one group.
-    notes: Vec<NoteGroup>,
+    pub(super) notes: Vec<NoteGroup>,
 }
 
 /// The notes sharing a code and, for a key's notes, a path, every player's
 /// slot counted as one path; an empty slot's notes share their code alone.
-struct NoteGroup {
+pub(super) struct NoteGroup {
     /// `<code> <path>`, a player's slot written `*`; an empty slot's group
     /// is `<code>` alone.
     key: String,
     /// The note code, whose catalog text is drawn once over its groups.
-    code: String,
+    pub(super) code: String,
     /// The catalog's `when` and `effect` for the code, as one line.
     text: String,
     /// The key in words (`Manager ID`, `Tight Possession`), or `Empty
     /// roster slot`.
     subject: String,
     /// One per note, in the order the import gave them.
-    notes: Vec<NoteRow>,
+    pub(super) notes: Vec<NoteRow>,
 }
 
 /// One note of a group, as the group's list draws it.
-struct NoteRow {
+pub(super) struct NoteRow {
     /// The roster slot the note is about (1-based, as the file's
     /// `players.NN` spells it); `None` for a team or tactics key.
     place: Option<u8>,
@@ -485,7 +505,7 @@ fn read(path: &Path, format: Format, recorder: &Recorder) -> anyhow::Result<Read
 }
 
 /// `path`'s file name, the whole path when it has none.
-fn file_name(path: &Path) -> String {
+pub(super) fn file_name(path: &Path) -> String {
     path.file_name()
         .unwrap_or(path.as_os_str())
         .to_string_lossy()
@@ -768,7 +788,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 match write_export(session, team.id, export, &path) {
                     Ok(()) => {
                         *notice = Some(Notice {
-                            text: format!("Wrote {}", file_name(&path)),
+                            text: format!("{} written", file_name(&path)),
                             kind: NoticeKind::Success,
                             action: None,
                         });

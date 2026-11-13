@@ -19,7 +19,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
-use studio_core::Recorder;
+use studio_core::{Notice, NoticeKind, Recorder};
 use team_widgets::violations::{
     RULE_COL, RULE_GAP, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, player_head_job,
     row_paint,
@@ -33,8 +33,8 @@ use crate::session::journal;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
-    Panel, Refusal, SaveView, aatf_check, edit_settled, player_list, refuse_save_being_read,
-    surrender_focus, terms,
+    Panel, Refusal, SaveView, aatf_check, edit_settled, interchange, player_list,
+    refuse_save_being_read, surrender_focus, terms,
 };
 
 /// The panel's first width in points, its whole frame included (the
@@ -109,7 +109,7 @@ pub(super) struct Comparator {
     /// alone: the comparison's key does not hold it, so a change starts
     /// no run.
     pub(super) filter_team: TeamChoice,
-    /// The Export's written path, for the `Wrote <path>` line.
+    /// The Export's written path, for the `<path> written` line.
     pub(super) exported: Option<PathBuf>,
     /// The comparison: the last result with the key it ran for and the run
     /// in flight (`WorkerResult`'s cycle, the AATF checks' own).
@@ -224,6 +224,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         filter,
         selected,
         refusal,
+        notice,
         open_save_dialog,
         export_dialog,
         focused,
@@ -278,7 +279,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     {
                         let picked = (picked_path.as_path(), picked);
                         match write_report(&path, session, picked, comparator.scope) {
-                            Ok(()) => comparator.exported = Some(path),
+                            Ok(()) => {
+                                *notice = Some(Notice {
+                                    text: format!("{} written", interchange::file_name(&path)),
+                                    kind: NoticeKind::Success,
+                                    action: None,
+                                });
+                                comparator.exported = Some(path);
+                            }
                             Err(error) => {
                                 *refusal = Some(Refusal {
                                     title: "Cannot export the differences",
@@ -359,7 +367,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 });
             }
             if let Some(path) = &comparator.exported {
-                ui.weak(format!("Wrote {}", path.display()));
+                ui.weak(format!("{} written", path.display()));
             }
             // Above the list, so a member scrolled deep in the rows still
             // sees that they are the previous result's.

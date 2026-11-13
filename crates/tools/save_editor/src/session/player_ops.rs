@@ -104,7 +104,7 @@ impl Session {
 
     /// Hide default body or Show default body on `player_id` (the Appearance
     /// section's buttons
-    /// and the Player menu's Toggle FPC settings): `kind`'s preset applied
+    /// and the Player menu's FPC entry): `kind`'s preset applied
     /// through `ops::fpc::apply` with the record's own IDs substituted in
     /// (`preset_for`), one sealed undo entry. `ids` is the settings' hide
     /// IDs. The strip settings the preset does not set are not cleared —
@@ -122,13 +122,20 @@ impl Session {
         self.edit_players(vec![edited]);
     }
 
+    /// Whether `is_fpc_player` reads `player_id`'s default body as hidden under
+    /// `ids`: what Ctrl+I branches on and the Player menu's entry is labeled by.
+    /// `None` for an id no player record carries.
+    pub(crate) fn body_hidden(&self, player_id: u32, ids: fpc::HideIds) -> Option<bool> {
+        self.file.player(player_id).map(|player| {
+            pes_savefile::ops::fpc::is_fpc_player(player, ids)
+                .expect("a loaded player's face run holds the skin field")
+        })
+    }
+
     /// Ctrl+I's toggle: Show default body on a player `is_fpc_player` reads as
     /// hidden, Hide default body on any other, under `ids`.
     pub(crate) fn toggle_fpc(&mut self, player_id: u32, ids: fpc::HideIds) {
-        let Some(hidden) = self.file.player(player_id).map(|player| {
-            pes_savefile::ops::fpc::is_fpc_player(player, ids)
-                .expect("a loaded player's face run holds the skin field")
-        }) else {
+        let Some(hidden) = self.body_hidden(player_id, ids) else {
             return;
         };
         self.apply_fpc(

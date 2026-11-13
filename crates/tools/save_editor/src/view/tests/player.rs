@@ -885,7 +885,7 @@ fn strip_of(view: &SaveView, id: u32) -> (u8, bool, u8, u32, u32) {
 // Hide default body gives the hide preset and the section reads "The
 // default body is currently hidden"; Ctrl+I gives the show preset and
 // "...shown". A
-// model's own boots ID is kept and reads as shown. Hide default body (FPC)
+// model's own boots ID is kept and reads as shown. Hide default body (Enable FPC)
 // hides every filled slot of the team in one undo step, and a strip
 // setting that breaks hiding lists its finding on the section — reported,
 // never cleared.
@@ -999,7 +999,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
     );
     assert_eq!(undo_entries(&mut window, &mut view), 2, "one entry each");
 
-    // The Team menu's Hide default body (FPC): the hide preset on every
+    // The Team menu's Hide default body (Enable FPC): the hide preset on every
     // filled slot of team 701, one undo step.
     let before: Vec<(usize, u32, u32, u32)> = rostered(&view, 701)
         .iter()
@@ -1016,7 +1016,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Hide default body (FPC)"),
+        menu_item(&nodes, "Hide default body (Enable FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1040,13 +1040,13 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
         "his own ID kept in the team run"
     );
 
-    // Show default body (FPC) is the same op the other way, run on the
+    // Show default body (Disable FPC) is the same op the other way, run on the
     // hidden team: the show preset on every filled slot, the own IDs
     // still kept; one undo restores the hidden state.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Show default body (FPC)"),
+        menu_item(&nodes, "Show default body (Disable FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1081,7 +1081,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
 
 // Ctrl+I toggles both ways (the SE-GUI-11 test covers it hidden to
 // shown): on a shown player it hides, again it shows, and the Player
-// menu's Toggle FPC settings, enabled under the unlock, hides again.
+// menu's Hide default body (Enable FPC), enabled under the unlock, hides again.
 // SE-GUI-11
 #[test]
 fn ctrl_i_toggles_the_fpc_visibility_both_ways_and_the_menu_item_too() {
@@ -1130,21 +1130,21 @@ fn ctrl_i_toggles_the_fpc_visibility_both_ways_and_the_menu_item_too() {
     );
     assert_eq!(strip_of(&view, 70101), (1, true, 0, 0, 0));
 
-    // The Player menu's Toggle FPC settings, enabled under the unlock,
-    // hides him again.
+    // The Player menu's FPC entry, enabled under the unlock and named
+    // for what it will do (shown, so Hide), hides him again; its label
+    // then names Show.
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-    let item = menu_item(&nodes, "Toggle FPC settings");
-    assert!(
-        !item.is_disabled(),
-        "the toggle is enabled under the unlock"
-    );
+    let item = menu_item(&nodes, "Hide default body (Enable FPC)");
+    assert!(!item.is_disabled(), "the entry is enabled under the unlock");
     click(&mut window, item, &mut view);
     let nodes = appearance_frame(&mut window, &mut view);
     assert!(
         label_value(&nodes, "The default body is currently hidden"),
-        "the menu toggle hid him"
+        "the menu entry hid him"
     );
     assert_eq!(strip_of(&view, 70101), (2, false, 2, 55, 11));
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    menu_item(&nodes, "Show default body (Disable FPC)");
 }
 
 // The PES 15/16 half of the same scenario: the appearance block is a
@@ -1198,7 +1198,7 @@ fn hide_body_round_trips_on_pes16() {
 }
 
 // The FPC items' half of the lock: under it the section's Hide/Show default body,
-// the Player menu's Toggle FPC settings and the Team menu's FPC items are
+// the Player menu's FPC entry and the Team menu's FPC items are
 // disabled with the ownership line as hover; Ctrl+I is a no-op while Set
 // all stats and Copy stats stay enabled.
 // SE-GUI-22
@@ -1230,14 +1230,11 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         );
     }
 
-    // The Player menu's Toggle FPC settings disabled the same way, the
+    // The Player menu's FPC entry disabled the same way, the
     // gameplay items enabled.
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-    let toggle = menu_item(&nodes, "Toggle FPC settings");
-    assert!(
-        toggle.is_disabled(),
-        "the toggle is disabled under the lock"
-    );
+    let toggle = menu_item(&nodes, "Hide default body (Enable FPC)");
+    assert!(toggle.is_disabled(), "the entry is disabled under the lock");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(toggle), "The team's export"),
         Some(
@@ -1260,7 +1257,10 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
 
     // The Team menu's two FPC items disabled with the same hover.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
-    for label in ["Hide default body (FPC)", "Show default body (FPC)"] {
+    for label in [
+        "Hide default body (Enable FPC)",
+        "Show default body (Disable FPC)",
+    ] {
         let item = menu_item(&nodes, label);
         assert!(item.is_disabled(), "{label} is disabled under the lock");
         assert_eq!(
@@ -1446,7 +1446,7 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
     // The Player menu's toggle disabled with the same hover; a gameplay
     // item stays enabled.
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-    let toggle = menu_item(&nodes, "Toggle FPC settings");
+    let toggle = menu_item(&nodes, "Hide default body (Enable FPC)");
     assert!(toggle.is_disabled());
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(toggle), "fpc_hide_boots_id"),
@@ -1460,7 +1460,10 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
 
     // The Team menu's two items the same.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
-    for label in ["Hide default body (FPC)", "Show default body (FPC)"] {
+    for label in [
+        "Hide default body (Enable FPC)",
+        "Show default body (Disable FPC)",
+    ] {
         let item = menu_item(&nodes, label);
         assert!(item.is_disabled(), "{label} is disabled");
         assert_eq!(
@@ -1480,8 +1483,8 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
 
 // Every FPC path reads the same settings' hide IDs (`view.hide_ids` =
 // 60 and 12): Ctrl+I hides and shows under them, the Player menu's
-// Toggle FPC settings hides the same, and the Team menu's Set and
-// Show default body (FPC) write and clear them on every filled slot
+// FPC entry hides the same, and the Team menu's Set and
+// Show default body (Disable FPC) write and clear them on every filled slot
 // whose IDs were 0, a model's own kept.
 // SE-GUI-31
 #[test]
@@ -1548,11 +1551,11 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "Ctrl+I shows him again"
     );
 
-    // The Player menu's Toggle FPC settings hides him the same way.
+    // The Player menu's FPC entry hides him the same way.
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
     click(
         &mut window,
-        menu_item(&nodes, "Toggle FPC settings"),
+        menu_item(&nodes, "Hide default body (Enable FPC)"),
         &mut view,
     );
     assert_eq!(
@@ -1561,7 +1564,7 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the menu toggle hides with the settings' IDs"
     );
 
-    // The Team menu's Hide default body (FPC): the settings' IDs on every
+    // The Team menu's Hide default body (Enable FPC): the settings' IDs on every
     // filled slot whose IDs were 0 or already the hide IDs, a model's
     // own kept.
     let before: Vec<(usize, u32, u32, u32)> = rostered(&view, 701)
@@ -1579,7 +1582,7 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Hide default body (FPC)"),
+        menu_item(&nodes, "Hide default body (Enable FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1603,12 +1606,12 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the previous setting's IDs are kept as his own"
     );
 
-    // Show default body (FPC) zeroes the slots the Set wrote (0 or the
+    // Show default body (Disable FPC) zeroes the slots the Set wrote (0 or the
     // hide ID), a model's own kept again.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Show default body (FPC)"),
+        menu_item(&nodes, "Show default body (Disable FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {

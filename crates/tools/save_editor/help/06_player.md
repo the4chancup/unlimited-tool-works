@@ -6,10 +6,11 @@ The **Player** menu works on the selected player:
 - **Bump all stats…** (Ctrl+B) adds the same amount, -10 to +10, to every
   ability stat, each kept within 40 to 99, and the dialog remembers the last
   amount used in this window.
-- **Toggle FPC settings** (Ctrl+I) follows the Appearance section's FPC reading:
-  it shows the default body of a player who reads "The default body is currently
-  hidden" and hides any other's, the same write as the section's Show default
-  body and Hide default body.
+- **Hide default body (Enable FPC)** or **Show default body (Disable FPC)**
+  (Ctrl+I): the entry's label names what the press will do, following the
+  Appearance section's FPC reading: it shows the default body of a player
+  who reads "The default body is currently hidden" and hides any other's,
+  the same write as the section's Show default body and Hide default body.
 - **Copy stats from…** copies another player's stats onto the selected one.
 - **Swap stats with…** trades them.
 
@@ -17,11 +18,11 @@ Every operation is one undoable step. Set all stats and Bump all stats write the
 same fields the player view's abilities and skills part edits, so they set no
 edit flag. Copy and Swap stats move the gameplay edit flags with the stats.
 
-**Toggle FPC settings**
+**Hide and Show default body**
 
 A player hidden by his model's own boots ID reads "The default body is currently
-shown", so for him the toggle hides him again; to show his default body, use the
-section's Show default body instead. The toggle stays disabled while the aesthetics lock is on (see the
+shown", so for him the entry hides him again; to show his default body, use the
+section's Show default body instead. The entry stays disabled while the aesthetics lock is on (see the
 Appearance section).
 
 **Copy and Swap stats**

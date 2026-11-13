@@ -2445,7 +2445,7 @@ fn the_docks_copy_writes_the_list_as_text_and_says_so() {
     let text = live_copied(&mut window, &mut view, at).expect("the click copies the list");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("Copied the Live AATF list of 734 /lit/.")
+        Some("Live AATF list of 734 /lit/ copied.")
     );
     assert_eq!(
         text.lines().collect::<Vec<_>>(),
@@ -2642,7 +2642,7 @@ fn copying_with_no_team_open_copies_the_panels_line() {
     assert_eq!(text, "No team is open.");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("Copied the Live AATF list.")
+        Some("Live AATF list copied.")
     );
 }
 

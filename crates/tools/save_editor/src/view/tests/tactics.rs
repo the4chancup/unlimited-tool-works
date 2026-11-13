@@ -1585,14 +1585,34 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         "the formation bar starts at the pitch's left ({:?})",
         kick_off.bounds()
     );
-    // And the bar fits its span at the design width: the Scroll names
-    // checkbox, its last item, ends inside the pane's right edge.
-    let scroll_names = node_labeled(&nodes, Role::CheckBox, "Scroll names");
+    // And the bar fits its span at the design width: the Portraits
+    // checkbox, its last item, ends inside the pane's right edge, and
+    // each of the two checkboxes' hover names what it switches.
+    let scroll = node_labeled(&nodes, Role::CheckBox, "Scroll");
+    let portraits = node_labeled(&nodes, Role::CheckBox, "Portraits");
     assert!(
-        scroll_names.bounds().expect("bounds").x1 <= pane_right,
-        "Scroll names ends inside the pane's right edge ({:?})",
-        scroll_names.bounds()
+        portraits.bounds().expect("bounds").x1 <= pane_right,
+        "Portraits ends inside the pane's right edge ({:?})",
+        portraits.bounds()
     );
+    for (checkbox, hover) in [
+        (
+            scroll,
+            "Scroll the names too long for their place on the pitch, as the game does. \
+             Off, they stand still, cut short.",
+        ),
+        (
+            portraits,
+            "Show the players' portraits on the pitch. Off, the formation's shape is \
+             easier to see.",
+        ),
+    ] {
+        assert_eq!(
+            tooltip_containing(&mut window, &mut view, centre(checkbox), hover).as_deref(),
+            Some(hover),
+            "the checkbox's hover"
+        );
+    }
 
     // The bars are the draft's `.tacbar`, 23 points tall above row 2
     // (the preset selector's 3-point margins round its 17), their widgets
@@ -1605,7 +1625,7 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         .iter()
         .find(|node| node.role() == Role::Label && node.value() == Some("Preset"))
         .expect("the preset bar's label");
-    for widget in [preset, two, kick_off, scroll_names] {
+    for widget in [preset, two, kick_off, scroll, portraits] {
         assert!(
             (centre_y(widget) - (row2_top - 6.0 - bar / 2.0)).abs() <= 0.5,
             "a bar's widget centred in the bar above row 2 ({:?}, row 2 at {row2_top})",
@@ -1941,7 +1961,7 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
     let rail = 1280.0 - f64::from(DEFAULT_PANE.x);
-    let items: [(&str, accesskit::Rect, f64, Option<f64>); 10] = [
+    let items: [(&str, accesskit::Rect, f64, Option<f64>); 11] = [
         ("1", button_bounds(&nodes, "1"), 368.48, Some(17.13)),
         ("2", button_bounds(&nodes, "2"), 387.61, Some(17.13)),
         ("3", button_bounds(&nodes, "3"), 406.73, Some(17.13)),
@@ -1975,10 +1995,11 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
             1030.19,
             None,
         ),
+        ("Scroll", check_bounds(&nodes, "Scroll"), 1123.55, None),
         (
-            "Scroll names",
-            check_bounds(&nodes, "Scroll names"),
-            1123.55,
+            "Portraits",
+            check_bounds(&nodes, "Portraits"),
+            1181.31,
             None,
         ),
         (
@@ -3290,7 +3311,7 @@ fn every_view_fits_the_pane_the_minimum_window_leaves() {
     }
 }
 
-// The formation bar's Scroll names checkbox (`TacticsView::scroll_names`):
+// The formation bar's Scroll checkbox (`TacticsView::scroll_names`):
 // a view setting, not an edit — on by default, its toggle marks no
 // unsaved change and pushes no undo entry, it writes `scroll_names` to
 // the tool's settings, and a fresh Tool on the same settings reads it
@@ -3319,7 +3340,7 @@ fn scroll_names_is_a_remembered_view_setting() {
     // other keys untouched, and leaves the session clean (a view
     // setting, not an edit).
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll names");
+    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
     assert_eq!(
         checkbox.toggled(),
         Some(accesskit::Toggled::True),
@@ -3350,11 +3371,103 @@ fn scroll_names_is_a_remembered_view_setting() {
     tool2.view.open(&save_path);
     open_team_view(&mut window, &mut tool2.view, 701);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll names");
+    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
     assert_eq!(
         checkbox.toggled(),
         Some(accesskit::Toggled::False),
         "the restart reads it back"
+    );
+}
+
+// The formation bar's Portraits checkbox (`TacticsView::portraits`):
+// remembered as Scroll is — on by default, its toggle marks no unsaved
+// change and pushes no undo entry, it writes `portraits` to the tool's
+// settings, a fresh Tool on the same settings reads it back, and an
+// open of another save keeps it.
+#[test]
+fn portraits_is_a_remembered_view_setting() {
+    use studio_core::StudioTool;
+
+    let save_path = fixture(PesVersion::Pes21, "portraits_setting");
+    let other_path = fixture(PesVersion::Pes17, "portraits_setting_other");
+    let dir = save_path.parent().expect("the scratch dir").to_path_buf();
+    let mut tool = crate::Tool::new();
+    tool.view.open(&save_path);
+    let mut settings = studio_core::Settings::default();
+    let mut table = tool.default_settings();
+    table.insert("unread_key".to_owned(), toml::Value::Integer(3));
+    settings.set_tool("save-editor", table);
+    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut tool.view, 701);
+
+    // On by default; the toggle writes the setting false, the tool's
+    // other keys untouched, and leaves the session clean (a view
+    // setting, not an edit).
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let checkbox = node_labeled(&nodes, Role::CheckBox, "Portraits");
+    assert_eq!(
+        checkbox.toggled(),
+        Some(accesskit::Toggled::True),
+        "on by default"
+    );
+    press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
+    assert!(
+        !tool.view.tactics.portraits,
+        "the pointer toggle flipped the checkbox"
+    );
+    let table = ctx.tool_settings("save-editor");
+    assert_eq!(
+        table["portraits"].as_bool(),
+        Some(false),
+        "the toggle wrote the setting off"
+    );
+    assert_eq!(
+        table["unread_key"].as_integer(),
+        Some(3),
+        "the tool's other keys survive"
+    );
+    let session = tool.view.session.as_ref().unwrap();
+    assert!(!session.is_dirty(), "a view setting marks nothing");
+    assert!(!session.can_undo(), "and pushes no undo entry");
+
+    // A fresh tool on the same settings: off on the first frame.
+    let mut tool2 = crate::Tool::new();
+    tool2.view.open(&save_path);
+    open_team_view(&mut window, &mut tool2.view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+    let checkbox = node_labeled(&nodes, Role::CheckBox, "Portraits");
+    assert_eq!(
+        checkbox.toggled(),
+        Some(accesskit::Toggled::False),
+        "the restart reads it back"
+    );
+
+    // Choose file… opens the next save — the view's and the settings
+    // table's `portraits` both stay false (the open lands inside a
+    // `Tool::view` frame, so the frame's own write-back is the check).
+    let picked = other_path.clone();
+    tool2.view.open_dialog = Box::new(move |_| Some(picked.clone()));
+    tool2.view.discover = Box::new(|_| Vec::new());
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+    let open = menu_button(&nodes, "File");
+    press_release(&mut window, centre(open), |ui| tool2.view(ui, &ctx));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+    let choose = menu_item(&nodes, "Choose file");
+    press_release(&mut window, centre(choose), |ui| tool2.view(ui, &ctx));
+    assert_eq!(
+        tool2.view.session.as_ref().unwrap().path(),
+        other_path.as_path(),
+        "premise: the other save opened"
+    );
+    assert!(
+        !tool2.view.tactics.portraits,
+        "the view keeps Portraits off"
+    );
+    assert_eq!(
+        ctx.tool_settings("save-editor")["portraits"].as_bool(),
+        Some(false),
+        "and the settings table keeps it off"
     );
 }
 
@@ -3808,7 +3921,7 @@ fn scroll_names_survives_opening_another_save() {
 
     // Off first, through the checkbox.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll names");
+    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
     press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
     assert_eq!(
         ctx.tool_settings("save-editor")["scroll_names"].as_bool(),

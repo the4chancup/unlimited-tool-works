@@ -271,7 +271,7 @@ fn a_clean_file_is_copied_listed_and_picked_and_a_reimport_replaces_it() {
     assert_eq!(
         success,
         [(
-            "Imported 4cc Autumn 25.".to_owned(),
+            "4cc Autumn 25 imported.".to_owned(),
             studio_core::NoticeKind::Success
         )]
     );
@@ -359,7 +359,7 @@ fn a_clean_file_is_copied_listed_and_picked_and_a_reimport_replaces_it() {
     click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
     click_in_dialog(&mut window, &mut tool, &ctx, replace, "Replace");
     assert_eq!(std::fs::read_to_string(&copy).unwrap(), corrected);
-    assert_eq!(notices(&requests), ["Imported 4cc Autumn 25 corrected."]);
+    assert_eq!(notices(&requests), ["4cc Autumn 25 corrected imported."]);
     let nodes = nodes_of(&tool_frame(&mut window, &mut tool, &ctx, Vec::new()));
     assert_eq!(
         dropdown(&nodes).value(),

@@ -179,7 +179,7 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
     let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("Copied the results of 5 teams.")
+        Some("Results of 5 teams copied.")
     );
     let copied_lines: Vec<&str> = text.lines().collect();
     assert_eq!(

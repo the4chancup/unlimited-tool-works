@@ -138,6 +138,7 @@ impl StudioTool for Tool {
         self.view.live_window = tool_settings.live_window;
         self.view.aesthetics_from_exports = tool_settings.aesthetics_from_exports;
         self.view.tactics.scroll_names = tool_settings.scroll_names;
+        self.view.tactics.portraits = tool_settings.portraits;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
         // Everything the editor needs of a PES version is the open save's: its
@@ -161,7 +162,8 @@ impl StudioTool for Tool {
             ctx.notify(notice);
         }
         // The toolbar's ruleset dropdown, its toggle and Show suggestions,
-        // where Live AATF's list stands, the formation bar's Scroll names and
+        // where Live AATF's list stands, the formation bar's Scroll and
+        // Portraits checkboxes and
         // the picker's last folder are settings: the table as read with only
         // those keys replaced, so any other key survives (as `settings_view`
         // writes `aesthetics_from_exports`).
@@ -170,6 +172,7 @@ impl StudioTool for Tool {
             || self.view.live_suggestions != tool_settings.live_suggestions
             || self.view.live_window != tool_settings.live_window
             || self.view.tactics.scroll_names != tool_settings.scroll_names
+            || self.view.tactics.portraits != tool_settings.portraits
             || self.view.last_folder != tool_settings.last_folder
         {
             let mut table = table;
@@ -192,6 +195,10 @@ impl StudioTool for Tool {
             table.insert(
                 "scroll_names".to_owned(),
                 toml::Value::Boolean(self.view.tactics.scroll_names),
+            );
+            table.insert(
+                "portraits".to_owned(),
+                toml::Value::Boolean(self.view.tactics.portraits),
             );
             match &self.view.last_folder {
                 Some(folder) => table.insert(

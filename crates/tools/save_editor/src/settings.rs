@@ -1,9 +1,10 @@
-//! The Save editor's section of the settings file: its seven keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its eight keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
 //! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
-//! `scroll_names` (the Tactics formation bar's checkbox) and `last_folder` (the folder the file
+//! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes) and `last_folder`
+//! (the folder the file
 //! picker starts in). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
 
@@ -35,11 +36,15 @@ pub(crate) struct SaveEditorSettings {
     /// Appearance section's "Edit aesthetics anyway" switch; off, they edit as every other
     /// field does.
     pub(crate) aesthetics_from_exports: bool,
-    /// "Scroll names" (the Tactics formation bar's checkbox), on by default: a view setting,
+    /// "Scroll" (the Tactics formation bar's checkbox), on by default: a view setting,
     /// not an edit — `Tool::view` reads it at start and writes it back when the checkbox
     /// changes it, as `live_aatf` is written.
     #[serde(default = "default_scroll_names")]
     pub(crate) scroll_names: bool,
+    /// "Portraits" (the Tactics formation bar's checkbox beside Scroll), on by default:
+    /// a view setting as `scroll_names` is.
+    #[serde(default = "default_portraits")]
+    pub(crate) portraits: bool,
     /// The folder the last save was opened from, by whichever of the opens: the file
     /// picker starts there while it exists, so a member who keeps his saves in a folder
     /// of his own is taken back to it. Written on every open, as `scroll_names` is.
@@ -55,6 +60,7 @@ impl Default for SaveEditorSettings {
             live_window: false,
             aesthetics_from_exports: false,
             scroll_names: default_scroll_names(),
+            portraits: default_portraits(),
             last_folder: None,
         }
     }
@@ -62,6 +68,11 @@ impl Default for SaveEditorSettings {
 
 /// `scroll_names`'s default: names scroll, as the game's do.
 fn default_scroll_names() -> bool {
+    true
+}
+
+/// `portraits`'s default: the pitch draws the players' portraits.
+fn default_portraits() -> bool {
     true
 }
 

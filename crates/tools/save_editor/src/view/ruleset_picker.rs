@@ -174,7 +174,7 @@ fn finish_import(view: &mut SaveView, file: &str, import: &rules::Import) {
         Ok(()) => {
             view.aatf_ruleset = import.file_name.clone();
             view.notice = Some(Notice {
-                text: format!("Imported {}.", import.description),
+                text: format!("{} imported.", import.description),
                 kind: NoticeKind::Success,
                 action: None,
             });

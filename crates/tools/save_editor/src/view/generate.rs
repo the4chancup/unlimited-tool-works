@@ -339,7 +339,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     Ok(()) => {
                         *notice = Some(Notice {
                             text: format!(
-                                "Wrote {} for {name} into {}",
+                                "{} for {name} written into {}",
                                 generate.file.file_name(),
                                 preview.folder
                             ),

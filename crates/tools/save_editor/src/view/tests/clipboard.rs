@@ -3,8 +3,12 @@
 //! window sends (`Event::Copy`, `Event::Paste` carrying the system
 //! clipboard's text), within one window and from one window to another.
 
+use std::collections::BTreeMap;
+
 use pes_savefile::interchange::team_toml::TeamToml;
-use pes_savefile::model::tactics::{TeamAutoFlags, TeamTactics, bench_fill};
+use pes_savefile::model::instruction::Instruction;
+use pes_savefile::model::tactics::{AdvancedInstruction, TeamAutoFlags, TeamTactics, bench_fill};
+use pes_savefile::schema::instruction::encode;
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::interchange::{Import, held, stage};
@@ -211,6 +215,15 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
 
     click_player_row(&mut window, &mut view, 701, 0);
     let copied = copy(&mut window, &mut view);
+    let (a_name, b_name) = (
+        display_name(&player_entry(&view, a).name),
+        display_name(&player_entry(&view, b).name),
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{a_name}'s stats copied.").as_str()),
+        "the copy's notice"
+    );
     click_player_row(&mut window, &mut view, 701, 1);
     ctrl_v(&mut window, &mut view, &copied);
 
@@ -218,6 +231,11 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
         player_entry(&view, b),
         expected,
         "B's record is what Copy stats from A writes"
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{a_name}'s stats pasted onto {b_name}.").as_str()),
+        "the paste's notice"
     );
     // One Ctrl+Z restores B.
     ctrl_z(&mut window, &mut view);
@@ -271,11 +289,25 @@ fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
 
     click_team_row(&mut window, &mut view, 701);
     let copied = copy(&mut window, &mut view);
+    let (from_name, onto_name) = (
+        display_name(&team_entry(&view, 701).name),
+        display_name(&team_entry(&view, 702).name),
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{from_name}'s Gameplan copied.").as_str()),
+        "the copy's notice"
+    );
     click_team_row(&mut window, &mut view, 702);
     let before = team_entry(&view, 702);
     ctrl_v(&mut window, &mut view, &copied);
 
     assert_gameplan_import(&mut window, &mut view, &expected, &before);
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{from_name}'s Gameplan pasted onto {onto_name}.").as_str()),
+        "the paste's notice"
+    );
 }
 
 // SE-GUI-56
@@ -292,6 +324,12 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
 
     click_button(&mut window, &mut view, "1");
     let copied = copy(&mut window, &mut view);
+    let name = display_name(&team_entry(&view, 701).name);
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{name}'s preset 1 copied.").as_str()),
+        "the copy's notice"
+    );
     click_button(&mut window, &mut view, "2");
     assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
     ctrl_v(&mut window, &mut view, &copied);
@@ -300,6 +338,11 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
         team_entry(&view, 701).tactics.presets[1],
         preset1,
         "the shown preset took the copied one"
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{name}'s preset 1 pasted onto {name}'s preset 2.").as_str()),
+        "the paste's notice"
     );
     ctrl_z(&mut window, &mut view);
     assert_ne!(
@@ -323,6 +366,12 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
 
     click_button(&mut window, &mut view, "Kick-off");
     let copied = copy(&mut window, &mut view);
+    let name = display_name(&team_entry(&view, 701).name);
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{name}'s preset 1 Kick-off formation copied.").as_str()),
+        "the copy's notice"
+    );
     click_button(&mut window, &mut view, "In-possession");
     assert_eq!(view.tactics.formation, 1, "in-possession is on screen");
     ctrl_v(&mut window, &mut view, &copied);
@@ -331,6 +380,16 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
         team_entry(&view, 701).tactics.presets[0].formations[1],
         kick_off,
         "the shown formation took the copied one"
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "{name}'s preset 1 Kick-off formation pasted onto {name}'s preset 1 In-possession formation."
+            )
+            .as_str()
+        ),
+        "the paste's notice"
     );
 }
 
@@ -357,6 +416,7 @@ fn a_paste_of_another_kind_than_the_target_does_nothing() {
         "premise: presets 1 and 2 differ"
     );
     let player_before = player_entry(&view, 70101);
+    view.notice = None;
 
     // Each target: a click selecting it, the copy of another kind. The
     // player row comes last: its click leaves the team view.
@@ -392,6 +452,10 @@ fn a_paste_of_another_kind_than_the_target_does_nothing() {
             "{case}: the player is untouched"
         );
         assert_no_edit(&view, case);
+        assert!(
+            view.notice.is_none(),
+            "{case}: the refused paste publishes no notice"
+        );
     }
 }
 
@@ -518,7 +582,7 @@ fn a_press_on_the_locked_formation_selector_sets_the_clipboard_kind() {
     let copied = copy(&mut window, &mut view);
     assert_eq!(
         head(&copied)[0],
-        format!("# Unlimited Tool Works: the Kick-off formation of {name}")
+        format!("# Unlimited Tool Works: {name}'s preset 1 Kick-off formation")
     );
 }
 
@@ -545,7 +609,7 @@ fn a_pointer_move_without_a_press_leaves_the_clipboard_kind() {
     let copied = copy(&mut window, &mut view);
     assert_eq!(
         head(&copied)[0],
-        format!("# Unlimited Tool Works: preset 2 of {name}")
+        format!("# Unlimited Tool Works: {name}'s preset 2")
     );
 }
 
@@ -560,7 +624,7 @@ fn ctrl_c_names_what_it_copied_on_the_system_clipboard() {
     let copied = copy(&mut window, &mut view);
     assert_eq!(
         head(&copied)[0],
-        format!("# Unlimited Tool Works: the stats of {name}")
+        format!("# Unlimited Tool Works: {name}'s stats")
     );
 }
 
@@ -911,7 +975,7 @@ fn a_players_stats_copied_in_one_window_paste_into_a_save_of_another_version() {
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: the stats of {name}").as_str(),
+            format!("# Unlimited Tool Works: {name}'s stats").as_str(),
             "# copied: stats"
         ]
     );
@@ -965,7 +1029,7 @@ fn a_teams_gameplan_copied_in_one_window_pastes_into_another() {
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: the Gameplan of {name}").as_str(),
+            format!("# Unlimited Tool Works: {name}'s Gameplan").as_str(),
             "# copied: gameplan"
         ]
     );
@@ -989,7 +1053,7 @@ fn a_teams_gameplan_pastes_into_a_save_of_another_version() {
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: the Gameplan of {name}").as_str(),
+            format!("# Unlimited Tool Works: {name}'s Gameplan").as_str(),
             "# copied: gameplan"
         ]
     );
@@ -1029,7 +1093,7 @@ fn a_preset_copied_in_one_window_pastes_over_the_preset_shown_in_another() {
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: preset 2 of {name}").as_str(),
+            format!("# Unlimited Tool Works: {name}'s preset 2").as_str(),
             "# copied: preset"
         ]
     );
@@ -1071,7 +1135,7 @@ fn a_formation_copied_in_one_window_pastes_over_the_formation_shown_in_another()
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: the In-possession formation of {name}").as_str(),
+            format!("# Unlimited Tool Works: {name}'s preset 1 In-possession formation").as_str(),
             "# copied: formation"
         ]
     );
@@ -1136,6 +1200,212 @@ fn a_copy_pastes_after_another_save_opens_in_the_same_window() {
     );
 }
 
+// A copy from a save of another PES version can leave values the target
+// does not store out of the paste: the notice ends with the count, from
+// the staged import's notes. Here every note is a key PES 17 lacks.
+// SE-GUI-72
+#[test]
+fn a_paste_from_another_version_ends_its_notice_with_the_dropped_count() {
+    let (mut window21, mut view21) = open_window(&pes21_stats_fixture("clip_tail_21"));
+    let (mut window17, mut view17) = open_window(&fixture(PesVersion::Pes17, "clip_tail_17"));
+    click_player_row(&mut window21, &mut view21, 714, 0);
+    let copied = copy(&mut window21, &mut view21);
+    let (a, b) = (
+        file(&view21).team(714).unwrap().roster[0].player_id,
+        file(&view17).team(701).unwrap().roster[0].player_id,
+    );
+    let (a_name, b_name) = (
+        display_name(&player_entry(&view21, a).name),
+        display_name(&player_entry(&view17, b).name),
+    );
+
+    // The notes the paste's staged import carries: the copy's one player
+    // table placed on the target's first slot, as `paste` builds it.
+    let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
+    let mut placed = TeamToml {
+        pes_version: document.pes_version,
+        ..TeamToml::default()
+    };
+    placed.players = BTreeMap::from([(
+        1,
+        document
+            .players
+            .into_values()
+            .next()
+            .expect("a stats copy holds one player table"),
+    )]);
+    let expected = stage(
+        file(&view17),
+        file(&view17).team(701).unwrap(),
+        &placed,
+        STATS,
+    )
+    .expect("the document stages onto 701");
+    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
+    assert!(count >= 3, "premise: several keys PES 17 lacks: {count}");
+    assert!(
+        expected
+            .notes
+            .iter()
+            .all(|group| group.code == "import_key_not_in_version"),
+        "premise: every note a key the version does not store"
+    );
+
+    click_player_row(&mut window17, &mut view17, 701, 0);
+    ctrl_v(&mut window17, &mut view17, &copied);
+
+    assert_eq!(
+        view17.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "{a_name}'s stats pasted onto {b_name}; {count} values PES 2017 does not store were left out"
+            )
+            .as_str()
+        ),
+        "the notice ends with the dropped count"
+    );
+}
+
+// A note that is not a dropped key — here an instruction PES 17 lacks,
+// written off — turns the tail into "left out or changed to fit".
+// SE-GUI-72
+#[test]
+fn a_paste_leaving_a_value_changed_says_so_in_its_notice() {
+    let (mut window21, mut view21) = open_window(&fixture(PesVersion::Pes21, "clip_tail_mixed_21"));
+    for instruction in [Instruction::WingBack, Instruction::Anchoring] {
+        assert_eq!(
+            encode(PesVersion::Pes17, instruction),
+            None,
+            "premise: PES 17 has no {instruction:?}"
+        );
+    }
+    let stored = |instruction| AdvancedInstruction {
+        instruction: encode(PesVersion::Pes21, instruction).expect("a PES 21 instruction"),
+        player: 0,
+    };
+    let set_instructions = |view: &mut SaveView, instructions| {
+        let mut team = team_entry(view, 701);
+        team.tactics.presets[0].attack_instructions = Some(instructions);
+        view.session.as_mut().unwrap().edit_team(1, team);
+    };
+    let (mut window17, mut view17) = open_window(&fixture(PesVersion::Pes17, "clip_tail_mixed_17"));
+    let name = display_name(&team_entry(&view17, 701).name);
+
+    // The notes a copy pasted now stages against 701 of the PES 17 save.
+    let notes_of = |view: &SaveView, copied: &str| {
+        let document = TeamToml::parse(copied).expect("the copy is a Team TOML document");
+        let expected = stage(
+            file(view),
+            file(view).team(701).unwrap(),
+            &document,
+            GAMEPLAN,
+        )
+        .expect("the document stages onto 701");
+        assert!(
+            expected
+                .notes
+                .iter()
+                .all(|group| group.code == "import_value_not_encodable"),
+            "premise: every note of another kind"
+        );
+        expected
+            .notes
+            .iter()
+            .map(|group| group.notes.len())
+            .sum::<usize>()
+    };
+
+    click_team_row(&mut window17, &mut view17, 701);
+    for (instructions, count, was_were) in [
+        (
+            [stored(Instruction::WingBack), stored(Instruction::Off)],
+            1,
+            "was",
+        ),
+        (
+            [
+                stored(Instruction::WingBack),
+                stored(Instruction::Anchoring),
+            ],
+            2,
+            "were",
+        ),
+    ] {
+        set_instructions(&mut view21, instructions);
+        click_team_row(&mut window21, &mut view21, 701);
+        let copied = copy(&mut window21, &mut view21);
+        assert_eq!(
+            notes_of(&view17, &copied),
+            count,
+            "premise: one note per instruction PES 17 lacks"
+        );
+        ctrl_v(&mut window17, &mut view17, &copied);
+        assert_eq!(
+            view17.notice.as_ref().map(|notice| notice.text.as_str()),
+            Some(
+                format!(
+                    "{name}'s Gameplan pasted onto {name}; {count} value{} {was_were} left out or changed to fit PES 2017",
+                    if count == 1 { "" } else { "s" }
+                )
+                .as_str()
+            ),
+            "the notice ends with the changed-or-dropped count"
+        );
+    }
+}
+
+// The same tail, one note: the singular.
+// SE-GUI-72
+#[test]
+fn a_paste_leaving_one_value_out_uses_the_singular_tail() {
+    let (mut window17, mut view17) = open_window(&fixture(PesVersion::Pes17, "clip_tail_one_17"));
+    click_player_row(&mut window17, &mut view17, 701, 0);
+    // A PES 21 stats copy by hand: `playing_attitude`, the one key PES 17
+    // lacks, so the staged import holds the one `NotInThisVersion` note.
+    let text = "# Unlimited Tool Works: SOMEONE's stats\n# copied: stats\n\
+                pes_version = 21\n\n[players.01.stats]\nplaying_attitude = 1\n";
+    let placed = TeamToml {
+        pes_version: Some(PesVersion::Pes21),
+        players: BTreeMap::from([(
+            1,
+            TeamToml::parse("pes_version = 21\n\n[players.01.stats]\nplaying_attitude = 1\n")
+                .expect("the document parses")
+                .players
+                .into_values()
+                .next()
+                .expect("one player table"),
+        )]),
+        ..TeamToml::default()
+    };
+    let expected = stage(
+        file(&view17),
+        file(&view17).team(701).unwrap(),
+        &placed,
+        STATS,
+    )
+    .expect("the document stages onto 701");
+    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
+    assert_eq!(count, 1, "premise: the one dropped key is one note");
+    ctrl_v(&mut window17, &mut view17, text);
+    let b_name = display_name(
+        &player_entry(
+            &view17,
+            file(&view17).team(701).unwrap().roster[0].player_id,
+        )
+        .name,
+    );
+    assert_eq!(
+        view17.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "SOMEONE's stats pasted onto {b_name}; 1 value PES 2017 does not store was left out"
+            )
+            .as_str()
+        ),
+        "the notice ends with the singular tail"
+    );
+}
+
 // SE-GUI-72
 #[test]
 fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
@@ -1160,6 +1430,7 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
     open_team_view(&mut window, &mut view, 701);
     click_button(&mut window, &mut view, "2");
     let before = team_entry(&view, 701);
+    view.notice = None;
     for (case, text) in [
         ("no Team TOML", "x".to_owned()),
         ("a Gameplan onto a preset", gameplan.clone()),
@@ -1180,6 +1451,7 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
             "{case}: the team is untouched"
         );
         assert_no_edit(&view, case);
+        assert!(view.notice.is_none(), "{case}: no paste ran, so no notice");
     }
 
     // A preset onto the shown formation.
@@ -1189,6 +1461,10 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
     ctrl_v(&mut window, &mut view, &preset);
     assert_eq!(team_entry(&view, 701), before, "a preset onto a formation");
     assert_no_edit(&view, "a preset onto a formation");
+    assert!(
+        view.notice.is_none(),
+        "a wrong-kind paste publishes no notice"
+    );
 }
 
 /// The selector fixture with /3/'s first player's playing style set to

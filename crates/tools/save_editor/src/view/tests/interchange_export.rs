@@ -219,8 +219,8 @@ fn the_team_toml_written_is_the_command_lines_export() {
     );
     assert_eq!(
         suggested,
-        folder.join("714.toml"),
-        "<id>.toml beside the save"
+        folder.join("co.toml"),
+        "the team name less its slashes beside the save"
     );
     let cli = folder.join("cli.toml");
     cli_stdout(
@@ -242,7 +242,7 @@ fn the_team_toml_written_is_the_command_lines_export() {
         view.notice
             .as_ref()
             .map(|notice| (notice.text.as_str(), notice.kind)),
-        Some(("Wrote panel.toml", NoticeKind::Success))
+        Some(("panel.toml written", NoticeKind::Success))
     );
     assert!(view.refusal.is_none(), "no refusal");
 
@@ -274,7 +274,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str, fil
     let texport = Texport::from_bytes(&bytes, None).expect("the file reads as a Texport");
     assert_eq!(texport.version(), version, "the save's version");
     assert_eq!(texport.team().id, CO, "the team's");
-    let wrote = format!("Wrote {suggested_name}");
+    let wrote = format!("{suggested_name} written");
     assert_eq!(
         view.notice
             .as_ref()
@@ -558,6 +558,67 @@ fn both_exports_carry_the_edits_the_save_holds_unsaved() {
     );
 }
 
+/// The path Team TOML's Save dialog suggests for the selected team:
+/// the export row clicked, the dialog stubbed to report the suggested
+/// path and pick nothing.
+fn suggested_toml(window: &mut Headless, view: &mut SaveView) -> String {
+    let (sender, asked) = mpsc::channel();
+    view.team_export_dialog = Box::new(move |_, suggested| {
+        sender
+            .send(suggested.to_owned())
+            .expect("the test holds the receiver");
+        None
+    });
+    let toml = button(window, view, "Team TOML\u{2026}");
+    click(window, &toml, view);
+    asked
+        .try_recv()
+        .expect("the Save dialog opened")
+        .file_name()
+        .expect("the suggestion has a file name")
+        .to_string_lossy()
+        .into_owned()
+}
+
+// SE-GUI-80
+#[test]
+fn the_team_toml_suggests_the_teams_name_less_its_slashes_then_short_then_id() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_toml_name", 718);
+    assert_eq!(team_entry(&view, 718).name.as_str(), "/f/", "premise: /f/");
+    assert_eq!(suggested_toml(&mut window, &mut view), "f.toml");
+
+    // A name in another script stays.
+    let mut team = team_entry(&view, 718);
+    team.name = "/\u{304d}\u{3089}\u{3089}/".to_owned();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(
+        suggested_toml(&mut window, &mut view),
+        "\u{304d}\u{3089}\u{3089}.toml"
+    );
+
+    // A character a file name cannot hold gives way to the short name.
+    let mut team = team_entry(&view, 718);
+    team.name = "/wh?/".to_owned();
+    team.short_name = "WHQ".to_owned();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(suggested_toml(&mut window, &mut view), "WHQ.toml");
+
+    // That failing too, the id.
+    let mut team = team_entry(&view, 718);
+    team.short_name.clear();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(suggested_toml(&mut window, &mut view), "718.toml");
+}
+
 #[test]
 fn a_team_without_a_short_name_suggests_its_id_and_a_cancel_writes_nothing() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_no_short_name", CO);
@@ -581,7 +642,7 @@ fn a_team_without_a_short_name_suggests_its_id_and_a_cancel_writes_nothing() {
     let suggested = asked.try_recv().expect("the Save dialog opened");
     assert_eq!(suggested, save_folder(&view).join("714.ted"));
     assert!(!suggested.exists(), "no file written");
-    assert!(view.notice.is_none(), "no Wrote notice");
+    assert!(view.notice.is_none(), "no written notice");
     assert!(view.refusal.is_none(), "no refusal");
 }
 
@@ -603,7 +664,7 @@ fn a_write_that_fails_is_refused_in_the_command_lines_words() {
             format!("{}: cannot write the file ({error})", written.display())
         ))
     );
-    assert!(view.notice.is_none(), "no Wrote notice");
+    assert!(view.notice.is_none(), "no written notice");
 }
 
 // The failed write is a `could not write` step and keeps no output: a
@@ -782,7 +843,7 @@ fn assert_save_refused(test: &str, pick: impl Fn(&Path) -> PathBuf) {
                 "{label}: the refusal shows {text:?}"
             );
         }
-        assert!(view.notice.is_none(), "{label}: no Wrote notice");
+        assert!(view.notice.is_none(), "{label}: no written notice");
 
         // The refused write is a `could not write` step and keeps no
         // output: a failed write's bytes are not an output.

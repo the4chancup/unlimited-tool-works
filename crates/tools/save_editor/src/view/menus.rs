@@ -18,6 +18,8 @@ use studio_core::widgets::{
     wheel_steps,
 };
 
+use studio_core::{Notice, NoticeKind};
+
 use crate::session::Session;
 use crate::session::cup::cup_teams;
 use crate::session::database;
@@ -25,8 +27,8 @@ use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{
-    NUMBER_BOX, Panel, Refusal, SaveView, comparator, refuse_save_being_read, selected_player,
-    selected_team_id,
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, interchange, refuse_save_being_read,
+    selected_player, selected_team_id,
 };
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
@@ -98,17 +100,25 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.clear_visual_flags(team_id);
             ui.close();
         }
-        if add_enabled(ui, fpc_ok, egui::Button::new("Hide default body (FPC)"))
-            .on_disabled_hover_text(&fpc_tip)
-            .clicked()
+        if add_enabled(
+            ui,
+            fpc_ok,
+            egui::Button::new("Hide default body (Enable FPC)"),
+        )
+        .on_disabled_hover_text(&fpc_tip)
+        .clicked()
             && let Ok(ids) = hide_ids
         {
             session.team_fpc(team_id, fpc::Preset::Hide, ids);
             ui.close();
         }
-        if add_enabled(ui, fpc_ok, egui::Button::new("Show default body (FPC)"))
-            .on_disabled_hover_text(&fpc_tip)
-            .clicked()
+        if add_enabled(
+            ui,
+            fpc_ok,
+            egui::Button::new("Show default body (Disable FPC)"),
+        )
+        .on_disabled_hover_text(&fpc_tip)
+        .clicked()
             && let Ok(ids) = hide_ids
         {
             session.team_fpc(team_id, fpc::Preset::Unhide, ids);
@@ -123,7 +133,8 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The Player menu button (the draft's `playerMenu`): the Set all stats and
-/// Bump all stats dialogs, Toggle FPC settings (its Ctrl+I drawn beside), the
+/// Bump all stats dialogs, the one FPC entry (its Ctrl+I drawn beside, its
+/// label the one of the two FPC actions it will do), the
 /// Copy and Swap stats dialogs, and the two Generate items opening
 /// `generate::Generate` (settings.toml and the in-game face: file writes, so
 /// the aesthetics lock does not gate them). Every item acts on the selected
@@ -144,7 +155,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             for label in [
                 "Set all stats\u{2026}",
                 "Bump all stats\u{2026}",
-                "Toggle FPC settings",
+                "Hide default body (Enable FPC)",
                 "Copy stats from\u{2026}",
                 "Swap stats with\u{2026}",
                 "Generate settings.toml\u{2026}",
@@ -157,7 +168,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     };
     let (unlocked, hide_ids) = (!view.aesthetics_locked(), view.hide_ids);
-    // As on the Team menu: an out-of-band hide ID disables the toggle
+    // As on the Team menu: an out-of-band hide ID disables the entry
     // behind the error's text.
     let (fpc_ok, fpc_tip) = match hide_ids {
         Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
@@ -178,10 +189,22 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             view.stat_num = Some(StatNum::bump(session, player_id, view.bump));
             ui.close();
         }
+        // The label names what the press will do, from the reading
+        // `toggle_fpc` branches on; the Hide label while the hide IDs are
+        // out of band, the entry then disabled.
+        let hidden = hide_ids
+            .ok()
+            .and_then(|ids| session.body_hidden(player_id, ids))
+            .unwrap_or(false);
+        let fpc_label = if hidden {
+            "Show default body (Disable FPC)"
+        } else {
+            "Hide default body (Enable FPC)"
+        };
         if add_enabled(
             ui,
             fpc_ok,
-            egui::Button::new("Toggle FPC settings").shortcut_text("Ctrl+I"),
+            egui::Button::new(fpc_label).shortcut_text("Ctrl+I"),
         )
         .on_disabled_hover_text(&fpc_tip)
         .clicked()
@@ -279,12 +302,26 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                     .and_then(|()| {
                         database::write_rosters_tsv(session.file(), session.recorder(), &path)
                     })
+                    .map(|()| path)
             });
-            if let Some(Err(error)) = written {
-                view.refusal = Some(Refusal {
-                    title: "Cannot write the roster sheet",
-                    message: format!("{error:#}"),
-                });
+            match written {
+                Some(Ok(path)) => {
+                    view.notice = Some(Notice {
+                        text: format!(
+                            "{} written (one row per player of every team)",
+                            interchange::file_name(&path)
+                        ),
+                        kind: NoticeKind::Success,
+                        action: None,
+                    });
+                }
+                Some(Err(error)) => {
+                    view.refusal = Some(Refusal {
+                        title: "Cannot write the roster sheet",
+                        message: format!("{error:#}"),
+                    });
+                }
+                None => {}
             }
             ui.close();
         }

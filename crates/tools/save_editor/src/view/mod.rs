@@ -100,7 +100,7 @@ pub(crate) struct SaveView {
     reveal_selected: bool,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
-    /// armed assignment mode, the open slot popover and Scroll names);
+    /// armed assignment mode, the open slot popover, Scroll and Portraits);
     /// back to preset 1 and kick-off on every open.
     pub(crate) tactics: team_widgets::tactics::TacticsView,
     /// The widget holding the keyboard at the last frame's end. A
@@ -552,12 +552,14 @@ impl SaveView {
                 self.last_folder = path.parent().map(Path::to_path_buf);
                 self.session = Some(session);
                 self.generation += 1;
-                // A view setting, not the save's: `scroll_names` is the
-                // member's, so it survives the open (the rest is the
-                // save's: back to preset 1 and kick-off).
+                // View settings, not the save's: `scroll_names` and
+                // `portraits` are the member's, so they survive the open
+                // (the rest is the save's: back to preset 1 and kick-off).
                 let scroll_names = self.tactics.scroll_names;
+                let portraits = self.tactics.portraits;
                 self.tactics = team_widgets::tactics::TacticsView::default();
                 self.tactics.scroll_names = scroll_names;
+                self.tactics.portraits = portraits;
                 self.prompt = None;
                 self.edit_mode_question = None;
                 self.refusal = None;
@@ -951,8 +953,9 @@ fn toolbar(
     // lock, and a no-op while a text field holds the keyboard (`typing`).
     let clear_flags_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::F));
-    // Ctrl+I is Toggle FPC settings, the same lock as Ctrl+F; Ctrl+B
-    // opens the Bump dialog, a gameplay write the lock does not stop.
+    // Ctrl+I is the Player menu's FPC entry, the same lock as Ctrl+F;
+    // Ctrl+B opens the Bump dialog, a gameplay write the lock does not
+    // stop.
     let fpc_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
     let bump_key =
@@ -1249,7 +1252,8 @@ fn save_to(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>, target: P
 
 /// `session.save_to(target)` and the refusal its error takes (the draft's
 /// `writeSave`); a written file goes to the top of the File menu's recent
-/// files. `edit_mode_closed` lets the write go ahead while the save's own
+/// files and gets its notice, the `.bak` named when the write replaced a
+/// file. `edit_mode_closed` lets the write go ahead while the save's own
 /// PES runs: the window's Save passes `false` (the own-game check ran
 /// first), the running-game dialog's Save `true`, the dialog having told
 /// the member how to keep the write.
@@ -1262,10 +1266,21 @@ pub(super) fn write_now(
     let Some(session) = view.session.as_mut() else {
         return false;
     };
+    let replaced = target.exists();
     match session.save_to(target, &running(), edit_mode_closed) {
         Ok(()) => {
             view.refusal = None;
             file_menu::push_recent(&mut view.recents, target);
+            let file = interchange::file_name(target);
+            view.notice = Some(Notice {
+                text: if replaced {
+                    format!("{file} saved (the replaced file is kept once as {file}.bak)")
+                } else {
+                    format!("{file} saved")
+                },
+                kind: NoticeKind::Success,
+                action: None,
+            });
             true
         }
         Err(error) => {

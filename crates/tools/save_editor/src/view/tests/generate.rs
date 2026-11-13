@@ -103,7 +103,7 @@ fn generated_settings_writes_the_explicit_colour_coded_name() {
         view.notice.as_ref().map(|notice| notice.text.as_str()),
         Some(
             format!(
-                "Wrote settings.toml for {} into {}",
+                "settings.toml for {} written into {}",
                 display_name(&raw),
                 dir.display()
             )

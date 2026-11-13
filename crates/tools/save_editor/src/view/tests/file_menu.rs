@@ -626,6 +626,11 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
         "the title names the new path"
     );
     assert_eq!(tool.view.recents.first(), Some(&target), "the recents' top");
+    assert_eq!(
+        tool.view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)"),
+        "the notice names the kept .bak"
+    );
 
     // A fresh path: written, and no `.bak` beside it.
     let fresh = dir.join("fresh").join("EDIT00000000");
@@ -634,6 +639,11 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     choose(&mut window, &mut view, "File", "Save as\u{2026}");
     assert!(fresh.is_file(), "the save is written");
     assert!(!bak_of(&fresh).exists(), "no .bak for a fresh path");
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("EDIT00000000 saved"),
+        "the plain saved notice, nothing replaced"
+    );
 }
 
 // SE-GUI-21, SE-GUI-26: Save as with the save's own PES running asks the
@@ -669,6 +679,41 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
         "the opened file is unchanged"
     );
     assert_eq!(view.save_path(), Some(target.as_path()));
+}
+
+// SE-GUI-79
+#[test]
+fn ctrl_s_names_the_saved_file_and_a_refused_write_publishes_no_notice() {
+    let path = fixture(PesVersion::Pes21, "save_notice");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)"),
+        "the file stood at the target, so the notice names the kept .bak"
+    );
+
+    // A target whose folder does not exist: the write fails, the refusal
+    // shows, no notice.
+    let dir = path.parent().unwrap().to_path_buf();
+    let missing = dir.join("missing").join("EDIT00000000");
+    view.notice = None;
+    view.discover = Box::new(|_| Vec::new());
+    view.save_as_dialog = Box::new(move |_| Some(missing.clone()));
+    choose(&mut window, &mut view, "File", "Save as\u{2026}");
+    assert!(
+        view.refusal.is_some(),
+        "the refused write shows the refusal"
+    );
+    assert!(view.notice.is_none(), "a refused write publishes no notice");
 }
 
 // A failed open leaves the open save's journal alone and records the file

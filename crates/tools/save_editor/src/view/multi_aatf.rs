@@ -474,7 +474,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.ctx()
                     .copy_text(copy_text(file, active.rules.ruleset(), key, checks));
                 *notice = Some(Notice {
-                    text: format!("Copied the results of {}.", counted(checks.len(), "team")),
+                    text: format!("Results of {} copied.", counted(checks.len(), "team")),
                     kind: NoticeKind::Success,
                     action: None,
                 });

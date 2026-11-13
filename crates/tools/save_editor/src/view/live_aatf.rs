@@ -204,10 +204,10 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         *notice = Some(Notice {
             text: match team {
                 Some(id) => format!(
-                    "Copied the Live AATF list of {}.",
+                    "Live AATF list of {} copied.",
                     multi_aatf::team_label(file, id)
                 ),
-                None => "Copied the Live AATF list.".to_owned(),
+                None => "Live AATF list copied.".to_owned(),
             },
             kind: NoticeKind::Success,
             action: None,

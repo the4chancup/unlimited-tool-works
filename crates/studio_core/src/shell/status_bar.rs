@@ -169,7 +169,13 @@ impl StatusBar {
                             let color = crate::theme::notice_color(notice.kind, ui.visuals());
                             let spacing = ui.spacing().item_spacing.x;
                             let button = egui::TextStyle::Button.resolve(ui.style());
+                            // The notice's text is the label family's
+                            // semibold at the Body size: seen, not found.
                             let body = egui::TextStyle::Body.resolve(ui.style());
+                            let text_font = egui::FontId::new(
+                                body.size,
+                                egui::FontFamily::Name("label".into()),
+                            );
                             let galley_width =
                                 |ui: &mut egui::Ui, text: &str, font: &egui::FontId| {
                                     ui.fonts_mut(|fonts| {
@@ -188,15 +194,19 @@ impl StatusBar {
                             } else {
                                 spacing
                             };
-                            let text_width = galley_width(ui, &notice.text, &body)
+                            let text_width = galley_width(ui, &notice.text, &text_font)
                                 .min(ui.available_width() - dismiss_width - action_width - gaps)
                                 .max(0.0);
                             let group = text_width + action_width + dismiss_width + gaps;
                             ui.add_space(((ui.available_width() - group) / 2.0).max(0.0));
                             ui.add_sized(
                                 [text_width, ui.spacing().interact_size.y],
-                                egui::Label::new(egui::RichText::new(&notice.text).color(color))
-                                    .truncate(),
+                                egui::Label::new(
+                                    egui::RichText::new(&notice.text)
+                                        .color(color)
+                                        .font(text_font.clone()),
+                                )
+                                .truncate(),
                             )
                             .on_hover_text(&notice.text);
                             if let Some(action) = &notice.action
@@ -1156,18 +1166,32 @@ mod tests {
             });
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             let shape = bar_text_shape(&out, text).expect("the notice text is painted");
-            let color = shape
-                .galley
-                .job
-                .sections
-                .first()
-                .map(|section| section.format.color);
+            let section = shape.galley.job.sections.first().expect("a text section");
             assert_eq!(
-                color,
-                Some(expected),
+                section.format.color, expected,
                 "{kind:?} paints its text in {expected:?}"
             );
+            assert_eq!(
+                section.format.font_id.family,
+                egui::FontFamily::Name("label".into()),
+                "{kind:?} paints its text in the label family's semibold"
+            );
         }
+        // The version's text keeps the body weight.
+        let version = crate::shell::version_label();
+        let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+        let section = bar_text_shape(&out, &version)
+            .expect("the version text is painted")
+            .galley
+            .job
+            .sections
+            .first()
+            .expect("a text section");
+        assert_ne!(
+            section.format.font_id.family,
+            egui::FontFamily::Name("label".into()),
+            "the version's text is not the label family"
+        );
     }
 
     // ST-SET-03

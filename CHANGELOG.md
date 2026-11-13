@@ -72,6 +72,20 @@ What changed for members, release by release, newest first.
   in the save untouched. On the command line, `diff` compares the cup's players alone and
   `export-toml --all-teams` writes the cup's teams alone, as `check-aatf` already checked
   them, while a team named by its ID is still read.
+- **Save editor**: the status bar says what was done after Save, Save as and Output
+  rosters to TSV, which showed nothing, and after Ctrl+C and Ctrl+V (`ROADTRIP's stats
+  copied.`, `ROADTRIP's stats pasted onto ZONE.`). A paste from a save of another PES
+  version also says how many values the target could not take. Every such notice names
+  the thing first (`f.toml written`, where it read `Wrote f.toml`).
+- **Status bar**: a notice is drawn in semibold, so it is easier to see.
+- **Save editor**: the Player menu's `Toggle FPC settings` now reads `Hide default body
+  (Enable FPC)` or `Show default body (Disable FPC)`, whichever Ctrl+I will do to the
+  selected player, and the Team menu's two entries carry the same brackets.
+- **Save editor**: exporting a team as Team TOML suggests the team's name for the file
+  (`f.toml` for /f/) instead of its ID.
+- **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the
+  portraits on the pitch so that the formation's shape is easier to see; `Scroll names`
+  beside it is now `Scroll`. Both are remembered.
 
 ### Fixes
 

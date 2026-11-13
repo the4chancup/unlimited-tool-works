@@ -3,8 +3,8 @@
 //! one grid — three columns (the settings, the pitch, the assignments) and
 //! three rows, so every panel lines up with its neighbours — plus the
 //! editor's own Copy/swap menus (four entries each on the selected preset
-//! or formation; `session::tactics_ops`) and the Scroll names view
-//! setting. The widgets edit a clone of the team's
+//! or formation; `session::tactics_ops`) and the Scroll and Portraits
+//! view settings. The widgets edit a clone of the team's
 //! tactics and report a change; the view pushes the clone back with
 //! `Session::edit_team` under one key per widget call (a panel's or a
 //! bar's), so a gesture's frames merge but different widgets' edits
@@ -274,7 +274,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // Row 1: the preset bar on column 1 (the draft's `presetSel`,
         // `fluid`, `presetMenu`), the formation bar over columns 2-3
         // starting at the pitch's left (`formationSel`, `formationMenu`,
-        // `scrollNames`) — each `BAR_HEIGHT` tall, their contents centred
+        // `scrollNames`, `pitchPortraits`) — each `BAR_HEIGHT` tall, their contents centred
         // in it (a full-height cell would centre them in the cell, not on
         // the row).
         let bar = |ui: &mut egui::Ui, left: f32, right_edge: f32| {
@@ -301,7 +301,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             *click_kind = Some(ClickKind::Formation);
         }
         copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
-        checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll names");
+        checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll").on_hover_text(
+            "Scroll the names too long for their place on the pitch, as the game does. \
+             Off, they stand still, cut short.",
+        );
+        checkbox(&mut formbar_ui, &mut tactics.portraits, "Portraits").on_hover_text(
+            "Show the players' portraits on the pitch. Off, the formation's shape is easier \
+             to see.",
+        );
         let row2_top = top_left.y + BAR_HEIGHT + ROW_GAP;
 
         // Row 2: Formation settings, the pitch, Player assignments —

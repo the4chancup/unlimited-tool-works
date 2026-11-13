@@ -335,6 +335,33 @@ fn output_rosters_to_tsv_refuses_the_open_save() {
     assert_write_refused(&view.recorder, &dir, &path);
 }
 
+// SE-GUI-79
+#[test]
+fn output_rosters_to_tsv_says_what_it_wrote() {
+    let path = fixture(PesVersion::Pes21, "tsv_notice");
+    let dir = path.parent().unwrap().to_path_buf();
+    let target = dir.join("EDIT.tsv");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.rosters_dialog = Box::new({
+        let target = target.clone();
+        move |_| Some(target.clone())
+    });
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let nodes = open_savefile_menu(&mut window, &mut view);
+    click(
+        &mut window,
+        menu_item(&nodes, "Output rosters to TSV\u{2026}"),
+        &mut view,
+    );
+    assert!(target.is_file(), "the sheet is written");
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("EDIT.tsv written (one row per player of every team)")
+    );
+    assert!(view.refusal.is_none(), "no refusal");
+}
+
 /// The Multi-team AATF dialog's title under 4cc Autumn 26, the ruleset a
 /// view starts on.
 const MULTI_TITLE: &str = "Multi-team AATF (4cc Autumn 26)";

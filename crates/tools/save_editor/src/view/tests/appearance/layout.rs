@@ -279,15 +279,15 @@ fn the_setting_off_draws_no_lock_and_the_setting_on_locks_the_paths() {
 
     let nodes = open_tool_menu(&mut window, &mut tool, &ctx, "Player", "Set all stats");
     assert!(
-        !menu_item(&nodes, "Toggle FPC settings").is_disabled(),
-        "the FPC toggle is enabled"
+        !menu_item(&nodes, "Hide default body (Enable FPC)").is_disabled(),
+        "the FPC entry is enabled"
     );
     let nodes = open_tool_menu(&mut window, &mut tool, &ctx, "Team", "Set edited flag");
     for label in [
         "Set boots and gloves IDs for everyone",
         "Clear visual flags",
-        "Hide default body (FPC)",
-        "Show default body (FPC)",
+        "Hide default body (Enable FPC)",
+        "Show default body (Disable FPC)",
     ] {
         assert!(
             !menu_item(&nodes, label).is_disabled(),

@@ -131,7 +131,7 @@ pub struct Notice {
 /// There is no `Default`: the publisher knows which reading fits its event.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NoticeKind {
-    /// Something asked for is done: a file written (`Wrote settings.toml`), a compile
+    /// Something asked for is done: a file written (`settings.toml written`), a compile
     /// finished (`Compiled 48 teams`). Drawn in the palette's `success`, the draft's green.
     Success,
     /// A change of state to know about, neither finished nor broken: `Switched to PES
