@@ -1905,6 +1905,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (plan and draft: the "Appearance" list, SE-GUI-84; brief `.tmp/eight/brief_appearance.md` written, carrying 0.0.2-presentation c) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last -> verify: SE-GUI-07 and 84, the built window
+  - [ ] 0.0.2-poslayout (the maintainer, 2026-11-13, drafted and approved; DECISIONS "Pitch | Left | List")
+    the Playable positions grid's layout toggle under its title, the `positions_layout`
+    view setting, the darker unchosen letters (`plans/save_editor.md` "Editing UI", the
+    Playable positions paragraphs); after 0.0.2-applayout lands, since both touch
+    `view/abilities.rs` -> verify: SE-GUI-85, the built window
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [ ] 0.0.2-presentation (the maintainer, 2026-11-13; plan written, DECISIONS "star rating and
     playing attitude are aesthetics") star and playing attitude become `settings.toml` keys

@@ -569,6 +569,20 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      LB CB RB / GK, the midfield in two, GK alone below the others). Each row is centred in
      the panel, and each position's label centred over its ratings (over the B).
 
+     Some members read the grid more easily another way, so a toggle under the title, as far
+     below it as the other panels' first rows stand below theirs, picks one of three layouts:
+     - **Pitch**, the rows above;
+     - **Left**, the same rows starting at one left edge, the block they make still centred
+       in the panel;
+     - **List**, one position a row, front to back (CF SS LWF RWF AMF LMF RMF CMF DMF LB RB
+       CB GK), its label at the left of a fixed-width cell and its ratings at the right, the
+       column centred in the panel.
+
+     The choice is a view setting (`positions_layout`, as `scroll_names` is), Pitch by
+     default. It is set once and forgotten, so the held choice is filled in the quiet grey
+     of the Stronger foot toggle's, not the selection's blue. Every layout shows whole at the
+     default window.
+
      The registered position is outlined, its corners rounded as the widgets' are (every
      frame and field in the view is rounded; the theme's own radius, not a second one). The
      chosen rating is filled, so the three tell apart at a glance and an unrated position
@@ -576,6 +590,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      - A a deep green (`#129648`) under a white letter,
      - B the selection's blue,
      - C a grey square.
+
+     The letters not chosen are drawn in the normal text colour, darker than a button's, so
+     the chosen one stands out; lighter than a disabled letter's, so they do not read as off.
 
      A click on a position's label makes it the registered position, the same undoable edit
      as General info's combo, where the eye already is when choosing among the ratings.
@@ -3013,6 +3030,16 @@ SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting 
                 flags' six boxes stand three a row over `Copy from ID`; GIVEN the lock's
                 setting on THEN the ownership line and the switch stand above Full Player
                 Customization and the pane still has no scroll bar
+SE-GUI-85  GIVEN a PES 2021 save open at the default window, a player's Stats screen shown,
+                the `positions_layout` setting absent
+           WHEN it is drawn
+           THEN the toggle under Playable positions reads `Pitch`, `Left`, `List`, Pitch
+                held; WHEN Left is pressed THEN the five rows' first labels share one left
+                x and the block's centre is the panel's (within 1 point); WHEN List is
+                pressed THEN the 13 labels stand one a row in the order CF SS LWF RWF AMF
+                LMF RMF CMF DMF LB RB CB GK, their lefts equal, each position's ratings at
+                its label's right; the pane has no scroll bar in any of the three; WHEN the
+                editor restarts THEN List is still held
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of
