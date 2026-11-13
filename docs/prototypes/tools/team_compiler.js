@@ -29,10 +29,13 @@
 const TEAM_COMPILER_CSS = `
   .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; }
   .tc-top .pipe-grid { flex: 1; }
-  .tc-grid { border-collapse: separate; border-spacing: 2px; }
+  /* The table takes the panel's height: its last row, empty, stretches over
+     what the exports leave, so the two lines reach the panel's foot. */
+  .tc-grid { border-collapse: separate; border-spacing: 2px; height: 100%; }
+  .tc-grid tr { height: 26px; }
+  .tc-grid tr.fill { height: auto; }
   .tc-grid td { padding: 0; white-space: nowrap; }
-  .tc-grid tr.off td { opacity: 0.45; }
-  .tc-grid tr.off td.act { opacity: 1; }
+  .tc-grid tr.off td:not(.tc-line):not(.act) { opacity: 0.45; }
   .tc-name { min-width: 52px; padding: 0 6px !important; height: 26px; border-radius: 2px;
     cursor: pointer; }
   .tc-name.hl, .tc-cell.hl { outline: 2px solid var(--sel-fg); outline-offset: 0; }
@@ -41,10 +44,11 @@ const TEAM_COMPILER_CSS = `
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
   .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
   .tc-gap { width: 8px; }
-  /* A vertical line down the grid (egui: a vline the Painter draws), unbroken
-     across the 2px between two rows. */
-  .tc-line { width: 9px; position: relative; }
-  .tc-line::after { content: ""; position: absolute; left: 4px; top: -1px; bottom: -1px;
+  /* A vertical line down the whole panel (egui: one vline the Painter draws
+     over the panel's height), 4 points clear of the cells on either side,
+     unbroken across the 2px between two rows. */
+  .tc-line { width: 5px; position: relative; }
+  .tc-line::after { content: ""; position: absolute; left: 2px; top: -2px; bottom: -2px;
     width: 1px; background: var(--stroke); }
   .tc-slot.wide, .tc-cell.wide { width: 44px; }
   /* Every position is drawn, a faint square where the export has nothing: the
@@ -73,7 +77,7 @@ const TEAM_COMPILER_CSS = `
   .tc-empty { padding: 24px; text-align: center; border: 1px dashed var(--stroke);
     border-radius: 2px; }
   /* The Save editor's toolbar line: the host's .top (a Panel::top's stroke). */
-  .tc-legend { flex-wrap: wrap; gap: 4px 10px; margin-bottom: 4px; }
+  .tc-legend { flex-wrap: wrap; gap: 4px 10px; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
 `;
@@ -111,11 +115,13 @@ const PORTRAITS = {
   // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
   a: [22, "error", ["portrait_name_invalid"],
     { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
-  aco: [23, "partialOk"], adv: [11, "error", ["portrait_conflict"]], an: [null, "unchecked"],
+  // /adv/ 11's portrait is in the player's own folder: its finding colours
+  // this cell and the player's.
+  aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
   egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
 function portraitsOf(key) {
-  const [count, status, codes = [], fix] = PORTRAITS[key] || [];
-  return status ? { count, status, codes, fix, folder: "Portraits" } : null;
+  const [count, status, codes = [], fix, dropFile] = PORTRAITS[key] || [];
+  return status ? { count, status, codes, fix, dropFile, folder: "Portraits" } : null;
 }
 // Every cell of a row but its label: the players, the portraits, the kits.
 const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portraits] : []),
@@ -147,7 +153,10 @@ function sampleRows() {
       kits: { GK: kit("g1", "#202020", "#f0f0f0", "partialOk"), K1: kit("p1", "#2060c0", "#f0f0f0", "partialOk") } },
     { key: "adv", name: "/adv/", id: 704, display: "adv Midcup Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
-      players: with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
+      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
+        // A portrait kept in the player's folder: its finding is the player's too.
+        11, { status: "error", codes: ["texture_not_pow2"], dropFile: true,
+          note: "The finding is on this player's portrait, which is in his folder" }),
       kits: { K1: kit("p1 - Lakers", "#602080", "#f0c020") } },
     { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26",
       label: { status: "checking", codes: [] },
@@ -208,6 +217,7 @@ function cellTip(r, cell, what) {
     lines.push(cell.count == null ? "Portraits not counted yet"
       : `${cell.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
   if (cell.out === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
+  if (cell.note) lines.push(cell.note);
   for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
   if (what === "kit" && cell.codes.includes("kit_colors_derived"))
     lines.push("The menu colours shown are the ones derived from the texture");
@@ -386,7 +396,9 @@ function grid() {
       h("p", { class: "mono" }, EXE_FOLDER + "\\exports"),
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
-  return h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow));
+  return h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow),
+    h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), h("td", { class: "tc-line" }),
+      h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), h("td", { class: "tc-line" })));
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
@@ -589,7 +601,7 @@ const WALK = [
   ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
   ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
-  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name with its rename, /adv/'s portraits a conflict)"],
+  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
   ["TC-GUI-12", "Compile: each cell turns bold, then green, yellow or orange-red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],

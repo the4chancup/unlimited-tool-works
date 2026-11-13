@@ -777,11 +777,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       above the grid with a toolbar's line under it; every position is drawn, a faint
       square where the export has nothing (it counts as the plan's empty column), so a
       row's button is easy to match to its row; a vertical line after the ID column and
-      after the last kit column; a portraits cell between the players and the kits (how
-      many of the row's players have a portrait, in the colour of the worst: the plan
-      maps a portrait's findings to its player's cell, so `gui.md` "Task-to-cell
-      mapping" changes with it). All go into `gui.md` when the draft is accepted. Open
-      in it: a blocked cell's look, the kit swatch as two flat halves,
+      after the last kit column, each the panel's whole height, clear of the cells on
+      both sides and not dimmed with a disabled row; a portraits cell between the
+      players and the kits (how many of the row's players have a portrait, in the colour
+      of the worst). A portrait's finding colours the portraits cell, and the player's
+      own cell too only when the portrait is in the player's folder, not in
+      `Portraits/`: the compiler needs no change for it, a portrait finding's scope is
+      the file's own path (`deep/portrait.rs`, `IssueScope::File`), which names the
+      folder; `portrait_conflict` is the export's (it skips the export) and stays on the
+      row's label. `gui.md` "Task-to-cell mapping" changes with it. All go into
+      `gui.md` when the draft is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
       the detail panel at the grid's right (with it open, a row with all ten kits scrolls
       sideways in the default window; without it the row and its button fit). Not drawn yet: the
       file drop on the grid, the Edit mode question, the autorun, a check arriving live.
