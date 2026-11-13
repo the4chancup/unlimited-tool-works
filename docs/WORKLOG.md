@@ -2915,6 +2915,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-13 (`scripts/drafts/draft_shots.py`): the draft's `Generate settings.toml…`
+  and `Generate in-game face…` dialogs do not open from their links
+  (`save_editor/player?dialog=settings`, `?dialog=ingame-face`): the page throws "p is not
+  defined" and the link reads back as `save_editor/player`. In the committed draft before
+  the Copy stats window was drafted; the script exits 1 on them. Its baseline is also stale
+  (0 of 100 shots unchanged).
 - open 2026-11-13 (a sidekick's run, `.tmp/arrows/brief_mut3.report.md`): the Save
   editor's `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
   failed once in `cargo test -p save_editor list` ("the range's first team: left `702 /a/`,

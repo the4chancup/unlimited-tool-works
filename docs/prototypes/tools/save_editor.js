@@ -3673,7 +3673,7 @@ function onKey(e) {
     else if (e.key === "f" && aesUnlocked()) { e.preventDefault(); clearVisualFlags(); }
     else if ((e.key === "c" || e.key === "v") && S.clickKind
         && !document.activeElement.matches("input, textarea")
-        && !document.querySelector(".modal-bg")) {
+        && !document.querySelector(".modal-bg:not(.floating)")) {
       e.preventDefault();
       if (e.key === "c") clipCopy(); else clipPaste();
     }
@@ -3746,7 +3746,14 @@ function clipCopy() {
   const data = kind === "player" ? clone(curPlayer().stats)
     : kind === "team" ? clone(t.tactics)
     : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
-  S.clip = { kind, data, save: S.save };
+  // What the copy holds, as the notices name it ("VAPE DUCK's stats", "/a/'s preset 2").
+  const held = kind === "player" ? displayName(curPlayer().name) + "'s stats"
+    : kind === "team" ? t.name + "'s Gameplan"
+    : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
+    : t.name + "'s " + FORMATIONS[S.tac.formation] + " formation";
+  S.clip = { kind, data, save: S.save, held };
+  // sample wording: the copy and paste notices.
+  publishNotice("Copied " + held + ".", null, "success");
   // The app's window hears Ctrl+V only as a paste of the system clipboard's
   // text, so a copy leaves a line there naming what it copied.
   const named = kind === "player" ? "the stats of " + displayName(curPlayer().name)
@@ -3766,6 +3773,14 @@ function clipPaste() {
     else if (kind === "preset") t.tactics.presets[S.tac.preset] = clone(d);
     else tacPreset(t).formations[S.tac.formation] = clone(d);
   });
+  // The paste names what it wrote and where. From a save of another PES version the
+  // same line would end with what the target does not store or caps ("; 3 values PES
+  // 2017 does not store were left out"); the draft's clipboard holds one save's copies.
+  const onto = kind === "player" ? displayName(curPlayer().name)
+    : kind === "team" ? t.name
+    : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
+    : t.name + "'s " + FORMATIONS[S.tac.formation] + " formation";
+  publishNotice("Pasted " + S.clip.held + " onto " + onto + ".", null, "success");
   render();
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
@@ -3852,11 +3867,13 @@ function playerMenu() {
   return menu("Player", [
     ["Set all stats\u2026", dlgSetStats, off, tip],
     ["Bump all stats\u2026\tCtrl+B", dlgBumpStats, off, tip],
-    ["Toggle FPC settings\tCtrl+I", () => { fpcToggle(p); render(); },
+    // One entry that says what Ctrl+I will do to this player, by the Appearance
+    // section's own reading of him (a toggle's name left that to be guessed).
+    [(isFpc(p) ? "Show" : "Hide") + " default body (FPC)\tCtrl+I", () => { fpcToggle(p); render(); },
       off || !aesUnlocked(), tip || ownershipTip()],
     "-",
-    ["Copy stats from\u2026", () => dlgCopySwap(p, "copy"), off, tip],
-    ["Swap stats with\u2026", () => dlgCopySwap(p, "swap"), off, tip],
+    // On a team's page too: the window then starts on the team's first player.
+    ["Copy stats\u2026", winCopyStats],
     "-",
     ["Generate settings.toml\u2026", dlgSettings, off, tip],
     ["Generate in-game face\u2026", dlgIngameFace, off, tip],
@@ -3872,8 +3889,8 @@ function teamMenu() {
       for (const p of t.players) p.name = POS_LONG[p.positions.registered]; }); render(); }],
     "-",
     ["Clear visual flags\tCtrl+F", clearVisualFlags, !aesUnlocked(), ownershipTip()],
-    ["Set FPC invisibility", () => teamFpc(true), !aesUnlocked(), ownershipTip()],
-    ["Remove FPC invisibility", () => teamFpc(false), !aesUnlocked(), ownershipTip()],
+    ["Hide default body (FPC)", () => teamFpc(true), !aesUnlocked(), ownershipTip()],
+    ["Show default body (FPC)", () => teamFpc(false), !aesUnlocked(), ownershipTip()],
     "-",
     // The team's files: its Team TOML, Texport or legacy squad in and out
     // (the interchange panel), and a picture of its tactics written to a
@@ -4090,27 +4107,66 @@ function dlgNum(name, title, line, start, apply) {
       if (!Number.isNaN(n)) { apply(n); closeWindow(); render(); } }),
      button("Cancel", closeWindow)]);
 }
-// Copy/swap stats with another player, by team and roster slot (SE-GUI-24).
-function dlgCopySwap(p, mode) {
-  const opts = [];
-  for (const t of curSave().teams) for (const q of t.players)
-    opts.push([t.id + ":" + q.slot, t.name + " " + String(q.slot).padStart(2, "0")
-      + " " + displayName(q.name)]);
-  const pick = combo(opts, null, () => {});
-  dlg(mode === "copy" ? "copy-stats" : "swap-stats", mode === "copy" ? "Copy stats" : "Swap stats", h("div", {},
-    h("p", {}, (mode === "copy" ? "Copy the picked player's stats onto " : "Swap ")
-      + displayName(p.name) + (mode === "copy" ? "." : "'s stats with the picked player's.")),
-    pick),
-    [button("OK", () => {
-      const [tid, slot] = pick.value.split(":").map(Number);
-      const other = findPlayer(tid, slot);
-      if (!other) return;
-      edit(mode === "copy" ? "Copy stats" : "Swap stats", () => {
-        if (mode === "copy") p.stats = clone(other.stats);
-        else { const s = p.stats; p.stats = other.stats; other.stats = s; }
-      });
-      closeWindow(); render();
-    }), button("Cancel", closeWindow)]);
+// Copy or swap stats between two players, each picked by team and player
+// (SE-GUI-24). A window, not a dialog: it stays open after Copy or Swap, so
+// one player's stats go onto several by changing the destination, and the
+// list under it stays usable: a click on a player there sets the destination
+// (on a team row, the team's first player). The destination starts on the
+// selected player (the selected team's first on a team's page); the source
+// starts on the destination's team with no player picked.
+// sample wording: the row and column heads, the buttons and the result line.
+let copyWin = null;
+function winCopyStats() {
+  const p = curPlayer(), t = selTeam();
+  copyWin = { src: { team: String(t.id), slot: null },
+    dst: { team: String(t.id), slot: String(p.slot) }, line: "", seen: JSON.stringify(S.sel) };
+  drawCopyStats();
+  render(); // the link carries the open window
+}
+function drawCopyStats() {
+  const w = copyWin, teams = curSave().teams;
+  // The list's selection moved while the window was open: it is the new destination.
+  const sel = JSON.stringify(S.sel);
+  if (sel !== w.seen) {
+    w.seen = sel;
+    w.dst = { team: String(selTeam().id), slot: String(curPlayer().slot) };
+  }
+  const teamOf = side => teams.find(x => String(x.id) === side.team) || teams[0];
+  const playerOf = side => side.slot === null ? null
+    : teamOf(side).players.find(q => String(q.slot) === side.slot) || null;
+  const teamCombo = side => combo(teams.map(x => [String(x.id), x.name]), side.team, v => {
+    side.team = v;
+    // The source loses its player with its team; the destination takes the new team's first.
+    side.slot = side === w.src ? null : String(teamOf(side).players[0].slot);
+  });
+  const playerCombo = side => combo(
+    (side === w.src ? [[null, "(pick a player)"]] : []).concat(teamOf(side).players.map(q =>
+      [String(q.slot), String(q.slot).padStart(2, "0") + " " + displayName(q.name)])),
+    side.slot, v => { side.slot = v; });
+  const src = playerOf(w.src), dst = playerOf(w.dst);
+  const same = src && dst && src === dst;
+  const why = !src ? "Pick the source player" : same ? "The source and the destination are the same player" : null;
+  const act = swap => {
+    edit(swap ? "Swap stats" : "Copy stats", () => {
+      if (swap) { const s = dst.stats; dst.stats = src.stats; src.stats = s; }
+      else dst.stats = clone(src.stats);
+    });
+    w.line = swap ? "Swapped the stats of " + displayName(src.name) + " and " + displayName(dst.name) + "."
+      : "Copied " + displayName(src.name) + "'s stats to " + displayName(dst.name) + ".";
+    render();
+  };
+  window_("Copy stats", h("div", {},
+    h("table", { class: "grid", id: "copy-stats-grid" },
+      h("tr", {}, h("td", {}), h("td", {}, weak("Team")), h("td", {}, weak("Player"))),
+      h("tr", {}, h("td", {}, "Source"), h("td", {}, teamCombo(w.src)), h("td", {}, playerCombo(w.src))),
+      h("tr", {}, h("td", {}, "Destination"), h("td", {}, teamCombo(w.dst)), h("td", {}, playerCombo(w.dst)))),
+    // The last copy or swap, so a window that stays open shows what it did.
+    h("div", { class: "row", id: "copy-stats-line", style: "min-height:18px" }, weak(w.line))),
+    [button("Copy", () => act(false), { disabled: !!why, title: why }),
+     button("Swap", () => act(true), { disabled: !!why, title: why }),
+     button("Close", () => { copyWin = null; closeWindow(); })], "copy-stats");
+  document.querySelector("#overlay .modal-bg").classList.add("floating");
+  windowDrawer = drawCopyStats;
 }
 // Set boots/gloves IDs for everyone: per side unchanged / the original's modes
 // (boots: incremental from a start, or one id for all; gloves as the boot ids
@@ -8568,8 +8624,7 @@ function linkKeys() {
 // A `dialog` value to its opener: the dialogs a menu opens with no argument
 // beyond the current selection.
 const DLGS = { "set-stats": dlgSetStats, "bump-stats": dlgBumpStats, "multi-aatf": dlgMultiAatf,
-  "copy-stats": () => dlgCopySwap(curPlayer(), "copy"),
-  "swap-stats": () => dlgCopySwap(curPlayer(), "swap"),
+  "copy-stats": winCopyStats,
   settings: dlgSettings, "ingame-face": dlgIngameFace, boglo: dlgBoglo, tsv: dlgTsv, fixdb: dlgFixDb,
   "kit-slots": dlgKitSlots,
   "picture-save": () => dlgPictureSave(false), "picture-save-settings": () => dlgPictureSave(true),
@@ -8649,7 +8704,7 @@ registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstS
     "save_editor/player?panel=patch", "save_editor/player?panel=interchange",
     "save_editor/player?dialog=set-stats", "save_editor/player?dialog=bump-stats",
     "save_editor/player?dialog=multi-aatf", "save_editor/player?dialog=copy-stats",
-    "save_editor/player?dialog=swap-stats", "save_editor/player?dialog=settings",
+    "save_editor/player?dialog=settings",
     "save_editor/player?dialog=ingame-face", "save_editor/player?dialog=boglo",
     "save_editor/player?dialog=tsv", "save_editor/player?dialog=fixdb",
     "save_editor/player?dialog=kit-slots", "save_editor/player?dialog=picture-save",
