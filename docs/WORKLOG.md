@@ -1927,13 +1927,16 @@ briefs, review loops, gates and mutation runs as for any step.
       and the new upgrader's `hair_high.fmdl` gains `common_folder/`);
       `JP Winter 2025 Aesthetic Export` (folder and `.7z`) builds 7 more entries, its
       `texture_not_div4` gone (`33e5d5a1`)
-    - [ ] untraced: four JP inputs (`JP Aesthetics Export for Genso Cup` three times, `JP
-      Aesthetic Additions for 2024 Winter Cup Garbage Day.7z`) went from the Error
-      `unmigrated_content` at `Boots/k0860 - Get out of JP/u0XXXp2.dds` (`path_taken` by
-      `u0731p2.dds`) to a clean run with `leftover_dropped` on `u0731p2.dds`: find the
-      commit that meant it, and whether dropping the team-ID copy and keeping the `XXX` one
-      is the right way round; and one Discord-backup archive gained two
-      `common_reference_kept` warnings (`mlpol/sourceimages`), still exit 1
+    - [x] traced 2026-11-13, both meant by `e6c672e4` (poc12 slice 1, after the `p11`
+      checkpoint): four JP inputs went from the Error `unmigrated_content` at
+      `Boots/k0860 - Get out of JP/u0XXXp2.dds` to a clean run with `leftover_dropped` on
+      `u0731p2.dds`, because the copies-differing-only-in-the-token rule stopped needing a
+      team ID (`kit_magic.rs` `renamed_winner`; `spec/export_upgrader.md` "Copies differing
+      only in the token" names this very folder and why the `XXX` copy is the one the cup
+      showed); one Discord-backup archive gained two `common_reference_kept` warnings on
+      `common/mlpol/sourceimages/`, because any folder but `sourceimages` after the Fox
+      Common directory now counts as the team's (`materials/mod.rs` `fox_common_folder`),
+      where only a three-character one did
     - [ ] the respelled `.fmdl` still holds the long path
       (`/Assets/pes16/model/character/common/sourceimages/`) beside the new
       `common_folder/`: check whether a texture still uses it or the string is left
@@ -2930,12 +2933,6 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-13 (`scripts/drafts/draft_shots.py`): the draft's `Generate settings.toml…`
-  and `Generate in-game face…` dialogs do not open from their links
-  (`save_editor/player?dialog=settings`, `?dialog=ingame-face`): the page throws "p is not
-  defined" and the link reads back as `save_editor/player`. In the committed draft before
-  the Copy stats window was drafted; the script exits 1 on them. Its baseline is also stale
-  (0 of 100 shots unchanged).
 - open 2026-11-13 (a sidekick's run, `.tmp/arrows/brief_mut3.report.md`): the Save
   editor's `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
   failed once in `cargo test -p save_editor list` ("the range's first team: left `702 /a/`,

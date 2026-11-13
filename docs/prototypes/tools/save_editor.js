@@ -8552,6 +8552,7 @@ function ingameFaceToml(p) {
 function dlgGenerate(name, title, file, toml) {
   // Empty, as in the view: the save knows no export or folder name, so the
   // folder is typed or picked, never guessed.
+  const p = curPlayer();
   const input = h("input", { type: "text", style: "width:420px" });
   dlg(name, title, h("div", {},
     h("p", {}, weak("The native folder picker (rfd) opens here; the draft edits the player folder inline.")),
