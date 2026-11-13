@@ -192,7 +192,8 @@ pub enum FormationBreak {
 
 impl Formation {
     /// Everything in this formation set the game's own screens could not
-    /// have made, clause by clause and, within a clause, by slot. Empty
+    /// have made, clause by clause; within a clause by slot (clauses 2,
+    /// 3 and 6), by position byte (4) or by line (5). Empty
     /// for a set the game's screens (the drag, the Select Position menu,
     /// a swap, the Change Formation list) could have produced. The game
     /// plays a broken set as stored; only a drop repairs the starter it
@@ -206,8 +207,9 @@ impl Formation {
     ///    row of `AREAS_A` holding the spot: a drop and the Select
     ///    Position menu write only a position the spot offers, and a swap
     ///    exchanges whole spot-and-position pairs. A starter outside the
-    ///    movable range is left to clause 2 alone, since no spot out
-    ///    there offers anything.
+    ///    movable range is left to clause 2 alone: the screens could not
+    ///    have stored his spot at all, so his position there says nothing
+    ///    more.
     /// 4. No wide position (LB, RB, LMF, RMF, LWF, RWF) is held twice:
     ///    a drop offers a wide position only while no other starter
     ///    holds it.
@@ -417,8 +419,8 @@ mod tests {
 
     #[test]
     fn clause_2_a_starter_outside_the_movable_range() {
-        // Each starter's own area ends at the range's edge, so a starter
-        // one unit past it also stands where his position is not offered:
+        // Every outfield position's area lies inside the movable range, so
+        // a starter past it also stands where his position is not offered:
         // clause 2 alone reports him.
         check(&[
             (&[(4, at("LB", 2, 10))], &[OutsideMovableRange { slot: 4 }]),
@@ -428,6 +430,22 @@ mod tests {
             (
                 &[(3, at("RB", 100, 12))],
                 &[OutsideMovableRange { slot: 3 }],
+            ),
+            // Outside the range he still holds his position and his spot
+            // for the other clauses: a second LMF, and on a teammate.
+            (
+                &[(4, at("LMF", 2, 25))],
+                &[
+                    OutsideMovableRange { slot: 4 },
+                    WidePositionTwice {
+                        position: 6,
+                        slots: vec![4, 8],
+                    },
+                ],
+            ),
+            (
+                &[(4, at("LB", 2, 10)), (2, at("CB", 8, 10))],
+                &[OutsideMovableRange { slot: 4 }, TooClose { slots: [2, 4] }],
             ),
             (&[(2, at("CB", 41, 3))], &[OutsideMovableRange { slot: 2 }]),
             (&[(2, at("CB", 41, 4))], &[]),

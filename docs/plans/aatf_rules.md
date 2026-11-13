@@ -227,8 +227,8 @@ carries the preset, the set and every break found in it, a break being one of:
 | a line outside its limits | 5 | the line and its count |
 | two starters on each other | 6 | the two slots |
 
-A starter outside the movable range breaks clause 2 alone: no spot out there offers anything,
-so clause 3 would only say the same thing twice. Its text names the preset and the set, then
+A starter outside the movable range breaks clause 2 alone: the screens could not have stored
+his spot at all, so clause 3 would only say the same thing twice. Its text names the preset and the set, then
 each break in a clause's words, clause by clause, the starters by name and position: `Preset 1,
 Kick-off: illegal formation. the goalkeeper is not on the keeper's spot; SMITH (LB) is outside
 the area a starter can be moved in; JONES (CF) holds a position the game does not give at his
