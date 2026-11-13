@@ -1932,7 +1932,10 @@ briefs, review loops, gates and mutation runs as for any step.
       checks (a compiled player's star lands, an upgraded 7-star team keeps its 7) are a's.
       Slice a runs on `sk/presentation-a` (`../4cc-studio-temp/presentation-a`, brief
       `.tmp/presentation/brief_presentation_a.md`), with Copy stats and the import's
-      sections leaving the two to the target (DECISIONS 2026-11-13)
+      sections leaving the two to the target (DECISIONS 2026-11-13); reviewed and committed on
+      the branch 2026-11-14 (`3667be9b`, the lead's gates green, one lead fix: the
+      import's dead re-homing of an old-place star removed); merges after 0.0.2-applayout,
+      both touching `view/interchange.rs`
     - [ ] c the Save editor: the Presentation group under the lock, last on the screen,
       each note beside its box (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
       the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
