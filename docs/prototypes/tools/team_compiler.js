@@ -106,6 +106,13 @@ const TEAM_COMPILER_CSS = `
     font-family: var(--font-mono); font-size: 11px; line-height: 11px; cursor: pointer;
     position: relative; overflow: hidden; }
   .tc-cell.busy { font-weight: 700; }
+  /* A compiling cell moves, as nothing else in the grid does (sample: two
+     looks, the draft controls' pick). The sweep: a light bar sliding along
+     the bottom edge. The pulse: a white inset ring fading in and out. Both are
+     painted from the clock each frame (egui: ctx.input(|i| i.time)), because
+     the view is redrawn on every tick of a run. */
+  .tc-sweep { position: absolute; bottom: 0; height: 3px; width: 40%; background: var(--strong);
+    border-radius: 1px; pointer-events: none; }
   /* sample look: a blocked cell (its export is skipped) keeps no fill. */
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }
@@ -270,7 +277,10 @@ function sampleRows() {
 // ---- State ----
 // D: the draft controls (the scenarios' GIVENs). S: the view's own state.
 // L: the log panel's state, in the host's shape.
-const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false };
+const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false, busyLook: "sweep" };
+// The phase of a compiling cell's motion, 0 to 1, counted from when the cell
+// started, so a short task still shows the motion's start.
+const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % periodMs) / periodMs;
 const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, detail: null,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
   // Where the member left the detail window (null until it first opens), and
@@ -345,9 +355,13 @@ function cellEl(r, cell, text, scope, what) {
   return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
       + (state === "blocked" && !rowOff(r) ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
       + (S.highlight === scope ? " hl" : ""),
-    style: lookStyle(l), title: cellTip(r, cell, what), "data-scope": scope,
+    style: lookStyle(l) + (cell.busy && D.busyLook === "pulse"
+        ? `; box-shadow: inset 0 0 0 2px rgba(255,255,255,${(0.3 + 0.7 * (0.5 + 0.5 * Math.cos(2 * Math.PI * busyPhase(cell, 1000)))).toFixed(2)})` : ""),
+    title: cellTip(r, cell, what), "data-scope": scope,
     onclick: e => openDetail(e, { row: r.key, what, slot: text }) },
     text,
+    cell.busy && D.busyLook === "sweep"
+      ? h("span", { class: "tc-sweep", style: `left:${(-40 + 140 * busyPhase(cell, 900)).toFixed(1)}%` }) : null,
     swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${cell.swatch[0]} 50%, ${cell.swatch[1]} 50%)` })
       : null);
 }
@@ -707,8 +721,9 @@ function modeMenu(btn, sideloadOff) {
 // ---- The run: a fake compile over the eligible rows' cells ----
 // The app's tasks run in parallel and end in no fixed order, so the cells
 // change scattered over the grid, a few at once: the fake run takes them in
-// a shuffled order (the same one every time), BUSY of them in hand.
-const BUSY = 6;
+// a shuffled order (the same one every time), BUSY of them in hand, as a
+// 16-thread machine's.
+const BUSY = 16;
 const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
@@ -732,7 +747,7 @@ function startRun(only) {
       ended.cell.out = ended.cell.dropFile ? "doneErr" : OUTCOME[ended.cell.status];
       run.files += 4; }
     const next = run.tasks[run.at++];
-    if (next) { next.cell.busy = true; run.memory = 310 + (run.at * 37) % 900; }
+    if (next) { next.cell.busy = true; next.cell.busyAt = performance.now(); run.memory = 310 + (run.at * 37) % 900; }
     else if (run.at - BUSY < run.tasks.length) { /* the last ones in hand end */ }
     else if (run.stage === "Processing" && S.mode === "normal") run.stage = "Packing the CPKs";
     else if (run.stage === "Packing the CPKs") {
@@ -925,6 +940,9 @@ function draftControls() {
       button("Start as quick_compile.bat", () => { if (S.run) return; S.autorun = true; S.mode = "normal";
         liveCheck(S.rows.filter(r => !r.special), () => startRun()); }),
       cb("quick_compile_close_on_success", D.closeOnSuccess, v => D.closeOnSuccess = v)),
+    h("label", { class: "cb", title: "TC-GUI-12: how a cell being compiled stands out" }, "A compiling cell shows",
+      combo([["sweep", "a bar sweeping its bottom edge"], ["pulse", "a pulsing white ring"], ["bold", "its number in bold only"]],
+        D.busyLook, v => D.busyLook = v)),
     collapsing("team-compiler/walk", "How to walk the scenarios", () =>
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }
