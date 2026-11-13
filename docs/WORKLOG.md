@@ -1970,6 +1970,26 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
     `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
     paint tests, the built window
+  - [ ] 0.0.2-pagetoggle (asked by the maintainer 2026-11-13; not planned or drafted yet; waits on
+    `QUESTIONS.md` "Three features asked on 2026-11-13") a three-way toggle left of the
+    player or team name, Stats | Appearance | Gameplan. With a team row selected, the first
+    two select the player last opened on that team (its first player if none was); with a
+    player selected, the third selects his team's row. It reverses `plans/save_editor.md`
+    "Editing UI" ("Not tabs, because…") in part, so the plan edit says what the two player
+    pages hold -> verify: draft looked at, headless tests, the built window
+  - [ ] 0.0.2-teamdrop (asked by the maintainer 2026-11-13; not planned or drafted yet) the player
+    list's team dropdown: `ALL` becomes `All teams`, and the open dropdown ends with a
+    separator and four radio buttons that filter the teams it lists by category: All, 4cc
+    (701-780, the Backup rows included), VGL (781-850), Invitational (851-920). Open points
+    in `QUESTIONS.md`, the same section -> verify: draft, headless tests
+  - [ ] 0.0.2-similar (asked by the maintainer 2026-11-13; not planned or drafted yet; the largest
+    of the three: the view has one selected player, and every edit writes one record) a
+    `Select all similar players` button under the player list selects every player whose
+    stats equal the selected one's, and they are then edited together as one unnamed
+    player; perhaps a window of checkboxes (position, cards, stats) choosing what must
+    match. Open points in `QUESTIONS.md`, the same section; slice it once they are
+    answered (the selection of several rows, then the edits written to all, each one undo
+    step) -> verify: draft, headless tests, the built window
   - [ ] 0.0.2-flatpitch (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the two formation picture dialogs (8.33, 8.34, not built yet), the
     maintainer's additions of 2026-11-13, drafted (`picturesFlatBox`,
     `picturesPortraitsBox`), to enter `plans/save_editor.md` "Formation pictures" and be
