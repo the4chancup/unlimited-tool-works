@@ -770,7 +770,7 @@ mod tests {
             labels,
             [
                 "First run and data location › Choosing the data location › Next to the program \
-                 puts them in a data/ folder beside UTW.exe, which"
+                 puts them in a data/ folder beside UTW.exe, so the"
             ],
         );
 

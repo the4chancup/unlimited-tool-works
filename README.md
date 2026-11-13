@@ -33,7 +33,7 @@ music format (Rigdio's) and the first parts of the Ruleset editor are built ahea
 phases.
 
 5,862 tests, all gates green. Every finished tool also runs from the command line
-(`UTW <tool> <command>`), the way to use those the window does not show yet.
+(`UTW <tool> <command>`), which is how to use the ones the window does not show yet.
 
 What the suite does now is specified in `docs/spec/` (start at `docs/spec/README.md`), what
 comes next is planned in `docs/plans/` (start at `docs/plans/README.md`). `AGENTS.md` is the

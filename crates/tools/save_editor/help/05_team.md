@@ -79,11 +79,11 @@ Neither will write over the save that is open.
 
 **Importing a team file**
 
-Below the panel's top row, **Pick…** opens a team file to import into the selected team: a
-Team TOML (`.toml`), a squad file (`.4ccs`), a tactics file (`.4cct`) or a
-Texport. PES 2015 to 2017 name their Texports `TEXPORT00000000`, `TEXPORT00000001` and so on,
-with no extension, so on a save from those games the file window opens showing all files. A
-squad file lists which record goes to which player.
+Below the panel's top row, **Pick…** opens a team file to import into the selected
+team: a Team TOML (`.toml`), a squad file (`.4ccs`), a tactics file (`.4cct`) or a
+Texport. PES 2015 to 2017 name their Texports `TEXPORT00000000`, `TEXPORT00000001` and
+so on, with no extension, so on a save from those games the file window opens showing
+all files. A squad file lists which record goes to which player.
 
 Tick the sections to bring in:
 
@@ -99,7 +99,7 @@ Only the sections the file holds are offered, and Aesthetics stays off while the
 aesthetics lock is on.
 
 A file from another PES version is converted, and the values that could not
-carry over are listed as notes, grouped, each group opening to its lines. If a
+carry over are listed as notes, in groups that open to show their lines. If a
 ticked section holds a value the save cannot take, the reason stands under the
 choices and Apply is disabled; untick that section to import the rest.
 

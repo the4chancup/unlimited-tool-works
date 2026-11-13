@@ -145,7 +145,7 @@ them directly in the export.</td>
 file named after it (<code>Crocs.boots</code>), as in a team's export.</td></tr>
 <tr><td>The referee marker on PES 18-21</td>
 <td>Red wrote <code>ref_marker.dds</code> into the game's own
-<code>dt00_x64.cpk</code>, after asking.</td>
+<code>dt00_x64.cpk</code>, after asking you first.</td>
 <td>The marker goes into the referees' CPK and no game file is written. See "The referee
 marker" below.</td></tr>
 </table>
@@ -188,14 +188,16 @@ case do not matter.</li>
 name at least one referee.</li>
 </ul>
 <p>An old <code>refs.txt</code> has the same lines, so the upgrade carries it over
-unchanged apart from the file's name and two-digit slot numbers.</p>
+unchanged, apart from the file's name and the slot numbers, which it always writes with
+two digits (<code>01</code>, not <code>1</code>).</p>
 
 <h2>Upgrading an old referee export</h2>
 <p>The referee export takes no savefile, so <code>quick_upgrade.bat</code> lists it as not
-upgraded. Upgrade it with its own command, from a console opened in the folder that holds
-<code>UTW.exe</code>, with your export's name in place of <code>refs Spring</code>:</p>
+upgraded. Upgrade it with its own command instead: open a console in the folder that holds
+<code>UTW.exe</code> (step 4 of "Compiling" in <code>README.txt</code> shows how) and run this,
+with your export's name in place of <code>refs Spring</code>:</p>
 <pre class="block">UTW.exe export-upgrader upgrade "old_exports\refs Spring" -o exports</pre>
-<p>The old export is never changed. The upgraded copy is written into
+<p>The old export is never changed: the upgraded copy is written into
 <code>exports</code> under the same name. What the upgrade does:</p>
 <ul>
 <li>writes <code>players.txt</code> from <code>refs.txt</code> (or from
@@ -248,7 +250,7 @@ beside it. Three things differ from a team player's folder:</p>
 <code>01 - tsuoffside</code>: the slots come from <code>players.txt</code> alone.</li>
 <li><strong>A referee without a face model keeps the game's own head.</strong> A team
 player in the same case gets a blank face.</li>
-<li><strong>On PES 15-17, a referee whose face is a head only needs a body.</strong> Put
+<li><strong>On PES 15-17, a referee whose face model is only a head needs a body.</strong> Put
 an empty file named <code>fpc_off</code> in the folder and the compile dresses the referee
 in the refkit, the body in <code>Common/refkit/</code> (shirt, shorts, socks, arms, and
 the boots and hands when the referee has no boots or gloves of their own). A referee whose <code>face.xml</code> already lists the body needs

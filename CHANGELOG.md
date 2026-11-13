@@ -7,19 +7,19 @@ What changed for members, release by release, newest first.
 ### New
 
 - **Export upgrader and Team compiler**: VGL27 keeps the managers' own boots and gloves
-  IDs: `quick_upgrade.bat` upgrades with `--legacy-ids`, which copies every boots or
+  IDs. `quick_upgrade.bat` upgrades with `--legacy-ids`, which copies every boots or
   gloves folder into each player wearing it and records the ID its old name carried in
-  `legacy_ids.toml`; the compiler packs those models under the old IDs, so a manager's
-  Red test build and the official DLC agree.
+  `legacy_ids.toml`; the compiler then packs those models under the old IDs, so a
+  manager's Red test build and the official DLC agree.
 - **Team compiler and Export upgrader**: in the bundle again through `quick_compile.bat`
-  and `quick_upgrade.bat`, with the `exports/` and `old_exports/` folders, for the /vg/
+  and `quick_upgrade.bat`, with the `exports/` and `old_exports/` folders, for /vg/
   League 27 on PES 2019. An upgraded export names no team ID: its references into the
   team's Common read `team_common_folder/`, in its `.mtl` files and models alike, and a
   keeper's `u0XXXg1` textures become `gk_kit1`. The kit texture the modded exe swaps in is
   written `team_kit` (`team_gk_kit` for a keeper), which the compiler turns back into the
   `dummy_kit` the exe looks for; a model or `.mtl` still naming `dummy_kit` is refused, with
   a hint to run it through the Export upgrader. A team the current teams list no longer
-  holds upgrades too, its roster found in the original save by the team's name.
+  holds upgrades too: its roster is found in the original save by the team's name.
 - **Team compiler and Export upgrader**: `quick_compile.bat` and `quick_upgrade.bat` show
   warnings and errors only, and write the whole report, Info messages included, to
   `compile_log.txt` and `upgrade_log.txt` beside them. On the command line, `--log-file
@@ -35,8 +35,8 @@ What changed for members, release by release, newest first.
   `000` placeholder is refused, with a hint to run it through the Export upgrader's
   `upgrade-models`.
 - **Team compiler**: `check` and `compile` take `--timestamps`: each finding line starts
-  with the seconds since the run started when the finding was made, for seeing where a slow
-  compile spends its time.
+  with the time the finding was made, in seconds since the run started, to show where a
+  slow compile spends its time.
 - **Team compiler**: a file or folder name, or a path to one of the export's files, still
   spelled with the old kit token (`u0XXXp1`, `kit6_u0827p0.dds`, `Common/u0XXXp0/`) is
   refused, with a hint to run the export through the Export upgrader, which respells it
@@ -44,16 +44,17 @@ What changed for members, release by release, newest first.
 - **Team compiler and Ruleset editor**: a texture can be a JPEG XL file (`.jxl`), which
   compiles exactly as the same picture saved as a PNG does, so no PNG copy is needed; the
   Ruleset editor's Event logo can be one too.
-- **Updates**: the dialog that offers a newer version has Update now: it downloads the
-  version, checks it and puts it in the program's folder, showing its progress, with Cancel
-  beside it. Restart now then starts the new version; Later leaves `Update ready` on the
-  status bar until the next start. When an update fails, the dialog says whether anything
-  was changed and where to download the version by hand. The first start of a new version
-  shows `Updated to` and its number on the status bar, with What's new beside it. The
-  launchers and the tools' commands typed in a terminal also tell of a newer version, in
-  one line after their report, without waiting for the check. Cancel stops an update at
-  any moment before the new files are put in place, and a window whose program another
-  window has already updated says so instead of updating it a second time.
+- **Updates**: the dialog that offers a newer version has an Update now button: it
+  downloads the version, checks it and puts it in the program's folder, showing its
+  progress, with Cancel beside it. Cancel stops the update at any moment before the new
+  files are put in place. Once they are, Restart now starts the new version; Later leaves
+  `Update ready` on the status bar until the next start. When an update fails, the dialog
+  says whether anything was changed and where to download the version by hand. The first
+  start of a new version shows `Updated to` and its number on the status bar, with What's
+  new beside it. With two windows open, once one has updated the program, the other says
+  so when asked to update instead of updating it a second time. The launchers and the
+  tools' commands typed in a terminal also mention a newer version, in one line after
+  their report, without waiting for the check.
 - **Help**: two new chapters: Updates explains the check, the offer and each step of an
   update, and What's new holds this list of changes, version by version.
 - **Save editor**: the Comparator lists each difference in three columns, Item, Old value
@@ -67,18 +68,18 @@ What changed for members, release by release, newest first.
   wherever the save stores them.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. In the Save editor the
   Open menu, Save and Save as are now in a **File** menu, and Undo and Redo in an **Edit**
-  menu; every shortcut works as before. The event logo is always shown, the bar ending
+  menu; every shortcut works as before. The event logo is always shown: the bar now ends
   short of it.
 - **Save editor**: on a PES 2017 to 2021 save, the Tactics tab's Numbers in attack and
-  Numbers in defence are disabled, since the game no longer lets them be set, unless the
-  active ruleset allows illegal formations: a cup playing a patched game keeps them.
+  Numbers in defence are disabled unless the active ruleset allows illegal formations,
+  since the game no longer lets them be set: a cup playing a patched game keeps them.
 - **Save editor**: what Ctrl+C copies (a player's stats, a team's Gameplan, a tactics
   preset or a formation) can be pasted with Ctrl+V in another Save editor window, even one
   holding a save of another PES version, and still after opening another save.
 - **Save editor**: a player dragged in a team's player list shows as one `Player order`
   row in the unsaved changes, listing the places he and the players he shifted held
-  before and after, and each player lists only what was edited on him rather than every
-  field of the record the drag put on his place.
+  before and after. Each player then lists only what was edited on him, rather than every
+  field of the record the drag put in his place.
 - **Save editor**: each row of the toolbar's unsaved changes list ends with an ×, which
   puts that one change back as the file has it, keeping the other edits, and Undo brings it
   back again. On a `Player order` row it puts the players back on their places, each
@@ -129,25 +130,25 @@ What changed for members, release by release, newest first.
   him in, so an edit can no longer make a formation Live AATF warns about, unless the
   active ruleset allows illegal formations.
 - **Save editor**: a PES 2018 save's Tactics pitch is drawn as that game's own, which
-  is PES 2017's; PES 2015's and PES 2016's draw PES 2017's too, the nearest measured
-  to theirs.
+  is PES 2017's; PES 2015's and PES 2016's draw PES 2017's too, the nearest to theirs
+  that has been measured.
 - **Sidebar**: in a window too short for every entry, the tool entries now scroll with
   the wheel in the room between the version selector and the bottom, where Help and
   Settings stay pinned instead of being drawn over the last entries.
 
 ### Minor fixes
 
-- The status bar's **Reset window** button no longer stays on a small screen where
-  clicking it did nothing: it goes once a click has left the window as it was, and
-  comes back when the window is resized. The pointer turns into a hand over it.
+- On a small screen, the status bar's **Reset window** button no longer stays after a
+  click that left the window as it was: it goes, and comes back when the window is
+  resized. The pointer turns into a hand over it.
 - **Export upgrader**: the progress line in a terminal counts one upgrade as one export
-  (`0/1`, not `0/2`), and counts the files it writes, where only the clock moved.
+  (`0/1`, not `0/2`), and counts the files it writes, where before only the clock moved.
 - **Export upgrader**: the comments in a kit's `config.toml` give the ranges the game
   takes: a collar's for each PES version (up to 131 on PES 2021) and 0-15 for the chest
   number's `y`, where they said 1-107 and 0-7.
-- **Save editor**: an aesthetics patch's names now show in game on PES 2019: applying it
-  marks each renamed player as edited, as typing the name does, where they showed
-  PLACEHOLDER. `apply-patch` writing back over its own save with no player applied now
+- **Save editor**: an aesthetics patch's names now show in game on PES 2019, where they
+  showed PLACEHOLDER: applying it marks each renamed player as edited, as typing the
+  name does. `apply-patch` writing back over its own save with no player applied now
   leaves the save and its `.bak` as they were, instead of replacing the previous backup.
 - **Save editor**: Up and Down walk the player list again after a page key left a team's
   Tactics slot popover open behind a player: they did nothing until the team was selected
@@ -161,8 +162,8 @@ What changed for members, release by release, newest first.
 - A click between two neighbouring entries of a menu or of a dropdown list no longer closes it with
   nothing picked: the entries now touch, so the click lands on one of them.
 - The corners of menus, dialogs, dropdown lists, text fields and the update download's
-  bar all carry the same slight rounding again: the framework update had left the
-  menus and dialogs rounder than the rest.
+  bar all carry the same slight rounding again: an update of the toolkit the window is
+  drawn with had left the menus and dialogs rounder than the rest.
 
 ## [0.0.1] - 2026-11-03
 

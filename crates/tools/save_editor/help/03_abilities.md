@@ -1,4 +1,4 @@
-A player's row opens the player view: his id and name on top, then three columns
+Clicking a player's row opens the player view: his id and name on top, then three columns
 side by side, with the collapsed **Appearance** section underneath.
 
 **The three columns**
@@ -12,14 +12,14 @@ styles**. The third is his **Ability stats**.
 
 **Playable positions**
 
-The chosen rating is filled, green for A, blue for B, grey for C, and his
-registered position's cell is outlined. A click on a position's name makes it
+Each position's chosen rating is filled, green for A, blue for B, grey for C,
+and his registered position's cell is outlined. A click on a position's name makes it
 his registered position.
 
 **Tricks and Free cards**
 
-Between Skills and COM playing styles a second skills panel stands when the
-rules in use set some cards apart. **Tricks** holds the ruleset's tricks, which
+When the AATF rules in use set some cards apart, a second skills panel stands
+between Skills and COM playing styles. **Tricks** holds the ruleset's tricks, which
 its free trick allowance usually covers. A ruleset without tricks shows **Free
 cards** instead, the skills its free-card rules name, including those free only
 for a tier, a position or the captain.
@@ -29,7 +29,7 @@ for a tier, a position or the captain.
 The Name and Shirt labels count what the field holds, as typed: `(12/61)` reads
 as 12 bytes used of the 61 the field holds (a colour code counts as the ten
 bytes it stores). The shirt name counts letters, 18 on most versions and 16 on
-PES 2016. When a name or shirt name is longer than every version can hold, the
+PES 2016. When a name or shirt name is longer than an older version can hold, the
 field and its count turn amber, and hovering them says what an older game would
 do with it.
 
@@ -47,13 +47,12 @@ stay in the same places on every version, so the page never rearranges.
 
 **Cards used**
 
-**Cards used** counts the paid cards the player holds under his own tier of
-the AATF rules in use (the ruleset picked in the dropdown on the toolbar): the
-tier is the one the rules read him as, the way the AATF check does, from his
-stats, registered position and height, and the paid cards are the skills and COM
-playing styles that count against that tier's limit.
+**Cards used** counts the paid cards the player holds: the skills and COM
+playing styles that count against his tier's limit under the AATF rules in use
+(the ruleset picked in the dropdown on the toolbar). His tier is read as the AATF
+check reads it, from his stats, registered position and height.
 
-When no tier's condition holds for him the badge says "No tier matches". The
+When no tier's condition holds for him, the badge says "No tier matches". The
 number goes red when he holds more than the limit. When the rules cannot read
 the player's tier, the badge's place reads "Tier check failed, click for more
 information.", and a click shows why.

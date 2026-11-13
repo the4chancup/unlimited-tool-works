@@ -7,9 +7,9 @@ The **Player** menu works on the selected player:
   ability stat, clamped to 40 to 99, and the dialog remembers the last amount
   used in this window.
 - **Toggle FPC settings** (Ctrl+I) follows the Appearance section's FPC reading:
-  it shows a player who reads "The default body is currently hidden" and hides
-  any other, the same write as the section's Show default body and Hide default
-  body.
+  it shows the default body of a player who reads "The default body is currently
+  hidden" and hides any other's, the same write as the section's Show default
+  body and Hide default body.
 - **Copy stats from…** copies another player's stats onto the selected one.
 - **Swap stats with…** trades them.
 
@@ -20,8 +20,8 @@ edit flag. Copy and Swap stats move the gameplay edit flags with the stats.
 **Toggle FPC settings**
 
 A player hidden by his model's own boots ID reads "The default body is currently
-shown", so for him the toggle hides him again. Use the section's Show default
-body on him. The toggle stays disabled while the aesthetics lock is on (see the
+shown", so for him the toggle hides him again; to show his default body, use the
+section's Show default body instead. The toggle stays disabled while the aesthetics lock is on (see the
 Appearance section).
 
 **Copy and Swap stats**
@@ -34,7 +34,7 @@ appearance field stay as they are.
 
 **Generating a player folder**
 
-**Generate settings.toml…** and **Generate in-game face…** write the selected
+The menu's **Generate settings.toml…** and **Generate in-game face…** write the selected
 player's look to a player folder of your choice, the files a team moving to
 compile-time aesthetics is built from. `settings.toml` holds everything but the
 in-game face: the names, the stock boots and gloves IDs, skin colour, physique,
@@ -42,7 +42,7 @@ strip and motions. `ingame_face.toml` holds the in-game face itself: iris
 colour, face and hair.
 
 The save cannot say which players wear the in-game face, so you choose per
-player whether to generate it, and neither writes the save.
+player whether to generate it. Neither item writes the save.
 
 When the folder already holds a `settings.toml`, its comments stay while the
 values become the player's. `ingame_face.toml` is written whole.
