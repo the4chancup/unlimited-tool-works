@@ -817,8 +817,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (the lead; shots by `.tmp/0_0_2/tc_draft/shot_tc4.py`), for the maintainer's look: the
       file drop on the grid (outlined while dragged; a name already there refused, naming it),
       the Edit mode question at the save's step, the autorun (close only on a run with no
-      error), a check arriving live (cells flip scattered as each check ends).
-      The host page's compiler stub (`startCompile`, its three-row table) is now
+      error), a check arriving live. Looked at the same night (the maintainer): the rest
+      stands; fixed (`shot_tc5.py`): a live check starts every cell Unchecked, a few at a
+      time turn Checking and each its result a few ticks later, and the drop's refusal is a
+      Warning notice (orange). The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted
   - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
     (`plans/aesthetics_export/settings_toml.md` "Edits made in PES come back to the export";
@@ -1940,6 +1942,9 @@ briefs, review loops, gates and mutation runs as for any step.
     0.0.2-applayout and -presentation a land, since it touches their files -> verify:
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
+  - [ ] 0.0.2-noticeerr (the maintainer, 2026-11-13; DECISIONS "no alias or deprecation shim")
+    `NoticeKind::Error`, drawn in the theme's error red (`plans/core/gui.md` "A notice is
+    seen, not found"); no publisher yet -> verify: ST-BAR-04 with four kinds
   - [ ] 0.0.2-nomodels (the maintainer, 2026-11-13; DECISIONS "model-folder mode is removed")
     `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
     "Model-folder mode"); the spec's section leaves with it -> verify: the upgrader's tests,

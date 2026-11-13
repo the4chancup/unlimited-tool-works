@@ -35,10 +35,9 @@ rationale. Structural points worth noting here:
   editing the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one
   Compiler for every export kind"). It takes the name from 0.0.2, before the other kinds
   join: the sidebar, the window's title and the help say Compiler, the command-line id is
-  `compiler` and its settings table `[compiler]`. No `team-compiler` alias stays, because no
-  release has presented the tool under that name (0.0.1 showed it greyed, as a planned
-  entry), and the bundle's `quick_compile.bat`, which self-update overwrites, is the one
-  launcher that calls it. The crate stays `team_compiler` until Phase 9 settles the crate
+  `compiler` and its settings table `[compiler]`. No `team-compiler` alias stays: none is
+  kept before 1.0.0 (`spec/core/distribution.md`, the `0.x` paragraph), and the bundle's
+  `quick_compile.bat`, the one launcher that calls the id, is overwritten by self-update. The crate stays `team_compiler` until Phase 9 settles the crate
   layout, and `export_balls_skipped` waits for the balls kind;
 - the **Player aesthetics editor** hands model viewing to Blender (launched with a manifest
   consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D

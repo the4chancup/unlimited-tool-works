@@ -17156,3 +17156,18 @@ settings for the player; in a Midcup export (a team export holding only what it 
 team is known and the save is read as for any export. No release presented the command, so
 it goes without a deprecation.
 Plan: `plans/export_upgrader.md` "Model-folder mode".
+
+## 2026-11-13 — core — no alias or deprecation shim before 1.0.0; notices gain an Error kind
+Decision (the maintainer):
+- **No alias, deprecation or compatibility shim before 1.0.0.** A renamed or removed command,
+  flag, settings key or file name stops working the release it changes. This replaces the
+  reason today's Compiler entry gave for dropping `team-compiler` (that no release presented
+  it): the rule holds whatever a release presented.
+- **`NoticeKind` gains `Error`**, drawn in the theme's error red, for a notice saying
+  something asked for failed. No publisher uses it yet. The compiler draft's refusal of a
+  dropped export whose name `exports` already holds stays a Warning (orange).
+Why: the `0.x` releases go to a small group of testers told of every change, and are there to
+keep the suite free of contracts; a shim is a contract. An Error kind keeps the first
+failure notice from borrowing the warning's orange, which reads as "look at this".
+Plan: `spec/core/distribution.md` (the `0.x` paragraph), `plans/core/README.md` (the
+Compiler bullet), `plans/core/gui.md` ("A notice is seen, not found", ST-BAR-04).

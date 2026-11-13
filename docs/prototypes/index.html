@@ -584,6 +584,7 @@
   .notice-txt.success { color: var(--success); }
   .notice-txt.info { color: var(--link); }
   .notice-txt.warning { color: var(--warn); }
+  .notice-txt.error { color: var(--error); }
   .small { font-size: 11px; }
   table.grid tr.sel:hover { background: var(--hover); }
   .window pre.mono { margin: 4px 0; }
@@ -3216,7 +3217,7 @@ function renderStatus() {
 // draft's timeout, one with an action stays until clicked or dismissed. A
 // notice published while the window is unfocused holds its text in the title.
 let noticeTimer = null;
-// kind is the notice's NoticeKind ("success" / "info" / "warning"): it picks the
+// kind is the notice's NoticeKind ("success" / "info" / "warning" / "error"): it picks the
 // text's colour, so every publisher says one.
 // Returns the notice, which a tool script keeps to ask noticeShown(n) later
 // (its own S shadows the shell's).

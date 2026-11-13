@@ -259,6 +259,9 @@ The suite ships `0.x` releases from the 0.0.1 preview (`plans/core/development_p
 plan's "Releases"), so the workspace says 0.0.1 until that preview is cut. The compatibility rule
 for released surfaces binds from 1.0.0. The `0.x` releases are test releases for a restricted
 group of testers, told in person of every change, so everything can still change before then.
+So no alias, deprecation or compatibility shim keeps a renamed or removed surface working (a
+command, a flag, a settings key, a file name) before 1.0.0: the `0.x` releases are there to keep
+the suite free of contracts, and a shim is one.
 
 The version a member sees is `v{CARGO_PKG_VERSION}`: in the status bar, and from `--version`
 beside the executable's name (`UTW v0.0.1`), the line a bug report quotes.

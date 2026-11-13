@@ -797,17 +797,27 @@ function endRun() {
 // scattered over the rows, a few at once. `then` runs once the last one is in.
 function liveCheck(rows, then) {
   const cells = rows.flatMap(r => [r.label, ...cellsOf(r)]);
-  for (const cell of cells) { cell.real = cell.real || cell.status; cell.status = "checking"; }
+  // Every cell starts unchecked; a few at a time start checking, scattered
+  // over the rows as the parallel checks pick them up, and each turns to its
+  // result a few ticks after it started.
+  for (const cell of cells) { cell.real = cell.real || cell.status; cell.status = "unchecked"; }
   const order = cells.map((cell, i) => ({ cell, k: (i * 7919) % 211 })).sort((a, b) => a.k - b.k);
-  let at = 0;
+  const PER_TICK = 4, TICKS_CHECKING = 3;
+  let tick = 0, started = 0, ended = 0;
   clearInterval(S.checkTimer);
   S.checkTimer = setInterval(() => {
-    for (let n = 0; n < 4 && at < order.length; n++, at++) {
-      const { cell } = order[at];
+    tick++;
+    for (let n = 0; n < PER_TICK && started < order.length; n++) {
+      const o = order[started++];
+      o.cell.status = "checking"; o.at = tick;
+    }
+    // Cells end in the order they started, each TICKS_CHECKING ticks later.
+    while (ended < started && tick - order[ended].at >= TICKS_CHECKING) {
+      const { cell } = order[ended++];
       cell.status = cell.real; delete cell.real;
     }
     render();
-    if (at >= order.length) { clearInterval(S.checkTimer); S.checkTimer = null; if (then) then(); }
+    if (ended >= order.length) { clearInterval(S.checkTimer); S.checkTimer = null; if (then) then(); }
   }, 50);
   render();
 }
@@ -820,7 +830,7 @@ function liveCheck(rows, then) {
 function dropNames(names) {
   for (const name of names) {
     if (S.rows.some(r => r.display === name)) {
-      publishNotice(`${name} is already in the exports folder: nothing copied`, null, "error");
+      publishNotice(`${name} is already in the exports folder: nothing copied`, null, "warning");
       continue;
     }
     const r = { key: "ck" + S.rows.length, name: "/ck/", id: 712, display: name,

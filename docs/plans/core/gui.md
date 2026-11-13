@@ -640,13 +640,17 @@ More rules that keep it worth the row:
   the eye goes to the centre of a row, and the activity is the rarer item, shown only while
   another tool's view is up.
 
-  Each notice carries a kind, `NoticeKind::{Success, Info, Warning}`, set by its publisher,
-  and is drawn in that kind's bright colour:
+  Each notice carries a kind, `NoticeKind::{Success, Info, Warning, Error}`, set by its
+  publisher, and is drawn in that kind's bright colour:
 
   - success bright green (`theme::SUCCESS_FG`, a file written, a compile done);
   - information the link blue (`Switched to PES 2021, which is running`, `Updated to v1.4.0`);
   - a warning the theme's warning orange (`Teams list is read-only`, a switch whose
-    `Fix PES path` action points at a wrong exe).
+    `Fix PES path` action points at a wrong exe, a dropped export whose name the folder
+    already holds);
+  - an error the theme's error red: something asked for failed. No publisher uses it yet;
+    it exists so the first that needs it does not borrow the warning's orange, which
+    would read as "look at this" for "this did not happen".
 
   One plain colour for every notice was how a member missed a "Wrote settings.toml" line at
   the bar's edge; a single green for every notice would paint a warning as a success. What
@@ -1611,10 +1615,11 @@ ST-BAR-03   GIVEN a tool publishing a Notice with an action
                  left, and a notice of 100 characters with an action THEN its whole text is
                  drawn; GIVEN one longer than the bar holds THEN its text ends in an ellipsis
                  inside the middle slot and its tooltip is the whole text
-ST-BAR-04   GIVEN three notices published in turn, one of each kind (Success, Info, Warning)
+ST-BAR-04   GIVEN four notices published in turn, one of each kind (Success, Info, Warning,
+                 Error)
             WHEN the status bar is drawn after each
             THEN each notice's text is drawn in its kind's colour: SUCCESS_FG, the link blue,
-                 the warning orange, and in the label family's semibold, while the version
+                 the warning orange, the error red, and in the label family's semibold, while the version
                  and a condition's text keep the body weight
 ST-BAR-07   withdrawn: no tool keeps a standing notice (0.0.2-sel)
 ST-BAR-08   withdrawn: no notice action switches the PES version (0.0.2-sel)
