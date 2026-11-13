@@ -1781,6 +1781,33 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-cgu 2026-11-13 (the lead): `codegen-units = 1` timed on the AATF check of a
     220-team PES 2017 save and not taken, 2.230 s against 2.280 s, inside either build's
     spread (DECISIONS 2026-11-13; `.tmp/0_0_2/cgu/`)
+  - [ ] 0.0.2-text the member-facing text reread (the maintainer, 2026-11-13: Opus agents
+    apply `~/.claude/rules/shakespeare.md`'s three readings to the readmes, the help, the UI
+    text, the web pages and the comments of the TOML files a member edits; plans and specs
+    later). Branch `text/shakespeare` (worktree `4cc-studio-temp/shakespeare`), merged only
+    on the maintainer's word; briefs and reports in its `.tmp/shakespeare/` -> verify: each
+    crate's tests and `just changelog` on the branch, then `just pipeline` after the merge
+    - [x] wave 1 2026-11-13 (`08cc737e` and the two commits after it, on the branch): the
+      readmes, the Save editor and core help, three web pages; the changelog cleaned of
+      entries for tools no release had presented, 0.0.2 presenting the Team compiler and
+      the Export upgrader in one bullet each, and the gate `just changelog`
+    - [x] wave 2 2026-11-13 (`642b046d`, on the branch): the command-line help pages (the
+      Team compiler's gains 45 subheadings), the two generated developer pages through
+      their scripts, the bundled `settings.toml`'s comments
+    - [ ] wave 3: the ruled proposals for the Team compiler's and the Export upgrader's
+      message catalogs and an export's `settings.toml` comments, applied by three SWE-2
+      sidekicks (briefs `brief_ap_tc.md`, `brief_ap_eu.md`, `brief_ap_toml.md`: the
+      rulings are in them)
+    - [ ] wave 4: proposals for the Save editor's and the Ruleset editor's messages, the
+      views' labels, tooltips and dialogs, and the other TOML comments (a kit's
+      `config.toml`, the Team TOML, the aesthetics patch, `legacy_ids`)
+    - [ ] the Export upgrader's help lists what each `unmigrated_content` `reason` means
+      (28 values, `UnmigratedReason`'s doc comments; no member-facing text explains them,
+      and it is the one Error a member fixes by hand)
+  - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
+    (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
+    from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,
+    every change traced to a commit since `3c512628` or made a step here
   - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
     DECISIONS "Update now waits for 0.0.2", "Update now's dialog: what the plan left open"),
     postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand

@@ -145,3 +145,32 @@ Adds: after such a paste, one notice in the status bar ("Pasted the stats of SUR
 values PES 2017 does not store were left out"), only when something was left out or
 capped. Costs: a notice for a keyboard action that is otherwise silent, its wording per
 kind, and a test per kind; a paste between saves of one version never shows it.
+
+## P55: The Team compiler's help as two topics
+
+From the text rereading of 2026-11-13 (worklog 0.0.2-text, `sh_tc.full.md`). The Team
+compiler's help is one topic, "Running from a terminal", of about 1,200 lines. Two thirds of
+it is what goes in an export and what each file becomes, which a member using the window
+needs as much as one using a terminal and would not look for under that title; the
+run-level text a member opens the page for (the exports folder, `--export`, `--no-deploy`,
+the modes, the exit codes) starts after 750 lines of per-file rules.
+
+Adds: two topics, "What goes in an export" (from "What `compile` builds" through "Kit
+config values the game ignores or cannot hold") and "Running from a terminal" (the commands,
+which exports a run reads, install errors, `upgrade-dpfl`, the modes, `multicpk_mode`, exit
+codes, the aesthetics patch), each findable by its title. Costs: the text moves between two
+files, the topic list in the tool's `lib.rs` and the help tests gain an entry, and a link
+or search hit a member saved to the old topic's second half lands on the new one.
+
+## P56: The window can say the game's Edit mode is closed
+
+From the same rereading (`sh_ui_tc.proposals.md` P4). While the PES the save belongs to is
+running, a compile skips the save step unless it is run with `--edit-mode-closed`. The
+window's Compile button cannot add the flag, so from the window the only way to get the save
+written is to close the game, and the `savefile_skipped_pes_running` message now says so.
+
+Adds: when a compile from the window skips the save step for that reason, the finding (or
+a dialog) offers "Edit mode is closed, write the save", which runs the save step alone with
+the flag's meaning. Costs: one more confirmation whose wrong answer loses the save's changes
+when the member leaves Edit mode (the reason the flag exists), a save-only run path from the
+window, and its tests.
