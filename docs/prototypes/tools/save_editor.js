@@ -370,12 +370,31 @@ table.grid.stats-grid td { padding: 2px 6px; }
 #pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px;
   color: #b4b4b4; }
 #pos-grid .plabel:hover { background: var(--hover); color: #f0f0f0; }
+/* The layout toggle under the title, as far below it as the other panels'
+   first rows stand below theirs; then the grid. Left starts every row at the
+   block's left edge, List gives each position a row of its own (the label in
+   a fixed-width cell, its C B A right of it); both keep the block centred in
+   the panel, as Pitch's rows are. */
+#pos-layout { margin: 4.5px 0 4px; }
+/* Set and forget: the held choice in the stronger foot's quiet grey, not the
+   selection colour that draws the eye. */
+#pos-layout .sel.on { background: #5a5a5a; color: var(--strong); }
+.pcols #pos-grid.left, .pcols #pos-grid.list { width: fit-content; margin: 1px auto 0; }
+#pos-grid.left .posrow { justify-content: flex-start; }
+#pos-grid.list { gap: 1px; }
+#pos-grid.list .posrow { justify-content: flex-start; }
+#pos-grid.list .poscell { width: auto; flex-direction: row; align-items: center; padding: 1px 3px; }
+#pos-grid.list .plabel { width: 34px; margin: 0 6px 0 0; text-align: left; }
 .rate { display: inline-flex; gap: 1px; }
 .rate .sel { padding: 0 5px; }
 /* In the positions grid each grade is a square of its own, so the chosen
    one's fill reads at a glance (the Tactics' style toggles share .rate and
    keep their padded words). */
 #pos-grid .rate { gap: 2px; }
+/* The ratings not held, in the body text's grey (darker than a button's text,
+   lighter than a disabled one's), so the held one stands out; hover still lights. */
+#pos-grid .rate:not(.off) .sel:not(.on) { color: var(--text); }
+#pos-grid .rate:not(.off) .sel:not(.on):hover { color: #f0f0f0; }
 #pos-grid .rate .sel { width: 17px; height: 17px; padding: 0; display: inline-flex;
   align-items: center; justify-content: center; border-radius: 2px; }
 .rate .sel.on { background: var(--sel-bg); }
@@ -4945,21 +4964,39 @@ function positionsPanel(p) {
   // ones), GK alone below; each row centred, each cell the position's label
   // centred over its C B A choice (POS_ROWS, which the formation's name reads).
   const posCols = colCount("positions");
-  const posRows = posCols >= 5 ? POS_ROWS : chunk(POS_ROWS.flat(), posCols);
+  const layout = POS_LAYOUT.v;
+  const posRows = layout === "list" ? POS_LIST.map(pos => [pos])
+    : posCols >= 5 ? POS_ROWS : chunk(POS_ROWS.flat(), posCols);
   // A label's click makes its position the registered one, the General info
   // combo's edit by another hand.
   const register = pos => {
     set(p, x => x.positions.registered, (x, v) => x.positions.registered = v, pos, "registered position");
     render();
   };
-  const posTable = h("div", { id: "pos-grid" },
+  const posTable = h("div", { id: "pos-grid", class: layout === "pitch" ? "" : layout },
     posRows.map(row => h("div", { class: "posrow" }, row.map(pos =>
       h("div", { class: "poscell" + (pos === p.positions.registered ? " reg" : "") },
         h("div", { class: "plabel", title: "Make " + pos + " the registered position",
           onclick: () => register(pos) }, pos), rating(pos))))));
   return namedCols(h("div", { class: "col" },
     h("div", { class: "row phead" }, markedLabel(strong("Playable positions"), fieldMark(p, "positions"))),
-    posTable), "positions");
+    posLayoutToggle(), posTable), "positions");
+}
+// The grid's arrangement, a tool setting (`positions_layout`; localStorage
+// stands for the settings file): Pitch, each row centred as the pitch reads;
+// Left, the same rows from one left edge; List, one position a row, front to
+// back (POS_LIST), its label left of its C B A.
+const POS_LAYOUT = { v: ["pitch", "left", "list"].includes(localStorage.getItem("save_editor.positions_layout"))
+  ? localStorage.getItem("save_editor.positions_layout") : "pitch" };
+// The List layout's order: the forwards, the wide and attacking midfielders,
+// the central ones, the full backs before the centre back, the keeper.
+const POS_LIST = ["CF", "SS", "LWF", "RWF", "AMF", "LMF", "RMF", "CMF", "DMF", "LB", "RB", "CB", "GK"];
+function posLayoutToggle() {
+  return h("div", {}, h("span", { class: "rate tri", id: "pos-layout" },
+    [["pitch", "Pitch"], ["left", "Left"], ["list", "List"]].map(([k, label]) =>
+      h("span", { class: "sel" + (POS_LAYOUT.v === k ? " on" : ""),
+        onclick: () => { if (POS_LAYOUT.v === k) return;
+          POS_LAYOUT.v = k; localStorage.setItem("save_editor.positions_layout", k); render(); } }, label))));
 }
 // The skill cards the active ruleset usually leaves out of the card limit, in
 // the game's order, and the title of the panel that holds them apart from
