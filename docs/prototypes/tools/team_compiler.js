@@ -36,8 +36,10 @@ const TEAM_COMPILER_CSS = `
      vertical line, between the players, the portraits and the kits. The
      table's own 2 between cells counts in each, so the paddings and the
      spacer cells bring the other 6 or 4. */
-  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 0 6px; }
-  .tc-top .pipe-grid { flex: 1; }
+  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 0 0; }
+  /* The left margin is the scroll area's own padding: as the panel's it would
+     put the area's clip 2 inside the compile column's checkboxes. */
+  .tc-top .pipe-grid { flex: 1; padding-left: 6px; box-sizing: border-box; }
   /* The table keeps its own width whatever room the panel has (the detail
      panel open beside it squeezes no column: the grid scrolls sideways), and
      takes the panel's height: its last row, empty, stretches over
@@ -76,6 +78,8 @@ const TEAM_COMPILER_CSS = `
   /* The compile column's checkbox, 4 from the panel's edge and 4 from the
      team's label: the panel's 6 and the table's 2 are already at its left. */
   .tc-grid td.act > input[type=checkbox] { display: block; margin: 0 2px 0 -4px; }
+  /* A cell clips what it holds (the host's td rule); the box reaches 4 left of its own. */
+  .tc-grid td.act { overflow: visible; }
   /* A vertical line down the whole panel (egui: one vline the Painter draws
      over the panel's height), 4 points clear of the cells on either side,
      unbroken across the 2px between two rows. */
@@ -540,6 +544,10 @@ function modeMenu(btn, sideloadOff) {
 }
 
 // ---- The run: a fake compile over the eligible rows' cells ----
+// The app's tasks run in parallel and end in no fixed order, so the cells
+// change scattered over the grid, a few at once: the fake run takes them in
+// a shuffled order (the same one every time), BUSY of them in hand.
+const BUSY = 6;
 const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
@@ -551,7 +559,8 @@ function startRun(only) {
   }
   const tasks = rows.flatMap(r => cellsOf(r)
     // A red cell is skipped and keeps its colour, unless only one file is dropped.
-    .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })));
+    .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })))
+    .map((task, i) => ({ ...task, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
   const start = Date.now();
   S.finished = false;
   S.run = { stage: "Processing", elapsed: 0, files: 0, memory: 310, tasks, at: 0, rows: rows.length };
@@ -561,12 +570,13 @@ function startRun(only) {
     const run = S.run;
     if (!run) return;
     run.elapsed = Math.floor((Date.now() - start) / 1000);
-    const prev = run.tasks[run.at - 1];
-    if (prev) { delete prev.cell.busy;
-      prev.cell.out = prev.cell.dropFile ? "doneErr" : OUTCOME[prev.cell.status];
+    const ended = run.tasks[run.at - BUSY];
+    if (ended) { delete ended.cell.busy;
+      ended.cell.out = ended.cell.dropFile ? "doneErr" : OUTCOME[ended.cell.status];
       run.files += 4; }
     const next = run.tasks[run.at++];
     if (next) { next.cell.busy = true; run.memory = 310 + (run.at * 37) % 900; }
+    else if (run.at - BUSY < run.tasks.length) { /* the last ones in hand end */ }
     else if (run.stage === "Processing" && S.mode === "normal") run.stage = "Packing the CPKs";
     else return endRun();
     toolActivity("team-compiler", { done: Math.min(run.at, run.tasks.length), total: run.tasks.length, elapsed: run.elapsed });
@@ -656,7 +666,7 @@ const WALK = [
   ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
-  ["TC-GUI-12", "Compile: each cell turns bold, then green, yellow or orange-red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
+  ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, yellow or orange-red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
   ["TC-GUI-13", "Cancel during a run: every cell returns to its check colour, the log's last line says so"],
   ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
