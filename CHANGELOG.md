@@ -6,6 +6,16 @@ What changed for members, release by release, newest first.
 
 ### New
 
+- **Team compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the
+  teams' aesthetics exports, compiles them into the CPKs the game loads, and writes the
+  aesthetics patch that carries the exports' settings into the official save. Its window
+  comes in a later version: this one runs it through `quick_compile.bat`, which shows the
+  warnings and errors and keeps the whole report in `compile_log.txt`, and through a
+  command line.
+- **Export upgrader**: the first preview. It upgrades exports made in the old format to the
+  one the Team compiler reads, once, and leaves the old export as it was. Its window comes
+  later too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
+  `old_exports`, with the whole report kept in `upgrade_log.txt`, or use its command line.
 - **Command line**: `--log-file <FILE>` on any tool's command adds everything the run
   prints to the file and leaves Info messages out of the console. If the run crashes,
   the crash's message is in the file too.

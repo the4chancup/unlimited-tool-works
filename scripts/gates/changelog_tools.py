@@ -9,9 +9,11 @@ first presents it describes it whole in one bullet (CONTRIBUTING.md "Commits"; D
 2026-11-06 "a tool no release has presented gets no entries"). Nothing else stops such an
 entry: the rule every agent reads says "a change a member would notice gets its line", and
 between 2026-11-08 and 2026-11-13 eleven entries for the Team compiler and the Export
-upgrader landed that way.
+upgrader landed that way, before 0.0.2 presented the two.
 
-`UNPRESENTED` names those tools as an entry's bold label spells them. An entry is a bullet
+`UNPRESENTED` names such tools as an entry's bold label spells them; it is empty while every
+tool with code in a release has been presented, and a tool built ahead of its release goes in
+with its first commit. An entry is a bullet
 that opens with a bold label (`- **Team compiler**: ...`, `- **Team compiler and Ruleset
 editor**: ...`); one whose label names an unpresented tool is listed, with its line. A tool
 leaves the list in the commit whose release notes present it. Exit 1 when anything is
@@ -24,8 +26,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# The tools no release has presented, as a changelog label names them.
-UNPRESENTED = ("Team compiler", "Export upgrader")
+# The tools no release has presented, as a changelog label names them. None now: 0.0.2
+# presents the Team compiler and the Export upgrader, the last two.
+UNPRESENTED: tuple[str, ...] = ()
 
 LABEL = re.compile(r"^- \*\*([^*]+)\*\*")
 

@@ -528,7 +528,9 @@ changes something a member notices against the last release (a fix for a bug a r
 a new or changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in
 `CHANGELOG.md` itself, a corner-case fix under its `### Minor fixes`; a fix for something no
 release has shipped adds none, and neither does a change to a tool no release has presented in
-its notes or the `README.md` (the Team compiler and the Export upgrader until one does). There is
+its notes or the `README.md`: the release that first presents it describes it whole, in one
+bullet (0.0.2 does for the Team compiler and the Export upgrader), and `just changelog` fails
+on an entry for a tool on its list of those not presented yet. There is
 one `fix` type for both: `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note
 owes its readers. Do not include agent co-authoring lines.
 

@@ -1,6 +1,7 @@
 """Tests for `changelog_tools.py`: python scripts/gates/temp_alias.py scripts/gates/changelog_tools_test.py"""
 
 import unittest
+from unittest import mock
 
 import changelog_tools
 
@@ -25,6 +26,7 @@ CHANGELOG = """# Changelog
 """
 
 
+@mock.patch.object(changelog_tools, "UNPRESENTED", ("Team compiler", "Export upgrader"))
 class UnpresentedEntries(unittest.TestCase):
     def test_an_unreleased_entry_labelled_with_an_unpresented_tool_is_listed(self):
         self.assertEqual(
