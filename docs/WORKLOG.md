@@ -1854,9 +1854,24 @@ briefs, review loops, gates and mutation runs as for any step.
       to preview portraits, so it never knows a marker;
       (12) the status bar's "Data folder is read-only" says the settings could not be
       saved and names the cause when the error gives one
-    - [ ] wave 4: proposals for the Save editor's and the Ruleset editor's messages, the
-      views' labels, tooltips and dialogs, and the other TOML comments (a kit's
-      `config.toml`, the Team TOML, the aesthetics patch, `legacy_ids`)
+    - [x] wave 4's proposals 2026-11-13: four Opus agents, proposals only
+      (`sh_ui_msg`, `sh_ui_view`, `sh_ui_shell`, `sh_toml_b` `.proposals.md`)
+    - [ ] wave 4 applied: four SWE-2 sidekicks on the branch (`brief_ap_msg.md`,
+      `brief_ap_view.md`, `brief_ap_shell.md`, `brief_ap_tomlb.md`, after
+      `brief_apply4_common.md`: the rulings are in them, the maintainer's twelve and the
+      lead's on the rest); review each diff, rerun its tests, commit, DECISIONS entry. The
+      sidekicks leave `docs/prototypes/` alone and list the drafts' quotes that changed:
+      the lead brings the drafts in step after the merge (main's drafts moved meanwhile:
+      the Copy stats window)
+    - [ ] set aside by the rulings, each to decide or do: the Ruleset editor's window shows
+      a finding as console `key=value` text (`sh_ui_msg` P12: a format, not a wording);
+      `fpc_taping_shows_pieces` says "nothing to do" where a member may have left taping on
+      by mistake (P11: the added advice is the maintainer's call); the Team TOML's `skills`
+      comment could say how a skill is spelt, once each label is checked against the game
+      (`sh_toml_b` 11); the Team TOML, patch and kit config spec blocks show comments the
+      writers do not write, and the patch block's `# slot 03 -> player 70203` contradicts
+      its prose (`sh_toml_b` "Wrong or stale" 4, 5, 7: trim the blocks or write the useful
+      comments); the kit config's comment columns drift with the value's width
     - [ ] the Export upgrader's help lists what each `unmigrated_content` `reason` means
       (28 values, `UnmigratedReason`'s doc comments; no member-facing text explains them,
       and it is the one Error a member fixes by hand)
