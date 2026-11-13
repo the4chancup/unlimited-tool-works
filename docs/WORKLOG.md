@@ -2363,8 +2363,15 @@ briefs, review loops, gates and mutation runs as for any step.
       own team rows. A team viewed from a Team TOML with no tactics would hold all-zero
       formations and warn: nothing reaches that today, the Team creator's check will
       (to settle in its phase). Look: Pending looks
-    - [ ] b's SWE-2 review (running, `.tmp/0_0_2/formation/swe_warn.md`, worktree
-      `review18`)
+    - [x] b's SWE-2 review 2026-11-13 (S-warn r1, 1 of 2 accepted, the loop ends): the
+      pitch's own range let a member make what the check warns about, which is 0.0.2-range
+  - [ ] 0.0.2-range with illegal formations off, the pitch holds an outfielder in the game's
+    movable range, x 5 to 99 and y 4 to 47, by a drop's snap and the popover's X and Y, on
+    every version (S-warn-1; DECISIONS 2026-11-13; `plans/save_editor.md` "Editing UI", the
+    popover's paragraph on X and Y; today `snap` and the steppers of
+    `team_widgets/src/pitch/` use `GRID_X` 104 and `GRID_Y` 48)
+    - [ ] its Acceptance scenario's wording (the stepper scenario that names the range's
+      ends) and the slice, after 0.0.2-cup merges (its tests reach `save_editor`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts

@@ -976,9 +976,10 @@ Win32 original hurt the most):
   rather than moving off with the marker. A press outside the popover closes it, as Close
   does.
 
-  X (0 to 104) and Y (4 to 48, the outfielders' rows: below the drop's bullet, "A pitch player
-  dropped on another"; 0 to 48 under a ruleset that allows illegal formations, "Illegal
-  formations" below) are steppers: the number with an arrow either side, `⏴` stepping it down
+  X (5 to 99) and Y (4 to 47: the game's movable range, `aatf_rules.md` "The illegal
+  formation check", clause 2, which a drop's snap keeps to as well; 0 to 104 and 0 to 48, the
+  whole stored grid, under a ruleset that allows illegal formations, "Illegal formations"
+  below) are steppers: the number with an arrow either side, `⏴` stepping it down
   by one and `⏵` up, each click one edit, clamped into the range (a stored spot past it steps
   back in), each arrow disabled at its end of the range and both for the keeper.
 
