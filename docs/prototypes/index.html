@@ -414,6 +414,7 @@
     border-radius: 2px; color: #f0f0f0; }
   .combo-pop > div > div.on { background: var(--sel-bg); color: var(--sel-fg); }
   .combo-pop > div > .sep { flex: none; margin: 3px 0; }
+  .combo-pop > .combo-foot { display: flex; flex-direction: column; gap: 3px; }
   /* A removable row's ×: a frameless small button at the row's right end, 12 from its text. */
   .combo-pop .combo-x { margin-left: auto; padding: 0 2px 0 12px; color: #8c8c8c; }
   .combo-pop .combo-x:hover { color: var(--error); }
@@ -1010,8 +1011,13 @@ function comboPopup(s) {
     for (const [text, fn, title] of s.comboActions)
       rows.push(h("div", { title, onclick: () => { closeComboPopup(); fn(); } }, text));
   }
+  // s.comboRadios: under the values and a separator, radio buttons that stay while the
+  // list scrolls; picking one runs its `set`, which redraws the list (the popup stays open).
+  const foot = s.comboRadios ? h("section", { class: "combo-foot" }, sep(), s.comboRadios.options.map(([v, label]) =>
+    h("label", { class: "cb" }, h("input", { type: "radio", name: "combo-radios",
+      checked: v === s.comboRadios.value, onchange: () => s.comboRadios.set(v) }), " " + label))) : null;
   const pop = h("div", { class: "combo-pop", style: `left:${left}px; top:${below}px; min-width:${s.offsetWidth}px` },
-    h("div", {}, rows));
+    h("div", {}, rows), foot);
   const win = document.getElementById("win");
   win.append(pop);
   if (below + pop.offsetHeight > win.clientHeight) pop.style.top = Math.max(4, top - pop.offsetHeight) + "px";

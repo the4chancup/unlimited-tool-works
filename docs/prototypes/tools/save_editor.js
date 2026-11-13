@@ -235,8 +235,6 @@ input[type=range]:focus { outline: none; }
    and Appearance line up with General info's title. */
 #player-view { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
   align-items: start; margin: 0 -8px 0 -22px; }
-#player-view > :first-child { grid-column: 2 / 7; grid-row: 1; }
-#player-view > :last-child { grid-column: 2 / 7; grid-row: 3; }
 .pcols { display: contents; }
 .pcols > * { grid-row: 2; }
 .pcols > :nth-child(1) { grid-column: 2; }
@@ -4398,13 +4396,33 @@ function matches(p, q) {
       || p.shirt_name.toLowerCase().includes(q)
       || String(p.id).includes(q);
 }
+// The team categories, by the teams list's ID ranges (4cc with its Backup rows).
+const TEAM_CATS = [["all", "All", 0, 99999], ["4cc", "4cc", 701, 780], ["vgl", "VGL", 781, 850],
+  ["inv", "Invitational", 851, 920]];
+function catTeams() {
+  const [, , lo, hi] = TEAM_CATS.find(c => c[0] === (S.teamCat || "all"));
+  return curSave().teams.filter(t => t.id >= lo && t.id <= hi);
+}
 function renderMaster() {
   const box = h("div", { class: "plist", "data-panel": "player-list" });
-  const sel = combo([["all", "ALL"]].concat(curSave().teams.map(t => [String(t.id), t.name])),
+  const sel = combo([["all", "All teams"]].concat(catTeams().map(t => [String(t.id), t.name])),
     // A team picked selects its team row, so the view shows its tactics; ALL
     // keeps the selection.
     S.teamSel, v => { S.teamSel = v; if (v !== "all") S.sel = { team: Number(v) }; });
   sel.id = "team-sel";
+  // Under the teams, the category that shortens them, and the list with them: a cup save
+  // holds 220 teams, and a manager works inside one competition's.
+  sel.comboRadios = { options: TEAM_CATS.map(([key, label]) => [key, label]), value: S.teamCat || "all",
+    set: v => {
+      S.teamCat = v;
+      if (S.teamSel !== "all" && !catTeams().some(t => String(t.id) === S.teamSel)) S.teamSel = "all";
+      // A selection the category no longer lists moves to the list's first player.
+      const listed = catTeams();
+      if (listed.length && !listed.includes(selTeam()))
+        S.sel = { team: listed[0].id, slot: listed[0].players[0].slot };
+      render(); updateLink();
+      comboPopup(document.getElementById("team-sel"));
+    } };
   // sample wording: the filter's placeholder and the rows' tooltips.
   const filter = h("input", { type: "text", id: "filter-box",
     placeholder: "Team or player: name, shirt name or ID", value: S.filter,
@@ -4467,7 +4485,7 @@ function renderList(rows) {
     }
     return;
   }
-  for (const t of (S.teamSel === "all" ? curSave().teams : [curTeam()])) {
+  for (const t of (S.teamSel === "all" ? catTeams() : [curTeam()])) {
     rows.append(teamRow(t));
     for (const p of t.players) rows.append(playerRow(t, p));
   }
@@ -4495,8 +4513,6 @@ function teamRow(team) {
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_1) }),
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_2) }),
     h("span", { class: "pname" }, ...nameSpans(team.name)),
-    // What a click on the row opens, for a manager who looks for the tactics.
-    h("span", { class: "thint" }, "[click for gameplan]"),
     dirtyTeam(team) ? h("span", { class: "dot", title: "Unsaved changes" }, "●") : null,
     teamMark(team));
 }
@@ -4702,8 +4718,33 @@ function generalPanel(p, team) {
 // read as 9 above and 11 below on the maintainer's screen. The toolbar's 4
 // of margin and 5 more.
 function viewTitle(id, name) {
-  return h("div", { class: "pheader strong", style: "margin:5px 0 4px" },
-    h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name));
+  return h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
+    pageToggle(),
+    h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name)));
+}
+// The three screens, as one sliding toggle left of the name (4ccEditor's tabs, which
+// members asked back): Stats and Appearance are the selected player's, Gameplan his
+// team's. From a team's row the first two go to the player last shown on that team, its
+// first player if none was; from a player Gameplan selects his team's row, so the list
+// shows where the screen came from.
+function pageToggle() {
+  const on = isTeamSel() ? "gameplan" : (S.page || "stats");
+  const go = page => {
+    const team = selTeam();
+    if (page === "gameplan") S.sel = { team: team.id };
+    else {
+      S.page = page;
+      if (isTeamSel()) {
+        const last = (S.lastPlayer || {})[team.id];
+        S.sel = { team: team.id, slot: findPlayer(team.id, last) ? last : team.players[0].slot };
+      }
+    }
+    render(); updateLink();
+  };
+  return h("span", { class: "rate tri", id: "page-toggle", style: "font-weight:400" },
+    [["stats", "Stats"], ["appearance", "Appearance"], ["gameplan", "Gameplan"]].map(([page, label]) =>
+      h("span", { class: "sel" + (on === page ? " on" : ""),
+        onclick: () => { if (on !== page) go(page); } }, label)));
 }
 // One "Make X" per tier of the active ruleset in its order, plus Set stats
 // (SE-GUI-09), in two columns under the player list. They act on the selected
@@ -4750,14 +4791,18 @@ function renderDetail() {
 // Skills in two, the ability stats in one - then the collapsing Appearance
 // section, closed by default.
 function playerView(p, team) {
-  return h("div", { id: "player-view" },
-    viewTitle(p.id, p.name),
+  (S.lastPlayer = S.lastPlayer || {})[team.id] = p.slot;
+  // Appearance is a screen of its own: the section that collapsed under the columns.
+  // The title's row stands outside the columns' grid, at the pane's left as the team
+  // view's does: a toggle that moved between two screens would slip from under the pointer.
+  if (S.page === "appearance")
+    return h("div", { id: "player-page" }, viewTitle(p.id, p.name), named(appearanceTab(p), "appearance"));
+  return h("div", { id: "player-page" }, viewTitle(p.id, p.name), h("div", { id: "player-view" },
     h("div", { class: "pcols" },
       h("div", { class: "col pcol first" }, generalPanel(p, team), otherStatsPanel(p),
         positionsPanel(p)),
       h("div", { class: "col pcol" }, skillsPanel(p, team), asidePanel(p), comStylesPanel(p)),
-      abilityPanel(p)),
-    named(collapsing("se-appearance", "Appearance", () => appearanceTab(p)), "appearance"));
+      abilityPanel(p))));
 }
 // The team view: the team's name as the title, the name/short-name/colour
 // fields the team bar carried, the gated ids, the kit slots behind a button
@@ -7069,7 +7114,7 @@ function comparatorPanel() {
       selectable("Gameplay", S.cmp.scope === "gameplay", () => S.cmp.scope = "gameplay"),
       selectable("Aesthetics", S.cmp.scope === "aesthetics", () => S.cmp.scope = "aesthetics"),
       weak(" Team "),
-      combo([["all", "ALL"]].concat(curSave().teams.map(t => [String(t.id), t.id + " " + t.name])),
+      combo([["all", "All teams"]].concat(curSave().teams.map(t => [String(t.id), t.id + " " + t.name])),
         S.cmp.team, v => S.cmp.team = v)) : null);
   if (!S.cmp.second) {
     if (!S.cmp.refused) c.append(weak("Pick a save of the same version to compare against."));
