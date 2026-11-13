@@ -362,16 +362,21 @@ impl StudioApp {
     }
 
     /// Writes the settings file, best-effort: a failed save keeps the in-memory change for
-    /// the session and raises the `data_dir_read_only` condition in the status bar (its only
+    /// the session and raises the `settings_save_failed` condition in the status bar (its only
     /// notice — no dialog, no retry); a save that succeeds drops it (ST-SET-03).
     #[cfg(not(target_arch = "wasm32"))]
     fn save_settings(&mut self) {
         if let Some(dir) = &self.ctx.paths().data_dir {
             let path = dir.join(crate::settings::SETTINGS_FILE_NAME);
             let result = self.ctx.settings().lock().unwrap().save(&path);
-            self.status_bar
-                .set_condition(ShellCondition::DataDirReadOnly, result.is_err());
+            self.status_bar.clear_save_failed();
             if let Err(error) = result {
+                self.status_bar.set_condition(
+                    ShellCondition::SettingsSaveFailed {
+                        error: error.to_string(),
+                    },
+                    true,
+                );
                 warn!(
                     "the settings file could not be written to {}: {error}",
                     path.display()

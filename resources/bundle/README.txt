@@ -4,13 +4,14 @@ Unlimited Tool Works 0.0.1
 A preview version for the DBC's managers and VGL's organizer.
 If anything goes wrong or reads strangely, please let me know.
 
-This version contains the Save editor. From the left bar, you can also check out the
+This version contains the Save editor. From the sidebar, you can also check out the
 work in progress preview of the Ruleset editor: it builds and edits a brand-new format of
-cup rules file, called 4ccrules. Some of its sections are not editable yet, but you can click
-on the link shown to open a demo webpage which shows how it'll look once it's finished.
+cup rules file, called 4ccrules. Some of its sections are not editable yet, but the link it
+shows opens a demo webpage of how it'll look once it's finished.
 
-The Team compiler and the Export upgrader are greyed out on the left bar, because their
-windows come in a later version. In this one they run through the two launchers below.
+The Team compiler and the Export upgrader are greyed out on the sidebar, because their
+windows come in a later version. In this one they run through two launchers in this folder,
+quick_upgrade.bat and quick_compile.bat.
 
 
 Getting started
@@ -19,15 +20,15 @@ Getting started
 1. Unpack this archive into a folder of its own, anywhere you like.
 2. Open UTW.exe (utw on Linux). It keeps its settings in the data folder beside it.
 3. The window starts on PES 2017, the game the DBC is played on. VGL's organizer picks
-   PES 2019 on the left bar before opening a save. quick_compile.bat below compiles for the
-   PES picked there; quick_upgrade.bat upgrades for the PES of the savefile dropped onto it,
-   whatever the left bar says. If the PES number on the left bar turns yellow or red, click
+   PES 2019 on the sidebar before opening a save. quick_compile.bat compiles for the PES
+   picked there; quick_upgrade.bat upgrades for the PES of the savefile dropped onto it,
+   whatever the sidebar says. If the PES number on the sidebar turns yellow or red, click
    the Settings gear at the bottom of the bar and set "PES folder" to the path of the
    folder that holds the PES exe.
-4. VGL's organizer: read "For VGL's organizer" at the end before running either launcher.
-   It starts with a backup of the game's download folder and the game's DpFileList.bin,
-   changes one setting and sets the order of the work, and all of that comes before the
-   sections in between.
+4. VGL's organizer: read "For VGL's organizer", at the end, before running either launcher.
+   It starts with three things to do before the first compile (back up the game's download
+   folder, install the cup's official DpFileList.bin, change one setting), then gives the
+   order of the work, so read it before the sections in between.
 
 On Linux the archive holds no .bat file. Wherever this readme names one, run its command
 from a terminal in this folder instead. For quick_compile.bat:
@@ -46,9 +47,8 @@ Checking a team for the DBC
 ---------------------------
 
 The Save editor checks teams against the DBC7's rules from the start, so there is nothing to
-set up. Just prepare your team then click the Live AATF button to check it.
-If you need to check multiple teams in one go, you can use the Multi-team AATF button in the
-Savefile menu.
+set up: prepare your team, then click the Live AATF button to check it. To check several
+teams in one go, use Multi-team AATF in the Savefile menu.
 
 The editor also comes with the rulesets from several recent cups built in. To check against
 another cup's rules, pick them in the dropdown on the toolbar, to the left of the Live AATF
@@ -64,8 +64,8 @@ Exports in the old format need upgrading once before they compile here.
 2. Drag your PES savefile onto quick_upgrade.bat. The savefile is the file named
    EDIT00000000, in the game's save folder under Documents\KONAMI.
 3. The upgraded exports land in the exports folder. The window lists each export's
-   warnings and errors and says how many were upgraded; for one that was not, it says why
-   above that line. Info messages are left out of the window: the whole report is in
+   warnings and errors, says why for each export that was not upgraded, and ends with how
+   many were. Info messages are left out of the window: the whole report is in
    upgrade_log.txt beside the launcher, until the next run replaces it.
 4. Then move the upgraded old exports out of old_exports. An export already upgraded is not
    upgraded again: the next run lists it as not upgraded ("the output folder already
@@ -89,10 +89,10 @@ Compiling
    only: the whole report, Info messages included, is in compile_log.txt beside the
    launcher, until the next run replaces it.
 4. The game needs the cup's official DpFileList.bin. If the report says dpfilelist_outdated
-   or dpfilelist_not_official, yours is another list, and the report names the command that
-   installs the official one. To run it, close PES, open the folder that holds
-   UTW.exe, click the address bar at the top of the window, type cmd and press
-   Enter. In the black window that opens, type
+   or dpfilelist_not_official, the game's list is a different one, and the report names the
+   command that installs the official one. To run it, close PES, open the folder that holds
+   UTW.exe, click the address bar at the top of the window, type cmd and press Enter. In
+   the black window that opens, type
 
        UTW.exe team-compiler upgrade-dpfl
 
@@ -100,7 +100,7 @@ Compiling
    official names, empty placeholders for the ones missing, the list replaced and the old one
    kept as DpFileList.bin.bak). Before going on, copy the game's download folder, found
    inside the folder that holds the PES exe, to a safe place: putting that copy back undoes
-   everything this command and the compiles after it change there. If the list reads
+   everything this command and the compiles after it change there. If what it lists looks
    right, run the command again with --yes at the end:
 
        UTW.exe team-compiler upgrade-dpfl --yes
@@ -121,12 +121,12 @@ For VGL's organizer
       To undo all of that, delete the download folder and put the copy back.
 
    b. Install the cup's official DpFileList.bin. Step 4 of "Compiling" above shows how:
-      UTW.exe team-compiler upgrade-dpfl, read what it lists, then the same command with
+      run UTW.exe team-compiler upgrade-dpfl, read what it lists, then run it again with
       --yes. Do it now, not when a compile asks for it: the game loads only the CPKs its
       DpFileList.bin names, and a compile stops when the list lacks the CPKs it writes.
       This is needed once per game folder.
 
-   c. Set the league's first DLC to compile into several CPKs. With the window closed,
+   c. Set the league's first DLC to compile into several CPKs. With UTW.exe closed,
       open data\settings.toml in Notepad, change the line
 
           multicpk_mode = false
@@ -144,17 +144,18 @@ For VGL's organizer
 2. The work runs in this order. The managers' tactical exports (the .ted files) go into
    the base save first: import them in the Save editor (the Team menu's "Import / export
    team file...") or in the game's own Edit mode (its import leaves the team names for you
-   to rewrite). That makes the official save. In the Save editor, click Save on the
-   toolbar, then close UTW.exe: the launchers change the save on disk, and an editor still
-   open on it would overwrite their changes the next time you click Save. Then upgrade
-   the old exports against the official save (drag it onto quick_upgrade.bat), compile
-   the exports (quick_compile.bat), and apply the compile's patch to the official save.
+   to rewrite). That makes the official save. In the Save editor, pick Save in the File
+   menu (or press Ctrl+S), then close UTW.exe: the launchers change the save on disk, and
+   an editor still open on it would overwrite their changes the next time you save. Then
+   upgrade the old exports against the official save (drag it onto quick_upgrade.bat),
+   compile the exports (quick_compile.bat), and apply the compile's patch to the official
+   save.
 
    The upgrade finds each team in the save by its name. The compile finds its ID in
    data\teams_list.txt, which holds the league's 52 teams at their VGL 27 IDs, /@/ 781
-   to /zzz/ 832, so each team of the official save needs the same ID. The compile
-   refuses a team the list lacks, as team_name_unknown. If a team joins later, open a
-   console in this folder as step 4 of "Compiling" shows, and run, with the save's own
+   to /zzz/ 832, so each team of the official save needs the ID the list gives it. The
+   compile refuses a team the list lacks, as team_name_unknown. If a team joins later, open
+   a console in this folder as step 4 of "Compiling" shows, and run, with the save's own
    path in place of official\EDIT00000000:
 
        UTW.exe save-editor export-teams-list "official\EDIT00000000"
@@ -176,8 +177,8 @@ For VGL's organizer
    Keep the quotes around both paths: a path with a space in it fails without them. The
    file already there is kept as EDIT00000000.bak.
 
-4. A later matchday is compiled into one CPK of its own. Change the line back to
-   multicpk_mode = false, and change the line
+4. A later matchday is compiled into one CPK of its own. In data\settings.toml, change the
+   line back to multicpk_mode = false, and change the line
 
        cpk_name = "4cc_99_test"
 
@@ -185,17 +186,17 @@ For VGL's organizer
 
        cpk_name = "4cc_61_midcup"
 
-   Before compiling it, move the exports compiled on earlier matchdays out of the exports
-   folder, so that it holds only this matchday's: a team with two exports there (its first
-   Full export and a new Midcup one) has both refused, as duplicate_aesthetics_export.
-
    A later matchday's export only adds to the team, so it has to be a Midcup one before
    it is upgraded: its old name must contain midcup or additions (rename "co day 5" to
    "co midcup day 5", for example). The upgrade makes any other name a Full export, and
    compiling a Full export removes every kit of the team it does not hold.
 
-5. The patch is the last write to the official save. A .ted imported after it writes that
-   team's players over their looks, so the patch has to be applied again.
+   Before compiling, move the exports compiled on earlier matchdays out of the exports
+   folder, so that it holds only this matchday's: a team with two exports there (its first
+   Full export and a new Midcup one) has both refused, as duplicate_aesthetics_export.
+
+5. The patch is the last write to the official save. A .ted imported after it overwrites
+   the looks of that team's players, so the patch has to be applied again.
 
 6. A later matchday's compile writes a new patch, so what goes out is a new official
    save, not only the new CPKs: the players' looks live in the save.
@@ -212,9 +213,10 @@ If something goes wrong
 -----------------------
 
 Every message names a code, such as fpc_undershorts_break_hiding.
-The help explains each one: click the ? button at the bottom of the left bar.
+The help explains each one: click the ? button at the bottom of the sidebar.
 
-If the window crashes, please post the log file found in the data folder. If a launcher
-fails, post its log file, found beside it: upgrade_log.txt for quick_upgrade.bat,
-compile_log.txt for quick_compile.bat. If there is no such file, copy what the black window
-says before pressing a key to close it, and post that.
+If the window crashes, please post the log file found in the data folder on the /aesco/
+server or the divegrass thread. If a launcher fails, post its log file instead, found beside
+it: upgrade_log.txt for quick_upgrade.bat, compile_log.txt for quick_compile.bat. If there
+is no such file, copy what the black window says before pressing a key to close it, and
+post that.

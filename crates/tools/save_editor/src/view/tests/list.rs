@@ -221,7 +221,7 @@ fn the_filter_finds_a_player_of_another_team_and_selecting_shows_him() {
         .iter()
         .find(|node| {
             node.role() == Role::TextInput
-                && node.placeholder() == Some("Filter every team (name, shirt name or id)")
+                && node.placeholder() == Some("Team or player: name, shirt name or ID")
         })
         .expect("the filter box");
     click(&mut window, filter_box, &mut view);
@@ -316,7 +316,7 @@ fn a_teams_name_in_the_filter_lists_its_squad_and_a_double_click_shows_it_alone(
         .iter()
         .find(|node| {
             node.role() == Role::TextInput
-                && node.placeholder() == Some("Filter every team (name, shirt name or id)")
+                && node.placeholder() == Some("Team or player: name, shirt name or ID")
         })
         .expect("the filter box");
     click(&mut window, filter_box, &mut view);

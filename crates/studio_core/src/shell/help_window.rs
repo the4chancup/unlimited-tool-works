@@ -280,6 +280,7 @@ impl HelpWindow {
             let scroll = self.scroll_pending;
             if self.topic == section.topics.len() && !section.messages.is_empty() {
                 ui.heading("Messages");
+                ui.label(crate::help::MESSAGES_INTRO);
                 let (consumed, link) = messages(
                     ui,
                     &mut self.cache,
@@ -770,7 +771,7 @@ mod tests {
             labels,
             [
                 "First run and data location › Choosing the data location › Next to the program \
-                 puts them in a data/ folder beside UTW.exe, which"
+                 puts them in a data/ folder beside UTW.exe, so the"
             ],
         );
 

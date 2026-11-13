@@ -76,14 +76,15 @@ svg.map.focus .edge.on { opacity: 1; stroke-width: 3; }
 
 <h1>Old exports and the UTW format</h1>
 <p class="lead">The managers keep making their exports in the old format (the AET format, the
-layout the wiki's export page describes) and keep testing them with Red, as before. Unlimited
+layout the wiki's export page describes) and keep testing them with Red. Unlimited
 Tool Works compiles a different layout, the <strong>UTW format</strong>, so each old export
 is upgraded once before you compile it. This page shows what changes and how the upgrade
 gets there.</p>
 
 <div class="callout">
 <p><strong>In one sentence:</strong> <code>quick_upgrade.bat</code> reads each export in
-<code>old_exports</code> together with the official save, and writes a new copy in the UTW
+<code>old_exports</code> together with the official save (the base save with the managers'
+<code>.ted</code> files imported), and writes a new copy in the UTW
 format into <code>exports</code>. The old export is never changed.</p>
 </div>
 
@@ -113,7 +114,7 @@ numbers, kept in <code>legacy_ids.toml</code>. The official DLC keeps the IDs ea
 chose, so the test CPKs they build with Red still match the official save.</td></tr>
 <tr><td>The export's name</td><td><code>co Spring</code></td><td><code>co Full Spring</code>
 (<code>Midcup</code> instead of <code>Full</code> when the old name said "midcup" or
-"additions").</td></tr>
+"additions"). A Full export is the team's whole set; a Midcup one only adds to it.</td></tr>
 </table>
 
 <h2>Where everything goes</h2>
@@ -232,7 +233,7 @@ upgraded one. Point at a box to follow only its lines.</p>
 </div>
 <figcaption>Boots and gloves go one of two ways, decided by the save: into the player's
 own folder when he alone wears them, or into a shared folder when two or more players do.
-The Note is read twice: its kit colours go to each kit, its team colours and notes to the
+The Team Note is read twice: its kit colours go to each kit, its team colours and notes to the
 two text files.</figcaption>
 </figure>
 
@@ -295,7 +296,8 @@ a player wears other boots would sort them differently.</figcaption>
 </figure>
 
 <h2>Where the upgrade fits in your work</h2>
-<p>The same order as in the README's "For VGL's organizer" section, drawn out.</p>
+<p>The same order as in the "For VGL's organizer" section of <code>README.txt</code>,
+drawn out.</p>
 <figure>
 <svg viewBox="0 0 1000 250" role="img" aria-label="The five steps from the managers' files to the official save">
   <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
@@ -360,7 +362,8 @@ it.</figcaption>
 <ul>
 <li><strong>Each export is upgraded whole or not at all.</strong> When something stops an
 export (a team the save does not hold, a file that cannot be read), nothing is written
-for it, and the window says why above its count of exports upgraded. Fix the cause and run
+for it, and the window says why above the line that counts the exports upgraded. Fix the
+cause and run
 <code>quick_upgrade.bat</code> again.</li>
 <li><strong>Files the game never used are left out.</strong> Red never put the
 <code>Other</code> folder, backup copies or stray files into the game, so the upgrade leaves
@@ -370,8 +373,8 @@ them out too and lists each one as a warning; the export still upgrades.</li>
 exists") and leaves the folder as it is. Move upgraded exports out of
 <code>old_exports</code> once they are done.</li>
 <li><strong>The referee export takes no save.</strong> Its name starts with
-<code>refs</code>; the README's "Upgrading old exports" section has the one command that
-upgrades it.</li>
+<code>refs</code>, and the "Upgrading old exports" section of <code>README.txt</code> has the
+one command that upgrades it.</li>
 </ul>
 
 </main>

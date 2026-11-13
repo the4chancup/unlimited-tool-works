@@ -279,8 +279,8 @@ fn roster_note(slot: u8, team_id: Option<u32>, roster_breaks: &[(u8, u32)]) -> S
         return String::new();
     };
     format!(
-        "; holds player {held}, not {}: applied, this record lands on slot \
-         {slot:02}, apart from {held}'s aesthetics export",
+        "; holds player {held}, not {}: an import writes this record to slot \
+         {slot:02}, so it may no longer match {held}'s aesthetics export",
         roster_order_player_id(team_id, index)
     )
 }
@@ -296,14 +296,14 @@ fn portable_note(which: PlayerText, text: Option<&str>) -> String {
         PlayerText::Name => (
             text.len(),
             format!(
-                "name past {} bytes: cut on PES 2015 to 2019",
+                "name past {} bytes: cut on PES 15 to 19",
                 portable_text_max(PlayerText::Name)
             ),
         ),
         PlayerText::ShirtName => (
             text.chars().count(),
             format!(
-                "shirt name past {} letters: cut on PES 2015 to 2019 (PES 2016: past 16)",
+                "shirt name past {} letters: cut on PES 15 to 19 (on PES 16, past 16)",
                 portable_text_max(PlayerText::ShirtName)
             ),
         ),

@@ -463,8 +463,8 @@ fn show_ready(ctx: &egui::Context, release: &Release) -> Option<Click> {
     let later = Click::Answer(UpdateAnswer::Later);
     stage_modal(ctx, "Update ready".to_owned(), Some(later), |ui| {
         ui.label(format!(
-            "{} is installed. Restart to start using it, the version you are running now \
-             will stay in the old folder.",
+            "{} is installed. Restart to start using it. The program you are running \
+             now has been moved to a folder named old, beside the new one.",
             version_label(release)
         ));
         stage_buttons(

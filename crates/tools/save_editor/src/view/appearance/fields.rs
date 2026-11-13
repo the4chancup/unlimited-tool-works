@@ -372,8 +372,8 @@ pub(crate) fn palette(version: PesVersion, key: SettingKey) -> Palette {
         SettingKey::IrisColor => ("Iris", IRIS_COLORS.as_slice()),
         SettingKey::WristTapeColorLeft => ("Wrist tape left", STRIP_COLORS.as_slice()),
         SettingKey::WristTapeColorRight => ("Wrist tape right", STRIP_COLORS.as_slice()),
-        SettingKey::SpectaclesColor => ("Spectacles colour", STRIP_COLORS.as_slice()),
-        SettingKey::GlovesColor => ("Gloves colour", STRIP_COLORS.as_slice()),
+        SettingKey::SpectaclesColor => ("Spectacles color", STRIP_COLORS.as_slice()),
+        SettingKey::GlovesColor => ("Gloves color", STRIP_COLORS.as_slice()),
         _ => unreachable!("{key:?} is not a palette key"),
     };
     Palette {
@@ -542,7 +542,10 @@ mod tests {
             ]),
         );
         assert_eq!(named_values(SettingKey::WristTapeColorLeft), None);
-        assert_eq!(named_values(SettingKey::GlovesColor), None);
+        assert_eq!(
+            named_values(SettingKey::GlovesColor),
+            named_values(SettingKey::SpectaclesColor)
+        );
     }
 
     // A named list over a range that does not start at 0: the entry count is

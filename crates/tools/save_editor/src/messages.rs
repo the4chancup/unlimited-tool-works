@@ -94,9 +94,6 @@ pub(crate) enum Code {
     /// The Appearance section's FPC group: the gloves checkbox is on with gloves ID 0, so the
     /// player wears winter gloves in winter conditions.
     FpcGlovesCheckboxWinterGloves,
-    /// The Appearance section's FPC group: a custom skin on a player whose body is not hidden
-    /// hides the body but not the jersey.
-    FpcCustomSkinOnNonFpc,
 }
 
 /// Which of `diff`'s two saves a finding is about, as the console names them.
@@ -148,7 +145,6 @@ impl Code {
             Code::FpcUndershortsBreakHiding => "fpc_undershorts_break_hiding",
             Code::FpcTapingShowsPieces => "fpc_taping_shows_pieces",
             Code::FpcGlovesCheckboxWinterGloves => "fpc_gloves_checkbox_winter_gloves",
-            Code::FpcCustomSkinOnNonFpc => "fpc_custom_skin_on_non_fpc",
         }
     }
 
@@ -175,8 +171,7 @@ impl Code {
             | Code::ImportSlotEmpty
             | Code::ImportTextCropped
             | Code::AatfRulesetGone
-            | Code::FpcGlovesCheckboxWinterGloves
-            | Code::FpcCustomSkinOnNonFpc => Severity::Warning,
+            | Code::FpcGlovesCheckboxWinterGloves => Severity::Warning,
             // A skipped team or player is an error and the rest is written, if any applied
             // (`apply-patch` exits 1); so is a dropped teams-list change and a list that cannot be written
             // (`export-teams-list` exits 1).
@@ -222,7 +217,6 @@ impl Code {
         Code::FpcUndershortsBreakHiding,
         Code::FpcTapingShowsPieces,
         Code::FpcGlovesCheckboxWinterGloves,
-        Code::FpcCustomSkinOnNonFpc,
     ];
 }
 
@@ -237,7 +231,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::ImportKeyNotInVersion,
         r#"The team file holds a key the file's version stores but the save's does not."#,
-        r#"The key is dropped from the import, but the rest is written."#,
+        r#"The key is dropped from the import, and the rest of the import is written."#,
     ),
     (
         Code::ImportValueNotEncodable,
@@ -251,8 +245,8 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::ImportSlotEmpty,
-        r#"The team file holds a player for a roster place the team leaves empty."#,
-        r#"The player is skipped, but the rest is written."#,
+        r#"The team file holds a player for a roster slot the team leaves empty."#,
+        r#"The player is skipped, and the rest of the import is written."#,
     ),
     (
         Code::ImportTextCropped,
@@ -267,12 +261,12 @@ const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::PatchTeamNotInSave,
         r#"`apply-patch` could not find a team with this id in the save, so its players were not looked at."#,
-        r#"The rest is written, and the command exits 1. A save holding none of the patch's players is not rewritten over itself."#,
+        r#"The rest is written, and the command exits 1. When `--out` is the same file as `--base` and the save holds none of the patch's players, the save is left as it was."#,
     ),
     (
         Code::PatchPlayerNotInSave,
         r#"`apply-patch` could not find a player with this id in the save."#,
-        r#"The rest is written, and the command exits 1. A save holding none of the patch's players is not rewritten over itself."#,
+        r#"The rest is written, and the command exits 1. When `--out` is the same file as `--base` and the save holds none of the patch's players, the save is left as it was."#,
     ),
     (
         Code::PlayerDiff,
@@ -286,7 +280,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::TeamsListAdded,
-        r#"`export-teams-list` found a team of the save the list lacked and appended it or put it into a placeholder's slot."#,
+        r#"`export-teams-list` found a team in the save that the list lacked, and appended it or put it into a placeholder's slot."#,
         r#"The change is merged into the list, which is written only with `--yes`."#,
     ),
     (
@@ -296,12 +290,12 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::TeamsListUnresolved,
-        r#"`export-teams-list` dropped a change because its id collided with another row of the merged list."#,
-        r#"The change is dropped, but the other changes are written with `--yes`, and the command exits 1."#,
+        r#"`export-teams-list` dropped a change because two teams would then share one id in the merged list."#,
+        r#"The other changes are written with `--yes`, and the command exits 1."#,
     ),
     (
         Code::TeamsListNameDuplicate,
-        r#"`export-teams-list` left a team of the save out because an earlier team folds to the same name, which the list can hold once."#,
+        r#"`export-teams-list` left a team of the save out because an earlier team has the same name, upper and lower case aside, and the list can hold a name once."#,
         r#"The team is left out, and the command exits 1. Rename one of them in the save to keep both."#,
     ),
     (
@@ -317,11 +311,11 @@ const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::TeamsListNotWritten,
         r#"`export-teams-list` ran without `--yes`, so it printed the summary only and left the file untouched."#,
-        r#"Nothing is written. Run it again with `--yes` to write it."#,
+        r#"Run it again with `--yes` to write the list."#,
     ),
     (
         Code::TeamsListReadOnly,
-        r#"`export-teams-list --yes` found that the data directory cannot take the file."#,
+        r#"`export-teams-list --yes` could not write the file into the data folder, because none is chosen yet or it cannot be written to (the line gives the reason)."#,
         r#"Nothing is written, and the command exits 1."#,
     ),
     (
@@ -331,13 +325,13 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::AatfCheckFailed,
-        r#"`check-aatf` could not check the team, because the ruleset's check itself failed on it. The other teams' results do not cover it."#,
+        r#"`check-aatf` could not check the team, because the ruleset's check itself failed on it, so the team has no result (the line gives the error)."#,
         r#"The other teams are still checked, but the command exits 1."#,
     ),
     (
         Code::AatfRulesetGone,
         r#"`check-aatf` ran without `--rules`, and the ruleset picked last in the Save editor is gone from the data folder or no longer loads (the line names it)."#,
-        r#"The first built-in ruleset, which the line names, is checked instead. Pick the cup's rules again in the dropdown on the Save editor's toolbar."#,
+        r#"The official ruleset built into Unlimited Tool Works, which the line names, is checked instead. Pick the cup's rules again in the dropdown on the Save editor's toolbar."#,
     ),
     (
         Code::FpcInnersBreakHiding,
@@ -356,13 +350,8 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::FpcGlovesCheckboxWinterGloves,
-        r#"The gloves checkbox is on with gloves ID 0."#,
-        r#"Nothing is changed for you. The player wears winter gloves in winter conditions, so untick the checkbox or give him a gloves ID if that is not wanted."#,
-    ),
-    (
-        Code::FpcCustomSkinOnNonFpc,
-        r#"A player wears a custom skin, but his body is not hidden by the FPC hide boots ID from Settings, so the skin hides his body but not his jersey."#,
-        r#"Nothing is changed for you. Hide the body too, or pick a preset skin."#,
+        r#"The Player gloves checkbox is on with Gloves ID 0, so the player wears winter gloves in winter conditions."#,
+        r#"Nothing is changed for you. Untick Player gloves, or give the player a gloves ID, if that is not wanted."#,
     ),
 ];
 
@@ -543,16 +532,16 @@ pub(crate) fn aatf_ruleset_gone(ruleset: &str, used: &str) -> Message {
 }
 
 /// The message for one `fpc::check` finding of the Appearance section's FPC group: the code
-/// it maps to and the finding's own severity. A code `fpc::check` does not emit is a
-/// programming error and panics naming it.
+/// it maps to and the finding's own severity. The group checks with `hidden` from
+/// `is_fpc_player`, under which the custom-skin code cannot be emitted, so a code outside
+/// the four is a programming error and panics naming it.
 pub(crate) fn fpc_finding(finding: &fpc::Finding) -> Message {
     let code = match finding.code {
         "fpc_inners_break_hiding" => Code::FpcInnersBreakHiding,
         "fpc_undershorts_break_hiding" => Code::FpcUndershortsBreakHiding,
         "fpc_taping_shows_pieces" => Code::FpcTapingShowsPieces,
         "fpc_gloves_checkbox_winter_gloves" => Code::FpcGlovesCheckboxWinterGloves,
-        "fpc_custom_skin_on_non_fpc" => Code::FpcCustomSkinOnNonFpc,
-        other => panic!("fpc::check emits its five codes, got {other}"),
+        other => panic!("the FPC group maps four of fpc::check's codes, got {other}"),
     };
     let mut message = message(code, vec![]);
     message.severity = match finding.severity {

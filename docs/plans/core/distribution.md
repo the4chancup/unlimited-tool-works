@@ -374,8 +374,8 @@ processor.
    move the install.
 
    The readme and `quick_compile.bat` are overwritten without ceremony (not user-edited).
-6. **Restart**: `Update ready` says "v<new> is installed. Restart to start using it, the version
-   you are running now will stay in the old folder." It offers **Restart now** (the ordinary
+6. **Restart**: `Update ready` says "v<new> is installed. Restart to start using it. The program
+   you are running now has been moved to a folder named old, beside the new one." It offers **Restart now** (the ordinary
    close prompts, then the new exe starts and shows `Updated to v<new>` with What's new) and
    **Later** (the next start runs the new exe).
 

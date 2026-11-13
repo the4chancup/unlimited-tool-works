@@ -393,7 +393,7 @@ manager_id = 1000               # PES 17 and later
 stadium_id = 12
 color_1 = [31, 58, 15]          # PES 17 and later; red, green, blue: 0 to 63 each
 color_2 = [63, 63, 63]
-kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; ten entries, values as stored
+kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; as the game stores them
 
 [team.edit_flags]
 name = true
@@ -438,7 +438,7 @@ defensive_line = 3              # 1 to 10
 compactness = 7                 # 1 to 10
 numbers_in_attack = 3           # 1 few, 2 medium, 3 many
 numbers_in_defence = 3          # 1 few, 2 medium, 3 many
-# players: in the order of starting_eleven (its first entry is the first player here); roster slots count from 0, so slot 0 is [players.01]
+# players: where each starting_eleven player stands, in its order; roster slot 0 is [players.01]
 [tactics.preset_1.formation_1]  # formation_1 kick-off, formation_2 in possession, formation_3 out of possession
 players = [{ position = "GK", x = 52, y = 2 }, ...]  # eleven; position "GK" .. "CF"; x, y as stored
 [tactics.preset_1.instructions] # PES 17 and later; instruction names, converted to the target version's on import
@@ -455,7 +455,7 @@ height = 180                    # cm
 weight = 75                     # kg
 boots_id = 3601
 gloves_id = 0
-base_copy_id = 84101            # the player whose look this one copies; his own id (the team id times 100 plus the slot) means none, and an import turns it into the target player's own id
+base_copy_id = 84101            # the player whose look this one copies; his own id (the team id times 100 plus the slot) means none and becomes the target player's own id on import
 
 [players.01.stats]              # stored values; the comments give the game's editor range, the parser accepts the field's stored range
 attacking_prowess = 77
@@ -487,7 +487,7 @@ weak_foot_usage = 1             # 0 to 3
 weak_foot_accuracy = 1          # 0 to 3
 form = 3                        # 0 to 7
 injury_resistance = 1           # 0 to 2
-star = 2                        # PES 19 and later, 0 to 7
+star = 2                        # PES 19 and later; 0 to 7
 playing_attitude = 0            # PES 20 and later
 
 [players.01.positions]
@@ -517,7 +517,7 @@ hair = true
 physique = false
 strip = false
 
-[players.01.appearance]         # settings.toml's [appearance] table, verbatim
+[players.01.appearance]         # the comments give the game's editor range; an import accepts the stored range
 skin_color = 1
 # ... [players.01.appearance.physique] / .strip / .motion / .face / .hair, as in settings.toml
 ```
@@ -792,7 +792,7 @@ version holds, since a missing key means a broken patch whose apply would reset 
 other keys.
 
 ```toml
-# aesthetics_patch.toml, written by the Team compiler to its output folder
+# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
 pes_version = 21
 tool_version = "1.4.0"
 allocation_scheme_version = 1
@@ -803,7 +803,7 @@ compiled = 2026-09-12T14:03:00Z
 id = 702
 name = "/a/"                 # for the reader; the id is what is applied
 
-[teams.players.03]           # slot 03 → player 70203
+[teams.players.03]           # player 70203
 name = "Snuffy"              # a write_names export's only; absent = not written
 shirt_name = "SNUFFY"        # likewise
 boots_id = 143               # the resolved ID; absent = the save keeps his

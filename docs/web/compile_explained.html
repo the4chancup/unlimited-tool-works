@@ -86,8 +86,9 @@ looks into the save. The exports are never changed.</p>
 
 <h2>What goes in and what comes out</h2>
 <p>Each box on the left is part of one export; the lines show where it ends up. Point at a
-box to follow only its lines. The CPK names are the ones of the league's first DLC, with
-<code>multicpk_mode = true</code>.</p>
+box to follow only its lines. The CPK names are those of the league's first DLC, compiled
+with <code>multicpk_mode = true</code>, a setting explained in "The first DLC and the
+matchdays after it" below.</p>
 <figure>
 <svg class="map" id="map" viewBox="0 0 1000 600" role="img"
   aria-label="Map from the parts of an export to the files the compile writes">
@@ -249,17 +250,18 @@ out again when the save cannot be patched, so the two do not drift apart.</figca
 </figure>
 <ul>
 <li><strong>Stage 1 can stop the run.</strong> When the window says
-<code>dpfilelist_outdated</code>, the game's list does not know the league's CPKs yet and
-nothing was compiled. The README's "Compiling" section, step 4, has the command that
-installs the official list; run <code>quick_compile.bat</code> again after it.</li>
+<code>dpfilelist_outdated</code>, the game's <code>DpFileList.bin</code> does not list the
+league's CPKs yet and nothing was compiled. Step 4 of "Compiling" in <code>README.txt</code>
+has the command that installs the official list; run <code>quick_compile.bat</code> again
+after it.</li>
 <li><strong>Stage 5 needs PES closed.</strong> The game writes its own copy of the save
 over the file when you leave Edit mode, which would undo the patch. With PES running, the
 compile skips the save and says so (<code>savefile_skipped_pes_running</code>).</li>
 <li><strong>Which save is patched.</strong> The one <code>savefile_path</code> names in
 <code>data\settings.toml</code>, or the game's own save under
 <code>Documents\KONAMI</code> when that line is not set. For an official save kept
-elsewhere, the README's "For VGL's organizer" section, step 3, has the one command that
-applies the patch to it.</li>
+elsewhere, step 3 of "For VGL's organizer" in <code>README.txt</code> has the one command
+that applies the patch to it.</li>
 </ul>
 
 <h2>When something in an export is wrong</h2>
@@ -290,8 +292,8 @@ out is still installed with the rest: send the manager the lines about their exp
 compile again when the fixed export is in.</p>
 
 <h2>The first DLC and the matchdays after it</h2>
-<p>Two settings in <code>data\settings.toml</code> decide which CPKs a compile writes. The
-README's "For VGL's organizer" section, steps 1 and 4, says when to change them.</p>
+<p>Two settings in <code>data\settings.toml</code> decide which CPKs a compile writes. Steps
+1 and 4 of "For VGL's organizer" in <code>README.txt</code> say when to change them.</p>
 <table>
 <tr><th></th><th>The first DLC</th><th>A later matchday</th></tr>
 <tr><td>Settings</td><td><code>multicpk_mode = true</code></td>
@@ -308,15 +310,16 @@ does not hold is removed from the team.</td><td>A Midcup export only adds: what 
 already has stays.</td></tr>
 </table>
 <p>The game loads the CPKs in the order its <code>DpFileList.bin</code> lists them, and a
-later one covers an earlier one. That is why a matchday's CPK needs only what changed, and
-why a first DLC compiled into <code>4cc_99_test.cpk</code> by mistake would cover every
-matchday after it.</p>
+later one covers an earlier one. That is why a matchday's CPK needs only what changed. It
+is also why the first DLC must not land in <code>4cc_99_test.cpk</code>, where a compile
+goes when both settings are left as they come: the game loads that CPK last, so it would
+cover every matchday after it.</p>
 <p>A referee export (its name starts with <code>refs</code>) is compiled with the others
 and goes into a CPK of its own, <code>4cc_18_referees.cpk</code>, in either mode.</p>
 
 <h2>What the compile window tells you</h2>
 <ul>
-<li><strong>One line per finding, then one line that sums up.</strong> The last line counts
+<li><strong>One line per warning or error, then one line that sums up.</strong> The last line counts
 the files written, the exports and folders left out, and the folders with errors.</li>
 <li><strong>Errors are what to send back to a manager.</strong> A line marked Error names
 something the team needed that was left out. A line marked Warning names something the

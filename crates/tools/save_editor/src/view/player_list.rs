@@ -112,7 +112,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     }
     ui.add(text_box(
         egui::TextEdit::singleline(&mut view.filter)
-            .hint_text("Filter every team (name, shirt name or id)")
+            .hint_text("Team or player: name, shirt name or ID")
             .desired_width(frame_width),
     ));
     // The quick actions sit at the panel's bottom, under the list (the

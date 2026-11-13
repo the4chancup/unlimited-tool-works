@@ -33,7 +33,7 @@ struct BogloFields<'a> {
 }
 
 fn boglo_fields(nodes: &[accesskit::Node]) -> BogloFields<'_> {
-    let incremental = node_labeled(nodes, Role::RadioButton, "Set incremental value:");
+    let incremental = node_labeled(nodes, Role::RadioButton, "Set values starting from:");
     let start = right_of(nodes, incremental, Role::SpinButton);
     let end = first_right_of(nodes, start, |node| {
         node.value()
@@ -129,7 +129,7 @@ fn the_boglo_option_column_is_as_wide_as_its_widest_option() {
     let button = egui::TextStyle::Button.resolve(&style);
     let widest = [
         "Unchanged",
-        "Set incremental value:",
+        "Set values starting from:",
         "Set all to the same ID:",
         "Set like boot IDs",
     ]
@@ -144,7 +144,7 @@ fn the_boglo_option_column_is_as_wide_as_its_widest_option() {
     })
     .fold(0.0, f32::max);
     let option = widest + style.spacing.icon_width + style.spacing.icon_spacing;
-    let incremental = node_labeled(&nodes, Role::RadioButton, "Set incremental value:")
+    let incremental = node_labeled(&nodes, Role::RadioButton, "Set values starting from:")
         .bounds()
         .expect("the radio's bounds");
     let start = boglo_fields(&nodes)
@@ -412,7 +412,7 @@ fn set_numbers_every_filled_slot_from_the_start_and_closes() {
     );
     click(
         &mut window,
-        node_labeled(&nodes, Role::RadioButton, "Set incremental value:"),
+        node_labeled(&nodes, Role::RadioButton, "Set values starting from:"),
         &mut view,
     );
     let nodes = draw(&mut window, &mut view);
@@ -446,7 +446,7 @@ fn a_start_past_the_range_shows_the_error_under_the_groups_and_writes_nothing() 
         .collect();
     click(
         &mut window,
-        node_labeled(&nodes, Role::RadioButton, "Set incremental value:"),
+        node_labeled(&nodes, Role::RadioButton, "Set values starting from:"),
         &mut view,
     );
     let nodes = draw(&mut window, &mut view);

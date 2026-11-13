@@ -46,7 +46,7 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset) {
         ui.label("At most");
         number(ui, &mut universal.max_skill_cards, 0..=41);
         ui.label("skill cards per player");
-        ui.weak("(a ruleset's choice; the official rules use 10)");
+        ui.weak("(the official rules use 10)");
     });
     com_styles(ui, universal);
     checkbox(

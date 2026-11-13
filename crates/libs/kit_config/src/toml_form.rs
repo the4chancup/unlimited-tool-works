@@ -504,7 +504,7 @@ pub fn to_toml(config: &KitConfig) -> String {
         c.shirt.tight
     ));
     line(&format!(
-        "pattern = {}                 # 0-13 (PES15 output supports 0-5)",
+        "pattern = {}                 # 0-13 (PES 15: 0-11)",
         c.shirt.pattern
     ));
     line(&format!(
@@ -522,7 +522,7 @@ pub fn to_toml(config: &KitConfig) -> String {
         c.shorts.model
     ));
     line("");
-    line("[colors]                    # the config's five RGB fields");
+    line("[colors]                    # the kit's own colors; the menu's are in colors.txt");
     line(&format!("shirt1 = \"{}\"", rgb_string(c.colors.shirt1)));
     line(&format!("shirt2 = \"{}\"", rgb_string(c.colors.shirt2)));
     line(&format!(
@@ -535,7 +535,7 @@ pub fn to_toml(config: &KitConfig) -> String {
     line("[name]");
     line(&format!("show = {}", c.name.show));
     line(&format!(
-        "shape = \"{}\"          # straight / light-curve / medium-curve / extreme-curve",
+        "shape = \"{}\"          # \"straight\" / \"light-curve\" / \"medium-curve\" / \"extreme-curve\"",
         shape_repr(c.name.shape)
     ));
     line(&format!(
@@ -574,7 +574,7 @@ pub fn to_toml(config: &KitConfig) -> String {
     line("");
     line("[number.shorts]");
     line(&format!(
-        "side = \"{}\"               # left / right",
+        "side = \"{}\"               # \"left\" / \"right\"",
         match c.numbers.shorts.side {
             Side::Left => "left",
             Side::Right => "right",
@@ -612,10 +612,8 @@ pub fn to_toml(config: &KitConfig) -> String {
         .collect();
     if !differing.is_empty() {
         line("");
-        line(
-            "[unknown]                   # undecoded bits, preserved verbatim (format table above);",
-        );
-        line("# keys only present when they differ from the template");
+        line("[unknown]                   # bits not yet decoded, carried over unchanged;");
+        line("# listed only where they differ from the default kit config");
         for (offset, value) in differing {
             line(&format!("\"0x{offset:02X}\" = {value}"));
         }

@@ -833,7 +833,7 @@ fn a_card_tick_on_another_player_is_its_own_undo_entry() {
         .iter()
         .find(|(_, node)| {
             node.role() == Role::TextInput
-                && node.placeholder() == Some("Filter every team (name, shirt name or id)")
+                && node.placeholder() == Some("Team or player: name, shirt name or ID")
         })
         .expect("the filter box");
     let (card_a, _) = nodes

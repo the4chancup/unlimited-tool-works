@@ -566,8 +566,8 @@ pub(super) fn edit_mode_dialog(
     let response = modal(ui.ctx(), id, format!("{game} is running"), |ui| {
         ui.label(
             "If the game's Edit mode is open, use its Data Management > Load after saving, \
-             before you leave Edit mode: leaving it after changing anything there writes the \
-             game's own copy over this save.",
+             before you leave Edit mode. Leaving Edit mode after changing anything in it \
+             writes the game's own copy over this save.",
         );
         modal_sentence_gap(ui);
         ui.label("If Edit mode is closed, the changes show when you open it.");

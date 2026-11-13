@@ -91,8 +91,8 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
         "Set boots and gloves IDs for everyone\u{2026}",
         "Set player names to positions",
         "Clear visual flags",
-        "Set FPC invisibility",
-        "Remove FPC invisibility",
+        "Hide default body (FPC)",
+        "Show default body (FPC)",
         "Import / export team file\u{2026}",
     ];
     assert!(
@@ -107,7 +107,7 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
     // The separator: a horizontal line across the popup between the FPC
     // entry and the new one.
     let nodes: Vec<accesskit::Node> = pairs.into_iter().map(|(_, node)| node).collect();
-    let fpc = menu_item(&nodes, "Remove FPC invisibility")
+    let fpc = menu_item(&nodes, "Show default body (FPC)")
         .bounds()
         .expect("drawn");
     let last = menu_item(&nodes, "Import / export team file")

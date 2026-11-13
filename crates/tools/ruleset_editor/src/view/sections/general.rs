@@ -90,8 +90,9 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
     ui.separator();
     ui.strong("Rating stats");
     ui.weak(
-        "A player's rating is the highest of these; it picks his tier. What a stat may sit at \
-         is the target, the warning band and the stat total, not the rating.",
+        "A player's rating is the highest of these stats, and it picks his tier. The \
+         values a stat may take come from its target, the warning band and the stat \
+         total, not from the rating.",
     );
     checklist(ui, ruleset, Checklist::Rating, &ABILITY_STATS);
     ui.separator();

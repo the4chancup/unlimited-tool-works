@@ -227,8 +227,8 @@ fn the_question_says_how_to_keep_the_write() {
         label_value(
             &nodes,
             "If the game's Edit mode is open, use its Data Management > Load after saving, \
-             before you leave Edit mode: leaving it after changing anything there writes the \
-             game's own copy over this save."
+             before you leave Edit mode. Leaving Edit mode after changing anything in it \
+             writes the game's own copy over this save."
         ),
         "the open Edit mode's sentence"
     );

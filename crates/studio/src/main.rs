@@ -31,8 +31,8 @@ use studio_core::icons;
 use studio_core::updater::{self, CheckReply, Fetch};
 use studio_core::{
     AppPaths, CommonSettings, EXE_NAME, LaunchMode, PlannedTool, SETTINGS_FILE_NAME, Settings,
-    ShellCondition, StudioApp, StudioTool, ToolContext, parse_launch, resolve_data_dir, run_cli,
-    run_gui, run_help, settings_file_writable, user_config_dir,
+    StudioApp, StudioTool, ToolContext, parse_launch, resolve_data_dir, run_cli, run_gui, run_help,
+    settings_file_writable, user_config_dir,
 };
 
 use crate::console::{RunLog, log_panics, spawn_notice_printer, spawn_printer};
@@ -333,12 +333,16 @@ fn run_loaded(
 ) -> io::Result<u8> {
     let skipped = settings.common.skipped_version.clone();
     // The CLI never writes settings, so the read-only data directory is probed rather than
-    // learned from a failed save. The condition prints once, as stderr's first line
-    // (ST-CLI-01).
+    // learned from a failed save, and the line says what the probe found: the window's
+    // "Settings could not be saved" would name a save that never ran. It prints once, as
+    // stderr's first line (ST-CLI-01).
     if let Some(dir) = &paths.data_dir
-        && !settings_file_writable(dir)
+        && let Err(error) = settings_file_writable(dir)
     {
-        report(log.as_deref(), &ShellCondition::DataDirReadOnly.text())?;
+        report(
+            log.as_deref(),
+            &format!("The settings file cannot be written: {error}"),
+        )?;
     }
     let (events_tx, events_rx) = unbounded();
     let (requests_tx, requests_rx) = unbounded();

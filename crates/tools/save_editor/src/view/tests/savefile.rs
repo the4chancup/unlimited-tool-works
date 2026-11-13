@@ -285,7 +285,7 @@ fn the_locked_savefile_menu_disables_fix_database_only() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
         Some(
-            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch."
                 .to_string(),
         ),
         "its hover is the ownership line"
@@ -326,7 +326,7 @@ fn output_rosters_to_tsv_refuses_the_open_save() {
     draw(&mut window, &mut view);
     let nodes = draw(&mut window, &mut view);
     let sentence = format!(
-        "{}: that is the save being read, and a roster sheet written over it would lose it",
+        "{}: that is the open save, and writing the roster sheet over it would destroy the save",
         path.display()
     );
     for text in ["Cannot write the roster sheet", sentence.as_str()] {

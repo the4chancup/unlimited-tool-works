@@ -15,6 +15,7 @@ use crate::model::team::TeamEntry;
 use crate::schema::TacticsSchema;
 use crate::schema::fields::{PresetField, TacticsField};
 use crate::schema::instruction;
+use crate::settings_toml::document::padded;
 
 use super::items::{
     as_table, boolean, emit, gated, int_array, label, label_position, opt, ranged, reject,
@@ -49,56 +50,49 @@ pub(super) fn emit_tactics(
         "roster slots, counting from 0; 255 = nobody",
     );
     let sp = &tactics.set_pieces;
-    out.push_str("\n[tactics.set_pieces]\n");
+    out.push('\n');
+    out.push_str(&padded(
+        "[tactics.set_pieces]",
+        "roster slots, counting from 0; 255 = nobody",
+    ));
+    out.push('\n');
     emit(
         out,
         "free_kick_long",
         sp.free_kick_long.map(|v| v.to_string()),
         "255",
-        "roster slots, counting from 0; 255 = nobody",
+        "",
     );
     emit(
         out,
         "free_kick_short",
         sp.free_kick_short.map(|v| v.to_string()),
         "255",
-        "roster slots, counting from 0; 255 = nobody",
+        "",
     );
     emit(
         out,
         "free_kick_second",
         sp.free_kick_second.map(|v| v.to_string()),
         "255",
-        "roster slots, counting from 0; 255 = nobody",
+        "",
     );
     emit(
         out,
         "corner_left",
         sp.corner_left.map(|v| v.to_string()),
         "255",
-        "roster slots, counting from 0; 255 = nobody",
+        "",
     );
     emit(
         out,
         "corner_right",
         sp.corner_right.map(|v| v.to_string()),
         "255",
-        "roster slots, counting from 0; 255 = nobody",
+        "",
     );
-    emit(
-        out,
-        "penalty",
-        sp.penalty.map(|v| v.to_string()),
-        "255",
-        "roster slots, counting from 0; 255 = nobody",
-    );
-    emit(
-        out,
-        "captain",
-        sp.captain.map(|v| v.to_string()),
-        "255",
-        "roster slots, counting from 0; 255 = nobody",
-    );
+    emit(out, "penalty", sp.penalty.map(|v| v.to_string()), "255", "");
+    emit(out, "captain", sp.captain.map(|v| v.to_string()), "255", "");
     let auto = &tactics.auto;
     out.push_str("\n[tactics.auto]\n");
     emit(
@@ -208,13 +202,18 @@ pub(super) fn emit_tactics(
             let Some(players) = formation else { continue };
             if n == 1 && f == 0 {
                 out.push_str(
-                    "\n# players: in the order of starting_eleven (its first entry is the first \
-                     player here); roster slots count from 0, so slot 0 is [players.01]\n",
+                    "\n# players: where each starting_eleven player stands, in its order; \
+                     roster slot 0 is [players.01]\n",
                 );
+                out.push_str(&padded(
+                    &format!("[tactics.preset_{n}.formation_{}]", f + 1),
+                    "formation_1 kick-off, formation_2 in possession, formation_3 out of possession",
+                ));
+                out.push('\n');
             } else {
                 out.push('\n');
+                out.push_str(&format!("[tactics.preset_{n}.formation_{}]\n", f + 1));
             }
-            out.push_str(&format!("[tactics.preset_{n}.formation_{}]\n", f + 1));
             out.push_str("players = [\n");
             for slot in players.iter() {
                 let entry = slot_text(

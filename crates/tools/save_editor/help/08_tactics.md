@@ -16,10 +16,11 @@ The part is a grid of three columns and three rows:
 **The pitch**
 
 The **pitch** is where the formation takes shape, drawn like the game's own
-formation screen: each starter stands at his spot, drawn as his portrait over a
+formation screen: each starter stands at his spot, shown as his portrait over a
 badge with his position and his name below it. A name too long for the badge
-scrolls now and then, as in the game; the **Scroll names** checkbox at the right
-of the formation bar holds them still when off, and the setting is remembered.
+scrolls now and then, as in the game; turning off the **Scroll names** checkbox,
+at the right of the formation bar, holds the names still, and the setting is
+remembered.
 
 The badge's right end shows his overall at the position he plays there, as the
 game's does, and a gold, silver or bronze outline round the badge names his
@@ -54,8 +55,8 @@ position.
 Unless the cup allows illegal formations (below), dropping him on another
 starter (the goalkeeper excepted) trades their places and positions in the
 formation on screen alone, as the game's own drag does: the preset's other two
-formations and the other presets keep theirs. While you hold him over the other,
-that one's marker is marked with corner brackets and the dragged one turns half
+formations and the other presets keep theirs. While you hold him over the other
+starter, that starter's marker gets corner brackets and the dragged one turns half
 transparent, so a drag meant only to move him can still be steered aside onto
 the grass.
 
@@ -101,7 +102,7 @@ arrows stay under the pointer, and a click anywhere outside closes them.
 **The three formations**
 
 The **Kick-off**, **In-possession** and **Out-of-possession** buttons on the
-formation bar pick which of the preset's three formations it shows. The game
+formation bar pick which of the preset's three formations the pitch shows. The game
 uses the second and third only while the preset's **Fluid formation** is on, so
 while it is off (and always on PES 2015) the buttons stay on Kick-off and cannot
 be clicked. The formation bar's Copy/swap still works, so you can prepare the
@@ -132,9 +133,9 @@ who joins the attack: each is a label over a chip naming its holder, or
 **Unassigned** where nobody holds it. **Join the attack** has three chips, one
 per joining player.
 
-Click a chip, then click the pitch player. Join keeps its mode open so up to
-three can be picked or unpicked, and all three chips stay highlighted while it
-is open; click a chip again to close it.
+Click a chip, then click the pitch player who takes the job. **Join the attack**
+stays open after a click, so up to three players can be picked or unpicked, and
+all three of its chips stay highlighted until you click a chip again to close it.
 
 **Presets**
 
@@ -164,8 +165,8 @@ Each is a label over its control:
 The defensive style's choices are shortened so the row fits; point at one to
 read its full name.
 
-From PES 2017 on the game's own Game Plan no longer shows the two numbers, so on
-a PES 2017 to 2021 save their choices are disabled, the stored one on a grey
+From PES 2017 on, the game's own Game Plan no longer shows numbers in attack and
+numbers in defence, so on a PES 2017 to 2021 save their choices are disabled, the stored one on a grey
 rectangle, unless the cup allows illegal formations (see **When the cup allows
 illegal formations** above).
 

@@ -60,7 +60,7 @@ pub(super) const PLAYABLE_POSITIONS_LABEL: &str = "Playable positions";
 
 /// The line a tier check's failure draws in the badge's place: it opens
 /// the error in the refusal dialog (the quick actions' line's shape).
-const TIER_CHECK_FAILED_LINE: &str = "Tier check failed, click for more information.";
+const TIER_CHECK_FAILED_LINE: &str = "Tier check failed: click to see why.";
 
 /// The gap between the panels of one column (the draft's `.pcol` `gap`),
 /// and between Skills' two card columns (`cards` keeps the same 14).
@@ -928,9 +928,9 @@ fn spawn_badge(
 /// height system.
 fn own_badge(rules: &aatf::Rules, team: &TeamView, slot: u8) -> OwnBadge {
     let Some(player) = team.player(slot) else {
-        // The place as the player list numbers it, from 01.
+        // The slot as the player list numbers it, from 01.
         return OwnBadge::Failed(format!(
-            "place {:02} of the roster holds no player",
+            "slot {:02} of the roster holds no player",
             u32::from(slot) + 1
         ));
     };

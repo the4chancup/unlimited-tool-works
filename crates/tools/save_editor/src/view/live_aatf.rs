@@ -41,7 +41,7 @@ const WINDOW_INSET: egui::Vec2 = egui::vec2(16.0, 40.0);
 const POP_OUT_TOOLTIP: &str = "Open Live AATF in a window of its own";
 
 /// The window's dock icon's tooltip and accessible name.
-const DOCK_TOOLTIP: &str = "Put Live AATF back in its dock";
+const DOCK_TOOLTIP: &str = "Put Live AATF back in its panel";
 
 /// The close buttons' tooltip, and the dock's close button's accessible
 /// name.

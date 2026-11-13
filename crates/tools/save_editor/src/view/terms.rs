@@ -467,7 +467,7 @@ fn on_off(stored: u32) -> &'static str {
 /// starts at a capital or a digit after a small letter, and at a capital
 /// after a digit; the words in sentence case, Id as ID, Com as COM and
 /// Color as the window spells them, a PES 2015-only field marked so
-/// (`NoseHeight` is "Nose height", `Color1Red` "Colour 1 red",
+/// (`NoseHeight` is "Nose height", `Color1Red` "Color 1 red",
 /// `EditedComStyles` "Edited COM styles", `Pes15JawDepth` "Jaw depth
 /// (PES 2015)"). The draft's `fieldWords`.
 fn field_words(name: &str) -> String {
@@ -492,7 +492,7 @@ fn field_words(name: &str) -> String {
         .map(|word| match word {
             "Id" => "ID".to_owned(),
             "Com" => "COM".to_owned(),
-            "Color" => "colour".to_owned(),
+            "Color" => "color".to_owned(),
             _ => word.to_lowercase(),
         })
         .collect();
@@ -507,9 +507,9 @@ fn field_words(name: &str) -> String {
 }
 
 /// A roster slot as the player list numbers it, from 01: slot 3 is
-/// "Player 04".
+/// "Slot 04".
 fn slot_label(slot: u8) -> String {
-    format!("Player {:02}", u32::from(slot) + 1)
+    format!("Slot {:02}", u32::from(slot) + 1)
 }
 
 /// The `SettingKey` that `writes` (`keys.rs`' `player_field` or

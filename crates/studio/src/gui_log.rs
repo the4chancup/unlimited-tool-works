@@ -296,10 +296,12 @@ fn crash_text(message: &str, log: Option<&Path>) -> String {
     );
     match log {
         Some(path) => format!(
-            "{what}\n\nPlease post this file where you report problems: {}. It holds what the program was doing, and your home folder is written in it as ~.",
+            "{what}\n\nPlease post this file on the /aesco/ server or the divegrass thread: {}. It holds what the program was doing, and it shows your home folder as ~, which keeps your user name out of it.",
             path.display()
         ),
-        None => format!("{what}\n\nPlease post this message where you report problems."),
+        None => format!(
+            "{what}\n\nPlease post this message on the /aesco/ server or the divegrass thread."
+        ),
     }
 }
 
@@ -331,14 +333,14 @@ pub(crate) fn unclean_text(old_log: &Path, dump: Option<&Path>) -> String {
                 None => dump.display().to_string(),
             };
             format!(
-                "The last session did not close normally. If it crashed, please post these two files where you report problems: {} and {}. Your home folder is written in the log as ~, but {} may still show your user name.",
+                "The last session did not close normally. If it crashed, please post these two files on the /aesco/ server or the divegrass thread: {} and {}. The log shows your home folder as ~, which keeps your user name out of it, but {} may still show your user name.",
                 old_log.display(),
                 dump.display(),
                 dump_name
             )
         }
         None => format!(
-            "The last session did not close normally. If it crashed, please post this file where you report problems: {}. Your home folder is written in it as ~.",
+            "The last session did not close normally. If it crashed, please post this file on the /aesco/ server or the divegrass thread: {}. It shows your home folder as ~, which keeps your user name out of it.",
             old_log.display()
         ),
     }
@@ -644,7 +646,9 @@ mod tests {
         let text = crash_text("the window froze", None);
         assert!(text.contains("the window froze"), "{text}");
         assert!(
-            text.contains("Please post this message where you report problems."),
+            text.contains(
+                "Please post this message on the /aesco/ server or the divegrass thread."
+            ),
             "{text}"
         );
     }
@@ -782,7 +786,7 @@ mod tests {
         assert!(text.contains("C:\\data\\utw.dmp"), "{text}");
         assert_eq!(
             unclean_text(Path::new("C:\\data\\utw.old.log"), None),
-            "The last session did not close normally. If it crashed, please post this file where you report problems: C:\\data\\utw.old.log. Your home folder is written in it as ~."
+            "The last session did not close normally. If it crashed, please post this file on the /aesco/ server or the divegrass thread: C:\\data\\utw.old.log. It shows your home folder as ~, which keeps your user name out of it."
         );
     }
 

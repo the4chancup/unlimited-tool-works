@@ -8,7 +8,7 @@ use crate::test_support::cup_save::{
 use super::*;
 
 /// The filter box's hint, which AccessKit gives as its placeholder.
-const FILTER_HINT: &str = "Filter every team (name, shirt name or id)";
+const FILTER_HINT: &str = "Team or player: name, shirt name or ID";
 
 /// `outside_cup_file`'s PES 17 save written under `test`'s scratch, and the unrostered
 /// player's id. Team 300's first player, the unrostered player and the cup player 70101

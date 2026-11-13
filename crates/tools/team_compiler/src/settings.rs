@@ -37,7 +37,7 @@ pub(crate) struct TeamCompilerSettings {
     pub(crate) dds_compression: DdsCompression,
     /// Disallowed file types are errors when on, info notes when off.
     pub(crate) strict_file_type_check: bool,
-    /// Keep folders with errors instead of discarding them.
+    /// Whether folders with errors are kept instead of discarded.
     pub(crate) pass_through: bool,
     /// The working teams list; a relative path resolves in the data directory.
     pub(crate) teams_list_path: PathBuf,

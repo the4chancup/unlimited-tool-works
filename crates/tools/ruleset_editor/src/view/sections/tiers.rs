@@ -87,7 +87,7 @@ fn tiers_table(
                 "Paid cards",
                 "Min. cards",
                 "A positions",
-                "Name colour",
+                "Name color",
                 "Warn band",
                 "Stats ≤ targets",
                 "",
@@ -231,15 +231,15 @@ fn tier_row(
 
     cell(ui, index, drop, |ui| {
         widgets::number(ui, &mut ruleset.tiers[index].stat_warning, 0..=99).on_hover_text(
-            "Points over the target that warn rather than err, for the ability stats that may sit below \
-             their target (0: every point errs)",
+            "How many points over the target give a warning instead of an error, for the ability \
+             stats that may sit below their target (0: every point over is an error)",
         )
     });
 
     cell(ui, index, drop, |ui| {
         checkbox(ui, &mut ruleset.tiers[index].total_within_targets, "").on_hover_text(
-            "The ability stats that may sit below their target add up to at most their targets, an \
-             error past them",
+            "Ticked: the ability stats that may sit below their target must not add up to more \
+             than their targets do. Going over is an error",
         )
     });
 
@@ -354,7 +354,7 @@ fn name_color_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
     let tier = &mut ruleset.tiers[index];
     let mut on = tier.name_color.is_some();
     if checkbox(ui, &mut on, "")
-        .on_hover_text("This tier's names carry a colour code")
+        .on_hover_text("This tier's names carry a color code")
         .changed()
     {
         tier.name_color = on.then(|| "cc9900ff".to_string());
@@ -371,7 +371,7 @@ fn name_color_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
     let output = color_tools::picker::color_field(ui, ("tier name colour", index), &mut rgb, &[]);
     output
         .response
-        .on_hover_text("Colour (the code's last two digits are the alpha)");
+        .on_hover_text("Color (the code's last two digits are the alpha)");
     if output.changed {
         tier.name_color = Some(code_with_alpha(rgb, tier.name_color.as_deref()));
     }
@@ -381,7 +381,7 @@ fn name_color_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
                 .desired_width(76.0)
                 .font(egui::TextStyle::Monospace),
         ))
-        .on_hover_text("The eight bytes after \\x11c in the name");
+        .on_hover_text("The eight characters after \\x11c in the player's name");
     }
 }
 
@@ -554,7 +554,8 @@ fn medal_systems(ui: &mut egui::Ui, ruleset: &mut Ruleset, medal_tiers: &BTreeSe
     ui.strong("Medal systems");
     ui.weak(
         "Alternative medal counts: the team's counts of the ticked tiers must equal one \
-         system's. Unticked tiers keep their own count, one of them the rest of the squad.",
+         system's. Unticked tiers keep their own count, and one of them can be the rest \
+         of the squad.",
     );
     let tiers = tier_ids(ruleset);
     let has_systems = !ruleset.medal_systems.is_empty();

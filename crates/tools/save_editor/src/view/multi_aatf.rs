@@ -266,7 +266,7 @@ fn group_line(file: &EditFile, team_id: u32, slot: Option<u8>) -> String {
         .and_then(|team| team.roster.get(usize::from(slot)))
         .and_then(|roster| file.player(roster.player_id))
         .map_or_else(
-            || format!("Slot {slot}"),
+            || format!("Slot {:02}", slot + 1),
             |player| format!("{} {}", player.id, display_name(&player.name)),
         )
 }

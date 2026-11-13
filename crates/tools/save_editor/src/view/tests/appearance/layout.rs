@@ -286,8 +286,8 @@ fn the_setting_off_draws_no_lock_and_the_setting_on_locks_the_paths() {
     for label in [
         "Set boots and gloves IDs for everyone",
         "Clear visual flags",
-        "Set FPC invisibility",
-        "Remove FPC invisibility",
+        "Hide default body (FPC)",
+        "Show default body (FPC)",
     ] {
         assert!(
             !menu_item(&nodes, label).is_disabled(),

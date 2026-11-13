@@ -26,8 +26,8 @@ pub(crate) type Discover = Box<dyn Fn(PesVersion) -> Vec<SavefileCandidate>>;
 pub(crate) type OpenDialog = Box<dyn FnMut(Option<&Path>) -> Option<PathBuf>>;
 
 /// `Choose file…`'s tooltip.
-const CHOOSE_FILE_TIP: &str =
-    "Opens in the folder the last save was opened from, or the newest found save's";
+const CHOOSE_FILE_TIP: &str = "Pick a save file, starting in the folder of the save opened last (or else of the \
+     newest save found)";
 
 /// Discovery under the shell's Documents folder.
 #[cfg(not(test))]
@@ -139,7 +139,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         {
             write = Some(Write::Save);
         }
-        if add_enabled(ui, save_open, egui::Button::new("Save as")).clicked() {
+        if add_enabled(ui, save_open, egui::Button::new("Save as\u{2026}")).clicked() {
             write = Some(Write::SaveAs);
         }
         if chosen.is_some() || write.is_some() {

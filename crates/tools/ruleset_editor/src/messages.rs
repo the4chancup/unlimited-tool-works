@@ -67,13 +67,13 @@ impl Code {
 const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::RulesFinding,
-        r#"`validate`: the rules file could not be loaded; the line names where it failed (a line and column when the text is broken, or the entry that broke a rule)."#,
+        r#"`validate`: the rules file could not be loaded; the line names where it failed (a line and column when the text is broken, the entry that broke a rule) or, failing that, what went wrong."#,
         r#"The file is unchanged; the exit code is 1. Fix the file in a text editor and run it again."#,
     ),
     (
         Code::LogicUpdated,
-        r#"`update-logic`: the file's checking code was official version `from`, older than this build's."#,
-        r#"Replaced with this build's checking code; the replaced file is kept beside it as a .bak copy."#,
+        r#"`update-logic`: the file's checking code was an older official version than this build's (the line gives it as `from`)."#,
+        r#"The checking code is replaced with this build's; the old file is kept beside it as a .bak copy."#,
     ),
     (
         Code::LogicAlreadyCurrent,
@@ -82,7 +82,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::SummaryWritten,
-        r#"`summary -o`: the file's readable rules text was written to `path`."#,
+        r#"`summary -o`: the file's readable rules text was written to the file the line names."#,
         r#"The file it replaced, if there was one, is kept beside it as a .bak copy."#,
     ),
 ];

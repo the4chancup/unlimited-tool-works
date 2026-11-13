@@ -35,7 +35,7 @@ pub const ALLOCATION_SCHEME_VERSION: u32 = 1;
 const MODEL_ID_MAX: u16 = 16383;
 
 /// The first line of a generated `aesthetics_patch.toml`.
-const HEADER: &str = "# aesthetics_patch.toml, written by the Team compiler to its output folder\n";
+const HEADER: &str = "# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch\n";
 
 /// `aesthetics_patch.toml`: the compiler's resolved savefile writes for its compiled players.
 #[derive(Debug, Clone, PartialEq)]
@@ -279,7 +279,12 @@ impl AestheticsPatch {
                     .into());
                 }
                 let path = format!("teams[{i}].players.{key}");
-                out.push_str(&format!("\n[teams.players.{key}]\n"));
+                out.push('\n');
+                out.push_str(&padded(
+                    &format!("[teams.players.{key}]"),
+                    &format!("player {}", team.id * 100 + u32::from(*slot)),
+                ));
+                out.push('\n');
                 if let Some(name) = &player.name {
                     out.push_str(&format!("name = {}\n", Value::from(name.as_str())));
                 }

@@ -333,14 +333,14 @@ if (localStorage.getItem("crate_map_theme") === "light")
 </script></head><body>
 <button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how the crates depend on each other</h1>
-<p>Every arrow points from a crate to one it uses (normal dependencies from the manifests,
-dev-dependencies left out). Rows run from the binary at the top to the libs at the bottom;
-within the libs, a row uses only rows below it. An arrow a longer path already implies
-(<code>save_editor</code> to <code>studio_core</code>, through <code>team_widgets</code>)
-shows only while a crate at either end is highlighted.
-Dashed crates are not linked into <code>UTW</code>.</p>
-<p class="key">Click a crate to keep it highlighted and put it in the address
-(<code>#save_editor</code>), again to let go:<span class="uses"></span>what it uses
+<p>Every arrow points from a crate to one it uses: normal dependencies from the manifests,
+dev-dependencies left out. Rows run from the binary at the top to the libs at the bottom,
+and within the libs a row uses only rows below it. Dashed crates are not linked into the
+binary, <code>UTW</code>. An arrow that a longer path already implies, such as
+<code>save_editor</code> to <code>studio_core</code> through <code>team_widgets</code>, is
+drawn only while a crate at either end is highlighted.</p>
+<p class="key">Click a crate to keep it highlighted and add it to the page address
+(<code>#save_editor</code>); click it again to let go. Arrows:<span class="uses"></span>what it uses
 <span class="usedby"></span>what uses it</p>
 <p id="about"><span class="hint">Hover over a crate to see what it does.</span></p>
 {"".join(svg)}

@@ -21,7 +21,7 @@ use crate::session::rules::{self, ImportCheck, builtins};
 use crate::view::{Refusal, SaveView, comparator};
 
 /// The dropdown's tooltip (the draft's).
-const TOOLTIP: &str = "The AATF rules the quick actions, the card counts and Live AATF use";
+const TOOLTIP: &str = "The AATF rules the quick actions, the Cards used badge and Live AATF use";
 
 /// The command row after the rulesets, and its tooltip (the draft's).
 const IMPORT_ROW: &str = "Import rules file\u{2026}";

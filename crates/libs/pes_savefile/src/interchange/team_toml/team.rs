@@ -351,7 +351,7 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "kit_slots",
         team.kit_slots.map(kit_slots_text),
         "[{ number = 0, binding = 0 }]",
-        "PES 17 only",
+        "PES 17 only; as the game stores them",
     );
     let flags = &team.edit_flags;
     if flags.name.is_none()
@@ -942,7 +942,7 @@ mod tests {
             .expect("from_team")
             .to_toml()
             .expect("to_toml");
-        let note = "# players: in the order of starting_eleven (its first entry is the first player here); roster slots count from 0, so slot 0 is [players.01]";
+        let note = "# players: where each starting_eleven player stands, in its order; roster slot 0 is [players.01]";
         assert!(text.contains(&format!("{note}\n[tactics.preset_1.formation_1]")));
         assert_eq!(text.matches(note).count(), 1, "the note once");
     }

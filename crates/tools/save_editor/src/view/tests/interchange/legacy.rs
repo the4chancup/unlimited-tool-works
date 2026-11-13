@@ -124,7 +124,9 @@ fn a_squad_file_with_more_records_than_the_roster_is_refused_alone() {
     let lines = panel_lines(&mut window, &mut view);
     assert_eq!(
         lines.last().map(String::as_str),
-        Some("pes19_squad.4ccs: 23 player records; the target team has 22 rostered players"),
+        Some(
+            "pes19_squad.4ccs: 23 players in the file, but the selected team has only 22: select a team with at least 23",
+        ),
         "{lines:#?}"
     );
     assert!(checkboxes(&mut window, &mut view).is_empty(), "no choice");

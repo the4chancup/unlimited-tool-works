@@ -31,8 +31,9 @@ const PAGE_URL: &str = "https://github.com/the4chancup/unlimited-tool-works/rele
 /// fixture lists for this platform's archive, in MB.
 const TOTAL_MB: &str = if cfg!(windows) { "10.7" } else { "11.8" };
 /// `Update ready`'s sentence for the fixture's `v0.0.2`.
-const READY_SENTENCE: &str = "v0.0.2 pre-alpha is installed. Restart to start using it, the \
-                              version you are running now will stay in the old folder.";
+const READY_SENTENCE: &str = "v0.0.2 pre-alpha is installed. Restart to start using it. The \
+                              program you are running now has been moved to a folder named \
+                              old, beside the new one.";
 /// `Update failed`'s way out, for the fixture's `v0.0.2`.
 const WAY_OUT: &str = "You can download v0.0.2 from the release page instead.";
 /// `Update failed`'s second paragraph when nothing was changed.

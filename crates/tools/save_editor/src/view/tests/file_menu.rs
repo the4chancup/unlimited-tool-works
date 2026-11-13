@@ -162,13 +162,13 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
             recent,
             "Choose file\u{2026} Ctrl+O",
             "Save Ctrl+S",
-            "Save as",
+            "Save as\u{2026}",
         ],
         "the discovered saves in version order, each named by its version, the newest PES 21 \
          first and the first of each version with its shortcut, then the recent file, then the \
          picker, then Save with its shortcut and Save as"
     );
-    for entry in ["Save Ctrl+S", "Save as"] {
+    for entry in ["Save Ctrl+S", "Save as\u{2026}"] {
         assert!(
             !node_labeled(&nodes, Role::Button, entry).is_disabled(),
             "{entry} is enabled with a save open"
@@ -197,7 +197,7 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
         tree.pes21_new.display().to_string(),
         tree.pes21_old.display().to_string(),
         tree.elsewhere.display().to_string(),
-        "Opens in the folder the last save was opened from, or the newest found save's".to_owned(),
+        "Pick a save file, starting in the folder of the save opened last (or else of the newest save found)".to_owned(),
     ];
     for (place, tip) in tips.iter().enumerate() {
         let nodes = draw(&mut window, &mut view);
@@ -594,7 +594,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     let mut tool = crate::Tool::new();
     tool.view = edited_view(&path, &target);
     let mut window = Headless::new();
-    choose(&mut window, &mut tool.view, "File", "Save as");
+    choose(&mut window, &mut tool.view, "File", "Save as\u{2026}");
 
     let session = tool.view.session.as_ref().unwrap();
     let reopened = Session::open(&target, Recorder::default()).expect("the target holds a save");
@@ -631,7 +631,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     let fresh = dir.join("fresh").join("EDIT00000000");
     std::fs::create_dir_all(fresh.parent().unwrap()).unwrap();
     let mut view = edited_view(&path, &fresh);
-    choose(&mut window, &mut view, "File", "Save as");
+    choose(&mut window, &mut view, "File", "Save as\u{2026}");
     assert!(fresh.is_file(), "the save is written");
     assert!(!bak_of(&fresh).exists(), "no .bak for a fresh path");
 }
@@ -652,8 +652,8 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let mut view = edited_view(&path, &target);
     let mut window = Headless::new();
 
-    let nodes = open_menu(&mut window, &mut view, "File", "Save as");
-    let save_as = centre(menu_item(&nodes, "Save as"));
+    let nodes = open_menu(&mut window, &mut view, "File", "Save as\u{2026}");
+    let save_as = centre(menu_item(&nodes, "Save as\u{2026}"));
     press_release(&mut window, save_as, |ui| show(ui, &mut view, &running_own));
     assert!(!target.exists(), "nothing written while the question waits");
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &running_own));

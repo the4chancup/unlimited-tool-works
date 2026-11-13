@@ -3,16 +3,17 @@ you, so you do not need to download a new release by hand.
 
 **Checking for a new version**
 
-When the program starts, unless it checked less than 120 minutes ago, and again
-every 120 minutes while it stays open, it reads the list of releases on the
-program's GitHub page. You can turn this off with `Check for updates` in the
+The program reads the list of releases on its GitHub page when it starts, unless
+it checked less than 120 minutes ago, and again every 120 minutes while it stays
+open. You can turn this off with `Check for updates` in the
 settings, or change how often it happens with `Check interval (minutes)`. When
 a check fails, because you are offline for instance, nothing is shown and the
 program tries again later.
 
-The launchers, and a tool's command typed in a terminal, look for a new version
-too while `Check for updates` is on, and tell of one in a line after their
-report. They install nothing: start the program and use the offer in the status
+The launchers (the `.bat` files that come with the program on Windows, such
+as `quick_compile.bat`), and a tool's command typed in a terminal, look for a new
+version too while `Check for updates` is on, and mention one in a line after
+their report. They install nothing: start the program and use the offer in the status
 bar.
 
 **The offer in the status bar**
@@ -23,7 +24,7 @@ version's number in blue. Nothing opens by itself: click the text, or the
 
 **Details**
 
-Details names the new version and the one you have, and shows the release
+The Details window names the new version and the one you have, and shows the release
 notes, which say what the new version brings. It has four buttons:
 
 - `Update now` downloads the new version and installs it, as described below;
@@ -62,16 +63,16 @@ The window has three buttons:
 
 In the rare case where the old files could not be put back either, the message
 does not say that nothing was changed, and it names the folder that holds them.
-Put them back into the program's folder, or delete that folder, because no other
-update starts until you do.
+Move them back into the program's folder, or delete the folder they are in,
+because no other update starts until you do.
 
 **Restarting**
 
 Once the new version is in place, `Update ready` offers two buttons:
 
-- `Restart now` closes the program and starts the new version. If a tool asks
-  about unsaved work first, as closing the program always does, the program
-  closes or stays open as you answer and does not start again by itself: the
+- `Restart now` closes the program and starts the new version. If a tool first
+  asks about unsaved work, as it does whenever the program closes, the program
+  closes or stays open as you answer, and it does not start again by itself: the
   new version runs the next time you start it;
 - `Later` closes the window. The status bar then reads `Update ready`, which
   opens this window again, and the new version runs the next time you start

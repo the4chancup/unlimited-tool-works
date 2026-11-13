@@ -84,7 +84,7 @@ fn page_down_and_up_step_seven_rows_from_a_number_field() {
         assert_eq!(
             view.selected,
             Some(Selection::Player(718, slot)),
-            "PageDown moved seven rows, to place {:02}",
+            "PageDown moved seven rows, to slot {:02}",
             slot + 1
         );
     }

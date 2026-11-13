@@ -699,7 +699,7 @@ impl Sidebar {
                 })
             });
         ctx.notify(Notice {
-            text: format!("Switched to PES {}", game.version.year()),
+            text: format!("Switched to PES {}, which is running", game.version.year()),
             // The fix action is offered only for an exe in another folder's
             // install, the switch worth a warning; a plain switch informs.
             kind: if action.is_some() {
@@ -878,7 +878,7 @@ fn label_offset(cell: f32) -> f32 {
 /// `label` in body text at `label_offset`, vertically centred and never wrapped
 /// (`None` in the rail, which shows the icons alone and needs no tooltip: the
 /// overlay shows the label). `active` gets the filled
-/// selection background plus the accent left bar; `clickable` selects
+/// selection background plus the accent bar at its left; `clickable` selects
 /// `Sense::click` over `Sense::hover`.
 fn entry_row(
     ui: &mut egui::Ui,
@@ -995,16 +995,24 @@ pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path, works_with: &str) -> S
     }
     match check {
         ExeCheck::Found => format!(
-            "{}\nThe PES version {works_with} works with",
+            "The PES version {works_with} works with\nInstalled in {}",
             folder.display()
         ),
         ExeCheck::OtherVersion(found) => format!(
-            "{} holds PES{}.exe, which is a different version from the one selected",
+            "{} holds PES{}.exe, a different version from the one selected. Pick PES \
+             {}, or check the PES folder setting",
             folder.display(),
+            found.year(),
             found.year()
         ),
-        ExeCheck::NoExe => format!("There is no PES exe in {}", folder.display()),
-        ExeCheck::NoFolder => format!("{} does not exist", folder.display()),
+        ExeCheck::NoExe => format!(
+            "There is no PES exe in {}. Check the PES folder setting",
+            folder.display()
+        ),
+        ExeCheck::NoFolder => format!(
+            "{} does not exist. Check the PES folder setting",
+            folder.display()
+        ),
     }
 }
 

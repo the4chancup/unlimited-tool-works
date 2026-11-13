@@ -100,7 +100,7 @@ impl FirstRun {
                 }
             });
             ui.spacing_mut().item_spacing.y = item_spacing;
-            ui.weak("You can move the data later by moving the folder.");
+            ui.weak("You can change this later by moving the folder from one place to the other.");
             if let Some(error) = &self.error {
                 ui.colored_label(ui.visuals().error_fg_color, error);
             }
@@ -232,7 +232,7 @@ mod tests {
         ));
         assert!(has_text(
             &nodes,
-            "You can move the data later by moving the folder."
+            "You can change this later by moving the folder from one place to the other."
         ));
         assert_eq!(calls[0].views(), 0, "no tool view while the dialog is up");
 
@@ -385,7 +385,9 @@ mod tests {
         let row_bottom = bounds_of("portable data folder beside the program")
             .y1
             .max(bounds_of("which survives replacing or moving the program folder").y1);
-        let footer = bounds_of("You can move the data later by moving the folder.");
+        let footer = bounds_of(
+            "You can change this later by moving the folder from one place to the other.",
+        );
 
         let above = row_top - title.y1;
         assert!(

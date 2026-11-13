@@ -64,7 +64,7 @@ fn body(
         }
     }
     if ui
-        .button("Blank: one tier, no brackets, universal rules set")
+        .button("Blank: one tier, no height brackets, universal rules on")
         .clicked()
     {
         guard(view, ctx, Pending::Blank);
@@ -74,7 +74,7 @@ fn body(
         ui.strong("Random");
         for preset in ["Sensible", "Weird", "Crazy"] {
             add_enabled(ui, false, egui::Button::new(preset))
-                .on_disabled_hover_text("The generator comes in a later build");
+                .on_disabled_hover_text("The generator comes in a later build.");
         }
     });
     ui.separator();

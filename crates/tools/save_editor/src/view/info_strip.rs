@@ -214,9 +214,8 @@ pub(super) fn general(
             )
         } else {
             format!(
-                "Up to {} bytes. A plain letter takes one byte, an accented letter takes two or \
-                 more, and a colour code takes ten. A colour code is typed as \\x11c and eight \
-                 hex digits.",
+                "Up to {} bytes: one for a plain letter, two or more for an accented letter, \
+                 and ten for a color code (typed as \\x11c and eight hex digits).",
                 text_len(schema, PlayerText::Name)
             )
         };

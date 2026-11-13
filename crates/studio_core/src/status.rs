@@ -12,8 +12,11 @@ use crate::help::HelpTarget;
 /// A persistent environment state the shell computes itself (left slot). Shown while it holds.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShellCondition {
-    /// Settings and the teams list cannot be written; the session keeps working in memory.
-    DataDirReadOnly,
+    /// The settings file could not be written; the session keeps working in memory.
+    SettingsSaveFailed {
+        /// The save's own error text.
+        error: String,
+    },
     /// A newer release exists.
     UpdateAvailable {
         /// The version available.
@@ -31,7 +34,7 @@ impl ShellCondition {
     /// The icon font's glyph shown beside the text (the draft's `CONDITION_DEFS`).
     pub(crate) fn icon(&self) -> &'static str {
         match self {
-            ShellCondition::DataDirReadOnly => crate::icons::WARNING,
+            ShellCondition::SettingsSaveFailed { .. } => crate::icons::WARNING,
             ShellCondition::UpdateAvailable { .. } | ShellCondition::UpdateReady { .. } => {
                 crate::icons::DOWNLOAD_SIMPLE
             }
@@ -41,7 +44,7 @@ impl ShellCondition {
     /// The bar's one-line text, and the line the CLI prints for the condition.
     pub fn text(&self) -> String {
         match self {
-            ShellCondition::DataDirReadOnly => "Data folder is read-only".to_owned(),
+            ShellCondition::SettingsSaveFailed { .. } => "Settings could not be saved".to_owned(),
             ShellCondition::UpdateAvailable { version } => {
                 format!("Update available: v{version}")
             }
@@ -52,13 +55,12 @@ impl ShellCondition {
     /// The bar's tooltip while the condition holds.
     pub(crate) fn tooltip(&self) -> String {
         match self {
-            ShellCondition::DataDirReadOnly => {
-                "Settings and the teams list cannot be saved, so changes last for this session \
-                 only"
-                    .to_owned()
-            }
+            ShellCondition::SettingsSaveFailed { error } => format!(
+                "The settings file could not be written: {error}. Changes are kept for this \
+                 session and tried again at the next save."
+            ),
             ShellCondition::UpdateAvailable { version } => format!(
-                "{} {} is out. Click the Details button for more info.",
+                "{} {} is out. Click Details to see what changed and to update.",
                 crate::APP_NAME,
                 crate::shell::version_label_of(version, false)
             ),
@@ -81,7 +83,7 @@ impl ShellCondition {
                     effect: ActionEffect::OpenUpdateDetails,
                 })
             }
-            ShellCondition::DataDirReadOnly => None,
+            ShellCondition::SettingsSaveFailed { .. } => None,
         }
     }
 }
@@ -133,7 +135,7 @@ pub enum NoticeKind {
     /// finished (`Compiled 48 teams`). Drawn in the palette's `success`, the draft's green.
     Success,
     /// A change of state to know about, neither finished nor broken: `Switched to PES
-    /// 2021`, `Updated to v1.4.0`. Drawn in the theme's link blue.
+    /// 2021, which is running`, `Updated to v1.4.0`. Drawn in the theme's link blue.
     Info,
     /// Something the member should look at: `Teams list is read-only`, a switch whose
     /// `Fix PES path` action points at another folder's exe. Drawn in the theme's
@@ -210,7 +212,8 @@ mod tests {
         };
         assert_eq!(
             offer.tooltip(),
-            "Unlimited Tool Works v0.0.2 pre-alpha is out. Click the Details button for more info."
+            "Unlimited Tool Works v0.0.2 pre-alpha is out. Click Details to see what changed \
+             and to update."
         );
     }
 }

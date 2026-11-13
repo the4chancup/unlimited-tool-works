@@ -38,7 +38,7 @@ use crate::settings_toml::set_appearance;
 #[derive(Debug, thiserror::Error)]
 pub enum LegacyError {
     /// The file's tag is not the format's.
-    #[error("expected tag {expected:?}, found {found:?}")]
+    #[error("not a 4ccEditor file: it starts {found:?}, not {expected:?}")]
     BadTag {
         /// The tag the format carries.
         expected: &'static str,
@@ -46,10 +46,10 @@ pub enum LegacyError {
         found: String,
     },
     /// The two version digits are not a supported PES version.
-    #[error("{0:?} is not a PES version this crate reads")]
+    #[error("{0:?} is not a PES version this app reads (15 to 21)")]
     BadVersion(String),
     /// The 8-byte team id field is not ASCII decimal.
-    #[error("team id {0:?} is not ASCII decimal")]
+    #[error("team id {0:?} is not a number")]
     BadTeamId(String),
     /// The file ends mid-structure.
     #[error("file is {len} bytes; {needed} are needed")]
@@ -60,7 +60,7 @@ pub enum LegacyError {
         len: usize,
     },
     /// A stored playing-style byte the exporting version's list does not hold.
-    #[error("playing style {value} is not in {version:?}'s list")]
+    #[error("playing style {value} is not in {version}'s list")]
     UnknownPlayingStyle {
         /// The exporting version.
         version: PesVersion,
@@ -68,7 +68,7 @@ pub enum LegacyError {
         value: u8,
     },
     /// An instruction byte outside the canonical table.
-    #[error("instruction byte {0} is not a canonical instruction")]
+    #[error("instruction byte {0} is not an instruction this app knows")]
     BadInstruction(u8),
     /// More player records than the 40-slot roster the format implies.
     #[error("{count} player records; the format holds at most 40")]
@@ -77,7 +77,9 @@ pub enum LegacyError {
         count: usize,
     },
     /// More player records than the target team has rostered players.
-    #[error("{records} player records; the target team has {rostered} rostered players")]
+    #[error(
+        "{records} players in the file, but the selected team has only {rostered}: select a team with at least {records}"
+    )]
     MoreRecordsThanRoster {
         /// The player records the file carries.
         records: usize,

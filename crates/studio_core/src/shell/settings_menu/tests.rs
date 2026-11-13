@@ -747,10 +747,10 @@ fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
     assert!(
         has_text(
             &nodes,
-            "invert_value_scrolling: Turns the wheel's steps over a value the \
-             other way: wheel down moves a slider right, raises a number and \
-             takes a list's item above, wheel up the reverse. Scrolling a \
-             pane is unchanged."
+            "invert_value_scrolling: Reverses the mouse wheel over a value: wheel \
+             down then moves a slider right, raises a number and picks the list \
+             item above, and wheel up does the opposite. Scrolling a pane is not \
+             affected."
         ),
         "the tooltip is the settings key, then the row's tip"
     );
@@ -1135,8 +1135,8 @@ fn a_row_labels_tooltip_leads_with_the_settings_key() {
     assert!(
         has_text(
             &nodes,
-            "thread_count: The number of worker threads a tool's run uses, where 0 \
-             means automatic (the logical cores minus one)."
+            "thread_count: How many processor threads a tool's run uses, where 0 \
+             means all of them but one."
         ),
         "the tooltip is the settings key, then the row's tip"
     );

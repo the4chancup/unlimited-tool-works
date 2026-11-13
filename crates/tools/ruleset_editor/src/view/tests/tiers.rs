@@ -1569,7 +1569,7 @@ fn the_name_colour_checkbox_writes_the_default_code() {
     // The unticked cell reads "none"; the checkbox carries its hover
     // text as its label (gold's is the topmost).
     let frame = settled(&mut window, &mut view, &ctx);
-    let checkboxes = nodes_labeled(&frame.nodes, "This tier's names carry a colour code")
+    let checkboxes = nodes_labeled(&frame.nodes, "This tier's names carry a color code")
         .into_iter()
         .filter(|node| node.role() == Role::CheckBox)
         .collect::<Vec<_>>();
@@ -1736,8 +1736,8 @@ fn each_tier_field_writes_to_its_own_binding() {
             role_labeled(
                 &frame.nodes,
                 Role::CheckBox,
-                "The ability stats that may sit below their target add up to at most their targets, an \
-                 error past them",
+                "Ticked: the ability stats that may sit below their target must not add up to more \
+                 than their targets do. Going over is an error",
             ),
             &mut view,
             &ctx,
@@ -1792,7 +1792,7 @@ fn each_tier_field_writes_to_its_own_binding() {
         let (ctx, _events, mut window, mut view) =
             tiers_view(aatf::Rules::official().ruleset().clone(), true);
         let frame = settled(&mut window, &mut view, &ctx);
-        let checkboxes = nodes_labeled(&frame.nodes, "This tier's names carry a colour code")
+        let checkboxes = nodes_labeled(&frame.nodes, "This tier's names carry a color code")
             .into_iter()
             .filter(|node| node.role() == Role::CheckBox)
             .collect::<Vec<_>>();

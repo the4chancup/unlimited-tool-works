@@ -433,10 +433,10 @@ fn a_read_only_data_dir_prints_the_condition_as_stderrs_first_line() {
     fs::set_permissions(&file, writable).unwrap();
 
     let text = stderr(&output);
-    assert_eq!(
-        text.lines().next(),
-        Some("Data folder is read-only"),
-        "stderr's first line is the condition: {text}"
+    let first = text.lines().next().unwrap_or_default();
+    assert!(
+        first.starts_with("The settings file cannot be written: ") && first.len() > 37,
+        "stderr's first line is the condition with the probe's error: {text}"
     );
 }
 
