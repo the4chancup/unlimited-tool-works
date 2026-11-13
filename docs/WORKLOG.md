@@ -1914,9 +1914,12 @@ briefs, review loops, gates and mutation runs as for any step.
       old place still read (`plans/pes_savefile/operations.md`), `PlayerDiff::scope` with
       the motions, star and attitude as aesthetics -> verify: the fixture saves' round trip,
       a 0.0.1 Team TOML imports, `diff` tags the three aesthetics
-    - [ ] b the Team compiler and the Export upgrader: the patch carries the keys, an upgrade
-      fills them from the save; their templates and help -> verify: a compiled player's
-      star lands in the save, an upgraded export keeps a 7-star team's 7
+    - [ ] b folded into a (2026-11-13): the compiler's patch and the upgrader's generation
+      carry the keys through `pes_savefile` with no code of their own; their goldens and
+      checks (a compiled player's star lands, an upgraded 7-star team keeps its 7) are a's.
+      Slice a runs on `sk/presentation-a` (`../4cc-studio-temp/presentation-a`, brief
+      `.tmp/presentation/brief_presentation_a.md`), with Copy stats and the import's
+      sections leaving the two to the target (DECISIONS 2026-11-13)
     - [ ] c the Save editor: the Presentation group under the lock, last on the screen,
       each note beside its box (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
       the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
