@@ -2392,13 +2392,17 @@ briefs, review loops, gates and mutation runs as for any step.
       change; the range is read from `formation_rule` (`MOVABLE_X`, `MOVABLE_Y`, now
       `pub`) instead of written twice; two tests' position asserted. Issues: the keys'
       step itself
-  - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
-    PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
-    1:30 in a console where Red takes under half that, and its progress line showed no parts
-    for its first 40 seconds) → measure on an idle machine (no mutation run, no cargo) with a
-    release build: Red's and ours on the same export, wall time, three runs, the median; our
-    time split by stage (validation, planning, each task kind, the CPK write) with a
-    sampling profiler; each stage that costs more than Red's whole run gets a worklog step
+  - [x] 0.0.2d 2026-11-13 (the lead): a compile timed against Red, after 0.0.2b. Ours
+    6.16 s (5.90 to 6.34), Red 57.06 s (52.74 to 58.14): three runs each, wall time, the
+    median, PES 2019, no deploy, ten of the VGL27 Friendlies' Day 1 exports (three more
+    name teams no list holds), ours the release exe at `cb1ee954` on the exports our
+    upgrader wrote from them (18.5 s once for the thirteen, archives unpacked), Red at
+    `1a48fa5` in a copy of its folder on the old ones, its run unpacking the archives
+    too. No stage of ours costs what Red's whole run does, so no step follows and no
+    sampling profiler was run. Not the export the maintainer timed at 1:30 (`egg Midcup
+    Big`): it predates today's format and no longer passes the checks; that run encoded
+    BC7, which 0.0.2b took out. Not looked into: our CPK is 946 MB to Red's 1,286 MB.
+    Scripts and logs: `.tmp/0_0_2/prof/`, `4cc-studio-temp/prof/`
 - [ ] with Release 0.2.0 (the maintainer, 2026-11-12): the response-time gate at the
   checkpoint (`plans/core/development_plan.md` "Release 0.2.0"); its first step only
   reports the medians
