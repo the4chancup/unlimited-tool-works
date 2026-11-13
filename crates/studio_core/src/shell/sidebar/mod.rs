@@ -386,57 +386,80 @@ impl Sidebar {
                 ui.add(egui::Separator::default().spacing(SEPARATOR_SPACING));
 
                 let mut clicked = None;
-                for (index, tool) in tools.iter().enumerate() {
-                    // A registered tool marked CLI-only is no tool entry: it is drawn
-                    // with the planned entries below (ST-SIDE-08).
-                    if cli_only.contains(&tool.id()) {
-                        continue;
-                    }
-                    let active_tool = index == *active;
-                    let response = entry_row(
-                        ui,
-                        row_width,
-                        cell,
-                        egui::RichText::new(tool.icon()).size(ICON_SIZE),
-                        (!rail).then_some(tool.label()),
-                        active_tool,
-                        true,
-                    );
-                    if response.has_focus() {
-                        self.focus_label = Some(tool.label());
-                    }
-                    response.widget_info(|| {
-                        egui::WidgetInfo::selected(
-                            egui::Role::Button,
-                            ui.is_enabled(),
-                            active_tool,
-                            tool.label(),
-                        )
+                // The entries scroll in the room the tail leaves: the tail is
+                // the separator above the help and settings rows, pinned to the
+                // foot — two rows, the item spacing between them and beside the
+                // separator, and the separator. In a window tall enough for
+                // every entry the area shrinks to its contents and nothing
+                // moves; in a shorter one the wheel scrolls. The rail has no
+                // room for a scroll bar, so none is drawn or reserved.
+                let tail = SEPARATOR_SPACING + 2.0 * (ENTRY_HEIGHT + ui.spacing().item_spacing.y);
+                egui::ScrollArea::vertical()
+                    // Under the contents' scope id: the rail and the overlay
+                    // share the scroll offset, so the opened sidebar shows the
+                    // entries scrolled as far as the rail's.
+                    .id_salt("entries")
+                    .max_height((ui.available_height() - tail).max(0.0))
+                    .min_scrolled_height(0.0)
+                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+                    .show(ui, |ui| {
+                        for (index, tool) in tools.iter().enumerate() {
+                            // A registered tool marked CLI-only is no tool entry: it is drawn
+                            // with the planned entries below (ST-SIDE-08).
+                            if cli_only.contains(&tool.id()) {
+                                continue;
+                            }
+                            let active_tool = index == *active;
+                            let response = entry_row(
+                                ui,
+                                row_width,
+                                cell,
+                                egui::RichText::new(tool.icon()).size(ICON_SIZE),
+                                (!rail).then_some(tool.label()),
+                                active_tool,
+                                true,
+                            );
+                            // egui does not scroll a focused widget into view
+                            // on its own.
+                            if response.gained_focus() {
+                                response.scroll_to_me(None);
+                            }
+                            if response.has_focus() {
+                                self.focus_label = Some(tool.label());
+                            }
+                            response.widget_info(|| {
+                                egui::WidgetInfo::selected(
+                                    egui::Role::Button,
+                                    ui.is_enabled(),
+                                    active_tool,
+                                    tool.label(),
+                                )
+                            });
+                            if response.clicked() {
+                                clicked = Some(SidebarClick::SwitchTool(index));
+                            }
+                        }
+                        for entry in drawn_planned(args) {
+                            // In the registry's order: a CLI-only tool's entry is here
+                            // (ST-SIDE-08).
+                            let response = add_enabled_ui(ui, false, |ui| {
+                                entry_row(
+                                    ui,
+                                    row_width,
+                                    cell,
+                                    egui::RichText::new(entry.icon).size(ICON_SIZE),
+                                    (!rail).then_some(entry.label),
+                                    false,
+                                    false,
+                                )
+                            })
+                            .inner;
+                            response.widget_info(|| {
+                                egui::WidgetInfo::labeled(egui::Role::Label, false, entry.label)
+                            });
+                            response.on_disabled_hover_text(PLANNED_TOOLTIP);
+                        }
                     });
-                    if response.clicked() {
-                        clicked = Some(SidebarClick::SwitchTool(index));
-                    }
-                }
-                for entry in drawn_planned(args) {
-                    // In the registry's order: a CLI-only tool's entry is here
-                    // (ST-SIDE-08).
-                    let response = add_enabled_ui(ui, false, |ui| {
-                        entry_row(
-                            ui,
-                            row_width,
-                            cell,
-                            egui::RichText::new(entry.icon).size(ICON_SIZE),
-                            (!rail).then_some(entry.label),
-                            false,
-                            false,
-                        )
-                    })
-                    .inner;
-                    response.widget_info(|| {
-                        egui::WidgetInfo::labeled(egui::Role::Label, false, entry.label)
-                    });
-                    response.on_disabled_hover_text(PLANNED_TOOLTIP);
-                }
 
                 // The bottom rows, pinned to the sidebar's foot: the help `?` above
                 // the settings gear (the first bottom-up child is the lowest), under

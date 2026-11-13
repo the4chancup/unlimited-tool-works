@@ -104,6 +104,9 @@ What changed for members, release by release, newest first.
 - **Save editor**: in the Tactics tab's bench list, a player dragged onto another swaps
   places with him, as in the starting eleven's list. He used to be moved into that place,
   shifting the players between.
+- **Sidebar**: in a window too short for every entry, the tool entries now scroll with
+  the wheel in the room between the version selector and the bottom, where Help and
+  Settings stay pinned instead of being drawn over the last entries.
 
 ### Minor fixes
 

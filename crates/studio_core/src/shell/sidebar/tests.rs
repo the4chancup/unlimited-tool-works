@@ -17,6 +17,8 @@ use crate::shell::test_harness::*;
 use crate::shell::{StudioApp, about, run_cli};
 use crate::tool::{AppPaths, PlannedTool};
 
+mod short_window;
+
 /// The overlay's inner width as the draft's row lays it out: the accent bar, the icon's
 /// `ICON_SIZE` box centred in the rest of the icon cell `cell` wide, `LABEL_GAP`, the
 /// widest body-text galley over `labels` (measured with the context's fonts) and
