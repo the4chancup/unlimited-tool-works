@@ -233,6 +233,11 @@ input[type=range]:focus { outline: none; }
    right margin), so the grid spans both: centred in the pane alone, the gap
    after the list read wider than the two between the columns. The header
    and Appearance line up with General info's title. */
+.aprow { display: flex; gap: 8px; align-items: stretch; }
+.aprow > :last-child { flex: 1; }
+#appearance-screen .group { margin: 4px 0; }
+#edit-flags-grid { border-spacing: 0; }
+#edit-flags-grid td { height: 22px; padding: 0; }
 #player-view { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
   align-items: start; margin: 0 -8px 0 -22px; }
 .pcols { display: contents; }
@@ -4820,7 +4825,8 @@ function teamView(t) {
     viewTitle(t.id, t.name),
     // The ids and the Kit slots button on the fields' row (the maintainer,
     // 2026-10-26: the Tactics below need the height).
-    h("div", { class: "row" },
+    // Twice the rows' own gap under the fields, now that no line parts them from the Tactics.
+    h("div", { class: "row", style: "margin-bottom:9px" },
       teamFields(t),
       namedCols(h("table", { class: "grid info-grid" },
         chunk([num("Manager ID", "manager_id", 17), num("Stadium ID", "stadium_id", 15)],
@@ -5085,14 +5091,16 @@ function appearanceTab(p) {
     h("input", { type: "checkbox", checked: p.edit_flags[key],
       onchange: e => { set(p, x => x.edit_flags[key], (x, v) => x.edit_flags[key] = v, e.target.checked, label); render(); } }),
     " " + label);
+  // One flag a row, each row level with a row of the Motion panel it stands beside.
+  const copyFrom = h("span", {}, " from ID ",
+    h("input", { type: "number", value: p.base_copy_id,
+      onchange: e => { const v = parseInt(e.target.value, 10);
+        if (!Number.isNaN(v)) { set(p, x => x.base_copy_id, (x, v) => x.base_copy_id = v, v, "copy-from id"); render(); } } }));
   const flags = h("div", { class: "group", "data-panel": "edit-flags" }, strong("Edit flags"),
-    h("div", { class: "row" },
-      ef("face", "Face"), ef("hair", "Hair"), ef("physique", "Physique"),
-      ef("strip", "Strip"), ef("motion", "Motion"), ef("base_copy", "Base copy"),
-      h("span", {}, "Copy from ID ",
-        h("input", { type: "number", value: p.base_copy_id,
-          onchange: e => { const v = parseInt(e.target.value, 10);
-            if (!Number.isNaN(v)) { set(p, x => x.base_copy_id, (x, v) => x.base_copy_id = v, v, "copy-from id"); render(); } } }))));
+    h("table", { class: "grid", id: "edit-flags-grid" },
+      [[ef("face", "Face")], [ef("hair", "Hair")], [ef("physique", "Physique")], [ef("strip", "Strip")],
+        [ef("motion", "Motion")], [ef("base_copy", "Base copy"), copyFrom]]
+        .map(cells => h("tr", {}, h("td", {}, cells)))));
   const phys = h("table", { class: "grid stats-grid" });
   const PHYS_LABELS = [["neck_length", "Neck length"], ["neck_size", "Neck size"],
     ["shoulder_height", "Shoulder height"], ["shoulder_width", "Shoulder width"],
@@ -5205,9 +5213,14 @@ function appearanceTab(p) {
       ? findings.map(([sev, text]) => h("div", { class: "row " + sev },
           (sev === "err" ? "Error: " : sev === "warn" ? "Warning: " : "Info: ") + text))
       : weak("No interference found."));
-  const body = h("div", { id: "appearance-body" }, flags, phys, stripRow, motion, colors, fpcGroup);
-  if (!en) dis(body);
-  return h("div", {}, cutscenes, ...lines, body);
+  // Full Player Customization first (what a manager opens the screen for), then the
+  // groups paired so the screen shows whole: Colors beside Cutscenes, Edit flags beside
+  // Motion. Cutscenes stays outside the lock, so the lock is applied group by group.
+  const body = h("div", { id: "appearance-body" }, phys, stripRow,
+    h("div", { class: "aprow" }, motion, flags));
+  if (!en) [fpcGroup, colors, body].forEach(dis);
+  return h("div", { id: "appearance-screen" }, ...lines, fpcGroup,
+    h("div", { class: "aprow" }, cutscenes, colors), body);
 }
 
 // ---- The colour picker (color_tools' color_field; libs/color_tools.md) ----
