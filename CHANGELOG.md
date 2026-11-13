@@ -75,6 +75,12 @@ What changed for members, release by release, newest first.
 - **Save editor**: what Ctrl+C copies (a player's stats, a team's Gameplan, a tactics
   preset or a formation) can be pasted with Ctrl+V in another Save editor window, even one
   holding a save of another PES version, and still after opening another save.
+- **Save editor**: on a PES 2017 or PES 2019 save, Live AATF and `check-aatf` warn about a
+  formation the game's own screens cannot make (a player beyond the area a starter can be
+  moved in, at a position the game does not give at his spot, or on top of a teammate, a
+  wide position held twice, too many or too few in a line), naming the preset, the
+  formation and the players, unless the ruleset allows illegal formations. Moving the
+  player on the Tactics pitch puts it right.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES

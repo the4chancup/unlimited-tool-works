@@ -48,6 +48,8 @@ mod file;
 /// The per-ruleset fixtures: known-legal and known-violating teams.
 #[cfg(test)]
 mod fixtures;
+/// The host's illegal formation check, raised beside the script's.
+mod illegal_formation;
 /// `Rules`: a loaded file, steps 1 to 3, `check_team`.
 mod rules;
 /// `Ruleset` and its types, deserialization and the load-time rules.
@@ -69,7 +71,7 @@ pub use rules::{RULES_FILE_EXTENSION, Rules, official_file};
 pub use team::{PlayerView, TeamView, TeamViewError};
 pub use templates::{Template, builtin, templates};
 pub use values::CardLimits;
-pub use violation::{CheckError, TeamCheck, Violation, ViolationKind};
+pub use violation::{CheckError, FormationStarter, TeamCheck, Violation, ViolationKind};
 
 pub use ruleset::{
     Bracket, BracketHeights, BracketId, Card, Condition, Effects, ExtraHeight, Foot, GroupId,

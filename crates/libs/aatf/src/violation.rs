@@ -1,6 +1,7 @@
 //! `Violation`: what `check_team` reports — a finding a team's player
 //! or the team itself breaks, converted from the script's list of maps.
 
+use pes_savefile::model::FormationBreak;
 use rhai::serde::from_dynamic;
 use rhai::{Dynamic, Map};
 use serde::Deserialize;
@@ -325,6 +326,35 @@ pub enum ViolationKind {
         /// The player id the slot holds.
         player: u32,
     },
+    /// A fielded formation set holds something the game's own formation
+    /// screens could not have made (`Formation::illegal_breaks`), under a
+    /// ruleset that does not allow illegal formations. Raised by the host
+    /// before the script runs; a script cannot return it.
+    #[serde(skip_deserializing)]
+    IllegalFormation {
+        /// The preset (1 to 3).
+        preset: u8,
+        /// The formation set within it (1 to 3: Kick-off, In-possession,
+        /// Out-of-possession).
+        formation: u8,
+        /// Everything the set breaks, in the rule's order.
+        breaks: Vec<FormationBreak>,
+        /// The set's eleven formation slots as the host read them, for the
+        /// breaks' words to name the starters (boxed: inline, the eleven
+        /// would make every kind of violation over 350 bytes).
+        eleven: Box<[FormationStarter; 11]>,
+    },
+}
+
+/// One formation slot of an `IllegalFormation`'s set: its starter's name
+/// and the position the set fields him at.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FormationStarter {
+    /// The starter's name as the save stores it, colour codes included;
+    /// `None` for an empty starting slot or a player the team lacks.
+    pub name: Option<String>,
+    /// The position the set fields him at.
+    pub position: Position,
 }
 
 impl ViolationKind {
@@ -577,6 +607,17 @@ impl ViolationKind {
             ViolationKind::RosterOrder { player } => {
                 ("RosterOrder", vec![("player", player.to_string())])
             }
+            // The preset and the set tell two warnings apart: the rule
+            // raises one per set. The breaks are for the words, not the map.
+            ViolationKind::IllegalFormation {
+                preset, formation, ..
+            } => (
+                "IllegalFormation",
+                vec![
+                    ("preset", preset.to_string()),
+                    ("formation", formation.to_string()),
+                ],
+            ),
         }
     }
 }
@@ -781,7 +822,8 @@ pub(crate) fn violations(list: Dynamic) -> Result<Vec<Violation>, CheckError> {
             | ViolationKind::Custom { .. }
             | ViolationKind::Unused { .. }
             | ViolationKind::UnusedChoice { .. }
-            | ViolationKind::RosterOrder { .. } => {}
+            | ViolationKind::RosterOrder { .. }
+            | ViolationKind::IllegalFormation { .. } => {}
         }
         out.push(Violation {
             slot,
@@ -1204,6 +1246,11 @@ mod tests {
         );
         bad_entry("#{ kind: \"Captain\", severity: \"fatal\" }", "fatal");
         bad_entry("#{ kind: \"Captain\", slot: 300 }", "300");
+        // The host raises it; a script cannot.
+        bad_entry(
+            "#{ kind: \"IllegalFormation\", preset: 1, formation: 1 }",
+            "IllegalFormation",
+        );
         bad_entry("5", "not a map");
     }
 
@@ -1256,6 +1303,23 @@ mod tests {
         assert_eq!(
             ViolationKind::NoTier { heights: vec![] }.rule(),
             ("NoTier", vec![("heights", "[]".to_string())])
+        );
+        // The host's illegal formation warning: its preset and set alone.
+        assert_eq!(
+            ViolationKind::IllegalFormation {
+                preset: 2,
+                formation: 3,
+                breaks: vec![FormationBreak::KeeperOffSpot],
+                eleven: Box::new(std::array::from_fn(|_| FormationStarter {
+                    name: None,
+                    position: Position(0),
+                })),
+            }
+            .rule(),
+            (
+                "IllegalFormation",
+                vec![("preset", "2".to_string()), ("formation", "3".to_string())]
+            )
         );
         // An `Option` field prints only when `Some`.
         assert_eq!(

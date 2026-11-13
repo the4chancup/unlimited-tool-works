@@ -2689,3 +2689,4 @@ fn copying_a_failed_check_copies_the_failed_line() {
 }
 
 mod chrome;
+mod illegal_formation;

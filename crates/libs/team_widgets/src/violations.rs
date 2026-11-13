@@ -4,10 +4,12 @@
 //! dock and its window, Multi-team AATF's report and the Team creator
 //! (planned) draw this list.
 
-use pes_savefile::interchange::team_toml::labels::{card_name, stat_name, title_case};
+use pes_savefile::interchange::team_toml::labels::{POSITIONS, card_name, stat_name, title_case};
+use pes_savefile::model::{FormationBreak, FormationLine};
 use pes_version::PesVersion;
 
 use crate::names::append_name;
+use crate::pitch::FORMATIONS;
 
 /// The failing glyph (`✖`, U+2716): the suite's symbols font holds it.
 /// The icon font's subset does not.
@@ -473,7 +475,8 @@ pub fn violation_detail(
         | K::Custom { .. }
         | K::Unused { .. }
         | K::UnusedChoice { .. }
-        | K::RosterOrder { .. } => Vec::new(),
+        | K::RosterOrder { .. }
+        | K::IllegalFormation { .. } => Vec::new(),
     }
 }
 
@@ -532,6 +535,7 @@ pub fn rule_name(kind: &aatf::ViolationKind) -> &'static str {
         K::Unused { .. } => "Unused",
         K::UnusedChoice { .. } => "Unused choice",
         K::RosterOrder { .. } => "Roster order",
+        K::IllegalFormation { .. } => "Illegal formation",
     }
 }
 
@@ -1168,6 +1172,75 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
             ),
             None => format!("a roster slot holds player {player} outside the roster order"),
         },
+        K::IllegalFormation {
+            preset,
+            formation,
+            breaks,
+            eleven,
+        } => format!(
+            "Preset {preset}, {}: illegal formation. {}",
+            FORMATIONS[usize::from(*formation) - 1],
+            breaks
+                .iter()
+                .map(|found| break_words(found, eleven))
+                .collect::<Vec<String>>()
+                .join("; ")
+        ),
+    }
+}
+
+/// One break of an illegal formation set in its clause's words, the set's
+/// starters (`eleven`, by formation slot) named code-free, those placed by
+/// spot with the position the set fields them at. A slot with no starter
+/// the team holds reads `Slot N`, N the formation slot from 1, capitalized
+/// as the group headers name an unknown player since it may open the
+/// sentence; the keeper's break, the rule's first whenever present, is
+/// capitalized for the same reason.
+fn break_words(found: &FormationBreak, eleven: &[aatf::FormationStarter; 11]) -> String {
+    let name = |slot: usize| match &eleven[slot].name {
+        Some(name) => pes_savefile::model::names::display_name(name),
+        None => format!("Slot {}", slot + 1),
+    };
+    let placed = |slot: usize| format!("{} ({})", name(slot), eleven[slot].position.label());
+    match found {
+        FormationBreak::KeeperOffSpot => "The goalkeeper is not on the keeper's spot".to_string(),
+        FormationBreak::OutsideMovableRange { slot } => format!(
+            "{} is outside the area a starter can be moved in",
+            placed(*slot)
+        ),
+        FormationBreak::PositionNotOffered { slot } => format!(
+            "{} holds a position the game does not give at his spot",
+            placed(*slot)
+        ),
+        FormationBreak::WidePositionTwice { position, slots } => {
+            let names: Vec<String> = slots.iter().map(|&slot| name(slot)).collect();
+            let times = match slots.len() {
+                2 => "twice".to_string(),
+                count => format!("{count} times"),
+            };
+            format!(
+                "{} is held {times} ({})",
+                POSITIONS[usize::from(*position)],
+                names.join(", ")
+            )
+        }
+        FormationBreak::LineCount { line, count } => {
+            let noun = match line {
+                FormationLine::Defenders => "defender",
+                FormationLine::Midfielders => "midfielder",
+                FormationLine::Forwards => "forward",
+            };
+            let plural = if *count == 1 { "" } else { "s" };
+            let limits = line.limits();
+            format!(
+                "{count} {noun}{plural}, where the game keeps {} to {}",
+                limits.start(),
+                limits.end()
+            )
+        }
+        FormationBreak::TooClose {
+            slots: [first, second],
+        } => format!("{} and {} stand on each other", name(*first), name(*second)),
     }
 }
 
@@ -1882,6 +1955,118 @@ mod tests {
         );
     }
 
+    /// A 4-2-3-1's eleven formation slots, each starter named, as an
+    /// `IllegalFormation` carries them: GK, CB, CB, RB, LB, DMF, DMF, LMF,
+    /// LMF, AMF, CF.
+    fn sample_eleven() -> Box<[aatf::FormationStarter; 11]> {
+        let starters = [
+            ("ADAMS", "GK"),
+            ("GREEN", "CB"),
+            ("BLACK", "CB"),
+            ("CLARK", "RB"),
+            ("SMITH", "LB"),
+            ("HALL", "DMF"),
+            ("KING", "DMF"),
+            ("BROWN", "LMF"),
+            ("WHITE", "LMF"),
+            ("LEWIS", "AMF"),
+            ("JONES", "CF"),
+        ];
+        Box::new(starters.map(|(name, at)| aatf::FormationStarter {
+            name: Some(name.to_string()),
+            position: position(at),
+        }))
+    }
+
+    /// An illegal formation's sentence: the preset and the set by name,
+    /// then each break in its clause's words in the rule's order, a
+    /// starter by his code-free name with his position in the set, a slot
+    /// without a starter by its number from 1, a count of holders past two
+    /// and a line of one in words.
+    #[test]
+    fn an_illegal_formation_words_every_break_in_the_rules_order() {
+        use aatf::ViolationKind as K;
+        let sent = |preset, formation, breaks, eleven| {
+            sentence(
+                &violation(
+                    None,
+                    aatf::Severity::Warning,
+                    K::IllegalFormation {
+                        preset,
+                        formation,
+                        breaks,
+                        eleven,
+                    },
+                ),
+                701,
+                official_17(),
+            )
+        };
+        assert_eq!(
+            sent(
+                1,
+                1,
+                vec![
+                    FormationBreak::KeeperOffSpot,
+                    FormationBreak::OutsideMovableRange { slot: 4 },
+                    FormationBreak::PositionNotOffered { slot: 10 },
+                    FormationBreak::WidePositionTwice {
+                        position: 6,
+                        slots: vec![7, 8],
+                    },
+                    FormationBreak::LineCount {
+                        line: FormationLine::Defenders,
+                        count: 6,
+                    },
+                    FormationBreak::TooClose { slots: [1, 2] },
+                ],
+                sample_eleven(),
+            ),
+            "Preset 1, Kick-off: illegal formation. The goalkeeper is not on the keeper's \
+             spot; SMITH (LB) is outside the area a starter can be moved in; JONES (CF) holds \
+             a position the game does not give at his spot; LMF is held twice (BROWN, WHITE); \
+             6 defenders, where the game keeps 2 to 5; GREEN and BLACK stand on each other"
+        );
+
+        let mut eleven = sample_eleven();
+        eleven[4].name = None;
+        eleven[3].name = Some("\u{11}ccc9900ffCLARK".to_string());
+        eleven[3].position = position("LB");
+        eleven[2].position = position("LB");
+        assert_eq!(
+            sent(
+                3,
+                3,
+                vec![
+                    FormationBreak::OutsideMovableRange { slot: 4 },
+                    FormationBreak::WidePositionTwice {
+                        position: 2,
+                        slots: vec![2, 3, 4],
+                    },
+                    FormationBreak::LineCount {
+                        line: FormationLine::Defenders,
+                        count: 1,
+                    },
+                    FormationBreak::LineCount {
+                        line: FormationLine::Midfielders,
+                        count: 7,
+                    },
+                    FormationBreak::LineCount {
+                        line: FormationLine::Forwards,
+                        count: 0,
+                    },
+                    FormationBreak::TooClose { slots: [3, 4] },
+                ],
+                eleven,
+            ),
+            "Preset 3, Out-of-possession: illegal formation. Slot 5 (LB) is outside the area \
+             a starter can be moved in; LB is held 3 times (BLACK, CLARK, Slot 5); \
+             1 defender, where the game keeps 2 to 5; 7 midfielders, where the game keeps 1 \
+             to 6; 0 forwards, where the game keeps 1 to 5; CLARK and Slot 5 stand on each \
+             other"
+        );
+    }
+
     // A hint names a valid value in the draft's `violationSentence` words:
     // a list joined with "and" or "or", a range of one height as itself,
     // one from 0 as "up to 175", any other as "175 to 210". An empty list adds no
@@ -2513,10 +2698,23 @@ mod tests {
                 "Roster order",
                 "the slot holds player 73406, not 73405",
             ),
+            (
+                a26,
+                Warning,
+                K::IllegalFormation {
+                    preset: 1,
+                    formation: 1,
+                    breaks: vec![FormationBreak::OutsideMovableRange { slot: 4 }],
+                    eleven: sample_eleven(),
+                },
+                "Illegal formation",
+                "Preset 1, Kick-off: illegal formation. SMITH (LB) is outside the area a \
+                 starter can be moved in",
+            ),
         ];
         let kinds: std::collections::BTreeSet<&str> =
             rows.iter().map(|(_, _, kind, ..)| kind.rule().0).collect();
-        assert_eq!(kinds.len(), 37, "one row or more for each of the 37 kinds");
+        assert_eq!(kinds.len(), 38, "one row or more for each of the 38 kinds");
         for (wording, severity, kind, name, expected) in rows {
             // Slot 4 of team 734: the roster order's player 73405.
             let violation = violation(Some(4), severity, kind);

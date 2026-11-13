@@ -532,6 +532,95 @@ fn a_roster_order_break_reports_the_held_and_expected_ids() {
     );
 }
 
+/// Team `team`'s LB (formation slot 4) in preset 1's set `formation` (from 0) moved to
+/// x 2, y 10, beyond the pitch's left line, where the game's screens cannot put a starter:
+/// his name, code-free.
+fn lb_beyond_the_line(file: &mut EditFile, team: u32, formation: usize) -> String {
+    let entry = file.team_mut(team).unwrap();
+    let slot = &mut entry.tactics.presets[0].formations[formation].players[4];
+    assert_eq!(
+        slot.position, 2,
+        "premise: team {team}'s formation slot 4 is the LB"
+    );
+    (slot.x, slot.y) = (2, 10);
+    let id = entry.roster[usize::from(entry.tactics.starting_eleven[4])].player_id;
+    pes_savefile::model::names::display_name(&file.player(id).unwrap().name)
+}
+
+/// The lines of `run` naming an illegal formation.
+fn illegal_formation_lines(run: &crate::common::Run) -> Vec<String> {
+    run.messages()
+        .into_iter()
+        .filter(|line| line.contains("rule=Illegal formation"))
+        .collect()
+}
+
+// SE-AATF-09
+#[test]
+fn an_illegal_formation_warns_on_pes_2017_and_2019_unless_the_ruleset_allows_it() {
+    let sandbox = Sandbox::new("aatf_illegal_formation");
+    let mut file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes17)).unwrap();
+    let lb = lb_beyond_the_line(&mut file, 701, 0);
+    lb_beyond_the_line(&mut file, 702, 1);
+    assert_eq!(
+        file.team(702).unwrap().tactics.presets[0].style.fluid,
+        Some(false),
+        "premise: team 702's preset 1 has Fluid formation off"
+    );
+    fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let warning = format!(
+        "Warning aatf_violation (team=701, rule=Illegal formation, problem=Preset 1, \
+         Kick-off: illegal formation. {lb} (LB) is outside the area a starter can be moved in)"
+    );
+
+    let run = check(
+        &sandbox,
+        "EDIT",
+        &["--teams", "701,702", "--rules", "spring26"],
+    );
+    assert_eq!(
+        illegal_formation_lines(&run),
+        std::slice::from_ref(&warning)
+    );
+    // The fixture's teams have errors of their own under Spring 26, so the exit code is read
+    // under Spring 26 with its own checks emptied: no team has an error, the warning stays.
+    let logic = rules_file("spring26");
+    assert_eq!(logic.matches("fn check_team(team) {").count(), 1);
+    fs::write(
+        sandbox.path("quiet.4ccrules"),
+        logic.replacen(
+            "fn check_team(team) {",
+            "fn check_team(team) { return [];",
+            1,
+        ),
+    )
+    .unwrap();
+    let quiet = sandbox.arg("quiet.4ccrules");
+    let run = check(&sandbox, "EDIT", &["--teams", "701,702", "--rules", &quiet]);
+    assert_eq!(run.messages(), std::slice::from_ref(&warning));
+    assert_eq!(run.exit_code(), 0);
+
+    let run = check(&sandbox, "EDIT", &["--teams", "701,702", "--rules", "dbc7"]);
+    assert_eq!(illegal_formation_lines(&run), Vec::<String>::new());
+
+    let mut file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes19)).unwrap();
+    let lb = lb_beyond_the_line(&mut file, 701, 0);
+    fs::write(sandbox.path("EDIT19"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let run = check(
+        &sandbox,
+        "EDIT19",
+        &["--teams", "701", "--rules", "spring26"],
+    );
+    assert_eq!(
+        illegal_formation_lines(&run),
+        [format!(
+            "Warning aatf_violation (team=701, rule=Illegal formation, problem=Preset 1, \
+             Kick-off: illegal formation. {lb} (LB) is outside the area a starter can be \
+             moved in)"
+        )]
+    );
+}
+
 // SE-AATF-04
 #[test]
 fn an_imported_aatf_ruleset_is_read_from_the_data_directorys_rules_folder() {
