@@ -1837,6 +1837,31 @@ briefs, review loops, gates and mutation runs as for any step.
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,
     every change traced to a commit since `3c512628` or made a step here
+    - [x] the run 2026-11-13: census 649 inputs, of which 58 are no longer on disk (the
+      maintainer removed `Lab\VGL26`; scratch copies under `Downloads` and `D:`), 586 the
+      same outcome, 5 changed; checkpoint `002` holds 422 clean inputs, 419 in both, 120
+      differing (`.tmp/library_parity/checkpoints/diff_p11_002.txt`). Traced:
+      63 inputs whose faces, boots, gloves and portraits moved by one or two team IDs, with
+      their TeamColor, UniColor and UniformParameter bins, and `egg_Configs.7z` now
+      `team_name_unknown`: the embedded list carries VGL27's allocation (`6268280c`);
+      404 model packages (`face.fpk`, `boots.fpk`, `glove.fpk`) a few bytes larger in the
+      other inputs: the upgrader writes the short Common forms into an `.fmdl` (`a2b948c6`;
+      diagnosed on `Teams_Guest\adv\adv aesthetic export` with both checkpoints' binaries:
+      the tree the old upgrader wrote compiles byte for byte the same with both compilers,
+      and the new upgrader's `hair_high.fmdl` gains `common_folder/`);
+      `JP Winter 2025 Aesthetic Export` (folder and `.7z`) builds 7 more entries, its
+      `texture_not_div4` gone (`33e5d5a1`)
+    - [ ] untraced: four JP inputs (`JP Aesthetics Export for Genso Cup` three times, `JP
+      Aesthetic Additions for 2024 Winter Cup Garbage Day.7z`) went from the Error
+      `unmigrated_content` at `Boots/k0860 - Get out of JP/u0XXXp2.dds` (`path_taken` by
+      `u0731p2.dds`) to a clean run with `leftover_dropped` on `u0731p2.dds`: find the
+      commit that meant it, and whether dropping the team-ID copy and keeping the `XXX` one
+      is the right way round; and one Discord-backup archive gained two
+      `common_reference_kept` warnings (`mlpol/sourceimages`), still exit 1
+    - [ ] the respelled `.fmdl` still holds the long path
+      (`/Assets/pes16/model/character/common/sourceimages/`) beside the new
+      `common_folder/`: check whether a texture still uses it or the string is left
+      unused in the table (harmless in game either way; the file is 31 bytes larger)
   - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
     DECISIONS "Update now waits for 0.0.2", "Update now's dialog: what the plan left open"),
     postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand
