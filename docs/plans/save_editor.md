@@ -1081,8 +1081,12 @@ Win32 original hurt the most):
   checks the formation in, even where the sidebar names another), since the versions' pitches
   differ (PES 2017's has seven bands to PES 2021's eleven, darker turf, a coarser grain and
   smaller boxes and circle) and a member checks a formation against his own game. Measured so
-  far: PES 2017 (0.0.1's version) and PES 2021. PES 2019 comes with 0.0.2 (VGL 27's version),
-  the others after it, and a version not yet measured draws PES 2021's.
+  far: PES 2017 (0.0.1's version) and PES 2021. PES 2019's (VGL 27's version) is PES 2021's:
+  on 229 captures of its Formation screen, the markers taken out by a per-pixel median of
+  the turf, it has the eleven equal bands, turf within two of PES 2021's on each channel
+  (dark `#2f5a1f`), the halfway line on row 192, the penalty box 159 by 66, the goal area 22
+  deep and a circle of radius 37.5, so it draws PES 2021's as it is. The other versions come
+  after 0.0.2, and a version not yet measured draws PES 2021's.
 
   The reference is each screen's own pitch texture and the screen, which draws that texture at
   two thirds of its size (mean luma difference 1.7 of 255 to a 1280 x 720 capture of PES
