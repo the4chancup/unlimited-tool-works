@@ -2,6 +2,18 @@
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
+## Save-to-save operations
+
+What exists of this is in `spec/pes_savefile/operations.md` "Save-to-save operations".
+
+**The comparator's scope follows the stats/aesthetics rule** (`plans/aesthetics_export/settings_toml.md`,
+the star and attitude paragraph): a row is gameplay when its field affects play, and
+aesthetics otherwise. `PlayerDiff::scope` today follows the compare script's byte slice (the
+appearance block), which leaves three aesthetics on the gameplay side: the motions, the star
+rating and playing attitude, which the export carries. They become aesthetics rows, in
+`diff` and in the Save editor's Comparator alike; the appearance block's fields stay
+aesthetics.
+
 ## Interchange formats
 
 ### Team TOML (new, replaces `.4ccs`/`.4cct`)
@@ -45,6 +57,16 @@ before applying the file. `apply` adds no note: the file holds no ids.
 
 Measured 2026-10-22 (worklog 8.9): no current cup save breaks the rule; five older PES 16 saves
 break it in 13 to 25 teams each.
+
+**Star rating and playing attitude move into `[players.NN.appearance]`.** They are
+aesthetics (the rule above), so the Team TOML carries them where it carries the export's
+keys, in the embedded table `[players.NN.appearance.presentation]` (`star`,
+`playing_attitude`, the stored values as the other appearance keys are), and no longer
+beside the stats. An import still reads them beside the stats, where every file written
+before 0.0.2 holds them (a DBC member's 0.0.1 export): a key the import does not know refuses
+the whole file (`TeamTomlError::UnknownKey`), so dropping the old place would refuse every
+such file. A file holding both places is refused, as two values for one field. An export
+writes the new place only.
 
 ### Texport (read + write)
 

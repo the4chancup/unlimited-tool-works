@@ -1187,6 +1187,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   and below, and `_mips_alpha255-255-127-0` on the texture's name fades it. Plan written
   (`plans/team_compiler/pipeline.md` "3. Per-model-folder parallel steps", DECISIONS
   "hand-made mip levels"); left: its acceptance scenarios, then the code
+- [ ] 8.48 for 0.1.0 (the maintainer, 2026-11-13): the compiler writes star 0 on a player with
+  FPC on and no kit-dependent textures, so the pre-match screen shows a teammate whose kit
+  shows; `star = -7` keeps the value, "only for special occasions"
+  (`plans/aesthetics_export/settings_toml.md` "From 0.1.0, a pre-match screen that shows the
+  kit"); after 0.0.2-presentation. Left: the scenarios, then the code
 
 ### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)
 
@@ -1918,6 +1923,20 @@ briefs, review loops, gates and mutation runs as for any step.
     dropdown's list and the player list alike (`All teams` under VGL lists the VGL teams'
     players alone), is remembered in the tool's settings, and stands in the player list's
     dropdown only -> verify: draft, headless tests
+  - [ ] 0.0.2-presentation (the maintainer, 2026-11-13; plan written, DECISIONS "star rating and
+    playing attitude are aesthetics") star and playing attitude become `settings.toml` keys
+    (`plans/aesthetics_export/settings_toml.md`, the star and attitude paragraph), in slices:
+    - [ ] a `pes_savefile`: the two keys in `settings_toml` (template comments, defaults 0,
+      generation, the ownership test), the patch writing them, the Team TOML's move with the
+      old place still read (`plans/pes_savefile/operations.md`), `PlayerDiff::scope` with
+      the motions, star and attitude as aesthetics -> verify: the fixture saves' round trip,
+      a 0.0.1 Team TOML imports, `diff` tags the three aesthetics
+    - [ ] b the Team compiler and the Export upgrader: the patch carries the keys, an upgrade
+      fills them from the save; their templates and help -> verify: a compiled player's
+      star lands in the save, an upgraded export keeps a 7-star team's 7
+    - [ ] c the Save editor: the Presentation group under the lock, below FPC and Colors,
+      the two-sentence note (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
+      the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player
     and every edit writes one record) a `Select all similar players` button under the

@@ -695,11 +695,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     for.
 - **Contents 1:1 with 4ccEditor's tabs**, which are the parity contract, but for stronger
   hand. 4ccEditor draws it on its Appearance tab; the player view draws it in General info,
-  beside the gameplay values it is one of. Star and playing attitude stay with Appearance, in
-  its Cutscenes group.
+  beside the gameplay values it is one of. Star and playing attitude, which affect no play,
+  stand on the Appearance screen, in its Presentation group.
   - **The numbers** are the game's, in 4ccEditor's ranges: abilities 40 to 99, form 1 to 8,
     injury resistance 1 to 3, weak foot usage and accuracy 1 to 4 (these four stored one
-    lower), and the Cutscenes group's star 0 to 7 and playing attitude 0 to 3, each inside the
+    lower), and the Presentation group's star 0 to 7 and playing attitude 0 to 3, each inside the
     field's bit width on every version. A value the save holds outside its range shows as
     stored and changes only when the member edits it: drawing a player never edits him (an egui
     number control clamps the value it draws unless told not to, which would mark him unsaved on
@@ -744,16 +744,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     player's kept one stays drawn, and another player's or ruleset's draws nothing.
   - **Appearance** (the draft's `appearanceTab`), top to bottom, each group framed and
     titled, 4 points under a title as on the Stats screen and 4 between groups:
-    - **Cutscenes**, the pane's width: star (19+) and playing attitude (20+), its note
-      ("These only change how the player appears in cutscenes.") on the title's row. It is
-      outside the aesthetics lock: the two change only cutscenes, so they are no aesthetic
-      the export owns. The star rating decides how likely the player is to be shown as the
-      team's featured player on the prematch screen; what playing attitude changes is
-      `QUESTIONS.md`'s.
     - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
-      setting is on: under Cutscenes, over everything they govern.
+      setting is on: first, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
       two swatch rows' first squares in line) at its right.
+    - **Presentation**, the pane's width: star (19+) and playing attitude (20+), its note on
+      the title's row: "The star rating affects how likely a player is to show up as the
+      team's featured player in the pre-match screen. Playing attitude only affects
+      cutscenes." Both are aesthetics, keys of the export
+      (`plans/aesthetics_export/settings_toml.md`), so the group is under the lock.
     - **Strip style**: fifteen settings in three columns by five rows, every label one
       width and every field one width (the two ID boxes as wide as the dropdowns), thin
       lines in the frame's colour parting what belongs together:
@@ -1882,7 +1881,7 @@ did. So the lock is a setting of the Save editor's section, **"Aesthetics from e
 4ccEditor's did, with no ownership line and no switch drawn. On, the editor **does not edit
 aesthetics** but through the switch:
 
-- The Appearance section renders its values below the Cutscenes group disabled, with one
+- The Appearance screen renders its values disabled, with one
   line of explanation ("The team's export owns the aesthetics, so edit its `settings.toml`
   (or its `ingame_face.toml`, for the face, hair and iris), recompile, then apply the patch", and
   a link to the apply action).
@@ -2594,15 +2593,14 @@ SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 
 SE-GUI-06  GIVEN a PES 17 save
            WHEN the player view is drawn, its Appearance section open
            THEN the stronger hand control (General info) and the star and playing attitude
-                controls (Appearance's Cutscenes group) are disabled with a tooltip naming the
+                controls (Appearance's Presentation group) are disabled with a tooltip naming the
                 first version that has them, in the same place as on a PES 21 save, where they
                 are enabled; GIVEN a PES 21 save, the aesthetics editable THEN Copy from ID's
                 Base copy flag is disabled in place, its tooltip `PES 15 to 18 only`
 SE-GUI-07  GIVEN the save open with "Aesthetics from exports" on
-           WHEN the Appearance section is drawn open
-           THEN its values below the Cutscenes group are disabled with the line saying the
-                team's export owns them and the patch step, the Cutscenes group's editable;
-                WHEN "Edit aesthetics anyway" is switched on THEN they are editable, and the
+           WHEN the Appearance screen is drawn
+           THEN its values, the Presentation group's included, are disabled with the line
+                saying the team's export owns them and the patch step; WHEN "Edit aesthetics anyway" is switched on THEN they are editable, and the
                 switch is off again at the next start of the tool
 SE-GUI-08  GIVEN the save open on a team
            WHEN player 02 is dragged above player 01 in the list
@@ -3000,8 +2998,8 @@ SE-GUI-83  GIVEN a cup save open on All teams
 SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting off, a
                 player's Appearance screen shown
            WHEN it is drawn
-           THEN its groups stand in this order: Cutscenes with its note on the title's row;
-                Full Player Customization with Colors at its right; Strip style; Physique
+           THEN its groups stand in this order: Full Player Customization with Colors at
+                its right; Presentation with its note on the title's row; Strip style; Physique
                 with Motion at its right and Edit flags under Motion; the pane has no
                 scroll bar; Strip style's fifteen settings stand in the plan's three
                 columns by five rows, every field one width; the four colours are
@@ -3010,8 +3008,8 @@ SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting 
                 `Outfielder gloves` is a dropdown of `Off` and `Worn in winter`, and
                 picking `Worn in winter` writes what ticking Player gloves wrote; Edit
                 flags' six boxes stand three a row over `Copy from ID`; GIVEN the lock's
-                setting on THEN the ownership line and the switch stand between Cutscenes
-                and Full Player Customization and the pane still has no scroll bar
+                setting on THEN the ownership line and the switch stand above Full Player
+                Customization and the pane still has no scroll bar
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of

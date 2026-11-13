@@ -29,6 +29,40 @@ It writes:
 - `shirt_name` as the save's string;
 - no `height` or `weight`.
 
+**Star rating and playing attitude are aesthetics.** Everything on a player that affects play
+is a stat, carried by the Team TOML; everything else is an aesthetic, carried by the export.
+The star rating affects how likely a player is to show up as the team's featured player in the
+pre-match screen, and playing attitude only affects cutscenes, so both are aesthetics, in a
+table named as the Save editor's group is:
+
+```toml
+[appearance.presentation]
+star = 0                        # 0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen
+playing_attitude = 0            # 0 to 3 (PES 20 and later): only affects cutscenes
+```
+
+They counted as stats before only by default: they sit in the record's stats block, no key
+carried them, and every split of a player's fields put what the export lacked on the stats
+side, so the export could not set them and the Save editor left them outside the lock. Now:
+
+- both default to 0, what the game gives a new player (most cup teams hold 0 or 7 stars on
+  every player, and attitude 0); a version without the field ignores its key, as one before
+  PES 20 ignores `dribbling`;
+- generation writes both from the save, so an upgraded export keeps each player's values,
+  and the aesthetics patch writes them as it writes the other `[appearance]` keys;
+- the Team TOML carries them in its embedded `[appearance]` table, no longer beside the
+  stats, and `diff` tags their rows aesthetics (`plans/pes_savefile/operations.md`);
+- an edit made in PES comes back to the export like the appearance keys' (below).
+
+**From 0.1.0, a pre-match screen that shows the kit.** The pre-match screen's featured player
+is where a member looks at a kit's colours while picking one. A player with FPC on and no
+kit-dependent textures (no `kitN` token in his face folder's model and texture paths,
+`spec/model_format.md` "Kit-dependent assets") shows none of the kit there, so the compiler
+writes his star as 0 whatever his `star` key says, so a teammate whose kit shows is more
+likely to stand there. A minus sign keeps the value for such a player: `star = -7` writes 7. The key's
+comment says so, and says the minus is only for special occasions; until 0.1.0 the key takes
+0 to 7 and the comment does not mention it.
+
 **Edits made in PES come back to the export.** PES is the previewer for what only the game
 shows well (the motions, played in context; the in-game face, built with its sliders), so
 members keep tuning those in Edit mode, and Studio brings the result into the export's files
@@ -48,8 +82,8 @@ default, over the edit.
   file's change while it runs (the watch only makes it sooner).
 
   A key whose save value differs from the record's resolved value is an edit made in PES, for
-  the motions and the appearance block's keys (the face sliders, skin, physique, strip) on every
-  compiled player: the save holds both. The boots and gloves IDs are compared as generation
+  the motions, the appearance block's keys (the face sliders, skin, physique, strip) and the
+  presentation keys on every compiled player: the save holds them all. The boots and gloves IDs are compared as generation
   writes them: a stock ID (0 to 100) that differs comes back as the key, a custom one is folder
   content and is named in the notice, not brought. His name, unless the export carries
   `write_names`, is not compared.

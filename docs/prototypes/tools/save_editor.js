@@ -3550,8 +3550,8 @@ const WALK = [
   ["SE-GUI-03", "edit an ability: the dot appears on his row and the save's state stays unwritten until Save (Ctrl+S or the File menu's entry) clears it"],
   ["SE-GUI-04", "make two edits, then Undo and Redo in the Edit menu"],
   ["SE-GUI-05", "edit, then open the other sample save from the draft control: the prompt offers save, discard, cancel"],
-  ["SE-GUI-06", "PES 17 sample: star and playing attitude in the Appearance section's Cutscenes group and stronger hand in General info sit disabled in place, tooltips naming PES 19+/20+; PES 21: enabled"],
-  ["SE-GUI-07", "the Appearance section below the Cutscenes group is disabled under the ownership line; the switch unlocks it; the switch is off on every open"],
+  ["SE-GUI-06", "PES 17 sample: star and playing attitude in the Appearance screen's Presentation group and stronger hand in General info sit disabled in place, tooltips naming PES 19+/20+; PES 21: enabled"],
+  ["SE-GUI-07", "the Appearance screen, its Presentation group included, is disabled under the ownership line; the switch unlocks it; the switch is off on every open"],
   ["SE-GUI-08", "drag a list row onto another: the dragged player's name, stats and look land on the target slot, those between shift one along, while every slot keeps its id, shirt number and captain mark; the save is marked unsaved"],
   ["SE-GUI-09", "the quick actions under the player list follow the toolbar's ruleset dropdown: Gold/Silver/Bronze/Goalkeeper/Regular under 4cc Autumn 26, each other built-in ruleset its own tiers"],
   ["SE-GUI-11", "switch Edit aesthetics anyway on; the Appearance section's FPC group: Hide default body (or Ctrl+I) gives the hide preset and reads 'The default body is currently hidden', Show default body (or Ctrl+I again) the show preset; a player with his own boots ID keeps it"],
@@ -5088,9 +5088,8 @@ function appearanceTab(p) {
     h("input", { type: "checkbox", id: "edit-anyway", checked: en,
       onchange: e => { S.editAnyway = e.target.checked; render(); } }),
     " Edit aesthetics anyway");
-  // The Cutscenes group (v2): star rating and playing attitude only change
-  // cutscenes, and the team's export does not own them, so they sit above the
-  // lock's line, outside #appearance-body and the reach of `dis`.
+  // The Presentation group: star rating and playing attitude affect no play, so
+  // they are aesthetics, keys of the team's export, and lock with the rest.
   const starIn = h("input", { type: "number", id: "f-star", value: p.stats.star ?? 0, min: 0, max: 7,
     onchange: e => { const v = parseInt(e.target.value, 10);
       if (!Number.isNaN(v)) { set(p, x => x.stats.star, (x, v2) => x.stats.star = v2, v, "star"); render(); } } });
@@ -5098,8 +5097,8 @@ function appearanceTab(p) {
     onchange: e => { const v = parseInt(e.target.value, 10);
       if (!Number.isNaN(v)) { set(p, x => x.stats.playing_attitude, (x, v2) => x.stats.playing_attitude = v2, v, "playing attitude"); render(); } } });
   const cutscenes = namedCols(h("div", { class: "group", id: "cutscenes" },
-    h("div", { class: "row", style: "margin:0" }, strong("Cutscenes"),
-      weak("These only change how the player appears in cutscenes.")),
+    h("div", { class: "row", style: "margin:0" }, strong("Presentation"),
+      weak("The star rating affects how likely a player is to show up as the team's featured player in the pre-match screen. Playing attitude only affects cutscenes.")),
     h("table", { class: "grid" },
       chunk([[lbl("Star"), fld(starIn, 19)], [lbl("Playing attitude"), fld(attIn, 20)]],
         colCount("cutscenes")).map(row => h("tr", {}, row.flat())))), "cutscenes");
@@ -5255,17 +5254,16 @@ function appearanceTab(p) {
           (sev === "err" ? "Error: " : sev === "warn" ? "Warning: " : "Info: ") + text))
       : weak("No interference found."));
   // Full Player Customization first (what a manager opens the screen for), then the
-  // groups paired so the screen shows whole: Colors beside Cutscenes, Edit flags beside
-  // Motion. Cutscenes stays outside the lock, so the lock is applied group by group.
+  // groups paired so the screen shows whole: Colors beside FPC, Edit flags beside
+  // Motion. The lock is applied group by group.
   // Physique at the left, Motion over Edit flags at its right: the three share the room
   // the sliders left empty beside them.
   const body = h("div", { id: "appearance-body" }, stripRow,
     h("div", { class: "aprow" }, phys, h("div", { class: "apcol" }, motion, flags)));
-  if (!en) [fpcGroup, colors, body].forEach(dis);
-  // Cutscenes first, outside the lock, then the lock's line and switch over everything
-  // they govern.
-  return h("div", { id: "appearance-screen" }, cutscenes, ...lines,
-    h("div", { class: "aprow fpcrow" }, fpcGroup, colors), body);
+  if (!en) [fpcGroup, colors, cutscenes, body].forEach(dis);
+  // The lock's line and switch first, over everything they govern.
+  return h("div", { id: "appearance-screen" }, ...lines,
+    h("div", { class: "aprow fpcrow" }, fpcGroup, colors), cutscenes, body);
 }
 
 // ---- The colour picker (color_tools' color_field; libs/color_tools.md) ----
