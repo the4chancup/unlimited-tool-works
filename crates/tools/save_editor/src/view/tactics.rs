@@ -302,7 +302,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll").on_hover_text(
-            "Scroll the names too long for their place on the pitch, as the game does. \
+            "Scroll long names on the pitch, as the game does. \
              Off, they stand still, cut short.",
         );
         checkbox(&mut formbar_ui, &mut tactics.portraits, "Portraits").on_hover_text(

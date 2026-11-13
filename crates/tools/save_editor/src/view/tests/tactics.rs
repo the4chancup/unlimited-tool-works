@@ -1598,7 +1598,7 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     for (checkbox, hover) in [
         (
             scroll,
-            "Scroll the names too long for their place on the pitch, as the game does. \
+            "Scroll long names on the pitch, as the game does. \
              Off, they stand still, cut short.",
         ),
         (
