@@ -69,28 +69,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
 
-## Three features asked on 2026-11-13
-
-Worklog steps 0.0.2-pagetoggle, 0.0.2-teamdrop and 0.0.2-similar wait on these.
-
-- **Stats | Appearance | Gameplan: what does each player page hold?** The player view shows
-  every field at once today, and "Editing UI" says why: a tab hid what an edit depended on
-  (the skills' card budget counts the positions' extra A ratings). Does Stats keep general
-  info, positions, skills and abilities together and Appearance take the appearance section
-  alone, so nothing a budget counts is split? And is the aim more room for each page, or a
-  quicker way to the team's page and back?
-- **The team dropdown's category.** Does the category only shorten the dropdown's own list,
-  or does `All teams` under VGL also list only the VGL teams' players? Is the category
-  remembered between sessions? Do the other team dropdowns (the Comparator's, Multi-team
-  AATF's range, Copy/swap stats) get it too?
-- **Select all similar players: where it looks.** Within the selected player's team, or over
-  the whole save?
-- **Select all similar players: what is edited together.** Stats alone (the Copy stats field
-  set), or appearance fields too? What do the name, the shirt name and the other fields
-  that differ show while several players are selected, and are they locked?
-- **Select all similar players: how the selection ends.** By clicking any row? Can a row be
-  added to or taken out of it by hand (Ctrl+click)?
-
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

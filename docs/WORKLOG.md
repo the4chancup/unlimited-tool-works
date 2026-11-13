@@ -1970,26 +1970,38 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
     `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
     paint tests, the built window
-  - [ ] 0.0.2-pagetoggle (asked by the maintainer 2026-11-13; not planned or drafted yet; waits on
-    `QUESTIONS.md` "Three features asked on 2026-11-13") a three-way toggle left of the
-    player or team name, Stats | Appearance | Gameplan. With a team row selected, the first
-    two select the player last opened on that team (its first player if none was); with a
-    player selected, the third selects his team's row. It reverses `plans/save_editor.md`
-    "Editing UI" ("Not tabs, because…") in part, so the plan edit says what the two player
-    pages hold -> verify: draft looked at, headless tests, the built window
-  - [ ] 0.0.2-teamdrop (asked by the maintainer 2026-11-13; not planned or drafted yet) the player
-    list's team dropdown: `ALL` becomes `All teams`, and the open dropdown ends with a
-    separator and four radio buttons that filter the teams it lists by category: All, 4cc
-    (701-780, the Backup rows included), VGL (781-850), Invitational (851-920). Open points
-    in `QUESTIONS.md`, the same section -> verify: draft, headless tests
-  - [ ] 0.0.2-similar (asked by the maintainer 2026-11-13; not planned or drafted yet; the largest
-    of the three: the view has one selected player, and every edit writes one record) a
-    `Select all similar players` button under the player list selects every player whose
-    stats equal the selected one's, and they are then edited together as one unnamed
-    player; perhaps a window of checkboxes (position, cards, stats) choosing what must
-    match. Open points in `QUESTIONS.md`, the same section; slice it once they are
-    answered (the selection of several rows, then the edits written to all, each one undo
-    step) -> verify: draft, headless tests, the built window
+  - [ ] 0.0.2-pagetoggle (asked and answered by the maintainer 2026-11-13; next: the draft, his
+    look, then the plan, DECISIONS and the code) a three-way toggle on the row of the
+    player or team name, at its left: Stats | Appearance | Gameplan. Stats is the player
+    view less its collapsible Appearance section (general info, positions, skills and
+    abilities stay together, so nothing a budget counts is split); Appearance is that
+    section as a screen of its own; Gameplan is the team view. With a team row selected,
+    Stats and Appearance select the player last opened on that team (its first player if
+    none was); with a player selected, Gameplan selects his team's row. The team rows'
+    `[click for gameplan]` goes: the toggle does it, and the label cluttered the list. Why
+    now: tabs were dropped for vertical room, which a toggle on the name's own row does not
+    take, and members used to 4ccEditor asked for them. The plan's "Editing UI" ("Not tabs,
+    because…") is rewritten with it -> verify: draft looked at, headless tests, the built
+    window
+  - [ ] 0.0.2-teamdrop (asked and answered by the maintainer 2026-11-13; next: the draft, his look,
+    then the plan, DECISIONS and the code) the player list's team dropdown: `ALL` becomes
+    `All teams` (in every team dropdown that has such an entry), and the open dropdown ends
+    with a separator and four radio buttons that filter by category: All, 4cc (701-780, the
+    Backup rows included), VGL (781-850), Invitational (851-920). The category shortens the
+    dropdown's list and the player list alike (`All teams` under VGL lists the VGL teams'
+    players alone), is remembered in the tool's settings, and stands in the player list's
+    dropdown only -> verify: draft, headless tests
+  - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
+    0.0.2, and only if time is left**: the largest, since the view has one selected player
+    and every edit writes one record) a `Select all similar players` button under the
+    player list opens a window of checkboxes (position, cards, stats) choosing what must
+    match the selected player, and a choice between his team (the default) and the whole
+    save; the matching players are then selected together and edited as one unnamed
+    player. Stats alone are edited together (the Copy stats field set); the name, the shirt
+    name and whatever differs show empty and locked. Clicking any row ends the selection;
+    Ctrl+click adds or removes a row. Two slices: the selection of several rows, then the
+    edits written to all as one undo step -> verify: draft, headless tests, the built
+    window
   - [ ] 0.0.2-flatpitch (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the two formation picture dialogs (8.33, 8.34, not built yet), the
     maintainer's additions of 2026-11-13, drafted (`picturesFlatBox`,
     `picturesPortraitsBox`), to enter `plans/save_editor.md` "Formation pictures" and be
