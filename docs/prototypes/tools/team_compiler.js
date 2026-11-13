@@ -111,14 +111,14 @@ const TEAM_COMPILER_CSS = `
      ctx.input(|i| i.time)), because the view is redrawn on every tick of a
      run, and above the Warning and Error rings (z-index over the ring's
      ::after; egui: painted after the ring). */
-  .tc-sweep { position: absolute; bottom: 0; height: 3px; width: 40%; background: var(--strong);
+  .tc-sweep { position: absolute; bottom: 0; height: 2px; width: 40%; background: var(--strong);
     border-radius: 1px; pointer-events: none; z-index: 1; }
   .tc-sweep-ring { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
     z-index: 1; }
   /* Inset by half the stroke, so the segment lies wholly inside the cell,
-     over the ring's 3 points. */
-  .tc-sweep-ring rect { fill: none; stroke: var(--strong); stroke-width: 3; x: 1.5px; y: 1.5px;
-    width: calc(100% - 3px); height: calc(100% - 3px); }
+     over the ring's 3 points (2 wide, so the ring's colour shows beside it). */
+  .tc-sweep-ring rect { fill: none; stroke: var(--strong); stroke-width: 2; x: 1px; y: 1px;
+    width: calc(100% - 2px); height: calc(100% - 2px); }
   /* sample look: a blocked cell (its export is skipped) keeps no fill. */
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }

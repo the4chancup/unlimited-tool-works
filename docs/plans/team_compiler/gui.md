@@ -336,7 +336,7 @@ status color.
 
 **A processing cell moves**, and nothing else in the grid does, so the eye finds the few
 cells being compiled without a colour of their own (a bold label alone was too hard to see). A
-light segment, a quarter of the cell's edge long and 3 points wide, travels clockwise around
+light segment, a quarter of the cell's edge long and 2 points wide, travels clockwise around
 the edge inside the cell, once a second, in the strong text colour. Its phase is counted from
 that cell's own start (`ctx.input(|i| i.time)` less the time it turned Processing), so a short
 task still shows the segment setting off and the cells do not move in step. It is painted
