@@ -1885,24 +1885,7 @@ briefs, review loops, gates and mutation runs as for any step.
       writers do not write, and the patch block's `# slot 03 -> player 70203` contradicts
       its prose (`sh_toml_b` "Wrong or stale" 4, 5, 7: trim the blocks or write the useful
       comments); the kit config's comment columns drift with the value's width
-  - [ ] 0.0.2-copywin (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) Copy and swap stats as one window (the maintainer, 2026-11-13;
-    drafted, `drawCopyStats`, and looked at the same day). The Player menu's "Copy stats
-    from…" and "Swap stats with…" become one entry, "Copy/swap stats…", which opens a
-    window titled "Copy/swap stats", not a dialog: non-modal, the view under it usable,
-    dragged by its title bar. Two rows (Source, Destination) by two columns (Team, Player),
-    four dropdowns. Both rows start on the selected player, or on the selected team's first
-    player while a team's gameplay page shows; a team dropdown changed takes that team's
-    first player. Buttons Copy, Swap and Close; Copy and Swap are disabled while both rows
-    name one player (the hover says so) and leave the window open, so several copies are
-    made in a row; each is one undo step and writes a line in the window ("Copied X's stats
-    to Y."). A click on a player in the list while the window is open sets the destination
-    (one player's stats copied onto several is the repeated action), a team row its first
-    player. The field set is the built one, 4ccEditor's but the free-kick motion (the parity
-    table's Copy player stats row: registered and playable positions included; checked
-    against `editor.h` `PlayerImport` 2026-11-13, nothing else is missing). Plan first
-    (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
-    the slice -> verify: headless, two copies in a row without reopening, a swap, one undo
-    step each, a click in the list moving the destination; the built window, dragged
+  - [x] 0.0.2-copywin (2026-11-13, `30b1109c`) `Copy/swap stats…` opens a non-modal window (Source and Destination by team and player; the list's selection sets the Destination; Copy and Swap leave it open); help page 06. Left: a look at the built window
   - [x] 0.0.2-fpcmenu (2026-11-13, `bba7eee1`) the Player menu's FPC entry reads `Hide default body (Enable FPC)` or `Show default body (Disable FPC)`, whichever Ctrl+I will do; the Team menu's two carry the same brackets; help pages 05 and 06
   - [x] 0.0.2-clipmsg (2026-11-13, `bba7eee1`) Ctrl+C and Ctrl+V publish a notice naming the copy and the target, a cross-version paste's with the count of values left out or changed; the clipboard text's first line holds the notice's words
   - [x] 0.0.2-notice (2026-11-13, `bba7eee1`) every result notice of the Save editor names the thing first (`f.toml written`), and the status bar draws a notice in the label family's semibold
