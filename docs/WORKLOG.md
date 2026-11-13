@@ -2426,6 +2426,18 @@ briefs, review loops, gates and mutation runs as for any step.
   wider than its room it shows only once scrolled to the end (S-undo-b-4; a mock of both,
   `.tmp/0_0_2/undo/bar_edge.png` and `bar_under_top.png`, by `shot_bar.py`). The wheel
   still scrolls sideways
+- [ ] after 0.0.2: the Tactics pitch of the versions not measured yet (`plans/save_editor.md`
+  "Each version draws its own screen's pitch"; today they draw PES 2021's). Settled
+  2026-11-13: PES 2019 is PES 2021's, PES 2018 is PES 2017's (0.0.2-range moves it), and
+  PES 2020 is taken as PES 2021's unmeasured (the maintainer). PES 2015's is a third
+  screen, not a third `PitchLook`: on the maintainer's two pictures
+  (`C:/Data/Pictures/ShareX/2026-11/PES2015-1.1.9.2-wip_2026-11-13_06-18-22.png` and
+  `_06-19-09.png`) the pitch is 348 by 454 where ours is 320 by 384 (0.77 wide to tall
+  against 0.83), with touchlines, solid white lines, a centre spot, about eighteen bands
+  of 25 rows under a brightness gradient (dark at both ends, `#055e01`, to `#157808` at
+  the halfway line), and its markers are dots with the name above, no portrait and no
+  badge. So it needs its own canvas shape, its own mapping of the stored spots and its
+  own markers, each to measure. PES 2016: the maintainer looks next
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
