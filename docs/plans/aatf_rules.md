@@ -692,10 +692,12 @@ The illegal formation check (0.0.2c) is verified by fixtures, none of them a rul
   shape: its fifteen presets, seven sets it wrote after drops (the three repairs, the drops
   near the areas' edges and the range's, two just outside a swap box) and the 484 distinct
   formations of its own teams in the cup library's saves.
-- **One formation per clause**, each the PES 17 fixture's team 701 first Kick-off set (a 4-4-2
-  that passes) changed in one starter: the keeper at (52, 1); the LB at (2, 10), which breaks
-  clause 2 and not 3; a CF at (52, 10); a second LMF at (14, 30); a midfielder made a sixth
-  defender; two CMFs 8 apart across and 2 up, and the same pair 9 apart, and 3 up, which pass.
+- **One formation per clause**, each the PES 17 fixture's team 701 first Kick-off set (the
+  game's default 4-2-3-1, which passes) changed in one or two starters: the keeper at
+  (52, 1); the LB at (2, 10), which breaks clause 2 and not 3; the CF at (52, 10); the AMF
+  made a second LMF at (14, 25); the two DMFs made CBs at (64, 14) and (40, 14), a fifth and
+  a sixth defender; the two DMFs made CMFs at (40, 22) and (48, 24), 8 apart across and 2
+  up, and the same pair 9 apart, and 3 up, which pass.
 - **Only fielded sets.** A broken In-possession set gives no warning while the preset's Fluid
   formation is off, and one when it is on.
 - **The flag and the version.** Under a ruleset with `illegal_formations` no team gets the
