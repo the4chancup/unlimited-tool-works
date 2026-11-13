@@ -1181,6 +1181,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     within a few points
 - [x] 8.2 the shell's draft, `docs/prototypes/shell.html` (2026-10-19, side-lead E, SWE-2 in
   seven slices): every `core/gui.md` shell screen, walked by a 29-check headless harness
+- [ ] 8.47 for 0.1.0 (the maintainer, 2026-11-13): the Team compiler takes hand-made mip
+  levels beside a raster texture, so a model can show or hide with the camera's distance:
+  `body_mip2.png` gives `body`'s mip 2, `body_mip4-6.png` mips 4 to 6, `body_mip8+.png` mip 8
+  and below; levels no file names are generated from `body.png` as today. Left: the plan
+  (`plans/team_compiler/pipeline.md`, the texture step), its open points first discussed
+  with the maintainer, then the code
 
 ### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)
 
