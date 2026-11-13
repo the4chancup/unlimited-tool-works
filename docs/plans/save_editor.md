@@ -837,7 +837,10 @@ side.
   side and a long move makes the row taller, not wider. The players' own rows are compared against the record each one
   came from, so a moved player lists only what was edited on him, before or after the move.
   One row per group, not per player, because the players between the two ends of a drag only
-  shifted by one place, and a row each would bury the one move the member made.
+  shifted by one place, and a row each would bury the one move the member made. A group
+  stands under the first team that rosters any of its players: right for the cup's teams,
+  which share no player, and not made right for the game's own clubs and national teams,
+  which do and which the suite does not support.
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
   draft's `changesTable`). It ends the row, in the link blue of the label that opened the
   list, and its column stays at the list's right edge while a wide row scrolls sideways

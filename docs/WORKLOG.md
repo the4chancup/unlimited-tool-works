@@ -1886,12 +1886,12 @@ briefs, review loops, gates and mutation runs as for any step.
       list compares a player with the record he came from, and each group of places
       that traded players is one `Player order` row. Two overlapping drags give groups
       that match neither drag (the cycles). Look: Pending looks
-    - [ ] a's SWE-2 review 2026-11-13 (S-undo-a r1, 2 of 5 accepted, the loop ends):
-      its fixes wait for b's merge, which edits the same files: a group of moved
-      places goes under the team whose roster holds all its members (a player on
-      two rosters put it under the wrong team), with a test on two teams sharing a
-      player; a moved player renamed after the move, the row's new side showing
-      the new name; `SEALED_KEY`'s comment (`.tmp/duck_rulings.md`)
+    - [ ] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends):
+      its fix waits for b's merge, which edits the same files: a moved player
+      renamed after the move, the row's new side showing the new name; and
+      `SEALED_KEY`'s comment (`.tmp/duck_rulings.md`). A player on two rosters
+      puts his group's row under the wrong team: left, such teams are not
+      supported (DECISIONS 2026-11-13)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
       one place per line (approved), and the X ending each row in the link blue, its
       column fixed at the list's right edge while a wide row scrolls under it (the
