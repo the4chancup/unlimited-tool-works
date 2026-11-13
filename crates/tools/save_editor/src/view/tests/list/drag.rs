@@ -280,25 +280,29 @@ fn bounds(node: &accesskit::Node) -> egui::Rect {
     )
 }
 
+/// A mark segment as `drop_marks` reports it: its index in the frame's
+/// shapes, its two points and its stroke width.
+type MarkSegment = (usize, [egui::Pos2; 2], f32);
+
 /// The drop marks `shapes` draw in `selection` on `frame` (the list's):
-/// the line's and serifs' segments with their stroke widths, and any
-/// unfilled rect stroked in the colour (a row's outline; a selected or
-/// hovered row's frame is filled, so it cannot pass for one). A mark
-/// straddling the frame's edge counts: the asserts decide what is drawn.
+/// the line's and serifs' segments (`MarkSegment`s), and any unfilled
+/// rect stroked in the colour (a row's outline; a selected or hovered
+/// row's frame is filled, so it cannot pass for one). A mark straddling
+/// the frame's edge counts: the asserts decide what is drawn.
 fn drop_marks(
     shapes: &[egui::epaint::ClippedShape],
     selection: egui::Color32,
     frame: egui::Rect,
-) -> (Vec<([egui::Pos2; 2], f32)>, Vec<egui::Rect>) {
+) -> (Vec<MarkSegment>, Vec<egui::Rect>) {
     let mut segments = Vec::new();
     let mut outlines = Vec::new();
-    for clipped in shapes {
+    for (index, clipped) in shapes.iter().enumerate() {
         match &clipped.shape {
             egui::Shape::LineSegment { points, stroke }
                 if stroke.color == selection
                     && frame.intersects(egui::Rect::from_points(points)) =>
             {
-                segments.push((*points, stroke.width));
+                segments.push((index, *points, stroke.width));
             }
             egui::Shape::Rect(shape)
                 if shape.fill == egui::Color32::TRANSPARENT
@@ -314,21 +318,38 @@ fn drop_marks(
 }
 
 /// Asserts `shapes`' drop marks are the one line across `target`'s
-/// edge at `edge_y`, 2 thick, a serif 2 wide and 7 high centred on it
-/// at each of the row's edges, and no outlined row.
+/// edge at `edge_y`, 2 thick in `visuals`' selection colour, a serif 2
+/// wide and 7 high centred on it at each of the row's edges, inside the
+/// frame's border, and no outlined row.
 fn assert_line(
     shapes: &[egui::epaint::ClippedShape],
-    selection: egui::Color32,
+    visuals: &egui::Visuals,
     frame: egui::Rect,
     target: egui::Rect,
     edge_y: f32,
     when: &str,
 ) {
-    let (segments, outlines) = drop_marks(shapes, selection, frame);
+    let (segments, outlines) = drop_marks(shapes, visuals.selection.stroke.color, frame);
+    // The frame's border is stroked inside it, and a row spans the
+    // frame's width: nothing of a mark reaches into the border, on
+    // either side (a horizontal segment's stroke is its height; a
+    // vertical one's its width).
+    let border = visuals.widgets.noninteractive.bg_stroke.width;
+    for (_, points, width) in &segments {
+        let (lo, hi) = if points[0].x == points[1].x {
+            (points[0].x - width / 2.0, points[0].x + width / 2.0)
+        } else {
+            (points[0].x.min(points[1].x), points[0].x.max(points[1].x))
+        };
+        assert!(
+            lo >= frame.min.x + border - 0.01 && hi <= frame.max.x - border + 0.01,
+            "no mark reaches into the frame's border {when} ({lo}..{hi} in {frame:?}, border {border})"
+        );
+    }
     let horizontals: Vec<([egui::Pos2; 2], f32)> = segments
         .iter()
-        .filter(|(points, _)| points[0].y == points[1].y)
-        .copied()
+        .filter(|(_, points, _)| points[0].y == points[1].y)
+        .map(|(_, points, width)| (*points, *width))
         .collect();
     let [(line, width)] = horizontals[..] else {
         panic!("one line across the row's edge {when}, got {segments:?}")
@@ -341,13 +362,13 @@ fn assert_line(
     );
     let (x0, x1) = (line[0].x.min(line[1].x), line[0].x.max(line[1].x));
     assert!(
-        (x0 - target.min.x).abs() < 0.01 && (x1 - target.max.x).abs() < 0.01,
-        "the line spans the row {when} ({x0}..{x1} vs {target:?})"
+        (x0 - (target.min.x + border)).abs() < 0.01 && (x1 - (target.max.x - border)).abs() < 0.01,
+        "the line spans the row inside the frame's border {when} ({x0}..{x1} vs {target:?}, border {border})"
     );
     let mut serif_xs: Vec<f32> = segments
         .iter()
-        .filter(|(points, _)| points[0].x == points[1].x && points[0].y != points[1].y)
-        .map(|(points, width)| {
+        .filter(|(_, points, _)| points[0].x == points[1].x && points[0].y != points[1].y)
+        .map(|(_, points, width)| {
             let height = (points[0].y - points[1].y).abs();
             let mid = (points[0].y + points[1].y) / 2.0;
             assert!(
@@ -362,8 +383,9 @@ fn assert_line(
         panic!("a serif at each end {when}, got {segments:?}")
     };
     assert!(
-        (left - (target.min.x + 1.0)).abs() < 0.01 && (right - (target.max.x - 1.0)).abs() < 0.01,
-        "the serifs' outer sides on the row's edges {when} ({left}, {right} vs {target:?})"
+        (left - (target.min.x + border + 1.0)).abs() < 0.01
+            && (right - (target.max.x - border - 1.0)).abs() < 0.01,
+        "the serifs' outer sides at the border's inner side {when} ({left}, {right} vs {target:?}, border {border})"
     );
     assert!(
         outlines.is_empty(),
@@ -374,15 +396,54 @@ fn assert_line(
 /// Asserts `shapes` draw no drop mark `when`.
 fn assert_no_marks(
     shapes: &[egui::epaint::ClippedShape],
-    selection: egui::Color32,
+    visuals: &egui::Visuals,
     frame: egui::Rect,
     when: &str,
 ) {
-    let (segments, outlines) = drop_marks(shapes, selection, frame);
+    let (segments, outlines) = drop_marks(shapes, visuals.selection.stroke.color, frame);
     assert!(
         segments.is_empty() && outlines.is_empty(),
         "no line and no outline {when}, got {segments:?} and {outlines:?}"
     );
+}
+
+/// The mark tests' prologue: `test`'s fixture save with SECOND (slot 1)
+/// and SIXTH (slot 5) renamed plus `prep`'s own changes, opened on team
+/// 701 in a headless window `height` tall. Answers the save as written,
+/// the view, the window and its visuals for the mark asserts.
+fn mark_scene(
+    test: &str,
+    height: f32,
+    prep: impl FnOnce(&mut EditFile),
+) -> (EditFile, SaveView, Headless, egui::Visuals) {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
+    file.player_mut(70106).unwrap().name = "SIXTH".to_owned();
+    prep(&mut file);
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let window = Headless::sized(DEFAULT_PANE.x, height);
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    (file, view, window, visuals)
+}
+
+/// A press on `from` with the pointer then held to `over`: the held
+/// frame's painted shapes.
+fn hold_from_to(
+    window: &mut Headless,
+    view: &mut SaveView,
+    from: egui::Pos2,
+    over: egui::Pos2,
+) -> Vec<egui::epaint::ClippedShape> {
+    window.frame(pointer_at(from, true), |ui| show(ui, view, &|| Vec::new()));
+    window
+        .frame(vec![egui::Event::PointerMoved(over)], |ui| {
+            show(ui, view, &|| Vec::new())
+        })
+        .2
 }
 
 // The place a drop on the held row moves the dragged player to is marked
@@ -394,27 +455,26 @@ fn assert_no_marks(
 // SE-GUI-75
 #[test]
 fn a_held_drag_marks_where_the_drop_would_land() {
-    let path = fixture(PesVersion::Pes21, "drag_line");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.player_mut(70101).unwrap().name = "FIRST".to_owned();
-    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
-    file.player_mut(70106).unwrap().name = "SIXTH".to_owned();
-    // Team 702's third rostered player renamed too: a row's label
-    // carries no team name, so the next team's row cannot pass for one of
-    // 701's. The third, so the drop's slot is not the dragged row's slot
-    // 1 — a coincidence that would make the drop a no-op whatever the
-    // team check.
-    let other_id = file
-        .team(702)
-        .unwrap()
-        .roster
-        .iter()
-        .filter(|slot| slot.player_id != 0)
-        .nth(2)
-        .expect("team 702 rosters three players")
-        .player_id;
-    file.player_mut(other_id).unwrap().name = "OTHER".to_owned();
-    file.save(&path).unwrap();
+    let mut other_id = 0;
+    // Tall enough for team 702's block to be drawn under team 701's at ALL.
+    let (file, mut view, mut window, visuals) = mark_scene("drag_line", 1100.0, |file| {
+        file.player_mut(70101).unwrap().name = "FIRST".to_owned();
+        // Team 702's third rostered player renamed too: a row's label
+        // carries no team name, so the next team's row cannot pass for
+        // one of 701's. The third, so the drop's slot is not the dragged
+        // row's slot 1 — a coincidence that would make the drop a no-op
+        // whatever the team check.
+        other_id = file
+            .team(702)
+            .unwrap()
+            .roster
+            .iter()
+            .filter(|slot| slot.player_id != 0)
+            .nth(2)
+            .expect("team 702 rosters three players")
+            .player_id;
+        file.player_mut(other_id).unwrap().name = "OTHER".to_owned();
+    });
     let other_slot = file
         .team(702)
         .unwrap()
@@ -433,19 +493,6 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         )
     };
 
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    // Tall enough for team 702's block to be drawn under team 701's at ALL.
-    let mut window = Headless::sized(DEFAULT_PANE.x, 1100.0);
-    let selection = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .selection
-        .stroke
-        .color;
-
     // Player 02's drag held over player 06's row: a line across its lower
     // edge (he comes from above: the rows down to it move up and he lands
     // under them), a serif at each end, and no row outlined.
@@ -453,15 +500,10 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     let sixth = bounds(row(&nodes, "06 CB SIXTH"));
     let first = bounds(row(&nodes, "01 CB FIRST"));
     let from = centre(row(&nodes, "02 CB SECOND"));
-    window.frame(pointer_at(from, true), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(sixth.center())], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    let shapes = hold_from_to(&mut window, &mut view, from, sixth.center());
     assert_line(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         sixth,
         sixth.max.y,
@@ -475,7 +517,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     });
     assert_line(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         first,
         first.min.y,
@@ -489,7 +531,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     });
     assert_no_marks(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         "over the dragged row itself",
     );
@@ -501,7 +543,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     });
     assert_no_marks(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         "held off the list",
     );
@@ -513,7 +555,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_no_marks(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         "after the release off the list",
     );
@@ -532,19 +574,60 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     let from = centre(row(&nodes, "02 CB SECOND"));
     let sixth = bounds(row(&nodes, "06 CB SIXTH"));
     let other = centre(row(&nodes, &other_label));
-    window.frame(pointer_at(from, true), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(sixth.center())], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    let shapes = hold_from_to(&mut window, &mut view, from, sixth.center());
     assert_line(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         sixth,
         sixth.max.y,
         "over a row of his own team under ALL",
+    );
+
+    // And over his team's last player row, its lower edge where the next
+    // team's row begins: that row's fill, painted after, covers none of
+    // the line.
+    let last_slot = file
+        .team(701)
+        .unwrap()
+        .roster
+        .iter()
+        .rposition(|slot| slot.player_id != 0)
+        .expect("team 701 rosters someone");
+    let last = bounds(row(&nodes, &format!("{:02} CB PLACEHOLDER", last_slot + 1)));
+    let next_team = bounds(team_row(&nodes, &view, 702));
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(last.center())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let frame = list_frame(&window, &shapes);
+    assert_line(
+        &shapes,
+        &visuals,
+        frame,
+        last,
+        last.max.y,
+        "over his team's last row under ALL",
+    );
+    let fills: Vec<usize> = shapes
+        .iter()
+        .enumerate()
+        .filter_map(|(index, clipped)| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == visuals.faint_bg_color
+                    && shape.rect.contains(next_team.center()) =>
+            {
+                Some(index)
+            }
+            _ => None,
+        })
+        .collect();
+    let [fill] = fills[..] else {
+        panic!("the next team's row fill alone, got {fills:?}")
+    };
+    let (segments, _) = drop_marks(&shapes, visuals.selection.stroke.color, frame);
+    assert!(
+        segments.iter().all(|(index, _, _)| *index > fill),
+        "every mark shape paints after the next team row's fill (fill at {fill}, marks at {segments:?})"
     );
 
     // Held over a row of the next team: a drop there moves nothing, so
@@ -554,7 +637,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
     });
     assert_no_marks(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         "over another team's row under ALL",
     );
@@ -576,31 +659,17 @@ fn a_held_drag_marks_where_the_drop_would_land() {
 // SE-GUI-75
 #[test]
 fn the_drop_mark_paints_over_the_next_rows_fill() {
-    let path = fixture(PesVersion::Pes21, "drag_mark_order");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
-    file.player_mut(70106).unwrap().name = "SIXTH".to_owned();
-    file.save(&path).unwrap();
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
+    let (_file, mut view, mut window, visuals) =
+        mark_scene("drag_mark_order", DEFAULT_PANE.y, |_| {});
     // Row 07 selected before the drag starts, so it fills during its own
     // pass, after row 06's (a click would end the drag it would precede).
     view.selected = Some(Selection::Player(701, 6));
-    let mut window = Headless::new();
-    let selection = window.ctx.style_of(window.ctx.theme()).visuals.selection;
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let sixth = bounds(row(&nodes, "06 CB SIXTH"));
     let seventh = bounds(row(&nodes, "07 CB PLACEHOLDER"));
     let from = centre(row(&nodes, "02 CB SECOND"));
-    window.frame(pointer_at(from, true), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(sixth.center())], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    let shapes = hold_from_to(&mut window, &mut view, from, sixth.center());
     // Row 07's selection fill: a rect filled in `selection.bg_fill`
     // containing the row's centre.
     let fills: Vec<usize> = shapes
@@ -608,7 +677,8 @@ fn the_drop_mark_paints_over_the_next_rows_fill() {
         .enumerate()
         .filter_map(|(index, clipped)| match &clipped.shape {
             egui::Shape::Rect(shape)
-                if shape.fill == selection.bg_fill && shape.rect.contains(seventh.center()) =>
+                if shape.fill == visuals.selection.bg_fill
+                    && shape.rect.contains(seventh.center()) =>
             {
                 Some(index)
             }
@@ -618,16 +688,12 @@ fn the_drop_mark_paints_over_the_next_rows_fill() {
     let [fill] = fills[..] else {
         panic!("row 07's selection fill alone, got {fills:?}")
     };
-    let marks: Vec<usize> = shapes
-        .iter()
-        .enumerate()
-        .filter_map(|(index, clipped)| match &clipped.shape {
-            egui::Shape::LineSegment { stroke, .. } if stroke.color == selection.stroke.color => {
-                Some(index)
-            }
-            _ => None,
-        })
-        .collect();
+    let (segments, _) = drop_marks(
+        &shapes,
+        visuals.selection.stroke.color,
+        list_frame(&window, &shapes),
+    );
+    let marks: Vec<usize> = segments.iter().map(|(index, _, _)| *index).collect();
     let [line, serif_l, serif_r] = marks[..] else {
         panic!("the line and its two serifs, got {marks:?}")
     };
@@ -643,39 +709,19 @@ fn the_drop_mark_paints_over_the_next_rows_fill() {
 // SE-GUI-75
 #[test]
 fn on_a_shared_edge_the_upper_rows_mark_shows_and_drops() {
-    let path = fixture(PesVersion::Pes21, "drag_shared_edge");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
-    file.player_mut(70106).unwrap().name = "SIXTH".to_owned();
-    file.save(&path).unwrap();
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let mut window = Headless::new();
-    let selection = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .selection
-        .stroke
-        .color;
+    let (_file, mut view, mut window, visuals) =
+        mark_scene("drag_shared_edge", DEFAULT_PANE.y, |_| {});
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let fifth = bounds(row(&nodes, "05 CB PLACEHOLDER"));
     let from = centre(row(&nodes, "02 CB SECOND"));
-    window.frame(pointer_at(from, true), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
     // The pointer on the edge the rows share: row 05's lower bound is
     // row 06's upper.
     let edge = egui::pos2(fifth.center().x, fifth.max.y);
-    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(edge)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    let shapes = hold_from_to(&mut window, &mut view, from, edge);
     assert_line(
         &shapes,
-        selection,
+        &visuals,
         list_frame(&window, &shapes),
         fifth,
         fifth.max.y,
@@ -692,6 +738,46 @@ fn on_a_shared_edge_the_upper_rows_mark_shows_and_drops() {
         &row_labels(&nodes)[4..6],
         ["05 CB SECOND ●", "06 CB SIXTH"],
         "the drop on the shared edge lands on the upper row"
+    );
+}
+
+// Held on the edge the dragged row shares with the row below: both
+// bounds take the pointer, the mark is the next row's alone (its lower
+// edge, the player coming from above), and the release there must reach
+// it, not stop at the dragged row, whose own drop moves nothing.
+// SE-GUI-75, SE-GUI-08
+#[test]
+fn on_the_dragged_rows_lower_edge_the_release_reaches_the_marked_row() {
+    let (_file, mut view, mut window, visuals) =
+        mark_scene("drag_edge_release", DEFAULT_PANE.y, |_| {});
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let fifth = bounds(row(&nodes, "05 CB PLACEHOLDER"));
+    let sixth = bounds(row(&nodes, "06 CB SIXTH"));
+    // Row 05 dragged to the edge it shares with row 06 below it: its
+    // lower bound is row 06's upper.
+    let edge = egui::pos2(fifth.center().x, fifth.max.y);
+    let shapes = hold_from_to(&mut window, &mut view, fifth.center(), edge);
+    assert_line(
+        &shapes,
+        &visuals,
+        list_frame(&window, &shapes),
+        sixth,
+        sixth.max.y,
+        "on the dragged row's lower edge",
+    );
+
+    // Released there, the drop reaches the marked row: the dragged
+    // record lands on place 06 where the line stood, and the record that
+    // stood there moves up to place 05.
+    window.frame(pointer_at(edge, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        &row_labels(&nodes)[4..6],
+        ["05 CB SIXTH ●", "06 CB PLACEHOLDER ●"],
+        "the release reached the marked row: the drop landed on place 06"
     );
 }
 

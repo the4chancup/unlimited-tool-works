@@ -250,20 +250,22 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     }
                     // Painted once, after the rows: painted with its row,
                     // the next row's background would cover its lower
-                    // half.
+                    // half. The mark's ends stop at the frame border's
+                    // inner side: a row spans the frame's width, and the
+                    // border, stroked inside it, would cover a serif's
+                    // outer point.
                     if let Some(mark) = drop_mark {
+                        let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
                         let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
                         let y = if mark.lower {
                             mark.rect.max.y
                         } else {
                             mark.rect.min.y
                         };
-                        ui.painter()
-                            .hline(mark.rect.min.x..=mark.rect.max.x, y, stroke);
-                        ui.painter()
-                            .vline(mark.rect.min.x + 1.0, y - 3.5..=y + 3.5, stroke);
-                        ui.painter()
-                            .vline(mark.rect.max.x - 1.0, y - 3.5..=y + 3.5, stroke);
+                        let (x0, x1) = (mark.rect.min.x + inset, mark.rect.max.x - inset);
+                        ui.painter().hline(x0..=x1, y, stroke);
+                        ui.painter().vline(x0 + 1.0, y - 3.5..=y + 3.5, stroke);
+                        ui.painter().vline(x1 - 1.0, y - 3.5..=y + 3.5, stroke);
                     }
                 })
         })
@@ -816,18 +818,22 @@ fn player_row(
         let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         response.dnd_set_drag_payload(*row);
         // A place between two rows, not the row's border; only a row
-        // whose release would move a record reports one.
-        if let Some(dropped) = response.dnd_hover_payload::<Row>()
-            && dropped.team_id == row.team_id
-            && session.moves_player(row.team_id, dropped.slot, row.slot)
-        {
+        // whose release would move a record reports one, and only it may
+        // take the payload: `dnd_release_payload` takes it from any row
+        // under the pointer, and on the edge two rows share the row
+        // above the marked one is drawn first.
+        let accepts = response.dnd_hover_payload::<Row>().filter(|dropped| {
+            dropped.team_id == row.team_id
+                && session.moves_player(row.team_id, dropped.slot, row.slot)
+        });
+        if let Some(dropped) = &accepts {
             drop_mark = Some(DropMark {
                 rect,
                 lower: dropped.slot < row.slot,
             });
         }
-        if let Some(dropped) = response.dnd_release_payload::<Row>()
-            && dropped.team_id == row.team_id
+        if accepts.is_some()
+            && let Some(dropped) = response.dnd_release_payload::<Row>()
         {
             session.move_player(row.team_id, dropped.slot, row.slot);
             // The selection follows the dragged record to its new slot.
