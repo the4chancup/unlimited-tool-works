@@ -1928,8 +1928,14 @@ briefs, review loops, gates and mutation runs as for any step.
       is put back by reversing its diff and applying it (`PlayerDiff::reversed`,
       `TeamDiff::reversed`, `apply_team`), a `Player order` row through the drag's own
       trade; the close prompt has no X. Look: Pending looks
-    - [ ] b's SWE-2 review (running, `.tmp/0_0_2/undo/swe_undo_b.md`, worktree
-      `review19`)
+    - [x] b's SWE-2 review 2026-11-13 (S-undo-b r1, 3 of 5 accepted, the loop ends): a
+      doc comment and a help sentence fixed
+    - [ ] the list's sideways scroll bar sits under the last row, not at the list's
+      bottom edge (S-undo-b-4): on a list both taller than its 240 points and wider than
+      its room, the bar shows only once scrolled to the end; the wheel still scrolls
+      sideways and the X column stays put. Since b, where the table went into a sideways
+      scroll inside the vertical one so the X column could stay outside it
+      (`view/changes_popup.rs` `table_with_xs`). To weigh with the look below it waits on
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
@@ -2682,7 +2688,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The X on each row of the unsaved changes list, in the built window: its blue against
   the label that opened the list, each on its row's first line, the column staying at
   the list's right edge while a wide row scrolls under it (the draft's renders:
-  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`); no PES; 0.0.2-undo b; maintainer
+  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`), and whether a list both tall and
+  wide needs its sideways scroll bar always in view (0.0.2-undo's open item); no PES;
+  0.0.2-undo b; maintainer
 - The unsaved changes after a drag in the player list, in the built window: one
   `Player order` row, its places one per line and the row as high as them, the team's
   name on its first line; no PES; 0.0.2-undo a; maintainer

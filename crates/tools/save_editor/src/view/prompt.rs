@@ -443,8 +443,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 /// value holding several lines (a `Player order` row's places) makes its
 /// row that many lines high, the Item on the first (the draft's cells sit
 /// on their baseline); every other row is one line. `selectable` makes
-/// each Item cell a click target selecting the row's player; the index of
-/// the row whose Item cell was clicked.
+/// each Item cell a click target selecting the row's player.
 pub(super) fn changes_table<'a>(
     ui: &mut egui::Ui,
     id: &str,

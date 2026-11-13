@@ -157,6 +157,6 @@ places they hold now, one place per line. Each of those players lists only what 
 edited on him, since the drag itself is that one row.
 
 Clicking `• unsaved changes` on the toolbar shows the same list. Each row there ends with an ×, which puts that one change back as the file has it and
-keeps your other edits, so the list stays open a row shorter. It is a step like any edit,
+keeps your other edits, so the list stays open a row shorter, and closes when none is left. It is a step like any edit,
 so Undo brings the change back. On a `Player order` row, the × puts every player of the
 row back on his place in the file, and each keeps what you edited on him.
