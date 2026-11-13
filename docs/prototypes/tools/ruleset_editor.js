@@ -885,7 +885,7 @@ function colour(hex8, set) {
     h("input", { type: "color", value: rgb, title: "Colour (the code's last two digits are the alpha)",
       oninput: e => { set(e.target.value.slice(1) + ((hex8 || "").slice(6, 8) || "ff")); changed(); },
       onchange: structural }),
-    text(hex8, set, { mono: true, width: 76, title: "The eight bytes after \\x11c in the name" }));
+    text(hex8, set, { mono: true, width: 76, title: "The eight characters after \\x11c in the player's name" }));
 }
 function remove(list, i) { return button("✕", () => { list.splice(i, 1); structural(); }, { frame0: true, title: "Remove" }); }
 
@@ -1478,7 +1478,7 @@ function startPage() {
     button("/vt/ League 10", () => loadTemplate("vtl10")),
     button("Divegrass Before Christmas 7", () => loadTemplate("dbc7")),
     button("Clouds' proposal, every item (from VGL26)", () => loadTemplate("clouds")),
-    button("Blank: one tier, no brackets, universal rules set", () => loadTemplate("blank")),
+    button("Blank: one tier, no height brackets, universal rules on", () => loadTemplate("blank")),
     h("div", { class: "sep" }),
     strong("Random"),
     row(["Sensible", "Weird", "Crazy"].map(p => button(p, () => {}, { disabled: true, title: "The generator is not faked in this draft" }))),
@@ -1511,7 +1511,7 @@ const VIEWS = {
       "Highest first: a player gets the first tier whose conditions he meets and whose rating he reaches. The Save editor's tier buttons follow this order."));
     const ids = R.tiers.map(t => [t.id, t.label]);
     const medalTiers = new Set(R.medal_systems.flatMap(s => Object.keys(s.counts)));
-    const g = named(h("table", { class: "grid" }, h("tr", {}, ["", "Label", "Id", "Count", "Counts as", "Rate", "Form", "Injury res.", "Weak foot", "Paid cards", "Min. cards", "A positions", "Name colour", "Warn band", "Stats ≤ targets", ""].map(x => h("th", {}, x)))), "tiers-table");
+    const g = named(h("table", { class: "grid" }, h("tr", {}, ["", "Label", "Id", "Count", "Counts as", "Rate", "Form", "Injury res.", "Weak foot", "Paid cards", "Min. cards", "A positions", "Name color", "Warn band", "Stats ≤ targets", ""].map(x => h("th", {}, x)))), "tiers-table");
     R.tiers.forEach((t, i) => {
       g.append(reorderable(h("tr", {},
         h("td", {}, handle(i)),
@@ -1533,12 +1533,12 @@ const VIEWS = {
         h("td", {}, drag(t.cards, v => t.cards = v ?? 0, { max: 20 })),
         h("td", {}, drag(t.min_cards, v => t.min_cards = v ?? 0, { max: 20 })),
         h("td", {}, drag(t.a_positions, v => t.a_positions = v ?? 0, { max: 13 })),
-        h("td", {}, h("span", { class: "row", style: "margin:0" }, checkbox("", t.name_color !== null, v => t.name_color = v ? "cc9900ff" : null, "This tier's names carry a colour code"),
+        h("td", {}, h("span", { class: "row", style: "margin:0" }, checkbox("", t.name_color !== null, v => t.name_color = v ? "cc9900ff" : null, "This tier's names carry a color code"),
           t.name_color !== null ? colour(t.name_color, v => t.name_color = v) : weak("none"))),
         h("td", {}, drag(t.stat_warning, v => t.stat_warning = v ?? 0, { max: 99, width: 40,
-          title: "Points over the target that warn rather than err, for the ability stats that may sit below their target (0: every point errs)" })),
+          title: "How many points over the target give a warning instead of an error, for the ability stats that may sit below their target (0: every point over is an error)" })),
         h("td", {}, checkbox("", t.total_within_targets, v => t.total_within_targets = v,
-          "The ability stats that may sit below their target add up to at most their targets, an error past them")),
+          "Ticked: the ability stats that may sit below their target must not add up to more than their targets do. Going over is an error")),
         h("td", {}, R.tiers.length > 1 ? button("✕", () => { R.medal_systems.forEach(s => { delete s.counts[t.id]; }); R.tiers.splice(i, 1); structural(); }, { frame0: true, title: "Remove" }) : "")), R.tiers, i));
       g.append(h("tr", {}, h("td", {}), h("td", { colspan: 15 }, collapsing(`tier:${i}`, "Stat targets, free cards and conditions", () => h("div", {},
         strong("Per-stat targets"), h("span", { class: "weak" }, " (empty: the rate)"),
@@ -1652,7 +1652,7 @@ const VIEWS = {
         u.weight ? ["between height −", drag(u.weight.below, v => u.weight.below = v ?? 0), "(at least", drag(u.weight.floor, v => u.weight.floor = v ?? 0), "kg) and height −", drag(u.weight.above, v => u.weight.above = v ?? 0)] : weak("any")),
       checkbox("A captain is required", u.captain_required, v => u.captain_required = v),
       row("At least", drag(u.min_goalkeepers, v => u.min_goalkeepers = v ?? 0, { max: 5 }), "goalkeepers"),
-      row("At most", drag(u.max_skill_cards, v => u.max_skill_cards = v ?? 0, { max: 41 }), "skill cards per player", weak("(a ruleset's choice; the official rules use 10)")),
+      row("At most", drag(u.max_skill_cards, v => u.max_skill_cards = v ?? 0, { max: 41 }), "skill cards per player", weak("(the official rules use 10)")),
       row(checkbox("At most", u.max_com_styles !== null, v => u.max_com_styles = v ? 5 : null), u.max_com_styles !== null ? drag(u.max_com_styles, v => u.max_com_styles = v ?? 0, { max: 7 }) : "", "COM styles per player"),
       checkbox("Illegal formations allowed (Whack Patch)", !!u.illegal_formations, v => u.illegal_formations = v)));
     d.append(h("div", { class: "sep" }), strong("Team settings"), h("div", { class: "weak" }, "Tactics settings a team must have, on the versions listed (every version when none is ticked)."));
@@ -1752,7 +1752,7 @@ const COND_FIELDS = [
   ["holds", "Holds any of (cards)", c => c.holds = []],
   ["rated_a_at", "Rated A at", c => c.rated_a_at = []],
   ["rated_b_at", "Rated B at", c => c.rated_b_at = []],
-  ["name_colors", "Name colour", c => c.name_colors = ["cc9900ff"]],
+  ["name_colors", "Name color", c => c.name_colors = ["cc9900ff"]],
   ["fielded_only_at", "Fielded only at", c => c.fielded_only_at = "CB"],
   ["ranges", "Value range (a stat, age, weight, form, …)", c => c.ranges = Object.assign(c.ranges || {}, { [RANGE_VALUES.find(v => !(v in (c.ranges || {})))]: [0, 99] })],
   ["strong_foot", "Stronger foot", c => c.strong_foot = "left"],
@@ -1783,7 +1783,7 @@ function condEditor(c, path, opts) {
   if (c.holds !== undefined) line("Holds any of", cardPicker(c.holds, v => c.holds = v), ["holds"]);
   if (c.rated_a_at !== undefined) line("Rated A at", chips(POSITIONS, c.rated_a_at, v => c.rated_a_at = v, x => x), ["rated_a_at"]);
   if (c.rated_b_at !== undefined) line("Rated B at", chips(POSITIONS, c.rated_b_at, v => c.rated_b_at = v, x => x), ["rated_b_at"]);
-  if (c.name_colors !== undefined) line("Name colour is", h("span", { class: "row", style: "margin:0" },
+  if (c.name_colors !== undefined) line("Name color is", h("span", { class: "row", style: "margin:0" },
     c.name_colors.map((n, j) => h("span", { class: "row", style: "margin:0" }, colour(n, v => c.name_colors[j] = v), remove(c.name_colors, j))),
     button("+", () => { c.name_colors.push("ffffffff"); structural(); }, { frame0: true })), ["name_colors"]);
   if (has(c, "fielded_only_at")) line("Fielded only at", h("span", { class: "row", style: "margin:0" }, combo(POSITIONS.map(p => [p, p]), c.fielded_only_at, v => c.fielded_only_at = v),

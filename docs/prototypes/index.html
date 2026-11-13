@@ -1314,8 +1314,8 @@ const PES_VERSIONS = ["2015", "2016", "2017", "2018", "2019", "2020", "2021"];
 // maintainer to refine (the plan fixes kinds and lifetimes, not strings).
 const CONDITION_DEFS = [
   { id: "data_dir_read_only", icon: "\uE4E0", // warning
-    text: () => "Data folder is read-only",
-    tip: () => "Settings and the teams list cannot be saved, so changes last for this session only" },
+    text: () => "Settings could not be saved",
+    tip: () => "The settings file could not be written: Access is denied. (os error 5). Changes are kept for this session and tried again at the next save." },
   { id: "update_available", icon: "\uE20C", // download
     // Once Update now has installed it (and Later was the answer), the offer
     // becomes the reminder to restart, and Details opens Update ready: a second
@@ -1324,7 +1324,7 @@ const CONDITION_DEFS = [
       + UPDATE_SAMPLE.version,
     tip: () => APP_NAME + " v" + UPDATE_SAMPLE.version + " " + UPDATE_SAMPLE.stage
       + (S.updateInstalled ? " is installed. Restart to start using it."
-        : " is out. Click the Details button for more info."),
+        : " is out. Click Details to see what changed and to update."),
     // In the link blue and clickable as Details is, as the toolbar's unsaved
     // changes label: seen without a dialog opening by itself.
     link: true,
@@ -1374,10 +1374,11 @@ function pesSelectorTip() {
   if (S.blocker) return S.blocker.tool + ": " + S.blocker.reason;
   const folder = resolvedPesFolder();
   if (S.exeFound === "other")
-    return folder + " holds PES" + S.exeFoundVersion + ".exe, which is a different version from the one selected";
-  if (S.exeFound === "none") return "There is no PES exe in " + folder;
-  if (S.exeFound === "no_folder") return folder + " does not exist";
-  return folder + "\nThe PES version this tool works with";
+    return folder + " holds PES" + S.exeFoundVersion + ".exe, a different version from the one selected. Pick PES "
+      + S.exeFoundVersion + ", or check the PES folder setting";
+  if (S.exeFound === "none") return "There is no PES exe in " + folder + ". Check the PES folder setting";
+  if (S.exeFound === "no_folder") return folder + " does not exist. Check the PES folder setting";
+  return "The PES version this tool works with\nInstalled in " + folder;
 }
 // The one writer of pes_version (a common setting): a blocked change does not
 // take; a manual change consumes the auto-switch and is saved like any
@@ -1414,7 +1415,7 @@ function pollRunningPes() {
   // sample wording: the notice text and its action's label. A switch whose
   // Fix PES path action points at another folder's exe warns, a plain one
   // informs.
-  publishNotice("Switched to PES " + rp.version, action, action ? "warning" : "info");
+  publishNotice("Switched to PES " + rp.version + ", which is running", action, action ? "warning" : "info");
 }
 // One version's PES folder, as "Fix PES path" and the Save editor's "Set PES
 // folder" store it: pes_folder_path, with ** put back for the two digits of
@@ -1821,8 +1822,8 @@ function updateNow() {
 function openUpdateReady() {
   const v = UPDATE_SAMPLE.version;
   window_("Update ready",
-    h("p", {}, "v" + v + " " + UPDATE_SAMPLE.stage + " is installed. Restart to start using it,"
-      + " the version you are running now will stay in the old folder."),
+    h("p", {}, "v" + v + " " + UPDATE_SAMPLE.stage + " is installed. Restart to start using it."
+      + " The program you are running now has been moved to a folder named old, beside the new one."),
     [button("Restart now", () => window_("Restart",
         weak("Closes the window, asking about unsaved changes first, and starts the new version"),
         [button("OK", () => {
@@ -1985,7 +1986,7 @@ const HELP = [
       "",
       "**Start page.** With no ruleset open the window offers to start one: *New from",
       "template* (the official rules and the VGL, VTL and DBC cup rulesets, then *Blank*,",
-      "one tier, no brackets, universal rules set), *Open file* to pick an existing",
+      "one tier, no height brackets, universal rules on), *Open file* to pick an existing",
       "rules file, and the recently used files below, newest first. A file that does not",
       "open lists what is wrong with it under the buttons.",
       "",
@@ -2273,16 +2274,16 @@ const CATALOG = {
     { code: "patch_player_not_in_save", severity: "Error", condition: "`apply-patch`: the save has no player with this id (`player`)", consequence: "the rest is written; exit 1" },
     { code: "player_diff", severity: "Info", condition: "`diff`: one field of a player in both saves, old to new (`player`, `field`, `old`, `new`)", consequence: "the report's rows; differences are the output, exit 0" },
     { code: "player_only_in", severity: "Info", condition: "`diff`: a player in one save alone (`player`, `save`: `first` or `second`)", consequence: "informational; goes on" },
-    { code: "teams_list_added", severity: "Info", condition: "`export-teams-list`: a team of the save the list lacked, appended or put into a placeholder's slot (`team`, `name`)", consequence: "merged; written only with `--yes`" },
+    { code: "teams_list_added", severity: "Info", condition: "`export-teams-list`: a team in the save that the list lacked, appended or put into a placeholder's slot (`team`, `name`)", consequence: "merged; written only with `--yes`" },
     { code: "teams_list_overridden", severity: "Info", condition: "`export-teams-list`: a name in both whose id becomes the save's (`name`, `old`, `new`)", consequence: "merged; written only with `--yes`" },
-    { code: "teams_list_unresolved", severity: "Error", condition: "`export-teams-list`: a change dropped because its id collided with another row of the merged list (`team`, `name`)", consequence: "the change is dropped, the other changes written with `--yes`; exit 1" },
-    { code: "teams_list_name_duplicate", severity: "Error", condition: "`export-teams-list`: a team of the save left out because an earlier team folds to the same name, which the list can hold once (`team`, `name`, `kept`)", consequence: "the team is left out; exit 1" },
+    { code: "teams_list_unresolved", severity: "Error", condition: "`export-teams-list`: a change dropped because two teams would then share one id in the merged list (`team`, `name`)", consequence: "the other changes written with `--yes`; exit 1" },
+    { code: "teams_list_name_duplicate", severity: "Error", condition: "`export-teams-list`: a team of the save left out because an earlier team has the same name, upper and lower case aside, and the list can hold a name once (`team`, `name`, `kept`)", consequence: "the team is left out; exit 1" },
     { code: "teams_list_kept", severity: "Info", condition: "`export-teams-list`: the working rows that ended unchanged (`count`)", consequence: "informational; goes on" },
     { code: "teams_list_written", severity: "Info", condition: "`export-teams-list`: the merged list was written (`path`)", consequence: "informational; goes on" },
     { code: "teams_list_not_written", severity: "Info", condition: "`export-teams-list` without `--yes`: the summary only, the file untouched (`path`)", consequence: "nothing is written" },
-    { code: "teams_list_read_only", severity: "Error", condition: "`export-teams-list --yes`: the data directory cannot take the file (`path`, `error`)", consequence: "nothing is written; exit 1" },
+    { code: "teams_list_read_only", severity: "Error", condition: "`export-teams-list --yes`: the file could not be written into the data folder, because none is chosen yet or it cannot be written to (`path`, `error`)", consequence: "nothing is written; exit 1" },
     { code: "aatf_violation", severity: "the violation's (Error or Warning)", condition: "`check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, then the rule's own fields)", consequence: "printed; an error-severity violation makes the exit code 1" },
-    { code: "aatf_check_failed", severity: "Error", condition: "`check-aatf`: the ruleset's check itself failed on the team, which the other teams' results do not cover (`team`, `error`)", consequence: "the other teams are still checked; exit 1" },
+    { code: "aatf_check_failed", severity: "Error", condition: "`check-aatf`: the ruleset's check itself failed on the team, so the team has no result (`team`, `error`)", consequence: "the other teams are still checked; exit 1" },
   ],
   "export-upgrader": [
     { code: "no_old_export", severity: "Error", condition: "step 1: the input holds nothing an old export holds; nothing is written", consequence: "-" },
@@ -2455,7 +2456,7 @@ function perVersionRows() {
         if (e.target.value) folders[key] = e.target.value; else delete folders[key];
         settingChanged(); drawSettings(); } });
     rows.push(sRow("PES " + year + " folder", "pes_folders." + key,
-      "PES " + year + "'s own folder. When it is filled, it is used as written instead of the PES folder above, and when it is empty, the PES folder above is used.",
+      "PES " + year + "'s own folder, used as written instead of the PES folder above. Leave it empty to use the PES folder above.",
       [edit, browse("folder")]));
   }
   return rows;
@@ -2474,7 +2475,7 @@ function commonSettingsRows() {
     v => { c.theme = v; saveSettings(); });
   theme.id = "set-theme";
   return [
-    sRow("PES version", "pes_version", "The PES version every tool works with, the same setting the sidebar's selector changes.",
+    sRow("PES version", "pes_version", "The PES version every tool works with, the same setting as the PES picker on the sidebar.",
       // The blocked reason on a hover-sensing wrapper, as in the sidebar.
       h("span", { title: S.blocker ? pesSelectorTip() : null },
         combo(PES_VERSIONS.map(v => [v, "PES " + v]), c.pes_version, setPesVersion,
@@ -2482,26 +2483,26 @@ function commonSettingsRows() {
     sRow("PES folder", "pes_folder_path", "The folder PES is installed in, where ** stands for the version's two digits (20** becomes 2019 for PES 2019). When the folder you browse to has the selected version's year in its name, the year is stored as 20** so that switching versions switches folders too. Any other folder is stored as you picked it.",
       [text("pes_folder_path"), browse("folder")]),
     ...perVersionRows(),
-    sRow("Exports folder", "exports_folder_path", "Where exports are picked up.",
+    sRow("Exports folder", "exports_folder_path", "The exports folder a compile reads when no other folder is given. A relative path starts from the folder UTW.exe is in.",
       [text("exports_folder_path"), browse("folder")]),
-    sRow("Threads", "thread_count", "The number of worker threads a tool's run uses, where 0 means automatic (the logical cores minus one).",
+    sRow("Threads", "thread_count", "How many processor threads a tool's run uses, where 0 means all of them but one.",
       num("thread_count", { id: "set-thread-count" })),
-    sRow("Memory cap", "memory_cap_percent", "The most memory a tool's run may budget for, as a percentage of physical memory.",
+    sRow("Memory cap", "memory_cap_percent", "The most memory a tool's run may budget for, in percent of the PC's memory.",
       [num("memory_cap_percent", { step: "any" }), " %"]),
     // Bounded to the stock band: boots 1 to 100, gloves 11 to 100 (save_editor.md "Full
     // Player Customization (FPC)").
-    sRow("FPC hide boots ID", "fpc_hide_boots_id", "The boots ID that Hide body and an fpc_on marker write. The game has no boots with this ID, and 4cc uses 55.",
+    sRow("FPC hide boots ID", "fpc_hide_boots_id", "The boots ID a full-body (FPC) player gets from Hide default body or an fpc_on marker. The game has no boots with this ID, and 4cc uses 55.",
       num("fpc_hide_boots_id", { min: 1, max: 100 })),
-    sRow("FPC hide gloves ID", "fpc_hide_gloves_id", "The gloves ID that Hide body and an fpc_on marker write. The game has no gloves with this ID, and 4cc uses 11.",
+    sRow("FPC hide gloves ID", "fpc_hide_gloves_id", "The gloves ID a full-body (FPC) player gets from Hide default body or an fpc_on marker. The game has no gloves with this ID, and 4cc uses 11.",
       num("fpc_hide_gloves_id", { min: 11, max: 100 })),
     sRow("Theme", "theme", "The window's color theme.", theme),
-    sRow("Invert value scrolling", "invert_value_scrolling", "Turns the wheel's steps over a value the other way: wheel down moves a slider right, raises a number and takes a list's item above, wheel up the reverse. Scrolling a pane is unchanged.",
+    sRow("Invert value scrolling", "invert_value_scrolling", "Reverses the mouse wheel over a value: wheel down then moves a slider right, raises a number and picks the list item above, and wheel up does the opposite. Scrolling a pane is not affected.",
       h("input", { type: "checkbox", checked: c.invert_value_scrolling,
         onchange: e => { c.invert_value_scrolling = e.target.checked; settingChanged(); } })),
-    sRow("Check for updates", "check_for_updates", "Whether the shell looks for new releases.",
+    sRow("Check for updates", "check_for_updates", "Whether the program checks for a newer version.",
       h("input", { type: "checkbox", checked: c.check_for_updates,
         onchange: e => { c.check_for_updates = e.target.checked; settingChanged(); } })),
-    sRow("Check interval (minutes)", "check_interval_minutes", "Minutes between release checks.",
+    sRow("Check interval (minutes)", "check_interval_minutes", "The minutes between two checks for a newer version.",
       num("check_interval_minutes", { disabled: !c.check_for_updates })),
   ];
 }
@@ -2571,7 +2572,7 @@ function drawFirstRun() {
           "A portable data folder beside the program, which moves and is deleted with it", "portable"),
         choice("In my user folder",
           CONFIG_DIR + ", which survives replacing or moving the program folder", "config")),
-      weak("You can move the data later by moving the folder."),
+      weak("You can change this later by moving the folder from one place to the other."),
       // sample wording: the write error.
       S.firstRunError ? h("div", { class: "err" }, S.firstRunError) : null),
     []);
@@ -2779,7 +2780,7 @@ const WALK = [
   ["ST-SIDE-07", "the grayed tool names under the registered ones: not clickable, each tooltip says Coming soon™"],
   ["ST-SET-01", "the gear: the common rows, then one section per tool with settings (none for the Export upgrader), the active tool's open"],
   ["ST-SET-02", "change Threads in the menu: it saves at once, the Team compiler stub's Threads line follows"],
-  ["ST-SET-03", "Data folder unwritable plus a change: the value keeps for the session, the read-only warning shows in the bar"],
+  ["ST-SET-03", "Data folder unwritable plus a change: the value keeps for the session, Settings could not be saved shows in the bar"],
   ["ST-BAR-01", "nothing switched on: the bar shows v0.0.1 pre-alpha alone"],
   ["ST-BAR-02", "Save editor busy: its progress sits in the right slot, gone while the Save editor is the view"],
   ["ST-BAR-03", "the Notice buttons: one with an action stays until clicked or dismissed, one without fades, a later one replaces it"],
@@ -3370,7 +3371,7 @@ function logPanel(st = S, opts = LOG_COMPILER) {
     selectable(label, st.logFilter === v, () => st.logFilter = v));
   const shown = filteredLog(st);
   const drawn = shown.slice(-LOG_CAP);
-  const count = shown.length > LOG_CAP ? `last ${LOG_CAP} of ${shown.length}`
+  const count = shown.length > LOG_CAP ? `last ${LOG_CAP} of ${shown.length} lines`
     : shown.length < st.log.length ? `${shown.length} of ${st.log.length} lines`
     : `${shown.length} lines`;
   const header = h("div", { class: "log-header" }, chevron, strong("Log"), chips,

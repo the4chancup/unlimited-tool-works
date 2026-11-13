@@ -1865,7 +1865,7 @@ briefs, review loops, gates and mutation runs as for any step.
       reads "Slot NN" from 1 in `team_widgets`' violations list and the Multi-team AATF
       copy. A side effect to see in the built window: the Gloves color dropdown lists the
       eight color names, since `gloves_color`'s comment now names them
-    - [ ] the drafts brought in step with wave 4 (`docs/prototypes/`, the lead's): the four
+    - [x] 2026-11-13 the drafts brought in step with wave 4 (`docs/prototypes/`, the lead's): the four
       reports' "Drafts to follow" lists (`4cc-studio-temp/shakespeare/.tmp/shakespeare/ap_*.report.md`),
       on main, where the drafts moved meanwhile (the Team menu's FPC entries already read
       "(Enable FPC)" and "(Disable FPC)" there: keep those)
