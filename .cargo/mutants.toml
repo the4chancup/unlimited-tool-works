@@ -461,4 +461,14 @@ exclude_re = [
     # (`fmdl`'s round-trip tests), so the package holds the same bytes. The guard only saves
     # the time. The function's only `>`.
     "team_compiler/src/processing/model\\.rs:\\d+:\\d+: replace > with >= in convert_part",
+    # `changes_table` puts a row's Item on the values' first line when `old` or `new` holds a
+    # line break. The only value with one is a `Player order` row's, whose two sides are
+    # `places` over the same group, one line per player each: both hold a break or neither
+    # does, so `&&` picks the same rows. The function's only `||`.
+    "save_editor/src/view/prompt\\.rs:\\d+:\\d+: replace \\|\\| with && in changes_table",
+    # `player_row` draws a drop's mark under the row when the dragged slot is `<` the row's.
+    # `<=` differs only for a drop on the record's own row, which never gets a mark:
+    # `moves_player` is false for `from == to` (pinned by
+    # `moves_player_names_only_a_drop_that_writes`).
+    "save_editor/src/view/player_list\\.rs:\\d+:\\d+: replace < with <= in player_row",
 ]

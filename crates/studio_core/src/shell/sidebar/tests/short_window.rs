@@ -349,6 +349,72 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
     }
 }
 
+// ST-SIDE-10's tall-window clause at its edge: in a window one point taller
+// than head, entries and tail need, every entry is in view and a wheel turn
+// moves none. A tail that kept more room would push the last entries under
+// the foot.
+// ST-SIDE-10
+#[test]
+fn in_a_window_just_tall_enough_every_entry_is_in_view_and_nothing_scrolls() {
+    let Shell { mut app, _dir, .. } = shell14();
+    let egui_ctx = test_context();
+    let labels = TOOLS.map(|(_, label)| label);
+
+    // The room the 780-point window leaves between the last entry and the
+    // tail's separator: shrunk by all of it but a point, the window is just
+    // tall enough.
+    let out = frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(1.0), 780.0);
+    let (_, band_bottom) = scroll_band(&out.nodes);
+    let slack = band_bottom - bounds(entry(&out.nodes, "T14")).y1;
+    assert!(
+        slack > 1.0,
+        "premise: 780 points leaves slack under the entries: {slack}"
+    );
+    let height = (780.0 - slack + 1.0) as f32;
+
+    let out = frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(1.1), height);
+    let (band_top, band_bottom) = scroll_band(&out.nodes);
+    let last = bounds(entry(&out.nodes, "T14"));
+    assert!(
+        last.y1 <= band_bottom + 0.5,
+        "premise: the last entry ends above the tail's separator: {last:?} vs {band_bottom}"
+    );
+    // "In view" is painted: an entry scrolled out of the scroll area's clip
+    // keeps its place in the layout but emits its icon under a clip that does
+    // not hold it.
+    for label in labels {
+        let entry_bounds = bounds(entry(&out.nodes, label));
+        let (icon, clip) =
+            icon_in(&out, entry_bounds).unwrap_or_else(|| panic!("{label}'s icon is painted"));
+        assert!(
+            clip.contains(icon.pos)
+                && f64::from(clip.max.y) >= entry_bounds.y1 - 0.5
+                && f64::from(clip.min.y) <= entry_bounds.y0 + 0.5,
+            "{label} is fully in view in a window just tall enough: {entry_bounds:?}, clip {clip:?}"
+        );
+    }
+
+    let before: Vec<f64> = labels
+        .iter()
+        .map(|label| bounds(entry(&out.nodes, label)).y0)
+        .collect();
+    let spot = egui::pos2(28.0, ((band_top + band_bottom) / 2.0) as f32);
+    let out = frame_at_height(
+        &egui_ctx,
+        &mut app,
+        wheel_notch_at(spot, false),
+        Some(1.2),
+        height,
+    );
+    for (label, before) in labels.iter().zip(before) {
+        let after = bounds(entry(&out.nodes, label)).y0;
+        assert_eq!(
+            before, after,
+            "{label} moved on a wheel turn in a window just tall enough"
+        );
+    }
+}
+
 // Tabbing to a tool entry scrolled out of view scrolls it back in: egui does
 // not scroll a focused widget into view on its own.
 #[test]

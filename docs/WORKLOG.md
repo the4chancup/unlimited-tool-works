@@ -2911,6 +2911,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-13 (a sidekick's run, `.tmp/arrows/brief_mut3.report.md`): the Save
+  editor's `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
+  failed once in `cargo test -p save_editor list` ("the range's first team: left `702 /a/`,
+  right `701 /3/`") and passed alone and on the rerun, with nothing of the crate changed.
+  Seen once; to find what the test shares with a neighbour (a file, a setting, an order)
+  before it fails a gate.
 - open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
   on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
   the three files sent (the team file, a save named as the one before, the saved file;
