@@ -21,7 +21,7 @@ use team_widgets::tactics::RosterRow;
 use team_widgets::violations::SWITCH_TOOLTIP;
 
 use crate::session::selection::{self, TeamChoice};
-use crate::session::{MovedPlace, Session};
+use crate::session::{MovedPlace, PutBack, Session};
 use crate::view::terms::{self, Term};
 use crate::view::{Refusal, SaveView, info_strip, save, write_now};
 
@@ -46,7 +46,7 @@ pub(crate) struct Prompt {
     /// What the prompt does once answered.
     pending: Pending,
     /// The table's rows.
-    rows: Vec<ChangeRow>,
+    rows: Vec<UnsavedRow>,
 }
 
 /// One row of the changes table: the item it changes (a player's or a
@@ -58,6 +58,25 @@ pub(super) struct ChangeRow {
     /// The field's label, its two values and, for a team colour, their
     /// swatches.
     pub(super) term: Term,
+}
+
+/// One row of the unsaved changes (`rows`): its cells, and what its X in
+/// the toolbar's list puts back.
+pub(super) struct UnsavedRow {
+    /// The row's three cells.
+    pub(super) cells: ChangeRow,
+    /// The change the row shows, to put back alone.
+    pub(super) put_back: PutBack,
+}
+
+/// What `changes_table` drew: the row whose Item cell was clicked (a
+/// `selectable` table's), and each row's Item cell, on the row's first line,
+/// where a column beside the table lines its own controls up.
+pub(super) struct TableResponse {
+    /// The index of the row whose Item cell was clicked.
+    pub(super) clicked: Option<usize>,
+    /// Each row's Item cell, in the rows' order.
+    pub(super) items: Vec<egui::Rect>,
 }
 
 /// The prompt's buttons.
@@ -110,7 +129,7 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
 /// A team row's slot-valued texts name the baseline's roster and records
 /// on the old side, the current's on the new: a drag moves records
 /// between the roster's ids while the stored byte still names the slot.
-pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
+pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<UnsavedRow>> {
     let file = session.file();
     let version = session.version();
     let changes = session.unsaved_changes()?;
@@ -152,9 +171,15 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
             && let Some(diffs) = player_diffs.get(&entry.player_id)
         {
             for diff in diffs {
-                rows.push(ChangeRow {
-                    item: named(),
-                    term: terms::row_term(version, diff),
+                rows.push(UnsavedRow {
+                    cells: ChangeRow {
+                        item: named(),
+                        term: terms::row_term(version, diff),
+                    },
+                    put_back: PutBack::Player {
+                        id: entry.player_id,
+                        diff: diff.clone(),
+                    },
                 });
             }
         }
@@ -182,7 +207,7 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
                 roster_for(baseline_team, &old_names, |id| session.baseline_player(id));
             let new_names = roster_names(team, |id| players.get(&id).copied());
             let new_roster = roster_for(team, &new_names, |id| players.get(&id).copied());
-            for term in terms::team_row_terms(
+            for (term, diffs) in terms::team_row_terms(
                 version,
                 team,
                 baseline_team,
@@ -193,11 +218,17 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
                 // Under its player the row is his shirt number, as the
                 // strip labels it: the slot's own words ("Player 04's
                 // number") would name him twice.
-                rows.push(ChangeRow {
-                    item: named(),
-                    term: Term {
-                        label: info_strip::NUMBER_LABEL.to_owned(),
-                        ..term
+                rows.push(UnsavedRow {
+                    cells: ChangeRow {
+                        item: named(),
+                        term: Term {
+                            label: info_strip::NUMBER_LABEL.to_owned(),
+                            ..term
+                        },
+                    },
+                    put_back: PutBack::Team {
+                        id: entry.team_id,
+                        diffs,
                     },
                 });
             }
@@ -212,22 +243,31 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
     for id in unlisted {
         let item = name_of(id);
         for diff in &player_diffs[&id] {
-            rows.push(ChangeRow {
-                item: item.clone(),
-                term: terms::row_term(version, diff),
+            rows.push(UnsavedRow {
+                cells: ChangeRow {
+                    item: item.clone(),
+                    term: terms::row_term(version, diff),
+                },
+                put_back: PutBack::Player {
+                    id,
+                    diff: diff.clone(),
+                },
             });
         }
     }
     for team in file.teams() {
         for (_, group) in changes.moves.iter().filter(|(id, _)| *id == team.id) {
-            rows.push(ChangeRow {
-                item: display_name(&team.name),
-                term: Term {
-                    label: PLAYER_ORDER.to_owned(),
-                    old: places(group, |id| session.baseline_player(id)),
-                    new: places(group, |id| players.get(&id).copied()),
-                    swatches: None,
+            rows.push(UnsavedRow {
+                cells: ChangeRow {
+                    item: display_name(&team.name),
+                    term: Term {
+                        label: PLAYER_ORDER.to_owned(),
+                        old: places(group, |id| session.baseline_player(id)),
+                        new: places(group, |id| players.get(&id).copied()),
+                        swatches: None,
+                    },
                 },
+                put_back: PutBack::Order(group.clone()),
             });
         }
         let Some(diffs) = team_diffs.get(&team.id) else {
@@ -253,7 +293,7 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
         let old_roster = roster_for(baseline_team, &old_names, |id| session.baseline_player(id));
         let new_names = roster_names(team, |id| players.get(&id).copied());
         let new_roster = roster_for(team, &new_names, |id| players.get(&id).copied());
-        for term in terms::team_row_terms(
+        for (term, diffs) in terms::team_row_terms(
             version,
             team,
             baseline_team,
@@ -261,9 +301,12 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
             &new_roster,
             &remaining,
         ) {
-            rows.push(ChangeRow {
-                item: display_name(&team.name),
-                term,
+            rows.push(UnsavedRow {
+                cells: ChangeRow {
+                    item: display_name(&team.name),
+                    term,
+                },
+                put_back: PutBack::Team { id: team.id, diffs },
             });
         }
     }
@@ -352,7 +395,12 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         let chrome = modal_frame(ui.style()).total_margin().sum().x;
         ui.set_max_width((ui.ctx().content_rect().width() * 0.9 - chrome).max(0.0));
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
-            changes_table(ui, "unsaved changes", &prompt.rows, false);
+            changes_table(
+                ui,
+                "unsaved changes",
+                prompt.rows.iter().map(|row| &row.cells),
+                false,
+            );
         });
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
@@ -402,7 +450,7 @@ pub(super) fn changes_table<'a>(
     id: &str,
     rows: impl IntoIterator<Item = &'a ChangeRow>,
     selectable: bool,
-) -> Option<usize> {
+) -> TableResponse {
     egui::Grid::new(id)
         .num_columns(3)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
@@ -412,6 +460,7 @@ pub(super) fn changes_table<'a>(
             }
             ui.end_row();
             let mut clicked = None;
+            let mut items = Vec::new();
             for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
                 let item = cell(format!("{item} · {}", term.label));
                 let item = if selectable {
@@ -431,6 +480,7 @@ pub(super) fn changes_table<'a>(
                 } else {
                     ui.add(item)
                 };
+                items.push(response.rect);
                 if selectable && response.on_hover_text(SWITCH_TOOLTIP).clicked() {
                     clicked = Some(index);
                 }
@@ -442,7 +492,7 @@ pub(super) fn changes_table<'a>(
                 value_cell(ui, &term.new, new_swatch);
                 ui.end_row();
             }
-            clicked
+            TableResponse { clicked, items }
         })
         .inner
 }

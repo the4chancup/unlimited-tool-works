@@ -24,6 +24,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchError, PatchSummary};
 use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
 use pes_savefile::model::{PlayerEntry, TeamEntry};
+use pes_savefile::ops::apply::{apply_player, apply_team};
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff, compare_players, compare_teams};
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::schema_for;
@@ -76,7 +77,7 @@ pub(crate) struct UnsavedChanges {
 }
 
 /// One roster place of a group of moved players (`UnsavedChanges::moves`).
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct MovedPlace {
     /// The roster slot, 0-based (place 04 is slot 3).
     pub(crate) slot: u8,
@@ -87,6 +88,30 @@ pub(crate) struct MovedPlace {
     /// on the place is the file's player of this id, with what was edited
     /// on him since.
     pub(crate) origin: u32,
+}
+
+/// What one row of the unsaved changes names, to put back alone
+/// (`Session::put_back`): the X at the end of the row in the toolbar's list.
+#[derive(Debug)]
+pub(crate) enum PutBack {
+    /// One field of the player `id`, as `unsaved_changes` compared it.
+    Player {
+        /// The player.
+        id: u32,
+        /// The field's diff, its old value the one to write back.
+        diff: PlayerDiff,
+    },
+    /// The fields of the team `id` one row names: one diff, or a team
+    /// colour's channels, which the row shows as one colour.
+    Team {
+        /// The team.
+        id: u32,
+        /// The fields' diffs, their old values the ones to write back.
+        diffs: Vec<TeamDiff>,
+    },
+    /// A group of players who traded places, each to go back on his place
+    /// in the file.
+    Order(Vec<MovedPlace>),
 }
 
 /// For every player id holding another id's record of the file as opened
@@ -470,23 +495,30 @@ impl Session {
                 .expect("`to` is filled"),
             taken,
         );
-        // Each filled slot's player takes `order`'s record for it, keeping the
-        // slot's own part of it (`moved_record`). Every entry is computed
-        // before the first write: a rostered id the save lacks leaves it
-        // untouched, aborting the whole move.
+        // Each filled slot's player takes `order`'s record for it.
+        let took = filled
+            .iter()
+            .zip(&order)
+            .filter(|(slot_id, record_id)| slot_id != record_id)
+            .map(|(&slot_id, &record_id)| (slot_id, record_id))
+            .collect();
+        self.trade_records(took);
+    }
+
+    /// Writes a trade of records as one sealed undo entry, the drag's and
+    /// the `Player order` row's put-back alike: every `(id, from)` of `took`
+    /// takes the record `from` holds now, keeping its slot's own part of it
+    /// (`moved_record`), and `origins` follows. Every entry is computed
+    /// before the first write: an id the save lacks aborts the whole trade.
+    fn trade_records(&mut self, took: Vec<(u32, u32)>) {
         let mut edited = Vec::new();
-        let mut took = Vec::new();
-        for (&slot_id, &record_id) in filled.iter().zip(&order) {
-            if slot_id == record_id {
-                continue;
-            }
+        for &(slot_id, record_id) in &took {
             let (Some(dest), Some(source)) =
                 (self.file.player(slot_id), self.file.player(record_id))
             else {
                 return;
             };
             edited.push(moved_record(source, dest));
-            took.push((slot_id, record_id));
         }
         // Records equal on every traded id write nothing, so the trade is
         // not kept either: the unsaved changes stay as empty as the save.
@@ -499,6 +531,56 @@ impl Session {
         self.undo.seal();
         self.changed(steps);
         self.dirty = self.compute_dirty();
+    }
+
+    /// Puts back what one row of the unsaved changes names, and nothing
+    /// else, as one sealed undo entry recorded as any edit: a field gets the
+    /// value of the record its player came from (or the team's file value),
+    /// the player's or team's other changes kept; a group of moved players
+    /// goes back on its places in the file through the trade a drag makes,
+    /// each player keeping what was edited on him. An error names the row's
+    /// player or team when its field no longer holds the row's new value
+    /// (the row is stale: the model changed since the rows were read).
+    pub(crate) fn put_back(&mut self, row: &PutBack) -> anyhow::Result<()> {
+        match row {
+            PutBack::Player { id, diff } => {
+                let mut player = self
+                    .file
+                    .player(*id)
+                    .ok_or_else(|| anyhow!("the save has no player {id}"))?
+                    .clone();
+                apply_player(&mut player, &diff.reversed())
+                    .with_context(|| format!("player {id}"))?;
+                self.edit_entries(vec![player], Vec::new());
+            }
+            PutBack::Team { id, diffs } => {
+                let mut team = self
+                    .file
+                    .team(*id)
+                    .ok_or_else(|| anyhow!("the save has no team {id}"))?
+                    .clone();
+                for diff in diffs {
+                    apply_team(&mut team, &diff.reversed())
+                        .with_context(|| format!("team {id}"))?;
+                }
+                self.edit_entries(Vec::new(), vec![team]);
+            }
+            // Each place takes back the record that came from it: the one
+            // on the place of the group whose origin is this place's id.
+            PutBack::Order(group) => {
+                let took = group
+                    .iter()
+                    .map(|place| {
+                        let holder = group.iter().find(|other| other.origin == place.id).expect(
+                            "a group is a cycle: one of its places holds each one's record",
+                        );
+                        (place.id, holder.id)
+                    })
+                    .collect();
+                self.trade_records(took);
+            }
+        }
+        Ok(())
     }
 
     /// Undoes the newest gesture; `false` when the stack is empty.

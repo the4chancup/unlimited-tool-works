@@ -657,8 +657,8 @@ fn unlisted_players_run_in_id_order() {
     let rows = prompt::rows(view.session.as_ref().unwrap()).expect("the rows compute");
     let items: Vec<&str> = rows
         .iter()
-        .filter(|row| row.term.label == "Name")
-        .map(|row| row.item.as_str())
+        .filter(|row| row.cells.term.label == "Name")
+        .map(|row| row.cells.item.as_str())
         .collect();
     assert_eq!(
         items,

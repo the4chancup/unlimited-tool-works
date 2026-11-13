@@ -760,7 +760,12 @@ fn a_colour_edit_is_one_hex_row() {
         ],
     );
     assert_eq!(terms.len(), 1, "the three channels merge");
-    assert_term(&terms[0], "Col. 1", "#FFAA41", "#4182C2");
+    assert_term(&terms[0].0, "Col. 1", "#FFAA41", "#4182C2");
+    assert_eq!(
+        terms[0].1.len(),
+        3,
+        "the row holds the three channels' diffs"
+    );
 
     // Only red changed: green and blue keep the stored ones.
     let mut team = baseline.clone();
@@ -778,7 +783,7 @@ fn a_colour_edit_is_one_hex_row() {
         }],
     );
     assert_eq!(terms.len(), 1);
-    assert_term(&terms[0], "Col. 1", "#FFAA41", "#00AA41");
+    assert_term(&terms[0].0, "Col. 1", "#FFAA41", "#00AA41");
 }
 
 /// Colour 2's three channels merge into its swatch's one row the same
@@ -826,7 +831,7 @@ fn colour_2s_channels_merge_into_one_hex_row() {
         ],
     );
     assert_eq!(terms.len(), 1, "the three channels merge");
-    assert_term(&terms[0], "Col. 2", "#000000", "#4182C2");
+    assert_term(&terms[0].0, "Col. 2", "#000000", "#4182C2");
 }
 
 /// A name edit's two diffs in `compare_teams`' order: the side-effect
@@ -857,8 +862,8 @@ fn a_name_edit_is_a_team_row_plus_the_flags_report_row() {
         ],
     );
     assert_eq!(terms.len(), 2);
-    assert_term(&terms[0], "Edited name", "0", "1");
-    assert_term(&terms[1], "Name", "/3/", "/3/X");
+    assert_term(&terms[0].0, "Edited name", "0", "1");
+    assert_term(&terms[1].0, "Name", "/3/", "/3/X");
 }
 
 /// A colour channel alone, outside `team_row_terms`' merge, is named in
@@ -939,13 +944,13 @@ fn the_team_field_and_roster_rows() {
         ],
     );
     assert_eq!(terms.len(), 7);
-    assert_term(&terms[0], "Manager ID", "701", "0");
-    assert_term(&terms[1], "Stadium ID", "29", "0");
-    assert_term(&terms[2], "Slot 1 · Number", "0", "128");
-    assert_term(&terms[3], "Slot 1 · Bound team ID", "701", "702");
-    assert_term(&terms[4], "Player 03's number", "3", "9");
-    assert_term(&terms[5], "Player 04", "70104", "0");
-    assert_term(&terms[6], "Team ID", "701", "702");
+    assert_term(&terms[0].0, "Manager ID", "701", "0");
+    assert_term(&terms[1].0, "Stadium ID", "29", "0");
+    assert_term(&terms[2].0, "Slot 1 · Number", "0", "128");
+    assert_term(&terms[3].0, "Slot 1 · Bound team ID", "701", "702");
+    assert_term(&terms[4].0, "Player 03's number", "3", "9");
+    assert_term(&terms[5].0, "Player 04", "70104", "0");
+    assert_term(&terms[6].0, "Team ID", "701", "702");
 }
 
 /// A tactics row goes through the Tactics editor's terms.
@@ -978,6 +983,6 @@ fn a_tactics_row_uses_the_tactics_terms() {
         ],
     );
     assert_eq!(terms.len(), 2);
-    assert_term(&terms[0], "Captain", "Player 01", "Player 06");
-    assert_term(&terms[1], "Preset 1 · Support range", "5", "7");
+    assert_term(&terms[0].0, "Captain", "Player 01", "Player 06");
+    assert_term(&terms[1].0, "Preset 1 · Support range", "5", "7");
 }

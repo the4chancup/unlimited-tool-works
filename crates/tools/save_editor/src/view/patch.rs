@@ -427,5 +427,6 @@ fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
             )
         })
         .inner
+        .clicked
         .and_then(|index| rows[index].select)
 }
