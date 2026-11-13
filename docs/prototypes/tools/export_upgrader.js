@@ -50,11 +50,14 @@ const EXPORT_UPGRADER_CSS = `
   .eu-grid .tc-cell.id4 { font-size: 9px; }
   .eu-grid .tc-cell.word { font-size: 10px; }
   .eu-msg { padding: 0 6px !important; }
-  /* The files look. Each export is a block: its two names, then its map. */
-  .eu-pairs { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+  /* The files look. Each export is a block: its two names, then its map.
+     The two columns' labels are one row that stays at the top while the
+     exports scroll under it (egui: a row drawn above the scroll area). */
+  .eu-pairs { flex: 1; min-height: 0; overflow: auto; padding: 0 8px 8px; }
   .eu-export { margin-bottom: 20px; }
   .eu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .eu-cols { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .eu-cols { display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 2;
+    background: var(--panel); padding: 8px 0 4px; }
   .eu-cols span { width: 38%; }
   .eu-flow { position: relative; --players: #3987e5; --boots: #d95926; --kits: #199e70;
     --plain: #8a8a8a; --out: #8c2a2a; }
@@ -502,8 +505,7 @@ function flowBlock(x) {
       n.sub ? h("span", { class: "sub" }, n.sub) : null);
   };
   map.append(...flow.L.map(n => box(n, false)), ...flow.R.map(n => box(n, true)));
-  return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head,
-    h("div", { class: "eu-cols weak" }, h("span", {}, "Old export"), h("span", {}, "Upgraded export")), map);
+  return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head, map);
 }
 // The lines' colours, under the files: what each carries.
 function flowLegend() {
@@ -717,7 +719,9 @@ function drawView(center) {
         h("p", {}, strong("No old exports found")), h("p", { class: "mono" }, EXE_FOLDER + "\\old_exports"),
         h("p", {}, "Drop an old export here: a folder, a .zip or a .7z."))))
     : many ? h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))
-    : h("div", { class: "eu-pairs", "data-panel": "pairs" }, all.map(flowBlock));
+    : h("div", { class: "eu-pairs", "data-panel": "pairs" },
+        h("div", { class: "eu-cols weak" }, h("span", {}, "Old export"), h("span", {}, "Upgraded export")),
+        all.map(flowBlock));
   center.append(h("div", { class: "pipe" }, argsRow(), !all.length ? null : many ? legend() : flowLegend(), body, toolbar(),
     named(logPanel(L, { tool: "export-upgrader", onLine: gotoCell }), "log"), detailPanel()));
   const lb = center.querySelector(".log-body");
