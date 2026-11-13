@@ -1832,10 +1832,12 @@ briefs, review loops, gates and mutation runs as for any step.
       to rule, as wave 3's were), to apply on the branch with a DECISIONS entry:
       (1) the bar holding the tools' icons is "sidebar" in every member text (the readme,
       `settings.toml`'s comments and the install help say "left bar" today);
-      (2) British spelling everywhere a member reads prose ("colour", and the labels the
-      game itself shows, such as "Numbers in defence"): the settings menu, `settings.toml`'s
-      comments and the help pages that write "color" follow; keys, file names and finding
-      codes (`skin_color`, `colors.txt`, `kit_colors_missing`) are names, not prose, and stay;
+      (2) British spelling in member-facing prose (as the labels the game itself shows,
+      such as "Numbers in defence"), with one exception: "color" is always spelt "color",
+      because the files and keys members know carry it (`colors.txt`, `skin_color`). So the
+      Save editor's and the Ruleset editor's "colour" becomes "color" (the `Colours` group,
+      "colour code", the tooltips, the help lines that write it), and nothing else changes
+      spelling;
       (3) a roster position is a "slot", counted from 1 (not "place", "Player 04" or the
       copied AATF line's 0-based "Slot 6");
       (4) the FPC action is "Hide default body (FPC)" / "Show default body (FPC)" in the
@@ -1868,8 +1870,10 @@ briefs, review loops, gates and mutation runs as for any step.
     the window opens, and does not follow the list's selection; the source starts on the
     destination's team with no player picked, Copy and Swap disabled until one is, and both
     rows stay as they are after a Copy; each Copy or Swap is one undo step and writes a line
-    in the window ("Copied X's stats to Y"). Open, asked: whether a click on a player in
-    the list while the window is open sets the source or the destination. Plan first
+    in the window ("Copied X's stats to Y"). A click on a player in the list while the
+    window is open sets the destination (one player's stats copied onto several is the
+    repeated action; the source is chosen once), the one way the destination moves besides
+    its dropdowns. Plan first
     (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
     the draft, then the slice -> verify: headless, two copies in a row without reopening,
     a swap, one undo step each; the built window
@@ -1877,7 +1881,7 @@ briefs, review loops, gates and mutation runs as for any step.
     maintainer, 2026-11-13: a toggle is ambiguous; two entries as the Team menu has, or one
     whose label follows the player's state): one entry reading "Hide default body (FPC)" or
     "Show default body (FPC)" by the Appearance section's own reading of the player, Ctrl+I
-    kept on it (the lead's choice between the two: one shortcut, one action). Plan:
+    kept on it (the maintainer agreed, 2026-11-13). Plan:
     `plans/save_editor.md` "Editing UI", the Player menu; help `06_player.md` -> verify:
     headless, the label on a hidden and on a shown player, Ctrl+I on each
   - [ ] 0.0.2-clipmsg a notice after Ctrl+C and after Ctrl+V saying what was copied or
