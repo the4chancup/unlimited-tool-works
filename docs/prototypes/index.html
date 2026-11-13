@@ -963,7 +963,9 @@ function combo(options, value, set, opts = {}) {
     onchange: e => { set(e.target.value === "\u0000" ? null : e.target.value); structural(); } },
     options.map(([v, label]) => h("option", { value: v ?? "\u0000", selected: v === value }, label)));
   s.addEventListener("mousedown", e => {
-    if (e.button !== 0) return;
+    // A combo of the draft's own controls, outside the app window, keeps the browser's list:
+    // the drawn one is placed inside the window, which clips it away.
+    if (e.button !== 0 || !s.closest("#win")) return;
     e.preventDefault();
     if (comboOpen === s) closeComboPopup(); else comboPopup(s);
   });
