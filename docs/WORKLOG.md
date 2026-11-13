@@ -15,10 +15,8 @@ is in `AGENTS.md` ("Working documents").
 1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c): its six clauses are set, the game's own
-   formations pass them and each was looked at in game, in PES 2017 and in PES 2019
-   (2026-11-13), the two versions it runs on; its Acceptance is written; next its two
-   slices.
+2. The illegal formation check (0.0.2c) is built: the rule and the warning are in, on
+   PES 2017 and PES 2019 saves; the warning's review is running.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
    SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
    two slices follow -clip), and -inst, whose
@@ -2324,13 +2322,19 @@ briefs, review loops, gates and mutation runs as for any step.
       `_pes19.txt`, built by `.tmp/0_0_2/formation/fixture/make_fixture*.py`) and one
       formation per clause; `team_widgets` pins the rule's reaches to its marker box and
       its row reading to what a drop offers
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/formation/swe_rule.md`, worktree
-      `review15`)
-    - [ ] slice b (Opus, the same session resumed; running since 2026-11-13, brief
-      `.tmp/0_0_2/formation/brief_form_warn.md`, worktree `4cc-studio-temp/formrule`,
-      run `sk_formwarn`): the host's warning per fielded set on PES 2017 and PES 2019
-      saves, its text (the kind carries what the sentence needs to name starters), the
-      ruleset's flag, SE-AATF-09 and SE-GUI-76
+    - [x] a's SWE-2 review 2026-11-13 (S-rule r1, 4 of 5 accepted, the loop ends;
+      `dd28365b`)
+    - [x] slice b 2026-11-13 (Opus, the same session, and the lead; merge `299551ad`; the
+      lead's rerun of `pes_savefile`, `aatf`, `team_widgets` and `save_editor`, clippy,
+      fmt; SE-AATF-09, SE-GUI-76): the host raises one `IllegalFormation` warning per
+      fielded set that breaks the rule, on PES 2017 and PES 2019 saves, unless the
+      ruleset allows illegal formations; it carries the eleven starters' names and
+      positions for its words; it lands after the players' rows and before the script's
+      own team rows. A team viewed from a Team TOML with no tactics would hold all-zero
+      formations and warn: nothing reaches that today, the Team creator's check will
+      (to settle in its phase). Look: Pending looks
+    - [ ] b's SWE-2 review (running, `.tmp/0_0_2/formation/swe_warn.md`, worktree
+      `review18`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
@@ -2633,6 +2637,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
   no PES; 0.0.2-line; maintainer
+- The illegal formation warning in the built window: a PES 2017 or PES 2019 save under a
+  ruleset without the flag (Spring 26), a team whose formation a tool made (the VGL27
+  save's /b/, /co/, /d/, /tg/, /toy/, /x/): the warning's words in Live AATF, and gone
+  after the named starter is dragged on the Tactics pitch; no PES; 0.0.2c; maintainer
 - The unsaved changes after a drag in the player list, in the built window: one
   `Player order` row, its places one per line and the row as high as them, the team's
   name on its first line; no PES; 0.0.2-undo a; maintainer
