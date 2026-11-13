@@ -15,7 +15,8 @@ to `mutants.diff/<crate>/` when its run ends, and `mutants.diff/missed_all.txt` 
 crate's survivors and, tagged `[timeout]`, its timeouts.
 
 A crate run whose mutants would cost more than a few minutes locally splits with
-`STUDIO_MUTANTS_REMOTE` (the split `mutants.py` describes): the
+`STUDIO_MUTANTS_REMOTE` (the split `mutants.py` describes, by files to the two
+sides' measured speeds where it can, else in halves): the
 estimate is the baseline plus the per-crate per-mutant costs this machine has
 measured (`mutants.estimate_seconds`), so a pes_savefile diff splits while a
 one-line `fpc` fix stays local. While the remote is busy — a whole-crate run
@@ -151,7 +152,7 @@ def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -
         state = mutants.remote_run_state(host)
         if state == "none":
             half = mutants.estimate_seconds([crate] * count, share=0.5)
-            print(f"mutants_diff: split, about {half:.0f} s a half, plus the transfer and polling")
+            print(f"mutants_diff: split, about {half:.0f} s a side, plus the transfer and polling")
             return mutants.split(selection, host, tree, source)
         print(
             f"mutants_diff: {host} is busy (a remote half "

@@ -342,18 +342,25 @@ class Partition(unittest.TestCase):
 
 class LocalShare(unittest.TestCase):
     def test_the_slower_half_gets_the_smaller_share(self):
+        # The every-outcome means say the opposite (a half that drew more unviable mutants
+        # reads cheaper): the share is the tested means' alone.
         cache = {
-            "mutant": {"cpk": 10.0},
-            "remote_mutant": {"cpk": 15.0},
-            "baseline": {},
+            "mutant": {"cpk": 15.0},
+            "remote_mutant": {"cpk": 10.0},
+            "tested": {"cpk": [10.0, 10]},
+            "remote_tested": {"cpk": [15.0, 10]},
         }
         self.assertAlmostEqual(mutants.local_share("cpk", cache), 0.6)
 
-    def test_a_half_without_a_measurement_gives_no_share(self):
-        cache = {"mutant": {"cpk": 10.0}, "remote_mutant": {}, "baseline": {}}
-        self.assertIsNone(mutants.local_share("cpk", cache))
-        cache = {"mutant": {}, "remote_mutant": {"cpk": 15.0}, "baseline": {}}
-        self.assertIsNone(mutants.local_share("cpk", cache))
+    def test_a_half_measured_on_too_few_tested_mutants_gives_no_share(self):
+        measured = {"cpk": [10.0, mutants.SHARE_MIN_TESTED]}
+        few = {"cpk": [15.0, mutants.SHARE_MIN_TESTED - 1]}
+        for local, remote in ((measured, {}), ({}, measured), (measured, few), (few, measured)):
+            cache = {"tested": local, "remote_tested": remote}
+            self.assertIsNone(mutants.local_share("cpk", cache), cache)
+        self.assertIsNotNone(
+            mutants.local_share("cpk", {"tested": measured, "remote_tested": measured})
+        )
 
 
 class CostCache(unittest.TestCase):
@@ -392,6 +399,50 @@ class CostCache(unittest.TestCase):
             write_run(out, 5, outcomes("CaughtMutant"), {"log/m": "test failed"})
             self.assertEqual(self.update(Path(tmp))["mutant"], {"cpk": 1.0})
 
+    def test_the_tested_mean_leaves_out_unviable_mutants_and_weighs_history(self):
+        def outcomes(seconds: dict[str, list[float]]) -> list[dict]:
+            return [
+                {
+                    "scenario": {"Mutant": {"name": f"m{i}", "file": "crates/libs/cpk/src/lib.rs"}},
+                    "summary": summary,
+                    "log_path": "log/m",
+                    "phase_results": [{"duration": value}],
+                }
+                for i, (summary, value) in enumerate(
+                    (summary, value) for summary, values in seconds.items() for value in values
+                )
+            ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "crates" / "libs" / "cpk").mkdir(parents=True)
+            (Path(tmp) / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            out = Path(tmp) / "mutants.out"
+            # Two tested at 100 s and 300 s, four unviable at 20 s, one timeout at 900 s:
+            # the tested mean is 200 over two, where every outcome's is 197.
+            run = {
+                "CaughtMutant": [100.0], "MissedMutant": [300.0],
+                "Unviable": [20.0] * 4, "Timeout": [900.0],
+            }
+            write_run(out, 7, outcomes(run), {"log/m": "test failed"})
+            cache = self.update(Path(tmp))
+            self.assertEqual(cache["tested"], {"cpk": [200.0, 2]})
+            self.assertAlmostEqual(cache["mutant"]["cpk"], 1380.0 / 7)
+            self.assertEqual(cache["remote_tested"], {})
+            # A second run of two at 400 s: weighed two against two.
+            write_run(out, 2, outcomes({"CaughtMutant": [400.0] * 2}), {"log/m": "test failed"})
+            self.assertEqual(self.update(Path(tmp))["tested"], {"cpk": [300.0, 4]})
+            # History counts for `TESTED_HISTORY` mutants at most: a mean standing on that
+            # many, then a run as large, lands halfway and stays at the cap.
+            cache_path = Path(tmp) / "cost.json"
+            cache = json.loads(cache_path.read_text(encoding="utf-8"))
+            cache["tested"]["cpk"] = [100.0, mutants.TESTED_HISTORY]
+            cache_path.write_text(json.dumps(cache), encoding="utf-8")
+            many = {"CaughtMutant": [300.0] * mutants.TESTED_HISTORY}
+            write_run(out, mutants.TESTED_HISTORY, outcomes(many), {"log/m": "test failed"})
+            self.assertEqual(
+                self.update(Path(tmp))["tested"], {"cpk": [200.0, mutants.TESTED_HISTORY]}
+            )
+
     def test_a_cache_without_remote_mutant_loads_an_empty_table(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache_path = Path(tmp) / "cost.json"
@@ -406,6 +457,8 @@ class CostCache(unittest.TestCase):
             finally:
                 mutants.COST_CACHE = saved
             self.assertEqual(cache["remote_mutant"], {})
+            self.assertEqual(cache["tested"], {})
+            self.assertEqual(cache["remote_tested"], {})
             self.assertEqual(cache["mutant"], {"cpk": 1.5})
             self.assertEqual(cache["baseline"], {"cpk": 60.0})
 
@@ -440,8 +493,97 @@ class CostCache(unittest.TestCase):
             finally:
                 mutants.ROOT, mutants.COST_CACHE = saved
             self.assertEqual(cache["remote_mutant"], {"cpk": 2.0})
+            self.assertEqual(cache["remote_tested"], {"cpk": [2.0, 5]})
             self.assertNotIn("cpk", cache["mutant"])
+            self.assertNotIn("cpk", cache["tested"])
             self.assertNotIn("cpk", cache["baseline"])
+
+
+class PlanFileSplit(unittest.TestCase):
+    """The plan of a split: a diff's selection is listed as a whole crate's is, and the
+    record says `files` only when a file split is planned."""
+
+    DIFF = ["--in-diff", "in.diff", "-p", "cpk"]
+    # Ten mutants over four files: 4, 3, 2 and 1.
+    FILES = {"a.rs": 4, "b.rs": 3, "c.rs": 2, "d.rs": 1}
+
+    def plan(self, tested: dict, remote_tested: dict, drop: str | None = None):
+        """`plan_file_split(DIFF)` with the listing stubbed: the whole selection's with the
+        plain config, a half's own files with its config (`drop`: a name the local half's
+        listing loses). Returns the record, the selections listed and the printed text."""
+        listed = []
+        configs = {}
+
+        def local_config(source, extra=None):
+            path = Path(f"local{len(configs)}.toml")
+            configs[str(path)] = extra
+            return path
+
+        def sized_config(nproc, build_jobs, extra, source):
+            return json.dumps(extra)
+
+        def list_mutants(selection, config, source):
+            listed.append(list(selection))
+            if str(config) in configs:
+                extra = configs[str(config)]
+                keep = None if extra is None else set(extra["examine_globs"])
+            else:
+                excluded = set(json.loads(Path(config).read_text(encoding="utf-8"))["exclude_globs"])
+                keep = set(self.FILES) - excluded
+            return [
+                {"file": file, "name": f"{file}:{i}"}
+                for file, count in self.FILES.items()
+                for i in range(count)
+                if (keep is None or file in keep) and not (keep and f"{file}:{i}" == drop)
+            ]
+
+        cache = {"tested": tested, "remote_tested": remote_tested}
+        out = io.StringIO()
+        with (
+            mock.patch.multiple(
+                mutants,
+                local_config=local_config,
+                sized_config=sized_config,
+                list_mutants=list_mutants,
+                load_cost_cache=lambda: cache,
+            ),
+            contextlib.redirect_stdout(out),
+        ):
+            record = mutants.plan_file_split(self.DIFF, 8, Path("source"))
+        return record, listed, out.getvalue()
+
+    def test_a_diffs_selection_is_listed_and_split_by_files_to_the_measured_share(self):
+        # 150 s there against 100 s here: this machine takes 60%, files a.rs and c.rs.
+        record, listed, out = self.plan({"cpk": [100.0, 20]}, {"cpk": [150.0, 20]})
+        self.assertEqual(listed, [self.DIFF] * 3)
+        self.assertEqual(record["crate"], "cpk")
+        self.assertEqual(record["method"], "files")
+        self.assertEqual(record["local_files"], ["a.rs", "c.rs"])
+        self.assertAlmostEqual(record["target"], 0.6)
+        self.assertAlmostEqual(record["achieved"], 0.6)
+        self.assertEqual(len(record["names"]), 10)
+        self.assertIn("file split: this machine tests 60% of cpk's 10 mutants", out)
+
+    def test_an_unmeasured_half_or_a_share_near_halves_stays_round_robin(self):
+        record, listed, out = self.plan({"cpk": [100.0, 20]}, {})
+        self.assertEqual((record["method"], record["local_files"]), ("round-robin", []))
+        self.assertEqual(listed, [self.DIFF], "only the whole listing, for the record's names")
+        self.assertEqual(len(record["names"]), 10)
+        self.assertIn("no per-mutant cost measured on both halves", out)
+        # 100 s against 115 s is 53%: inside SHARE_MIN_GAIN of halves.
+        record, listed, out = self.plan({"cpk": [100.0, 20]}, {"cpk": [115.0, 20]})
+        self.assertEqual((record["method"], record["local_files"]), ("round-robin", []))
+        self.assertEqual(listed, [self.DIFF])
+        self.assertIn("near enough to halves", out)
+        # At the line itself the split is by files.
+        edge = 100.0 * (0.5 + mutants.SHARE_MIN_GAIN) / (0.5 - mutants.SHARE_MIN_GAIN)
+        record, _, _ = self.plan({"cpk": [100.0, 20]}, {"cpk": [edge + 1.0, 20]})
+        self.assertEqual(record["method"], "files")
+
+    def test_halves_that_do_not_recombine_to_the_listing_stay_round_robin(self):
+        record, _, out = self.plan({"cpk": [100.0, 20]}, {"cpk": [150.0, 20]}, drop="a.rs:0")
+        self.assertEqual((record["method"], record["local_files"]), ("round-robin", []))
+        self.assertIn("a file split is inexact (1 missing, first: a.rs:0)", out)
 
 
 class RemoteSelection(unittest.TestCase):
@@ -1105,6 +1247,47 @@ class SplitShares(unittest.TestCase):
         ):
             with self.assertRaisesRegex(mutants.Refused, "versions differ"):
                 mutants.split(["-p", "cpk"], "bonfire", HEAD_TREE, Path("source"))
+
+    def test_a_diff_split_is_planned_recorded_and_run_by_its_plan(self):
+        """A diff run's split goes through `plan_file_split` with its own selection, its
+        record is kept for the summary's coverage check, and a `files` plan reaches the
+        halves; a run with no local half plans nothing and drops the last record."""
+        diff = ["--in-diff", "in.diff", "-p", "cpk"]
+        for method, files in (("files", ["a.rs"]), ("round-robin", [])):
+            planned = []
+            ran = {}
+
+            def plan(selection, nproc, source):
+                planned.append(selection)
+                return {"method": method, "local_files": files, "names": ["m"]}
+
+            def run_split(selection, host, tree, source, head, remote_tree, nproc, local, local_files):
+                ran["local_files"] = local_files
+                return 0, 0, 1.0, 1.0
+
+            with (
+                tempfile.TemporaryDirectory() as tmp,
+                mock.patch.object(mutants, "ROOT", Path(tmp)),
+                mock.patch.multiple(
+                    mutants,
+                    remote_start=lambda host, tree: (None, None, 8),
+                    set_aside_last_run=lambda: None,
+                    plan_file_split=plan,
+                    run_split=run_split,
+                    finish_remote_run=lambda *a, **k: 0,
+                ),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                mutants.record_extra_run("cpk", {}, 1.0)
+                mutants.split(diff, "bonfire", HEAD_TREE, Path("source"))
+                self.assertEqual(planned, [diff])
+                self.assertEqual(ran["local_files"], set(files) if files else None)
+                record = json.loads(mutants.split_run_record().read_text(encoding="utf-8"))
+                self.assertEqual(record["method"], method)
+                self.assertFalse(mutants.extra_run_record().exists(), "a diff has no extra pass")
+                mutants.split(diff, "bonfire", HEAD_TREE, Path("source"), local=False)
+                self.assertEqual(planned, [diff], "a run with no local half plans nothing")
+                self.assertFalse(mutants.split_run_record().exists())
 
     def test_a_file_split_takes_no_shard_on_either_side(self):
         calls = self.run_split({"crates/libs/cpk/src/read.rs"})

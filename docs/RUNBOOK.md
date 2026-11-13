@@ -102,23 +102,30 @@ run is under way: it keeps the split below, a round's diff being minutes and its
 waited on, except while a mutation half is on the VPS (running, or ended and not collected)
 or the VPS cannot be reached, when it runs entirely on this
 machine instead of waiting days for its turn there. What follows
-describes the split: a diff uses it, and the whole-crate file split it describes is kept
-for when a whole run needs this machine again.
+describes the split: a diff uses it, and a whole run that needs this machine again would.
 
 **The split with the maintainer's VPS.** On the maintainer's PC the
 user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
 `just mutants-diff` run part of a larger crate's mutants there (`scripts/mutation/mutants.py`: the working tree is
 sent as a git bundle, the remote half runs at low priority, its results land in
-`mutants.out/remote/` and the combined survivors in `mutants.out/missed_all.txt`). A whole-crate
-run hands each side a complementary set of the crate's source files rather than `--shard`
+`mutants.out/remote/` and the combined survivors in `mutants.out/missed_all.txt`). A split
+run hands each side a complementary set of its mutants' source files rather than `--shard`
 halves: the local config's `examine_globs` name this machine's files and the remote's
 `exclude_globs` add them, the local share being `remote / (local + remote)` of the two sides'
-measured mean seconds per mutant (the cost table, below; the remote side's means fold into
-its `remote_mutant` table at each fetch), so a slower side tests less. A diff run, a crate one
-side has not measured yet, a file assignment landing further from the target than halves, and per-side
-listings that do not recombine to the whole listing exactly all keep the even `--shard 0/2` /
-`1/2`, and `extra_mutants.out/split.json` records which a run used so the summary can check the
-merged outcomes name every listed mutant exactly once. Benchmarked
+mean seconds per tested mutant of the crate (the cost table's `tested` and `remote_tested`,
+below), so a slower side tests fewer and the two end together: `save_editor`, whose suite
+this machine's 16 threads run in two thirds of the VPS's time, goes about 60 to 40, and most
+crates stay near halves. The split is by files, not by mutant names, because cargo-mutants
+27.1 applies no name filter to its "delete field" mutants, and by one run per side, not
+several shards each, because every run pays its own baseline. A crate one side has not
+measured on ten tested mutants yet, a share within five points of halves (the means are not
+measured more finely, and round-robin gives each side a mix of files), a file assignment
+landing further from the target than halves, and per-side listings that do not recombine to
+the whole listing exactly all keep the even `--shard 0/2` / `1/2`. No floor on a run's size
+is needed beside those: a small diff's mutants sit in too few files to be shared out
+unevenly, and the split itself starts only past four minutes' estimate.
+`extra_mutants.out/split.json` records which a run used, a diff's too, so the summary can
+check the merged outcomes name every listed mutant exactly once. Benchmarked
 on 2026-09-27 on one commit, the VPS is about as fast as the PC (`fox2` whole crate 167 s
 against 256 s, one eighth of `fmdl` 460 s against 433 s) with identical results, so a split
 roughly halves a whole-crate run whose sides rate the same, and it moves part of its energy off
@@ -149,7 +156,13 @@ first build and every timeout: an estimate that left all three out put a 38-muta
 80 s, and it took 270 s (the estimate now says 266 s). That estimate is for the whole run
 here; a split run prints its own, the baseline plus half the rest (each half builds a
 baseline, so a split does not halve the estimate), and ends with its wall time, which adds
-the transfer, polling and fetch. The local half runs at below-normal priority with each of
+the transfer, polling and fetch. The share's means are a second pair of tables: seconds per
+tested mutant (caught or missed), each run's mutants weighed against at most a hundred
+earlier ones. They leave out what the estimate's mean rightly counts, the unviable mutants
+(a build's seconds each, and how many a side draws is chance: on 2026-11-13 this machine drew
+21 of a hundred and the VPS 5, and the estimate's means, 292 s and 317 s, would have shared
+`save_editor` 52 to 48 where the tested means were 384 s and 596 s) and the timeouts. The
+local half runs at below-normal priority with each of
 its two cargo processes given half the logical CPUs (`sized_config`, the remote half's
 sizing), not with two CPUs held back: the machine stays usable by priority, and the run gets
 what the user leaves idle (measured level with the old cap). A starved test can then time
