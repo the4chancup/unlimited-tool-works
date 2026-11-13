@@ -455,8 +455,6 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
         "Set all stats",
         "Bump all stats",
         "Hide default body (Enable FPC)",
-        "Copy stats from",
-        "Swap stats with",
         "Generate settings.toml",
         "Generate in-game face",
     ] {
@@ -468,6 +466,11 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
             "{label}'s tooltip"
         );
     }
+    // Copy/swap stats… stays enabled: it names both players itself.
+    assert!(
+        !menu_item(&nodes, "Copy/swap stats").is_disabled(),
+        "Copy/swap stats enabled on a team row"
+    );
 }
 
 // SE-GUI-09

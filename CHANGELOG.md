@@ -86,6 +86,9 @@ What changed for members, release by release, newest first.
 - **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the
   portraits on the pitch so that the formation's shape is easier to see; `Scroll names`
   beside it is now `Scroll`. Both are remembered.
+- **Save editor**: Copy stats and Swap stats are one Player menu entry, `Copy/swap
+  stats…`, whose window stays open over the editor. Pick the source once, then select
+  each player in the list and press Copy: selecting a row makes him the destination.
 
 ### Fixes
 

@@ -336,8 +336,7 @@ fn menu_dialogs(version: PesVersion) -> Screens {
         ),
         ("Set all stats", "Player", "Set all stats\u{2026}"),
         ("Bump all stats", "Player", "Bump all stats\u{2026}"),
-        ("Copy stats from", "Player", "Copy stats from\u{2026}"),
-        ("Swap stats with", "Player", "Swap stats with\u{2026}"),
+        ("Copy/swap stats", "Player", "Copy/swap stats\u{2026}"),
         ("Fix database", "Savefile", "Fix database\u{2026}"),
         (
             "Generate in-game face",

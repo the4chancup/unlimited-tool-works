@@ -11,8 +11,8 @@ The **Player** menu works on the selected player:
   Appearance section's FPC reading: it shows the default body of a player
   who reads "The default body is currently hidden" and hides any other's,
   the same write as the section's Show default body and Hide default body.
-- **Copy stats from…** copies another player's stats onto the selected one.
-- **Swap stats with…** trades them.
+- **Copy/swap stats…** opens a window that copies one player's stats onto another,
+  or trades them, and stays open for the next player.
 
 Every operation is one undoable step. Set all stats and Bump all stats write the
 same fields the player view's abilities and skills part edits, so they set no
@@ -27,7 +27,14 @@ Appearance section).
 
 **Copy and Swap stats**
 
-The other player is picked by team, then by roster slot. Height, weight, every
+The window has two rows, Source and Destination, each picked by team, then by
+roster slot; both start on the selected player. It stays open over the editor,
+and selecting a row in the player list makes that player the Destination, so
+one player's stats go onto several others with a click on each and **Copy**.
+**Swap** trades the two players' stats instead. A line in the window says what
+the last Copy or Swap did.
+
+Height, weight, every
 ability, form, injury, weak foot, positions, playing style, skills and COM
 styles, stronger foot and hand, star, playing attitude and the gameplay edit
 flags move with the stats. Names, nationality, age, every motion and every

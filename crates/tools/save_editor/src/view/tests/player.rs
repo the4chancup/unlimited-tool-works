@@ -10,7 +10,7 @@ use pes_savefile::model::names::display_name;
 use super::*;
 
 /// The rostered `(slot, player_id)` pairs of `team_id`, in slot order.
-fn rostered(view: &SaveView, team_id: u32) -> Vec<(usize, u32)> {
+pub(super) fn rostered(view: &SaveView, team_id: u32) -> Vec<(usize, u32)> {
     team_entry(view, team_id)
         .roster
         .iter()
@@ -370,7 +370,7 @@ fn a_long_sentence_widens_the_number_row_to_the_sentence_the_gap_and_the_box() {
 /// `entry` with the copy/swap field set taken from `source`: height,
 /// weight, the whole stats, positions and skills, and the eight
 /// gameplay edit flags: Copy player stats' field set.
-fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
+pub(super) fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
     let mut entry = entry.clone();
     entry.basic.height = source.basic.height;
     entry.basic.weight = source.basic.weight;
@@ -390,7 +390,7 @@ fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
 
 /// Gives 70101 and 70102 distinct values in and out of the field set, so a
 /// copy's kept half is not vacuous (`version`'s fixture written to `path`).
-fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
+pub(super) fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
     let mut file = EditFile::from_bytes(&fixture_save(version)).unwrap();
     {
         let dest = file.player_mut(70101).unwrap();
@@ -455,10 +455,10 @@ fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
     file.save(path).unwrap();
 }
 
-/// The label of the player in roster `slot` (0-based) in the Copy/Swap
-/// dialog's player combo: his place in the roster, registered position
-/// and display name, as the player list shows them.
-fn slot_label(entry: &PlayerEntry, slot: usize) -> String {
+/// The label of the player in roster `slot` (0-based) in the Copy/swap
+/// window's player dropdown and in the list's rows alike: his place in
+/// the roster, registered position and display name.
+pub(super) fn slot_label(entry: &PlayerEntry, slot: usize) -> String {
     let position = POSITIONS
         .get(usize::from(entry.positions.registered))
         .copied()
@@ -466,231 +466,8 @@ fn slot_label(entry: &PlayerEntry, slot: usize) -> String {
     format!("{:02} {position} {}", slot + 1, display_name(&entry.name))
 }
 
-/// The `role` control named by `label` inside a dialog: `right_of_label`,
-/// except the label is picked among its copies (the team view's "Team"
-/// and the player view's "Player" scope carry the same texts) by which
-/// one's row holds a `role` node.
-fn dialog_control<'a>(
-    nodes: &'a [accesskit::Node],
-    label: &str,
-    role: Role,
-) -> &'a accesskit::Node {
-    nodes
-        .iter()
-        .filter(|node| node.role() == Role::Label && node.value() == Some(label))
-        .find_map(|label_node| first_right_of(nodes, label_node, |n| n.role() == role))
-        .unwrap_or_else(|| panic!("no {role:?} right of a {label:?} label"))
-}
-
-/// Picks `label` in the Copy/Swap dialog's player combo and clicks OK.
-fn run_copy_swap(window: &mut Headless, view: &mut SaveView, item: &str, label: &str) {
-    let nodes = open_menu(window, view, "Player", "Set all stats");
-    click(window, menu_item(&nodes, item), view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let combo = dialog_control(&nodes, "Player", Role::ComboBox);
-    click(window, combo, view);
-    let (_, nodes, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    // A list row can carry the same label, so the pick is scoped to the
-    // open combo's popup — the `Role::ListBox` subtree egui builds for it.
-    let parent: HashMap<accesskit::NodeId, accesskit::NodeId> = nodes
-        .iter()
-        .flat_map(|(id, node)| node.children().iter().map(move |child| (*child, *id)))
-        .collect();
-    let by_id: HashMap<accesskit::NodeId, &accesskit::Node> =
-        nodes.iter().map(|(id, node)| (*id, node)).collect();
-    let in_listbox = |mut at: accesskit::NodeId| {
-        for _ in 0..64 {
-            if by_id[&at].role() == Role::ListBox {
-                return true;
-            }
-            let Some(id) = parent.get(&at) else {
-                return false;
-            };
-            at = *id;
-        }
-        panic!("a node deeper than 64")
-    };
-    let (option, _) = nodes
-        .iter()
-        .find(|(id, node)| node.label() == Some(label) && in_listbox(*id))
-        .unwrap_or_else(|| panic!("no {label:?} in the player combo"));
-    action_click(window, view, *option);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    click(window, node_labeled(&nodes, Role::Button, "OK"), view);
-}
-
-// The Copy row: the picked player's field set lands on the
-// selected one and nothing outside it moves — names, nationality, age,
-// every motion, the motion and appearance flags and
-// the whole appearance stay — as one undoable edit, saved and reopened.
-// SE-GUI-24
-#[test]
-fn copy_stats_writes_the_field_set_and_nothing_else() {
-    let path = fixture(PesVersion::Pes21, "player_copy");
-    mark_copy_players(&path, PesVersion::Pes21);
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let dest_before = player_entry(&view, 70101);
-    let source_before = player_entry(&view, 70102);
-    // Premises: the fields a copy must and must not carry all differ.
-    assert_ne!(dest_before.stats, source_before.stats);
-    assert_ne!(dest_before.positions, source_before.positions);
-    assert_ne!(dest_before.name, source_before.name);
-    assert_ne!(dest_before.motion, source_before.motion);
-    assert_ne!(dest_before.appearance, source_before.appearance);
-
-    // The dialog's team combo opens on the selected player's team (701),
-    // its player combo on the first filled slot: 70102 is the option named
-    // by his place, position and name.
-    run_copy_swap(
-        &mut window,
-        &mut view,
-        "Copy stats from",
-        &slot_label(&source_before, 1),
-    );
-
-    assert_eq!(
-        player_entry(&view, 70101),
-        with_stats_of(&dest_before, &source_before),
-        "the field set copied, the rest 70101's own"
-    );
-    assert_eq!(
-        player_entry(&view, 70102),
-        source_before,
-        "the source is untouched"
-    );
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
-    assert_eq!(player_entry(&view, 70101), dest_before, "restored");
-
-    // Redo, save, reopen: the file holds the copy.
-    window.frame(vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    assert_eq!(
-        EditFile::load(&path).unwrap().player(70101).unwrap(),
-        &with_stats_of(&dest_before, &source_before),
-        "the reopened file holds the copy"
-    );
-}
-
-// Swap player stats: the same field set traded both ways between the
-// selected and the picked player — here on PES 16, whose appearance block
-// is a separate record and stays out of the trade, as the field set
-// leaves it out.
-// SE-GUI-24
-#[test]
-fn swap_stats_trades_the_field_set_on_pes16() {
-    let path = fixture(PesVersion::Pes16, "player_swap16");
-    mark_copy_players(&path, PesVersion::Pes16);
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let first_before = player_entry(&view, 70101);
-    let second_before = player_entry(&view, 70102);
-    assert_ne!(first_before.appearance, second_before.appearance);
-
-    run_copy_swap(
-        &mut window,
-        &mut view,
-        "Swap stats with",
-        &slot_label(&second_before, 1),
-    );
-
-    assert_eq!(
-        player_entry(&view, 70101),
-        with_stats_of(&first_before, &second_before),
-        "70101 takes 70102's set, keeps the rest"
-    );
-    assert_eq!(
-        player_entry(&view, 70102),
-        with_stats_of(&second_before, &first_before),
-        "70102 takes 70101's set, keeps the rest"
-    );
-    assert_eq!(
-        player_entry(&view, 70101).appearance,
-        first_before.appearance,
-        "the appearance record stays"
-    );
-    assert_eq!(
-        player_entry(&view, 70102).appearance,
-        second_before.appearance,
-        "the appearance record stays"
-    );
-
-    // One undo trades them back; redo trades again; saved file holds it.
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
-    assert_eq!(player_entry(&view, 70101), first_before);
-    assert_eq!(player_entry(&view, 70102), second_before);
-    window.frame(vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    let reopened = EditFile::load(&path).unwrap();
-    assert_eq!(
-        reopened.player(70101).unwrap(),
-        &with_stats_of(&first_before, &second_before)
-    );
-    assert_eq!(
-        reopened.player(70102).unwrap(),
-        &with_stats_of(&second_before, &first_before)
-    );
-}
-
-// The free-kick motion is a look the team's export owns, not a stat:
-// Copy and Swap stats leave each player's his own, the lock or not, and
-// still move the rest of the field set.
-#[test]
-fn copy_and_swap_stats_keep_each_players_free_kick_motion() {
-    for (item, test) in [
-        ("Copy stats from", "player_copy_free_kick"),
-        ("Swap stats with", "player_swap_free_kick"),
-    ] {
-        let path = fixture(PesVersion::Pes21, test);
-        mark_copy_players(&path, PesVersion::Pes21);
-        let mut view = SaveView::new();
-        view.open(&path);
-        assert!(!view.aesthetics_locked(), "premise: the lock is off");
-        let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-        let first_before = player_entry(&view, 70101);
-        let second_before = player_entry(&view, 70102);
-        assert_ne!(
-            first_before.motion.free_kick, second_before.motion.free_kick,
-            "premise: the free-kick motions differ"
-        );
-        assert_ne!(
-            first_before.stats, second_before.stats,
-            "premise: the stats differ"
-        );
-
-        run_copy_swap(&mut window, &mut view, item, &slot_label(&second_before, 1));
-
-        assert_eq!(
-            player_entry(&view, 70101),
-            with_stats_of(&first_before, &second_before),
-            "{item}: 70101 takes the field set but his own free-kick motion"
-        );
-        let second_after = if item == "Copy stats from" {
-            second_before.clone()
-        } else {
-            with_stats_of(&second_before, &first_before)
-        };
-        assert_eq!(
-            player_entry(&view, 70102),
-            second_after,
-            "{item}: 70102 keeps his free-kick motion"
-        );
-    }
-}
-
-// The four menu dialogs' headings are their titles (`StatNum::title`,
-// `CopySwap::title`): the heading text is what a member reads the dialog
-// by.
+// The two menu dialogs' headings are their titles (`StatNum::title`):
+// the heading text is what a member reads the dialog by.
 #[test]
 fn the_menu_dialogs_draw_their_headings() {
     let path = fixture(PesVersion::Pes21, "player_dialog_headings");
@@ -700,8 +477,6 @@ fn the_menu_dialogs_draw_their_headings() {
     for (item, title) in [
         ("Set all stats", "Set all stats"),
         ("Bump all stats", "Bump all stats"),
-        ("Copy stats from", "Copy stats"),
-        ("Swap stats with", "Swap stats"),
     ] {
         let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
         click(&mut window, menu_item(&nodes, item), &mut view);
@@ -715,141 +490,6 @@ fn the_menu_dialogs_draw_their_headings() {
             node_labeled(&nodes, Role::Button, "Cancel"),
             &mut view,
         );
-    }
-}
-
-// The Copy/Swap dialog's pick: it opens on the selected player's team's
-// first filled roster slot, and picking another team re-picks that
-// team's first filled slot — the combo's shown text names the picked
-// player by his place, position and name.
-#[test]
-fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
-    let path = fixture(PesVersion::Pes21, "player_copy_swap_pick");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    // The selected player is the first listed, so his team's first
-    // filled slot is the pick. Another team of the fixture, for the
-    // switch: read both from the save, never typed in.
-    let (slot, first_id) = rostered(&view, 701)
-        .first()
-        .copied()
-        .expect("team 701 has a filled slot");
-    let first = player_entry(&view, first_id);
-    // His shirt number moved off his place, so the label shows which one
-    // it reads: the fixture's numbers equal the places.
-    let session = view.session.as_mut().unwrap();
-    let mut team = session.file().team(701).unwrap().clone();
-    team.roster[slot].number = 19;
-    session.edit_team(1, team);
-    assert_ne!(
-        usize::from(team_entry(&view, 701).roster[slot].number),
-        slot + 1
-    );
-    let second_id = view
-        .session
-        .as_ref()
-        .unwrap()
-        .file()
-        .teams()
-        .iter()
-        .find(|team| team.id != 701 && team.roster.iter().any(|slot| slot.player_id != 0))
-        .expect("another team with a filled slot")
-        .id;
-    let second_name = team_entry(&view, second_id).name.clone();
-    let (second_slot, second_player_id) = rostered(&view, second_id)
-        .first()
-        .copied()
-        .expect("the other team has a filled slot");
-    let second = player_entry(&view, second_player_id);
-
-    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(
-        player_combo(&nodes).value().map(str::to_owned),
-        Some(slot_label(&first, slot)),
-        "the pick is the team's first filled slot, shown by his label"
-    );
-
-    // Pick the other team in the Team combo: the pick re-seats on its
-    // first filled slot.
-    let team_combo = dialog_control(&nodes, "Team", Role::ComboBox);
-    click(&mut window, team_combo, &mut view);
-    let (_, nodes, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (option, _) = nodes
-        .iter()
-        .find(|(_, node)| node.label() == Some(second_name.as_str()))
-        .unwrap_or_else(|| panic!("no {second_name:?} in the team combo"));
-    action_click(&mut window, &mut view, *option);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(
-        player_combo(&nodes).value().map(str::to_owned),
-        Some(slot_label(&second, second_slot)),
-        "the pick is the picked team's first filled slot"
-    );
-}
-
-// The Copy/Swap dialog's team combo names a team by its display name, its
-// shown text and its entries alike, as the list's team selector does: a
-// colour code's control character and hex digits never show.
-#[test]
-fn the_copy_swap_team_combo_names_a_coded_team_by_its_display_name() {
-    let path = fixture(PesVersion::Pes21, "copy_swap_display_name");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    let name = file.team(701).unwrap().name.clone();
-    file.team_mut(701).unwrap().name = format!("\x11cff0000ff{name}");
-    file.save(&path).unwrap();
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-
-    // The selected player is the first listed, of team 701: the combo
-    // opens on his team.
-    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let team_combo = dialog_control(&nodes, "Team", Role::ComboBox);
-    assert_eq!(team_combo.value(), Some(name.as_str()), "the shown text");
-
-    click(&mut window, team_combo, &mut view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let entries: Vec<&str> = nodes
-        .iter()
-        .filter(|node| node.role() == Role::Button)
-        .filter_map(|node| node.label())
-        .collect();
-    assert!(entries.contains(&name.as_str()), "the entry: {entries:?}");
-    assert!(
-        entries.iter().all(|entry| !entry.contains('\u{11}')),
-        "no colour code byte in the popup: {entries:?}"
-    );
-}
-
-/// The Copy/Swap dialog's player combo node.
-fn player_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
-    dialog_control(nodes, "Player", Role::ComboBox)
-}
-
-// The Copy/Swap dialog leaves on OK as on Cancel (`view.copy_swap` is
-// `None` after both), the `&&` mutant's keep-it-open case.
-#[test]
-fn the_copy_swap_dialog_closes_on_ok_and_cancel() {
-    let path = fixture(PesVersion::Pes21, "player_copy_swap_close");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-
-    for button in ["OK", "Cancel"] {
-        let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
-        click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
-        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        click(
-            &mut window,
-            node_labeled(&nodes, Role::Button, button),
-            &mut view,
-        );
-        assert!(view.copy_swap.is_none(), "{button} closed the dialog");
     }
 }
 
@@ -1243,12 +883,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         ),
         "the toggle's hover is the ownership line"
     );
-    for label in [
-        "Set all stats",
-        "Copy stats from",
-        "Swap stats with",
-        "Bump all stats",
-    ] {
+    for label in ["Set all stats", "Copy/swap stats", "Bump all stats"] {
         assert!(
             !menu_item(&nodes, label).is_disabled(),
             "{label} stays enabled"

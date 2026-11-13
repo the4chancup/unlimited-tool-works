@@ -1,34 +1,32 @@
-//! The toolbar's menu buttons: the Player menu's four stat operations, FPC
-//! toggle and two Generate items, the Team menu's operations over the
+//! The toolbar's menu buttons: the Player menu's stat operations, FPC
+//! toggle, Copy/swap stats window (`copy_stats`) and two Generate items,
+//! the Team menu's operations over the
 //! selected row's team, each a sealed undo entry
 //! (`session/{player,team}_ops.rs`), the Savefile menu's Comparator, Apply
 //! aesthetics patch, roster sheet, Multi-team AATF and Fix database
 //! (`session/database.rs`), and the dialogs they open (`Boglo`,
-//! `StatNum`, `CopySwap` and the Fix database confirmation; the draft's
-//! `dlgBoglo`, `dlgNum`, `dlgCopySwap` and `dlgFixDb`).
+//! `StatNum` and the Fix database confirmation; the draft's
+//! `dlgBoglo`, `dlgNum` and `dlgFixDb`).
 
 use std::ops::RangeInclusive;
 
 use pes_savefile::EditFile;
-use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, combo_item, menu_button, menu_separator, modal, modal_buttons,
-    modal_fit_contents, modal_sentence_gap, number_arrows, radio_value, step_choice, step_number,
-    wheel_steps,
+    add_enabled, add_enabled_ui, menu_button, menu_separator, modal, modal_buttons,
+    modal_fit_contents, number_arrows, radio_value, step_number, wheel_steps,
 };
 
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::Session;
-use crate::session::cup::cup_teams;
 use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{
-    NUMBER_BOX, Panel, Refusal, SaveView, comparator, interchange, refuse_save_being_read,
-    selected_player, selected_team_id,
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, copy_stats, interchange,
+    refuse_save_being_read, selected_player, selected_team_id,
 };
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
@@ -52,7 +50,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let prefill = selected_player(view).map(|(_, _, id)| id).or_else(|| {
         view.session
             .as_ref()
-            .and_then(|session| first_filled(session.file(), team_id))
+            .and_then(|session| copy_stats::first_filled(session.file(), team_id))
     });
     if view.session.is_none() {
         return;
@@ -134,13 +132,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 
 /// The Player menu button (the draft's `playerMenu`): the Set all stats and
 /// Bump all stats dialogs, the one FPC entry (its Ctrl+I drawn beside, its
-/// label the one of the two FPC actions it will do), the
-/// Copy and Swap stats dialogs, and the two Generate items opening
+/// label the one of the two FPC actions it will do), the Copy/swap stats
+/// window (`copy_stats::window`), and the two Generate items opening
 /// `generate::Generate` (settings.toml and the in-game face: file writes, so
-/// the aesthetics lock does not gate them). Every item acts on the selected
-/// player; the menu is disabled with no save open, its entries are disabled
-/// on a team selection (they act on a player), and the FPC item carries the
-/// ownership line as its disabled hover (SE-GUI-22).
+/// the aesthetics lock does not gate them). The menu is disabled with no
+/// save open; on a team selection every entry but Copy/swap stats… is
+/// disabled (they act on a player, while the window names both players
+/// itself), and the FPC item carries the ownership line as its disabled
+/// hover (SE-GUI-22).
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -148,16 +147,26 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         });
         return;
     }
-    let Some((team_id, _, player_id)) = selected_player(view) else {
+    let Some((_, _, player_id)) = selected_player(view) else {
         // A team row selected: every item acts on a player, so all are
-        // disabled with the reason on hover.
+        // disabled with the reason on hover except Copy/swap stats…,
+        // which picks its two players in its own dropdowns.
         menu_button(ui, "Player", |ui| {
             for label in [
                 "Set all stats\u{2026}",
                 "Bump all stats\u{2026}",
                 "Hide default body (Enable FPC)",
-                "Copy stats from\u{2026}",
-                "Swap stats with\u{2026}",
+            ] {
+                add_enabled(ui, false, egui::Button::new(label))
+                    .on_disabled_hover_text("The Player menu acts on a player: pick a player row");
+            }
+            if ui.button("Copy/swap stats\u{2026}").clicked() {
+                if let Some(session) = view.session.as_mut() {
+                    view.copy_swap = Some(copy_stats::CopySwap::new(session, view.selected));
+                }
+                ui.close();
+            }
+            for label in [
                 "Generate settings.toml\u{2026}",
                 "Generate in-game face\u{2026}",
             ] {
@@ -214,22 +223,8 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         menu_separator(ui);
-        if ui.button("Copy stats from\u{2026}").clicked() {
-            view.copy_swap = Some(CopySwap::new(
-                session,
-                player_id,
-                team_id,
-                CopySwapMode::Copy,
-            ));
-            ui.close();
-        }
-        if ui.button("Swap stats with\u{2026}").clicked() {
-            view.copy_swap = Some(CopySwap::new(
-                session,
-                player_id,
-                team_id,
-                CopySwapMode::Swap,
-            ));
+        if ui.button("Copy/swap stats\u{2026}").clicked() {
+            view.copy_swap = Some(copy_stats::CopySwap::new(session, view.selected));
             ui.close();
         }
         menu_separator(ui);
@@ -899,206 +894,5 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     if close || response.should_close() {
         view.stat_num = None;
-    }
-}
-
-/// Copy or swap, as the dialog's mode.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum CopySwapMode {
-    /// Copy the picked player's stats onto the selected one.
-    Copy,
-    /// Trade them.
-    Swap,
-}
-
-/// The Copy/Swap stats dialog's state (`view.copy_swap` while it is
-/// open): the mode, the selected player it runs on, and the other player
-/// picked by team then roster slot (the draft's `dlgCopySwap`'s two
-/// combo boxes — one list of a cup save's 4,600 players cannot be
-/// browsed).
-pub(crate) struct CopySwap {
-    /// Copy or swap.
-    mode: CopySwapMode,
-    /// The selected player (the destination, the first swap side).
-    player_id: u32,
-    /// The picked team's id.
-    team_id: u32,
-    /// The picked player's id, a filled slot of `team_id`.
-    other_id: u32,
-}
-
-impl CopySwap {
-    /// The dialog as it opens: the picked team the selected player's own,
-    /// the picked player its first filled roster slot.
-    fn new(session: &Session, player_id: u32, team_id: u32, mode: CopySwapMode) -> CopySwap {
-        let other_id = first_filled(session.file(), team_id).unwrap_or(player_id);
-        CopySwap {
-            mode,
-            player_id,
-            team_id,
-            other_id,
-        }
-    }
-
-    /// The dialog's heading.
-    fn title(&self) -> &'static str {
-        match self.mode {
-            CopySwapMode::Copy => "Copy stats",
-            CopySwapMode::Swap => "Swap stats",
-        }
-    }
-
-    /// OK's operation on `session`.
-    fn apply(&self, session: &mut Session) {
-        match self.mode {
-            CopySwapMode::Copy => {
-                session.copy_stats(self.player_id, self.other_id);
-            }
-            CopySwapMode::Swap => {
-                session.swap_stats(self.player_id, self.other_id);
-            }
-        }
-    }
-}
-
-/// The first filled roster slot's player id on `team_id`, skipping an id
-/// no player record carries (`None` for an empty or missing team).
-fn first_filled(file: &EditFile, team_id: u32) -> Option<u32> {
-    file.team(team_id).and_then(|team| {
-        team.roster
-            .iter()
-            .map(|slot| slot.player_id)
-            .find(|&id| id != 0 && file.player(id).is_some())
-    })
-}
-
-/// The player combo's `(player_id, label)` options for `team_id`: every
-/// filled roster slot in slot order, each labeled by its place in the
-/// roster (`01` to `23`, not the shirt number), registered position and
-/// display name, as the player list shows them.
-fn roster_options(file: &EditFile, team_id: u32) -> Vec<(u32, String)> {
-    let mut options = Vec::new();
-    let Some(team) = file.team(team_id) else {
-        return options;
-    };
-    for (index, slot) in team.roster.iter().enumerate() {
-        if slot.player_id == 0 {
-            continue;
-        }
-        let place = format!("{:02}", index + 1);
-        let label = match file.player(slot.player_id) {
-            Some(player) => {
-                let position = POSITIONS
-                    .get(usize::from(player.positions.registered))
-                    .copied()
-                    .unwrap_or("?");
-                format!("{place} {position} {}", display_name(&player.name))
-            }
-            None => format!("{place} ?"),
-        };
-        options.push((slot.player_id, label));
-    }
-    options
-}
-
-/// The Copy/Swap stats dialog while `view.copy_swap` holds one (the
-/// draft's `dlgCopySwap`): the heading and line naming the selected
-/// player, the team combo prefilled with his own team, the player combo
-/// listing that team's filled roster slots; OK applies and closes,
-/// Cancel or Escape closes.
-pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
-    if view.copy_swap.is_none() {
-        return;
-    }
-    let mut close = false;
-    let title = view.copy_swap.as_ref().expect("checked above").title();
-    let response = modal(
-        ui.ctx(),
-        egui::Id::unique("save_editor_copy_swap"),
-        title,
-        |ui| {
-            let (Some(session), Some(dialog)) = (view.session.as_mut(), view.copy_swap.as_mut())
-            else {
-                return;
-            };
-            let name = session
-                .file()
-                .player(dialog.player_id)
-                .map(|player| display_name(&player.name))
-                .unwrap_or_else(|| dialog.player_id.to_string());
-            match dialog.mode {
-                CopySwapMode::Copy => {
-                    ui.label(format!("Copy the picked player's stats onto {name}."));
-                }
-                CopySwapMode::Swap => {
-                    ui.label(format!("Swap {name}'s stats with the picked player's."));
-                }
-            }
-            modal_sentence_gap(ui);
-            ui.horizontal(|ui| {
-                ui.label("Team");
-                let mut picked = dialog.team_id;
-                let combo = egui::ComboBox::from_id_salt("save_editor_copy_swap_team")
-                    .selected_text(
-                        session
-                            .file()
-                            .team(picked)
-                            .map(|team| display_name(&team.name))
-                            .unwrap_or_else(|| picked.to_string()),
-                    )
-                    .show_ui(ui, |ui| {
-                        for team in cup_teams(session.file()) {
-                            combo_item(ui, &mut picked, team.id, display_name(&team.name));
-                        }
-                    })
-                    .response;
-                let teams = cup_teams(session.file()).map(|team| team.id);
-                if let Some(next) = step_choice(teams, &picked, wheel_steps(ui, &combo)) {
-                    picked = next;
-                }
-                if picked != dialog.team_id {
-                    dialog.team_id = picked;
-                    // The new team's first filled slot is the new pick.
-                    dialog.other_id =
-                        first_filled(session.file(), picked).unwrap_or(dialog.player_id);
-                }
-            });
-            ui.horizontal(|ui| {
-                ui.label("Player");
-                let options = roster_options(session.file(), dialog.team_id);
-                let mut picked = dialog.other_id;
-                let combo = egui::ComboBox::from_id_salt("save_editor_copy_swap_player")
-                    .selected_text(
-                        options
-                            .iter()
-                            .find(|(id, _)| *id == picked)
-                            .map(|(_, label)| label.clone())
-                            .unwrap_or_else(|| "?".to_owned()),
-                    )
-                    .show_ui(ui, |ui| {
-                        for (id, label) in &options {
-                            combo_item(ui, &mut picked, *id, label);
-                        }
-                    })
-                    .response;
-                let players = options.iter().map(|(id, _)| *id);
-                if let Some(next) = step_choice(players, &picked, wheel_steps(ui, &combo)) {
-                    picked = next;
-                }
-                dialog.other_id = picked;
-            });
-            modal_buttons(ui, |ui| {
-                if ui.button("Cancel").clicked() {
-                    close = true;
-                }
-                if ui.button("OK").clicked() {
-                    dialog.apply(session);
-                    close = true;
-                }
-            });
-        },
-    );
-    if close || response.should_close() {
-        view.copy_swap = None;
     }
 }

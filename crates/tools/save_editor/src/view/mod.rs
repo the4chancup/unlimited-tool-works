@@ -16,6 +16,7 @@ mod appearance;
 mod changes_popup;
 mod clipboard;
 mod comparator;
+mod copy_stats;
 mod event_logo;
 mod file_menu;
 mod generate;
@@ -281,9 +282,9 @@ pub(crate) struct SaveView {
     /// The quick actions' Set stats number (the draft's `set-stats`
     /// field), starting at 77.
     set_stats: u8,
-    /// The Copy/Swap stats dialog's state while it is open (the Player
-    /// menu's `…` items); `None` while it is closed.
-    copy_swap: Option<menus::CopySwap>,
+    /// The Copy/swap stats window's state while it is open (the Player
+    /// menu's `…` item); `None` while it is closed.
+    copy_swap: Option<copy_stats::CopySwap>,
     /// The Fix database confirmation is open (the Savefile menu's item);
     /// `false` while it is closed.
     fix_database: bool,
@@ -808,7 +809,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
-    menus::copy_swap_dialog(ui, view);
+    copy_stats::window(ui, view);
     menus::fix_database_dialog(ui, view);
     multi_aatf::dialog(ui, view);
     generate::dialog(ui, view);

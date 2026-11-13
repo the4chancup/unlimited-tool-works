@@ -1725,6 +1725,7 @@ mod appearance;
 mod changes_popup;
 mod clipboard;
 mod comparator;
+mod copy_stats;
 mod event_logo;
 mod file_menu;
 mod generate;

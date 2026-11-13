@@ -555,7 +555,10 @@ fn the_arrows_wait_while_the_unsaved_changes_list_is_open() {
 // SE-GUI-52
 #[test]
 fn the_arrows_wait_while_a_dialog_is_open() {
-    // The Copy stats dialog up: the modal gate the page keys already had.
+    // The Set all stats dialog up: the modal gate the page keys already
+    // had. (The Copy/swap stats window is deliberately NOT this test's
+    // dialog — it is not a modal: the arrows move the selection under
+    // it, which is how it picks each destination.)
     let path = fixture(PesVersion::Pes17, "arrow_keys_dialog");
     let mut view = SaveView::new();
     view.open(&path);
@@ -575,11 +578,11 @@ fn the_arrows_wait_while_a_dialog_is_open() {
     );
     view.selected = Some(Selection::Player(701, 0));
 
-    // The Player menu's Copy stats opens the dialog and leaves it up.
-    let nodes = open_menu(&mut window, &mut view, "Player", "Copy stats from");
-    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
+    // The Player menu's Set all stats opens the dialog and leaves it up.
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    click(&mut window, menu_item(&nodes, "Set all stats"), &mut view);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(view.copy_swap.is_some(), "premise: the dialog is open");
+    assert!(view.stat_num.is_some(), "premise: the dialog is open");
 
     window.frame(
         vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
@@ -590,7 +593,7 @@ fn the_arrows_wait_while_a_dialog_is_open() {
         Some(Selection::Player(701, 0)),
         "Down with the dialog open moved nothing"
     );
-    assert!(view.copy_swap.is_some(), "the dialog stays open");
+    assert!(view.stat_num.is_some(), "the dialog stays open");
 }
 
 // SE-GUI-52
