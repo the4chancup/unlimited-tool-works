@@ -3487,6 +3487,7 @@ function layoutApply() {
     if (!S.layoutEdit) {
       // The tweaks stay (toggle on or off); only the overlay's own marks go.
       // A pinned panel keeps the position the pin set.
+      el.style.zIndex = "";
       const o = layoutOriginals.get(el);
       if (o) { el.style.outline = o.outline;
         if (!(store[key] && store[key].x != null)) el.style.position = o.position; }
@@ -3501,6 +3502,10 @@ function layoutApply() {
     captureOriginals(el);
     if (getComputedStyle(el).position === "static") el.style.position = "relative";
     el.style.outline = "1px dashed var(--sel-fg)";
+    // A pinned panel stands above the unpinned ones while editing: it is `fixed`, so its
+    // overlay's z-index counts only inside it, and dropped over a sibling its handle lay
+    // under that sibling's overlay and could not be grabbed again.
+    el.style.zIndex = store[key] && store[key].x != null ? "99" : "";
     el.append(h("div", { class: "le-ov", style: "z-index:" + Math.min(60 + depth, 99) },
       h("span", { class: "le-tag" },
         h("span", { class: "le-name" }, el.dataset.panel),

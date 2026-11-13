@@ -1892,8 +1892,7 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-saved (2026-11-13, `bba7eee1`) Save, Save as, Output rosters to TSV and the Comparator's Export publish their notice
   - [x] 0.0.2-tomlname (2026-11-13, `bba7eee1`) a Team TOML export suggests the team's name less its slashes, then the short name, then the ID
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
-  - [ ] 0.0.2-pagetoggle (asked and answered by the maintainer 2026-11-13; next: the draft, his
-    look, then the plan, DECISIONS and the code) a three-way toggle on the row of the
+  - [ ] 0.0.2-pagetoggle (plan written 2026-11-13, DECISIONS "three screens on a toggle", SE-GUI-82 to 84, drafted and approved; left: the code) a three-way toggle on the row of the
     player or team name, at its left: Stats | Appearance | Gameplan. Stats is the player
     view less its collapsible Appearance section (general info, positions, skills and
     abilities stay together, so nothing a budget counts is split); Appearance is that
@@ -1904,9 +1903,9 @@ briefs, review loops, gates and mutation runs as for any step.
     now: tabs were dropped for vertical room, which a toggle on the name's own row does not
     take, and members used to 4ccEditor asked for them. The plan's "Editing UI" ("Not tabs,
     because…") is rewritten with it -> verify: draft looked at, headless tests, the built
-    window
-  - [ ] 0.0.2-teamdrop (asked and answered by the maintainer 2026-11-13; next: the draft, his look,
-    then the plan, DECISIONS and the code) the player list's team dropdown: `ALL` becomes
+    window. With it, the Appearance screen's new layout (the plan's "Appearance" list, SE-GUI-84):
+    the groups' order, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`
+  - [ ] 0.0.2-teamdrop (plan written 2026-11-13, DECISIONS "three screens on a toggle", SE-GUI-82 to 84, drafted and approved; left: the code) the player list's team dropdown: `ALL` becomes
     `All teams` (in every team dropdown that has such an entry), and the open dropdown ends
     with a separator and four radio buttons that filter by category: All, 4cc (701-780, the
     Backup rows included), VGL (781-850), Invitational (851-920). The category shortens the

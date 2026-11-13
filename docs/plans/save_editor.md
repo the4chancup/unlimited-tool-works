@@ -69,11 +69,11 @@ implementation is measured against.
 What exists of this is in `spec/save_editor.md` "Team operations".
 
 Each operation below acts on the selected row's team, a player's or a team row's own (under
-ALL too, as 4ccEditor's do), on every filled roster slot, as one undoable edit. With no row
+All teams too, as 4ccEditor's do), on every filled roster slot, as one undoable edit. With no row
 selected the Team menu is disabled.
 
 4ccEditor's Set player names to positions alone renames every row its list shows, which under
-ALL is every player of the save. That is not kept, so no team operation reaches past one team.
+All teams is every player of the save. That is not kept, so no team operation reaches past one team.
 
 | 4ccEditor | Fate |
 |-----------|------|
@@ -156,14 +156,29 @@ Placement rules for the planned parts:
 ## Editing UI
 
 The tool view (the panel right of the suite sidebar) is a master-detail layout after
-4ccEditor's own window, without its tabs and its dialog sprawl. A player row selected shows the
-player view, every field of the player at once; a team row shows the team view, the team's
-fields and its tactics.
+4ccEditor's own window, without its dialog sprawl. The detail has three screens, chosen by a
+sliding toggle at the left of the title's row, `Stats | Appearance | Gameplan` (the draft's
+`pageToggle`): Stats and Appearance are the selected player's, Gameplan his team's view.
 
-Not tabs, because they split one player's fields over pages a member flicked between to check
-a build, and every page but the one shown hid what an edit on it depended on (the skills' card
-budget counts the positions' extra A ratings). At 1280 points the pane holds them all side by
-side.
+- **Stats holds everything a build depends on, together**: general info, positions, skills
+  and abilities. 4ccEditor's tabs split those over pages a member flicked between, and every
+  page but the one shown hid what an edit on it depended on (the skills' card budget counts
+  the positions' extra A ratings). Appearance depends on none of them, so it is the one part
+  that gets a screen of its own.
+- **The toggle follows the selection and moves it.** A player row selected shows Stats or
+  Appearance, whichever was shown last (the choice stays as the selection moves from player
+  to player); a team row shows Gameplan. Pressing Gameplan with a player selected selects
+  his team's row, so the list shows where the screen came from. Pressing Stats or
+  Appearance with a team row selected selects the player last shown on that team since the
+  save was opened, its first player when none was.
+- **The title's row is the same on all three screens**: the toggle, then the ID and the
+  name, starting at the pane's left edge, with a separator line under the row. A toggle
+  that stood elsewhere on another screen would slip from under the pointer. The team view
+  has no second line under its fields' row: the row keeps 9 points under it instead, twice
+  the rows' gap.
+
+Members used to 4ccEditor asked for its tabs back. The first arrangement dropped them for the
+vertical room a tab row takes; a toggle on the title's own row takes none.
 
 ```
 ┌──────────────────────┬────────────────────────────────────────────────────────────────┐
@@ -180,7 +195,8 @@ side.
 └──────────────────────┴────────────────────────────────────────────────────────────────┘
 ```
 
-- **Team selector** with an "ALL" entry (as in 4ccEditor), plus a **filter box
+- **Team selector** with an `All teams` entry (4ccEditor's `ALL`; every team dropdown of the
+  tool that has such an entry spells it so), plus a **filter box
   that searches across all teams** (name, shirt name, ID): finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
   `display_name()` (see the pes_savefile spec's "Name colour codes"), a team's own name
@@ -192,11 +208,24 @@ side.
   filter to this team`), and the help topic on the list names it.
 
   Picking a different team selects its team row, so the detail shows that team's view, its
-  tactics with it: a manager who picks a team usually wants its tactics next. Picking ALL, or
+  tactics with it: a manager who picks a team usually wants its tactics next. Picking All teams, or
   the team already shown, keeps the selection (that team's row heads the list, a click away).
+
+  The open dropdown ends, under a separator, with four radio buttons in a column that stay
+  while the teams scroll: `All`, `4cc` (IDs 701 to 780, the Backup rows included), `VGL` (781
+  to 850) and `Invitational` (851 to 920), the teams list's own sections. The category
+  shortens the dropdown's teams and the player list alike: `All teams` under `VGL` lists
+  the VGL teams' rows and players alone, since a category that shortened the dropdown and
+  not the list would have the two disagree. Picking one leaves the dropdown open, so the
+  shorter list is seen at once. A team picked that the new category leaves out gives way to
+  `All teams`, and a selection it leaves out moves to the list's first player. The category
+  is remembered in the tool's settings (`team_category`: `all`, `4cc`, `vgl` or
+  `invitational`; a view setting, as `scroll_names` is) and stands in the player list's
+  dropdown only: the Comparator's filter, Multi-team AATF's range and the Copy/swap stats
+  window list every cup team.
 - **Only the cup's teams are shown** (0.0.2-cup). The teams whose id lies in the cup's range,
   701 to 920 (`teams_list`'s), and the players on their rosters are all the Save editor
-  lists: the team selector, ALL, the filter's search, Live AATF, Multi-team AATF's range,
+  lists: the team selector, All teams, the filter's search, Live AATF, Multi-team AATF's range,
   the copy and swap dialog's team list, the roster sheet, the comparator's rows and the
   report it exports read those alone, and Fix database repairs those alone. So do the
   commands that name no team: `check-aatf` without `--teams`, `export-toml --all-teams`,
@@ -226,18 +255,18 @@ side.
   A **team row** heads each team's players, set apart from a player row by the faint fill
   under it and its name in the strong text colour (no bold: the app installs no bold face, and
   a second font file for one row costs more than it shows). It shows the team's id, its
-  colours 1-2 as swatches and its name, then `[click for gameplan]` in the weak colour at the
-  normal weight (nothing else says where the tactics are; on a narrow row it is elided before
-  the name is), and a dot when the team's own fields (name, short name, colours, ids, kit
+  colours 1-2 as swatches and its name (no `[click for gameplan]` after it: the toggle's
+  Gameplan goes there and selects the row, which shows what the row is for, and the label
+  cluttered the list), and a dot when the team's own fields (name, short name, colours, ids, kit
   slots, tactics) have unsaved changes.
 
   A click on a team row selects the team, and the detail shows the team view. A team row never
-  drags and is no drop target. ALL lists every team's row and players. Under a filter a team's
+  drags and is no drop target. All teams lists every team's row and players. Under a filter a team's
   row stays while its own name or any of its players matches.
 
   The team row replaces the team bar above the old tabs: the team is one click away from its
   players, where a manager looks for it, rather than a strip that took a row from every
-  player. A save opens on ALL with the list's first player row selected.
+  player. A save opens on All teams with the list's first player row selected.
 
   **Up and Down** move the selection to the list's previous or next row as shown (team rows
   included, so the detail turns to the team view on one), the list scrolling to keep it in
@@ -247,7 +276,7 @@ side.
 
   **PgUp and PgDn**, from any field (4ccEditor's hidden shortcut, which stepped one player),
   move the selection from team row to team row while the list holds two team rows or more
-  (ALL, or a filter several teams match), one per press, PgUp from a player to his own team's
+  (All teams, or a filter several teams match), one per press, PgUp from a player to his own team's
   row first. With one team row (a team picked) they move it 7 rows at a time. The first and
   last rows, or team rows, stop them. The team rows counted are the list's as filtered,
   wherever it is scrolled, so a press does the same whatever the window's height. A page of
@@ -256,7 +285,7 @@ side.
 
   A player row shows his slot in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
-  with no team name under ALL or a filter: the team row above its players already names it.
+  with no team name under All teams or a filter: the team row above its players already names it.
   The row shows the slot, not the shirt number, because the slot is the `NN` of his export's
   `NN - Name` folder and of his id, and General info shows the shirt number.
 
@@ -282,7 +311,7 @@ side.
   would break it. A drop several rows away is the spinner pressed that many times, so the
   players in between shift one slot along.
 
-  A drop works on a row of the dragged player's own team, in one team's list or under ALL,
+  A drop works on a row of the dragged player's own team, in one team's list or under All teams,
   where each team's rows run unbroken under its team row. A drop on another team's row does
   nothing, and drag is off while a filter is typed, where neighbouring rows are not one team's
   neighbouring slots. While a drag is held over a row of his team other than his own, the
@@ -474,7 +503,7 @@ side.
   below. The gaps are evened in ink instead: the drafts set the title 2 lower, and the app,
   whose title sat low instead, takes a 6-point margin over it and room under it (11 and 11
   measured).
-- **The player view**: three columns side by side, then the Appearance section. The room the
+- **The player view** (the Stats screen): three columns side by side. The room the
   fixed columns leave is split into four equal gaps: after the player list, between the
   columns, and after Ability stats (30.4 points each at the 1280 × 780 window). The first
   counts from the list's frame, 22 points before the pane (the list's 10-point bar strip and
@@ -610,11 +639,12 @@ side.
   it (a field's frame, a checkbox), the badge's lower half overlapping that gap: the spacing of
   the team view's titles, so the two views read alike.
 
-  Then **Appearance**, a collapsing section closed by default, below the columns (its contents
-  below). Opening it makes the view taller than the pane, and the pane's scroll bar then
-  floats over the view's right margin (egui 0.37's default `ScrollStyle::floating`, which
-  takes no room), so nothing shifts when it appears and the view reserves no strip for it:
-  the margin the centring leaves is room enough.
+  **Appearance** is a screen of its own (its contents below), laid out to show whole in the
+  default window, where the collapsing section it was, under the columns, always scrolled.
+  When a screen is taller than the pane, the pane's scroll bar floats over the view's right
+  margin (egui 0.37's default `ScrollStyle::floating`, which takes no room), so nothing
+  shifts when it appears and the view reserves no strip for it. A scenario or a text that
+  says "the Appearance section, open" means the Appearance screen shown.
 
   The pane is one scroll area whatever row is picked, so its offset outlives a pick: choosing
   another player leaves the view where it was (clamped where the new view is shorter), and a
@@ -712,20 +742,49 @@ side.
     PES 2017 save in a release build. On the UI thread they made each wheel notch over a stat
     box cost over 100 ms, three times that under CPU load. Until the new badge lands the same
     player's kept one stays drawn, and another player's or ruleset's draws nothing.
-  - **Appearance**: first a **Cutscenes** group, star (19+) and playing attitude (20+),
-    outside the aesthetics lock: they change only cutscenes, so they are no aesthetic the
-    export owns. Then the ownership line, the switch and the locked groups, each group's
-    labels in their own aligned cells, the draft's pairs per row (physique two, the strip's
-    ids, enums and checkboxes four, motion two):
-    - edit flags (face, hair, physique, strip, motion, base copy + copy-from ID),
-    - physique sliders (14 values),
-    - strip style (boots ID, gloves ID (any player's, 0 = normal hands), taping,
-      spectacles, sleeves, inners, socks, undershorts, shirttail, the player-gloves checkbox
-      with its gloves colour, the wrist tape L/R and spectacles colours),
-    - motion (hunching, arm movement, kick motions, gc1/gc2, randomize; dribbling motion
-      20+),
-    - colours (skin, iris),
-    - then the Full Player Customization group.
+  - **Appearance** (the draft's `appearanceTab`), top to bottom, each group framed and
+    titled, 4 points under a title as on the Stats screen and 4 between groups:
+    - **Cutscenes**, the pane's width: star (19+) and playing attitude (20+), its note
+      ("These only change how the player appears in cutscenes.") on the title's row. It is
+      outside the aesthetics lock: the two change only cutscenes, so they are no aesthetic
+      the export owns.
+    - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
+      setting is on: under Cutscenes, over everything they govern.
+    - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
+      two swatch rows' first squares in line) at its right.
+    - **Strip style**: fifteen settings in three columns by five rows, every label one
+      width and every field one width (the two ID boxes as wide as the dropdowns), thin
+      lines in the frame's colour parting what belongs together:
+
+      | | | |
+      |---|---|---|
+      | Boots ID | Sleeves | Inners |
+      | Gloves ID (any player's, 0 = normal hands) | Socks | Undershorts |
+      | Wrist taping | Wrist tape left | Wrist tape right |
+      | Outfielder gloves | Gloves color | Ankle taping |
+      | Spectacles | Spectacles color | Shirttail out |
+
+      The lines: under the second row and under the third, across the three columns; under
+      the fourth across the first two; between the columns on the first two rows; and at
+      the third column's left on the last two. So the blocks are the IDs, sleeves and
+      socks, inners and undershorts, the wrists' row, the gloves with their colour, the
+      spectacles with theirs, and the two checkboxes.
+
+      The four colours are dropdowns of the colours' names, not swatch rows: beside a
+      dropdown a row of swatches read as one more choice of that dropdown. `Outfielder
+      gloves` (4ccEditor's "Player gloves" checkbox) is a dropdown, `Off` or `Worn in
+      winter`: a checkbox beside the colours read as one of them and did not say when the
+      gloves show.
+    - **Physique** at the left, its 14 sliders two a row, 82 points long (the suite's are
+      110; at 110 Motion beside them wrapped two labels) on rows 34 points tall, which fill
+      the group to the height of the two at its right; **Motion** at its right (hunching,
+      arm movement, kick motions, gc1/gc2, two a row, Randomize under them; dribbling
+      motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,
+      hair, physique over strip, motion, base copy), `Copy from ID` on a row under them.
+
+    At the default window the screen shows whole, also with the lock's three lines drawn
+    (42 points to spare then, measured on the draft). A second FPC finding, or a narrower
+    window, scrolls it.
 
     Editable, as in 4ccEditor, unless the "Aesthetics from exports" setting is on; see
     "Read-only aesthetics" below.
@@ -1208,7 +1267,7 @@ Win32 original hurt the most):
     A **Scroll** checkbox right of the formations' Copy/swap, on by default and
     remembered in the tool's settings as Live AATF is, holds every wider name still at its
     badge's left when off (a view setting, not an edit: no undo entry, no unsaved dot). Its
-    hover: "Scroll the names too long for their place on the pitch, as the game does. Off,
+    hover: "Scroll long names on the pitch, as the game does. Off,
     they stand still, cut short." (the label was `Scroll names`; the bar needed the room).
 
     A **Portraits** checkbox stands at its right, on by default and remembered the same way.
@@ -2303,7 +2362,7 @@ What this editor adds on top of the lib:
 
     Both glyphs are the suite's symbols font's. Its tooltip is the player's rows as the dock
     counts them, a zero count left out (`2 errors, 1 warning`, `1 suggestion`), and
-    `No issues` when he has none. Players of other teams, with ALL picked, carry none: they
+    `No issues` when he has none. Players of other teams, with All teams picked, carry none: they
     are not checked. The team's own rows (no slot) mark the team's row the same way.
   - **The field a row is about** gets a mark when its player is selected (the pitch's, when
     his team's row is: the pitch is the team view's), for the highest severity among its
@@ -2454,7 +2513,7 @@ imports, generation), get theirs here.
 ```
 SE-GUI-01  GIVEN the save
            WHEN it is opened from the view (Open, or its entry in the discovered-saves list)
-           THEN the team selector lists its teams and ALL, the player list shows each player's
+           THEN the team selector lists its teams and All teams, the player list shows each player's
                 place in the roster, position and name with the name's color codes rendered as colors under
                 its team's row, and the player view's first line is the selected player's id
                 and name, its color codes rendered as colors, over his General info fields
@@ -2462,7 +2521,7 @@ SE-GUI-02  GIVEN the PES 17 save open on team 701
            WHEN a name, shirt name or id of a player of another team is typed in the filter box
            THEN the list shows the matching players across all teams, matched on the
                 color-code-free display name, and selecting one shows him
-SE-GUI-46  GIVEN the PES 17 save open on team 701, ALL picked in the team selector
+SE-GUI-46  GIVEN the PES 17 save open on team 701, All teams picked in the team selector
            WHEN part of team 718's name that none of its players' names, shirt names or ids
                 holds is typed in the filter box
            THEN team 718's row heads every one of its players; WHEN that row is double-clicked
@@ -2549,7 +2608,7 @@ SE-GUI-08  GIVEN the save open on a team
                 `team id × 100 + 01`, whose record (name, stats, appearance but the face and
                 hair) is the one player 02 had, and the other way round; the roster's ids and shirt numbers are as they
                 were, and the AATF check reports no `RosterOrder` error for the team; GIVEN
-                ALL picked THEN the same drag has the same outcome, and WHEN player 02 is
+                All teams picked THEN the same drag has the same outcome, and WHEN player 02 is
                 dropped on a row of the next team instead THEN nothing moves
 SE-GUI-09  GIVEN the official ruleset active
            WHEN Make Gold is clicked on a player
@@ -2662,7 +2721,7 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 save alone) paints no head row;
            GIVEN a save of another version picked THEN it is refused naming both versions;
            GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
-                filter reads ALL; WHEN the same path is picked again after the file changed on
+                filter reads All teams; WHEN the same path is picked again after the file changed on
                 disk THEN the panel lists the new differences; WHEN Export writes diff.txt
                 THEN the panel reads `<path> written` and the status bar's notice
                 `diff.txt written`, and WHEN it names a folder that does not
@@ -2721,7 +2780,7 @@ SE-GUI-51  GIVEN DBC6's save (`EDIT00000000_DBC6`) open under DBC7, Multi-team A
                 and the copied text's first line is the same; WHEN the range is narrowed to
                 857 THEN it reads `Medal systems: GGSS 1 · Height systems: Manlet 1`; WHEN the
                 ruleset is the official one THEN the line holds the height systems alone
-SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row selected and no
+SE-GUI-52  GIVEN the PES 17 save open on All teams, team 701's (/3/) last player row selected and no
                 control holding the keyboard
            WHEN Down is pressed
            THEN team 702's (/a/) row is selected and the detail shows its team view; WHEN Up
@@ -2730,13 +2789,13 @@ SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row s
                 Height field holding the keyboard WHEN Down is pressed THEN the selection
                 stays; WHEN Down is pressed on a row below the list's view THEN the list
                 scrolls so the selected row shows, and no widget holds the keyboard after a
-                press that moved the selection; GIVEN ALL's last row selected WHEN Down is
+                press that moved the selection; GIVEN All teams's last row selected WHEN Down is
                 pressed THEN nothing moves; GIVEN the Bump all stats dialog,
                 the unsaved-changes list or team 701's slot popover open, or a pointer button
                 held on a row, WHEN Down is pressed THEN the selection stays and the dialog,
                 list or popover stays open; WHEN the button is released, or PgDn selects a
                 player row from the slot popover, THEN Down walks one row again
-SE-GUI-53  GIVEN the PES 17 save open on ALL with team 718's player 05 selected
+SE-GUI-53  GIVEN the PES 17 save open on All teams with team 718's player 05 selected
            WHEN PgDn is pressed
            THEN the next team's row is selected, and each PgDn after it the next one's,
                 the last team row stopping it; WHEN PgUp is pressed on a player THEN his own
@@ -2829,7 +2888,7 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 then each player's head and his `Unused` rows (73410's `Unused: 4 of 5 paid
                 cards used` first), their rule name in the normal text colour; GIVEN no
                 check returned yet THEN the button is not greyed out and the copied text is
-                `Checking /lit/…`, and with ALL picked and nothing selected `No team is
+                `Checking /lit/…`, and with All teams picked and nothing selected `No team is
                 open.`, the notice `Copied the Live AATF list.`; GIVEN a ruleset whose check fails on team 743 THEN the
                 list holds the failure line and no `All clean`
 SE-GUI-64  GIVEN the save open on a team, no drag held
@@ -2864,7 +2923,7 @@ SE-GUI-76  GIVEN SE-AATF-09's save open, Live AATF on, 4cc Spring 26 the active 
 SE-GUI-77  GIVEN a save holding, beside the cup's teams, a team with id 300 whose roster
                 holds players no cup team has, and a player on no roster at all
            WHEN the save is opened
-           THEN the team selector lists the cup's teams and not team 300; under ALL
+           THEN the team selector lists the cup's teams and not team 300; under All teams
                 the list holds no row of team 300, of its players or of the player on
                 no roster; a filter typed as team 300's name, then as one of its
                 players' names, lists nothing; Multi-team AATF's range offers no team
@@ -2911,6 +2970,45 @@ SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
                 his badge's top edge at its left end and a Live AATF cross stands on its
                 badge, and no undo entry or unsaved mark follows; GIVEN the editor
                 restarted THEN Portraits is still unticked
+SE-GUI-82  GIVEN the save open on team 718's player 05
+           WHEN the detail is drawn
+           THEN its title row starts at the pane's left with a three-way toggle, Stats on,
+                then the ID and name, a separator under the row, and no Appearance section
+                under the columns; WHEN Appearance is pressed THEN the Appearance screen
+                shows, the toggle where it stood, and no undo entry or unsaved mark follows;
+                WHEN player 07's row is clicked THEN Appearance still shows, for 07; WHEN
+                Gameplan is pressed THEN team 718's row is selected and the team view shows,
+                Gameplan on; WHEN Stats is pressed THEN player 07 is selected and the Stats
+                screen shows; GIVEN team 701's row selected with none of its players shown
+                since the save opened WHEN Appearance is pressed THEN 701's first player is
+                selected on the Appearance screen; and no team row reads `[click for
+                gameplan]`
+SE-GUI-83  GIVEN a cup save open on All teams
+           WHEN the team selector is opened
+           THEN its first entry reads `All teams`, and under the teams and a separator stand
+                four radio buttons, All ticked, 4cc, VGL, Invitational; WHEN VGL is ticked
+                THEN the dropdown stays open and lists All teams and teams 781 to 850
+                alone, the player list holds those teams' rows and players alone, and the
+                selection is the list's first player; WHEN 4cc is ticked THEN teams 701 to
+                780 are listed, Backup 9 (780) among them; GIVEN team 781 picked WHEN
+                Invitational is ticked THEN the selector reads All teams; GIVEN the editor
+                restarted THEN the category is still ticked (`team_category` in the tool's
+                settings); and the Comparator's team filter reads `All teams` and lists
+                every cup team whatever the category
+SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting off, a
+                player's Appearance screen shown
+           WHEN it is drawn
+           THEN its groups stand in this order: Cutscenes with its note on the title's row;
+                Full Player Customization with Colors at its right; Strip style; Physique
+                with Motion at its right and Edit flags under Motion; the pane has no
+                scroll bar; Strip style's fifteen settings stand in the plan's three
+                columns by five rows, every field one width; the four colours are
+                dropdowns naming White, Black, Red, Blue, Yellow, Green, Pink and Turquoise;
+                `Outfielder gloves` is a dropdown of `Off` and `Worn in winter`, and
+                picking `Worn in winter` writes what ticking Player gloves wrote; Edit
+                flags' six boxes stand three a row over `Copy from ID`; GIVEN the lock's
+                setting on THEN the ownership line and the switch stand between Cutscenes
+                and Full Player Customization and the pane still has no scroll bar
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of
@@ -3110,7 +3208,7 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
                 picked in the toolbar's dropdown, THEN the list and N are that team's, or that
                 ruleset's; the panel checks
                 the selected row's team (a player's or a team row's own, another team's
-                when the filter lists it), else the selector's (with ALL picked and nothing
+                when the filter lists it), else the selector's (with All teams picked and nothing
                 selected: `No team is open.`);
                 GIVEN the PES 15 save with a team that passes THEN the header reads `<team>
                 passes <ruleset> with no issues.`, and WHEN an edit breaks a rule and the last one is

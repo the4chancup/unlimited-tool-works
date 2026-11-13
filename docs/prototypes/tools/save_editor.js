@@ -235,9 +235,29 @@ input[type=range]:focus { outline: none; }
    and Appearance line up with General info's title. */
 .aprow { display: flex; gap: 8px; align-items: stretch; }
 .aprow > :last-child { flex: 1; }
+.apcol { display: flex; flex-direction: column; }
+.apcol > :last-child { flex: 1; }
+/* A little shorter than the suite's 110, so Motion beside them wraps no label. */
+#appearance-screen [data-panel=physique] input[type=range] { width: 82px; }
+/* The rows a little further apart: the group is as tall as Motion and Edit flags beside it. */
+#appearance-screen [data-panel=physique] table.grid.stats-grid td { padding-top: 5px; padding-bottom: 5px; }
+.aprow.fpcrow > :first-child { flex: 1; }
+.aprow.fpcrow > :last-child { flex: none; }
 #appearance-screen .group { margin: 4px 0; }
+/* Under each title the gap the Stats screen's panels have under theirs. */
+#appearance-screen .group > .strong { display: block; margin-bottom: 4px; }
+#appearance-screen .group > .strong + .row { margin-top: 0; }
+#appearance-screen #cutscenes > .row:first-child { margin-bottom: 4px !important; }
+#strip-grid { display: grid; grid-template-columns: repeat(3, max-content); gap: 0; }
+.scell { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 14px;
+  border: 0 solid var(--stroke); }
+.scell:nth-child(3n + 1) { padding-left: 0; }
+.scell.lr { border-right-width: 1px; }
+.scell.lb { border-bottom-width: 1px; }
+.scell .slabel { width: 104px; color: var(--text); }
+.scell select, .scell input[type=number] { width: 118px; box-sizing: border-box; }
 #edit-flags-grid { border-spacing: 0; }
-#edit-flags-grid td { height: 22px; padding: 0; }
+#edit-flags-grid td { height: 22px; padding: 0 12px 0 0; }
 #player-view { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
   align-items: start; margin: 0 -8px 0 -22px; }
 .pcols { display: contents; }
@@ -5077,8 +5097,9 @@ function appearanceTab(p) {
   const attIn = h("input", { type: "number", id: "f-attitude", value: p.stats.playing_attitude ?? 0, min: 0, max: 3,
     onchange: e => { const v = parseInt(e.target.value, 10);
       if (!Number.isNaN(v)) { set(p, x => x.stats.playing_attitude, (x, v2) => x.stats.playing_attitude = v2, v, "playing attitude"); render(); } } });
-  const cutscenes = namedCols(h("div", { class: "group", id: "cutscenes" }, strong("Cutscenes"),
-    h("div", { class: "row" }, weak("These only change how the player appears in cutscenes.")),
+  const cutscenes = namedCols(h("div", { class: "group", id: "cutscenes" },
+    h("div", { class: "row", style: "margin:0" }, strong("Cutscenes"),
+      weak("These only change how the player appears in cutscenes.")),
     h("table", { class: "grid" },
       chunk([[lbl("Star"), fld(starIn, 19)], [lbl("Playing attitude"), fld(attIn, 20)]],
         colCount("cutscenes")).map(row => h("tr", {}, row.flat())))), "cutscenes");
@@ -5091,17 +5112,19 @@ function appearanceTab(p) {
     h("input", { type: "checkbox", checked: p.edit_flags[key],
       onchange: e => { set(p, x => x.edit_flags[key], (x, v) => x.edit_flags[key] = v, e.target.checked, label); render(); } }),
     " " + label);
-  // One flag a row, each row level with a row of the Motion panel it stands beside.
-  const copyFrom = h("span", {}, " from ID ",
+  // The flags in three columns, Copy from ID under them.
+  const copyFrom = h("span", {}, "Copy from ID ",
     h("input", { type: "number", value: p.base_copy_id,
       onchange: e => { const v = parseInt(e.target.value, 10);
         if (!Number.isNaN(v)) { set(p, x => x.base_copy_id, (x, v) => x.base_copy_id = v, v, "copy-from id"); render(); } } }));
   const flags = h("div", { class: "group", "data-panel": "edit-flags" }, strong("Edit flags"),
     h("table", { class: "grid", id: "edit-flags-grid" },
-      [[ef("face", "Face")], [ef("hair", "Hair")], [ef("physique", "Physique")], [ef("strip", "Strip")],
-        [ef("motion", "Motion")], [ef("base_copy", "Base copy"), copyFrom]]
-        .map(cells => h("tr", {}, h("td", {}, cells)))));
-  const phys = h("table", { class: "grid stats-grid" });
+      [[ef("face", "Face"), ef("hair", "Hair"), ef("physique", "Physique")],
+        [ef("strip", "Strip"), ef("motion", "Motion"), ef("base_copy", "Base copy")]]
+        .map(cells => h("tr", {}, cells.map(c => h("td", {}, c)))),
+      h("tr", {}, h("td", { colspan: 3 }, copyFrom))));
+  const physGrid = h("table", { class: "grid stats-grid" });
+  const phys = h("div", { class: "group", "data-panel": "physique" }, strong("Physique"), physGrid);
   const PHYS_LABELS = [["neck_length", "Neck length"], ["neck_size", "Neck size"],
     ["shoulder_height", "Shoulder height"], ["shoulder_width", "Shoulder width"],
     ["chest", "Chest"], ["waist", "Waist"], ["arm_size", "Arm size"],
@@ -5110,53 +5133,69 @@ function appearanceTab(p) {
     ["head_width", "Head width"], ["head_depth", "Head depth"]];
   // Two label/field pairs per row; the slider and its readout share one cell.
   for (let i = 0; i < PHYS_LABELS.length; i += 2)
-    phys.append(h("tr", {}, PHYS_LABELS.slice(i, i + 2).flatMap(([k, label]) => [
+    physGrid.append(h("tr", {}, PHYS_LABELS.slice(i, i + 2).flatMap(([k, label]) => [
       lbl(label),
       h("td", {}, h("div", { class: "row" },
         rangeField(-7, 7, p.appearance.physique[k], v => {
           set(p, x => x.appearance.physique[k], (x, v2) => x.appearance.physique[k] = v2, v, label); render(); })))])));
   const st = p.appearance.strip;
-  const stripCols = colCount("strip-style"), stripSpan = 2 * stripCols - 1;
-  const stripPairs = [
-    [lbl("Boots ID"), h("td", {}, h("input", { type: "number", value: p.boots_id,
+  const sp_boots = [lbl("Boots ID"), h("td", {}, h("input", { type: "number", value: p.boots_id,
       onchange: e => { const v = parseInt(e.target.value, 10);
-        if (!Number.isNaN(v)) { set(p, x => x.boots_id, (x, v) => x.boots_id = v, v, "boots id"); render(); } } }))],
-    [lbl("Gloves ID"), h("td", {}, h("input", { type: "number", value: p.gloves_id, title: "Any player can wear gloves, not only goalkeepers; 0 means normal hands.",
+        if (!Number.isNaN(v)) { set(p, x => x.boots_id, (x, v) => x.boots_id = v, v, "boots id"); render(); } } }))];
+  const sp_glovesId = [lbl("Gloves ID"), h("td", {}, h("input", { type: "number", value: p.gloves_id, title: "Any player can wear gloves, not only goalkeepers; 0 means normal hands.",
       onchange: e => { const v = parseInt(e.target.value, 10);
-        if (!Number.isNaN(v)) { set(p, x => x.gloves_id, (x, v) => x.gloves_id = v, v, "gloves id"); render(); } } }))],
-    [lbl("Sleeves"), h("td", {}, combo(SLEEVES.map(x => [x, titleCase(x)]), st.sleeves,
-      v => { set(p, x => x.appearance.strip.sleeves, (x, v2) => x.appearance.strip.sleeves = v2, v, "sleeves"); render(); }))],
-    [lbl("Inners"), h("td", {}, combo(INNERS.map(x => [x, titleCase(x)]), st.inners,
-      v => { set(p, x => x.appearance.strip.inners, (x, v2) => x.appearance.strip.inners = v2, v, "inners"); render(); }))],
-    [lbl("Socks"), h("td", {}, combo(SOCKS.map(x => [x, titleCase(x)]), st.socks,
-      v => { set(p, x => x.appearance.strip.socks, (x, v2) => x.appearance.strip.socks = v2, v, "socks"); render(); }))],
-    [lbl("Undershorts"), h("td", {}, combo(UNDERSHORTS.map(x => [x, titleCase(x)]), st.undershorts,
-      v => { set(p, x => x.appearance.strip.undershorts, (x, v2) => x.appearance.strip.undershorts = v2, v, "undershorts"); render(); }))],
-    [lbl("Shirttail out"), h("td", {}, h("input", { type: "checkbox", checked: st.untucked,
-      onchange: e => { set(p, x => x.appearance.strip.untucked, (x, v) => x.appearance.strip.untucked = v, e.target.checked, "shirttail"); render(); } }))],
-    [lbl("Ankle taping"), h("td", {}, h("input", { type: "checkbox", checked: st.ankle_taping,
-      onchange: e => { set(p, x => x.appearance.strip.ankle_taping, (x, v) => x.appearance.strip.ankle_taping = v, e.target.checked, "ankle taping"); render(); } }))]];
-  // The ids, enums and checkboxes four pairs a row, fewer in a narrower
-  // panel; the palette rows below span the row whatever the count.
-  const stripRow = namedCols(h("div", { class: "group" }, strong("Strip style"),
-    h("table", { class: "grid" },
-      chunk(stripPairs, stripCols).map(row => h("tr", {}, row.flat())),
-      h("tr", {},
-        lbl("Wrist taping"), h("td", { colspan: stripSpan },
-          combo(WRIST_TAPING.map(x => [x, titleCase(x)]), st.wrist_taping,
-            v => { set(p, x => x.appearance.strip.wrist_taping, (x, v2) => x.appearance.strip.wrist_taping = v2, v, "wrist taping"); render(); }),
-          " Left ", paletteRow("wrist", st.wrist_tape_color_left, (x, v) => x.appearance.strip.wrist_tape_color_left = v, p, "wrist tape left"),
-          " Right ", paletteRow("wrist", st.wrist_tape_color_right, (x, v) => x.appearance.strip.wrist_tape_color_right = v, p, "wrist tape right"))),
-      h("tr", {},
-        lbl("Spectacles"), h("td", { colspan: stripSpan },
-          combo(SPECTACLES.map((x, i) => [String(i), x]), String(st.spectacles),
-            v => { set(p, x => x.appearance.strip.spectacles, (x, v2) => x.appearance.strip.spectacles = Number(v2), Number(v), "spectacles"); render(); }),
-          " ", paletteRow("spectacles", st.spectacles_color, (x, v) => x.appearance.strip.spectacles_color = v, p, "spectacles colour"))),
-      h("tr", {},
-        lbl("Player gloves"), h("td", { colspan: stripSpan },
-          h("input", { type: "checkbox", checked: st.gloves,
-            onchange: e => { set(p, x => x.appearance.strip.gloves, (x, v) => x.appearance.strip.gloves = v, e.target.checked, "player gloves"); render(); } }),
-          " ", paletteRow("gloves", st.gloves_color, (x, v) => x.appearance.strip.gloves_color = v, p, "gloves colour"))))), "strip-style");
+        if (!Number.isNaN(v)) { set(p, x => x.gloves_id, (x, v) => x.gloves_id = v, v, "gloves id"); render(); } } }))];
+  const sp_sleeves = [lbl("Sleeves"), h("td", {}, combo(SLEEVES.map(x => [x, titleCase(x)]), st.sleeves,
+      v => { set(p, x => x.appearance.strip.sleeves, (x, v2) => x.appearance.strip.sleeves = v2, v, "sleeves"); render(); }))];
+  const sp_inners = [lbl("Inners"), h("td", {}, combo(INNERS.map(x => [x, titleCase(x)]), st.inners,
+      v => { set(p, x => x.appearance.strip.inners, (x, v2) => x.appearance.strip.inners = v2, v, "inners"); render(); }))];
+  const sp_socks = [lbl("Socks"), h("td", {}, combo(SOCKS.map(x => [x, titleCase(x)]), st.socks,
+      v => { set(p, x => x.appearance.strip.socks, (x, v2) => x.appearance.strip.socks = v2, v, "socks"); render(); }))];
+  const sp_undershorts = [lbl("Undershorts"), h("td", {}, combo(UNDERSHORTS.map(x => [x, titleCase(x)]), st.undershorts,
+      v => { set(p, x => x.appearance.strip.undershorts, (x, v2) => x.appearance.strip.undershorts = v2, v, "undershorts"); render(); }))];
+  const sp_shirttail = [lbl("Shirttail out"), h("td", {}, h("input", { type: "checkbox", checked: st.untucked,
+      onchange: e => { set(p, x => x.appearance.strip.untucked, (x, v) => x.appearance.strip.untucked = v, e.target.checked, "shirttail"); render(); } }))];
+  const sp_ankle = [lbl("Ankle taping"), h("td", {}, h("input", { type: "checkbox", checked: st.ankle_taping,
+      onchange: e => { set(p, x => x.appearance.strip.ankle_taping, (x, v) => x.appearance.strip.ankle_taping = v, e.target.checked, "ankle taping"); render(); } }))];
+  // A palette as a dropdown of its colours' names: a row of swatches beside a dropdown read
+  // as one more choice of that dropdown.
+  const colour = (pal, value, put, label) => h("td", {},
+    combo(PALETTES[pal].map(([name], i) => [String(i), name]), String(value),
+      v => { edit(label, () => put(p, Number(v))); render(); }));
+  // The maintainer's order, three columns by five rows, with thin lines parting what
+  // belongs together: the IDs, sleeves and socks, the layers under the kit, the wrists'
+  // row, the gloves, the spectacles, and the two checkboxes. Each setting is a named cell,
+  // so Layout edit moves it by itself; `lines` are the cell's own edges that carry a line
+  // (b under it, r at its right).
+  const stripCells = {
+    boots: sp_boots, sleeves: sp_sleeves, socks: sp_socks,
+    "gloves-id": sp_glovesId, inners: sp_inners, undershorts: sp_undershorts,
+    // Not a checkbox: beside the colours it read as one of them, and it did not say when
+    // the gloves show.
+    gloves: [lbl("Outfielder gloves"), h("td", {}, combo([["off", "Off"], ["on", "Worn in winter"]], st.gloves ? "on" : "off",
+      v => { set(p, x => x.appearance.strip.gloves, (x, v2) => x.appearance.strip.gloves = v2, v === "on", "outfielder gloves"); render(); }))],
+    shirttail: sp_shirttail, ankle: sp_ankle,
+    "gloves-color": [lbl("Gloves color"), colour("gloves", st.gloves_color, (x, v) => x.appearance.strip.gloves_color = v, "gloves colour")],
+    spectacles: [lbl("Spectacles"), h("td", {}, combo(SPECTACLES.map((x, i) => [String(i), x]), String(st.spectacles),
+      v => { set(p, x => x.appearance.strip.spectacles, (x, v2) => x.appearance.strip.spectacles = Number(v2), Number(v), "spectacles"); render(); }))],
+    "spectacles-color": [lbl("Spectacles color"), colour("spectacles", st.spectacles_color, (x, v) => x.appearance.strip.spectacles_color = v, "spectacles colour")],
+    "wrist-taping": [lbl("Wrist taping"), h("td", {}, combo(WRIST_TAPING.map(x => [x, titleCase(x)]), st.wrist_taping,
+      v => { set(p, x => x.appearance.strip.wrist_taping, (x, v2) => x.appearance.strip.wrist_taping = v2, v, "wrist taping"); render(); }))],
+    "wrist-left": [lbl("Wrist tape left"), colour("wrist", st.wrist_tape_color_left, (x, v) => x.appearance.strip.wrist_tape_color_left = v, "wrist tape left")],
+    "wrist-right": [lbl("Wrist tape right"), colour("wrist", st.wrist_tape_color_right, (x, v) => x.appearance.strip.wrist_tape_color_right = v, "wrist tape right")],
+  };
+  const STRIP_ORDER = [
+    ["boots", "r"], ["sleeves", "r"], ["inners", ""],
+    ["gloves-id", "rb"], ["socks", "rb"], ["undershorts", "b"],
+    ["wrist-taping", "b"], ["wrist-left", "b"], ["wrist-right", "b"],
+    ["gloves", "b"], ["gloves-color", "rb"], ["ankle", ""],
+    ["spectacles", ""], ["spectacles-color", "r"], ["shirttail", ""]];
+  const stripRow = named(h("div", { class: "group" }, strong("Strip style"),
+    h("div", { id: "strip-grid" }, STRIP_ORDER.map(([key, lines]) => {
+      const [label, field] = stripCells[key];
+      return named(h("div", { class: "scell" + (lines.includes("r") ? " lr" : "") + (lines.includes("b") ? " lb" : "") },
+        h("span", { class: "slabel" }, label.textContent), ...field.childNodes), "strip-" + key);
+    }))), "strip-style");
   const mo = p.appearance.motion;
   const mv = (label, key, lo, hiV) => [lbl(label), h("td", {},
     h("input", { type: "number", min: lo, max: hiV, value: mo[key] ?? "",
@@ -5169,6 +5208,15 @@ function appearanceTab(p) {
       if (!Number.isNaN(v)) { set(p, x => x.appearance.motion.dribbling, (x, v2) => x.appearance.motion.dribbling = v2, v, "dribbling motion"); render(); } } });
   // Two label/field pairs a row (the maintainer, 2026-10-26), one in a
   // narrower panel.
+  // Every motion but the dribbling motion, from 1 (a celebration never OFF) to the
+  // version's top, as 4ccEditor's button but within the measured ranges.
+  const randomize =
+      button("Randomize", () => {
+        edit("Randomize motion", () => {
+          const rnd = hi => 1 + Math.floor(Math.random() * hi);
+          for (const key of Object.keys(MOTION_TOP)) mo[key] = rnd(top(key));
+        }); render();
+      }, { title: "Set every motion to a random value, except the dribbling motion" });
   const motion = namedCols(h("div", { class: "group" }, strong("Motion"),
     h("table", { class: "grid" },
       chunk([mv("Hunching (dribbling)", "hunching_dribbling", 1, top("hunching_dribbling")),
@@ -5182,20 +5230,13 @@ function appearanceTab(p) {
         mv("Goal celebration 1", "goal_celebration_1", 0, top("goal_celebration_1")),
         mv("Goal celebration 2", "goal_celebration_2", 0, top("goal_celebration_2"))],
         colCount("motion")).map(row => h("tr", {}, row.flat()))),
-    h("div", { class: "row" },
-      // Every motion but the dribbling motion, from 1 (a celebration never OFF)
-      // to the version's top, as 4ccEditor's button but within the measured ranges.
-      button("Randomize", () => {
-        edit("Randomize motion", () => {
-          const rnd = hi => 1 + Math.floor(Math.random() * hi);
-          for (const key of Object.keys(MOTION_TOP)) mo[key] = rnd(top(key));
-        }); render();
-      }, { title: "Set every motion to a random value, except the dribbling motion" }))), "motion");
+    h("div", { class: "row" }, randomize)), "motion");
   const colors = h("div", { class: "group", "data-panel": "colours" }, strong("Colors"),
-    h("div", { class: "row" }, "Skin ",
-      paletteRow("skin", p.appearance.skin_color, (x, v) => x.appearance.skin_color = v, p, "skin colour")),
-    h("div", { class: "row" }, "Iris ",
-      paletteRow("iris", p.appearance.iris_color, (x, v) => x.appearance.iris_color = v, p, "iris colour")));
+    h("table", { class: "grid" },
+      h("tr", {}, lbl("Skin"), h("td", {},
+        paletteRow("skin", p.appearance.skin_color, (x, v) => x.appearance.skin_color = v, p, "skin colour"))),
+      h("tr", {}, lbl("Iris"), h("td", {},
+        paletteRow("iris", p.appearance.iris_color, (x, v) => x.appearance.iris_color = v, p, "iris colour")))));
   // The classifier's reading, Hide and Show default body (Ctrl+I picks one), and
   // the interference findings of fpc::check, fixed order. Not a checkbox: a
   // player hidden by his model's own boots ID reads as shown. Disabled with
@@ -5216,11 +5257,15 @@ function appearanceTab(p) {
   // Full Player Customization first (what a manager opens the screen for), then the
   // groups paired so the screen shows whole: Colors beside Cutscenes, Edit flags beside
   // Motion. Cutscenes stays outside the lock, so the lock is applied group by group.
-  const body = h("div", { id: "appearance-body" }, phys, stripRow,
-    h("div", { class: "aprow" }, motion, flags));
+  // Physique at the left, Motion over Edit flags at its right: the three share the room
+  // the sliders left empty beside them.
+  const body = h("div", { id: "appearance-body" }, stripRow,
+    h("div", { class: "aprow" }, phys, h("div", { class: "apcol" }, motion, flags)));
   if (!en) [fpcGroup, colors, body].forEach(dis);
-  return h("div", { id: "appearance-screen" }, ...lines, fpcGroup,
-    h("div", { class: "aprow" }, cutscenes, colors), body);
+  // Cutscenes first, outside the lock, then the lock's line and switch over everything
+  // they govern.
+  return h("div", { id: "appearance-screen" }, cutscenes, ...lines,
+    h("div", { class: "aprow fpcrow" }, fpcGroup, colors), body);
 }
 
 // ---- The colour picker (color_tools' color_field; libs/color_tools.md) ----
@@ -6396,7 +6441,7 @@ function tacticsTab(t) {
   // The pitch's name scrolling, on by default: a view setting, not an edit.
   // sample wording: the two labels and their hovers.
   const scrollNames = h("label", { class: "cb",
-      title: "Scroll the names too long for their place on the pitch, as the game does. Off, they stand still, cut short." },
+      title: "Scroll long names on the pitch, as the game does. Off, they stand still, cut short." },
     h("input", { type: "checkbox", checked: S.scrollNames !== false, id: "scroll-names",
       onchange: e => { S.scrollNames = e.target.checked; drawPitch(t); } }),
     " Scroll");
