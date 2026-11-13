@@ -66,6 +66,53 @@ What exists of this is in `spec/team_compiler/pipeline.md` "3. Per-model-folder 
 In **Format conversion** (step 1): duplicate sources within the selected representation are
 ambiguous and drop the folder (`model_source_ambiguous`).
 
+In **Texture conversion** (step 5), **hand-made mip levels**. The game samples a smaller mip
+level of a texture the farther the camera is from it, so levels drawn by hand make a model
+show, fade or hide with the distance. Today that takes a DDS whose levels were drawn by hand,
+which GIMP and Photoshop can write and Paint.NET cannot, and a member who resaves a copied
+model drops the levels without noticing they were there. So the levels can also be files of
+their own beside the texture, where anyone copying the folder sees them:
+
+- `<stem>_mipN` gives level N, `<stem>_mipN-M` levels N to M, `<stem>_mipN+` level N and
+  every smaller one, in any accepted source format. Level 0 is the texture itself, so a
+  `_mip0` file is refused (`texture_mip_invalid`, E). The suffix is matched in any case and
+  comes last (`body_nrm_mip2` gives `body_nrm`'s level 2). A `_mip` file with no texture of
+  its stem beside it in the same lookup namespace is an ordinary texture, as today.
+- Once a texture has an override, level 0 is the texture's top level, and each other level
+  comes from the override whose suffix names it or, when none does, from the texture's top
+  level, halved down to that level's size as a raster source's chain is. An override never
+  feeds the levels below its own: with a 1024 × 1024 `body.png`, `body_mip2.png` and
+  `body_mip5+.png`, levels 2 and 5 to 10 are the two files resized, and levels 1, 3 and 4
+  are `body.png` at a half, an eighth and a sixteenth of its size. This holds whatever the
+  texture's format: a DDS or FTEX texture's own lower levels are dropped once it has an
+  override, so every hand-made level is one a member can see. A DDS or FTEX override gives
+  its top level. A texture with no override keeps its levels as today.
+- An override of any size is resized to each level it gives (`image`'s resize, Triangle
+  filter; a file already at the level's size is taken as it is). The member can draw it at
+  full size, and the levels keep working when the texture is later swapped for a larger or
+  smaller one.
+- A level past the texture's smallest is a Warning (`texture_mip_level_missing`), and the
+  file's other levels are used: a texture swapped for a smaller one keeps its levels, with
+  less effect. Two files giving one level are an Error (`texture_mip_overlap`).
+- `_mips_alpha<a0>-<a1>-...` on the texture's own name, with no override file, multiplies
+  each level's alpha by its value over 255, from level 0, the last value repeating for every
+  smaller level: `body_mips_alpha255-255-127-0.png` keeps levels 0 and 1, halves level 2's
+  alpha and makes level 3 and below transparent, the usual fade. Materials still name it
+  `body` (a `body.png` beside it is `texture_stem_conflict`). Each level is generated from
+  the unmultiplied chain, so level 3 is not made from level 2's halved alpha; a level an
+  override file gives is taken as drawn. Values past the smallest level are
+  `texture_mip_level_missing`; a value over 255 or a malformed list is `texture_mip_invalid`;
+  a normal-role texture is `texture_mip_invalid` too, since DXT5nm's alpha holds a normal
+  component. We use a name, not a text file beside the texture, because a separate file is
+  one more thing a copy can lose, the failure these files exist to end.
+- The override files and the alpha list are part of the conversion cache's key, so a
+  `body.png` cached without them is not reused once they appear, and two folders with the
+  same `body.png` and different levels get their own textures. BC1 eligibility reads every
+  emitted level, so a faded level keeps the texture in BC3.
+- PES 15-17 move to smaller levels at a shorter distance than PES 18-21, so one set of levels
+  fades a little earlier there. We do not shift the levels by one on PES 15-17: the cups play
+  the Fox games and are not expected to go back.
+
 ### 5. Writer (single-threaded)
 
 What exists of this is in `spec/team_compiler/pipeline.md` "5. Writer (single-threaded)".
