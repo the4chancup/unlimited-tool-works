@@ -3015,6 +3015,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme keeps egui's error
+  red, `#FF0000`, which reads at about 3.8 on the light panel (grey 248), where
+  `plans/core/gui.md`'s contrast rule (the Dark/light theme row: a colour under 4.5 on the
+  dark panel keeps its dark ratio) asks for the dark red's 4.3 on grey 27. Computed from
+  the WCAG formula, not yet measured by a test; about 50 places draw it (Error lines,
+  violations, the pitch). Fix: darken it in linear light in `theme::install`, as the
+  warning's `#C54B00`, with a test beside the warning's.
 - watch 2026-11-13: the Save editor's
   `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
   failed twice under load ("the range's first team: left `702 /a/`, right `701 /3/`"), the
