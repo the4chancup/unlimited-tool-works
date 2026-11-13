@@ -1045,3 +1045,56 @@ fn every_x_stays_at_the_lists_right_edge_while_a_wide_row_scrolls() {
         );
     }
 }
+
+// A list narrower than the 460 floor holds its box at 460 anyway, and
+// every X ends at the box's inner right edge rather than beside the
+// table.
+// SE-GUI-74
+#[test]
+fn a_narrow_lists_xs_end_at_the_boxs_inner_right_edge() {
+    let (mut view, _) = three_changes("changes_list_x_edge");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    let xs: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button && node.label() == Some(X))
+        .filter_map(|node| node.bounds())
+        .collect();
+    assert_eq!(xs.len(), 3, "premise: one X per row");
+    let table_right = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label)
+        .filter_map(|node| node.bounds())
+        .map(|bounds| bounds.x1)
+        .fold(f64::MIN, f64::max);
+    let spacing = f64::from(window.ctx.global_style().spacing.item_spacing.x);
+    for x in &xs {
+        assert!(
+            x.x0 - table_right > spacing + 1.0,
+            "premise: the table is narrower than the room left of the X \
+             column, so the floor sets the column: {x:?}, table to {table_right}"
+        );
+    }
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    assert!(
+        (popup.width() - 460.0).abs() <= 0.5,
+        "premise: the box is at the 460 floor: {popup:?}"
+    );
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke
+        .width;
+    let inner_right = f64::from(popup.right()) - 8.0 - f64::from(stroke);
+    for x in &xs {
+        assert!(
+            (x.x1 - inner_right).abs() <= 0.5,
+            "the X ends at the box's inner right edge: {x:?}, {popup:?}"
+        );
+    }
+}
