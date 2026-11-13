@@ -1911,22 +1911,23 @@ briefs, review loops, gates and mutation runs as for any step.
       list compares a player with the record he came from, and each group of places
       that traded players is one `Player order` row. Two overlapping drags give groups
       that match neither drag (the cycles). Look: Pending looks
-    - [ ] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends):
-      its fix waits for b's merge, which edits the same files: a moved player
-      renamed after the move, the row's new side showing the new name; and
-      `SEALED_KEY`'s comment (`.tmp/duck_rulings.md`). A player on two rosters
-      puts his group's row under the wrong team: left, such teams are not
-      supported (DECISIONS 2026-11-13)
+    - [x] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends; its
+      fix, a moved player renamed after the move, landed with b)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
       one place per line (approved), and the X ending each row in the link blue, its
       column fixed at the list's right edge while a wide row scrolls under it (the
       maintainer, 2026-11-12: first in the row it read as an error mark); renders
       `.tmp/0_0_2/undo/x_list.png`, `x_wide.png`, `x_wide_scrolled.png` by `shot_x.py`
       and `shot_x_wide.py` beside them. The maintainer's look at the fixed X is pending
-    - [ ] b: the X on each row of the toolbar's list (SE-GUI-74), as the draft's
-      `changesTable` and `undoChange`. Opus, the same session resumed, running since
-      2026-11-13 (brief `.tmp/0_0_2/undo/brief_undo_b.md`, worktree
-      `4cc-studio-temp/undo`, run `sk_undo_b`)
+    - [x] b 2026-11-13 (Opus, the same session, and the lead; merge `f682295e`; the
+      lead's rerun of `pes_savefile`, `aatf`, `team_widgets` and `save_editor` on the
+      merged tree, clippy, fmt; SE-GUI-74): an X ends each row of the toolbar's list and
+      puts that change back as one sealed undo step, the list open a row shorter; a row
+      is put back by reversing its diff and applying it (`PlayerDiff::reversed`,
+      `TeamDiff::reversed`, `apply_team`), a `Player order` row through the drag's own
+      trade; the close prompt has no X. Look: Pending looks
+    - [ ] b's SWE-2 review (running, `.tmp/0_0_2/undo/swe_undo_b.md`, worktree
+      `review19`)
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
@@ -2667,6 +2668,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   ruleset without the flag (Spring 26), a team whose formation a tool made (the VGL27
   save's /b/, /co/, /d/, /tg/, /toy/, /x/): the warning's words in Live AATF, and gone
   after the named starter is dragged on the Tactics pitch; no PES; 0.0.2c; maintainer
+- The X on each row of the unsaved changes list, in the built window: its blue against
+  the label that opened the list, each on its row's first line, the column staying at
+  the list's right edge while a wide row scrolls under it (the draft's renders:
+  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`); no PES; 0.0.2-undo b; maintainer
 - The unsaved changes after a drag in the player list, in the built window: one
   `Player order` row, its places one per line and the row as high as them, the team's
   name on its first line; no PES; 0.0.2-undo a; maintainer
