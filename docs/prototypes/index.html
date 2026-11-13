@@ -2722,6 +2722,31 @@ function updateLink() {
   if (q) frag += "?" + q;
   if (frag !== lastLink) { lastLink = frag; history.replaceState(null, "", frag); }
 }
+// A click that spans a redraw. A view redrawn on every tick of a run (the
+// compiler's and the upgrader's) replaces the element a press landed on
+// before its release, and the browser then fires no click: Cancel did
+// nothing. egui keeps a widget's identity across frames, so the draft does
+// too: when the pressed control is gone at the release, the control now
+// under the pointer is clicked if it is the same one (its id, its cell's
+// scope, or its tag, class and label).
+let pressedControl = null;
+const CONTROL = "button, [data-scope]";
+function sameControl(a, b) {
+  if (a.id || b.id) return a.id === b.id;
+  if (a.dataset.scope || b.dataset.scope) return a.dataset.scope === b.dataset.scope;
+  return a.tagName === b.tagName && a.className === b.className && a.textContent === b.textContent;
+}
+document.addEventListener("pointerdown", e => {
+  pressedControl = e.button === 0 ? e.target.closest(CONTROL) : null;
+}, true);
+document.addEventListener("pointerup", e => {
+  const was = pressedControl;
+  pressedControl = null;
+  if (!was || was.isConnected || e.button !== 0) return;
+  const now = document.elementFromPoint(e.clientX, e.clientY)?.closest(CONTROL);
+  if (now && !now.disabled && sameControl(was, now)) now.click();
+}, true);
+
 function render() {
   closeMenus();
   setTitle();
