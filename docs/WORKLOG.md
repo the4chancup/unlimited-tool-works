@@ -1930,12 +1930,6 @@ briefs, review loops, gates and mutation runs as for any step.
       trade; the close prompt has no X. Look: Pending looks
     - [x] b's SWE-2 review 2026-11-13 (S-undo-b r1, 3 of 5 accepted, the loop ends): a
       doc comment and a help sentence fixed
-    - [ ] the list's sideways scroll bar sits under the last row, not at the list's
-      bottom edge (S-undo-b-4): on a list both taller than its 240 points and wider than
-      its room, the bar shows only once scrolled to the end; the wheel still scrolls
-      sideways and the X column stays put. Since b, where the table went into a sideways
-      scroll inside the vertical one so the X column could stay outside it
-      (`view/changes_popup.rs` `table_with_xs`). To weigh with the look below it waits on
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
@@ -2421,6 +2415,14 @@ briefs, review loops, gates and mutation runs as for any step.
   distinct, 116 of them in `save_editor.js`. A pure refactor first, proven by
   `draft_shots.py` showing no changed shot on the dark theme; then the light values.
   Opus, when no draft edit is in flight
+- [ ] after 0.0.2 (the maintainer, 2026-11-13: "something we will have to fix"): the
+  unsaved changes list's sideways scroll bar at the list's bottom edge. Since the X
+  (0.0.2-undo b) the table sits in a sideways scroll inside the vertical one, so the X
+  column can stay outside it (`save_editor` `view/changes_popup.rs` `table_with_xs`), and
+  the bar is under the table's last row: on a list both taller than its 240 points and
+  wider than its room it shows only once scrolled to the end (S-undo-b-4; a mock of both,
+  `.tmp/0_0_2/undo/bar_edge.png` and `bar_under_top.png`, by `shot_bar.py`). The wheel
+  still scrolls sideways
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
@@ -2688,9 +2690,7 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The X on each row of the unsaved changes list, in the built window: its blue against
   the label that opened the list, each on its row's first line, the column staying at
   the list's right edge while a wide row scrolls under it (the draft's renders:
-  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`), and whether a list both tall and
-  wide needs its sideways scroll bar always in view (0.0.2-undo's open item); no PES;
-  0.0.2-undo b; maintainer
+  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`); no PES; 0.0.2-undo b; maintainer
 - The unsaved changes after a drag in the player list, in the built window: one
   `Player order` row, its places one per line and the row as high as them, the team's
   name on its first line; no PES; 0.0.2-undo a; maintainer
