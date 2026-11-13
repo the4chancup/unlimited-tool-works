@@ -125,23 +125,3 @@ evidence in `fix_resolutions.md` beside it). Each waits only for its tool's phas
   carry over": the in-game test of 2026-10-09 found that a `.mtl` beside a nocloth `.model` is
   read and the collar model then stops drawing, "And a collar drawn with the kit's own
   material has no alpha test"). Did the same test show the second, or is it from elsewhere?
-
-## From the text rereading of 2026-11-13
-
-Doubts the agents rereading the member-facing text left (worklog 0.0.2-text; each one's
-evidence is in the report named, under `4cc-studio-temp/shakespeare/.tmp/shakespeare/`).
-
-- **Where a member reports a problem.** The bundle readme says to "post the log file", and
-  the Export upgrader's `migration_not_clean` row now ends "Fix what the findings name in the
-  old export and upgrade again", but no text says where a log, or a migration that fails for
-  no reason the member can fix, should be posted (`sh_readme.full.md`, `sh_ui_eu.proposals.md`
-  P16). Which place should the readme and that row name?
-- **The gloves colours' names.** An export's `settings.toml` comments name the eight
-  spectacles colours and give `gloves_color` as `0 to 7` alone. The Save editor's code says
-  the gloves colour shares the spectacles colours' names, without saying it was looked at in
-  game (`sh_toml_a.proposals.md` P4). Are the eight gloves colours in Edit mode white, black,
-  red, blue, yellow, green, pink and turquoise, in that order?
-- **"Outfield player gloves".** The `gloves` key's comment says "outfield player gloves",
-  the Save editor's label for the same field "Player gloves" (`sh_toml_a.proposals.md`
-  section 4). Is the game's option limited to outfield players, so that the label should say
-  so too?

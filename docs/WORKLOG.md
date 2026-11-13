@@ -1797,7 +1797,24 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] wave 3: the ruled proposals for the Team compiler's and the Export upgrader's
       message catalogs and an export's `settings.toml` comments, applied by three SWE-2
       sidekicks (briefs `brief_ap_tc.md`, `brief_ap_eu.md`, `brief_ap_toml.md`: the
-      rulings are in them)
+      rulings are in them). The Team compiler's catalog then names its settings by key;
+      the step that builds its settings form (Phase 8) gives the catalog the form's labels
+      back (DECISIONS 2026-11-13, on the branch)
+    - [ ] the maintainer's three answers of 2026-11-13, applied on the branch once wave 3's
+      sidekicks have left the files (one SWE-2 brief; a DECISIONS entry with them):
+      (1) where a member posts a log or a migration they cannot fix: "on the /aesco/ server
+      or the divegrass thread", Red's crash handler's words (`Engines/compiler_run.bat`); the
+      bundle readme says so already (uncommitted on the branch); still to do: the crash and
+      unclean-close dialogs' "where you report problems" (`crates/studio/src/gui_log.rs`,
+      ST-RUN-09/10 and their tests) and the Export upgrader's `migration_not_clean` row;
+      (2) the gloves colours, looked at in PES 2019's Edit mode: white, black, red, blue,
+      yellow, green, pink, turquoise, the spectacles' eight in the same order, so
+      `gloves_color`'s comment names them (`sh_toml_a.proposals.md` P4; the wrist tape's
+      stay `0 to 7`, not looked at) and the Save editor's code comment calling them
+      approximations says they were looked at;
+      (3) Player gloves in PES 2019's Edit mode is greyed out on a goalkeeper; an outfield
+      player has "OFF" and "Worn in Winter", the colour below it: the `gloves` key's
+      "outfield player gloves" is right and stays
     - [ ] wave 4: proposals for the Save editor's and the Ruleset editor's messages, the
       views' labels, tooltips and dialogs, and the other TOML comments (a kit's
       `config.toml`, the Team TOML, the aesthetics patch, `legacy_ids`)
