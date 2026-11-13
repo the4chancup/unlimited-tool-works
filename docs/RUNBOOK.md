@@ -397,7 +397,10 @@ Sidekicks: Claude Opus through headless Claude Code for a real slice, SWE-2 (Kim
 through the Devin CLI for a small contained one and for in-game runs (the `sidekick` skill
 launches both); a cold probe on a spec-in-hand crate showed SWE-2 follows `CONTRIBUTING.md`
 literally and reports plan gaps instead of deciding them, so it is trusted with
-implementation, not with judgment. Reviewers: SWE-2, Gemini 4 Carbon and GPT-6 Astra, run
+implementation, not with judgment. A slice too large for SWE-2 (its output limit
+cuts its runs short, or its brief runs well past a few hundred lines) that cannot be
+conveniently split goes to an Opus 5.5 sidekick, whatever the phase's default route; a SWE-2
+run stopped by its output limit is not retried on a fresh SWE-2 session. Reviewers: SWE-2, Gemini 4 Carbon and GPT-6 Astra, run
 through the `duck` skill ("Review rounds"). A Devin lead's reviewer subagent profiles (global,
 `%APPDATA%\Devin\agents\`): `gpt-astra-high` (GPT, latest Astra) when the lead is a Claude, **or
 when you do not know what model you are**; `fable-medium` (Claude) only when you know you are a
