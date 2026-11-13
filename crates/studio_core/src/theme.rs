@@ -7,7 +7,8 @@
 //! for the light fills, each a step lighter than the grey that keeps the dark
 //! fill's contrast with the panel. The rest of the presets stays egui's own
 //! `Visuals` until the curated one lands, but for the light warning colour,
-//! darkened to read at 4.5 on the light panel.
+//! darkened to read at 4.5 on the light panel, and the corner radii: one
+//! radius, 2 points, on every corner egui or the suite draws.
 
 use crate::settings::Theme;
 use crate::status::NoticeKind;
@@ -267,6 +268,13 @@ pub fn notice_color(kind: NoticeKind, visuals: &egui::Visuals) -> egui::Color32 
     }
 }
 
+/// The one corner radius everything drawn with corners rounds by, the
+/// drafts' `border-radius: 2px`: `install` pins it on every radius egui
+/// draws (the window's, the menu's and each widget state's), and the
+/// suite's own painter and frame calls read the style's value, so a
+/// widget added later cannot bring a number of its own.
+const CORNER_RADIUS: u8 = 2;
+
 /// Applies the common `theme` setting to `ctx` through `Context::set_theme`: the setting,
 /// never the system's theme, decides, so a member on a light desktop still gets the dark
 /// default.
@@ -315,6 +323,10 @@ pub fn install(ctx: &egui::Context) {
             ] {
                 style.text_styles.insert(text_style, font_id);
             }
+            // 0.37 leaves windows and menus at 6 points; the one radius
+            // covers them too.
+            style.visuals.window_corner_radius = egui::CornerRadius::same(CORNER_RADIUS);
+            style.visuals.menu_corner_radius = egui::CornerRadius::same(CORNER_RADIUS);
             match theme {
                 egui::Theme::Dark => style.visuals.widgets = widgets_dark(),
                 egui::Theme::Light => {
@@ -330,10 +342,11 @@ pub fn install(ctx: &egui::Context) {
 }
 
 /// egui 0.36.1's `Widgets::dark()`, field for field but for the pressed
-/// state's text colour (the strong text colour, below): the drafts' stylesheet
-/// draws widgets in these colors, and 0.37's `Widgets::dark()` moved them (the
-/// buttons to grey 50 with text at 215, the radii to 4 to 6 points), so it
-/// cannot supply them.
+/// state's text colour (the strong text colour, below) and the corner
+/// radii, `CORNER_RADIUS` on every state where 0.36 rounded a hovered
+/// widget to 3: the drafts' stylesheet draws widgets in these colors, and
+/// 0.37's `Widgets::dark()` moved them (the buttons to grey 50 with text
+/// at 215, the radii to 4 to 6 points), so it cannot supply them.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_dark() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -342,7 +355,7 @@ fn widgets_dark() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(27),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(140)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
@@ -350,7 +363,7 @@ fn widgets_dark() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(60),
             bg_stroke: egui::Stroke::default(),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(180)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
@@ -358,7 +371,7 @@ fn widgets_dark() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(70),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(150)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::from_gray(240)),
-            corner_radius: egui::CornerRadius::same(3),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
@@ -370,7 +383,7 @@ fn widgets_dark() -> egui::style::Widgets {
             // here, not egui's white. A pressed widget's text, and whatever
             // else egui draws in a pressed widget's foreground, takes it too.
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::from_gray(220)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         open: egui::style::WidgetVisuals {
@@ -378,14 +391,15 @@ fn widgets_dark() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(27),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(210)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
     }
 }
 
-/// egui 0.36.1's `Widgets::light()`, field for field but for the fills, for
-/// the same reason as `widgets_dark`: 0.37's `Widgets::light()` rounded every
+/// egui 0.36.1's `Widgets::light()`, field for field but for the fills and
+/// the corner radii, `CORNER_RADIUS` on every state, for the same reason as
+/// `widgets_dark`: 0.37's `Widgets::light()` rounded every
 /// state to 6 points, which is not the look the drafts were reviewed in.
 /// The fills are near the dark states' contrast with their panel instead of
 /// 0.36's greys, whose resting 230 reads at 1.18 on the 248 panel, where the
@@ -402,7 +416,7 @@ fn widgets_light() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(248),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(190)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(80)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
@@ -410,7 +424,7 @@ fn widgets_light() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(207),
             bg_stroke: egui::Stroke::default(),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
@@ -418,7 +432,7 @@ fn widgets_light() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(192),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
-            corner_radius: egui::CornerRadius::same(3),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
@@ -426,7 +440,7 @@ fn widgets_light() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(214),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         open: egui::style::WidgetVisuals {
@@ -434,7 +448,7 @@ fn widgets_light() -> egui::style::Widgets {
             bg_fill: egui::Color32::from_gray(220),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(160)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
-            corner_radius: egui::CornerRadius::same(2),
+            corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
     }
@@ -674,6 +688,7 @@ mod tests {
         }
     }
 
+    // ST-CORNER-01
     #[test]
     fn install_pins_egui_0_36s_spacing_and_widget_states() {
         let ctx = egui::Context::default();
@@ -693,8 +708,82 @@ mod tests {
                 widgets.inactive.fg_stroke.color,
                 egui::Color32::from_gray(inactive_text)
             );
-            assert_eq!(widgets.hovered.corner_radius, egui::CornerRadius::same(3));
+            for (name, radius) in [
+                ("window", style.visuals.window_corner_radius),
+                ("menu", style.visuals.menu_corner_radius),
+                ("noninteractive", widgets.noninteractive.corner_radius),
+                ("inactive", widgets.inactive.corner_radius),
+                ("hovered", widgets.hovered.corner_radius),
+                ("active", widgets.active.corner_radius),
+                ("open", widgets.open.corner_radius),
+            ] {
+                assert_eq!(radius, egui::CornerRadius::same(2), "{theme:?} {name}");
+            }
         }
+    }
+
+    /// Every `.rs` file under `dir`, recursively.
+    fn rust_files(dir: &std::path::Path, found: &mut Vec<std::path::PathBuf>) {
+        for entry in std::fs::read_dir(dir).expect("the directory reads") {
+            let path = entry.expect("an entry").path();
+            if path.is_dir() {
+                rust_files(&path, found);
+            } else if path.extension().is_some_and(|ext| ext == "rs") {
+                found.push(path);
+            }
+        }
+    }
+
+    /// `line` passes a number as a corner radius: `CornerRadius::same(` or
+    /// `.corner_radius(` with a digit right after the bracket.
+    fn numbered_radius(line: &str) -> bool {
+        ["CornerRadius::same(", ".corner_radius("]
+            .iter()
+            .any(|needle| {
+                line.find(needle)
+                    .and_then(|at| line[at + needle.len()..].chars().next())
+                    .is_some_and(|next| next.is_ascii_digit())
+            })
+    }
+
+    // ST-CORNER-01's second clause: every rectangle the suite paints reads
+    // the theme's radius, so no source file outside this one may pass a
+    // number as a corner radius and a widget added later cannot bring its
+    // own. Files of tests alone (a `tests.rs`, a `tests` folder's) are
+    // skipped; a `#[cfg(test)]` block inside a source file is not, so a
+    // radius checked there reads the style like the code beside it.
+    #[test]
+    fn no_source_file_passes_a_number_as_a_corner_radius() {
+        let crates = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("studio_core sits under crates/");
+        let mut sources = Vec::new();
+        rust_files(crates, &mut sources);
+        let mut found = Vec::new();
+        for path in sources {
+            let test_file = path
+                .file_name()
+                .is_some_and(|name| name == "theme.rs" || name == "tests.rs")
+                || path.components().any(|part| part.as_os_str() == "tests");
+            if test_file {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("a source file reads");
+            for (number, line) in text.lines().enumerate() {
+                if numbered_radius(line) {
+                    found.push(format!(
+                        "{}:{}",
+                        path.strip_prefix(crates).unwrap_or(&path).display(),
+                        number + 1
+                    ));
+                }
+            }
+        }
+        assert!(
+            found.is_empty(),
+            "a number passed as a corner radius:\n{}",
+            found.join("\n")
+        );
     }
 
     // The dark theme's strong text is the drafts' `--strong`, grey 220, not

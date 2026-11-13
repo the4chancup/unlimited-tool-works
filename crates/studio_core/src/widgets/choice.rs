@@ -315,7 +315,7 @@ mod tests {
         // the whole row.
         let pointer = probe[0].right_center() - egui::vec2(10.0, 0.0);
         let (shapes, rects) = settled(Some(pointer), two_checkboxes);
-        assert_checked_box(&shapes, rects[0], egui::Stroke::new(1.0, HOVER_BORDER), 3);
+        assert_checked_box(&shapes, rects[0], egui::Stroke::new(1.0, HOVER_BORDER), 2);
     }
 
     #[test]

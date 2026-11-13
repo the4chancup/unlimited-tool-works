@@ -130,6 +130,9 @@ What changed for members, release by release, newest first.
   no longer reads as a field left to fill.
 - A click between two entries of a menu or of a dropdown list no longer closes it with
   nothing picked: the entries now touch, so the click always lands on one of them.
+- The corners of menus, dialogs, dropdown lists, text fields and the update download's
+  bar all carry the same slight rounding again: the framework update had left the
+  menus and dialogs rounder than the rest.
 
 ## [0.0.1] - 2026-11-03
 

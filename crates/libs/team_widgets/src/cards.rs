@@ -116,7 +116,7 @@ pub fn cards_used(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
             );
             let chip = egui::Frame::new()
                 .fill(ui.visuals().widgets.inactive.weak_bg_fill)
-                .corner_radius(2)
+                .corner_radius(ui.visuals().widgets.noninteractive.corner_radius)
                 .inner_margin(egui::Margin::symmetric(4, 0));
             // The chip is allocated at its own size, so it stays one text
             // line high, centred on the row: a frame put straight in the
@@ -953,7 +953,16 @@ mod tests {
             "no margin down ({text_rect:?} in {:?})",
             chip.rect
         );
-        assert_eq!(chip.corner_radius, egui::CornerRadius::same(2));
+        assert_eq!(
+            chip.corner_radius,
+            window
+                .ctx
+                .style_of(window.ctx.theme())
+                .visuals
+                .widgets
+                .noninteractive
+                .corner_radius
+        );
 
         // No tier matching paints no chip.
         let (_, shapes) = window.badge(CardsBadge::NoTier);

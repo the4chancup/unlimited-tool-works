@@ -75,6 +75,10 @@ pub(crate) const PITCH: egui::Vec2 = egui::vec2(320.0, 384.0);
 /// border a side. The settings and assignments panels beside it are as
 /// tall.
 pub const PITCH_BOX: egui::Vec2 = egui::vec2(322.0, 386.0);
+/// The corner radii of the captain's mark, its box and the mark inside:
+/// the game's own, not the theme's, because the mark imitates the game's.
+const CAPTAIN_BOX_RADIUS: u8 = 3;
+const CAPTAIN_MARK_RADIUS: u8 = 2;
 /// The grid's extent in stored units.
 const GRID_X: u8 = 104;
 const GRID_Y: u8 = 48;
@@ -1202,6 +1206,13 @@ fn paint_marker(
 ) -> Option<f32> {
     let roster_slot = tactics.starting_eleven[spot.index];
     let badge = badge_rect(spot.centre);
+    let radius = painter
+        .ctx()
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .corner_radius;
     let portrait = portrait_rect(badge);
     if let Some(texture) = roster
         .get(usize::from(roster_slot))
@@ -1221,7 +1232,7 @@ fn paint_marker(
     } else {
         palette.badge_fill
     };
-    painter.rect_filled(badge, egui::CornerRadius::same(2), fill);
+    painter.rect_filled(badge, radius, fill);
     // His medal tier outlines the badge in its colour, inside the
     // badge's edge — an outline, not a fill, since the position
     // colours read at a contrast of 1.0 to 2.4 on the metals. A slot
@@ -1232,7 +1243,7 @@ fn paint_marker(
     {
         painter.rect_stroke(
             badge,
-            egui::CornerRadius::same(2),
+            radius,
             egui::Stroke::new(1.5, medal.colour(palette)),
             egui::StrokeKind::Inside,
         );
@@ -1307,14 +1318,18 @@ fn paint_marker(
                 egui::pos2(badge.left() + 1.0, badge.top() - 17.0),
                 egui::pos2(badge.left() + 15.0, badge.top() - 4.0),
             ),
-            egui::CornerRadius::same(3),
+            egui::CornerRadius::same(CAPTAIN_BOX_RADIUS),
             palette.badge_fill,
         );
         let mark = egui::Rect::from_min_max(
             egui::pos2(badge.left() + 2.0, badge.top() - 16.0),
             egui::pos2(badge.left() + 14.0, badge.top() - 5.0),
         );
-        painter.rect_filled(mark, egui::CornerRadius::same(2), palette.captain_fill);
+        painter.rect_filled(
+            mark,
+            egui::CornerRadius::same(CAPTAIN_MARK_RADIUS),
+            palette.captain_fill,
+        );
         painter.text(
             mark.center(),
             egui::Align2::CENTER_CENTER,

@@ -515,7 +515,7 @@ fn team_row(
                 );
                 ui.painter().rect_filled(
                     swatch,
-                    egui::CornerRadius::same(1),
+                    ui.visuals().widgets.noninteractive.corner_radius,
                     egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]),
                 );
                 x += SWATCH + 3.0;

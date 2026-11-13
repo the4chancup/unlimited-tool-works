@@ -432,9 +432,9 @@ fn swatch_shapes(
 }
 
 // At rest the swatch is outlined as a resting text box is (the theme's quiet
-// line, grey 60 on the dark theme, corners rounded by 3), so a black colour
+// line, grey 60 on the dark theme, the theme's corner radius), so a black colour
 // on the dark panel still shows its box; hovered, it takes the hovered
-// widgets' stroke, its corners still 3.
+// widgets' stroke, its corners unchanged.
 #[test]
 fn the_swatch_is_outlined_as_a_resting_text_box() {
     let mut window = Headless::new();
@@ -457,9 +457,9 @@ fn the_swatch_is_outlined_as_a_resting_text_box() {
         outline.stroke, widgets.noninteractive.bg_stroke,
         "the resting outline"
     );
-    assert_eq!(outline.corner_radius, egui::CornerRadius::same(3));
+    assert_eq!(outline.corner_radius, widgets.noninteractive.corner_radius);
     assert_eq!(fill.fill, Color32::BLACK, "the swatch carries the colour");
-    assert_eq!(fill.corner_radius, egui::CornerRadius::same(3));
+    assert_eq!(fill.corner_radius, widgets.noninteractive.corner_radius);
 
     let hover = vec![egui::Event::PointerMoved(rect.center())];
     window.field(&mut color, &[], hover.clone());
@@ -473,8 +473,8 @@ fn the_swatch_is_outlined_as_a_resting_text_box() {
         outline.stroke, widgets.hovered.bg_stroke,
         "the hovered outline"
     );
-    assert_eq!(outline.corner_radius, egui::CornerRadius::same(3));
-    assert_eq!(fill.corner_radius, egui::CornerRadius::same(3));
+    assert_eq!(outline.corner_radius, widgets.noninteractive.corner_radius);
+    assert_eq!(fill.corner_radius, widgets.noninteractive.corner_radius);
 }
 
 // A committed hex text is one change.

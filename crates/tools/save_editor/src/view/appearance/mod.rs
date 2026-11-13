@@ -913,21 +913,22 @@ fn swatch(ui: &mut egui::Ui, rgb: [u8; 3], held: bool, label: &str) -> egui::Res
         info
     });
     if ui.is_rect_visible(rect) {
+        let radius = ui.visuals().widgets.noninteractive.corner_radius;
         ui.painter().rect_filled(
             rect,
-            egui::CornerRadius::same(2),
+            radius,
             egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]),
         );
         ui.painter().rect_stroke(
             rect,
-            egui::CornerRadius::same(2),
+            radius,
             egui::Stroke::new(1.0, studio_core::theme::palette(ui.visuals()).swatch_edge),
             egui::StrokeKind::Inside,
         );
         if held {
             ui.painter().rect_stroke(
                 rect.expand(1.0),
-                egui::CornerRadius::same(2),
+                radius,
                 egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
                 egui::StrokeKind::Outside,
             );
