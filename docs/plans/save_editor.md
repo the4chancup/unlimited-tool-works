@@ -100,7 +100,7 @@ What exists of this is in `spec/save_editor.md` "Database operations".
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Output rosters to TSV (`EDIT.tsv` in the working folder, no dialog, UTF-8; every team, hidden ones included, in roster order; per player: number, name, registered position, Finishing as the "rating", captain mark, height, playing style, skills, COM styles) | Kept, the same columns and label spellings, UTF-8 with a byte-order mark (4ccEditor's `ccs=UTF-8` writes one, and a spreadsheet reads accented names right by it); written where a save dialog says, `EDIT.tsv` its default name, the open save refused as the destination as the team file panel's exports and the Comparator's report export refuse it |
+| Output rosters to TSV (`EDIT.tsv` in the working folder, no dialog, UTF-8; every team, hidden ones included, in roster order (ours: every cup team, "Only the cup's teams are shown"); per player: number, name, registered position, Finishing as the "rating", captain mark, height, playing style, skills, COM styles) | Kept, the same columns and label spellings, UTF-8 with a byte-order mark (4ccEditor's `ccs=UTF-8` writes one, and a spreadsheet reads accented names right by it); written where a save dialog says, `EDIT.tsv` its default name, the open save refused as the destination as the team file panel's exports and the Comparator's report export refuse it |
 | Fix database (clear all visual flags, reset kit slots, PES17 kit-ID repair; a player's base-copy id cleared when it is neither his own nor 0 and his base-copy flag is off, the flag cleared when the id is his own or 0; every team's strip-edited flag cleared) | Kept as a maintenance action behind a confirmation dialog, under the aesthetics lock (it clears what Clear visual flags clears), one undo step, but for two parts. The base-copy repair runs only where the record has the flag (PES 15 to 18): on 19 to 21 4ccEditor tests a flag it never reads (an uninitialized field), and clearing copy ids there would change players' looks. The PES 17 kit-ID repair is not kept: its 2,500 writes step 131 bytes (`write_dataOld` advances its cursor 3 bytes, then the loop adds 0x80) over a strip table whose entries are 132 bytes (`spec/pes_savefile/model.md` "Kit slots and the strip table"), so all but the first land inside entries' bodies, and each writes 0xC0 into the strip-number byte; a repair of that table waits for its layout to be measured. The kit slots reset where the model has them (PES 17, the one version 4ccEditor writes them on) |
 | (none) | New, after 0.0.1: Save formation pictures for a range of teams ("Tactics editor", "Formation pictures") |
 
@@ -196,9 +196,12 @@ side.
   the team already shown, keeps the selection (that team's row heads the list, a click away).
 - **Only the cup's teams are shown** (0.0.2-cup). The teams whose id lies in the cup's range,
   701 to 920 (`teams_list`'s), and the players on their rosters are all the Save editor
-  lists: the team selector, ALL, the filter's search, Live AATF, Multi-team AATF's range and
-  `check-aatf` when it names no team read those alone, and Fix database repairs those
-  alone. The game's own clubs and national
+  lists: the team selector, ALL, the filter's search, Live AATF, Multi-team AATF's range,
+  the copy and swap dialog's team list, the roster sheet, the comparator's rows and the
+  report it exports read those alone, and Fix database repairs those alone. So do the
+  commands that name no team: `check-aatf` without `--teams`, `export-toml --all-teams`,
+  `export-teams-list` and `diff`, which reports a player when a cup team's roster holds
+  him in either save, and a team when its id is a cup team's. The game's own clubs and national
   teams, and every player on no cup team's roster, stay in the save and are written back
   byte for byte; nothing lists, checks or edits them, and no setting shows them. A team
   named by its id on the command line is still read, whatever its id. Hidden, not listed,
@@ -2774,7 +2777,19 @@ SE-GUI-77  GIVEN a save holding, beside the cup's teams, a team with id 300 whos
                 300 and its report has none; Fix database changes nothing of team 300
                 or its players; GIVEN a cup player's Height edited and the save
                 written THEN team 300's record, its players' records and the
-                unrostered player's are byte for byte what the opened save held
+                unrostered player's are byte for byte what the opened save held; WHEN
+                Output rosters to TSV runs THEN the sheet has no line of team 300; GIVEN
+                a second copy of the save in which team 300's name, one of its players'
+                Height and a cup player's Height differ, picked in the comparator THEN
+                its rows hold the cup player's Height alone
+SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
+           WHEN diff is run, and with --json
+           THEN the report holds the cup player's Height row and nothing of team 300, of
+                its player or of the player on no roster
+SE-TOML-10 GIVEN SE-GUI-77's save
+           WHEN export-toml --all-teams --out-dir is run
+           THEN the folder holds one <id>.toml per cup team and no 300.toml; WHEN
+                export-toml --team 300 is run THEN team 300's file is written
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -2937,7 +2952,7 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 path THEN the file replaced, if any, is kept once as its .bak
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
-           THEN the file written holds, for every team, its name on a line of its own, then one
+           THEN the file written holds, for every cup team, its name on a line of its own, then one
                 tab-separated row per player (number, name, registered position, Finishing as
                 the rating, captain mark, height, playing style, skills, COM styles), as
                 4ccEditor's output does; WHEN
