@@ -1510,6 +1510,19 @@ ST-SIDE-09  GIVEN stub tool A, which targets the PES version, and stub tool B, w
                  version`, and every tool entry's icon stands where it stood under A, in the
                  rail and in the opened sidebar; the setting is unchanged by the switch, and
                  the Settings menu's PES version row still shows and changes it
+ST-SIDE-10  GIVEN a build registering fourteen stub tools, drawn in a window 420 points high
+            WHEN the rail is drawn
+            THEN no tool entry in view meets the tail (its separator, Help and Settings),
+                 the last tool entry is not in view, Settings ends inside the sidebar, and
+                 the logo and the version selector stand where they do in a window 780
+                 points high; WHEN the wheel is turned over the tool entries until they
+                 move no further THEN the last tool entry is in view above the tail's
+                 separator, the first is not in view, and the logo, the selector, Help and
+                 Settings have not moved; WHEN the sidebar is then opened by a hover THEN
+                 every tool entry stands at the height it has in the rail, and head and
+                 tail where they were; no scroll bar is drawn in either; GIVEN the same
+                 build in the window 780 points high THEN every entry is in view and a
+                 wheel turn moves none
 ST-SET-01   GIVEN two registered tools with settings sections and the second active
             WHEN the settings gear is clicked
             THEN the menu shows the common section and one collapsible section per tool, the
