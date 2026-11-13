@@ -24,6 +24,9 @@ use crate::ruleset::{Card, Foot, PlayStyle, Position, Stat};
 pub struct PlayerView {
     /// The roster slot.
     pub(crate) slot: u8,
+    /// The name as the save stores it, colour codes included: the host's
+    /// own warnings name a player by it. No script reads it.
+    pub(crate) name: String,
     /// Age in years.
     pub(crate) age: u8,
     /// Height in cm.
@@ -86,6 +89,7 @@ impl PlayerView {
         }
         PlayerView {
             slot,
+            name: entry.name.clone(),
             age: entry.basic.age,
             height: entry.basic.height,
             weight: entry.basic.weight,
@@ -369,7 +373,7 @@ impl TeamView {
     /// The formations `preset` (1 to 3) can field, as
     /// `(formation number, formation)` numbered from 1: all three when
     /// fluid, the kick-off one otherwise.
-    fn fielded_formations(&self, preset: u8) -> Vec<(u8, &Formation)> {
+    pub(crate) fn fielded_formations(&self, preset: u8) -> Vec<(u8, &Formation)> {
         let preset_ref = &self.tactics.presets[usize::from(preset) - 1];
         preset_ref
             .fielded_formations()
