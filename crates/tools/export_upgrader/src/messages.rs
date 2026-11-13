@@ -471,7 +471,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "unmigrated_content",
         Severity::Error,
-        r#"Content of the input that reached the game, or was clearly meant for it, but that the migration does not carry into the output. Examples: two files or folders claiming one place (a second face folder of one slot, two portraits of one), a whole folder under a name the old format refuses, a Team Note entry whose colors do not read, a kit config that does not decode. The line names the cause, and, where another file or folder took the place, that one's path."#,
+        r#"Content of the input that reached the game, or was clearly meant for it, but that the migration does not carry into the output. Examples: two files or folders claiming one place (a second face folder of one slot, two portraits of one), a whole folder under a name the old format refuses, a Team Note entry whose colors do not read, a kit config that does not decode. The line names the cause, and, where another file or folder took the place, that one's path. "Fixing unmigrated content" in this tool's help lists the causes."#,
         r#"It is not migrated, and the run is not clean, so nothing is written. Fix it in the input and upgrade again."#,
     ),
     (
@@ -1264,6 +1264,38 @@ mod tests {
                 "{value} is not snake_case"
             );
             assert!(seen.insert(value), "duplicate reason value: {value}");
+        }
+    }
+
+    #[test]
+    fn the_unmigrated_content_page_lists_every_reason_once() {
+        // A list item's head is a line `- `<head>`; the page is the member's
+        // index of the causes, so each reason is exactly one item and no
+        // backticked snake_case head is anything else.
+        let page = include_str!("../help/02_unmigrated_content.md");
+        let heads: Vec<&str> = page
+            .lines()
+            .filter_map(|line| line.strip_prefix("- `"))
+            .filter_map(|item| item.split('`').next())
+            .collect();
+        for reason in UnmigratedReason::ALL {
+            let count = heads
+                .iter()
+                .filter(|head| **head == reason.as_str())
+                .count();
+            assert_eq!(count, 1, "{}", reason.as_str());
+        }
+        for head in heads {
+            let snake_case = head
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+            assert!(
+                !snake_case
+                    || UnmigratedReason::ALL
+                        .iter()
+                        .any(|reason| reason.as_str() == head),
+                "`{head}` is a backticked snake_case head but no reason"
+            );
         }
     }
 

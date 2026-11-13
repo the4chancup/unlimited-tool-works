@@ -83,11 +83,18 @@ impl StudioTool for Tool {
     fn help(&self) -> HelpSection {
         HelpSection {
             title: "Export upgrader",
-            topics: vec![HelpTopic {
-                slug: "command-line",
-                title: "Running from a terminal",
-                body: include_str!("../help/01_command_line.md"),
-            }],
+            topics: vec![
+                HelpTopic {
+                    slug: "command-line",
+                    title: "Running from a terminal",
+                    body: include_str!("../help/01_command_line.md"),
+                },
+                HelpTopic {
+                    slug: "unmigrated-content",
+                    title: "Fixing unmigrated content",
+                    body: include_str!("../help/02_unmigrated_content.md"),
+                },
+            ],
             messages: messages::catalog(),
         }
     }
@@ -116,6 +123,6 @@ mod tests {
         assert_eq!(tool.id(), "export-upgrader");
         assert_eq!(tool.label(), "Export upgrader");
         assert!(tool.default_settings().is_empty());
-        assert_eq!(tool.help().topics.len(), 1);
+        assert_eq!(tool.help().topics.len(), 2);
     }
 }
