@@ -747,7 +747,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     - **Cutscenes**, the pane's width: star (19+) and playing attitude (20+), its note
       ("These only change how the player appears in cutscenes.") on the title's row. It is
       outside the aesthetics lock: the two change only cutscenes, so they are no aesthetic
-      the export owns.
+      the export owns. The star rating decides how likely the player is to be shown as the
+      team's featured player on the prematch screen; what playing attitude changes is
+      `QUESTIONS.md`'s.
     - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
       setting is on: under Cutscenes, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the

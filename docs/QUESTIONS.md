@@ -68,14 +68,15 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   on the same import; the manager id is not. Does the game mind two teams sharing one
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
-- **What star and playing attitude change.** The Save editor's Appearance screen puts star
+- **What playing attitude changes.** The Save editor's Appearance screen puts star
   (PES 2019+) and playing attitude (PES 2020+) in a Cutscenes group with the note "These
   only change how the player appears in cutscenes.", and leaves them outside the aesthetics
-  lock (`plans/save_editor.md` "Editing UI", the Cutscenes bullet). The claim is a lead's
-  reading from 2026-10-23, written when a collaborator asked for the two to move toward
-  Appearance; no in-game check or source backs it. What does each change in the game, and
-  does either reach a match (a player's play, his card, the AATF)? The note, the group's
-  name and its place outside the lock follow the answer.
+  lock (`plans/save_editor.md` "Editing UI", the Cutscenes bullet). The star rating is
+  known: it decides how likely the player is to be the team's featured player on the
+  prematch screen. Playing attitude's effect rests on a lead's reading from 2026-10-23, with
+  no in-game check or source. What does it change in the game, and does it reach a match (a
+  player's play, his card, the AATF)? The note and the group's place outside the lock
+  follow the answer.
 
 ## After the release
 
