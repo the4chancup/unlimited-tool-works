@@ -1,7 +1,7 @@
 // The Team compiler's draft (plans/team_compiler/gui.md), a view of the drafts'
 // host page, index.html: the live-validating team grid (one row per export, a
 // cell per player at fixed positions 01-23, 01-35 on the referee row, and a
-// cell per kit), the detail panel a cell opens, the toolbar (the run strip and
+// cell for its portraits and a cell per kit), the detail panel a cell opens, the toolbar (the run strip and
 // the split Compile button with its output modes) and the log panel.
 // An initial draft: the rows are samples built to show every cell state and
 // every row action the plan names, not a recorded run. Team names and IDs are
@@ -41,6 +41,12 @@ const TEAM_COMPILER_CSS = `
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
   .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
   .tc-gap { width: 8px; }
+  /* A vertical line down the grid (egui: a vline the Painter draws), unbroken
+     across the 2px between two rows. */
+  .tc-line { width: 9px; position: relative; }
+  .tc-line::after { content: ""; position: absolute; left: 4px; top: -1px; bottom: -1px;
+    width: 1px; background: var(--stroke); }
+  .tc-slot.wide, .tc-cell.wide { width: 44px; }
   /* Every position is drawn, a faint square where the export has nothing: the
      full grid leads the eye along a row to its button. */
   .tc-slot { width: 26px; height: 26px; background: var(--faint); border-radius: 2px; }
@@ -98,6 +104,22 @@ const players = (from, to, status = "fullOk", folder = n => `${pad(n)} - Player 
 const kit = (folder, c1, c2, status = "fullOk", codes = []) =>
   ({ status, folder, codes, swatch: [c1, c2] });
 const with_ = (cells, n, patch) => { Object.assign(cells[n], patch); return cells; };
+// A row's portraits cell, by the row's key: how many of its players have a
+// portrait, the cell's status and its findings. A referee export has none.
+const PORTRAITS = {
+  "3": [23, "fullOk"],
+  // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
+  a: [22, "error", ["portrait_name_invalid"],
+    { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
+  aco: [23, "partialOk"], adv: [11, "error", ["portrait_conflict"]], an: [null, "unchecked"],
+  egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
+function portraitsOf(key) {
+  const [count, status, codes = [], fix] = PORTRAITS[key] || [];
+  return status ? { count, status, codes, fix, folder: "Portraits" } : null;
+}
+// Every cell of a row but its label: the players, the portraits, the kits.
+const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portraits] : []),
+  ...Object.values(r.kits)];
 
 function sampleRows() {
   return [
@@ -115,7 +137,7 @@ function sampleRows() {
         // sample: the one-click rename of a misnamed player folder; which code
         // names that folder is not in the catalog yet, so the nearest stands in.
         15, { status: "warning", codes: ["root_file_unexpected"], folder: "15 Snuffy",
-          fix: "Rename to 15 - Snuffy" }),
+          fix: { label: "Rename to 15 - Snuffy", folder: "15 - Snuffy" } }),
       kits: { GK: kit("g1", "#30a050", "#101010"), K1: kit("p1 - Pink", "#f080b0", "#f0f0f0"),
         K2: kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
         K3: kit("p3 - Third", "#6040a0", "#f0c020") } },
@@ -125,8 +147,7 @@ function sampleRows() {
       kits: { GK: kit("g1", "#202020", "#f0f0f0", "partialOk"), K1: kit("p1", "#2060c0", "#f0f0f0", "partialOk") } },
     { key: "adv", name: "/adv/", id: 704, display: "adv Midcup Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
-      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
-        11, { status: "error", codes: ["portrait_conflict"] }),
+      players: with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
       kits: { K1: kit("p1 - Lakers", "#602080", "#f0c020") } },
     { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26",
       label: { status: "checking", codes: [] },
@@ -153,7 +174,7 @@ function sampleRows() {
       label: { status: "fullOk", codes: [] },
       players: players(1, 35, "fullOk", n => `${pad(1 + (n - 1) % 5)} - Referee ${1 + (n - 1) % 5}`),
       kits: { K1: kit("p1 - Referee", "#101010", "#f0e020") } },
-  ];
+  ].map(r => ({ ...r, portraits: portraitsOf(r.key) }));
 }
 
 // ---- State ----
@@ -183,6 +204,9 @@ const eligible = r => !r.special && !r.blocked && !S.unticked[r.key];
 
 function cellTip(r, cell, what) {
   const lines = [cell.folder || r.display, STATE_NAMES[shown(cell)]];
+  if (what === "portraits")
+    lines.push(cell.count == null ? "Portraits not counted yet"
+      : `${cell.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
   if (cell.out === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
   for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
   if (what === "kit" && cell.codes.includes("kit_colors_derived"))
@@ -195,7 +219,7 @@ function cellEl(r, cell, text, scope, what) {
   const state = shown(cell);
   const colour = COLOURS[state] || COLOURS.unchecked;
   const hl = S.highlight === scope ? " hl" : "";
-  return h("div", { class: "tc-cell" + (cell.busy ? " busy" : "") + (state === "blocked" ? " blocked" : "") + hl,
+  return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "") + (state === "blocked" ? " blocked" : "") + hl,
     style: `background:${colour}; color:${labelColour(colour)}`, title: cellTip(r, cell, what),
     "data-scope": scope,
     onclick: () => { S.detail = { row: r.key, what, slot: text }; render(); } },
@@ -275,7 +299,7 @@ function rowActions(r) {
       button("No", () => { idEntry(r).note = null; render(); }));
   // In place of the cells they span their columns, widening none; beside
   // the cells they follow the last kit column.
-  const span = r.special === "untagged" || r.special === "old" ? SLOTS + 2 + KIT_SLOTS.length : 1;
+  const span = r.special === "untagged" || r.special === "old" ? SLOTS + 3 + KIT_SLOTS.length : 1;
   return acts.length ? h("td", { class: "tc-acts act", colspan: String(span) }, row(...acts)) : null;
 }
 function tagExport(r, tag) {
@@ -284,6 +308,7 @@ function tagExport(r, tag) {
   r.label = { status: "fullOk", codes: [] };
   r.players = players(1, 23);
   r.kits = { GK: kit("g1", "#101010", "#f0f0f0"), K1: kit("p1", "#40a0c0", "#f0f0f0") };
+  r.portraits = { count: 23, status: "fullOk", codes: [], folder: "Portraits" };
   render();
 }
 // One of two clashing exports leaves (disabled, or moved away): the other compiles.
@@ -309,24 +334,32 @@ function gridRow(r) {
     title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
     onclick: () => { S.detail = { row: r.key, what: "label" }; render(); } }, r.name));
-  cells.push(idCell(r), h("td", { class: "tc-gap" }));
+  cells.push(idCell(r), h("td", { class: "tc-line" }));
   const acts = rowActions(r);
   if (r.special === "untagged" || r.special === "old") {
-    cells.push(acts);
+    cells.push(acts, h("td", { class: "tc-line" }));
   } else {
     for (let n = 1; n <= SLOTS; n++)
       cells.push(playerSlot(r, n));
+    // The portraits: one cell, the count of the row's players that have one
+    // over the players it has, in the colour of the worst of them.
+    const po = r.portraits;
+    cells.push(h("td", { class: "tc-gap" }), h("td", { class: "tc-slot wide" },
+      po ? cellEl(r, po, (po.count == null ? "?" : po.count) + "/" + Object.keys(r.players).length,
+        `${r.name} portraits`, "portraits") : null));
     cells.push(h("td", { class: "tc-gap" }));
     for (const k of KIT_SLOTS)
       cells.push(h("td", { class: "tc-slot" },
         r.kits[k] ? cellEl(r, r.kits[k], k, `${r.name} ${k}`, "kit") : null));
+    cells.push(h("td", { class: "tc-line" }));
     if (acts) cells.push(acts);
   }
   const lines = [h("tr", { class: off ? "off" : "" }, cells)];
   if (r.refs)
-    lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 4 : 3) }),
+    lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 3 : 2) }), h("td", { class: "tc-line" }),
       Array.from({ length: SLOTS }, (_, i) => playerSlot(r, SLOTS + 1 + i)),
-      h("td", { class: "tc-gap" }), KIT_SLOTS.map(() => h("td", { class: "tc-slot" }))));
+      h("td", { class: "tc-gap" }), h("td", { class: "tc-slot wide" }), h("td", { class: "tc-gap" }),
+      KIT_SLOTS.map(() => h("td", { class: "tc-slot" })), h("td", { class: "tc-line" })));
   return lines;
 }
 const playerSlot = (r, n) => h("td", { class: "tc-slot" },
@@ -370,9 +403,11 @@ function detailPanel() {
   const r = rowOf(S.detail.row);
   if (!r) return null;
   const cell = S.detail.what === "label" ? { ...r.label, folder: r.display }
-    : S.detail.what === "kit" ? r.kits[S.detail.slot] : r.players[Number(S.detail.slot)];
+    : S.detail.what === "kit" ? r.kits[S.detail.slot]
+    : S.detail.what === "portraits" ? r.portraits : r.players[Number(S.detail.slot)];
   if (!cell) return null;
-  const title = S.detail.what === "label" ? r.name : `${r.name} ${S.detail.slot}`;
+  const title = S.detail.what === "label" ? r.name
+    : S.detail.what === "portraits" ? `${r.name} portraits` : `${r.name} ${S.detail.slot}`;
   return h("div", { class: "tc-detail", "data-panel": "detail" },
     row(strong(title), h("span", { style: "flex:1" }),
       button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close the panel" })),
@@ -388,9 +423,10 @@ function detailPanel() {
     row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + cell.folder)),
         { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
       // A finding with one obvious fix: a rename the member asks for by a click.
-      cell.fix && !r.archive ? button(cell.fix, () => {
-        cell.folder = "15 - Snuffy"; cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
-        { title: "Renames the folder; refused when a folder of that name exists" }) : null));
+      cell.fix && !r.archive ? button(cell.fix.label, () => {
+        cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
+        cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
+        { title: "A rename; refused when that name exists" }) : null));
 }
 
 // ---- The toolbar: the run strip and the split Compile button ----
@@ -445,12 +481,12 @@ const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
   const rows = S.rows.filter(r => only ? only.includes(r.key) : eligible(r));
-  for (const r of S.rows) for (const cell of [...Object.values(r.players), ...Object.values(r.kits)]) {
+  for (const r of S.rows) for (const cell of cellsOf(r)) {
     delete cell.out; delete cell.busy;
     // An export that is skipped whole: its cells are blocked, not pending.
     if (r.blocked && !only) cell.out = "blocked";
   }
-  const tasks = rows.flatMap(r => [...Object.values(r.players), ...Object.values(r.kits)]
+  const tasks = rows.flatMap(r => cellsOf(r)
     // A red cell is skipped and keeps its colour, unless only one file is dropped.
     .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })));
   const start = Date.now();
@@ -491,7 +527,7 @@ function endRun() {
 // Cancel: the cells not yet processed return to their check colours; nothing
 // is written or replaced.
 function cancelRun() {
-  for (const r of S.rows) for (const cell of [...Object.values(r.players), ...Object.values(r.kits)]) {
+  for (const r of S.rows) for (const cell of cellsOf(r)) {
     delete cell.busy; delete cell.out;
   }
   stopRun();
@@ -508,6 +544,7 @@ function seedLog() {
         text: `${severity(code)} - ${scope} - ${code}: ${messageOf(code)}` }); };
     each(r.label, r.name);
     for (const [n, cell] of Object.entries(r.players)) each(cell, `${r.name} ${pad(n)}`);
+    if (r.portraits) each(r.portraits, `${r.name} portraits`);
     for (const [k, cell] of Object.entries(r.kits)) each(cell, `${r.name} ${k}`);
   }
 }
@@ -552,7 +589,7 @@ const WALK = [
   ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
   ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
-  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /adv/ 11 a portrait conflict)"],
+  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name with its rename, /adv/'s portraits a conflict)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
   ["TC-GUI-12", "Compile: each cell turns bold, then green, yellow or orange-red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
@@ -583,12 +620,12 @@ function linkOpen(scr, keys) {
   if (keys.dest !== undefined) { if (BADGES[keys.dest]) D.writable = keys.dest; else linkWarn("dest=" + keys.dest); }
   if (keys.detail !== undefined) {
     const [key, what, slot] = keys.detail.split(".");
-    if (rowOf(key) && ["label", "player", "kit"].includes(what)) S.detail = { row: key, what, slot };
+    if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.detail = { row: key, what, slot };
     else linkWarn("detail=" + keys.detail);
   }
   // run=done: the finished run's colours, without the timer.
   if (keys.run === "done") {
-    for (const r of S.rows) for (const cell of [...Object.values(r.players), ...Object.values(r.kits)]) {
+    for (const r of S.rows) for (const cell of cellsOf(r)) {
       if (r.blocked) cell.out = "blocked";
       else if (eligible(r) && (OUTCOME[cell.status] || cell.dropFile))
         cell.out = cell.dropFile ? "doneErr" : OUTCOME[cell.status];
