@@ -119,6 +119,9 @@ const TEAM_COMPILER_CSS = `
   /* Two rows, filled column by column: each column a pair of related states. */
   .tc-legend { display: grid; grid-template-rows: auto auto; grid-auto-flow: column;
     grid-auto-columns: max-content; gap: 4px 16px; }
+  /* Its title and the one state with no pair stand over both rows, centred. */
+  .tc-legend .both { grid-row: 1 / span 2; align-self: center; }
+  .tc-legend .name { font-size: 14px; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
 `;
@@ -466,11 +469,12 @@ function titleRow() {
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
 // The legend's columns, each a pair of related states, the upper one first.
-const LEGEND = ["unchecked", "checking", "partialError", "partialOk", "warning", "error",
-  "fullOk", "done", "doneWarn", "doneErr", "blocked"];
+const LEGEND = ["unchecked", "checking", "partialOk", "partialError", "warning", "error",
+  "doneWarn", "doneErr", "fullOk", "done", "blocked"];
 function legend() {
   return h("div", { class: "tc-legend top weak", "data-panel": "legend" },
-    LEGEND.map(k => h("span", { class: "k" },
+    h("span", { class: "both name" }, "Legend"),
+    LEGEND.map(k => h("span", { class: "k" + (k === "blocked" ? " both" : "") },
       h("span", { class: "tc-cell" + (k === "blocked" ? " blocked" : ""),
         style: COLOURS[k] ? `background:${COLOURS[k]}` : "" }), STATE_NAMES[k])));
 }
