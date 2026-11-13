@@ -7,10 +7,10 @@
 //! failed `apply_tier` leaves the player as he was and shows the error in
 //! the refusal dialog.
 
-use studio_core::widgets::{add_enabled_ui, step_number, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, number_arrows, step_number, wheel_steps};
 
 use crate::session::Session;
-use crate::view::{NUMBER_BOX, Refusal, SaveView, number_arrows, selected_player, surrender_focus};
+use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
 
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";

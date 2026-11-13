@@ -16,8 +16,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled_ui, combo_item, radio, step_choice, step_number, text_box,
-    wheel_steps,
+    FORM_ROW_SPACING, add_enabled_ui, combo_item, number_arrows, radio, step_choice, step_number,
+    text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -28,7 +28,7 @@ use crate::view::abilities::{
     STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
-use crate::view::{SaveView, edit_player, edit_team, number_arrows, selected_player};
+use crate::view::{SaveView, edit_player, edit_team, selected_player};
 
 /// The General info panel's Name field.
 pub(super) const NAME_LABEL: &str = "Name";

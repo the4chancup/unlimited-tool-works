@@ -20,12 +20,12 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, step_number, text_box,
-    wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows,
+    step_number, text_box, wheel_steps,
 };
 
 use crate::session::Session;
-use crate::view::{SaveView, edit_team, info_strip, number_arrows, selected_team, tactics};
+use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
 
 /// One unit of the header's row: a label with its field, or the button.
 #[derive(Debug, Clone, Copy)]

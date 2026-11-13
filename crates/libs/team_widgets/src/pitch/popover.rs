@@ -4,7 +4,7 @@
 
 use pes_savefile::model::tactics::TeamTactics;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, combo_item, step_choice, step_number, wheel_steps,
+    add_enabled, add_enabled_ui, combo_item, number_arrows, step_choice, step_number, wheel_steps,
 };
 
 use super::{drop_rule, outfield_range, overalls_of, position_label};
@@ -293,15 +293,17 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, min: u8, max: u8, enabled: bool) {
                 visuals.corner_radius = egui::CornerRadius::ZERO;
             }
             let size = ui.available_size();
-            add_enabled(
-                ui,
-                enabled,
-                egui::DragValue::new(&mut *value)
-                    .range(min..=max)
-                    .clamp_existing_to_range(false)
-                    .min_size(size),
-            )
-            .on_disabled_hover_text(SPOT_FIXED)
+            number_arrows(ui, value, min..=max, |ui, value| {
+                add_enabled(
+                    ui,
+                    enabled,
+                    egui::DragValue::new(value)
+                        .range(min..=max)
+                        .clamp_existing_to_range(false)
+                        .min_size(size),
+                )
+                .on_disabled_hover_text(SPOT_FIXED)
+            })
         });
         // `clamp_existing_to_range(false)` keeps a stored value outside
         // the range drawn as stored, so the clamp is on a change, never
@@ -1074,9 +1076,8 @@ mod tests {
             } else {
                 slot.y = stored;
             }
-            // A click on the number focuses it; the arrow keys then step
-            // it. A frame holding several presses, as a key held down
-            // repeats: a quarter step each, one unit in all.
+            // A click on the number focuses it; one press then steps it,
+            // the range's end holding.
             let (nodes, _) =
                 window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
             let field = control_right_of(&nodes, label, Role::SpinButton);
@@ -1087,16 +1088,13 @@ mod tests {
                 &mut view,
                 &roster,
             );
-            let presses = vec![
-                egui::Event::Key {
-                    key,
-                    physical_key: None,
-                    pressed: true,
-                    repeat: true,
-                    modifiers: egui::Modifiers::NONE,
-                };
-                4
-            ];
+            let presses = vec![egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }];
             let (_, changed) =
                 window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, presses);
             let slot = tactics.presets[0].formations[0].players[index];
@@ -1104,6 +1102,55 @@ mod tests {
             assert_eq!(at, end, "{label} at {stored} on {key:?} stays {end}");
             assert!(!changed, "{label} at {stored}: the keys write nothing");
         }
+    }
+
+    // Inside the range, the focused number's ArrowUp takes one more, the
+    // press one edit.
+    // ST-WHEEL-07
+    #[test]
+    fn one_arrow_up_on_the_focused_x_adds_one() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+        let was = tactics.presets[0].formations[0].players[index].x;
+        assert!(
+            was > *MOVABLE_X.start() && was < *MOVABLE_X.end(),
+            "premise: x {was} sits inside the range with room up"
+        );
+
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let field = control_right_of(&nodes, "X", Role::SpinButton);
+        window.click_pitch(
+            centre(field),
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        assert!(
+            window.ctx.egui_wants_keyboard_input(),
+            "premise: X's number holds the keyboard"
+        );
+        let (_, changed) = window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            vec![egui::Event::Key {
+                key: egui::Key::ArrowUp,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+        );
+        let x = tactics.presets[0].formations[0].players[index].x;
+        assert_eq!(x, was + 1, "one ArrowUp on X at {was} gives {}", was + 1);
+        assert!(changed, "the press is an edit");
     }
 
     // Y's range starts at 4, the outfielders' lowest row, as a drag's
@@ -1260,16 +1307,13 @@ mod tests {
             &mut view,
             &roster,
         );
-        let presses = vec![
-            egui::Event::Key {
-                key: egui::Key::ArrowUp,
-                physical_key: None,
-                pressed: true,
-                repeat: true,
-                modifiers: egui::Modifiers::NONE,
-            };
-            4
-        ];
+        let presses = vec![egui::Event::Key {
+            key: egui::Key::ArrowUp,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        }];
         let (_, changed) =
             window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, presses);
         assert_eq!(

@@ -45,7 +45,7 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, collapsing_header, menu_button, modal, modal_buttons, step_number, toolbar_framed,
+    add_enabled, collapsing_header, menu_button, modal, modal_buttons, toolbar_framed,
     toolbar_separator,
 };
 use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
@@ -890,46 +890,6 @@ pub(super) fn surrender_focus(ui: &egui::Ui) {
     if let Some(id) = ui.ctx().memory(|memory| memory.focused()) {
         ui.ctx().memory_mut(|memory| memory.surrender_focus(id));
     }
-}
-
-/// A whole-number field's arrow-key step: `value` moved one per
-/// ArrowUp/ArrowDown pressed this frame while the field `add` draws holds
-/// the keyboard, clamped inside `range` as `step_number` does, the presses
-/// consumed first so the drag value's own key step never sees them — egui
-/// steps a key press by the drag speed, a quarter point, which a whole
-/// number rounds back to where it was. The drag speed itself is
-/// untouched, so a drag moves the field as before. The field's id is
-/// only known once drawn, so the last frame's `response.id` stands in,
-/// kept under the call's widget position (`auto_id_with`, stable for a
-/// field drawn every frame). `mark_changed` fires on a moved `value`,
-/// as the wheel's `step_number` makes the caller do.
-pub(super) fn number_arrows<N: egui::emath::Numeric>(
-    ui: &mut egui::Ui,
-    value: &mut N,
-    range: std::ops::RangeInclusive<N>,
-    add: impl FnOnce(&mut egui::Ui, &mut N) -> egui::Response,
-) -> egui::Response {
-    let key = ui.auto_id_with("number field arrows");
-    let focused = ui
-        .data(|data| data.get_temp::<egui::Id>(key))
-        .is_some_and(|id| ui.memory(|memory| memory.has_focus(id)));
-    let steps = if focused {
-        ui.input_mut(|input| {
-            let up = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
-            let down = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
-            i32::try_from(up).expect("a frame's key presses fit an i32")
-                - i32::try_from(down).expect("a frame's key presses fit an i32")
-        })
-    } else {
-        0
-    };
-    let stepped = step_number(value, steps, range);
-    let mut response = add(ui, value);
-    ui.data_mut(|data| data.insert_temp(key, response.id));
-    if stepped {
-        response.mark_changed();
-    }
-    response
 }
 
 /// The editor's focus mode: a press on another widget ends the focused

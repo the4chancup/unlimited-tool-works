@@ -27,7 +27,9 @@ use pes_savefile::interchange::team_toml::labels::{
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
-use studio_core::widgets::{FORM_ROW_SPACING, add_enabled, step_number, wheel_steps};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, add_enabled, number_arrows, step_number, wheel_steps,
+};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
@@ -36,7 +38,7 @@ use crate::session::Session;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
     ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, info_strip, live_marks,
-    number_arrows, selected_player,
+    selected_player,
 };
 
 /// The Profile grid's registered-position combo.

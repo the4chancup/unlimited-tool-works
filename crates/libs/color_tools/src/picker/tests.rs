@@ -593,6 +593,29 @@ fn a_wheel_notch_over_a_channel_commits_one_step() {
     assert_eq!(color, [10, 19, 30]);
 }
 
+// One ArrowUp in the focused R field adds one, committed as a typed value is.
+// ST-WHEEL-07
+#[test]
+fn an_arrow_up_steps_the_focused_r_channel_by_one() {
+    let mut window = Headless::new();
+    let mut color = [128, 0, 0];
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(spin_field(&nodes, "R ")), &mut color, &[]);
+    // The settle frame lets the field's edit install its key filter.
+    window.field(&mut color, &[], Vec::new());
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the R field holds the keyboard"
+    );
+    let (_, out) = window.field(&mut color, &[], key(egui::Key::ArrowUp));
+    assert!(!out.changed, "the step is not a commit");
+    let (_, out) = window.field(&mut color, &[], key(egui::Key::Enter));
+    assert!(out.changed, "the Enter commits the step");
+    assert_eq!(color, [129, 0, 0], "one ArrowUp added one");
+}
+
 // Tab between the channel fields is one edit: the last focus loss commits all three at once.
 #[test]
 fn tab_between_channels_commits_only_when_the_edit_ends() {

@@ -357,3 +357,24 @@ fn values_past_a_range_are_drawn_as_stored() {
         "drawing changed nothing"
     );
 }
+
+/// The goalkeepers number's arrow-key step: one ArrowUp in the focused
+/// box adds one.
+// ST-WHEEL-07
+#[test]
+fn an_arrow_up_on_a_focused_number_adds_one() {
+    let (ctx, _events, mut window, mut view) = universal_view(crate::document::blank());
+    assert_eq!(universal(&view).min_goalkeepers, 1, "the start value");
+    let frame = settled(&mut window, &mut view, &ctx);
+    click(&mut window, spin_button(&frame.nodes, "1"), &mut view, &ctx);
+    // The settle frame lets the field's edit install its key filter.
+    window.draw(&mut view, &ctx);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the goalkeepers box holds the keyboard"
+    );
+    window.frame(vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert_eq!(universal(&view).min_goalkeepers, 2, "one ArrowUp added one");
+}

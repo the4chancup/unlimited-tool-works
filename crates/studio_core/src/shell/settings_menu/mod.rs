@@ -23,7 +23,8 @@ use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
     FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, checkbox_without_text,
-    combo_item, path_row, path_row_commit, row_label, step_choice, step_number, wheel_steps,
+    combo_item, number_arrows, path_row, path_row_commit, row_label, step_choice, step_number,
+    wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -244,13 +245,14 @@ impl SettingsMenu {
                 // clamps the stored value on sight and reports it changed, so merely opening
                 // the menu would rewrite a hand-set value (a portable folder's thread count
                 // from a bigger PC).
-                let mut response = ui
-                    .add(
-                        egui::DragValue::new(&mut thread_count)
+                let mut response = number_arrows(ui, &mut thread_count, 0..=max, |ui, value| {
+                    ui.add(
+                        egui::DragValue::new(value)
                             .range(0..=max)
                             .clamp_existing_to_range(false),
                     )
-                    .labelled_by(threads.id);
+                })
+                .labelled_by(threads.id);
                 if step_number(&mut thread_count, wheel_steps(ui, &response), 0..=max) {
                     response.mark_changed();
                 }
@@ -299,12 +301,14 @@ impl SettingsMenu {
                      game has no boots with this ID, and 4cc uses 55.",
                 );
                 let mut hide_boots_id = common.fpc_hide_boots_id;
-                let mut response = ui
-                    .add(
-                        egui::DragValue::new(&mut hide_boots_id)
-                            .range(fpc::HideIds::BOOTS)
-                            .clamp_existing_to_range(false),
-                    )
+                let mut response =
+                    number_arrows(ui, &mut hide_boots_id, fpc::HideIds::BOOTS, |ui, value| {
+                        ui.add(
+                            egui::DragValue::new(value)
+                                .range(fpc::HideIds::BOOTS)
+                                .clamp_existing_to_range(false),
+                        )
+                    })
                     .labelled_by(hide_boots.id);
                 let steps = wheel_steps(ui, &response);
                 if step_number(&mut hide_boots_id, steps, fpc::HideIds::BOOTS) {
@@ -324,13 +328,19 @@ impl SettingsMenu {
                      game has no gloves with this ID, and 4cc uses 11.",
                 );
                 let mut hide_gloves_id = common.fpc_hide_gloves_id;
-                let mut response = ui
-                    .add(
-                        egui::DragValue::new(&mut hide_gloves_id)
-                            .range(fpc::HideIds::GLOVES)
-                            .clamp_existing_to_range(false),
-                    )
-                    .labelled_by(hide_gloves.id);
+                let mut response = number_arrows(
+                    ui,
+                    &mut hide_gloves_id,
+                    fpc::HideIds::GLOVES,
+                    |ui, value| {
+                        ui.add(
+                            egui::DragValue::new(value)
+                                .range(fpc::HideIds::GLOVES)
+                                .clamp_existing_to_range(false),
+                        )
+                    },
+                )
+                .labelled_by(hide_gloves.id);
                 let steps = wheel_steps(ui, &response);
                 if step_number(&mut hide_gloves_id, steps, fpc::HideIds::GLOVES) {
                     response.mark_changed();
@@ -406,13 +416,15 @@ impl SettingsMenu {
                 // The interval is off while the check is, as the draft draws it;
                 // typed minutes clamp to at least 1 (the drag clamps entry only,
                 // as the rows above).
-                let mut response = add_enabled(
-                    ui,
-                    common.check_for_updates,
-                    egui::DragValue::new(&mut minutes)
-                        .range(1..=u32::MAX)
-                        .clamp_existing_to_range(false),
-                )
+                let mut response = number_arrows(ui, &mut minutes, 1..=u32::MAX, |ui, value| {
+                    add_enabled(
+                        ui,
+                        common.check_for_updates,
+                        egui::DragValue::new(value)
+                            .range(1..=u32::MAX)
+                            .clamp_existing_to_range(false),
+                    )
+                })
                 .labelled_by(interval.id);
                 if step_number(&mut minutes, wheel_steps(ui, &response), 1..=u32::MAX) {
                     response.mark_changed();

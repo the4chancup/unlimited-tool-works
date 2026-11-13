@@ -24,8 +24,8 @@ use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, step_choice, step_number,
-    wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, step_choice,
+    step_number, wheel_steps,
 };
 
 use crate::session::Session;
@@ -34,7 +34,7 @@ use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, option_name,
     palette,
 };
-use crate::view::{Panel, SaveView, edit_player, number_arrows, selected_player};
+use crate::view::{Panel, SaveView, edit_player, selected_player};
 
 /// `edit_flags`' Face checkbox.
 pub(super) const FACE_LABEL: &str = "Face";

@@ -8,8 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{
-    add_enabled, checkbox, collapsing_header, combo_item, step_choice, step_number, text_box,
-    wheel_steps,
+    add_enabled, checkbox, collapsing_header, combo_item, number_arrows, step_choice, step_number,
+    text_box, wheel_steps,
 };
 
 use super::Section;
@@ -644,11 +644,13 @@ fn map_number(
     keep_zero: bool,
 ) -> egui::Response {
     let mut value = map.get(key).copied().unwrap_or(0);
-    let mut response = ui.add(
-        egui::DragValue::new(&mut value)
-            .range(0..=max)
-            .clamp_existing_to_range(false),
-    );
+    let mut response = number_arrows(ui, &mut value, 0..=max, |ui, value| {
+        ui.add(
+            egui::DragValue::new(value)
+                .range(0..=max)
+                .clamp_existing_to_range(false),
+        )
+    });
     if step_number(&mut value, wheel_steps(ui, &response), 0..=max) {
         response.mark_changed();
     }

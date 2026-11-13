@@ -14,7 +14,8 @@ use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     add_enabled, add_enabled_ui, combo_item, menu_button, menu_separator, modal, modal_buttons,
-    modal_fit_contents, modal_sentence_gap, radio_value, step_choice, step_number, wheel_steps,
+    modal_fit_contents, modal_sentence_gap, number_arrows, radio_value, step_choice, step_number,
+    wheel_steps,
 };
 
 use crate::session::Session;
@@ -24,8 +25,8 @@ use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{
-    NUMBER_BOX, Panel, Refusal, SaveView, comparator, number_arrows, refuse_save_being_read,
-    selected_player, selected_team_id,
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, refuse_save_being_read, selected_player,
+    selected_team_id,
 };
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the

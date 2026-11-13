@@ -322,6 +322,43 @@ fn a_wheel_notch_over_threads_steps_the_thread_count_by_one() {
     assert_eq!(ctx.common().thread_count, 1, "one notch up is one more");
 }
 
+#[test]
+fn an_arrow_up_on_the_threads_box_steps_the_thread_count_by_one() {
+    let dir = TestDir::new("studio_core_settings_threads_arrow");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, ctx, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    assert_eq!(ctx.common().thread_count, 0, "the premise: automatic");
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    click(
+        &egui_ctx,
+        &mut app,
+        widget_on_row(&nodes, "Threads", Role::SpinButton),
+    );
+    // The settle frame lets the field's edit install its key filter.
+    frame(&egui_ctx, &mut app, Vec::new(), true);
+    assert!(
+        egui_ctx.egui_wants_keyboard_input(),
+        "premise: the Threads box holds the keyboard"
+    );
+    frame(
+        &egui_ctx,
+        &mut app,
+        vec![key(egui::Key::ArrowUp, true)],
+        true,
+    );
+    assert_eq!(ctx.common().thread_count, 1, "one ArrowUp is one more");
+}
+
 // The `Memory cap` row's entry range accepts a fraction of a percent (the common
 // settings allow `0 < percent <= 100`).
 #[test]

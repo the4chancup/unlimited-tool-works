@@ -2,7 +2,8 @@
 //! as the system's own controls do: `wheel_steps` reads the wheel for one
 //! control, and `step_choice`, `cycle_choice` and `step_number` turn its
 //! steps into the combo's next item, a toggle's next choice or the number's
-//! next value.
+//! next value. `number_arrows` gives a whole-number drag value the
+//! one-per-press arrow-key step egui's quarter-point key step cannot.
 
 use std::ops::RangeInclusive;
 
@@ -258,6 +259,46 @@ pub fn step_number<N: Numeric>(value: &mut N, steps: i32, range: RangeInclusive<
     true
 }
 
+/// A whole-number field's arrow-key step: `value` moved one per
+/// ArrowUp/ArrowDown pressed this frame while the field `add` draws holds
+/// the keyboard, clamped inside `range` as `step_number` does, the presses
+/// consumed first so the drag value's own key step never sees them — egui
+/// steps a key press by the drag speed, a quarter point, which a whole
+/// number rounds back to where it was. The drag speed itself is
+/// untouched, so a drag moves the field as before. The field's id is
+/// only known once drawn, so the last frame's `response.id` stands in,
+/// kept under the call's widget position (`auto_id_with`, stable for a
+/// field drawn every frame). `mark_changed` fires on a moved `value`,
+/// as the wheel's `step_number` makes the caller do.
+pub fn number_arrows<N: Numeric>(
+    ui: &mut egui::Ui,
+    value: &mut N,
+    range: RangeInclusive<N>,
+    add: impl FnOnce(&mut egui::Ui, &mut N) -> egui::Response,
+) -> egui::Response {
+    let key = ui.auto_id_with("number field arrows");
+    let focused = ui
+        .data(|data| data.get_temp::<egui::Id>(key))
+        .is_some_and(|id| ui.memory(|memory| memory.has_focus(id)));
+    let steps = if focused {
+        ui.input_mut(|input| {
+            let up = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
+            let down = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
+            i32::try_from(up).expect("a frame's key presses fit an i32")
+                - i32::try_from(down).expect("a frame's key presses fit an i32")
+        })
+    } else {
+        0
+    };
+    let stepped = step_number(value, steps, range);
+    let mut response = add(ui, value);
+    ui.data_mut(|data| data.insert_temp(key, response.id));
+    if stepped {
+        response.mark_changed();
+    }
+    response
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -342,11 +383,13 @@ mod tests {
                         // Room above the controls, so a pane turn of two
                         // notches leaves them in view.
                         ui.add_space(100.0);
-                        let mut drag = add_enabled(
-                            ui,
-                            drag_enabled,
-                            egui::DragValue::new(&mut value).range(0..=255),
-                        );
+                        let mut drag = number_arrows(ui, &mut value, 0..=255, |ui, value| {
+                            add_enabled(
+                                ui,
+                                drag_enabled,
+                                egui::DragValue::new(value).range(0..=255),
+                            )
+                        });
                         if step_number(&mut value, wheel_steps(ui, &drag), 0..=255) {
                             drag.mark_changed();
                         }
@@ -636,6 +679,38 @@ mod tests {
             "the same scroll with the switch on: offset {}",
             window.offset
         );
+    }
+
+    // ST-WHEEL-07
+    #[test]
+    fn an_arrow_press_steps_the_drag_value_being_typed_by_one() {
+        let mut window = Window::new();
+        for events in click(window.drag_rect.center()) {
+            window.frame(events);
+        }
+        // The settle frame lets the field's edit install its key filter,
+        // which keeps the arrows for itself.
+        window.frame(Vec::new());
+        assert!(
+            window.ctx.egui_wants_keyboard_input(),
+            "premise: the drag value holds the keyboard"
+        );
+        let press = |key| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        };
+        window.frame(vec![press(egui::Key::ArrowUp)]);
+        assert_eq!(window.value, 181, "one ArrowUp added one");
+        window.frame(vec![press(egui::Key::ArrowDown)]);
+        window.frame(vec![press(egui::Key::ArrowDown)]);
+        assert_eq!(window.value, 179, "two ArrowDowns took two");
+        window.value = 255;
+        window.frame(Vec::new());
+        window.frame(vec![press(egui::Key::ArrowUp)]);
+        assert_eq!(window.value, 255, "at 255 an ArrowUp stays 255");
     }
 
     #[test]
