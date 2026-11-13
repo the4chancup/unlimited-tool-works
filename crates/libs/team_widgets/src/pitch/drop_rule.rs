@@ -7,73 +7,8 @@
 //! overalls pick between them, so the same spot gives different players
 //! different positions.
 
+use pes_savefile::model::formation_rule::{AREAS_A, AREAS_B, WIDE};
 use pes_savefile::model::tactics::Formation;
-
-/// A position's pitch area in stored units, bounds inclusive (x 0 to
-/// 104 across, y 0 to 48 up).
-#[derive(Clone, Copy)]
-pub(super) struct Rect {
-    pub(super) y_min: u8,
-    pub(super) y_max: u8,
-    pub(super) x_min: u8,
-    pub(super) x_max: u8,
-}
-
-impl Rect {
-    /// The point is inside the area, bounds included.
-    fn contains(self, x: u8, y: u8) -> bool {
-        self.y_min <= y && y <= self.y_max && self.x_min <= x && x <= self.x_max
-    }
-}
-
-/// One table row, `(y_min, y_max, x_min, x_max)` as the tables store it.
-const fn rect(y_min: u8, y_max: u8, x_min: u8, x_max: u8) -> Rect {
-    Rect {
-        y_min,
-        y_max,
-        x_min,
-        x_max,
-    }
-}
-
-/// The two area tables the game holds per position, indexed by the
-/// position byte (GK 0 to CF 12); a position's area holds a point when
-/// either row does. The second table widens the first's left and
-/// central rows out to the pitch's edges and its top rows to y 48 —
-/// the right-side rows it leaves at x 99 — and both are kept as the
-/// game has them. The first table's rows are also the areas a held
-/// starter lights.
-pub(super) const AREAS_A: [Rect; 13] = [
-    rect(0, 3, 52, 56),   // GK
-    rect(4, 15, 5, 99),   // CB
-    rect(4, 15, 5, 20),   // LB
-    rect(4, 15, 84, 99),  // RB
-    rect(16, 25, 21, 83), // DMF
-    rect(16, 34, 5, 99),  // CMF
-    rect(16, 34, 5, 20),  // LMF
-    rect(16, 34, 84, 99), // RMF
-    rect(26, 34, 21, 83), // AMF
-    rect(35, 47, 5, 20),  // LWF
-    rect(35, 47, 84, 99), // RWF
-    rect(35, 47, 5, 99),  // SS
-    rect(40, 47, 21, 83), // CF
-];
-/// The second table; `AREAS_A`'s doc explains it.
-const AREAS_B: [Rect; 13] = [
-    rect(0, 3, 52, 56),   // GK
-    rect(4, 15, 0, 104),  // CB
-    rect(4, 15, 0, 20),   // LB
-    rect(4, 15, 84, 99),  // RB
-    rect(16, 25, 21, 83), // DMF
-    rect(16, 34, 0, 104), // CMF
-    rect(16, 34, 0, 20),  // LMF
-    rect(16, 34, 84, 99), // RMF
-    rect(26, 34, 21, 83), // AMF
-    rect(35, 48, 0, 20),  // LWF
-    rect(35, 48, 84, 99), // RWF
-    rect(35, 48, 0, 104), // SS
-    rect(40, 48, 21, 83), // CF
-];
 
 /// The full-width bands' defaults, in the order the game tries them:
 /// CB, CMF, SS.
@@ -81,11 +16,6 @@ const BAND_DEFAULTS: [u8; 3] = [1, 5, 11];
 /// The positions tried for a candidate, in the game's order: LB, RB,
 /// DMF, LMF, RMF, AMF, LWF, RWF, CF, then CB and SS.
 const CANDIDATES: [u8; 11] = [2, 3, 4, 6, 7, 8, 9, 10, 12, 1, 11];
-/// The wide positions (LB, RB, LMF, RMF, LWF, RWF): one is offered
-/// only when no other slot holds it; the rest are always free, however
-/// many slots share them.
-const WIDE: [u8; 6] = [2, 3, 6, 7, 9, 10];
-
 /// The positions the snapped point `(x, y)` in stored units offers
 /// `slot` of `formation`, as the game's drag and its Select Position
 /// menu offer them: the band's default (the first of `BAND_DEFAULTS`

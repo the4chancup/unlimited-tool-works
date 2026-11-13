@@ -5,9 +5,9 @@
 //! his position changes: the drop rule decides that, from every
 //! position's area and his overalls.
 
+use pes_savefile::model::formation_rule::{AREAS_A, PositionArea};
 use studio_core::theme::Palette;
 
-use super::drop_rule::{self, AREAS_A};
 use super::{SPOT_X0, SPOT_XS, SPOT_Y0, SPOT_YS};
 
 /// The canvas rectangles a starter rated at `rated` (indexed by the
@@ -64,7 +64,7 @@ pub(super) fn paint_dim(
 /// halfway between their last units. A row at the table's edge (x 5 or
 /// 99, y 47) reaches the canvas' edge instead, as the game's lit panels
 /// do, and the result is clipped to the canvas.
-fn area_rect(canvas: egui::Rect, row: drop_rule::Rect) -> egui::Rect {
+fn area_rect(canvas: egui::Rect, row: PositionArea) -> egui::Rect {
     let x = |units: f32| canvas.left() + SPOT_X0 + SPOT_XS * units;
     let y = |units: f32| canvas.top() + SPOT_Y0 - SPOT_YS * units;
     let left = if row.x_min <= 5 {
