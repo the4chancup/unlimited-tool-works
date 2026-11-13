@@ -329,14 +329,17 @@ if (localStorage.getItem("crate_map_theme") === "light")
 </script></head><body>
 <button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how work moves from a plan to a release</h1>
-<p>Each row is one participant, each column one stage. The lead plans, briefs, reviews
-and talks to the maintainer; sidekicks implement, two or three at once, the release's blocking
-path first; up to three reviewer families critique a surface, cheapest first, as deep as a
-defect in it would cost; tests, gates and mutation runs measure what reading cannot.
-Every arrow points from a step to one it feeds. Details live in <code>AGENTS.md</code>,
-<code>docs/CONTRIBUTING.md</code> and <code>docs/RUNBOOK.md</code>.</p>
-<p class="key">Click a step to keep it highlighted and put it in the address
-(<code>#brief</code>), again to let go:<span class="uses"></span>what it feeds
+<p>Each row is one participant and each column one stage, and every arrow points from a step
+to one it feeds. The maintainer is the person who runs the project. The lead, a Claude
+session, plans, writes briefs, reviews the work and talks to the maintainer. Sidekicks, other
+AI sessions, implement the briefs two or three at once, starting with the steps the next
+release cannot go out without. Up to three reviewers from different model families critique
+each piece of work, cheapest first, and the more a defect in it would cost, the deeper it is
+reviewed. Tests, gates and mutation runs measure what reading cannot. Details live in the
+repository's <code>AGENTS.md</code>, <code>docs/CONTRIBUTING.md</code> and
+<code>docs/RUNBOOK.md</code>.</p>
+<p class="key">Click a step to keep it highlighted and add it to the page address
+(<code>#brief</code>); click it again to let go. Arrows:<span class="uses"></span>what it feeds
 <span class="usedby"></span>what feeds it</p>
 <p id="about"><span class="hint">Hover over a step to see what it is.</span></p>
 SVG

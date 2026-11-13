@@ -15,16 +15,17 @@ UTW save-editor export-teams-list <save> [--yes]
 **Writing a save**
 
 A command that writes a save reads the one `--base` names and writes the one `--out` names,
-which may be the same file. A file already at `--out` is first copied to `<file>.bak` (one
-level deep: the next write replaces that copy). No command creates a save from nothing.
+which may be the same file. It prints its lines only once `--out` is written, so a write that
+fails prints only its failure. A file already at `--out` is first copied to `<file>.bak`, and
+only one copy is kept: the next write replaces it. No command creates a save from nothing.
 
 **While the game is running**
 
-While the PES of the save's version is running, the game writes the save it holds over the file
-when you leave its Edit mode after changing anything there, so a save written while Edit mode
-is open is lost then unless Edit mode's Load reads it in first. A command that writes a save
-therefore writes it while the game runs only when you add `--edit-mode-closed`, which says you
-have closed Edit mode.
+While the PES version the save belongs to is running, the game holds its own copy of the save.
+When you leave Edit mode after changing anything there, the game writes that copy over the
+file, so a save a command wrote while Edit mode was open is lost, unless Edit mode's Load
+read it in first. That is why, while the game runs, a command writes a save only when you add
+`--edit-mode-closed`, which tells it you have closed Edit mode.
 
 Without it, the command writes nothing and names the running game: close Edit mode, then run
 the command again with `--edit-mode-closed`. Opening Edit mode then reads the save in without
@@ -51,7 +52,7 @@ save has it, so a file holding only `[team] id` and `[players.03] name = "Snuffy
 player and nothing else.
 
 A file written from another PES version is converted on the way in, and each value that could
-not be taken as written is one line:
+not be taken as written prints one line:
 
 - a key the save's version has no field for (`import_key_not_in_version`);
 - a value it cannot store (`import_value_not_encodable`);
@@ -70,15 +71,15 @@ compiled players' motions and, for exports carrying the `write_names` marker, th
 patch must be for the save's PES version and the suite's boots and gloves allocation scheme, or
 it is refused with nothing written.
 
-Each team of the patch is one line, `patch_team_applied`, listed only when at least one of its
+Each team of the patch prints one line, `patch_team_applied`, but only when at least one of its
 players was written: a team whose patch players the save lacks entirely is not listed. A team
-or a player the save does not hold is the error line `patch_team_not_in_save` or
-`patch_player_not_in_save`. The rest of the patch is applied and written, and the command exits
-1. A save holding none of the patch's players, written back over itself (`--out` the same file
-as `--base`), is left as it was, so its `.bak` stays your previous backup.
+or a player the save does not hold prints the error line `patch_team_not_in_save` or
+`patch_player_not_in_save`. The rest of the patch is applied and written, and the command
+exits 1.
 
-Like every command that writes a save, its lines come once `--out` is written (or, for a save
-left as it was, once nothing needs writing), so a write that fails prints only its failure.
+When `--out` is the same file as `--base` and the save holds none of the patch's players, the
+save is left as it was, so its `.bak` stays your previous backup. The lines then print once
+the command finds that nothing needs writing.
 
 **Comparing two saves**
 
@@ -90,12 +91,13 @@ and leaves the game's own teams out:
   second's;
 - a player who is in one save alone is `player_only_in`.
 
-`--aesthetics` keeps the look's fields alone (appearance id, boots, gloves, base copy, physique,
+`--aesthetics` keeps only the look's fields (appearance id, boots, gloves, base copy, physique,
 strip, face), and `--gameplay` keeps everything else (names, basics, abilities, positions,
 skills, motion).
-With `--json` the report is one JSON document on stdout instead, for tooling. It lists the
-players with their changed fields, then the players only one save holds.
-Nothing else is printed.
+
+With `--json` the report is instead one JSON document on stdout, for scripts to read. It lists
+the players with their changed fields, then the players only one save holds. Nothing else is
+printed.
 
 Differences are the output, not errors, so the exit code is 0. Two saves of different versions
 are refused.
@@ -106,17 +108,18 @@ are refused.
 cup range, 701 to 920, or the ones `--teams` names as a comma-separated list of ids and
 inclusive ranges (`701,705-710`).
 
-The ruleset is the file `--rules` names, read from where the command runs; when no file has
-that name, the built-in ruleset of that short name (`--rules dbc7`, `--rules vgl27`), and a
-value that is neither is refused, listing the built-in names. Without `--rules`, it is the one
-picked in the dropdown on the window's toolbar (the `aatf_ruleset` setting): a built-in ruleset or a
-copy in the data folder's `rules` folder. When that copy is gone, the warning line
-`aatf_ruleset_gone` says so and the official ruleset built into Unlimited Tool Works, 4cc
-Autumn 26, is used instead.
+`--rules` names a rules file, read from where the command runs. When no file has
+that name, it names a built-in ruleset by its short name (`--rules dbc7`, `--rules vgl27`). A
+value that is neither is refused, and the refusal lists the built-in names. Without `--rules`,
+the ruleset is the one picked in the dropdown on the Save editor's toolbar (the `aatf_ruleset`
+setting): a built-in ruleset or a copy in the data folder's `rules` folder. When that copy is
+gone, the warning line `aatf_ruleset_gone` says so and the official ruleset built into
+Unlimited Tool Works, 4cc Autumn 26, is used instead.
 
 Each violation prints as one `aatf_violation` line with the team, the player's id for a
 player's violation, the rule and what is wrong, and the teams print in id order. A team
-whose check cannot run is the error line `aatf_check_failed`, and the rest are still checked.
+whose check cannot run prints the error line `aatf_check_failed`, and the rest are still
+checked.
 An error-severity violation makes the command exit 1, while warnings alone leave it at 0.
 
 A rules file that does not load is refused, naming the line and column or the key path it
@@ -125,10 +128,10 @@ refused as well.
 
 **Updating the teams list**
 
-`export-teams-list` merges the save's teams into the `teams_list.txt` of the data folder (the
-list the Team compiler resolves export names against, or the list shipped with Unlimited Tool
-Works when there is no file yet): every team whose name is slash-wrapped (`/co/`) and whose id
-is in the cup range, 701 to 920.
+`export-teams-list` merges the save's teams into `teams_list.txt` in the data folder, the list
+the Team compiler looks export names up in; when that file does not exist yet, the merge starts
+from the list shipped with Unlimited Tool Works. It takes every team whose name is
+slash-wrapped (`/co/`) and whose id is in the cup range, 701 to 920.
 
 It prints what the merge does, one line each:
 
@@ -142,8 +145,9 @@ It prints what the merge does, one line each:
 - how many rows stay as they were (`teams_list_kept`).
 
 Without `--yes` it stops there (`teams_list_not_written`); with `--yes` it writes the merged
-list (`teams_list_written`), with the dropped changes left out. A data folder that cannot take
-the file, or none chosen yet, is the error line `teams_list_read_only` and nothing is written.
+list (`teams_list_written`), with the dropped changes left out. When the data folder cannot
+take the file, or none is chosen yet, the command prints the error line `teams_list_read_only`
+and writes nothing.
 The exit code is 1 when an error line was printed, and 0 otherwise.
 
 **Exit codes**

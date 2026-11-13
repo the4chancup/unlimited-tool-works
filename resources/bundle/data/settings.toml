@@ -3,8 +3,9 @@
 # Lines starting with # are comments: UTW.exe ignores them.
 # Edit this file with UTW.exe closed, or change the settings in the window instead
 # (the gear at the bottom of the left bar).
-# Text goes between quotes. A folder path goes between single quotes ('like this'), so
-# its backslashes are read as they are written.
+# Text goes between quotes, while numbers, true and false go without them. A folder
+# path with a backslash (\) in it goes between single quotes ('like this'), so its
+# backslashes are read as they are written.
 # A setting whose line is removed goes back to its default.
 
 
@@ -18,8 +19,9 @@ pes_version = 17
 # The folder where the PES exe is.
 # The ** in it is replaced by pes_version's number: with pes_version = 19, the default
 # below means C:\Program Files (x86)\Pro Evolution Soccer 2019.
-# A PES installed somewhere else can have its own folder: see pes_folders, at the end
-# of this section.
+# If your PES is installed somewhere else, write its folder here. When you have several
+# PES versions in different places, each can have its own folder: see pes_folders, at
+# the end of this section.
 # Default: 'C:\Program Files (x86)\Pro Evolution Soccer 20**'
 pes_folder_path = 'C:\Program Files (x86)\Pro Evolution Soccer 20**'
 
@@ -28,12 +30,12 @@ pes_folder_path = 'C:\Program Files (x86)\Pro Evolution Soccer 20**'
 # Default: "exports"
 exports_folder_path = "exports"
 
-# How many processor threads a compile or an upgrade uses.
+# How many processor threads a compile uses.
 # 0 means all of them but one.
 # Default: 0
 thread_count = 0
 
-# The most memory a compile or an upgrade may use, in percent of the PC's memory.
+# The most memory a compile may use, in percent of the PC's memory.
 # Default: 80.0
 memory_cap_percent = 80.0
 
@@ -64,10 +66,10 @@ fpc_hide_boots_id = 55
 # Default: 11
 fpc_hide_gloves_id = 11
 
-# (Only needed when a PES is installed somewhere other than pes_folder_path says.)
-# To give that PES its own folder, remove the # at the start of the two lines below,
-# then write the PES number and its folder. Add one line like the second for each such
-# PES. These lines must stay the last ones of this section.
+# (Only needed when several PES versions are installed in different places.)
+# To give a PES its own folder, remove the # at the start of the two lines below, then
+# write the PES number and its folder. Add one line like the second for each other PES
+# that needs one. These lines must stay the last ones of this section.
 # [common.pes_folders]
 # 21 = 'D:\Games\eFootball PES 2021'
 
@@ -92,7 +94,7 @@ recent_files = []
 
 # The ruleset the AATF checks use, the same as the toolbar's ruleset dropdown.
 # Accepted values: a built-in ruleset's name (like "dbc7" or "autumn26"), or the file
-# name of a ruleset imported into the rules folder inside the data folder.
+# name of a ruleset imported into the rules folder, next to this file.
 # Default: "autumn26"
 aatf_ruleset = "dbc7"
 
@@ -117,7 +119,7 @@ live_window = false
 # Default: false
 aesthetics_from_exports = false
 
-# If true, names scroll, as they do in the game.
+# If true, a name too long for its badge on the Tactics pitch scrolls, as in the game.
 # The same as the "Scroll names" box on the Tactics formation bar.
 # Default: true
 scroll_names = true
@@ -126,10 +128,10 @@ scroll_names = true
 [team-compiler]
 
 # (Usually only needed when making a cup's DLC.)
-# If true, the teams go into several numbered CPKs (4cc_41_teams, 4cc_42_teams and so on,
-# see teams_cpk_name), each filled up to cpk_part_max_size, and the files every team
-# shares go into the bins CPK (see bins_cpk_name).
-# If false, everything goes into the single CPK named by cpk_name.
+# If true, the teams are split over several numbered CPKs (4cc_41_teams, 4cc_42_teams
+# and so on), each filled up to cpk_part_max_size, while the files every team shares go
+# into a CPK of their own. teams_cpk_name and bins_cpk_name set their names.
+# If false, all of them go into the single CPK named by cpk_name.
 # Default: false
 multicpk_mode = false
 
@@ -167,8 +169,8 @@ cpk_part_max_size = 3221225472
 # Default: "4cc_08_bins"
 bins_cpk_name = "4cc_08_bins"
 
-# The name of the referees CPK, without .cpk, made when the exports include a /refs/
-# export.
+# The name of the referees CPK, without .cpk. It is made when the exports include a
+# /refs/ export.
 # Default: "4cc_18_referees"
 refs_cpk_name = "4cc_18_referees"
 
