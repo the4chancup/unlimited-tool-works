@@ -1781,7 +1781,8 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-cgu 2026-11-13 (the lead): `codegen-units = 1` timed on the AATF check of a
     220-team PES 2017 save and not taken, 2.230 s against 2.280 s, inside either build's
     spread (DECISIONS 2026-11-13; `.tmp/0_0_2/cgu/`)
-  - [ ] 0.0.2-text the member-facing text reread (the maintainer, 2026-11-13: Opus agents
+  - [ ] 0.0.2-text the member-facing text reread, merged 2026-11-13 (`9ed7606d`; open: the
+    slices below still unticked) (the maintainer, 2026-11-13: Opus agents
     apply `~/.claude/rules/shakespeare.md`'s three readings to the readmes, the help, the UI
     text, the web pages and the comments of the TOML files a member edits; plans and specs
     later). Branch `text/shakespeare` (worktree `4cc-studio-temp/shakespeare`), merged only
@@ -1800,7 +1801,7 @@ briefs, review loops, gates and mutation runs as for any step.
       rulings are in them). The Team compiler's catalog then names its settings by key;
       the step that builds its settings form (Phase 8) gives the catalog the form's labels
       back (DECISIONS 2026-11-13, on the branch)
-    - [ ] the maintainer's three answers of 2026-11-13, applied on the branch once wave 3's
+    - [x] done with wave 4 (`f32b3ab5`) and the merge `9ed7606d`: the maintainer's three answers of 2026-11-13, applied on the branch once wave 3's
       sidekicks have left the files (one SWE-2 brief; a DECISIONS entry with them):
       (1) where a member posts a log or a migration they cannot fix: "on the /aesco/ server
       or the divegrass thread", Red's crash handler's words (`Engines/compiler_run.bat`); the

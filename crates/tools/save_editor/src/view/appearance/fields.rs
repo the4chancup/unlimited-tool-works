@@ -295,9 +295,10 @@ pub(crate) const MOTIONS: [MotionField; 9] = [
 ];
 
 /// The strip palettes' swatch colours, approximations of the spectacles
-/// colours' names (`SettingKey::SpectaclesColor`), which the gloves colour
-/// shares; the wrist tape's colours are assumed to be the same set,
-/// unverified.
+/// colours' names (`SettingKey::SpectaclesColor`). The gloves colour has the
+/// same eight in the same order, as PES 2019's Edit mode lists them. The
+/// wrist tape's are drawn from this set too, wrongly: the game offers four
+/// (the strip's colour, white, black, beige).
 const STRIP_COLORS: [[u8; 3]; 8] = [
     [0xE8, 0xE8, 0xE8],
     [0x1C, 0x1C, 0x1C],
