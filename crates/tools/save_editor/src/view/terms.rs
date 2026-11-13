@@ -81,8 +81,9 @@ fn report_term(diff: &PlayerDiff) -> Term {
 }
 
 /// `diffs`' rows in the views' terms, for the unsaved-changes prompt: one
-/// `Term` per row in `diffs`' order — a team colour's three channel diffs
-/// merge into the swatch's one row, at the first channel's place. `team`
+/// `Term` per row in `diffs`' order, beside the diffs it shows (what the
+/// row's X puts back) — a team colour's three channel diffs merge into the
+/// swatch's one row, at the first channel's place. `team`
 /// is the open save's entry (its tactics' eleven name the slots);
 /// `baseline_team` is the file-as-opened's, whose tactics an
 /// instruction-target row's old side is worded under and whose colour a
@@ -98,24 +99,25 @@ pub(super) fn team_row_terms(
     old_roster: &[RosterRow<'_>],
     new_roster: &[RosterRow<'_>],
     diffs: &[TeamDiff],
-) -> Vec<Term> {
+) -> Vec<(Term, Vec<TeamDiff>)> {
     let mut terms = Vec::with_capacity(diffs.len());
     let mut colours_done = [false; 2];
     for diff in diffs {
         match colour_index(diff) {
             Some(colour) if !colours_done[colour] => {
                 colours_done[colour] = true;
-                terms.push(colour_term(baseline_team, team, colour));
+                let channels = diffs
+                    .iter()
+                    .filter(|other| colour_index(other) == Some(colour))
+                    .cloned()
+                    .collect();
+                terms.push((colour_term(baseline_team, team, colour), channels));
             }
             // A later channel of an already merged colour is no row.
             Some(_) => {}
-            None => terms.push(team_row_term(
-                version,
-                team,
-                baseline_team,
-                old_roster,
-                new_roster,
-                diff,
+            None => terms.push((
+                team_row_term(version, team, baseline_team, old_roster, new_roster, diff),
+                vec![diff.clone()],
             )),
         }
     }

@@ -1,12 +1,13 @@
-//! Applying a comparator row to a player entry: the replayed side of the
-//! rows `ops::compare` produces, each applied only when the entry holds
-//! the row's old value.
+//! Applying a comparator row to a player or team entry: the replayed side
+//! of the rows `ops::compare` produces, and, reversed, the old value put
+//! back; each applied only when the entry holds the row's old value.
 
 use crate::codec::CodecError;
 use crate::model::player::PlayerEntry;
-use crate::ops::compare::PlayerDiff;
+use crate::model::team::TeamEntry;
+use crate::ops::compare::{PlayerDiff, TeamDiff};
 use crate::ops::fingerprint::face_hash;
-use crate::schema::fields::PlayerText;
+use crate::schema::fields::{PlayerText, TeamText};
 
 /// A comparator row could not be applied to the entry.
 #[derive(Debug, thiserror::Error)]
@@ -75,6 +76,51 @@ pub fn apply_player(entry: &mut PlayerEntry, row: &PlayerDiff) -> Result<(), App
     Ok(())
 }
 
+/// `apply_player`'s twin for a team row: the row's old value must be what
+/// the team holds (`Stale` naming what it holds, the team untouched,
+/// otherwise), then the team takes the row's new one.
+pub fn apply_team(entry: &mut TeamEntry, row: &TeamDiff) -> Result<(), ApplyError> {
+    let stale = |held: u32| ApplyError::Stale {
+        holds: held.to_string(),
+    };
+    match row {
+        TeamDiff::Field { field, old, new } => {
+            let held = entry.get(*field)?;
+            if held != *old {
+                return Err(stale(held));
+            }
+            entry.set(*field, *new)?;
+        }
+        TeamDiff::Text { text, old, new } => {
+            let held = match text {
+                TeamText::Name => &mut entry.name,
+                TeamText::ShortName => &mut entry.short_name,
+            };
+            if *held != *old {
+                return Err(ApplyError::Stale {
+                    holds: held.clone(),
+                });
+            }
+            *held = new.clone();
+        }
+        TeamDiff::Roster { field, old, new } => {
+            let held = entry.roster_get(*field)?;
+            if held != *old {
+                return Err(stale(held));
+            }
+            entry.roster_set(*field, *new)?;
+        }
+        TeamDiff::Tactics { field, old, new } => {
+            let held = entry.tactics_get(*field)?;
+            if held != *old {
+                return Err(stale(held));
+            }
+            entry.tactics_set(*field, *new)?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use pes_version::PesVersion;
@@ -101,7 +147,8 @@ mod tests {
         (a, b, rows.into_iter().next().expect("one row"))
     }
 
-    /// `a` with `row` applied equals `b`.
+    /// `a` with `row` applied equals `b`, and `b` with the reversed row
+    /// equals `a`.
     fn applies(a: &PlayerEntry, row: &PlayerDiff, b: &PlayerEntry) {
         let mut applied = a.clone();
         apply_player(&mut applied, row).expect("the row applies");
@@ -111,6 +158,69 @@ mod tests {
                 .is_empty(),
             "the applied entry equals the after entry"
         );
+        let mut back = b.clone();
+        apply_player(&mut back, &row.reversed()).expect("the reversed row applies");
+        assert_eq!(&back, a, "the reversed row puts the old value back");
+    }
+
+    /// Team 701 of the PES 21 fixture and `f`'s edit of it, with `f`'s
+    /// single `compare_teams` row.
+    fn team_row_of(f: fn(&mut TeamEntry)) -> (TeamEntry, TeamEntry, TeamDiff) {
+        let a = crate::test_support::open(PesVersion::Pes21)
+            .0
+            .team(701)
+            .expect("the fixture holds team 701")
+            .clone();
+        let mut b = a.clone();
+        f(&mut b);
+        let rows = crate::ops::compare::compare_teams(&a, &b, schema_for(PesVersion::Pes21))
+            .expect("compares");
+        assert_eq!(rows.len(), 1, "one edit, one row: {rows:?}");
+        (a, b, rows.into_iter().next().expect("one row"))
+    }
+
+    // Each kind of team row applies, its reversed row puts the old value
+    // back, and a row whose old value the team does not hold is refused
+    // with the team untouched.
+    #[test]
+    fn a_team_row_applies_both_ways_and_a_stale_one_is_refused() {
+        // The kind of row, as the cases below name it.
+        fn kind_of(row: &TeamDiff) -> &'static str {
+            match row {
+                TeamDiff::Field { .. } => "field",
+                TeamDiff::Text { .. } => "text",
+                TeamDiff::Roster { .. } => "roster",
+                TeamDiff::Tactics { .. } => "tactics",
+            }
+        }
+        let cases = [
+            (
+                "field",
+                (|team: &mut TeamEntry| team.manager_id = team.manager_id.map(|id| id + 1))
+                    as fn(&mut TeamEntry),
+            ),
+            ("text", |team| team.name.push('Z')),
+            ("roster", |team| team.roster[0].number += 1),
+            ("tactics", |team| {
+                team.tactics.presets[0].sliders.support_range ^= 1;
+            }),
+        ];
+        for (kind, edit) in cases {
+            let (a, b, row) = team_row_of(edit);
+            assert_eq!(kind_of(&row), kind, "{row:?}");
+            let mut applied = a.clone();
+            apply_team(&mut applied, &row).expect(kind);
+            assert_eq!(applied, b, "{kind}: the row applies");
+            let mut back = b.clone();
+            apply_team(&mut back, &row.reversed()).expect(kind);
+            assert_eq!(back, a, "{kind}: the reversed row puts the old value back");
+            let mut entry = b.clone();
+            assert!(
+                matches!(apply_team(&mut entry, &row), Err(ApplyError::Stale { .. })),
+                "{kind}: a stale row is refused"
+            );
+            assert_eq!(entry, b, "{kind}: a stale row changes nothing");
+        }
     }
 
     /// `row` on `b` (whose held value is the row's `new`, not its `old`) is

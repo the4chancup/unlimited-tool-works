@@ -1,7 +1,7 @@
 mod journal;
 
 use pes_savefile::model::ingame_face::IngameFace;
-use pes_savefile::schema::fields::PlayerField;
+use pes_savefile::schema::fields::{PlayerField, TeamField};
 use pes_savefile::schema::ingame_face::IngameFaceField;
 
 use super::*;
@@ -618,6 +618,239 @@ fn a_save_makes_the_moved_order_the_files() {
             ]
         )],
         "the undone move against the written order"
+    );
+}
+
+/// `PlayerDiff::Field`'s Height row from `old` to `new`.
+fn height_diff(old: u32, new: u32) -> PlayerDiff {
+    PlayerDiff::Field {
+        field: PlayerField::Height,
+        old,
+        new,
+    }
+}
+
+/// The player `id`'s height in the open save.
+fn height(session: &Session, id: u32) -> u8 {
+    session.file().player(id).unwrap().basic.height
+}
+
+// A player's row put back writes the file's value into that field alone,
+// his other edit kept, as one undo step.
+#[test]
+fn a_players_row_put_back_is_one_undo_step() {
+    let mut session = told_apart("put_back_player");
+    let mut edited = session.file().player(70101).unwrap().clone();
+    assert_ne!(edited.basic.height, 190, "premise: a real change");
+    edited.basic.height = 190;
+    session.edit_player(1, edited);
+    let mut edited = session.file().player(70101).unwrap().clone();
+    let speed = edited.stats.speed;
+    edited.stats.speed = speed ^ 1;
+    session.edit_player(2, edited);
+    let speed_diff = PlayerDiff::Field {
+        field: PlayerField::Speed,
+        old: u32::from(speed),
+        new: u32::from(speed ^ 1),
+    };
+    let both = [(70101, vec![height_diff(171, 190), speed_diff.clone()])];
+    assert_eq!(session.unsaved_changes().unwrap().players, both, "premise");
+
+    session
+        .put_back(&PutBack::Player {
+            id: 70101,
+            diff: height_diff(171, 190),
+        })
+        .unwrap();
+    assert_eq!(height(&session, 70101), 171, "the file's height");
+    assert_eq!(
+        session.unsaved_changes().unwrap().players,
+        [(70101, vec![speed_diff])],
+        "the Speed row is still there"
+    );
+
+    assert!(session.undo());
+    assert_eq!(height(&session, 70101), 190, "one Undo brings it back");
+    assert_eq!(session.unsaved_changes().unwrap().players, both);
+}
+
+// A team's row put back, each kind in turn (a tactics field, a colour's
+// three channels, a roster slot's shirt number): its fields get the file's
+// values, the other rows stay, and one Undo brings it back.
+#[test]
+fn a_teams_row_put_back_is_one_undo_step() {
+    let mut session = told_apart("put_back_team");
+    let file_team = session.file().team(701).unwrap().clone();
+    let mut team = file_team.clone();
+    team.manager_id = team.manager_id.map(|id| id + 1);
+    team.tactics.presets[0].sliders.support_range ^= 1;
+    team.colors.as_mut().expect("PES 21 stores colours")[0] =
+        pes_savefile::model::team::TeamColor {
+            red: 10,
+            green: 20,
+            blue: 30,
+        };
+    team.roster[0].number += 1;
+    session.edit_team(1, team.clone());
+    let edited = session.unsaved_changes().unwrap().teams;
+    let [(701, all)] = edited.as_slice() else {
+        panic!("premise: team 701's rows: {edited:?}")
+    };
+    let is_manager = |diff: &TeamDiff| {
+        matches!(
+            diff,
+            TeamDiff::Field {
+                field: TeamField::ManagerId,
+                ..
+            }
+        )
+    };
+    let cases = [
+        (
+            "support range",
+            (|diff: &TeamDiff| matches!(diff, TeamDiff::Tactics { .. })) as fn(&TeamDiff) -> bool,
+            (|team: &TeamEntry| u32::from(team.tactics.presets[0].sliders.support_range))
+                as fn(&TeamEntry) -> u32,
+        ),
+        (
+            "colour 1",
+            |diff| {
+                matches!(
+                    diff,
+                    TeamDiff::Field {
+                        field: TeamField::Color1Red
+                            | TeamField::Color1Green
+                            | TeamField::Color1Blue,
+                        ..
+                    }
+                )
+            },
+            |team| {
+                let colour = team.colors.unwrap()[0];
+                u32::from_be_bytes([0, colour.red, colour.green, colour.blue])
+            },
+        ),
+        (
+            "shirt number",
+            |diff| matches!(diff, TeamDiff::Roster { .. }),
+            |team| u32::from(team.roster[0].number),
+        ),
+    ];
+    for (row, is_row, value) in cases {
+        let diffs: Vec<TeamDiff> = all.iter().filter(|diff| is_row(diff)).cloned().collect();
+        assert!(!diffs.is_empty(), "{row}: premise, its diffs");
+        assert_ne!(value(&file_team), value(&team), "{row}: premise");
+
+        session.put_back(&PutBack::Team { id: 701, diffs }).unwrap();
+        let current = session.file().team(701).unwrap();
+        assert_eq!(value(current), value(&file_team), "{row}: the file's value");
+        let left = session.unsaved_changes().unwrap().teams;
+        let [(701, left)] = left.as_slice() else {
+            panic!("{row}: the team's other rows are still there: {left:?}")
+        };
+        assert!(!left.iter().any(is_row), "{row}: its row is gone");
+        assert!(left.iter().any(is_manager), "{row}: the other rows stay");
+
+        assert!(session.undo(), "{row}");
+        assert_eq!(
+            value(session.file().team(701).unwrap()),
+            value(&team),
+            "{row}: one Undo brings it back"
+        );
+        assert_eq!(&session.unsaved_changes().unwrap().teams, &edited, "{row}");
+    }
+}
+
+// Two rows put back one after the other are two undo steps: each put-back
+// is sealed, so the second never joins the first's entry.
+#[test]
+fn two_rows_put_back_are_two_undo_steps() {
+    let mut session = told_apart("put_back_twice");
+    for (key, id) in [(1, 70101), (2, 70102)] {
+        let mut edited = session.file().player(id).unwrap().clone();
+        edited.basic.height = 190;
+        session.edit_player(key, edited);
+    }
+    for (id, old) in [(70101, 171), (70102, 172)] {
+        session
+            .put_back(&PutBack::Player {
+                id,
+                diff: height_diff(old, 190),
+            })
+            .unwrap();
+    }
+    assert_eq!(
+        (height(&session, 70101), height(&session, 70102)),
+        (171, 172)
+    );
+
+    assert!(session.undo());
+    assert_eq!(
+        (height(&session, 70101), height(&session, 70102)),
+        (171, 190),
+        "one Undo takes back the second put-back alone"
+    );
+}
+
+// A moved player's row put back writes the value of the record he came
+// from, not the file's on his new id.
+#[test]
+fn a_moved_players_row_put_back_takes_his_origins_value() {
+    let mut session = told_apart("put_back_moved");
+    session.move_player(701, 3, 6);
+    let mut edited = session.file().player(70107).unwrap().clone();
+    edited.basic.height = 190;
+    session.edit_player(1, edited);
+    assert_ne!(
+        session.baseline_player(70107).unwrap().basic.height,
+        174,
+        "premise: the file's 07 is another height than P04's"
+    );
+
+    session
+        .put_back(&PutBack::Player {
+            id: 70107,
+            diff: height_diff(174, 190),
+        })
+        .unwrap();
+    assert_eq!(height(&session, 70107), 174, "P04's height in the file");
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(changes.moves, [drag_04_to_07()], "the move stays");
+}
+
+// A `Player order` row put back: every player of the group on his place
+// in the file, an edit made on one of them after the move still his; one
+// Undo brings the move back.
+#[test]
+fn a_player_order_row_put_back_keeps_each_players_edits() {
+    let mut session = told_apart("put_back_order");
+    session.move_player(701, 3, 6);
+    let mut edited = session.file().player(70107).unwrap().clone();
+    assert_eq!(edited.name, "P04", "premise: P04 on 07");
+    edited.basic.height = 190;
+    session.edit_player(1, edited);
+    let (_, group) = drag_04_to_07();
+
+    session.put_back(&PutBack::Order(group)).unwrap();
+    let names: Vec<String> = (70104..=70107)
+        .map(|id| session.file().player(id).unwrap().name.clone())
+        .collect();
+    assert_eq!(names, ["P04", "P05", "P06", "P07"], "back on their places");
+    assert_eq!(height(&session, 70104), 190, "P04's edit is still his");
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(changes.players, [(70104, vec![height_diff(174, 190)])]);
+    assert!(changes.moves.is_empty(), "no group");
+
+    assert!(session.undo());
+    assert_eq!(session.file().player(70107).unwrap().name, "P04");
+    assert_eq!(height(&session, 70107), 190);
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(changes.players, [(70107, vec![height_diff(174, 190)])]);
+    assert_eq!(
+        changes.moves,
+        [drag_04_to_07()],
+        "one Undo brings the move back"
     );
 }
 

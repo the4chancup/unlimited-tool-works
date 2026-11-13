@@ -74,6 +74,39 @@ pub enum DiffScope {
 }
 
 impl PlayerDiff {
+    /// The same difference read the other way, `old` and `new` traded: the
+    /// row that writes the old value back (`ops::apply::apply_player`).
+    pub fn reversed(&self) -> PlayerDiff {
+        match self.clone() {
+            PlayerDiff::Field { field, old, new } => PlayerDiff::Field {
+                field,
+                old: new,
+                new: old,
+            },
+            PlayerDiff::Text { text, old, new } => PlayerDiff::Text {
+                text,
+                old: new,
+                new: old,
+            },
+            PlayerDiff::Face { field, old, new } => PlayerDiff::Face {
+                field,
+                old: new,
+                new: old,
+            },
+            PlayerDiff::FaceRun {
+                old,
+                new,
+                old_bits,
+                new_bits,
+            } => PlayerDiff::FaceRun {
+                old: new,
+                new: old,
+                old_bits: new_bits,
+                new_bits: old_bits,
+            },
+        }
+    }
+
     /// Aesthetics is the appearance block: its fields (the appearance id, the
     /// four appearance edit flags, boots/gloves/base-copy IDs, physique,
     /// strip), every `Face` and `FaceRun` row — the slice
@@ -314,6 +347,35 @@ pub enum TeamDiff {
         /// `b`'s stored value.
         new: u32,
     },
+}
+
+impl TeamDiff {
+    /// `PlayerDiff::reversed`'s twin: the row that writes the old value back
+    /// (`ops::apply::apply_team`).
+    pub fn reversed(&self) -> TeamDiff {
+        match self.clone() {
+            TeamDiff::Field { field, old, new } => TeamDiff::Field {
+                field,
+                old: new,
+                new: old,
+            },
+            TeamDiff::Text { text, old, new } => TeamDiff::Text {
+                text,
+                old: new,
+                new: old,
+            },
+            TeamDiff::Roster { field, old, new } => TeamDiff::Roster {
+                field,
+                old: new,
+                new: old,
+            },
+            TeamDiff::Tactics { field, old, new } => TeamDiff::Tactics {
+                field,
+                old: new,
+                new: old,
+            },
+        }
+    }
 }
 
 /// Every difference between two teams of the same version, for the Save
