@@ -1760,9 +1760,9 @@ briefs, review loops, gates and mutation runs as for any step.
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
   the organizer's order and the AATF check of the official save (the plan's paragraph)
-  - [ ] 0.0.2-cgu `codegen-units = 1` timed on the AATF check of a 220-team save, both
-    profiles (the maintainer: taken only if the app runs faster; DECISIONS "Test pre-releases
-    for Update now")
+  - [x] 0.0.2-cgu 2026-11-13 (the lead): `codegen-units = 1` timed on the AATF check of a
+    220-team PES 2017 save and not taken, 2.230 s against 2.280 s, inside either build's
+    spread (DECISIONS 2026-11-13; `.tmp/0_0_2/cgu/`)
   - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
     DECISIONS "Update now waits for 0.0.2", "Update now's dialog: what the plan left open"),
     postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand
@@ -2385,8 +2385,11 @@ briefs, review loops, gates and mutation runs as for any step.
       `plans/save_editor.md`, "Each version draws its own screen's pitch"). Nothing
       else of the pitch treats PES 2017's screen apart: the keeper's marker and the
       spot mapping are one set of constants for every version
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/formation/swe_range.md`, worktree
-      `review21`)
+    - [ ] its SWE-2 review 2026-11-13 (S-range r1, 3 of 6 accepted, the loop ends with
+      its rework): the arrow keys on the popover's focused X or Y stepped past the
+      range's ends; the range read from `formation_rule` instead of written twice; two
+      tests' position asserted. Rework running (SWE-2, the same session,
+      `.tmp/0_0_2/formation/brief_range_r1.md`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
