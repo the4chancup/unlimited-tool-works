@@ -2388,10 +2388,13 @@ SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto pl
            WHEN the unsaved changes list or the close prompt is opened
            THEN the move is one row, item team 701's name, label `Player order`, its old value
                 the places 04 to 07 with the players the file has on them and its new value
-                the same places with the players now on them, and no player has a row;
+                the same places with the players now on them, one place per line and the
+                row as high as its places, and no player has a row;
                 GIVEN the moved player's Height then edited THEN the list holds that row
-                and his one Height row, old and new values his own; GIVEN the move undone
-                THEN the list holds the Height row alone, under the player it was edited on;
+                and his one Height row, old and new values his own; GIVEN both undone THEN
+                the list is empty; GIVEN a player's Height edited, then that player dragged
+                to another place, then the drag undone THEN the list holds the Height row
+                alone, under the player it was edited on;
                 GIVEN a second, separate pair of the team swapped THEN the list holds two
                 `Player order` rows; GIVEN the save written THEN the list is empty and a
                 later move's row compares against the written order
