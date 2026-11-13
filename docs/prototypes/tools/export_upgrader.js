@@ -5,9 +5,10 @@
 // - Five or more: the Team compiler's grid, three lines an export (each
 //   player's face folder, and under it the boots and the gloves folder the save
 //   has him wear), then the portraits, the kits and the team's files.
-// - Four or fewer: each export as two columns, what the old export holds on the
-//   left and where it goes in the upgraded one on the right, a row per
-//   destination, each row turning as the run writes it.
+// - Four or fewer: each export as the explanatory page's map (docs/web/
+//   upgrade_explained.html), a box per folder of the old export on the left, a
+//   box per folder of the upgraded one on the right and a line from each to
+//   where it goes, lighting up as the run writes it.
 // Both draw the same cells: a click on either opens the cell's detail. A toggle
 // picks either look whatever the count.
 // The first draft (two drop targets, one input, the left-behind list; kept in
@@ -20,10 +21,10 @@
 // before implementation"). Widget mapping: the grid, its cells, the legend, the
 // toolbar and the detail window are the Team compiler's widgets (its draft's
 // .tc- rules, one shared widget in the app); .eu-args = a Panel::top's row of
-// a TextEdit, two buttons and a Checkbox; .eu-pair = a Grid of three columns,
-// labels in the monospace font, the middle column's bracket three line
-// segments the Painter draws; .eu-sq = a rect the Painter fills; a section's
-// title = a weak label over a separator; <select> = a ComboBox.
+// a TextEdit, two buttons and a Checkbox; .eu-box = a rect the Painter fills
+// and strokes with its text painted over it, Sense::click and hover; an
+// .edge = a CubicBezierShape the Painter draws under the boxes; .eu-sq = a
+// rect the Painter fills; <select> = a ComboBox.
 // The wrapper keeps the view's names out of the host's scope; its body is left
 // unindented, as in tools/save_editor.js.
 // Names this script uses without declaring them (render, h, row, weak, strong,
@@ -41,33 +42,58 @@ const EXPORT_UPGRADER_CSS = `
   .eu-args .fld input { width: 100%; box-sizing: border-box; }
   .eu-args .fld.bad input { border-color: var(--error); color: var(--error); }
   .eu-look { display: inline-flex; gap: 2px; margin-left: 8px; }
+  button.eu-next { background: var(--sel-bg); color: var(--sel-fg); }
+  .eu-msg .row { flex-wrap: nowrap; }
   /* A line's name, between the team's label and the first line. */
   .eu-line { width: 44px; padding: 0 4px !important; color: #6e6e6e; }
   .eu-grid tr.space { height: 6px; }
   .eu-grid .tc-cell.id4 { font-size: 9px; }
   .eu-grid .tc-cell.word { font-size: 10px; }
   .eu-msg { padding: 0 6px !important; }
-  /* The two columns. Each export is a block: its two names, then its rows. */
+  /* The files look. Each export is a block: its two names, then its map. */
   .eu-pairs { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
-  .eu-export { margin-bottom: 16px; }
-  .eu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .eu-pair { border-collapse: collapse; width: 100%; table-layout: fixed; }
-  .eu-pair col.sq { width: 22px; } .eu-pair col.mid { width: 34px; }
-  .eu-pair td { padding: 2px 4px; vertical-align: middle; overflow: hidden;
-    text-overflow: ellipsis; white-space: nowrap; }
-  .eu-pair tr.sec td { padding-top: 8px; color: #6e6e6e; border-bottom: 1px solid var(--stroke); }
-  .eu-pair tr.item { cursor: pointer; }
-  .eu-pair tr.item:hover { background: var(--faint); }
-  .eu-pair tr.hl { outline: 2px solid var(--sel-fg); outline-offset: -2px; }
+  .eu-export { margin-bottom: 20px; }
+  .eu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .eu-cols { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .eu-cols span { width: 38%; }
+  .eu-flow { position: relative; --players: #3987e5; --boots: #d95926; --kits: #199e70;
+    --plain: #8a8a8a; --out: #8c2a2a; }
+  .eu-flow svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  /* A line rests dim, lights once its destination is written, and is thick
+     while it is being written. */
+  .eu-flow .edge { fill: none; stroke-width: 1.5; opacity: 0.4; vector-effect: non-scaling-stroke; }
+  .eu-flow .edge.players { stroke: var(--players); } .eu-flow .edge.boots { stroke: var(--boots); }
+  .eu-flow .edge.kits { stroke: var(--kits); } .eu-flow .edge.plain { stroke: var(--plain); }
+  .eu-flow .edge.out { stroke: var(--out); stroke-dasharray: 5 4; }
+  .eu-flow .edge.info { stroke-dasharray: 6 5; }
+  .eu-flow .edge.lit { opacity: 1; } .eu-flow .edge.busy { opacity: 1; stroke-width: 3; }
+  /* A box: the panel's fill, a stroke, a stripe in its lines' colour. */
+  .eu-box { position: absolute; width: 38%; height: 22px; box-sizing: border-box; display: flex;
+    align-items: center; gap: 6px; padding: 0 6px 0 10px; background: var(--faint);
+    border: 1px solid var(--stroke); border-radius: 2px; cursor: pointer; overflow: hidden;
+    white-space: nowrap; }
+  .eu-box.left { left: 0; } .eu-box.right { right: 0; }
+  .eu-box::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--plain); }
+  .eu-box.players::before { background: var(--players); } .eu-box.boots::before { background: var(--boots); }
+  .eu-box.kits::before { background: var(--kits); }
+  .eu-box.out::before { background: var(--out); }
+  .eu-box.out { border-style: dashed; }
+  .eu-box .text { overflow: hidden; text-overflow: ellipsis; }
+  .eu-box .sub { color: #6e6e6e; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right; }
   /* A destination not written yet is weak; written, it takes the text colour. */
-  .eu-pair td.dst { color: #6e6e6e; } .eu-pair tr.done td.dst { color: var(--text); }
-  .eu-pair tr.busy td { font-weight: 700; }
-  .eu-pair tr.err td.dst, .eu-pair tr.blocked td.dst { color: #8c2a2a; }
-  .eu-pair .sub { color: #6e6e6e; }
-  /* The middle column: several sources joined by a bracket into one arrow. */
-  .eu-pair td.mid { text-align: center; color: #6e6e6e; position: relative; overflow: visible; }
-  .eu-pair td.mid.many::before { content: ""; position: absolute; left: 2px; top: 22%;
-    bottom: 22%; width: 6px; border: 1px solid #6e6e6e; border-left: 0; }
+  .eu-box.right .text { color: #6e6e6e; } .eu-box.right.lit .text { color: var(--text); }
+  .eu-box.busy { border-color: var(--strong); } .eu-box.busy .text { font-weight: 700; color: var(--strong); }
+  .eu-box:hover { border-color: var(--sel-fg); }
+  .eu-box.hl { outline: 2px solid var(--sel-fg); }
+  .eu-flow.focus .eu-box:not(.on), .eu-flow.focus .edge:not(.on) { opacity: 0.15; }
+  .eu-flow.focus .edge.on { opacity: 1; stroke-width: 2.5; }
+  .eu-flow-legend { display: flex; gap: 16px; padding: 4px 8px; }
+  .eu-flow-legend .k { display: inline-flex; align-items: center; gap: 4px; }
+  .eu-ln { display: inline-block; width: 22px; height: 0; border-top: 2px solid #8a8a8a; }
+  .eu-ln.players { border-color: #3987e5; } .eu-ln.boots { border-color: #d95926; }
+  .eu-ln.kits { border-color: #199e70; } .eu-ln.out { border-color: #8c2a2a; border-top-style: dashed; }
+  .eu-ln.info { border-top-style: dashed; }
   .eu-sq { display: inline-block; width: 14px; height: 14px; border-radius: 2px;
     box-sizing: border-box; vertical-align: middle; position: relative; }
   .eu-sq.blocked { background: transparent !important; border: 1px dashed #8c2a2a; }
@@ -262,7 +288,7 @@ function labelCell(x, span) {
 // the name's guess. sample: a combo; the first draft had a pair of buttons.
 function tagCell(x, span) {
   return h("td", { class: "tc-acts act", rowspan: String(span) },
-    blocked(x) ? rowAct(x) : combo([["Full", "Full"], ["Midcup", "Midcup"]], x.tag,
+    combo([["Full", "Full"], ["Midcup", "Midcup"]], x.tag,
       v => { x.tag = v; }, { title: "The upgraded export's name says Full or Midcup. Prefilled: " + x.guess, disabled: !!S.run }));
 }
 function rowAct(x) {
@@ -279,7 +305,8 @@ function gridRows(x) {
   const why = blocked(x);
   if (why)
     return [h("tr", {}, labelCell(x, 1), h("td", { class: "eu-line" }), vline(),
-      h("td", { class: "eu-msg", colspan: String(SLOTS + RIGHT), style: `color:${ERR}` }, why), vline(), tagCell(x, 1)),
+      h("td", { class: "eu-msg", colspan: String(SLOTS + RIGHT) },
+        row(h("span", { style: `color:${ERR}` }, why), rowAct(x))), vline(), h("td", {})),
       h("tr", { class: "space" })];
   const line = (name, kids) => [h("td", { class: "eu-line" }, name), vline(), ...kids, vline()];
   const item = kind => n => slot(x[kind][n]
@@ -334,82 +361,153 @@ function legend() {
     LEGEND.flatMap(col => col.map(k => h("span", { class: "k" }, sq(k), STATE_NAMES[k]))));
 }
 
-// ---- The two columns (four exports or fewer) ----
-// One row per destination: the old paths that end in it, the arrow, the new
-// path and what it holds. Each row stands for the cells it is made of, so it
-// turns as they do.
-function pairRows(x) {
-  const out = [];
-  const sec = title => out.push({ sec: title });
-  const add = (cells, what, slotName, dst, sub, src) =>
-    out.push({ cells, what, slot: slotName, dst, sub, src: src || [...new Set(cells.flatMap(c => c.src))] });
-  // sample: the sections' titles.
-  sec("Players: a folder each, his looks read from the save into its settings.toml");
+// ---- The files look (four exports or fewer): boxes and lines ----
+// The explanatory page's map, drawn for the export at hand: a box per folder
+// or file of the old export on the left, a box per folder or file of the
+// upgraded one on the right, and a line from each box to where it goes, in
+// the colour of what it carries. A box under the pointer keeps its own lines
+// and dims the rest. During a run a destination and its lines light up as it
+// is written.
+const BOX_H = 22, BOX_GAP = 3, SEC_GAP = 12;
+// One export's boxes and lines. A node: its side, text, kind (the line's
+// colour), the cells it stands for (its state), and what a click opens.
+function flowOf(x) {
+  const L = [], R = [], edges = [];
+  const node = (side, id, text, kind, cells, open, more = {}) => {
+    const n = { id: `${x.key}:${side === L ? "L" : "R"}:${id}`, text, kind, cells, open, ...more };
+    side.push(n);
+    return n;
+  };
+  const edge = (from, to, kind, info) => edges.push({ a: from, b: to, kind, info });
+  const gapAfter = side => { if (side.length) side[side.length - 1].gap = true; };
+  // The players: a face folder each, to his own folder.
+  const P = {};
   for (const [n, face] of Object.entries(x.faces)) {
     const own = ["boots", "gloves"].map(k => x[k][n]).filter(Boolean);
     const links = own.filter(c => c.link).map(c => `${c.title}.${c.dst.split(".").pop()}`);
-    const moved = own.filter(c => !c.link);
-    add([face, ...own], "face", pad(n), face.dst,
-      ["face", ...moved.map(c => c.dst === face.dst ? (x.boots[n] === c ? "boots" : "gloves") : "")].filter(Boolean).join(", ")
-        + (links.length ? `; ${links.join(", ")}: a link to the shared folder` : ""),
-      [face, ...moved].flatMap(c => c.src));
+    const moved = own.filter(c => !c.link).map(c => (x.boots[n] === c ? "boots" : "gloves"));
+    P[n] = node(R, "p" + n, face.dst, "players", [face, ...own], { what: "face", slot: pad(n) },
+      { sub: ["face", ...moved, ...links].join(", ") });
+    edge(node(L, "f" + n, face.src[0], "players", [face], { what: "face", slot: pad(n) }), P[n], "players");
   }
-  if (x.shared.length) {
-    sec("Shared boots and gloves: worn by two or more players");
-    for (const s of x.shared)
-      add([s.cell], s.kind, pad(s.wearers[0]), s.cell.dst, "worn by " + s.wearers.map(pad).join(", "));
+  gapAfter(L); gapAfter(R);
+  // The boots and gloves folders: to each wearer, to the shared folder when
+  // two or more wear them, and their IDs to legacy_ids.toml.
+  const items = {};
+  for (const kind of ["boots", "gloves"])
+    for (const [n, c] of Object.entries(x[kind])) {
+      const key = c.src[0];
+      if (!items[key]) items[key] = node(L, key, key, "boots", [], { what: kind, slot: pad(n) });
+      items[key].cells.push(c);
+      edge(items[key], P[n], "boots");
+    }
+  for (const s of x.shared) {
+    items[s.cell.src[0]].cells.push(s.cell);
+    edge(items[s.cell.src[0]], node(R, "s" + s.id, s.cell.dst, "boots", [s.cell],
+      { what: s.kind, slot: pad(s.wearers[0]) }, { sub: "worn by " + s.wearers.map(pad).join(", ") }), "boots");
   }
-  sec("Kits: texture, settings and colours together");
-  for (const [k, c] of Object.entries(x.kits)) add([c], "kit", k, c.dst, k);
-  sec("Team files");
-  add([x.files.Note], "file", "Note", x.files.Note.dst, "team colours and notes, from the Note");
-  add([x.portraits], "portraits", "", "Portraits\\01.dds … " + pad(x.portraits.count) + ".dds", "renamed by the player's number");
-  for (const name of ["Logo", "Common", "Collar"])
-    if (x.files[name]) add([x.files[name]], "file", name, x.files[name].dst, name === "Logo" ? "the team's emblem" : "as it was");
-  add([x.ids], "ids", "", x.ids.dst, "the boots and gloves IDs the manager used");
+  gapAfter(L); gapAfter(R);
+  // The kits: configs, textures and the Note's colours, into a folder a kit.
+  const kitCells = Object.values(x.kits), anyKit = { what: "kit", slot: Object.keys(x.kits)[0] };
+  const configs = node(L, "kc", "Kit Configs\\", "kits", kitCells, anyKit);
+  const textures = node(L, "kt", "Kit Textures\\", "kits", kitCells, anyKit);
+  const note = node(L, "note", x.files.Note.src[0], "plain", [x.files.Note], { what: "file", slot: "Note" });
+  for (const [k, c] of Object.entries(x.kits)) {
+    const kitBox = node(R, "k" + k, c.dst, "kits", [c], { what: "kit", slot: k }, { sub: k + ": texture, settings, colours" });
+    edge(configs, kitBox, "kits"); edge(textures, kitBox, "kits"); edge(note, kitBox, "plain", true);
+  }
+  gapAfter(R);
+  edge(note, node(R, "colors", x.files.Note.dst, "plain", [x.files.Note], { what: "file", slot: "Note" }), "plain");
+  edge(node(L, "po", "Portraits\\", "plain", [x.portraits], { what: "portraits", slot: "" }),
+    node(R, "po", `Portraits\\01.dds … ${pad(x.portraits.count)}.dds`, "plain", [x.portraits], { what: "portraits", slot: "" }), "plain");
+  for (const name of ["Logo", "Common", "Collar"]) if (x.files[name])
+    edge(node(L, name, x.files[name].src[0], "plain", [x.files[name]], { what: "file", slot: name }),
+      node(R, name, x.files[name].dst, "plain", [x.files[name]], { what: "file", slot: name }), "plain");
+  if (Object.keys(items).length) {
+    const ids = node(R, "ids", x.ids.dst, "boots", [x.ids], { what: "ids", slot: "" }, { sub: "the boots and gloves IDs" });
+    for (const item of Object.values(items)) edge(item, ids, "boots", true);
+  }
+  // What is left out: dashed boxes, to one dashed box.
   if (x.left.length) {
-    sec("Not carried");
-    for (const [path, why] of x.left) out.push({ cells: [leftCell(x)], what: "left", slot: "", src: [path], dst: "left out", sub: why, left: true });
+    gapAfter(L); gapAfter(R);
+    const out = node(R, "left", "Not carried", "out", [leftCell(x)], { what: "left", slot: "" }, { sub: "left out, listed in the log" });
+    for (const [path] of x.left) edge(node(L, "x" + path, path, "out", [leftCell(x)], { what: "left", slot: "" }), out, "out");
   }
-  return out;
+  let y = 0;
+  for (const side of [L, R]) { y = 0; for (const n of side) { n.y = y; y += BOX_H + BOX_GAP + (n.gap ? SEC_GAP : 0); } side.height = y; }
+  return { L, R, edges, height: Math.max(L.height, R.height) };
 }
-// A row's state: the worst of its cells' while any is unread or wrong, the
+// A box's state: the worst of its cells' while any is unread or wrong, the
 // run's once every one of them is through it.
-function rowState(x, r) {
-  const states = r.cells.map(c => shown(x, c));
+function nodeState(x, n) {
+  const states = n.cells.map(c => shown(x, c));
   for (const s of ["blocked", "error", "unchecked", "checking"]) if (states.includes(s)) return s;
-  if (r.cells.some(c => c.busy)) return "busy";
+  if (n.cells.some(c => c.busy)) return "busy";
   if (states.every(s => s === "done" || s === "doneWarn")) return states.includes("doneWarn") ? "doneWarn" : "done";
   return states.includes("warning") ? "warning" : "fullOk";
 }
-function pairBlock(x) {
+const SVG = "http://www.w3.org/2000/svg";
+function flowBlock(x) {
   const why = blocked(x), l = look(x, x.label);
   const head = h("div", { class: "eu-head" },
     h("span", { class: "tc-name mono" + (l.outline ? " ol" : ""), style: lookStyle(l) + "; display:inline-flex; align-items:center; justify-content:center",
       title: STATE_NAMES[l.state] }, x.name),
     h("span", { class: "mono" }, x.old), weak("→"), h("span", { class: "mono" }, "exports\\" + outName(x)),
-    why ? h("span", { style: `color:${ERR}` }, why) : null,
+    why ? h("span", { style: `color:${ERR}` }, why) : null, why ? rowAct(x) : null,
     h("span", { style: "flex:1" }),
-    why ? rowAct(x) : combo([["Full", "Full"], ["Midcup", "Midcup"]], x.tag, v => { x.tag = v; },
+    why ? null : combo([["Full", "Full"], ["Midcup", "Midcup"]], x.tag, v => { x.tag = v; },
       { title: "Prefilled: " + x.guess, disabled: !!S.run }));
   if (why) return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head);
-  const trs = pairRows(x).map(r => {
-    if (r.sec) return h("tr", { class: "sec" }, h("td", { colspan: "4" }, r.sec));
-    const state = rowState(x, r), scope = scopeOf(x, r.what, r.slot);
-    const cls = { done: "done", doneWarn: "done", busy: "busy", error: "err", blocked: "blocked" }[state] || "";
-    return h("tr", { class: `item ${cls}` + (S.highlight === scope ? " hl" : ""), "data-scope": scope,
-      title: r.cells.map(c => cellTip(x, c)).join("\n\n"),
-      onclick: () => { S.detail = { key: x.key, what: r.what, slot: r.slot }; render(); } },
-      h("td", {}, sq(state === "busy" ? "checking" : state, "eu-sq")),
-      h("td", { class: "mono" }, r.src.map(p => h("div", {}, p))),
-      h("td", { class: "mid" + (r.src.length > 1 ? " many" : "") }, r.left ? "✕" : "→"),
-      h("td", { class: "mono dst" }, r.dst, r.sub ? h("span", { class: "sub" }, "  " + r.sub) : null));
-  });
+  const flow = flowOf(x);
+  const map = h("div", { class: "eu-flow", style: `height:${flow.height}px` });
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", `0 0 1000 ${flow.height}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+  const mid = n => n.y + BOX_H / 2;
+  const written = n => ["done", "doneWarn"].includes(nodeState(x, n));
+  for (const e of flow.edges) {
+    const path = document.createElementNS(SVG, "path");
+    path.setAttribute("d", `M380 ${mid(e.a)} C500 ${mid(e.a)} 500 ${mid(e.b)} 620 ${mid(e.b)}`);
+    path.setAttribute("class", `edge ${e.kind}` + (e.info ? " info" : "") + (written(e.b) ? " lit" : "")
+      + (nodeState(x, e.b) === "busy" ? " busy" : ""));
+    path.dataset.a = e.a.id; path.dataset.b = e.b.id;
+    svg.append(path);
+  }
+  map.append(svg);
+  // The pointer on a box: its lines and the boxes at their other ends stay,
+  // the rest dims (egui: the hovered box's id, read while painting).
+  const focus = id => {
+    const on = new Set([id]);
+    for (const path of svg.children) {
+      const mine = path.dataset.a === id || path.dataset.b === id;
+      path.classList.toggle("on", mine);
+      if (mine) { on.add(path.dataset.a); on.add(path.dataset.b); }
+    }
+    for (const box of map.querySelectorAll(".eu-box")) box.classList.toggle("on", on.has(box.dataset.node));
+    map.classList.add("focus");
+  };
+  const box = (n, right) => {
+    const state = nodeState(x, n), scope = scopeOf(x, n.open.what, n.open.slot);
+    return h("div", { class: `eu-box ${n.kind} ${right ? "right" : "left"}` + (right && written(n) ? " lit" : "")
+        + (state === "busy" ? " busy" : "") + (S.highlight === scope ? " hl" : ""),
+      style: `top:${n.y}px`, "data-node": n.id, "data-scope": scope,
+      title: [...new Set(n.cells.map(c => cellTip(x, c)))].slice(0, 3).join("\n\n"),
+      onmouseenter: () => focus(n.id), onmouseleave: () => map.classList.remove("focus"),
+      onclick: () => { S.detail = { key: x.key, ...n.open }; render(); } },
+      sq(state === "busy" ? "checking" : state, "eu-sq"), h("span", { class: "mono text" }, n.text),
+      n.sub ? h("span", { class: "sub" }, n.sub) : null);
+  };
+  map.append(...flow.L.map(n => box(n, false)), ...flow.R.map(n => box(n, true)));
   return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head,
-    h("table", { class: "eu-pair" },
-      h("colgroup", {}, h("col", { class: "sq" }), h("col", {}), h("col", { class: "mid" }), h("col", {})),
-      h("tr", { class: "sec" }, h("td", {}), h("td", {}, "Old export"), h("td", {}), h("td", {}, "Upgraded export")),
-      trs));
+    h("div", { class: "eu-cols weak" }, h("span", {}, "Old export"), h("span", {}, "Upgraded export")), map);
+}
+// The lines' colours, under the files: what each carries.
+function flowLegend() {
+  const line = (kind, text, info) => h("span", { class: "k" },
+    h("span", { class: `eu-ln ${kind}` + (info ? " info" : "") }), text);
+  return h("div", { class: "eu-flow-legend top weak", "data-panel": "legend" },
+    line("players", "players"), line("boots", "boots and gloves"), line("kits", "kits"),
+    line("plain", "team files"), line("out", "not carried"), line("plain", "information read", true));
 }
 
 // ---- The detail window: what a clicked cell is read from and written to ----
@@ -491,8 +589,12 @@ function toolbar() {
   const arrow = button("⏷", e => { e.stopPropagation(); moreMenu(e.currentTarget); }, { disabled: !!run });
   return h("div", { class: "tc-bar", "data-panel": "run" },
     h("span", { class: "strip mono", id: "upgrade-progress" }, strip),
-    S.finished && !run ? button("Open the Team compiler", () => switchToTool("team-compiler"),
-      { title: "The upgraded exports are in its exports folder: it checks them like any other" }) : null,
+    // The step after an upgrade. Always there; once a run has finished it
+    // turns the accent blue (egui: the button's fill set to the selection
+    // colour), the view's one blue button, until the next run starts.
+    named(Object.assign(button("Open the Team compiler", () => switchToTool("team-compiler"),
+      { disabled: !!run, title: "The upgraded exports are in its exports folder: it checks them like any other" }),
+      { className: S.finished && !run ? "eu-next" : "" }), "next"),
     h("div", { class: "tc-split" }, main, arrow));
 }
 function moreMenu(btn) {
@@ -611,8 +713,8 @@ function drawView(center) {
         h("p", {}, strong("No old exports found")), h("p", { class: "mono" }, EXE_FOLDER + "\\old_exports"),
         h("p", {}, "Drop an old export here: a folder, a .zip or a .7z."))))
     : many ? h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))
-    : h("div", { class: "eu-pairs", "data-panel": "pairs" }, all.map(pairBlock));
-  center.append(h("div", { class: "pipe" }, argsRow(), many ? legend() : null, body, toolbar(),
+    : h("div", { class: "eu-pairs", "data-panel": "pairs" }, all.map(flowBlock));
+  center.append(h("div", { class: "pipe" }, argsRow(), !all.length ? null : many ? legend() : flowLegend(), body, toolbar(),
     named(logPanel(L, { tool: "export-upgrader", onLine: gotoCell }), "log"), detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
@@ -640,7 +742,7 @@ const WALK = [
   ["an Error", "/a/'s Note has a line that does not read: outlined red; Upgrade writes nothing of /a/ and its cells turn to the dashed Not written"],
   ["cannot be read", "/@/ is not in the save (tick Upgrade without the save and it is read), /b/ is already upgraded, /biz/'s output already exists: one line each, with what to do"],
   ["Full or Midcup", "the combo at each row's right, prefilled from the name (/a/: Midcup, from \"additions\")"],
-  ["the two columns", "set old_exports to 3 exports: a row per destination, the old paths left and the new right; Upgrade turns each row as it is written"],
+  ["the files look", "set old_exports to 3 exports: a box per old folder left, a box per new one right, a line where each goes; point at a box to follow its lines (/egg/'s Boots\\k0920 goes to players 02, 03 and 04, the shared folder and the IDs); Upgrade lights each destination as it is written"],
   ["the toggle", "Grid and Files at the arguments' right end: either look for any number of exports; until one is picked the count chooses"],
   ["a click", "on a cell, a row or a log line: the detail window, with the old and new paths and the findings"],
 ];

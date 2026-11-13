@@ -933,7 +933,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       read (team not in the save, already upgraded, output exists) is one line with its
       action; Full or Midcup is a combo at each row's right; the detail window is fixed
       at the right; after a run, Open the Team compiler in place of Move to exports and
-      compile. Not drawn: model-folder mode, the output-exists abort's button, Copy
+      compile. Ruled the same day: the grid is good; the button that opens the Team
+      compiler is always there and turns blue once an upgrade has finished; an action
+      that follows a row's message stands beside the message, never in the rightmost
+      column; the files look is the explanatory page's map (`docs/web/
+      upgrade_explained.html`), a box per old folder left, a box per new one right and a
+      line from each to where it goes, in the colour of what it carries, a hovered box
+      keeping its lines and dimming the rest, a destination lighting as it is written
+      (renders `flow_*.png` by `shot_flow.py`). Not drawn: model-folder mode, the output-exists abort's button, Copy
       report, a referee export. `plans/export_upgrader.md` "GUI" still describes the
       first draft: rewritten when this one is accepted
     - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
