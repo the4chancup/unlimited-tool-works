@@ -143,6 +143,7 @@ const TEAM_COMPILER_CSS = `
   .tc-legend.shut { display: flex; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
+  .tc-legend .two { line-height: 1.25; }
 `;
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
@@ -157,7 +158,7 @@ const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc
 const OUTLINES = { warning: WARN, error: ERR, partialError: ERR };
 const OFF = "#333333";
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
-  partialOk: "Shallow check (archive)", fullOk: "Checked", warning: "Warning",
+  partialOk: "Shallow check done (archive)", fullOk: "Checked", warning: "Warning",
   partialError: "Error", error: "Error", done: "Done",
   doneWarn: "Done with warnings", doneErr: "Done with errors", blocked: "Blocked" };
 // The label's colour follows the cell's own colour, not the theme: a soft light
@@ -295,7 +296,21 @@ const rowOff = r => r.special === "disabled" || !!S.unticked[r.key];
 // What a cell shows: blocked while its export is skipped whole (from the
 // check on, so the grid says before Compile what will not compile), else
 // the run's outcome once it has one, else its check status.
-const shown = (r, cell) => r.blocked && cell !== r.label ? "blocked" : cell.out || cell.status;
+const shown = (r, cell) => cell === r.label ? labelOut(r) || cell.status
+  : r.blocked ? "blocked" : cell.out || cell.status;
+// A team's label after the run: the export's outcome, the worst of what its
+// cells and the label itself came to (a cell the run skipped for its error
+// counts as one). None while any cell of the row is still to be checked or
+// processed.
+function labelOut(r) {
+  const cells = cellsOf(r);
+  const pending = c => c.busy || ["unchecked", "checking"].includes(c.status)
+    || (!c.out && (OUTCOME[c.status] || c.dropFile));
+  if (!cells.some(c => c.out) || cells.some(pending)) return null;
+  const states = [r.label.status, ...cells.map(c => c.out || c.status)];
+  if (states.some(s => ["doneErr", "error", "partialError"].includes(s))) return "doneErr";
+  return states.some(s => ["doneWarn", "warning"].includes(s)) ? "doneWarn" : "done";
+}
 // A cell's or a label's fill and outline. An off row is flat grey.
 function look(r, cell) {
   if (rowOff(r)) return { fill: OFF, text: "#6e6e6e", outline: null };
@@ -553,7 +568,10 @@ function legend() {
     const l = k === "blocked" ? { fill: "transparent", text: "", outline: null } : look(sample, { status: k });
     return h("span", { class: "k" + (alone ? " both" : "") },
       h("span", { class: "tc-cell" + (k === "blocked" ? " blocked" : "") + (l.outline ? " ol" : ""),
-        style: lookStyle(l) }), STATE_NAMES[k]);
+        style: lookStyle(l) }),
+      // The one long name takes two lines; its swatch stays centred on both.
+      k === "partialOk" ? h("span", { class: "two" }, h("div", {}, "Shallow check done"), h("div", {}, "(archive)"))
+        : STATE_NAMES[k]);
   };
   return h("div", { class: "tc-legend top weak", "data-panel": "legend" }, title,
     LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1))));

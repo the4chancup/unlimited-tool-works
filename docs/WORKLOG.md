@@ -806,7 +806,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       fill the cell's foot edge to edge; the portraits column is 50 wide; a disabled or
       unticked row is flat grey; the detail panel is a window the member places and
       finds again where it was left, with room for a player's 3D preview; cells change
-      scattered over the grid as parallel tasks end. All go into
+      scattered over the grid as parallel tasks end; a team's label takes the export's
+      outcome once every cell of its row is through the run (done, done with warnings or
+      done with errors, the worst of its cells and its own findings, a skipped cell
+      counting as an error); the legend's archive entry reads "Shallow check done
+      (archive)" on two lines. All go into
       `gui.md` when the draft is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
       the detail panel at the grid's right (with it open, a row with all ten kits scrolls
       sideways in the default window; without it the row and its button fit). Not drawn yet: the
