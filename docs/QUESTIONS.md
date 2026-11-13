@@ -69,6 +69,15 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
 
+## The Compiler's and the Export upgrader's windows
+
+- **How a compiling cell stands out** (worklog 8.10; you, 2026-11-14: a bold number is hard
+  to notice, without changing the cell's colour). The compiler draft draws two looks, picked
+  in its draft controls ("A compiling cell shows"): a light bar sweeping the cell's bottom
+  edge, or a white inset ring pulsing once a second. Each starts from the cell's own start.
+  Which one? The answer goes into `plans/team_compiler/gui.md` and TC-GUI-12, which say "bold"
+  today.
+
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
