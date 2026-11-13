@@ -450,8 +450,9 @@ side.
   - The field set is the parity table's Copy player stats row, for Copy and for Swap.
 - **Every action that writes a file or the clipboard publishes a notice**, in the form
   `core/gui.md` "Status bar" gives (the thing first, then what was done to it): Save and
-  Save as (`<file> saved (the replaced file is kept once as <file>.bak)`), Output rosters
-  to TSV, the two Generate actions, each team file export and the Comparator's Export
+  Save as (`<file> saved (the replaced file is kept once as <file>.bak)`, the brackets only
+  when the write replaced a file: a Save as onto a new name reads `<file> saved`), Output
+  rosters to TSV, the two Generate actions, each team file export and the Comparator's Export
   (`<file> written`, with its detail after), an imported ruleset (`<label> imported.`), the
   Multi-team AATF and Live AATF copies, and Ctrl+C and Ctrl+V (below). The draft's
   `publishNotice` calls are the list; an action added later gets its notice with it.
@@ -833,7 +834,14 @@ side.
   named the same way>.`. A paste that left out or capped something, as one from a save of
   another PES version can, says so in the same notice (`X's stats pasted onto Y; 3 values PES
   2017 does not store were left out`): the import panel lists those before Apply, and a paste
-  has no panel.
+  has no panel. The tail counts the import's notes: when every one is a key the target does
+  not store it reads as above (`1 value PES 2017 does not store was left out`), and with a
+  capped, cropped or unencodable value among them `; 3 values were left out or changed to
+  fit PES 2017`.
+
+  The words that name a copy (`X's stats`, `/x/'s preset 2 Kick-off formation`) are also its
+  clipboard text's first line, after `# Unlimited Tool Works: `, so a paste in another window
+  names the copy from the text alone.
 
   The copy is text on the system clipboard, so it pastes into another window of the suite, or
   into the same window after another save was opened (0.0.2-clip; until it is built the
@@ -2656,7 +2664,8 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
            GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
                 filter reads ALL; WHEN the same path is picked again after the file changed on
                 disk THEN the panel lists the new differences; WHEN Export writes diff.txt
-                THEN the panel reads `Wrote <path>`, and WHEN it names a folder that does not
+                THEN the panel reads `<path> written` and the status bar's notice
+                `diff.txt written`, and WHEN it names a folder that does not
                 exist THEN a dialog titled `Cannot export the differences` names the path
 SE-GUI-14  GIVEN (after Release 0.1.0) the transplant panel, a donor save, one of its teams and
                 that team's export in the exports folder, slots 03 and 07 checked
@@ -2758,8 +2767,9 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 Ctrl+V is pressed THEN preset 2 equals preset 1, and likewise a formation;
                 GIVEN a preset copied WHEN a player row is selected and Ctrl+V pressed
                 THEN nothing changes; each Ctrl+C puts on the system clipboard a text whose
-                first line names what it copied (`# Unlimited Tool Works: the stats of
-                <name>`, `… preset 2 of <team>`, `… the Kick-off formation of <team>`;
+                first line names what it copied in the notice's words (`# Unlimited Tool
+                Works: <name>'s stats`, `… <team>'s Gameplan`, `… <team>'s preset 2`, `…
+                <team>'s preset 2 Kick-off formation`;
                 SE-GUI-72 has the rest of the text), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
                 press not; GIVEN team 701's row copied and pasted onto itself THEN no undo

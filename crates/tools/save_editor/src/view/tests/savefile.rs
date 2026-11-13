@@ -404,13 +404,16 @@ fn range_combos(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<&accesski
 /// title closes the popup.
 fn range_items(window: &mut Headless, view: &mut SaveView, nth: usize) -> Vec<String> {
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let combo = range_combos(&pairs)[nth];
+    click(window, range_combos(&pairs)[nth], view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    // The combo's edges are read in the frame the items are: a check's
+    // result landing between the click and this frame grows the dialog and
+    // moves the combo up, and the first item then stands above the edge the
+    // earlier frame drew.
     let (left, right, below) = {
-        let bounds = combo.bounds().expect("drawn bounds");
+        let bounds = range_combos(&pairs)[nth].bounds().expect("drawn bounds");
         (bounds.x0, bounds.x1, bounds.y1)
     };
-    click(window, combo, view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     // The popup's items stand under the combo, as `pick_range_end` finds
     // them; its scroll area draws the items it shows.
     let mut items: Vec<(f64, String)> = pairs

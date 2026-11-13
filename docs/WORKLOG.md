@@ -3020,17 +3020,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-13 (a sidekick's run, `.tmp/arrows/brief_mut3.report.md`): the Save
-  editor's `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
-  failed once in `cargo test -p save_editor list` ("the range's first team: left `702 /a/`,
-  right `701 /3/`") and passed alone and on the rerun, with nothing of the crate changed.
-  Seen once. Likely cause, from reading (not reproduced): `range_items`
-  (`view/tests/savefile.rs`) takes the combo's bottom edge from the frame before its click
-  and keeps the popup items at or below it in the frame after; when the check's result has
-  just landed, the dialog grows and moves up between those two frames, so the first item
-  (`701 /3/`) stands above the stale edge and is left out. How many frames the check takes
-  depends on the machine's load. To do: reproduce it by looping the test beside other
-  builds, then read the combo's bounds in the popup's own frame.
+- watch 2026-11-13: the Save editor's
+  `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
+  failed twice under load ("the range's first team: left `702 /a/`, right `701 /3/`"), the
+  second time in `just pipeline` on `9ed7606d`, and passes alone. Fixed from reading, never
+  reproduced on demand: `range_items` (`view/tests/savefile.rs`) took the combo's bottom edge
+  from the frame before its click, and a check landing between the two frames moved the
+  dialog up, so the first item stood above the stale edge; it now reads the edge in the
+  popup's frame. Remove this entry after two clean pipelines; a third failure means the
+  cause is another.
 - open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
   on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
   the three files sent (the team file, a save named as the one before, the saved file;
