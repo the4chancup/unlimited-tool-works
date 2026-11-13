@@ -651,6 +651,15 @@ More rules that keep it worth the row:
   One plain colour for every notice was how a member missed a "Wrote settings.toml" line at
   the bar's edge; a single green for every notice would paint a warning as a success. What
   needs a decision now is a dialog, never a notice (next rule).
+
+  A notice's text is drawn in the label family, the suite's semibold (`theme.rs`), in every
+  kind: in the body weight a notice was still easy to miss among the bar's other texts.
+
+  A notice that reports a result names the thing first, then what was done to it, with no
+  subject: `f.toml written`, `EDIT00000000 saved`, `X's stats copied.`, not `Wrote f.toml`.
+  The thing is what the member looks for, so it leads. It does not say "successfully": the
+  green already does. A detail follows in brackets or after the verb (`… written to
+  <folder>`, `… saved (the replaced file is kept once as <file>.bak)`).
 - **The middle takes what the sides leave.** The left slot (the version and any held conditions) and
   the right one (another tool's activity) are as wide as what they hold, and the notice's middle
   slot gets the rest, its text centred in it and cut with an ellipsis only past that, the whole
@@ -1605,7 +1614,8 @@ ST-BAR-03   GIVEN a tool publishing a Notice with an action
 ST-BAR-04   GIVEN three notices published in turn, one of each kind (Success, Info, Warning)
             WHEN the status bar is drawn after each
             THEN each notice's text is drawn in its kind's colour: SUCCESS_FG, the link blue,
-                 the warning orange
+                 the warning orange, and in the label family's semibold, while the version
+                 and a condition's text keep the body weight
 ST-BAR-07   withdrawn: no tool keeps a standing notice (0.0.2-sel)
 ST-BAR-08   withdrawn: no notice action switches the PES version (0.0.2-sel)
 ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the interval, and a

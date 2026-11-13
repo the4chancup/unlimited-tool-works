@@ -131,6 +131,10 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   `#[expect(clippy::let_underscore_must_use, reason = "…")]` on the statement for the truly
   ignorable; `expect`, not `allow`, so a suppression that stops firing is itself an error.
   Discarding through `.ok();` is the same thing without the reason and is forbidden.
+- **A notice or message that reports a result names the thing first, then what was done
+  to it**, with no subject: `f.toml written`, `X's stats copied.`, not `Wrote f.toml` or
+  `Copied X's stats`. It says no "successfully" where its colour or severity already does.
+  The rule and its reasons are in `plans/core/gui.md` "Status bar".
 - Diagnostics go through `log` (`debug!`/`trace!` in libs, `info!` for stage milestones in tools);
   user-facing findings go through `Message`. Never `println!`/`eprintln!` outside `studio`'s CLI
   result output and `main`. Libs never `error!`: return the error, let the caller decide. No

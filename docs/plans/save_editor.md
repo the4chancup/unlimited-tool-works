@@ -53,10 +53,10 @@ implementation is measured against.
 |-----------|------|
 | Set all ability stats (dialog: every ability stat to N, 40 to 99, prefilled with the player's first; weak foot, form and injury untouched) | Kept, same fields and range; no edit flag set (the dialog writes the ability stats, as typing them does, and typing sets none) |
 | Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat kept within 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
-| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
-| Swap player stats (two PIDs; the same field set as Copy) | Kept, the other player picked as for Copy |
+| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); each player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), in the Copy/swap stats window ("Editing UI") |
+| Swap player stats (two PIDs; the same field set as Copy) | Kept, a button of the same window |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
-| Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
+| Toggle FPC settings (Ctrl+I) | Kept as one Player menu entry whose label says what it will do (see "Full Player Customization" below) |
 | Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates: the buttons and the checker can never disagree |
 | Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving from team row to team row, or 7 rows with one team listed ("Editing UI" below, SE-GUI-53) |
 | Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
@@ -421,14 +421,40 @@ side.
   the drafts: opening one closes the other, which would otherwise open on top of it.
 
   A menu item's shortcut is drawn right of its label in the weak colour
-  (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
-  visual flags `Ctrl+F`.
+  (`Button::shortcut_text`): Bump all stats `Ctrl+B`, the Player menu's FPC entry `Ctrl+I`,
+  Clear visual flags `Ctrl+F`.
 
   Set all stats and Bump all stats ask for their number on the sentence's own row, the
   field at the dialog's right edge, in line with Cancel under it, at least 12 points from
   the sentence (the draft's `.num-row`): a number field alone on the row under a sentence
   read as a second step. The field is the drafts' 52-point number box, as wide as the
   quick actions' and the boots and gloves dialog's, not egui's 40-point least widget width.
+
+  **Copy/swap stats** is one Player menu entry, `Copy/swap stats…`, which opens a window of
+  that name and not a dialog: non-modal, the view under it usable, dragged by its title bar,
+  opening low in the middle, clear of the player list and of the Ability stats column (the
+  draft's `drawCopyStats`). A dialog closed after one copy and covered the list; copying one
+  player's stats onto several, the usual job, was a reopening per player.
+
+  - Two rows, Source and Destination, by two columns, Team and Player: four dropdowns. Both
+    rows start on the selected player, or on the selected team's first player while a team's
+    page shows. A team dropdown changed takes that team's first player.
+  - Buttons Copy, Swap and Close. Copy and Swap are disabled while both rows name one
+    player, their hover saying so ("The source and the destination are the same player").
+    Neither closes the window. Each is one undo step and writes a line in the window
+    ("Copied X's stats to Y.", "Swapped the stats of X and Y."), so a window that stays open
+    shows what it did.
+  - While the window is open, the list's selection moving (a click, Up or Down, a team row
+    giving its first player) sets the destination: the source is chosen once, the
+    destination per copy. Ctrl+C and Ctrl+V work under it as they do without it.
+  - The field set is the parity table's Copy player stats row, for Copy and for Swap.
+- **Every action that writes a file or the clipboard publishes a notice**, in the form
+  `core/gui.md` "Status bar" gives (the thing first, then what was done to it): Save and
+  Save as (`<file> saved (the replaced file is kept once as <file>.bak)`), Output rosters
+  to TSV, the two Generate actions, each team file export and the Comparator's Export
+  (`<file> written`, with its detail after), an imported ruleset (`<label> imported.`), the
+  Multi-team AATF and Live AATF copies, and Ctrl+C and Ctrl+V (below). The draft's
+  `publishNotice` calls are the list; an action added later gets its notice with it.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
   **nor the open save's path**: the tool's `title_detail` gives it to the idle window title,
   in square brackets, and the toolbar keeps `• unsaved changes` alone, which never takes a
@@ -800,6 +826,15 @@ side.
   Down pastes onto the next row. A paste of another kind does nothing; each paste is one undo
   step.
 
+  A copy and a paste each publish a success notice naming what was copied or pasted, since a
+  keyboard action that shows nothing leaves a member pressing it twice: `X's stats copied.`,
+  `/x/'s Gameplan copied.`, `/x/'s preset 2 copied.`, `/x/'s preset 2 Kick-off formation
+  copied.` (a formation's notice names its preset), and `<the same> pasted onto <the target,
+  named the same way>.`. A paste that left out or capped something, as one from a save of
+  another PES version can, says so in the same notice (`X's stats pasted onto Y; 3 values PES
+  2017 does not store were left out`): the import panel lists those before Apply, and a paste
+  has no panel.
+
   The copy is text on the system clipboard, so it pastes into another window of the suite, or
   into the same window after another save was opened (0.0.2-clip; until it is built the
   clipboard is the editor's own, emptied when a save opens, with one naming line on the
@@ -1162,9 +1197,19 @@ Win32 original hurt the most):
     through one loop, its width plus a 16 px gap after which its start follows, so it ends
     where it began, and holds still the rest of the period. A name that fits never moves.
 
-    A **Scroll names** checkbox right of the formations' Copy/swap, on by default and
+    A **Scroll** checkbox right of the formations' Copy/swap, on by default and
     remembered in the tool's settings as Live AATF is, holds every wider name still at its
-    badge's left when off (a view setting, not an edit: no undo entry, no unsaved dot). Each
+    badge's left when off (a view setting, not an edit: no undo entry, no unsaved dot). Its
+    hover: "Scroll the names too long for their place on the pitch, as the game does. Off,
+    they stand still, cut short." (the label was `Scroll names`; the bar needed the room).
+
+    A **Portraits** checkbox stands at its right, on by default and remembered the same way.
+    Off, a player is his position badge and name alone, where they stand with the portrait:
+    eleven portraits hide the shape a manager is trying to read. Its hover: "Show the
+    players' portraits on the pitch. Off, the formation's shape is easier to see." With the
+    portraits off the captain's mark stands on the badge's top edge at the badge's left end,
+    and Live AATF's cross stands on the badge too, centred, its lower ends touching it, where
+    both would otherwise float over the turf. Each
     name's period starts when the pitch first shows it, still first. The game staggers names by
     a rule not established (two names 2.1 s apart); the editor's start together when the team
     view opens, until the game's delays are measured (a worklog step after 0.0.2).
@@ -1325,14 +1370,27 @@ Win32 original hurt the most):
   selected row's team through a dialog of the tool's own, not rfd's save-file dialog, since a
   native dialog cannot hold the checkbox the range dialog has too. The dialog holds:
   - the folder last used (the tool's `formation_pictures_folder` setting, which the range
-    dialog shares) with Browse for rfd's folder picker;
+    dialog shares) with Browse for rfd's folder picker; until a member picks one it is
+    `formations` beside the program;
   - the file name `<id> <name>.png` filled in (the name less the characters a file name
     cannot hold, `718 f.png`; the id first so a folder sorts as the teams list does);
-  - and the checkbox "With each preset's settings beside its row", which adds or removes
-    " settings" before the extension, so a team's two pictures do not replace each other.
+  - the checkbox "With each preset's settings beside its row", which adds or removes
+    " settings" before the extension, so a team's two pictures do not replace each other;
+  - the checkbox "Portraits", which starts as the formation bar's Portraits is each time the
+    dialog opens. A change here is this picture's alone and is never written back to the
+    bar's setting: a member who keeps portraits off and wants them in one picture finds them
+    still off afterwards. Its hover: "Draw the players' portraits in the picture. Off, the
+    formation's shape is easier to see.";
+  - and the checkbox "Without the pitch's grain (smaller file)", unticked by default and
+    remembered as the folder is, shared by both dialogs. The grain is noise, which PNG cannot
+    compress, so a picture without it is smaller, which matters when a cup's worth is
+    shared. Its hover: "Paint the pitch in flat bands, without its grain. The picture looks
+    plainer and its file is smaller, which helps when sharing many." (how much smaller is
+    measured when the pictures are built; the hover claims no figure).
 
   Labels and fields sit on one grid, every field starting at one x. A name already in the
-  folder asks "Replace it?" first; the picture is then written and a success notice names it,
+  folder asks "Replace it?" first; the picture is then written and a success notice names it
+  (`<file> written to <folder>`),
   with an Open folder action.
 
   **The picture.** The theme's panel colour under the team's name in its colour codes'
@@ -1691,8 +1749,8 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   "Settings menu"), and `libs/fpc`'s hide preset takes them as an `fpc::HideIds` value rather
   than reading constants.
 
-  The editor's Hide default body, Show default body, Ctrl+I, the team's Hide and Show
-  default body (FPC) and the classifier (`is_fpc_player`) read the setting, and so do the
+  The editor's Hide default body, Show default body, Ctrl+I, the Team menu's two entries
+  and the classifier (`is_fpc_player`) read the setting, and so do the
   compiler's `fpc_on` marker and its default-ID rule. One setting, not one per tool: a
   compiler writing 60 for a marker and an editor reading only 55 as hidden would show every
   compiled FPC player as "The default body is currently shown".
@@ -1724,7 +1782,11 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   again. The Appearance section draws the classifier's reading ("The default body is currently
   hidden" or "The default body is currently shown") with two actions, Hide default body and
   Show default body. Ctrl+I shows a player the classifier reads as hidden and hides any other,
-  and the Team menu's Hide and Show default body (FPC) are the same two actions over the team.
+  and the Team menu's `Hide default body (Enable FPC)` and `Show default body (Disable FPC)`
+  are the same two actions over the team. The Player menu has one entry, on Ctrl+I, whose
+  label is the one of those two it will do, by the classifier's reading of the selected
+  player: `Toggle FPC settings` did not say which way it would go. The brackets name the
+  cup's word for it beside the plain one, since a member looks for either.
 - **The findings are catalog codes.** `fpc::check`'s codes are rows of the tool's message
   catalog (`fpc_inners_break_hiding`, `fpc_undershorts_break_hiding`, `fpc_taping_shows_pieces`,
   `fpc_gloves_checkbox_winter_gloves`), so the section's text and the help's Messages topic
@@ -1756,7 +1818,7 @@ aesthetics** but through the switch:
   (or its `ingame_face.toml`, for the face, hair and iris), recompile, then apply the patch", and
   a link to the apply action).
 - The same lock covers every other aesthetics write path: the team operations that write
-  appearance fields (set boots/gloves IDs for everyone, hide/show the team's default body (FPC), clear visual
+  appearance fields (set boots/gloves IDs for everyone, hide/show the team's default body, clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of
   Team TOML and legacy squad imports (the section checkbox is disabled, gameplay and tactics
   import as before).
@@ -2008,7 +2070,14 @@ the editor exposes them as:
   (`plans/pes_savefile/operations.md` "Texport (read + write)"). On a PES 2015-2016 save it
   is disabled, its tooltip saying `The editor cannot write a PES 2015 or 2016 Texport`.
 
-  The Save dialog suggests `<short name>.ted` on 18-21. On 17 it suggests the name the game
+  A Team TOML's Save dialog suggests the team's name less its slashes (`/f/` gives
+  `f.toml`; a name in another script stays, `きらら.toml`), a file a member recognizes in a
+  folder, where `<id>.toml` made them look the ID up. A name left empty, or holding a
+  character a file name cannot hold (`\ / : * ? " < > |`), gives way to the short name, and
+  that one, failing the same, to the ID. The command line's `export-toml` writes where
+  `--out` says and its `--all` keeps `<id>.toml`, which sorts as the teams list does.
+
+  A Texport's Save dialog suggests `<short name>.ted` on 18-21. On 17 it suggests the name the game
   reads from the save's folder: `TEXPORT` and an eight-digit hexadecimal number in upper
   case, no extension (`TEXPORT0000000A` follows `TEXPORT00000009`; real cup folders hold
   `TEXPORT0000000D` and `TEXPORT00000013`), the first number from `00000000` that folder
@@ -2495,7 +2564,7 @@ SE-GUI-11  GIVEN a player without FPC, his Appearance section open, and the aest
            WHEN Ctrl+I, or Hide default body, is used
            THEN his record carries the hide preset's values and the Appearance section reads
                 "The default body is currently hidden"; Ctrl+I again, or Show default body, gives him the show preset's; GIVEN a player
-                whose boots ID is 627 THEN hiding keeps 627; Hide default body (FPC) applies the
+                whose boots ID is 627 THEN hiding keeps 627; Hide default body (Enable FPC) applies the
                 hide preset to every player of the team; a strip setting that breaks hiding is
                 listed in the Appearance section as an interference finding
 SE-GUI-12  GIVEN the team view's Tactics on preset 1, and /vg/ League 27, which does not allow
@@ -2653,7 +2722,7 @@ SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row s
                 stays; WHEN Down is pressed on a row below the list's view THEN the list
                 scrolls so the selected row shows, and no widget holds the keyboard after a
                 press that moved the selection; GIVEN ALL's last row selected WHEN Down is
-                pressed THEN nothing moves; GIVEN the Player menu's Copy stats from dialog,
+                pressed THEN nothing moves; GIVEN the Bump all stats dialog,
                 the unsaved-changes list or team 701's slot popover open, or a pointer button
                 held on a row, WHEN Down is pressed THEN the selection stays and the dialog,
                 list or popover stays open; WHEN the button is released, or PgDn selects a
@@ -2680,6 +2749,9 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
            click, or by Down from A's row)
            WHEN Ctrl+V is pressed
            THEN B's record holds what Copy stats from A writes, and one Undo restores B;
+                the status bar's notice reads `A's stats copied.` after the copy and `A's
+                stats pasted onto B.` after the paste, and likewise a Gameplan's, a preset's
+                and a formation's, the formation's naming its preset;
                 GIVEN team 701's row copied and team 702's row selected WHEN Ctrl+V is
                 pressed THEN 702 holds what a Gameplan-only import of 701's document
                 writes; GIVEN preset 1 copied from its selector and preset 2 shown WHEN
@@ -2794,6 +2866,41 @@ SE-GUI-77  GIVEN a save holding, beside the cup's teams, a team with id 300 whos
                 a second copy of the save in which team 300's name, one of its players'
                 Height and a cup player's Height differ, picked in the comparator THEN
                 its rows hold the cup player's Height alone
+SE-GUI-78  GIVEN the save open on player A of team 701
+           WHEN the Player menu's Copy/swap stats… is clicked
+           THEN a window titled Copy/swap stats opens with Source and Destination both on A,
+                Copy and Swap disabled and their hover saying the two are the same player,
+                and the view under it still takes clicks; WHEN the Source's player
+                dropdown is set to B and Copy is clicked THEN A holds B's field set, the
+                window is still open and reads `Copied B's stats to A.`, and one Undo
+                restores A; WHEN player C's row is then clicked in the list THEN the
+                Destination is C, and a second Copy writes C without the window reopened;
+                WHEN Swap is clicked THEN B and C hold each other's field set as one undo
+                step; WHEN a team dropdown is changed THEN its player dropdown shows that
+                team's first player; GIVEN a team's page shown WHEN the entry is clicked
+                THEN both rows start on the team's first player; WHEN the title bar is
+                dragged THEN the window moves and stays where it is dropped
+SE-GUI-79  GIVEN a save open with an edit made
+           WHEN Ctrl+S is pressed
+           THEN the status bar's notice reads `<the save's file name> saved (the replaced
+                file is kept once as <file name>.bak)`, in the success colour; WHEN Save
+                as…, Output rosters to TSV, a Team TOML export, a Texport export, each
+                Generate action and the Comparator's Export each write their file THEN
+                each publishes `<file> written` with its detail, and none reads `Wrote`;
+                WHEN a ruleset is imported THEN the notice reads `<label> imported.`
+SE-GUI-80  GIVEN team 718 /f/ selected in the interchange panel
+           WHEN Team TOML's export is clicked
+           THEN the Save dialog suggests `f.toml`; GIVEN a team named `/きらら/` THEN
+                `きらら.toml`; GIVEN a team named `/wh?/` with the short name `WHQ` THEN
+                `WHQ.toml`; GIVEN that team with an empty short name THEN `<its id>.toml`
+SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
+           WHEN the formation bar is drawn
+           THEN it ends with two checkboxes, Scroll and Portraits, both ticked, each with
+                its hover; WHEN Portraits is unticked THEN the pitch draws no portrait,
+                each badge and name stands where it stood, the captain's mark stands on
+                his badge's top edge at its left end and a Live AATF cross stands on its
+                badge, and no undo entry or unsaved mark follows; GIVEN the editor
+                restarted THEN Portraits is still unticked
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of
@@ -2929,8 +3036,8 @@ SE-GUI-35  GIVEN the save open with "Aesthetics from exports" off (the default)
                 as an ability edit does; GIVEN the setting switched on in the settings menu
                 THEN the next frame draws the switch, off, and the paths disabled
 SE-GUI-24  GIVEN the save open on a player
-           WHEN Set all stats to N, Bump all stats by N, Copy stats from another player or Swap
-                stats with him runs from the player operations
+           WHEN Set all stats to N, Bump all stats by N, or Copy or Swap in the Copy/swap
+                stats window runs from the player operations
            THEN his ability values are the operation's result (Set and Bump kept within 40 to
                 99, weak foot, form and injury untouched; Copy and Swap over the parity row's
                 field set, positions, skills and COM styles included), as one undoable edit,
@@ -3098,9 +3205,12 @@ SE-GUI-31  GIVEN the common settings' FPC hide IDs set to 60 (boots) and 12 (glo
            WHEN Hide default body is used on a player whose boots and gloves IDs are 0
            THEN his record holds boots 60 and gloves 12 and Appearance reads "The default body is currently hidden";
                 WHEN Show default body is used THEN both are 0 again; GIVEN a player whose boots ID is
-                55 THEN Appearance reads "The default body is currently shown"; WHEN Ctrl+I, the Player menu's Toggle
-                FPC settings or the Team menu's Hide and Show default body (FPC) run THEN they
-                write and clear 60 and 12 the same, and a player holding 55 and 11 keeps them
+                55 THEN Appearance reads "The default body is currently shown"; WHEN Ctrl+I, the Player menu's
+                FPC entry or the Team menu's Hide default body (Enable FPC) and Show default
+                body (Disable FPC) run THEN they write and clear 60 and 12 the same; the
+                Player menu's entry reads Hide default body (Enable FPC) on a player whose
+                body is shown and Show default body (Disable FPC) on one whose body is
+                hidden, and a player holding 55 and 11 keeps them
 SE-GUI-32  GIVEN the save open and VTL11 picked in the toolbar's ruleset dropdown (SE-GUI-15)
            WHEN the tool is closed and reopened
            THEN the `aatf_ruleset` setting reads `vtl11`, the tool's other keys unchanged, the

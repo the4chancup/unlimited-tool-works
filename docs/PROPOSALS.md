@@ -133,19 +133,6 @@ call at each of those places goes through the disabled-widget helper, and each g
 line in a test; a member who reads a dimmed label as "locked by the aesthetics switch" (the
 Appearance section dims for that reason too) has one more thing dimmed there.
 
-## P54: A paste from another PES version says what it could not carry
-
-From the review of 0.0.2-clip (SWE-2, 2026-11-12). Ctrl+V of a copy made in a save of
-another PES version goes through the import, which leaves out what the target's version does
-not store and caps what it stores smaller (a PES 2021 player's playing attitude or star
-pasted into a PES 2017 save). The import panel lists those before Apply; a paste shows
-nothing, so the member cannot tell that the target holds less than the copy.
-
-Adds: after such a paste, one notice in the status bar ("Pasted the stats of SURNAME; 3
-values PES 2017 does not store were left out"), only when something was left out or
-capped. Costs: a notice for a keyboard action that is otherwise silent, its wording per
-kind, and a test per kind; a paste between saves of one version never shows it.
-
 ## P55: The Team compiler's help as two topics
 
 From the text rereading of 2026-11-13 (worklog 0.0.2-text, `sh_tc.full.md`). The Team

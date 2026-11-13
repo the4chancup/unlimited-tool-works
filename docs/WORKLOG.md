@@ -1885,7 +1885,7 @@ briefs, review loops, gates and mutation runs as for any step.
       writers do not write, and the patch block's `# slot 03 -> player 70203` contradicts
       its prose (`sh_toml_b` "Wrong or stale" 4, 5, 7: trim the blocks or write the useful
       comments); the kit config's comment columns drift with the value's width
-  - [ ] 0.0.2-copywin Copy and swap stats as one window (the maintainer, 2026-11-13;
+  - [ ] 0.0.2-copywin (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) Copy and swap stats as one window (the maintainer, 2026-11-13;
     drafted, `drawCopyStats`, and looked at the same day). The Player menu's "Copy stats
     from…" and "Swap stats with…" become one entry, "Copy/swap stats…", which opens a
     window titled "Copy/swap stats", not a dialog: non-modal, the view under it usable,
@@ -1903,7 +1903,7 @@ briefs, review loops, gates and mutation runs as for any step.
     (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
     the slice -> verify: headless, two copies in a row without reopening, a swap, one undo
     step each, a click in the list moving the destination; the built window, dragged
-  - [ ] 0.0.2-fpcmenu the FPC entries say what they do (the maintainer, 2026-11-13: a
+  - [ ] 0.0.2-fpcmenu (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the FPC entries say what they do (the maintainer, 2026-11-13: a
     toggle is ambiguous; drafted and looked at the same day). The Player menu's "Toggle FPC
     settings" becomes one entry whose label follows the Appearance section's own reading of
     the player: "Hide default body (Enable FPC)" on a shown body, "Show default body
@@ -1913,7 +1913,7 @@ briefs, review loops, gates and mutation runs as for any step.
     "Hide default body" and "Show default body". Plan: `plans/save_editor.md` "Editing UI",
     the Player and Team menus; help `05_team.md`, `06_player.md` -> verify: headless, the
     label on a hidden and on a shown player, Ctrl+I on each
-  - [ ] 0.0.2-clipmsg a notice after Ctrl+C and after Ctrl+V saying what was copied or
+  - [ ] 0.0.2-clipmsg (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) a notice after Ctrl+C and after Ctrl+V saying what was copied or
     pasted (the maintainer, 2026-11-13; drafted, `clipCopy` and `clipPaste`, and looked at
     the same day), in 0.0.2-notice's form: "X's stats copied.", "/x/'s Gameplan copied.",
     "/x/'s preset 2 copied.", "/x/'s preset 2 Kick-off formation copied." (a formation's
@@ -1926,7 +1926,7 @@ briefs, review loops, gates and mutation runs as for any step.
     PES 2017 does not store were left out"); P54 leaves `PROPOSALS.md` with this step's
     plan edit. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one
     notice per kind of copy and of paste, the cross-version line, a notice's text bold
-  - [ ] 0.0.2-notice result notices name the thing first, then what was done to it (the
+  - [ ] 0.0.2-notice (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) result notices name the thing first, then what was done to it (the
     maintainer, 2026-11-13: "Wrote TEXPORT…" should read "TEXPORT… written", and messages
     are usually in the passive). Drafted the same day over every
     `publishNotice` of the Save editor's draft: a written or saved file reads "<file>
@@ -1938,7 +1938,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `text/shakespeare` rewords catalogs and windows, so land it there or after its merge),
     then the built notices and the tests that quote them -> verify: headless, each notice's
     text
-  - [ ] 0.0.2-saved the built Save editor publishes the notices its draft does (the
+  - [ ] 0.0.2-saved (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the built Save editor publishes the notices its draft does (the
     maintainer, 2026-11-13: Ctrl+S confirms nothing on the status bar). Found by reading,
     2026-11-13: no notice after Save and Save as, none after Output rosters to TSV, and
     the Comparator's Export writes a weak line in its panel where the draft publishes a
@@ -1948,7 +1948,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `live_aatf.rs`, `multi_aatf.rs`, `ruleset_picker.rs` and `mod.rs` only), the plan's
     scenarios for the missing ones, then the code; the other tools' drafts the same way
     -> verify: headless, a notice after each action
-  - [ ] 0.0.2-tomlname the Team TOML export's suggested file name is the team's name (the
+  - [ ] 0.0.2-tomlname (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the Team TOML export's suggested file name is the team's name (the
     maintainer, 2026-11-13; drafted, `ixTomlName`): the name less its slashes (`/f/` gives
     `f.toml`; non-ASCII stays, `きらら.toml`), the short name when the name is empty or
     holds a character a file name cannot hold (`\ / : * ? " < > |`), the ID when the short
@@ -1956,7 +1956,7 @@ briefs, review loops, gates and mutation runs as for any step.
     CLI's `export-toml` takes its path from `--out` and does not change. Plan:
     `plans/save_editor.md`, the Team file interchange panel -> verify: a unit test over
     `/f/`, a non-ASCII name, a name with `?`, an empty short name
-  - [ ] 0.0.2-pitchbar the formation bar's "Scroll names" becomes "Scroll" with a hover,
+  - [ ] 0.0.2-pitchbar (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the formation bar's "Scroll names" becomes "Scroll" with a hover,
     and a "Portraits" checkbox stands at its right (the maintainer, 2026-11-13: portraits
     make a formation's shape hard to see; drafted): on by default, remembered in the
     tool's settings as Scroll is, a view setting (no undo entry, no unsaved dot). Off, a
@@ -1970,7 +1970,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
     `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
     paint tests, the built window
-  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34, not built yet), the
+  - [ ] 0.0.2-flatpitch (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the two formation picture dialogs (8.33, 8.34, not built yet), the
     maintainer's additions of 2026-11-13, drafted (`picturesFlatBox`,
     `picturesPortraitsBox`), to enter `plans/save_editor.md` "Formation pictures" and be
     built with 8.33:
