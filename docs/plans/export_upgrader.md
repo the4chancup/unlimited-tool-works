@@ -120,9 +120,9 @@ step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step
 Model-folder mode (`spec/export_upgrader.md` "Model-folder mode") is removed in 0.0.2: the
 `upgrade-models` command, its module, its help and its scenarios (EU-MF-*) go, and the view
 has no second input. An old model that arrives after a team's upgrade comes in a Midcup
-export, a team export holding only what it adds, so the upgrader knows the team, reads the
-save's settings for its players as for any export. A bare folder of model folders names no team, so its upgrade could carry
-nothing of the save, and the mode existed only for it. No release presented the command (the
+export, a team export holding only what it adds, so the upgrader knows the team and reads
+the save's settings for its players as for any export. A bare folder of model folders names
+no team, so its upgrade could carry nothing of the save, and the mode existed only for it. No release presented the command (the
 upgrader's first preview is 0.0.2's), so it goes without a deprecation.
 
 ## CLI
@@ -186,8 +186,7 @@ built: `spec/export_upgrader.md` "CLI"):
   the naming lines are the exe's and the launcher counts nothing. An export named twice, or
   named and also inside the `--all` folder, gets no special case: once its first turn has
   written the output, its second is refused because the output folder exists.
-  `upgrade-models` stays one folder.
-- **The progress line.** On a terminal, `upgrade` and `upgrade-models` draw the console's
+- **The progress line.** On a terminal, `upgrade` draws the console's
   progress line as `compile` does, counting the input exports and the files written
   (`plans/core/architecture.md` "The console's progress line and run summary"). A run of
   several exports counts them all from its first frame (`n/N exports`): the command
@@ -198,137 +197,132 @@ built: `spec/export_upgrader.md` "CLI"):
 
 ## GUI
 
-The tool view is the two commands as two drop targets. It is drafted first
-(`docs/prototypes/tools/export_upgrader.js`, `core/gui.md` "Prototypes before implementation") and
-refined with the maintainer before `view/` is written:
+The tool view upgrades every old export in the `old_exports` folder beside the app into the
+`exports` folder the Compiler reads, as `quick_upgrade.bat` does. Its draft is
+`docs/prototypes/tools/export_upgrader.js` (`core/gui.md` "Prototypes before
+implementation"), whose second version the maintainer accepted. It reuses the Compiler's
+widgets: the grid, its cells and colours, the legend, the toolbar, the detail window and the
+log panel are one shared widget, so the two tools read alike, and an upgrade's result is
+checked in the next tool exactly as it was shown here.
 
-- **Two drop targets**, side by side: *Upgrade an export* (a folder, `.zip` or `.7z`) and
-  *Upgrade model folders* (a folder of old-format model folders, "Model-folder mode"). A path is
-  dropped on a target from outside the window or picked with the target's Browse button
-  (`rfd`). The view holds one input: a drop on either target clears the other, and Upgrade runs
-  the command of the target that holds it.
-- **The run's arguments**, under the first target, the CLI's and nothing more:
-  - the savefile field, prefilled with the newest save `pes_savefile::discovery` finds for the
-    selected PES version (empty when it finds none; a Browse button beside it);
-  - the **loose** switch (step 11).
+The view takes no path of its own (no drop target to fill, no Output into field), because
+the bundle's folders already say where old and new exports live, and the one launcher
+members use (`quick_upgrade.bat`) reads the same two.
 
-  Exactly one of the two is taken, so Upgrade is enabled once either is set. Loose switched on
-  disables the savefile field, its value kept for when loose goes off and not passed, rather
-  than clearing it, because a member trying both ways would pick the save again. The field
-  follows the selected PES version's discovered save until the member edits or picks one.
-
-  Both are disabled for a referee export (its name's first word `refs`) and while the second
-  target holds the input, since neither takes them, so Upgrade is then enabled as soon as the
-  target is filled.
-
-  An **Output into** field holds the directory the output folder is written inside (`-o`): the
-  input's parent by default, so the output lands beside the input, as the CLI's default. For
-  the second target the same field is the output directory itself (`upgrade-models` writes its
-  folders straight into its `-o`), `<input> upgraded` beside the input by default, as the
-  CLI's.
-
-  A **Full / Midcup** pair (`--coverage`) is prefilled with the name's guess once a team export
-  is dropped, its tooltip naming what decided it (`coverage_tag_chosen`'s `source`,
-  `spec/export_upgrader.md` "CLI"). The pair is disabled for a referee export and for the
-  second target, and held on the name's tag when the name already carries one (the CLI refuses
-  the other there). The view passes `--coverage` only when the pair differs from the name's
-  guess, so the report's `source` is the name's whenever the member left the pair alone.
-- **The savefile field names the team it needs.** Once a team export is dropped, its team is
-  resolved (the Note's `Team:` line, else the name, step 6) and the field shows `needs /egg/`
-  beside it. A referee export's field is disabled and shows nothing beside it, because it takes
-  no save. The field shows the name alone, because the upgrader reads no teams list and the
-  save's team is found by name (`spec/export_upgrader.md` step 6).
-
-  The field's states:
-  - A save picked or discovered that holds no team of that name turns the field red, the
-    refusal's sentence as its tooltip, and Upgrade stays disabled, so a manager whose save
-    comes from another cup or version learns it before the run rather than from its exit 2.
-  - A Note or name that gives no team name shows `no team name` instead and disables nothing
-    of its own (Upgrade still needs a save or loose, EU-GUI-01). The save is then not checked
-    for the team, which has no name to look for, and the run reports `team_name_unknown`
-    before any check of the save for the team, as the CLI does.
-  - A picked or discovered file that does not read as a save turns the field red with the read
-    error as its tooltip, Upgrade disabled.
-  - An export whose Note or archive does not read at the drop leaves the field plain: the run
-    reports it (`source_read_failed`, `export_extract_failed`) as the CLI does.
-
-  A red field disables Upgrade only while loose is off. With loose on the field's value is not
-  passed (above), so loose stays the way out of a save that will not do.
-
-  The resolution and the save read are the run's own steps, moved to the drop and the pick;
-  the run still checks both.
-- **Upgrading without the save asks first.** With loose on, Upgrade opens a dialog before the
-  run. The save is where the players' looks live (the appearance step 8 reads into
-  `settings.toml`, and the in-game faces), and the old export holds none of it. So an upgrade
-  without the save carries none, and a compile of the output then gives the players it holds
-  the default look.
-
-  The dialog says that and the remedy (cancel, and pick the save the team was made in). Its
-  Upgrade button stays disabled until the member ticks
-  `I understand the players' looks will be lost`; Cancel returns to the view, loose still on.
-  The dialog is asked on every loose run rather than once, because each export's loss is its
-  own.
-
-  The CLI asks nothing: `--loose` is already the opt-in step 11 requires, and a prompt would
-  stall a script.
-- **The Upgrade button** runs the command on a thread of its own through the CLI's own parser,
-  as the Team compiler's Compile does (`spec/core/development_plan.md` "Phase 3", the shell
-  slice), so the view cannot upgrade anything the command line would refuse. A refusal (a
-  savefile without the team, exit 2) and an abort (an output folder that already exists, exit
-  3) show as the CLI prints them.
-
-  The existing-output abort's done line carries **Open the existing folder**, so a manager
-  re-running an upgrade sees what the earlier run made and can rename or remove it. The command
-  returns the folder's path with that abort, as a field of the error, not parsed back from its
-  text, which a Windows path's `:` would break. An abort over a file that could not be written
-  carries no such button, because its folder is the incomplete staging one.
-- **The report** is the view's product: step 10's findings as the console prints them, in the
-  log panel, and above it the **left-behind** list. The list has one row per
-  `unmigrated_content` or `leftover_dropped` entry with its input path, the finding's code and
-  the entry's context (a Note line, a kit config's error), so the author sees in one place what
-  to fix in the input (an unmigrated entry, which kept anything from being written) or what the
-  output left out (a leftover).
-
-  Entries are grouped by their parent folder:
-  - A parent holding two or more is one collapsing row with the count
-    (`Boots/k2177 - THIS BEAVER IS CONTAMINATED: 18 left out`: the count is of entries, files
-    or folders alike), its chevron opening it to its entries.
-  - A parent holding one stays that one row.
-  - The export's own root, as a parent, is named by the input's name (`co Spring: 2 left out`).
-  - An entry that is itself a folder (a second face folder) groups under its parent like a
-    file.
-
-  A real export's upgrade (Lab's EGG, in the draft) left 120 rows, 18 of them one boots
-  folder's, which then read as the 25 folders they are about.
-
-  A click on a group's row opens or closes it, as its chevron does. A click on an entry's row
-  opens the system file browser at that entry (the folder, the file selected where the platform
-  can; for an archive input, the folder the archive sits in, the archive selected), and its
-  tooltip says so. The fix then starts from the list rather than a walk through the folders.
-
-  For `upgrade-models` the per-folder "where it goes" lines are the log's, as the CLI prints
-  them, and the list holds the folders it left out.
-
-  A **Copy report** button beside the done line puts the console's lines on the clipboard, as
-  the CLI prints them, for a manager asking for help in the cup's thread. The run ends with the
-  exit code's meaning in words (clean; not clean, nothing written, see the list; refused;
-  aborted).
-
-  A clean run, the only one that writes output, also gets the notice
-  `Upgraded <name> · [Open output folder]` in the status bar and, in the view's done line, a
-  **Move to exports and compile** button. The button moves the output into the exports folder
-  and makes the Team compiler active (`ctx.switch_to_tool`, as the Refs arranger hands off),
-  the watcher then checking it like any dropped export. It is a button rather than the
-  notice's action because a notice carries at most one (`spec/core/gui.md` "Status bar"), and
-  Open output folder stays useful to a member who compiles elsewhere. Once clicked, the done
-  line says where the output moved to and the button goes.
-
-  A clean `upgrade-models` run gets the notice and no Move button, because its output is
-  folders to drop into an export, not an export. Any other run publishes no notice, having
-  nothing to open.
-
-  A new input clears the previous run's report, the log and the list included, because the
-  report is about the input it ran on.
+- **The folder.** On opening, the view reads `old_exports` and lists every export in it (a
+  folder, `.zip` or `.7z`), each read as the upgrade reads it up to the write: its cells
+  show what the run would do and what stops it, before anything is written. The folder is
+  watched as the Compiler watches `exports`, so an export copied in appears and is read.
+  A folder, `.zip` or `.7z` dropped on the view is copied into `old_exports`, as the
+  Compiler's drop copies into `exports`, and refused with a notice when `old_exports`
+  already holds that name. An empty folder shows `No old exports found`, the folder's path
+  and the drop's invitation.
+- **The arguments**, one row under the title bar:
+  - **Save**, prefilled with the newest save `pes_savefile::discovery` finds for the
+    selected PES version (empty when it finds none), with a Browse button. It follows the
+    selected version's discovered save until the member edits or picks one. One save serves
+    every export, since a cup's teams come from one save. The field turns red while any
+    listed team is missing from it, its tooltip naming those teams, and each such export's
+    row says so (below).
+  - **Upgrade without the save**, the `--loose` switch, its tooltip saying what loose does
+    (each boots or gloves folder goes to the player at its ID's position in the team's old
+    block of 25, and no player's looks are read). Ticked, it disables the save field, keeping
+    its value for when it is unticked, because a member trying both ways would pick the save
+    again, and an export refused for its team is read again with no save.
+  - `into` and the `exports` folder's path, as text: where every upgraded export goes.
+  - At the row's right end, the **look toggle**, `Grid | Files` (below).
+- **Two looks, one set of cells.**
+  - **Grid**, the default from five exports on: the Compiler's grid, three lines an export.
+    The **Face** line holds a cell per player slot (his face folder, to `Players\NN -
+    Name`), then the portraits (`n/N`) and a cell per kit (its two colours as the
+    Compiler's swatch).
+  - The **Boots** and **Gloves** lines hold, under each player, the boots or gloves
+    folder the save has him wear, by its four-digit ID. A folder one player wears moves into
+    his own; one two or more wear stays shared, with a link in each wearer's folder, and its
+    cell stands under each wearer.
+  - Right of the portraits, the team's files: `Note` (its colours and notes), `Logo`,
+    `Common` and `Collar` on the Boots line; on the Gloves line `IDs` (the boots and gloves
+    IDs kept in `legacy_ids.toml`) and one cell counting what the upgrade leaves out
+    (`3 out`), in place of a list.
+  - The team's label cell, at the row's left, carries the export's own state, its tooltip
+    the old name and the upgraded one (`exports\<name>`, EU-ROOT's naming).
+  - **Files**, the default under five: the explanatory page's map (`docs/web/
+    upgrade_explained.html`) drawn for each export. A box stands per folder or file of the
+    old export on the left and per folder or file of the upgraded one on the right, with a
+    line from each old box to every place it goes, in the colour of what it carries:
+    players, boots and gloves, kits, team files, and dashed for what is not carried or for
+    information read (the Note's kit colours into each kit).
+  - A box under the pointer keeps its own lines and the boxes at their other ends, and dims
+    the rest. The dimming ends 120 ms after the pointer leaves, as on that page, so going
+    from box to box does not flicker.
+  - Each export's block opens with its label, its old name, `→` and its upgraded name.
+    The labels `Old export` and `Upgraded export` are one row that stays above the exports
+    as they scroll, and a legend of the lines' colours stands above the map.
+  - **The toggle** picks either look whatever the count; until the member picks one, the
+    count chooses. The pick lasts the session, because the right look depends on the day's
+    folder.
+  - A box's state is its cells' (the worst while any is unread or wrong, the run's once
+    every one is through), so the two looks never disagree.
+- **Cell states** are the Compiler's colours with the upgrader's words: `Not read yet`,
+  `Reading`, `Ready`, `Warning` and `Error` (outlines), `Upgraded`, `Upgraded with warnings`,
+  and `Not written` (the dashed red outline). The legend, above the grid, lists them as the
+  Compiler's does.
+- **An export with an Error is not written.** Its cells turn `Not written` once the run
+  passes it, the Error's cell keeping its red outline so the eye finds what to fix, and the
+  log gives `migration_not_clean` for it. The others are written. This is the upgrader's
+  rule, a clean export or nothing, applied per export.
+- **An export that cannot be read** is one line in place of its cells, in the error
+  colour, with the action that resolves it beside the message, never in the rightmost
+  column:
+  - a team the save does not hold: the line only, since picking another save or ticking
+    the loose switch resolves it;
+  - an export already in the Studio format: **Move to exports**, which moves it into
+    `exports` as it is;
+  - an upgraded export already in `exports`: **Open the existing folder**, so the member
+    sees what the earlier run made and renames or removes it. The path comes from the
+    error's field, never parsed from its text, which a Windows path's `:` would break.
+- **Full or Midcup** is a combo at each row's right (in Files, at the block's head),
+  prefilled with the name's guess, its tooltip naming what decided it
+  (`coverage_tag_chosen`'s `source`). It is held on the name's tag when the name carries
+  one, since the CLI refuses the other there. The run passes `--coverage` for an export
+  only when the combo differs from the guess, so the report's `source` stays the name's
+  whenever the member left it alone. A referee export has no combo.
+- **A click** on a cell, a box, a label or a log line opens the Compiler's detail window:
+  the old paths a cell is read from and the path it is written to, its state, its findings,
+  who wears a boots or gloves folder (and so whether it moves or stays shared), the list of
+  what is left out for the count's cell, and **Open the old folder**. A log line's click
+  also outlines its cell or row.
+- **The toolbar** is the Compiler's:
+  - **The strip.** Idle, it gives the last run's line and the counts
+    (`13 old exports · 8 ready · 1 with errors · 3 cannot be read · 2 with warnings`).
+    During a run it reads `Upgrading · mm:ss · n of N folders written`.
+  - **Open the Compiler** stands left of Upgrade, always enabled but during a run. Once an
+    upgrade has finished it takes the accent colour, the view's one blue button, until the
+    next run starts, because the upgraded exports are already in the Compiler's folder and
+    it is the next step.
+  - **Upgrade** is a split button. Its arrow opens Open old_exports folder, Open exports
+    folder and **Copy report** (the run's lines as the console prints them, for a member
+    asking for help in the cup's thread). Upgrade is enabled once any export is ready,
+    and during the run it reads Cancel.
+- **The run** upgrades every ready export, in parallel, through the command's own code, so
+  the view upgrades nothing the command line would refuse. Cells change as their folders
+  are written, scattered over the exports a few at a time. The run ends with the notice
+  `Upgraded N exports`, carrying Open exports folder.
+  - **Cancel** stops the run. Exports already written stay in `exports`, and one being
+    written leaves nothing, by the upgrade's own staging (never a half-migrated output).
+  - The window's close during a run asks, as the Compiler's does.
+- **Upgrading without the save asks first.** With the loose switch ticked, Upgrade opens a
+  dialog before the run. The save is where the players' looks live (skin colour, build,
+  strip style, the in-game faces) and the old exports hold none of it, so an upgrade
+  without it carries none, and a compile of the result gives those players the default
+  look. The dialog says that and the remedy (cancel, and pick the save the teams were made
+  in). Its Upgrade stays disabled until `I understand the players' looks will be lost` is
+  ticked, and Cancel returns to the view, the switch still ticked. It is asked on every
+  such run, because each run's loss is its own. The CLI asks nothing: `--loose` is already
+  the opt-in step 11 requires, and a prompt would stall a script.
+- **A referee export** (its name's first word `refs`) takes no save: its row is read and
+  written whatever the save field holds, and has no Full or Midcup combo. The draft does
+  not show one yet (worklog 8.17b).
 - No settings section: the tool has no settings (step 6: it reads no teams list).
 
 ## Dependencies
@@ -385,65 +379,76 @@ EU-CLI-15  GIVEN two exports named, the second of a team the save lacks
 ```
 
 **Phase 8 scope.** Phase 8 delivers the view ("GUI"). What a scenario observes is what a frame
-draws, through the headless harness (the frame's AccessKit nodes; a dropped path as egui's
-dropped-files input; a click as press and release frames), the output written, and the notice
-published. `manual` marks only what needs a native dialog.
+draws, through the headless harness (the frame's AccessKit nodes and painted shapes; a dropped
+path as egui's dropped-files input; a click as press and release frames), the output written,
+and the notice published. `manual` marks only what needs a native dialog.
 
-The inputs are Phase 6's fixtures, copied under the test's own folder. The discovered save is
-one placed under a Documents folder there.
+The inputs are Phase 6's fixtures, copied into an `old_exports` folder under the test's own
+folder, with an `exports` folder beside it. The discovered save is one placed under a
+Documents folder there.
 
 What the upgrade writes is the Phase 6 scenarios'. These scenarios observe that the view
-reaches the same command with the arguments shown and shows its report.
+reaches the same code with the arguments shown and shows its report.
 
 ```
-EU-GUI-01  GIVEN the selector at PES 21, an old export folder dropped on the Upgrade-an-export
-                 target and a PES 21 save under the test's Documents folder
+EU-GUI-01  GIVEN the selector at PES 21, EU-CLI-01's `co - Spring` export in old_exports and a PES 21
+                 save holding /co/ under the test's Documents folder
            WHEN the view is drawn
-           THEN the target names the export, the savefile field holds the discovered save, the
-                loose switch is off, the Output-into field reads the input's parent folder, and
-                Upgrade is enabled; GIVEN no discovered save THEN the field is empty and Upgrade
-                is disabled until a save is picked or loose switched on; WHEN loose is switched
-                on and Upgrade clicked THEN the loose dialog opens and no run starts, its
-                Upgrade disabled until its box is ticked; WHEN Cancel is clicked THEN the view
-                is back, loose still on; WHEN the box is ticked and the dialog's Upgrade
-                clicked THEN the run is `upgrade --loose` with no savefile argument, its output
-                the one `upgrade --loose` writes for that export
-EU-GUI-02  GIVEN EU-GUI-01's export and save, the export's Other/ holding one file
+           THEN the Save field holds the discovered save, the loose switch is off, the look is
+                Files (one export), /co/'s block names its old and upgraded names, and once its
+                reading ends every box is Ready and Upgrade is enabled; GIVEN no discovered
+                save THEN the field is empty and Upgrade disabled until a save is picked or
+                the loose switch ticked
+EU-GUI-02  GIVEN EU-GUI-01's folder and save, the export's Other/ holding one file
            WHEN Upgrade is clicked
-           THEN the output folder is the one `upgrade --savefile` writes (EU-ROOT's naming), the
-                log shows the report's lines as the console prints them, the left-behind list
-                holds one row, the Other/ file's leftover_dropped with its path, the last line
-                gives the exit code's meaning (clean), the notice "Upgraded <name>" with its
-                Open output folder action is published, and the done line shows Move to
-                exports and compile; WHEN that is clicked THEN the output sits in the exports
-                folder and the Team compiler's view is active
-EU-GUI-03  GIVEN the first target filled as in EU-GUI-01, then a folder of old model folders,
-                 one of them holding no file directly in it (EU-MF-03's), dropped on the
-                 Upgrade-model-folders target
-           WHEN Upgrade is clicked
-           THEN the first target was cleared by the drop and the savefile field and loose switch
-                disabled, the Output-into field read "<input> upgraded" beside the input, the run
-                is `upgrade-models`', the left-behind list holds one row for the folder without
-                files, with its path and unmigrated_content, nothing is written (EU-MF-03), no
-                notice is published and no Move to exports and compile is shown
-EU-GUI-04  GIVEN a referee export dropped on the first target
+           THEN exports holds the folder `upgrade --savefile` writes (EU-ROOT's naming), the
+                count cell reads `1 out` and its detail lists the Other/ file with
+                leftover_dropped, the log shows the report's lines as the console prints them,
+                the notice `Upgraded 1 export` with Open exports folder is published, and Open
+                the Compiler takes the accent colour; WHEN that is clicked THEN the Compiler's
+                view is active
+EU-GUI-03  GIVEN five old exports, one of them /co/ whose Note holds EU-ROOT-06's unreadable colour entry
+           WHEN the view is drawn and Upgrade clicked
+           THEN the look is Grid, /co/'s Note cell is outlined red before the run, the other
+                four are written, /co/ is not (its cells Not written, the Note's outline kept)
+                and the log gives migration_not_clean for it; WHEN Files is picked THEN the same
+                five show as maps and stay so with a sixth export added
+EU-GUI-04  GIVEN two exports, one of a team the save does not hold, one whose upgraded folder
+                 already exists in exports
            WHEN the view is drawn
-           THEN the savefile field and the loose switch are disabled and Upgrade is enabled;
-                WHEN Upgrade is clicked THEN the run is `upgrade` with neither a savefile nor
-                loose argument, the output EU-REF-01's (its players.txt from refs.txt)
-EU-GUI-05  GIVEN an input whose output folder already exists
+           THEN each is one line in the error colour: the first's names the team and the Save
+                field is red, its tooltip naming the team; the second's carries Open the
+                existing folder beside its message; Upgrade is disabled; WHEN the loose switch
+                is ticked THEN the first is read and Upgrade is enabled
+EU-GUI-05  GIVEN EU-GUI-01's folder, the loose switch ticked
            WHEN Upgrade is clicked
-           THEN the log shows the abort naming the folder (EU-CLI-05), the last line reads
-                aborted, nothing is written and no notice is published
-EU-GUI-06  manual  GIVEN the view open
-                   WHEN a target's Browse button is clicked
-                   THEN the native picker opens for a folder (or, on the first target, a folder or
-                        archive) and the picked path fills the target as a drop would
-EU-GUI-07  GIVEN EU-GUI-01's upgrade in flight, another tool's view active
-           WHEN the window's close is requested
-           THEN the Export upgrader's view is active with its prompt; GIVEN close chosen THEN
-                the window closes after the run's last line, the output EU-GUI-01's; GIVEN
-                the window kept THEN the run ends as it would have
+           THEN the loose dialog opens and no run starts, its Upgrade disabled until its box is
+                ticked; WHEN Cancel is clicked THEN the view is back, the switch still ticked;
+                WHEN the box is ticked and the dialog's Upgrade clicked THEN the output is the
+                one `upgrade --loose` writes for that export
+EU-GUI-06  GIVEN EU-GUI-01's folder, its name carrying no tag
+           WHEN Midcup is picked in its combo and Upgrade clicked
+           THEN the output is `upgrade --coverage midcup`'s and the report's source is the
+                member's choice; GIVEN the combo left alone THEN no --coverage is passed and the
+                source is the name's
+EU-GUI-07  GIVEN a referee export in old_exports and no save picked
+           WHEN the view is drawn and Upgrade clicked
+           THEN its row has no Full or Midcup combo, Upgrade is enabled, and the output is
+                EU-REF-01's (its players.txt from refs.txt)
+EU-GUI-08  GIVEN EU-GUI-03's five exports and the upgrade in flight
+           WHEN Cancel is clicked
+           THEN the run stops, every export exports holds is whole (as its own `upgrade` writes
+                it) and none is partial; GIVEN another tool's view active and the window's
+                close requested during a run THEN the Export upgrader's view is active with
+                the Compiler's prompt
+EU-GUI-09  GIVEN EU-GUI-01's folder
+           WHEN a folder holding an old export is dropped on the view
+           THEN it is copied into old_exports, listed and read; WHEN a folder of the same name
+                is dropped THEN nothing is copied and a notice names it
+EU-GUI-10  manual  GIVEN the view open
+                   WHEN the Save field's Browse button is clicked
+                   THEN the native picker opens in the selected version's save folder and the
+                        picked file fills the field
 ```
 
 **0.0.2-poc13 scope.** The legacy mode, `--legacy-ids` (above, "What it does").

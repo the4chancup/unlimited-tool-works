@@ -12,8 +12,8 @@
 // Both draw the same cells: a click on either opens the cell's detail. A toggle
 // picks either look whatever the count.
 // The first draft (two drop targets, one input, the left-behind list; kept in
-// git history) is replaced. Not drawn yet from it: model-folder mode, the
-// output-exists abort's button, Copy report, a referee export.
+// git history) is replaced. Not drawn yet from it: a referee export.
+// Model-folder mode is removed (plans/export_upgrader.md "Model-folder mode").
 // Marked "sample": wording and looks the plan does not fix. The rows are
 // samples built to show every state, not recorded runs; team names are
 // teams_list.txt's, /egg/ a real team the bundled list does not hold.
@@ -564,7 +564,7 @@ function argsRow() {
     button("Browse…", () => window_("Savefile", h("p", {}, "The system's file picker opens here, in the selected version's save folder."),
       button("Close", closeWindow), "pick-savefile"), { disabled: S.loose || !!S.run }),
     h("span", { title: LOOSE_TIP }, cb("Upgrade without the save", S.loose, v => { S.loose = v; })),
-    weak("into"), h("span", { class: "mono", title: "Each upgraded export is written beside the others the Team compiler reads" },
+    weak("into"), h("span", { class: "mono", title: "Each upgraded export is written beside the others the Compiler reads" },
       EXE_FOLDER + "\\exports"),
     // The look: the program's choice by the count of exports until the member
     // picks one, which then holds whatever the count (two selectable labels).
@@ -598,7 +598,7 @@ function toolbar() {
     // The step after an upgrade. Always there; once a run has finished it
     // turns the accent blue (egui: the button's fill set to the selection
     // colour), the view's one blue button, until the next run starts.
-    named(Object.assign(button("Open the Team compiler", () => switchToTool("team-compiler"),
+    named(Object.assign(button("Open the Compiler", () => switchToTool("team-compiler"),
       { disabled: !!run, title: "The upgraded exports are in its exports folder: it checks them like any other" }),
       { className: S.finished && !run ? "eu-next" : "" }), "next"),
     h("div", { class: "tc-split" }, main, arrow));
@@ -612,7 +612,7 @@ function moreMenu(btn) {
     item("Open old_exports folder", `The file manager opens on ${EXE_FOLDER}\\old_exports.`),
     item("Open exports folder", `The file manager opens on ${EXE_FOLDER}\\exports.`),
     h("div", { class: "sep", style: "margin:5.5px 0" }),
-    item("Upgrade model folders…", "Model-folder mode (a folder of old face, boots or gloves folders, upgraded on their own) is not drawn in this draft yet."));
+    item("Copy report", "The run's lines, as the console prints them, are put on the clipboard."));
   document.getElementById("win").append(m);
   m.style.left = left - m.offsetWidth + "px"; m.style.top = top - m.offsetHeight + "px";
 }

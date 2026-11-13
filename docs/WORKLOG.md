@@ -947,15 +947,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       keeping its lines and dimming the rest (the dimming ends 120 ms after the pointer
       leaves, as on that page, so going from box to box does not flicker; the files look
       accepted by the maintainer 2026-11-13; the labels `Old export` and `Upgraded export` are one row that stays above the exports as they scroll), a destination lighting as it is written
-      (renders `flow_*.png` by `shot_flow.py`). Not drawn: model-folder mode, the output-exists abort's button, Copy
-      report, a referee export. Accepted as drawn 2026-11-13 night (the maintainer), so
-      `plans/export_upgrader.md` "GUI" is rewritten from it; the maintainer leans to
-      dropping model-folder mode (an old model comes in a Midcup export, so the team and
-      the save's settings are known): ruled 2026-11-13, 0.0.2-nomodels
-    - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
-      2026-10-26, `plans/export_upgrader.md` "GUI"), the samples' rows grouped and the
-      `needs <team>` hint from the real runs → verify: the bundled drafts build; each item
-      reached in the draft
+      (renders `flow_*.png` by `shot_flow.py`). Accepted as drawn 2026-11-13 night (the
+      maintainer); `plans/export_upgrader.md` "GUI" and its EU-GUI scenarios rewritten
+      from it the same night, Copy report drawn in the Upgrade button's menu, model-folder
+      mode removed (0.0.2-nomodels). Not drawn: a referee export's row (8.17b)
+    - [ ] 8.17b a referee export's row in the second draft (no save, no Full or Midcup
+      combo; `plans/export_upgrader.md` "GUI"); the first draft's items (P18's pair, P19's
+      dialog, P32-P36) are in 8.17c's draft or ruled out with it → verify: the bundled
+      drafts build; the row reached in the draft
   - [x] 8.18 the host's layout edit toggle (DECISIONS "The drafts' host gets a layout edit
     toggle"). Done 2026-10-25 (side-lead A, merged `139355d9`)
   - [ ] 8.19 the host's remarks, links and longest values (`core/gui.md` "The host's other
