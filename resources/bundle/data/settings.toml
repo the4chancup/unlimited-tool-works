@@ -120,9 +120,15 @@ live_window = false
 aesthetics_from_exports = false
 
 # If true, a name too long for its badge on the Tactics pitch scrolls, as in the game.
-# The same as the "Scroll names" box on the Tactics formation bar.
+# The same as the "Scroll" box on the Tactics formation bar.
 # Default: true
 scroll_names = true
+
+# If true, the Tactics pitch shows the players' portraits.
+# If false, each player is his badge and name alone, so the formation's shape is easier to see.
+# The same as the "Portraits" box on the Tactics formation bar.
+# Default: true
+portraits = true
 
 
 [team-compiler]
