@@ -1832,23 +1832,24 @@ briefs, review loops, gates and mutation runs as for any step.
       to rule, as wave 3's were), to apply on the branch with a DECISIONS entry:
       (1) the bar holding the tools' icons is "sidebar" in every member text (the readme,
       `settings.toml`'s comments and the install help say "left bar" today);
-      (2) "color", not "colour", everywhere a member reads it (the Save editor's and the
-      Ruleset editor's labels and tooltips, the help);
+      (2) British spelling everywhere a member reads prose ("colour", and the labels the
+      game itself shows, such as "Numbers in defence"): the settings menu, `settings.toml`'s
+      comments and the help pages that write "color" follow; keys, file names and finding
+      codes (`skin_color`, `colors.txt`, `kit_colors_missing`) are names, not prose, and stay;
       (3) a roster position is a "slot", counted from 1 (not "place", "Player 04" or the
       copied AATF line's 0-based "Slot 6");
       (4) the FPC action is "Hide default body (FPC)" / "Show default body (FPC)" in the
-      Team menu, the Player menu and the Appearance section (the lead's reading of "Hide /
-      Show default body (FPC)", to confirm), and the settings tooltips' stale "Hide body"
-      follows;
+      Team menu and the Appearance section, and the settings tooltips' stale "Hide body"
+      follows; the Player menu's toggle is 0.0.2-fpcmenu below;
       (5) the Comparator's columns are "Picked save" / "Open save";
       (6) the boots and gloves dialog's option reads "Set values starting from:";
       (7) "Update logic" stays; (8) "Save as…", the dialog's "Cancel", the tick's "No issues";
       (9) Fix database's "every player's" stays: the cups' database files hold cup teams
       only, so every player is a cup player (the help's "cup player" wording may follow);
       (10) Update ready says the program you are running will be moved to a folder named old;
-      (11) `fpc_custom_skin_on_non_fpc` leaves the Save editor, unless it can be shown for a
-      player whose export folder carries `fpc_off` with skin 7 (to look at: where a marker
-      is known, the Team compiler or the editor's Aesthetics from exports);
+      (11) `fpc_custom_skin_on_non_fpc` leaves the Save editor (the `Code` variant, its
+      arm, the catalog row, `help_cli.rs`'s last-row pin): the editor reads an export only
+      to preview portraits, so it never knows a marker;
       (12) the status bar's "Data folder is read-only" says the settings could not be
       saved and names the cause when the error gives one
     - [ ] wave 4: proposals for the Save editor's and the Ruleset editor's messages, the
@@ -1862,19 +1863,33 @@ briefs, review loops, gates and mutation runs as for any step.
     rows (source, destination) by two columns (team, player), four dropdowns; the destination
     starts on the selected player, or on the selected team's first player while a team's
     gameplay page shows; buttons Copy and Close, and Copy leaves the window open, so several
-    copies are made by changing the dropdowns. Plan first (`plans/save_editor.md` "Editing
-    UI", the Player menu and its SE-GUI scenarios), then the draft, then the slice. Open:
-    whether "Swap stats with…" takes the same window -> verify: headless, two copies in a
-    row without reopening; the built window
+    copies are made by changing the dropdowns. Ruled the same day: a Swap button stands
+    beside Copy and "Swap stats with…" leaves the menu; the destination is set once, when
+    the window opens, and does not follow the list's selection; the source starts on the
+    destination's team with no player picked, Copy and Swap disabled until one is, and both
+    rows stay as they are after a Copy; each Copy or Swap is one undo step and writes a line
+    in the window ("Copied X's stats to Y"). Open, asked: whether a click on a player in
+    the list while the window is open sets the source or the destination. Plan first
+    (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
+    the draft, then the slice -> verify: headless, two copies in a row without reopening,
+    a swap, one undo step each; the built window
+  - [ ] 0.0.2-fpcmenu the Player menu's "Toggle FPC settings" says what it will do (the
+    maintainer, 2026-11-13: a toggle is ambiguous; two entries as the Team menu has, or one
+    whose label follows the player's state): one entry reading "Hide default body (FPC)" or
+    "Show default body (FPC)" by the Appearance section's own reading of the player, Ctrl+I
+    kept on it (the lead's choice between the two: one shortcut, one action). Plan:
+    `plans/save_editor.md` "Editing UI", the Player menu; help `06_player.md` -> verify:
+    headless, the label on a hidden and on a shown player, Ctrl+I on each
   - [ ] 0.0.2-clipmsg a notice after Ctrl+C and after Ctrl+V saying what was copied or
     pasted (the maintainer, 2026-11-13: "Copied player X's stats", "Copied /x/'s preset 2",
-    "Pasted player X's stats"; a small corner popup for a few seconds, or the status bar if
-    the popup costs too much). The status bar's notice slot exists and already carries
-    "Copied the Live AATF list." (`plans/core/gui.md` "Status bar": it is the home of what
-    was once called a toast), so the notice goes there unless the maintainer rules for the
-    popup. PROPOSALS P54 (a paste from another PES version says what it left out) is the
-    same notice's longer form. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 ->
-    verify: headless, one notice per kind of copy and of paste
+    "Pasted player X's stats"). Ruled the same day: the status bar's notice slot, in the
+    success green; and every status bar notice is drawn bold, since notices are easy to miss
+    (`plans/core/gui.md` "Status bar", `studio_core`'s status bar). PROPOSALS P54 is
+    accepted into it: a paste from a save of another PES version says in the same line what
+    the target does not store or caps ("Pasted X's stats; 3 values PES 2017 does not store
+    were left out"); P54 leaves `PROPOSALS.md` with this step's plan edit. Plan:
+    `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one notice per kind
+    of copy and of paste, the cross-version line, a notice's text bold
   - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,
