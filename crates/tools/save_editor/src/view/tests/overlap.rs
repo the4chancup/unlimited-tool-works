@@ -137,6 +137,11 @@ fn collisions(
     let mut found = Vec::new();
     for (i, a) in drawn.iter().enumerate() {
         for b in &drawn[i + 1..] {
+            // A scroll bar's overlap is no collision: the floating bar lies
+            // over the view's right margin by design, taking no room.
+            if a.node.role() == Role::ScrollBar || b.node.role() == Role::ScrollBar {
+                continue;
+            }
             if a.layer != b.layer
                 || contains(a.rect, b.rect)
                 || contains(b.rect, a.rect)

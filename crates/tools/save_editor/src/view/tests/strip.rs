@@ -1426,10 +1426,10 @@ fn the_player_header_tops_the_player_view_alone() {
         (normal, " WAS GOOD"),
     ];
     let body = window.ctx.style_of(window.ctx.theme()).text_styles[&egui::TextStyle::Body].size;
-    // The player view, with the Appearance section closed then open: the
-    // header tops both arrangements.
-    for appearance_open in [false, true] {
-        if appearance_open {
+    // The Stats screen, then the Appearance screen: the same title's row
+    // tops both, the Stats fields' labels on Stats alone.
+    for appearance in [false, true] {
+        if appearance {
             open_appearance(&mut window, &mut view);
         }
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -1453,12 +1453,19 @@ fn the_player_header_tops_the_player_view_alone() {
                 .iter()
                 .map(|(color, text)| (*color, text.to_string()))
                 .collect::<Vec<_>>(),
-            "the title's painted runs (appearance open: {appearance_open})"
+            "the title's painted runs (appearance: {appearance})"
         );
         assert!(
             title_painted(&shapes, title, body),
             "the name at the body's size"
         );
+        if appearance {
+            assert!(
+                label_value(&nodes, "Edit flags"),
+                "the Appearance screen shows"
+            );
+            continue;
+        }
         // The panels' titles and the player fields' labels — the counted
         // labels carry their counts, matched by prefix.
         for label in [

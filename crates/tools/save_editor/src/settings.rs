@@ -1,9 +1,10 @@
-//! The Save editor's section of the settings file: its eight keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its nine keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
 //! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
-//! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes) and `last_folder`
+//! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes),
+//! `team_category` (the team selector's radio buttons) and `last_folder`
 //! (the folder the file
 //! picker starts in). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
@@ -33,7 +34,7 @@ pub(crate) struct SaveEditorSettings {
     pub(crate) live_window: bool,
     /// "Aesthetics from exports", off by default because the cup the suite serves first
     /// keeps its looks in the save. On, the save's aesthetics write only through the
-    /// Appearance section's "Edit aesthetics anyway" switch; off, they edit as every other
+    /// Appearance screen's "Edit aesthetics anyway" switch; off, they edit as every other
     /// field does.
     pub(crate) aesthetics_from_exports: bool,
     /// "Scroll" (the Tactics formation bar's checkbox), on by default: a view setting,
@@ -45,6 +46,12 @@ pub(crate) struct SaveEditorSettings {
     /// a view setting as `scroll_names` is.
     #[serde(default = "default_portraits")]
     pub(crate) portraits: bool,
+    /// The team selector's category (the radio buttons under its teams): which of the cup's
+    /// team ranges the dropdown and the list show. `TeamCategory`'s spellings
+    /// (`all`, `4cc`, `vgl`, `invitational`); an unknown one reads as `all`, kept in the
+    /// file until the member picks a category.
+    #[serde(default = "default_team_category")]
+    pub(crate) team_category: String,
     /// The folder the last save was opened from, by whichever of the opens: the file
     /// picker starts there while it exists, so a member who keeps his saves in a folder
     /// of his own is taken back to it. Written on every open, as `scroll_names` is.
@@ -61,6 +68,7 @@ impl Default for SaveEditorSettings {
             aesthetics_from_exports: false,
             scroll_names: default_scroll_names(),
             portraits: default_portraits(),
+            team_category: default_team_category(),
             last_folder: None,
         }
     }
@@ -74,6 +82,13 @@ fn default_scroll_names() -> bool {
 /// `portraits`'s default: the pitch draws the players' portraits.
 fn default_portraits() -> bool {
     true
+}
+
+/// `team_category`'s default: every cup team listed.
+fn default_team_category() -> String {
+    crate::session::selection::TeamCategory::All
+        .setting()
+        .to_owned()
 }
 
 /// The defaults as a settings table, merged into the file's section for every key it lacks.
@@ -136,6 +151,13 @@ mod tests {
             Some(true),
             "read in and written back"
         );
+    }
+
+    #[test]
+    fn team_category_defaults_to_all_and_round_trips() {
+        assert_eq!(default_table()["team_category"].as_str(), Some("all"));
+        let table: toml::Table = toml::from_str("team_category = \"vgl\"").unwrap();
+        assert_eq!(from_table(&table).unwrap().team_category, "vgl");
     }
 
     #[test]

@@ -112,7 +112,9 @@ fn list_separators(
                     && f64::from(points[0].y) >= top
                     && f64::from(points[0].y) <= bottom
                     && f64::from(points[0].x.min(points[1].x)) <= left + 1.0
-                    && f64::from(points[0].x.max(points[1].x)) >= right - 1.0 =>
+                    && f64::from(points[0].x.min(points[1].x)) >= left - 1.0
+                    && f64::from(points[0].x.max(points[1].x)) >= right - 1.0
+                    && f64::from(points[0].x.max(points[1].x)) <= right + 1.0 =>
             {
                 Some(f64::from(points[0].y))
             }

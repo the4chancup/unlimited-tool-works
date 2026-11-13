@@ -7,12 +7,15 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{combo_item, ink_span, step_choice, text_box, wheel_steps};
+use studio_core::widgets::{
+    COMBO_SEPARATOR_SPACING, combo_item, combo_separator, ink_span, radio_value, step_choice,
+    text_box, wheel_steps,
+};
 use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
 use crate::session::cup::cup_teams;
-use crate::session::selection::{self, ListRow, Row, TeamChoice};
+use crate::session::selection::{self, ListRow, Row, TeamCategory, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
 use crate::view::{SaveView, Selection, live_marks, quick_actions};
@@ -98,17 +101,50 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         return frame_right;
     };
     let team_before = view.team;
+    let category_before = view.team_category;
     ui.scope(|ui| {
         ui.spacing_mut().combo_width = frame_width;
-        team_selector(ui, &mut view.team, session.file(), "save_editor_team");
+        team_selector(
+            ui,
+            &mut view.team,
+            Some(&mut view.team_category),
+            session.file(),
+            "save_editor_team",
+        );
     });
     // Picking a team selects its team row, so the detail shows that team's
     // view, its tactics with it: a manager who picks a team usually wants
-    // its tactics next. Picking ALL keeps the selection.
+    // its tactics next. Picking All teams keeps the selection.
     if view.team != team_before
         && let TeamChoice::Team(id) = view.team
     {
         view.selected = Some(Selection::Team(id));
+    }
+    // A category pick: a team the new category leaves out gives way to
+    // All teams, and a selection it leaves out moves to the list's first
+    // player row (kept when it lists none).
+    if view.team_category != category_before {
+        if let TeamChoice::Team(id) = view.team
+            && !view.team_category.contains(id)
+        {
+            view.team = TeamChoice::All;
+        }
+        let selection_out = view.selected.is_some_and(|selection| {
+            let id = match selection {
+                Selection::Team(id) | Selection::Player(id, _) => id,
+            };
+            !view.team_category.contains(id)
+        });
+        if selection_out {
+            view.selected =
+                selection::list(session.file(), &view.team, &view.filter, view.team_category)
+                    .into_iter()
+                    .find_map(|row| match row {
+                        ListRow::Player(row) => Some(Selection::Player(row.team_id, row.slot)),
+                        ListRow::Team(_) => None,
+                    })
+                    .or(view.selected);
+        }
     }
     ui.add(text_box(
         egui::TextEdit::singleline(&mut view.filter)
@@ -139,7 +175,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
             });
         });
     // A drop works on a row of the dragged player's own team, in one team's
-    // list or under ALL where each team's rows run unbroken under its team
+    // list or under All teams where each team's rows run unbroken under its team
     // row; drag is off while a filter is typed, where neighbouring rows are
     // not one team's neighbouring slots.
     let layout = RowLayout {
@@ -162,7 +198,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         )
     });
     let session = view.session.as_mut().expect("checked above");
-    let rows = selection::list(session.file(), &view.team, &view.filter);
+    let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category);
     // A page or arrow key moved the selection: its row's index, scrolled
     // to below.
     let reveal = std::mem::take(&mut view.reveal_selected)
@@ -373,10 +409,11 @@ fn list_and_position(view: &SaveView) -> Option<(Vec<Selection>, usize)> {
     let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
         return None;
     };
-    let drawn: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
-        .into_iter()
-        .map(row_selection)
-        .collect();
+    let drawn: Vec<Selection> =
+        selection::list(session.file(), &view.team, &view.filter, view.team_category)
+            .into_iter()
+            .map(row_selection)
+            .collect();
     drawn
         .iter()
         .position(|row| *row == selected)
@@ -404,38 +441,80 @@ struct RowLayout {
     draggable: bool,
 }
 
-/// The team selector: `ALL`, then each cup team by name in the save's order.
-/// `id_salt` is the combo's: two combos with one salt share their popup
-/// state, so the comparator's filter passes its own (the player list's
-/// stays `save_editor_team`).
+/// The team selector: `All teams`, then each cup team of `category` by
+/// name in the save's order. With `category`, the popup ends, under a
+/// separator, in the four radio buttons of `TeamCategory::CHOICES`: they
+/// stand under the teams' own scroll area (the draft's `.combo-foot`), so
+/// they stay in view while the teams scroll, and picking one leaves the
+/// popup open, so the shorter list shows at once (the combo's
+/// `CloseOnClickOutside` keeps it open on a click inside, and an entry's
+/// own `ui.close()` closes it on a pick). `id_salt` is the
+/// combo's: two combos with one salt share their popup state, so the
+/// comparator's filter passes its own (the player list's stays
+/// `save_editor_team`).
 pub(super) fn team_selector(
     ui: &mut egui::Ui,
     choice: &mut TeamChoice,
+    category: Option<&mut TeamCategory>,
     file: &EditFile,
     id_salt: &str,
 ) {
     let mut chosen = *choice;
-    let combo = egui::ComboBox::from_id_salt(id_salt)
-        .selected_text(match chosen {
-            TeamChoice::All => "ALL".to_owned(),
-            TeamChoice::Team(id) => file
-                .team(id)
-                .map(|team| display_name(&team.name))
-                .unwrap_or_else(|| id.to_string()),
-        })
+    let shown = category.as_deref().copied().unwrap_or(TeamCategory::All);
+    let combo = egui::ComboBox::from_id_salt(id_salt).selected_text(match chosen {
+        TeamChoice::All => "All teams".to_owned(),
+        TeamChoice::Team(id) => file
+            .team(id)
+            .map(|team| display_name(&team.name))
+            .unwrap_or_else(|| id.to_string()),
+    });
+    let combo = if category.is_some() {
+        combo.close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+    } else {
+        combo
+    };
+    let combo = combo
         .show_ui(ui, |ui| {
-            combo_item(ui, &mut chosen, TeamChoice::All, "ALL");
-            for team in cup_teams(file) {
-                combo_item(
-                    ui,
-                    &mut chosen,
-                    TeamChoice::Team(team.id),
-                    display_name(&team.name),
-                );
+            let mut items = |ui: &mut egui::Ui| {
+                if combo_item(ui, &mut chosen, TeamChoice::All, "All teams").clicked() {
+                    ui.close();
+                }
+                for team in cup_teams(file) {
+                    if shown.contains(team.id)
+                        && combo_item(
+                            ui,
+                            &mut chosen,
+                            TeamChoice::Team(team.id),
+                            display_name(&team.name),
+                        )
+                        .clicked()
+                    {
+                        ui.close();
+                    }
+                }
+            };
+            if let Some(category) = category {
+                // The teams scroll in a scroll area of their own, capped
+                // so it and the radios' footer together fill the popup's
+                // `combo_height`: the radios stay in view while the
+                // teams scroll.
+                let row = ui.spacing().interact_size.y + ui.spacing().item_spacing.y;
+                let footer = COMBO_SEPARATOR_SPACING + 4.0 * row;
+                egui::ScrollArea::vertical()
+                    .max_height((ui.spacing().combo_height - footer).max(row))
+                    .show(ui, &mut items);
+                combo_separator(ui);
+                for button in TeamCategory::CHOICES {
+                    radio_value(ui, category, button, button.label());
+                }
+            } else {
+                items(ui);
             }
         })
         .response;
-    let teams = cup_teams(file).map(|team| TeamChoice::Team(team.id));
+    let teams = cup_teams(file)
+        .filter(|team| shown.contains(team.id))
+        .map(|team| TeamChoice::Team(team.id));
     let choices = std::iter::once(TeamChoice::All).chain(teams);
     if let Some(next) = step_choice(choices, &chosen, wheel_steps(ui, &combo)) {
         chosen = next;
@@ -468,8 +547,7 @@ fn paint_row_frame(
 /// A team's own row (the draft's `trow`): one click target the row's width
 /// — the team's id in the weak colour, its colours 1 and 2 as small filled
 /// squares (the shown colour, `channel_to_show`), the name with its colour
-/// codes in the strong text colour, `[click for gameplan]` after it in the
-/// weak colour (the hint is elided before the name is), and a `●` at the
+/// codes in the strong text colour, and a `●` at the
 /// row's right end while the team's own entry has unsaved changes
 /// (`Session::team_dirty`).
 /// `mark`, while Live AATF holds this team's check, is the team's own
@@ -569,30 +647,6 @@ fn team_row(
             name_galley.clone(),
             text,
         );
-        // `[click for gameplan]` after the name, in the weak colour at the
-        // normal weight (the draft's `.thint`): what a click on the row
-        // opens. It takes only the room the name left, so it is elided
-        // before the name is. An elided name ends a few points short of
-        // its room (the cut falls between letters), so it is the elision,
-        // not the room left, that drops the hint: a name filling the row
-        // keeps it to itself.
-        let hint_x = x + name_galley.size().x + ui.spacing().item_spacing.x;
-        let hint_room = rect.max.x - padding - room - hint_x;
-        if !name_galley.elided && hint_room > 0.0 {
-            let mut hint = egui::text::LayoutJob::default();
-            hint.append(
-                "[click for gameplan]",
-                0.0,
-                egui::TextFormat::simple(font, weak),
-            );
-            hint.wrap = egui::text::TextWrapping::truncate_at_width(hint_room);
-            let hint_galley = ui.painter().layout_job(hint);
-            ui.painter().galley(
-                egui::pos2(hint_x, centre - hint_galley.size().y / 2.0),
-                hint_galley,
-                weak,
-            );
-        }
         // The dot at the row's right end in the warning colour, one item
         // spacing plus `DOT_MARK_GAP` before the mark when the row has
         // one.

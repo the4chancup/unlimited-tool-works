@@ -28,7 +28,9 @@ use crate::view::abilities::{
     STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
-use crate::view::{SaveView, edit_player, edit_team, selected_player};
+use crate::view::{
+    PlayerScreen, SaveView, Selection, edit_player, edit_team, selected_player, selected_team_id,
+};
 
 /// The General info panel's Name field.
 pub(super) const NAME_LABEL: &str = "Name";
@@ -74,8 +76,8 @@ pub(super) fn shown_name(name: &str) -> String {
     name.replace('\x11', "\\x11")
 }
 
-/// The header for the selected player; nothing when the selection names no
-/// rostered player (a stale slot, an empty save's list).
+/// The title's row for the selected player; nothing when the selection
+/// names no rostered player (a stale slot, an empty save's list).
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some((_, _, player_id)) = selected_player(view) else {
         return;
@@ -89,38 +91,144 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .expect("the selected player")
         .name
         .clone();
-    // General info's title holds its ink higher in its row than the team
-    // view's labels, centred in their 18-point row, so this view's first
-    // row needs more room under the title for even ink gaps.
-    view_title(ui, player_id, &name, 4.0);
+    view_title(ui, view, player_id, &name);
 }
 
-/// A view's title, the player view's and the team view's alike (the
-/// draft's `viewTitle`): `<id> <name>`, not the tool's name, which the
-/// title bar carries. The id in the weak colour as the list draws ids, the
-/// name's colour codes drawn as the list draws them (`append_name`), its
-/// plain runs in the strong colour, all in the body text's size (the app
-/// installs no bold face). `space_below` comes after it: the view's first
-/// row's ink then stands as far below the title's ink as the title's
-/// stands below the toolbar's buttons. Even boxes would not do it, since a
-/// line box holds more room under the baseline than over the capitals.
-pub(super) fn view_title(ui: &mut egui::Ui, id: u32, name: &str, space_below: f32) {
-    let body = egui::TextStyle::Body.resolve(ui.style());
-    let mut title = egui::text::LayoutJob::default();
-    title.append(
-        &format!("{id} "),
-        0.0,
-        egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
-    );
-    append_name(&mut title, name, &body);
-    let strong = ui.visuals().strong_text_color();
-    for section in &mut title.sections {
-        if section.format.color == egui::Color32::PLACEHOLDER {
-            section.format.color = strong;
+/// A view's title's row, the player's screens' and the team view's alike
+/// (the draft's `viewTitle`): the three screens' toggle (`page_toggle`),
+/// then `<id> <name>` — the id in the weak colour as the list draws ids,
+/// the name's colour codes drawn as the list draws them (`append_name`),
+/// its plain runs in the strong colour, all in the body text's size (the
+/// app installs no bold face) — and the separator under the row (the
+/// `.sep` the fields' row carried), which parts the title from the screen
+/// the toggle switches.
+pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: &str) {
+    ui.horizontal(|ui| {
+        page_toggle(ui, view);
+        let body = egui::TextStyle::Body.resolve(ui.style());
+        let mut title = egui::text::LayoutJob::default();
+        title.append(
+            &format!("{id} "),
+            0.0,
+            egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
+        );
+        append_name(&mut title, name, &body);
+        let strong = ui.visuals().strong_text_color();
+        for section in &mut title.sections {
+            if section.format.color == egui::Color32::PLACEHOLDER {
+                section.format.color = strong;
+            }
+        }
+        ui.label(title);
+    });
+    // The `.sep` under the row (its 8-point margin each side of the
+    // painted row carries the room the draft's `margin-bottom` adds).
+    let trailing = ui.spacing().item_spacing.y;
+    let stroke = ui.visuals().widgets.noninteractive.bg_stroke.width;
+    ui.add(egui::Separator::default().spacing(2.0 * (SEPARATOR_MARGIN - trailing) + stroke));
+}
+
+/// The `.sep`'s margin each side of its painted row.
+const SEPARATOR_MARGIN: f32 = 8.0;
+
+/// One segment of the title's toggle: the two player screens and the
+/// team view.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Segment {
+    Stats,
+    Appearance,
+    Gameplan,
+}
+
+impl Segment {
+    /// The segment's text.
+    fn label(self) -> &'static str {
+        match self {
+            Segment::Stats => "Stats",
+            Segment::Appearance => "Appearance",
+            Segment::Gameplan => "Gameplan",
         }
     }
-    ui.label(title);
-    ui.add_space(space_below);
+}
+
+/// The three screens' toggle at the title row's left (the draft's
+/// `pageToggle`): `Stats`, `Appearance` and `Gameplan` drawn as the
+/// tactics' numbers toggles draw their three choices (a point apart, the
+/// `.sel` 5-point padding, the held one filled in the selection colour).
+/// `Gameplan` is held while a team row is selected, else the player
+/// screen shown (`view.page`). A press on another segment moves the
+/// screen and, as a row's click does, the selection: `Gameplan` selects
+/// the selected row's team's row; a player screen from a team row
+/// selects the team's remembered or first filled slot — the list
+/// scrolling to show the row (`reveal_selected`). Not drawn with nothing
+/// selected.
+fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
+    let Some(team_id) = selected_team_id(view) else {
+        return;
+    };
+    let on = match view.selected {
+        Some(Selection::Team(_)) => Segment::Gameplan,
+        _ => match view.page {
+            PlayerScreen::Stats => Segment::Stats,
+            PlayerScreen::Appearance => Segment::Appearance,
+        },
+    };
+    let pressed = ui
+        .scope(|ui| {
+            ui.spacing_mut().item_spacing.x = 1.0;
+            ui.spacing_mut().button_padding = egui::vec2(5.0, 0.0);
+            // The draft's `.sel` is text-high, where a button stands a
+            // control's `interact_size` tall.
+            ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
+            [Segment::Stats, Segment::Appearance, Segment::Gameplan]
+                .iter()
+                .find_map(|&segment| {
+                    let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
+                    response.clicked().then_some(segment)
+                })
+        })
+        .inner;
+    let Some(segment) = pressed else {
+        return;
+    };
+    if segment == on {
+        return;
+    }
+    match segment {
+        Segment::Gameplan => {
+            view.selected = Some(Selection::Team(team_id));
+            view.reveal_selected = true;
+        }
+        Segment::Stats | Segment::Appearance => {
+            view.page = match segment {
+                Segment::Stats => PlayerScreen::Stats,
+                _ => PlayerScreen::Appearance,
+            };
+            if matches!(view.selected, Some(Selection::Team(_)))
+                && let Some(slot) = last_shown_slot(view, team_id)
+            {
+                view.selected = Some(Selection::Player(team_id, slot));
+                view.reveal_selected = true;
+            }
+        }
+    }
+}
+
+/// The team's roster slot a player screen selects from its row: the
+/// player last shown on it since the save opened, the first filled slot
+/// when none was shown (or the remembered slot no longer holds one).
+fn last_shown_slot(view: &SaveView, team_id: u32) -> Option<u8> {
+    let session = view.session.as_ref()?;
+    let shown = |slot: u8| session.slot_player(team_id, slot).is_some();
+    if let Some(&slot) = view.last_shown.get(&team_id)
+        && shown(slot)
+    {
+        return Some(slot);
+    }
+    let roster = session.file().team(team_id)?.roster.len();
+    (0..roster)
+        .map(|slot| u8::try_from(slot).expect("a roster is at most 40 slots"))
+        .find(|&slot| shown(slot))
 }
 
 /// The General info panel's content (`generalPanel`): the Name and Shirt

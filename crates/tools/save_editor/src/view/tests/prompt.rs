@@ -541,7 +541,7 @@ fn a_player_on_two_rosters_gets_his_rows_once() {
     view.session.as_mut().unwrap().edit_player(2, edited);
     let file = view.session.as_ref().unwrap().file();
     assert_eq!(
-        selection::rows(file, &TeamChoice::All, "")
+        selection::rows(file, &TeamChoice::All, "", TeamCategory::All)
             .iter()
             .filter(|row| row.player_id == 70101)
             .count(),
@@ -580,7 +580,7 @@ fn an_unlisted_players_rows_come_after_the_listed() {
     view.session.as_mut().unwrap().edit_team(3, team);
     let file = view.session.as_ref().unwrap().file();
     assert!(
-        !selection::rows(file, &TeamChoice::All, "")
+        !selection::rows(file, &TeamChoice::All, "", TeamCategory::All)
             .iter()
             .any(|row| row.player_id == 70101),
         "premise: no roster lists him"

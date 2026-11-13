@@ -33,13 +33,17 @@ pub fn combo_label(
     ui.selectable_label(checked, text)
 }
 
+/// The height `combo_separator` takes in a combo's open list.
+pub const COMBO_SEPARATOR_SPACING: f32 = 7.0;
+
 /// The line between two groups of rows in a combo's open list, in the
-/// middle of the 7 points it stands in (the draft's `.combo-pop .sep`).
-/// egui's own separator stands in 6 and relies on the item spacing's gap
-/// above and below it, which the list's rows no longer leave.
+/// middle of the `COMBO_SEPARATOR_SPACING` points it stands in (the
+/// draft's `.combo-pop .sep`). egui's own separator stands in 6 and relies
+/// on the item spacing's gap above and below it, which the list's rows no
+/// longer leave.
 pub fn combo_separator(ui: &mut egui::Ui) -> egui::Response {
     rows_meet(ui.spacing_mut());
-    ui.add(egui::Separator::default().spacing(7.0))
+    ui.add(egui::Separator::default().spacing(COMBO_SEPARATOR_SPACING))
 }
 
 /// `selectable_value` as `combo_label`: `*current` takes `item` on a

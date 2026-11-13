@@ -1,24 +1,38 @@
+use studio_core::StudioTool as _;
+
 use super::*;
 
-/// The team selector's combo (the list panel's leftmost), clicked open;
-/// the popup's `entry` item picked through its AccessKit action.
+/// The team selector's combo: the list panel's leftmost.
+fn selector_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
+    nodes
+        .iter()
+        .filter(|node| node.role() == Role::ComboBox)
+        .min_by(|a, b| {
+            let x = |node: &&accesskit::Node| node.bounds().map(|r| r.x0).unwrap_or(f64::MAX);
+            x(a).partial_cmp(&x(b)).expect("ordered bounds")
+        })
+        .expect("the team selector")
+}
+
+/// The category radio button labeled `label` in the open popup.
+fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::RadioButton && node.label() == Some(label))
+        .unwrap_or_else(|| panic!("no {label:?} radio button"))
+}
+
+/// The team selector's combo, clicked open; the popup's `entry` item
+/// picked through its AccessKit action.
 fn pick_in_selector(window: &mut Headless, view: &mut SaveView, entry: &str) {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    // The popup stays open after an AccessKit pick; a second call's click
-    // would toggle it closed.
+    // A pick may have closed the popup; click the combo open only while
+    // `entry` is not drawn (a click while it is open closes it).
     if !nodes
         .iter()
         .any(|node| node.role() == Role::Button && node.label() == Some(entry))
     {
-        let selector = nodes
-            .iter()
-            .filter(|node| node.role() == Role::ComboBox)
-            .min_by(|a, b| {
-                let x = |node: &&accesskit::Node| node.bounds().map(|r| r.x0).unwrap_or(f64::MAX);
-                x(a).partial_cmp(&x(b)).expect("ordered bounds")
-            })
-            .expect("the team selector");
-        click(window, selector, view);
+        click(window, selector_combo(&nodes), view);
     }
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     let (item, _) = pairs
@@ -30,7 +44,7 @@ fn pick_in_selector(window: &mut Headless, view: &mut SaveView, entry: &str) {
 }
 
 // Picking a team in the team selector selects its team row, so the
-// detail shows the team's view and its tactics; picking ALL keeps the
+// detail shows the team's view and its tactics; picking All teams keeps the
 // selection.
 #[test]
 fn picking_a_team_in_the_selector_selects_its_team_row() {
@@ -58,11 +72,11 @@ fn picking_a_team_in_the_selector_selects_its_team_row() {
         "the detail shows the team view"
     );
 
-    pick_in_selector(&mut window, &mut view, "ALL");
+    pick_in_selector(&mut window, &mut view, "All teams");
     assert_eq!(
         view.selected,
         Some(Selection::Team(702)),
-        "picking ALL keeps the selection"
+        "picking All teams keeps the selection"
     );
 }
 
@@ -105,8 +119,253 @@ fn the_team_selector_names_a_coded_team_by_its_display_name() {
     );
 }
 
-/// The `[click for gameplan]` hint's text shape painted inside `bounds`
-/// (a team row's), when one draws.
+// The four category radio buttons under the selector's teams shorten the
+// dropdown and the list to one competition's teams: `All teams`, then the
+// category's teams alone, in the popup as in the list; a team the
+// category leaves out gives way to `All teams`, and a selection it leaves
+// out moves to the list's first player.
+// SE-GUI-83
+#[test]
+fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
+    let path = fixture(PesVersion::Pes21, "team_categories");
+    let file = EditFile::load(&path).unwrap();
+    // The fixture's boundary teams: Backup 9 is the last 4cc team, /@/
+    // the first VGL one.
+    assert_eq!(file.team(780).unwrap().name, "Backup 9", "premise: 780");
+    assert_eq!(file.team(781).unwrap().name, "/@/", "premise: 781");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+
+    // The cup teams' display names in `lo`..=`hi`, the save's order.
+    let names = |lo: u32, hi: u32| -> Vec<String> {
+        file.teams()
+            .iter()
+            .filter(|team| (lo..=hi).contains(&team.id))
+            .map(|team| display_name(&team.name))
+            .collect()
+    };
+    let all_names = names(701, 920);
+    // The open popup's entries, in order: the `All teams` row and the
+    // listed teams.
+    let entries = |nodes: &[accesskit::Node]| -> Vec<String> {
+        let mut items: Vec<&accesskit::Node> = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::Button
+                    && node.label().is_some_and(|label| {
+                        label == "All teams" || all_names.iter().any(|name| name == label)
+                    })
+            })
+            .collect();
+        items.sort_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().map(|r| r.y0).unwrap_or(0.0);
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        });
+        items
+            .iter()
+            .filter_map(|node| node.label().map(str::to_owned))
+            .collect()
+    };
+    // The popup's radio buttons in column order, each with its tick.
+    let radios = |nodes: &[accesskit::Node]| -> Vec<(String, bool)> {
+        let mut radios: Vec<&accesskit::Node> = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::RadioButton
+                    && node
+                        .label()
+                        .is_some_and(|label| ["All", "4cc", "VGL", "Invitational"].contains(&label))
+            })
+            .collect();
+        radios.sort_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().map(|r| r.y0).unwrap_or(0.0);
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        });
+        radios
+            .iter()
+            .map(|node| {
+                (
+                    node.label().expect("a radio's label").to_owned(),
+                    node.toggled() == Some(accesskit::Toggled::True),
+                )
+            })
+            .collect()
+    };
+    let expected = |names: Vec<String>| -> Vec<String> {
+        std::iter::once("All teams".to_owned())
+            .chain(names)
+            .collect()
+    };
+
+    // `All teams` first, then the save's teams; under them the four
+    // radios, `All` ticked.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        selector_combo(&nodes).value(),
+        Some("All teams"),
+        "the closed combo's text"
+    );
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        entries(&nodes),
+        expected(all_names.clone()),
+        "All's entries"
+    );
+    assert_eq!(
+        radios(&nodes),
+        [
+            ("All".to_owned(), true),
+            ("4cc".to_owned(), false),
+            ("VGL".to_owned(), false),
+            ("Invitational".to_owned(), false),
+        ],
+        "the radios under the teams, All ticked"
+    );
+
+    // `VGL` ticked through a pointer click: the popup stays open and
+    // lists `All teams` and the 781 to 850 teams alone.
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        radios(&nodes),
+        [
+            ("All".to_owned(), false),
+            ("4cc".to_owned(), false),
+            ("VGL".to_owned(), true),
+            ("Invitational".to_owned(), false),
+        ],
+        "VGL ticked, the popup still open"
+    );
+    assert_eq!(
+        entries(&nodes),
+        expected(names(781, 850)),
+        "`All teams` and the VGL teams alone"
+    );
+    // The radios stand under the teams' first rows, in view while the
+    // teams scroll: the first radio tops out before the seventh item's
+    // place, not below all seventy.
+    let mut item_tops: Vec<f64> = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| {
+                    label == "All teams" || all_names.iter().any(|name| name == label)
+                })
+        })
+        .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
+        .collect();
+    item_tops.sort_by(|a, b| a.partial_cmp(b).expect("ordered tops"));
+    let radio_top = nodes
+        .iter()
+        .filter(|node| node.role() == Role::RadioButton)
+        .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
+        .fold(f64::MAX, f64::min);
+    assert!(
+        item_tops.first().is_some_and(|top| radio_top > *top) && radio_top < item_tops[6],
+        "the radios in view under the teams ({radio_top} vs {item_tops:?})"
+    );
+
+    // The list holds the VGL teams' rows and players alone, and the
+    // selection is its first player row.
+    let drawn_teams: Vec<u32> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button && !player_row(node))
+        .filter_map(|node| node.label())
+        .filter_map(|label| label.split(' ').next()?.parse().ok())
+        .collect();
+    assert!(
+        drawn_teams.iter().all(|id| (781..=850).contains(id)),
+        "only VGL team rows drawn: {drawn_teams:?}"
+    );
+    assert!(drawn_teams.contains(&781), "781's row among them");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(781, 0)),
+        "the selection moved to the list's first player row"
+    );
+
+    // `4cc` ticked: the 701 to 780 teams alone, Backup 9 (780) among
+    // them and no 781.
+    click(&mut window, radio(&nodes, "4cc"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let four_cc = entries(&nodes);
+    assert_eq!(four_cc, expected(names(701, 780)), "the 4cc teams alone");
+    assert!(
+        four_cc.iter().any(|name| name == "Backup 9"),
+        "780 among them"
+    );
+    assert!(!four_cc.iter().any(|name| name == "/@/"), "no 781");
+
+    // 781 picked under `VGL`, then `Invitational` ticked: the picked
+    // team is out of the new category, so the selector reads `All
+    // teams` and the selection is Invitational's first player.
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (item, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("/@/"))
+        .expect("781's entry in the VGL popup");
+    action_click(&mut window, &mut view, *item);
+    assert_eq!(view.team, TeamChoice::Team(781), "premise: 781 picked");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, radio(&nodes, "Invitational"), &mut view);
+    assert_eq!(
+        view.team,
+        TeamChoice::All,
+        "the picked team out of the category gives way to All teams"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        selector_combo(&nodes).value(),
+        Some("All teams"),
+        "the selector reads All teams"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(851, 0)),
+        "the selection is the list's first player row"
+    );
+}
+
+// The wheel over the closed selector steps `All teams` and the
+// category's teams alone: under VGL the step after `All teams` is the
+// first VGL team, not the first 4cc one.
+#[test]
+fn the_closed_selectors_wheel_steps_the_categorys_teams() {
+    let path = fixture(PesVersion::Pes21, "team_category_wheel");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team_category = TeamCategory::Vgl;
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // One notch down over the closed combo.
+    window.frame(
+        vec![
+            egui::Event::PointerMoved(centre(selector_combo(&nodes))),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, -1.0),
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        view.team,
+        TeamChoice::Team(781),
+        "one notch down: the first VGL team"
+    );
+}
+
+/// The hint's text shape painted inside `bounds` (a team row's), when
+/// one draws.
 fn hint_in_row(
     shapes: &[egui::epaint::ClippedShape],
     bounds: accesskit::Rect,
@@ -126,170 +385,27 @@ fn hint_in_row(
         .next()
 }
 
-// The team row draws `[click for gameplan]` after the name, in the weak
-// colour: nothing else says where the tactics are.
+// The team row is the team's id, swatches and name alone: no hint
+// after the name, the toggle's Gameplan taking the member there
+// (SE-GUI-82's last clause).
+// SE-GUI-82
 #[test]
-fn the_team_row_hints_click_for_gameplan() {
-    let path = fixture(PesVersion::Pes21, "team_row_hint");
+fn the_team_row_paints_no_click_for_gameplan() {
+    let path = fixture(PesVersion::Pes21, "team_row_no_hint");
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(701);
     let mut window = Headless::new();
-    let weak = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .weak_text_color();
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = team_row(&nodes, &view, 701)
         .bounds()
         .expect("the team row's bounds");
-    let hint = text_in_rect(&shapes, "[click for gameplan]", bounds);
-    assert_eq!(galley_color(hint), weak, "the hint in the weak colour");
-    let name = text_in_rect(&shapes, "/3/", bounds);
-    let gap = hint.pos.x - (name.pos.x + name.galley.size().x);
-    assert!(
-        gap >= 0.0
-            && gap
-                <= window
-                    .ctx
-                    .style_of(window.ctx.theme())
-                    .spacing
-                    .item_spacing
-                    .x
-                    + 1.0,
-        "the hint follows the name with at most an item spacing's gap ({gap})"
-    );
-}
-
-// The hint gives way first on a narrow row (the draft's `.thint`): a
-// name leaving part of its room elides the hint while painting whole
-// itself; a name that fills the row drops the hint entirely.
-#[test]
-fn the_team_rows_hint_elides_before_the_name() {
-    let path = fixture(PesVersion::Pes21, "team_row_hint_elides");
-    // A name that leaves only part of the hint's room.
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    let name = "N".repeat(12);
-    file.team_mut(701).unwrap().name = name.clone();
-    file.save(&path).unwrap();
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let mut window = Headless::new();
-    let padding = f64::from(
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .spacing
-            .button_padding
-            .x,
-    );
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = team_row(&nodes, &view, 701)
-        .bounds()
-        .expect("the team row's bounds");
-    let name_shape = text_in_rect(&shapes, &name, bounds);
-    let name_x = f64::from(name_shape.pos.x);
-    assert!(!name_shape.galley.elided, "the name still paints whole");
-    let hint = hint_in_row(&shapes, bounds).expect("the hint still paints, elided");
-    assert!(hint.galley.elided, "the hint elides before the name does");
-    assert_centred_on_row(hint, bounds, "the hint");
-    let hint_end = f64::from(hint.pos.x + hint.galley.size().x);
-    assert!(
-        hint_end <= bounds.x1 - padding + 0.5,
-        "the hint ends inside the row's right less the padding ({hint_end} vs {})",
-        bounds.x1 - padding
-    );
-
-    // The same row with the team dirty: the dot's room comes off the
-    // hint's too, so it still ends at the row's right less the padding.
-    let mut team = team_entry(&view, 701);
-    team.short_name = "ZED".to_owned();
-    view.session.as_mut().unwrap().edit_team(1, team);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = team_row(&nodes, &view, 701)
-        .bounds()
-        .expect("the team row's bounds");
-    dot_in_row(&shapes, bounds);
-    let hint = hint_in_row(&shapes, bounds).expect("the hint still paints before the dot");
-    let hint_end = f64::from(hint.pos.x + hint.galley.size().x);
-    assert!(
-        hint_end <= bounds.x1 - padding + 0.5,
-        "the hint keeps the dot's room off the row's right ({hint_end} vs {})",
-        bounds.x1 - padding
-    );
-
-    // A name the panel cannot hold keeps the row to itself: no hint at
-    // all, the name elided instead.
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    let name = "N".repeat(52);
-    file.team_mut(701).unwrap().name = name.clone();
-    file.save(&path).unwrap();
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = team_row(&nodes, &view, 701)
-        .bounds()
-        .expect("the team row's bounds");
-    let name_shape = text_in_rect(&shapes, "NNNN", bounds);
-    assert!(name_shape.galley.elided, "the name elides");
     assert!(
         hint_in_row(&shapes, bounds).is_none(),
-        "no hint paints on the full row"
+        "no hint paints in the row"
     );
-
-    // Wide glyphs: the elided name's galley ends well short of its room
-    // (the cut falls between letters), so the hint's room is positive —
-    // still no hint: the elision, not the room, drops it. Which glyph
-    // lands the cut past an item spacing is the font's own, so the widest
-    // candidates are laid out as the row truncates them and the first
-    // leaving the room is picked.
-    let spacing = f64::from(
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .spacing
-            .item_spacing
-            .x,
-    );
-    let body = egui::TextStyle::Body.resolve(&window.ctx.style_of(window.ctx.theme()));
-    let trunc = (bounds.x1 - padding - name_x) as f32;
-    let name = ["W", "M", "@", "O", "m", "w", "%", "&", "Q", "#"]
-        .iter()
-        .map(|glyph| glyph.repeat(52))
-        .find(|name| {
-            let mut job = egui::text::LayoutJob::default();
-            team_widgets::names::append_name(&mut job, name.as_str(), &body);
-            job.wrap = egui::text::TextWrapping::truncate_at_width(trunc);
-            let galley = window.ctx.fonts_mut(|fonts| fonts.layout_job(job));
-            trunc - galley.size().x > spacing as f32
-        })
-        .expect("a wide-glyph name whose cut leaves the hint room");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.team_mut(701).unwrap().name = name.clone();
-    file.save(&path).unwrap();
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.team = TeamChoice::Team(701);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = team_row(&nodes, &view, 701)
-        .bounds()
-        .expect("the team row's bounds");
-    let name_shape = text_in_rect(&shapes, &name[..4], bounds);
-    assert!(name_shape.galley.elided, "the name elides");
-    let name_end = f64::from(name_shape.pos.x + name_shape.galley.size().x);
-    assert!(
-        bounds.x1 - padding - (name_end + spacing) > 0.0,
-        "premise: the elided name leaves the hint room ({name_end} vs {})",
-        bounds.x1 - padding
-    );
-    assert!(
-        hint_in_row(&shapes, bounds).is_none(),
-        "no hint paints on the elided row"
-    );
+    // The row still paints its name where the hint's room was.
+    text_in_rect(&shapes, "/3/", bounds);
 }
 
 // The list's scroll bar stands outside its frame: egui's solid bar, 4
@@ -368,7 +484,7 @@ fn the_lists_scroll_bar_stands_outside_its_frame() {
     }
 }
 
-/// One frame of the PES 21 fixture under ALL, the list scrolling, after a
+/// One frame of the PES 21 fixture under All teams, the list scrolling, after a
 /// frame that measured the rows: the frame's nodes and shapes.
 fn scrolling_list(
     test: &str,
@@ -380,7 +496,7 @@ fn scrolling_list(
     let path = fixture(PesVersion::Pes21, test);
     let mut view = SaveView::new();
     view.open(&path);
-    assert_eq!(view.team, TeamChoice::All, "premise: ALL selected");
+    assert_eq!(view.team, TeamChoice::All, "premise: All teams selected");
     let mut window = Headless::new();
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -669,7 +785,7 @@ fn a_player_row_numbers_his_place_in_the_roster() {
 }
 
 // The rows are the draft's `.prow`s: 18 high and touching, the team's row
-// too, under ALL. A player row's place, position and name are columns:
+// too, under All teams. A player row's place, position and name are columns:
 // the place in the weak colour, the position 5 points after it in a
 // 28-point column, the name 5 points after that column.
 #[test]
@@ -832,5 +948,74 @@ fn every_position_fits_its_column_at_the_lists_font() {
         name.pos.x - letters_end >= 5.0 - 0.5,
         "the name at least 5 after the position's letters ({} vs {letters_end})",
         name.pos.x
+    );
+}
+
+// The category picked in the selector is the `team_category` setting,
+// written on the tick: a restarted editor ticks it back, opening
+// another save keeps it, and an unknown value in the file reads as
+// `all`.
+// SE-GUI-83
+#[test]
+fn the_category_setting_survives_a_restart_and_another_save() {
+    let dir = crate::test_support::scratch("team_category_setting");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, fixture_save(PesVersion::Pes21)).unwrap();
+    let (ctx, shared, _events_rx, _requests_rx) =
+        crate::test_support::shared_tool_context(&dir, studio_core::Settings::default());
+    let mut tool = crate::Tool::new();
+    tool.view.open(&path);
+    let mut window = Headless::new();
+
+    // Tick VGL in the selector, a pointer click as the member does it.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    press_release(&mut window, centre(selector_combo(&nodes)), |ui| {
+        tool.view(ui, &ctx)
+    });
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    press_release(&mut window, centre(radio(&nodes, "VGL")), |ui| {
+        tool.view(ui, &ctx)
+    });
+    assert_eq!(
+        ctx.tool_settings(crate::messages::TOOL_ID)
+            .get("team_category")
+            .and_then(toml::Value::as_str),
+        Some("vgl"),
+        "the tick wrote the setting"
+    );
+
+    // The editor started again ticks it; opening another save keeps it.
+    let mut restarted = crate::Tool::new();
+    window.frame(Vec::new(), |ui| restarted.view(ui, &ctx));
+    assert_eq!(
+        restarted.view.team_category,
+        TeamCategory::Vgl,
+        "the restart reads the setting"
+    );
+    let second = dir.join("second");
+    std::fs::write(&second, fixture_save(PesVersion::Pes17)).unwrap();
+    restarted.view.open(&second);
+    assert_eq!(
+        restarted.view.team_category,
+        TeamCategory::Vgl,
+        "another save keeps it"
+    );
+
+    // An unknown value in the file reads as `all`.
+    let mut table = toml::Table::new();
+    table.insert(
+        "team_category".to_owned(),
+        toml::Value::String("cup".to_owned()),
+    );
+    shared
+        .lock()
+        .unwrap()
+        .set_tool(crate::messages::TOOL_ID, table);
+    let mut third = crate::Tool::new();
+    window.frame(Vec::new(), |ui| third.view(ui, &ctx));
+    assert_eq!(
+        third.view.team_category,
+        TeamCategory::All,
+        "an unknown value reads as all"
     );
 }

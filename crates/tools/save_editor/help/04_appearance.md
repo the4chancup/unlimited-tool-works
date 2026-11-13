@@ -1,6 +1,7 @@
-The collapsed **Appearance** section at the bottom of the player view holds his
-look: the game's own edit flags, his physique, his strip style, his motions, and
-his skin and iris colors.
+The **Appearance** screen holds a player's look: the game's own edit flags, his
+physique, his strip style, his motions, and his skin and iris colors. The toggle
+beside the player's name picks one of three screens: **Stats** shows his fields,
+**Appearance** his look, and **Gameplan** his team's fields and tactics.
 
 **Cutscenes**
 
@@ -17,7 +18,7 @@ the team is recompiled or patched.
 
 That is what the **Aesthetics from exports** setting, in the Save editor's
 Settings section, is for. A cup whose looks are compiled from exports turns it
-on, which puts on the aesthetics lock: the section turns read-only under a line
+on, which puts on the aesthetics lock: the screen turns read-only under a line
 saying the team's export owns the aesthetics, and every other control that
 writes the look, such as the Team menu's FPC items, is locked too. The setting
 is off by default, for the cups whose looks live in the save, so every control
@@ -25,7 +26,7 @@ then edits and neither that line nor the switch below is drawn.
 
 **Edit aesthetics anyway**
 
-The **Edit aesthetics anyway** switch, under that line, unlocks the section for
+The **Edit aesthetics anyway** switch, under that line, unlocks the screen for
 the rest of the session, for the cases the lock does not cover: a team with no
 export, or a cup-night fix when recompiling is not an option. Opening another
 save keeps it unlocked. Starting the tool again turns it back off.
@@ -41,7 +42,7 @@ dribbling motion is left as it is. One Undo restores them all.
 
 **Full Player Customization**
 
-The **Full Player Customization** group, last in the section, is where FPC
+The **Full Player Customization** group, last on the screen, is where FPC
 invisibility lives: a line reading from the save whether his default body is
 hidden, then the **Hide default body** and **Show default body** buttons.
 

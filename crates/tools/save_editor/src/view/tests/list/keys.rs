@@ -7,6 +7,7 @@ fn listed_selections(view: &SaveView) -> Vec<Selection> {
         view.session.as_ref().unwrap().file(),
         &view.team,
         &view.filter,
+        view.team_category,
     )
     .iter()
     .map(|row| match row {
@@ -285,7 +286,12 @@ fn the_arrows_walk_the_lists_rows_across_the_team_rows() {
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::All;
-    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let rows = selection::list(
+        view.session.as_ref().unwrap().file(),
+        &TeamChoice::All,
+        "",
+        TeamCategory::All,
+    );
     let last = rows
         .iter()
         .rposition(|row| matches!(row, selection::ListRow::Player(row) if row.team_id == 701))
@@ -334,7 +340,12 @@ fn up_on_the_lists_first_row_moves_nothing() {
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::All;
-    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let rows = selection::list(
+        view.session.as_ref().unwrap().file(),
+        &TeamChoice::All,
+        "",
+        TeamCategory::All,
+    );
     assert_eq!(
         rows.first(),
         Some(&selection::ListRow::Team(701)),
@@ -357,13 +368,18 @@ fn up_on_the_lists_first_row_moves_nothing() {
 // SE-GUI-52
 #[test]
 fn down_on_the_lists_last_row_moves_nothing() {
-    // ALL's last row, a player of the last team: Down stops there, and
+    // All teams' last row, a player of the last team: Down stops there, and
     // the step itself reports no move.
     let path = fixture(PesVersion::Pes17, "arrow_keys_last_row");
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::All;
-    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let rows = selection::list(
+        view.session.as_ref().unwrap().file(),
+        &TeamChoice::All,
+        "",
+        TeamCategory::All,
+    );
     let selection::ListRow::Player(player) = rows.last().expect("a last row") else {
         panic!("premise: the last row is a player row")
     };
@@ -756,7 +772,7 @@ fn the_arrows_walk_again_once_pgdn_left_the_slot_popover() {
 // SE-GUI-53
 #[test]
 fn the_page_keys_walk_the_team_rows_with_several_listed() {
-    // With two team rows or more listed (ALL lists every team's), a
+    // With two team rows or more listed (All teams lists every team's), a
     // press walks the team rows: PgDn the next one's, PgUp a player's own
     // then the one above; the list's first row and the last team row
     // stop them, whatever the window's height.

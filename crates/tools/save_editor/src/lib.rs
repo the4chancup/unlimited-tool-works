@@ -29,6 +29,7 @@ use studio_core::widgets::{FORM_ROW_SPACING, checkbox_without_text};
 use studio_core::{CliError, HelpSection, HelpTopic, RunningPes, StudioTool, ToolContext};
 
 use crate::messages::TOOL_ID;
+use crate::session::selection::TeamCategory;
 
 /// The "Aesthetics from exports" row's hover text in the settings menu.
 const AESTHETICS_FROM_EXPORTS_TIP: &str = "On when the cup's looks are compiled from exports: \
@@ -139,6 +140,8 @@ impl StudioTool for Tool {
         self.view.aesthetics_from_exports = tool_settings.aesthetics_from_exports;
         self.view.tactics.scroll_names = tool_settings.scroll_names;
         self.view.tactics.portraits = tool_settings.portraits;
+        let team_category = TeamCategory::from_setting(&tool_settings.team_category);
+        self.view.team_category = team_category;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
         // Everything the editor needs of a PES version is the open save's: its
@@ -163,7 +166,7 @@ impl StudioTool for Tool {
         }
         // The toolbar's ruleset dropdown, its toggle and Show suggestions,
         // where Live AATF's list stands, the formation bar's Scroll and
-        // Portraits checkboxes and
+        // Portraits checkboxes, the selector's category and
         // the picker's last folder are settings: the table as read with only
         // those keys replaced, so any other key survives (as `settings_view`
         // writes `aesthetics_from_exports`).
@@ -173,6 +176,7 @@ impl StudioTool for Tool {
             || self.view.live_window != tool_settings.live_window
             || self.view.tactics.scroll_names != tool_settings.scroll_names
             || self.view.tactics.portraits != tool_settings.portraits
+            || self.view.team_category != team_category
             || self.view.last_folder != tool_settings.last_folder
         {
             let mut table = table;
@@ -199,6 +203,10 @@ impl StudioTool for Tool {
             table.insert(
                 "portraits".to_owned(),
                 toml::Value::Boolean(self.view.tactics.portraits),
+            );
+            table.insert(
+                "team_category".to_owned(),
+                toml::Value::String(self.view.team_category.setting().to_owned()),
             );
             match &self.view.last_folder {
                 Some(folder) => table.insert(

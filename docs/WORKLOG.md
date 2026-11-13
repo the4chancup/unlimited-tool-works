@@ -1903,26 +1903,9 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-saved (2026-11-13, `bba7eee1`) Save, Save as, Output rosters to TSV and the Comparator's Export publish their notice
   - [x] 0.0.2-tomlname (2026-11-13, `bba7eee1`) a Team TOML export suggests the team's name less its slashes, then the short name, then the ID
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
-  - [ ] 0.0.2-pagetoggle (plan written 2026-11-13, DECISIONS "three screens on a toggle", SE-GUI-82 to 84, drafted and approved; left: the code) a three-way toggle on the row of the
-    player or team name, at its left: Stats | Appearance | Gameplan. Stats is the player
-    view less its collapsible Appearance section (general info, positions, skills and
-    abilities stay together, so nothing a budget counts is split); Appearance is that
-    section as a screen of its own; Gameplan is the team view. With a team row selected,
-    Stats and Appearance select the player last opened on that team (its first player if
-    none was); with a player selected, Gameplan selects his team's row. The team rows'
-    `[click for gameplan]` goes: the toggle does it, and the label cluttered the list. Why
-    now: tabs were dropped for vertical room, which a toggle on the name's own row does not
-    take, and members used to 4ccEditor asked for them. The plan's "Editing UI" ("Not tabs,
-    because…") is rewritten with it -> verify: draft looked at, headless tests, the built
-    window. With it, the Appearance screen's new layout (the plan's "Appearance" list, SE-GUI-84):
-    the groups' order, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`
-  - [ ] 0.0.2-teamdrop (plan written 2026-11-13, DECISIONS "three screens on a toggle", SE-GUI-82 to 84, drafted and approved; left: the code) the player list's team dropdown: `ALL` becomes
-    `All teams` (in every team dropdown that has such an entry), and the open dropdown ends
-    with a separator and four radio buttons that filter by category: All, 4cc (701-780, the
-    Backup rows included), VGL (781-850), Invitational (851-920). The category shortens the
-    dropdown's list and the player list alike (`All teams` under VGL lists the VGL teams'
-    players alone), is remembered in the tool's settings, and stands in the player list's
-    dropdown only -> verify: draft, headless tests
+  - [x] 0.0.2-pagetoggle (2026-11-13, COMMIT) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
+  - [ ] 0.0.2-applayout (plan and draft: the "Appearance" list, SE-GUI-84; brief `.tmp/eight/brief_appearance.md` written, carrying 0.0.2-presentation c) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last -> verify: SE-GUI-07 and 84, the built window
+  - [x] 0.0.2-teamdrop (2026-11-13, COMMIT) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [ ] 0.0.2-presentation (the maintainer, 2026-11-13; plan written, DECISIONS "star rating and
     playing attitude are aesthetics") star and playing attitude become `settings.toml` keys
     (`plans/aesthetics_export/settings_toml.md`, the star and attitude paragraph), in slices:

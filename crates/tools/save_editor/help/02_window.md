@@ -25,9 +25,14 @@ portraits from that version's PES folder.
 
 **Teams and players**
 
-The dropdown above the list picks a team, or ALL for every cup team of the save. Picking a
-team selects its row, so the right side shows the team's fields and tactics; ALL keeps what
-you had selected.
+The dropdown above the list picks a team, or All teams for every cup team of the save.
+Picking a team selects its row, so the right side shows the team's fields and tactics;
+All teams keeps what you had selected.
+
+The radio buttons at the bottom of the open dropdown narrow the dropdown's teams and the
+list to one competition's teams: 4cc, VGL or Invitational; All is every cup team again.
+If the picked team is not in the category, the dropdown shows All teams. The pick is
+remembered for next time.
 
 Only the cup's teams are listed (ids 701 to 920), with the players on their rosters. A save
 made from the game's own data also holds its clubs and national teams, and players on no cup
@@ -35,8 +40,8 @@ team: they stay in the save exactly as they are, and the editor never lists, che
 changes them.
 
 The list holds a row per team and, under each team, a row per player: the team's row shows
-its id, its two colors and its name followed by `[click for gameplan]`, and a player's row
-his shirt number, position and name as the game draws it, colors included. A `●` on a row marks
+its id, its two colors and its name, and a player's row his shirt number, position and name
+as the game draws it, colors included. A `●` on a row marks
 a player or the team itself with unsaved changes.
 
 The filter box above the list finds a team, or a player of any listed team, by part of a name,
@@ -53,9 +58,10 @@ and hairstyle belong to the slot, so they stay where they were.
 
 **Editing**
 
-Click a player's row to select him: the right side shows his id and name, then three columns
-of his fields, and the collapsed **Appearance** section underneath. Click a team's row to
-select the team: the right side shows the team's fields and its tactics.
+Click a player's row to select him: the right side shows his id and name, and under them his
+fields. The toggle left of the name switches between **Stats**, three columns of his fields,
+and **Appearance**, his look. Click a team's row, or **Gameplan** on the toggle, to see the
+team's fields and its tactics.
 
 A player's Name and Shirt labels count what the field holds (`(12/61)` reads as 12 used
 of 61). When it is longer than an older version can hold, the field takes an amber tint and

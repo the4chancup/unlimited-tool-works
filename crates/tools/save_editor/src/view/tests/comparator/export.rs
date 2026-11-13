@@ -280,7 +280,7 @@ fn another_save_resets_the_team_filter() {
     );
 
     // Another save opened (the fixture again through `SaveView::open`):
-    // its teams are not the old one's, so the filter reads ALL.
+    // its teams are not the old one's, so the filter reads All teams.
     let second = picked_save(&dir, "second", |_| {});
     view.open(&second);
     assert_eq!(
@@ -294,8 +294,8 @@ fn another_save_resets_the_team_filter() {
             .iter()
             .find(|node| node.role() == Role::ComboBox)
             .and_then(|combo| combo.value()),
-        Some("ALL"),
-        "the combo reads ALL"
+        Some("All teams"),
+        "the combo reads All teams"
     );
 }
 

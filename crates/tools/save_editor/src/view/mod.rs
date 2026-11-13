@@ -1,12 +1,13 @@
 //! The Save editor's window: a toolbar over a master-detail layout, the
 //! player list left (`player_list`, its team and player rows, the quick
-//! actions under it) and, right, the view the selected row names: the team
-//! view (`team`) on a team row, the player view — the title
-//! (`info_strip`), the three columns (`abilities` with `info_strip`'s
-//! General info and Other stats) and the Appearance section (`appearance`)
-//! — on a player row. Render-only over the session's state: it opens a
-//! save, filters and selects players, reorders a team's list by drag
-//! (`Session::move_player`), edits the strip's fields through
+//! actions under it) and, right, the screen the selected row and the
+//! title's toggle name: `Gameplan`, the team view (`team`), on a team
+//! row; the player's `Stats` — the three columns (`abilities` with
+//! `info_strip`'s General info and Other stats) — or `Appearance`
+//! (`appearance`) on a player row; every screen under the same title's
+//! row (`info_strip`) with the toggle at its left. Render-only over the
+//! session's state: it opens a save, filters and selects players, reorders
+//! a team's list by drag (`Session::move_player`), edits the strip's fields through
 //! `Session::edit_player`/`edit_team` (one undo entry per gesture), saves, and
 //! shows a refusal in a modal.
 
@@ -39,6 +40,7 @@ pub(crate) mod terms;
 mod tests;
 mod worker;
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -46,15 +48,14 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, collapsing_header, menu_button, modal, modal_buttons, toolbar_framed,
-    toolbar_separator,
+    add_enabled, menu_button, modal, modal_buttons, toolbar_framed, toolbar_separator,
 };
 use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
 
 use crate::session::Session;
 use crate::session::journal;
 use crate::session::rules::{self, Imported};
-use crate::session::selection::{self, TeamChoice};
+use crate::session::selection::{self, TeamCategory, TeamChoice};
 
 /// The list row the selection names: a team by id, or a player by team
 /// and roster slot.
@@ -64,6 +65,17 @@ pub(crate) enum Selection {
     Team(u32),
     /// A player row: the team he is rostered on and his roster slot.
     Player(u32, u8),
+}
+
+/// The player screen the detail's toggle shows on a player row (`Stats`
+/// or `Appearance`; the third segment, `Gameplan`, is the team view a
+/// team row selects). `Stats` when a save opens.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PlayerScreen {
+    /// The three columns (General info, Skills, Ability stats).
+    Stats,
+    /// The Appearance content, a screen of its own.
+    Appearance,
 }
 
 /// The floating panels, of which one at a time is open (`SaveView::panel`).
@@ -87,10 +99,25 @@ pub(crate) struct SaveView {
     pub(crate) recorder: Recorder,
     /// Which team the list shows.
     team: TeamChoice,
+    /// The category the selector's radio buttons pick: the dropdown's and
+    /// the list's teams are its alone. `Tool::view` syncs it with the
+    /// `team_category` setting as `scroll_names` is synced, so it stands
+    /// when another save opens.
+    pub(crate) team_category: TeamCategory,
     /// The filter box's text.
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
+    /// The player screen the title's toggle shows on a player row
+    /// (`Stats` on a save's open). The toggle's third segment,
+    /// `Gameplan`, is the team view a team row selects — the selection
+    /// holds it, never this field.
+    page: PlayerScreen,
+    /// Per team, the roster slot of the player last shown on it since the
+    /// save opened (emptied on open): the row a player screen's segment
+    /// selects from the team's row, the team's first filled slot when
+    /// none was shown.
+    last_shown: HashMap<u32, u8>,
     /// What the last click named for Ctrl+C and Ctrl+V (the list, the
     /// preset selector or the formation selector); clicks elsewhere
     /// leave it, `None` before the first click of one.
@@ -433,8 +460,11 @@ impl SaveView {
             session: None,
             recorder: Recorder::default(),
             team: TeamChoice::All,
+            team_category: TeamCategory::All,
             filter: String::new(),
             selected: None,
+            page: PlayerScreen::Stats,
+            last_shown: HashMap::new(),
             click_kind: None,
             reveal_selected: false,
             tactics: team_widgets::tactics::TacticsView::default(),
@@ -528,9 +558,9 @@ impl SaveView {
         self.session.as_ref().map(Session::path)
     }
 
-    /// Opens the save at `path`: on success the selector reads `ALL`, the
-    /// filter is empty and the first player row is selected (a team's own
-    /// row is not a player); a file the
+    /// Opens the save at `path`: on success the selector reads `All
+    /// teams`, the filter is empty and the first player row is selected
+    /// (a team's own row is not a player); a file the
     /// save refuses is shown as a refusal and the open session is untouched.
     /// The aesthetics lock is deliberately not reset (`edit_aesthetics`).
     /// `Session::open` records the open — a refused one names the file
@@ -540,7 +570,9 @@ impl SaveView {
             Ok(session) => {
                 self.team = TeamChoice::All;
                 self.filter.clear();
-                self.selected = selection::list(session.file(), &self.team, "")
+                self.page = PlayerScreen::Stats;
+                self.last_shown.clear();
+                self.selected = selection::list(session.file(), &self.team, "", self.team_category)
                     .into_iter()
                     .find_map(|row| match row {
                         selection::ListRow::Player(row) => {
@@ -608,8 +640,9 @@ const LIST_WIDTH: f32 = 255.0;
 /// least widget width is 40.
 pub(super) const NUMBER_BOX: f32 = 52.0;
 
-/// The detail pane's margin over a view's title.
-const TITLE_MARGIN: i8 = 6;
+/// The detail pane's margin over a view's title's row (the draft's
+/// `.pheader` margin-top).
+const TITLE_MARGIN: i8 = 5;
 
 /// The player list's margin over its team combo. The panes start one item
 /// spacing (3 points) under the toolbar band's line, so the combo stands 4
@@ -619,49 +652,6 @@ const LIST_TOP_MARGIN: i8 = 1;
 /// The room between the panes' bottom and the status bar (the draft's
 /// `.center.filled` bottom padding).
 const PANE_BOTTOM_MARGIN: f32 = 6.0;
-
-/// How far the Appearance header's text stands after its left edge: the
-/// draft's `summary::before` arrow box, 14px wide, where egui indents 18.
-const APPEARANCE_INDENT: f32 = 14.0;
-
-/// How far the Appearance header's arrow stands from the middle of the box
-/// egui centres it in (the indent's middle, on the header's centre line):
-/// the draft's arrow is a symbol at the box's left, on the text's baseline,
-/// so it sits left of that middle and below the line's centre.
-const APPEARANCE_ARROW_OFFSET: egui::Vec2 = egui::vec2(-3.5, 2.0);
-
-/// The Appearance section under the player's columns, closed by default,
-/// its header as the draft's `details > summary`: one line of text high,
-/// the text `APPEARANCE_INDENT` in, the arrow where the draft's stands
-/// (`appearance_arrow`). The section's content keeps the view's spacing
-/// and its width (the grids are sized for it, the body's indent would push
-/// them past it).
-fn appearance_section(ui: &mut egui::Ui, view: &mut SaveView) {
-    let spacing = ui.spacing().clone();
-    ui.scope(|ui| {
-        let text_height = ui.text_style_height(&egui::TextStyle::Button);
-        let header = ui.spacing_mut();
-        header.indent = APPEARANCE_INDENT;
-        header.interact_size.y = text_height;
-        header.button_padding.y = 0.0;
-        collapsing_header("Appearance")
-            .id_salt("appearance")
-            .icon(appearance_arrow)
-            .show_unindented(ui, |ui| {
-                *ui.spacing_mut() = spacing;
-                appearance::show(ui, view);
-            });
-    });
-}
-
-/// egui's collapsing arrow, moved by `APPEARANCE_ARROW_OFFSET` from the box
-/// egui gives it (`response`'s rect).
-fn appearance_arrow(ui: &mut egui::Ui, openness: f32, response: &egui::Response) {
-    let moved = response
-        .clone()
-        .with_new_rect(response.rect.translate(APPEARANCE_ARROW_OFFSET));
-    egui::collapsing_header::paint_default_icon(ui, openness, &moved);
-}
 
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
@@ -770,35 +760,49 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                         // own outside-press handling no longer runs and
                         // the arrows' gate reads it.
                         view.tactics.close_popover();
-                        // The player view: the title, the three columns,
-                        // then the Appearance section, closed by default.
-                        // The room the three fixed columns leave between
-                        // the player list's frame and the window's right
-                        // edge is split into four equal gaps: before the
-                        // first column, between the columns and after the
-                        // last. The eye reads the first gap from the list's
-                        // last ink and the last to the window's edge, so
-                        // the pane's own margins count in neither: centred
-                        // in the pane, the gap after the list read wider
-                        // than those between the columns. `columns_width`
-                        // is the last pass's measured width;
-                        // `abilities::show` discards a pass that measures
-                        // others.
-                        let columns = abilities::columns_width(ui);
-                        let window_right = ui.ctx().content_rect().max.x;
-                        let gap = ((window_right - frame_right - columns) / 4.0).max(0.0);
-                        let pad = (frame_right + gap - ui.cursor().min.x).max(0.0);
-                        ui.horizontal(|ui| {
-                            ui.add_space(pad);
-                            ui.vertical(|ui| {
-                                // The columns' stored total and the two
-                                // gaps between them.
-                                ui.set_width(columns + 2.0 * gap);
-                                info_strip::show(ui, view);
-                                abilities::show(ui, view, gap);
-                                appearance_section(ui, view);
-                            });
-                        });
+                        // The player last shown on his team is the row the
+                        // toggle's player screens go back to from the
+                        // team's row.
+                        if let Some((team_id, slot, _)) = selected_player(view) {
+                            view.last_shown.insert(team_id, slot);
+                        }
+                        // The title's row first, at the pane's left edge:
+                        // a toggle that stood elsewhere on another screen
+                        // would slip from under the pointer.
+                        info_strip::show(ui, view);
+                        match view.page {
+                            PlayerScreen::Appearance => appearance::show(ui, view),
+                            PlayerScreen::Stats => {
+                                // The three fixed columns, centred as the
+                                // Stats screen's: the room they leave
+                                // between the player list's frame and the
+                                // window's right edge is split into four
+                                // equal gaps: before the first column,
+                                // between the columns and after the last.
+                                // The eye reads the first gap from the
+                                // list's last ink and the last to the
+                                // window's edge, so the pane's own margins
+                                // count in neither: centred in the pane,
+                                // the gap after the list read wider than
+                                // those between the columns.
+                                // `columns_width` is the last pass's
+                                // measured width; `abilities::show`
+                                // discards a pass that measures others.
+                                let columns = abilities::columns_width(ui);
+                                let window_right = ui.ctx().content_rect().max.x;
+                                let gap = ((window_right - frame_right - columns) / 4.0).max(0.0);
+                                let pad = (frame_right + gap - ui.cursor().min.x).max(0.0);
+                                ui.horizontal(|ui| {
+                                    ui.add_space(pad);
+                                    ui.vertical(|ui| {
+                                        // The columns' stored total and
+                                        // the two gaps between them.
+                                        ui.set_width(columns + 2.0 * gap);
+                                        abilities::show(ui, view, gap);
+                                    });
+                                });
+                            }
+                        }
                     }
                 });
         });

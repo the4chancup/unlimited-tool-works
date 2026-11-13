@@ -130,6 +130,13 @@ scroll_names = true
 # Default: true
 portraits = true
 
+# Which teams the player list and its team dropdown show: "all" for every cup team,
+# "4cc" for the 4cc teams, "vgl" for the VGL teams or "invitational" for the
+# invitational teams.
+# The same as the radio buttons at the bottom of the open dropdown.
+# Default: "all"
+team_category = "all"
+
 
 [team-compiler]
 

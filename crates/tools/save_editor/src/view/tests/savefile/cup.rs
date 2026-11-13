@@ -70,7 +70,7 @@ fn filled(file: &EditFile, id: u32) -> usize {
 }
 
 /// The PES 17 sample with /aco/ (703) renumbered 300 and one of its players taken off
-/// every roster: the team selector offers the cup's teams alone, ALL lists none of team
+/// every roster: the team selector offers the cup's teams alone, All teams lists none of team
 /// 300's rows, a filter typed as its name or its first player's name lists nothing,
 /// Multi-team AATF opens on 701 and offers and reports no team 300, and Fix database
 /// leaves team 300 and both players' flags as they were.
@@ -84,10 +84,10 @@ fn a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired() {
     view.open(&path);
     view.aesthetics_from_exports = true;
     view.edit_aesthetics = true;
-    // Tall enough for ALL's first three teams: 701's and 702's rows, then the third's.
+    // Tall enough for All teams' first three teams: 701's and 702's rows, then the third's.
     let mut window = Headless::sized(DEFAULT_PANE.x, 2400.0);
 
-    // The team selector: ALL, then every cup team in record order, and no team 300.
+    // The team selector: All teams, then every cup team in record order, and no team 300.
     let names: Vec<String> = opened
         .teams()
         .iter()
@@ -102,16 +102,16 @@ fn a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired() {
             x(a).partial_cmp(&x(b)).expect("ordered bounds")
         })
         .expect("the team selector");
-    assert_eq!(selector.value(), Some("ALL"));
+    assert_eq!(selector.value(), Some("All teams"));
     click(&mut window, selector, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let mut items: Vec<&accesskit::Node> = nodes
         .iter()
         .filter(|node| {
             node.role() == Role::Button
-                && node
-                    .label()
-                    .is_some_and(|label| label == "ALL" || names.iter().any(|name| name == label))
+                && node.label().is_some_and(|label| {
+                    label == "All teams" || names.iter().any(|name| name == label)
+                })
         })
         .collect();
     items.sort_by(|a, b| {
@@ -119,7 +119,7 @@ fn a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired() {
         y(a).partial_cmp(&y(b)).expect("ordered bounds")
     });
     let items: Vec<&str> = items.iter().filter_map(|node| node.label()).collect();
-    let mut expected = vec!["ALL"];
+    let mut expected = vec!["All teams"];
     expected.extend(
         opened
             .teams()
@@ -137,9 +137,13 @@ fn a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired() {
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
-    assert_eq!(view.team, TeamChoice::All, "premise: ALL stays chosen");
+    assert_eq!(
+        view.team,
+        TeamChoice::All,
+        "premise: All teams stays chosen"
+    );
 
-    // ALL: 701 and 702 with their squads, then 704; no row of team 300's.
+    // All teams: 701 and 702 with their squads, then 704; no row of team 300's.
     let nodes = draw(&mut window, &mut view);
     let groups = drawn_groups(&nodes, &opened);
     assert!(

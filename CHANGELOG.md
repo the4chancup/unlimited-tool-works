@@ -17,12 +17,18 @@
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
   in the **File** menu, Undo and Redo in the **Edit** menu, with the same shortcuts.
+- **Save editor**: a toggle left of the player's or team's name switches the right side
+  between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
+  Appearance, until now a collapsed section under the stats, is a screen of its own.
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
   installs it, and a command typed in a terminal mentions a newer version too. The Help
   window's new Updates chapter explains each step.
 
 ### Useful
 
+- **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
+  radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
+  Invitational teams.
 - **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats…`, which stays
   open: pick the source once, then select in the list each player to copy onto.
 - **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics

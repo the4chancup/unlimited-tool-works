@@ -67,8 +67,7 @@ pub(super) const PLAYER_GLOVES_LABEL: &str = "Player gloves";
 /// The dribbling motion's number.
 pub(super) const DRIBBLING_MOTION_LABEL: &str = "Dribbling motion";
 
-/// The Appearance section's content for the selected player, inside the
-/// player view's collapsing section.
+/// The Appearance screen's content for the selected player.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some((_, _, player_id)) = selected_player(view) else {
         return;

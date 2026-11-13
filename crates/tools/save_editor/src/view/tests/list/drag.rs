@@ -124,7 +124,7 @@ fn a_whitespace_only_filter_keeps_the_drag_on() {
     );
 }
 
-// SE-GUI-08, under ALL, where each team's rows run unbroken under its
+// SE-GUI-08, under All teams, where each team's rows run unbroken under its
 // team row: a drop on a row of the dragged player's own team moves him as
 // in one team's list; a drop on another team's row or on a team row does
 // nothing.
@@ -165,7 +165,7 @@ fn under_all_a_drag_moves_within_the_team_and_nowhere_else() {
 
     let mut view = SaveView::new();
     view.open(&path);
-    assert_eq!(view.team, TeamChoice::All, "open selects ALL");
+    assert_eq!(view.team, TeamChoice::All, "open selects All teams");
     // Tall enough for team 702's block to be drawn under team 701's.
     let mut window = Headless::sized(DEFAULT_PANE.x, 1100.0);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -451,12 +451,12 @@ fn hold_from_to(
 // serif at each end (the draft's `.dropabove` and `.dropbelow`): on the
 // row's lower edge when he comes from above, on its upper edge when he
 // comes from below. His own row (the drop moves nothing) and a row of
-// another team under ALL get none; released off the list, none is left.
+// another team under All teams get none; released off the list, none is left.
 // SE-GUI-75
 #[test]
 fn a_held_drag_marks_where_the_drop_would_land() {
     let mut other_id = 0;
-    // Tall enough for team 702's block to be drawn under team 701's at ALL.
+    // Tall enough for team 702's block to be drawn under team 701's at All teams.
     let (file, mut view, mut window, visuals) = mark_scene("drag_line", 1100.0, |file| {
         file.player_mut(70101).unwrap().name = "FIRST".to_owned();
         // Team 702's third rostered player renamed too: a row's label
@@ -581,7 +581,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         list_frame(&window, &shapes),
         sixth,
         sixth.max.y,
-        "over a row of his own team under ALL",
+        "over a row of his own team under All teams",
     );
 
     // And over his team's last player row, its lower edge where the next
@@ -606,7 +606,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         frame,
         last,
         last.max.y,
-        "over his team's last row under ALL",
+        "over his team's last row under All teams",
     );
     let fills: Vec<usize> = shapes
         .iter()
@@ -639,7 +639,7 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         &shapes,
         &visuals,
         list_frame(&window, &shapes),
-        "over another team's row under ALL",
+        "over another team's row under All teams",
     );
     window.frame(pointer_at(other, false), |ui| {
         show(ui, &mut view, &|| Vec::new())

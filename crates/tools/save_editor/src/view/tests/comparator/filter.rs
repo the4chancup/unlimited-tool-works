@@ -164,8 +164,12 @@ fn the_team_filter_narrows_the_list_without_recomparing() {
         "the held result's key is the one before the filter"
     );
 
-    pick_comparator_team(&mut window, &mut view, "ALL");
-    assert_eq!(view.comparator.filter_team, TeamChoice::All, "ALL again");
+    pick_comparator_team(&mut window, &mut view, "All teams");
+    assert_eq!(
+        view.comparator.filter_team,
+        TeamChoice::All,
+        "All teams again"
+    );
     let lines = window_lines(&mut window, &mut view, "Comparator");
     assert!(
         lines.iter().any(|line| line == "Team 734 /lit/")
@@ -259,5 +263,61 @@ fn the_team_filter_keeps_an_only_in_section_by_its_roster() {
             .iter()
             .any(|line| line == "No differences in this team."),
         "the empty-team read: {lines:?}"
+    );
+}
+
+// The comparator's team filter reads `All teams` too and lists every cup
+// team, whatever the player list's category: its combo carries the
+// player's salt, not its radios.
+// SE-GUI-83
+#[test]
+fn the_comparators_team_filter_lists_every_cup_team() {
+    let (mut view, mut window, _) = compared_73401("comparator_filter_all_teams");
+    view.team_category = TeamCategory::Vgl;
+    let file = view.session.as_ref().expect("an open save").file();
+    let all_names: Vec<String> = file
+        .teams()
+        .iter()
+        .map(|team| display_name(&team.name))
+        .collect();
+    assert_eq!(all_names.len(), 220, "premise: the cup teams");
+
+    // The comparator window's only combo, opened: `All teams`, then
+    // every cup team, and no radio button.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = comparator_nodes(&pairs)
+        .into_iter()
+        .find(|node| node.role() == Role::ComboBox)
+        .expect("the Team combo")
+        .clone();
+    assert_eq!(combo.value(), Some("All teams"), "the filter's text");
+    click(&mut window, &combo, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let mut items: Vec<&accesskit::Node> = comparator_nodes(&pairs)
+        .into_iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| {
+                    label == "All teams" || all_names.iter().any(|name| name == label)
+                })
+        })
+        .collect();
+    items.sort_by(|a, b| {
+        let y = |node: &&accesskit::Node| node.bounds().map(|r| r.y0).unwrap_or(0.0);
+        y(a).partial_cmp(&y(b)).expect("ordered bounds")
+    });
+    let items: Vec<String> = items
+        .iter()
+        .filter_map(|node| node.label().map(str::to_owned))
+        .collect();
+    let expected: Vec<String> = std::iter::once("All teams".to_owned())
+        .chain(all_names)
+        .collect();
+    assert_eq!(items, expected, "every cup team under a category");
+    assert!(
+        !comparator_nodes(&pairs)
+            .iter()
+            .any(|node| node.role() == Role::RadioButton),
+        "no radio button in the filter"
     );
 }

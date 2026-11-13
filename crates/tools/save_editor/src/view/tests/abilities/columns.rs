@@ -2,11 +2,11 @@ use super::*;
 
 // SE-GUI-37's player-view clause: General info, Skills and Ability stats
 // side by side left to right on the pane the shell leaves at the 1280 x
-// 780 window (`DEFAULT_PANE`), their tops level, Appearance closed below
-// them inside the pane's height, every first-half box on its half's right
-// edge and the second half's on its label column, every combo on the
-// column's, and nothing past the pane's right edge. PES 17's gated fields
-// keep the layout.
+// 780 window (`DEFAULT_PANE`), their tops level, every first-half box on
+// its half's right edge and the second half's on its label column, every
+// combo on the column's, and nothing past the pane's right edge. The
+// Stats screen carries no Appearance header under them (SE-GUI-82: the
+// section is a screen of its own). PES 17's gated fields keep the layout.
 // SE-GUI-37
 #[test]
 fn the_player_view_lays_out_its_three_columns_at_1280() {
@@ -57,9 +57,11 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "the columns' tops level: {titles:?}"
     );
 
-    // Appearance sits closed below the deepest panel's bottom: the last
-    // ability stat's row or the positions grid's last, whichever is lower.
-    // Aggression's control is its number box, or PES 17's gated stand-in.
+    // Nothing draws below the deepest panel's bottom: the last ability
+    // stat's row or the positions grid's last, whichever is lower, inside
+    // the pane's height (its content edges less the two `CentralPanel`
+    // margins, as `tactics.rs` bounds its deepest node). Aggression's
+    // control is its number box, or PES 17's gated stand-in.
     let stat_bottom = control_right_of(&nodes, "Aggression")
         .bounds()
         .expect("bounds")
@@ -70,24 +72,18 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         .map(|node| node.bounds().expect("bounds").y1)
         .fold(0.0, f64::max);
     let deepest = stat_bottom.max(grid_bottom);
-    let appearance = node_labeled(&nodes, Role::DisclosureTriangle, "Appearance");
-    assert_eq!(
-        appearance.is_expanded(),
-        Some(false),
-        "Appearance is closed"
-    );
     assert!(
-        appearance.bounds().expect("bounds").y0 >= deepest,
-        "Appearance below the deepest panel's bottom ({deepest})"
-    );
-    // The view fits the pane with no scrolling: the header's bottom inside
-    // the pane's height (its content edges less the two
-    // `CentralPanel` margins, as `tactics.rs` bounds its deepest node).
-    assert!(
-        appearance.bounds().expect("bounds").y1 <= f64::from(DEFAULT_PANE.y - 2.0 * PANEL_MARGIN),
-        "Appearance's bottom inside the pane ({:?} vs {})",
-        appearance.bounds(),
+        deepest <= f64::from(DEFAULT_PANE.y - 2.0 * PANEL_MARGIN),
+        "the deepest panel's bottom inside the pane ({deepest} vs {})",
         DEFAULT_PANE.y - 2.0 * PANEL_MARGIN
+    );
+    // The Stats screen carries no Appearance header: the section is a
+    // screen of its own, on the title row's toggle.
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::DisclosureTriangle),
+        "no Appearance header under the columns"
     );
 
     // The six label-left rows (Name, Shirt and the four combos) share
@@ -354,8 +350,8 @@ fn assert_three_columns_at_1280(version: PesVersion) {
 // The room the three fixed columns leave is split into four equal gaps:
 // after the player list, counted from its frame, between the columns, and
 // after Ability stats to the window's edge; 30.4 points each at the
-// 1280 x 780 window, and still equal on a wider one. The title line and
-// Appearance start at General info's title.
+// 1280 x 780 window, and still equal on a wider one. The title's row
+// starts at the pane's left edge, the toggle first.
 // The gaps read the columns' widths the previous frame measured (egui
 // memory), so three settle frames run before the read.
 #[test]
@@ -398,23 +394,15 @@ fn the_player_view_splits_its_room_into_four_equal_gaps() {
             }
         }
 
-        // The title line and Appearance start at General info's title.
-        let title = nodes
-            .iter()
-            .filter(|node| node.role() == Role::Label)
-            .find(|node| {
-                node.value()
-                    .is_some_and(|value| value.starts_with("70101 "))
-            })
-            .and_then(accesskit::Node::bounds)
-            .expect("the view's title");
-        let appearance = node_labeled(&nodes, Role::DisclosureTriangle, "Appearance")
+        // The title's row starts at the pane's left edge with the toggle
+        // (the title started at General info's title's x before).
+        let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
+        let stats = node_labeled(&nodes, Role::Button, "Stats")
             .bounds()
-            .expect("bounds");
+            .expect("the Stats segment");
         assert!(
-            (title.x0 - lefts[0]).abs() <= 0.5 && (appearance.x0 - lefts[0]).abs() <= 0.5,
-            "the title ({title:?}) and Appearance ({appearance:?}) start at {}",
-            lefts[0]
+            (stats.x0 - pane_left).abs() <= 0.5,
+            "the title's row at the pane's left ({stats:?} vs {pane_left})"
         );
     }
 }

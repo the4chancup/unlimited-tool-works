@@ -1,6 +1,7 @@
 //! Which players and team rows the master list shows: the team the selector
-//! names, or every cup team at ALL and while the filter box is in use, so a
-//! player is found without knowing his team first. A team outside the cup
+//! names, or every cup team at All teams and while the filter box is in use, so a
+//! player is found without knowing his team first, narrowed to one
+//! competition's teams by the selector's category. A team outside the cup
 //! (`session::cup`) is never listed, nor are its players.
 
 use std::collections::HashMap;
@@ -18,6 +19,70 @@ pub(crate) enum TeamChoice {
     All,
     /// One team, by id.
     Team(u32),
+}
+
+/// Which of the cup's team-id ranges the selector and the list show (the
+/// teams list's own sections): every cup team, or one competition's alone.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TeamCategory {
+    /// Every cup team.
+    All,
+    /// The 4cc teams (ids 701 to 780, the Backup rows included).
+    FourCc,
+    /// The VGL teams (781 to 850).
+    Vgl,
+    /// The invitational teams (851 to 920).
+    Invitational,
+}
+
+impl TeamCategory {
+    /// The categories in the radio buttons' order.
+    pub(crate) const CHOICES: [TeamCategory; 4] = [
+        TeamCategory::All,
+        TeamCategory::FourCc,
+        TeamCategory::Vgl,
+        TeamCategory::Invitational,
+    ];
+
+    /// Whether `team_id` lies in the category's id range.
+    pub(crate) fn contains(self, team_id: u32) -> bool {
+        match self {
+            TeamCategory::All => true,
+            TeamCategory::FourCc => (701..=780).contains(&team_id),
+            TeamCategory::Vgl => (781..=850).contains(&team_id),
+            TeamCategory::Invitational => (851..=920).contains(&team_id),
+        }
+    }
+
+    /// The radio button's text.
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            TeamCategory::All => "All",
+            TeamCategory::FourCc => "4cc",
+            TeamCategory::Vgl => "VGL",
+            TeamCategory::Invitational => "Invitational",
+        }
+    }
+
+    /// The `team_category` setting's spelling of the category.
+    pub(crate) fn setting(self) -> &'static str {
+        match self {
+            TeamCategory::All => "all",
+            TeamCategory::FourCc => "4cc",
+            TeamCategory::Vgl => "vgl",
+            TeamCategory::Invitational => "invitational",
+        }
+    }
+
+    /// The category `setting` spells; an unknown spelling reads as `All`.
+    pub(crate) fn from_setting(setting: &str) -> TeamCategory {
+        match setting {
+            "4cc" => TeamCategory::FourCc,
+            "vgl" => TeamCategory::Vgl,
+            "invitational" => TeamCategory::Invitational,
+            _ => TeamCategory::All,
+        }
+    }
 }
 
 /// One listed row: the player's team, roster slot and id.
@@ -42,14 +107,21 @@ pub(crate) enum ListRow {
 }
 
 /// The rows the list draws: each listed team's row, then its players' rows
-/// in roster order. A non-empty `filter` matches across all cup teams (whatever
-/// the choice) on the display name, the shirt name or the id,
+/// in roster order; `category` leaves out the teams outside its range,
+/// under `TeamChoice::All` and a non-empty `filter` alike. A non-empty
+/// `filter` matches across the kept teams (whatever the choice) on the
+/// display name, the shirt name or the id,
 /// case-insensitive. A team whose own name (its display name, matched as
 /// the players' names are) matches is then listed with all its players, so
 /// a search for a team shows its squad; any other team is listed with its
 /// matching players only, and skipped when none match. Empty slots (player
 /// id 0) are never listed.
-pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<ListRow> {
+pub(crate) fn list(
+    file: &EditFile,
+    team: &TeamChoice,
+    filter: &str,
+    category: TeamCategory,
+) -> Vec<ListRow> {
     let query = filter.trim().to_lowercase();
     let filtering = !query.is_empty();
     // Player ids are stable inside an open file: one map serves the whole
@@ -61,6 +133,9 @@ pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<List
         .collect();
     let mut rows = Vec::new();
     for team_entry in cup_teams(file) {
+        if !category.contains(team_entry.id) {
+            continue;
+        }
         if !filtering
             && let TeamChoice::Team(id) = team
             && *id != team_entry.id
@@ -84,8 +159,13 @@ pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<List
 
 /// `list`'s player rows, alone, for the unsaved-changes table's player
 /// order (`view::prompt`).
-pub(crate) fn rows(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<Row> {
-    list(file, team, filter)
+pub(crate) fn rows(
+    file: &EditFile,
+    team: &TeamChoice,
+    filter: &str,
+    category: TeamCategory,
+) -> Vec<Row> {
+    list(file, team, filter, category)
         .into_iter()
         .filter_map(|row| match row {
             ListRow::Player(row) => Some(row),
@@ -158,12 +238,15 @@ mod tests {
     fn a_team_lists_its_rostered_slots_in_order() {
         let file = open(PesVersion::Pes17);
         assert_eq!(
-            rows(&file, &TeamChoice::Team(718), ""),
+            rows(&file, &TeamChoice::Team(718), "", TeamCategory::All),
             rostered(&file, 718)
         );
         // Team 718's first slot is player 71801; a team the save lacks lists nothing.
-        assert_eq!(rows(&file, &TeamChoice::Team(718), "")[0].player_id, 71801);
-        assert!(rows(&file, &TeamChoice::Team(99999), "").is_empty());
+        assert_eq!(
+            rows(&file, &TeamChoice::Team(718), "", TeamCategory::All)[0].player_id,
+            71801
+        );
+        assert!(rows(&file, &TeamChoice::Team(99999), "", TeamCategory::All).is_empty());
     }
 
     #[test]
@@ -174,7 +257,10 @@ mod tests {
             .iter()
             .flat_map(|team| rostered(&file, team.id))
             .collect();
-        assert_eq!(rows(&file, &TeamChoice::All, ""), expected);
+        assert_eq!(
+            rows(&file, &TeamChoice::All, "", TeamCategory::All),
+            expected
+        );
     }
 
     #[test]
@@ -184,17 +270,17 @@ mod tests {
         // code-free display name, case-insensitive.
         assert!(file.player(71801).unwrap().name.contains('\x11'));
         assert_eq!(
-            rows(&file, &TeamChoice::Team(701), "roadtrip"),
+            rows(&file, &TeamChoice::Team(701), "roadtrip", TeamCategory::All),
             [Row {
                 team_id: 718,
                 slot: 0,
                 player_id: 71801,
             }]
         );
-        assert!(rows(&file, &TeamChoice::All, "ROADTRIP").len() == 1);
+        assert!(rows(&file, &TeamChoice::All, "ROADTRIP", TeamCategory::All).len() == 1);
         // A whitespace-only filter is no filter: the chosen team's roster.
         assert_eq!(
-            rows(&file, &TeamChoice::Team(701), "   "),
+            rows(&file, &TeamChoice::Team(701), "   ", TeamCategory::All),
             rostered(&file, 701)
         );
     }
@@ -203,7 +289,7 @@ mod tests {
     fn a_filter_matches_the_id_and_the_shirt_name() {
         let file = open(PesVersion::Pes17);
         assert_eq!(
-            rows(&file, &TeamChoice::Team(701), "71801"),
+            rows(&file, &TeamChoice::Team(701), "71801", TeamCategory::All),
             [Row {
                 team_id: 718,
                 slot: 0,
@@ -211,7 +297,12 @@ mod tests {
             }]
         );
         assert_eq!(
-            rows(&file, &TeamChoice::Team(701), "exact change"),
+            rows(
+                &file,
+                &TeamChoice::Team(701),
+                "exact change",
+                TeamCategory::All
+            ),
             [Row {
                 team_id: 718,
                 slot: 0,
@@ -219,7 +310,15 @@ mod tests {
             }]
         );
         // No match: nothing, not the chosen team's roster.
-        assert!(rows(&file, &TeamChoice::Team(701), "no such player").is_empty());
+        assert!(
+            rows(
+                &file,
+                &TeamChoice::Team(701),
+                "no such player",
+                TeamCategory::All
+            )
+            .is_empty()
+        );
     }
 
     // A team row heads each listed team's players.
@@ -235,7 +334,10 @@ mod tests {
                     .chain(rostered(&file, team.id).into_iter().map(ListRow::Player))
             })
             .collect();
-        assert_eq!(list(&file, &TeamChoice::All, ""), expected);
+        assert_eq!(
+            list(&file, &TeamChoice::All, "", TeamCategory::All),
+            expected
+        );
     }
 
     // One team picked: its row then its players, no other team's.
@@ -246,7 +348,10 @@ mod tests {
             .into_iter()
             .chain(rostered(&file, 718).into_iter().map(ListRow::Player))
             .collect();
-        assert_eq!(list(&file, &TeamChoice::Team(718), ""), expected);
+        assert_eq!(
+            list(&file, &TeamChoice::Team(718), "", TeamCategory::All),
+            expected
+        );
     }
 
     // Under a filter a team whose own name matches lists its whole squad,
@@ -293,7 +398,10 @@ mod tests {
                 }),
             ])
             .collect();
-        assert_eq!(list(&file, &TeamChoice::All, "/f/"), expected);
+        assert_eq!(
+            list(&file, &TeamChoice::All, "/f/", TeamCategory::All),
+            expected
+        );
     }
 
     // A team whose name carries capitals matches the filter
@@ -318,7 +426,10 @@ mod tests {
                 player.id
             );
         }
-        assert!(list(&file, &TeamChoice::Team(701), "umajp").contains(&ListRow::Team(827)));
+        assert!(
+            list(&file, &TeamChoice::Team(701), "umajp", TeamCategory::All)
+                .contains(&ListRow::Team(827))
+        );
     }
 
     // A filter matching one player: his team's row heads him, no other
@@ -327,7 +438,86 @@ mod tests {
     fn list_filter_matching_one_player_gives_his_row_then_him() {
         let file = open(PesVersion::Pes17);
         assert_eq!(
-            list(&file, &TeamChoice::Team(701), "roadtrip"),
+            list(&file, &TeamChoice::Team(701), "roadtrip", TeamCategory::All),
+            [
+                ListRow::Team(718),
+                ListRow::Player(Row {
+                    team_id: 718,
+                    slot: 0,
+                    player_id: 71801,
+                }),
+            ]
+        );
+    }
+
+    // The categories' id ranges: 4cc 701 to 780, VGL 781 to 850,
+    // Invitational 851 to 920, All teams holding them all.
+    #[test]
+    fn the_categories_hold_their_team_id_ranges() {
+        for (id, four_cc, vgl, invitational) in [
+            (700, false, false, false),
+            (701, true, false, false),
+            (780, true, false, false),
+            (781, false, true, false),
+            (850, false, true, false),
+            (851, false, false, true),
+            (920, false, false, true),
+            (921, false, false, false),
+        ] {
+            assert_eq!(TeamCategory::FourCc.contains(id), four_cc, "4cc {id}");
+            assert_eq!(TeamCategory::Vgl.contains(id), vgl, "VGL {id}");
+            assert_eq!(
+                TeamCategory::Invitational.contains(id),
+                invitational,
+                "Invitational {id}"
+            );
+            assert!(TeamCategory::All.contains(id), "All teams {id}");
+        }
+    }
+
+    // The `team_category` setting's spellings; an unknown one reads as `all`.
+    #[test]
+    fn the_setting_spells_each_category() {
+        for (setting, category) in [
+            ("all", TeamCategory::All),
+            ("4cc", TeamCategory::FourCc),
+            ("vgl", TeamCategory::Vgl),
+            ("invitational", TeamCategory::Invitational),
+        ] {
+            assert_eq!(category.setting(), setting, "{setting}");
+            assert_eq!(TeamCategory::from_setting(setting), category, "{setting}");
+        }
+        assert_eq!(TeamCategory::from_setting("premier"), TeamCategory::All);
+    }
+
+    // A category lists its own teams alone, under All teams and under the
+    // filter's search alike.
+    #[test]
+    fn list_lists_only_the_categorys_teams() {
+        let file = open(PesVersion::Pes17);
+        let expected: Vec<ListRow> = file
+            .teams()
+            .iter()
+            .filter(|team| (781..=850).contains(&team.id))
+            .flat_map(|team| {
+                [ListRow::Team(team.id)]
+                    .into_iter()
+                    .chain(rostered(&file, team.id).into_iter().map(ListRow::Player))
+            })
+            .collect();
+        assert!(expected.len() > 70, "premise: the VGL teams' rows");
+        assert_eq!(
+            list(&file, &TeamChoice::All, "", TeamCategory::Vgl),
+            expected
+        );
+        // A team picked outside the category lists nothing.
+        assert!(list(&file, &TeamChoice::Team(718), "", TeamCategory::Vgl).is_empty());
+
+        // The filter box's search under a category finds no player of a
+        // team outside it: 71801 is a 4cc player.
+        assert!(list(&file, &TeamChoice::All, "roadtrip", TeamCategory::Vgl).is_empty());
+        assert_eq!(
+            list(&file, &TeamChoice::All, "roadtrip", TeamCategory::FourCc),
             [
                 ListRow::Team(718),
                 ListRow::Player(Row {

@@ -176,6 +176,7 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
 
     let other = fixture(PesVersion::Pes21, "appearance_lock_fox_other");
     view.open(&other);
+    open_appearance(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
         !right_of_label(&nodes, "Chest", Role::SpinButton)[0].is_disabled(),

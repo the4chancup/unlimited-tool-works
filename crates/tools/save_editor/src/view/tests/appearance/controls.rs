@@ -724,6 +724,7 @@ fn the_skin_palette_draws_its_entries_held_swatch_and_a_past_top_number() {
         .unwrap();
     file.save(&path).unwrap();
     view.open(&path);
+    open_appearance(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let swatches = skin_swatches(&nodes);
     assert!(
@@ -739,6 +740,7 @@ fn the_skin_palette_draws_its_entries_held_swatch_and_a_past_top_number() {
         .unwrap();
     file.save(&path).unwrap();
     view.open(&path);
+    open_appearance(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let swatches = skin_swatches(&nodes);
     assert!(

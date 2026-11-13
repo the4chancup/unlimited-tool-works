@@ -255,44 +255,6 @@ fn the_skills_header_is_one_text_line_high() {
     }
 }
 
-// The Appearance header as the draft's `details > summary`: its text 14
-// after General info's title (the arrow's 14-point box) and 604.5 under
-// its top, the closed arrow's ink 13.6 to 7.1 before the text and 5.9 to
-// 12.7 under its top (the symbol drawn at 9 points on the text's line).
-#[test]
-fn the_appearance_header_stands_where_the_drafts_does() {
-    let (_, nodes, shapes) = settled_player_view("appearance_header");
-    let general = label_bounds(&nodes, "General info");
-    let text = text_shape(&shapes, "Appearance");
-    let (x, y) = (f64::from(text.pos.x), f64::from(text.pos.y));
-    near_draft(x - general.x0, 14.0, "the text after General info's x");
-    near_draft(y - general.y0, 604.5, "the text under General info's top");
-    let header = node_labeled(&nodes, Role::DisclosureTriangle, "Appearance")
-        .bounds()
-        .expect("bounds");
-    let arrow = shapes
-        .iter()
-        .find_map(|clipped| match &clipped.shape {
-            egui::Shape::Path(path)
-                if path.points.len() == 3
-                    && path.points.iter().all(|point| {
-                        header.contains(accesskit::Point::new(
-                            f64::from(point.x),
-                            f64::from(point.y),
-                        ))
-                    }) =>
-            {
-                Some(egui::Rect::from_points(&path.points))
-            }
-            _ => None,
-        })
-        .expect("the header's arrow");
-    near_draft(f64::from(arrow.min.x) - x, -13.6, "the arrow's left");
-    near_draft(f64::from(arrow.max.x) - x, -7.1, "the arrow's tip");
-    near_draft(f64::from(arrow.min.y) - y, 5.9, "the arrow's top");
-    near_draft(f64::from(arrow.max.y) - y, 12.7, "the arrow's bottom");
-}
-
 // The detail pane is one scroll area whatever row is picked: its offset
 // outlives picking another player — a member editing one part of the
 // Appearance player after player never scrolls back.

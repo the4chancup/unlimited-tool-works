@@ -20,7 +20,7 @@ use studio_core::widgets::{
 use team_widgets::tactics::RosterRow;
 use team_widgets::violations::SWITCH_TOOLTIP;
 
-use crate::session::selection::{self, TeamChoice};
+use crate::session::selection::{self, TeamCategory, TeamChoice};
 use crate::session::{MovedPlace, PutBack, Session};
 use crate::view::terms::{self, Term};
 use crate::view::{Refusal, SaveView, info_strip, save, write_now};
@@ -120,7 +120,7 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
 }
 
 /// The table's rows (the draft's `unsavedChanges`): the changed players
-/// in the ALL list's order (a changed one the list does not show last by
+/// in the All teams list's order (a changed one the list does not show last by
 /// id), a roster slot's `Shirt number` row under its player after his own
 /// (the dot's rule: his dot covers his roster slot's number), then each changed team's
 /// other rows in the open save's team order, first a `Player order` row per
@@ -135,7 +135,7 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<UnsavedRow>> {
     let changes = session.unsaved_changes()?;
     let player_diffs: HashMap<u32, Vec<PlayerDiff>> = changes.players.into_iter().collect();
     let team_diffs: HashMap<u32, Vec<TeamDiff>> = changes.teams.into_iter().collect();
-    // The ALL list runs to the thousands on a cup save: the id lookups
+    // The All teams list runs to the thousands on a cup save: the id lookups
     // go through indexes built once, never `EditFile`'s linear scans
     // (`session`'s baseline lookups are already its own maps').
     let players: HashMap<u32, &PlayerEntry> = file
@@ -144,9 +144,10 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<UnsavedRow>> {
         .map(|player| (player.id, player))
         .collect();
     let teams: HashMap<u32, &TeamEntry> = file.teams().iter().map(|team| (team.id, team)).collect();
-    // The roster slots the ALL list shows (its order is the players'): a
-    // `Shirt number` row of one goes under its player.
-    let listed_rows = selection::rows(file, &TeamChoice::All, "");
+    // The roster slots the All teams list shows (its order is the
+    // players'): a `Shirt number` row of one goes under its player. The
+    // table is not the list, so no category narrows it.
+    let listed_rows = selection::rows(file, &TeamChoice::All, "", TeamCategory::All);
     let listed: HashSet<(u32, u8)> = listed_rows
         .iter()
         .map(|row| (row.team_id, row.slot))

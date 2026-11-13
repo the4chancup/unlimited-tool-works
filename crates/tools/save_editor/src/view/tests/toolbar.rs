@@ -261,31 +261,51 @@ fn band_bottom(
     f64::from(line + 0.5 * stroke.width)
 }
 
-/// The view's title `title` in the frame's shapes, and the two ink gaps
-/// around it: from the toolbar band's line to the title's ink, and from
-/// the title's ink to the ink of `first_row`, the view's first row's text.
-fn title_gaps(
+/// The ink gap under a view's title's row and the separator's painted
+/// row: the band's bottom to the title's ink, and whether a
+/// stroke-coloured line spanning the pane stands between the title's ink
+/// and `first_row`'s.
+fn title_row_and_separator(
     window: &Headless,
     nodes: &[accesskit::Node],
     shapes: &[egui::epaint::ClippedShape],
     title: &str,
     first_row: &str,
-) -> (f64, f64) {
+) -> (f64, Option<f64>) {
     let band = band_bottom(window, nodes, shapes);
-    let title = text_below(shapes, title, 0.0);
-    let title_ink = ink(title);
+    let title_ink = ink(text_below(shapes, title, 0.0));
     let row_ink = ink(text_below(shapes, first_row, title_ink.bottom()));
-    (
-        f64::from(title_ink.top()) - band,
-        f64::from(row_ink.top() - title_ink.bottom()),
-    )
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > f64::from(title_ink.bottom())
+                    && f64::from(points[0].y) < f64::from(row_ink.top())
+                    && f64::from(points[0].x.min(points[1].x)) <= title_ink.left() as f64 + 1.0
+                    && f64::from(points[0].x.max(points[1].x)) >= f64::from(PANE_RIGHT) - 1.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .min_by(f64::total_cmp);
+    (f64::from(title_ink.top()) - band, line)
 }
 
-/// The player view's title `<id> <name>` stands as far below the
-/// toolbar's band as General info's title is below it, in ink (within
-/// a point).
+/// The player view's title's row stands under the toolbar's band, the
+/// id and name's ink about 11.5 below it (the draft's `.pheader`
+/// margin), the separator under the row before General info's title.
 #[test]
-fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_row() {
+fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
     let path = fixture(PesVersion::Pes21, "title_player_gaps");
     let mut view = SaveView::new();
     view.open(&path);
@@ -294,7 +314,7 @@ fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_r
     let mut window = Headless::new();
     draw(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (above, below) = title_gaps(
+    let (above, line) = title_row_and_separator(
         &window,
         &nodes,
         &shapes,
@@ -302,17 +322,18 @@ fn the_player_views_title_sits_midway_in_ink_between_the_toolbar_and_the_first_r
         "General info",
     );
     assert!(
-        (above - below).abs() <= 1.0,
-        "the ink gaps {above} above and {below} below"
+        (above - 11.5).abs() <= 1.0,
+        "the title's ink {above} under the toolbar's band"
     );
+    assert!(line.is_some(), "a separator under the title's row");
 }
 
-/// The team view's title is `<id> <name>`, team 701's `701 /3/` in the
-/// PES 21 fixture, the id in the weak colour, and stands as far below the
-/// toolbar's band as the Name field's row is below it, in ink (within a
-/// point).
+/// The team view's title's row holds `<id> <name>` after the toggle,
+/// team 701's `701 /3/` in the PES 21 fixture, the id in the weak colour,
+/// its ink about 11.5 below the toolbar's band, the separator under the
+/// row before the Name field's row.
 #[test]
-fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
+fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
     let path = fixture(PesVersion::Pes21, "title_team_gaps");
     let mut view = SaveView::new();
     view.open(&path);
@@ -326,7 +347,7 @@ fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
         visuals.weak_text_color(),
         "the id in the weak colour"
     );
-    let (above, below) = title_gaps(
+    let (above, line) = title_row_and_separator(
         &window,
         &nodes,
         &shapes,
@@ -334,9 +355,10 @@ fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
         crate::view::team::TEAM_LABEL,
     );
     assert!(
-        (above - below).abs() <= 1.0,
-        "the ink gaps {above} above and {below} below"
+        (above - 11.5).abs() <= 1.0,
+        "the title's ink {above} under the toolbar's band"
     );
+    assert!(line.is_some(), "a separator under the title's row");
 }
 
 // With no save open the menus that act on one are drawn disabled: Player,

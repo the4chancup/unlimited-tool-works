@@ -69,12 +69,12 @@ fn an_open_save_lists_every_rostered_player_and_shows_the_first() {
             x(a).partial_cmp(&x(b)).expect("ordered bounds")
         })
         .expect("the team selector");
-    assert_eq!(selector.value(), Some("ALL"));
+    assert_eq!(selector.value(), Some("All teams"));
 
-    // Open it: ALL first, then the save's teams in order.
+    // Open it: All teams first, then the save's teams in order.
     click(&mut window, selector, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let mut expected = vec!["ALL".to_string()];
+    let mut expected = vec!["All teams".to_string()];
     expected.extend(file.teams().iter().map(|team| team.name.clone()));
     let mut items: Vec<&accesskit::Node> = nodes
         .iter()

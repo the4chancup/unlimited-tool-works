@@ -413,20 +413,18 @@ fn open_team_view(window: &mut Headless, view: &mut SaveView, team_id: u32) {
     );
 }
 
-/// The Appearance section opened by its header's click (already open: no
-/// click, which would close it). The click goes through the AccessKit
-/// action: the header sits below the fold on small panes, where a pointer
-/// click cannot reach it.
+/// The Appearance screen chosen with the title row's toggle (already
+/// chosen: no press). The press goes through the AccessKit action: the
+/// toggle stands above the fold only while the pane is unscrolled, and a
+/// test reaching for a deep control scrolls after.
 fn open_appearance(window: &mut Headless, view: &mut SaveView) {
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let (id, expanded) = pairs
+    let (id, chosen) = pairs
         .iter()
-        .find(|(_, node)| {
-            node.role() == Role::DisclosureTriangle && node.label() == Some("Appearance")
-        })
-        .map(|(id, node)| (*id, node.is_expanded()))
-        .expect("the Appearance section's header");
-    if expanded != Some(true) {
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Appearance"))
+        .map(|(id, node)| (*id, node.toggled() == Some(accesskit::Toggled::True)))
+        .expect("the title row's Appearance segment");
+    if !chosen {
         action_click(window, view, id);
     }
 }
@@ -441,9 +439,6 @@ fn scroll_into_view(
     view: &mut SaveView,
     target: impl Fn(&accesskit::Node) -> bool,
 ) -> Vec<accesskit::Node> {
-    // The pointer rests inside the scroll's clip: the MouseWheel scrolls
-    // the pane under it, never the list's.
-    let at = egui::pos2(600.0, 400.0);
     // egui spreads a wheel delta of 8 points or more over the next frames
     // (`WheelState::after_events`, not configurable), so the target found
     // inside the clip may still be moving: it is returned only once its
@@ -451,12 +446,14 @@ fn scroll_into_view(
     let mut last = None;
     for _ in 0..48 {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-        // The clip the detail's ScrollArea leaves the rows: the rightmost
-        // bar's span when it exists, the window's own otherwise.
+        // The clip the detail's ScrollArea leaves the rows: its bar's
+        // span when it exists (the list's own bar is left of it and is
+        // never its clip), the window's own otherwise.
         let clip = nodes
             .iter()
             .filter(|node| node.role() == Role::ScrollBar)
             .filter_map(|node| node.bounds())
+            .filter(|bounds| bounds.x0 > 300.0)
             .max_by(|a, b| a.x0.partial_cmp(&b.x0).expect("ordered bounds"))
             .map(|bounds| (bounds.y0, bounds.y1))
             .unwrap_or((0.0, f64::from(window.screen.y)));
@@ -486,6 +483,23 @@ fn scroll_into_view(
         let delta = match found {
             Some((_, bounds)) if (bounds.y0 + bounds.y1) / 2.0 < clip.0 => 400.0,
             _ => -400.0,
+        };
+        // The pointer rests at a point inside the clip no widget covers:
+        // the MouseWheel goes to what is under it, and a combo or a
+        // number box under it would step its own value instead of
+        // scrolling the pane.
+        let at = {
+            let y = (clip.0 + clip.1) / 2.0;
+            [280.0, 340.0, 400.0, 700.0, 900.0, 1050.0, 1150.0]
+                .into_iter()
+                .find(|&x| {
+                    !nodes.iter().any(|node| {
+                        node.bounds()
+                            .is_some_and(|b| b.contains(accesskit::Point::new(x, y)))
+                    })
+                })
+                .map(|x| egui::pos2(x as f32, y as f32))
+                .expect("a point inside the clip that no widget covers")
         };
         window.frame(
             vec![
@@ -1746,4 +1760,5 @@ mod strip;
 mod tactics;
 mod tactics_undo;
 mod team;
+mod toggle;
 mod toolbar;

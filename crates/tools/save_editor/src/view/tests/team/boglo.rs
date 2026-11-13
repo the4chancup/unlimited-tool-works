@@ -215,7 +215,7 @@ fn the_boglo_ranges_dash_stands_8_from_either_box() {
     );
 }
 
-/// PES 17 under ALL with the first team's last player selected, one
+/// PES 17 under All teams with the first team's last player selected, one
 /// height edit on him made, and the boots and gloves dialog opened on
 /// that team: the view, the window, the team's id, the next team's id
 /// and the edited player's id.
@@ -223,8 +223,17 @@ fn boglo_on_a_teams_last_player(test: &str) -> (SaveView, Headless, u32, u32, u3
     let path = fixture(PesVersion::Pes17, test);
     let mut view = SaveView::new();
     view.open(&path);
-    assert_eq!(view.team, TeamChoice::All, "premise: the list shows ALL");
-    let rows = selection::rows(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    assert_eq!(
+        view.team,
+        TeamChoice::All,
+        "premise: the list shows All teams"
+    );
+    let rows = selection::rows(
+        view.session.as_ref().unwrap().file(),
+        &TeamChoice::All,
+        "",
+        TeamCategory::All,
+    );
     let team = rows[0].team_id;
     let last = rows
         .iter()

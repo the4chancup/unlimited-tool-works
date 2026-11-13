@@ -361,6 +361,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     player_list::team_selector(
                         ui,
                         &mut comparator.filter_team,
+                        None,
                         file,
                         "save_editor_comparator_team",
                     );

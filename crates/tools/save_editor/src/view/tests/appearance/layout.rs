@@ -168,7 +168,7 @@ fn the_motion_grid_holds_two_pairs_a_row_in_two_columns() {
 // window scales the UI down, every drawn node ends inside it — on PES 17
 // unlocked, and on PES 21 with the switch on.
 #[test]
-fn the_appearance_section_fits_the_pane_the_shell_leaves() {
+fn the_appearance_screen_fits_the_pane_the_shell_leaves() {
     for (version, test) in [
         (PesVersion::Pes17, "appearance_pane_17"),
         (PesVersion::Pes21, "appearance_pane_21"),

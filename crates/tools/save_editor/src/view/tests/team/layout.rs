@@ -339,10 +339,11 @@ fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
 
 // The ids share the fields' row because the Tactics editor below needs
 // the height: at the default pane the view's lowest drawn stroke (the
-// lists' and Automatic settings' frame bottoms) paints 739, 1 above the
-// draft's last row, pixel row 740 of the 1280 x 780 client, whose y the
+// lists' and Automatic settings' frame bottoms) paints 741, 1 above the
+// draft's last row, pixel row 742 of the 1280 x 780 client, whose y the
 // pane shares (as it stood 1 above 741 before the toolbar stood on its
-// band, which set everything under it 1 point higher).
+// band, which set everything under it 1 point higher; the title's row
+// and its separator cost another two).
 #[test]
 fn the_team_view_fits_the_default_pane() {
     let path = fixture(PesVersion::Pes21, "team_view_fit");
@@ -370,16 +371,16 @@ fn the_team_view_fits_the_default_pane() {
     // A 1-point stroke paints the row above its bounding bottom.
     let last_row = bottom - 1.0;
     assert!(
-        (last_row - 739.0).abs() <= 0.5,
-        "the lowest stroke paints 739, 1 above the draft's last row of 740 ({last_row})"
+        (last_row - 741.0).abs() <= 0.5,
+        "the lowest stroke paints 741, 1 above the draft's last row of 742 ({last_row})"
     );
 }
 
-/// The team view's fields' row and the line under it, from one frame of
-/// team 701's view at the default pane: the bottom of the row's tallest
-/// control, the line's painted row (the top of its stroke, as the draft's
-/// `.sep` border covers one pixel row) and the line's left end.
-fn fields_line(test: &str) -> (Vec<accesskit::Node>, f64, f64, f64) {
+/// The team view's title's row and the separator under it, from one
+/// frame of team 701's view at the default pane: the bottom of the row's
+/// tallest control, the line's painted row (the top of its stroke, as
+/// the draft's `.sep` border covers one pixel row) and the line's ends.
+fn title_line(test: &str) -> (Vec<accesskit::Node>, f64, f64, f64, f64) {
     let path = fixture(PesVersion::Pes21, test);
     let mut view = SaveView::new();
     view.open(&path);
@@ -387,20 +388,18 @@ fn fields_line(test: &str) -> (Vec<accesskit::Node>, f64, f64, f64) {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let name = bar_name_field(&nodes).bounds().expect("bounds");
-    let on_row = |b: &accesskit::Rect| b.y0 < name.y1 && b.y1 > name.y0;
-    let row_bottom = nodes
+    // The row's bottom: the deepest of the toggle's segments and the
+    // title's text.
+    let title = label_bounds(&nodes, "701 /3/");
+    let row_bottom = ["Stats", "Appearance", "Gameplan"]
         .iter()
-        .filter(|node| {
-            matches!(
-                node.role(),
-                Role::TextInput | Role::ColorWell | Role::SpinButton | Role::Button
-            )
+        .map(|label| {
+            node_labeled(&nodes, Role::Button, label)
+                .bounds()
+                .expect("bounds")
         })
-        .filter_map(accesskit::Node::bounds)
-        .filter(|b| on_row(b) && b.x0 >= name.x0)
         .map(|b| b.y1)
-        .fold(name.y1, f64::max);
+        .fold(title.y1, f64::max);
     let stroke = window
         .ctx
         .global_style()
@@ -408,140 +407,63 @@ fn fields_line(test: &str) -> (Vec<accesskit::Node>, f64, f64, f64) {
         .widgets
         .noninteractive
         .bg_stroke;
-    let (line, line_left) = shapes
+    let (line, line_left, line_right) = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::LineSegment { points, stroke: s }
                 if *s == stroke
                     && points[0].y == points[1].y
                     && f64::from(points[0].y) > row_bottom
-                    && points[0].x.min(points[1].x) <= name.x0 as f32 =>
+                    && f64::from(points[0].x.min(points[1].x)) <= title.x0 + 1.0
+                    && f64::from(points[0].x.max(points[1].x)) >= f64::from(PANE_RIGHT) - 1.0 =>
             {
                 Some((
                     f64::from(points[0].y),
                     f64::from(points[0].x.min(points[1].x)),
+                    f64::from(points[0].x.max(points[1].x)),
                 ))
             }
             _ => None,
         })
         .min_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered ys"))
-        .expect("a stroke line under the fields' row");
+        .expect("a stroke line under the title's row");
     let painted_row = line - f64::from(stroke.width) / 2.0;
-    (nodes, row_bottom, painted_row, line_left)
+    (nodes, row_bottom, painted_row, line_left, line_right)
 }
 
-// The draft's `.sep` under the fields' row: its painted row 11 points below
-// the row's tallest control (the row's 3-point margin and the line's 8),
-// the Tactics' first control 11.5 below that row (the line's own point, its
-// 8-point margin and the bar's 2.5 over the Fluid formation checkbox).
+// The draft's `.sep` under the title's row: its painted row 8.5 below the
+// row's bottom (the line's own 8-point margin), the fields' row's first
+// control 8.5 below that row (the margin's other half).
 #[test]
-fn the_line_under_the_fields_stands_11_from_the_row_and_11_5_from_the_tactics() {
-    let (nodes, row_bottom, line, line_left) = fields_line("team_separator_gaps");
+fn the_line_under_the_title_stands_its_margin_off_row_and_fields() {
+    let (nodes, row_bottom, line, line_left, _) = title_line("title_separator_gaps");
     // The view's nodes only (the line spans the view): the player list's
     // rows left of it run past the line too.
-    let tactics_top = nodes
+    let fields_top = nodes
         .iter()
         .filter_map(accesskit::Node::bounds)
         .filter(|b| b.y0 > line && b.x0 >= line_left)
         .map(|b| b.y0)
         .fold(f64::MAX, f64::min);
     assert!(
-        (line - row_bottom - 11.0).abs() <= 0.5,
-        "the line's row stands 11 below the row's tallest control ({line} vs {row_bottom})"
+        (line - row_bottom - 8.5).abs() <= 1.0,
+        "the line's row stands 8.5 below the title's row ({line} vs {row_bottom})"
     );
     assert!(
-        (tactics_top - line - 11.5).abs() <= 0.5,
-        "the Tactics' first control stands 11.5 below the line's row ({tactics_top} vs {line})"
+        (fields_top - line - 8.5).abs() <= 1.0,
+        "the fields' row stands 8.5 below the line's row ({fields_top} vs {line})"
     );
 }
 
 // The team view's pane ends where the draft's `.detail` content does, at
-// the view's right edge, 8 points short of the window's: the line under
-// the fields, which spans the pane, ends there, as the draft's `.sep`
-// does at 1272.
+// the view's right edge, 8 points short of the window's: the separator
+// under the title's row, which spans the pane, ends there, as the draft's
+// `.sep` does at 1272.
 #[test]
 fn the_team_views_line_ends_8_from_the_windows_edge() {
-    let path = fixture(PesVersion::Pes21, "team_pane_right");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_team_view(&mut window, &mut view, 701);
-    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let stroke = window
-        .ctx
-        .global_style()
-        .visuals
-        .widgets
-        .noninteractive
-        .bg_stroke;
-    // Right of the view's left edge: the toolbar band's line starts there.
-    let line_right = shapes
-        .iter()
-        .find_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke: s }
-                if *s == stroke
-                    && points[0].y == points[1].y
-                    && points[0].x.min(points[1].x) > PANEL_MARGIN
-                    && (points[0].x - points[1].x).abs() > window.screen.x * 0.5 =>
-            {
-                Some(f64::from(points[0].x.max(points[1].x)))
-            }
-            _ => None,
-        })
-        .expect("the line under the fields, across the pane");
+    let (_, _, _, _, line_right) = title_line("team_pane_right");
     assert!(
         (line_right - f64::from(PANE_RIGHT)).abs() <= 1.0,
         "the line ends at {PANE_RIGHT}, the draft's 1272 ({line_right})"
-    );
-}
-
-// The Tactics bars' choices (the draft's `.sel`s, 17 tall, centred in the
-// 23-point `.tacbar` 8 under the line) stand 12 under the line's painted
-// row and end 29 under it: the draft's 98 to 115 under its row 86.
-#[test]
-fn the_tactics_bars_choices_stand_12_under_the_line() {
-    let (nodes, _, line, _) = fields_line("team_bar_under_line");
-    for label in [
-        "1",
-        "2",
-        "3",
-        "Kick-off",
-        "In-possession",
-        "Out-of-possession",
-    ] {
-        let choice = node_labeled(&nodes, Role::Button, label)
-            .bounds()
-            .expect("bounds");
-        assert!(
-            (choice.y0 - line - 12.0).abs() <= 1.0,
-            "{label} starts 12 under the line's row ({} vs {line})",
-            choice.y0
-        );
-        assert!(
-            (choice.y1 - line - 29.0).abs() <= 1.0,
-            "{label} ends 29 under the line's row ({} vs {line})",
-            choice.y1
-        );
-    }
-}
-
-// The fields' row's boxes stand 7 under the title's line box: the draft's
-// title keeps 4 points under it and the row its own 3-point margin round
-// its controls (its 57 under the title's 50).
-#[test]
-fn the_fields_row_stands_7_under_the_title() {
-    let path = fixture(PesVersion::Pes21, "team_row_under_title");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let title = label_bounds(&nodes, "701 /3/");
-    let name = bar_name_field(&nodes).bounds().expect("bounds");
-    assert!(
-        (name.y0 - title.y1 - 7.0).abs() <= 1.0,
-        "the Name box stands 7 under the title ({} vs {})",
-        name.y0,
-        title.y1
     );
 }

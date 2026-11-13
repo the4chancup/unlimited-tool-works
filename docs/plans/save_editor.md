@@ -3278,10 +3278,10 @@ SE-GUI-37  GIVEN the PES 17 save open on team 701
                 Make buttons' tooltip "These buttons act on a player: pick a player row";
                 WHEN the team's short name is edited THEN the team row carries the unsaved dot
                 and none of its players does; WHEN the team row is dragged onto a player row
-                THEN nothing moves; WHEN a player row is clicked THEN the player view shows,
-                its first line his id then his name, under it General info, Skills and
-                Ability stats side by side left to right at the 1280 × 780 window, their tops
-                level, and Appearance closed below them; and no view draws "Save editor"
+                THEN nothing moves; WHEN a player row is clicked THEN the player's Stats
+                screen shows, its title's row his id then his name, under it General info,
+                Skills and Ability stats side by side left to right at the 1280 × 780 window,
+                their tops level; and no view draws "Save editor"
 SE-GUI-38  GIVEN the save, player 70101's name set to the colour code `\x11cff0000ff` then `AB`,
                 and his shirt name to 20 letters, before it is opened
            WHEN he is selected
