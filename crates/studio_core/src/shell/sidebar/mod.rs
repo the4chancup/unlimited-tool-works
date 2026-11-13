@@ -400,6 +400,9 @@ impl Sidebar {
                     // entries scrolled as far as the rail's.
                     .id_salt("entries")
                     .max_height((ui.available_height() - tail).max(0.0))
+                    // egui keeps a scroll area 64 points high whatever
+                    // `max_height` says: left at that, a window with less room
+                    // than 64 would draw the entries over the tail again.
                     .min_scrolled_height(0.0)
                     .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
                     .show(ui, |ui| {

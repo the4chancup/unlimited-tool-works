@@ -283,6 +283,18 @@ fn marked_field_maps_every_kind() {
             None,
         ),
         (K::RosterOrder { player: 73401 }, None),
+        (
+            K::IllegalFormation {
+                preset: 1,
+                formation: 1,
+                breaks: vec![pes_savefile::model::FormationBreak::KeeperOffSpot],
+                eleven: Box::new(std::array::from_fn(|_| aatf::FormationStarter {
+                    name: None,
+                    position: aatf::Position::try_from("GK".to_owned()).expect("GK"),
+                })),
+            },
+            None,
+        ),
     ];
     for (kind, field) in cases {
         assert_eq!(live_marks::marked_field(kind), *field, "{kind:?}");

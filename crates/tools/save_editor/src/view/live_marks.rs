@@ -161,7 +161,8 @@ pub(super) fn marked_field(kind: &aatf::ViolationKind) -> Option<MarkedField> {
         | K::Captain
         | K::Goalkeepers { .. }
         | K::TeamSetting { .. }
-        | K::FormationShape { .. } => None,
+        | K::FormationShape { .. }
+        | K::IllegalFormation { .. } => None,
     }
 }
 

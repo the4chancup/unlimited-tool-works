@@ -7,6 +7,7 @@ use pes_savefile::model::player::PlayerEntry;
 use serde::de::DeserializeOwned;
 
 use crate::file::{LogicIdentity, assemble, identity};
+use crate::illegal_formation::illegal_formations;
 use crate::ruleset::{LoadError, Ruleset, Severity, Tier, ruleset_from_scope, run_top_level};
 use crate::team::{PlayerView, TeamView};
 use crate::values::{CardLimits, TierValues};
@@ -120,14 +121,15 @@ impl Rules {
         self.logic
     }
 
-    /// `team`'s check: its violations, the roster-order breaks of the
-    /// host's own check, raised in Rust before the script runs
-    /// (`spec/aatf_rules.md` "The host"), then the file's
+    /// `team`'s check: its violations, the host's own checks raised in
+    /// Rust before the script runs (`spec/aatf_rules.md` "The host"): the
+    /// roster-order breaks, then the illegal formation warnings unless the
+    /// ruleset allows illegal formations; then the file's
     /// `check_team(team)` converted, with the medal and height systems the
     /// script read the team under. The violations are ordered by roster
     /// slot, each slot's own rows kept (a slot's roster break first), the
-    /// team's rows (no slot) last. The violations panels display their
-    /// groups in this order.
+    /// team's rows (no slot) last, the host's before the script's. The
+    /// violations panels display their groups in this order.
     pub fn check_team(&self, team: &TeamView) -> Result<TeamCheck, CheckError> {
         let mut check = team_check(self.call("check_team", (team.clone(),))?)?;
         let mut out: Vec<Violation> = team
@@ -139,6 +141,9 @@ impl Rules {
                 kind: ViolationKind::RosterOrder { player },
             })
             .collect();
+        if !self.ruleset.universal.illegal_formations {
+            out.extend(illegal_formations(team));
+        }
         out.append(&mut check.violations);
         // A stable sort keeps each slot's own order: the break first.
         out.sort_by_key(|violation| (violation.slot.is_none(), violation.slot));

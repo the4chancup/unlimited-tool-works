@@ -230,11 +230,13 @@ carries the preset, the set and every break found in it, a break being one of:
 A starter outside the movable range breaks clause 2 alone: the screens could not have stored
 his spot at all, so clause 3 would only say the same thing twice. Its text names the preset and the set, then
 each break in a clause's words, clause by clause, the starters by name and position: `Preset 1,
-Kick-off: illegal formation. the goalkeeper is not on the keeper's spot; SMITH (LB) is outside
+Kick-off: illegal formation. The goalkeeper is not on the keeper's spot; SMITH (LB) is outside
 the area a starter can be moved in; JONES (CF) holds a position the game does not give at his
 spot; LMF is held twice (BROWN, WHITE); 6 defenders, where the game keeps 2 to 5; GREEN and
 BLACK stand on each other` (the words of each break as here; a set breaking one clause holds
-that one alone).
+that one alone; a wide position held by more than two is `held 3 times`; a formation slot with
+no starter reads `Slot 5`). The warning carries the eleven starters' names and positions as
+the host read them, since the words are made where no roster is at hand.
 
 The rule itself is `pes_savefile`'s, as the roster order's is (`Formation::illegal_breaks`, the
 breaks of one set), since it is the game's rule about a stored formation and the Save editor's

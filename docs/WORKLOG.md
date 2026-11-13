@@ -15,10 +15,8 @@ is in `AGENTS.md` ("Working documents").
 1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c): its six clauses are set, the game's own
-   formations pass them and each was looked at in game, in PES 2017 and in PES 2019
-   (2026-11-13), the two versions it runs on; its Acceptance is written; next its two
-   slices.
+2. The illegal formation check (0.0.2c) is built: the rule and the warning are in, on
+   PES 2017 and PES 2019 saves; the warning's review is running.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
    SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
    two slices follow -clip), and -inst, whose
@@ -918,6 +916,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`.tmp/8_17/runs.py`); DECISIONS "The view's arguments and report, where the plan was
     silent"; the usability review's ideas `PROPOSALS.md` P32-P36. Waits for the maintainer's
     remarks
+    - [ ] 8.17c a second draft, replacing the first (the maintainer, 2026-11-13: two looks by
+      the number of old exports, a grid as the Team compiler's from five on with three
+      lines an export for the face, boots and gloves folders, and under five the source
+      and destination files in two columns, turning as the run goes, "feel free to
+      improvise"; then a toggle to pick either look whatever the count). Drawn 2026-11-13
+      (the lead; renders `.tmp/0_0_2/eu_draft/` by `shot_eu.py`; the first draft's file
+      kept beside them as `export_upgrader_single.js`). Improvised, for the maintainer to
+      rule on: the view reads `old_exports` beside the app and writes into `exports`
+      (no drop targets, no Output into field); one save for all the exports, the field
+      red while any team is missing from it; boots and gloves cells stand under the
+      player the save has wear them, by their four-digit ID, a shared folder under each
+      wearer; the team's files as cells (Note, Logo, Common, Collar, IDs) and one cell
+      counting what is left out, in place of the left-behind list; an export with an
+      Error is not written and its cells turn to "Not written"; an export that cannot be
+      read (team not in the save, already upgraded, output exists) is one line with its
+      action; Full or Midcup is a combo at each row's right; the detail window is fixed
+      at the right; after a run, Open the Team compiler in place of Move to exports and
+      compile. Not drawn: model-folder mode, the output-exists abort's button, Copy
+      report, a referee export. `plans/export_upgrader.md` "GUI" still describes the
+      first draft: rewritten when this one is accepted
     - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
       2026-10-26, `plans/export_upgrader.md` "GUI"), the samples' rows grouped and the
       `needs <team>` hint from the real runs → verify: the bundled drafts build; each item
@@ -1879,11 +1897,19 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/save_editor.md` "Editing UI", the two bullets after the changes table's;
     SE-GUI-73, 74): a move trades whole records between ids and filled the list with every
     field of the players it shifted. Tier 2. After 0.0.2-clip merges (the same crate)
-    - [ ] a: the session remembers whose record each id holds; the `Player order` row in
-      the list and the close prompt; a moved player's rows against the record he came
-      from (SE-GUI-73). Opus, running since 2026-11-13 (brief
-      `.tmp/0_0_2/undo/brief_undo_a.md`, worktree `4cc-studio-temp/undo`, branch
-      `sk/undo-a`, run `sk_undo_a`)
+    - [x] a 2026-11-13 (`4090e2b4`, Opus with one rework and the lead; merge `969e6f3f`;
+      the lead's rerun of `save_editor`, clippy, fmt; SE-GUI-73, reworded: undo is
+      linear): the session remembers whose record each id holds (`Origins`), a move's
+      undo entry keeps the trade itself so an undo past a save still reads right, the
+      list compares a player with the record he came from, and each group of places
+      that traded players is one `Player order` row. Two overlapping drags give groups
+      that match neither drag (the cycles). Look: Pending looks
+    - [ ] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends):
+      its fix waits for b's merge, which edits the same files: a moved player
+      renamed after the move, the row's new side showing the new name; and
+      `SEALED_KEY`'s comment (`.tmp/duck_rulings.md`). A player on two rosters
+      puts his group's row under the wrong team: left, such teams are not
+      supported (DECISIONS 2026-11-13)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
       one place per line (approved), and the X ending each row in the link blue, its
       column fixed at the list's right edge while a wide row scrolls under it (the
@@ -1891,7 +1917,9 @@ briefs, review loops, gates and mutation runs as for any step.
       `.tmp/0_0_2/undo/x_list.png`, `x_wide.png`, `x_wide_scrolled.png` by `shot_x.py`
       and `shot_x_wide.py` beside them. The maintainer's look at the fixed X is pending
     - [ ] b: the X on each row of the toolbar's list (SE-GUI-74), as the draft's
-      `changesTable` and `undoChange`
+      `changesTable` and `undoChange`. Opus, the same session resumed, running since
+      2026-11-13 (brief `.tmp/0_0_2/undo/brief_undo_b.md`, worktree
+      `4cc-studio-temp/undo`, run `sk_undo_b`)
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
@@ -1915,7 +1943,20 @@ briefs, review loops, gates and mutation runs as for any step.
       accepts a drop takes it (on the edge under the dragged row the line showed a drop
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
-  - [ ] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
+  - [ ] 0.0.2-cup only the cup's teams are shown (the maintainer, 2026-11-13, on a review
+    concern about players shared between rosters: "there's no need to show the game's own
+    clubs and national teams. We should filter them out, even"; asked, they chose the
+    filter everywhere with no switch, and their players hidden too; DECISIONS 2026-11-13;
+    `plans/save_editor.md` "Editing UI", the bullet "Only the cup's teams are shown")
+    - [x] its Acceptance scenarios 2026-11-13 (the lead): SE-GUI-77 (the selector, ALL,
+      the filter, Multi-team AATF, Fix database, and a write keeping the hidden
+      records' bytes), SE-AATF-10 (`check-aatf` with and without `--teams`)
+    - [ ] the slice, after 0.0.2c b and 0.0.2-undo b land (the same crate): read first
+      every place that walks `file.teams()` or `file.players()` (`session/selection.rs`,
+      the AATF check's views, the CLI, the patch and import paths, the unsaved changes),
+      and say for each whether it lists (filter) or writes (never filter); the PES
+      fixtures hold only ids 701 to 920, so the tests need a save with one team outside
+  - [x] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13: the tail's separator and Help drawn over the last tool entries)
     - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,
       fmt; ST-SIDE-10): the tool entries scroll by the wheel in the room between the
@@ -1924,7 +1965,7 @@ briefs, review loops, gates and mutation runs as for any step.
       does not do it by itself). egui's fade at a scroll area's cut edge is left on.
       Its test starts `sidebar/tests/`; moving `tests.rs`'s other tests there is not
       done. Look: Pending looks
-    - [ ] its SWE-2 review
+    - [x] its SWE-2 review 2026-11-13 (S-side r1: 2 of 8 accepted, the loop ends)
   - [x] 0.0.2-rad 2026-11-13 (`4bdfc5cf`, merge `b1274e74`, review fixes `842f41e3`): one
     corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
     egui's radii in both themes and the suite's own painting reads the style
@@ -2300,13 +2341,19 @@ briefs, review loops, gates and mutation runs as for any step.
       `_pes19.txt`, built by `.tmp/0_0_2/formation/fixture/make_fixture*.py`) and one
       formation per clause; `team_widgets` pins the rule's reaches to its marker box and
       its row reading to what a drop offers
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/formation/swe_rule.md`, worktree
-      `review15`)
-    - [ ] slice b (Opus, the same session resumed; running since 2026-11-13, brief
-      `.tmp/0_0_2/formation/brief_form_warn.md`, worktree `4cc-studio-temp/formrule`,
-      run `sk_formwarn`): the host's warning per fielded set on PES 2017 and PES 2019
-      saves, its text (the kind carries what the sentence needs to name starters), the
-      ruleset's flag, SE-AATF-09 and SE-GUI-76
+    - [x] a's SWE-2 review 2026-11-13 (S-rule r1, 4 of 5 accepted, the loop ends;
+      `dd28365b`)
+    - [x] slice b 2026-11-13 (Opus, the same session, and the lead; merge `299551ad`; the
+      lead's rerun of `pes_savefile`, `aatf`, `team_widgets` and `save_editor`, clippy,
+      fmt; SE-AATF-09, SE-GUI-76): the host raises one `IllegalFormation` warning per
+      fielded set that breaks the rule, on PES 2017 and PES 2019 saves, unless the
+      ruleset allows illegal formations; it carries the eleven starters' names and
+      positions for its words; it lands after the players' rows and before the script's
+      own team rows. A team viewed from a Team TOML with no tactics would hold all-zero
+      formations and warn: nothing reaches that today, the Team creator's check will
+      (to settle in its phase). Look: Pending looks
+    - [ ] b's SWE-2 review (running, `.tmp/0_0_2/formation/swe_warn.md`, worktree
+      `review18`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
@@ -2609,6 +2656,13 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
   no PES; 0.0.2-line; maintainer
+- The illegal formation warning in the built window: a PES 2017 or PES 2019 save under a
+  ruleset without the flag (Spring 26), a team whose formation a tool made (the VGL27
+  save's /b/, /co/, /d/, /tg/, /toy/, /x/): the warning's words in Live AATF, and gone
+  after the named starter is dragged on the Tactics pitch; no PES; 0.0.2c; maintainer
+- The unsaved changes after a drag in the player list, in the built window: one
+  `Player order` row, its places one per line and the row as high as them, the team's
+  name on its first line; no PES; 0.0.2-undo a; maintainer
 - The sidebar in a window dragged too short for its entries: the wheel over the rail
   scrolls the tool entries, the logo, the selector, Help and Settings stay put, the
   opened sidebar shows the same entries, and the entries fade at the cut edge (egui's

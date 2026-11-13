@@ -140,7 +140,7 @@ impl FormationLine {
     }
 
     /// The number of starters the line may hold, bounds included.
-    fn limits(self) -> RangeInclusive<usize> {
+    pub fn limits(self) -> RangeInclusive<usize> {
         match self {
             FormationLine::Defenders => 2..=5,
             FormationLine::Midfielders => 1..=6,

@@ -194,6 +194,17 @@ side.
   Picking a different team selects its team row, so the detail shows that team's view, its
   tactics with it: a manager who picks a team usually wants its tactics next. Picking ALL, or
   the team already shown, keeps the selection (that team's row heads the list, a click away).
+- **Only the cup's teams are shown** (0.0.2-cup). The teams whose id lies in the cup's range,
+  701 to 920 (`teams_list`'s), and the players on their rosters are all the Save editor
+  lists: the team selector, ALL, the filter's search, Live AATF, Multi-team AATF's range and
+  `check-aatf` when it names no team read those alone, and Fix database repairs those
+  alone. The game's own clubs and national
+  teams, and every player on no cup team's roster, stay in the save and are written back
+  byte for byte; nothing lists, checks or edits them, and no setting shows them. A team
+  named by its id on the command line is still read, whatever its id. Hidden, not listed,
+  because no member edits them, a save made from the stock game holds more of them than of
+  the cup's, and they alone share players between rosters, a case every list rule would
+  otherwise have to carry.
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable. Under the design width the window
   scales instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with
@@ -837,7 +848,10 @@ side.
   side and a long move makes the row taller, not wider. The players' own rows are compared against the record each one
   came from, so a moved player lists only what was edited on him, before or after the move.
   One row per group, not per player, because the players between the two ends of a drag only
-  shifted by one place, and a row each would bury the one move the member made.
+  shifted by one place, and a row each would bury the one move the member made. A group
+  stands under the first team that rosters any of its players, which is its own team: the
+  cup's teams share no player, and no other team is shown ("Only the cup's teams are
+  shown" above).
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
   draft's `changesTable`). It ends the row, in the link blue of the label that opened the
   list, and its column stays at the list's right edge while a wide row scrolls sideways
@@ -2744,6 +2758,17 @@ SE-GUI-76  GIVEN SE-AATF-09's save open, Live AATF on, 4cc Spring 26 the active 
                 moved in`; WHEN the LB is dragged on the Tactics pitch to (12, 10) THEN the
                 warning is gone; WHEN DBC7 is picked instead THEN the list holds no such
                 warning; GIVEN a PES 21 save with the same set THEN none under any ruleset
+SE-GUI-77  GIVEN a save holding, beside the cup's teams, a team with id 300 whose roster
+                holds players no cup team has, and a player on no roster at all
+           WHEN the save is opened
+           THEN the team selector lists the cup's teams and not team 300; under ALL
+                the list holds no row of team 300, of its players or of the player on
+                no roster; a filter typed as team 300's name, then as one of its
+                players' names, lists nothing; Multi-team AATF's range offers no team
+                300 and its report has none; Fix database changes nothing of team 300
+                or its players; GIVEN a cup player's Height edited and the save
+                written THEN team 300's record, its players' records and the
+                unrostered player's are byte for byte what the opened save held
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -3083,6 +3108,11 @@ SE-AATF-09 GIVEN a PES 17 save whose team 701 has, in preset 1's Kick-off set, i
                 when no team has an error; the second prints no such warning; GIVEN a PES 19
                 save whose team 701 has the same Kick-off set WHEN check-aatf is run with
                 --rules spring26 THEN it prints the same warning on team 701
+SE-AATF-10 GIVEN SE-GUI-77's save, team 300 holding an error-severity violation and
+                the cup's teams none
+           WHEN check-aatf is run with no --teams, then with --teams 300
+           THEN the first prints nothing of team 300 and exits 0; the second prints
+                team 300's violation and exits 1
 SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
                 opens the save, sets player 70101's Height from the value the save holds to
                 another and writes the save, the save so written its kept output
