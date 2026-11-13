@@ -201,7 +201,8 @@ side.
   report it exports read those alone, and Fix database repairs those alone. So do the
   commands that name no team: `check-aatf` without `--teams`, `export-toml --all-teams`,
   `export-teams-list` and `diff`, which reports a player when a cup team's roster holds
-  him in either save, and a team when its id is a cup team's. The game's own clubs and national
+  him in either save (it compares players, not teams; the comparator heads him by the first
+  cup team that rosters him). The game's own clubs and national
   teams, and every player on no cup team's roster, stay in the save and are written back
   byte for byte; nothing lists, checks or edits them, and no setting shows them. A team
   named by its id on the command line is still read, whatever its id. Hidden, not listed,
