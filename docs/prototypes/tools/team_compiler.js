@@ -187,7 +187,7 @@ const PORTRAITS = {
     { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
   // /adv/ 11's portrait is in the player's own folder: its finding colours
   // this cell and the player's.
-  civ4xg: [23, "fullOk"], aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
+  civ4xg: [23, "fullOk"], inv1: [23, "fullOk"], aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
   egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
 function portraitsOf(key) {
   const [count, status, codes = [], fix, dropFile] = PORTRAITS[key] || [];
@@ -253,6 +253,10 @@ function sampleRows() {
     { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
       kits: { GK: kit("g1", "#c0a020", "#202020"), K1: kit("p1", "#2050a0", "#c0a020") } },
+    // A name that takes two lines of the label.
+    { key: "inv1", name: "Invitational 1", id: 851, display: "Invitational 1 Full Aesthetics Export Autumn26",
+      label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      kits: { GK: kit("g1", "#202020", "#f0f0f0"), K1: kit("p1", "#f0f0f0", "#c02020") } },
     { key: "refs", name: "/refs/", id: null, refs: true, display: "refs Full Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
       players: players(1, 35, "fullOk", n => `${pad(1 + (n - 1) % 5)} - Referee ${1 + (n - 1) % 5}`),
@@ -438,6 +442,14 @@ function dropClash(r, keep) {
 // font's letters are 0.602 of its size wide; egui: the galley measured, the
 // size stepped down until it fits).
 const nameSize = name => Math.min(12, Math.floor(2 * 44 / (name.length * 0.602)) / 2);
+// The label's lines and their size: one line down to 9 points (eight
+// letters); a longer name is cut in two halves, one over the other, at 9 or
+// at what the longer half needs. sample: the cut is at the middle letter.
+function nameLines(name) {
+  if (nameSize(name) >= 9) return { lines: [name], size: nameSize(name) };
+  const half = Math.ceil(name.length / 2);
+  return { lines: [name.slice(0, half), name.slice(half)], size: Math.min(9, nameSize(name.slice(0, half))) };
+}
 function gridRow(r) {
   const off = rowOff(r);
   const cells = [];
@@ -445,12 +457,14 @@ function gridRow(r) {
     cells.push(h("td", { class: "act" }, r.special ? null
       : h("input", { type: "checkbox", checked: !S.unticked[r.key], title: "Compile this export at the next Compile",
           onchange: e => { if (e.target.checked) delete S.unticked[r.key]; else S.unticked[r.key] = true; render(); } })));
-  const l = look(r, r.label);
+  const l = look(r, r.label), named = nameLines(r.name);
   cells.push(h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === r.name ? " hl" : ""),
-    style: lookStyle(l) + `; font-size:${nameSize(r.name)}px`, "data-scope": r.name,
+    style: lookStyle(l) + `; font-size:${named.size}px; line-height:${named.lines.length > 1 ? named.size + 1 + "px" : "normal"}`,
+    "data-scope": r.name,
     title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
-    onclick: e => openDetail(e, { row: r.key, what: "label" }) }, r.name));
+    onclick: e => openDetail(e, { row: r.key, what: "label" }) },
+    named.lines.map(line => h("div", {}, line))));
   cells.push(idCell(r), vline());
   const message = rowMessage(r), acts = rowActions(r);
   if (message) {
