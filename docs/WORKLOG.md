@@ -1928,10 +1928,9 @@ briefs, review loops, gates and mutation runs as for any step.
     clubs and national teams. We should filter them out, even"; asked, they chose the
     filter everywhere with no switch, and their players hidden too; DECISIONS 2026-11-13;
     `plans/save_editor.md` "Editing UI", the bullet "Only the cup's teams are shown")
-    - [ ] its Acceptance scenarios (a GUI one: a save holding a team outside 701 to 920
-      shows neither it nor its players in the selector, ALL, the filter's search or
-      Multi-team AATF's range; a CLI one: `check-aatf` with no team skips it and with
-      its id reads it; a write keeps its bytes), written before the brief
+    - [x] its Acceptance scenarios 2026-11-13 (the lead): SE-GUI-77 (the selector, ALL,
+      the filter, Multi-team AATF, Fix database, and a write keeping the hidden
+      records' bytes), SE-AATF-10 (`check-aatf` with and without `--teams`)
     - [ ] the slice, after 0.0.2c b and 0.0.2-undo b land (the same crate): read first
       every place that walks `file.teams()` or `file.players()` (`session/selection.rs`,
       the AATF check's views, the CLI, the patch and import paths, the unsaved changes),
