@@ -412,18 +412,31 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 ### Changelog and version display
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
-shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Inside a
-section, bullets are grouped by tool (`**Team compiler**: …`, `**Save editor**: …`,
-`**General**: …` for what every tool shares), because that is how a member reads it even
-though the version axis is one.
+shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Each
+bullet opens with its tool (`**Team compiler**: …`, `**Save editor**: …`, `**General**: …` for
+what every tool shares), because that is how a member reads it even though the version axis is
+one.
 
-A fix for a corner case few members ever reach (a rare sequence of steps, such as a popover
-left open while a page key moves the selection elsewhere) goes in the section's closing
-`### Minor fixes` list, in the same per-tool bullets, not among the headline bullets. A member
-reads the top of a section for what changed in their own use, and a list led by corner cases
-buries it. A fix for a crash, a loss of data or a wrong file written stays among the headline
-bullets however rare its case, because the member it reached needs to find it. Every reader
-below shows the `###` heading as written, so the help window's renderer handles it.
+Inside a section the bullets stand under up to five headings, in this order, sorted by how much
+a member needs them (Red's changelog does the same, and members read a long list only as far
+as its first heading):
+
+- `### Important`: what changes how a member works or what they must know (a new tool, a
+  control that moved, a list that now shows less);
+- `### Useful`: what else was added or changed;
+- `### New checks`: new warnings and errors (Live AATF, `check-aatf`, the compiler's checks),
+  which a cup manager looks for in particular;
+- `### Fixes`: bugs a member could hit using what a release promised, and every crash, loss of
+  data or wrong file written however rare its case, because the member it reached needs to
+  find it;
+- `### Minor fixes`: corner cases few members ever reach (a popover left open while a page key
+  moves the selection elsewhere) and cosmetic ones.
+
+A bullet says what changed and where, in one or two lines; how each step works is the help
+topic's, which the bullet can name. A list of 40 bullets of four lines each was read by
+nobody. A fix for a PES version no release has promised (0.0.1 promised the Save editor on
+PES 2017) gets no entry: no member met the bug. Every reader below shows the `###` headings
+as written, so the help window's renderer handles them.
 
 The changelog is written in the step that changes the behavior, like the help topic (see
 `spec/core/gui.md` "Help window"), from the first release on. An entry goes under

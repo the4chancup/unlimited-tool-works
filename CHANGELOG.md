@@ -4,149 +4,99 @@ What changed for members, release by release, newest first.
 
 ## [Unreleased]
 
-### New
+### Important
 
-- **Team compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the
-  teams' aesthetics exports, compiles them into the CPKs the game loads, and writes the
-  aesthetics patch that carries the exports' settings into the official save. Its window
-  comes in a later version: this one runs it through `quick_compile.bat`, which shows the
-  warnings and errors and keeps the whole report in `compile_log.txt`, and through a
-  command line.
+- **Team compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the teams'
+  aesthetics exports, compiles them into the CPKs the game loads, and writes the aesthetics
+  patch that carries their settings into the official save. Its window comes later: run
+  `quick_compile.bat`, which keeps the whole report in `compile_log.txt`, or its command line.
 - **Export upgrader**: the first preview. It upgrades exports made in the old format to the
-  one the Team compiler reads, once, and leaves the old export as it was. Its window comes
-  later too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
-  `old_exports`, with the whole report kept in `upgrade_log.txt`, or use its command line.
-- **Command line**: `--log-file <FILE>` on any tool's command adds everything the run
-  prints to the file and leaves Info messages out of the console. If the run crashes,
-  the crash's message is in the file too.
-- **Ruleset editor**: the Event logo can be a JPEG XL file (`.jxl`).
-- **Updates**: the dialog that offers a newer version has an Update now button: it
-  downloads the version, checks it and puts it in the program's folder, showing its
-  progress, with Cancel beside it. Cancel stops the update at any moment before the new
-  files are put in place. Once they are, Restart now starts the new version; Later leaves
-  `Update ready` on the status bar until the next start. When an update fails, the dialog
-  says whether anything was changed and where to download the version by hand. The first
-  start of a new version shows `Updated to` and its number on the status bar, with What's
-  new beside it. With two windows open, once one has updated the program, the other says
-  so when asked to update instead of updating it a second time. A tool's command
-  typed in a terminal also mentions a newer version, in one line after its report,
-  without waiting for the check.
-- **Help**: two new chapters: Updates explains the check, the offer and each step of an
-  update, and What's new holds this list of changes, version by version.
-- **Save editor**: the Comparator lists each difference in three columns, Item, Picked
-  save and Open save, under one head row; a value too long for its column is cut, and
-  hovering the row shows it whole.
-- **Save editor**: a player dragged in a team's player list moves with the pointer, as a
-  dragged lineup row does, and the list shows a line where he will land instead of an
-  outline round a row.
-- **Save editor**: a team's Stadium ID can be seen and edited on every version and its
-  Manager ID from PES 2017 on, not only from PES 2019 on, and a Team TOML carries them
-  wherever the save stores them.
-- **Save editor and Ruleset editor**: the toolbar is a menu bar. In the Save editor the
-  Open menu, Save and Save as are now in a **File** menu, and Undo and Redo in an **Edit**
-  menu; every shortcut works as before. The event logo is always shown: the bar now ends
-  short of it.
-- **Save editor**: on a PES 2017 to 2021 save, the Tactics tab's Numbers in attack and
-  Numbers in defence are disabled unless the active ruleset allows illegal formations,
-  since the game no longer lets them be set: a cup playing a patched game keeps them.
-- **Save editor**: what Ctrl+C copies (a player's stats, a team's Gameplan, a tactics
-  preset or a formation) can be pasted with Ctrl+V in another Save editor window, even one
-  holding a save of another PES version, and still after opening another save.
-- **Save editor**: a player dragged in a team's player list shows as one `Player order`
-  row in the unsaved changes, listing the places he and the players he shifted held
-  before and after. Each player then lists only what was edited on him, rather than every
-  field of the record the drag put in his place.
-- **Save editor**: each row of the toolbar's unsaved changes list ends with an ×, which
-  puts that one change back as the file has it, keeping the other edits, and Undo brings it
-  back again. On a `Player order` row it puts the players back on their places, each
-  keeping what was edited on him.
-- **Save editor**: on a PES 2017 or PES 2019 save, Live AATF and `check-aatf` warn about a
-  formation the game's own screens cannot make (a player beyond the area a starter can be
-  moved in, at a position the game does not give at his spot, or on top of a teammate, a
-  wide position held twice, too many or too few in a line), naming the preset, the
-  formation and the players, unless the ruleset allows illegal formations. Moving the
-  player on the Tactics pitch puts it right.
-- **Save editor**: lists only the cup's teams (IDs 701 to 920) and the players on their
-  rosters, in the team selector, the filter, Multi-team AATF, the Comparator and the roster
-  sheet, and Fix database repairs only those. The game's own clubs and national teams stay
-  in the save untouched. On the command line, `diff` compares the cup's players alone and
-  `export-toml --all-teams` writes the cup's teams alone, as `check-aatf` already checked
-  them, while a team named by its ID is still read.
-- **Save editor**: the status bar says what was done after Save, Save as and Output
-  rosters to TSV, which showed nothing, and after Ctrl+C and Ctrl+V (`ROADTRIP's stats
-  copied.`, `ROADTRIP's stats pasted onto ZONE.`). A paste from a save of another PES
-  version also says how many values the target could not take. Every such notice names
-  the thing first (`f.toml written`, where it read `Wrote f.toml`).
-- **Status bar**: a notice is drawn in semibold, so it is easier to see.
-- **Save editor**: the Player menu's `Toggle FPC settings` now reads `Hide default body
-  (Enable FPC)` or `Show default body (Disable FPC)`, whichever Ctrl+I will do to the
-  selected player, and the Team menu's two entries carry the same brackets.
-- **Save editor**: exporting a team as Team TOML suggests the team's name for the file
-  (`f.toml` for /f/) instead of its ID.
+  one the Team compiler reads, and leaves the old export as it was. Its window comes later
+  too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
+  `old_exports`, or use its command line.
+- **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
+  database repairs only those; the game's own clubs and national teams stay in the save
+  untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
+- **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
+  in the **File** menu, Undo and Redo in the **Edit** menu, with the same shortcuts.
+- **Updates**: the offer of a newer version has an Update now button, which downloads and
+  installs it, and a command typed in a terminal mentions a newer version too. The Help
+  window's new Updates chapter explains each step.
+
+### Useful
+
+- **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats…`, which stays
+  open: pick the source once, then select in the list each player to copy onto.
+- **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics
+  preset or a formation) in another Save editor window too, even one holding another PES
+  version's save.
+- **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
+  Ctrl+V did, in semibold so it is easier to see.
+- **Save editor**: each row of the unsaved changes list has an ×, which puts that one change
+  back. A player dragged in the player list shows there as one `Player order` row.
+- **Save editor**: a player dragged in the player list moves with the pointer, and a line
+  shows where he will land.
 - **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the
-  portraits on the pitch so that the formation's shape is easier to see; `Scroll names`
-  beside it is now `Scroll`. Both are remembered.
-- **Save editor**: Copy stats and Swap stats are one Player menu entry, `Copy/swap
-  stats…`, whose window stays open over the editor. Pick the source once, then select
-  each player in the list and press Copy: selecting a row makes him the destination.
+  portraits so the formation's shape is easier to see. `Scroll names` beside it is now
+  `Scroll`.
+- **Save editor**: the Player menu's FPC entry says what Ctrl+I will do: `Hide default body
+  (Enable FPC)` or `Show default body (Disable FPC)`.
+- **Save editor**: a team's Stadium ID can be edited on every version and its Manager ID from
+  PES 2017 on, and Team TOML files carry them.
+- **Save editor**: exporting a Team TOML suggests the team's name for the file (`f.toml` for
+  /f/).
+- **Save editor**: the Comparator shows each difference in three columns: Item, Picked save
+  and Open save.
+- **Save editor**: on a PES 2017 to 2021 save, Numbers in attack and Numbers in defence are
+  disabled unless the ruleset allows illegal formations, since the game no longer lets them
+  be set.
+- **Command line**: `--log-file <FILE>` keeps everything a run prints in a file, a crash's
+  message included, and leaves Info messages out of the console.
+- **Ruleset editor**: the Event logo can be a JPEG XL file (`.jxl`).
+- **Help**: a What's new chapter holds this list.
+
+### New checks
+
+- **Save editor**: on a PES 2017 or PES 2019 save, Live AATF and `check-aatf` warn about a
+  formation the game's own screens cannot make, naming the preset, the formation and the
+  players, unless the ruleset allows illegal formations.
 
 ### Fixes
 
-- **Save editor**: a PES 2017 Texport it wrote imported and listed its players in Edit, but
-  the kick-off screen's "Starting Lineup" showed nobody. A Texport (PES 2017 to 2021) is now
-  written from the save's own records, as the game writes one: the team keeps its manager and
-  coach (a Manager ID changed in the editor brings that manager's coach), and every value the
-  editor does not show keeps the save's.
-- **Settings**: with two windows of the program open, a setting changed in one is no longer
-  undone when the other saves something else: each window writes only the settings it
-  changed itself. A window shows what another one changed once it is started again.
-- **Windows**: a Shift+click or a middle click on the program's taskbar button opens another
-  window, as it does for most programs. It did nothing unless Windows
-  had a shortcut for the program, such as a taskbar pin.
-- **Save editor**: a save is edited as its own version, whatever the sidebar's selector
-  shows: the portraits and the Set PES path button read the PES folder of the save's
-  version, and the editor no longer warns that the save is not the sidebar's version.
-  The file picker starts in the folder the last save was opened from.
-- **Save editor and Ruleset editor**: the sidebar's PES version box stands empty and
-  disabled while the editor is shown, instead of naming a version the editor does not
-  use.
+- **Save editor**: a PES 2017 Texport it wrote showed nobody in the kick-off screen's
+  Starting Lineup. Texports are now written from the save's own records, as the game writes
+  them.
+- **Save editor**: `apply-patch` writing over its own save with no player to apply no longer
+  replaces the previous `.bak`.
+- **Settings**: with two windows open, a setting changed in one is no longer undone when the
+  other changes one of its own.
 - **Save editor**: in the Tactics tab's bench list, a player dragged onto another swaps
-  places with him, as in the starting eleven's list. He used to be moved into that place,
-  shifting the players between.
-- **Save editor**: a starter moved on the Tactics pitch, dragged or edited in the slot
-  popover's X and Y, now stays inside the area the game's own Formation screen can put
-  him in, so an edit can no longer make a formation Live AATF warns about, unless the
-  active ruleset allows illegal formations.
-- **Save editor**: a PES 2018 save's Tactics pitch is drawn as that game's own, which
-  is PES 2017's; PES 2015's and PES 2016's draw PES 2017's too, the nearest to theirs
-  that has been measured.
-- **Sidebar**: in a window too short for every entry, the tool entries now scroll with
-  the wheel in the room between the version selector and the bottom, where Help and
-  Settings stay pinned instead of being drawn over the last entries.
+  places with him, as in the starting eleven, instead of shifting the players between.
+- **Save editor**: a starter moved on the Tactics pitch stays inside the area the game's
+  Formation screen allows, so an edit can no longer make a formation Live AATF warns about.
 
 ### Minor fixes
 
-- On a small screen, the status bar's **Reset window** button no longer stays after a
-  click that left the window as it was: it goes, and comes back when the window is
-  resized. The pointer turns into a hand over it.
-- **Save editor**: an aesthetics patch's names now show in game on PES 2019, where they
-  showed PLACEHOLDER: applying it marks each renamed player as edited, as typing the
-  name does. `apply-patch` writing back over its own save with no player applied now
-  leaves the save and its `.bak` as they were, instead of replacing the previous backup.
-- **Save editor**: Up and Down walk the player list again after a page key left a team's
-  Tactics slot popover open behind a player: they did nothing until the team was selected
-  again and the popover closed.
-- **Save editor**: after opening another save, a team's medal outlines and a player's Cards
-  used badge no longer show the previous save's for a moment: they wait for the new save's own
-  answer.
-- **Save editor**: the name of an ability stat the save's PES version does not have
-  (Tight Possession and Aggression before PES 2020, for one) is dimmed like its `-`, so it
-  no longer reads as a field left to fill.
-- A click between two neighbouring entries of a menu or of a dropdown list no longer closes it with
-  nothing picked: the entries now touch, so the click lands on one of them.
-- The corners of menus, dialogs, dropdown lists, text fields and the update download's
-  bar all carry the same slight rounding again: an update of the toolkit the window is
-  drawn with had left the menus and dialogs rounder than the rest.
+- **Save editor**: a save is edited as its own version, whatever the sidebar shows: the
+  portraits and Set PES path follow it, and no warning says it is not the sidebar's version.
+  The file picker starts in the folder of the last save opened.
+- **Save editor and Ruleset editor**: the sidebar's PES version box is empty and disabled
+  while either is shown.
+- **Save editor**: Up and Down walk the player list again after Page Up or Page Down left a
+  Tactics slot popover open.
+- **Save editor**: after opening another save, medal outlines and Cards used badges no longer
+  show the previous save's for a moment.
+- **Save editor**: an ability stat the save's version lacks is dimmed like its `-`.
+- **Sidebar**: in a short window, the tool entries scroll, and Help and Settings stay pinned
+  below them.
+- **Status bar**: on a small screen, the Reset window button no longer stays after a click
+  that changed nothing.
+- **Windows**: a Shift+click or a middle click on the program's taskbar button opens another
+  window.
+- **General**: a click between two entries of a menu or dropdown list no longer closes it
+  with nothing picked.
+- **General**: menus, dialogs, dropdown lists, text fields and the update's progress bar
+  share one corner rounding again.
 
 ## [0.0.1] - 2026-11-03
 

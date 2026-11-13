@@ -530,13 +530,15 @@ says why, not what; the diff says what. This is for maintainers reading history 
 "Changelog and version display" and is never generated from commit messages. A commit that
 changes something a member notices against the last release (a fix for a bug a release shipped,
 a new or changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in
-`CHANGELOG.md` itself, a corner-case fix under its `### Minor fixes`; a fix for something no
-release has shipped adds none, and neither does a change to a tool no release has presented in
-its notes or the `README.md`: the release that first presents it describes it whole, in one
-bullet (0.0.2 does for the Team compiler and the Export upgrader), and `just changelog` fails
-on an entry for a tool on its list of those not presented yet. There is
-one `fix` type for both: `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note
-owes its readers. Do not include agent co-authoring lines.
+`CHANGELOG.md` itself, under the heading `plans/core/distribution.md` "Changelog and version
+display" gives it (a corner-case fix under `### Minor fixes`), in one or two lines; a fix for
+something no release has shipped, or for a PES version no release has promised, adds none,
+and neither does a change to a tool no release has presented in its notes or the `README.md`:
+the release that first presents it describes it whole, in one bullet (0.0.2 does for the Team
+compiler and the Export upgrader), and `just changelog` fails on an entry for a tool on its
+list of those not presented yet. There is one `fix` type for both:
+`git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note owes its readers. Do
+not include agent co-authoring lines.
 
 Write the message to a file and commit with `python scripts/commit.py <message file> [git commit
 arguments]`; a merge is `python scripts/commit.py --merge <branch> <message file>`. The script
