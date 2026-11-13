@@ -136,6 +136,8 @@ pub(super) fn change_lines(change: &Change, schema: &VersionSchema, undone: bool
             };
             team_lines(from, to, schema)
         }
+        // The move's players' own changes, in the same entry, carry its lines.
+        Change::Move { .. } => Vec::new(),
     }
 }
 

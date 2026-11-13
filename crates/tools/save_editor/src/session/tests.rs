@@ -1,6 +1,7 @@
 mod journal;
 
 use pes_savefile::model::ingame_face::IngameFace;
+use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 
 use super::*;
@@ -382,6 +383,242 @@ fn two_moves_are_two_undo_steps() {
     assert_eq!(session.file().player(70102).unwrap().name, "SECOND");
     assert_eq!(session.file().player(70103).unwrap().name, "THIRD");
     assert!(!session.can_undo());
+}
+
+/// `version`'s fixture with team 701's first eight players told apart
+/// (slot `i` holds 70101 + `i`, named `P01` to `P08`, 171 to 178 cm
+/// tall), saved so the file holds them: the fixture's placeholders are
+/// identical records, which a move would trade without a trace.
+fn told_apart(test: &str) -> Session {
+    let mut session = open(PesVersion::Pes21, test);
+    for n in 1..=8u8 {
+        let id = 70100 + u32::from(n);
+        assert_eq!(
+            session.file().team(701).unwrap().roster[usize::from(n - 1)].player_id,
+            id,
+            "premise: slot {} holds {id}",
+            n - 1
+        );
+        let player = session.file.player_mut(id).unwrap();
+        player.name = format!("P{n:02}");
+        player.basic.height = 170 + n;
+    }
+    save_in_place(&mut session);
+    session
+}
+
+/// A `MovedPlace` of `slot`, its `id` and the `origin` whose record it holds.
+fn place(slot: u8, id: u32, origin: u32) -> MovedPlace {
+    MovedPlace { slot, id, origin }
+}
+
+/// The group `move_player(701, 3, 6)` makes of `told_apart`'s players:
+/// place 04's record lands on 07, those of 05 to 07 shift one up.
+fn drag_04_to_07() -> (u32, Vec<MovedPlace>) {
+    (
+        701,
+        vec![
+            place(3, 70104, 70105),
+            place(4, 70105, 70106),
+            place(5, 70106, 70107),
+            place(6, 70107, 70104),
+        ],
+    )
+}
+
+// A drag is one group of the places it shifted, and no player lists a
+// diff: each is compared with the record he came from.
+#[test]
+fn a_move_is_one_group_and_no_players_diffs() {
+    let mut session = told_apart("move_group");
+    session.move_player(701, 3, 6);
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(
+        changes
+            .players
+            .iter()
+            .map(|(id, _)| *id)
+            .collect::<Vec<_>>(),
+        Vec::<u32>::new(),
+        "no player lists a diff"
+    );
+    assert!(changes.teams.is_empty(), "the roster is not written");
+    assert_eq!(changes.moves, [drag_04_to_07()]);
+}
+
+// An edit after the move lists that edit alone, its old value the
+// origin's; undoing the edit and the move empties the list, a redo
+// brings the group back.
+#[test]
+fn a_moved_players_edit_is_his_one_diff_through_undo_and_redo() {
+    let mut session = told_apart("move_edit_undo");
+    session.move_player(701, 3, 6);
+    // The dragged player, the file's 70104, now holds 70107.
+    let origin_height = session.baseline_player(70104).unwrap().basic.height;
+    assert_ne!(
+        origin_height,
+        session.baseline_player(70107).unwrap().basic.height,
+        "premise: the file's heights on the two ids differ"
+    );
+    let mut edited = session.file().player(70107).unwrap().clone();
+    assert_eq!(edited.basic.height, origin_height, "premise: he moved");
+    edited.basic.height = 190;
+    session.edit_player(1, edited);
+
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(
+        changes.players,
+        [(
+            70107,
+            vec![PlayerDiff::Field {
+                field: PlayerField::Height,
+                old: u32::from(origin_height),
+                new: 190,
+            }]
+        )],
+        "his one Height diff, the old value his own"
+    );
+    assert_eq!(changes.moves, [drag_04_to_07()]);
+
+    assert!(session.undo(), "the edit undone");
+    assert!(session.undo(), "the move undone");
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert!(changes.moves.is_empty(), "no group");
+
+    assert!(session.redo(), "the move redone");
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(changes.moves, [drag_04_to_07()], "the group back");
+}
+
+// An edit made before the move stays his through it: the moved player
+// lists that edit alone, and so does he once the move is undone.
+#[test]
+fn an_edit_before_the_move_stays_the_moved_players() {
+    let mut session = told_apart("move_after_edit");
+    let mut edited = session.file().player(70104).unwrap().clone();
+    edited.basic.height = 190;
+    session.edit_player(1, edited);
+    session.move_player(701, 3, 6);
+    let height = |old: u32| {
+        vec![PlayerDiff::Field {
+            field: PlayerField::Height,
+            old,
+            new: 190,
+        }]
+    };
+
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(changes.players, [(70107, height(174))], "on his new id");
+    assert_eq!(changes.moves, [drag_04_to_07()]);
+
+    assert!(session.undo(), "the move undone");
+    let changes = session.unsaved_changes().unwrap();
+    assert_eq!(changes.players, [(70104, height(174))], "back on his own");
+    assert!(changes.moves.is_empty(), "no group");
+}
+
+// Two separate swaps are two groups; a drag overlapping an earlier one
+// gives the groups the records' cycles make.
+#[test]
+fn separate_swaps_are_separate_groups() {
+    let mut session = told_apart("move_two_groups");
+    session.move_player(701, 0, 1);
+    session.move_player(701, 3, 6);
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(
+        changes.moves,
+        [
+            (701, vec![place(0, 70101, 70102), place(1, 70102, 70101)]),
+            drag_04_to_07(),
+        ]
+    );
+
+    // Places 04 to 07 hold P05, P06, P07, P04; place 02's P02 dragged onto
+    // 05 leaves places 02 to 07 holding P03, P05, P06, P02, P07, P04: two
+    // cycles, 02, 03, 05 (P03, P05, P02) and 04, 06, 07 (P06, P07, P04).
+    let mut session = told_apart("move_overlapping");
+    session.move_player(701, 3, 6);
+    session.move_player(701, 1, 4);
+    let names: Vec<String> = (70102..=70107)
+        .map(|id| session.file().player(id).unwrap().name.clone())
+        .collect();
+    assert_eq!(names, ["P03", "P05", "P06", "P02", "P07", "P04"], "premise");
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(
+        changes.moves,
+        [
+            (
+                701,
+                vec![
+                    place(1, 70102, 70103),
+                    place(2, 70103, 70105),
+                    place(4, 70105, 70102)
+                ]
+            ),
+            (
+                701,
+                vec![
+                    place(3, 70104, 70106),
+                    place(5, 70106, 70107),
+                    place(6, 70107, 70104)
+                ]
+            ),
+        ]
+    );
+}
+
+// A save makes the moved order the file's: no group, and a later move is
+// measured against the written order, the undone first move included.
+#[test]
+fn a_save_makes_the_moved_order_the_files() {
+    let mut session = told_apart("move_saved");
+    session.move_player(701, 3, 6);
+    save_in_place(&mut session);
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert!(changes.moves.is_empty(), "no group");
+
+    // Dragged back from 07 to 04: against the written order a move of
+    // its own, not the first one undone.
+    session.move_player(701, 6, 3);
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(
+        changes.moves,
+        [(
+            701,
+            vec![
+                place(3, 70104, 70107),
+                place(4, 70105, 70104),
+                place(5, 70106, 70105),
+                place(6, 70107, 70106)
+            ]
+        )]
+    );
+
+    // Both moves undone: the order before the save, which the file no
+    // longer holds, is a move against it.
+    assert!(session.undo());
+    assert!(session.undo());
+    let changes = session.unsaved_changes().unwrap();
+    assert!(changes.players.is_empty(), "no diffs");
+    assert_eq!(
+        changes.moves,
+        [(
+            701,
+            vec![
+                place(3, 70104, 70107),
+                place(4, 70105, 70104),
+                place(5, 70106, 70105),
+                place(6, 70107, 70106)
+            ]
+        )],
+        "the undone move against the written order"
+    );
 }
 
 #[test]

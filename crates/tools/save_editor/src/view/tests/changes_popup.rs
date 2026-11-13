@@ -513,3 +513,249 @@ fn the_list_opens_under_the_label_at_its_left_edge() {
         "still 3 points under the label: popup {popup:?}, label {label:?}"
     );
 }
+
+/// The PES 21 fixture with team 701's first eight players named `P01` to
+/// `P08` and 171 to 178 cm tall, open on team 701's list: the fixture's
+/// placeholders are identical records, which a drag would trade without
+/// a trace.
+fn told_apart(test: &str) -> SaveView {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    for n in 1..=8u8 {
+        let player = file.player_mut(70100 + u32::from(n)).unwrap();
+        player.name = format!("P{n:02}");
+        player.basic.height = 170 + n;
+    }
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view
+}
+
+/// Drags the list's row labeled `from` onto the row labeled `onto`.
+fn drag_row(window: &mut Headless, view: &mut SaveView, from: &str, onto: &str) {
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (from, onto) = (centre(row(&nodes, from)), centre(row(&nodes, onto)));
+    drag(window, from, onto, view);
+}
+
+/// The rows of the toolbar's list and of the close prompt, asserted the
+/// same: the list opened by a click on its label and closed by another,
+/// then the prompt opened as the window's close opens it, and cancelled.
+fn both_lists(window: &mut Headless, view: &mut SaveView) -> Vec<(String, String, String)> {
+    click_label(window, view);
+    let listed = list_rows(window, view);
+    click_label(window, view);
+    assert!(view.changes_list.is_none(), "the list closed again");
+    crate::view::prompt::open(view, crate::view::prompt::Pending::Close);
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let prompted = table_rows(&super::prompt::dialog_nodes(&pairs, "Unsaved changes"));
+    // Esc cancels the prompt; a frame without it lets its modal layer go,
+    // which holds the shortcuts dead while it stands.
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, view, &|| Vec::new()),
+    );
+    assert!(view.prompt.is_none(), "the prompt cancelled");
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    assert_eq!(
+        listed, prompted,
+        "the list and the prompt hold the same rows"
+    );
+    listed
+}
+
+/// A `Player order` row of team 701 (`/3/`), its two sides' lines.
+fn order_row(old: &[&str], new: &[&str]) -> (String, String, String) {
+    (
+        "/3/ · Player order".to_owned(),
+        old.join("\n"),
+        new.join("\n"),
+    )
+}
+
+/// The session lists no group of moved places.
+fn no_moves(view: &SaveView) -> bool {
+    let session = view.session.as_ref().expect("a save is open");
+    session
+        .unsaved_changes()
+        .expect("the changes compare")
+        .moves
+        .is_empty()
+}
+
+/// The row of the drag from place 04 onto 07: P04 lands on 07, P05 to
+/// P07 shift one place up.
+fn drag_04_to_07() -> (String, String, String) {
+    order_row(
+        &["04 P04", "05 P05", "06 P06", "07 P07"],
+        &["04 P05", "05 P06", "06 P07", "07 P04"],
+    )
+}
+
+// SE-GUI-73
+#[test]
+fn a_dragged_player_is_one_player_order_row() {
+    let mut view = told_apart("changes_list_move");
+    let mut window = Headless::new();
+
+    // The drag from 04 onto 07: one row, and no player has one.
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        &row_labels(&nodes)[3..7],
+        ["04 CB P05 ●", "05 CB P06 ●", "06 CB P07 ●", "07 CB P04 ●"],
+        "premise: the drag moved P04 onto 07"
+    );
+    assert_eq!(both_lists(&mut window, &mut view), [drag_04_to_07()]);
+
+    // The moved player's Height edited: that row and his one Height row,
+    // its old value his own.
+    let mut edited = player_entry(&view, 70107);
+    assert_eq!(edited.basic.height, 174, "premise: P04's height moved");
+    let file_height = view
+        .session
+        .as_ref()
+        .unwrap()
+        .baseline_player(70107)
+        .unwrap()
+        .basic
+        .height;
+    assert_ne!(file_height, 174, "premise: the file's 07 is another height");
+    edited.basic.height = 190;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let height_row = (
+        "P04 · Height".to_owned(),
+        "174".to_owned(),
+        "190".to_owned(),
+    );
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [height_row.clone(), drag_04_to_07()]
+    );
+
+    // The Height undone, then the move: the list holds the order row, then
+    // nothing, and the label is gone with the last change.
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(both_lists(&mut window, &mut view), [drag_04_to_07()]);
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert!(!view.is_dirty(), "the move undone, nothing is unsaved");
+    // A clean save shows no list to read: the session's own answer, which
+    // the list's rows are made from, holds no moved group either.
+    assert!(no_moves(&view), "the move undone: no moved group is left");
+
+    // P02's Height edited, then P02 dragged onto 03, then the drag undone:
+    // his Height row stays his, under his name, against the file's Height
+    // on his own id.
+    let mut edited = player_entry(&view, 70102);
+    assert_ne!(edited.basic.height, 190, "premise: a real change");
+    assert_ne!(
+        player_entry(&view, 70103).basic.height,
+        190,
+        "premise: the record the drag puts on 02 is another height"
+    );
+    edited.basic.height = 190;
+    view.session.as_mut().unwrap().edit_player(2, edited);
+    drag_row(&mut window, &mut view, "02 CB P02 ●", "03 CB P03");
+    let height_row = (
+        "P02 · Height".to_owned(),
+        "172".to_owned(),
+        "190".to_owned(),
+    );
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [
+            height_row.clone(),
+            order_row(&["02 P02", "03 P03"], &["02 P03", "03 P02"])
+        ],
+        "his one Height row beside the order row"
+    );
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [height_row],
+        "the drag undone: the Height row alone"
+    );
+    // The Height undone too, so the clauses below start from the file.
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert!(!view.is_dirty(), "both undone, nothing is unsaved");
+    assert!(no_moves(&view), "both undone: no moved group is left");
+
+    // The drag from 04 onto 07 again (the Height edit cleared the redo
+    // stack) and a second, separate pair swapped: two rows.
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    drag_row(&mut window, &mut view, "02 CB P02", "01 CB P01");
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [
+            order_row(&["01 P01", "02 P02"], &["01 P02", "02 P01"]),
+            drag_04_to_07()
+        ]
+    );
+
+    // Saved: nothing is unsaved; P04 dragged back onto 04 is a row against
+    // the written order.
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(!view.is_dirty(), "the save is written");
+    drag_row(&mut window, &mut view, "07 CB P04", "04 CB P05");
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [order_row(
+            &["04 P05", "05 P06", "06 P07", "07 P04"],
+            &["04 P04", "05 P05", "06 P06", "07 P07"],
+        )]
+    );
+}
+
+// The order row is as high as its four places, its Item on the first
+// line; the Height row beside it keeps one line.
+// SE-GUI-73
+#[test]
+fn a_player_order_row_is_as_high_as_its_places() {
+    let mut view = told_apart("changes_list_move_height");
+    view.session.as_mut().unwrap().move_player(701, 3, 6);
+    let mut edited = player_entry(&view, 70107);
+    edited.basic.height = 190;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    let bounds = |value: &str| {
+        nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(value))
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("no cell {value:?}"))
+    };
+    let (_, old, new) = drag_04_to_07();
+    // A value's line; the Item's proportional font runs a point taller.
+    let one_line = bounds("174");
+    let line = one_line.y1 - one_line.y0;
+    for cell in [bounds("P04 · Height"), bounds("190")] {
+        assert!(
+            cell.y1 - cell.y0 < 1.5 * line,
+            "the Height row's cells are one line: {cell:?}, {one_line:?}"
+        );
+    }
+    let item = bounds("/3/ · Player order");
+    assert!(
+        item.y1 - item.y0 < 1.5 * line,
+        "the order row's Item is one line: {item:?}"
+    );
+    for value in [old.as_str(), new.as_str()] {
+        let cell = bounds(value);
+        assert!(
+            (cell.y1 - cell.y0 - 4.0 * line).abs() < 1.0,
+            "four lines high: {cell:?}, a line {line}"
+        );
+        assert!(
+            (cell.y0 - item.y0).abs() < 1.0,
+            "the Item on the values' first line: {cell:?}, {item:?}"
+        );
+    }
+}

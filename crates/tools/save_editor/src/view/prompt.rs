@@ -20,8 +20,8 @@ use studio_core::widgets::{
 use team_widgets::tactics::RosterRow;
 use team_widgets::violations::SWITCH_TOOLTIP;
 
-use crate::session::Session;
 use crate::session::selection::{self, TeamChoice};
+use crate::session::{MovedPlace, Session};
 use crate::view::terms::{self, Term};
 use crate::view::{Refusal, SaveView, info_strip, save, write_now};
 
@@ -104,7 +104,8 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
 /// in the ALL list's order (a changed one the list does not show last by
 /// id), a roster slot's `Shirt number` row under its player after his own
 /// (the dot's rule: his dot covers his roster slot's number), then each changed team's
-/// other rows in the open save's team order. The item is the player's
+/// other rows in the open save's team order, first a `Player order` row per
+/// group of its players that traded places (`places`). The item is the player's
 /// display name (`display_name`, colour codes dropped) or the team's.
 /// A team row's slot-valued texts name the baseline's roster and records
 /// on the old side, the current's on the new: a drag moves records
@@ -218,6 +219,17 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
         }
     }
     for team in file.teams() {
+        for (_, group) in changes.moves.iter().filter(|(id, _)| *id == team.id) {
+            rows.push(ChangeRow {
+                item: display_name(&team.name),
+                term: Term {
+                    label: PLAYER_ORDER.to_owned(),
+                    old: places(group, |id| session.baseline_player(id)),
+                    new: places(group, |id| players.get(&id).copied()),
+                    swatches: None,
+                },
+            });
+        }
         let Some(diffs) = team_diffs.get(&team.id) else {
             continue;
         };
@@ -256,6 +268,26 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
         }
     }
     Ok(rows)
+}
+
+/// The label of a group of moved players' row.
+const PLAYER_ORDER: &str = "Player order";
+
+/// One side of a `Player order` row (the draft's `places`): the group's
+/// places in roster order, one per line, each its two-digit number and the
+/// display name of the record `lookup` finds on its id (the baseline's on
+/// the old side, the current file's on the new), so the two sides read
+/// line by line and a long move makes the row taller, not wider.
+fn places<'a>(group: &[MovedPlace], lookup: impl Fn(u32) -> Option<&'a PlayerEntry>) -> String {
+    group
+        .iter()
+        .map(|place| {
+            let name = lookup(place.id)
+                .map_or_else(|| place.id.to_string(), |player| display_name(&player.name));
+            format!("{:02} {name}", u32::from(place.slot) + 1)
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// `team`'s roster slots' display names for `roster_for` (the two steps
@@ -316,7 +348,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // The modal is as wide as its widest row, at most nine tenths of
         // the window's width: `set_max_width` caps the content (the frame's
         // margins and stroke make up the rest), and a wider row scrolls
-        // sideways inside the table, every cell on one line.
+        // sideways inside the table, no line of a cell wrapped.
         let chrome = modal_frame(ui.style()).total_margin().sum().x;
         ui.set_max_width((ui.ctx().content_rect().width() * 0.9 - chrome).max(0.0));
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
@@ -359,9 +391,12 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 /// toolbar's changes list's and the patch panel's: a grid with the weak
 /// header row `Item`, `Old value`, `New value`, then one row per
 /// `ChangeRow`, the Item cell `<item> · <label>` and the values in
-/// monospace, a team colour's each after its swatch, every cell on one
-/// line. `selectable` makes each Item cell a click target selecting the
-/// row's player; the index of the row whose Item cell was clicked.
+/// monospace, a team colour's each after its swatch, no line wrapped. A
+/// value holding several lines (a `Player order` row's places) makes its
+/// row that many lines high, the Item on the first (the draft's cells sit
+/// on their baseline); every other row is one line. `selectable` makes
+/// each Item cell a click target selecting the row's player; the index of
+/// the row whose Item cell was clicked.
 pub(super) fn changes_table<'a>(
     ui: &mut egui::Ui,
     id: &str,
@@ -379,16 +414,25 @@ pub(super) fn changes_table<'a>(
             let mut clicked = None;
             for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
                 let item = cell(format!("{item} · {}", term.label));
-                if selectable {
-                    if ui
-                        .add(item.sense(egui::Sense::click()))
-                        .on_hover_text(SWITCH_TOOLTIP)
-                        .clicked()
-                    {
-                        clicked = Some(index);
-                    }
+                let item = if selectable {
+                    item.sense(egui::Sense::click())
                 } else {
-                    ui.add(item);
+                    item
+                };
+                // The grid centres a cell in its row's height: a cell as
+                // high as the values' lines puts the Item on the first.
+                let response = if term.old.contains('\n') || term.new.contains('\n') {
+                    let height = value_height(ui, &term.old).max(value_height(ui, &term.new));
+                    ui.vertical(|ui| {
+                        ui.set_min_height(height);
+                        ui.add(item)
+                    })
+                    .inner
+                } else {
+                    ui.add(item)
+                };
+                if selectable && response.on_hover_text(SWITCH_TOOLTIP).clicked() {
+                    clicked = Some(index);
                 }
                 let [old_swatch, new_swatch] = match term.swatches {
                     Some([old, new]) => [Some(old), Some(new)],
@@ -406,6 +450,19 @@ pub(super) fn changes_table<'a>(
 /// A cell of the changes table: `text` on one line.
 fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
     egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
+}
+
+/// The height `value_cell` draws `value` at, every line unwrapped.
+fn value_height(ui: &egui::Ui, value: &str) -> f32 {
+    egui::WidgetText::from(egui::RichText::new(value).monospace())
+        .into_galley(
+            ui,
+            Some(egui::TextWrapMode::Extend),
+            f32::INFINITY,
+            egui::TextStyle::Body,
+        )
+        .size()
+        .y
 }
 
 /// A value cell of the changes table: `value` in monospace, after its
