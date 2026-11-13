@@ -748,11 +748,6 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
       setting is on: first, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
       two swatch rows' first squares in line) at its right.
-    - **Presentation**, the pane's width: star (19+) and playing attitude (20+), its note on
-      the title's row: "The star rating affects how likely a player is to show up as the
-      team's featured player in the pre-match screen. Playing attitude only affects
-      cutscenes." Both are aesthetics, keys of the export
-      (`plans/aesthetics_export/settings_toml.md`), so the group is under the lock.
     - **Strip style**: fifteen settings in three columns by five rows, every label one
       width and every field one width (the two ID boxes as wide as the dropdowns), thin
       lines in the frame's colour parting what belongs together:
@@ -782,9 +777,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
       arm movement, kick motions, gc1/gc2, two a row, Randomize under them; dribbling
       motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,
       hair, physique over strip, motion, base copy), `Copy from ID` on a row under them.
+    - **Presentation**, the pane's width, last: star (19+) and playing attitude (20+), one
+      under the other, each with its note at its right: "How likely the player is to show up
+      as the team's featured player in the pre-match screen." and "Only affects cutscenes."
+      A note beside its box needs no room of its own, which a note on the title's row took.
+      Both are aesthetics, keys of the export (`plans/aesthetics_export/settings_toml.md`),
+      so the group is under the lock.
 
     At the default window the screen shows whole, also with the lock's three lines drawn
-    (42 points to spare then, measured on the draft). A second FPC finding, or a narrower
+    (38 points to spare then, measured on the draft). A second FPC finding, or a narrower
     window, scrolls it.
 
     Editable, as in 4ccEditor, unless the "Aesthetics from exports" setting is on; see
@@ -2999,8 +3000,8 @@ SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting 
                 player's Appearance screen shown
            WHEN it is drawn
            THEN its groups stand in this order: Full Player Customization with Colors at
-                its right; Presentation with its note on the title's row; Strip style; Physique
-                with Motion at its right and Edit flags under Motion; the pane has no
+                its right; Strip style; Physique with Motion at its right and Edit flags
+                under Motion; Presentation, each note at its box's right; the pane has no
                 scroll bar; Strip style's fifteen settings stand in the plan's three
                 columns by five rows, every field one width; the four colours are
                 dropdowns, the gloves' and the spectacles' naming White, Black, Red, Blue,

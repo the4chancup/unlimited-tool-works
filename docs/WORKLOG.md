@@ -1934,8 +1934,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] b the Team compiler and the Export upgrader: the patch carries the keys, an upgrade
       fills them from the save; their templates and help -> verify: a compiled player's
       star lands in the save, an upgraded export keeps a 7-star team's 7
-    - [ ] c the Save editor: the Presentation group under the lock, below FPC and Colors,
-      the two-sentence note (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
+    - [ ] c the Save editor: the Presentation group under the lock, last on the screen,
+      each note beside its box (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
       the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player

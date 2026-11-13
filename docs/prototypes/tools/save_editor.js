@@ -3539,7 +3539,7 @@ function draftControls() {
 const V2_REMARKS = [
   "Team information on a tab: adopted. The team row's view holds the name, the short name and the colours; invitational members edit the name and abbreviation often.",
   "Fonts too thin: adopted. Body text is regular weight (400); the built app draws egui's default Ubuntu Light, so its theme changes too.",
-  "Star rating and playing attitude toward Appearance: adopted, in a Cutscenes group outside the aesthetics lock: they only change cutscenes, but the export does not own them.",
+  "Star rating and playing attitude toward Appearance: adopted, in a Presentation group under the aesthetics lock: they affect no play, so they are aesthetics, keys of the team's export.",
   "Card amount: adopted. The badge shows the player's own tier only, which follows from his stats, registered position and height under the active ruleset.",
   "Stats aligned: adopted.",
   "Playable positions aligned, in the order CF SS LWF RWF / AMF LMF RMF CMF DMF / CB LB RB GK: adopted.",
@@ -4615,7 +4615,7 @@ function rangeField(min, max, value, commit) {
 // layoutPanelW), never from the pane's and never past the layout's own.
 const COL_PANELS = {
   "positions": [5, 66], "skills": [2, 165], "aside": [2, 165], "com-styles": [2, 165],
-  "team-info": [2, 120], "cutscenes": [2, 120, 14],
+  "team-info": [2, 120],
   "strip-style": [4, 170, 14], "motion": [2, 194, 14],
   "tactics-settings": [2, 192, 30],
 };
@@ -5096,12 +5096,14 @@ function appearanceTab(p) {
   const attIn = h("input", { type: "number", id: "f-attitude", value: p.stats.playing_attitude ?? 0, min: 0, max: 3,
     onchange: e => { const v = parseInt(e.target.value, 10);
       if (!Number.isNaN(v)) { set(p, x => x.stats.playing_attitude, (x, v2) => x.stats.playing_attitude = v2, v, "playing attitude"); render(); } } });
-  const cutscenes = namedCols(h("div", { class: "group", id: "cutscenes" },
-    h("div", { class: "row", style: "margin:0" }, strong("Presentation"),
-      weak("The star rating affects how likely a player is to show up as the team's featured player in the pre-match screen. Playing attitude only affects cutscenes.")),
+  // Each note stands beside the box it explains, so the group is one column.
+  const cutscenes = named(h("div", { class: "group", id: "cutscenes" },
+    h("div", { class: "row", style: "margin:0" }, strong("Presentation")),
     h("table", { class: "grid" },
-      chunk([[lbl("Star"), fld(starIn, 19)], [lbl("Playing attitude"), fld(attIn, 20)]],
-        colCount("cutscenes")).map(row => h("tr", {}, row.flat())))), "cutscenes");
+      h("tr", {}, lbl("Star"), fld(starIn, 19),
+        h("td", {}, weak("How likely the player is to show up as the team's featured player in the pre-match screen."))),
+      h("tr", {}, lbl("Playing attitude"), fld(attIn, 20),
+        h("td", {}, weak("Only affects cutscenes."))))), "cutscenes");
   // The ownership line and the switch draw only while the setting is on;
   // off, the groups edit without either.
   const lines = D.aesFromExports ? [row(own), row(sw)] : [];
@@ -5263,7 +5265,7 @@ function appearanceTab(p) {
   if (!en) [fpcGroup, colors, cutscenes, body].forEach(dis);
   // The lock's line and switch first, over everything they govern.
   return h("div", { id: "appearance-screen" }, ...lines,
-    h("div", { class: "aprow fpcrow" }, fpcGroup, colors), cutscenes, body);
+    h("div", { class: "aprow fpcrow" }, fpcGroup, colors), body, cutscenes);
 }
 
 // ---- The colour picker (color_tools' color_field; libs/color_tools.md) ----
