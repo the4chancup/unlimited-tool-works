@@ -53,7 +53,7 @@ implementation is measured against.
 |-----------|------|
 | Set all ability stats (dialog: every ability stat to N, 40 to 99, prefilled with the player's first; weak foot, form and injury untouched) | Kept, same fields and range; no edit flag set (the dialog writes the ability stats, as typing them does, and typing sets none) |
 | Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat kept within 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
-| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); each player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), in the Copy/swap stats window ("Editing UI") |
+| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, the star and playing attitude, looks that stay the target's (the free-kick motion is a motion like the others; star and attitude affect no play, keys of `[appearance.presentation]`); each player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), in the Copy/swap stats window ("Editing UI") |
 | Swap player stats (two PIDs; the same field set as Copy) | Kept, a button of the same window |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
 | Toggle FPC settings (Ctrl+I) | Kept as one Player menu entry whose label says what it will do (see "Full Player Customization" below) |
@@ -2079,11 +2079,13 @@ the editor exposes them as:
   - names, shirt names and shirt numbers go with aesthetics (its `PlayerImport` copies them
     under `importAes`), not with gameplay as the comparator's scopes have them, and so do
     nationality, age, every motion and the base-copy flag and id;
-  - height, weight, star, playing attitude and stronger hand go with gameplay.
+  - height, weight and stronger hand go with gameplay.
 
-  One departure: the squad load copies the free-kick motion with the stats, and here it goes
+  Two departures: the squad load copies the free-kick motion with the stats, and here it goes
   with aesthetics, with the other motions, since it is an `[appearance.motion]` key of the
-  export's `settings.toml` like them (the aesthetics lock then guards it too). The file's
+  export's `settings.toml` like them (the aesthetics lock then guards it too); and it copies
+  star and playing attitude with the stats, which here go with aesthetics, keys of
+  `[appearance.presentation]`, since they affect no play. The file's
   `[team]` keys, which the squad file never carried, split: the name, short name, manager and
   stadium, with their edit flags, go with gameplay; the two team colours, the kit slots and
   the strip flag go with aesthetics, the team's look.
@@ -2115,7 +2117,7 @@ the editor exposes them as:
   the only place the instruction it writes off is named (the drafts' `ixWarningGroups`).
 
   The console's line, with its code and key path
-  (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's form, not
+  (`Warning import_key_not_in_version (path=players.03.positions.stronger_hand)`), is the CLI's form, not
   the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
