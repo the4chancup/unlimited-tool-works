@@ -1949,7 +1949,8 @@ briefs, review loops, gates and mutation runs as for any step.
     history, the built window's sidebar and title
   - [ ] 0.0.2-noticeerr (the maintainer, 2026-11-13; DECISIONS "no alias or deprecation shim")
     `NoticeKind::Error`, drawn in the theme's error red; both themes' error and warning
-    colours become GitHub's (red `#F85149`/`#D1242F`, amber `#D29922`/`#9A6700`), the pitch's
+    colours become GitHub's (red `#F85149`/`#D1242F`, amber `#D29922`/`#9A6700`), with its
+    green `#3FB950`/`#1A7F37` and link blue `#58A6FF`/`#0969DA`, the pitch's
     crosses the dark pair in both themes (`plans/core/gui.md` "A notice is seen, not found"
     and the Dark/light theme row); no publisher yet -> verify: ST-BAR-04 with four kinds, the
     pitch's crosses on both themes

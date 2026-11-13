@@ -17206,3 +17206,14 @@ themes only because egui's two reds were the same `#FF0000`, gets `Palette::pitc
 the dark red. The Team compiler's and the upgrader's grid colours are their own and stay.
 Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found";
 `plans/save_editor.md` (three "warning amber"); the drafts' `--warn` and the pitch cross.
+
+## 2026-11-14: the success green and the link blue are GitHub's too
+
+So the four notice kinds' colours come from one set (the maintainer): `#3FB950` and `#58A6FF`
+on the dark panel, `#1A7F37` and `#0969DA` on the light one. Our dark `#4CD964` outshone the
+new error red; egui's light link blue `#009BFF` read at 2.8 on the light panel, under the
+4.5 every light text colour keeps, while its dark `#5AAAFF` was GitHub's but for a shade.
+GitHub's newer dark blue, `#4493F8`, was drawn and not taken (`.tmp/0_0_2/red/blues.png`,
+`greens.png`). The link blue is every link's, not only the Info notices'.
+Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found"; the
+drafts' `--success` and `--link`.
