@@ -916,6 +916,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`.tmp/8_17/runs.py`); DECISIONS "The view's arguments and report, where the plan was
     silent"; the usability review's ideas `PROPOSALS.md` P32-P36. Waits for the maintainer's
     remarks
+    - [ ] 8.17c a second draft, replacing the first (the maintainer, 2026-11-13: two looks by
+      the number of old exports, a grid as the Team compiler's from five on with three
+      lines an export for the face, boots and gloves folders, and under five the source
+      and destination files in two columns, turning as the run goes, "feel free to
+      improvise"; then a toggle to pick either look whatever the count). Drawn 2026-11-13
+      (the lead; renders `.tmp/0_0_2/eu_draft/` by `shot_eu.py`; the first draft's file
+      kept beside them as `export_upgrader_single.js`). Improvised, for the maintainer to
+      rule on: the view reads `old_exports` beside the app and writes into `exports`
+      (no drop targets, no Output into field); one save for all the exports, the field
+      red while any team is missing from it; boots and gloves cells stand under the
+      player the save has wear them, by their four-digit ID, a shared folder under each
+      wearer; the team's files as cells (Note, Logo, Common, Collar, IDs) and one cell
+      counting what is left out, in place of the left-behind list; an export with an
+      Error is not written and its cells turn to "Not written"; an export that cannot be
+      read (team not in the save, already upgraded, output exists) is one line with its
+      action; Full or Midcup is a combo at each row's right; the detail window is fixed
+      at the right; after a run, Open the Team compiler in place of Move to exports and
+      compile. Not drawn: model-folder mode, the output-exists abort's button, Copy
+      report, a referee export. `plans/export_upgrader.md` "GUI" still describes the
+      first draft: rewritten when this one is accepted
     - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
       2026-10-26, `plans/export_upgrader.md` "GUI"), the samples' rows grouped and the
       `needs <team>` hint from the real runs → verify: the bundled drafts build; each item
