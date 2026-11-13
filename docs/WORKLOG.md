@@ -1905,9 +1905,10 @@ briefs, review loops, gates and mutation runs as for any step.
     label on a hidden and on a shown player, Ctrl+I on each
   - [ ] 0.0.2-clipmsg a notice after Ctrl+C and after Ctrl+V saying what was copied or
     pasted (the maintainer, 2026-11-13; drafted, `clipCopy` and `clipPaste`, and looked at
-    the same day): "Copied X's stats.", "Copied /x/'s Gameplan.", "Copied /x/'s preset 2.",
-    "Copied /x/'s preset 2 Kick-off formation." (a formation's notice names its preset),
-    and "Pasted <the same> onto <the target named the same way>.". They go to the status
+    the same day), in 0.0.2-notice's form: "X's stats copied.", "/x/'s Gameplan copied.",
+    "/x/'s preset 2 copied.", "/x/'s preset 2 Kick-off formation copied." (a formation's
+    notice names its preset), and "<the same> pasted onto <the target named the same
+    way>.". They go to the status
     bar's notice slot, in the success green; and every status bar notice is drawn bold,
     since notices are easy to miss (`plans/core/gui.md` "Status bar", `studio_core`'s status
     bar). PROPOSALS P54 is accepted into it: a paste from a save of another PES version says
@@ -1915,6 +1916,56 @@ briefs, review loops, gates and mutation runs as for any step.
     PES 2017 does not store were left out"); P54 leaves `PROPOSALS.md` with this step's
     plan edit. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one
     notice per kind of copy and of paste, the cross-version line, a notice's text bold
+  - [ ] 0.0.2-notice result notices name the thing first, then what was done to it (the
+    maintainer, 2026-11-13: "Wrote TEXPORT…" should read "TEXPORT… written successfully",
+    and messages are usually in the passive). Drafted the same day over every
+    `publishNotice` of the Save editor's draft: a written or saved file reads "<file>
+    written successfully" / "<file> saved successfully" with its detail after; the others
+    "<thing> copied.", "<thing> pasted onto <target>.", "<ruleset> imported.", "Diff
+    exported: …", "Results of N teams copied.", "Live AATF list of <id> <name> copied.". To
+    do: the rule written where member text's rules live (`docs/CONTRIBUTING.md`; the branch
+    `text/shakespeare` rewords catalogs and windows, so land it there or after its merge),
+    then the built notices and the tests that quote them -> verify: headless, each notice's
+    text
+  - [ ] 0.0.2-saved the built Save editor publishes the notices its draft does (the
+    maintainer, 2026-11-13: Ctrl+S confirms nothing on the status bar). Found by reading,
+    2026-11-13: no notice after Save and Save as (the draft: "<file> saved successfully
+    (the replaced file is kept once as <file>.bak)"), none after Output rosters to TSV, and
+    the Comparator's Export writes a weak line in its panel where the draft publishes a
+    notice. To do: every `publishNotice` of the draft (`docs/prototypes/tools/save_editor.js`)
+    checked against `view/` (`Notice {` is set in `generate.rs`, `interchange.rs`,
+    `live_aatf.rs`, `multi_aatf.rs`, `ruleset_picker.rs` and `mod.rs` only), the plan's
+    scenarios for the missing ones, then the code; the other tools' drafts the same way
+    -> verify: headless, a notice after each action
+  - [ ] 0.0.2-tomlname the Team TOML export's suggested file name is the team's name (the
+    maintainer, 2026-11-13; drafted, `ixTomlName`): the name less its slashes (`/f/` gives
+    `f.toml`; non-ASCII stays, `きらら.toml`), the short name when the name is empty or
+    holds a character a file name cannot hold (`\ / : * ? " < > |`), the ID when the short
+    name fails the same. Today `<id>.toml` (`view/interchange.rs` `Export::file_name`). The
+    CLI's `export-toml` takes its path from `--out` and does not change. Plan:
+    `plans/save_editor.md`, the Team file interchange panel -> verify: a unit test over
+    `/f/`, a non-ASCII name, a name with `?`, an empty short name
+  - [ ] 0.0.2-pitchbar the formation bar's "Scroll names" becomes "Scroll" with a hover,
+    and a "Portraits" checkbox stands at its right (the maintainer, 2026-11-13: portraits
+    make a formation's shape hard to see; drafted): on by default, remembered in the
+    tool's settings as Scroll is, a view setting (no undo entry, no unsaved dot). Off, a
+    player is his position badge and name alone, where they stand today. Hovers, as
+    drafted: "Scroll the names too long for their place on the pitch, as the game does.
+    Off, they stand still, cut short." and "Show the players' portraits on the pitch. Off,
+    the formation's shape is easier to see.". Open: with the portraits off the captain's
+    mark and the Live AATF cross still stand where the portrait was; whether a formation
+    picture follows the checkbox (the draft's always draws portraits). Plan:
+    `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
+    `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
+    paint tests, the built window
+  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34, not built yet) gain
+    a checkbox "Without the pitch's grain (a smaller file)" (the maintainer, 2026-11-13;
+    drafted, `picturesFlatBox`): unticked by default, so the grain stays; remembered and
+    shared by both dialogs as the folder is; its hover says why ("Paint the pitch in flat
+    bands, without its grain. The picture looks plainer and its file is much smaller,
+    which helps when sharing many."). The grain is noise, which PNG cannot compress; "much
+    smaller" is to be measured on a real picture when 8.33 is built, and the hover's words
+    set by the figure. Plan: `plans/save_editor.md` "Formation pictures", with 8.33
   - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,

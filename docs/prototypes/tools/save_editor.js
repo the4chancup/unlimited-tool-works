@@ -3216,7 +3216,7 @@ function writeSave(path) {
     for (const p of t.players) S.basePlayers[t.id + ":" + p.slot] = JSON.stringify(p);
     S.baseTeams[t.id] = JSON.stringify({ ...t, players: undefined });
   }
-  publishNotice("Saved " + path.split("\\").pop() + " (the replaced file is kept once as " + path.split("\\").pop() + ".bak)", null, "success");
+  publishNotice(path.split("\\").pop() + " saved successfully (the replaced file is kept once as " + path.split("\\").pop() + ".bak)", null, "success");
   pushRecent(path);
 }
 function saveAs() {
@@ -3753,7 +3753,7 @@ function clipCopy() {
     : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
   S.clip = { kind, data, save: S.save, held };
   // sample wording: the copy and paste notices.
-  publishNotice("Copied " + held + ".", null, "success");
+  publishNotice(held[0].toUpperCase() + held.slice(1) + " copied.", null, "success");
   // The app's window hears Ctrl+V only as a paste of the system clipboard's
   // text, so a copy leaves a line there naming what it copied.
   const named = kind === "player" ? "the stats of " + displayName(curPlayer().name)
@@ -3780,7 +3780,7 @@ function clipPaste() {
     : kind === "team" ? t.name
     : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
     : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
-  publishNotice("Pasted " + S.clip.held + " onto " + onto + ".", null, "success");
+  publishNotice(S.clip.held[0].toUpperCase() + S.clip.held.slice(1) + " pasted onto " + onto + ".", null, "success");
   render();
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
@@ -4061,7 +4061,7 @@ function drawMultiAatf() {
     list),
     [button("Copy to clipboard", () => {
       if (navigator.clipboard) navigator.clipboard.writeText(multiAatfText(results)).catch(() => {});
-      publishNotice("Copied the results of " + sampled.length + " teams.", null, "success");
+      publishNotice("Results of " + sampled.length + " teams copied.", null, "success");
     }, { disabled: !sampled.length }), button("Close", closeWindow)], "multi-aatf");
   render();
 }
@@ -4293,7 +4293,7 @@ function dlgTsv() {
     input),
     [button("Save", () => {
       S.lastTsv = rosterTsv();
-      publishNotice("Wrote " + input.value.split("\\").pop() + " (one row per player of every team)", null, "success");
+      publishNotice(input.value.split("\\").pop() + " written successfully (one row per player of every team)", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -5716,15 +5716,15 @@ const pitchLook = () => PITCH_LOOKS["20" + version()] || PITCH_LOOKS["2021"];
 // is painted half a level up to keep the drawn mean on the look's colours.
 const TURF = { w: 480, h: 576 };
 const turfCache = new Map();
-function turf() {
-  const look = pitchLook();
-  if (turfCache.has(look)) return turfCache.get(look);
+function turf(flat) {
+  const look = pitchLook(), key = flat ? "flat " + JSON.stringify(look.dark) + look.bands.length : look;
+  if (turfCache.has(key)) return turfCache.get(key);
   const c = document.createElement("canvas");
   c.width = TURF.w; c.height = TURF.h;
   const g = c.getContext("2d"), img = g.createImageData(TURF.w, TURF.h);
   let seed = 1;
   const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
-  const spread = look.grain * Math.sqrt(12), scale = TURF.h / PITCH.h;
+  const spread = flat ? 0 : look.grain * Math.sqrt(12), scale = TURF.h / PITCH.h;
   for (let y = 0; y < TURF.h; y++) {
     const band = look.bands.filter(edge => edge * scale <= y).length;
     const [r, gr, b] = band % 2 === 0 ? look.dark : look.light;
@@ -5734,7 +5734,7 @@ function turf() {
     }
   }
   g.putImageData(img, 0, 0);
-  turfCache.set(look, c);
+  turfCache.set(key, c);
   return c;
 }
 // The lines: white at 20%, 2px, no touchlines or spots (the textures draw none).
@@ -5812,10 +5812,11 @@ function drawPitch(t) {
 // (`formationsPicture`): `f0` is the formation painted; `live` draws the
 // view's own states (the drag, the selection corners, the armed join fill,
 // the scrolling names), which a picture has none of: its wider names hold
-// still at the badge's left, as "Scroll names" off draws them.
+// still at the badge's left, as Scroll off draws them.
 function paintPitch(g, t, f0, live) {
   const d = live ? S.pitchDrag : null;
-  g.drawImage(turf(), 0, 0, PITCH.w, PITCH.h);
+  // A picture's turf is flat when its dialog's checkbox says so; the view's keeps its grain.
+  g.drawImage(turf(!live && S.picturesFlat === true), 0, 0, PITCH.w, PITCH.h);
   drawLines(g);
   const f = f0.players, tac = t.tactics;
   if (d && d.moved && !d.gk) dimOutsideLit(g, rosterPlayer(t, tac.starting_eleven[d.i]));
@@ -5840,7 +5841,8 @@ function paintPitch(g, t, f0, live) {
     const shown = !dragged ? s.position : target >= 0 ? f[target].position
       : ruledPosition(t, f0, i, ...heldSpot(d), s.position);
     const bl = x - MARKER.badgeW / 2, bt = y - MARKER.badgeH / 2;
-    const img = portraitOf(p);
+    // The view's Portraits checkbox; a picture always draws them.
+    const img = live && S.pitchPortraits === false ? null : portraitOf(p);
     if (img) g.drawImage(img, x - MARKER.portrait / 2, bt - MARKER.gap - MARKER.portrait,
       MARKER.portrait, MARKER.portrait);
     g.fillStyle = live && S.assign && S.assign.kind === "join" && joined.includes(roster) ? "#005c80" : "#242b2d";
@@ -5883,7 +5885,7 @@ function paintPitch(g, t, f0, live) {
     const runs = p ? nameRuns(p.name) : [["(empty)", null]];
     const width = runs.reduce((w, [text]) => w + g.measureText(text).width, 0);
     const long = width > MARKER.badgeW;
-    // "Scroll names" off: a wider name holds still at the badge's left.
+    // Scroll off: a wider name holds still at the badge's left.
     const scrolls = long && live && S.scrollNames !== false;
     const start = scrolls ? bl - nameScroll(width, (performance.now() - (S.pitchSince ?? performance.now())) / 1000)
       : long ? bl : x - width / 2;
@@ -6326,10 +6328,19 @@ function tacticsTab(t) {
     pitchCanvas(t), setFolder, slotPopover(t));
   if (setFolder) requestAnimationFrame(() => placeSetFolder(setFolder));
   // The pitch's name scrolling, on by default: a view setting, not an edit.
-  const scrollNames = h("label", { class: "cb" },
+  // sample wording: the two labels and their hovers.
+  const scrollNames = h("label", { class: "cb",
+      title: "Scroll the names too long for their place on the pitch, as the game does. Off, they stand still, cut short." },
     h("input", { type: "checkbox", checked: S.scrollNames !== false, id: "scroll-names",
       onchange: e => { S.scrollNames = e.target.checked; drawPitch(t); } }),
-    " Scroll names");
+    " Scroll");
+  // The pitch's portraits, on by default and remembered as Scroll is: off, each player is
+  // his position badge and name alone, which shows a formation's shape more plainly.
+  const pitchPortraits = h("label", { class: "cb",
+      title: "Show the players' portraits on the pitch. Off, the formation's shape is easier to see." },
+    h("input", { type: "checkbox", checked: S.pitchPortraits !== false, id: "pitch-portraits",
+      onchange: e => { S.pitchPortraits = e.target.checked; drawPitch(t); } }),
+    " Portraits");
   // Auto substitution as the game names its choices (measured in-game: Off 0,
   // Very late 1, Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21; PES
   // 17's screen lists the same four in 21's order; 18 to 20, between the two,
@@ -6352,7 +6363,7 @@ function tacticsTab(t) {
   const frame = h("div", {},
     h("div", { class: "tacgrid" },
       h("div", { class: "tacbar" }, presetSel, fluid, presetMenu),
-      h("div", { class: "tacbar", id: "tac-formbar" }, formationSel, formationMenu, scrollNames),
+      h("div", { class: "tacbar", id: "tac-formbar" }, formationSel, formationMenu, scrollNames, pitchPortraits),
       namedCols(h("div", { class: "group", id: "tac-settings" }, strong("Formation settings"),
         formRows), "tactics-settings"),
       h("div", { "data-panel": "tactics-pitch" }, pitchWrap),
@@ -6573,6 +6584,14 @@ const formGrid = (...pairs) => h("div", { class: "pform" },
 // did. The picture is then written and a notice names it, with an Open
 // folder action.
 // sample wording: the dialog's labels, the replace question, the notice.
+// The pictures' turf without its grain, off by default and remembered as the folder is
+// (both dialogs share it): the grain is noise, which PNG cannot compress.
+// sample wording: the label and its hover.
+const picturesFlatBox = () => h("label", { class: "cb", id: "pic-flat",
+    title: "Paint the pitch in flat bands, without its grain. The picture looks plainer and its file is much smaller, which helps when sharing many." },
+  h("input", { type: "checkbox", checked: S.picturesFlat === true,
+    onchange: e => { S.picturesFlat = e.target.checked; } }),
+  " Without the pitch's grain (a smaller file)");
 function dlgPictureSave() {
   const t = selTeam();
   let settings = false;
@@ -6587,7 +6606,7 @@ function dlgPictureSave() {
     S.picturesFolder = folderIn.value;
     S.picturesWritten = (S.picturesWritten || new Set()).add(file);
     writePicture(t, file, settings);
-    publishNotice("Wrote " + nameIn.value + " to " + folderIn.value,
+    publishNotice(nameIn.value + " written successfully to " + folderIn.value,
       { label: "Open folder", run: openOutputStub }, "success");
     closeWindow(); render();
   };
@@ -6595,7 +6614,8 @@ function dlgPictureSave() {
       formGrid(["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))],
         ["File name", nameIn]),
-      h("label", { class: "cb" }, toggle, " With each preset's settings beside its row")),
+      h("label", { class: "cb" }, toggle, " With each preset's settings beside its row"),
+      h("div", {}, picturesFlatBox())),
     [button("Save", () => {
       // The draft knows only the files it wrote this session; the app asks
       // the folder.
@@ -6676,6 +6696,7 @@ function drawPicturesRange() {
         ["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))]),
       cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
+      h("div", {}, picturesFlatBox()),
       h("div", { style: "display:grid" }, nameLine(false), nameLine(true)));
     buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: !teams.length }),
       button("Cancel", closeWindow)];
@@ -7021,7 +7042,7 @@ function comparatorPanel() {
         S.cmp.second, v => v && cmpPick(v), { title: "The save the open one is compared against" }),
       S.cmp.second ? button("Export", () => {
         S.cmp.exportText = cmpExport();
-        publishNotice("Exported the diff: the report's lines for the " + cmpRows().length + " rows shown", null, "success");
+        publishNotice("Diff exported: the report's lines for the " + cmpRows().length + " rows shown", null, "success");
         render();
       }, { title: "Write the differences of the rows shown as text" }) : null),
     S.cmp.refused ? h("div", { class: "row err", id: "cmp-refused" }, S.cmp.refused) : null,
@@ -7380,7 +7401,7 @@ function importRules(f) {
     storeImports();
     setRuleset(f.key);
     closeWindow();
-    publishNotice("Imported " + label + ".", null, "success");
+    publishNotice(label + " imported.", null, "success");
   };
   if (!old.length) { add(); return; }
   dlg("import-replace", "Replace an imported ruleset?", h("p", {},
@@ -7857,7 +7878,7 @@ function liveCopy() {
   const b = button("Copy to clipboard", () => {
     const team = LIVE.result ? LIVE.result.team : liveTeam();
     if (navigator.clipboard) navigator.clipboard.writeText(liveText()).catch(() => {});
-    publishNotice("Copied the Live AATF list of " + team.id + " " + displayName(team.name) + ".",
+    publishNotice("Live AATF list of " + team.id + " " + displayName(team.name) + " copied.",
       null, "success");
   });
   b.id = "live-copy";
@@ -8309,17 +8330,25 @@ function ixWriteAesthetics(src, dst, d) {
 // The team's export text the draft holds (the draft cannot regenerate it
 // from the model's field subset; only the scenario's own file is held).
 const ixTomlHeld = t => TEAM_TOML_TEXT[S.saveKey + "/" + t.id] !== undefined;
+// The Team TOML's suggested name: the team's name less its slashes (`/f/` gives `f.toml`),
+// a name a member recognizes in a folder. A name left empty, or holding a character a file
+// name cannot hold, gives way to the short name, and that one, failing the same, to the ID.
+function ixTomlName(t) {
+  const fits = s => s !== "" && !/[\\/:*?"<>|]/.test(s);
+  const name = displayName(t.name).replace(/\//g, "").trim();
+  return (fits(name) ? name : fits(t.short_name || "") ? t.short_name : t.id) + ".toml";
+}
 function ixExportToml() {
   const t = selTeam();
   const input = h("input", { type: "text", style: "width:420px",
-    value: folderOf(S.path) + "\\" + t.id + ".toml" });
+    value: folderOf(S.path) + "\\" + ixTomlName(t) });
   dlg("export-toml", "Export team as Team TOML", h("div", {},
     h("p", {}, weak("The native save dialog (rfd) opens here; the draft edits the path inline.")),
     input),
     [button("Save", () => {
       S.ix.exportText = TEAM_TOML_TEXT[S.saveKey + "/" + t.id];
-      publishNotice("Wrote " + input.value.split("\\").pop()
-        + " (the CLI's export-toml text for team " + t.id + ")", null, "success");
+      publishNotice(input.value.split("\\").pop()
+        + " written successfully (the CLI's export-toml text for team " + t.id + ")", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -8343,8 +8372,8 @@ function ixExportTed() {
         label: ixTedName(t) + "  (Texport, PES " + version()
           + ", written this session)",
         model: clone(t) };
-      publishNotice("Wrote " + input.value.split("\\").pop()
-        + " (team " + t.id + " as a PES " + version() + " Texport)", null, "success");
+      publishNotice(input.value.split("\\").pop()
+        + " written successfully (team " + t.id + " as a PES " + version() + " Texport)", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -8585,8 +8614,8 @@ function dlgGenerate(name, title, file, toml) {
     h("pre", { class: "mono small", style: "max-height:300px; overflow:auto; border:1px solid var(--stroke); padding:4px" },
       toml(p))),
     [button("Write", () => {
-      publishNotice("Wrote " + file + " for " + displayName(p.name)
-        + " into " + input.value, null, "success");
+      publishNotice(file + " for " + displayName(p.name)
+        + " written successfully into " + input.value, null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
