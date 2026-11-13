@@ -194,6 +194,16 @@ side.
   Picking a different team selects its team row, so the detail shows that team's view, its
   tactics with it: a manager who picks a team usually wants its tactics next. Picking ALL, or
   the team already shown, keeps the selection (that team's row heads the list, a click away).
+- **Only the cup's teams are shown** (0.0.2-cup). The teams whose id lies in the cup's range,
+  701 to 920 (`teams_list`'s), and the players on their rosters are all the Save editor
+  lists: the team selector, ALL, the filter's search, Live AATF, Multi-team AATF's range and
+  `check-aatf` when it names no team read those alone. The game's own clubs and national
+  teams, and every player on no cup team's roster, stay in the save and are written back
+  byte for byte; nothing lists, checks or edits them, and no setting shows them. A team
+  named by its id on the command line is still read, whatever its id. Hidden, not listed,
+  because no member edits them, a save made from the stock game holds more of them than of
+  the cup's, and they alone share players between rosters, a case every list rule would
+  otherwise have to carry.
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable. Under the design width the window
   scales instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with
@@ -838,9 +848,9 @@ side.
   came from, so a moved player lists only what was edited on him, before or after the move.
   One row per group, not per player, because the players between the two ends of a drag only
   shifted by one place, and a row each would bury the one move the member made. A group
-  stands under the first team that rosters any of its players: right for the cup's teams,
-  which share no player, and not made right for the game's own clubs and national teams,
-  which do and which the suite does not support.
+  stands under the first team that rosters any of its players, which is its own team: the
+  cup's teams share no player, and no other team is shown ("Only the cup's teams are
+  shown" above).
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
   draft's `changesTable`). It ends the row, in the link blue of the label that opened the
   list, and its column stays at the list's right edge while a wide row scrolls sideways

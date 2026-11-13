@@ -1925,6 +1925,20 @@ briefs, review loops, gates and mutation runs as for any step.
       accepts a drop takes it (on the edge under the dragged row the line showed a drop
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
+  - [ ] 0.0.2-cup only the cup's teams are shown (the maintainer, 2026-11-13, on a review
+    concern about players shared between rosters: "there's no need to show the game's own
+    clubs and national teams. We should filter them out, even"; asked, they chose the
+    filter everywhere with no switch, and their players hidden too; DECISIONS 2026-11-13;
+    `plans/save_editor.md` "Editing UI", the bullet "Only the cup's teams are shown")
+    - [ ] its Acceptance scenarios (a GUI one: a save holding a team outside 701 to 920
+      shows neither it nor its players in the selector, ALL, the filter's search or
+      Multi-team AATF's range; a CLI one: `check-aatf` with no team skips it and with
+      its id reads it; a write keeps its bytes), written before the brief
+    - [ ] the slice, after 0.0.2c b and 0.0.2-undo b land (the same crate): read first
+      every place that walks `file.teams()` or `file.players()` (`session/selection.rs`,
+      the AATF check's views, the CLI, the patch and import paths, the unsaved changes),
+      and say for each whether it lists (filter) or writes (never filter); the PES
+      fixtures hold only ids 701 to 920, so the tests need a save with one team outside
   - [x] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13: the tail's separator and Help drawn over the last tool entries)
     - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,
