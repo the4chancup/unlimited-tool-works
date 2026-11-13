@@ -3003,7 +3003,8 @@ SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting 
                 with Motion at its right and Edit flags under Motion; the pane has no
                 scroll bar; Strip style's fifteen settings stand in the plan's three
                 columns by five rows, every field one width; the four colours are
-                dropdowns naming White, Black, Red, Blue, Yellow, Green, Pink and Turquoise;
+                dropdowns, the gloves' and the spectacles' naming White, Black, Red, Blue,
+                Yellow, Green, Pink and Turquoise;
                 `Outfielder gloves` is a dropdown of `Off` and `Worn in winter`, and
                 picking `Worn in winter` writes what ticking Player gloves wrote; Edit
                 flags' six boxes stand three a row over `Copy from ID`; GIVEN the lock's
