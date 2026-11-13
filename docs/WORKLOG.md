@@ -1879,11 +1879,15 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/save_editor.md` "Editing UI", the two bullets after the changes table's;
     SE-GUI-73, 74): a move trades whole records between ids and filled the list with every
     field of the players it shifted. Tier 2. After 0.0.2-clip merges (the same crate)
-    - [ ] a: the session remembers whose record each id holds; the `Player order` row in
-      the list and the close prompt; a moved player's rows against the record he came
-      from (SE-GUI-73). Opus, running since 2026-11-13 (brief
-      `.tmp/0_0_2/undo/brief_undo_a.md`, worktree `4cc-studio-temp/undo`, branch
-      `sk/undo-a`, run `sk_undo_a`)
+    - [x] a 2026-11-13 (`4090e2b4`, Opus with one rework and the lead; merge `969e6f3f`;
+      the lead's rerun of `save_editor`, clippy, fmt; SE-GUI-73, reworded: undo is
+      linear): the session remembers whose record each id holds (`Origins`), a move's
+      undo entry keeps the trade itself so an undo past a save still reads right, the
+      list compares a player with the record he came from, and each group of places
+      that traded players is one `Player order` row. Two overlapping drags give groups
+      that match neither drag (the cycles). Look: Pending looks
+    - [ ] a's SWE-2 review (running, `.tmp/0_0_2/undo/swe_undo_a.md`, worktree
+      `review17`)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
       one place per line (approved), and the X ending each row in the link blue, its
       column fixed at the list's right edge while a wide row scrolls under it (the
@@ -1891,7 +1895,9 @@ briefs, review loops, gates and mutation runs as for any step.
       `.tmp/0_0_2/undo/x_list.png`, `x_wide.png`, `x_wide_scrolled.png` by `shot_x.py`
       and `shot_x_wide.py` beside them. The maintainer's look at the fixed X is pending
     - [ ] b: the X on each row of the toolbar's list (SE-GUI-74), as the draft's
-      `changesTable` and `undoChange`
+      `changesTable` and `undoChange`. Opus, the same session resumed, running since
+      2026-11-13 (brief `.tmp/0_0_2/undo/brief_undo_b.md`, worktree
+      `4cc-studio-temp/undo`, run `sk_undo_b`)
   - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
@@ -2609,6 +2615,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
   no PES; 0.0.2-line; maintainer
+- The unsaved changes after a drag in the player list, in the built window: one
+  `Player order` row, its places one per line and the row as high as them, the team's
+  name on its first line; no PES; 0.0.2-undo a; maintainer
 - The sidebar in a window dragged too short for its entries: the wheel over the rail
   scrolls the tool entries, the logo, the selector, Help and Settings stay put, the
   opened sidebar shows the same entries, and the entries fade at the cut edge (egui's
