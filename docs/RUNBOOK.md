@@ -251,7 +251,14 @@ service.
 **The remote half runs detached** from any ssh session (`~/studio-mutants/run/`: `job.sh`,
 `pid`, `log`, `exit`, `memory_peak`), and the script polls it every 15 s with short ssh calls.
 A dropped link costs a poll, not the run: a remote half that hung off one long ssh session
-once died with it. If `just mutants` itself stops, `just mutants-collect` waits for the remote half
+once died with it. Its progress is read while it runs, with one read-only call each, nothing
+chained: `/c/Windows/System32/OpenSSH/ssh.exe bonfire "wc -l ~/studio-mutants/tree/mutants.out/caught.txt ~/studio-mutants/tree/mutants.out/missed.txt ~/studio-mutants/tree/mutants.out/unviable.txt ~/studio-mutants/tree/mutants.out/timeout.txt"`
+gives the mutants done so far by outcome (the "total" line against the log's "Found N
+mutants to test"), and `... bonfire "tail -n 6 ~/studio-mutants/run/log"` the baseline's
+times and each survivor as it is found. The local half's counts are the same four files
+under the launching tree's `mutants.out/`. The two halves hold the same number of mutants,
+not the same work: the VPS builds and tests each about twice as slowly, so an estimate of
+the whole run is the remote half's. If `just mutants` itself stops, `just mutants-collect` waits for the remote half
 and fetches it, including a died half's partial results. It is run from the tree that
 launched the half, whose `.tmp/mutants-remote-pending` says what the run was: from another
 tree it summarizes the remote half alone and says so. A run that uses the VPS refuses to start while a
