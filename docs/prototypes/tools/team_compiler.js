@@ -68,8 +68,10 @@ const TEAM_COMPILER_CSS = `
   .tc-grid tr.off .tc-id { color: #6e6e6e; }
   /* 4 at the sides and an ID cell of 36: with the compile column shown, the widest row and its button
      then fit the default window to the point, and no sideways scroll bar shows. */
-  .tc-name { min-width: 52px; padding: 0 4px !important; height: 26px; border-radius: 2px;
-    cursor: pointer; position: relative; }
+  /* The label is one width for every team; a name too long for it at the
+     usual size is drawn smaller (nameSize). */
+  .tc-name { width: 52px; min-width: 52px; max-width: 52px; padding: 0 4px !important; height: 26px;
+    border-radius: 2px; cursor: pointer; position: relative; overflow: hidden; }
   /* A warning or an error the check found: a thick outline in its colour,
      inside the cell's edge, over the cell's own colour and a kit's swatch. */
   .tc-cell.ol::after, .tc-name.ol::after { content: ""; position: absolute; inset: 0;
@@ -105,10 +107,10 @@ const TEAM_COMPILER_CSS = `
   /* sample look: a blocked cell (its export is skipped) keeps no fill. */
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }
-  /* A kit's two menu colours fill the cell's foot, edge to edge; the label
-     stands over them. */
+  /* A kit's two menu colours fill the cell's foot, 2 inside its edges so the
+     cell's own colour frames them; the label stands over them. */
   .tc-cell.kit { justify-content: flex-start; padding-top: 3px; }
-  .tc-sw { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; }
+  .tc-sw { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 9px; }
   .tc-acts .row { flex-wrap: nowrap; }
   /* The detail window (egui: a Window inside the tool's panel, movable by its
      title bar, where the member leaves it). */
@@ -147,9 +149,11 @@ const TEAM_COMPILER_CSS = `
 // A check's warning or error is no fill of its own: it outlines the cell's
 // colour (checked, or shallow-checked) until the compile has gone through
 // the cell, which then turns solid in the same colour.
+// The suite's warning orange and error red (the drafts' --warn and --error).
+const WARN = "#ff8f00", ERR = "#ff0000";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
-  fullOk: "#800080", done: "#008000", doneWarn: "#dcc832", doneErr: "#dc3c3c" };
-const OUTLINES = { warning: "#dcc832", error: "#dc3c3c", partialError: "#dc3c3c" };
+  fullOk: "#800080", done: "#008000", doneWarn: WARN, doneErr: ERR };
+const OUTLINES = { warning: WARN, error: ERR, partialError: ERR };
 const OFF = "#333333";
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
   partialOk: "Shallow check (archive)", fullOk: "Checked", warning: "Warning",
@@ -182,7 +186,7 @@ const PORTRAITS = {
     { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
   // /adv/ 11's portrait is in the player's own folder: its finding colours
   // this cell and the player's.
-  aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
+  civ4xg: [23, "fullOk"], aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
   egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
 function portraitsOf(key) {
   const [count, status, codes = [], fix, dropFile] = PORTRAITS[key] || [];
@@ -244,6 +248,10 @@ function sampleRows() {
       archive: true, label: { status: "error", codes: ["duplicate_aesthetics_export"] },
       blocked: "duplicate_aesthetics_export",
       players: players(1, 23, "partialOk"), kits: { K1: kit("p1", "#c0a020", "#101010", "partialOk") } },
+    // A name too long for the label at the usual size.
+    { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26",
+      label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      kits: { GK: kit("g1", "#c0a020", "#202020"), K1: kit("p1", "#2050a0", "#c0a020") } },
     { key: "refs", name: "/refs/", id: null, refs: true, display: "refs Full Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
       players: players(1, 35, "fullOk", n => `${pad(1 + (n - 1) % 5)} - Referee ${1 + (n - 1) % 5}`),
@@ -424,6 +432,11 @@ function dropClash(r, keep) {
   render();
 }
 
+// The team label's font size: the usual 12 while the name fits the label's 52
+// points, else the largest half-point size at which it does (the monospace
+// font's letters are 0.602 of its size wide; egui: the galley measured, the
+// size stepped down until it fits).
+const nameSize = name => Math.min(12, Math.floor(2 * 52 / (name.length * 0.602)) / 2);
 function gridRow(r) {
   const off = rowOff(r);
   const cells = [];
@@ -433,7 +446,7 @@ function gridRow(r) {
           onchange: e => { if (e.target.checked) delete S.unticked[r.key]; else S.unticked[r.key] = true; render(); } })));
   const l = look(r, r.label);
   cells.push(h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === r.name ? " hl" : ""),
-    style: lookStyle(l), "data-scope": r.name,
+    style: lookStyle(l) + `; font-size:${nameSize(r.name)}px`, "data-scope": r.name,
     title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
     onclick: e => openDetail(e, { row: r.key, what: "label" }) }, r.name));
@@ -510,11 +523,15 @@ function titleRow() {
 const LEGEND = [["unchecked", "checking"], ["partialOk"], ["warning", "error"],
   ["doneWarn", "doneErr"], ["fullOk", "done"], ["blocked"]];
 function legend() {
-  const fold = button(S.legendShut ? "▸" : "▾", () => {
+  const tip = S.legendShut ? "Show the legend" : "Hide the legend";
+  const toggle = () => {
     S.legendShut = !S.legendShut;
     localStorage.setItem("drafts.tc.legend_shut", S.legendShut ? "1" : "0");
-    render(); }, { frame0: true, title: S.legendShut ? "Show the legend" : "Hide the legend" });
-  const title = h("span", { class: "both name" }, fold, "Legend");
+    render(); };
+  // The chevron points where a click sends the legend: up to fold it away,
+  // down to bring it back. The title does what the chevron does.
+  const title = h("span", { class: "both name", title: tip, style: "cursor:pointer", onclick: toggle },
+    button(S.legendShut ? "▾" : "▴", null, { frame0: true }), "Legend");
   if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
   const sample = { key: "", label: {} };
   const entry = (k, alone) => {
@@ -612,7 +629,7 @@ function summary() {
 function toolbar() {
   const run = S.run;
   const strip = run
-    ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written · ${run.memory} MB in use`
+    ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written · ${run.memory} MB of system memory in use`
     : [S.last, summary()].filter(Boolean).join("  —  ");
   const sideloadOff = ["2015", "2016"].includes(shellPesVersion());
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(), {});
