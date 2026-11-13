@@ -1869,7 +1869,7 @@ briefs, review loops, gates and mutation runs as for any step.
       reports' "Drafts to follow" lists (`4cc-studio-temp/shakespeare/.tmp/shakespeare/ap_*.report.md`),
       on main, where the drafts moved meanwhile (the Team menu's FPC entries already read
       "(Enable FPC)" and "(Disable FPC)" there: keep those)
-    - [ ] the Export upgrader's help page on what each `unmigrated_content` cause means, and
+    - [x] 2026-11-13 (`7baef557` on the branch) the Export upgrader's help page on what each `unmigrated_content` cause means, and
       the stale `upgrade-models` sentence about `u0731p2.dds` beside `u0XXXp2.dds`
       (`brief_eu_reasons.md`, SWE-2, running on the branch since 2026-11-13)
     - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
