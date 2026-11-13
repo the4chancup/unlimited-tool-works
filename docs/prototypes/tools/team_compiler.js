@@ -51,7 +51,9 @@ const TEAM_COMPILER_CSS = `
      line down: every cell of it sticks, the two lines' cells too, each on
      the panel's fill and spread over the 2 between cells, and the panel's
      top margin is the row's own padding, so no row shows above or through it. */
-  .tc-grid tr.head > * { position: sticky; top: 0; background: var(--panel); z-index: 1;
+  /* It sticks 2 down, where it already stands under the table's own spacing:
+     at 0 the first scroll would pull it up by those 2. */
+  .tc-grid tr.head > * { position: sticky; top: 2px; background: var(--panel); z-index: 1;
     box-shadow: 0 0 0 2px var(--panel); }
   .tc-grid tr.head th { padding: 6px 0 2px; font-weight: 400; color: #6e6e6e;
     text-align: left; white-space: nowrap; }
@@ -61,7 +63,9 @@ const TEAM_COMPILER_CSS = `
   .tc-grid tr.head .tc-line { z-index: 2; }
   .tc-grid td { padding: 0; white-space: nowrap; }
   .tc-grid tr.off td:not(.tc-line):not(.act) { opacity: 0.45; }
-  .tc-name { min-width: 52px; padding: 0 6px !important; height: 26px; border-radius: 2px;
+  /* 5 at the sides, not 6: with the compile column shown, the widest row and its button
+     then fit the default window to the point, and no sideways scroll bar shows. */
+  .tc-name { min-width: 52px; padding: 0 5px !important; height: 26px; border-radius: 2px;
     cursor: pointer; }
   .tc-name.hl, .tc-cell.hl { outline: 2px solid var(--sel-fg); outline-offset: 0; }
   .tc-id { width: 40px; text-align: center; height: 26px; border-radius: 2px;
@@ -69,6 +73,9 @@ const TEAM_COMPILER_CSS = `
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
   .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
   .tc-gap > div { width: 4px; }
+  /* The compile column's checkbox, 4 from the panel's edge and 4 from the
+     team's label: the panel's 6 and the table's 2 are already at its left. */
+  .tc-grid td.act > input[type=checkbox] { display: block; margin: 0 2px 0 -4px; }
   /* A vertical line down the whole panel (egui: one vline the Painter draws
      over the panel's height), 4 points clear of the cells on either side,
      unbroken across the 2px between two rows. */

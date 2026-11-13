@@ -314,11 +314,14 @@ Top to bottom:
    the version dropdown, the help and the gear their room. At 32 they would take 571 (38-point
    rows) with 12-point side margins, and a rail that overflows loses entries from sight.
 
-   In a window too short for every entry, the tool entries are cut under the sidebar's
-   tail (the separator and the Report, Help and Settings entries below it), which keeps
-   its place at the sidebar's foot on the panel's own fill, in the rail and in the opened
-   sidebar alike. Entries and tail are never drawn over one another, and nothing is drawn
-   over the status bar (0.0.2-side; the draft's `.tail-box`).
+   In a window too short for every entry, the tool entries scroll, by the wheel, between
+   the sidebar's head (the logo, the version dropdown and the separator under them) and
+   its tail (the separator and the Report, Help and Settings entries below it). Head and
+   tail keep their places, in the rail and in the opened sidebar alike, and the opened
+   sidebar's entries stand where the rail's do, scrolled as far. No scroll bar is drawn:
+   the rail has no room for one. Entries and tail are never drawn over one another, and
+   nothing is drawn over the status bar (0.0.2-side; the draft's `.tools-box` and
+   `.tail-box`).
 
    The active tool is highlighted with an accent-colored left border bar plus a filled
    background, the bar 3 points wide with its two left corners rounded as the entry's (2

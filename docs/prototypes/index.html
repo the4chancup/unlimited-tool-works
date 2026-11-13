@@ -548,14 +548,18 @@
   .clover .ring { color: var(--clover-ring); }
   .clover .leaves { color: var(--clover-leaf); }
   .sidebar .sep { align-self: stretch; margin: 4px 0; }
-  /* A window too short for every entry: the tool entries are cut under the
-     tail (the separator and the three entries under it), which keeps its
-     place on the panel's own fill, and nothing is drawn over the status bar. */
+  /* A window too short for every entry: the tool entries scroll (egui: a
+     ScrollArea with no bar drawn, the rail having no room for one; the wheel
+     scrolls it) between the head and the tail (the separator and the three
+     entries under it), which keep their places, and nothing is drawn over
+     the status bar. */
   .sidebar { overflow: hidden; min-height: 0; }
   .sidebar > * { flex: none; }
-  .sidebar .tail-box { margin-top: auto; align-self: stretch; position: sticky; bottom: 0;
-    z-index: 1; background: var(--panel); display: flex; flex-direction: column; align-items: center; }
-  #sb-open .tail-box { align-items: stretch; }
+  .sidebar .tools-box { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: none;
+    align-self: stretch; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  .sidebar .tools-box > * { flex: none; }
+  .sidebar .tail-box { align-self: stretch; display: flex; flex-direction: column; align-items: center; }
+  #sb-open .tools-box, #sb-open .tail-box { align-items: stretch; }
   .sidebar .tail { display: flex; gap: 3px; }
   .sidebar .tail { flex-direction: column; align-items: center; }
   .bottom { height: 24px; min-height: 24px; padding-top: 0; padding-bottom: 0; overflow: hidden; }
@@ -2946,8 +2950,9 @@ function sidebarItems(full) {
   if (!targets || (!full && S.sidebarOpen)) pesSel.tabIndex = -1;
   const open = t => t.registered && !(demo && t.demo === false);
   const pick = t => { if (open(t)) { S.activeTool = t.id; render(); } };
+  const tools = [];
   for (const t of TOOLS.filter(open).concat(TOOLS.filter(t => !open(t)))) {
-    items.push(h("span", { class: "sel tool" + (S.activeTool === t.id ? " on" : "")
+    tools.push(h("span", { class: "sel tool" + (S.activeTool === t.id ? " on" : "")
         + (open(t) ? "" : " planned"), "data-id": t.id,
       tabindex: open(t) ? ti : null,
       title: open(t) ? null : t.registered ? "Not in the demo yet" : "Coming soon™",
@@ -2961,6 +2966,7 @@ function sidebarItems(full) {
     class: "sel tool frame0", id: full ? id + "-open" : id, tabindex: ti,
     onclick: fn },
     ph(glyph), h("span", { class: "tlabel" }, label));
+  items.push(h("div", { class: "tools-box" }, tools));
   items.push(h("div", { class: "tail-box" }, h("div", { class: "sep" }), h("div", { class: "tail" },
     // "(WIP)" until the help and the settings menu are complete, as their
     // windows' titles.
@@ -3014,6 +3020,10 @@ function drawSidebarLayer() {
   });
   // Right after the rail in the DOM: Tab runs rail -> layer -> center.
   document.getElementById("sidebar").after(layer);
+  // The opened sidebar's entries stand where the rail's do, and scroll them with it.
+  const rail = document.querySelector("#sidebar .tools-box"), over = layer.querySelector(".tools-box");
+  over.scrollTop = rail.scrollTop;
+  over.addEventListener("scroll", () => { rail.scrollTop = over.scrollTop; });
 }
 function sidebarEnter() {
   clearTimeout(sidebarTimer);
@@ -3039,8 +3049,11 @@ function sidebarLeave() {
 }
 function renderSidebar() {
   const sb = document.getElementById("sidebar");
+  // The entries keep their scroll through a redraw.
+  const scrolled = (sb.querySelector(".tools-box") || {}).scrollTop || 0;
   sb.innerHTML = "";
   sb.append(...sidebarItems(false));
+  sb.querySelector(".tools-box").scrollTop = scrolled;
   // A pointer or focus outside everything that holds the layer closes it; a
   // window opening or a control inside taking focus keeps it.
   if (S.sidebarOpen) sidebarCloseCheck();

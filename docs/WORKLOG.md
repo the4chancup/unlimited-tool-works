@@ -1898,11 +1898,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13, from the built window: the tail's separator and its Help entry drawn over
     the last tool entries; in the draft the Settings entry was drawn over the status bar).
-    The tool entries are cut under the tail, which keeps its place on the panel's fill
+    The tool entries scroll between the head and the tail, which keep their places
     (`plans/core/gui.md` "Sidebar", the paragraph starting "In a window too short")
-    - [x] the plan and the draft 2026-11-13 (the lead): the host page's `.tail-box`,
-      looked at in a 419-point-high window, rail and opened sidebar
-      (`.tmp/0_0_2/tc_draft/side_short.png`, `side_short_open.png`)
+    - [x] the plan and the draft 2026-11-13 (the lead): the host page's `.tools-box`
+      and `.tail-box`, measured in a 419-point-high window (`.tmp/0_0_2/tc_draft/
+      measure2.py`: a wheel turn scrolls the entries, the logo and Settings stay put;
+      `side_short_scrolled.png`)
     - [ ] the slice (small, SWE-2): `studio_core`'s `shell/sidebar`, with a scenario in
       `plans/core/gui.md` "Acceptance" written first; read first how the sidebar lays
       out its tail today
