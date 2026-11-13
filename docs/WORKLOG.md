@@ -2372,7 +2372,10 @@ briefs, review loops, gates and mutation runs as for any step.
     `team_widgets/src/pitch/` use `GRID_X` 104 and `GRID_Y` 48)
     - [x] its Acceptance clauses 2026-11-13 (the lead): SE-GUI-42's last six, the range's
       four ends by a held marker and by the steppers, and a stored x 2 stepping in to 5
-    - [ ] the slice, after 0.0.2-cup merges (its tests reach `save_editor`)
+    - [ ] the slice, after 0.0.2-cup merges (its tests reach `save_editor`); the same
+      brief moves PES 2018 to PES 2017's pitch (the maintainer's two pictures,
+      2026-11-13, measured: `plans/save_editor.md`, "Each version draws its own screen's
+      pitch"; `pitch_look` in the same file)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts

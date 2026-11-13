@@ -1085,8 +1085,12 @@ Win32 original hurt the most):
   on 229 captures of its Formation screen, the markers taken out by a per-pixel median of
   the turf, it has the eleven equal bands, turf within two of PES 2021's on each channel
   (dark `#2f5a1f`), the halfway line on row 192, the penalty box 159 by 66, the goal area 22
-  deep and a circle of radius 37.5, so it draws PES 2021's as it is. The other versions come
-  after 0.0.2, and a version not yet measured draws PES 2021's.
+  deep and a circle of radius 37.5, so it draws PES 2021's as it is. PES 2018's is PES
+  2017's: on two half-size pictures of its Formation screen the pitch is 320 by 382, seven
+  bands with their edges on PES 2017's rows within a pixel, the halfway line on row 191 and
+  PES 2017's two greens (`#1f4b17` exactly, `#2b5c23` to its `#2c5d24`), so it draws PES
+  2017's as it is. The other versions come after 0.0.2, and a version not yet measured draws
+  PES 2021's.
 
   The reference is each screen's own pitch texture and the screen, which draws that texture at
   two thirds of its size (mean luma difference 1.7 of 255 to a 1280 x 720 capture of PES
