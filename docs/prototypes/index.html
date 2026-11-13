@@ -1094,7 +1094,8 @@ function menu(label, items, opts = {}) {
     if (below + m.offsetHeight > win.clientHeight) m.style.top = Math.max(4, top - m.offsetHeight - 2) + "px";
   };
   return h("button", { class: opts.frame0 ? "frame0" : "", title: opts.title,
-    onclick: e => { e.stopPropagation(); open(e.currentTarget); },
+    onclick: e => { e.stopPropagation();
+      if (openMenuButton === e.currentTarget) closeMenus(); else open(e.currentTarget); },
     onmouseenter: e => { if (openMenuButton && openMenuButton !== e.currentTarget
       && openMenuButton.parentElement === e.currentTarget.parentElement
       && document.querySelector(".menu")) open(e.currentTarget); } }, label + " ⏷");
