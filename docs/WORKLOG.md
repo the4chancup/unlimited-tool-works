@@ -2373,7 +2373,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its Acceptance clauses 2026-11-13 (the lead): SE-GUI-42's last six, the range's
       four ends by a held marker and by the steppers, and a stored x 2 stepping in to 5
     - [ ] the slice, after 0.0.2-cup merges (its tests reach `save_editor`); the same
-      brief moves PES 2018 to PES 2017's pitch (the maintainer's two pictures,
+      brief moves PES 2015, PES 2016 and PES 2018 to PES 2017's pitch (the maintainer's pictures,
       2026-11-13, measured: `plans/save_editor.md`, "Each version draws its own screen's
       pitch"; `pitch_look` in the same file)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
@@ -2427,7 +2427,8 @@ briefs, review loops, gates and mutation runs as for any step.
   `.tmp/0_0_2/undo/bar_edge.png` and `bar_under_top.png`, by `shot_bar.py`). The wheel
   still scrolls sideways
 - [ ] after 0.0.2: the Tactics pitch of the versions not measured yet (`plans/save_editor.md`
-  "Each version draws its own screen's pitch"; today they draw PES 2021's). Settled
+  "Each version draws its own screen's pitch"; until then PES 2015 and PES 2016 draw PES
+  2017's, the maintainer, 2026-11-13: "more similar to 17", moved by 0.0.2-range). Settled
   2026-11-13: PES 2019 is PES 2021's, PES 2018 is PES 2017's (0.0.2-range moves it), and
   PES 2020 is taken as PES 2021's unmeasured (the maintainer). PES 2015's is a third
   screen, not a third `PitchLook`: on the maintainer's two pictures

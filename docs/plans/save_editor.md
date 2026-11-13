@@ -1090,8 +1090,10 @@ Win32 original hurt the most):
   2017's: on two half-size pictures of its Formation screen the pitch is 320 by 382, seven
   bands with their edges on PES 2017's rows within a pixel, the halfway line on row 191 and
   PES 2017's two greens (`#1f4b17` exactly, `#2b5c23` to its `#2c5d24`), so it draws PES
-  2017's as it is. The other versions come after 0.0.2, and a version not yet measured draws
-  PES 2021's.
+  2017's as it is. PES 2020's is taken as PES 2021's, unmeasured. PES 2015's and PES 2016's
+  are screens of their own (another shape, other lines and markers: worklog, the
+  after-0.0.2 list) and come after 0.0.2; until then both draw PES 2017's, the nearer of the
+  two built (PES 2016 shares its seven bands, row scale and boxes).
 
   The reference is each screen's own pitch texture and the screen, which draws that texture at
   two thirds of its size (mean luma difference 1.7 of 255 to a 1280 x 720 capture of PES
