@@ -1959,7 +1959,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its Acceptance scenarios 2026-11-13 (the lead): SE-GUI-77 (the selector, ALL,
       the filter, Multi-team AATF, Fix database, and a write keeping the hidden
       records' bytes), SE-AATF-10 (`check-aatf` with and without `--teams`)
-    - [ ] the slice, after 0.0.2c b and 0.0.2-undo b land (the same crate): read first
+    - [ ] the slice (running since 2026-11-13, Opus, worktree `4cc-studio-temp/cup`,
+      branch `sk/cup`, brief `.tmp/0_0_2/cup/brief_cup.md`): read first
       every place that walks `file.teams()` or `file.players()` (`session/selection.rs`,
       the AATF check's views, the CLI, the patch and import paths, the unsaved changes),
       and say for each whether it lists (filter) or writes (never filter); the PES
