@@ -1921,24 +1921,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] the slice (small, SWE-2): `studio_core`'s `shell/sidebar`, with a scenario in
       `plans/core/gui.md` "Acceptance" written first; read first how the sidebar lays
       out its tail today
-  - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
-    move to egui 0.37 rounded everything more, most were put back by hand and menus and
-    dialogs kept slipping through; "a root solution", and the suite's own painted corners
-    read the theme's value). egui has no single setting, but all seven radii it draws are
-    in `Visuals`; `theme.rs` set five and left `window_corner_radius` and
-    `menu_corner_radius` at 6 (`plans/core/gui.md` "Other UI components", the Corners row;
-    ST-CORNER-01)
-    - [x] the plan and the drafts 2026-11-13 (the lead): the drafts' 6, 4 and 3 pixel
-      radii are 2; pills and circles keep their shapes
-    - [x] the slice 2026-11-13 (`4bdfc5cf`, SWE-2 and the lead; merge `b1274e74`; the
-      lead's rerun of `studio_core`, `color_tools`, `team_widgets` and `save_editor`,
-      clippy, fmt): one constant in `theme.rs` for all seven radii, both themes; every
-      numbered radius reads the style, three bare numbers in painter calls with them;
-      the update download's bar passes the style's radius (untested: no test paints
-      that bar); the captain's mark keeps the game's radii as two constants. The walk
-      test reads `CornerRadius::same(n)` and `.corner_radius(n)` only, not a bare
-      number passed to a painter call. Look: Pending looks
-    - [ ] its SWE-2 review (running, `.tmp/0_0_2/rad/swe_rad.md`, worktree `review14`)
+  - [x] 0.0.2-rad 2026-11-13 (`4bdfc5cf`, merge `b1274e74`, review fixes `842f41e3`): one
+    corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
+    egui's radii in both themes and the suite's own painting reads the style
+    (ST-CORNER-01); the captain's mark keeps the game's radii, radio buttons stay circles.
+    The update download's bar is painted in no test. Look: Pending looks
   - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at

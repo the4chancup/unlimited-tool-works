@@ -207,9 +207,10 @@ out as in PES 2017:
 Every set the game wrote during those looks (the fifteen presets, the three repairs, the
 drops near the areas' edges, the range's and a swap box's) passes the six clauses under
 PES 2017's tables, and so do the 484 distinct formations of the game's own teams in the
-cup library's PES 2019 saves. So PES 2019 is read with the same tables and the same six clauses. One thing differs,
-and the check does not depend on it: PES 2019's Team Sheet and its Change Formation write all
-three sets of the preset alike, where PES 2017 writes the one set on screen.
+cup library's PES 2019 saves. So PES 2019 is read with the same tables and the same six
+clauses. One thing differs, and the check does not depend on it: PES 2019's Team Sheet and
+its Change Formation write all three sets of the preset alike, where PES 2017 writes the one
+set on screen.
 
 **What is checked and what the warning says.** Only the sets a preset fields are read
 (`TacticsPreset::fielded_formations`: Kick-off alone, or all three under Fluid formation): the
