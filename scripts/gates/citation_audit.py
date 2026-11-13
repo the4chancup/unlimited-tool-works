@@ -253,13 +253,13 @@ class Keys:
         with self.lock:
             return self.index, self.keys[self.index]
 
-    def spend(self, index: int) -> bool:
+    def spend(self, index: int, code: int) -> bool:
         """Leaves key `index` behind; false when no key follows it. A thread whose request
         raced another's switch moves to the key already current."""
         with self.lock:
             if index == self.index and self.index + 1 < len(self.keys):
                 self.index += 1
-                print(f"citation audit: key {index + 1} refused, using key {self.index + 1}", file=sys.stderr)
+                print(f"citation audit: key {index + 1} refused (HTTP {code}), using key {self.index + 1}", file=sys.stderr)
             return self.index > index
 
 
@@ -281,7 +281,7 @@ def ask(keys: Keys, text: str) -> float:
                 attempt += 1
                 time.sleep(2 * attempt)
                 continue
-            if error.code in Keys.SPENT and keys.spend(index):
+            if error.code in Keys.SPENT and keys.spend(index, error.code):
                 attempt = 0
                 continue
             raise AuditError(f"HTTP {error.code}: {detail}".replace(key, "<key>")) from None
