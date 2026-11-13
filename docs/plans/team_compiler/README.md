@@ -238,8 +238,8 @@ TC-GUI-11  GIVEN the toolbar at rest
                 launch
 TC-GUI-12  GIVEN a run in flight
            WHEN frames are drawn
-           THEN each cell being processed keeps its check color and label, a light segment
-                travelling around its edge above any Warning or Error ring, then turns
+           THEN each cell being processed keeps its check color and label, a light bar
+                sweeping its bottom edge above any Warning or Error ring, then turns
                 done, done-with-warning or done-with-errors as its task ends; the run strip
                 shows the stage, the elapsed time, the files written and the memory in use;
                 the Compile button reads Cancel

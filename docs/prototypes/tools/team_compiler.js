@@ -105,20 +105,13 @@ const TEAM_COMPILER_CSS = `
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-family: var(--font-mono); font-size: 11px; line-height: 11px; cursor: pointer;
     position: relative; overflow: hidden; }
-  /* A compiling cell moves, as nothing else in the grid does: a light
-     segment travels around its edge, or (the draft controls' other pick)
-     along its bottom edge. It is painted from the clock each frame (egui:
+  /* A compiling cell moves, as nothing else in the grid does: a light bar
+     sweeps its bottom edge. It is painted from the clock each frame (egui:
      ctx.input(|i| i.time)), because the view is redrawn on every tick of a
      run, and above the Warning and Error rings (z-index over the ring's
      ::after; egui: painted after the ring). */
   .tc-sweep { position: absolute; bottom: 0; height: 2px; width: 40%; background: var(--strong);
     border-radius: 1px; pointer-events: none; z-index: 1; }
-  .tc-sweep-ring { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
-    z-index: 1; }
-  /* Inset by half the stroke, so the segment lies wholly inside the cell,
-     over the ring's 3 points (2 wide, so the ring's colour shows beside it). */
-  .tc-sweep-ring rect { fill: none; stroke: var(--strong); stroke-width: 2; x: 1px; y: 1px;
-    width: calc(100% - 2px); height: calc(100% - 2px); }
   /* sample look: a blocked cell (its export is skipped) keeps no fill. */
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }
@@ -283,22 +276,11 @@ function sampleRows() {
 // ---- State ----
 // D: the draft controls (the scenarios' GIVENs). S: the view's own state.
 // L: the log panel's state, in the host's shape.
-const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false, busyLook: "around" };
-// A compiling cell's moving segment. Around: a quarter of the edge's length,
-// travelling clockwise from the top-left corner once a second (an SVG rect's
-// dash, pathLength 100; egui: the rect's outline cut at the phase). Bottom: a
-// bar sliding left to right.
-function sweepEl(cell) {
-  if (D.busyLook === "bottom")
-    return h("span", { class: "tc-sweep", style: `left:${(-40 + 140 * busyPhase(cell, 900)).toFixed(1)}%` });
-  const NS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(NS, "svg"), rect = document.createElementNS(NS, "rect");
-  svg.setAttribute("class", "tc-sweep-ring");
-  for (const [k, v] of [["rx", "1"], ["pathLength", "100"], ["stroke-dasharray", "25 75"],
-    ["stroke-dashoffset", (-100 * busyPhase(cell, 1000)).toFixed(1)]]) rect.setAttribute(k, v);
-  svg.append(rect);
-  return svg;
-}
+const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false };
+// A compiling cell's bar, sliding left to right along its bottom edge,
+// entering and leaving it, once every 0.9 s.
+const sweepEl = cell => h("span", { class: "tc-sweep",
+  style: `left:${(-40 + 140 * busyPhase(cell, 900)).toFixed(1)}%` });
 // The phase of a compiling cell's motion, 0 to 1, counted from when the cell
 // started, so a short task still shows the motion's start.
 const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % periodMs) / periodMs;
@@ -959,9 +941,6 @@ function draftControls() {
       button("Start as quick_compile.bat", () => { if (S.run) return; S.autorun = true; S.mode = "normal";
         liveCheck(S.rows.filter(r => !r.special), () => startRun()); }),
       cb("quick_compile_close_on_success", D.closeOnSuccess, v => D.closeOnSuccess = v)),
-    h("label", { class: "cb", title: "TC-GUI-12: how a cell being compiled stands out" }, "A compiling cell shows",
-      combo([["around", "a segment going around its edge"], ["bottom", "a bar sweeping its bottom edge"]],
-        D.busyLook, v => D.busyLook = v)),
     collapsing("team-compiler/walk", "How to walk the scenarios", () =>
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }

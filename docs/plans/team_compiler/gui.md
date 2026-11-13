@@ -224,7 +224,7 @@ the cache below are `libs/pipeline`'s, shared with the Balls compiler's list vie
         (folder watcher)
 unchecked (background) → checking (inverse background) → partial-ok (blue)/full-ok (purple)/warning (faint yellow)/partial-error (faint red)/error (red)
         (Compile pressed — eligible cells are pending; effective DropFolder/DropExport scopes are blocked)
-processing (color kept, a light segment travelling around the cell's edge) → done (green)/done with warning (yellow)/done with errors (orange-red, pass-through or DropFile only)
+processing (color kept, a light bar sweeping the cell's bottom edge) → done (green)/done with warning (yellow)/done with errors (orange-red, pass-through or DropFile only)
 ```
 
 Processing eligibility follows the effective disposition, not severity alone:
@@ -262,7 +262,7 @@ egui renders cells with `painter.rect_filled` (direct GPU drawing, no DOM):
 
 ```rust
 // Check-phase and compile-outcome colors. Processing reuses the retained
-// check-phase status; the moving segment (below) is its only extra presentation.
+// check-phase status; the sweeping bar (below) is its only extra presentation.
 fn cell_color(
     status: FolderStatus,
     check_status: FolderStatus,
@@ -336,12 +336,13 @@ status color.
 
 **A processing cell moves**, and nothing else in the grid does, so the eye finds the few
 cells being compiled without a colour of their own (a bold label alone was too hard to see). A
-light segment, a quarter of the cell's edge long and 2 points wide, travels clockwise around
-the edge inside the cell, once a second, in the strong text colour. Its phase is counted from
-that cell's own start (`ctx.input(|i| i.time)` less the time it turned Processing), so a short
-task still shows the segment setting off and the cells do not move in step. It is painted
-after the Warning or Error ring, so it shows over them. While any cell processes the view
-requests a repaint each frame; it stops when none does.
+light bar, 2 points tall and two fifths of the cell's width, sweeps the cell's bottom edge from
+left to right, entering and leaving it, once every 0.9 seconds, in the strong text colour. Its
+phase is counted from that cell's own start (`ctx.input(|i| i.time)` less the time it turned
+Processing), so a short task still shows the bar setting off and the cells do not move in
+step. It is clipped to the cell and painted after the Warning or Error ring, so it shows over
+them. While any cell processes the view requests a repaint each frame; it stops when none
+does.
 
 Color transitions (blue→green fade) are not built-in as with CSS. If desired, interpolate
 between the old and new color over a few frames in the update loop (~10 lines).

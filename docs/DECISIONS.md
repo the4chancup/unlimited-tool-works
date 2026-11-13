@@ -17171,3 +17171,14 @@ keep the suite free of contracts; a shim is a contract. An Error kind keeps the 
 failure notice from borrowing the warning's orange, which reads as "look at this".
 Plan: `spec/core/distribution.md` (the `0.x` paragraph), `plans/core/README.md` (the
 Compiler bullet), `plans/core/gui.md` ("A notice is seen, not found", ST-BAR-04).
+
+## 2026-11-14 — team_compiler — a compiling cell sweeps: a 2-point bar along its bottom edge, in place of a bold label
+Decision (the maintainer, from the draft): a cell being compiled keeps its colour and label,
+and a light bar, 2 points tall and two fifths of its width, sweeps its bottom edge once every
+0.9 seconds, painted over any Warning or Error ring. A segment travelling around the edge
+and a pulsing white ring were drawn and not taken.
+Why: the bold label alone was too hard to see; motion finds the few compiling cells without
+a colour of their own, which the grid's colours already spend on states, and a bar on one
+edge leaves a ring's colour readable.
+Plan: `plans/team_compiler/gui.md` ("A processing cell moves", the state list),
+`plans/team_compiler/README.md` TC-GUI-12.

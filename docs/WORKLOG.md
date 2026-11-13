@@ -820,9 +820,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       error), a check arriving live. Looked at the same night (the maintainer): the rest
       stands; fixed (`shot_tc5.py`): a live check starts every cell Unchecked, a few at a
       time turn Checking and each its result a few ticks later, and the drop's refusal is a
-      Warning notice (orange). 2026-11-14: a compiling cell's bold label gave way to a light
-      segment travelling around its edge over any ring (`shot_busy2.py`; bottom bar or
-      around: QUESTIONS). The host page's compiler stub (`startCompile`, its three-row table) is now
+      Warning notice (orange). 2026-11-14: a compiling cell's bold label gave way to a 2-point
+      bar sweeping its bottom edge over any ring (the maintainer's pick over a segment
+      going around the edge; DECISIONS "a compiling cell sweeps"). The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted
   - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
     (`plans/aesthetics_export/settings_toml.md` "Edits made in PES come back to the export";

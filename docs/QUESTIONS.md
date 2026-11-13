@@ -69,15 +69,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
 
-## The Compiler's and the Export upgrader's windows
-
-- **Around the edge, or along the bottom?** (worklog 8.10; you, 2026-11-14: the bottom sweep
-  looks fine, try one going around the square). The compiler draft's default is now a
-  segment travelling around a compiling cell's edge, above any Warning or Error ring; the
-  bottom-edge bar stays in its draft controls ("A compiling cell shows"). The plan
-  (`plans/team_compiler/gui.md`, "A processing cell moves"; TC-GUI-12) says "around"; if
-  you prefer the bottom, both change.
-
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
