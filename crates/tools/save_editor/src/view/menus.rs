@@ -98,7 +98,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.clear_visual_flags(team_id);
             ui.close();
         }
-        if add_enabled(ui, fpc_ok, egui::Button::new("Set FPC invisibility"))
+        if add_enabled(ui, fpc_ok, egui::Button::new("Hide default body (FPC)"))
             .on_disabled_hover_text(&fpc_tip)
             .clicked()
             && let Ok(ids) = hide_ids
@@ -106,7 +106,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.team_fpc(team_id, fpc::Preset::Hide, ids);
             ui.close();
         }
-        if add_enabled(ui, fpc_ok, egui::Button::new("Remove FPC invisibility"))
+        if add_enabled(ui, fpc_ok, egui::Button::new("Show default body (FPC)"))
             .on_disabled_hover_text(&fpc_tip)
             .clicked()
             && let Ok(ids) = hide_ids
@@ -461,7 +461,7 @@ impl Boglo {
 /// as the widest, so every field stands at one x.
 const BOGLO_OPTIONS: [&str; 4] = [
     "Unchanged",
-    "Set incremental value:",
+    "Set values starting from:",
     "Set all to the same ID:",
     "Set like boot IDs",
 ];
@@ -602,7 +602,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                             ui,
                             &mut boglo.boots,
                             BootsPick::Incremental,
-                            "Set incremental value:",
+                            "Set values starting from:",
                         );
                     });
                     let start = number_arrows(ui, &mut boglo.start, 0..=u32::MAX, |ui, value| {
@@ -674,7 +674,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.colored_label(ui.visuals().error_fg_color, error.as_str());
             }
             modal_buttons(ui, |ui| {
-                if ui.button("Close").clicked() {
+                if ui.button("Cancel").clicked() {
                     close = true;
                 }
                 if ui.button("Set").clicked() {
@@ -746,7 +746,7 @@ impl StatNum {
             op: StatNumOp::Bump,
             player_id,
             line: format!(
-                "Add to all of {}'s ability stats, clamped to 40 to 99",
+                "Add to all of {}'s ability stats, each kept within 40 to 99",
                 display_name(&player.name)
             ),
             value: last,

@@ -200,10 +200,10 @@ fn the_logo_links_to_the_event_page() {
     let at = centre(logo(&nodes, &ruleset.name).expect("DBC7's logo is drawn"));
 
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, at, "Click here").as_deref(),
+        tooltip_containing(&mut window, &mut view, at, "Click to open").as_deref(),
         Some(
             format!(
-                "{}\n\nClick here to open the event's page:\n{page}",
+                "{}\n\nClick to open the event's page:\n{page}",
                 ruleset.name
             )
             .as_str()

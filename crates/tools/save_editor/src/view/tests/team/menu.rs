@@ -75,10 +75,10 @@ fn the_team_menu_operations_edit_every_filled_slot_as_one_undoable_edit() {
         &mut view,
     );
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let incremental = node_labeled(&nodes, Role::RadioButton, "Set incremental value:");
+    let incremental = node_labeled(&nodes, Role::RadioButton, "Set values starting from:");
     click(&mut window, incremental, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let incremental = node_labeled(&nodes, Role::RadioButton, "Set incremental value:");
+    let incremental = node_labeled(&nodes, Role::RadioButton, "Set values starting from:");
     let start = right_of(&nodes, incremental, Role::SpinButton);
     click(&mut window, start, &mut view);
     window.frame(vec![egui::Event::Text(start_value.to_string())], |ui| {
@@ -222,7 +222,7 @@ fn the_locked_team_menu_disables_the_aesthetics_items_with_the_ownership_line() 
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"

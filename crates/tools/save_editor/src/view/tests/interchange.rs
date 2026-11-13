@@ -385,7 +385,7 @@ fn a_team_toml_with_stats_alone_writes_the_abilities_as_one_undoable_edit() {
         panel_lines(&mut window, &mut view)
             .last()
             .map(String::as_str),
-        Some("Applied co.toml. The changes stay unsaved until you click Save.")
+        Some("Applied co.toml.")
     );
 
     assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo entry");
@@ -756,7 +756,7 @@ fn a_second_pick_replaces_the_first_ones_import_and_applied_line() {
         panel_lines(&mut window, &mut view)
             .last()
             .map(String::as_str),
-        Some("Applied co.toml. The changes stay unsaved until you click Save."),
+        Some("Applied co.toml."),
         "premise: the first file applied"
     );
     let expected = lib_import(&view, &kept(&cm, ALL), THREE);
@@ -780,7 +780,7 @@ fn a_second_pick_replaces_the_first_ones_import_and_applied_line() {
         panel_lines(&mut window, &mut view)
             .last()
             .map(String::as_str),
-        Some("Applied cm.toml. The changes stay unsaved until you click Save.")
+        Some("Applied cm.toml.")
     );
 }
 
@@ -864,7 +864,7 @@ fn the_applied_line_stands_after_an_apply_that_wrote_until_the_next_change() {
     let lines = panel_lines(&mut window, &mut view);
     assert_eq!(
         lines.last().map(String::as_str),
-        Some("Applied co.toml. The changes stay unsaved until you click Save."),
+        Some("Applied co.toml."),
         "{lines:#?}"
     );
     assert!(

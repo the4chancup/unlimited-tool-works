@@ -484,7 +484,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "migration_not_clean",
         Severity::Info,
         r#"The report's last line, otherwise."#,
-        r#"Nothing is written. The exit code is 1 after an Error finding, or after a finding that dropped more than a leftover. Fix what the findings name in the old export and upgrade again."#,
+        r#"Nothing is written. The exit code is 1 after an Error finding, or after a finding that dropped more than a leftover. Fix what the findings name in the old export and upgrade again. If a finding names something the old export does not hold, post the report on the /aesco/ server or the divegrass thread."#,
     ),
     (
         "leftover_dropped",

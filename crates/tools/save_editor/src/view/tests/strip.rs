@@ -604,9 +604,8 @@ fn the_name_hover_names_the_versions_byte_limit_and_the_colour_code() {
         assert_eq!(
             tooltip,
             Some(format!(
-                "Up to {limit} bytes. A plain letter takes one byte, an accented letter takes two \
-                 or more, and a colour code takes ten. A colour code is typed as \\x11c and eight \
-                 hex digits."
+                "Up to {limit} bytes: one for a plain letter, two or more for an accented letter, \
+                 and ten for a color code (typed as \\x11c and eight hex digits)."
             )),
             "{version:?}'s Name hover"
         );

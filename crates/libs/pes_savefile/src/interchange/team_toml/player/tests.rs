@@ -1383,7 +1383,7 @@ fn a_name_or_shirt_name_past_the_portable_limits_carries_a_note() {
         .find(|line| line.starts_with("name ="))
         .expect("the name line");
     assert!(
-        name_line.contains("# name past 46 bytes: cut on PES 2015 to 2019"),
+        name_line.contains("# name past 46 bytes: cut on PES 15 to 19"),
         "{name_line}"
     );
     let shirt_line = block
@@ -1392,7 +1392,7 @@ fn a_name_or_shirt_name_past_the_portable_limits_carries_a_note() {
         .expect("the shirt_name line");
     assert!(
         shirt_line
-            .contains("# shirt name past 18 letters: cut on PES 2015 to 2019 (PES 2016: past 16)"),
+            .contains("# shirt name past 18 letters: cut on PES 15 to 19 (on PES 16, past 16)"),
         "{shirt_line}"
     );
     // A text inside the limits gets no note.
@@ -1430,7 +1430,7 @@ fn a_key_the_version_lacks_emits_its_commented_neutral_line() {
         .find(|line| line.contains("star ="))
         .expect("a star line, commented or not");
     assert!(line.starts_with("# star = 0"), "{line}");
-    assert!(line.contains("# PES 19 and later, 0 to 7"), "{line}");
+    assert!(line.contains("# PES 19 and later; 0 to 7"), "{line}");
 }
 
 /// Stored-ranges mode is bounded by the field's widest bit width: neck
@@ -2141,11 +2141,11 @@ fn a_broken_roster_order_notes_the_held_ids_on_the_headers() {
     let headers = player_headers(&text);
     assert_eq!(
         headers[0],
-        "[players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18); holds player 70102, not 70101: applied, this record lands on slot 01, apart from 70102's aesthetics export"
+        "[players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18); holds player 70102, not 70101: an import writes this record to slot 01, so it may no longer match 70102's aesthetics export"
     );
     assert_eq!(
         headers[1],
-        "[players.02]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18); holds player 70101, not 70102: applied, this record lands on slot 02, apart from 70101's aesthetics export"
+        "[players.02]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18); holds player 70101, not 70102: an import writes this record to slot 02, so it may no longer match 70101's aesthetics export"
     );
     assert_eq!(
         headers

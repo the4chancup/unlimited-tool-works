@@ -4,7 +4,7 @@ official one.
 
 **Start page.** With no ruleset open the window offers to start one: *New from
 template* (the official rules and the VGL, VTL and DBC cup rulesets, then *Blank:
-one tier, no brackets, universal rules set*), *Open file* to pick an existing
+one tier, no height brackets, universal rules on*), *Open file* to pick an existing
 rules file, and the recently used files below, newest first. A file that does not
 open lists what is wrong with it under the buttons.
 

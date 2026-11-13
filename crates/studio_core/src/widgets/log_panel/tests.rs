@@ -208,7 +208,7 @@ fn only_the_capped_tail_of_the_log_is_drawn() {
         "the 301st from the end is too"
     );
     assert!(shows(&nodes, "log line 350"), "the newest is drawn");
-    assert!(shows(&nodes, "last 300 of 350"), "the count line");
+    assert!(shows(&nodes, "last 300 of 350 lines"), "the count line");
 
     // Stuck to the bottom: the two last drawn lines stack a row apart at the
     // body's bottom edge — a line scrolled under the viewport would be
@@ -970,7 +970,7 @@ fn the_count_line_changes_at_the_cap() {
     let lines = plain_lines(LOG_CAP);
     assert_eq!(count_text(Filter::All, &lines), "300 lines");
     let lines = plain_lines(LOG_CAP + 1);
-    assert_eq!(count_text(Filter::All, &lines), "last 300 of 301");
+    assert_eq!(count_text(Filter::All, &lines), "last 300 of 301 lines");
 }
 
 #[test]

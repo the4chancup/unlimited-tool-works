@@ -280,6 +280,7 @@ impl HelpWindow {
             let scroll = self.scroll_pending;
             if self.topic == section.topics.len() && !section.messages.is_empty() {
                 ui.heading("Messages");
+                ui.label(crate::help::MESSAGES_INTRO);
                 let (consumed, link) = messages(
                     ui,
                     &mut self.cache,

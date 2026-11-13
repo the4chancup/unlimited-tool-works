@@ -92,7 +92,7 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
         "the separator between Savefile and the dropdown: {separators:?}"
     );
     let (top, bottom) = toolbar_band(&nodes);
-    for gone in ["Save", "Save as", "Undo", "Redo"] {
+    for gone in ["Save", "Save as\u{2026}", "Undo", "Redo"] {
         assert!(
             !nodes.iter().any(|node| {
                 node.role() == Role::Button
@@ -363,7 +363,7 @@ fn the_menus_are_disabled_with_no_save_open() {
         !menu_item(&nodes, "Choose file").is_disabled(),
         "the picker is enabled"
     );
-    for entry in ["Save Ctrl+S", "Save as"] {
+    for entry in ["Save Ctrl+S", "Save as\u{2026}"] {
         assert!(
             node_labeled(&nodes, Role::Button, entry).is_disabled(),
             "{entry} is disabled"

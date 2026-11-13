@@ -652,7 +652,13 @@ impl SettingKey {
                 default: Some(0),
             },
             SettingKey::Gloves => bool_key("gloves", "true, false (outfield player gloves)", false),
-            SettingKey::GlovesColor => seven_color("gloves_color"),
+            SettingKey::GlovesColor => KeySpec {
+                table: KeyTable::Strip,
+                name: "gloves_color",
+                kind: Kind::Number { min: 0, max: 7 },
+                comment: "0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 green, 6 pink, 7 turquoise",
+                default: Some(0),
+            },
             SettingKey::HunchingDribbling => motion_1based(
                 "hunching_dribbling",
                 PlayerField::HunchingDribbling,

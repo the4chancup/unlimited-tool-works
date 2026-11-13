@@ -41,9 +41,9 @@ use crate::view::{
 /// draft's `.panel`).
 const PANEL_WIDTH: f32 = 620.0;
 
-/// A field row's Old value column (the draft's `#cmp-rows .drow .o`): 200
-/// points, its text cut with an ellipsis when longer, so every New value
-/// starts at one place.
+/// A field row's Picked save column (the draft's `#cmp-rows .drow .o`):
+/// 200 points, its text cut with an ellipsis when longer, so every Open
+/// save starts at one place.
 const OLD_COL: f32 = 200.0;
 
 /// The list's first line whenever it holds a field row: the three columns'
@@ -195,16 +195,16 @@ pub(super) enum Line {
     Row {
         /// The field's label, the Item column.
         label: String,
-        /// The picked save's value, the Old value column.
+        /// The picked save's value, the Picked save column.
         old: String,
-        /// The open save's value, the New value column.
+        /// The open save's value, the Open save column.
         new: String,
         /// The player a click selects.
         select: Option<SelectedPlayer>,
         /// His open-save roster team, as the head's.
         team: Option<u32>,
     },
-    /// The rows' head, `Item`, `Old value`, `New value` (the draft's
+    /// The rows' head, `Item`, `Picked save`, `Open save` (the draft's
     /// `#cmp-rows .drow.head`). Never in a comparison's held lines:
     /// `shown` puts it first when the drawn list holds a row.
     Columns,
@@ -270,8 +270,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         && ui
                             .button("Export\u{2026}")
                             .on_hover_text(
-                                "Write the differences of the shown scope as text, \
-                                 covering every team",
+                                "Write the differences the Show row picks to a text file, \
+                                 for every team, whatever the Team dropdown shows",
                             )
                             .clicked()
                         && let Some(path) = export_dialog("diff.txt")
@@ -653,7 +653,7 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
     lines
 }
 
-/// `id`'s head as `file` holds him: `player_head` over his roster place
+/// `id`'s head as `file` holds him: `player_head` over his roster slot
 /// with the drawn head's `Rostered`, `Player <id> <name>` alone when no
 /// roster holds him.
 fn head(file: &EditFile, place: Option<Place>, id: u32) -> (String, Option<Rostered>) {
@@ -740,23 +740,23 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
 }
 
 /// The x offsets from a field row's left edge of its three columns, Item,
-/// Old value and New value: `drow_columns`' two, the label's column
-/// `RULE_COL` wide, then the New value `RULE_GAP` past the Old value's
+/// Picked save and Open save: `drow_columns`' two, the label's column
+/// `RULE_COL` wide, then the Open save `RULE_GAP` past the Picked save's
 /// `OLD_COL`.
 fn column_offsets(width: f32) -> [f32; 3] {
     let (label_x, old_x, _) = drow_columns(width, RULE_COL);
     [label_x, old_x, old_x + OLD_COL + RULE_GAP]
 }
 
-/// The rows' head (the draft's `#cmp-rows .drow.head`): `Item`, `Old
-/// value` and `New value` in the weak colour at the field rows' three
+/// The rows' head (the draft's `#cmp-rows .drow.head`): `Item`, `Picked
+/// save` and `Open save` in the weak colour at the field rows' three
 /// places, as the unsaved changes list heads its own. It names columns and
 /// selects nothing, so it takes no click and draws no hover outline.
 fn columns_head(ui: &mut egui::Ui) {
     let weak = ui.visuals().weak_text_color();
     let font = egui::TextStyle::Body.resolve(ui.style());
     let offsets = column_offsets(ui.available_width());
-    let galleys = ["Item", "Old value", "New value"].map(|title| {
+    let galleys = ["Item", "Picked save", "Open save"].map(|title| {
         ui.painter()
             .layout_no_wrap(title.to_owned(), font.clone(), weak)
     });
@@ -768,7 +768,7 @@ fn columns_head(ui: &mut egui::Ui) {
         egui::WidgetInfo::labeled(
             egui::Role::Label,
             ui.is_enabled(),
-            "Item Old value New value",
+            "Item Picked save Open save",
         )
     });
     if ui.is_rect_visible(rect) {

@@ -265,7 +265,7 @@ pub fn well_frame(visuals: &egui::Visuals) -> egui::Frame {
         .inner_margin(egui::Margin::symmetric(6, 2))
 }
 
-/// The header's count line (the draft's `log-count`): `last 300 of N` when the
+/// The header's count line (the draft's `log-count`): `last 300 of N lines` when the
 /// shown lines overflow the cap, `N of M lines` when a filter hides some, `N lines`
 /// when everything shows.
 fn count_text(filter: Filter, lines: &[LogLine]) -> String {
@@ -274,7 +274,7 @@ fn count_text(filter: Filter, lines: &[LogLine]) -> String {
         .filter(|line| filter.shows(line.severity))
         .count();
     if shown > LOG_CAP {
-        format!("last {LOG_CAP} of {shown}")
+        format!("last {LOG_CAP} of {shown} lines")
     } else if shown < lines.len() {
         format!("{shown} of {} lines", lines.len())
     } else {

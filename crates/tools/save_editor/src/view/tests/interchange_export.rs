@@ -188,8 +188,10 @@ fn the_export_buttons_say_what_each_file_is() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_hovers", CO);
     let toml = button(&mut window, &mut view, "Team TOML\u{2026}");
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, centre(&toml), "full-fidelity").as_deref(),
-        Some("One team's full-fidelity file, the same text the CLI's export-toml writes")
+        tooltip_containing(&mut window, &mut view, centre(&toml), "every value").as_deref(),
+        Some(
+            "The team, its tactics and its players with every value: the same file the command line's export-toml writes"
+        )
     );
     let texport = button(&mut window, &mut view, "Texport\u{2026}");
     assert_eq!(
@@ -720,9 +722,8 @@ fn on_pes_15_and_16_the_texport_is_disabled_and_says_why() {
         let texport = button(&mut window, &mut view, "Texport\u{2026}");
         assert!(texport.is_disabled(), "no Texport on {version}");
         assert_eq!(
-            tooltip_containing(&mut window, &mut view, centre(&texport), "Texport template")
-                .as_deref(),
-            Some("PES 2015 and 2016 have no Texport template"),
+            tooltip_containing(&mut window, &mut view, centre(&texport), "cannot write").as_deref(),
+            Some("The editor cannot write a PES 2015 or 2016 Texport"),
             "{version}"
         );
         assert!(
@@ -772,7 +773,7 @@ fn assert_save_refused(test: &str, pick: impl Fn(&Path) -> PathBuf) {
         // holds the nodes.
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let sentence = format!(
-            "{}: that is the save being read, and a {format} written over it would lose it",
+            "{}: that is the open save, and writing the {format} over it would destroy the save",
             destination.display()
         );
         for text in ["Cannot export the team", sentence.as_str()] {

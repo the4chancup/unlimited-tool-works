@@ -405,7 +405,7 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   close writes a closing line as the log's last, and so does a crash after its dialog. At
   start, a previous log (`utw.old.log` once renamed) that does not end with one of the two
   shows a dialog before the window opens: "The last session did not close normally. If it
-  crashed, please post this file where you report problems: <path>", naming the home folder's
+  crashed, please post this file on the /aesco/ server or the divegrass thread: <path>", naming the home folder's
   `~`. This catches what the panic hook cannot see (a stack overflow, a failed allocation, a
   crash in native code), and the crash dump below, where one was written, adds its stacks.
 

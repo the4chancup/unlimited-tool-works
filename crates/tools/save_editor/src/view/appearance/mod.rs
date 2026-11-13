@@ -1,7 +1,7 @@
 //! The Appearance section (the draft's `appearanceTab` and `paletteRow`):
 //! the Cutscenes group first (star and playing attitude,
 //! which change only cutscenes and so sit outside the lock), then the
-//! groups — Edit flags, Physique, Strip style, Motion, Colours. With the
+//! groups — Edit flags, Physique, Strip style, Motion, Colors. With the
 //! "Aesthetics from exports" setting off the section edits as every other does;
 //! with it on, the ownership line and the "Edit aesthetics anyway" switch
 //! (`SaveView`'s `edit_aesthetics`, off at every start of the tool) draw
@@ -160,7 +160,7 @@ fn groups(
     ui.strong(MOTION_LABEL);
     motion_grid(ui, session, player_id, version, &player.motion, draw);
     ui.separator();
-    ui.strong("Colours");
+    ui.strong("Colors");
     colour_rows(ui, session, player_id, version, &player.appearance);
     ui.separator();
     ui.strong("Full Player Customization");
@@ -201,8 +201,8 @@ fn ownership_line(ui: &mut egui::Ui) -> bool {
 /// section, the disabled groups' hover and the locked Team-menu items'
 /// (`menus.rs`).
 pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, so edit its \
-                                        settings.toml (the face, hair and iris: its \
-                                        ingame_face.toml) and recompile, then apply the patch.";
+                                        settings.toml (or its ingame_face.toml, for the face, \
+                                        hair and iris), recompile, then apply the patch.";
 
 /// The FPC group, last in the section (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'
@@ -246,7 +246,7 @@ fn fpc_group(
         if ui
             .button("Hide default body")
             .on_hover_text(
-                "Apply the hide preset: long sleeves, a tucked shirt and short socks. \
+                "Write long sleeves, a tucked shirt and short socks. \
                  A boots or gloves ID of 0 takes the hide ID from Settings (a model's \
                  own ID is kept), and a Custom skin (PES 2015 to 2017) becomes Light. \
                  Ctrl+I switches this player between hidden and shown, and the Team \
@@ -259,7 +259,7 @@ fn fpc_group(
         if ui
             .button("Show default body")
             .on_hover_text(
-                "Apply the show preset: short sleeves, an untucked shirt and standard \
+                "Write short sleeves, an untucked shirt and standard \
                  socks. A boots or gloves ID that holds the hide ID goes back to 0, and \
                  a Custom skin (PES 2015 to 2017) becomes Light.",
             )
@@ -468,7 +468,9 @@ fn strip_rows(
                     player.appearance.gloves_id = shown;
                 },
             )
-            .on_hover_text("Any player's gloves ID works; 0 means normal hands.");
+            .on_hover_text(
+                "Any player can wear gloves, not only goalkeepers; 0 means normal hands.",
+            );
             maybe_end_row(ui, 2, per_row);
             for (index, (label, key, get, set)) in STRIP_ENUMS.iter().enumerate() {
                 combo(

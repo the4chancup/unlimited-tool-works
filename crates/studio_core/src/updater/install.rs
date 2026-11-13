@@ -110,7 +110,7 @@ pub(crate) enum InstallError {
     /// closed during its swap. The files may be the only copies of the
     /// program's old files, so no update runs until the member has dealt with
     /// them. Empty folders in the backup count for nothing.
-    #[error("An earlier update could not put some of the program's old files back, and they are still in {}. Put them back into the program's folder, or remove that folder, then update again.", folder.display())]
+    #[error("An earlier update could not put some of the program's old files back, and they are still in {}. Move them back into the program's folder, or delete the folder they are in, then update again.", folder.display())]
     OldFilesLeft {
         /// The backup folder holding them.
         folder: PathBuf,
@@ -157,7 +157,7 @@ pub(crate) enum InstallError {
     },
     /// A move of the swap failed, and undoing the moves made before it failed
     /// too. The temp folder is kept: the files set aside wait there.
-    #[error("The update stopped while {step} ({source}), and putting the old files back failed too ({restore}). The old files are in {}.", kept.display())]
+    #[error("The update stopped while {step} ({source}), and putting the old files back failed too ({restore}). The old files are in {}: move them back into the program's folder.", kept.display())]
     NotRestored {
         /// The step that failed.
         step: SwapStep,

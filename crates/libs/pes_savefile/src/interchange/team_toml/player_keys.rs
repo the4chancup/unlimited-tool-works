@@ -266,7 +266,7 @@ impl PlayerKey {
                 "base_copy_id",
                 Kind::U32,
                 F::BaseCopyId,
-                "the player whose look this one copies; his own id (the team id times 100 plus the slot) means none, and an import turns it into the target player's own id",
+                "the player whose look this one copies; his own id (the team id times 100 plus the slot) means none and becomes the target player's own id on import",
             ),
             PlayerKey::AttackingProwess => {
                 ability("stats.attacking_prowess", F::AttackingProwess, "")
@@ -328,7 +328,7 @@ impl PlayerKey {
                 "stats.star",
                 Kind::Stored,
                 F::Star,
-                "PES 19 and later, 0 to 7",
+                "PES 19 and later; 0 to 7",
             ),
             PlayerKey::PlayingAttitude => spec(
                 "stats.playing_attitude",

@@ -36,8 +36,8 @@ from ("as the game stores it").
 **Roster order.** Export from a team that breaks 4cc's roster order (slot `NN` holding a player
 other than `team id × 100 + NN`: `roster_order_breaks`, `plans/aatf_rules.md` "The host")
 writes the slot as the save holds it, with a note on that slot's header line naming the player
-it holds and the one the rule puts there ("holds player 80423, not 80403: applied, this record
-lands on slot 03, apart from 80423's aesthetics export").
+it holds and the one the rule puts there ("holds player 80423, not 80403: an import writes
+this record to slot 03, so it may no longer match 80423's aesthetics export").
 
 A Team TOML lands players by slot, so the record leaves its id behind, and the aesthetics
 export, which names players by id, no longer matches it. The note is how a member learns that

@@ -56,7 +56,7 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
         (
             "import_key_not_in_version",
             "The team file holds a key the file's version stores but the save's does not. \
-             The key is dropped from the import, but the rest is written.",
+             The key is dropped from the import, and the rest of the import is written.",
         ),
         (
             "import_value_not_encodable",
@@ -73,8 +73,8 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
         ),
         (
             "import_slot_empty",
-            "The team file holds a player for a roster place the team leaves empty. The player \
-             is skipped, but the rest is written.",
+            "The team file holds a player for a roster slot the team leaves empty. The player \
+             is skipped, and the rest of the import is written.",
         ),
         (
             "import_text_cropped",
@@ -394,7 +394,7 @@ fn the_panel_holds_still_once_the_line_under_apply_shows_in_the_shortest_window(
 
     click(&mut window, &apply, &mut view);
 
-    let applied = format!("Applied {SQUAD_19}. The changes stay unsaved until you click Save.");
+    let applied = format!("Applied {SQUAD_19}.");
     let lines = panel_lines(&mut window, &mut view);
     assert!(
         lines.contains(&applied),
@@ -426,7 +426,7 @@ fn every_empty_place_a_file_names_is_one_group() {
 
     assert_eq!(
         note_headers(&mut window, &mut view),
-        ["Empty roster place \u{b7} 2 players"]
+        ["Empty roster slot \u{b7} 2 players"]
     );
 }
 

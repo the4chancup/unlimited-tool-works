@@ -17,7 +17,11 @@ pub(crate) fn chapter_markdown(section: &HelpSection) -> String {
         markdown.push_str(&format!("## {}\n\n{}\n\n", topic.title, topic.body.trim()));
     }
     if !section.messages.is_empty() {
-        markdown.push_str(&format!("## Messages\n\n{}", table(&section.messages)));
+        markdown.push_str(&format!(
+            "## Messages\n\n{}\n\n{}",
+            crate::help::MESSAGES_INTRO,
+            table(&section.messages)
+        ));
     }
     markdown
 }
@@ -30,7 +34,11 @@ pub(crate) fn topic_markdown(section: &HelpSection, slug: &str) -> Option<String
         if section.messages.is_empty() {
             return None;
         }
-        return Some(format!("## Messages\n\n{}", table(&section.messages)));
+        return Some(format!(
+            "## Messages\n\n{}\n\n{}",
+            crate::help::MESSAGES_INTRO,
+            table(&section.messages)
+        ));
     }
     let topic = section.topics.iter().find(|topic| topic.slug == slug)?;
     Some(format!("## {}\n\n{}\n", topic.title, topic.body.trim()))
@@ -179,10 +187,26 @@ mod tests {
              \n\
              ## Messages\n\
              \n\
+             Where a row says \"the line\", it means the line the finding prints in the log or the terminal.\n\
+             \n\
              | Code | Severity | When | Effect |\n\
              |---|---|---|---|\n\
              | `export_extract_failed` | Error | an archive cannot be opened | export skipped |\n\
              | `notes_found` | Info | a valid `notes.txt` is present | collected into `teamnotes.txt` |\n"
+        );
+    }
+
+    // A row whose cells name "the line" is read under the sentence that says what
+    // the line is, which stands between the heading and the table.
+    #[test]
+    fn the_messages_table_opens_with_what_the_line_means() {
+        let markdown = chapter_markdown(&section());
+        assert!(
+            markdown.contains(&format!(
+                "## Messages\n\n{}\n\n| Code | Severity | When | Effect |",
+                crate::help::MESSAGES_INTRO
+            )),
+            "{markdown}"
         );
     }
 
@@ -200,7 +224,10 @@ mod tests {
             Some("## Exports\n\nAn export is a folder.\n".to_owned())
         );
         let messages = topic_markdown(&section(), "messages").unwrap();
-        assert!(messages.starts_with("## Messages\n\n| Code | Severity | When | Effect |\n"));
+        assert!(messages.starts_with(&format!(
+            "## Messages\n\n{}\n\n| Code | Severity | When | Effect |\n",
+            crate::help::MESSAGES_INTRO
+        )));
         assert!(messages.ends_with(
             "| `notes_found` | Info | a valid `notes.txt` is present | collected into `teamnotes.txt` |\n"
         ));
@@ -369,7 +396,10 @@ mod tests {
         run_help(&tools, Some("alpha"), Some("messages"), None, &mut out).unwrap();
         assert_eq!(
             text(out),
-            "## Messages\n\n| Code | Severity | When | Effect |\n|---|---|---|---|\n| `a_code` | Error | a trigger | an effect |\n"
+            format!(
+                "## Messages\n\n{}\n\n| Code | Severity | When | Effect |\n|---|---|---|---|\n| `a_code` | Error | a trigger | an effect |\n",
+                crate::help::MESSAGES_INTRO
+            )
         );
     }
 

@@ -60,7 +60,7 @@ fn set_line(name: &str) -> String {
 
 /// The Bump dialog's line for `name`.
 fn bump_line(name: &str) -> String {
-    format!("Add to all of {name}'s ability stats, clamped to 40 to 99")
+    format!("Add to all of {name}'s ability stats, each kept within 40 to 99")
 }
 
 /// Every ability of `player` is `value` (the ones the version has).
@@ -885,7 +885,7 @@ fn strip_of(view: &SaveView, id: u32) -> (u8, bool, u8, u32, u32) {
 // Hide default body gives the hide preset and the section reads "The
 // default body is currently hidden"; Ctrl+I gives the show preset and
 // "...shown". A
-// model's own boots ID is kept and reads as shown. Set FPC invisibility
+// model's own boots ID is kept and reads as shown. Hide default body (FPC)
 // hides every filled slot of the team in one undo step, and a strip
 // setting that breaks hiding lists its finding on the section — reported,
 // never cleared.
@@ -999,7 +999,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
     );
     assert_eq!(undo_entries(&mut window, &mut view), 2, "one entry each");
 
-    // The Team menu's Set FPC invisibility: the hide preset on every
+    // The Team menu's Hide default body (FPC): the hide preset on every
     // filled slot of team 701, one undo step.
     let before: Vec<(usize, u32, u32, u32)> = rostered(&view, 701)
         .iter()
@@ -1016,7 +1016,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Set FPC invisibility"),
+        menu_item(&nodes, "Hide default body (FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1040,13 +1040,13 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
         "his own ID kept in the team run"
     );
 
-    // Remove FPC invisibility is the same op the other way, run on the
+    // Show default body (FPC) is the same op the other way, run on the
     // hidden team: the show preset on every filled slot, the own IDs
     // still kept; one undo restores the hidden state.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Remove FPC invisibility"),
+        menu_item(&nodes, "Show default body (FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1223,7 +1223,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(button), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"
@@ -1241,7 +1241,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(toggle), "The team's export"),
         Some(
-            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch."
                 .to_string(),
         ),
         "the toggle's hover is the ownership line"
@@ -1260,13 +1260,13 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
 
     // The Team menu's two FPC items disabled with the same hover.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
-    for label in ["Set FPC invisibility", "Remove FPC invisibility"] {
+    for label in ["Hide default body (FPC)", "Show default body (FPC)"] {
         let item = menu_item(&nodes, label);
         assert!(item.is_disabled(), "{label} is disabled under the lock");
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"
@@ -1460,7 +1460,7 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
 
     // The Team menu's two items the same.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
-    for label in ["Set FPC invisibility", "Remove FPC invisibility"] {
+    for label in ["Hide default body (FPC)", "Show default body (FPC)"] {
         let item = menu_item(&nodes, label);
         assert!(item.is_disabled(), "{label} is disabled");
         assert_eq!(
@@ -1481,7 +1481,7 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
 // Every FPC path reads the same settings' hide IDs (`view.hide_ids` =
 // 60 and 12): Ctrl+I hides and shows under them, the Player menu's
 // Toggle FPC settings hides the same, and the Team menu's Set and
-// Remove FPC invisibility write and clear them on every filled slot
+// Show default body (FPC) write and clear them on every filled slot
 // whose IDs were 0, a model's own kept.
 // SE-GUI-31
 #[test]
@@ -1561,7 +1561,7 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the menu toggle hides with the settings' IDs"
     );
 
-    // The Team menu's Set FPC invisibility: the settings' IDs on every
+    // The Team menu's Hide default body (FPC): the settings' IDs on every
     // filled slot whose IDs were 0 or already the hide IDs, a model's
     // own kept.
     let before: Vec<(usize, u32, u32, u32)> = rostered(&view, 701)
@@ -1579,7 +1579,7 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Set FPC invisibility"),
+        menu_item(&nodes, "Hide default body (FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {
@@ -1603,12 +1603,12 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the previous setting's IDs are kept as his own"
     );
 
-    // Remove FPC invisibility zeroes the slots the Set wrote (0 or the
+    // Show default body (FPC) zeroes the slots the Set wrote (0 or the
     // hide ID), a model's own kept again.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
-        menu_item(&nodes, "Remove FPC invisibility"),
+        menu_item(&nodes, "Show default body (FPC)"),
         &mut view,
     );
     for &(slot, id, boots, gloves) in &before {

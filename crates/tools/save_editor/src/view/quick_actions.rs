@@ -13,7 +13,7 @@ use crate::session::Session;
 use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
 
 /// The disabled controls' tooltip on a team selection.
-const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
+const TEAM_TIP: &str = "These buttons act on a player: pick a player row";
 
 /// A quick action cell's height, the draft's 20: the theme's
 /// controls are 18 (`interact_size`), the quick actions keep their own.
@@ -99,7 +99,7 @@ fn tier_button(
     .inner;
     let response = if enabled {
         button.on_hover_text(format!(
-            "The {} tier's values (the active ruleset)",
+            "Give this player the {} tier's values from the AATF rules in use",
             tier.label
         ))
     } else {

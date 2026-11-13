@@ -231,7 +231,7 @@ fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination
     draw(window, view);
     let nodes = draw(window, view);
     let sentence = format!(
-        "{}: that is the save being read, and a difference report written over it would lose it",
+        "{}: that is the open save, and writing the difference report over it would destroy the save",
         destination.display()
     );
     for text in ["Cannot export the differences", sentence.as_str()] {

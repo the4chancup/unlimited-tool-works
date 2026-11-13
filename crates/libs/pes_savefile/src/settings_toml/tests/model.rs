@@ -1239,7 +1239,7 @@ fn the_key_specs_match_the_plan_table() {
         "0 none, 1 rectangle rimless, 2 rectangle half frame, 3 rectangle full frame, 4 oval rimless, 5 oval half frame, 6 oval full frame, 7 round full frame",
         "0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 green, 6 pink, 7 turquoise",
         "true, false (outfield player gloves)",
-        "0 to 7",
+        "0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 green, 6 pink, 7 turquoise",
         "1 to 3 (PES 20 and 21: 1 to 5)",
         "1 to 3 (PES 20 and 21: 1 to 5)",
         "1 to 8 (PES 15: 1 to 5; PES 20 and 21: 1 to 10)",

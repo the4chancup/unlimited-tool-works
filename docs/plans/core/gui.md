@@ -30,7 +30,7 @@ The tool view belongs to each tool; pipeline tools subdivide it into grid, toolb
 │ [?][gear]│   │ - /cc/ processed                       │ │
 │          │   └────────────────────────────────────────┘ │
 ├──────────┴──────────────────────────────────────────────┤
-│ ⚠ data folder read-only          Compiled 48 · [Open output] │
+│ ⚠ Settings could not be saved    Compiled 48 · [Open output] │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -457,8 +457,9 @@ The settings menu is assembled from injected sections:
   move), the folder as it is, else the main row as before.
 - Saving is **best-effort**: if the write fails (typically a portable install unpacked somewhere
   unwritable), the in-memory settings keep working for the session and the shell raises the
-  `data_dir_read_only` condition in the status bar, one condition covering settings and the
-  teams list, since both live there. No elevation, no retry prompt.
+  `settings_save_failed` condition in the status bar (`Settings could not be saved`, its
+  hover giving the save's own error and that the change is tried again at the next save). No
+  elevation, no retry prompt.
 
   A save edits the file in place (`toml_edit`), changing only the values that changed: until
   the settings menu exists members edit the file by hand, and a tool switch saving
@@ -643,7 +644,7 @@ More rules that keep it worth the row:
   and is drawn in that kind's bright colour:
 
   - success bright green (`theme::SUCCESS_FG`, a file written, a compile done);
-  - information the link blue (`Switched to PES 2021`, `Updated to v1.4.0`);
+  - information the link blue (`Switched to PES 2021, which is running`, `Updated to v1.4.0`);
   - a warning the theme's warning orange (`Teams list is read-only`, a switch whose
     `Fix PES path` action points at a wrong exe).
 
@@ -684,7 +685,7 @@ More rules that keep it worth the row:
   bar the button stayed and did nothing).
 
   The data location is not shown: it is a choice made once and on purpose, its one failure
-  mode already has the `data_dir_read_only` condition, and the About block carries it for the
+  mode already has the `settings_save_failed` condition, and the About block carries it for the
   rare report that needs it.
 
   The row is always present at a fixed height, so a notice never shifts the tool view.
@@ -696,9 +697,11 @@ More rules that keep it worth the row:
 - **CLI equivalence:** conditions print once at startup on stderr, notices print on stderr as
   they occur (stdout is the findings'); the same items, rendered as lines.
 
-  The CLI writes no settings, so its `data_dir_read_only` comes from a probe at startup: the
+  The CLI writes no settings, so its `settings_save_failed` comes from a probe at startup: the
   settings file opened for writing, nothing written, which fails where the file is read-only,
-  as it is in a portable copy on read-only media or in a folder the user may not write. The
+  as it is in a portable copy on read-only media or in a folder the user may not write. Its
+  line says what the probe found, `The settings file cannot be written: <the error>`, not the
+  window's `Settings could not be saved`, which would name a save that never ran. The
   GUI does not probe: the first save that fails raises the condition, and the next save that
   succeeds drops it.
 
@@ -1542,7 +1545,7 @@ ST-SET-02   GIVEN the menu open
 ST-SET-03   GIVEN a data directory that cannot be written
             WHEN a setting is changed
             THEN the change applies for the session, the status bar's left slot shows the
-                 data_dir_read_only condition, and no dialog or prompt opens
+                 settings_save_failed condition, and no dialog or prompt opens
 ST-SET-04   GIVEN the selector at PES 2019 and the menu open
             WHEN `D:\Games\Pro Evolution Soccer 2019` is stored as a pick on the PES folder
                  row (the pick's rule called with that folder: the native picker is manual)
@@ -1818,7 +1821,7 @@ ST-RUN-12   GIVEN a window running over a data location
                  earlier session closed
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs
-            THEN stderr starts with the data_dir_read_only condition as one line, and a notice a
+            THEN stderr starts with the settings_save_failed condition as one line, and a notice a
                  tool publishes during the command prints as one line when it occurs
 ST-CLI-02   manual  GIVEN a compile run from a terminal
                     WHEN it runs

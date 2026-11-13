@@ -33,9 +33,9 @@ What changed for members, release by release, newest first.
   without waiting for the check.
 - **Help**: two new chapters: Updates explains the check, the offer and each step of an
   update, and What's new holds this list of changes, version by version.
-- **Save editor**: the Comparator lists each difference in three columns, Item, Old value
-  and New value, under one head row, as the unsaved changes list does; a value too long for
-  its column is cut, and hovering the row shows it whole.
+- **Save editor**: the Comparator lists each difference in three columns, Item, Picked
+  save and Open save, under one head row; a value too long for its column is cut, and
+  hovering the row shows it whole.
 - **Save editor**: a player dragged in a team's player list moves with the pointer, as a
   dragged lineup row does, and the list shows a line where he will land instead of an
   outline round a row.

@@ -313,7 +313,7 @@ pub(super) struct RowMark {
     /// has none.
     severity: Option<aatf::Severity>,
     /// `N error(s), M warning(s), K suggestion(s)` — a zero count left
-    /// out, `No errors` when there are none.
+    /// out, `No issues` when there are none.
     pub(super) tooltip: String,
 }
 
@@ -376,7 +376,7 @@ pub(super) fn row_mark(violations: &[aatf::Violation], slot: Option<u8>) -> RowM
     RowMark {
         severity: highest(on_slot),
         tooltip: if parts.is_empty() {
-            "No errors".to_owned()
+            "No issues".to_owned()
         } else {
             parts.join(", ")
         },

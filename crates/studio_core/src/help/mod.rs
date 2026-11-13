@@ -18,6 +18,12 @@ pub(crate) const MESSAGES_SLUG: &str = "messages";
 /// The What's new chapter's id: the `Updated to` notice's What's new opens it.
 pub(crate) const WHATS_NEW_ID: &str = "whats-new";
 
+/// The line under a Messages topic's heading, before its table, in the help window
+/// and in the exported Markdown alike: what "the line" means where a row's cells
+/// name it.
+pub(crate) const MESSAGES_INTRO: &str = "Where a row says \"the line\", it means the line \
+     the finding prints in the log or the terminal.";
+
 /// One tool's chapter of the help window: a title and its topics, in reading order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HelpSection {

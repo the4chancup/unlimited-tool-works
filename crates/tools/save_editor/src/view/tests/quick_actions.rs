@@ -410,12 +410,12 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
         !draws_tool_name(&nodes),
         "the team view draws no \"Save editor\" either"
     );
-    let tip = "The make buttons act on a player: pick a player row";
+    let tip = "These buttons act on a player: pick a player row";
     for label in ["Make Gold", "Make Regular", "Set stats"] {
         let button = node_labeled(&nodes, Role::Button, label);
         assert!(button.is_disabled(), "{label} disabled on a team row");
         assert_eq!(
-            tooltip_containing(&mut window, &mut view, centre(button), "make buttons"),
+            tooltip_containing(&mut window, &mut view, centre(button), "These buttons"),
             Some(tip.to_string()),
             "{label}'s tooltip"
         );
@@ -423,7 +423,7 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
     let field = set_stats_field(&nodes);
     assert!(field.is_disabled(), "the number disabled too");
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, centre(field), "make buttons"),
+        tooltip_containing(&mut window, &mut view, centre(field), "These buttons"),
         Some(tip.to_string()),
         "the number's tooltip"
     );
@@ -1082,7 +1082,7 @@ fn a_label_too_long_for_its_half_elides() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(wide_button), "tier's values"),
         Some(format!(
-            "The {WIDE_TIER} tier's values (the active ruleset)"
+            "Give this player the {WIDE_TIER} tier's values from the AATF rules in use"
         )),
         "the elided button's tooltip"
     );

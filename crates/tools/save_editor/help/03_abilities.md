@@ -27,7 +27,7 @@ for a tier, a position or the captain.
 **Counts**
 
 The Name and Shirt labels count what the field holds, as typed: `(12/61)` reads
-as 12 bytes used of the 61 the field holds (a colour code counts as the ten
+as 12 bytes used of the 61 the field holds (a color code counts as the ten
 bytes it stores). The shirt name counts letters, 18 on most versions and 16 on
 PES 2016. When a name or shirt name is longer than an older version can hold, the
 field takes an amber tint and its count turns red, and hovering them says what an
@@ -54,5 +54,5 @@ check reads it, from his stats, registered position and height.
 
 When no tier's condition holds for him, the badge says "No tier matches". The
 number goes red when he holds more than the limit. When the rules cannot read
-the player's tier, the badge's place reads "Tier check failed, click for more
-information.", and a click shows why.
+the player's tier, the badge's place reads "Tier check failed: click to see
+why.", and a click shows why.

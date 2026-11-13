@@ -111,7 +111,7 @@ fn assert_at_x(shape: &egui::epaint::TextShape, bounds: accesskit::Rect, x: f64)
 // points) in, the picked save's value the draft's `gap` (8) past the
 // label's 190-point column (4 + 190 + 8), the open save's 8 past the old
 // value's 200 (202 + 200 + 8), both values in the strong colour and no
-// arrow painted. One head row, `Item`, `Old value`, `New value` at the
+// arrow painted. One head row, `Item`, `Picked save`, `Open save` at the
 // same three places in the weak colour, stands above the first team
 // heading; a player head keeps the row's left edge.
 // SE-GUI-13
@@ -140,7 +140,7 @@ fn a_row_stands_in_three_columns_under_one_head() {
     );
 
     let heading = text_shape(&shapes, "Team 734 /lit/");
-    for (title, x) in [("Item", 4.0), ("Old value", 202.0), ("New value", 410.0)] {
+    for (title, x) in [("Item", 4.0), ("Picked save", 202.0), ("Open save", 410.0)] {
         let painted: Vec<&egui::epaint::TextShape> = shapes
             .iter()
             .filter_map(|clipped| match &clipped.shape {
@@ -210,15 +210,15 @@ fn a_comparison_with_no_differing_field_paints_no_head() {
         !shapes.iter().any(|clipped| matches!(
             &clipped.shape,
             egui::Shape::Text(shape)
-                if ["Item", "Old value", "New value"].contains(&shape.galley.job.text.as_str())
+                if ["Item", "Picked save", "Open save"].contains(&shape.galley.job.text.as_str())
         )),
         "no head row painted"
     );
 }
 
 /// The name the cut tests give 73401 in one of the two saves: wider than
-/// the Old value's 200 points and than the rest of the row past the New
-/// value's 410.
+/// the Picked save's 200 points and than the rest of the row past the Open
+/// save's 410.
 const LONG_NAME: &str = "THE EXTRAORDINARILY LONG-LEGGED FORWARD";
 
 /// 73401's Name row as a frame of the comparator drew it.
@@ -304,7 +304,7 @@ fn a_cut_value_ends_in_an_ellipsis_and_hovers_the_whole_row() {
     let (mut view, mut window, row) = compared_long_name("comparator_cut", false);
     let old = text_in_row(&row.shapes, row.bounds, LONG_NAME);
     assert_cut(old, 200.0);
-    // Wider than the Item column's 190, so the cut is the Old value's own.
+    // Wider than the Item column's 190, so the cut is the Picked save's own.
     assert!(
         old.galley.size().x > 190.0,
         "the old value cut at its own column, not the label's: {}",

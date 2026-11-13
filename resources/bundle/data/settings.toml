@@ -2,7 +2,7 @@
 #
 # Lines starting with # are comments: UTW.exe ignores them.
 # Edit this file with UTW.exe closed, or change the settings in the window instead
-# (the gear at the bottom of the left bar).
+# (the gear at the bottom of the sidebar).
 # Text goes between quotes, while numbers, true and false go without them. A folder
 # path with a backslash (\) in it goes between single quotes ('like this'), so its
 # backslashes are read as they are written.
@@ -11,7 +11,7 @@
 
 [common]
 
-# The PES the tools work for, the same as the PES picker on the window's left bar.
+# The PES the tools work for, the same as the PES picker on the sidebar.
 # Accepted values: 15 - 16 - 17 - 18 - 19 - 20 - 21
 # Default: 19
 pes_version = 17

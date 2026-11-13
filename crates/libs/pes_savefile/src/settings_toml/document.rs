@@ -574,7 +574,18 @@ pub(crate) fn emit_appearance(
             // The document's own root table has no header line: its keys
             // (`ingame_face.toml`'s `iris_color`) sit at the top level.
             if !table_path.is_empty() {
-                out.push_str(&format!("\n[{table_path}]\n"));
+                // Team TOML's key comments give the editor ranges while its
+                // import accepts the stored ones: the header carries that.
+                let comment = if document.stored_ranges() && spec.table == KeyTable::Appearance {
+                    "the comments give the game's editor range; an import accepts the stored \
+                     range"
+                } else {
+                    ""
+                };
+                out.push_str(&format!(
+                    "\n{}\n",
+                    padded(&format!("[{table_path}]"), comment)
+                ));
             }
             table = spec.table;
         }

@@ -19,7 +19,7 @@ fn doc(tail: &str) -> String {
 /// 05's names, resolved model IDs and whole `[appearance]` — every key
 /// PES 21 holds, no comments — and slot 06's `base_copy_id` alone.
 const GOLDEN: &str = "\
-# aesthetics_patch.toml, written by the Team compiler to its output folder
+# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
 pes_version = 21
 tool_version = \"0.1.0\"
 allocation_scheme_version = 1
@@ -30,7 +30,7 @@ compiled = 2026-09-12T14:03:00Z
 id = 714
 name = \"/co/\"                   # for the reader; the id is what is applied
 
-[teams.players.05]
+[teams.players.05]              # player 71405
 name = \"Snuffy\"
 shirt_name = \"SNUFFY\"
 boots_id = 143
@@ -172,7 +172,7 @@ side_back_style = 4
 hairline = 1
 forehead_width = 2
 
-[teams.players.06]
+[teams.players.06]              # player 71406
 base_copy_id = 101334
 ";
 

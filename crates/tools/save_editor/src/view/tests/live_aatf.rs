@@ -1907,7 +1907,7 @@ fn the_list_pops_out_into_a_window_and_its_close_turns_live_aatf_off() {
         bench.y1 <= starter.y0,
         "roster order: 71801's group above 71808's: {bench:?}, {starter:?}"
     );
-    let dock_icon = node_labeled(&nodes, Role::Button, "Put Live AATF back in its dock");
+    let dock_icon = node_labeled(&nodes, Role::Button, "Put Live AATF back in its panel");
     let close = node_labeled(&nodes, Role::Button, "Close window");
     let (dock_bounds, close_bounds) = (
         dock_icon.bounds().expect("bounds"),
@@ -2090,7 +2090,7 @@ fn a_touch_leaves_the_windows_dock_icon_on_its_title_bar() {
         let frame = live_window(nodes).expect("the Live AATF window");
         nodes.iter().any(|node| {
             node.role() == Role::Button
-                && node.label() == Some("Put Live AATF back in its dock")
+                && node.label() == Some("Put Live AATF back in its panel")
                 && node.bounds().is_some_and(|bounds| inside(bounds, frame))
         })
     };
@@ -2294,7 +2294,7 @@ fn the_docks_close_button_turns_live_aatf_off() {
     let window_close = node_labeled(&nodes, Role::Button, "Close window")
         .bounds()
         .expect("bounds");
-    let dock_icon = node_labeled(&nodes, Role::Button, "Put Live AATF back in its dock");
+    let dock_icon = node_labeled(&nodes, Role::Button, "Put Live AATF back in its panel");
     let window_gap = window_close.x0 - dock_icon.bounds().expect("bounds").x1;
     let window_cross = segments_inside(&shapes, window_close);
     assert_eq!(

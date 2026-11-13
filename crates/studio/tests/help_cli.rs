@@ -84,12 +84,12 @@ fn the_export_writes_one_markdown_file_per_chapter() {
         ("team-compiler", NOTES_ENCODING_INVALID),
         (
             "save-editor",
-            "| `fpc_custom_skin_on_non_fpc` | Warning | A player wears a custom skin, but his body is not hidden by the FPC hide boots ID from Settings, so the skin hides his body but not his jersey. | Nothing is changed for you. Hide the body too, or pick a preset skin. |",
+            "| `fpc_gloves_checkbox_winter_gloves` | Warning | The Player gloves checkbox is on with Gloves ID 0, so the player wears winter gloves in winter conditions. | Nothing is changed for you. Untick Player gloves, or give the player a gloves ID, if that is not wanted. |",
         ),
         ("export-upgrader", UPGRADER_NOTES_ENCODING_INVALID),
         (
             "ruleset-editor",
-            "| `summary_written` | Info | `summary -o`: the file's readable rules text was written to `path`. | The file it replaced, if there was one, is kept beside it as a .bak copy. |",
+            "| `summary_written` | Info | `summary -o`: the file's readable rules text was written to the file the line names. | The file it replaced, if there was one, is kept beside it as a .bak copy. |",
         ),
     ];
     for (id, last_row) in last_rows {

@@ -64,7 +64,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, rect: Option<egui::Re
                 .add(image.sense(egui::Sense::click()))
                 .on_hover_cursor(egui::CursorIcon::PointingHand)
                 .on_hover_text(format!(
-                    "{}\n\nClick here to open the event's page:\n{page}",
+                    "{}\n\nClick to open the event's page:\n{page}",
                     ruleset.name
                 ));
             if response.clicked() {

@@ -456,7 +456,7 @@ fn the_strip_fields_rows() {
     );
     assert_term(
         &row_term(version, &field(PlayerField::SpectaclesColor, 0, 3)),
-        "Spectacles colour",
+        "Spectacles color",
         "White",
         "Blue",
     );
@@ -569,9 +569,9 @@ fn the_face_fields_rows() {
             PesVersion::Pes17,
             &face_row(IngameFaceField::PlayerGlovesColor, 0, 6),
         ),
-        "Gloves colour",
-        "0",
-        "6",
+        "Gloves color",
+        "White",
+        "Pink",
     );
     assert_term(
         &row_term(
@@ -590,15 +590,15 @@ fn the_face_fields_rows() {
 fn field_words_names_a_field_in_words() {
     for (name, words) in [
         ("NoseHeight", "Nose height"),
-        ("Color1Red", "Colour 1 red"),
+        ("Color1Red", "Color 1 red"),
         // A digit run is one word: the break sits after it, before a
         // capital, never inside it.
-        ("Color12Red", "Colour 12 red"),
+        ("Color12Red", "Color 12 red"),
         ("Pes15JawDepth", "Jaw depth (PES 2015)"),
         ("TeamId", "Team ID"),
         ("EditedAbilities", "Edited abilities"),
         ("EditedComStyles", "Edited COM styles"),
-        ("HairColorRed", "Hair colour red"),
+        ("HairColorRed", "Hair color red"),
     ] {
         assert_eq!(field_words(name), words, "{name}");
     }
@@ -886,7 +886,7 @@ fn a_lone_colour_channel_is_named_in_words() {
             new: 16,
         },
     );
-    assert_term(&term, "Colour 1 red", "63", "16");
+    assert_term(&term, "Color 1 red", "63", "16");
 }
 
 /// The team fields', the kit slots' and the roster's rows: the view's
@@ -948,8 +948,8 @@ fn the_team_field_and_roster_rows() {
     assert_term(&terms[1].0, "Stadium ID", "29", "0");
     assert_term(&terms[2].0, "Slot 1 · Number", "0", "128");
     assert_term(&terms[3].0, "Slot 1 · Bound team ID", "701", "702");
-    assert_term(&terms[4].0, "Player 03's number", "3", "9");
-    assert_term(&terms[5].0, "Player 04", "70104", "0");
+    assert_term(&terms[4].0, "Slot 03's number", "3", "9");
+    assert_term(&terms[5].0, "Slot 04", "70104", "0");
     assert_term(&terms[6].0, "Team ID", "701", "702");
 }
 

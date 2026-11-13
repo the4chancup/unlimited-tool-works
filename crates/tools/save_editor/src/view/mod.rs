@@ -1296,7 +1296,7 @@ pub(super) fn refuse_save_being_read(
     ) && destination_file == save_file
     {
         let reason =
-            format!("that is the save being read, and a {what} written over it would lose it");
+            format!("that is the open save, and writing the {what} over it would destroy the save");
         journal::write_failed(destination, recorder, &reason);
         anyhow::bail!("{}: {reason}", destination.display());
     }

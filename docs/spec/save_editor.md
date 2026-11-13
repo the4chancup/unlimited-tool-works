@@ -423,16 +423,16 @@ something says so with its own code.
 | `patch_player_not_in_save` | Error | `apply-patch`: the save has no player with this id (`player`) | the rest is written (a save holding none of the patch's players is not rewritten in place); exit 1 |
 | `player_diff` | Info | `diff`: one field of a player in both saves, old to new (`player`, `field`, `old`, `new`) | the report's rows; differences are the output, exit 0 |
 | `player_only_in` | Info | `diff`: a player in one save alone (`player`, `save`: `first` or `second`) | informational; goes on |
-| `teams_list_added` | Info | `export-teams-list`: a team of the save the list lacked, appended or put into a placeholder's slot (`team`, `name`) | merged; written only with `--yes` |
+| `teams_list_added` | Info | `export-teams-list`: a team in the save that the list lacked, appended or put into a placeholder's slot (`team`, `name`) | merged; written only with `--yes` |
 | `teams_list_overridden` | Info | `export-teams-list`: a name in both whose id becomes the save's (`name`, `old`, `new`) | merged; written only with `--yes` |
-| `teams_list_unresolved` | Error | `export-teams-list`: a change dropped because its id collided with another row of the merged list (`team`, `name`) | the change is dropped, the other changes written with `--yes`; exit 1 |
-| `teams_list_name_duplicate` | Error | `export-teams-list`: a team of the save left out because an earlier team folds to the same name, which the list can hold once (`team`, `name`, `kept`) | the team is left out; exit 1 |
+| `teams_list_unresolved` | Error | `export-teams-list`: a change dropped because two teams would then share one id in the merged list (`team`, `name`) | the other changes written with `--yes`; exit 1 |
+| `teams_list_name_duplicate` | Error | `export-teams-list`: a team of the save left out because an earlier team has the same name, upper and lower case aside, and the list can hold a name once (`team`, `name`, `kept`) | the team is left out; exit 1 |
 | `teams_list_kept` | Info | `export-teams-list`: the working rows that ended unchanged (`count`) | informational; goes on |
 | `teams_list_written` | Info | `export-teams-list`: the merged list was written (`path`) | informational; goes on |
 | `teams_list_not_written` | Info | `export-teams-list` without `--yes`: the summary only, the file untouched (`path`) | nothing is written |
-| `teams_list_read_only` | Error | `export-teams-list --yes`: the data directory cannot take the file (`path`, `error`) | nothing is written; exit 1 |
+| `teams_list_read_only` | Error | `export-teams-list --yes`: the file could not be written into the data folder, because none is chosen yet or it cannot be written to (`path`, `error`) | nothing is written; exit 1 |
 | `aatf_violation` | the violation's (Error or Warning) | `check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, the rule's name in words; `problem`, what is wrong) | printed; an error-severity violation makes the exit code 1 |
-| `aatf_check_failed` | Error | `check-aatf`: the ruleset's check itself failed on the team, which the other teams' results do not cover (`team`, `error`) | the other teams are still checked; exit 1 |
+| `aatf_check_failed` | Error | `check-aatf`: the ruleset's check itself failed on the team, so the team has no result (`team`, `error`) | the other teams are still checked; exit 1 |
 | `aatf_ruleset_gone` | Warning | `check-aatf` without `--rules`: the `aatf_ruleset` setting names a ruleset that is gone from the data folder or no longer loads (`ruleset`, `used`) | the first embedded ruleset, which the line names, is checked instead |
 
 ---

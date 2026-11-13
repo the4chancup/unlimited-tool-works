@@ -2,6 +2,7 @@
 //! by which one already holds the file. Resolution only looks; asking the user and writing the
 //! file belong to the GUI's first start (spec/core/distribution.md "Data location").
 
+use std::io;
 use std::path::{Path, PathBuf};
 
 use directories::BaseDirs;
@@ -32,16 +33,16 @@ pub fn user_config_dir() -> Option<PathBuf> {
     Some(BaseDirs::new()?.config_dir().join("unlimited-tool-works"))
 }
 
-/// Whether the data directory's settings file opens for writing — the CLI's source of
-/// `data_dir_read_only`. The CLI writes no settings,
-/// so nothing else could raise the condition. The probe opens the file for writing without
-/// creating or truncating it and writes nothing, so the file's bytes and modified time are
-/// untouched; it reports `false` on a read-only file or folder, or a missing file.
-pub fn settings_file_writable(data_dir: &Path) -> bool {
+/// The data directory's settings file opened for writing — the CLI's source of the
+/// settings-save condition: the CLI writes no settings, so nothing else could raise it.
+/// The probe opens the file for writing without creating or truncating it and writes
+/// nothing, so the file's bytes and modified time are untouched; the `Err` is the
+/// open's own error (a read-only file or folder, or a missing file).
+pub fn settings_file_writable(data_dir: &Path) -> io::Result<()> {
     std::fs::OpenOptions::new()
         .write(true)
         .open(data_dir.join(SETTINGS_FILE_NAME))
-        .is_ok()
+        .map(|_| ())
 }
 
 #[cfg(test)]
@@ -176,8 +177,8 @@ mod tests {
         writable.set_readonly(false);
         fs::set_permissions(&file, writable).unwrap();
 
-        assert!(probed_writable, "a writable file probes true");
-        assert!(!probed_read_only, "a read-only file probes false");
+        assert!(probed_writable.is_ok(), "a writable file probes true");
+        assert!(probed_read_only.is_err(), "a read-only file probes false");
         assert_eq!(bytes_after_writable, bytes, "the probe writes nothing");
         assert_eq!(
             modified_after_writable, modified,

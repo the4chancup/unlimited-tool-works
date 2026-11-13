@@ -4,12 +4,12 @@ Unlimited Tool Works 0.0.1
 A preview version for the DBC's managers and VGL's organizer.
 If anything goes wrong or reads strangely, please let me know.
 
-This version contains the Save editor. From the left bar, you can also check out the
+This version contains the Save editor. From the sidebar, you can also check out the
 work in progress preview of the Ruleset editor: it builds and edits a brand-new format of
 cup rules file, called 4ccrules. Some of its sections are not editable yet, but the link it
 shows opens a demo webpage of how it'll look once it's finished.
 
-The Team compiler and the Export upgrader are greyed out on the left bar, because their
+The Team compiler and the Export upgrader are greyed out on the sidebar, because their
 windows come in a later version. In this one they run through two launchers in this folder,
 quick_upgrade.bat and quick_compile.bat.
 
@@ -20,9 +20,9 @@ Getting started
 1. Unpack this archive into a folder of its own, anywhere you like.
 2. Open UTW.exe (utw on Linux). It keeps its settings in the data folder beside it.
 3. The window starts on PES 2017, the game the DBC is played on. VGL's organizer picks
-   PES 2019 on the left bar before opening a save. quick_compile.bat compiles for the PES
+   PES 2019 on the sidebar before opening a save. quick_compile.bat compiles for the PES
    picked there; quick_upgrade.bat upgrades for the PES of the savefile dropped onto it,
-   whatever the left bar says. If the PES number on the left bar turns yellow or red, click
+   whatever the sidebar says. If the PES number on the sidebar turns yellow or red, click
    the Settings gear at the bottom of the bar and set "PES folder" to the path of the
    folder that holds the PES exe.
 4. VGL's organizer: read "For VGL's organizer", at the end, before running either launcher.
@@ -213,7 +213,7 @@ If something goes wrong
 -----------------------
 
 Every message names a code, such as fpc_undershorts_break_hiding.
-The help explains each one: click the ? button at the bottom of the left bar.
+The help explains each one: click the ? button at the bottom of the sidebar.
 
 If the window crashes, please post the log file found in the data folder on the /aesco/
 server or the divegrass thread. If a launcher fails, post its log file instead, found beside

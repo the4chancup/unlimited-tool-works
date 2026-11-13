@@ -34,7 +34,7 @@ fn the_start_page_offers_its_entries_in_order() {
             "/vt/ League 11",
             "/vt/ League 10",
             "Divegrass Before Christmas 7",
-            "Blank: one tier, no brackets, universal rules set",
+            "Blank: one tier, no height brackets, universal rules on",
             "Sensible",
             "Weird",
             "Crazy",
@@ -184,7 +184,7 @@ fn blank_opens_as_new_ruleset_and_saves_back_equal() {
         &mut window,
         &mut view,
         &ctx,
-        "Blank: one tier, no brackets, universal rules set",
+        "Blank: one tier, no height brackets, universal rules on",
     );
 
     let document = view.document.as_ref().expect("a document opened");

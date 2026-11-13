@@ -3,14 +3,14 @@ model = 144                 # 144 / 160 / 176
 collar = 12                # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)
 winter_collar = 40         # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)
 tight = true               # 144/160 only
-pattern = 0                 # 0-13 (PES15 output supports 0-5)
+pattern = 0                 # 0-13 (PES 15: 0-11)
 long_sleeves = "normal"     # "normal" / "undershirt-only" (144/160 only)
 short_sleeves = "normal"    # "normal" / "cut-out" (144/160 only)
 
 [shorts]
 model = 1                  # 0-17
 
-[colors]                    # the config's five RGB fields
+[colors]                    # the kit's own colors; the menu's are in colors.txt
 shirt1 = "#00994B"
 shirt2 = "#00994B"
 undershirt = "#00994B"
@@ -19,7 +19,7 @@ socks = "#00994B"
 
 [name]
 show = true
-shape = "straight"          # straight / light-curve / medium-curve / extreme-curve
+shape = "straight"          # "straight" / "light-curve" / "medium-curve" / "extreme-curve"
 y = 31                       # 0-39 (PES 15-20: 0-33)
 size = 14                   # 0-20
 
@@ -34,7 +34,7 @@ y = 5                       # 0-15
 size = 8                   # 0-15
 
 [number.shorts]
-side = "left"               # left / right
+side = "left"               # "left" / "right"
 x = 8                       # 0-14
 y = 4                       # 0-14
 size = 7                    # 0-13
@@ -45,8 +45,8 @@ left_short = { x = 7, y = 16 }
 right_long = { x = 7, y = 22 }
 left_long = { x = 7, y = 16 }
 
-[unknown]                   # undecoded bits, preserved verbatim (format table above);
-# keys only present when they differ from the template
+[unknown]                   # bits not yet decoded, carried over unchanged;
+# listed only where they differ from the default kit config
 "0x13" = 0
 "0x16" = 0
 "0x18" = 0

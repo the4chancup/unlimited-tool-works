@@ -1,6 +1,6 @@
 The collapsed **Appearance** section at the bottom of the player view holds his
 look: the game's own edit flags, his physique, his strip style, his motions, and
-his skin and iris colours.
+his skin and iris colors.
 
 **Cutscenes**
 

@@ -47,6 +47,14 @@ impl StatusBar {
         }
     }
 
+    /// Drops the settings-save condition however it was raised: a successful save has
+    /// no error text to rebuild the raised instance with.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) fn clear_save_failed(&mut self) {
+        self.conditions
+            .retain(|held| !matches!(held, ShellCondition::SettingsSaveFailed { .. }));
+    }
+
     /// The latest notice; it replaces the one before it.
     pub(super) fn set_notice(&mut self, notice: Notice) {
         self.notice = Some(notice);
@@ -1164,7 +1172,7 @@ mod tests {
 
     // ST-SET-03
     #[test]
-    fn a_failed_settings_save_raises_the_read_only_condition_and_a_save_drops_it() {
+    fn a_failed_settings_save_raises_the_save_failed_condition_and_a_save_drops_it() {
         let egui_ctx = test_context();
         egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
 
@@ -1206,7 +1214,7 @@ mod tests {
         assert!(
             bottom_texts(&nodes)
                 .iter()
-                .any(|text| text.contains("Data folder is read-only")),
+                .any(|text| text.contains("Settings could not be saved")),
             "the condition is in the left slot"
         );
         assert!(
@@ -1220,17 +1228,26 @@ mod tests {
         let nodes = idle(&egui_ctx, &mut app, 8).nodes;
         let node = nodes
             .iter()
-            .find(|node| node.value() == Some("Data folder is read-only"))
+            .find(|node| node.value() == Some("Settings could not be saved"))
             .expect("the condition's text label");
         frame(&egui_ctx, &mut app, hover(node), true);
         let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+        // The save's own error text is in the tooltip: the same save on the same
+        // path gives it here.
+        let expected = {
+            let mut settings = crate::settings::Settings::default();
+            settings
+                .save(&data_dir.join(crate::settings::SETTINGS_FILE_NAME))
+                .expect_err("the premise: the path cannot be written")
+                .to_string()
+        };
         assert!(
-            has_text(
-                &nodes,
-                "Settings and the teams list cannot be saved, so changes last for this \
-                 session only"
-            ),
-            "the entry's tooltip explains the session-only setting"
+            has_text(&nodes, &expected),
+            "the tooltip names the save's error: {expected}"
+        );
+        assert!(
+            has_text(&nodes, "tried again at the next save"),
+            "the tooltip says what follows"
         );
 
         assert_eq!(
@@ -1253,7 +1270,7 @@ mod tests {
         assert!(
             !bottom_texts(&nodes)
                 .iter()
-                .any(|text| text.contains("Data folder is read-only")),
+                .any(|text| text.contains("Settings could not be saved")),
             "a save that succeeds drops the condition"
         );
         assert_eq!(ctx.common().pes_version, PesVersion::Pes20);

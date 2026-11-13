@@ -357,7 +357,7 @@ fn row_mark_counts_the_slots_rows_and_picks_its_glyph() {
             '✔',
             visuals.hyperlink_color,
         ),
-        (&[], "No errors", '✔', success),
+        (&[], "No issues", '✔', success),
     ];
     for (violations, tooltip, glyph, color) in cases {
         let mark = live_marks::row_mark(violations, Some(1));
@@ -472,7 +472,7 @@ fn the_marks_follow_the_held_check() {
             "Yuki-kun ^~^",
             "\u{2714}",
             studio_core::theme::notice_color(studio_core::NoticeKind::Success, &visuals),
-            "No errors",
+            "No issues",
         ),
     ] {
         let row = nodes

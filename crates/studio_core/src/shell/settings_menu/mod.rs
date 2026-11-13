@@ -191,9 +191,9 @@ impl SettingsMenu {
                         let label = format!("PES {} folder", version.year());
                         let key = format!("pes_folders.{}", version.number());
                         let tip = format!(
-                            "PES {}'s own folder. When it is filled, it is used as \
-                             written instead of the PES folder above, and when it is \
-                             empty, the PES folder above is used.",
+                            "PES {}'s own folder, used as written instead of the \
+                             PES folder above. Leave it empty to use the PES folder \
+                             above.",
                             version.year()
                         );
                         let mut current = common
@@ -223,7 +223,8 @@ impl SettingsMenu {
                     ui,
                     "Exports folder",
                     "exports_folder_path",
-                    "Where exports are picked up.",
+                    "The exports folder a compile reads when no other folder is \
+                     given. A relative path starts from the folder UTW.exe is in.",
                     &mut self.exports_folder,
                     &mut exports,
                 ) {
@@ -234,8 +235,8 @@ impl SettingsMenu {
                     ui,
                     "Threads",
                     "thread_count",
-                    "The number of worker threads a tool's run uses, where 0 means \
-                     automatic (the logical cores minus one).",
+                    "How many processor threads a tool's run uses, where 0 means \
+                     all of them but one.",
                 );
                 let max = available_parallelism()
                     .map(|count| count.get())
@@ -266,8 +267,8 @@ impl SettingsMenu {
                     ui,
                     "Memory cap",
                     "memory_cap_percent",
-                    "The most memory a tool's run may budget for, as a percentage \
-                     of physical memory.",
+                    "The most memory a tool's run may budget for, in percent of \
+                     the PC's memory.",
                 );
                 let mut memory_cap = common.memory_cap_percent;
                 // The box holds the number alone and `%` follows it as the row's text,
@@ -297,8 +298,9 @@ impl SettingsMenu {
                     ui,
                     "FPC hide boots ID",
                     "fpc_hide_boots_id",
-                    "The boots ID that Hide body and an fpc_on marker write. The \
-                     game has no boots with this ID, and 4cc uses 55.",
+                    "The boots ID a full-body (FPC) player gets from Hide default \
+                     body or an fpc_on marker. The game has no boots with this ID, \
+                     and 4cc uses 55.",
                 );
                 let mut hide_boots_id = common.fpc_hide_boots_id;
                 let mut response =
@@ -324,8 +326,9 @@ impl SettingsMenu {
                     ui,
                     "FPC hide gloves ID",
                     "fpc_hide_gloves_id",
-                    "The gloves ID that Hide body and an fpc_on marker write. The \
-                     game has no gloves with this ID, and 4cc uses 11.",
+                    "The gloves ID a full-body (FPC) player gets from Hide default \
+                     body or an fpc_on marker. The game has no gloves with this ID, \
+                     and 4cc uses 11.",
                 );
                 let mut hide_gloves_id = common.fpc_hide_gloves_id;
                 let mut response = number_arrows(
@@ -375,10 +378,10 @@ impl SettingsMenu {
                     ui,
                     "Invert value scrolling",
                     "invert_value_scrolling",
-                    "Turns the wheel's steps over a value the other way: wheel \
-                     down moves a slider right, raises a number and takes a \
-                     list's item above, wheel up the reverse. Scrolling a pane \
-                     is unchanged.",
+                    "Reverses the mouse wheel over a value: wheel down then moves \
+                     a slider right, raises a number and picks the list item \
+                     above, and wheel up does the opposite. Scrolling a pane is \
+                     not affected.",
                 );
                 let mut on = common.invert_value_scrolling;
                 if checkbox_without_text(ui, &mut on)
@@ -394,7 +397,7 @@ impl SettingsMenu {
                     ui,
                     "Check for updates",
                     "check_for_updates",
-                    "Whether the shell looks for new releases.",
+                    "Whether the program checks for a newer version.",
                 );
                 let mut on = common.check_for_updates;
                 if checkbox_without_text(ui, &mut on)
@@ -410,7 +413,7 @@ impl SettingsMenu {
                     ui,
                     "Check interval (minutes)",
                     "check_interval_minutes",
-                    "Minutes between release checks.",
+                    "The minutes between two checks for a newer version.",
                 );
                 let mut minutes = common.check_interval_minutes;
                 // The interval is off while the check is, as the draft draws it;
@@ -457,8 +460,8 @@ fn version_row(
         ui,
         "PES version",
         "pes_version",
-        "The PES version every tool works with, the same setting the sidebar's selector \
-         changes.",
+        "The PES version every tool works with, the same setting as the PES picker \
+         on the sidebar.",
     );
     let blocker = version_blocker(tools);
     let mut picked = common.pes_version;

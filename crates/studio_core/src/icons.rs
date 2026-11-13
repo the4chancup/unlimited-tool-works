@@ -42,7 +42,7 @@ pub const GEAR: &str = "\u{E270}";
 pub const QUESTION: &str = "\u{E3E8}";
 /// The status bar notice's dismiss button: an X.
 pub const X: &str = "\u{E4F6}";
-/// The status bar's read-only-data-folder condition: a warning triangle.
+/// The status bar's settings-save condition: a warning triangle.
 pub const WARNING: &str = "\u{E4E0}";
 /// The status bar's update-available condition: an arrow down onto a tray.
 pub const DOWNLOAD_SIMPLE: &str = "\u{E20C}";

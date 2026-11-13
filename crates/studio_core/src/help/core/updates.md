@@ -63,8 +63,8 @@ The window has three buttons:
 
 In the rare case where the old files could not be put back either, the message
 does not say that nothing was changed, and it names the folder that holds them.
-Put them back into the program's folder, or delete that folder, because no other
-update starts until you do.
+Move them back into the program's folder, or delete the folder they are in,
+because no other update starts until you do.
 
 **Restarting**
 

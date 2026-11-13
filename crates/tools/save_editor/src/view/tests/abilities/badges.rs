@@ -287,7 +287,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
     let nodes = badge_landed(&mut window, &mut view);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     // `Cards used:`, then the red click line in the badge's place.
-    const LINE: &str = "Tier check failed, click for more information.";
+    const LINE: &str = "Tier check failed: click to see why.";
     let error_node = {
         let column_x0 = skills_header(&nodes).x0;
         nodes

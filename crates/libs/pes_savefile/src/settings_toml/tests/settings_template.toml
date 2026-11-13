@@ -46,7 +46,7 @@ wrist_tape_color_right = 0      # 0 to 7
 spectacles = 0                  # 0 none, 1 rectangle rimless, 2 rectangle half frame, 3 rectangle full frame, 4 oval rimless, 5 oval half frame, 6 oval full frame, 7 round full frame
 spectacles_color = 0            # 0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 green, 6 pink, 7 turquoise
 gloves = false                  # true, false (outfield player gloves)
-gloves_color = 0                # 0 to 7
+gloves_color = 0                # 0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 green, 6 pink, 7 turquoise
 
 [appearance.motion]
 hunching_dribbling = 1          # 1 to 3 (PES 20 and 21: 1 to 5)

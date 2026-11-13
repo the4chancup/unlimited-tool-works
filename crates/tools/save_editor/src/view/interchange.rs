@@ -316,7 +316,7 @@ pub(super) struct Import {
     /// the save holds them: compared once, when staged, not every frame.
     pub(super) changes: bool,
     /// The notes grouped by code and, for a key's notes, its path, in
-    /// first-seen order; every empty place's note is one group.
+    /// first-seen order; every empty slot's note is one group.
     notes: Vec<NoteGroup>,
 }
 
@@ -331,7 +331,7 @@ struct NoteGroup {
     /// The catalog's `when` and `effect` for the code, as one line.
     text: String,
     /// The key in words (`Manager ID`, `Tight Possession`), or `Empty
-    /// roster place`.
+    /// roster slot`.
     subject: String,
     /// One per note, in the order the import gave them.
     notes: Vec<NoteRow>,
@@ -339,11 +339,11 @@ struct NoteGroup {
 
 /// One note of a group, as the group's list draws it.
 struct NoteRow {
-    /// The roster place the note is about (1-based, as the file's
+    /// The roster slot the note is about (1-based, as the file's
     /// `players.NN` spells it); `None` for a team or tactics key.
     place: Option<u8>,
-    /// The target team's player at that place as stored, colour codes
-    /// included; `None` when the place holds no player.
+    /// The target team's player at that slot as stored, colour codes
+    /// included; `None` when the slot holds no player.
     name: Option<String>,
     /// What the note carries: a playing style's name, a lowered value's
     /// `19 → 0`, the cropped text; empty when it carries nothing.
@@ -605,7 +605,7 @@ pub(super) fn stage(
 
 /// A note's group: its `code` and its path, `players.NN.` written
 /// `players.*.` so one key over every player is one group. An empty slot's
-/// note has no path and keys by its code alone, so every empty place the
+/// note has no path and keys by its code alone, so every empty slot the
 /// file names is one group too.
 fn group_key(code: &str, note: &ImportNote) -> String {
     let Some(path) = note_path(note) else {
@@ -622,7 +622,7 @@ fn group_key(code: &str, note: &ImportNote) -> String {
 }
 
 /// The key path `note` is about; `None` for an empty slot's note, which
-/// names a roster place and no key.
+/// names a roster slot and no key.
 fn note_path(note: &ImportNote) -> Option<&str> {
     match note {
         ImportNote::NotInThisVersion { path }
@@ -667,10 +667,10 @@ fn path_place(path: &str) -> Option<u8> {
 /// name, a motion, an edit flag and a preset's instructions with what they
 /// belong to, any other key (another stat included: `Playing attitude`, as
 /// the Cutscenes row labels it) by its last part (`Manager ID`); an empty
-/// slot's note is `Empty roster place`.
+/// slot's note is `Empty roster slot`.
 fn note_subject(version: PesVersion, note: &ImportNote) -> String {
     let Some(path) = note_path(note) else {
-        return "Empty roster place".to_owned();
+        return "Empty roster slot".to_owned();
     };
     let parts: Vec<&str> = path.rsplit('.').collect();
     let last = parts[0];
@@ -692,14 +692,13 @@ fn note_subject(version: PesVersion, note: &ImportNote) -> String {
     }
 }
 
-/// A key's part in words: underscores as spaces, `id` as ID, `color` as
-/// colour, the first letter a capital (`manager_id` reads `Manager ID`).
+/// A key's part in words: underscores as spaces, `id` as ID, the first
+/// letter a capital (`manager_id` reads `Manager ID`).
 fn key_words(part: &str) -> String {
     let words = part
         .split('_')
         .map(|word| match word {
             "id" => "ID",
-            "color" => "colour",
             word => word,
         })
         .collect::<Vec<_>>()
@@ -900,7 +899,7 @@ fn contents(
         if ui
             .button("Team TOML\u{2026}")
             .on_hover_text(
-                "One team's full-fidelity file, the same text the CLI's export-toml writes",
+                "The team, its tactics and its players with every value: the same file the command line's export-toml writes",
             )
             .clicked()
         {
@@ -912,7 +911,7 @@ fn contents(
             egui::Button::new("Texport\u{2026}"),
         )
         .on_hover_text("A file PES itself can import")
-        .on_disabled_hover_text("PES 2015 and 2016 have no Texport template")
+        .on_disabled_hover_text("The editor cannot write a PES 2015 or 2016 Texport")
         .clicked()
         {
             action = Some(Action::Export(Export::Texport));
@@ -930,7 +929,7 @@ fn contents(
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
             if ui
                 .button("Pick\u{2026}")
-                .on_hover_text("The file picked decides the format")
+                .on_hover_text("Pick the team file to import; its extension decides how it is read")
                 .clicked()
             {
                 action = Some(Action::Pick);
@@ -1035,10 +1034,7 @@ fn contents(
         ui.weak("The changes can be undone and stay unsaved until you click Save.");
     });
     if interchange.applied == Some(revision) {
-        ui.weak(format!(
-            "Applied {}. The changes stay unsaved until you click Save.",
-            file_name(&picked.path)
-        ));
+        ui.weak(format!("Applied {}.", file_name(&picked.path)));
     } else if unchanged {
         ui.weak("The team already holds every value of the chosen sections.");
     }
@@ -1050,7 +1046,7 @@ fn contents(
 fn intro(format: Format, from: Option<PesVersion>, save: PesVersion) -> String {
     let label = format.label();
     match from {
-        None => format!("{label} naming no version, read as the save's."),
+        None => format!("{label} naming no PES version, read as a {save} file."),
         Some(from) if from == save => format!("{label} written from a {from} save."),
         Some(from) => {
             format!("{label} written from a {from} save, converted to {save} where it can be.")
@@ -1174,7 +1170,7 @@ fn subject_line(group: &NoteGroup) -> String {
 }
 
 /// A players' group's rows: the place (weak), the player's name in its
-/// colour codes as the pairing list draws it (`(empty place)` when the
+/// color codes as the pairing list draws it (`(empty slot)` when the
 /// place holds none), and the note's detail (weak).
 fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
     let font = egui::TextStyle::Body.resolve(ui.style());
@@ -1191,7 +1187,7 @@ fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
                     ui.label(job);
                 }
                 None => {
-                    ui.weak("(empty place)");
+                    ui.weak("(empty slot)");
                 }
             }
             if !note.detail.is_empty() {
@@ -1283,7 +1279,7 @@ mod tests {
                 Some(24),
                 None,
                 "",
-                "Empty roster place",
+                "Empty roster slot",
             ),
             (
                 ImportNote::NotInThisVersion {
@@ -1366,14 +1362,14 @@ mod tests {
 
     /// The staged import's players are the target's rostered players and
     /// no one else: the save holds other teams' players, and a record of
-    /// id 0 must not pass for one of the target's empty places.
+    /// id 0 must not pass for one of the target's empty slots.
     #[test]
     fn a_staged_import_holds_the_targets_rostered_players_alone() {
         let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).expect("fixture");
         let team = file.team(701).expect("team 701").clone();
         assert!(
             team.roster.iter().any(|slot| slot.player_id == 0),
-            "premise: 701 has an empty place"
+            "premise: 701 has an empty slot"
         );
         if !file.players().iter().any(|player| player.id == 0) {
             let outsider = file

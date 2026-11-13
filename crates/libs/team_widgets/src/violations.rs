@@ -386,7 +386,8 @@ pub fn violation_line(violation: &aatf::Violation, team_id: u32, wording: Wordin
 /// (`6 in Tall slots, 10 cm each (60): …`), the bracket by its label in
 /// `wording.ruleset`. Inside a line the players stand in roster order, named
 /// code-free from `players` (the team's); a slot none of them holds reads
-/// `Slot {slot}`, as the group headers name it. Every other kind has none.
+/// `Slot NN`, the roster slot counted from 1, as the group headers name it. Every other
+/// kind has none.
 pub fn violation_detail(
     violation: &aatf::Violation,
     players: &[ListedPlayer<'_>],
@@ -395,7 +396,7 @@ pub fn violation_detail(
     let player = |slot: u8| players.iter().find(|player| player.slot == slot);
     let name = |slot: u8| {
         player(slot).map_or_else(
-            || format!("Slot {slot}"),
+            || format!("Slot {:02}", slot + 1),
             |player| pes_savefile::model::names::display_name(player.name),
         )
     };
@@ -596,8 +597,8 @@ fn fill_plain(job: &mut egui::text::LayoutJob, color: egui::Color32) {
 }
 
 /// One group's header: `Player {id} - {number} - {name}` for a rostered
-/// player (`player_head_job`), `Slot {slot}` for one the host lists no
-/// player for, `Team-wide issues` for the team's own rows.
+/// player (`player_head_job`), `Slot NN` (the roster slot counted from 1) for one the
+/// host lists no player for, `Team-wide issues` for the team's own rows.
 fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let visuals = ui.visuals();
@@ -609,7 +610,7 @@ fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) 
         Some(slot) => match team.players.iter().find(|p| p.slot == slot) {
             Some(player) => player_head_job(player.id, player.number, player.name, &font, visuals),
             None => egui::text::LayoutJob::single_section(
-                format!("Slot {slot}"),
+                format!("Slot {:02}", slot + 1),
                 egui::TextFormat::simple(font.clone(), visuals.weak_text_color()),
             ),
         },
@@ -2840,7 +2841,7 @@ mod tests {
             ),
             [
                 "At 185: Stack Bros. (189), HELLOHELL, Kenkon Itteki! (189)",
-                "At 180: Let's Ghost, Love East, Slot 20",
+                "At 180: Let's Ghost, Love East, Slot 21",
             ]
         );
     }
@@ -3100,7 +3101,7 @@ mod tests {
                 "Team 718 /f/",
                 "Player 71801 - 50 - ROADTRIP",
                 "Height: height 185 takes no bracket",
-                "Slot 7",
+                "Slot 08",
                 "Height: height 185 takes no bracket",
             ],
             "the head's drawn text is code-free"
@@ -3122,7 +3123,7 @@ mod tests {
         .collect();
         assert_eq!(painted_runs(text_shape(&shapes, "Player 71801")), expected);
         assert_eq!(
-            painted_text_color(&shapes, "Slot 7"),
+            painted_text_color(&shapes, "Slot 08"),
             weak,
             "an unlisted slot's head stays weak"
         );

@@ -44,7 +44,7 @@ implementation is measured against.
 | 4ccEditor | Fate |
 |-----------|------|
 | Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
-| Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
+| Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as…**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
 ### Player operations
@@ -52,7 +52,7 @@ implementation is measured against.
 | 4ccEditor | Fate |
 |-----------|------|
 | Set all ability stats (dialog: every ability stat to N, 40 to 99, prefilled with the player's first; weak foot, form and injury untouched) | Kept, same fields and range; no edit flag set (the dialog writes the ability stats, as typing them does, and typing sets none) |
-| Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat clamped to 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
+| Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat kept within 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
 | Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
 | Swap player stats (two PIDs; the same field set as Copy) | Kept, the other player picked as for Copy |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
@@ -80,7 +80,7 @@ ALL is every player of the save. That is not kept, so no team operation reaches 
 | Clear visual settings flags (all players on team) | Kept |
 | Set edited/created flag (all players on team) | Kept |
 | Set / remove FPC invisibility (whole team) | Kept |
-| Set boot/glove IDs for everyone (boots: unchanged, incremental or same for all; gloves: unchanged, like the boots, or same for all; incremental gives slot `k` the start ID + `k` − 1, slots 1 to 23) | Kept, every filled slot of the roster numbered by its slot (4ccEditor stops at the first id missing from the team, a bug not kept), in 4ccEditor's own layout, the maintainer's design: a group per side (`Boot IDs`, `Glove IDs`), its options stacked (`Unchanged`, `Set incremental value:`, `Set all to the same ID:`; `Set like boot IDs`), each option's field in one column across both groups, the incremental range's last ID beside its start, read-only and following it (the start plus 22, slot 23's), drawn as a flat box a shade off the panel with its number in `#a0a0a0`, the draft's (`#5f5f5f` on the light theme; egui's weak text grey on that box is as faded as a disabled widget's text, barely readable), the one-ID boxes as wide as the range, each group as wide as its options and fields and the window as wide as the groups; `Set` applies and closes, `Close` closes; a value past the field's range is an error line under the groups |
+| Set boot/glove IDs for everyone (boots: unchanged, incremental or same for all; gloves: unchanged, like the boots, or same for all; incremental gives slot `k` the start ID + `k` − 1, slots 1 to 23) | Kept, every filled slot of the roster numbered by its slot (4ccEditor stops at the first id missing from the team, a bug not kept), in 4ccEditor's own layout, the maintainer's design: a group per side (`Boot IDs`, `Glove IDs`), its options stacked (`Unchanged`, `Set values starting from:`, `Set all to the same ID:`; `Set like boot IDs`), each option's field in one column across both groups, the incremental range's last ID beside its start, read-only and following it (the start plus 22, slot 23's), drawn as a flat box a shade off the panel with its number in `#a0a0a0`, the draft's (`#5f5f5f` on the light theme; egui's weak text grey on that box is as faded as a disabled widget's text, barely readable), the one-ID boxes as wide as the range, each group as wide as its options and fields and the window as wide as the groups; `Set` applies and closes, `Cancel` closes; a value past the field's range is an error line under the groups |
 | Set player names to positions (each name becomes its registered position's full name, "Goalkeeper", and the edited-player flag is set) | Kept, same, and written: 4ccEditor renames the players in memory but never marks the records changed, so its Save writes none of it back (measured, the slice 2 parity run) |
 | Load squad (`.4ccs`, with stats/aesthetics/tactics checkboxes) | Kept as read-only legacy import, same section checkboxes; Team TOML import is the primary path. Cross-version import applies the playstyle/skill conversion maps |
 
@@ -254,10 +254,10 @@ side.
   rows, as a list box's keys move, crossed into the next team at a place that depended on the
   window's height.
 
-  A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
+  A player row shows his slot in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
-  The row shows the place, not the shirt number, because the place is the `NN` of his export's
+  The row shows the slot, not the shirt number, because the slot is the `NN` of his export's
   `NN - Name` folder and of his id, and General info shows the shirt number.
 
   The rows' text, as every name the views draw (the lineup lists, the popover, the view's
@@ -286,7 +286,7 @@ side.
   where each team's rows run unbroken under its team row. A drop on another team's row does
   nothing, and drag is off while a filter is typed, where neighbouring rows are not one team's
   neighbouring slots. While a drag is held over a row of his team other than his own, the
-  place the drop moves him to is marked by a line between two rows, 2 points thick in the
+  slot the drop moves him to is marked by a line between two rows, 2 points thick in the
   selection colour, with a short serif at each end (the draft's `.dropabove` and
   `.dropbelow`; until it is built that row is outlined, the draft's `.dragover`). The line is
   on the row's lower edge when he comes from above, since the rows down to that one move up
@@ -297,12 +297,12 @@ side.
   no row. The line is drawn over the rows, after them, so the next row's background never
   covers its lower half, and a pointer on the very edge two rows share marks the upper
   row's drop alone, the one the release goes to.
-  A drop has one place to go, so the list never shows two lines, and a drag that ends
+  A drop has one slot to go, so the list never shows two lines, and a drag that ends
   without a drop (a release outside the list, Esc) leaves none.
 
   The dragged row is drawn under the pointer while it is held, the point first pressed kept
-  under it, as a dragged lineup row is (SE-GUI-65), and its place in the list is drawn as the
-  lineup draws a dragged row's place. A draggable row shows the pointing hand wherever the
+  under it, as a dragged lineup row is (SE-GUI-65), and its slot in the list is drawn as the
+  lineup draws a dragged row's slot. A draggable row shows the pointing hand wherever the
   pointer is on it (egui leaves a row that also takes clicks on the arrow, so the row asks for
   it). The lineup rows keep the move cross, which Windows draws for egui's grab hand.
 
@@ -356,7 +356,7 @@ side.
   runs to the edge.
 
   With a page it is a link: the pointing-hand cursor, a click opening the page in the browser,
-  and its tooltip the event (the ruleset's name), then a blank line, then "Click here to open
+  and its tooltip the event (the ruleset's name), then a blank line, then "Click to open
   the event's page:" and the address on the next line. Without one its tooltip names the event
   alone. One look on both themes: an event's logo is made for any background. The picture is
   decoded once per ruleset, not per frame; one that fails to decode is not drawn (its bytes
@@ -384,7 +384,7 @@ side.
     clickable (the changes list).
 
   `File` is the opens first (the discovered saves by version, the session's recent files,
-  the picker), then under a separator `Save` (`Ctrl+S`) and `Save as`, both dead with no
+  the picker), then under a separator `Save` (`Ctrl+S`) and `Save as…`, both dead with no
   save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
   undo or redo.
 
@@ -608,9 +608,8 @@ side.
   - in the error red past it.
 
   The field and its count carry one hover: past the portable limit below, its warning; else
-  what counts (on PES 21 "Up to 61 bytes. A plain letter takes one byte, an accented letter
-  takes two or more, and a colour code takes ten. A colour code is typed as \x11c and eight hex
-  digits.", "Up to 18 letters. Western European accents (é, ü, ñ) are fine, but other letters
+  what counts (on PES 21 "Up to 61 bytes: one for a plain letter, two or more for an accented
+  letter, and ten for a color code (typed as \x11c and eight hex digits).", "Up to 18 letters. Western European accents (é, ü, ñ) are fine, but other letters
   and symbols are not.").
 
   The save is where a member writes the names a tactical export carries to a cup of any
@@ -668,13 +667,13 @@ side.
     so a limit without it showed the bonus only past the limit (a VGL 27 tester's report,
     2026-11-02).
 
-    A tier check that fails on the player shows `Tier check failed, click for more
-    information.` in the error colour in the badge's place, its click opening a dialog titled
+    A tier check that fails on the player shows `Tier check failed: click to see
+    why.` in the error colour in the badge's place, its click opening a dialog titled
     `The tier check failed` with the error. The AATF check never runs the two functions the
     badge asks (`player_tier`, then `card_limits`), so a member's edit that breaks only them
     would otherwise show nowhere.
 
-    That error names a roster place as the player list numbers it (`place 04`). The quick
+    That error names a roster slot as the player list numbers it (`slot 04`). The quick
     actions' refusal `Cannot apply the tier` names a tier by its label (`Gold`), not by the
     ruleset's id. An id no tier of the ruleset carries is quoted as the id, the only name it
     has.
@@ -845,14 +844,14 @@ side.
   compared id by id every field of each player differs, and the rows say nothing a member
   can read. The session therefore remembers, for each player id, whose record from the file
   it now holds, through every move, undo and redo, and forgets it when the save is written
-  or another opened. The table then has one row for each group of players that traded places
+  or another opened. The table then has one row for each group of players that traded slots
   among themselves: the item is the team's name, the label `Player order`, and the two values
-  list the group's places with the player on each, in the file and now, one place per line
+  list the group's slots with the player on each, in the file and now, one slot per line
   (`04 SMITH` over `07 JONES`, beside `04 JONES` over `07 SMITH`), so the two read side by
   side and a long move makes the row taller, not wider. The players' own rows are compared against the record each one
   came from, so a moved player lists only what was edited on him, before or after the move.
   One row per group, not per player, because the players between the two ends of a drag only
-  shifted by one place, and a row each would bury the one move the member made. A group
+  shifted by one slot, and a row each would bury the one move the member made. A group
   stands under the first team that rosters any of its players, which is its own team: the
   cup's teams share no player, and no other team is shown ("Only the cup's teams are
   shown" above).
@@ -867,7 +866,7 @@ side.
   and the list stays open, a row shorter. It is no step taken out of the undo stack: later
   steps may build on an earlier one, while a row is a field's difference from the file and
   already holds the value to write. On a `Player order` row the X puts the whole group back on
-  their places in the file, each player keeping the edits made on him. The close prompt's
+  their slots in the file, each player keeping the edits made on him. The close prompt's
   table has no X: it asks one question about all the changes.
 - The toolbar's `• unsaved changes` is a clickable label (Sense::click, the pointing-hand
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
@@ -919,10 +918,10 @@ back when it exits: that made a member close the whole game for every edit, whic
 unnecessary. A PES of another version asks nothing, since a game only writes its own
 version's save.
 
-- **The window.** Save, Save as and the unsaved-changes prompt's Save, with the save's own PES
+- **The window.** Save, Save as… and the unsaved-changes prompt's Save, with the save's own PES
   running, first show a dialog naming the game:
   - if its Edit mode is open, use Data Management > Load after saving, before leaving Edit
-    mode, since leaving it after changing anything there writes the game's own copy over the
+    mode. Leaving Edit mode after changing anything in it writes the game's own copy over the
     save;
   - if Edit mode is closed, the changes show when it is opened.
 
@@ -1692,8 +1691,8 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   "Settings menu"), and `libs/fpc`'s hide preset takes them as an `fpc::HideIds` value rather
   than reading constants.
 
-  The editor's Hide default body, Show default body, Ctrl+I, the team's Set and Remove FPC
-  invisibility and the classifier (`is_fpc_player`) read the setting, and so do the
+  The editor's Hide default body, Show default body, Ctrl+I, the team's Hide and Show
+  default body (FPC) and the classifier (`is_fpc_player`) read the setting, and so do the
   compiler's `fpc_on` marker and its default-ID rule. One setting, not one per tool: a
   compiler writing 60 for a marker and an editor reading only 55 as hidden would show every
   compiled FPC player as "The default body is currently shown".
@@ -1725,13 +1724,14 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
   again. The Appearance section draws the classifier's reading ("The default body is currently
   hidden" or "The default body is currently shown") with two actions, Hide default body and
   Show default body. Ctrl+I shows a player the classifier reads as hidden and hides any other,
-  and the Team menu's Set and Remove FPC invisibility are the same two actions over the team.
-- **The findings are catalog codes.** `fpc::check`'s five codes are rows of the tool's message
+  and the Team menu's Hide and Show default body (FPC) are the same two actions over the team.
+- **The findings are catalog codes.** `fpc::check`'s codes are rows of the tool's message
   catalog (`fpc_inners_break_hiding`, `fpc_undershorts_break_hiding`, `fpc_taping_shows_pieces`,
-  `fpc_gloves_checkbox_winter_gloves`, `fpc_custom_skin_on_non_fpc`), so the section's text and the
-  help's Messages topic are one; they join the spec's Messages table when this phase closes.
-  The last never fires here: the save's classifier counts a custom skin as hidden, so only the
-  compiler, which classifies by the folder's marker, can meet it.
+  `fpc_gloves_checkbox_winter_gloves`), so the section's text and the help's Messages topic
+  are one; they join the spec's Messages table when this phase closes. The fifth,
+  `fpc_custom_skin_on_non_fpc`, is no row: the save's classifier counts a custom skin as
+  hidden, so the editor never meets it, and only the compiler, which classifies by the
+  folder's marker, can.
 
 ---
 
@@ -1753,10 +1753,10 @@ aesthetics** but through the switch:
 
 - The Appearance section renders its values below the Cutscenes group disabled, with one
   line of explanation ("The team's export owns the aesthetics, so edit its `settings.toml`
-  (the face, hair and iris: its `ingame_face.toml`) and recompile, then apply the patch", and
+  (or its `ingame_face.toml`, for the face, hair and iris), recompile, then apply the patch", and
   a link to the apply action).
 - The same lock covers every other aesthetics write path: the team operations that write
-  appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
+  appearance fields (set boots/gloves IDs for everyone, hide/show the team's default body (FPC), clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of
   Team TOML and legacy squad imports (the section checkbox is disabled, gameplay and tactics
   import as before).
@@ -1845,8 +1845,8 @@ The panel over the spec's `diff` report:
 
   The changes list and the prompt also list team and tactics rows, which the Comparator never
   shows (its rows are `diff`'s per-player differences), in the same words:
-  - a roster slot as the player list numbers it (`Player(3)` is "Player 04", `Number(3)`
-    "Player 04's number");
+  - a roster slot as the player list numbers it (`Player(3)` is "Slot 04", `Number(3)`
+    "Slot 04's number");
   - a man-marking byte, the marked opponent's formation slot, as `Opponent's starter 5`
     (numbered from 1; 255 reads `None`) on the row of the own starter who marks
     (`Preset 1 · Man marking · <his name>`): the bare byte read as one of the team's own
@@ -1865,10 +1865,10 @@ The panel over the spec's `diff` report:
 - The picked save is the report's first and the open save its second, so a row reads picked,
   then open: what the member's edits changed against the save he compares with.
 
-  A row stands in three columns, Item, Old value and New value, named by a head row above the
+  A row stands in three columns, Item, Picked save and Open save, named by a head row above the
   list, as the unsaved changes list names its own (not one `old → new` text: values of every
   length then start at one place, and the eye runs down a column). Item is 190 points wide
-  and Old value 200, each cut with an ellipsis where its text is longer, and New value takes
+  and Picked save 200, each cut with an ellipsis where its text is longer, and Open save takes
   the rest, cut the same way where the row is narrower than its text (a long name; a panel
   dragged narrow). A row that cuts a value shows the whole row's text on hover, above the
   hint of what its click does. The team and player heads are as they were.
@@ -2006,7 +2006,7 @@ the editor exposes them as:
 
   Export writes PES 17-21 files from `Texport::new`'s templates and the open save
   (`plans/pes_savefile/operations.md` "Texport (read + write)"). On a PES 2015-2016 save it
-  is disabled, its tooltip saying `PES 2015 and 2016 have no Texport template`.
+  is disabled, its tooltip saying `The editor cannot write a PES 2015 or 2016 Texport`.
 
   The Save dialog suggests `<short name>.ted` on 18-21. On 17 it suggests the name the game
   reads from the save's folder: `TEXPORT` and an eight-digit hexadecimal number in upper
@@ -2168,7 +2168,7 @@ What this editor adds on top of the lib:
 
   The window's title is `Live AATF`, its title bar holding left of the close button the dock
   icon (the arrow into a square, U+E5DF, Phosphor's arrow-square-in; `Put Live AATF back in
-  its dock`), which puts the list back, while the close button (`Turn Live AATF off`) turns
+  its panel`), which puts the list back, while the close button (`Turn Live AATF off`) turns
   Live AATF off as the toolbar toggle does. Under the title stand the dock's count line and
   checking mark, then the same rows in the same well, the players' groups in one column in
   roster order as Multi-team AATF lists them. The rule's column is 140 points (the longest
@@ -2226,7 +2226,7 @@ What this editor adds on top of the lib:
 
     Both glyphs are the suite's symbols font's. Its tooltip is the player's rows as the dock
     counts them, a zero count left out (`2 errors, 1 warning`, `1 suggestion`), and
-    `No errors` when he has none. Players of other teams, with ALL picked, carry none: they
+    `No issues` when he has none. Players of other teams, with ALL picked, carry none: they
     are not checked. The team's own rows (no slot) mark the team's row the same way.
   - **The field a row is about** gets a mark when its player is selected (the pitch's, when
     his team's row is: the pitch is the team view's), for the highest severity among its
@@ -2414,16 +2414,16 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
                 Team compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
-SE-GUI-73  GIVEN the save open and team 701's player on place 04 dragged onto place 07
+SE-GUI-73  GIVEN the save open and team 701's player on slot 04 dragged onto slot 07
            WHEN the unsaved changes list or the close prompt is opened
            THEN the move is one row, item team 701's name, label `Player order`, its old value
-                the places 04 to 07 with the players the file has on them and its new value
-                the same places with the players now on them, one place per line and the
-                row as high as its places, and no player has a row;
+                the slots 04 to 07 with the players the file has on them and its new value
+                the same slots with the players now on them, one slot per line and the
+                row as high as its slots, and no player has a row;
                 GIVEN the moved player's Height then edited THEN the list holds that row
                 and his one Height row, old and new values his own; GIVEN both undone THEN
                 the list is empty; GIVEN a player's Height edited, then that player dragged
-                to another place, then the drag undone THEN the list holds the Height row
+                to another slot, then the drag undone THEN the list holds the Height row
                 alone, under the player it was edited on;
                 GIVEN a second, separate pair of the team swapped THEN the list holds two
                 `Player order` rows; GIVEN the save written THEN the list is empty and a
@@ -2495,7 +2495,7 @@ SE-GUI-11  GIVEN a player without FPC, his Appearance section open, and the aest
            WHEN Ctrl+I, or Hide default body, is used
            THEN his record carries the hide preset's values and the Appearance section reads
                 "The default body is currently hidden"; Ctrl+I again, or Show default body, gives him the show preset's; GIVEN a player
-                whose boots ID is 627 THEN hiding keeps 627; Set FPC invisibility applies the
+                whose boots ID is 627 THEN hiding keeps 627; Hide default body (FPC) applies the
                 hide preset to every player of the team; a strip setting that breaks hiding is
                 listed in the Appearance section as an interference finding
 SE-GUI-12  GIVEN the team view's Tactics on preset 1, and /vg/ League 27, which does not allow
@@ -2579,7 +2579,7 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
                 each row draws its label, the picked save's value and the open save's in
                 three columns, at 4, 202 and 410 points from the row's left, under one head
-                row `Item`, `Old value`, `New value`, and no arrow; a value wider than its
+                row `Item`, `Picked save`, `Open save`, and no arrow; a value wider than its
                 column is cut with an ellipsis, and its row's hover then holds the whole row's
                 text above the click hint; a comparison with no field row (players in one
                 save alone) paints no head row;
@@ -2842,16 +2842,16 @@ SE-GUI-67  GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team
                 turned on THEN Apply writes no aesthetics, and once "Edit aesthetics anyway"
                 is on, Apply writes them; WHEN 713's file is picked after the first was
                 applied THEN the first's `Applied` line goes, and Apply writes 713's file
-                onto 701 and reads `Applied cm.toml. The changes stay unsaved until you click Save.`
+                onto 701 and reads `Applied cm.toml.`
 SE-GUI-68  GIVEN a PES 17 save open on team 714 (/co/)
            WHEN team 714's Team TOML from a PES 21 save, its preset 1 attacking instructions
                 holding Wing Back, which PES 17 lacks, is picked; then the PES 19 squad file
-                `pes19_squad.4ccs`; and, on a PES 21 save's team 701, whose players fill places
+                `pes19_squad.4ccs`; and, on a PES 21 save's team 701, whose players fill slots
                 01 to 23, a file naming players 24 and 25
            THEN the first's notes hold the line `Preset 1 attacking instructions: Wing Back`;
                 the second's group `Goal celebration 1 motion · 23 players`, opened, lists
-                each player's place, name and value change (`01`, his name, `127 → 122`); the
-                third's notes are one group, `Empty roster place · 2 players`
+                each player's slot, name and value change (`01`, his name, `127 → 122`); the
+                third's notes are one group, `Empty roster slot · 2 players`
 SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
            WHEN it is opened through the import dialog
            THEN its sections import as the Team TOML import does, read-only for the legacy
@@ -2931,7 +2931,7 @@ SE-GUI-35  GIVEN the save open with "Aesthetics from exports" off (the default)
 SE-GUI-24  GIVEN the save open on a player
            WHEN Set all stats to N, Bump all stats by N, Copy stats from another player or Swap
                 stats with him runs from the player operations
-           THEN his ability values are the operation's result (Set and Bump clamped to 40 to
+           THEN his ability values are the operation's result (Set and Bump kept within 40 to
                 99, weak foot, form and injury untouched; Copy and Swap over the parity row's
                 field set, positions, skills and COM styles included), as one undoable edit,
                 and the saved file holds them; WHEN Bump all stats is opened again THEN its
@@ -2949,7 +2949,7 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
            THEN it lists the three discovered saves, each labelled by its version alone, the
                 first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
                 recent file above the file picker, then under a separator Save with Ctrl+S
-                beside it and Save as, both disabled while no save is open; WHEN the menu is
+                beside it and Save as…, both disabled while no save is open; WHEN the menu is
                 closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
@@ -2960,7 +2960,7 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 `<test folder>/backups` and Choose file is used again THEN the picker starts
                 in `<test folder>/backups`, and still does after the editor is started again
                 from the same settings, and WHEN that folder no longer exists THEN in the
-                newest discovered save's again; WHEN Save as writes a new
+                newest discovered save's again; WHEN Save as… writes a new
                 path THEN the file replaced, if any, is kept once as its .bak
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
@@ -3058,7 +3058,7 @@ SE-GUI-37  GIVEN the PES 17 save open on team 701
                 1-2 as swatches; WHEN it is clicked THEN the detail shows the team view (its
                 name, short name, colours, manager and stadium ids, the Kit slots… button, the
                 Tactics), and the quick actions and the Player menu's entries are disabled, the
-                Make buttons' tooltip "The make buttons act on a player: pick a player row";
+                Make buttons' tooltip "These buttons act on a player: pick a player row";
                 WHEN the team's short name is edited THEN the team row carries the unsaved dot
                 and none of its players does; WHEN the team row is dragged onto a player row
                 THEN nothing moves; WHEN a player row is clicked THEN the player view shows,
@@ -3099,7 +3099,7 @@ SE-GUI-31  GIVEN the common settings' FPC hide IDs set to 60 (boots) and 12 (glo
            THEN his record holds boots 60 and gloves 12 and Appearance reads "The default body is currently hidden";
                 WHEN Show default body is used THEN both are 0 again; GIVEN a player whose boots ID is
                 55 THEN Appearance reads "The default body is currently shown"; WHEN Ctrl+I, the Player menu's Toggle
-                FPC settings or the Team menu's Set and Remove FPC invisibility run THEN they
+                FPC settings or the Team menu's Hide and Show default body (FPC) run THEN they
                 write and clear 60 and 12 the same, and a player holding 55 and 11 keeps them
 SE-GUI-32  GIVEN the save open and VTL11 picked in the toolbar's ruleset dropdown (SE-GUI-15)
            WHEN the tool is closed and reopened
