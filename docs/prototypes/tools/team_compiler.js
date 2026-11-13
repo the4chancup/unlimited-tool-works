@@ -27,6 +27,8 @@
 "use strict";
 
 const TEAM_COMPILER_CSS = `
+/* A file dragged over the grid: the area it lands in, outlined. */
+.tc-top.tc-drop { outline: 2px dashed var(--sel-fg); outline-offset: -4px; }
   /* The view takes the central panel edge to edge (a pipeline tool's own
      panels fill the Ui it is given), so its two horizontal lines span the
      panel; what sits between them brings its own 8 points at the sides. */
@@ -268,7 +270,7 @@ function sampleRows() {
 // ---- State ----
 // D: the draft controls (the scenarios' GIVENs). S: the view's own state.
 // L: the log panel's state, in the host's shape.
-const D = { writable: "yes", dataReadOnly: false, empty: false };
+const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false };
 const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, detail: null,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
   // Where the member left the detail window (null until it first opens), and
@@ -733,15 +735,43 @@ function startRun(only) {
     if (next) { next.cell.busy = true; run.memory = 310 + (run.at * 37) % 900; }
     else if (run.at - BUSY < run.tasks.length) { /* the last ones in hand end */ }
     else if (run.stage === "Processing" && S.mode === "normal") run.stage = "Packing the CPKs";
+    else if (run.stage === "Packing the CPKs") {
+      run.stage = "Updating the save";
+      if (D.writable === "running") { stopTimer(); return askEditMode(run); }
+    }
     else return endRun();
     toolActivity("team-compiler", { done: Math.min(run.at, run.tasks.length), total: run.tasks.length, elapsed: run.elapsed });
     render();
   }, 60);
   render();
 }
+function stopTimer() { clearInterval(S.run.timer); }
 function stopRun() {
-  clearInterval(S.run.timer);
+  stopTimer();
   toolActivity("team-compiler", null);
+}
+// The savefile step with the save's own PES running (gui.md "Row actions",
+// the save findings): the Save editor's Edit mode question, in place of the
+// command line's --edit-mode-closed. Save runs the step as the flag does;
+// Cancel leaves the save as it was, the run going on to its end.
+// sample wording: the dialog's text and the log lines.
+function askEditMode(run) {
+  render();
+  const go = write => {
+    closeWindow();
+    appendLog([write
+      ? { severity: "Info", code: null, scope: null, text: "Info - The save was updated" }
+      : { severity: "Warning", code: "savefile_skipped_pes_running", scope: null,
+          text: "Warning - The save was not updated: PES is running" }], L);
+    endRun();
+    render();
+  };
+  window_(`PES ${shellPesVersion()} is running`, h("div", {},
+    h("p", {}, "If the game's Edit mode is open, use its Data Management > Load after the save is "
+      + "updated, before you leave Edit mode. Leaving Edit mode after changing anything in it "
+      + "writes the game's own copy over the save."),
+    h("p", {}, "If Edit mode is closed, the changes show when you open it.")),
+    [button("Cancel", () => go(false)), button("Save", () => go(true))], "edit-mode");
 }
 function endRun() {
   const run = S.run;
@@ -751,6 +781,70 @@ function endRun() {
   S.finished = true;
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Compiled ${run.rows} exports` }], L);
   publishNotice(`Compiled ${run.rows} exports`, { label: "Open output", run: openOutputStub }, "success");
+  // Success is a run with no export done with errors: with one, the window
+  // stays open on the grid that shows it.
+  const failed = S.rows.filter(eligible).some(r => cellsOf(r).some(c => c.out === "doneErr"));
+  if (S.autorun && D.closeOnSuccess && !failed)
+    window_("Draft only: the window closes", h("p", {}, "Started by quick_compile.bat with "
+      + "quick_compile_close_on_success on, the app closes here: the run ended with no error."),
+      button("Close", closeWindow), "autorun-close");
+  S.autorun = false;
+}
+
+// ---- A check arriving live (gui.md "Live validation") ----
+// Every cell of the rows starts as Checking and flips to its result as its
+// scope's check ends: the checks run in parallel, so the cells change
+// scattered over the rows, a few at once. `then` runs once the last one is in.
+function liveCheck(rows, then) {
+  const cells = rows.flatMap(r => [r.label, ...cellsOf(r)]);
+  for (const cell of cells) { cell.real = cell.real || cell.status; cell.status = "checking"; }
+  const order = cells.map((cell, i) => ({ cell, k: (i * 7919) % 211 })).sort((a, b) => a.k - b.k);
+  let at = 0;
+  clearInterval(S.checkTimer);
+  S.checkTimer = setInterval(() => {
+    for (let n = 0; n < 4 && at < order.length; n++, at++) {
+      const { cell } = order[at];
+      cell.status = cell.real; delete cell.real;
+    }
+    render();
+    if (at >= order.length) { clearInterval(S.checkTimer); S.checkTimer = null; if (then) then(); }
+  }, 50);
+  render();
+}
+
+// ---- The file drop (gui.md "Row actions", the empty grid) ----
+// A folder, .zip or .7z dropped anywhere on the grid, filled or empty, is
+// copied into the exports folder and checked like any new export; a name
+// the folder already holds is refused, naming it, and nothing is copied.
+// sample: every new name becomes /ck/'s export (the teams list's 712).
+function dropNames(names) {
+  for (const name of names) {
+    if (S.rows.some(r => r.display === name)) {
+      publishNotice(`${name} is already in the exports folder: nothing copied`, null, "error");
+      continue;
+    }
+    const r = { key: "ck" + S.rows.length, name: "/ck/", id: 712, display: name,
+      archive: /\.(zip|7z)$/i.test(name),
+      label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      kits: { GK: kit("g1", "#202020", "#f0c020"), K1: kit("p1", "#f0f0f0", "#108040"),
+        K2: kit("p2", "#108040", "#f0f0f0") },
+      portraits: { count: 23, status: "fullOk", codes: [], folder: "Portraits" } };
+    if (r.archive) { r.label.status = "partialOk";
+      for (const cell of cellsOf(r)) cell.status = "partialOk"; }
+    D.empty = false;
+    S.rows.push(r);
+    publishNotice(`${name} copied into the exports folder`, null, "success");
+    liveCheck([r]);
+  }
+  render();
+}
+function dropZone(el) {
+  const files = e => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
+  el.addEventListener("dragover", e => { if (!files(e)) return; e.preventDefault(); el.classList.add("tc-drop"); });
+  el.addEventListener("dragleave", e => { if (e.target === el) el.classList.remove("tc-drop"); });
+  el.addEventListener("drop", e => { if (!files(e)) return; e.preventDefault(); el.classList.remove("tc-drop");
+    dropNames([...e.dataTransfer.files].map(f => f.name)); });
+  return el;
 }
 // Cancel: the cells not yet processed return to their check colours; nothing
 // is written or replaced.
@@ -792,7 +886,7 @@ function drawView(center) {
   center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
     D.empty ? null : legend(),
-    h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid())),
+    dropZone(h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))),
     toolbar(),
     named(logPanel(L, { tool: "team-compiler", onLine: gotoCell }), "log"),
     detailPanel()));
@@ -812,6 +906,15 @@ function draftControls() {
       cb("The exports folder is empty", D.empty, v => D.empty = v)),
     button("Reset the sample rows", () => { S.rows = sampleRows(); S.detail = null; S.unticked = {};
       S.ids = {}; S.last = null; S.finished = false; L.log = []; seedLog(); render(); }),
+    h("span", { title: "gui.md \"Live validation\"" },
+      button("Check every export again", () => liveCheck(S.rows.filter(r => !r.special)))),
+    h("span", { title: "gui.md \"Row actions\", the empty grid: a drop works on a filled grid too" },
+      button("Drop ck Full Aesthetics Export Autumn26.zip", () => dropNames(["ck Full Aesthetics Export Autumn26.zip"])),
+      button("Drop an export already there", () => dropNames(["a Full Aesthetics Export Autumn26"]))),
+    h("span", { title: "gui.md \"Toolbar\": a --gui autorun presses Compile once the initial check completes" },
+      button("Start as quick_compile.bat", () => { if (S.run) return; S.autorun = true; S.mode = "normal";
+        liveCheck(S.rows.filter(r => !r.special), () => startRun()); }),
+      cb("quick_compile_close_on_success", D.closeOnSuccess, v => D.closeOnSuccess = v)),
     collapsing("team-compiler/walk", "How to walk the scenarios", () =>
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }
@@ -827,6 +930,10 @@ const WALK = [
   ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
+  ["live check", "Check every export again: every cell reads Checking, then flips to its result as its check ends, scattered over the rows"],
+  ["drop", "drag a folder or a .zip from the desktop onto the grid (or use the two Drop controls): a new name is copied in and checked live; a name already there is refused, naming it"],
+  ["Edit mode", "set the destination to \"locked: PES is running\" and Compile: once the CPKs are packed, the save's step asks the Edit mode question; Save updates the save, Cancel leaves it and logs why"],
+  ["autorun", "Start as quick_compile.bat: the check runs, then Compile presses itself; with quick_compile_close_on_success ticked, the window would close at the end of a run with no error (the sample run ends with /adv/ done with errors, so it stays: untick /adv/ in the compile column first to see the close)"],
   ["row actions", "/b/ (old layout) offers Upgrade; /bant/ (NO_USE) is greyed with Enable; the two /biz/ exports clash: Disable on the folder, Move to unused on the archive; a right click on a row's label offers Compile only this export"],
 ];
 
