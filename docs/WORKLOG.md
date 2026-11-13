@@ -1875,40 +1875,46 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] the Export upgrader's help lists what each `unmigrated_content` `reason` means
       (28 values, `UnmigratedReason`'s doc comments; no member-facing text explains them,
       and it is the one Error a member fixes by hand)
-  - [ ] 0.0.2-copywin Copy stats as a window (the maintainer, 2026-11-13): the Player
-    menu's "Copy stats from…" becomes "Copy stats…" and opens a window, not a dialog: two
-    rows (source, destination) by two columns (team, player), four dropdowns; the destination
-    starts on the selected player, or on the selected team's first player while a team's
-    gameplay page shows; buttons Copy and Close, and Copy leaves the window open, so several
-    copies are made by changing the dropdowns. Ruled the same day: a Swap button stands
-    beside Copy and "Swap stats with…" leaves the menu; the destination is set once, when
-    the window opens, and does not follow the list's selection; the source starts on the
-    destination's team with no player picked, Copy and Swap disabled until one is, and both
-    rows stay as they are after a Copy; each Copy or Swap is one undo step and writes a line
-    in the window ("Copied X's stats to Y"). A click on a player in the list while the
-    window is open sets the destination (one player's stats copied onto several is the
-    repeated action; the source is chosen once), the one way the destination moves besides
-    its dropdowns. Plan first
+  - [ ] 0.0.2-copywin Copy and swap stats as one window (the maintainer, 2026-11-13;
+    drafted, `drawCopyStats`, and looked at the same day). The Player menu's "Copy stats
+    from…" and "Swap stats with…" become one entry, "Copy/swap stats…", which opens a
+    window titled "Copy/swap stats", not a dialog: non-modal, the view under it usable,
+    dragged by its title bar. Two rows (Source, Destination) by two columns (Team, Player),
+    four dropdowns. Both rows start on the selected player, or on the selected team's first
+    player while a team's gameplay page shows; a team dropdown changed takes that team's
+    first player. Buttons Copy, Swap and Close; Copy and Swap are disabled while both rows
+    name one player (the hover says so) and leave the window open, so several copies are
+    made in a row; each is one undo step and writes a line in the window ("Copied X's stats
+    to Y."). A click on a player in the list while the window is open sets the destination
+    (one player's stats copied onto several is the repeated action), a team row its first
+    player. The field set is the built one, 4ccEditor's but the free-kick motion (the parity
+    table's Copy player stats row: registered and playable positions included; checked
+    against `editor.h` `PlayerImport` 2026-11-13, nothing else is missing). Plan first
     (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
-    the draft, then the slice -> verify: headless, two copies in a row without reopening,
-    a swap, one undo step each; the built window
-  - [ ] 0.0.2-fpcmenu the Player menu's "Toggle FPC settings" says what it will do (the
-    maintainer, 2026-11-13: a toggle is ambiguous; two entries as the Team menu has, or one
-    whose label follows the player's state): one entry reading "Hide default body (FPC)" or
-    "Show default body (FPC)" by the Appearance section's own reading of the player, Ctrl+I
-    kept on it (the maintainer agreed, 2026-11-13). Plan:
-    `plans/save_editor.md` "Editing UI", the Player menu; help `06_player.md` -> verify:
-    headless, the label on a hidden and on a shown player, Ctrl+I on each
+    the slice -> verify: headless, two copies in a row without reopening, a swap, one undo
+    step each, a click in the list moving the destination; the built window, dragged
+  - [ ] 0.0.2-fpcmenu the FPC entries say what they do (the maintainer, 2026-11-13: a
+    toggle is ambiguous; drafted and looked at the same day). The Player menu's "Toggle FPC
+    settings" becomes one entry whose label follows the Appearance section's own reading of
+    the player: "Hide default body (Enable FPC)" on a shown body, "Show default body
+    (Disable FPC)" on a hidden one, Ctrl+I kept on it. The Team menu's two entries take the
+    same two labels (on the branch `text/shakespeare` they read "Hide default body (FPC)" and
+    "Show default body (FPC)" until this step). The Appearance section's two buttons stay
+    "Hide default body" and "Show default body". Plan: `plans/save_editor.md` "Editing UI",
+    the Player and Team menus; help `05_team.md`, `06_player.md` -> verify: headless, the
+    label on a hidden and on a shown player, Ctrl+I on each
   - [ ] 0.0.2-clipmsg a notice after Ctrl+C and after Ctrl+V saying what was copied or
-    pasted (the maintainer, 2026-11-13: "Copied player X's stats", "Copied /x/'s preset 2",
-    "Pasted player X's stats"). Ruled the same day: the status bar's notice slot, in the
-    success green; and every status bar notice is drawn bold, since notices are easy to miss
-    (`plans/core/gui.md` "Status bar", `studio_core`'s status bar). PROPOSALS P54 is
-    accepted into it: a paste from a save of another PES version says in the same line what
-    the target does not store or caps ("Pasted X's stats; 3 values PES 2017 does not store
-    were left out"); P54 leaves `PROPOSALS.md` with this step's plan edit. Plan:
-    `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one notice per kind
-    of copy and of paste, the cross-version line, a notice's text bold
+    pasted (the maintainer, 2026-11-13; drafted, `clipCopy` and `clipPaste`, and looked at
+    the same day): "Copied X's stats.", "Copied /x/'s Gameplan.", "Copied /x/'s preset 2.",
+    "Copied /x/'s preset 2 Kick-off formation." (a formation's notice names its preset),
+    and "Pasted <the same> onto <the target named the same way>.". They go to the status
+    bar's notice slot, in the success green; and every status bar notice is drawn bold,
+    since notices are easy to miss (`plans/core/gui.md` "Status bar", `studio_core`'s status
+    bar). PROPOSALS P54 is accepted into it: a paste from a save of another PES version says
+    in the same line what the target does not store or caps ("Pasted X's stats; 3 values
+    PES 2017 does not store were left out"); P54 leaves `PROPOSALS.md` with this step's
+    plan edit. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one
+    notice per kind of copy and of paste, the cross-version line, a notice's text bold
   - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,

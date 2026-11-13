@@ -3743,14 +3743,14 @@ function clipKind() {
 }
 function clipCopy() {
   const kind = clipKind(), t = selTeam();
-  const data = kind === "player" ? clone(curPlayer().stats)
+  const data = kind === "player" ? statFields(curPlayer())
     : kind === "team" ? clone(t.tactics)
     : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
   // What the copy holds, as the notices name it ("VAPE DUCK's stats", "/a/'s preset 2").
   const held = kind === "player" ? displayName(curPlayer().name) + "'s stats"
     : kind === "team" ? t.name + "'s Gameplan"
     : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
-    : t.name + "'s " + FORMATIONS[S.tac.formation] + " formation";
+    : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
   S.clip = { kind, data, save: S.save, held };
   // sample wording: the copy and paste notices.
   publishNotice("Copied " + held + ".", null, "success");
@@ -3759,7 +3759,7 @@ function clipCopy() {
   const named = kind === "player" ? "the stats of " + displayName(curPlayer().name)
     : kind === "team" ? "the Gameplan of " + t.name
     : kind === "preset" ? "preset " + (S.tac.preset + 1) + " of " + t.name
-    : "the " + FORMATIONS[S.tac.formation] + " formation of " + t.name;
+    : "the " + FORMATIONS[S.tac.formation] + " formation of preset " + (S.tac.preset + 1) + " of " + t.name;
   if (navigator.clipboard) navigator.clipboard.writeText("Unlimited Tool Works: " + named).catch(() => {});
 }
 function clipPaste() {
@@ -3768,7 +3768,7 @@ function clipPaste() {
   const d = S.clip.data;
   const what = { player: "stats", team: "Gameplan", preset: "preset", formation: "formation" }[kind];
   edit("Paste " + what, () => {
-    if (kind === "player") curPlayer().stats = clone(d);
+    if (kind === "player") Object.assign(curPlayer(), clone(d));
     else if (kind === "team") t.tactics = clone(d);
     else if (kind === "preset") t.tactics.presets[S.tac.preset] = clone(d);
     else tacPreset(t).formations[S.tac.formation] = clone(d);
@@ -3779,7 +3779,7 @@ function clipPaste() {
   const onto = kind === "player" ? displayName(curPlayer().name)
     : kind === "team" ? t.name
     : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
-    : t.name + "'s " + FORMATIONS[S.tac.formation] + " formation";
+    : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
   publishNotice("Pasted " + S.clip.held + " onto " + onto + ".", null, "success");
   render();
 }
@@ -3869,11 +3869,11 @@ function playerMenu() {
     ["Bump all stats\u2026\tCtrl+B", dlgBumpStats, off, tip],
     // One entry that says what Ctrl+I will do to this player, by the Appearance
     // section's own reading of him (a toggle's name left that to be guessed).
-    [(isFpc(p) ? "Show" : "Hide") + " default body (FPC)\tCtrl+I", () => { fpcToggle(p); render(); },
+    [(isFpc(p) ? "Show default body (Disable FPC)" : "Hide default body (Enable FPC)") + "\tCtrl+I", () => { fpcToggle(p); render(); },
       off || !aesUnlocked(), tip || ownershipTip()],
     "-",
     // On a team's page too: the window then starts on the team's first player.
-    ["Copy stats\u2026", winCopyStats],
+    ["Copy/swap stats\u2026", winCopyStats],
     "-",
     ["Generate settings.toml\u2026", dlgSettings, off, tip],
     ["Generate in-game face\u2026", dlgIngameFace, off, tip],
@@ -3889,8 +3889,8 @@ function teamMenu() {
       for (const p of t.players) p.name = POS_LONG[p.positions.registered]; }); render(); }],
     "-",
     ["Clear visual flags\tCtrl+F", clearVisualFlags, !aesUnlocked(), ownershipTip()],
-    ["Hide default body (FPC)", () => teamFpc(true), !aesUnlocked(), ownershipTip()],
-    ["Show default body (FPC)", () => teamFpc(false), !aesUnlocked(), ownershipTip()],
+    ["Hide default body (Enable FPC)", () => teamFpc(true), !aesUnlocked(), ownershipTip()],
+    ["Show default body (Disable FPC)", () => teamFpc(false), !aesUnlocked(), ownershipTip()],
     "-",
     // The team's files: its Team TOML, Texport or legacy squad in and out
     // (the interchange panel), and a picture of its tactics written to a
@@ -4107,19 +4107,28 @@ function dlgNum(name, title, line, start, apply) {
       if (!Number.isNaN(n)) { apply(n); closeWindow(); render(); } }),
      button("Cancel", closeWindow)]);
 }
+// The field set Copy stats, Swap stats and a player's Ctrl+C move, 4ccEditor's but the
+// free-kick motion (plans/save_editor.md, the parity table's Copy player stats row):
+// height, weight, every stat, the registered and playable positions with the playing
+// style and the stronger foot and hand, the skills and the COM styles. The name, the
+// look and every motion stay the player's own.
+const STAT_FIELDS = ["height", "weight", "stats", "positions", "skills", "com_styles"];
+const statFields = p => clone(Object.fromEntries(STAT_FIELDS.map(k => [k, p[k]])));
 // Copy or swap stats between two players, each picked by team and player
 // (SE-GUI-24). A window, not a dialog: it stays open after Copy or Swap, so
-// one player's stats go onto several by changing the destination, and the
-// list under it stays usable: a click on a player there sets the destination
-// (on a team row, the team's first player). The destination starts on the
-// selected player (the selected team's first on a team's page); the source
-// starts on the destination's team with no player picked.
-// sample wording: the row and column heads, the buttons and the result line.
+// one player's stats go onto several by changing the destination, the list
+// under it stays usable, and its title bar drags it. A click on a player in
+// the list sets the destination (on a team row, the team's first player).
+// The source and the destination both start on the selected player (the
+// selected team's first on a team's page), so Copy and Swap wait for one of
+// the two to change.
+// sample wording: the title, the row and column heads, the buttons and the result line.
 let copyWin = null;
 function winCopyStats() {
   const p = curPlayer(), t = selTeam();
-  copyWin = { src: { team: String(t.id), slot: null },
-    dst: { team: String(t.id), slot: String(p.slot) }, line: "", seen: JSON.stringify(S.sel) };
+  copyWin = { src: { team: String(t.id), slot: String(p.slot) },
+    dst: { team: String(t.id), slot: String(p.slot) }, line: "", seen: JSON.stringify(S.sel),
+    at: [0, 0] };
   drawCopyStats();
   render(); // the link carries the open window
 }
@@ -4132,30 +4141,28 @@ function drawCopyStats() {
     w.dst = { team: String(selTeam().id), slot: String(curPlayer().slot) };
   }
   const teamOf = side => teams.find(x => String(x.id) === side.team) || teams[0];
-  const playerOf = side => side.slot === null ? null
-    : teamOf(side).players.find(q => String(q.slot) === side.slot) || null;
+  const playerOf = side => teamOf(side).players.find(q => String(q.slot) === side.slot) || null;
   const teamCombo = side => combo(teams.map(x => [String(x.id), x.name]), side.team, v => {
     side.team = v;
-    // The source loses its player with its team; the destination takes the new team's first.
-    side.slot = side === w.src ? null : String(teamOf(side).players[0].slot);
+    // A side takes its new team's first player.
+    side.slot = String(teamOf(side).players[0].slot);
   });
-  const playerCombo = side => combo(
-    (side === w.src ? [[null, "(pick a player)"]] : []).concat(teamOf(side).players.map(q =>
-      [String(q.slot), String(q.slot).padStart(2, "0") + " " + displayName(q.name)])),
+  const playerCombo = side => combo(teamOf(side).players.map(q =>
+      [String(q.slot), String(q.slot).padStart(2, "0") + " " + displayName(q.name)]),
     side.slot, v => { side.slot = v; });
   const src = playerOf(w.src), dst = playerOf(w.dst);
-  const same = src && dst && src === dst;
-  const why = !src ? "Pick the source player" : same ? "The source and the destination are the same player" : null;
+  const why = src === dst ? "The source and the destination are the same player" : null;
   const act = swap => {
     edit(swap ? "Swap stats" : "Copy stats", () => {
-      if (swap) { const s = dst.stats; dst.stats = src.stats; src.stats = s; }
-      else dst.stats = clone(src.stats);
+      const from = statFields(src), back = statFields(dst);
+      Object.assign(dst, from);
+      if (swap) Object.assign(src, back);
     });
     w.line = swap ? "Swapped the stats of " + displayName(src.name) + " and " + displayName(dst.name) + "."
       : "Copied " + displayName(src.name) + "'s stats to " + displayName(dst.name) + ".";
     render();
   };
-  window_("Copy stats", h("div", {},
+  window_("Copy/swap stats", h("div", {},
     h("table", { class: "grid", id: "copy-stats-grid" },
       h("tr", {}, h("td", {}), h("td", {}, weak("Team")), h("td", {}, weak("Player"))),
       h("tr", {}, h("td", {}, "Source"), h("td", {}, teamCombo(w.src)), h("td", {}, playerCombo(w.src))),
@@ -4166,6 +4173,23 @@ function drawCopyStats() {
      button("Swap", () => act(true), { disabled: !!why, title: why }),
      button("Close", () => { copyWin = null; closeWindow(); })], "copy-stats");
   document.querySelector("#overlay .modal-bg").classList.add("floating");
+  // The title bar drags the window, as the built one's does; where it was dropped is kept
+  // across the redraws.
+  const win = document.querySelector("#overlay .window");
+  const place = () => { win.style.transform = "translate(" + w.at[0] + "px," + w.at[1] + "px)"; };
+  place();
+  win.querySelector(".title").addEventListener("mousedown", e => {
+    if (e.button !== 0) return;
+    const x0 = e.clientX - w.at[0], y0 = e.clientY - w.at[1];
+    const move = ev => { w.at = [ev.clientX - x0, ev.clientY - y0]; place(); };
+    const up = () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+    e.preventDefault();
+  });
   windowDrawer = drawCopyStats;
 }
 // Set boots/gloves IDs for everyone: per side unchanged / the original's modes

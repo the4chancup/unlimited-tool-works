@@ -575,10 +575,11 @@
   .notice-txt { font-weight: 600; }
   /* A window that leaves the view under it usable (egui's Window, not its Modal): no
      backdrop, clicks pass beside it. It opens low in the middle, clear of the player list
-     and of the Ability stats column, and the built one is dragged by its title. */
+     and of the Ability stats column, and its title bar drags it. */
   .modal-bg.floating { background: none; pointer-events: none; align-items: flex-end;
     justify-content: center; padding: 0 0 56px 0; }
   .modal-bg.floating .window { pointer-events: auto; }
+  .modal-bg.floating .window .title { cursor: move; user-select: none; }
   .notice-txt.success { color: var(--success); }
   .notice-txt.info { color: var(--link); }
   .notice-txt.warning { color: var(--warn); }
