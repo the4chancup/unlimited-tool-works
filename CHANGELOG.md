@@ -1,7 +1,5 @@
 # Changelog
 
-What changed for members, release by release, newest first.
-
 ## [Unreleased]
 
 ### Important
