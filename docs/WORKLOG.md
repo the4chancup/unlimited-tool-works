@@ -1815,6 +1815,18 @@ briefs, review loops, gates and mutation runs as for any step.
       (3) Player gloves in PES 2019's Edit mode is greyed out on a goalkeeper; an outfield
       player has "OFF" and "Worn in Winter", the colour below it: the `gloves` key's
       "outfield player gloves" is right and stays
+    - [ ] the wrist tape's colours are four, not the strip palette's eight (the maintainer,
+      2026-11-13, PES 2019's Edit mode: "Strip Colour", "White", "Black", "Beige", in that
+      order, text only; wrist tape greyed out on a goalkeeper). Measured the same day on the
+      maintainer's PES 2019 save: /a/'s VAPE DUCK, set to Beige, holds 3 in both fields, and
+      the save's 4,830 players hold only 0 to 3. So 0 strip colour, 1 white, 2 black,
+      3 beige: the `wrist_tape_color_left`/`_right` comments name them in place of `0 to 7`
+      (`settings_toml/keys.rs`, the Team TOML's too), the Save editor offers those four by
+      name in place of eight swatches (`view/appearance/fields.rs`, `STRIP_COLORS`' comment
+      "assumed to be the same set, unverified"), and the plan and spec say so. Open: whether
+      a value of 4 to 7 is refused or kept as stored (no save holds one), and whether PES
+      2015 to 2018, 2020 and 2021 list the same four -> verify: headless, the control lists
+      four names; a `settings.toml` with 3 compiles to 3
     - [ ] wave 4: proposals for the Save editor's and the Ruleset editor's messages, the
       views' labels, tooltips and dialogs, and the other TOML comments (a kit's
       `config.toml`, the Team TOML, the aesthetics patch, `legacy_ids`)

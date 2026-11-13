@@ -467,15 +467,11 @@ pub(super) fn changes_table<'a>(
                 } else {
                     item
                 };
-                // The grid centres a cell in its row's height: a cell as
-                // high as the values' lines puts the Item on the first.
+                // The grid centres a widget in its row's height, but starts
+                // a child layout at the row's top: the Item added through
+                // one sits on the values' first line.
                 let response = if term.old.contains('\n') || term.new.contains('\n') {
-                    let height = value_height(ui, &term.old).max(value_height(ui, &term.new));
-                    ui.vertical(|ui| {
-                        ui.set_min_height(height);
-                        ui.add(item)
-                    })
-                    .inner
+                    ui.vertical(|ui| ui.add(item)).inner
                 } else {
                     ui.add(item)
                 };
@@ -499,19 +495,6 @@ pub(super) fn changes_table<'a>(
 /// A cell of the changes table: `text` on one line.
 fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
     egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
-}
-
-/// The height `value_cell` draws `value` at, every line unwrapped.
-fn value_height(ui: &egui::Ui, value: &str) -> f32 {
-    egui::WidgetText::from(egui::RichText::new(value).monospace())
-        .into_galley(
-            ui,
-            Some(egui::TextWrapMode::Extend),
-            f32::INFINITY,
-            egui::TextStyle::Body,
-        )
-        .size()
-        .y
 }
 
 /// A value cell of the changes table: `value` in monospace, after its
