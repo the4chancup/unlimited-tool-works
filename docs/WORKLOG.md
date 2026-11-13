@@ -18,8 +18,8 @@ is in `AGENTS.md` ("Working documents").
 2. The illegal formation check (0.0.2c) is in and reviewed, with the pitch held to the
    movable range (0.0.2-range).
 3. The Save editor asks of 2026-11-03 are in: -clip, -undo, -inst, -drift, -statlbl, and
-   the cup-teams filter (0.0.2-cup). Open: the arrow keys on every whole-number box
-   (0.0.2-arrows, with SWE-2).
+   the cup-teams filter (0.0.2-cup), and the arrow keys on every whole-number box
+   (0.0.2-arrows).
 4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
@@ -1762,7 +1762,7 @@ briefs, review loops, gates and mutation runs as for any step.
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
   the organizer's order and the AATF check of the official save (the plan's paragraph)
-  - [ ] 0.0.2-arrows Up and Down step every whole-number box by one (found in
+  - [x] 0.0.2-arrows 2026-11-13 Up and Down step every whole-number box by one (found in
     0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
     steps, through its own `number_arrows`; the Tactics popover's X stays put after four
     presses. DECISIONS 2026-11-13; `plans/core/gui.md` "The wheel over a value", the arrow
@@ -1770,6 +1770,14 @@ briefs, review loops, gates and mutation runs as for any step.
     popover, the settings menu, the Ruleset editor and the colour picker draw their
     whole-number boxes through it -> verify: headless, one Up adds one at each site; the
     built window, the popover's X. Brief `.tmp/arrows/brief.md` (SWE-2)
+    - [x] the slice 2026-11-13 (`ab7c70de`, SWE-2 and the lead's rerun: `studio_core` 476,
+      `team_widgets` 261, `color_tools` 74, `ruleset_editor` 149 + 13, `save_editor`
+      852 + 57, clippy, fmt): one test a site, each red first. In the built window the
+      popover's X went 27 to 28 on one Up and to 26 on two Downs
+    - [x] its SWE-2 review 2026-11-13 (S-arrows r1, 1 of 2 accepted, the loop ends): the
+      popover's end-of-range test asserts its focus premise. Rejected: a box disabled
+      while focused stepping on, since egui drops a disabled widget's focus (shown by a
+      red run)
   - [x] 0.0.2-cgu 2026-11-13 (the lead): `codegen-units = 1` timed on the AATF check of a
     220-team PES 2017 save and not taken, 2.230 s against 2.280 s, inside either build's
     spread (DECISIONS 2026-11-13; `.tmp/0_0_2/cgu/`)

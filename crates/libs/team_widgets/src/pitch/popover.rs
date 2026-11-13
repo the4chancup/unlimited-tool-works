@@ -1088,6 +1088,10 @@ mod tests {
                 &mut view,
                 &roster,
             );
+            assert!(
+                window.ctx.egui_wants_keyboard_input(),
+                "premise: {label}'s number holds the keyboard"
+            );
             let presses = vec![egui::Event::Key {
                 key,
                 physical_key: None,
