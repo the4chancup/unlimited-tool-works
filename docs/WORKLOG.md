@@ -1916,19 +1916,15 @@ briefs, review loops, gates and mutation runs as for any step.
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
   - [ ] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
-    2026-11-13, from the built window: the tail's separator and its Help entry drawn over
-    the last tool entries; in the draft the Settings entry was drawn over the status bar).
-    The tool entries scroll between the head and the tail, which keep their places
-    (`plans/core/gui.md` "Sidebar", the paragraph starting "In a window too short")
-    - [x] the plan and the draft 2026-11-13 (the lead): the host page's `.tools-box`
-      and `.tail-box`, measured in a 419-point-high window (`.tmp/0_0_2/tc_draft/
-      measure2.py`: a wheel turn scrolls the entries, the logo and Settings stay put;
-      `side_short_scrolled.png`)
-    - [x] the scenario 2026-11-13 (the lead): ST-SIDE-10
-    - [ ] the slice (small, SWE-2), running since 2026-11-13 in the main tree (brief
-      `.tmp/0_0_2/side/brief_side.md`): the entries in a scroll area between head and
-      tail, no scroll bar, one offset for the rail and the opened sidebar, a focused
-      entry brought into view; its test starts `sidebar/tests/`
+    2026-11-13: the tail's separator and Help drawn over the last tool entries)
+    - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,
+      fmt; ST-SIDE-10): the tool entries scroll by the wheel in the room between the
+      head and the tail, which keep their places; no scroll bar; one offset for the
+      rail and the opened sidebar; an entry focused by Tab is scrolled into view (egui
+      does not do it by itself). egui's fade at a scroll area's cut edge is left on.
+      Its test starts `sidebar/tests/`; moving `tests.rs`'s other tests there is not
+      done. Look: Pending looks
+    - [ ] its SWE-2 review
   - [x] 0.0.2-rad 2026-11-13 (`4bdfc5cf`, merge `b1274e74`, review fixes `842f41e3`): one
     corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
     egui's radii in both themes and the suite's own painting reads the style
@@ -2613,6 +2609,10 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   list, the line with its serifs under or over the row, none left after a release or Esc;
   and on the first and last row in view, where the list's clip cuts the line's outer half;
   no PES; 0.0.2-line; maintainer
+- The sidebar in a window dragged too short for its entries: the wheel over the rail
+  scrolls the tool entries, the logo, the selector, Help and Settings stay put, the
+  opened sidebar shows the same entries, and the entries fade at the cut edge (egui's
+  own; say if it should go); no PES; 0.0.2-side; maintainer
 - The corners in the built window, all 2 points: a toolbar menu, a dropdown list, a
   dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
   update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
