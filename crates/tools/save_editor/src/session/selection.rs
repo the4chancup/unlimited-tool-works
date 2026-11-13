@@ -1,6 +1,7 @@
 //! Which players and team rows the master list shows: the team the selector
-//! names, or every team at ALL and while the filter box is in use, so a
-//! player is found without knowing his team first.
+//! names, or every cup team at ALL and while the filter box is in use, so a
+//! player is found without knowing his team first. A team outside the cup
+//! (`session::cup`) is never listed, nor are its players.
 
 use std::collections::HashMap;
 
@@ -8,10 +9,12 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 
+use crate::session::cup::cup_teams;
+
 /// Which team the list shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TeamChoice {
-    /// Every team of the save, in the save's own order.
+    /// Every cup team of the save, in the save's own order.
     All,
     /// One team, by id.
     Team(u32),
@@ -39,7 +42,7 @@ pub(crate) enum ListRow {
 }
 
 /// The rows the list draws: each listed team's row, then its players' rows
-/// in roster order. A non-empty `filter` matches across all teams (whatever
+/// in roster order. A non-empty `filter` matches across all cup teams (whatever
 /// the choice) on the display name, the shirt name or the id,
 /// case-insensitive. A team whose own name (its display name, matched as
 /// the players' names are) matches is then listed with all its players, so
@@ -57,7 +60,7 @@ pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<List
         .map(|player| (player.id, player))
         .collect();
     let mut rows = Vec::new();
-    for team_entry in file.teams() {
+    for team_entry in cup_teams(file) {
         if !filtering
             && let TeamChoice::Team(id) = team
             && *id != team_entry.id

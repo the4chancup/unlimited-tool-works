@@ -10,6 +10,7 @@ use pes_version::PesVersion;
 
 use crate::TEST_SALT;
 use crate::common::Sandbox;
+use crate::common::cup_save::{MOVED_TEAM, assert_premises, outside_cup_file, outside_players};
 
 /// The `rulesets/<ruleset>.rhai` rules file, assembled the way `aatf`'s `file::assemble`
 /// builds a data block that has no CUSTOM CHECKS section: the block trimmed, the current
@@ -347,6 +348,56 @@ fn without_teams_every_cup_team_is_checked_in_id_order() {
     // Every cup team left breaks a rule (the fixture's placeholder players do), so each
     // prints, once, in id order: exactly these five, the record order notwithstanding.
     assert_eq!(teams, [701, 702, 704, 718, 920], "team id order: {teams:?}");
+}
+
+/// SE-GUI-77's save on PES 21 is checked under Autumn 26 with the file's own checks
+/// emptied: the cup's teams then break no rule, while team 300 still breaks the roster
+/// order, which the check makes itself before the file's checks run (its slots hold
+/// /aco/'s players, 70301 on, where the rule wants 30001 on).
+// SE-AATF-10
+#[test]
+fn without_teams_a_team_outside_the_cup_is_left_out_and_named_it_is_checked() {
+    let sandbox = Sandbox::new("aatf_outside_cup");
+    let (file, unrostered) = outside_cup_file(PesVersion::Pes21);
+    assert_premises(&file, unrostered);
+    assert_eq!(
+        outside_players(&file)[0],
+        MOVED_TEAM * 100 + 1,
+        "premise: team 300's first slot holds /aco/'s first player"
+    );
+    fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let logic = rules_file("autumn26");
+    assert_eq!(logic.matches("fn check_team(team) {").count(), 1);
+    fs::write(
+        sandbox.path("quiet.4ccrules"),
+        logic.replacen(
+            "fn check_team(team) {",
+            "fn check_team(team) { return [];",
+            1,
+        ),
+    )
+    .unwrap();
+    let quiet = sandbox.arg("quiet.4ccrules");
+
+    let run = check(&sandbox, "EDIT", &["--rules", &quiet]);
+    assert!(
+        !run.messages().iter().any(|line| line.contains("team=300")),
+        "nothing of team 300: {:?}",
+        run.messages()
+    );
+    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
+
+    let run = check(&sandbox, "EDIT", &["--teams", "300", "--rules", &quiet]);
+    assert_eq!(
+        run.messages().first().map(String::as_str),
+        Some(
+            "Error aatf_violation (team=300, player=70301, rule=Roster order, \
+             problem=the slot holds player 70301, not 30001)"
+        ),
+        "{:?}",
+        run.messages()
+    );
+    assert_eq!(run.exit_code(), 1, "{:?}", run.messages());
 }
 
 // SE-AATF-06

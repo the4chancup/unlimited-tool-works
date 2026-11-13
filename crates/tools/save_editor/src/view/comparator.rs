@@ -28,6 +28,7 @@ use team_widgets::violations::{
 use crate::diff::{self, DiffReport, PlayerReport};
 use crate::messages::version_mismatch_sentence;
 use crate::session::Session;
+use crate::session::cup::is_cup_team;
 use crate::session::journal;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
@@ -543,12 +544,17 @@ impl Place {
     }
 }
 
-/// The first team in `file`'s order whose roster holds each player: one
-/// group per player, not one per roster — a player on a club and a
-/// national team reads once.
+/// The first cup team in `file`'s order whose roster holds each player: one
+/// group per player, not one per roster. A team outside the cup places no
+/// one, so no heading or click names it.
 pub(super) fn roster_of(file: &EditFile) -> HashMap<u32, Place> {
     let mut roster = HashMap::new();
-    for (index, team) in file.teams().iter().enumerate() {
+    let cup = file
+        .teams()
+        .iter()
+        .enumerate()
+        .filter(|(_, team)| is_cup_team(team.id));
+    for (index, team) in cup {
         for (slot, entry) in team.roster.iter().enumerate() {
             if entry.player_id != 0 {
                 roster.entry(entry.player_id).or_insert(Place {

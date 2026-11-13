@@ -171,6 +171,22 @@ fn a_row_stands_in_three_columns_under_one_head() {
     assert_at_x(head, row, 0.0);
 }
 
+/// 73410 renumbered 9_999_999 with his place on 734's roster: in a compare
+/// with the fixture, 9_999_999 is in this save alone and 73410 in the other
+/// alone, each on 734's roster in his own save (a player no cup roster
+/// holds in either save is not reported).
+fn renumber_73410(file: &mut EditFile) {
+    file.player_mut(73410).expect("73410 is a player").id = 9_999_999;
+    let place = file
+        .team_mut(734)
+        .expect("team 734")
+        .roster
+        .iter_mut()
+        .find(|entry| entry.player_id == 73410)
+        .expect("73410 on 734's roster");
+    place.player_id = 9_999_999;
+}
+
 // A comparison whose only differences are players in one save alone (no
 // field row) paints no head row.
 // SE-GUI-13
@@ -179,9 +195,7 @@ fn a_comparison_with_no_differing_field_paints_no_head() {
     let (mut view, mut window) = open_734_with("comparator_no_head", &[], 183);
     // As `the_players_only_in_one_save_list_under_their_headings`: one id
     // renumbered out, so the report holds only-in players and no row.
-    let picked = picked_save(&scratch_of(&view), "picked", |file| {
-        file.player_mut(73410).expect("73410 is a player").id = 9_999_999;
-    });
+    let picked = picked_save(&scratch_of(&view), "picked", renumber_73410);
     view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
@@ -638,11 +652,10 @@ fn a_save_of_another_version_is_refused_naming_both() {
 fn the_players_only_in_one_save_list_under_their_headings() {
     let (mut view, mut window) = open_734_with("comparator_only_in", &[], 183);
     let dir = scratch_of(&view);
-    // As `tests/cli/diff.rs`'s `diff_pair`: one id renumbered out, so
-    // 9_999_999 is in the picked save alone and 73410 in the open alone.
-    let picked = picked_save(&dir, "picked", |file| {
-        file.player_mut(73410).expect("73410 is a player").id = 9_999_999;
-    });
+    // As `tests/cli/diff.rs`'s `diff_pair`: one id renumbered out with his
+    // place, so 9_999_999 is in the picked save alone and 73410 in the open
+    // alone.
+    let picked = picked_save(&dir, "picked", renumber_73410);
     let slot = view
         .session
         .as_ref()
@@ -666,11 +679,12 @@ fn the_players_only_in_one_save_list_under_their_headings() {
             .any(|node| node.value() == Some("Only in the picked save")),
         "the picked-only heading"
     );
-    // His record keeps the name; no roster holds him in the picked save.
+    // His record keeps the name, and his place on the picked save's 734
+    // its number.
     assert!(
         nodes
             .iter()
-            .any(|node| node.value() == Some("Player 9999999 DFW")),
+            .any(|node| node.value() == Some("Player 9999999 - 46 - DFW")),
         "the picked-only head"
     );
     assert!(

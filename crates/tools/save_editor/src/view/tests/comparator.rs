@@ -268,6 +268,7 @@ fn scroll_to(
     panic!("the list never showed {text:?}")
 }
 
+mod cup;
 mod export;
 mod filter;
 mod rows;

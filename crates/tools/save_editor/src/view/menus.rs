@@ -18,6 +18,7 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
+use crate::session::cup::cup_teams;
 use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
@@ -1008,12 +1009,12 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                             .unwrap_or_else(|| picked.to_string()),
                     )
                     .show_ui(ui, |ui| {
-                        for team in session.file().teams() {
+                        for team in cup_teams(session.file()) {
                             combo_item(ui, &mut picked, team.id, display_name(&team.name));
                         }
                     })
                     .response;
-                let teams = session.file().teams().iter().map(|team| team.id);
+                let teams = cup_teams(session.file()).map(|team| team.id);
                 if let Some(next) = step_choice(teams, &picked, wheel_steps(ui, &combo)) {
                     picked = next;
                 }

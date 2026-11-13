@@ -89,6 +89,12 @@ What changed for members, release by release, newest first.
   wide position held twice, too many or too few in a line), naming the preset, the
   formation and the players, unless the ruleset allows illegal formations. Moving the
   player on the Tactics pitch puts it right.
+- **Save editor**: lists only the cup's teams (IDs 701 to 920) and the players on their
+  rosters, in the team selector, the filter, Multi-team AATF, the Comparator and the roster
+  sheet, and Fix database repairs only those. The game's own clubs and national teams stay
+  in the save untouched. On the command line, `diff` compares the cup's players alone and
+  `export-toml --all-teams` writes the cup's teams alone, as `check-aatf` already checked
+  them, while a team named by its ID is still read.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES

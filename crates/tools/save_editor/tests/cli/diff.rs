@@ -5,6 +5,10 @@ use std::fs;
 use pes_savefile::EditFile;
 use pes_version::PesVersion;
 
+use crate::common::cup_save::{
+    CUP_PLAYER, assert_copies_differ, assert_premises, outside_cup_file, outside_players,
+    second_copy,
+};
 use crate::{Sandbox, TEST_SALT};
 
 /// A player id no save holds, so renumbering a player to it leaves him in one save alone.
@@ -20,13 +24,17 @@ impl Sandbox {
     }
 
     /// Two PES 21 saves: `A` is the fixture with player 70110 renumbered to `NOWHERE`
-    /// (so 70110 is in `B` alone and `NOWHERE` in `A` alone); `B` is the fixture with
-    /// 70105 carrying two changes, his boots id and his speed, and a second changed player,
-    /// 70106, whose boots id moved by one. The three changed values, old and new.
+    /// with his place on 701's roster (so 70110 is in `B` alone and `NOWHERE` in `A`
+    /// alone, each on a cup roster, which is what the report reads); `B` is the fixture
+    /// with 70105 carrying two changes, his boots id and his speed, and a second changed
+    /// player, 70106, whose boots id moved by one. The three changed values, old and new.
     fn diff_pair(&self) -> [(u32, u32); 3] {
         // The boots id is a `u32` field, the speed a `u8`; both land as `u32` for the lines.
         let mut a = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
         a.player_mut(70110).unwrap().id = NOWHERE;
+        let place = &mut a.team_mut(701).unwrap().roster[9];
+        assert_eq!(place.player_id, 70110, "premise: 70110's place");
+        place.player_id = NOWHERE;
         fs::write(self.path("A"), a.to_bytes(&TEST_SALT).unwrap()).unwrap();
         let mut b = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
         let boots = &mut b.player_mut(70105).unwrap().appearance.boots_id;
@@ -131,6 +139,59 @@ fn the_text_names_a_field_as_its_view_does_and_json_keeps_the_schema_name() {
             "id": 73401,
             "rows": [{ "field": "Heading", "old": "77", "new": "80" }]
         }])
+    );
+}
+
+/// SE-GUI-77's save on PES 21 as `A` and its second copy as `B`: team 300's name, its first
+/// player's Height, the unrostered player's Height and 70101's Height differ. The report,
+/// text and JSON, holds 70101's Height alone.
+// SE-DIF-07
+#[test]
+fn a_team_outside_the_cup_and_a_player_on_no_cup_roster_are_not_reported() {
+    let sandbox = Sandbox::new("diff_outside_cup");
+    let (file, unrostered) = outside_cup_file(PesVersion::Pes21);
+    fs::write(sandbox.path("A"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let copy = second_copy(&file, unrostered);
+    fs::write(sandbox.path("B"), copy.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let (a, b) = (
+        EditFile::load(&sandbox.path("A")).unwrap(),
+        EditFile::load(&sandbox.path("B")).unwrap(),
+    );
+    assert_premises(&a, unrostered);
+    assert_copies_differ(&a, &b, unrostered);
+    let outside = outside_players(&a)[0];
+    let height = a.player(CUP_PLAYER).unwrap().basic.height;
+
+    let run = sandbox.diff("A", "B", &[]);
+    assert_eq!(run.exit_code(), 0);
+    assert_eq!(
+        run.messages(),
+        vec![format!(
+            "Info player_diff (player={CUP_PLAYER}, field=Height, old={height}, new={})",
+            height + 1
+        )],
+        "70101's Height alone, nothing of {outside} or {unrostered}"
+    );
+
+    let run = sandbox.diff("A", "B", &["--json"]);
+    assert_eq!(run.exit_code(), 0);
+    let stdout = run.stdout();
+    let report: serde_json::Value = serde_json::from_str(&stdout)
+        .unwrap_or_else(|error| panic!("stdout does not parse as JSON: {error}\n{stdout}"));
+    assert_eq!(
+        report,
+        serde_json::json!({
+            "players": [{
+                "id": CUP_PLAYER,
+                "rows": [{
+                    "field": "Height",
+                    "old": height.to_string(),
+                    "new": (height + 1).to_string()
+                }]
+            }],
+            "only_in_first": [],
+            "only_in_second": []
+        })
     );
 }
 

@@ -250,38 +250,6 @@ fn the_counts_line_lists_the_systems_the_range_was_read_under() {
     assert!(at < first, "the counts sit above the list: {lines:?}");
 }
 
-/// The popup items of the dialog's team combo `nth` from the left, top to
-/// bottom: the combo clicked open, its items read, then a click on the
-/// title closes the popup.
-fn range_items(window: &mut Headless, view: &mut SaveView, nth: usize) -> Vec<String> {
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let combo = range_combos(&pairs)[nth];
-    let (left, right, below) = {
-        let bounds = combo.bounds().expect("drawn bounds");
-        (bounds.x0, bounds.x1, bounds.y1)
-    };
-    click(window, combo, view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    // The popup's items stand under the combo, as `pick_range_end` finds
-    // them; its scroll area draws the items it shows.
-    let mut items: Vec<(f64, String)> = pairs
-        .iter()
-        .filter(|(_, node)| node.role() == Role::Button)
-        .filter_map(|(_, node)| {
-            let (bounds, label) = (node.bounds()?, node.label()?);
-            ((left..right).contains(&bounds.x0) && bounds.y0 >= below)
-                .then(|| (bounds.y0, label.to_owned()))
-        })
-        .collect();
-    items.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
-    let title = super::prompt::dialog_nodes(&pairs, MULTI_TITLE)
-        .into_iter()
-        .find(|node| node.value() == Some(MULTI_TITLE))
-        .expect("the title");
-    click(window, title, view);
-    items.into_iter().map(|(_, label)| label).collect()
-}
-
 /// The last end follows a first end picked past it, on the frame of the
 /// pick, and lists the teams from the first end's on: 718 picked on the
 /// first end of the PES 17 sample's dialog, opened on 701 to 701.

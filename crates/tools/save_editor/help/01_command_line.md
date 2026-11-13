@@ -36,8 +36,9 @@ restarting the game. A PES of another version running does not count.
 and stadium, its tactics, and every rostered player with every field, the look included.
 
 - With `--team` one team goes to the file `--out` names, replacing it when it exists.
-- With `--all-teams` every team of the save goes to its own `<id>.toml` in the `--out-dir`
-  folder, which is created when missing and whose older files are replaced.
+- With `--all-teams` every cup team of the save (ids 701 to 920) goes to its own `<id>.toml`
+  in the `--out-dir` folder, which is created when missing and whose older files are
+  replaced.
 
 A team id the save does not hold, or an `--out` naming the save itself, is refused and nothing
 is written.
@@ -82,7 +83,8 @@ left as it was, once nothing needs writing), so a write that fails prints only i
 **Comparing two saves**
 
 `diff` lists what differs between two saves of the same version, player by player, paired by
-player id:
+player id. It compares the players a cup team's roster holds in either save (ids 701 to 920)
+and leaves the game's own teams out:
 
 - one line per changed field, `player_diff`, with the field, the first save's value and the
   second's;

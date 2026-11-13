@@ -37,7 +37,7 @@ const WRITE_FAILED: u8 = 3;
 
 #[derive(Debug, Subcommand)]
 enum SaveEditorCommand {
-    /// Write one team of a save as a Team TOML file, or every team as one file each.
+    /// Write one team of a save as a Team TOML file, or every cup team as one file each.
     ExportToml(ExportTomlArgs),
     /// Patch a save's team from a Team TOML file. The team its [team] id names takes the
     /// file's keys, and the rest of the save is untouched.
@@ -129,7 +129,7 @@ struct ExportTomlArgs {
     /// The file the one team goes to. It is replaced when it exists.
     #[arg(short, long, value_name = "FILE", requires = "team")]
     out: Option<PathBuf>,
-    /// Every team of the save, one <id>.toml each.
+    /// Every cup team of the save (ids 701 to 920), one <id>.toml each.
     #[arg(long, requires = "out_dir")]
     all_teams: bool,
     /// The folder the <id>.toml files go in. It is created when missing, and files already
@@ -322,7 +322,7 @@ fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliErro
         }
         (None, _, Some(out_dir)) => {
             let mut files = Vec::new();
-            for id in session.team_ids() {
+            for id in session.cup_team_ids() {
                 let path = out_dir.join(format!("{id}.toml"));
                 files.push((id, path, session.export_team(id).map_err(invalid)?));
             }
@@ -410,10 +410,7 @@ fn check_aatf(
     let ids = match &args.teams {
         Some(text) => parse_teams(text).map_err(|error| invalid(anyhow!("--teams: {error}")))?,
         None => {
-            let mut ids: Vec<u32> = session
-                .team_ids()
-                .filter(|id| (701..=920).contains(id))
-                .collect();
+            let mut ids: Vec<u32> = session.cup_team_ids().collect();
             ids.sort_unstable();
             ids
         }
@@ -688,6 +685,48 @@ mod tests {
         ] {
             assert!(parse(&bad).is_err(), "{bad:?}");
         }
+    }
+
+    // SE-TOML-10
+    #[test]
+    fn export_toml_all_teams_writes_the_cup_teams_alone() {
+        use crate::test_support::cup_save::{OUTSIDE_TEAM, outside_cup_file};
+        use crate::test_support::{TEST_SALT, cli_stdout, scratch};
+
+        let dir = scratch("export_toml_cup_teams");
+        let (file, _) = outside_cup_file(PesVersion::Pes21);
+        fs::write(dir.join("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+        let save = dir.join("EDIT").display().to_string();
+        let out = dir.join("teams");
+        let out_dir = out.display().to_string();
+        cli_stdout(
+            &dir,
+            &["export-toml", &save, "--all-teams", "--out-dir", &out_dir],
+        );
+        let mut written: Vec<String> = fs::read_dir(&out)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        written.sort();
+        let mut expected: Vec<String> = file
+            .teams()
+            .iter()
+            .filter(|team| team.id != OUTSIDE_TEAM)
+            .map(|team| format!("{}.toml", team.id))
+            .collect();
+        expected.sort();
+        assert_eq!(expected.len(), 219, "premise: 219 cup teams");
+        assert_eq!(written, expected, "one file per cup team, no 300.toml");
+
+        // Named by its id, team 300 is written.
+        let single = dir.join("300.toml");
+        let single_arg = single.display().to_string();
+        cli_stdout(
+            &dir,
+            &["export-toml", &save, "--team", "300", "--out", &single_arg],
+        );
+        let text = fs::read_to_string(&single).expect("team 300's file is written");
+        assert!(text.contains("id = 300"), "team 300's own file: {text}");
     }
 
     #[test]
