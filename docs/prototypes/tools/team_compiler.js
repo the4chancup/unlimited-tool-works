@@ -41,7 +41,9 @@ const TEAM_COMPILER_CSS = `
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
   .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
   .tc-gap { width: 8px; }
-  .tc-slot { width: 26px; height: 26px; }
+  /* Every position is drawn, a faint square where the export has nothing: the
+     full grid leads the eye along a row to its button. */
+  .tc-slot { width: 26px; height: 26px; background: var(--faint); border-radius: 2px; }
   .tc-cell { width: 26px; height: 26px; border-radius: 2px; box-sizing: border-box;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-family: var(--font-mono); font-size: 11px; line-height: 11px; cursor: pointer; }
@@ -75,8 +77,8 @@ const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc
   fullOk: "#9b59b6", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
   done: "#32b450", doneWarn: "#dcc832", doneErr: "#b46432" };
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
-  partialOk: "Shallow check passed (an archive)", fullOk: "Checked", warning: "Warning",
-  partialError: "Shallow check failed (an archive)", error: "Error", done: "Done",
+  partialOk: "Shallow check passed (archive)", fullOk: "Checked", warning: "Warning",
+  partialError: "Shallow check failed (archive)", error: "Error", done: "Done",
   doneWarn: "Done with warnings", doneErr: "Done with errors", blocked: "Blocked" };
 // The label's colour follows the cell's own colour, not the theme: a soft light
 // grey on a dark cell, a soft dark grey on a light one.
@@ -304,7 +306,7 @@ function gridRow(r) {
   const colour = COLOURS[r.label.status];
   cells.push(h("td", { class: "tc-name mono" + (S.highlight === r.name ? " hl" : ""),
     style: `background:${colour}; color:${labelColour(colour)}`, "data-scope": r.name,
-    title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (an archive: shallow check)" : "") }),
+    title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
     onclick: () => { S.detail = { row: r.key, what: "label" }; render(); } }, r.name));
   cells.push(idCell(r), h("td", { class: "tc-gap" }));
@@ -323,7 +325,8 @@ function gridRow(r) {
   const lines = [h("tr", { class: off ? "off" : "" }, cells)];
   if (r.refs)
     lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 4 : 3) }),
-      Array.from({ length: 35 - SLOTS }, (_, i) => playerSlot(r, SLOTS + 1 + i))));
+      Array.from({ length: SLOTS }, (_, i) => playerSlot(r, SLOTS + 1 + i)),
+      h("td", { class: "tc-gap" }), KIT_SLOTS.map(() => h("td", { class: "tc-slot" }))));
   return lines;
 }
 const playerSlot = (r, n) => h("td", { class: "tc-slot" },
