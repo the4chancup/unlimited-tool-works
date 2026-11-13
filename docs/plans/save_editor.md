@@ -2517,7 +2517,12 @@ SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that f
                 dragged to (40, 45) THEN he stays an SS; WHEN an outfielder is held with the
                 pointer below the pitch THEN his badge stands on y 4, and WHEN he is released
                 on the grass there THEN his slot holds y 4; WHEN his popover is opened at y 4
-                THEN its Y's ⏴ is disabled
+                THEN its Y's ⏴ is disabled; WHEN he is held with the pointer above the
+                pitch, left of it and right of it THEN his badge stands on y 47, x 5 and
+                x 99, and WHEN he is released on the grass at each THEN his slot holds it;
+                WHEN his popover is opened at (99, 47) THEN its X's ⏵ and its Y's ⏵ are
+                disabled, and at x 5 its X's ⏴; GIVEN a slot stored at x 2 WHEN its popover's
+                X's ⏵ is clicked THEN it holds x 5
 SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF COWBOY BEBOP
                 (70223) at (40, 45), and DBC7, which allows illegal formations, the active
                 ruleset

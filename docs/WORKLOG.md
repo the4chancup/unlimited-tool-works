@@ -2370,8 +2370,9 @@ briefs, review loops, gates and mutation runs as for any step.
     every version (S-warn-1; DECISIONS 2026-11-13; `plans/save_editor.md` "Editing UI", the
     popover's paragraph on X and Y; today `snap` and the steppers of
     `team_widgets/src/pitch/` use `GRID_X` 104 and `GRID_Y` 48)
-    - [ ] its Acceptance scenario's wording (the stepper scenario that names the range's
-      ends) and the slice, after 0.0.2-cup merges (its tests reach `save_editor`)
+    - [x] its Acceptance clauses 2026-11-13 (the lead): SE-GUI-42's last six, the range's
+      four ends by a held marker and by the steppers, and a stored x 2 stepping in to 5
+    - [ ] the slice, after 0.0.2-cup merges (its tests reach `save_editor`)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
