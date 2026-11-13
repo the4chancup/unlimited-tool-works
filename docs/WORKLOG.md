@@ -784,17 +784,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `Portraits/`: the compiler needs no change for it, a portrait finding's scope is
       the file's own path (`deep/portrait.rs`, `IssueScope::File`), which names the
       folder; `portrait_conflict` is the export's (it skips the export) and stays on the
-      row's label. `gui.md` "Task-to-cell mapping" changes with it. Also ruled: checked
+      row's label. `plans/team_compiler/gui.md` "Task-to-cell mapping" changes with it. Also ruled: checked
       is `#800080` and done `#008000`; every margin of the grid is 8; a title row (Team,
       ID, Players, Portraits, Kits) that stays in view, solid, with no tick-all checkbox
       in the compile column; the detail panel squeezes no column (the grid scrolls
       sideways); an untagged row reads "Full or Midcup?" in the warning colour and an
       old one "Old export format" in the error colour; a clashing archive is moved to
       the exports folder's `unused/`, not `old exports/`, which is for exports in the
-      old format (`gui.md` "Row actions" says `old exports/` today). Later the same
+      old format (`plans/team_compiler/gui.md` "Row actions" says `old exports/` today). Later the same
       day: a check's warning or error is a thick yellow or red outline on the cell's own
       colour (checked, or shallow-checked, so the two archive states become one), solid
-      yellow or red once the compile has gone through the cell (`gui.md` "Cell states"
+      yellow or red once the compile has gone through the cell (`plans/team_compiler/gui.md` "Cell states"
       and its colour table change); a skipped export's cells are blocked from the check
       on, not from Compile; a row's message and its answer buttons stand over the
       Players columns (the reassign question hides the row's cells while asked), its one
