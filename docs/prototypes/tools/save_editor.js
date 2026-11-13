@@ -4718,9 +4718,13 @@ function generalPanel(p, team) {
 // read as 9 above and 11 below on the maintainer's screen. The toolbar's 4
 // of margin and 5 more.
 function viewTitle(id, name) {
-  return h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
-    pageToggle(),
-    h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name)));
+  // The line under the row is the one the team view drew under its fields: it parts the
+  // toggle from the screen it switches, on all three.
+  return h("div", {},
+    h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
+      pageToggle(),
+      h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name))),
+    h("div", { class: "sep" }));
 }
 // The three screens, as one sliding toggle left of the name (4ccEditor's tabs, which
 // members asked back): Stats and Appearance are the selected player's, Gameplan his
@@ -4823,7 +4827,6 @@ function teamView(t) {
           colCount("team-info")).map(r => h("tr", {}, r))), "team-info"),
       button("Kit slots\u2026", dlgKitSlots,
         { title: "The kit slot assignments, rarely edited" })),
-    h("div", { class: "sep" }),
     tacticsTab(t));
 }
 // The team's name, short name and colours 1-2, the former team bar's fields
