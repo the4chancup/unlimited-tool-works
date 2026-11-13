@@ -1921,7 +1921,7 @@ briefs, review loops, gates and mutation runs as for any step.
       accepts a drop takes it (on the edge under the dragged row the line showed a drop
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
-  - [ ] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
+  - [x] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13: the tail's separator and Help drawn over the last tool entries)
     - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,
       fmt; ST-SIDE-10): the tool entries scroll by the wheel in the room between the
@@ -1930,7 +1930,7 @@ briefs, review loops, gates and mutation runs as for any step.
       does not do it by itself). egui's fade at a scroll area's cut edge is left on.
       Its test starts `sidebar/tests/`; moving `tests.rs`'s other tests there is not
       done. Look: Pending looks
-    - [ ] its SWE-2 review
+    - [x] its SWE-2 review 2026-11-13 (S-side r1: 2 of 8 accepted, the loop ends)
   - [x] 0.0.2-rad 2026-11-13 (`4bdfc5cf`, merge `b1274e74`, review fixes `842f41e3`): one
     corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
     egui's radii in both themes and the suite's own painting reads the style

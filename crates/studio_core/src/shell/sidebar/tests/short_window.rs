@@ -2,7 +2,7 @@
 //! wheel in the room between the head and the tail, which keep their places,
 //! and the opened sidebar's entries stand where the rail's do (ST-SIDE-10).
 
-use super::super::ENTRY_HEIGHT;
+use super::super::{ENTRY_HEIGHT, SEPARATOR_SPACING};
 use super::*;
 
 /// The scenario's fourteen stub tools, `(id, label)` pairs.
@@ -77,12 +77,13 @@ fn idle_at_height(
 }
 
 /// The scroll room's top and bottom: from the head separator's bottom to the
-/// tail separator's top — each separator a 9-point row flanked by the layout's
-/// 3-point item spacing, which the entries never share with it.
+/// tail separator's top — each separator a `SEPARATOR_SPACING` row flanked by the
+/// layout's 3-point item spacing (egui's own), which the entries never share with it.
 fn scroll_band(nodes: &[accesskit::Node]) -> (f64, f64) {
     let head_end = combo(nodes).bounds().expect("the selector is drawn").y1;
     let help_top = entry(nodes, HELP_LABEL).bounds().unwrap().y0;
-    (head_end + 15.0, help_top - 12.0)
+    let separator = f64::from(SEPARATOR_SPACING);
+    (head_end + 3.0 + separator + 3.0, help_top - 3.0 - separator)
 }
 
 /// The `i` icon glyph painted inside `bounds` (an entry row's): its text
@@ -159,7 +160,7 @@ fn bounds(node: &accesskit::Node) -> accesskit::Rect {
 // ST-SIDE-10
 #[test]
 fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
-    let Shell { mut app, .. } = shell14();
+    let Shell { mut app, _dir, .. } = shell14();
     let egui_ctx = test_context();
     let labels = TOOLS.map(|(_, label)| label);
 
@@ -338,7 +339,7 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
     let out = frame_at_height(
         &egui_ctx,
         &mut app,
-        wheel_notch_at(centre(entry(&out.nodes, "T07")), false),
+        wheel_notch(entry(&out.nodes, "T07"), false),
         Some(2.8),
         780.0,
     );
@@ -352,7 +353,7 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
 // not scroll a focused widget into view on its own.
 #[test]
 fn a_focused_entry_is_scrolled_into_view() {
-    let Shell { mut app, .. } = shell14();
+    let Shell { mut app, _dir, .. } = shell14();
     let egui_ctx = test_context();
 
     frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(1.0), 420.0);
