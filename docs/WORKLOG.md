@@ -1984,6 +1984,17 @@ briefs, review loops, gates and mutation runs as for any step.
       formation's shape is easier to see."
     - the folder, until a member picks one: `formations` beside the program (the plan has
       only "the folder last used")
+  - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
+    docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
+    reference text). Waits for the maintainer, who decides after the weekly usage reset
+    (Thursday 01:00) whether SWE-2 or Opus runs it. The trial, 2026-11-13: SWE-2 on `fpc`
+    and `vtree` (branch `text/docstrings`, worktree `4cc-studio-temp/docstrings`, one commit,
+    not merged; brief and report in its `.tmp/docstrings/`): 104 blocks read, 15 edited,
+    mostly chained sentences split, three pointers given their file, one stale claim found
+    and reported (`StripStyle` "as booleans"); one slip in fifteen (a source pointer moved
+    onto a sentence it does not support), corrected by the lead. For the full pass: one
+    crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
+    with the sentence it documents"; the lead reads each edit against the code
   - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,
