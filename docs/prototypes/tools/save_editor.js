@@ -6019,7 +6019,7 @@ function paintPitch(g, t, f0, live) {
     // With the portraits off the cross stands on the badge, its lower ends touching it.
     if (crossRows) crosses.push([x, faces ? bt - MARKER.gap - MARKER.portrait / 2
         : bt - (MARKER.portrait / 2 - PITCH_CROSS.inset) - PITCH_CROSS.width / 2 - PITCH_CROSS.outline,
-      crossRows.some(r => r[0] === "Error") ? "#ff0000" : "#ff8f00"]);
+      crossRows.some(r => r[0] === "Error") ? "#f85149" : "#d29922"]);
     g.save();
     g.beginPath(); g.rect(bl, y + 3, MARKER.badgeW, 20); g.clip();
     g.font = "12px " + FONT_BODY; g.textAlign = "left";

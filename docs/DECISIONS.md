@@ -17193,3 +17193,16 @@ trustworthy". The Team compiler grid's own state colours (its Error fill and rin
 the theme's and are not changed by this.
 Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found"; the
 drafts' `--error`.
+
+## 2026-11-14: the warning colour is GitHub's amber, `#D29922` dark and `#9A6700` light
+
+With the error red moved to GitHub's `#F85149`, egui's warning orange `#FF8F00` stood too
+close to it (the maintainer). GitHub's attention amber replaces it in both themes, our own
+light `#C54B00` included; GitHub's orange ("severe", `#DB6D28`) was drawn and sits as close to
+the red as egui's (`.tmp/0_0_2/red/warns.png`). The Live AATF pitch's crosses keep one value
+in both themes, as every colour on the turf does: the warning cross (`Palette::pitch_warn`)
+takes the dark amber, and the error cross, which read the theme's red and matched in both
+themes only because egui's two reds were the same `#FF0000`, gets `Palette::pitch_error`,
+the dark red. The Team compiler's and the upgrader's grid colours are their own and stay.
+Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found";
+`plans/save_editor.md` (three "warning amber"); the drafts' `--warn` and the pitch cross.

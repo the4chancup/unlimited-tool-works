@@ -1948,9 +1948,11 @@ briefs, review loops, gates and mutation runs as for any step.
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
   - [ ] 0.0.2-noticeerr (the maintainer, 2026-11-13; DECISIONS "no alias or deprecation shim")
-    `NoticeKind::Error`, drawn in the theme's error red, GitHub's `#F85149` dark and `#D1242F` light
-    in place of egui's `#FF0000` (`plans/core/gui.md` "A notice is
-    seen, not found"); no publisher yet -> verify: ST-BAR-04 with four kinds
+    `NoticeKind::Error`, drawn in the theme's error red; both themes' error and warning
+    colours become GitHub's (red `#F85149`/`#D1242F`, amber `#D29922`/`#9A6700`), the pitch's
+    crosses the dark pair in both themes (`plans/core/gui.md` "A notice is seen, not found"
+    and the Dark/light theme row); no publisher yet -> verify: ST-BAR-04 with four kinds, the
+    pitch's crosses on both themes
   - [ ] 0.0.2-nomodels (the maintainer, 2026-11-13; DECISIONS "model-folder mode is removed")
     `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
     "Model-folder mode"); the spec's section leaves with it -> verify: the upgrader's tests,
@@ -2954,7 +2956,7 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
 - The Save editor's eight help chapters and the two core ones read in the built window; any
   PES; 8.29e's e1; harness
-- The Live AATF pitch's `#FF8F00` warning cross, drawn for a Warning-severity position mark (no
+- The Live AATF pitch's warning cross (`#D29922` from 0.0.2-noticeerr), drawn for a Warning-severity position mark (no
   real save under 4cc Autumn 26 raises one); any PES; 8.9m's m4; harness
 - ov7b's Import and × dialogs, ov10's pitch drag and ov12's popover steppers in the built
   window; any PES; 0.0.1ov; harness

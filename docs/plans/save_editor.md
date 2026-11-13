@@ -678,7 +678,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   The count says how near its limit the field is, the limit being the smaller of the shown
   maximum and the portable one below:
   - in the grey of a disabled card's label (`#5a5a5a`) under it,
-  - in the warning orange on it,
+  - in the warning amber on it,
   - in the error red past it.
 
   The field and its count carry one hover: past the portable limit below, its warning; else
@@ -2377,7 +2377,7 @@ What this editor adds on top of the lib:
     after its unsaved-changes dot:
     - a cross (`✖`, U+2716) in the error colour on a player with an Error-severity row;
     - else a check mark (`✔`, U+2714; warnings and suggestions are not failures, as
-      `check-aatf`'s exit code counts them), in the warning orange when one of his rows is a
+      `check-aatf`'s exit code counts them), in the warning amber when one of his rows is a
       Warning, in the link blue when his rows are suggestions alone, in the success colour
       when he has none.
 
@@ -2389,7 +2389,7 @@ What this editor adds on top of the lib:
     his team's row is: the pitch is the team view's), for the highest severity among its
     rows:
     - a cross (`✖`) in the error colour for an Error,
-    - a warning sign (`⚠`, U+26A0) in the warning orange for a Warning,
+    - a warning sign (`⚠`, U+26A0) in the warning amber for a Warning,
     - a circled i (`ⓘ`, U+24D8) in the link blue for suggestions alone.
 
     All three are the symbols font's (`ⓘ` drawn for it in the warning sign's stroke and
