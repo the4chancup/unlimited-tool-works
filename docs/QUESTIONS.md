@@ -71,12 +71,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## The Compiler's and the Export upgrader's windows
 
-- **How a compiling cell stands out** (worklog 8.10; you, 2026-11-14: a bold number is hard
-  to notice, without changing the cell's colour). The compiler draft draws two looks, picked
-  in its draft controls ("A compiling cell shows"): a light bar sweeping the cell's bottom
-  edge, or a white inset ring pulsing once a second. Each starts from the cell's own start.
-  Which one? The answer goes into `plans/team_compiler/gui.md` and TC-GUI-12, which say "bold"
-  today.
+- **Around the edge, or along the bottom?** (worklog 8.10; you, 2026-11-14: the bottom sweep
+  looks fine, try one going around the square). The compiler draft's default is now a
+  segment travelling around a compiling cell's edge, above any Warning or Error ring; the
+  bottom-edge bar stays in its draft controls ("A compiling cell shows"). The plan
+  (`plans/team_compiler/gui.md`, "A processing cell moves"; TC-GUI-12) says "around"; if
+  you prefer the bottom, both change.
 
 ## After the release
 

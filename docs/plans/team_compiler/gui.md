@@ -224,7 +224,7 @@ the cache below are `libs/pipeline`'s, shared with the Balls compiler's list vie
         (folder watcher)
 unchecked (background) → checking (inverse background) → partial-ok (blue)/full-ok (purple)/warning (faint yellow)/partial-error (faint red)/error (red)
         (Compile pressed — eligible cells are pending; effective DropFolder/DropExport scopes are blocked)
-processing (bold number, color kept) → done (green)/done with warning (yellow)/done with errors (orange-red, pass-through or DropFile only)
+processing (color kept, a light segment travelling around the cell's edge) → done (green)/done with warning (yellow)/done with errors (orange-red, pass-through or DropFile only)
 ```
 
 Processing eligibility follows the effective disposition, not severity alone:
@@ -262,7 +262,7 @@ egui renders cells with `painter.rect_filled` (direct GPU drawing, no DOM):
 
 ```rust
 // Check-phase and compile-outcome colors. Processing reuses the retained
-// check-phase status; the label turning bold is its only extra presentation.
+// check-phase status; the moving segment (below) is its only extra presentation.
 fn cell_color(
     status: FolderStatus,
     check_status: FolderStatus,
@@ -305,16 +305,11 @@ for slot in 1..=slot_count {
     let actual_color = cell_color(cell.status, cell.check_status, bg, fg);
     ui.painter().rect_filled(rect, 3.0, actual_color);
 
-    let font = if cell.status == FolderStatus::Processing {
-        egui::FontId::new(11.0, egui::FontFamily::Name("bold_mono".into()))
-    } else {
-        egui::FontId::monospace(11.0)
-    };
     ui.painter().text(
         rect.center(),
         egui::Align2::CENTER_CENTER,
         format!("{slot:02}"),
-        font,
+        egui::FontId::monospace(11.0),
         label_color(actual_color), // contrast derives from the painted color
     );
 
@@ -338,6 +333,15 @@ light backgrounds a dark-grey label. These are soft extremes rather than pure wh
 avoid excessive contrast. This is independent of the dark/light theme, which matters most for
 `Checking` cells (inverse background flips with the theme) and keeps labels readable on every
 status color.
+
+**A processing cell moves**, and nothing else in the grid does, so the eye finds the few
+cells being compiled without a colour of their own (a bold label alone was too hard to see). A
+light segment, a quarter of the cell's edge long and 3 points wide, travels clockwise around
+the edge inside the cell, once a second, in the strong text colour. Its phase is counted from
+that cell's own start (`ctx.input(|i| i.time)` less the time it turned Processing), so a short
+task still shows the segment setting off and the cells do not move in step. It is painted
+after the Warning or Error ring, so it shows over them. While any cell processes the view
+requests a repaint each frame; it stops when none does.
 
 Color transitions (blue→green fade) are not built-in as with CSS. If desired, interpolate
 between the old and new color over a few frames in the update loop (~10 lines).
