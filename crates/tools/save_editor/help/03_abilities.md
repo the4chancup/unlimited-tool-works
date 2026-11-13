@@ -30,8 +30,8 @@ The Name and Shirt labels count what the field holds, as typed: `(12/61)` reads
 as 12 bytes used of the 61 the field holds (a colour code counts as the ten
 bytes it stores). The shirt name counts letters, 18 on most versions and 16 on
 PES 2016. When a name or shirt name is longer than an older version can hold, the
-field and its count turn amber, and hovering them says what an older game would
-do with it.
+field takes an amber tint and its count turns red, and hovering them says what an
+older game would do with it.
 
 **Value ranges**
 

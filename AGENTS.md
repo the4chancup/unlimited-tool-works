@@ -31,7 +31,8 @@ from the document, not from memory. **After a step:** run the step's checkpoint 
 closed step to one line (ID, date, commit, what it delivered), update "Current status",
 commit (`python scripts/commit.py <message file>`, the only way to commit or merge: it checks
 the message first). Once a release exists, a change a
-member would notice gets its `CHANGELOG.md` `[Unreleased]` line (`CONTRIBUTING.md` "Commits").
+member would notice gets its `CHANGELOG.md` `[Unreleased]` line, unless its tool is one no
+release has presented yet (`CONTRIBUTING.md` "Commits"; `just changelog` checks).
 
 **Phases, releases and sidekicks** follow `docs/RUNBOOK.md`, read before doing what each
 covers: "Phases and releases" (a tool phase opens with its Acceptance section; a phase closes

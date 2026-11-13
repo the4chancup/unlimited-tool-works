@@ -12,7 +12,7 @@ python := if os_family() == "windows" { "python" } else { "python3" }
 script_test := python + " scripts/gates/temp_alias.py"
 
 # The verification gates, in order. CI runs this same recipe.
-gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals commit-messages
+gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers changelog comment-refs colour-literals commit-messages
 
 # The same gates on the mutants host (STUDIO_MUTANTS_REMOTE) against the working tree, while this machine should not carry the load
 gates-remote:
@@ -44,7 +44,7 @@ test:
     {{script_test}} scripts/library_parity/checkpoint_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
-gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals (commit-messages base)
+gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers changelog comment-refs colour-literals (commit-messages base)
 
 # Every commit since `base` has a message of the project's shape (CONTRIBUTING.md "Commits"); `scripts/commit.py` checks one before it commits it
 commit-messages base="HEAD":
@@ -103,6 +103,11 @@ doc-pointers:
     {{script_test}} scripts/gates/doc_pointers_test.py
     {{script_test}} scripts/release/symbolize_log_test.py
     {{python}} scripts/gates/doc_pointers.py
+
+# The changelog check's own tests, then the check ([Unreleased] holds no entry for a tool no release has presented: CONTRIBUTING.md "Commits")
+changelog:
+    {{script_test}} scripts/gates/changelog_tools_test.py
+    {{python}} scripts/gates/changelog_tools.py
 
 # Gate 7: the comment check's own tests, then the check (no code comment cites a plan, a decision,
 # a step, a review or who decided, instead of standing on its own: CONTRIBUTING.md "Code style")

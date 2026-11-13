@@ -58,8 +58,9 @@ of his fields, and the collapsed **Appearance** section underneath. Click a team
 select the team: the right side shows the team's fields and its tactics.
 
 A player's Name and Shirt labels count what the field holds (`(12/61)` reads as 12 used
-of 61) and turn amber when it is longer than an older version can hold. A `\x11c` plus 8 hex
-digits inside a name is a color code, and the field keeps it as typed.
+of 61). When it is longer than an older version can hold, the field takes an amber tint and
+its count turns red. A `\x11c` plus 8 hex digits inside a name is a color code, and the field
+keeps it as typed.
 
 **Undo and redo**
 
@@ -119,6 +120,10 @@ one under the other, its icon beside the close button puts the list back in the 
 closing the window turns Live AATF off. The panel's own close button, beside its icon, turns
 Live AATF off too. The editor remembers where you left the list, so turning Live AATF on
 again opens it there.
+
+**Copy to clipboard**, left of that icon in the panel and under the close button in the
+window, copies the list as it shows, as plain text you can paste into a message: a line
+naming the ruleset, the team with its error and warning counts, then the same groups.
 
 While it is on, the editor itself is marked too:
 
