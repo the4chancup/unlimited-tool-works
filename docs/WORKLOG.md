@@ -2295,17 +2295,22 @@ briefs, review loops, gates and mutation runs as for any step.
       Friendlies save, another profile's) is refused by this install with "Create Edit
       Data?", so the looks ran on a test save built on the maintainer's own save of
       2026-10-13; the live save is back in place, byte for byte
-    - [ ] slice a (Opus), running since 2026-11-13 (brief
-      `.tmp/0_0_2/formation/brief_form_rule.md`, worktree `4cc-studio-temp/formrule`,
-      branch `sk/formrule`, run `sk_formrule`): `pes_savefile`'s rule
-      (`Formation::illegal_breaks` and its `FormationBreak`s in `model/formation_rule.rs`,
-      the area tables moved there from `team_widgets`' `pitch/drop_rule.rs`), tested on
-      the lead's fixtures of what the game made (`pes_savefile/tests/fixtures/
-      game_formations_pes17.txt` and `_pes19.txt`, built by `make_fixture.py` and
-      `make_fixture19.py` in `.tmp/0_0_2/formation/fixture/`) and one formation per
-      clause; `team_widgets` pins clause 6's reaches to its marker box
-    - [ ] slice b (Opus), after a: the host's warning per fielded set on PES 2017 and
-      PES 2019 saves, its text, the ruleset's flag, SE-AATF-09 and SE-GUI-76
+    - [x] slice a 2026-11-13 (`eb6b96e0`, Opus and the lead; merge `8c528582`; the lead's
+      rerun of `pes_savefile`, `team_widgets` and `save_editor`, clippy, fmt):
+      `Formation::illegal_breaks` and its `FormationBreak`s in `pes_savefile`'s
+      `model/formation_rule.rs`, the area tables and the wide positions moved there from
+      `team_widgets`' drop rule; tested on what PES 2017 and PES 2019 made themselves
+      (938 and 506 formations in `tests/fixtures/game_formations_pes17.txt` and
+      `_pes19.txt`, built by `.tmp/0_0_2/formation/fixture/make_fixture*.py`) and one
+      formation per clause; `team_widgets` pins the rule's reaches to its marker box and
+      its row reading to what a drop offers
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/formation/swe_rule.md`, worktree
+      `review15`)
+    - [ ] slice b (Opus, the same session resumed; running since 2026-11-13, brief
+      `.tmp/0_0_2/formation/brief_form_warn.md`, worktree `4cc-studio-temp/formrule`,
+      run `sk_formwarn`): the host's warning per fielded set on PES 2017 and PES 2019
+      saves, its text (the kind carries what the sentence needs to name starters), the
+      ruleset's flag, SE-AATF-09 and SE-GUI-76
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
