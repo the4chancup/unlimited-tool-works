@@ -811,9 +811,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       done with errors, the worst of its cells and its own findings, a skipped cell
       counting as an error); the legend's archive entry reads "Shallow check done
       (archive)" on two lines. All go into
-      `gui.md` when the draft is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
-      the detail panel at the grid's right (with it open, a row with all ten kits scrolls
-      sideways in the default window; without it the row and its button fit). Not drawn yet: the
+      `gui.md` when the draft is accepted. Ruled 2026-11-13 night (the maintainer): a blocked
+      cell's dotted red outline and the kit swatch as two flat halves stand; the detail
+      panel is the placed window above, not a panel at the grid's right. Not drawn yet: the
       file drop on the grid, the Edit mode question, the autorun, a check arriving live.
       The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted
@@ -945,8 +945,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       leaves, as on that page, so going from box to box does not flicker; the files look
       accepted by the maintainer 2026-11-13; the labels `Old export` and `Upgraded export` are one row that stays above the exports as they scroll), a destination lighting as it is written
       (renders `flow_*.png` by `shot_flow.py`). Not drawn: model-folder mode, the output-exists abort's button, Copy
-      report, a referee export. `plans/export_upgrader.md` "GUI" still describes the
-      first draft: rewritten when this one is accepted
+      report, a referee export. Accepted as drawn 2026-11-13 night (the maintainer), so
+      `plans/export_upgrader.md` "GUI" is rewritten from it; the maintainer leans to
+      dropping model-folder mode (an old model comes in a Midcup export, so the team and
+      the save's settings are known): under discussion
     - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
       2026-10-26, `plans/export_upgrader.md` "GUI"), the samples' rows grouped and the
       `needs <team>` hint from the real runs → verify: the bundled drafts build; each item
