@@ -1,7 +1,8 @@
 # ingame_face.toml, inside a player folder: the in-game face, which the game draws when
 # the folder holds no face model and no face link. The file marks the folder as wearing
-# it. Every key is optional: an absent key takes the value shown here, and an empty file
-# is the game's default face. A commented key shows what can be set and its range.
+# it. Every key is optional: an absent key takes its default, and an empty file is the
+# game's default face. A key line starting with "#" is unset and shows that default:
+# delete the "#" to set it.
 
 iris_color = 0                  # 0 black, 1 dark brown, 2 brown, 3 sable, 4 navy blue, 5 charcoal, 6 gray, 7 blue, 8 sienna, 9 green, 10 violet
 

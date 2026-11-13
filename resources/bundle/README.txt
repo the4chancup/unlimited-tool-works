@@ -215,7 +215,8 @@ If something goes wrong
 Every message names a code, such as fpc_undershorts_break_hiding.
 The help explains each one: click the ? button at the bottom of the left bar.
 
-If the window crashes, please post the log file found in the data folder. If a launcher
-fails, post its log file, found beside it: upgrade_log.txt for quick_upgrade.bat,
-compile_log.txt for quick_compile.bat. If there is no such file, copy what the black window
-says before pressing a key to close it, and post that.
+If the window crashes, please post the log file found in the data folder on the /aesco/
+server or the divegrass thread. If a launcher fails, post its log file instead, found beside
+it: upgrade_log.txt for quick_upgrade.bat, compile_log.txt for quick_compile.bat. If there
+is no such file, copy what the black window says before pressing a key to close it, and
+post that.

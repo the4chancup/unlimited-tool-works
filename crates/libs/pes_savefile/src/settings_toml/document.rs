@@ -21,26 +21,27 @@ use super::{
 /// lines (the in-game face's sentence pointing at `ingame_face.toml`
 /// included) and its four `name`/`shirt_name` comment lines, verbatim.
 const HEADER: &str = "\
-# settings.toml, inside a player folder. Every key is optional: an absent key takes the
-# value shown here (name and shirt_name: not written). A commented key shows what can be
-# set and its range. The file never references the export's models: what a player wears
-# is decided by the folder contents (models present, link files pointing at shared
-# folders); boots_id/gloves_id only name the game's stock models.
+# settings.toml, inside a player folder. Every key is optional: an absent key takes its
+# default (name and shirt_name: not written). A key line starting with \"#\" is unset and
+# shows that default: delete the \"#\" to set it. Models are not chosen here: the player
+# wears the models in this folder and in the shared folders its link files point at;
+# boots_id/gloves_id only pick the game's stock models.
 # The in-game face's keys (iris, face, hair) are in ingame_face.toml.
 
-# true = derive from the folder name (\"15 - Snuffy\" gives \"Snuffy\"; the whole folder
-# name for players.txt-mapped folders); \"text\" = write as is; absent = not written.
-# name and shirt_name are used only when the export's root holds the `write_names` marker;
-# otherwise they are ignored and the names in the save stand.
+# name and shirt_name are written to the save only when the export's root holds the
+# `write_names` marker; otherwise they are ignored and the names in the save stand.
+# name: true = derive from the folder name (\"15 - Snuffy\" gives \"Snuffy\"; the whole
+# folder name for players.txt-mapped folders); \"text\" = write as is; absent = not written.
 ";
 
-/// The header of a generated `ingame_face.toml`: the spec block's four
+/// The header of a generated `ingame_face.toml`: the spec block's five
 /// comment lines, verbatim.
 const INGAME_FACE_HEADER: &str = "\
 # ingame_face.toml, inside a player folder: the in-game face, which the game draws when
 # the folder holds no face model and no face link. The file marks the folder as wearing
-# it. Every key is optional: an absent key takes the value shown here, and an empty file
-# is the game's default face. A commented key shows what can be set and its range.
+# it. Every key is optional: an absent key takes its default, and an empty file is the
+# game's default face. A key line starting with \"#\" is unset and shows that default:
+# delete the \"#\" to set it.
 ";
 
 /// The dotted path a settings value reports `key` under, naming the file the
@@ -446,17 +447,16 @@ fn model_id(document: &DocumentMut, key: SettingKey) -> Result<Option<u8>, Setti
 /// the aesthetics patch's `[teams.players.NN.appearance]`, or
 /// `ingame_face.toml` (the in-game face's keys alone, at the top level).
 /// The document settles the value bounds, which keys the walks visit and
-/// the `[appearance.motion]` note.
+/// whether the range comments and commented defaults emit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AppearanceDocument {
-    /// `settings.toml`: the editor ranges the key comments document apply,
-    /// and the motion table carries its note (a settings apply writes the
-    /// motions through the aesthetics patch). The in-game face's keys are
-    /// `ingame_face.toml`'s: one left here is an unknown key.
+    /// `settings.toml`: the editor ranges the key comments document apply.
+    /// The in-game face's keys are `ingame_face.toml`'s: one left here is
+    /// an unknown key.
     Settings,
     /// Team TOML's `[players.NN.appearance]`: bounds are each field's
     /// widest stored bit width (a real save's values go past the editor
-    /// ranges), and no motion note.
+    /// ranges).
     Team,
     /// A patch's `[teams.players.NN.appearance]`: the joined schema (every
     /// non-top key, as Team TOML) narrowed to the keys `version` holds —
@@ -467,8 +467,7 @@ pub(crate) enum AppearanceDocument {
     Patch(PesVersion),
     /// `ingame_face.toml`: `iris_color` at the top level, `[face]` and
     /// `[hair]` — the `[appearance]` face run with the root dropped. The
-    /// editor ranges apply, as `settings.toml`'s; there is no motion note
-    /// (the document holds no motion keys).
+    /// editor ranges apply, as `settings.toml`'s.
     IngameFace,
 }
 
@@ -616,10 +615,10 @@ pub(crate) fn emit_appearance(
 
 impl PlayerSettings {
     /// Reads a `settings.toml` text. Every key is optional; anything the key
-    /// table does not know (a stray table, a compiler-owned field such as
-    /// `boots_id`, or an in-game face key — they are `ingame_face.toml`'s) is
-    /// `UnknownKey`. The first error met, in `SettingKey::ALL` order then the
-    /// unknown-key sweep, is the one reported.
+    /// table does not know (a stray table, or an in-game face key — they are
+    /// `ingame_face.toml`'s) is `UnknownKey`. The first error met, in
+    /// `SettingKey::ALL` order then the unknown-key sweep, is the one
+    /// reported.
     pub fn parse(text: &str) -> Result<Self, SettingsError> {
         let document: DocumentMut = text
             .parse()

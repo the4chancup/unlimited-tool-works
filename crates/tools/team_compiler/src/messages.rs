@@ -214,8 +214,8 @@ pub(crate) enum Code {
     KitVariantMissing,
     /// Per-kit model files (`pants_kit1.fmdl`, `pants_kit2.fmdl`) where no `face.xml` names
     /// the set, so nothing switches models with the kit: on a Fox target, and on PES 2015 to
-    /// 2017 in a shared boots or gloves folder and under `ingame_face`. The lowest variant is
-    /// used, the others ignored.
+    /// 2017 in a shared boots or gloves folder and under `ingame_face`. The set's `kitF` is
+    /// used, or its lowest variant when it has none; the others ignored.
     KitVariantModelLeftOut,
     /// PES 2015 to 2017: a per-kit model variant whose `.mtl` (the one its search finds, as a
     /// `face.xml` entry would name it, directory included) is not the one its set's entry
@@ -233,7 +233,9 @@ pub(crate) enum Code {
     /// header gives; the folder holding it is left out.
     FaceDiffInvalid,
     /// A folder gives its face diff twice: it holds both `face_diff.bin` and `face_diff.xml`,
-    /// or its own `face.xml` holds a `<dif>` beside either; the folder is left out.
+    /// or its own `face.xml` holds a `<dif>` beside a `face_diff.xml` (a `<dif>` beside a
+    /// `face_diff.bin` is no conflict, since each game reads its own); the folder is left
+    /// out.
     XmlDifConflict,
     /// PES 2015 to 2017: a player folder's own `face.xml` that is not UTF-8 text or not
     /// well-formed XML (the error names the line and column); the folder is left out.
@@ -1522,7 +1524,7 @@ mod tests {
         );
         assert_eq!(
             row("file_type_disallowed").3,
-            "With `Strict file type check` on, this is an Error and the folder is left out (in `Collars/`, only the file is left out). With it off, it is an Info and nothing is left out."
+            "With `strict_file_type_check` on, this is an Error and the folder is left out (in `Collars/`, only the file is left out). With it off, it is an Info and nothing is left out."
         );
     }
 

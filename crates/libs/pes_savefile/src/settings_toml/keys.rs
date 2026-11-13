@@ -559,14 +559,14 @@ impl SettingKey {
                 table: KeyTable::Top,
                 name: "boots_id",
                 kind: Kind::Number { min: 0, max: 100 },
-                comment: "\"\" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock boots model; ignored when the folder's boots models or a boots link get an ID (pre-Fox face-XML boots do not)",
+                comment: "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock boots model; ignored when the folder has boots models or a boots link (pre-Fox face.xml boots do not count)",
                 default: None,
             },
             SettingKey::GlovesId => KeySpec {
                 table: KeyTable::Top,
                 name: "gloves_id",
                 kind: Kind::Number { min: 0, max: 100 },
-                comment: "\"\" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder's gloves models or a gloves link get an ID (pre-Fox face-XML gloves do not)",
+                comment: "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder has gloves models or a gloves link (pre-Fox face.xml gloves do not count)",
                 default: None,
             },
             SettingKey::SkinColor => KeySpec {
@@ -692,7 +692,7 @@ impl SettingKey {
                 table: KeyTable::Motion,
                 name: "dribbling",
                 kind: Kind::Number { min: 0, max: 3 },
-                comment: "0 to 3, PES 20 and 21 only",
+                comment: "0 to 3 (PES 20 and 21 only)",
                 default: Some(0),
             },
             SettingKey::GoalCelebration1 => {

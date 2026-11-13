@@ -115,8 +115,8 @@ pub(crate) enum Code {
     LogoSmallDropped,
     /// No usable `_r_ll` member: the largest usable one became `logo.png`.
     LogoFallback,
-    /// An `.mtl`/`.fmdl` reference into the team's `Common/` kept as written
-    /// but its `???`, respelled the team's ID: the file is not in the
+    /// An `.mtl`/`.fmdl` reference into the team's `Common/` kept as a game
+    /// path, its `common/???/` written `team_common_folder/`: the file is not in the
     /// input's `Common/`, a link would clash (the folder already holds a
     /// texture of that stem, which is the one the model will wear — the
     /// compiler looks a game path's file name up in the folder first), or a
@@ -471,7 +471,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "unmigrated_content",
         Severity::Error,
-        r#"Content of the input that reached the game, or was clearly meant for it, but that the migration does not carry into the output: two files or folders claiming one place (a second face folder of one slot, two portraits of one), a whole folder under a name the old format refuses, a Team Note entry whose colors do not read, a kit config that does not decode. The line names the cause, and, where another file or folder took the place, that one's path."#,
+        r#"Content of the input that reached the game, or was clearly meant for it, but that the migration does not carry into the output. Examples: two files or folders claiming one place (a second face folder of one slot, two portraits of one), a whole folder under a name the old format refuses, a Team Note entry whose colors do not read, a kit config that does not decode. The line names the cause, and, where another file or folder took the place, that one's path."#,
         r#"It is not migrated, and the run is not clean, so nothing is written. Fix it in the input and upgrade again."#,
     ),
     (
@@ -484,12 +484,12 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "migration_not_clean",
         Severity::Info,
         r#"The report's last line, otherwise."#,
-        r#"Nothing is written. The exit code is 1 after an Error finding, or after a finding that dropped more than a leftover."#,
+        r#"Nothing is written. The exit code is 1 after an Error finding, or after a finding that dropped more than a leftover. Fix what the findings name in the old export and upgrade again."#,
     ),
     (
         "leftover_dropped",
         Severity::Warning,
-        r#"Content that never reached a player in game, outside the old format's layout or inside it (a refused portrait, a stray file, a second goalkeeper kit, a file directly in `Faces/`, `Boots/` or `Gloves/`). For a dropped part of a Team Note entry, the line names the entry's line in the Note."#,
+        r#"Content that never reached a player in game, wherever it sits (a refused portrait, a stray file, a second goalkeeper kit, a file directly in `Faces/`, `Boots/` or `Gloves/`). For a dropped part of a Team Note entry, the line names the entry's line in the Note."#,
         r#"It is not written, but the run stays clean."#,
     ),
     (
@@ -507,7 +507,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "merge_kept_shared",
         Severity::Info,
-        r#"A player folder and a boots or gloves folder that would merge into it share a file path with different bytes."#,
+        r#"A player folder and a boots or gloves folder that would merge into it each hold a file at the same path, with different bytes."#,
         r#"The boots or gloves folder is kept shared with a link instead."#,
     ),
     (
@@ -519,26 +519,26 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "wearer_by_name",
         Severity::Warning,
-        r#"A boots or gloves folder carries an ID no save record wears, but its name part is a rostered player's name and the save wears a custom ID (above 100) on him that no folder of the kind carries (the line names the folder, the slot and the save's ID)."#,
-        r#"The folder becomes his as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+        r#"A boots or gloves folder carries an ID no save record wears, but its name part is a rostered player's name, and in the save he wears a custom ID (above 100) that no folder of that kind carries (the line names the folder, the slot and the save's ID)."#,
+        r#"The folder becomes his as if it were numbered with the save's ID, so his model is not lost. Check that this is the player the folder was meant for."#,
     ),
     (
         "wearer_by_number",
         Severity::Warning,
-        r#"A boots or gloves folder nobody wears took the save's ID its same-numbered folder of the other kind was paired with, by name, number or order (the line names the folder, the slot, the save's ID and `from`, the folder it followed)."#,
-        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+        r#"A boots or gloves folder nobody wears has a same-numbered folder of the other kind, which was paired with a save ID by name, number or order. A player also wears that ID for this kind, with no folder carrying it, so the folder takes it too (the line names the folder, the slot, the save's ID and `from`, the folder it followed)."#,
+        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check that this is the player the folder was meant for."#,
     ),
     (
         "wearer_by_order",
         Severity::Warning,
-        r#"A boots or gloves kind held as many unworn folders as worn custom IDs no folder carried, and they were paired in order of ID and folder number (the line names the folder, the slot and the save's ID)."#,
-        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+        r#"The boots (or the gloves) had as many unworn folders as worn custom IDs no folder carried, so they were paired in order of ID and folder number (the line names the folder, the slot and the save's ID)."#,
+        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check that this is the player the folder was meant for."#,
     ),
     (
         "texture_duplicate_dropped",
         Severity::Warning,
-        r#"A folder of the upgraded export held one texture stem twice, a `.dds` beside a `.ftex`, which the check would refuse."#,
-        r#"The `.ftex` is dropped and the `.dds` kept (the line names the dropped file and `kept`, the `.dds`'s path). Check the kept one is the texture meant."#,
+        r#"A folder of the upgraded export held one texture stem twice, a `.dds` beside a `.ftex`, which the compiler would refuse (the line names the dropped file and `kept`, the `.dds`'s path)."#,
+        r#"The `.ftex` is dropped and the `.dds` kept, and the run stays clean. Check the kept one is the texture meant."#,
     ),
     (
         "kit_without_config",
@@ -591,32 +591,32 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "common_reference_kept",
         Severity::Warning,
-        r#"An `.mtl` or `.fmdl` reference into the team's `Common/` whose file the input's `Common/` does not hold, or which no link can spell (the model's folder already holds a texture or link of that stem, or a `.mtl` in a subfolder names a Common subfolder)."#,
-        r#"It is kept as written, its Common written `team_common_folder/`, the team's Common in the new spelling. An installed CPK may still supply the file."#,
+        r#"An `.mtl` or `.fmdl` reference into the team's `Common/` that names a file the input's `Common/` does not hold, or that a `.common` link cannot stand for (the model's folder already holds a texture or link of that stem, or a `.mtl` in a subfolder names a Common subfolder)."#,
+        r#"It stays a path into the team's Common, in the new spelling `team_common_folder/`. An installed CPK may still supply the file."#,
     ),
     (
         "model_far_dropped",
         Severity::Warning,
-        r#"A model every vertex of which sits more than 5000 units from the origin: how old exports hid a template's default face, hair or glove, by moving the whole model out of view. The line names the file and its vertex count."#,
+        r#"A model whose every vertex sits more than 5000 units from the origin, which is how old exports hid a template's default face, hair or glove, by moving the whole model out of view. The line names the file and its vertex count."#,
         r#"It is not written (the compiler would refuse it), but the run stays clean. A boots or gloves folder left with no model hides the boots or hands."#,
     ),
     (
         "antiblur_dropped",
         Severity::Info,
-        r#"An `.fmdl` carrying anti-blur copies (the duplicate meshes older files added so motion blur could draw them apart)."#,
-        r#"The copies are written off, the line naming how many; the meshes' request for them is cleared, so nothing adds them back. Nothing to do."#,
+        r#"An `.fmdl` carrying anti-blur copies (duplicate meshes older models added to stay sharp under the game's blur, the line naming how many)."#,
+        r#"The model is written without them, and its meshes no longer ask for them, so nothing adds them back. Nothing to do."#,
     ),
     (
         "custom_model_missing",
         Severity::Error,
         r#"In the save, a rostered player of a `Full` output wears a custom boots or gloves ID (above 100) that no migrated folder claims, and the output gives him no folder."#,
-        r#"The content is missing. The run is not clean, so nothing is written. Add the folder to the old export, or take the ID off the player in the save."#,
+        r#"The run is not clean, so nothing is written. Add the folder to the old export, or take the ID off the player in the save."#,
     ),
     (
         "custom_model_not_worn",
         Severity::Info,
         r#"In the save, a rostered player wears a custom boots or gloves ID that is the number of a folder of the other kind, the save's way of wearing no custom item of the kind."#,
-        r#"His `settings.toml` gets the hide ID of the kind (55 for boots, 11 for gloves), which shows the same no-model. Nothing to do."#,
+        r#"His `settings.toml` gets the hide ID of the kind (55 for boots, 11 for gloves), which the game also shows as no model. Nothing to do."#,
     ),
     (
         "custom_model_unpaired",
@@ -652,7 +652,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "coverage_tag_chosen",
         Severity::Info,
         r#"The coverage tag the output's name took, and what decided it (the line names them): `flag` for `--coverage`, `name` for a tag word the name already carried, `midcup` or `additions` for text the name holds, `default` when it holds neither."#,
-        r#"Nothing to do. Check the tag is what the export should be, and pass `--coverage` if it is not."#,
+        r#"Check the tag is what the export should be. If it is not, upgrade again with `--coverage`, or, when the tag came from the name (`name`), fix the name's second word first."#,
     ),
     (
         "staging_folder_removed",
@@ -665,7 +665,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "nested_folders_fixed",
         Severity::Warning,
         r#"The export's content sits one level too deep, inside a single folder."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export, which is still written."#,
     ),
     (
         "nested_root_ambiguous",
@@ -689,7 +689,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "refs_txt_ignored",
         Severity::Warning,
         r#"A referee export holds both `players.txt` and the old `refs.txt` name."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export, which is still written."#,
     ),
     (
         "source_read_failed",
@@ -755,7 +755,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "player_unlisted",
         Severity::Warning,
         r#"`players.txt` is present but does not list this player folder, whatever number its name carries."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export. The compiler would leave it out, so the run is not clean and nothing is written."#,
     ),
     (
         "player_folder_number_invalid",
@@ -815,7 +815,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "shared_folder_orphaned",
         Severity::Warning,
         r#"A shared `Faces/`, `Boots/` or `Gloves/` folder is linked by no player."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export. The compiler would leave it out, so the run is not clean and nothing is written."#,
     ),
     (
         "fpc_conflict",
@@ -887,25 +887,25 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "kit_icon_invalid",
         Severity::Warning,
         r#"A kit's `icon_<N>` marker is numbered above 23, or the kit holds two or more (each is reported)."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export. The compiler would leave it out, so the run is not clean and nothing is written."#,
     ),
     (
         "kit_all_file_ignored",
         Severity::Warning,
         r#"`Kits/all/` holds something other than kit textures (`config.toml`, `colors.txt`, an `icon_<N>` marker, anything else)."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export. The compiler would leave it out, so the run is not clean and nothing is written."#,
     ),
     (
         "kit_all_unused",
         Severity::Warning,
         r#"`Kits/all/` is present but no kit folder inherits from it."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export, which is still written."#,
     ),
     (
         "kit_textures_inherited",
         Severity::Info,
         r#"A kit lacks texture names that `Kits/all/` provides (the line lists them)."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export, which is still written."#,
     ),
     (
         "portrait_name_invalid",
@@ -935,13 +935,13 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "root_file_unexpected",
         Severity::Warning,
         r#"An unknown file or folder sits at the export's root (a stale `wrapper/` beside a usable root included), or a file sits directly inside `Players/`, `Kits/`, `Faces/`, `Boots/` or `Gloves/`, all of which hold only folders."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export. The compiler would leave it out, so the run is not clean and nothing is written."#,
     ),
     (
         "notes_found",
         Severity::Info,
         r#"The export's root holds a non-empty `notes.txt`."#,
-        r#"It is reported on the upgraded export, which is still written unless the finding drops part of it."#,
+        r#"Found in the upgraded export, which is still written."#,
     ),
     (
         "notes_encoding_invalid",
@@ -1306,7 +1306,7 @@ mod tests {
         );
         assert_eq!(
             row.3,
-            "It is reported on the upgraded export, which is still written unless the finding drops part of it."
+            "Found in the upgraded export, which is still written."
         );
         let row = CATALOG
             .iter()

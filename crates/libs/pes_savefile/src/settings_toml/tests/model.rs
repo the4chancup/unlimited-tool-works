@@ -1209,8 +1209,8 @@ fn get_after_set_round_trips_every_key() {
 #[test]
 fn the_key_specs_match_the_plan_table() {
     let comments: [&str; 130] = [
-        "\"\" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock boots model; ignored when the folder's boots models or a boots link get an ID (pre-Fox face-XML boots do not)",
-        "\"\" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder's gloves models or a gloves link get an ID (pre-Fox face-XML gloves do not)",
+        "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock boots model; ignored when the folder has boots models or a boots link (pre-Fox face.xml boots do not count)",
+        "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder has gloves models or a gloves link (pre-Fox face.xml gloves do not count)",
         "0 white, 1 light, 2 fair, 3 medium, 4 olive, 5 brown, 6 black, 7 custom (invisible body, PES 15 to 17 only)",
         "0 black, 1 dark brown, 2 brown, 3 sable, 4 navy blue, 5 charcoal, 6 gray, 7 blue, 8 sienna, 9 green, 10 violet",
         "-7 to 7",
@@ -1247,7 +1247,7 @@ fn the_key_specs_match_the_plan_table() {
         "1 to 6 (PES 20 and 21: 1 to 10)",
         "1 to 16 (PES 20 and 21: 1 to 20)",
         "1 to 4 (PES 20 and 21: 1 to 7)",
-        "0 to 3, PES 20 and 21 only",
+        "0 to 3 (PES 20 and 21 only)",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
         "-7 to 7",

@@ -1,18 +1,18 @@
-# settings.toml, inside a player folder. Every key is optional: an absent key takes the
-# value shown here (name and shirt_name: not written). A commented key shows what can be
-# set and its range. The file never references the export's models: what a player wears
-# is decided by the folder contents (models present, link files pointing at shared
-# folders); boots_id/gloves_id only name the game's stock models.
+# settings.toml, inside a player folder. Every key is optional: an absent key takes its
+# default (name and shirt_name: not written). A key line starting with "#" is unset and
+# shows that default: delete the "#" to set it. Models are not chosen here: the player
+# wears the models in this folder and in the shared folders its link files point at;
+# boots_id/gloves_id only pick the game's stock models.
 # The in-game face's keys (iris, face, hair) are in ingame_face.toml.
 
-# true = derive from the folder name ("15 - Snuffy" gives "Snuffy"; the whole folder
-# name for players.txt-mapped folders); "text" = write as is; absent = not written.
-# name and shirt_name are used only when the export's root holds the `write_names` marker;
-# otherwise they are ignored and the names in the save stand.
+# name and shirt_name are written to the save only when the export's root holds the
+# `write_names` marker; otherwise they are ignored and the names in the save stand.
+# name: true = derive from the folder name ("15 - Snuffy" gives "Snuffy"; the whole
+# folder name for players.txt-mapped folders); "text" = write as is; absent = not written.
 name = true
 # shirt_name = ""                 # "text" = write as is; absent = not written
-boots_id = ""                   # "" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock boots model; ignored when the folder's boots models or a boots link get an ID (pre-Fox face-XML boots do not)
-gloves_id = ""                  # "" = default (fpc_on: hidden, fpc_off 0, no marker 0 or in a Midcup export the installed ID); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder's gloves models or a gloves link get an ID (pre-Fox face-XML gloves do not)
+boots_id = ""                   # "" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock boots model; ignored when the folder has boots models or a boots link (pre-Fox face.xml boots do not count)
+gloves_id = ""                  # "" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder has gloves models or a gloves link (pre-Fox face.xml gloves do not count)
 
 [appearance]
 # skin_color = 1                  # 0 white, 1 light, 2 fair, 3 medium, 4 olive, 5 brown, 6 black, 7 custom (invisible body, PES 15 to 17 only)
@@ -56,6 +56,6 @@ gloves_id = ""                  # "" = default (fpc_on: hidden, fpc_off 0, no ma
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 0                   # 0 to 3 (PES 20 and 21 only)
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
