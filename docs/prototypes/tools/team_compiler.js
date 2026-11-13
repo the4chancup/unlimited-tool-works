@@ -32,13 +32,29 @@ const TEAM_COMPILER_CSS = `
      panel; what sits between them brings its own 8 points at the sides. */
   .center.tc-view { overflow: hidden; scrollbar-gutter: auto; padding: 0; }
   .tc-view .log-panel { margin: 0 8px 8px; }
-  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px; }
-  .tc-top .pipe-grid { flex: 1; }
-  /* The table takes the panel's height: its last row, empty, stretches over
+  /* Every margin of the grid is 8: the panel's left and top, each side of a
+     vertical line, between the players, the portraits and the kits. The
+     table's own 2 between cells counts in each, so the paddings and the
+     spacer cells bring the other 6 or 4. */
+  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 0 6px; }
+  .tc-top .pipe-grid { flex: 1; padding-top: 6px; box-sizing: border-box; }
+  /* The table keeps its own width whatever room the panel has (the detail
+     panel open beside it squeezes no column: the grid scrolls sideways), and
+     takes the panel's height: its last row, empty, stretches over
      what the exports leave, so the two lines reach the panel's foot. */
-  .tc-grid { border-collapse: separate; border-spacing: 2px; height: 100%; }
+  .tc-grid { border-collapse: separate; border-spacing: 2px; height: 100%;
+    width: max-content; }
   .tc-grid tr { height: 26px; }
   .tc-grid tr.fill { height: auto; }
+  /* The title row: what each group of columns holds, in the weak text, kept
+     in view while the rows scroll under it. */
+  .tc-grid tr.head { height: 18px; }
+  .tc-grid tr.head th { position: sticky; top: 0; background: var(--panel); z-index: 1;
+    padding: 0 0 2px; font-weight: 400; color: #6e6e6e; text-align: left; white-space: nowrap; }
+  .tc-grid tr.head th.mid { text-align: center; }
+  /* Portraits is wider than its 44-point column: the text overhangs evenly. */
+  .tc-grid tr.head th.mid > div { width: 44px; display: flex; justify-content: center; }
+  .tc-grid tr.head .tc-line::after { top: -8px; }
   .tc-grid td { padding: 0; white-space: nowrap; }
   .tc-grid tr.off td:not(.tc-line):not(.act) { opacity: 0.45; }
   .tc-name { min-width: 52px; padding: 0 6px !important; height: 26px; border-radius: 2px;
@@ -48,14 +64,14 @@ const TEAM_COMPILER_CSS = `
     background: var(--widget); color: var(--strong); }
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
   .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
-  .tc-gap { width: 8px; }
+  .tc-gap > div { width: 4px; }
   /* A vertical line down the whole panel (egui: one vline the Painter draws
      over the panel's height), 4 points clear of the cells on either side,
      unbroken across the 2px between two rows. */
   /* The cell's width is its div's: a bare td of 5 is squeezed to under 2. */
   .tc-line { position: relative; }
-  .tc-line > div { width: 5px; }
-  .tc-line::after { content: ""; position: absolute; left: 2px; top: -2px; bottom: -2px;
+  .tc-line > div { width: 13px; }
+  .tc-line::after { content: ""; position: absolute; left: 6px; top: -2px; bottom: -2px;
     width: 1px; background: var(--stroke); }
   .tc-slot.wide, .tc-cell.wide { width: 44px; }
   /* Every position is drawn, a faint square where the export has nothing: the
@@ -69,10 +85,9 @@ const TEAM_COMPILER_CSS = `
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }
   .tc-sw { width: 16px; height: 5px; margin-top: 2px; border-radius: 1px; }
-  .tc-acts { padding-left: 4px !important; }
   .tc-acts .row { flex-wrap: nowrap; }
   .tc-detail { width: 300px; flex: none; overflow: auto; border: 1px solid var(--stroke);
-    margin: 4px 0;
+    margin: 8px 0;
     border-radius: 2px; padding: 8px; box-sizing: border-box; }
   .tc-detail .find { margin: 6px 0; }
   .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; min-height: 24px;
@@ -93,8 +108,8 @@ const TEAM_COMPILER_CSS = `
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
-  fullOk: "#820080", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
-  done: "#32b450", doneWarn: "#dcc832", doneErr: "#b46432" };
+  fullOk: "#800080", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
+  done: "#008000", doneWarn: "#dcc832", doneErr: "#b46432" };
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
   partialOk: "Shallow check passed (archive)", fullOk: "Checked", warning: "Warning",
   partialError: "Shallow check failed (archive)", error: "Error", done: "Done",
@@ -252,6 +267,8 @@ function cellEl(r, cell, text, scope, what) {
 
 // A vertical line's cell.
 const vline = () => h("td", { class: "tc-line" }, h("div", {}));
+// The room between two sections of a row.
+const gap = () => h("td", { class: "tc-gap" }, h("div", {}));
 const KIT_SLOTS = ["GK", "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9"];
 // The player columns. sample: the referee row's positions 24 to 35 take a
 // second line under 01 to 12, where the plan extends the columns to 35;
@@ -365,10 +382,10 @@ function gridRow(r) {
     // The portraits: one cell, the count of the row's players that have one
     // over the players it has, in the colour of the worst of them.
     const po = r.portraits;
-    cells.push(h("td", { class: "tc-gap" }), h("td", { class: "tc-slot wide" },
+    cells.push(gap(), h("td", { class: "tc-slot wide" },
       po ? cellEl(r, po, (po.count == null ? "?" : po.count) + "/" + Object.keys(r.players).length,
         `${r.name} portraits`, "portraits") : null));
-    cells.push(h("td", { class: "tc-gap" }));
+    cells.push(gap());
     for (const k of KIT_SLOTS)
       cells.push(h("td", { class: "tc-slot" },
         r.kits[k] ? cellEl(r, r.kits[k], k, `${r.name} ${k}`, "kit") : null));
@@ -379,7 +396,7 @@ function gridRow(r) {
   if (r.refs)
     lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       Array.from({ length: SLOTS }, (_, i) => playerSlot(r, SLOTS + 1 + i)),
-      h("td", { class: "tc-gap" }), h("td", { class: "tc-slot wide" }), h("td", { class: "tc-gap" }),
+      gap(), h("td", { class: "tc-slot wide" }), gap(),
       KIT_SLOTS.map(() => h("td", { class: "tc-slot" })), vline()));
   return lines;
 }
@@ -407,9 +424,25 @@ function grid() {
       h("p", { class: "mono" }, EXE_FOLDER + "\\exports"),
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
-  return h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow),
+  return h("table", { class: "tc-grid", "data-panel": "grid" }, titleRow(), S.rows.flatMap(gridRow),
     h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), vline()));
+}
+// The title row. sample: the titles' wording, and the compile column's own
+// checkbox, which ticks or unticks every export at once.
+function titleRow() {
+  const th = (text, props = {}) => h("th", props, text);
+  const ticked = S.rows.filter(r => !r.special).every(r => !S.unticked[r.key]);
+  return h("tr", { class: "head" },
+    S.column ? h("th", {}, h("input", { type: "checkbox", checked: ticked,
+      title: ticked ? "Untick every export" : "Tick every export",
+      onchange: () => { S.unticked = ticked
+        ? Object.fromEntries(S.rows.filter(r => !r.special).map(r => [r.key, true])) : {};
+        render(); } })) : null,
+    th("Team"), th("ID", { class: "mid" }), vline(),
+    th("Players", { colspan: String(SLOTS) }), gap(),
+    th(h("div", {}, "Portraits"), { class: "mid" }), gap(),
+    th("Kits", { colspan: String(KIT_SLOTS.length) }), vline(), th(""));
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
