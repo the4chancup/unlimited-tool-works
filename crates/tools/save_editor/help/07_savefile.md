@@ -51,7 +51,7 @@ the save.
 **Fix database…** repairs base copies on PES 2015 to 2018 (a stray copy id is
 cleared, and a copy flag that points at nothing is cleared; later games' records
 have no base-copy flag, so their copy ids are kept), clears the face, hair,
-physique and strip edit flags on every player, and on PES 2017 clears every
+physique and strip edit flags on every cup player, and on PES 2017 clears every
 team's strip flag and resets the kit slots to their defaults. It repairs the cup's
 teams and their players alone, and leaves the game's own teams as they are. The whole
 repair is one undoable step.

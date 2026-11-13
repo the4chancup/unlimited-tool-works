@@ -1,6 +1,7 @@
 //! A save holding, beside the cup's teams, one team outside the cup's id range and a
 //! player on no roster, as a save made from the stock game holds the game's own clubs:
-//! the fixture saves hold the cup's teams alone. Shared by the crate's unit tests and its
+//! the PES 17 and PES 21 fixture saves hold the cup's teams alone (PES 19's holds the
+//! game's own too, so the builder is not for it). Shared by the crate's unit tests and its
 //! command-line tests (`tests/common`).
 
 use std::collections::HashSet;

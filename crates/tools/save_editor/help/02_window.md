@@ -25,7 +25,7 @@ read from are the save's version's.
 
 **Teams and players**
 
-The dropdown picks a team, or ALL for every team of the save; picking a team selects its
+The dropdown picks a team, or ALL for every cup team of the save; picking a team selects its
 row, so the right side shows the team's fields and tactics (ALL keeps what you had
 selected).
 
@@ -39,7 +39,7 @@ its id, its two colours and its name followed by `[click for gameplan]`, a playe
 shirt number, position and name as the game draws it, colors included. A `●` on a row marks
 a player or the team itself with unsaved changes.
 
-The filter box above the list finds a team, or a player of any team, by part of a name,
+The filter box above the list finds a team, or a player of any listed team, by part of a name,
 shirt name or id, so you can find someone without knowing their team first. A team whose name
 matches is listed with its whole squad. Double-click a team's row to show that team alone: the
 team selector picks it and the filter box empties. Up and Down move through the list's rows,
