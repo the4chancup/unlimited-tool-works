@@ -58,35 +58,56 @@ fn the_badge_centre_is_the_screens_spot_mapping() {
     }
 }
 
-// `snap` is the mapping's inverse: every stored (x, y) an outfielder can
-// hold round-trips, a spot of the keeper's rows 0 to 3 snaps up to y 4,
-// and a point past each edge clamps to it.
+// `snap` is the mapping's inverse: every stored (x, y) inside the
+// movable range round-trips, one outside it snaps to the range's edge,
+// and under a ruleset that allows illegal formations the whole stored
+// grid round-trips.
 #[test]
-fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
+fn snap_inverts_the_mapping_and_clamps_to_the_spot_range() {
     let origin = egui::pos2(40.0, 80.0);
     for x in 0..=GRID_X {
         for y in 0..=GRID_Y {
             let slot = outfield(x, y);
             assert_eq!(
-                snap(badge_centre(origin, slot), origin, OUTFIELD_Y_MIN),
-                (x, y.max(4)),
-                "({x}, {y})"
+                snap(badge_centre(origin, slot), origin, &outfield_range(false)),
+                (
+                    x.clamp(MOVABLE_X_MIN, MOVABLE_X_MAX),
+                    y.clamp(MOVABLE_Y_MIN, MOVABLE_Y_MAX)
+                ),
+                "({x}, {y}), the flag off"
+            );
+            assert_eq!(
+                snap(badge_centre(origin, slot), origin, &outfield_range(true)),
+                (x, y),
+                "({x}, {y}), the flag on"
             );
         }
     }
     assert_eq!(
-        snap(origin + egui::vec2(500.0, 200.0), origin, OUTFIELD_Y_MIN),
-        (104, 24),
+        snap(
+            origin + egui::vec2(500.0, 200.0),
+            origin,
+            &outfield_range(false)
+        ),
+        (99, 24),
         "past the right edge"
     );
     assert_eq!(
-        snap(origin + egui::vec2(160.0, 500.0), origin, OUTFIELD_Y_MIN),
+        snap(
+            origin + egui::vec2(160.0, 500.0),
+            origin,
+            &outfield_range(false)
+        ),
         (52, 4),
         "past the near edge"
     );
     assert_eq!(
-        snap(origin + egui::vec2(-50.0, -50.0), origin, OUTFIELD_Y_MIN),
-        (0, 48),
+        snap(
+            origin + egui::vec2(-50.0, -50.0),
+            origin,
+            &outfield_range(false)
+        ),
+        (5, 47),
         "past the far corner"
     );
 }
@@ -499,6 +520,34 @@ fn each_version_paints_its_own_cached_turf() {
         pes_2017,
         "PES 2017's turf is the one loaded for its first frame"
     );
+}
+
+// PES 2018's Formation screen is PES 2017's, so its pitch draws PES
+// 2017's turf; PES 2015's and PES 2016's screens, unmeasured, draw it
+// too, the nearer of the two built. PES 2020's, unmeasured, draws PES
+// 2021's as PES 2019's own is.
+#[test]
+fn the_unmeasured_screens_draw_the_measured_ones_turf() {
+    let turf = |version: PesVersion| turf_image(pitch_look(version)).pixels;
+    for version in [PesVersion::Pes15, PesVersion::Pes16, PesVersion::Pes18] {
+        assert_eq!(
+            turf(version),
+            turf(PesVersion::Pes17),
+            "{version:?} draws PES 2017's"
+        );
+        assert_ne!(
+            turf(version),
+            turf(PesVersion::Pes21),
+            "{version:?} is not PES 2021's"
+        );
+    }
+    for version in [PesVersion::Pes19, PesVersion::Pes20] {
+        assert_eq!(
+            turf(version),
+            turf(PesVersion::Pes21),
+            "{version:?} draws PES 2021's"
+        );
+    }
 }
 
 // The badge's position-text colours are the game's groups: forwards,
@@ -1114,7 +1163,7 @@ fn the_released_marker_paints_at_the_drop_point() {
     let centres = centres_of(canvas, &players);
     let from = marker_point(&nodes, &players, index);
     let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
-    let (x, y) = snap(onto, canvas.min, OUTFIELD_Y_MIN);
+    let (x, y) = snap(onto, canvas.min, &outfield_range(false));
     assert_ne!(
         (players[index].x, players[index].y),
         (x, y),

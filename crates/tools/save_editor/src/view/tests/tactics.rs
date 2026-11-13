@@ -545,8 +545,10 @@ fn the_pitch_moves_assigns_and_swaps_on_the_tactics_editor() {
     let from =
         marker_point(canvas, &players, index).expect("a point on the marker a press can reach");
     let offset = from - badge_centre(canvas, slot_before);
-    let (x, y, onto) = (0..104_u8)
-        .flat_map(|x| (4..48_u8).map(move |y| (x, y)))
+    // Written (x + 1, y + 1) must stay inside the movable range, x 5 to
+    // 99 and y 4 to 47.
+    let (x, y, onto) = (4..99_u8)
+        .flat_map(|x| (3..47_u8).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,

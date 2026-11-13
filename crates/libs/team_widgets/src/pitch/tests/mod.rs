@@ -462,7 +462,7 @@ fn held_centre(
     let (x, y) = snap(
         pointer - press_offset(canvas, slot, press),
         canvas.min,
-        outfield_y_min(illegal_formations),
+        &outfield_range(illegal_formations),
     );
     clamp_centre(
         badge_centre(canvas.min, FormationSlot { x, y, ..slot }),

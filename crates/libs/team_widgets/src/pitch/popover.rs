@@ -7,7 +7,7 @@ use studio_core::widgets::{
     add_enabled, add_enabled_ui, combo_item, step_choice, step_number, wheel_steps,
 };
 
-use super::{GRID_X, GRID_Y, drop_rule, outfield_y_min, overalls_of, position_label};
+use super::{drop_rule, outfield_range, overalls_of, position_label};
 use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name};
 
@@ -22,12 +22,13 @@ use crate::tactics::{RosterRow, TacticsView, raw_name};
 /// (`drop_rule::spot_choices`, as the game's Select Position menu lists
 /// them; his own first when the spot offers neither) with Make GK beside
 /// it at its own width, the two filling the popover's width, and the X
-/// (0 to 104) and Y (`outfield_y_min` to 48: 4, or 0 under the flag
-/// below) steppers (`stepper`) and Close. A change of X or Y, typed or
+/// and Y steppers (`stepper`) of the game's movable range — X 5 to 99,
+/// Y 4 to 47 — and Close. A change of X or Y, typed or
 /// stepped, sets his position by the drop rule at the new spot, as a
 /// release there does. Under a ruleset that allows illegal formations
 /// (`illegal_formations`) the combo lists the twelve outfield positions
-/// whatever his spot, Y starts at 0, and an X or Y change keeps his
+/// whatever his spot, the steppers span the whole stored grid — X 0 to
+/// 104, Y 0 to 48 — and an X or Y change keeps his
 /// position. The keeper's slot shows a
 /// disabled "GK", the two steppers disabled under "The goalkeeper's spot
 /// is fixed" and Make GK disabled. Make GK exchanges the slot's
@@ -197,14 +198,21 @@ pub(super) fn slot_popover(
         ui.horizontal(|ui| {
             // A step needs no `mark_changed`: the move below compares the
             // spot with the slot's.
+            let range = outfield_range(illegal_formations);
             ui.label("X");
-            stepper(ui, &mut formation.players[index].x, 0, GRID_X, !keeper);
+            stepper(
+                ui,
+                &mut formation.players[index].x,
+                *range.x.start(),
+                *range.x.end(),
+                !keeper,
+            );
             ui.label("Y");
             stepper(
                 ui,
                 &mut formation.players[index].y,
-                outfield_y_min(illegal_formations),
-                GRID_Y,
+                *range.y.start(),
+                *range.y.end(),
                 !keeper,
             );
             if ui.button("Close").clicked() {
@@ -716,7 +724,10 @@ mod tests {
         let before = tactics.clone();
         let slot = before.presets[0].formations[0].players[index];
         assert!(slot.position != 0, "premise: not the keeper's slot");
-        assert!(slot.x > 0 && slot.y < GRID_Y, "premise: room to step");
+        assert!(
+            slot.x > 0 && slot.y < crate::pitch::MOVABLE_Y_MAX,
+            "premise: room to step"
+        );
 
         open(&mut window, &mut tactics, &mut view, &roster, index);
         assert!(
@@ -907,35 +918,46 @@ mod tests {
         assert_eq!(tactics, expect, "his slot alone changes");
     }
 
-    // A stored x past the range (110) steps back into it: `⏵` is
-    // disabled and one click on `⏴` gives 104, the range's end.
+    // A stored x outside the range (110 past its end, 2 below it) steps
+    // back in: the arrow into the range is enabled and one click gives
+    // the nearest end, 99 and 5 respectively.
+    // SE-GUI-42
     #[test]
-    fn a_stored_x_past_the_range_steps_back_to_its_end() {
+    fn a_stored_x_outside_the_range_steps_back_to_its_nearest_end() {
         let mut window = Headless::sized(600.0, 450.0);
         let mut tactics = fixture_tactics(PesVersion::Pes21);
         let mut view = TacticsView::default();
         let rows = fixture_rows(PesVersion::Pes21);
         let roster = roster_rows(&rows);
         let index = 4;
-        tactics.presets[0].formations[0].players[index].x = 110;
 
         open(&mut window, &mut tactics, &mut view, &roster, index);
-        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
-        let [down, up] = arrows(&nodes, "X");
-        assert!(!down.is_disabled(), "⏴ is enabled past the range");
-        assert!(up.is_disabled(), "⏵ is disabled past the range");
-        assert!(
-            click_arrow(&mut window, "X", 0, &mut tactics, &mut view, &roster),
-            "the click is an edit"
-        );
-        assert_eq!(
-            tactics.presets[0].formations[0].players[index].x, GRID_X,
-            "one ⏴ from 110 gives 104"
-        );
+        for (stored, arrow, landed) in [(110, 0, 99), (2, 1, 5)] {
+            tactics.presets[0].formations[0].players[index].x = stored;
+            let (nodes, _) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            let pair = arrows(&nodes, "X");
+            assert!(
+                !pair[arrow].is_disabled(),
+                "at x {stored} the arrow into the range is enabled"
+            );
+            assert!(
+                pair[1 - arrow].is_disabled(),
+                "at x {stored} the other arrow is disabled"
+            );
+            assert!(
+                click_arrow(&mut window, "X", arrow, &mut tactics, &mut view, &roster),
+                "at x {stored} the click is an edit"
+            );
+            assert_eq!(
+                tactics.presets[0].formations[0].players[index].x, landed,
+                "one click from {stored} gives {landed}"
+            );
+        }
     }
 
-    // Each arrow is disabled at its end of the range: at x 0 `⏴`, at x
-    // 104 `⏵`, and a click on the disabled one writes nothing. Neither
+    // Each arrow is disabled at its end of the range: at x 5 `⏴`, at x
+    // 99 `⏵`, and a click on the disabled one writes nothing. Neither
     // shows the keeper's hover: the spot is not fixed.
     #[test]
     fn each_arrow_is_disabled_at_its_end_of_the_range() {
@@ -950,7 +972,7 @@ mod tests {
         let index = 4;
         open(&mut window, &mut tactics, &mut view, &roster, index);
 
-        for (x, disabled) in [(0, 0), (GRID_X, 1)] {
+        for (x, disabled) in [(5, 0), (99, 1)] {
             tactics.presets[0].formations[0].players[index].x = x;
             let (nodes, _) =
                 window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
@@ -982,6 +1004,35 @@ mod tests {
                 "at x {x} no keeper's hover"
             );
         }
+    }
+
+    // At (99, 47), the movable range's far corner, X's ⏵ and Y's ⏵ are
+    // disabled, their ⏴s enabled; at x 5, the range's near end, X's ⏴ is
+    // disabled.
+    // SE-GUI-42
+    #[test]
+    fn at_the_ranges_ends_the_arrows_off_it_are_disabled() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        tactics.presets[0].formations[0].players[index].x = 99;
+        tactics.presets[0].formations[0].players[index].y = 47;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        for label in ["X", "Y"] {
+            let [down, up] = arrows(&nodes, label);
+            assert!(up.is_disabled(), "at (99, 47) {label}'s ⏵ is disabled");
+            assert!(!down.is_disabled(), "at (99, 47) {label}'s ⏴ is enabled");
+        }
+        tactics.presets[0].formations[0].players[index].x = 5;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let [down, up] = arrows(&nodes, "X");
+        assert!(down.is_disabled(), "at x 5 X's ⏴ is disabled");
+        assert!(!up.is_disabled(), "at x 5 X's ⏵ is enabled");
     }
 
     // Y's range starts at 4, the outfielders' lowest row, as a drag's
@@ -1066,6 +1117,54 @@ mod tests {
         );
     }
 
+    // The flag's ranges are the whole stored grid: X reaches 0 and 104,
+    // Y reaches 48, each arrow disabled only at its own end.
+    // SE-GUI-45
+    #[test]
+    fn under_illegal_formations_the_steppers_span_the_whole_grid() {
+        let mut window = Headless::sized(600.0, 450.0);
+        window.illegal_formations = true;
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        for (label, stored, arrow, landed) in [("X", 1, 0, 0), ("X", 103, 1, 104), ("Y", 47, 1, 48)]
+        {
+            let slot = &mut tactics.presets[0].formations[0].players[index];
+            if label == "X" {
+                slot.x = stored;
+            } else {
+                slot.y = stored;
+            }
+            let (nodes, _) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            let pair = arrows(&nodes, label);
+            assert!(
+                !pair[arrow].is_disabled(),
+                "at {label} {stored} the arrow to {landed} is enabled"
+            );
+            assert!(
+                click_arrow(&mut window, label, arrow, &mut tactics, &mut view, &roster),
+                "at {label} {stored} the click is an edit"
+            );
+            let slot = tactics.presets[0].formations[0].players[index];
+            assert_eq!(
+                if label == "X" { slot.x } else { slot.y },
+                landed,
+                "{label} {stored} +1 gives {landed}"
+            );
+            let (nodes, _) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            assert!(
+                arrows(&nodes, label)[arrow].is_disabled(),
+                "at {label} {landed} the arrow is disabled"
+            );
+        }
+    }
+
     // The keeper's popover: all four arrows disabled, under the fields'
     // hover "The goalkeeper's spot is fixed".
     #[test]
@@ -1087,7 +1186,9 @@ mod tests {
         // His y 3 is below Y's range, so Y's `⏴` would be disabled for an
         // outfielder too; the hover below is the keeper's alone.
         assert!(
-            slot.x > 0 && slot.x < GRID_X && slot.y < GRID_Y,
+            slot.x > crate::pitch::MOVABLE_X_MIN
+                && slot.x < crate::pitch::MOVABLE_X_MAX
+                && slot.y < crate::pitch::MOVABLE_Y_MAX,
             "premise: no arrow but Y's ⏴ is at its end of the range"
         );
 

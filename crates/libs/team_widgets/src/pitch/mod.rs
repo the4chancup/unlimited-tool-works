@@ -7,6 +7,8 @@
 //! the screen's slot-to-spot mapping and markers of portrait, badge and
 //! coloured name.
 
+use std::ops::RangeInclusive;
+
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
@@ -82,21 +84,40 @@ const CAPTAIN_MARK_RADIUS: u8 = 2;
 /// The grid's extent in stored units.
 const GRID_X: u8 = 104;
 const GRID_Y: u8 = 48;
-/// The outfielders' lowest stored y. Rows 0 to 3 are the keeper's area
-/// alone, and the game holds a dragged outfielder at y 4 however low the
-/// pointer goes, so a drop and the popover's Y stop there too, unless the
-/// ruleset allows illegal formations (`outfield_y_min`).
-const OUTFIELD_Y_MIN: u8 = 4;
+/// The game's movable range in stored units: its own Formation screen
+/// moves a starter only inside x 5 to 99 and y 4 to 47, rows 0 to 3
+/// being the keeper's area alone. The stored grid (`GRID_X` by
+/// `GRID_Y`) is wider: under a ruleset that allows illegal formations
+/// an outfielder's spot may take it all (`outfield_range`).
+const MOVABLE_X_MIN: u8 = 5;
+const MOVABLE_X_MAX: u8 = 99;
+const MOVABLE_Y_MIN: u8 = 4;
+const MOVABLE_Y_MAX: u8 = 47;
 
-/// The lowest stored y a drag or the popover's Y gives an outfielder:
-/// `OUTFIELD_Y_MIN`, or 0 under a ruleset that allows illegal formations,
-/// whose patched game keeps an outfielder on any row, the keeper's
-/// included.
-fn outfield_y_min(illegal_formations: bool) -> u8 {
+/// The spot range an outfielder's marker may take, one axis each.
+struct OutfieldRange {
+    /// The x ends, inclusive.
+    x: RangeInclusive<u8>,
+    /// The y ends, inclusive.
+    y: RangeInclusive<u8>,
+}
+
+/// The stored range a drag or the popover's X and Y hold an outfielder
+/// to: the game's movable range, x `MOVABLE_X_MIN` to `MOVABLE_X_MAX`
+/// and y `MOVABLE_Y_MIN` to `MOVABLE_Y_MAX`, or the whole stored grid
+/// under a ruleset that allows illegal formations, whose patched game
+/// keeps an outfielder on any spot of it, the keeper's rows included.
+fn outfield_range(illegal_formations: bool) -> OutfieldRange {
     if illegal_formations {
-        0
+        OutfieldRange {
+            x: 0..=GRID_X,
+            y: 0..=GRID_Y,
+        }
     } else {
-        OUTFIELD_Y_MIN
+        OutfieldRange {
+            x: MOVABLE_X_MIN..=MOVABLE_X_MAX,
+            y: MOVABLE_Y_MIN..=MOVABLE_Y_MAX,
+        }
     }
 }
 
@@ -181,7 +202,9 @@ struct PitchLook {
 
 /// PES 2017's screen: seven bands, the middle one light and centred on
 /// the halfway line, and a goal line at 382, the canvas' last two rows
-/// being the texture's padding.
+/// being the texture's padding. PES 2018 draws it as its own screen;
+/// PES 2015 and PES 2016 draw it for want of a measured one of theirs,
+/// PES 2016's sharing its seven bands, row scale and boxes.
 static PES_2017_PITCH: PitchLook = PitchLook {
     name: "PES 2017 pitch turf",
     bands: &[58.0, 111.3, 164.7, 218.0, 271.3, 324.7],
@@ -222,17 +245,16 @@ static PES_2021_PITCH: PitchLook = PitchLook {
     arc: [36.0, 44.0],
 };
 
-/// The pitch `version`'s own formation screen draws. A version whose
-/// screen is not measured yet draws PES 2021's.
+/// The pitch `version`'s own formation screen draws. PES 2018's screen
+/// is PES 2017's and PES 2019's is PES 2021's; PES 2015's, PES 2016's
+/// and PES 2020's are unmeasured, the first two drawing PES 2017's, the
+/// nearer of the two built, and PES 2020's PES 2021's.
 fn pitch_look(version: PesVersion) -> &'static PitchLook {
     match version {
-        PesVersion::Pes17 => &PES_2017_PITCH,
-        PesVersion::Pes15
-        | PesVersion::Pes16
-        | PesVersion::Pes18
-        | PesVersion::Pes19
-        | PesVersion::Pes20
-        | PesVersion::Pes21 => &PES_2021_PITCH,
+        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 | PesVersion::Pes18 => {
+            &PES_2017_PITCH
+        }
+        PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => &PES_2021_PITCH,
     }
 }
 
@@ -459,7 +481,7 @@ pub fn pitch(
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
-        let y_min = outfield_y_min(illegal_formations);
+        let range = outfield_range(illegal_formations);
         // Interact in draw order first: egui gives an overlap to the
         // widget registered last, so the lowest marker (painted on top)
         // wins a press.
@@ -508,7 +530,7 @@ pub fn pitch(
                 .ctx()
                 .pointer_interact_pos()
                 .map_or((players[index].x, players[index].y), |pos| {
-                    snap(pos - held.offset, canvas.min, y_min)
+                    snap(pos - held.offset, canvas.min, &range)
                 });
             let formation = &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
             let position = if illegal_formations {
@@ -590,7 +612,7 @@ pub fn pitch(
                             let offset = previous
                                 .filter(|held| held.slot == from)
                                 .map_or(egui::Vec2::ZERO, |held| held.offset);
-                            let (x, y) = snap(pos - offset, canvas.min, y_min);
+                            let (x, y) = snap(pos - offset, canvas.min, &range);
                             if !illegal_formations {
                                 formation.players[from].position =
                                     drop_rule::dropped_position(formation, from, x, y, overalls);
@@ -795,15 +817,15 @@ fn badge_centre(origin: egui::Pos2, slot: FormationSlot) -> egui::Pos2 {
 
 /// `pos` inside the canvas (from `origin`) snapped back through the
 /// mapping to the stored grid (the draft's `snapXY`): the nearest unit,
-/// clamped to the grid, y no lower than `y_min` (`outfield_y_min`).
-fn snap(pos: egui::Pos2, origin: egui::Pos2, y_min: u8) -> (u8, u8) {
+/// clamped into `range` (`outfield_range`).
+fn snap(pos: egui::Pos2, origin: egui::Pos2, range: &OutfieldRange) -> (u8, u8) {
     let local = pos - origin;
     let x = ((local.x - SPOT_X0) / SPOT_XS)
         .round()
-        .clamp(0.0, f32::from(GRID_X)) as u8;
+        .clamp(f32::from(*range.x.start()), f32::from(*range.x.end())) as u8;
     let y = ((SPOT_Y0 - local.y) / SPOT_YS)
         .round()
-        .clamp(f32::from(y_min), f32::from(GRID_Y)) as u8;
+        .clamp(f32::from(*range.y.start()), f32::from(*range.y.end())) as u8;
     (x, y)
 }
 

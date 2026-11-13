@@ -44,8 +44,9 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     // point in the outfielders' rows, where the snap reads the mapping.
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
-    let (x, y, onto) = (0..=GRID_X)
-        .flat_map(|x| (OUTFIELD_Y_MIN..=GRID_Y).map(move |y| (x, y)))
+    // Written (x + 1, y + 1) must stay inside the movable range.
+    let (x, y, onto) = (MOVABLE_X_MIN - 1..MOVABLE_X_MAX)
+        .flat_map(|x| ((MOVABLE_Y_MIN - 1)..MOVABLE_Y_MAX).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -56,9 +57,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
             )
         })
         .find(|(x, y, point)| {
-            *x < GRID_X
-                && *y < GRID_Y
-                && canvas.contains(*point)
+            canvas.contains(*point)
                 && (*x + 1 != slot.x || *y + 1 != slot.y)
                 && centres.iter().enumerate().all(|(other, centre)| {
                     other == index || !marker_rect(*centre, canvas).contains(*point)
@@ -91,8 +90,8 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let from = marker_point(&nodes, &formation.players, index);
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
-    let (x, y, onto) = (0..GRID_X)
-        .flat_map(|x| (OUTFIELD_Y_MIN..GRID_Y).map(move |y| (x, y)))
+    let (x, y, onto) = (MOVABLE_X_MIN..=MOVABLE_X_MAX)
+        .flat_map(|x| (MOVABLE_Y_MIN..=MOVABLE_Y_MAX).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -154,8 +153,8 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let centres = centres_of(canvas, &formation.players);
     let from = marker_point(&nodes, &formation.players, index);
     let offset = press_offset(canvas, slot, from);
-    let (x, y, onto) = (0..GRID_X)
-        .flat_map(|x| (OUTFIELD_Y_MIN..GRID_Y).map(move |y| (x, y)))
+    let (x, y, onto) = (MOVABLE_X_MIN..=MOVABLE_X_MAX)
+        .flat_map(|x| (MOVABLE_Y_MIN..=MOVABLE_Y_MAX).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -450,7 +449,7 @@ fn under_illegal_formations_a_marker_dropped_on_another_lands_at_the_snapped_spo
     let (x, y) = snap(
         over - press_offset(canvas, players[from], at),
         canvas.min,
-        0,
+        &outfield_range(true),
     );
     assert_ne!(
         (x, y),
@@ -578,7 +577,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
                 && snap(
                     over - press_offset(canvas, players[index], from),
                     canvas.min,
-                    OUTFIELD_Y_MIN,
+                    &outfield_range(false),
                 ) != (players[index].x, players[index].y)
         })
         .expect("an outfield starter off the keeper's marker");
@@ -627,7 +626,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
     let (x, y) = snap(
         over - press_offset(canvas, players[index], from),
         canvas.min,
-        OUTFIELD_Y_MIN,
+        &outfield_range(false),
     );
     expect.presets[0].formations[0].players[index].x = x;
     expect.presets[0].formations[0].players[index].y = y;
@@ -665,7 +664,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
         .flat_map(|dy| (1..64).map(move |dx| (dx, dy)))
         .map(|(dx, dy)| egui::pos2(canvas.left() + 5.0 * dx as f32, canvas.bottom() - dy as f32))
         .find(|&point| {
-            mapped_y(point) < f32::from(OUTFIELD_Y_MIN)
+            mapped_y(point) < f32::from(MOVABLE_Y_MIN)
                 && centres
                     .iter()
                     .all(|centre| !marker_rect(*centre, canvas).contains(point))
@@ -676,7 +675,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
         "premise: the release is on the pitch"
     );
     assert!(
-        mapped_y(release) < f32::from(OUTFIELD_Y_MIN),
+        mapped_y(release) < f32::from(MOVABLE_Y_MIN),
         "premise: the mapping alone reads y {} there",
         mapped_y(release)
     );
@@ -700,7 +699,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let badge = *badge_rects(&shapes)
         .last()
         .expect("the held marker's badge, painted last");
-    let (x, _) = snap(below - offset, canvas.min, OUTFIELD_Y_MIN);
+    let (x, _) = snap(below - offset, canvas.min, &outfield_range(false));
     near(
         badge.center(),
         clamp_centre(spot_centre(canvas, x, 4), canvas),
@@ -718,12 +717,122 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let landed = tactics.presets[0].formations[0].players[index];
     assert_eq!(
         (landed.x, landed.y),
-        (snap(release - offset, canvas.min, OUTFIELD_Y_MIN).0, 4),
+        (
+            snap(release - offset, canvas.min, &outfield_range(false)).0,
+            4
+        ),
         "he lands on y 4"
     );
     let mut expect = before;
     expect.presets[0].formations[0].players[index] = landed;
     assert_eq!(tactics, expect, "his slot alone changes");
+}
+
+// The movable range's other three edges: held with the pointer above
+// the pitch his badge stands on y 47, left of it on x 5 and right of it
+// on x 99, and released on the grass at a point the mapping alone reads
+// past each edge, he lands on its end.
+// SE-GUI-42
+#[test]
+fn an_outfielder_held_past_the_pitches_other_sides_stands_on_the_ranges_edge() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut expect = tactics.clone();
+    let index = 4;
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    // The stored (x, y) the mapping alone reads at `point` less `offset`,
+    // unclamped.
+    let mapped = |point: egui::Pos2, offset: egui::Vec2| {
+        let local = point - offset - canvas.min;
+        (
+            ((local.x - SPOT_X0) / SPOT_XS).round(),
+            ((SPOT_Y0 - local.y) / SPOT_YS).round(),
+        )
+    };
+    /// Whether the mapped stored `(x, y)` lies past `side`'s edge.
+    type Past = fn((f32, f32)) -> bool;
+    let cases: [(&str, Past); 3] = [
+        ("above", |(_x, y)| y > 47.0),
+        ("left", |(x, _y)| x < 5.0),
+        ("right", |(x, _y)| x > 99.0),
+    ];
+    for (side, past) in cases {
+        let players = tactics.presets[0].formations[0].players;
+        // A frame at the new spots first: the press hit-tests against
+        // the widgets the last frame registered.
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let centres = centres_of(canvas, &players);
+        let from = marker_point(&nodes, &players, index);
+        let offset = press_offset(canvas, players[index], from);
+        let release = (1..64)
+            .flat_map(|dx| (1..77).map(move |dy| (dx, dy)))
+            .map(|(dx, dy)| canvas.min + egui::vec2(5.0 * dx as f32, 5.0 * dy as f32))
+            .find(|&point| {
+                canvas.contains(point)
+                    && past(mapped(point, offset))
+                    && centres
+                        .iter()
+                        .all(|centre| !marker_rect(*centre, canvas).contains(point))
+            })
+            .unwrap_or_else(|| panic!("{side}: a grass point the mapping reads past the edge"));
+        let held = match side {
+            "above" => egui::pos2(release.x, canvas.top() - 40.0),
+            "left" => egui::pos2(canvas.left() - 40.0, release.y),
+            "right" => egui::pos2(canvas.right() + 40.0, release.y),
+            _ => unreachable!(),
+        };
+        let (hx, hy) = mapped(held, offset);
+        assert!(past((hx, hy)), "{side}: the held point maps past the edge");
+
+        window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            pointer_at(from, true),
+        );
+        let (shapes, changed) = window.pitch_shapes(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            vec![egui::Event::PointerMoved(held)],
+        );
+        assert!(!changed, "{side}: a held frame writes nothing");
+        let badge = *badge_rects(&shapes)
+            .last()
+            .expect("the held marker's badge, painted last");
+        near(
+            badge.center(),
+            clamp_centre(
+                spot_centre(canvas, hx.clamp(5.0, 99.0) as u8, hy.clamp(4.0, 47.0) as u8),
+                canvas,
+            ),
+            0.5,
+        );
+
+        let (_, changed) = window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            pointer_at(release, false),
+        );
+        assert!(changed, "{side}: the release writes");
+        let (rx, ry) = mapped(release, offset);
+        let landed = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (landed.x, landed.y),
+            (rx.clamp(5.0, 99.0) as u8, ry.clamp(4.0, 47.0) as u8),
+            "{side}: he lands on the range's edge"
+        );
+        expect.presets[0].formations[0].players[index] = landed;
+        assert_eq!(tactics, expect, "{side}: his slot alone changes");
+    }
 }
 
 // Under a ruleset that allows illegal formations the patched game keeps
@@ -785,7 +894,7 @@ fn under_illegal_formations_an_outfielder_dragged_below_the_pitch_lands_on_y_0()
     let badge = *badge_rects(&shapes)
         .last()
         .expect("the held marker's badge, painted last");
-    let (x, _) = snap(below - offset, canvas.min, 0);
+    let (x, _) = snap(below - offset, canvas.min, &outfield_range(true));
     near(
         badge.center(),
         clamp_centre(spot_centre(canvas, x, 0), canvas),
@@ -803,13 +912,96 @@ fn under_illegal_formations_an_outfielder_dragged_below_the_pitch_lands_on_y_0()
     let mut expect = before;
     expect.presets[0].formations[0].players[index] = FormationSlot {
         position: players[index].position,
-        x: snap(release - offset, canvas.min, 0).0,
+        x: snap(release - offset, canvas.min, &outfield_range(true)).0,
         y: 0,
     };
     assert_eq!(
         tactics, expect,
         "he lands on y 0 with his position, his slot alone changing"
     );
+}
+
+// The grid's other edges under the flag: a release on the grass at x 0
+// and at y 48, each spot stored as it is — the whole stored grid, not
+// the movable range, is his.
+// SE-GUI-45
+#[test]
+fn under_illegal_formations_a_release_on_the_grids_other_edges_stores_them() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut expect = tactics.clone();
+    let index = 4;
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    // The edge's fixed stored coordinate and the other one's scan for a
+    // free grass point: (0, y) the left edge, (x, 48) the top.
+    for (x, y) in [(Some(0), None), (None, Some(48))] {
+        let players = tactics.presets[0].formations[0].players;
+        // A frame at the new spots first: the press hit-tests against
+        // the widgets the last frame registered.
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let centres = centres_of(canvas, &players);
+        let from = marker_point(&nodes, &players, index);
+        let offset = press_offset(canvas, players[index], from);
+        let free = |x: u8, y: u8| {
+            let point = badge_centre(canvas.min, FormationSlot { position: 1, x, y }) + offset;
+            canvas.contains(point)
+                && centres
+                    .iter()
+                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+        };
+        let (x, y) = match (x, y) {
+            (Some(x), None) => (0..=GRID_Y).find(|&y| free(x, y)).map(|y| (x, y)),
+            (None, Some(y)) => (0..=GRID_X).find(|&x| free(x, y)).map(|x| (x, y)),
+            _ => unreachable!(),
+        }
+        .expect("a free grass point on the edge");
+        let release = badge_centre(canvas.min, FormationSlot { position: 1, x, y }) + offset;
+
+        window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            pointer_at(from, true),
+        );
+        let (shapes, changed) = window.pitch_shapes(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            vec![egui::Event::PointerMoved(release)],
+        );
+        assert!(!changed, "({x}, {y}): a held frame writes nothing");
+        let badge = *badge_rects(&shapes)
+            .last()
+            .expect("the held marker's badge, painted last");
+        near(
+            badge.center(),
+            clamp_centre(spot_centre(canvas, x, y), canvas),
+            0.5,
+        );
+        let (_, changed) = window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            pointer_at(release, false),
+        );
+        assert!(changed, "({x}, {y}): the release writes");
+        let landed = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (landed.x, landed.y),
+            (x, y),
+            "the edge spot stored as it is"
+        );
+        expect.presets[0].formations[0].players[index] = landed;
+        assert_eq!(tactics, expect, "({x}, {y}): his slot alone changes");
+    }
 }
 
 /// A marker `index` of preset 1's Kick-off whose box's left edge has
@@ -862,7 +1054,7 @@ fn a_release_within_the_click_distance_is_a_click_not_a_drop() {
     let (index, press, release) =
         edge_press(canvas, &players, 0.25, 5.75).expect("a marker with grass at its left edge");
     assert_ne!(
-        snap(release, canvas.min, OUTFIELD_Y_MIN),
+        snap(release, canvas.min, &outfield_range(false)),
         (players[index].x, players[index].y),
         "premise: a drop there would move him"
     );
@@ -966,7 +1158,7 @@ fn a_release_past_the_click_distance_is_a_drop_not_a_click() {
     let (x, y) = snap(
         release - press_offset(canvas, players[index], press),
         canvas.min,
-        OUTFIELD_Y_MIN,
+        &outfield_range(false),
     );
     assert_ne!(
         (x, y),
