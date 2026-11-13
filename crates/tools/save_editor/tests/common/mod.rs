@@ -15,6 +15,10 @@ use studio_core::{
     StudioTool, ToolContext,
 };
 
+// The unit tests' own builder, compiled here too, so both suites read the same save.
+#[path = "../../src/test_support/cup_save.rs"]
+pub mod cup_save;
+
 /// A fresh folder standing in for the executable's folder; `data/` is the data directory.
 pub struct Sandbox {
     pub root: PathBuf,

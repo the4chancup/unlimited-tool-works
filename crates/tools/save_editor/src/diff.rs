@@ -1,6 +1,7 @@
 //! The comparator's report (`spec/save_editor.md` "Comparator (gameplay + aesthetics)"):
 //! two saves' players paired by id, each changed field a row, then the players only in one
-//! save.
+//! save. Only the players a cup team's roster holds in either save are reported
+//! (`session::cup`).
 
 use pes_savefile::EditFile;
 use pes_savefile::ops::compare::{CompareError, DiffScope, PlayerDiff, compare};
@@ -9,6 +10,7 @@ use studio_core::{EventLines, Message, PipelineEvent};
 
 use crate::events::Report;
 use crate::messages::{Code, Side, diff_fields, message, player_diff};
+use crate::session::cup::cup_player_ids;
 use crate::view::terms;
 
 /// The report as data, rendered either as finding lines or as one JSON document (`--json`),
@@ -142,20 +144,27 @@ pub(crate) fn report_json(
 }
 
 /// Both saves' report as data, each row's field by its schema name (what `--json`
-/// writes) and its stored values. Saves of two versions are the lib's `VersionMismatch`.
-/// `pub(crate)` for the comparator panel's worker.
+/// writes) and its stored values. Only a player a cup team's roster holds, in either
+/// save, is reported: the game's own teams' players and players on no cup roster are
+/// left out, changed, added or removed. Saves of two versions are the lib's
+/// `VersionMismatch`. `pub(crate)` for the comparator panel's worker.
 pub(crate) fn build(
     first: &EditFile,
     second: &EditFile,
     scope: Option<DiffScope>,
 ) -> Result<DiffReport, CompareError> {
     let diff = compare(first, second)?;
+    let mut cup_players = cup_player_ids(first);
+    cup_players.extend(cup_player_ids(second));
     let mut data = DiffReport {
         players: Vec::new(),
         only_in_first: Vec::new(),
         only_in_second: Vec::new(),
     };
     for player in first.players() {
+        if !cup_players.contains(&player.id) {
+            continue;
+        }
         if diff.only_in_a.contains(&player.id) {
             // An unmatched player is reported once, in `only_in_first`.
             continue;
@@ -190,7 +199,7 @@ pub(crate) fn build(
         (&diff.only_in_a, &mut data.only_in_first),
         (&diff.only_in_b, &mut data.only_in_second),
     ] {
-        for &id in ids {
+        for &id in ids.iter().filter(|id| cup_players.contains(id)) {
             entries.push(OnlyInPlayer { id });
         }
     }
@@ -234,6 +243,41 @@ mod tests {
             let lines = report_lines(&a, &b, scope).unwrap();
             assert!(!lines.is_empty(), "scope {scope:?} has rows");
             assert_eq!(stdout, lines.join("\n") + "\n", "scope {scope:?}");
+        }
+    }
+
+    /// A player a cup roster holds in one of the two saves alone is reported, whichever
+    /// save it is; a player no cup roster holds in either is not.
+    #[test]
+    fn a_player_on_a_cup_roster_in_either_save_is_reported() {
+        use crate::test_support::cup_save::{outside_cup_file, outside_players};
+
+        let (first, unrostered) = outside_cup_file(PesVersion::Pes21);
+        let outside = outside_players(&first)[0];
+        let mut second = first.clone();
+        // The unrostered player is put on 701's first empty slot in `second` alone.
+        second
+            .team_mut(701)
+            .unwrap()
+            .roster
+            .iter_mut()
+            .find(|slot| slot.player_id == 0)
+            .expect("premise: 701 has an empty slot")
+            .player_id = unrostered;
+        for id in [unrostered, outside] {
+            second.player_mut(id).unwrap().basic.height += 1;
+        }
+        for (a, b, which) in [
+            (&first, &second, "the second save"),
+            (&second, &first, "the first save"),
+        ] {
+            let report = build(a, b, None).unwrap();
+            let ids: Vec<u32> = report.players.iter().map(|player| player.id).collect();
+            assert_eq!(
+                ids,
+                [unrostered],
+                "{unrostered}, on a cup roster in {which} alone, and not {outside}"
+            );
         }
     }
 }

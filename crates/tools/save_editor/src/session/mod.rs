@@ -4,6 +4,7 @@
 //! every operation on the model; the session resolves ids against the open save and hands
 //! the lib the entries it asks for.
 
+pub(crate) mod cup;
 pub(crate) mod database;
 pub(crate) mod import_sections;
 pub(crate) mod journal;
@@ -280,9 +281,10 @@ impl Session {
         self.revision = NEXT_REVISION.fetch_add(1, Ordering::Relaxed);
     }
 
-    /// The ids of the save's teams, in record order.
-    pub(crate) fn team_ids(&self) -> impl Iterator<Item = u32> {
-        self.file.teams().iter().map(|team| team.id)
+    /// The ids of the save's cup teams, in record order: the teams a
+    /// command naming no team reads.
+    pub(crate) fn cup_team_ids(&self) -> impl Iterator<Item = u32> {
+        cup::cup_teams(&self.file).map(|team| team.id)
     }
 
     /// The player id `team`'s roster `slot` (0-based) holds, `None` for a

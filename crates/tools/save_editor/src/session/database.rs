@@ -17,6 +17,7 @@ use pes_version::PesVersion;
 use studio_core::Recorder;
 
 use crate::session::Session;
+use crate::session::cup::{cup_player_ids, cup_teams};
 use crate::session::journal;
 
 /// The skill names the sheet spells, index = the canonical skill slot
@@ -99,16 +100,16 @@ fn default_kit_slots(team_id: u32) -> [KitSlot; 10] {
     slots
 }
 
-/// The roster sheet's text (`rosters_tsv`): per team of the save, in
-/// record order and hidden ones included, the team's name on its own
-/// line, then one tab-separated row per filled roster slot in slot order
+/// The roster sheet's text (`rosters_tsv`): per cup team of the save, in
+/// record order, the team's name on its own line, then one tab-separated
+/// row per filled roster slot in slot order
 /// — shirt number, name (raw, the colour codes kept), registered
 /// position, Finishing, `(C)` on the captain's slot, height, playing
 /// style, then each skill and COM style set — and an empty line after
 /// the team.
 pub(crate) fn rosters_tsv(file: &EditFile) -> String {
     let mut out = String::new();
-    for team in file.teams() {
+    for team in cup_teams(file) {
         out.push_str(&team.name);
         out.push('\n');
         for (index, slot) in team.roster.iter().enumerate() {
@@ -211,15 +212,21 @@ pub(crate) fn write_rosters_tsv(
 /// `Session::edit_entries` (each entry cloned, repaired, kept only when
 /// it differs): the repair reads, `edit_entries` writes.
 ///
-/// On every player the four visual flags clear; where the record has the
-/// base-copy flag (PES 15 to 18) a copy id naming another player while
-/// the flag is off becomes 0, and the flag itself clears when the id is
-/// the player's own or 0. On every team the strip flag clears where the
-/// record has it (PES 17), and the kit slots go back to their defaults
-/// where the record has them (PES 17 again).
+/// On every player of a cup roster the four visual flags clear; where the
+/// record has the base-copy flag (PES 15 to 18) a copy id naming another
+/// player while the flag is off becomes 0, and the flag itself clears when
+/// the id is the player's own or 0. On every cup team the strip flag clears
+/// where the record has it (PES 17), and the kit slots go back to their
+/// defaults where the record has them (PES 17 again). The other teams and
+/// players are left as the save holds them.
 pub(crate) fn fix_database(file: &EditFile) -> (Vec<PlayerEntry>, Vec<TeamEntry>) {
+    let cup_players = cup_player_ids(file);
     let mut players = Vec::new();
-    for player in file.players() {
+    for player in file
+        .players()
+        .iter()
+        .filter(|player| cup_players.contains(&player.id))
+    {
         let mut repaired = player.clone();
         match repaired.edit_flags.base_copy {
             Some(false)
@@ -247,7 +254,7 @@ pub(crate) fn fix_database(file: &EditFile) -> (Vec<PlayerEntry>, Vec<TeamEntry>
         }
     }
     let mut teams = Vec::new();
-    for team in file.teams() {
+    for team in cup_teams(file) {
         let mut repaired = team.clone();
         if repaired.edit_flags.strip.is_some() {
             repaired.edit_flags.strip = Some(false);
@@ -285,12 +292,12 @@ mod tests {
         EditFile::from_bytes(&fixture_save(version)).unwrap()
     }
 
-    /// The index of `team_id`'s name line in the sheet: every team before
-    /// it writes a name line, one row per filled roster slot and an empty
-    /// line (the fixture's rosters point at players the save holds).
+    /// The index of `team_id`'s name line in the sheet: every cup team
+    /// before it writes a name line, one row per filled roster slot and an
+    /// empty line (the fixture's rosters point at players the save holds).
+    /// PES 19's fixture holds teams outside the cup before 701.
     fn block_start(file: &EditFile, team_id: u32) -> usize {
-        file.teams()
-            .iter()
+        cup_teams(file)
             .take_while(|team| team.id != team_id)
             .map(|team| {
                 2 + team
@@ -581,5 +588,23 @@ mod tests {
             .map(|player| player.appearance.base_copy_id)
             .unwrap_or(70102);
         assert_eq!(kept, 70102, "the repair never touches a PES 21 copy id");
+    }
+
+    // SE-GUI-77
+    #[test]
+    fn the_sheet_holds_the_cup_teams_alone() {
+        use crate::test_support::cup_save::{OUTSIDE_TEAM, outside_cup_file};
+
+        let (file, _) = outside_cup_file(PesVersion::Pes17);
+        let outside = &file.team(OUTSIDE_TEAM).unwrap().name;
+        assert_eq!(outside, "/aco/", "premise: team 300's name");
+        let tsv = rosters_tsv(&file);
+        let lines: Vec<&str> = tsv.lines().collect();
+        assert!(
+            !lines.contains(&outside.as_str()),
+            "no name line for team 300"
+        );
+        // An id no team holds starts past every cup team's block: the sheet's length.
+        assert_eq!(lines.len(), block_start(&file, 0), "one block per cup team");
     }
 }

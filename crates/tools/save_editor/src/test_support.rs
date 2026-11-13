@@ -5,6 +5,8 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+pub(crate) mod cup_save;
+
 /// A fresh, empty scratch folder for `test` under the test binary's build folder
 /// (`target/<profile>/save_editor_tests/<test>`): per checkout, so a mutation run's copy
 /// has its own, and emptied at the start of each run, so no process id is needed.

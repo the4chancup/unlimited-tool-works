@@ -11,7 +11,9 @@ use std::path::Path;
 use anyhow::anyhow;
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use teams_list::{TeamId, TeamName, TeamsList};
+use teams_list::{TeamName, TeamsList};
+
+use crate::session::cup::cup_teams;
 
 // The merge, re-exported so the command reaches the lib's through this module: inside the
 // crate the module's name shadows the lib's.
@@ -42,13 +44,12 @@ pub(crate) fn from_save(file: &EditFile) -> (TeamsList, Vec<NameDuplicate>) {
     let mut text = String::from("ID\tName\r\n");
     let mut seen: BTreeMap<TeamName, u32> = BTreeMap::new();
     let mut duplicates = Vec::new();
-    for team in file.teams() {
+    for team in cup_teams(file) {
         let display = display_name(&team.name);
         let trimmed = display.trim();
-        let in_cup_range = u16::try_from(team.id).is_ok_and(|id| TeamId::new(id).is_ok());
         let slash_wrapped =
             trimmed.len() >= 3 && trimmed.starts_with('/') && trimmed.ends_with('/');
-        if !in_cup_range || !slash_wrapped {
+        if !slash_wrapped {
             continue;
         }
         let Ok(name) = TeamName::new(trimmed) else {
@@ -121,6 +122,8 @@ pub(crate) fn write(path: &Path, list: &TeamsList) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use teams_list::TeamId;
+
     use super::*;
 
     /// A cup-range team named outside the slash convention is no cup identity, even one the

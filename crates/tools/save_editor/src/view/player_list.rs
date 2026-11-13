@@ -11,6 +11,7 @@ use studio_core::widgets::{combo_item, ink_span, step_choice, text_box, wheel_st
 use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
+use crate::session::cup::cup_teams;
 use crate::session::selection::{self, ListRow, Row, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
@@ -403,7 +404,7 @@ struct RowLayout {
     draggable: bool,
 }
 
-/// The team selector: `ALL`, then each team by name in the save's order.
+/// The team selector: `ALL`, then each cup team by name in the save's order.
 /// `id_salt` is the combo's: two combos with one salt share their popup
 /// state, so the comparator's filter passes its own (the player list's
 /// stays `save_editor_team`).
@@ -424,7 +425,7 @@ pub(super) fn team_selector(
         })
         .show_ui(ui, |ui| {
             combo_item(ui, &mut chosen, TeamChoice::All, "ALL");
-            for team in file.teams() {
+            for team in cup_teams(file) {
                 combo_item(
                     ui,
                     &mut chosen,
@@ -434,7 +435,7 @@ pub(super) fn team_selector(
             }
         })
         .response;
-    let teams = file.teams().iter().map(|team| TeamChoice::Team(team.id));
+    let teams = cup_teams(file).map(|team| TeamChoice::Team(team.id));
     let choices = std::iter::once(TeamChoice::All).chain(teams);
     if let Some(next) = step_choice(choices, &chosen, wheel_steps(ui, &combo)) {
         chosen = next;

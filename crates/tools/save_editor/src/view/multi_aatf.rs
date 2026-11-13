@@ -1,8 +1,8 @@
 //! The Savefile menu's Multi-team AATF dialog, the draft's `dlgMultiAatf`:
-//! an organizer's check of a range of the save's teams under the toolbar's
+//! an organizer's check of a range of the save's cup teams under the toolbar's
 //! ruleset, a report read once and copied out, while Live AATF is where a
 //! team gets fixed. The range's two ends are picked by team on one row,
-//! both on the save's first team by default, the last never before the
+//! both on the save's first cup team by default, the last never before the
 //! first, and kept while the dialog is closed and opened again on the same
 //! save. The teams are checked in parallel on the AATF check's worker
 //! (`aatf_check`) whenever the ruleset changes, and whenever the range
@@ -25,6 +25,7 @@ use team_widgets::violations::{
     ListUse, ListedPlayer, Wording, issue_groups, rule_name, sentence, violation_detail,
 };
 
+use crate::session::cup::cup_teams;
 use crate::session::rules::{self, TeamCheck};
 use crate::view::SaveView;
 use crate::view::aatf_check::{self, CheckKey, TeamsCheck};
@@ -90,11 +91,11 @@ impl MultiAatf {
     }
 
     /// The Savefile menu's entry: the dialog up, both ends of its range on
-    /// the save's first team the first time it opens on `file`, checked at
-    /// once.
+    /// the save's first cup team the first time it opens on `file`, checked
+    /// at once.
     pub(super) fn open(&mut self, file: &EditFile) {
         if self.range.is_none() {
-            let first = file.teams().iter().map(|team| team.id).min();
+            let first = cup_teams(file).map(|team| team.id).min();
             self.range = first.map(|first| Range {
                 picked: (first, first),
                 checked: (first, first),
@@ -114,12 +115,10 @@ pub(super) fn counted(n: usize, word: &str) -> String {
     }
 }
 
-/// The teams of `file` whose id lies between `first` and `last`, in id
+/// The cup teams of `file` whose id lies between `first` and `last`, in id
 /// order.
 fn range_ids(file: &EditFile, first: u32, last: u32) -> Vec<u32> {
-    let mut ids: Vec<u32> = file
-        .teams()
-        .iter()
+    let mut ids: Vec<u32> = cup_teams(file)
         .map(|team| team.id)
         .filter(|id| (first..=last).contains(id))
         .collect();
@@ -133,13 +132,11 @@ pub(super) fn team_label(file: &EditFile, id: u32) -> String {
     format!("{id} {}", display_name(aatf_check::team_name(file, id)))
 }
 
-/// One end of the range: a combo of the save's teams from id `from` on, in
-/// id order, the order the range is taken in, as wide as its widest label
+/// One end of the range: a combo of the save's cup teams from id `from` on,
+/// in id order, the order the range is taken in, as wide as its widest label
 /// so a pick never moves the other combo.
 fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, from: u32, picked: &mut u32) {
-    let mut labels: Vec<(u32, String)> = file
-        .teams()
-        .iter()
+    let mut labels: Vec<(u32, String)> = cup_teams(file)
         .filter(|team| team.id >= from)
         .map(|team| (team.id, team_label(file, team.id)))
         .collect();

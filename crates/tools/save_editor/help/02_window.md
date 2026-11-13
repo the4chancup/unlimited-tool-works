@@ -29,6 +29,11 @@ The dropdown picks a team, or ALL for every team of the save; picking a team sel
 row, so the right side shows the team's fields and tactics (ALL keeps what you had
 selected).
 
+Only the cup's teams are listed (ids 701 to 920), with the players on their rosters. A save
+made from the game's own data also holds its clubs and national teams, and players on no cup
+team: they stay in the save exactly as they are, and the editor never lists, checks or
+changes them.
+
 The list below it holds a row per team and, under it, one per player: the team's row shows
 its id, its two colours and its name followed by `[click for gameplan]`, a player's row his
 shirt number, position and name as the game draws it, colors included. A `●` on a row marks
@@ -90,7 +95,8 @@ version, naming both. The **Show** row narrows the list to All, Gameplay or Aest
 the team dropdown to one team.
 
 Rows group by team and by player: each row shows a field's name and its value in the picked
-save and in the open save. Clicking a row selects that player in the editor.
+save and in the open save. Clicking a row selects that player in the editor. Only the players
+on a cup team's roster, in either save, are compared: the game's own teams are left out.
 
 A comparison takes a moment on a big save, and the window says so until the rows land.
 **Export…** writes the picked scope's differences over the whole save as a text file.
