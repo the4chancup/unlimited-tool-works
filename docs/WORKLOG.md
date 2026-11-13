@@ -813,8 +813,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (archive)" on two lines. All go into
       `gui.md` when the draft is accepted. Ruled 2026-11-13 night (the maintainer): a blocked
       cell's dotted red outline and the kit swatch as two flat halves stand; the detail
-      panel is the placed window above, not a panel at the grid's right. Not drawn yet: the
-      file drop on the grid, the Edit mode question, the autorun, a check arriving live.
+      panel is the placed window above, not a panel at the grid's right. Drawn the same night
+      (the lead; shots by `.tmp/0_0_2/tc_draft/shot_tc4.py`), for the maintainer's look: the
+      file drop on the grid (outlined while dragged; a name already there refused, naming it),
+      the Edit mode question at the save's step, the autorun (close only on a run with no
+      error), a check arriving live (cells flip scattered as each check ends).
       The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted
   - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
