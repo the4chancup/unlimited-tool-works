@@ -1917,10 +1917,11 @@ briefs, review loops, gates and mutation runs as for any step.
     plan edit. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one
     notice per kind of copy and of paste, the cross-version line, a notice's text bold
   - [ ] 0.0.2-notice result notices name the thing first, then what was done to it (the
-    maintainer, 2026-11-13: "Wrote TEXPORT…" should read "TEXPORT… written successfully",
-    and messages are usually in the passive). Drafted the same day over every
+    maintainer, 2026-11-13: "Wrote TEXPORT…" should read "TEXPORT… written", and messages
+    are usually in the passive). Drafted the same day over every
     `publishNotice` of the Save editor's draft: a written or saved file reads "<file>
-    written successfully" / "<file> saved successfully" with its detail after; the others
+    written" / "<file> saved" with its detail after (no "successfully": the notice's green
+    says so already; the maintainer, the same day); the others
     "<thing> copied.", "<thing> pasted onto <target>.", "<ruleset> imported.", "Diff
     exported: …", "Results of N teams copied.", "Live AATF list of <id> <name> copied.". To
     do: the rule written where member text's rules live (`docs/CONTRIBUTING.md`; the branch
@@ -1929,10 +1930,10 @@ briefs, review loops, gates and mutation runs as for any step.
     text
   - [ ] 0.0.2-saved the built Save editor publishes the notices its draft does (the
     maintainer, 2026-11-13: Ctrl+S confirms nothing on the status bar). Found by reading,
-    2026-11-13: no notice after Save and Save as (the draft: "<file> saved successfully
-    (the replaced file is kept once as <file>.bak)"), none after Output rosters to TSV, and
+    2026-11-13: no notice after Save and Save as, none after Output rosters to TSV, and
     the Comparator's Export writes a weak line in its panel where the draft publishes a
-    notice. To do: every `publishNotice` of the draft (`docs/prototypes/tools/save_editor.js`)
+    notice. The draft's Save notice reads "<file> saved (the replaced file is kept once as
+    <file>.bak)". To do: every `publishNotice` of the draft (`docs/prototypes/tools/save_editor.js`)
     checked against `view/` (`Notice {` is set in `generate.rs`, `interchange.rs`,
     `live_aatf.rs`, `multi_aatf.rs`, `ruleset_picker.rs` and `mod.rs` only), the plan's
     scenarios for the missing ones, then the code; the other tools' drafts the same way
@@ -1952,20 +1953,28 @@ briefs, review loops, gates and mutation runs as for any step.
     player is his position badge and name alone, where they stand today. Hovers, as
     drafted: "Scroll the names too long for their place on the pitch, as the game does.
     Off, they stand still, cut short." and "Show the players' portraits on the pitch. Off,
-    the formation's shape is easier to see.". Open: with the portraits off the captain's
-    mark and the Live AATF cross still stand where the portrait was; whether a formation
-    picture follows the checkbox (the draft's always draws portraits). Plan:
+    the formation's shape is easier to see.". With the portraits off the captain's mark
+    stands on the badge's top edge, at the badge's left end, and the Live AATF cross stands
+    on the badge too, its lower ends touching it (both drafted; the maintainer, the same
+    day). A formation picture has a Portraits box of its own (0.0.2-flatpitch). Plan:
     `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
     `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
     paint tests, the built window
-  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34, not built yet) gain
-    a checkbox "Without the pitch's grain (a smaller file)" (the maintainer, 2026-11-13;
-    drafted, `picturesFlatBox`): unticked by default, so the grain stays; remembered and
-    shared by both dialogs as the folder is; its hover says why ("Paint the pitch in flat
-    bands, without its grain. The picture looks plainer and its file is much smaller,
-    which helps when sharing many."). The grain is noise, which PNG cannot compress; "much
-    smaller" is to be measured on a real picture when 8.33 is built, and the hover's words
-    set by the figure. Plan: `plans/save_editor.md` "Formation pictures", with 8.33
+  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34, not built yet), the
+    maintainer's additions of 2026-11-13, drafted (`picturesFlatBox`,
+    `picturesPortraitsBox`), to enter `plans/save_editor.md` "Formation pictures" and be
+    built with 8.33:
+    - a checkbox "Without the pitch's grain (smaller file)": unticked by default, so the
+      grain stays; remembered and shared by both dialogs as the folder is; hover "Paint the
+      pitch in flat bands, without its grain. The picture looks plainer and its file is
+      smaller, which helps when sharing many." (the grain is noise, which PNG cannot
+      compress; "smaller" with no measure claimed)
+    - a checkbox "Portraits": it starts as the formation bar's Portraits is each time a
+      dialog opens, and a change in the dialog is that picture's alone, never written back
+      to the bar's setting; hover "Draw the players' portraits in the picture. Off, the
+      formation's shape is easier to see."
+    - the folder, until a member picks one: `formations` beside the program (the plan has
+      only "the folder last used")
   - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
     (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
     from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,

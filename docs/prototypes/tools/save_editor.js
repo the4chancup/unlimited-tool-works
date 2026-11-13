@@ -3031,7 +3031,8 @@ const S = { save: null, baseline: null, teamSel: "all", filter: "",
   // The formation pictures' folder (the tool's `formation_pictures_folder`
   // setting: the folder last picked) and the last picture a run drew (the
   // draft control's preview; the app writes files instead).
-  picturesFolder: "C:\\Data\\Documents\\Formation pictures", lastPicture: null };
+  // The pictures' folder until one is picked: `formations` beside the program.
+  picturesFolder: "C:\\4cc\\unlimited-tool-works-0.0.1\\formations", lastPicture: null };
 const clone = x => JSON.parse(JSON.stringify(x));
 function curSave() { return S.save; }
 function curTeam() {
@@ -3216,7 +3217,7 @@ function writeSave(path) {
     for (const p of t.players) S.basePlayers[t.id + ":" + p.slot] = JSON.stringify(p);
     S.baseTeams[t.id] = JSON.stringify({ ...t, players: undefined });
   }
-  publishNotice(path.split("\\").pop() + " saved successfully (the replaced file is kept once as " + path.split("\\").pop() + ".bak)", null, "success");
+  publishNotice(path.split("\\").pop() + " saved (the replaced file is kept once as " + path.split("\\").pop() + ".bak)", null, "success");
   pushRecent(path);
 }
 function saveAs() {
@@ -4293,7 +4294,7 @@ function dlgTsv() {
     input),
     [button("Save", () => {
       S.lastTsv = rosterTsv();
-      publishNotice(input.value.split("\\").pop() + " written successfully (one row per player of every team)", null, "success");
+      publishNotice(input.value.split("\\").pop() + " written (one row per player of every team)", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -5841,8 +5842,9 @@ function paintPitch(g, t, f0, live) {
     const shown = !dragged ? s.position : target >= 0 ? f[target].position
       : ruledPosition(t, f0, i, ...heldSpot(d), s.position);
     const bl = x - MARKER.badgeW / 2, bt = y - MARKER.badgeH / 2;
-    // The view's Portraits checkbox; a picture always draws them.
-    const img = live && S.pitchPortraits === false ? null : portraitOf(p);
+    // The view's Portraits checkbox, or the picture dialog's own.
+    const faces = live ? S.pitchPortraits !== false : S.picturesPortraits !== false;
+    const img = faces ? portraitOf(p) : null;
     if (img) g.drawImage(img, x - MARKER.portrait / 2, bt - MARKER.gap - MARKER.portrait,
       MARKER.portrait, MARKER.portrait);
     g.fillStyle = live && S.assign && S.assign.kind === "join" && joined.includes(roster) ? "#005c80" : "#242b2d";
@@ -5873,7 +5875,9 @@ function paintPitch(g, t, f0, live) {
     // whole portrait; painted after every marker, since a later one's portrait
     // can cover his.
     const crossRows = p && pitchCrossRows(t, p, s.position);
-    if (crossRows) crosses.push([x, bt - MARKER.gap - MARKER.portrait / 2,
+    // With the portraits off the cross stands on the badge, its lower ends touching it.
+    if (crossRows) crosses.push([x, faces ? bt - MARKER.gap - MARKER.portrait / 2
+        : bt - (MARKER.portrait / 2 - PITCH_CROSS.inset) - PITCH_CROSS.width / 2 - PITCH_CROSS.outline,
       crossRows.some(r => r[0] === "Error") ? "#ff0000" : "#ff8f00"]);
     g.save();
     g.beginPath(); g.rect(bl, y + 3, MARKER.badgeW, 20); g.clip();
@@ -5900,13 +5904,16 @@ function paintPitch(g, t, f0, live) {
     g.restore();
     // The captain's mark: a white box outlined 1 px in the badge's colour,
     // as the game's (the outline on the badge's left edge plus 1).
+    // With the portraits off it stands on the badge's top edge, at its left end, where it
+    // would otherwise float over the turf.
     if (roster === t.captain) {
+      const [cl, cb] = faces ? [bl + 1, bt - 4] : [bl, bt];
       g.fillStyle = "#242b2d";
-      g.beginPath(); g.roundRect(bl + 1, bt - 5 - 12, 14, 13, 3); g.fill();
+      g.beginPath(); g.roundRect(cl, cb - 13, 14, 13, 3); g.fill();
       g.fillStyle = "#ffffff";
-      g.beginPath(); g.roundRect(bl + 2, bt - 5 - 11, 12, 11, 2); g.fill();
+      g.beginPath(); g.roundRect(cl + 1, cb - 12, 12, 11, 2); g.fill();
       g.fillStyle = "#000000"; g.font = "9px " + FONT_BODY; g.textAlign = "center";
-      g.fillText("C", bl + 8, bt - 10);
+      g.fillText("C", cl + 7, cb - 6);
     }
     if (!live) continue;
     if (S.slotPop && S.slotPop.i === i) corners(g, x, y, "#14fbff");
@@ -6588,12 +6595,21 @@ const formGrid = (...pairs) => h("div", { class: "pform" },
 // (both dialogs share it): the grain is noise, which PNG cannot compress.
 // sample wording: the label and its hover.
 const picturesFlatBox = () => h("label", { class: "cb", id: "pic-flat",
-    title: "Paint the pitch in flat bands, without its grain. The picture looks plainer and its file is much smaller, which helps when sharing many." },
+    title: "Paint the pitch in flat bands, without its grain. The picture looks plainer and its file is smaller, which helps when sharing many." },
   h("input", { type: "checkbox", checked: S.picturesFlat === true,
     onchange: e => { S.picturesFlat = e.target.checked; } }),
-  " Without the pitch's grain (a smaller file)");
+  " Without the pitch's grain (smaller file)");
+// A picture's portraits: the box starts as the formation bar's Portraits is when the dialog
+// opens, and a change here is the picture's alone (the bar's setting stays as it was).
+// sample wording: the label and its hover.
+const picturesPortraitsBox = () => h("label", { class: "cb", id: "pic-portraits",
+    title: "Draw the players' portraits in the picture. Off, the formation's shape is easier to see." },
+  h("input", { type: "checkbox", checked: S.picturesPortraits !== false,
+    onchange: e => { S.picturesPortraits = e.target.checked; } }),
+  " Portraits");
 function dlgPictureSave() {
   const t = selTeam();
+  S.picturesPortraits = S.pitchPortraits !== false;
   let settings = false;
   const folderIn = h("input", { type: "text", id: "pic-folder", style: "width:380px", value: S.picturesFolder });
   const nameIn = h("input", { type: "text", id: "pic-name", style: "width:380px", value: pictureFileName(t, false) });
@@ -6606,7 +6622,7 @@ function dlgPictureSave() {
     S.picturesFolder = folderIn.value;
     S.picturesWritten = (S.picturesWritten || new Set()).add(file);
     writePicture(t, file, settings);
-    publishNotice(nameIn.value + " written successfully to " + folderIn.value,
+    publishNotice(nameIn.value + " written to " + folderIn.value,
       { label: "Open folder", run: openOutputStub }, "success");
     closeWindow(); render();
   };
@@ -6615,6 +6631,7 @@ function dlgPictureSave() {
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))],
         ["File name", nameIn]),
       h("label", { class: "cb" }, toggle, " With each preset's settings beside its row"),
+      h("div", {}, picturesPortraitsBox()),
       h("div", {}, picturesFlatBox())),
     [button("Save", () => {
       // The draft knows only the files it wrote this session; the app asks
@@ -6659,6 +6676,7 @@ function setRangeEnd(range, key, id) {
 function dlgPicturesRange() {
   const ids = curSave().teams.map(t => t.id);
   if (picRange.from == null) { picRange.from = Math.min(...ids); picRange.to = Math.max(...ids); }
+  S.picturesPortraits = S.pitchPortraits !== false;
   drawPicturesRange();
   render();
 }
@@ -6696,6 +6714,7 @@ function drawPicturesRange() {
         ["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))]),
       cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
+      h("div", {}, picturesPortraitsBox()),
       h("div", {}, picturesFlatBox()),
       h("div", { style: "display:grid" }, nameLine(false), nameLine(true)));
     buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: !teams.length }),
@@ -8348,7 +8367,7 @@ function ixExportToml() {
     [button("Save", () => {
       S.ix.exportText = TEAM_TOML_TEXT[S.saveKey + "/" + t.id];
       publishNotice(input.value.split("\\").pop()
-        + " written successfully (the CLI's export-toml text for team " + t.id + ")", null, "success");
+        + " written (the CLI's export-toml text for team " + t.id + ")", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -8373,7 +8392,7 @@ function ixExportTed() {
           + ", written this session)",
         model: clone(t) };
       publishNotice(input.value.split("\\").pop()
-        + " written successfully (team " + t.id + " as a PES " + version() + " Texport)", null, "success");
+        + " written (team " + t.id + " as a PES " + version() + " Texport)", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
@@ -8615,7 +8634,7 @@ function dlgGenerate(name, title, file, toml) {
       toml(p))),
     [button("Write", () => {
       publishNotice(file + " for " + displayName(p.name)
-        + " written successfully into " + input.value, null, "success");
+        + " written into " + input.value, null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
