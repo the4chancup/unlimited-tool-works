@@ -326,8 +326,11 @@ function confirmId(r, reassign) {
   render();
 }
 
-// What a row holds in place of, or after, its cells.
-function rowActions(r) {
+// What a row says in place of its cells: a message too long for the room
+// right of the last line, with the buttons that answer it. The team's cells
+// are hidden while it stands (an untagged or old export has none to show; a
+// team typed an ID another team holds gets its cells back with the answer).
+function rowMessage(r) {
   const acts = [];
   if (r.special === "untagged")
     acts.push(h("span", { class: "warn" }, "Full or Midcup?"),
@@ -337,6 +340,17 @@ function rowActions(r) {
     acts.push(h("span", { class: "err" }, "Old export format"),
       button("Upgrade", () => switchToTool("export-upgrader"),
         { title: "Opens the Export upgrader with this export as its input" }));
+  const asked = r.id == null && !r.refs && idEntry(r).note;
+  if (asked && asked.ask)
+    acts.push(h("span", { class: "warn" }, asked.text + "; reassign?"),
+      button("Yes", () => confirmId(r, true)),
+      button("No", () => { idEntry(r).note = null; render(); }));
+  return acts.length ? h("td", { class: "tc-acts act", colspan: String(SLOTS + 3 + KIT_SLOTS.length) },
+    row(...acts)) : null;
+}
+// A row's small button, right of the last line.
+function rowActions(r) {
+  const acts = [];
   if (r.special === "disabled")
     acts.push(button("Enable", () => { delete r.special; r.label.codes = []; render(); },
       { title: "Removes the export's NO_USE marker" }));
@@ -347,15 +361,7 @@ function rowActions(r) {
       ? button("Move to unused", () => dropClash(r), { title: "Moves the archive into the exports folder's unused folder: no NO_USE marker can be written inside an archive" })
       : button("Disable", () => { r.special = "disabled"; dropClash(r, true); },
         { title: "Writes the export's NO_USE marker, so the other one compiles" }));
-  const asked = r.id == null && !r.refs && idEntry(r).note;
-  if (asked && asked.ask)
-    acts.push(h("span", { class: "warn" }, asked.text + "; reassign?"),
-      button("Yes", () => confirmId(r, true)),
-      button("No", () => { idEntry(r).note = null; render(); }));
-  // In place of the cells they span their columns, widening none; beside
-  // the cells they follow the last kit column.
-  const span = r.special === "untagged" || r.special === "old" ? SLOTS + 3 + KIT_SLOTS.length : 1;
-  return acts.length ? h("td", { class: "tc-acts act", colspan: String(span) }, row(...acts)) : null;
+  return acts.length ? h("td", { class: "tc-acts act" }, row(...acts)) : null;
 }
 function tagExport(r, tag) {
   r.display = r.display.replace(" ", ` ${tag} `);
@@ -390,9 +396,9 @@ function gridRow(r) {
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
     onclick: () => { S.detail = { row: r.key, what: "label" }; render(); } }, r.name));
   cells.push(idCell(r), vline());
-  const acts = rowActions(r);
-  if (r.special === "untagged" || r.special === "old") {
-    cells.push(acts, vline());
+  const message = rowMessage(r), acts = rowActions(r);
+  if (message) {
+    cells.push(message, vline());
   } else {
     for (let n = 1; n <= SLOTS; n++)
       cells.push(playerSlot(r, n));
@@ -407,8 +413,8 @@ function gridRow(r) {
       cells.push(h("td", { class: "tc-slot" },
         r.kits[k] ? cellEl(r, r.kits[k], k, `${r.name} ${k}`, "kit") : null));
     cells.push(vline());
-    if (acts) cells.push(acts);
   }
+  if (acts) cells.push(acts);
   const lines = [h("tr", { class: off ? "off" : "" }, cells)];
   if (r.refs)
     lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
@@ -661,7 +667,7 @@ function draftControls() {
 }
 const WALK = [
   ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
-  ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
+  ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: the question takes the place of the row's cells until Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
   ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
