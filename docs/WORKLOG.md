@@ -2437,7 +2437,14 @@ briefs, review loops, gates and mutation runs as for any step.
   of 25 rows under a brightness gradient (dark at both ends, `#055e01`, to `#157808` at
   the halfway line), and its markers are dots with the name above, no portrait and no
   badge. So it needs its own canvas shape, its own mapping of the stored spots and its
-  own markers, each to measure. PES 2016: the maintainer looks next
+  own markers, each to measure. PES 2016's is between the two (three pictures,
+  `PES2016_2026-11-13_06-23-03.png`, `-18` and `-24` in the same folder): PES 2017's
+  seven bands at PES 2017's row scale (the inner five 53.4 tall, edges on rows 46, 100,
+  153, 207, 260, 313 of 360) and its penalty box (133 wide) and goal area (60), but the
+  pitch is 275 wide by 360 (0.76, PES 2015's shape), the turf olive (`#426522`,
+  `#4d712a`), the lines stronger, with touchlines and a centre spot, and a marker is the
+  name over a position badge over the overall, no portrait. So it too needs its own
+  canvas width, mapping across and markers
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
