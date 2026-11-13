@@ -43,8 +43,9 @@ use crate::session::undo::{Change, UndoStack};
 static NEXT_REVISION: AtomicU64 = AtomicU64::new(1);
 
 /// The undo merge key every sealed operation's changes go under
-/// (`edit_entries`, which `edit_players`, `fix_database` and the team
-/// operations call, and `move_player`): each is one sealed entry, never
+/// (`edit_entries`' callers, which are `edit_players`, `fix_database` and
+/// the team operations, and a trade of records, a drag's or a put-back's):
+/// each is one sealed entry, never
 /// part of a widget's open gesture; a widget's key is its `egui::Id` value,
 /// never `u64::MAX`.
 const SEALED_KEY: u64 = u64::MAX;

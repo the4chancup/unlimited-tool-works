@@ -723,6 +723,36 @@ fn a_dragged_player_is_one_player_order_row() {
     );
 }
 
+// The order row's new side names the players now on the places, as they
+// are now: a moved player renamed after the move shows his new name there,
+// while the old side keeps the file's. (A new side read from the record he
+// came from would still say `P04`.)
+// SE-GUI-73
+#[test]
+fn a_player_order_rows_new_side_names_the_players_as_they_are_now() {
+    let mut view = told_apart("changes_list_move_rename");
+    let mut window = Headless::new();
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    let mut renamed = player_entry(&view, 70107);
+    assert_eq!(renamed.name, "P04", "premise: P04 stands on 07");
+    renamed.name = "RENAMED".to_owned();
+    view.session.as_mut().unwrap().edit_player(1, renamed);
+    assert_eq!(
+        both_lists(&mut window, &mut view),
+        [
+            (
+                "RENAMED · Name".to_owned(),
+                "P04".to_owned(),
+                "RENAMED".to_owned()
+            ),
+            order_row(
+                &["04 P04", "05 P05", "06 P06", "07 P07"],
+                &["04 P05", "05 P06", "06 P07", "07 RENAMED"]
+            ),
+        ]
+    );
+}
+
 // The order row is as high as its four places, its Item on the first
 // line; the Height row beside it keeps one line.
 // SE-GUI-73
