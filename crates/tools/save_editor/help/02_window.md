@@ -150,3 +150,8 @@ A PES of another version asks nothing.
 Closing the window or opening another save with unsaved edits asks first, over a table of
 each changed field with its value in the file and in the editor. Save writes the edits,
 Discard loses them, and Cancel keeps everything as it was.
+
+A player you dragged to another place in the list shows as one `Player order` row of his
+team, which lists the places he and the players he shifted held in the file beside the
+places they hold now, one place per line. Each of those players lists only what you
+edited on him, since the drag itself is that one row.

@@ -75,6 +75,10 @@ What changed for members, release by release, newest first.
 - **Save editor**: what Ctrl+C copies (a player's stats, a team's Gameplan, a tactics
   preset or a formation) can be pasted with Ctrl+V in another Save editor window, even one
   holding a save of another PES version, and still after opening another save.
+- **Save editor**: a player dragged in a team's player list shows as one `Player order`
+  row in the unsaved changes, listing the places he and the players he shifted held
+  before and after, and each player lists only what was edited on him rather than every
+  field of the record the drag put on his place.
 - **Team compiler**: no texture is encoded as BC7 any more: it is BC1 or BC3 on every
   version, and a `.dds` or `.ftex` already in BC7 keeps its blocks. A `.dds` or `.ftex`
   stored uncompressed is written uncompressed now, except a kit's main texture on PES

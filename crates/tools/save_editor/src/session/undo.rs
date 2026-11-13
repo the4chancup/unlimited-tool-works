@@ -8,6 +8,8 @@
 use pes_savefile::EditFile;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 
+use crate::session::{Origins, trade};
+
 /// One model entry an edit changed, before and after. The entries are boxed: a
 /// `TeamEntry` (its tactics included) is more than twice a `PlayerEntry`'s size, and
 /// unboxed every change would carry the larger variant's room.
@@ -25,6 +27,16 @@ pub(crate) enum Change {
         before: Box<TeamEntry>,
         /// The entry after.
         after: Box<TeamEntry>,
+    },
+    /// A move's trade of records between player ids, for the session's
+    /// `Origins`: each `(id, the id whose record it took)`. The trade is
+    /// kept rather than the map's entries before and after, so an undo
+    /// past a save, which made the moved order the file's, still names
+    /// whose record of the written file each id holds. An entry holds at
+    /// most one: the move's players' changes and this one, sealed.
+    Move {
+        /// The ids the move wrote, each with the id whose record it took.
+        took: Vec<(u32, u32)>,
     },
 }
 
@@ -79,17 +91,23 @@ impl Change {
         match self {
             Change::Player { before, after } => before == after,
             Change::Team { before, after } => before == after,
+            Change::Move { took } => took.iter().all(|(id, from)| id == from),
         }
     }
 
     /// The same model entry another `Change` names: same kind (player or
-    /// team), same id.
+    /// team), same id. A move names none: two trades do not merge by
+    /// keeping one's before, they compose.
     fn same_entry(&self, other: &Change) -> bool {
         match (self, other) {
             (Change::Player { before: a, .. }, Change::Player { before: b, .. }) => a.id == b.id,
             (Change::Team { before: a, .. }, Change::Team { before: b, .. }) => a.id == b.id,
-            (Change::Player { .. }, Change::Team { .. })
-            | (Change::Team { .. }, Change::Player { .. }) => false,
+            (Change::Player { .. }, Change::Team { .. } | Change::Move { .. })
+            | (Change::Team { .. }, Change::Player { .. } | Change::Move { .. })
+            | (
+                Change::Move { .. },
+                Change::Player { .. } | Change::Team { .. } | Change::Move { .. },
+            ) => false,
         }
     }
 
@@ -99,8 +117,12 @@ impl Change {
         match (self, other) {
             (Change::Player { after, .. }, Change::Player { after: new, .. }) => *after = new,
             (Change::Team { after, .. }, Change::Team { after: new, .. }) => *after = new,
-            (Change::Player { .. }, Change::Team { .. })
-            | (Change::Team { .. }, Change::Player { .. }) => {
+            (Change::Player { .. }, Change::Team { .. } | Change::Move { .. })
+            | (Change::Team { .. }, Change::Player { .. } | Change::Move { .. })
+            | (
+                Change::Move { .. },
+                Change::Player { .. } | Change::Team { .. } | Change::Move { .. },
+            ) => {
                 unreachable!("merge_after is called only under `same_entry`")
             }
         }
@@ -108,8 +130,10 @@ impl Change {
 
     /// Writes `before`'s entry back into the file (`before` set) or
     /// `after`'s (cleared): undo and redo's halves of a restore. An entry
-    /// the file lacks is left (the model never removes one).
-    fn restore(&self, file: &mut EditFile, before: bool) {
+    /// the file lacks is left (the model never removes one). A move's trade
+    /// is applied to `origins` backwards (every id took back the record it
+    /// gave) or forwards again.
+    fn restore(&self, file: &mut EditFile, origins: &mut Origins, before: bool) {
         match self {
             Change::Player {
                 before: old,
@@ -127,6 +151,14 @@ impl Change {
                 let value = if before { old } else { new };
                 if let Some(team) = file.team_mut(value.id) {
                     *team = TeamEntry::clone(value);
+                }
+            }
+            Change::Move { took } => {
+                let pairs = took.iter().copied();
+                if before {
+                    trade(origins, pairs.map(|(id, from)| (from, id)));
+                } else {
+                    trade(origins, pairs);
                 }
             }
         }
@@ -218,15 +250,15 @@ impl UndoStack {
         self.redo.last().map(|entry| entry.changes.as_slice())
     }
 
-    /// Restores each change's `before` into the file and moves the newest
-    /// entry to redo; `false` when the stack is empty.
-    pub(crate) fn undo(&mut self, file: &mut EditFile) -> bool {
+    /// Restores each change's `before` into the file and `origins` and moves
+    /// the newest entry to redo; `false` when the stack is empty.
+    pub(crate) fn undo(&mut self, file: &mut EditFile, origins: &mut Origins) -> bool {
         self.seal();
         let Some(entry) = self.undo.pop() else {
             return false;
         };
         for change in &entry.changes {
-            change.restore(file, true);
+            change.restore(file, origins, true);
         }
         self.redo.push(entry);
         true
@@ -234,13 +266,13 @@ impl UndoStack {
 
     /// Reapplies each change's `after` and moves the newest redo entry back;
     /// `false` when the redo stack is empty.
-    pub(crate) fn redo(&mut self, file: &mut EditFile) -> bool {
+    pub(crate) fn redo(&mut self, file: &mut EditFile, origins: &mut Origins) -> bool {
         self.seal();
         let Some(entry) = self.redo.pop() else {
             return false;
         };
         for change in &entry.changes {
-            change.restore(file, false);
+            change.restore(file, origins, false);
         }
         self.undo.push(entry);
         self.open = false;
@@ -292,7 +324,7 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.push(1, change(70101, 11, 12), 0.0);
         // One entry: undo restores the first push's before, not the last's.
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert!(!stack.can_undo());
 
@@ -301,9 +333,9 @@ mod tests {
         stack.seal();
         stack.push(1, change(70101, 11, 12), 0.0);
         // Two entries: the sealed first gesture is its own undo step.
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 11);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
     }
 
@@ -313,9 +345,9 @@ mod tests {
         let mut stack = UndoStack::new();
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.push(2, change(70102, 20, 21), 0.0);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70102), 20);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
     }
 
@@ -326,7 +358,7 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.push(1, change(70102, 20, 21), 0.0);
         // One entry holding both: undo restores both players at once.
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert_eq!(height(&file, 70102), 20);
         assert!(!stack.can_undo());
@@ -337,7 +369,7 @@ mod tests {
         let mut file = file();
         let mut stack = UndoStack::new();
         stack.push(1, change(70101, 10, 11), 0.0);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert!(stack.can_redo());
         stack.push(2, change(70102, 20, 21), 0.0);
         assert!(!stack.can_redo());
@@ -357,9 +389,9 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         // Merged under the same key: one entry holding before=10 after=12.
         stack.push(1, change(70101, 11, 12), 0.0);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
-        stack.redo(&mut file);
+        stack.redo(&mut file, &mut Origins::new());
         assert_eq!(
             height(&file, 70101),
             12,
@@ -382,9 +414,9 @@ mod tests {
             },
             0.0,
         );
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_ne!(height(&file, 70101), 99);
-        stack.redo(&mut file);
+        stack.redo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 99);
         assert!(stack.can_undo());
         assert!(!stack.can_redo());
@@ -400,7 +432,7 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.settle();
         stack.push(1, change(70101, 11, 12), RUN_PAUSE);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10, "the two pushes were one entry");
         assert!(!stack.can_undo());
     }
@@ -414,9 +446,9 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.settle();
         stack.push(1, change(70101, 11, 12), RUN_PAUSE + 0.5);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 11);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert!(!stack.can_undo());
     }
@@ -431,9 +463,9 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.seal();
         stack.push(1, change(70101, 11, 12), 0.5);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 11);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert!(!stack.can_undo());
     }
@@ -449,11 +481,11 @@ mod tests {
         stack.push(2, change(70101, 11, 12), 0.3);
         stack.settle();
         stack.push(1, change(70101, 12, 13), 0.5);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 12, "the last push its own entry");
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 11);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert!(!stack.can_undo(), "three entries");
     }
@@ -471,14 +503,14 @@ mod tests {
         stack.push(1, change(70101, 10, 11), 0.0);
         stack.settle();
         stack.push(1, change(70102, 20, 21), 0.5);
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70102), 20);
         assert_eq!(
             height(&file, 70101),
             fixture_height,
             "the first undo touched only the second push"
         );
-        stack.undo(&mut file);
+        stack.undo(&mut file, &mut Origins::new());
         assert_eq!(height(&file, 70101), 10);
         assert!(!stack.can_undo(), "two entries");
     }

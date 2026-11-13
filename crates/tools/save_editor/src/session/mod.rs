@@ -14,7 +14,7 @@ pub(crate) mod tactics_ops;
 pub(crate) mod team_ops;
 pub(crate) mod undo;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -42,8 +42,8 @@ use crate::session::undo::{Change, UndoStack};
 static NEXT_REVISION: AtomicU64 = AtomicU64::new(1);
 
 /// The undo merge key every sealed operation's changes go under
-/// (`edit_entries`, which `edit_players`, `fix_database`, `move_player`
-/// and the team operations call): each is one sealed entry, never
+/// (`edit_entries`, which `edit_players`, `fix_database` and the team
+/// operations call, and `move_player`): each is one sealed entry, never
 /// part of a widget's open gesture; a widget's key is its `egui::Id` value,
 /// never `u64::MAX`.
 const SEALED_KEY: u64 = u64::MAX;
@@ -61,12 +61,57 @@ const EXPORT_FACE_FIELDS: [IngameFaceField; 4] = [
 
 /// The differences from the baselines `is_dirty` compares against, as plain
 /// data for the unsaved-changes prompt (`Session::unsaved_changes`): every
-/// player and team whose entry differs, with the diffs the compares list.
+/// player and team whose entry differs, with the diffs the compares list,
+/// and the groups of roster places whose players traded records.
 pub(crate) struct UnsavedChanges {
     /// `(player id, his diffs)`, in record order.
     pub(crate) players: Vec<(u32, Vec<PlayerDiff>)>,
     /// `(team id, the team's diffs)`, in record order.
     pub(crate) teams: Vec<(u32, Vec<TeamDiff>)>,
+    /// `(team id, one group's places in roster order)`: the places whose
+    /// players traded records among themselves, one entry per group (a
+    /// drag from place 04 to 07 is a group of four, a second, separate
+    /// swap a second group), teams in record order.
+    pub(crate) moves: Vec<(u32, Vec<MovedPlace>)>,
+}
+
+/// One roster place of a group of moved players (`UnsavedChanges::moves`).
+#[derive(Debug, PartialEq)]
+pub(crate) struct MovedPlace {
+    /// The roster slot, 0-based (place 04 is slot 3).
+    pub(crate) slot: u8,
+    /// The player id the slot holds, in the file and now: the file's
+    /// player on the place is the baseline's record of this id.
+    pub(crate) id: u32,
+    /// The id whose record of the file the place holds now: the player now
+    /// on the place is the file's player of this id, with what was edited
+    /// on him since.
+    pub(crate) origin: u32,
+}
+
+/// For every player id holding another id's record of the file as opened
+/// or last saved, that other id (the record's origin); an id holding its
+/// own record has no entry. The moves keep it, so the unsaved changes
+/// compare each player with the record he came from.
+pub(crate) type Origins = HashMap<u32, u32>;
+
+/// The id whose record of the file `id` holds.
+fn origin(origins: &Origins, id: u32) -> u32 {
+    origins.get(&id).copied().unwrap_or(id)
+}
+
+/// Applies a trade of records to `origins`: every `(id, from)` of `took`
+/// now holds what `from` held. Every origin is read before the first
+/// write, since a trade's ids are its sources too.
+pub(crate) fn trade(origins: &mut Origins, took: impl Iterator<Item = (u32, u32)>) {
+    let traded: Vec<(u32, u32)> = took.map(|(id, from)| (id, origin(origins, from))).collect();
+    for (id, from) in traded {
+        if id == from {
+            origins.remove(&id);
+        } else {
+            origins.insert(id, from);
+        }
+    }
 }
 
 /// The open save: the file, the path it came from, the undo stack and the
@@ -83,6 +128,9 @@ pub(crate) struct Session {
     baseline_players: HashMap<u32, PlayerEntry>,
     /// Every team by id, as opened or last saved.
     baseline_teams: HashMap<u32, TeamEntry>,
+    /// Whose record of the baseline each player id holds, after the moves
+    /// since the open or the last save.
+    origins: Origins,
     /// Whether the model differs from the baseline, recomputed by each
     /// mutating call (the toolbar's marker reads the flag, not a rescan).
     dirty: bool,
@@ -153,6 +201,7 @@ impl Session {
             undo: UndoStack::new(),
             baseline_players,
             baseline_teams,
+            origins: Origins::new(),
             dirty: false,
             revision: NEXT_REVISION.fetch_add(1, Ordering::Relaxed),
             now: 0.0,
@@ -263,6 +312,23 @@ impl Session {
     /// step): every player of `players` and every team of `teams` replaced
     /// as one sealed undo entry, the same skip rules on both.
     pub(crate) fn edit_entries(&mut self, players: Vec<PlayerEntry>, teams: Vec<TeamEntry>) {
+        let Some(steps) = self.push_entries(players, teams) else {
+            return;
+        };
+        // One entry for the whole batch, sealed: the next edit does not merge.
+        self.undo.seal();
+        self.changed(steps);
+        self.dirty = self.compute_dirty();
+    }
+
+    /// `edit_entries`' writes and pushes, the entry left open for a sealed
+    /// operation to add to (`move_player`'s trade): the journal's steps, or
+    /// `None` when nothing changed and nothing was pushed.
+    fn push_entries(
+        &mut self,
+        players: Vec<PlayerEntry>,
+        teams: Vec<TeamEntry>,
+    ) -> Option<Vec<Step>> {
         // The before/after pairs are computed before the first write, as in
         // `move_player`: the write and the undo entry are the same data.
         let mut changed_players = Vec::new();
@@ -286,7 +352,7 @@ impl Session {
             changed_teams.push((entry.clone(), after));
         }
         if changed_players.is_empty() && changed_teams.is_empty() {
-            return;
+            return None;
         }
         // The journal's lines are read off the same before/after pairs the
         // undo entry takes: a change the model took is a change recorded.
@@ -320,10 +386,7 @@ impl Session {
                 self.now,
             );
         }
-        // One entry for the whole batch, sealed: the next edit does not merge.
-        self.undo.seal();
-        self.changed(steps);
-        self.dirty = self.compute_dirty();
+        Some(steps)
     }
 
     /// `edit_player` for a team entry (a roster slot's number, the
@@ -412,6 +475,7 @@ impl Session {
         // before the first write: a rostered id the save lacks leaves it
         // untouched, aborting the whole move.
         let mut edited = Vec::new();
+        let mut took = Vec::new();
         for (&slot_id, &record_id) in filled.iter().zip(&order) {
             if slot_id == record_id {
                 continue;
@@ -422,8 +486,19 @@ impl Session {
                 return;
             };
             edited.push(moved_record(source, dest));
+            took.push((slot_id, record_id));
         }
-        self.edit_players(edited);
+        // Records equal on every traded id write nothing, so the trade is
+        // not kept either: the unsaved changes stay as empty as the save.
+        let Some(steps) = self.push_entries(edited, Vec::new()) else {
+            return;
+        };
+        trade(&mut self.origins, took.iter().copied());
+        // Into the entry the players' changes opened: one undo takes both.
+        self.undo.push(SEALED_KEY, Change::Move { took }, self.now);
+        self.undo.seal();
+        self.changed(steps);
+        self.dirty = self.compute_dirty();
     }
 
     /// Undoes the newest gesture; `false` when the stack is empty.
@@ -439,7 +514,7 @@ impl Session {
             }
             steps
         });
-        let undone = self.undo.undo(&mut self.file);
+        let undone = self.undo.undo(&mut self.file, &mut self.origins);
         if undone {
             self.changed(steps.expect("`undo` returned true"));
             self.dirty = self.compute_dirty();
@@ -458,7 +533,7 @@ impl Session {
             }
             steps
         });
-        let redone = self.undo.redo(&mut self.file);
+        let redone = self.undo.redo(&mut self.file, &mut self.origins);
         if redone {
             self.changed(steps.expect("`redo` returned true"));
             self.dirty = self.compute_dirty();
@@ -573,16 +648,32 @@ impl Session {
     }
 
     /// The differences from the baselines `is_dirty` compares against (the
-    /// unsaved-changes table's rows): every player whose entry differs,
-    /// `compare_players` on baseline and current; every team that differs,
-    /// `compare_teams`. A codec error is named by the player or team it hit
-    /// (a gated field `None` on an entry never read from this save).
+    /// unsaved-changes table's rows): every player whose entry differs from
+    /// the record he came from, `compare_players` on that record and his
+    /// current one; every team that differs, `compare_teams`; and the
+    /// groups of places whose players traded records (`moves`). A codec
+    /// error is named by the player or team it hit (a gated field `None` on
+    /// an entry never read from this save).
     pub(crate) fn unsaved_changes(&self) -> anyhow::Result<UnsavedChanges> {
         let schema = schema_for(self.version());
         let mut players = Vec::new();
         for player in self.file.players() {
-            let Some(baseline) = self.baseline_players.get(&player.id) else {
+            let Some(own) = self.baseline_players.get(&player.id) else {
                 continue;
+            };
+            // What the file would hold on his id had the moves been made
+            // in it: the record he came from, with his slot's own part.
+            let moved;
+            let baseline = match self.origins.get(&player.id) {
+                Some(from) => {
+                    let source = self
+                        .baseline_players
+                        .get(from)
+                        .expect("an origin is an id of the baseline");
+                    moved = moved_record(source, own);
+                    &moved
+                }
+                None => own,
             };
             if baseline == player {
                 continue;
@@ -603,7 +694,51 @@ impl Session {
                 .with_context(|| format!("team {}", team.id))?;
             teams.push((team.id, diffs));
         }
-        Ok(UnsavedChanges { players, teams })
+        Ok(UnsavedChanges {
+            players,
+            teams,
+            moves: self.moves(),
+        })
+    }
+
+    /// The groups of roster places whose players traded records, one per
+    /// cycle of `origins` (each id holds its origin's record, the origin
+    /// holds its own origin's, and so on back to the first), teams in
+    /// record order, each team's groups in the order of their first place.
+    /// A player rostered on two teams is grouped under the first.
+    fn moves(&self) -> Vec<(u32, Vec<MovedPlace>)> {
+        let mut grouped: HashSet<u32> = HashSet::new();
+        let mut moves = Vec::new();
+        for team in self.file.teams() {
+            let slot_of = |id: u32| {
+                team.roster
+                    .iter()
+                    .position(|slot| slot.player_id == id)
+                    .and_then(|slot| u8::try_from(slot).ok())
+            };
+            for slot in &team.roster {
+                let start = slot.player_id;
+                if !self.origins.contains_key(&start) || grouped.contains(&start) {
+                    continue;
+                }
+                let mut places = Vec::new();
+                let mut id = start;
+                while grouped.insert(id) {
+                    let from = origin(&self.origins, id);
+                    if let Some(slot) = slot_of(id) {
+                        places.push(MovedPlace {
+                            slot,
+                            id,
+                            origin: from,
+                        });
+                    }
+                    id = from;
+                }
+                places.sort_by_key(|place| place.slot);
+                moves.push((team.id, places));
+            }
+        }
+        moves
     }
 
     /// Writes the save to `path` (Save as; Save passes the session's own
@@ -625,6 +760,7 @@ impl Session {
         self.write(path)?;
         self.path = path.to_path_buf();
         (self.baseline_players, self.baseline_teams) = baselines(&self.file);
+        self.origins.clear();
         self.dirty = false;
         Ok(())
     }
