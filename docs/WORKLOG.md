@@ -771,10 +771,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       grid on sample rows in every cell state, the row actions, the ID cell's entry, the
       detail panel, the split Compile button with its modes, the run strip, a fake run and
       its cancel, the log's cross-link, the draft controls and the scenario walk. To
-      refine with the maintainer before `view/grid.rs` is briefed; open in it: the
-      referee row's 24-35 on a second line (35 columns push the kit cells out of the
-      default window), a blocked cell's look, the legend (not in the plan), the kit
-      swatch as two flat halves, the detail panel at the grid's right. Not drawn yet: the
+      refine with the maintainer before `view/grid.rs` is briefed. Ruled 2026-11-13 (the
+      maintainer): the referee row's 24-35 on a second line is fine (FoxDen's referee
+      script needs one slot per referee, so a row will rarely pass 23); the legend stays,
+      above the grid with a toolbar's line under it; both go into `gui.md` when the draft
+      is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
+      the detail panel at the grid's right (with it open, a row with all ten kits scrolls
+      sideways in the default window; without it the row and its button fit). Not drawn yet: the
       file drop on the grid, the Edit mode question, the autorun, a check arriving live.
       The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted

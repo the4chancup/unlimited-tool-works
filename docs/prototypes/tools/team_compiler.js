@@ -64,7 +64,8 @@ const TEAM_COMPILER_CSS = `
   .tc-badge { color: var(--warn); }
   .tc-empty { padding: 24px; text-align: center; border: 1px dashed var(--stroke);
     border-radius: 2px; }
-  .tc-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
+  /* The Save editor's toolbar line: the host's .top (a Panel::top's stroke). */
+  .tc-legend { flex-wrap: wrap; gap: 4px 10px; margin-bottom: 4px; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
 `;
@@ -100,8 +101,12 @@ function sampleRows() {
   return [
     { key: "3", name: "/3/", id: 701, display: "3 Full Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      // Every kit slot, the widest a row gets.
       kits: { GK: kit("g1 - Keeper", "#f0c020", "#202020"), K1: kit("p1 - Home", "#c02020", "#f0f0f0"),
-        K2: kit("p2 - Away", "#f0f0f0", "#2040a0") } },
+        K2: kit("p2 - Away", "#f0f0f0", "#2040a0"), K3: kit("p3 - Third", "#202020", "#c02020"),
+        K4: kit("p4 - Retro", "#f0e0a0", "#803020"), K5: kit("p5 - Green", "#208040", "#f0f0f0"),
+        K6: kit("p6 - Sky", "#60b0e0", "#f0f0f0"), K7: kit("p7 - Orange", "#f08020", "#202020"),
+        K8: kit("p8 - Violet", "#7040b0", "#f0c020"), K9: kit("p9 - Grey", "#808080", "#202020") } },
     { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26",
       label: { status: "warning", codes: ["shared_folder_orphaned"] },
       players: with_(with_(players(1, 23), 7, { status: "warning", codes: ["fmdl_texture_not_found"] }),
@@ -345,14 +350,12 @@ function grid() {
       h("p", { class: "mono" }, EXE_FOLDER + "\\exports"),
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
-  return h("div", {},
-    h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow)),
-    legend());
+  return h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow));
 }
-// sample: a legend, which the plan does not have. It names the colours while
-// the draft is read; whether the app keeps one is the maintainer's call.
+// The legend, above the grid and outside its scroll area, a line under it
+// as under a toolbar: what each cell colour means.
 function legend() {
-  return h("div", { class: "tc-legend weak", "data-panel": "legend" },
+  return h("div", { class: "tc-legend top weak", "data-panel": "legend" },
     Object.keys(COLOURS).map(k => h("span", { class: "k" },
       h("span", { class: "tc-cell", style: `background:${COLOURS[k]}` }), STATE_NAMES[k])),
     h("span", { class: "k" }, h("span", { class: "tc-cell blocked" }), STATE_NAMES.blocked));
@@ -519,6 +522,7 @@ function drawView(center) {
   if (oldLog) S.logScroll = oldLog.scrollTop;
   center.innerHTML = "";
   center.append(h("div", { class: "pipe" },
+    D.empty ? null : legend(),
     h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()), detailPanel()),
     toolbar(),
     named(logPanel(L, { tool: "team-compiler", onLine: gotoCell }), "log")));
