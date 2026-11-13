@@ -1961,12 +1961,17 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its Acceptance scenarios 2026-11-13 (the lead): SE-GUI-77 (the selector, ALL,
       the filter, Multi-team AATF, Fix database, and a write keeping the hidden
       records' bytes), SE-AATF-10 (`check-aatf` with and without `--teams`)
-    - [ ] the slice (running since 2026-11-13, Opus, worktree `4cc-studio-temp/cup`,
-      branch `sk/cup`, brief `.tmp/0_0_2/cup/brief_cup.md`): read first
-      every place that walks `file.teams()` or `file.players()` (`session/selection.rs`,
-      the AATF check's views, the CLI, the patch and import paths, the unsaved changes),
-      and say for each whether it lists (filter) or writes (never filter); the PES
-      fixtures hold only ids 701 to 920, so the tests need a save with one team outside
+    - [x] the slice 2026-11-13 (Opus, two runs, and the lead; merge `b60cec7e`; the lead's
+      rerun of `save_editor`, 852 + 57, clippy, fmt on the branch; SE-GUI-77, SE-AATF-10,
+      SE-DIF-07, SE-TOML-10): one rule, `session/cup.rs` on `teams_list`'s range, feeds
+      the selector, ALL, the filter, Multi-team AATF, Fix database, the roster sheet, the
+      copy and swap dialog, the comparator and `diff` (a player a cup roster holds in
+      either save), `check-aatf` without `--teams`, `export-toml --all-teams` and
+      `export-teams-list`; the baselines, the unsaved changes, undo and the write stay
+      whole. The tests' save is the fixture with /aco/ renumbered 300 and one player off
+      every roster (`src/test_support/cup_save.rs`, shared with the CLI suite by `#[path]`).
+      PES 2019's fixture already holds teams outside the cup (346 teams, ids 100 to 420)
+    - [ ] its SWE-2 review (running, `.tmp/0_0_2/cup/swe_cup.md`, worktree `review20`)
   - [x] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
     2026-11-13: the tail's separator and Help drawn over the last tool entries)
     - [x] the slice 2026-11-13 (SWE-2 and the lead's rerun of `studio_core`, clippy,

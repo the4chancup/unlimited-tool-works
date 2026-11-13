@@ -313,7 +313,8 @@ Rules every command shares:
 The commands:
 
 - `export-toml` requires an explicit source EDIT and either `--team <id>` with `-o`/`--out <file>`,
-  or `--all-teams` with `--out-dir <directory>` for one file per team of the save, named
+  or `--all-teams` with `--out-dir <directory>` for one file per cup team of the save (ids 701
+  to 920; `plans/save_editor.md` "Only the cup's teams are shown"), named
   `<id>.toml`. These forms are mutually exclusive; there is no implicit current-team selection.
   An existing TOML is replaced, with no backup. A `--team` the save lacks is refused, and so is
   an `--out` naming the input save itself (exit 2, nothing written): the no-backup rule is for a
