@@ -1827,7 +1827,8 @@ briefs, review loops, gates and mutation runs as for any step.
       a value of 4 to 7 is refused or kept as stored (no save holds one), and whether PES
       2015 to 2018, 2020 and 2021 list the same four -> verify: headless, the control lists
       four names; a `settings.toml` with 3 compiles to 3
-    - [ ] wave 4's rulings (the maintainer, 2026-11-13, on the twelve choices of
+    - [x] wave 4's rulings, applied in `f32b3ab5` on the branch with their DECISIONS entry
+      (the maintainer, 2026-11-13, on the twelve choices of
       `.tmp/shakespeare_choices.html`; every other proposal of the four lists is the lead's
       to rule, as wave 3's were), to apply on the branch with a DECISIONS entry:
       (1) the bar holding the tools' icons is "sidebar" in every member text (the readme,
@@ -1856,13 +1857,24 @@ briefs, review loops, gates and mutation runs as for any step.
       saved and names the cause when the error gives one
     - [x] wave 4's proposals 2026-11-13: four Opus agents, proposals only
       (`sh_ui_msg`, `sh_ui_view`, `sh_ui_shell`, `sh_toml_b` `.proposals.md`)
-    - [ ] wave 4 applied: four SWE-2 sidekicks on the branch (`brief_ap_msg.md`,
-      `brief_ap_view.md`, `brief_ap_shell.md`, `brief_ap_tomlb.md`, after
-      `brief_apply4_common.md`: the rulings are in them, the maintainer's twelve and the
-      lead's on the rest); review each diff, rerun its tests, commit, DECISIONS entry. The
-      sidekicks leave `docs/prototypes/` alone and list the drafts' quotes that changed:
-      the lead brings the drafts in step after the merge (main's drafts moved meanwhile:
-      the Copy stats window)
+    - [x] wave 4 applied 2026-11-13 (`f32b3ab5` on the branch; four SWE-2 sidekicks, each
+      diff read whole, the six crates' tests, clippy, fmt, changelog and doc-pointers rerun
+      by the lead). The lead's own in it: the terminal's start-up line reads "The settings
+      file cannot be written: <error>" (it comes from a probe, so the window's "Settings
+      could not be saved" would name a save that never ran); a roster slot no player holds
+      reads "Slot NN" from 1 in `team_widgets`' violations list and the Multi-team AATF
+      copy. A side effect to see in the built window: the Gloves color dropdown lists the
+      eight color names, since `gloves_color`'s comment now names them
+    - [ ] the drafts brought in step with wave 4 (`docs/prototypes/`, the lead's): the four
+      reports' "Drafts to follow" lists (`4cc-studio-temp/shakespeare/.tmp/shakespeare/ap_*.report.md`),
+      on main, where the drafts moved meanwhile (the Team menu's FPC entries already read
+      "(Enable FPC)" and "(Disable FPC)" there: keep those)
+    - [ ] the Export upgrader's help page on what each `unmigrated_content` cause means, and
+      the stale `upgrade-models` sentence about `u0731p2.dds` beside `u0XXXp2.dds`
+      (`brief_eu_reasons.md`, SWE-2, running on the branch since 2026-11-13)
+    - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
+      the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
+      boots and gloves dialog's option column)
     - [ ] set aside by the rulings, each to decide or do: the Ruleset editor's window shows
       a finding as console `key=value` text (`sh_ui_msg` P12: a format, not a wording);
       `fpc_taping_shows_pieces` says "nothing to do" where a member may have left taping on
@@ -1872,9 +1884,6 @@ briefs, review loops, gates and mutation runs as for any step.
       writers do not write, and the patch block's `# slot 03 -> player 70203` contradicts
       its prose (`sh_toml_b` "Wrong or stale" 4, 5, 7: trim the blocks or write the useful
       comments); the kit config's comment columns drift with the value's width
-    - [ ] the Export upgrader's help lists what each `unmigrated_content` `reason` means
-      (28 values, `UnmigratedReason`'s doc comments; no member-facing text explains them,
-      and it is the one Error a member fixes by hand)
   - [ ] 0.0.2-copywin Copy and swap stats as one window (the maintainer, 2026-11-13;
     drafted, `drawCopyStats`, and looked at the same day). The Player menu's "Copy stats
     from…" and "Swap stats with…" become one entry, "Copy/swap stats…", which opens a
