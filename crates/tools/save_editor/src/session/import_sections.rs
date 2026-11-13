@@ -140,6 +140,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         physique,
         strip,
         motion,
+        presentation,
         face,
         hair,
     } = appearance;
@@ -202,6 +203,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
                 goal_celebration_1: kept(aesthetics, goal_celebration_1),
                 goal_celebration_2: kept(aesthetics, goal_celebration_2),
             },
+            presentation: kept(aesthetics, presentation),
             face: kept(aesthetics, face),
             hair: kept(aesthetics, hair),
         },
@@ -375,6 +377,7 @@ mod tests {
                 "appearance.motion.goal_celebration_2",
                 &motion.goal_celebration_2,
             ),
+            key("appearance.presentation", &look.presentation),
         ]
     }
 
@@ -864,7 +867,17 @@ mod tests {
                 "slot {slot}: the appearance"
             );
             let co = player_at(CO, slot);
-            assert_eq!(after.stats, co.stats, "slot {slot}: /co/'s abilities");
+            // The presentation fields are aesthetics: the import keeps
+            // /3/'s star and playing attitude, not /co/'s.
+            assert_eq!(
+                after.stats,
+                pes_savefile::model::player::PlayerStats {
+                    star: three.stats.star,
+                    playing_attitude: three.stats.playing_attitude,
+                    ..co.stats
+                },
+                "slot {slot}: /co/'s abilities, /3/'s presentation"
+            );
             assert_eq!(
                 after.motion, three.motion,
                 "slot {slot}: /3/'s motions, the free kick's with them"

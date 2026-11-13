@@ -1,5 +1,6 @@
 use super::*;
 
+use crate::model::player::PlayerStats;
 use crate::schema::limits::motion_top;
 
 /// A key's field is the one it writes: a player-record key's in
@@ -240,7 +241,15 @@ fn apply_copies_the_settings_and_leaves_the_rest() {
     assert_eq!(q.name, p.name);
     assert_eq!(q.shirt_name, p.shirt_name);
     assert_eq!(q.id, q_before.id);
-    assert_eq!(q.stats, q_before.stats);
+    // `star` is a settings key, so the apply copies p's; `playing_attitude`
+    // stays q's, PES 19 storing none.
+    assert_eq!(
+        q.stats,
+        PlayerStats {
+            star: p.stats.star,
+            ..q_before.stats
+        }
+    );
     assert_eq!(q.positions, q_before.positions);
     assert_eq!(q.skills, q_before.skills);
     assert_eq!(q.edit_flags, q_before.edit_flags);
@@ -461,6 +470,84 @@ fn a_setting_the_version_lacks_is_skipped_not_refused() {
     assert_eq!(player.appearance.sleeves, 2);
 }
 
+/// The presentation keys read like the version-gated dribbling motion: the
+/// player's stored value where the version holds it, `None` and no error
+/// where it does not (`star` is PES 19+, `playing_attitude` PES 20+).
+#[test]
+fn from_player_reads_the_presentation_keys_where_the_version_holds_them() {
+    let (file, _) = open(PesVersion::Pes21);
+    let p21 = file
+        .players()
+        .iter()
+        .find(|player| player.stats.star.is_some_and(|star| star != 0))
+        .expect("a fixture player with a non-zero star");
+    let attitude = p21.stats.playing_attitude.expect("PES 21 stores it");
+    let s21 = PlayerSettings::from_player(p21).expect("from_player");
+    assert_eq!(s21.appearance.presentation.star, p21.stats.star);
+    assert_eq!(s21.appearance.presentation.playing_attitude, Some(attitude));
+
+    let p19 = find_player(
+        &payload(PesVersion::Pes19),
+        schema_for(PesVersion::Pes19),
+        70101,
+    );
+    let s19 = PlayerSettings::from_player(&p19).expect("from_player");
+    assert_eq!(s19.appearance.presentation.star, p19.stats.star);
+    assert!(s19.appearance.presentation.star.is_some());
+    assert_eq!(s19.appearance.presentation.playing_attitude, None);
+
+    let p18 = find_player(
+        &payload(PesVersion::Pes18),
+        schema_for(PesVersion::Pes18),
+        70101,
+    );
+    let s18 = PlayerSettings::from_player(&p18).expect("from_player");
+    assert_eq!(s18.appearance.presentation.star, None);
+    assert_eq!(s18.appearance.presentation.playing_attitude, None);
+}
+
+/// A set `star` writes on PES 21, and is skipped as the dribbling motion is
+/// on a version without the field: `apply` writes nothing and reports
+/// nothing, `apply_appearance` (Team TOML's write) refuses it
+/// `NotInThisVersion` and changes nothing.
+#[test]
+fn the_presentation_keys_write_and_skip_and_refuse_as_the_gated_motion() {
+    let settings =
+        PlayerSettings::parse("[appearance.presentation]\nstar = 7\n").expect("the key parses");
+
+    let mut player = find_player(
+        &payload(PesVersion::Pes21),
+        schema_for(PesVersion::Pes21),
+        70101,
+    );
+    player.stats.star = Some(0);
+    settings
+        .apply(&mut player, PesVersion::Pes21)
+        .expect("apply");
+    assert_eq!(player.stats.star, Some(7));
+
+    let mut player = find_player(
+        &payload(PesVersion::Pes18),
+        schema_for(PesVersion::Pes18),
+        70101,
+    );
+    assert_eq!(player.stats.star, None, "premise: PES 18 has no star field");
+    settings
+        .apply(&mut player, PesVersion::Pes18)
+        .expect("a key the version lacks is skipped, not an error");
+    assert_eq!(player.stats.star, None, "no field, no write");
+
+    let before = player.clone();
+    let mut appearance = AppearanceSettings::default();
+    appearance.presentation.star = Some(7);
+    let err = apply_appearance(&appearance, &mut player).expect_err("refused");
+    match &err {
+        SettingsError::NotInThisVersion { key } => assert_eq!(key, "star"),
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(player, before, "a refused write changes nothing");
+}
+
 /// `apply_appearance` (Team TOML's write, which keeps a `Some` as authored)
 /// refuses a motion the player's version has no field for, where `apply`
 /// drops the key: `dribbling` on PES 18 is `NotInThisVersion`, and the
@@ -620,7 +707,24 @@ fn a_default_settings_applies_the_template_values() {
         assert_eq!(player.id, before.id);
         assert_eq!(player.appearance_id, before.appearance_id);
         assert_eq!(player.basic, before.basic);
-        assert_eq!(player.stats, before.stats);
+        // The presentation keys are settings: each writes its default 0
+        // where the version holds the field, stays `before`'s where not.
+        assert_eq!(
+            player.stats,
+            PlayerStats {
+                star: if held_on(SettingKey::Star, version) {
+                    Some(0)
+                } else {
+                    before.stats.star
+                },
+                playing_attitude: if held_on(SettingKey::PlayingAttitude, version) {
+                    Some(0)
+                } else {
+                    before.stats.playing_attitude
+                },
+                ..before.stats
+            }
+        );
         assert_eq!(player.positions, before.positions);
         assert_eq!(player.skills, before.skills);
         assert_eq!(player.edit_flags, before.edit_flags);
@@ -1208,7 +1312,7 @@ fn get_after_set_round_trips_every_key() {
 
 #[test]
 fn the_key_specs_match_the_plan_table() {
-    let comments: [&str; 130] = [
+    let comments: [&str; 132] = [
         "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock boots model; ignored when the folder has boots models or a boots link (pre-Fox face.xml boots do not count)",
         "\"\" = default (fpc_on: hidden; fpc_off: 0; no marker: 0, or the save's ID in a Midcup export); 0 to 100, a stock gloves model (0 = normal hands); ignored when the folder has gloves models or a gloves link (pre-Fox face.xml gloves do not count)",
         "0 white, 1 light, 2 fair, 3 medium, 4 olive, 5 brown, 6 black, 7 custom (invisible body, PES 15 to 17 only)",
@@ -1250,6 +1354,8 @@ fn the_key_specs_match_the_plan_table() {
         "0 to 3 (PES 20 and 21 only)",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
+        "0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen",
+        "0 to 3 (PES 20 and later): only affects cutscenes",
         "-7 to 7",
         "-7 to 7",
         "-7 to 7",
@@ -1345,6 +1451,7 @@ fn the_key_specs_match_the_plan_table() {
         "appearance.physique",
         "appearance.strip",
         "appearance.motion",
+        "appearance.presentation",
         "appearance.face",
         "appearance.hair",
     ];

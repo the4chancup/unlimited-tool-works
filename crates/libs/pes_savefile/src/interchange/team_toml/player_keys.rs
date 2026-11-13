@@ -15,6 +15,7 @@ use crate::model::player::PlayerEntry;
 use crate::schema::fields::PlayerField;
 #[cfg(test)]
 use crate::schema::schema_for;
+use crate::settings_toml::SettingKey;
 
 use super::items::label_position;
 
@@ -166,6 +167,15 @@ pub(crate) enum PlayerKey {
 }
 
 const POSITIONS_COMMENT: &str = "\"GK\" \"CB\" \"LB\" \"RB\" \"DMF\" \"CMF\" \"LMF\" \"RMF\" \"AMF\" \"LWF\" \"RWF\" \"SS\" \"CF\"";
+
+/// The keys `[players.NN.appearance.presentation]` replaced, `(old-place
+/// key, new key)`: every file written before the table existed carries them
+/// under `stats`, which an import still reads into the new place (a field
+/// given in both is refused), while an export writes the new place alone.
+pub(crate) const MOVED_TO_PRESENTATION: &[(PlayerKey, SettingKey)] = &[
+    (PlayerKey::Star, SettingKey::Star),
+    (PlayerKey::PlayingAttitude, SettingKey::PlayingAttitude),
+];
 
 const fn spec(
     path: &'static str,

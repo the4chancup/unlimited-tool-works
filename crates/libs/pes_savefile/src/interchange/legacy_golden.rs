@@ -333,10 +333,8 @@ const U8_KEYS: &[(usize, PlayerKey)] = &[
     (40, PlayerKey::Coverage),
     (41, PlayerKey::WeakFootUsage),
     (58, PlayerKey::PlaceKicking),
-    (59, PlayerKey::Star),
     (61, PlayerKey::TightPossession),
     (62, PlayerKey::Aggression),
-    (63, PlayerKey::PlayingAttitude),
     (67, PlayerKey::Stamina),
     (68, PlayerKey::Speed),
     (73, PlayerKey::StrongerFoot),
@@ -380,7 +378,9 @@ const APPEARANCE_U8_KEYS: &[(usize, SettingKey)] = &[
     (55, SettingKey::HunchingDribbling),
     (56, SettingKey::HunchingRunning),
     (57, SettingKey::PenaltyKick),
+    (59, SettingKey::Star),
     (60, SettingKey::Dribbling),
+    (63, SettingKey::PlayingAttitude),
     (340, SettingKey::WristTapeColorLeft),
     (341, SettingKey::WristTapeColorRight),
     (342, SettingKey::WristTaping),
@@ -420,17 +420,18 @@ const PHYSIQUE_KEYS: &[SettingKey] = &[
     SettingKey::HeadDepth,
 ];
 
-/// Mapped fields PES 19 does not store: four PES 20 added, and the base-copy
+/// Mapped fields PES 19 does not store: three PES 20 added, and the base-copy
 /// edit flag, which the 15-18 schemas hold and 19's does not. Absent whatever
-/// the bytes hold. Dribbling motion (PES 20 too) is `APPEARANCE_ABSENT_ON_19`.
+/// the bytes hold. Dribbling motion and playing attitude (PES 20 too) are
+/// `APPEARANCE_ABSENT_ON_19`.
 const ABSENT_ON_19: &[PlayerKey] = &[
     PlayerKey::TightPossession,
     PlayerKey::StrongerHand,
     PlayerKey::Aggression,
-    PlayerKey::PlayingAttitude,
     PlayerKey::EditedBaseCopy,
 ];
-const APPEARANCE_ABSENT_ON_19: &[SettingKey] = &[SettingKey::Dribbling];
+const APPEARANCE_ABSENT_ON_19: &[SettingKey] =
+    &[SettingKey::Dribbling, SettingKey::PlayingAttitude];
 
 #[test]
 fn read_squad_decodes_every_record_and_every_mapped_field() {

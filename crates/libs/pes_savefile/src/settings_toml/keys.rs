@@ -99,6 +99,10 @@ pub enum SettingKey {
     GoalCelebration1,
     /// `[appearance.motion] goal_celebration_2`
     GoalCelebration2,
+    /// `[appearance.presentation] star` (PES 19+)
+    Star,
+    /// `[appearance.presentation] playing_attitude` (PES 20+)
+    PlayingAttitude,
     /// `[appearance.face] cheek_type`
     CheekType,
     /// `[appearance.face] forehead_type`
@@ -347,6 +351,8 @@ pub enum KeyTable {
     Strip,
     /// `[appearance.motion]`.
     Motion,
+    /// `[appearance.presentation]`.
+    Presentation,
     /// `[appearance.face]`.
     Face,
     /// `[appearance.hair]`.
@@ -362,6 +368,7 @@ impl KeyTable {
             KeyTable::Physique => "appearance.physique",
             KeyTable::Strip => "appearance.strip",
             KeyTable::Motion => "appearance.motion",
+            KeyTable::Presentation => "appearance.presentation",
             KeyTable::Face => "appearance.face",
             KeyTable::Hair => "appearance.hair",
         }
@@ -374,6 +381,7 @@ impl KeyTable {
             KeyTable::Physique => Some("physique"),
             KeyTable::Strip => Some("strip"),
             KeyTable::Motion => Some("motion"),
+            KeyTable::Presentation => Some("presentation"),
             KeyTable::Face => Some("face"),
             KeyTable::Hair => Some("hair"),
             KeyTable::Top | KeyTable::Appearance => None,
@@ -419,7 +427,7 @@ const SEVEN: &str = "-7 to 7";
 
 impl SettingKey {
     /// Every key, in the spec table's order.
-    pub const ALL: [SettingKey; 130] = [
+    pub const ALL: [SettingKey; 132] = [
         SettingKey::BootsId,
         SettingKey::GlovesId,
         SettingKey::SkinColor,
@@ -461,6 +469,8 @@ impl SettingKey {
         SettingKey::Dribbling,
         SettingKey::GoalCelebration1,
         SettingKey::GoalCelebration2,
+        SettingKey::Star,
+        SettingKey::PlayingAttitude,
         SettingKey::Jawline,
         SettingKey::JawHeight,
         SettingKey::Cheekbones,
@@ -707,6 +717,20 @@ impl SettingKey {
             SettingKey::GoalCelebration2 => {
                 celebration("goal_celebration_2", PlayerField::GoalCelebration2)
             }
+            SettingKey::Star => KeySpec {
+                table: KeyTable::Presentation,
+                name: "star",
+                kind: Kind::Number { min: 0, max: 7 },
+                comment: "0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen",
+                default: Some(0),
+            },
+            SettingKey::PlayingAttitude => KeySpec {
+                table: KeyTable::Presentation,
+                name: "playing_attitude",
+                kind: Kind::Number { min: 0, max: 3 },
+                comment: "0 to 3 (PES 20 and later): only affects cutscenes",
+                default: Some(0),
+            },
             SettingKey::CheekType => face(
                 "cheek_type",
                 IngameFaceField::CheekType,
@@ -1355,6 +1379,8 @@ impl SettingKey {
             SettingKey::Dribbling => Source::Player(PlayerField::DribblingMotion),
             SettingKey::GoalCelebration1 => Source::Player(PlayerField::GoalCelebration1),
             SettingKey::GoalCelebration2 => Source::Player(PlayerField::GoalCelebration2),
+            SettingKey::Star => Source::Player(PlayerField::Star),
+            SettingKey::PlayingAttitude => Source::Player(PlayerField::PlayingAttitude),
             SettingKey::CheekType => Source::Face(IngameFaceField::CheekType),
             SettingKey::ForeheadType => Source::Face(IngameFaceField::ForeheadType),
             SettingKey::FacialHairType => Source::Face(IngameFaceField::FacialHairType),

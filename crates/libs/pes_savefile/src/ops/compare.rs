@@ -107,12 +107,14 @@ impl PlayerDiff {
         }
     }
 
-    /// Aesthetics is the appearance block: its fields (the appearance id, the
-    /// four appearance edit flags, boots/gloves/base-copy IDs, physique,
-    /// strip), every `Face` and `FaceRun` row — the slice
-    /// `test_support::copy_appearance` moves, the appearance id aside, which
-    /// the tests check this list against. Everything else (motion and the
-    /// other edit flags included) is gameplay.
+    /// Aesthetics is a field the appearance block or a `settings.toml` key
+    /// holds: the block's fields (the appearance id, the four appearance
+    /// edit flags, boots/gloves/base-copy IDs, physique, strip), every key's
+    /// source field (the motions, the star rating and playing attitude
+    /// included), every `Face` and `FaceRun` row — the slice
+    /// `test_support::copy_appearance` moves plus the key table's, which the
+    /// tests check this list against. Everything else (the other edit flags
+    /// included) is gameplay.
     pub fn scope(&self) -> DiffScope {
         use PlayerField as F;
         let field = match self {
@@ -155,18 +157,27 @@ impl PlayerDiff {
             | F::Socks
             | F::Undershorts
             | F::Untucked
-            | F::AnkleTaping => DiffScope::Aesthetics,
+            | F::AnkleTaping
+            | F::HunchingDribbling
+            | F::HunchingRunning
+            | F::ArmMovementDribbling
+            | F::ArmMovementRunning
+            | F::CornerKickMotion
+            | F::FreeKickMotion
+            | F::PenaltyKickMotion
+            | F::DribblingMotion
+            | F::GoalCelebration1
+            | F::GoalCelebration2
+            | F::Star
+            | F::PlayingAttitude => DiffScope::Aesthetics,
             F::Id
             | F::Nationality
             | F::Height
             | F::Weight
-            | F::GoalCelebration1
-            | F::GoalCelebration2
             | F::AttackingProwess
             | F::DefensiveProwess
             | F::Goalkeeping
             | F::Dribbling
-            | F::FreeKickMotion
             | F::Finishing
             | F::LowPass
             | F::LoftedPass
@@ -183,7 +194,6 @@ impl PlayerDiff {
             | F::PhysicalContact
             | F::KickingPower
             | F::ExplosivePower
-            | F::ArmMovementDribbling
             | F::EditedRegisteredPosition
             | F::Age
             | F::RegisteredPosition
@@ -192,14 +202,9 @@ impl PlayerDiff {
             | F::BallWinning
             | F::WeakFootAccuracy
             | F::Jump
-            | F::ArmMovementRunning
-            | F::CornerKickMotion
             | F::Coverage
             | F::WeakFootUsage
             | F::PlayablePosition(_)
-            | F::HunchingDribbling
-            | F::HunchingRunning
-            | F::PenaltyKickMotion
             | F::PlaceKicking
             | F::EditedPlayablePositions
             | F::EditedAbilities
@@ -213,11 +218,8 @@ impl PlayerDiff {
             | F::StrongerFoot
             | F::ComStyle(_)
             | F::Skill(_)
-            | F::Star
-            | F::DribblingMotion
             | F::TightPossession
             | F::Aggression
-            | F::PlayingAttitude
             | F::StrongerHand => DiffScope::Gameplay,
         }
     }
@@ -499,6 +501,8 @@ mod tests {
     use crate::model::ingame_face::IngameFace;
     use crate::schema::fields::PresetField;
     use crate::schema::schema_for;
+    use crate::settings_toml::SettingKey;
+    use crate::settings_toml::keys::Source;
     use crate::test_support::{FIXTURES, find_player, open, payload};
 
     fn player(version: PesVersion, id: u32) -> PlayerEntry {
@@ -596,6 +600,35 @@ mod tests {
         assert_eq!(diffs[0].scope(), DiffScope::Aesthetics);
     }
 
+    /// The star rating, playing attitude and the motions are aesthetics
+    /// rows: they change no play, so an edit to each is `Aesthetics` like an
+    /// appearance field's, where a real stat stays `Gameplay`.
+    #[test]
+    fn a_star_attitude_or_motion_edit_is_one_aesthetics_row() {
+        let a = player(PesVersion::Pes21, 70101);
+        let schema = schema_for(PesVersion::Pes21);
+
+        for field in [
+            PlayerField::Star,
+            PlayerField::PlayingAttitude,
+            PlayerField::FreeKickMotion,
+        ] {
+            let old = a.get(field).expect("covered");
+            let new = if old == 0 { 1 } else { 0 };
+            let mut b = a.clone();
+            b.set(field, new).expect("fits");
+            let diffs = compare_players(&a, &b, schema).expect("compares");
+            assert_eq!(diffs, [PlayerDiff::Field { field, old, new }], "{field:?}");
+            assert_eq!(diffs[0].scope(), DiffScope::Aesthetics, "{field:?}");
+        }
+
+        let mut b = a.clone();
+        b.stats.stamina += 1;
+        let diffs = compare_players(&a, &b, schema).expect("compares");
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(diffs[0].scope(), DiffScope::Gameplay);
+    }
+
     #[test]
     fn a_face_field_is_one_face_row_an_unused_bit_is_one_run_row() {
         let a = player(PesVersion::Pes21, 70101);
@@ -656,8 +689,11 @@ mod tests {
         );
     }
 
+    /// The scope rule: `Aesthetics` exactly when `copy_appearance` moves the
+    /// field or a `SettingKey` has it as its source — the appearance block's
+    /// slice plus the keys' fields, which is what the export carries.
     #[test]
-    fn a_field_is_aesthetics_exactly_when_the_appearance_copy_moves_it() {
+    fn a_field_is_aesthetics_exactly_when_the_copy_or_a_key_carries_it() {
         let schema = schema_for(PesVersion::Pes21);
         let a = player(PesVersion::Pes21, 70101);
         for (field, _, width) in crate::codec::runs(schema.player) {
@@ -672,7 +708,11 @@ mod tests {
             crate::test_support::copy_appearance(&mut c, &b);
             // The appearance id is the appearance block's, but a copied
             // look keeps the target's own id, so the copy leaves it.
-            let moved = field == PlayerField::AppearanceId || c.get(field).expect("covered") == new;
+            let moved = field == PlayerField::AppearanceId
+                || c.get(field).expect("covered") == new
+                || SettingKey::ALL
+                    .iter()
+                    .any(|key| key.source() == Source::Player(field));
             assert_eq!(
                 diffs
                     .first()

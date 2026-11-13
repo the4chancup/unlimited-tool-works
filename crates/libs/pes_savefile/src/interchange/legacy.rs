@@ -256,10 +256,8 @@ const U8_SCALARS: &[(usize, PlayerKey)] = &[
     (40, PlayerKey::Coverage),              // player_export.cover
     (41, PlayerKey::WeakFootUsage),         // player_export.weak_use
     (58, PlayerKey::PlaceKicking),          // player_export.place_kick
-    (59, PlayerKey::Star),                  // player_export.star
     (61, PlayerKey::TightPossession),       // player_export.tight_pos
     (62, PlayerKey::Aggression),            // player_export.aggres
-    (63, PlayerKey::PlayingAttitude),       // player_export.play_attit
     (67, PlayerKey::Stamina),               // player_export.stamina
     (68, PlayerKey::Speed),                 // player_export.speed
     (STRONG_FOOT, PlayerKey::StrongerFoot), // player_export.strong_foot
@@ -304,7 +302,9 @@ const APPEARANCE_U8: &[(usize, SettingKey)] = &[
     (MO_HUNCHD, SettingKey::HunchingDribbling),
     (MO_HUNCHR, SettingKey::HunchingRunning),
     (MO_PK, SettingKey::PenaltyKick),
+    (59, SettingKey::Star), // player_export.star
     (MO_DRIB, SettingKey::Dribbling),
+    (63, SettingKey::PlayingAttitude), // player_export.play_attit
     (WRIST_COL_L, SettingKey::WristTapeColorLeft),
     (WRIST_COL_R, SettingKey::WristTapeColorRight),
     (WRIST_TAPE, SettingKey::WristTaping),
@@ -823,7 +823,10 @@ mod tests {
         assert!(!doc.players.is_empty(), "premise: the squad has players");
         for (slot, section) in &doc.players {
             assert!(section.stats.physical_contact.is_none(), "slot {slot}");
-            assert!(section.stats.star.is_none(), "slot {slot}");
+            assert!(
+                section.appearance.presentation.star.is_none(),
+                "slot {slot}"
+            );
             assert!(section.stats.tight_possession.is_none(), "slot {slot}");
             assert!(section.positions.stronger_hand.is_none(), "slot {slot}");
             assert!(section.appearance.motion.dribbling.is_none(), "slot {slot}");
