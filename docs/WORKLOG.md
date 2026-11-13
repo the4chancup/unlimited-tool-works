@@ -766,6 +766,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     fixes, Upgrade on an old export, the empty grid's drop, Compile only this export and the
     hidden compile column, disabled exports greyed with Enable and Disable on a clash, the save
     findings opening the Save editor; accepted 2026-10-25 as P3-P5, P7-P9, P15's Part A)
+    - [ ] the Team compiler's draft, `docs/prototypes/tools/team_compiler.js`: a first
+      version 2026-11-13 (the lead; renders `.tmp/0_0_2/tc_draft/` by `shot_tc.py`): the
+      grid on sample rows in every cell state, the row actions, the ID cell's entry, the
+      detail panel, the split Compile button with its modes, the run strip, a fake run and
+      its cancel, the log's cross-link, the draft controls and the scenario walk. To
+      refine with the maintainer before `view/grid.rs` is briefed; open in it: the
+      referee row's 24-35 on a second line (35 columns push the kit cells out of the
+      default window), a blocked cell's look, the legend (not in the plan), the kit
+      swatch as two flat halves, the detail panel at the grid's right. Not drawn yet: the
+      file drop on the grid, the Edit mode question, the autorun, a check arriving live.
+      The host page's compiler stub (`startCompile`, its three-row table) is now
+      unreachable and goes when the draft is accepted
   - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
     (`plans/aesthetics_export/settings_toml.md` "Edits made in PES come back to the export";
     DECISIONS of 2026-10-25; the maintainer's "even if Studio was not running" first):
