@@ -27,7 +27,12 @@
 "use strict";
 
 const TEAM_COMPILER_CSS = `
-  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; }
+  /* The view takes the central panel edge to edge (a pipeline tool's own
+     panels fill the Ui it is given), so its two horizontal lines span the
+     panel; what sits between them brings its own 8 points at the sides. */
+  .center.tc-view { overflow: hidden; scrollbar-gutter: auto; padding: 0; }
+  .tc-view .log-panel { margin: 0 8px 8px; }
+  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px; }
   .tc-top .pipe-grid { flex: 1; }
   /* The table takes the panel's height: its last row, empty, stretches over
      what the exports leave, so the two lines reach the panel's foot. */
@@ -47,7 +52,9 @@ const TEAM_COMPILER_CSS = `
   /* A vertical line down the whole panel (egui: one vline the Painter draws
      over the panel's height), 4 points clear of the cells on either side,
      unbroken across the 2px between two rows. */
-  .tc-line { width: 5px; position: relative; }
+  /* The cell's width is its div's: a bare td of 5 is squeezed to under 2. */
+  .tc-line { position: relative; }
+  .tc-line > div { width: 5px; }
   .tc-line::after { content: ""; position: absolute; left: 2px; top: -2px; bottom: -2px;
     width: 1px; background: var(--stroke); }
   .tc-slot.wide, .tc-cell.wide { width: 44px; }
@@ -65,16 +72,18 @@ const TEAM_COMPILER_CSS = `
   .tc-acts { padding-left: 4px !important; }
   .tc-acts .row { flex-wrap: nowrap; }
   .tc-detail { width: 300px; flex: none; overflow: auto; border: 1px solid var(--stroke);
+    margin: 4px 0;
     border-radius: 2px; padding: 8px; box-sizing: border-box; }
   .tc-detail .find { margin: 6px 0; }
-  .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 0; min-height: 24px; }
+  .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; min-height: 24px;
+    border-top: 1px solid var(--stroke); }
   .tc-bar .strip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; }
   .tc-split { display: flex; gap: 1px; }
   .tc-split button:first-child { border-radius: 2px 0 0 2px; min-width: 150px; }
   .tc-split button:last-child { border-radius: 0 2px 2px 0; padding: 0 4px; }
   .tc-badge { color: var(--warn); }
-  .tc-empty { padding: 24px; text-align: center; border: 1px dashed var(--stroke);
+  .tc-empty { margin-top: 8px; padding: 24px; text-align: center; border: 1px dashed var(--stroke);
     border-radius: 2px; }
   /* The Save editor's toolbar line: the host's .top (a Panel::top's stroke). */
   .tc-legend { flex-wrap: wrap; gap: 4px 10px; }
@@ -84,7 +93,7 @@ const TEAM_COMPILER_CSS = `
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
-  fullOk: "#9b59b6", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
+  fullOk: "#820080", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
   done: "#32b450", doneWarn: "#dcc832", doneErr: "#b46432" };
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
   partialOk: "Shallow check passed (archive)", fullOk: "Checked", warning: "Warning",
@@ -241,6 +250,8 @@ function cellEl(r, cell, text, scope, what) {
       : null);
 }
 
+// A vertical line's cell.
+const vline = () => h("td", { class: "tc-line" }, h("div", {}));
 const KIT_SLOTS = ["GK", "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9"];
 // The player columns. sample: the referee row's positions 24 to 35 take a
 // second line under 01 to 12, where the plan extends the columns to 35;
@@ -344,10 +355,10 @@ function gridRow(r) {
     title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
     onclick: () => { S.detail = { row: r.key, what: "label" }; render(); } }, r.name));
-  cells.push(idCell(r), h("td", { class: "tc-line" }));
+  cells.push(idCell(r), vline());
   const acts = rowActions(r);
   if (r.special === "untagged" || r.special === "old") {
-    cells.push(acts, h("td", { class: "tc-line" }));
+    cells.push(acts, vline());
   } else {
     for (let n = 1; n <= SLOTS; n++)
       cells.push(playerSlot(r, n));
@@ -361,15 +372,15 @@ function gridRow(r) {
     for (const k of KIT_SLOTS)
       cells.push(h("td", { class: "tc-slot" },
         r.kits[k] ? cellEl(r, r.kits[k], k, `${r.name} ${k}`, "kit") : null));
-    cells.push(h("td", { class: "tc-line" }));
+    cells.push(vline());
     if (acts) cells.push(acts);
   }
   const lines = [h("tr", { class: off ? "off" : "" }, cells)];
   if (r.refs)
-    lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 3 : 2) }), h("td", { class: "tc-line" }),
+    lines.push(h("tr", {}, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       Array.from({ length: SLOTS }, (_, i) => playerSlot(r, SLOTS + 1 + i)),
       h("td", { class: "tc-gap" }), h("td", { class: "tc-slot wide" }), h("td", { class: "tc-gap" }),
-      KIT_SLOTS.map(() => h("td", { class: "tc-slot" })), h("td", { class: "tc-line" })));
+      KIT_SLOTS.map(() => h("td", { class: "tc-slot" })), vline()));
   return lines;
 }
 const playerSlot = (r, n) => h("td", { class: "tc-slot" },
@@ -397,8 +408,8 @@ function grid() {
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
   return h("table", { class: "tc-grid", "data-panel": "grid" }, S.rows.flatMap(gridRow),
-    h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), h("td", { class: "tc-line" }),
-      h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), h("td", { class: "tc-line" })));
+    h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
+      h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), vline()));
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
@@ -573,6 +584,7 @@ function drawView(center) {
   const oldLog = center.querySelector(".log-body");
   if (oldLog) S.logScroll = oldLog.scrollTop;
   center.innerHTML = "";
+  center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
     D.empty ? null : legend(),
     h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()), detailPanel()),
