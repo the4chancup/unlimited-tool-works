@@ -1903,73 +1903,12 @@ briefs, review loops, gates and mutation runs as for any step.
     (`plans/save_editor.md` "Editing UI", the Player menu and its SE-GUI scenarios), then
     the slice -> verify: headless, two copies in a row without reopening, a swap, one undo
     step each, a click in the list moving the destination; the built window, dragged
-  - [ ] 0.0.2-fpcmenu (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the FPC entries say what they do (the maintainer, 2026-11-13: a
-    toggle is ambiguous; drafted and looked at the same day). The Player menu's "Toggle FPC
-    settings" becomes one entry whose label follows the Appearance section's own reading of
-    the player: "Hide default body (Enable FPC)" on a shown body, "Show default body
-    (Disable FPC)" on a hidden one, Ctrl+I kept on it. The Team menu's two entries take the
-    same two labels (on the branch `text/shakespeare` they read "Hide default body (FPC)" and
-    "Show default body (FPC)" until this step). The Appearance section's two buttons stay
-    "Hide default body" and "Show default body". Plan: `plans/save_editor.md` "Editing UI",
-    the Player and Team menus; help `05_team.md`, `06_player.md` -> verify: headless, the
-    label on a hidden and on a shown player, Ctrl+I on each
-  - [ ] 0.0.2-clipmsg (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) a notice after Ctrl+C and after Ctrl+V saying what was copied or
-    pasted (the maintainer, 2026-11-13; drafted, `clipCopy` and `clipPaste`, and looked at
-    the same day), in 0.0.2-notice's form: "X's stats copied.", "/x/'s Gameplan copied.",
-    "/x/'s preset 2 copied.", "/x/'s preset 2 Kick-off formation copied." (a formation's
-    notice names its preset), and "<the same> pasted onto <the target named the same
-    way>.". They go to the status
-    bar's notice slot, in the success green; and every status bar notice is drawn bold,
-    since notices are easy to miss (`plans/core/gui.md` "Status bar", `studio_core`'s status
-    bar). PROPOSALS P54 is accepted into it: a paste from a save of another PES version says
-    in the same line what the target does not store or caps ("Pasted X's stats; 3 values
-    PES 2017 does not store were left out"); P54 leaves `PROPOSALS.md` with this step's
-    plan edit. Plan: `plans/save_editor.md` "Editing UI", SE-GUI-72 -> verify: headless, one
-    notice per kind of copy and of paste, the cross-version line, a notice's text bold
-  - [ ] 0.0.2-notice (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) result notices name the thing first, then what was done to it (the
-    maintainer, 2026-11-13: "Wrote TEXPORT…" should read "TEXPORT… written", and messages
-    are usually in the passive). Drafted the same day over every
-    `publishNotice` of the Save editor's draft: a written or saved file reads "<file>
-    written" / "<file> saved" with its detail after (no "successfully": the notice's green
-    says so already; the maintainer, the same day); the others
-    "<thing> copied.", "<thing> pasted onto <target>.", "<ruleset> imported.", "Diff
-    exported: …", "Results of N teams copied.", "Live AATF list of <id> <name> copied.". To
-    do: the rule written where member text's rules live (`docs/CONTRIBUTING.md`; the branch
-    `text/shakespeare` rewords catalogs and windows, so land it there or after its merge),
-    then the built notices and the tests that quote them -> verify: headless, each notice's
-    text
-  - [ ] 0.0.2-saved (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the built Save editor publishes the notices its draft does (the
-    maintainer, 2026-11-13: Ctrl+S confirms nothing on the status bar). Found by reading,
-    2026-11-13: no notice after Save and Save as, none after Output rosters to TSV, and
-    the Comparator's Export writes a weak line in its panel where the draft publishes a
-    notice. The draft's Save notice reads "<file> saved (the replaced file is kept once as
-    <file>.bak)". To do: every `publishNotice` of the draft (`docs/prototypes/tools/save_editor.js`)
-    checked against `view/` (`Notice {` is set in `generate.rs`, `interchange.rs`,
-    `live_aatf.rs`, `multi_aatf.rs`, `ruleset_picker.rs` and `mod.rs` only), the plan's
-    scenarios for the missing ones, then the code; the other tools' drafts the same way
-    -> verify: headless, a notice after each action
-  - [ ] 0.0.2-tomlname (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the Team TOML export's suggested file name is the team's name (the
-    maintainer, 2026-11-13; drafted, `ixTomlName`): the name less its slashes (`/f/` gives
-    `f.toml`; non-ASCII stays, `きらら.toml`), the short name when the name is empty or
-    holds a character a file name cannot hold (`\ / : * ? " < > |`), the ID when the short
-    name fails the same. Today `<id>.toml` (`view/interchange.rs` `Export::file_name`). The
-    CLI's `export-toml` takes its path from `--out` and does not change. Plan:
-    `plans/save_editor.md`, the Team file interchange panel -> verify: a unit test over
-    `/f/`, a non-ASCII name, a name with `?`, an empty short name
-  - [ ] 0.0.2-pitchbar (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the formation bar's "Scroll names" becomes "Scroll" with a hover,
-    and a "Portraits" checkbox stands at its right (the maintainer, 2026-11-13: portraits
-    make a formation's shape hard to see; drafted): on by default, remembered in the
-    tool's settings as Scroll is, a view setting (no undo entry, no unsaved dot). Off, a
-    player is his position badge and name alone, where they stand today. Hovers, as
-    drafted: "Scroll the names too long for their place on the pitch, as the game does.
-    Off, they stand still, cut short." and "Show the players' portraits on the pitch. Off,
-    the formation's shape is easier to see.". With the portraits off the captain's mark
-    stands on the badge's top edge, at the badge's left end, and the Live AATF cross stands
-    on the badge too, its lower ends touching it (both drafted; the maintainer, the same
-    day). A formation picture has a Portraits box of its own (0.0.2-flatpitch). Plan:
-    `plans/save_editor.md` "Tactics editor" (the Scroll names paragraph), help
-    `08_tactics.md`; code in `team_widgets` `pitch/` and `tactics/` -> verify: headless
-    paint tests, the built window
+  - [x] 0.0.2-fpcmenu (2026-11-13, `bba7eee1`) the Player menu's FPC entry reads `Hide default body (Enable FPC)` or `Show default body (Disable FPC)`, whichever Ctrl+I will do; the Team menu's two carry the same brackets; help pages 05 and 06
+  - [x] 0.0.2-clipmsg (2026-11-13, `bba7eee1`) Ctrl+C and Ctrl+V publish a notice naming the copy and the target, a cross-version paste's with the count of values left out or changed; the clipboard text's first line holds the notice's words
+  - [x] 0.0.2-notice (2026-11-13, `bba7eee1`) every result notice of the Save editor names the thing first (`f.toml written`), and the status bar draws a notice in the label family's semibold
+  - [x] 0.0.2-saved (2026-11-13, `bba7eee1`) Save, Save as, Output rosters to TSV and the Comparator's Export publish their notice
+  - [x] 0.0.2-tomlname (2026-11-13, `bba7eee1`) a Team TOML export suggests the team's name less its slashes, then the short name, then the ID
+  - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [ ] 0.0.2-pagetoggle (asked and answered by the maintainer 2026-11-13; next: the draft, his
     look, then the plan, DECISIONS and the code) a three-way toggle on the row of the
     player or team name, at its left: Stats | Appearance | Gameplan. Stats is the player
