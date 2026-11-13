@@ -476,7 +476,11 @@ function flowBlock(x) {
   map.append(svg);
   // The pointer on a box: its lines and the boxes at their other ends stay,
   // the rest dims (egui: the hovered box's id, read while painting).
+  // Leaving waits a moment, as on the explanatory page, so moving from one
+  // box to the next does not flicker.
+  let leave = null;
   const focus = id => {
+    clearTimeout(leave);
     const on = new Set([id]);
     for (const path of svg.children) {
       const mine = path.dataset.a === id || path.dataset.b === id;
@@ -492,7 +496,7 @@ function flowBlock(x) {
         + (state === "busy" ? " busy" : "") + (S.highlight === scope ? " hl" : ""),
       style: `top:${n.y}px`, "data-node": n.id, "data-scope": scope,
       title: [...new Set(n.cells.map(c => cellTip(x, c)))].slice(0, 3).join("\n\n"),
-      onmouseenter: () => focus(n.id), onmouseleave: () => map.classList.remove("focus"),
+      onmouseenter: () => focus(n.id), onmouseleave: () => { leave = setTimeout(() => map.classList.remove("focus"), 120); },
       onclick: () => { S.detail = { key: x.key, ...n.open }; render(); } },
       sq(state === "busy" ? "checking" : state, "eu-sq"), h("span", { class: "mono text" }, n.text),
       n.sub ? h("span", { class: "sub" }, n.sub) : null);

@@ -939,7 +939,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       column; the files look is the explanatory page's map (`docs/web/
       upgrade_explained.html`), a box per old folder left, a box per new one right and a
       line from each to where it goes, in the colour of what it carries, a hovered box
-      keeping its lines and dimming the rest, a destination lighting as it is written
+      keeping its lines and dimming the rest (the dimming ends 120 ms after the pointer
+      leaves, as on that page, so going from box to box does not flicker; the files look
+      accepted by the maintainer 2026-11-13), a destination lighting as it is written
       (renders `flow_*.png` by `shot_flow.py`). Not drawn: model-folder mode, the output-exists abort's button, Copy
       report, a referee export. `plans/export_upgrader.md` "GUI" still describes the
       first draft: rewritten when this one is accepted
