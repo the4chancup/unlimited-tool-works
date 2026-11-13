@@ -792,7 +792,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       sideways); an untagged row reads "Full or Midcup?" in the warning colour and an
       old one "Old export format" in the error colour; a clashing archive is moved to
       the exports folder's `unused/`, not `old exports/`, which is for exports in the
-      old format (`gui.md` "Row actions" says `old exports/` today). All go into
+      old format (`gui.md` "Row actions" says `old exports/` today). Later the same
+      day: a check's warning or error is a thick yellow or red outline on the cell's own
+      colour (checked, or shallow-checked, so the two archive states become one), solid
+      yellow or red once the compile has gone through the cell (`gui.md` "Cell states"
+      and its colour table change); a skipped export's cells are blocked from the check
+      on, not from Compile; a row's message and its answer buttons stand over the
+      Players columns (the reassign question hides the row's cells while asked), its one
+      small button right of the last line; the legend is two rows of related pairs under
+      a "Legend" title and folds, staying folded across launches; the run strip sums the
+      grid up at rest (exports, skipped, with errors, with warnings); a kit's two colours
+      fill the cell's foot edge to edge; the portraits column is 50 wide; a disabled or
+      unticked row is flat grey; the detail panel is a window the member places and
+      finds again where it was left, with room for a player's 3D preview; cells change
+      scattered over the grid as parallel tasks end. All go into
       `gui.md` when the draft is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
       the detail panel at the grid's right (with it open, a row with all ten kits scrolls
       sideways in the default window; without it the row and its button fit). Not drawn yet: the

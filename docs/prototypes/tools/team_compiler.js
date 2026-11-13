@@ -32,11 +32,12 @@ const TEAM_COMPILER_CSS = `
      panel; what sits between them brings its own 8 points at the sides. */
   .center.tc-view { overflow: hidden; scrollbar-gutter: auto; padding: 0; }
   .tc-view .log-panel { margin: 0 8px 8px; }
+  .tc-view .pipe { position: relative; }
   /* Every margin of the grid is 8: the panel's left and top, each side of a
      vertical line, between the players, the portraits and the kits. The
      table's own 2 between cells counts in each, so the paddings and the
      spacer cells bring the other 6 or 4. */
-  .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 0 0; }
+  .tc-top { flex: 1; min-height: 0; display: flex; padding: 0 8px 0 0; }
   /* The left margin is the scroll area's own padding: as the panel's it would
      put the area's clip 2 inside the compile column's checkboxes. */
   .tc-top .pipe-grid { flex: 1; padding-left: 6px; box-sizing: border-box; }
@@ -60,20 +61,24 @@ const TEAM_COMPILER_CSS = `
   .tc-grid tr.head th { padding: 6px 0 2px; font-weight: 400; color: #6e6e6e;
     text-align: left; white-space: nowrap; }
   .tc-grid tr.head th.mid { text-align: center; }
-  /* Portraits is wider than its 44-point column: the text overhangs evenly. */
-  .tc-grid tr.head th.mid > div { width: 44px; display: flex; justify-content: center; }
+  .tc-grid tr.head th.mid > div { width: 50px; display: flex; justify-content: center; }
   .tc-grid tr.head .tc-line { z-index: 2; }
   .tc-grid td { padding: 0; white-space: nowrap; }
-  .tc-grid tr.off td:not(.tc-line):not(.act) { opacity: 0.45; }
-  /* 5 at the sides, not 6: with the compile column shown, the widest row and its button
+  /* A row that is off (disabled, or unticked for this run) is flat grey. */
+  .tc-grid tr.off .tc-id { color: #6e6e6e; }
+  /* 4 at the sides and an ID cell of 36: with the compile column shown, the widest row and its button
      then fit the default window to the point, and no sideways scroll bar shows. */
-  .tc-name { min-width: 52px; padding: 0 5px !important; height: 26px; border-radius: 2px;
-    cursor: pointer; }
+  .tc-name { min-width: 52px; padding: 0 4px !important; height: 26px; border-radius: 2px;
+    cursor: pointer; position: relative; }
+  /* A warning or an error the check found: a thick outline in its colour,
+     inside the cell's edge, over the cell's own colour and a kit's swatch. */
+  .tc-cell.ol::after, .tc-name.ol::after { content: ""; position: absolute; inset: 0;
+    border-radius: 2px; box-shadow: inset 0 0 0 3px var(--ol); pointer-events: none; }
   .tc-name.hl, .tc-cell.hl { outline: 2px solid var(--sel-fg); outline-offset: 0; }
-  .tc-id { width: 40px; text-align: center; height: 26px; border-radius: 2px;
+  .tc-id { width: 36px; text-align: center; height: 26px; border-radius: 2px;
     background: var(--widget); color: var(--strong); }
   .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
-  .tc-id input { width: 34px; box-sizing: border-box; text-align: center; }
+  .tc-id input { width: 30px; box-sizing: border-box; text-align: center; }
   .tc-gap > div { width: 4px; }
   /* The compile column's checkbox, 4 from the panel's edge and 4 from the
      team's label: the panel's 6 and the table's 2 are already at its left. */
@@ -88,23 +93,34 @@ const TEAM_COMPILER_CSS = `
   .tc-line > div { width: 13px; }
   .tc-line::after { content: ""; position: absolute; left: 6px; top: -2px; bottom: -2px;
     width: 1px; background: var(--stroke); }
-  .tc-slot.wide, .tc-cell.wide { width: 44px; }
+  .tc-slot.wide, .tc-cell.wide { width: 50px; }
   /* Every position is drawn, a faint square where the export has nothing: the
      full grid leads the eye along a row to its button. */
   .tc-slot { width: 26px; height: 26px; background: var(--faint); border-radius: 2px; }
   .tc-cell { width: 26px; height: 26px; border-radius: 2px; box-sizing: border-box;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: var(--font-mono); font-size: 11px; line-height: 11px; cursor: pointer; }
+    font-family: var(--font-mono); font-size: 11px; line-height: 11px; cursor: pointer;
+    position: relative; overflow: hidden; }
   .tc-cell.busy { font-weight: 700; }
   /* sample look: a blocked cell (its export is skipped) keeps no fill. */
   .tc-cell.blocked { background: transparent !important; border: 1px dashed #8c2a2a;
     color: #8c2a2a !important; }
-  .tc-sw { width: 16px; height: 5px; margin-top: 2px; border-radius: 1px; }
+  /* A kit's two menu colours fill the cell's foot, edge to edge; the label
+     stands over them. */
+  .tc-cell.kit { justify-content: flex-start; padding-top: 3px; }
+  .tc-sw { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; }
   .tc-acts .row { flex-wrap: nowrap; }
-  .tc-detail { width: 300px; flex: none; overflow: auto; border: 1px solid var(--stroke);
-    margin: 8px 0;
-    border-radius: 2px; padding: 8px; box-sizing: border-box; }
+  /* The detail window (egui: a Window inside the tool's panel, movable by its
+     title bar, where the member leaves it). */
+  .tc-detail { position: absolute; z-index: 5; width: 300px; background: var(--panel);
+    border: 1px solid var(--stroke); border-radius: 2px; box-shadow: 0 4px 16px #000a; }
+  .tc-detail .bar { display: flex; align-items: center; padding: 2px 4px 2px 8px;
+    border-bottom: 1px solid var(--stroke); cursor: move; user-select: none; }
+  .tc-detail .body { padding: 8px; }
   .tc-detail .find { margin: 6px 0; }
+  /* sample: where a player's 3D preview will stand (a later feature). */
+  .tc-detail .preview { height: 180px; margin-bottom: 8px; background: var(--extreme);
+    border-radius: 2px; display: flex; align-items: center; justify-content: center; }
   .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; min-height: 24px;
     border-top: 1px solid var(--stroke); }
   .tc-bar .strip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
@@ -121,18 +137,23 @@ const TEAM_COMPILER_CSS = `
     grid-auto-columns: max-content; gap: 4px 16px; }
   /* Its title and the one state with no pair stand over both rows, centred. */
   .tc-legend .both { grid-row: 1 / span 2; align-self: center; }
-  .tc-legend .name { font-size: 14px; }
+  .tc-legend .name { font-size: 14px; display: inline-flex; align-items: center; gap: 2px; }
+  .tc-legend.shut { display: flex; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
 `;
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
+// A check's warning or error is no fill of its own: it outlines the cell's
+// colour (checked, or shallow-checked) until the compile has gone through
+// the cell, which then turns solid in the same colour.
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
-  fullOk: "#800080", warning: "#8f8221", partialError: "#8c2a2a", error: "#dc3c3c",
-  done: "#008000", doneWarn: "#dcc832", doneErr: "#b46432" };
+  fullOk: "#800080", done: "#008000", doneWarn: "#dcc832", doneErr: "#dc3c3c" };
+const OUTLINES = { warning: "#dcc832", error: "#dc3c3c", partialError: "#dc3c3c" };
+const OFF = "#333333";
 const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
-  partialOk: "Shallow check passed (archive)", fullOk: "Checked", warning: "Warning",
-  partialError: "Shallow check failed (archive)", error: "Error", done: "Done",
+  partialOk: "Shallow check (archive)", fullOk: "Checked", warning: "Warning",
+  partialError: "Error", error: "Error", done: "Done",
   doneWarn: "Done with warnings", doneErr: "Done with errors", blocked: "Blocked" };
 // The label's colour follows the cell's own colour, not the theme: a soft light
 // grey on a dark cell, a soft dark grey on a light one.
@@ -235,7 +256,11 @@ function sampleRows() {
 // L: the log panel's state, in the host's shape.
 const D = { writable: "yes", dataReadOnly: false, empty: false };
 const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, detail: null,
-  highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0 };
+  highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
+  // Where the member left the detail window (null until it first opens), and
+  // the legend folded away: both kept across launches (localStorage here).
+  detailPos: JSON.parse(localStorage.getItem("drafts.tc.detail_pos") || "null"),
+  legendShut: localStorage.getItem("drafts.tc.legend_shut") === "1" };
 const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
   logStick: true, logNew: 0 };
 
@@ -252,15 +277,28 @@ const RANK = { Fatal: 0, Error: 1, Warning: 2, Info: 3 };
 const sorted = codes => [...codes].sort((a, b) =>
   RANK[severity(a)] - RANK[severity(b)] || a.localeCompare(b));
 // What a cell shows: the run's outcome once it has one, else its check status.
-const shown = cell => cell.out || cell.status;
 const eligible = r => !r.special && !r.blocked && !S.unticked[r.key];
+const rowOff = r => r.special === "disabled" || !!S.unticked[r.key];
+// What a cell shows: blocked while its export is skipped whole (from the
+// check on, so the grid says before Compile what will not compile), else
+// the run's outcome once it has one, else its check status.
+const shown = (r, cell) => r.blocked && cell !== r.label ? "blocked" : cell.out || cell.status;
+// A cell's or a label's fill and outline. An off row is flat grey.
+function look(r, cell) {
+  if (rowOff(r)) return { fill: OFF, text: "#6e6e6e", outline: null };
+  const state = shown(r, cell);
+  const fill = OUTLINES[state] ? COLOURS[r.archive ? "partialOk" : "fullOk"] : COLOURS[state] || COLOURS.unchecked;
+  return { fill, text: labelColour(fill), outline: OUTLINES[state] || null };
+}
+const lookStyle = l => `background:${l.fill}; color:${l.text}` + (l.outline ? `; --ol:${l.outline}` : "");
 
 function cellTip(r, cell, what) {
-  const lines = [cell.folder || r.display, STATE_NAMES[shown(cell)]];
+  const state = shown(r, cell);
+  const lines = [cell.folder || r.display, rowOff(r) ? "Off: not compiled" : STATE_NAMES[state]];
   if (what === "portraits")
     lines.push(cell.count == null ? "Portraits not counted yet"
       : `${cell.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
-  if (cell.out === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
+  if (state === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
   if (cell.note) lines.push(cell.note);
   for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
   if (what === "kit" && cell.codes.includes("kit_colors_derived"))
@@ -270,18 +308,17 @@ function cellTip(r, cell, what) {
 
 // ---- The grid ----
 function cellEl(r, cell, text, scope, what) {
-  const state = shown(cell);
-  const colour = COLOURS[state] || COLOURS.unchecked;
-  const hl = S.highlight === scope ? " hl" : "";
-  return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "") + (state === "blocked" ? " blocked" : "") + hl,
-    style: `background:${colour}; color:${labelColour(colour)}`, title: cellTip(r, cell, what),
-    "data-scope": scope,
-    onclick: () => { S.detail = { row: r.key, what, slot: text }; render(); } },
+  const state = shown(r, cell), l = look(r, cell);
+  // The kit's menu colours, once known and while the row is on (sample look:
+  // two flat halves stand in for the icon's pattern, which color_tools draws).
+  const swatch = cell.swatch && !rowOff(r) && !["unchecked", "checking", "blocked"].includes(state);
+  return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
+      + (state === "blocked" && !rowOff(r) ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
+      + (S.highlight === scope ? " hl" : ""),
+    style: lookStyle(l), title: cellTip(r, cell, what), "data-scope": scope,
+    onclick: e => openDetail(e, { row: r.key, what, slot: text }) },
     text,
-    // The kit's menu colours, once known (sample look: two flat halves stand
-    // in for the icon's pattern, which color_tools draws).
-    cell.swatch && state !== "unchecked" && state !== "checking"
-      ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${cell.swatch[0]} 50%, ${cell.swatch[1]} 50%)` })
+    swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${cell.swatch[0]} 50%, ${cell.swatch[1]} 50%)` })
       : null);
 }
 
@@ -388,18 +425,18 @@ function dropClash(r, keep) {
 }
 
 function gridRow(r) {
-  const off = r.special === "disabled" || !!S.unticked[r.key];
+  const off = rowOff(r);
   const cells = [];
   if (S.column)
     cells.push(h("td", { class: "act" }, r.special ? null
       : h("input", { type: "checkbox", checked: !S.unticked[r.key], title: "Compile this export at the next Compile",
           onchange: e => { if (e.target.checked) delete S.unticked[r.key]; else S.unticked[r.key] = true; render(); } })));
-  const colour = COLOURS[r.label.status];
-  cells.push(h("td", { class: "tc-name mono" + (S.highlight === r.name ? " hl" : ""),
-    style: `background:${colour}; color:${labelColour(colour)}`, "data-scope": r.name,
+  const l = look(r, r.label);
+  cells.push(h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === r.name ? " hl" : ""),
+    style: lookStyle(l), "data-scope": r.name,
     title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
-    onclick: () => { S.detail = { row: r.key, what: "label" }; render(); } }, r.name));
+    onclick: e => openDetail(e, { row: r.key, what: "label" }) }, r.name));
   cells.push(idCell(r), vline());
   const message = rowMessage(r), acts = rowActions(r);
   if (message) {
@@ -468,58 +505,115 @@ function titleRow() {
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
-// The legend's columns, each a pair of related states, the upper one first.
-const LEGEND = ["unchecked", "checking", "partialOk", "partialError", "warning", "error",
-  "doneWarn", "doneErr", "fullOk", "done", "blocked"];
+// The legend's columns: a pair of related states one over the other, or one
+// state alone, centred. It folds to its title, and stays folded.
+const LEGEND = [["unchecked", "checking"], ["partialOk"], ["warning", "error"],
+  ["doneWarn", "doneErr"], ["fullOk", "done"], ["blocked"]];
 function legend() {
-  return h("div", { class: "tc-legend top weak", "data-panel": "legend" },
-    h("span", { class: "both name" }, "Legend"),
-    LEGEND.map(k => h("span", { class: "k" + (k === "blocked" ? " both" : "") },
-      h("span", { class: "tc-cell" + (k === "blocked" ? " blocked" : ""),
-        style: COLOURS[k] ? `background:${COLOURS[k]}` : "" }), STATE_NAMES[k])));
+  const fold = button(S.legendShut ? "▸" : "▾", () => {
+    S.legendShut = !S.legendShut;
+    localStorage.setItem("drafts.tc.legend_shut", S.legendShut ? "1" : "0");
+    render(); }, { frame0: true, title: S.legendShut ? "Show the legend" : "Hide the legend" });
+  const title = h("span", { class: "both name" }, fold, "Legend");
+  if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
+  const sample = { key: "", label: {} };
+  const entry = (k, alone) => {
+    const l = k === "blocked" ? { fill: "transparent", text: "", outline: null } : look(sample, { status: k });
+    return h("span", { class: "k" + (alone ? " both" : "") },
+      h("span", { class: "tc-cell" + (k === "blocked" ? " blocked" : "") + (l.outline ? " ol" : ""),
+        style: lookStyle(l) }), STATE_NAMES[k]);
+  };
+  return h("div", { class: "tc-legend top weak", "data-panel": "legend" }, title,
+    LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1))));
 }
 
-// ---- The detail panel: what a clicked cell holds, and what to do about it ----
+// ---- The detail window: what a clicked cell holds, and what to do about it ----
+// It opens beside the first cell clicked and from then on where the member
+// left it; a click on another cell changes what it shows, not where it is.
+function openDetail(e, detail) {
+  if (!S.detailPos) {
+    const pipe = e.currentTarget.closest(".pipe").getBoundingClientRect();
+    const cell = e.currentTarget.getBoundingClientRect(), scale = winScale();
+    S.detailPos = { x: Math.min((cell.right - pipe.left) / scale + 8, pipe.width / scale - 310),
+      y: Math.min((cell.top - pipe.top) / scale, pipe.height / scale - 320) };
+  }
+  S.detail = detail;
+  render();
+}
+function dragDetail(e, win) {
+  if (e.button !== 0 || e.target.closest("button")) return;
+  const from = { ...S.detailPos }, x0 = e.clientX, y0 = e.clientY, scale = winScale();
+  const move = ev => {
+    S.detailPos = { x: Math.max(0, from.x + (ev.clientX - x0) / scale), y: Math.max(0, from.y + (ev.clientY - y0) / scale) };
+    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px";
+  };
+  const up = () => {
+    document.removeEventListener("mousemove", move);
+    document.removeEventListener("mouseup", up);
+    localStorage.setItem("drafts.tc.detail_pos", JSON.stringify(S.detailPos));
+  };
+  document.addEventListener("mousemove", move);
+  document.addEventListener("mouseup", up);
+  e.preventDefault();
+}
 function detailPanel() {
   if (!S.detail) return null;
   const r = rowOf(S.detail.row);
   if (!r) return null;
-  const cell = S.detail.what === "label" ? { ...r.label, folder: r.display }
+  const cell = S.detail.what === "label" ? r.label
     : S.detail.what === "kit" ? r.kits[S.detail.slot]
     : S.detail.what === "portraits" ? r.portraits : r.players[Number(S.detail.slot)];
   if (!cell) return null;
+  const folder = S.detail.what === "label" ? r.display : cell.folder;
   const title = S.detail.what === "label" ? r.name
     : S.detail.what === "portraits" ? `${r.name} portraits` : `${r.name} ${S.detail.slot}`;
-  return h("div", { class: "tc-detail", "data-panel": "detail" },
-    row(strong(title), h("span", { style: "flex:1" }),
-      button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close the panel" })),
-    h("div", { class: "mono" }, cell.folder),
-    h("div", { class: "weak" }, STATE_NAMES[shown(cell)]),
-    cell.codes.length ? sorted(cell.codes).map(code =>
-      h("div", { class: "find " + (severity(code) === "Warning" ? "warn" : severity(code) === "Info" ? "" : "err") },
-        severity(code), " ",
-        h("span", { class: "msg-link", title: "Open the help at this message",
-          onclick: () => openHelp({ tool: "team-compiler", topic: "messages", anchor: code }) }, code),
-        h("div", {}, messageOf(code))))
-      : h("div", { class: "find weak" }, "No findings."),
-    row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + cell.folder)),
-        { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
-      // A finding with one obvious fix: a rename the member asks for by a click.
-      cell.fix && !r.archive ? button(cell.fix.label, () => {
-        cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
-        cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
-        { title: "A rename; refused when that name exists" }) : null));
+  // A link opens it with no cell clicked: at the grid's right.
+  const pos = S.detailPos || { x: 760, y: 70 };
+  const win = h("div", { class: "tc-detail", "data-panel": "detail", style: `left:${pos.x}px; top:${pos.y}px` });
+  win.append(
+    h("div", { class: "bar", onmousedown: e => { S.detailPos = pos; dragDetail(e, win); } },
+      strong(title), h("span", { style: "flex:1" }),
+      button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close" })),
+    h("div", { class: "body" },
+      S.detail.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)") : null,
+      h("div", { class: "mono" }, folder),
+      h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
+      cell.codes.length ? sorted(cell.codes).map(code =>
+        h("div", { class: "find " + (severity(code) === "Warning" ? "warn" : severity(code) === "Info" ? "" : "err") },
+          severity(code), " ",
+          h("span", { class: "msg-link", title: "Open the help at this message",
+            onclick: () => openHelp({ tool: "team-compiler", topic: "messages", anchor: code }) }, code),
+          h("div", {}, messageOf(code))))
+        : h("div", { class: "find weak" }, "No findings."),
+      row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + folder)),
+          { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
+        // A finding with one obvious fix: a rename the member asks for by a click.
+        cell.fix && !r.archive ? button(cell.fix.label, () => {
+          cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
+          cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
+          { title: "A rename; refused when that name exists" }) : null)));
+  return win;
 }
 
 // ---- The toolbar: the run strip and the split Compile button ----
 const BADGES = {
   running: "PES is running: the compile cannot replace the installed CPKs. Close the game, or the run writes to the output folder only",
   elevation: "The game folder needs administrator rights to write to. Restart the app as administrator, or the run writes to the output folder only" };
+// The grid summed up, what the strip says while nothing runs: can I compile?
+function summary() {
+  if (D.empty) return "";
+  const on = S.rows.filter(eligible);
+  const having = states => on.filter(r => [r.label, ...cellsOf(r)].some(c => states.includes(c.status))).length;
+  const count = (n, one, many = one) => n ? `${n} ${n === 1 ? one : many}` : null;
+  return [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
+    count(having(["error", "partialError"]), "with errors"), count(having(["warning"]), "with warnings")]
+    .filter(Boolean).join(" · ");
+}
 function toolbar() {
   const run = S.run;
   const strip = run
     ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written · ${run.memory} MB in use`
-    : S.last || "";
+    : [S.last, summary()].filter(Boolean).join("  —  ");
   const sideloadOff = ["2015", "2016"].includes(shellPesVersion());
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(), {});
   main.id = "compile-btn";
@@ -567,11 +661,7 @@ const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
   const rows = S.rows.filter(r => only ? only.includes(r.key) : eligible(r));
-  for (const r of S.rows) for (const cell of cellsOf(r)) {
-    delete cell.out; delete cell.busy;
-    // An export that is skipped whole: its cells are blocked, not pending.
-    if (r.blocked && !only) cell.out = "blocked";
-  }
+  for (const r of S.rows) for (const cell of cellsOf(r)) { delete cell.out; delete cell.busy; }
   const tasks = rows.flatMap(r => cellsOf(r)
     // A red cell is skipped and keeps its colour, unless only one file is dropped.
     .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })))
@@ -652,9 +742,10 @@ function drawView(center) {
   center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
     D.empty ? null : legend(),
-    h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()), detailPanel()),
+    h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid())),
     toolbar(),
-    named(logPanel(L, { tool: "team-compiler", onLine: gotoCell }), "log")));
+    named(logPanel(L, { tool: "team-compiler", onLine: gotoCell }), "log"),
+    detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
 }
@@ -715,8 +806,7 @@ function linkOpen(scr, keys) {
   // run=done: the finished run's colours, without the timer.
   if (keys.run === "done") {
     for (const r of S.rows) for (const cell of cellsOf(r)) {
-      if (r.blocked) cell.out = "blocked";
-      else if (eligible(r) && (OUTCOME[cell.status] || cell.dropFile))
+      if (eligible(r) && (OUTCOME[cell.status] || cell.dropFile))
         cell.out = cell.dropFile ? "doneErr" : OUTCOME[cell.status];
     }
     S.last = "Compile finished in 00:42 · 1184 files written";
