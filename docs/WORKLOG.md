@@ -1900,7 +1900,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its SWE-2 loop (2026-11-12; rulings "S-sel r1" and "S-sel r2", five then two
       accepted; fixes `1c765193` and the commit after it). Carbon owed
     - [ ] the look in the built window, both themes (Pending looks)
-  - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
+  - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03). It
     holds once a move is one row (the maintainer, 2026-11-12; DECISIONS 2026-11-12;
     `plans/save_editor.md` "Editing UI", the two bullets after the changes table's;
@@ -1930,7 +1930,7 @@ briefs, review loops, gates and mutation runs as for any step.
       trade; the close prompt has no X. Look: Pending looks
     - [x] b's SWE-2 review 2026-11-13 (S-undo-b r1, 3 of 5 accepted, the loop ends): a
       doc comment and a help sentence fixed
-  - [ ] 0.0.2-line the player list's drop place as a line between two rows, not an outline
+  - [x] 0.0.2-line the player list's drop place as a line between two rows, not an outline
     round one (the maintainer, 2026-11-12: a drop inserts and shifts, it swaps nothing;
     `plans/save_editor.md` "Editing UI", the drag-and-drop paragraphs). Drafted 2026-11-12
     (`.dropabove`, `.dropbelow`; renders of a drag each way, `.tmp/0_0_2/undo/dropline_down.png`
@@ -1987,7 +1987,7 @@ briefs, review loops, gates and mutation runs as for any step.
     egui's radii in both themes and the suite's own painting reads the style
     (ST-CORNER-01); the captain's mark keeps the game's radii, radio buttons stay circles.
     The update download's bar is painted in no test. Look: Pending looks
-  - [ ] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
+  - [x] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at
     the root, there is no real reason why there should be gaps between the choices in a
@@ -2171,9 +2171,8 @@ briefs, review loops, gates and mutation runs as for any step.
       - the VGL27 Friendlies through the bundle 2026-11-09 (39 teams): 37 upgrade and compile
         clean for PES 2019; /wuwa/'s note colour `##8C96C5` refuses its upgrade, which stays
         (DECISIONS 2026-11-09)
-      Open: the hand-over to VGL's organizer (the maintainer's); the Linux tarball now also
-      carries the two `.bat` files (`expected_entries` has no platform gate), to settle before
-      0.0.2
+      Open: the hand-over to VGL's organizer (the maintainer's). The Linux tarball
+      carries no `.bat` file (`release.py` `PLATFORMS`: Linux's launchers are none)
   - [x] 0.0.2-poc9 a legacy kit folder's file names lose their Studio tokens (DECISIONS
     2026-11-09, two entries; EU-MDL-28): an author's token written `kit_tex` (`975e68a7`)
   - [x] 0.0.2-poc10 the embedded teams list carries VGL27's allocation (DECISIONS "the
@@ -2298,7 +2297,7 @@ briefs, review loops, gates and mutation runs as for any step.
       11-15
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
-  - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
+  - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
     check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted; 2026-11-12 "An illegal formation is
     one only a tool outside PES can make"): what the stock screens can produce, read from
     PES 2017's exe, then looked at in game on `PES2017.exe.old5`; then the plan's rule, its
