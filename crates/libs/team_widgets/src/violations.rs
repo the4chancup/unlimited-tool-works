@@ -803,7 +803,7 @@ pub fn row_paint(
         if response.hovered() {
             ui.painter().rect_stroke(
                 rect,
-                2.0,
+                ui.visuals().widgets.hovered.corner_radius,
                 ui.visuals().widgets.hovered.bg_stroke,
                 egui::StrokeKind::Inside,
             );

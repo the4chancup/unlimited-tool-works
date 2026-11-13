@@ -58,10 +58,6 @@ const CLOVER_SIZE: f32 = 28.0;
 const HOVER_DELAY: f64 = 0.10;
 /// The accent bar on the active entry's left edge (draft: 3 px).
 const ACTIVE_BAR_WIDTH: f32 = 3.0;
-/// The radius of the accent bar's two left corners: the draft entry's 2 px
-/// corner radius, which its left border follows. The right corners stay square
-/// against the row's fill.
-const ACTIVE_BAR_CORNER: u8 = 2;
 /// The space between the right edge of an entry's `ICON_SIZE` icon box and its label in
 /// the opened sidebar, the draft's `.sidebar .tool` gap.
 const LABEL_GAP: f32 = 6.0;
@@ -875,13 +871,14 @@ fn entry_row(
     let (rect, response) = ui.allocate_exact_size(egui::vec2(width, ENTRY_HEIGHT), sense);
     let text_color = paint_in_use_frame(ui, rect, &response, active);
     if active && ui.is_enabled() {
+        // The bar's left corners follow the entry's border radius; the right
+        // ones stay square against the row's fill.
         ui.painter().rect_filled(
             egui::Rect::from_min_size(rect.min, egui::vec2(ACTIVE_BAR_WIDTH, rect.height())),
             egui::CornerRadius {
-                nw: ACTIVE_BAR_CORNER,
                 ne: 0,
-                sw: ACTIVE_BAR_CORNER,
                 se: 0,
+                ..ui.visuals().widgets.noninteractive.corner_radius
             },
             ui.visuals().selection.stroke.color,
         );

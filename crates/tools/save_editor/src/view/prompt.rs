@@ -410,10 +410,10 @@ fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
 
 /// A value cell of the changes table: `value` in monospace, after its
 /// colour's swatch when it is a colour (the draft's `.chswatch`): a
-/// 12-point square of the colour, its corners rounded 2, framed by the
-/// 1-point dark edge the appearance palettes' swatches draw, so a colour
-/// near the panel's own still shows its square, and 5 points clear of
-/// the hex.
+/// 12-point square of the colour, its corners the theme's radius, framed
+/// by the 1-point dark edge the appearance palettes' swatches draw, so a
+/// colour near the panel's own still shows its square, and 5 points clear
+/// of the hex.
 fn value_cell(ui: &mut egui::Ui, value: &str, swatch: Option<egui::Color32>) {
     let text = cell(egui::RichText::new(value).monospace());
     let Some(colour) = swatch else {
@@ -426,7 +426,7 @@ fn value_cell(ui: &mut egui::Ui, value: &str, swatch: Option<egui::Color32>) {
         let edge = studio_core::theme::palette(ui.visuals()).swatch_edge;
         ui.painter().rect(
             rect,
-            2.0,
+            ui.visuals().widgets.noninteractive.corner_radius,
             colour,
             egui::Stroke::new(1.0, edge),
             egui::StrokeKind::Inside,

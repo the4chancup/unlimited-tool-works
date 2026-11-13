@@ -461,12 +461,15 @@ fn the_lists_frame_rounds_its_corners() {
         .iter()
         .find(|shape| !shape.stroke.is_empty())
         .expect("the frame's stroke");
+    let radius = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .noninteractive
+        .corner_radius;
     for (what, shape) in [("fill", fill), ("stroke", stroke)] {
-        assert_eq!(
-            shape.corner_radius,
-            egui::CornerRadius::same(2),
-            "the frame's {what} radius"
-        );
+        assert_eq!(shape.corner_radius, radius, "the frame's {what} radius");
     }
 }
 

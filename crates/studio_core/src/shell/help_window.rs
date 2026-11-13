@@ -581,7 +581,7 @@ fn messages(
                         .expand2(egui::vec2(2.0, 0.0));
                     ui.painter().rect_filled(
                         rect,
-                        2.0,
+                        ui.visuals().widgets.noninteractive.corner_radius,
                         ui.visuals().selection.bg_fill.gamma_multiply(0.4),
                     );
                     if scroll {

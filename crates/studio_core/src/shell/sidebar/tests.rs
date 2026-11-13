@@ -879,16 +879,19 @@ fn the_accent_bar_rounds_its_left_corners_only() {
     let egui_ctx = test_context();
 
     let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
-    let color = egui_ctx.global_style().visuals.selection.stroke.color;
-    let bar = accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color)
-        .expect("the active row carries the accent bar");
+    let visuals = egui_ctx.global_style().visuals.clone();
+    let bar = accent_bar_at(
+        &out,
+        entry(&out.nodes, "A").bounds().unwrap(),
+        visuals.selection.stroke.color,
+    )
+    .expect("the active row carries the accent bar");
     assert_eq!(
         bar.corner_radius,
         egui::CornerRadius {
-            nw: 2,
             ne: 0,
-            sw: 2,
-            se: 0
+            se: 0,
+            ..visuals.widgets.noninteractive.corner_radius
         }
     );
 }

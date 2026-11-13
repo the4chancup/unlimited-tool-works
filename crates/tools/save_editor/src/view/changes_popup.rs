@@ -78,7 +78,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let frame = egui::Frame::popup(ui.style())
         .fill(ui.visuals().panel_fill)
         .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
-        .corner_radius(6)
+        .corner_radius(ui.visuals().menu_corner_radius)
         .inner_margin(8);
     // The draft's 460 to 640 points measure the whole box: the content gets
     // what the frame's margins and stroke leave of them.

@@ -437,15 +437,18 @@ fn the_pitchs_border_and_turf_round_their_corners() {
             _ => None,
         })
         .collect();
+    let radius = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .noninteractive
+        .corner_radius;
     let border = rects
         .iter()
         .find(|shape| shape.rect == canvas.expand(1.0) && !shape.stroke.is_empty())
         .expect("the border stroked around the canvas and its 1-point side");
-    assert_eq!(
-        border.corner_radius,
-        egui::CornerRadius::same(2),
-        "the border's radius"
-    );
+    assert_eq!(border.corner_radius, radius, "the border's radius");
     let turf = rects
         .iter()
         .find(|shape| shape.fill_texture_id() != egui::TextureId::default())
@@ -453,7 +456,7 @@ fn the_pitchs_border_and_turf_round_their_corners() {
     assert_eq!(turf.rect, canvas, "the turf fills the canvas");
     assert_eq!(
         turf.corner_radius,
-        egui::CornerRadius::same(1),
+        radius - 1,
         "the turf's radius, the border's inner one"
     );
 }

@@ -355,7 +355,7 @@ fn show_offer(
         // 8 points of padding either side, at most 240 tall, scrolling.
         egui::Frame::new()
             .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
-            .corner_radius(2)
+            .corner_radius(ui.visuals().widgets.noninteractive.corner_radius)
             .inner_margin(egui::Margin::symmetric(8, 0))
             .show(ui, |ui| {
                 egui::ScrollArea::vertical()
@@ -415,8 +415,11 @@ fn show_downloading(
             let visuals = ui.visuals_mut();
             visuals.extreme_bg_color = visuals.widgets.noninteractive.bg_stroke.color;
             let fill = visuals.selection.stroke.color;
+            // egui draws a bar as a pill unless given a radius.
+            let radius = visuals.widgets.noninteractive.corner_radius;
             ui.add(
                 egui::ProgressBar::new(fraction)
+                    .corner_radius(radius)
                     .desired_width(360.0)
                     .desired_height(8.0)
                     .fill(fill),

@@ -48,8 +48,9 @@ fn click_label(window: &mut Headless, view: &mut SaveView) {
 }
 
 /// One frame of the open list: the label's bounds and the popup's outer
-/// box, the frame's painted rect (the draft's `.chpop`: corners rounded 6,
-/// the panel's fill, the noninteractive stroke, painted inside the box).
+/// box, the frame's painted rect (the draft's `.chpop`: the menu's corner
+/// radius, the panel's fill, the noninteractive stroke, painted inside the
+/// box).
 /// egui paints a shadowed frame as a `Shape::Vec` of the shadow and the
 /// rect, so the shapes are walked into.
 fn label_and_popup(window: &mut Headless, view: &mut SaveView) -> (accesskit::Rect, egui::Rect) {
@@ -70,7 +71,7 @@ fn label_and_popup(window: &mut Headless, view: &mut SaveView) -> (accesskit::Re
     let frames: Vec<egui::Rect> = found
         .into_iter()
         .filter(|rect| {
-            rect.corner_radius == egui::CornerRadius::same(6)
+            rect.corner_radius == visuals.menu_corner_radius
                 && rect.fill == visuals.panel_fill
                 && rect.stroke == visuals.widgets.noninteractive.bg_stroke
         })
@@ -81,8 +82,8 @@ fn label_and_popup(window: &mut Headless, view: &mut SaveView) -> (accesskit::Re
 }
 
 /// Asserts that the value cell reading `hex` among `nodes` paints its
-/// swatch: a 12 × 12 rect filled `colour`, its corners rounded 2, its
-/// 1-point stroke the theme's swatch edge, 5 points left of the hex and
+/// swatch: a 12 × 12 rect filled `colour`, its corners the theme's radius,
+/// its 1-point stroke the theme's swatch edge, 5 points left of the hex and
 /// centred on its line.
 pub(super) fn assert_swatch_before(
     window: &Headless,
@@ -116,7 +117,16 @@ pub(super) fn assert_swatch_before(
         egui::vec2(12.0, 12.0),
         "the swatch is 12 x 12"
     );
-    assert_eq!(swatch.corner_radius, egui::CornerRadius::same(2));
+    assert_eq!(
+        swatch.corner_radius,
+        window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .noninteractive
+            .corner_radius
+    );
     let edge = studio_core::theme::palette(&window.ctx.global_style().visuals).swatch_edge;
     assert_eq!(
         swatch.stroke,
