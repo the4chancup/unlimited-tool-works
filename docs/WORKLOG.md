@@ -785,7 +785,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `Portraits/`: the compiler needs no change for it, a portrait finding's scope is
       the file's own path (`deep/portrait.rs`, `IssueScope::File`), which names the
       folder; `portrait_conflict` is the export's (it skips the export) and stays on the
-      row's label. `gui.md` "Task-to-cell mapping" changes with it. All go into
+      row's label. `gui.md` "Task-to-cell mapping" changes with it. Also ruled: checked
+      is `#800080` and done `#008000`; every margin of the grid is 8; a title row (Team,
+      ID, Players, Portraits, Kits) that stays in view, solid, with no tick-all checkbox
+      in the compile column; the detail panel squeezes no column (the grid scrolls
+      sideways); an untagged row reads "Full or Midcup?" in the warning colour and an
+      old one "Old export format" in the error colour; a clashing archive is moved to
+      the exports folder's `unused/`, not `old exports/`, which is for exports in the
+      old format (`gui.md` "Row actions" says `old exports/` today). All go into
       `gui.md` when the draft is accepted. Open in it: a blocked cell's look, the kit swatch as two flat halves,
       the detail panel at the grid's right (with it open, a row with all ten kits scrolls
       sideways in the default window; without it the row and its button fit). Not drawn yet: the
@@ -1888,6 +1895,17 @@ briefs, review loops, gates and mutation runs as for any step.
       accepts a drop takes it (on the edge under the dragged row the line showed a drop
       that did nothing), and the line's ends stop inside the list's border, which was
       stroked over each serif's outer point
+  - [ ] 0.0.2-side a window too short for the sidebar's entries (the maintainer,
+    2026-11-13, from the built window: the tail's separator and its Help entry drawn over
+    the last tool entries; in the draft the Settings entry was drawn over the status bar).
+    The tool entries are cut under the tail, which keeps its place on the panel's fill
+    (`plans/core/gui.md` "Sidebar", the paragraph starting "In a window too short")
+    - [x] the plan and the draft 2026-11-13 (the lead): the host page's `.tail-box`,
+      looked at in a 419-point-high window, rail and opened sidebar
+      (`.tmp/0_0_2/tc_draft/side_short.png`, `side_short_open.png`)
+    - [ ] the slice (small, SWE-2): `studio_core`'s `shell/sidebar`, with a scenario in
+      `plans/core/gui.md` "Acceptance" written first; read first how the sidebar lays
+      out its tail today
   - [ ] 0.0.2-rad one corner radius, 2 points, everywhere (the maintainer, 2026-11-13: the
     move to egui 0.37 rounded everything more, most were put back by hand and menus and
     dialogs kept slipping through; "a root solution", and the suite's own painted corners

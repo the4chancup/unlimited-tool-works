@@ -548,6 +548,14 @@
   .clover .ring { color: var(--clover-ring); }
   .clover .leaves { color: var(--clover-leaf); }
   .sidebar .sep { align-self: stretch; margin: 4px 0; }
+  /* A window too short for every entry: the tool entries are cut under the
+     tail (the separator and the three entries under it), which keeps its
+     place on the panel's own fill, and nothing is drawn over the status bar. */
+  .sidebar { overflow: hidden; min-height: 0; }
+  .sidebar > * { flex: none; }
+  .sidebar .tail-box { margin-top: auto; align-self: stretch; position: sticky; bottom: 0;
+    z-index: 1; background: var(--panel); display: flex; flex-direction: column; align-items: center; }
+  #sb-open .tail-box { align-items: stretch; }
   .sidebar .tail { display: flex; gap: 3px; }
   .sidebar .tail { flex-direction: column; align-items: center; }
   .bottom { height: 24px; min-height: 24px; padding-top: 0; padding-bottom: 0; overflow: hidden; }
@@ -2947,19 +2955,18 @@ function sidebarItems(full) {
       onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(t); } } },
       ph(t.icon), h("span", { class: "tlabel" }, t.label)));
   }
-  items.push(h("div", { class: "sep", style: "margin-top:auto" }));
   // The tail's entries are tool rows (same metrics in both states); the
   // rail's keeps the ids the checks use, the layer's are second controls.
   const tailEntry = (glyph, label, fn, id) => h("button", {
     class: "sel tool frame0", id: full ? id + "-open" : id, tabindex: ti,
     onclick: fn },
     ph(glyph), h("span", { class: "tlabel" }, label));
-  items.push(h("div", { class: "tail" },
+  items.push(h("div", { class: "tail-box" }, h("div", { class: "sep" }), h("div", { class: "tail" },
     // "(WIP)" until the help and the settings menu are complete, as their
     // windows' titles.
     tailEntry("\uE4E0", "Report a problem", openReport, "report-btn"),
     tailEntry("\uE3E8", "Help (WIP)", () => openHelp({ tool: S.activeTool }), "help-btn"),
-    tailEntry("\uE270", "Settings (WIP)", openSettings, "settings-btn")));
+    tailEntry("\uE270", "Settings (WIP)", openSettings, "settings-btn"))));
   return items;
 }
 // The opened layer stays while the pointer rests on it or focus is inside

@@ -37,7 +37,7 @@ const TEAM_COMPILER_CSS = `
      table's own 2 between cells counts in each, so the paddings and the
      spacer cells bring the other 6 or 4. */
   .tc-top { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 8px 0 6px; }
-  .tc-top .pipe-grid { flex: 1; padding-top: 6px; box-sizing: border-box; }
+  .tc-top .pipe-grid { flex: 1; }
   /* The table keeps its own width whatever room the panel has (the detail
      panel open beside it squeezes no column: the grid scrolls sideways), and
      takes the panel's height: its last row, empty, stretches over
@@ -47,14 +47,18 @@ const TEAM_COMPILER_CSS = `
   .tc-grid tr { height: 26px; }
   .tc-grid tr.fill { height: auto; }
   /* The title row: what each group of columns holds, in the weak text, kept
-     in view while the rows scroll under it. */
-  .tc-grid tr.head { height: 18px; }
-  .tc-grid tr.head th { position: sticky; top: 0; background: var(--panel); z-index: 1;
-    padding: 0 0 2px; font-weight: 400; color: #6e6e6e; text-align: left; white-space: nowrap; }
+     in view while the rows scroll under it. It is solid from the legend's
+     line down: every cell of it sticks, the two lines' cells too, each on
+     the panel's fill and spread over the 2 between cells, and the panel's
+     top margin is the row's own padding, so no row shows above or through it. */
+  .tc-grid tr.head > * { position: sticky; top: 0; background: var(--panel); z-index: 1;
+    box-shadow: 0 0 0 2px var(--panel); }
+  .tc-grid tr.head th { padding: 6px 0 2px; font-weight: 400; color: #6e6e6e;
+    text-align: left; white-space: nowrap; }
   .tc-grid tr.head th.mid { text-align: center; }
   /* Portraits is wider than its 44-point column: the text overhangs evenly. */
   .tc-grid tr.head th.mid > div { width: 44px; display: flex; justify-content: center; }
-  .tc-grid tr.head .tc-line::after { top: -8px; }
+  .tc-grid tr.head .tc-line { z-index: 2; }
   .tc-grid td { padding: 0; white-space: nowrap; }
   .tc-grid tr.off td:not(.tc-line):not(.act) { opacity: 0.45; }
   .tc-name { min-width: 52px; padding: 0 6px !important; height: 26px; border-radius: 2px;
@@ -315,11 +319,11 @@ function confirmId(r, reassign) {
 function rowActions(r) {
   const acts = [];
   if (r.special === "untagged")
-    acts.push(weak("Full or Midcup?"),
+    acts.push(h("span", { class: "warn" }, "Full or Midcup?"),
       button("Full", () => tagExport(r, "Full"), { title: "Renames the export: " + r.display.replace(" ", " Full ") }),
       button("Midcup", () => tagExport(r, "Midcup"), { title: "Renames the export: " + r.display.replace(" ", " Midcup ") }));
   if (r.special === "old")
-    acts.push(weak("An export in the old layout"),
+    acts.push(h("span", { class: "err" }, "Old export format"),
       button("Upgrade", () => switchToTool("export-upgrader"),
         { title: "Opens the Export upgrader with this export as its input" }));
   if (r.special === "disabled")
@@ -327,7 +331,9 @@ function rowActions(r) {
       { title: "Removes the export's NO_USE marker" }));
   if (r.special === "clash")
     acts.push(r.archive
-      ? button("Move to old exports", () => dropClash(r), { title: "Moves the archive into the sibling old exports folder: no marker can be written inside an archive" })
+      // An archive's Disable: no NO_USE marker can be written inside it, so it
+      // is moved out of the compiler's way instead.
+      ? button("Move to unused", () => dropClash(r), { title: "Moves the archive into the exports folder's unused folder: no NO_USE marker can be written inside an archive" })
       : button("Disable", () => { r.special = "disabled"; dropClash(r, true); },
         { title: "Writes the export's NO_USE marker, so the other one compiles" }));
   const asked = r.id == null && !r.refs && idEntry(r).note;
@@ -428,17 +434,11 @@ function grid() {
     h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), vline()));
 }
-// The title row. sample: the titles' wording, and the compile column's own
-// checkbox, which ticks or unticks every export at once.
+// The title row. sample: the titles' wording.
 function titleRow() {
   const th = (text, props = {}) => h("th", props, text);
-  const ticked = S.rows.filter(r => !r.special).every(r => !S.unticked[r.key]);
   return h("tr", { class: "head" },
-    S.column ? h("th", {}, h("input", { type: "checkbox", checked: ticked,
-      title: ticked ? "Untick every export" : "Tick every export",
-      onchange: () => { S.unticked = ticked
-        ? Object.fromEntries(S.rows.filter(r => !r.special).map(r => [r.key, true])) : {};
-        render(); } })) : null,
+    S.column ? th("") : null,
     th("Team"), th("ID", { class: "mid" }), vline(),
     th("Players", { colspan: String(SLOTS) }), gap(),
     th(h("div", {}, "Portraits"), { class: "mid" }), gap(),
@@ -654,7 +654,7 @@ const WALK = [
   ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
-  ["row actions", "/b/ (old layout) offers Upgrade; /bant/ (NO_USE) is greyed with Enable; the two /biz/ exports clash: Disable on the folder, Move to old exports on the archive; a right click on a row's label offers Compile only this export"],
+  ["row actions", "/b/ (old layout) offers Upgrade; /bant/ (NO_USE) is greyed with Enable; the two /biz/ exports clash: Disable on the folder, Move to unused on the archive; a right click on a row's label offers Compile only this export"],
 ];
 
 const screen = () => "main";

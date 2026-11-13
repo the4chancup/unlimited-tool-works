@@ -312,8 +312,13 @@ Top to bottom:
    points wide and every entry is in it. At 24 the fourteen entries take 459 points of the
    756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the logo,
    the version dropdown, the help and the gear their room. At 32 they would take 571 (38-point
-   rows) with 12-point side margins, and a rail that overflows scrolls its entries out of
-   sight.
+   rows) with 12-point side margins, and a rail that overflows loses entries from sight.
+
+   In a window too short for every entry, the tool entries are cut under the sidebar's
+   tail (the separator and the Report, Help and Settings entries below it), which keeps
+   its place at the sidebar's foot on the panel's own fill, in the rail and in the opened
+   sidebar alike. Entries and tail are never drawn over one another, and nothing is drawn
+   over the status bar (0.0.2-side; the draft's `.tail-box`).
 
    The active tool is highlighted with an accent-colored left border bar plus a filled
    background, the bar 3 points wide with its two left corners rounded as the entry's (2
