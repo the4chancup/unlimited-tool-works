@@ -823,8 +823,8 @@ side.
   playing style outside his version's list) does not stop his team's tactics from being
   copied; a stats copy needs the players and is not made then.
 - In a number field being typed, **Up and Down** step the value by one, as a wheel notch
-  does; egui steps a whole-number field by its drag speed (a quarter) and rounds the sum
-  back, so a press changed nothing, and the drag's sensitivity stays as it is.
+  does: the suite's rule for every whole-number box (`plans/core/gui.md` "The wheel over a
+  value", the arrow keys' paragraph).
 - Closing, or opening another save, with unsaved changes prompts: save, discard or cancel,
   over a table of what would be saved or lost, columns Item, Old value and New value. The
   table spans the prompt's width, the two value columns sharing its right part. The prompt is
@@ -988,8 +988,9 @@ Win32 original hurt the most):
   back in), each arrow disabled at its end of the range and both for the keeper.
 
   The arrows take clicks, never the keyboard's focus, as a system spinner's do: Tab goes from
-  X to Y, and a focused number steps with the arrow keys already. A nudge by one is a click
-  there, where a drag of egui's `DragValue`, which has no arrows of its own, overshoots it.
+  X to Y, and a focused number steps with the arrow keys, by the suite's rule. A nudge by
+  one is a click there, where a drag of egui's `DragValue`, which has no arrows of its own,
+  overshoots it.
   The number and its two arrows are joined into one box as wide as the number box was (52
   points: each arrow 12, the number 28, room for `104`), so the popover is no wider
   (`slotPopover`'s `num`, the draft's `.spin`).

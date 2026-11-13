@@ -945,6 +945,14 @@ built with egui's own constructor. The drafts do the same for every
 `select` and number input (`docs/prototypes/index.html`, the wheel listener), so a draft can
 be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
 
+**The arrow keys.** In a whole-number box being typed in, Up and Down step the value by one,
+clamped to the box's range as a notch's step is. egui steps a key press by the box's drag
+speed, a quarter for a whole number, and the sum rounds back to the number it was, so a press
+left to egui changes nothing. One function in `studio_core`'s widgets takes the two keys
+before the drag value sees them, and every whole-number drag value of the suite is drawn
+through it, the shared libs' included; the drag's own sensitivity stays egui's. A browser's
+number input steps by one already, so the drafts need nothing (ST-WHEEL-07).
+
 **Invert value scrolling**, a common setting (`invert_value_scrolling`, off by default, a
 checkbox after Theme), turns every step above the other way, in every tool: wheel down takes
 the item above or one more, moves a slider and a toggle to the right, and steps a selector
@@ -1892,6 +1900,11 @@ ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
                  WHEN the setting is off again and one notch down turns over the drag value
                  THEN it is 179; and a turn over the area's empty space scrolls it the same
                  way with the setting on or off
+ST-WHEEL-07 GIVEN a drag value at 180 (range 0 to 255) being typed in
+            WHEN Up is pressed once
+            THEN the value is 181; WHEN Down is pressed twice THEN 179; GIVEN the value at 255
+                 WHEN Up is pressed THEN it stays 255; the same one step per press in the
+                 Tactics popover's X, a Ruleset editor number box and the colour picker's R
 ST-COMBO-01 GIVEN a combo of five items open
             WHEN its list is drawn
             THEN each row is 21 points high and starts where the row above it ends; WHEN a

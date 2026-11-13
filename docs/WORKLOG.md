@@ -15,14 +15,16 @@ is in `AGENTS.md` ("Working documents").
 1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c) is built: the rule and the warning are in, on
-   PES 2017 and PES 2019 saves; the warning's review is running.
-3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
-   SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
-   two slices follow -clip), and -inst, whose
-   cause is being looked for with the maintainer; -drift and -statlbl are in.
-4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
-5. The cut. The library checkpoints (0.0.2-chk) are in.
+2. The illegal formation check (0.0.2c) is in and reviewed, with the pitch held to the
+   movable range (0.0.2-range).
+3. The Save editor asks of 2026-11-03 are in: -clip, -undo, -inst, -drift, -statlbl, and
+   the cup-teams filter (0.0.2-cup). Open: the arrow keys on every whole-number box
+   (0.0.2-arrows, with SWE-2).
+4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
+   `codegen-units` (0.0.2-cgu: not taken).
+5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
+   (Carbon, from 2026-11-15), the maintainer's looks ("Pending looks") and the bundle's
+   hand-over to VGL's organizer.
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1760,6 +1762,14 @@ briefs, review loops, gates and mutation runs as for any step.
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
   the organizer's order and the AATF check of the official save (the plan's paragraph)
+  - [ ] 0.0.2-arrows Up and Down step every whole-number box by one (found in
+    0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
+    steps, through its own `number_arrows`; the Tactics popover's X stays put after four
+    presses. DECISIONS 2026-11-13; `plans/core/gui.md` "The wheel over a value", the arrow
+    keys' paragraph, ST-WHEEL-07): the helper moves to `studio_core`'s widgets and the
+    popover, the settings menu, the Ruleset editor and the colour picker draw their
+    whole-number boxes through it -> verify: headless, one Up adds one at each site; the
+    built window, the popover's X. Brief `.tmp/arrows/brief.md` (SWE-2)
   - [x] 0.0.2-cgu 2026-11-13 (the lead): `codegen-units = 1` timed on the AATF check of a
     220-team PES 2017 save and not taken, 2.230 s against 2.280 s, inside either build's
     spread (DECISIONS 2026-11-13; `.tmp/0_0_2/cgu/`)
@@ -2755,17 +2765,6 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-13 (found in 0.0.2-range's rework): Up and Down on a focused whole-number
-  box seem to step nothing. egui 0.37 gives an integer `DragValue` a speed of a quarter
-  (`drag_value.rs` line 84) and adds `speed * presses` to the value (line 513), so one
-  press adds 0.25 and the value written back is the same whole number; the rework's
-  test had to send four presses in one frame to move a `u8` by one. Read from the
-  source and from that test, not tried in the built window. It would hold for every
-  whole-number box the suite draws through `DragValue` (the Tactics popover's X and Y,
-  whose plan paragraph says "a focused number steps with the arrow keys already";
-  Height, the ability numbers), and for a drag across one, a unit per four points. To
-  do: try it in the built window; if so, one fix at the suite's number box (a step of
-  one for the keys), a scenario, and the plan's sentence
 - open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
   on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
   the three files sent (the team file, a save named as the one before, the saved file;
