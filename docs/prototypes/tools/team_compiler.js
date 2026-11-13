@@ -116,7 +116,9 @@ const TEAM_COMPILER_CSS = `
   .tc-empty { margin-top: 8px; padding: 24px; text-align: center; border: 1px dashed var(--stroke);
     border-radius: 2px; }
   /* The Save editor's toolbar line: the host's .top (a Panel::top's stroke). */
-  .tc-legend { flex-wrap: wrap; gap: 4px 10px; }
+  /* Two rows, filled column by column: each column a pair of related states. */
+  .tc-legend { display: grid; grid-template-rows: auto auto; grid-auto-flow: column;
+    grid-auto-columns: max-content; gap: 4px 16px; }
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
 `;
@@ -463,11 +465,14 @@ function titleRow() {
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.
+// The legend's columns, each a pair of related states, the upper one first.
+const LEGEND = ["unchecked", "checking", "partialError", "partialOk", "warning", "error",
+  "fullOk", "done", "doneWarn", "doneErr", "blocked"];
 function legend() {
   return h("div", { class: "tc-legend top weak", "data-panel": "legend" },
-    Object.keys(COLOURS).map(k => h("span", { class: "k" },
-      h("span", { class: "tc-cell", style: `background:${COLOURS[k]}` }), STATE_NAMES[k])),
-    h("span", { class: "k" }, h("span", { class: "tc-cell blocked" }), STATE_NAMES.blocked));
+    LEGEND.map(k => h("span", { class: "k" },
+      h("span", { class: "tc-cell" + (k === "blocked" ? " blocked" : ""),
+        style: COLOURS[k] ? `background:${COLOURS[k]}` : "" }), STATE_NAMES[k])));
 }
 
 // ---- The detail panel: what a clicked cell holds, and what to do about it ----
