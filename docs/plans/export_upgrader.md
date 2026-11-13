@@ -115,6 +115,16 @@ step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step
     suite validates the structural step against Red's reference output, and the glTF conversion
     has its own roundtrip tests in `model_convert`.
 
+## Model-folder mode
+
+Model-folder mode (`spec/export_upgrader.md` "Model-folder mode") is removed in 0.0.2: the
+`upgrade-models` command, its module, its help and its scenarios (EU-MF-*) go, and the view
+has no second input. An old model that arrives after a team's upgrade comes in a Midcup
+export, a team export holding only what it adds, so the upgrader knows the team, reads the
+save's settings for its players as for any export. A bare folder of model folders names no team, so its upgrade could carry
+nothing of the save, and the mode existed only for it. No release presented the command (the
+upgrader's first preview is 0.0.2's), so it goes without a deprecation.
+
 ## CLI
 
 What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--convert-to-gltf` to

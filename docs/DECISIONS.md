@@ -17130,3 +17130,29 @@ Plan: `plans/save_editor.md`, the feature table's Copy player stats row and the 
 Decision (the maintainer, 2026-11-13, drafted and approved): a toggle under the Playable positions title picks the grid's layout: Pitch (today's rows, each centred), Left (the same rows from one left edge, the block centred) or List (one position a row, CF SS LWF RWF AMF LMF RMF CMF DMF LB RB CB GK, label left and ratings right, the column centred). A view setting, `positions_layout`, Pitch by default; the held choice in the Stronger foot toggle's grey. The unchosen C, B and A letters are drawn in the normal text colour, darker than a button's. In 0.0.2.
 Why: some members find the pitch-shaped grid hard to read. The toggle is set once and forgotten, so it does not take the selection's blue, which draws the eye; darker unchosen letters make the chosen rating stand out. Names: "Mapped" did not say mapped to what, and "Columns" named a single column. Measured on the draft at the default window: 117 points to spare under the panel with Pitch and Left, 69 with List.
 Plan: `plans/save_editor.md` "Editing UI", the Playable positions paragraphs; SE-GUI-85. Worklog 0.0.2-poslayout.
+
+## 2026-11-13 — team_compiler, core — the Team compiler is named Compiler from 0.0.2, its command-line id `compiler`, with no alias
+Decision (the maintainer: the name, and the command line's in 0.0.2; the lead's choices marked *lead*):
+- The sidebar, the window's title, the help and the messages say **Compiler**, and the
+  command-line id is `compiler`, from 0.0.2 rather than when the balls kind lands (which
+  DECISIONS 2026-11-09 had said).
+- *Lead*: no `team-compiler` alias (2026-11-09 proposed one for a release), because no
+  release has presented the tool under that name: 0.0.1 showed it greyed as a planned
+  entry. The bundle's `quick_compile.bat` is the one launcher that calls it, and self-update
+  overwrites that file. The settings table becomes `[compiler]`, and a `[team-compiler]`
+  table left in a settings file stays as read and unused, as any unknown tool's.
+- *Lead*: the crate stays `team_compiler` until Phase 9 settles the crate layout, and
+  `export_balls_skipped` waits for the balls kind, as 2026-11-09 has them.
+Why now: the window's first slice is about to be built, and a window, a help page and a
+launcher named one way and renamed a release later would teach the members a name twice.
+Plan: `plans/core/README.md` (the Compiler bullet).
+
+## 2026-11-13 — export_upgrader — model-folder mode is removed: an old model comes in a Midcup export
+Decision (the maintainer): the upgrader no longer upgrades a bare folder of old model
+folders. `upgrade-models`, its module, its help and the EU-MF scenarios go in 0.0.2, and the
+view gets no second input.
+Why: a bare model folder names no team, so its upgrade could carry nothing of the save's
+settings for the player; in a Midcup export (a team export holding only what it adds) the
+team is known and the save is read as for any export. No release presented the command, so
+it goes without a deprecation.
+Plan: `plans/export_upgrader.md` "Model-folder mode".

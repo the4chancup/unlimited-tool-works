@@ -951,7 +951,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       report, a referee export. Accepted as drawn 2026-11-13 night (the maintainer), so
       `plans/export_upgrader.md` "GUI" is rewritten from it; the maintainer leans to
       dropping model-folder mode (an old model comes in a Midcup export, so the team and
-      the save's settings are known): under discussion
+      the save's settings are known): ruled 2026-11-13, 0.0.2-nomodels
     - [ ] 8.17b the accepted items drawn (P18's Full/Midcup pair, P19's dialog, P32-P36; ruled
       2026-10-26, `plans/export_upgrader.md` "GUI"), the samples' rows grouped and the
       `needs <team>` hint from the real runs → verify: the bundled drafts build; each item
@@ -1933,6 +1933,18 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] c the Save editor: the Presentation group under the lock, last on the screen,
       each note beside its box (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
       the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
+  - [ ] 0.0.2-compilername (the maintainer, 2026-11-13; DECISIONS "named Compiler from 0.0.2")
+    the Team compiler becomes the Compiler: the sidebar, title, help, messages and
+    `quick_compile.bat`, the command-line id `compiler` and the settings table `[compiler]`,
+    no alias; the crate keeps its name (`plans/core/README.md`, the Compiler bullet); then
+    the docs respelled by the lead (spec, plans, drafts; DECISIONS and LOG stay). After
+    0.0.2-applayout and -presentation a land, since it touches their files -> verify:
+    `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
+    history, the built window's sidebar and title
+  - [ ] 0.0.2-nomodels (the maintainer, 2026-11-13; DECISIONS "model-folder mode is removed")
+    `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
+    "Model-folder mode"); the spec's section leaves with it -> verify: the upgrader's tests,
+    `UTW export-upgrader upgrade-models` refused as an unknown command
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player
     and every edit writes one record) a `Select all similar players` button under the
