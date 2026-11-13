@@ -149,8 +149,9 @@ const TEAM_COMPILER_CSS = `
 // A check's warning or error is no fill of its own: it outlines the cell's
 // colour (checked, or shallow-checked) until the compile has gone through
 // the cell, which then turns solid in the same colour.
-// The suite's warning orange and error red (the drafts' --warn and --error).
-const WARN = "#ff8f00", ERR = "#ff0000";
+// A warning's yellow and the suite's error red (the drafts' --error). Not the
+// suite's warning orange: as an outline it reads too close to the red.
+const WARN = "#dcc832", ERR = "#ff0000";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
   fullOk: "#800080", done: "#008000", doneWarn: WARN, doneErr: ERR };
 const OUTLINES = { warning: WARN, error: ERR, partialError: ERR };
@@ -432,11 +433,11 @@ function dropClash(r, keep) {
   render();
 }
 
-// The team label's font size: the usual 12 while the name fits the label's 52
-// points, else the largest half-point size at which it does (the monospace
+// The team label's font size: the usual 12 while the name fits the 44 points
+// the label's 52 leave between its paddings, else the largest half-point size at which it does (the monospace
 // font's letters are 0.602 of its size wide; egui: the galley measured, the
 // size stepped down until it fits).
-const nameSize = name => Math.min(12, Math.floor(2 * 52 / (name.length * 0.602)) / 2);
+const nameSize = name => Math.min(12, Math.floor(2 * 44 / (name.length * 0.602)) / 2);
 function gridRow(r) {
   const off = rowOff(r);
   const cells = [];
