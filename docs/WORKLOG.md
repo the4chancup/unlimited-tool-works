@@ -1877,7 +1877,9 @@ briefs, review loops, gates and mutation runs as for any step.
     field of the players it shifted. Tier 2. After 0.0.2-clip merges (the same crate)
     - [ ] a: the session remembers whose record each id holds; the `Player order` row in
       the list and the close prompt; a moved player's rows against the record he came
-      from (SE-GUI-73). Opus
+      from (SE-GUI-73). Opus, running since 2026-11-13 (brief
+      `.tmp/0_0_2/undo/brief_undo_a.md`, worktree `4cc-studio-temp/undo`, branch
+      `sk/undo-a`, run `sk_undo_a`)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
       one place per line (approved), and the X ending each row in the link blue, its
       column fixed at the list's right edge while a wide row scrolls under it (the
@@ -1918,9 +1920,11 @@ briefs, review loops, gates and mutation runs as for any step.
       and `.tail-box`, measured in a 419-point-high window (`.tmp/0_0_2/tc_draft/
       measure2.py`: a wheel turn scrolls the entries, the logo and Settings stay put;
       `side_short_scrolled.png`)
-    - [ ] the slice (small, SWE-2): `studio_core`'s `shell/sidebar`, with a scenario in
-      `plans/core/gui.md` "Acceptance" written first; read first how the sidebar lays
-      out its tail today
+    - [x] the scenario 2026-11-13 (the lead): ST-SIDE-10
+    - [ ] the slice (small, SWE-2), running since 2026-11-13 in the main tree (brief
+      `.tmp/0_0_2/side/brief_side.md`): the entries in a scroll area between head and
+      tail, no scroll bar, one offset for the rail and the opened sidebar, a focused
+      entry brought into view; its test starts `sidebar/tests/`
   - [x] 0.0.2-rad 2026-11-13 (`4bdfc5cf`, merge `b1274e74`, review fixes `842f41e3`): one
     corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
     egui's radii in both themes and the suite's own painting reads the style
@@ -2287,14 +2291,17 @@ briefs, review loops, gates and mutation runs as for any step.
       Friendlies save, another profile's) is refused by this install with "Create Edit
       Data?", so the looks ran on a test save built on the maintainer's own save of
       2026-10-13; the live save is back in place, byte for byte
-    - [ ] the slices (Opus), after the PES 2019 looks: first `pes_savefile`'s rule
-      (`Formation::illegal_breaks`, the area tables moved from `team_widgets`'
-      `pitch/drop_rule.rs`), with the lead's fixture of the game's own formations and
-      presets (`.tmp/0_0_2/formation/fixture/game_formations_pes17.txt` and
-      `game_formations_pes19.txt`, built by `make_fixture.py` and `make_fixture19.py`
-      beside them) and the throwaway clauses of `4cc-studio-temp/formation`'s
-      `formation_clauses.rs` as its model; then the host's warning, its text, SE-AATF-09
-      and SE-GUI-76
+    - [ ] slice a (Opus), running since 2026-11-13 (brief
+      `.tmp/0_0_2/formation/brief_form_rule.md`, worktree `4cc-studio-temp/formrule`,
+      branch `sk/formrule`, run `sk_formrule`): `pes_savefile`'s rule
+      (`Formation::illegal_breaks` and its `FormationBreak`s in `model/formation_rule.rs`,
+      the area tables moved there from `team_widgets`' `pitch/drop_rule.rs`), tested on
+      the lead's fixtures of what the game made (`pes_savefile/tests/fixtures/
+      game_formations_pes17.txt` and `_pes19.txt`, built by `make_fixture.py` and
+      `make_fixture19.py` in `.tmp/0_0_2/formation/fixture/`) and one formation per
+      clause; `team_widgets` pins clause 6's reaches to its marker box
+    - [ ] slice b (Opus), after a: the host's warning per fielded set on PES 2017 and
+      PES 2019 saves, its text, the ruleset's flag, SE-AATF-09 and SE-GUI-76
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
