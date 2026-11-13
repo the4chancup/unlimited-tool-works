@@ -1794,7 +1794,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] wave 2 2026-11-13 (`642b046d`, on the branch): the command-line help pages (the
       Team compiler's gains 45 subheadings), the two generated developer pages through
       their scripts, the bundled `settings.toml`'s comments
-    - [ ] wave 3: the ruled proposals for the Team compiler's and the Export upgrader's
+    - [x] wave 3 2026-11-13 (`f0b68506`, on the branch; `team_compiler` 912 + 669, `export_upgrader` 308 + 159, `pes_savefile` 419, clippy, fmt): the ruled proposals for the Team compiler's and the Export upgrader's
       message catalogs and an export's `settings.toml` comments, applied by three SWE-2
       sidekicks (briefs `brief_ap_tc.md`, `brief_ap_eu.md`, `brief_ap_toml.md`: the
       rulings are in them). The Team compiler's catalog then names its settings by key;
