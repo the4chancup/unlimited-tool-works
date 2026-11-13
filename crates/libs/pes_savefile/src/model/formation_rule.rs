@@ -102,9 +102,11 @@ const KEEPER_SPOT: (u8, u8) = (52, 3);
 /// The outfield slots: every formation slot but the keeper's.
 const OUTFIELD: Range<usize> = 1..11;
 /// The spots a starter can be dragged to, across and up: a drop past an
-/// edge stores the edge.
-const MOVABLE_X: RangeInclusive<u8> = 5..=99;
-const MOVABLE_Y: RangeInclusive<u8> = 4..=47;
+/// edge stores the edge. The Tactics pitch's drags, drops and the slot
+/// popover's X and Y hold a starter to the same range.
+pub const MOVABLE_X: RangeInclusive<u8> = 5..=99;
+/// `MOVABLE_X`'s up-down half.
+pub const MOVABLE_Y: RangeInclusive<u8> = 4..=47;
 /// The wide positions (LB, RB, LMF, RMF, LWF, RWF), in byte order: a
 /// drop offers one only while no other starter holds it; the rest are
 /// always free, however many starters share them.

@@ -1,7 +1,9 @@
 //! The drag-and-drop tests: marker and row drops, the exchanges and
 //! swaps, and the grass, own-chip and off-pitch releases.
 
-use pes_savefile::model::formation_rule::{AREAS_A, CLOSE_ACROSS, CLOSE_UP_DOWN};
+use pes_savefile::model::formation_rule::{
+    AREAS_A, CLOSE_ACROSS, CLOSE_UP_DOWN, MOVABLE_X, MOVABLE_Y,
+};
 use pes_savefile::model::instruction::Instruction;
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
@@ -45,8 +47,8 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
     // Written (x + 1, y + 1) must stay inside the movable range.
-    let (x, y, onto) = (MOVABLE_X_MIN - 1..MOVABLE_X_MAX)
-        .flat_map(|x| ((MOVABLE_Y_MIN - 1)..MOVABLE_Y_MAX).map(move |y| (x, y)))
+    let (x, y, onto) = (*MOVABLE_X.start() - 1..*MOVABLE_X.end())
+        .flat_map(|x| ((*MOVABLE_Y.start() - 1)..*MOVABLE_Y.end()).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -90,8 +92,8 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let from = marker_point(&nodes, &formation.players, index);
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
-    let (x, y, onto) = (MOVABLE_X_MIN..=MOVABLE_X_MAX)
-        .flat_map(|x| (MOVABLE_Y_MIN..=MOVABLE_Y_MAX).map(move |y| (x, y)))
+    let (x, y, onto) = MOVABLE_X
+        .flat_map(|x| MOVABLE_Y.map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -153,8 +155,8 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let centres = centres_of(canvas, &formation.players);
     let from = marker_point(&nodes, &formation.players, index);
     let offset = press_offset(canvas, slot, from);
-    let (x, y, onto) = (MOVABLE_X_MIN..=MOVABLE_X_MAX)
-        .flat_map(|x| (MOVABLE_Y_MIN..=MOVABLE_Y_MAX).map(move |y| (x, y)))
+    let (x, y, onto) = MOVABLE_X
+        .flat_map(|x| MOVABLE_Y.map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -664,7 +666,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
         .flat_map(|dy| (1..64).map(move |dx| (dx, dy)))
         .map(|(dx, dy)| egui::pos2(canvas.left() + 5.0 * dx as f32, canvas.bottom() - dy as f32))
         .find(|&point| {
-            mapped_y(point) < f32::from(MOVABLE_Y_MIN)
+            mapped_y(point) < f32::from(*MOVABLE_Y.start())
                 && centres
                     .iter()
                     .all(|centre| !marker_rect(*centre, canvas).contains(point))
@@ -675,7 +677,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
         "premise: the release is on the pitch"
     );
     assert!(
-        mapped_y(release) < f32::from(MOVABLE_Y_MIN),
+        mapped_y(release) < f32::from(*MOVABLE_Y.start()),
         "premise: the mapping alone reads y {} there",
         mapped_y(release)
     );
@@ -824,11 +826,23 @@ fn an_outfielder_held_past_the_pitches_other_sides_stands_on_the_ranges_edge() {
         );
         assert!(changed, "{side}: the release writes");
         let (rx, ry) = mapped(release, offset);
+        let (lx, ly) = (rx.clamp(5.0, 99.0) as u8, ry.clamp(4.0, 47.0) as u8);
         let landed = tactics.presets[0].formations[0].players[index];
         assert_eq!(
             (landed.x, landed.y),
-            (rx.clamp(5.0, 99.0) as u8, ry.clamp(4.0, 47.0) as u8),
+            (lx, ly),
             "{side}: he lands on the range's edge"
+        );
+        assert_eq!(
+            landed.position,
+            crate::pitch::drop_rule::dropped_position(
+                &expect.presets[0].formations[0],
+                index,
+                lx,
+                ly,
+                overalls_of(&roster, &tactics, index),
+            ),
+            "{side}: the drop rule's position at the landed spot"
         );
         expect.presets[0].formations[0].players[index] = landed;
         assert_eq!(tactics, expect, "{side}: his slot alone changes");
@@ -998,6 +1012,10 @@ fn under_illegal_formations_a_release_on_the_grids_other_edges_stores_them() {
             (landed.x, landed.y),
             (x, y),
             "the edge spot stored as it is"
+        );
+        assert_eq!(
+            landed.position, players[index].position,
+            "({x}, {y}): the flag keeps his position"
         );
         expect.presets[0].formations[0].players[index] = landed;
         assert_eq!(tactics, expect, "({x}, {y}): his slot alone changes");

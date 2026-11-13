@@ -10,6 +10,7 @@
 use std::ops::RangeInclusive;
 
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
+use pes_savefile::model::formation_rule::{MOVABLE_X, MOVABLE_Y};
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
 use studio_core::theme::{self, Palette};
@@ -84,15 +85,6 @@ const CAPTAIN_MARK_RADIUS: u8 = 2;
 /// The grid's extent in stored units.
 const GRID_X: u8 = 104;
 const GRID_Y: u8 = 48;
-/// The game's movable range in stored units: its own Formation screen
-/// moves a starter only inside x 5 to 99 and y 4 to 47, rows 0 to 3
-/// being the keeper's area alone. The stored grid (`GRID_X` by
-/// `GRID_Y`) is wider: under a ruleset that allows illegal formations
-/// an outfielder's spot may take it all (`outfield_range`).
-const MOVABLE_X_MIN: u8 = 5;
-const MOVABLE_X_MAX: u8 = 99;
-const MOVABLE_Y_MIN: u8 = 4;
-const MOVABLE_Y_MAX: u8 = 47;
 
 /// The spot range an outfielder's marker may take, one axis each.
 struct OutfieldRange {
@@ -103,10 +95,12 @@ struct OutfieldRange {
 }
 
 /// The stored range a drag or the popover's X and Y hold an outfielder
-/// to: the game's movable range, x `MOVABLE_X_MIN` to `MOVABLE_X_MAX`
-/// and y `MOVABLE_Y_MIN` to `MOVABLE_Y_MAX`, or the whole stored grid
-/// under a ruleset that allows illegal formations, whose patched game
-/// keeps an outfielder on any spot of it, the keeper's rows included.
+/// to: the game's movable range (`pes_savefile`'s `MOVABLE_X` and
+/// `MOVABLE_Y`: its own Formation screen moves a starter only inside
+/// x 5 to 99 and y 4 to 47, rows 0 to 3 being the keeper's area alone),
+/// or the whole stored grid (`GRID_X` by `GRID_Y`) under a ruleset that
+/// allows illegal formations, whose patched game keeps an outfielder on
+/// any spot of it, the keeper's rows included.
 fn outfield_range(illegal_formations: bool) -> OutfieldRange {
     if illegal_formations {
         OutfieldRange {
@@ -115,8 +109,8 @@ fn outfield_range(illegal_formations: bool) -> OutfieldRange {
         }
     } else {
         OutfieldRange {
-            x: MOVABLE_X_MIN..=MOVABLE_X_MAX,
-            y: MOVABLE_Y_MIN..=MOVABLE_Y_MAX,
+            x: MOVABLE_X.clone(),
+            y: MOVABLE_Y.clone(),
         }
     }
 }

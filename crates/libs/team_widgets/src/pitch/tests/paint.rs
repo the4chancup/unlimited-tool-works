@@ -71,8 +71,8 @@ fn snap_inverts_the_mapping_and_clamps_to_the_spot_range() {
             assert_eq!(
                 snap(badge_centre(origin, slot), origin, &outfield_range(false)),
                 (
-                    x.clamp(MOVABLE_X_MIN, MOVABLE_X_MAX),
-                    y.clamp(MOVABLE_Y_MIN, MOVABLE_Y_MAX)
+                    x.clamp(*MOVABLE_X.start(), *MOVABLE_X.end()),
+                    y.clamp(*MOVABLE_Y.start(), *MOVABLE_Y.end())
                 ),
                 "({x}, {y}), the flag off"
             );
@@ -527,7 +527,7 @@ fn each_version_paints_its_own_cached_turf() {
 // too, the nearer of the two built. PES 2020's, unmeasured, draws PES
 // 2021's as PES 2019's own is.
 #[test]
-fn the_unmeasured_screens_draw_the_measured_ones_turf() {
+fn each_version_draws_its_screens_turf() {
     let turf = |version: PesVersion| turf_image(pitch_look(version)).pixels;
     for version in [PesVersion::Pes15, PesVersion::Pes16, PesVersion::Pes18] {
         assert_eq!(

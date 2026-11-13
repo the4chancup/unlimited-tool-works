@@ -124,10 +124,10 @@ What changed for members, release by release, newest first.
 - **Save editor**: in the Tactics tab's bench list, a player dragged onto another swaps
   places with him, as in the starting eleven's list. He used to be moved into that place,
   shifting the players between.
-- **Save editor**: a starter dragged on the Tactics pitch now stays inside the area the
-  game's own Formation screen can put him in, so a drag to the pitch's edge can no
-  longer make a formation Live AATF warns about, unless the active ruleset allows
-  illegal formations.
+- **Save editor**: a starter moved on the Tactics pitch, dragged or edited in the slot
+  popover's X and Y, now stays inside the area the game's own Formation screen can put
+  him in, so an edit can no longer make a formation Live AATF warns about, unless the
+  active ruleset allows illegal formations.
 - **Save editor**: a PES 2018 save's Tactics pitch is drawn as that game's own, which
   is PES 2017's; PES 2015's and PES 2016's draw PES 2017's too, the nearest measured
   to theirs.

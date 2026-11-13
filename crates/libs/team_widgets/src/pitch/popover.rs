@@ -303,6 +303,13 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, min: u8, max: u8, enabled: bool) {
             )
             .on_disabled_hover_text(SPOT_FIXED)
         });
+        // `clamp_existing_to_range(false)` keeps a stored value outside
+        // the range drawn as stored, so the clamp is on a change, never
+        // on draw: the keyboard step and the AccessKit requests are the
+        // edits `range` does not clamp itself.
+        if number.changed() {
+            *value = (*value).clamp(min, max);
+        }
         step_number(value, wheel_steps(ui, &number), min..=max);
         let right = egui::CornerRadius {
             nw: 0,
@@ -329,6 +336,7 @@ fn cell<R>(ui: &mut egui::Ui, width: f32, add: impl FnOnce(&mut egui::Ui) -> R) 
 #[cfg(test)]
 mod tests {
     use egui::accesskit::{self, Role};
+    use pes_savefile::model::formation_rule::{MOVABLE_X, MOVABLE_Y};
     use pes_version::PesVersion;
 
     use super::*;
@@ -446,15 +454,17 @@ mod tests {
         assert_eq!(slot.y, y, "y stays");
     }
 
-    // A stored coordinate past the grid (a hand-edited or corrupt save)
-    // shows as stored in the popover's fields and is not rewritten by
-    // drawing them: the frame reports no change and x stays 200.
+    // A stored coordinate outside the range (110 past the movable
+    // range's end, 200 past the grid itself — a hand-edited or corrupt
+    // save) shows as stored in the popover's fields and is not rewritten
+    // by drawing them: the frame reports no change and x stays as stored.
+    // SE-GUI-42
     #[test]
     fn an_out_of_range_stored_spot_is_not_clamped_on_draw() {
         let mut window = Headless::sized(600.0, 450.0);
         let mut tactics = fixture_tactics(PesVersion::Pes21);
         let index = 4;
-        tactics.presets[0].formations[0].players[index].x = 200;
+        tactics.presets[0].formations[0].players[index].x = 110;
         let mut view = TacticsView::default();
         let rows = fixture_rows(PesVersion::Pes21);
         let roster = roster_rows(&rows);
@@ -464,22 +474,25 @@ mod tests {
         let (_, changed) =
             window.click_pitch(at, PesVersion::Pes21, &mut tactics, &mut view, &roster);
         assert!(!changed, "opening the popover writes nothing");
-        let (nodes, changed) =
-            window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
-        assert!(!changed, "drawing the popover writes nothing");
-        assert_eq!(
-            tactics.presets[0].formations[0].players[index].x, 200,
-            "the stored x stays"
-        );
-        let field = controls_right_of(&nodes, "X", Role::SpinButton)
-            .into_iter()
-            .next()
-            .expect("the X field");
-        assert_eq!(
-            field.numeric_value(),
-            Some(200.0),
-            "the field shows the stored 200"
-        );
+        for stored in [110u8, 200] {
+            tactics.presets[0].formations[0].players[index].x = stored;
+            let (nodes, changed) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            assert!(!changed, "stored {stored}: the frame reports no change");
+            assert_eq!(
+                tactics.presets[0].formations[0].players[index].x, stored,
+                "the stored x stays"
+            );
+            let field = controls_right_of(&nodes, "X", Role::SpinButton)
+                .into_iter()
+                .next()
+                .expect("the X field");
+            assert_eq!(
+                field.numeric_value(),
+                Some(f64::from(stored)),
+                "the field shows the stored {stored}"
+            );
+        }
         let (_, changed) =
             window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
         assert!(!changed, "and an idle frame keeps it");
@@ -725,7 +738,7 @@ mod tests {
         let slot = before.presets[0].formations[0].players[index];
         assert!(slot.position != 0, "premise: not the keeper's slot");
         assert!(
-            slot.x > 0 && slot.y < crate::pitch::MOVABLE_Y_MAX,
+            slot.x > *MOVABLE_X.start() && slot.y < *MOVABLE_Y.end(),
             "premise: room to step"
         );
 
@@ -1035,6 +1048,64 @@ mod tests {
         assert!(!up.is_disabled(), "at x 5 X's ⏵ is enabled");
     }
 
+    // The focused number's arrow keys: a press bursts past the range's
+    // end clamps back to it, the value landing on the end and the frame
+    // writing nothing net.
+    // SE-GUI-42
+    #[test]
+    fn the_arrow_keys_step_no_further_than_the_ranges_ends() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        for (label, stored, key, end) in [
+            ("X", 99u8, egui::Key::ArrowUp, 99u8),
+            ("X", 5, egui::Key::ArrowDown, 5),
+            ("Y", 47, egui::Key::ArrowUp, 47),
+            ("Y", 4, egui::Key::ArrowDown, 4),
+        ] {
+            let slot = &mut tactics.presets[0].formations[0].players[index];
+            if label == "X" {
+                slot.x = stored;
+            } else {
+                slot.y = stored;
+            }
+            // A click on the number focuses it; the arrow keys then step
+            // it. A frame holding several presses, as a key held down
+            // repeats: a quarter step each, one unit in all.
+            let (nodes, _) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            let field = control_right_of(&nodes, label, Role::SpinButton);
+            window.click_pitch(
+                centre(field),
+                PesVersion::Pes21,
+                &mut tactics,
+                &mut view,
+                &roster,
+            );
+            let presses = vec![
+                egui::Event::Key {
+                    key,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: true,
+                    modifiers: egui::Modifiers::NONE,
+                };
+                4
+            ];
+            let (_, changed) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, presses);
+            let slot = tactics.presets[0].formations[0].players[index];
+            let at = if label == "X" { slot.x } else { slot.y };
+            assert_eq!(at, end, "{label} at {stored} on {key:?} stays {end}");
+            assert!(!changed, "{label} at {stored}: the keys write nothing");
+        }
+    }
+
     // Y's range starts at 4, the outfielders' lowest row, as a drag's
     // does: at y 4 `⏴` is disabled and its click writes nothing, and a
     // slot stored at y 2, below the range, steps back in to 4 on `⏵`.
@@ -1165,6 +1236,49 @@ mod tests {
         }
     }
 
+    // The flag's X number focused at the grid's end: Up leaves it there,
+    // the clamp holding the whole grid's end and no further.
+    // SE-GUI-45
+    #[test]
+    fn under_illegal_formations_the_arrow_keys_stop_at_the_grids_end() {
+        let mut window = Headless::sized(600.0, 450.0);
+        window.illegal_formations = true;
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        tactics.presets[0].formations[0].players[index].x = 104;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let field = control_right_of(&nodes, "X", Role::SpinButton);
+        window.click_pitch(
+            centre(field),
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        let presses = vec![
+            egui::Event::Key {
+                key: egui::Key::ArrowUp,
+                physical_key: None,
+                pressed: true,
+                repeat: true,
+                modifiers: egui::Modifiers::NONE,
+            };
+            4
+        ];
+        let (_, changed) =
+            window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, presses);
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].x, 104,
+            "Up at x 104 stays at the grid's end"
+        );
+        assert!(!changed, "the keys write nothing");
+    }
+
     // The keeper's popover: all four arrows disabled, under the fields'
     // hover "The goalkeeper's spot is fixed".
     #[test]
@@ -1186,9 +1300,7 @@ mod tests {
         // His y 3 is below Y's range, so Y's `⏴` would be disabled for an
         // outfielder too; the hover below is the keeper's alone.
         assert!(
-            slot.x > crate::pitch::MOVABLE_X_MIN
-                && slot.x < crate::pitch::MOVABLE_X_MAX
-                && slot.y < crate::pitch::MOVABLE_Y_MAX,
+            slot.x > *MOVABLE_X.start() && slot.x < *MOVABLE_X.end() && slot.y < *MOVABLE_Y.end(),
             "premise: no arrow but Y's ⏴ is at its end of the range"
         );
 

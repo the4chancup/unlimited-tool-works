@@ -648,7 +648,7 @@ fn the_popovers_writes_land_in_the_shown_preset_and_formation() {
     // The typed y is neither the slot's y nor its x, old or new, so a Y
     // field writing x (or nothing) shows.
     let y = 30;
-    assert!(y <= GRID_Y, "premise: y on the grid");
+    assert!(y <= *MOVABLE_Y.end(), "premise: y in the movable range");
     assert_ne!(players[index].y, y, "premise: a real y change");
     assert_ne!(players[index].x, y, "premise: y is not the slot's x");
 

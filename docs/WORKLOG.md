@@ -2371,7 +2371,7 @@ briefs, review loops, gates and mutation runs as for any step.
       (to settle in its phase). Look: Pending looks
     - [x] b's SWE-2 review 2026-11-13 (S-warn r1, 1 of 2 accepted, the loop ends): the
       pitch's own range let a member make what the check warns about, which is 0.0.2-range
-  - [ ] 0.0.2-range with illegal formations off, the pitch holds an outfielder in the game's
+  - [x] 0.0.2-range with illegal formations off, the pitch holds an outfielder in the game's
     movable range, x 5 to 99 and y 4 to 47, by a drop's snap and the popover's X and Y, on
     every version (S-warn-1; DECISIONS 2026-11-13; `plans/save_editor.md` "Editing UI", the
     popover's paragraph on X and Y; today `snap` and the steppers of
@@ -2385,11 +2385,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `plans/save_editor.md`, "Each version draws its own screen's pitch"). Nothing
       else of the pitch treats PES 2017's screen apart: the keeper's marker and the
       spot mapping are one set of constants for every version
-    - [ ] its SWE-2 review 2026-11-13 (S-range r1, 3 of 6 accepted, the loop ends with
-      its rework): the arrow keys on the popover's focused X or Y stepped past the
-      range's ends; the range read from `formation_rule` instead of written twice; two
-      tests' position asserted. Rework running (SWE-2, the same session,
-      `.tmp/0_0_2/formation/brief_range_r1.md`)
+    - [x] its SWE-2 review 2026-11-13 (S-range r1, 3 of 6 accepted, the loop ends with
+      its rework, SWE-2 and the lead's rerun: `pes_savefile` 419, `team_widgets` 260,
+      `save_editor` 852 + 57, clippy, fmt): the arrow keys on the popover's focused X or
+      Y stepped past the range's ends, so the number is clamped when it reports a
+      change; the range is read from `formation_rule` (`MOVABLE_X`, `MOVABLE_Y`, now
+      `pub`) instead of written twice; two tests' position asserted. Issues: the keys'
+      step itself
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
@@ -2749,6 +2751,17 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-13 (found in 0.0.2-range's rework): Up and Down on a focused whole-number
+  box seem to step nothing. egui 0.37 gives an integer `DragValue` a speed of a quarter
+  (`drag_value.rs` line 84) and adds `speed * presses` to the value (line 513), so one
+  press adds 0.25 and the value written back is the same whole number; the rework's
+  test had to send four presses in one frame to move a `u8` by one. Read from the
+  source and from that test, not tried in the built window. It would hold for every
+  whole-number box the suite draws through `DragValue` (the Tactics popover's X and Y,
+  whose plan paragraph says "a focused number steps with the arrow keys already";
+  Height, the ability numbers), and for a drag across one, a unit per four points. To
+  do: try it in the built window; if so, one fix at the suite's number box (a step of
+  one for the keys), a scenario, and the plan's sentence
 - open 2026-11-12 (a member's 0.0.1 report, relayed by the maintainer): "importing a team
   on a PES 2021 save deleted every team, everyone is a placeholder". Not reproduced from
   the three files sent (the team file, a save named as the one before, the saved file;
