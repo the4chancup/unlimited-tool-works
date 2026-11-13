@@ -1948,7 +1948,8 @@ briefs, review loops, gates and mutation runs as for any step.
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
   - [ ] 0.0.2-noticeerr (the maintainer, 2026-11-13; DECISIONS "no alias or deprecation shim")
-    `NoticeKind::Error`, drawn in the theme's error red (`plans/core/gui.md` "A notice is
+    `NoticeKind::Error`, drawn in the theme's error red, GitHub's `#F85149` dark and `#D1242F` light
+    in place of egui's `#FF0000` (`plans/core/gui.md` "A notice is
     seen, not found"); no publisher yet -> verify: ST-BAR-04 with four kinds
   - [ ] 0.0.2-nomodels (the maintainer, 2026-11-13; DECISIONS "model-folder mode is removed")
     `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
@@ -3015,13 +3016,11 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme keeps egui's error
-  red, `#FF0000`, which reads at about 3.8 on the light panel (grey 248), where
-  `plans/core/gui.md`'s contrast rule (the Dark/light theme row: a colour under 4.5 on the
-  dark panel keeps its dark ratio) asks for the dark red's 4.3 on grey 27. Computed from
-  the WCAG formula, not yet measured by a test; about 50 places draw it (Error lines,
-  violations, the pitch). Fix: darken it in linear light in `theme::install`, as the
-  warning's `#C54B00`, with a test beside the warning's.
+- resolved 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme's error red,
+  egui's `#FF0000`, read at 3.8 on the light panel, under `plans/core/gui.md`'s contrast
+  rule. The maintainer found 3.8 fine and the dark red too bright: both themes take
+  GitHub's danger pair, `#F85149` and `#D1242F` (DECISIONS "the error red is GitHub's"),
+  in 0.0.2-noticeerr.
 - watch 2026-11-13: the Save editor's
   `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
   failed twice under load ("the range's first team: left `702 /a/`, right `701 /3/`"), the

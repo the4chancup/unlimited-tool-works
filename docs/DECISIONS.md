@@ -17182,3 +17182,14 @@ a colour of their own, which the grid's colours already spend on states, and a b
 edge leaves a ring's colour readable.
 Plan: `plans/team_compiler/gui.md` ("A processing cell moves", the state list),
 `plans/team_compiler/README.md` TC-GUI-12.
+
+## 2026-11-14: the error red is GitHub's, `#F85149` dark and `#D1242F` light
+
+The maintainer found egui's `#FF0000` too bright on the dark panel (its full saturation
+glares, though it reads at only 4.3), and chose GitHub's danger pair over a softer red of
+our own (Apple's, Material's, Radix's and a coral were drawn beside it,
+`.tmp/0_0_2/red/reds.png`) or a light value darkened by the contrast rule: "they're more
+trustworthy". The Team compiler grid's own state colours (its Error fill and ring) are not
+the theme's and are not changed by this.
+Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found"; the
+drafts' `--error`.
