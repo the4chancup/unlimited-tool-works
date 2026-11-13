@@ -17035,3 +17035,8 @@ Why: 2 on the bars not a pill because the pill was the only fully round shape le
 beside rectangles that are merely not sharp; circles on the radio buttons not 2 because a
 squared radio button reads as a checkbox; the captain's mark imitates the game's.
 Plan: `core/gui.md` "Other UI components", the Corners row, and ST-CORNER-01.
+
+## 2026-11-13 — aatf, pes_savefile — the illegal formation check runs on PES 2017 and PES 2019
+Decision: the check runs on PES 2019 saves as on PES 2017's, with the same tables and the same six clauses, though PES 2019's executable is unread. The plan's earlier rule, "the versions whose executable it was read and confirmed on", gives way to "read from the executable or seen in game on every point". Every other version still gets no check.
+Why: the cup plays PES 2019 next and the maintainer wants the check there first. Not a reading of its exe first, because the in-game looks answer the question the reading would: every point looked at in PES 2019 matched PES 2017 (a broken formation kept as stored, the three repairs, the movable range's four edges, the line refusals, the swap distance), its fifteen presets equal PES 2017's spot for spot, and every set the game wrote, with the 484 distinct formations of its own teams in the cup library's saves, passes under PES 2017's tables. Not PES 2021 as well, though its library saves pass too, because nothing of its screens was seen and a warning there would rest on a guess.
+Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)" (the list "Looked at in PES 2019", the paragraph on the versions) and its fixtures; `plans/save_editor.md` SE-AATF-09.

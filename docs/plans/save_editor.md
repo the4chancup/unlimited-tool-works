@@ -3077,7 +3077,9 @@ SE-AATF-09 GIVEN a PES 17 save whose team 701 has, in preset 1's Kick-off set, i
            WHEN check-aatf is run with --rules spring26, then with --rules dbc7
            THEN the first prints one warning on team 701 starting `Preset 1, Kick-off: illegal
                 formation.` and naming the LB by name, none on team 702 for it, and exits 0
-                when no team has an error; the second prints no such warning
+                when no team has an error; the second prints no such warning; GIVEN a PES 19
+                save whose team 701 has the same Kick-off set WHEN check-aatf is run with
+                --rules spring26 THEN it prints the same warning on team 701
 SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
                 opens the save, sets player 70101's Height from the value the save holds to
                 another and writes the save, the save so written its kept output

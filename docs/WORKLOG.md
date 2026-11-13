@@ -16,8 +16,9 @@ is in `AGENTS.md` ("Working documents").
    ST-UPD-04 passed on Windows and on Linux).
    The TLS provider (0.0.2-tls) is settled: `ring` stays.
 2. The illegal formation check (0.0.2c): its six clauses are set, the game's own
-   formations pass them and each was looked at in game (2026-11-12); next its Acceptance
-   and the slice.
+   formations pass them and each was looked at in game, in PES 2017 and in PES 2019
+   (2026-11-13), the two versions it runs on; its Acceptance is written; next its two
+   slices.
 3. The Save editor asks of 2026-11-03 still open: -clip (designed, DECISIONS 2026-11-12,
    SE-GUI-72; its slice is with an Opus sidekick), -undo (designed, SE-GUI-73 and 74; its
    two slices follow -clip), and -inst, whose
@@ -2288,19 +2289,23 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the plan's rest and its Acceptance 2026-11-12 (the lead; DECISIONS 2026-11-12):
       one warning per fielded set, the rule in `pes_savefile`, the fixtures, SE-AATF-09,
       SE-GUI-76
-    - [ ] the same looks on PES 2019 (the maintainer, 2026-11-13: the check is wanted
-      there first, VGL27 plays on it; its exe is unread). Under PES 2017's tables the
-      game's own teams in the PES 2019 saves hold no break (484 distinct formations) and
-      the cup slots' 30 breaking sets look tool-made, so the same rule is expected.
-      Briefed (`.tmp/0_0_2/formation/ingame19/brief_form_looks19.md`, SWE-2: the four
-      broken starters, a drop near each area's edge, the presets, the line limits, the
-      swap distance); it runs only while no cargo job does. Then the plan names the
-      versions the check runs on
+    - [x] the same looks on PES 2019, 2026-11-13 (SWE-2, pad and OBS;
+      `.tmp/0_0_2/formation/ingame19/findings.md`, the kept saves under the clauses in
+      `.tmp/0_0_2/formation/census/looks19/`): the same rule on every point, the fifteen
+      presets equal to PES 2017's spot for spot, every set the game wrote passing under
+      PES 2017's tables; the check runs on PES 2017 and PES 2019 (DECISIONS 2026-11-13).
+      PES 2019 writes all three sets of a preset alike. The cup's PES 2019 save the looks
+      ran on holds six other teams breaking clause 3 or 4 (/b/, /co/, /d/, /tg/, /toy/,
+      /x/: a tool's work, what the warning is for). The live PES 2019 save (VGL27's
+      Friendlies save, another profile's) is refused by this install with "Create Edit
+      Data?", so the looks ran on a test save built on the maintainer's own save of
+      2026-10-13; the live save is back in place, byte for byte
     - [ ] the slices (Opus), after the PES 2019 looks: first `pes_savefile`'s rule
       (`Formation::illegal_breaks`, the area tables moved from `team_widgets`'
       `pitch/drop_rule.rs`), with the lead's fixture of the game's own formations and
-      presets (`.tmp/0_0_2/formation/fixture/game_formations_pes17.txt`, built by
-      `make_fixture.py` beside it) and the throwaway clauses of `4cc-studio-temp/formation`'s
+      presets (`.tmp/0_0_2/formation/fixture/game_formations_pes17.txt` and
+      `game_formations_pes19.txt`, built by `make_fixture.py` and `make_fixture19.py`
+      beside them) and the throwaway clauses of `4cc-studio-temp/formation`'s
       `formation_clauses.rs` as its model; then the host's warning, its text, SE-AATF-09
       and SE-GUI-76
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one

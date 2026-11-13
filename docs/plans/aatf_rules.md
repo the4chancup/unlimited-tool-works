@@ -157,9 +157,10 @@ library (1,706 distinct) or, read under the same tables, the ten PES 2021 saves 
 tables' layout was established by matching: 92 teams of a PES 2018 save reproduce all nine of
 their formations from it, since no PES 2017 save in the library holds a team outside the
 cup's slots. Under PES 2017's tables the cup's PES 2016 and 2019 saves do hold formations
-breaking clause 3, 4 or 2 (5 and 30 distinct ones, 12 teams); neither version's exe is read,
-so whether a tool made them or those versions' screens differ is not known, and the check
-does not run there.
+breaking clause 3, 4 or 2 (5 and 30 distinct ones, 12 teams). PES 2019's are a tool's work,
+its screens holding the same rule ("Looked at in PES 2019" below). PES 2016's exe is unread
+and its screens unseen, so whether a tool made its five is not known, and the check does not
+run there.
 
 Looked at in PES 2017 under the stock exe (pad and screen captures, a 4-4-2 changed in one
 starter by a tool for each clause):
@@ -186,6 +187,29 @@ starter by a tool for each clause):
 
 Run under the clauses, the saves those looks kept flag each of the four changed formations
 under the clause it was made to break, and none of the formations a drop repaired.
+
+Looked at in PES 2019 the same way (the cup's install, whose exe is unread and carries the
+cup's two kit patches; the same 4-4-2 and the same four changed starters), every point came
+out as in PES 2017:
+
+- a broken formation is drawn and saved as stored, the keeper alone drawn on his own spot;
+- a drop repairs the starter it moves, to the same values: the LB to x 5, the CF at (52, 10)
+  to a CB, the second LMF to a CMF, and the keeper cannot be picked up;
+- the movable range is x 5 to 99 and y 4 to 47, each of its four edges reached with a starter
+  pushed against it;
+- the Change Formation list is PES 2017's, all fifteen formations spot for spot;
+- a drop is refused with the no-entry sign for a sixth defender, for a drop leaving one
+  defender, for a sixth forward, for one leaving no forward and for one leaving no midfielder
+  (a seventh midfielder could not be reached from the 4-4-2);
+- the swap sign shows up to 11 units across and 4 or 5 up or down, and a starter dropped 12
+  across or 5 up from another is stored there.
+
+Every set the game wrote during those looks (the fifteen presets, the three repairs, the
+drops near the areas' edges, the range's and a swap box's) passes the six clauses under
+PES 2017's tables, and so do the 484 distinct formations of the game's own teams in the
+cup library's PES 2019 saves. So PES 2019 is read with the same tables and the same six clauses. One thing differs,
+and the check does not depend on it: PES 2019's Team Sheet and its Change Formation write all
+three sets of the preset alike, where PES 2017 writes the one set on screen.
 
 **What is checked and what the warning says.** Only the sets a preset fields are read
 (`TacticsPreset::fielded_formations`: Kick-off alone, or all three under Fluid formation): the
@@ -222,10 +246,13 @@ would copy the game's tables into every file and take a logic version. The rules
 turns it off. The tables it reads live in `team_widgets` today (the drop rule's, taken from PES
 2016), which `libs/aatf` cannot depend on, so they move to `pes_savefile` for both.
 
-The check runs on the versions whose executable it was read and confirmed on. A save of another
-version gets none, rather than a rule guessed for it (PES 2015's pair on G: could not be read:
-its patch is a memory dump with detours outside the image, and no clean exe of its build is
-there).
+The check runs on PES 2017, where it was read from the executable and confirmed in game, and
+on PES 2019, where the cup plays next: its executable is unread, but its screens were seen to
+hold the same rule on every point looked at, and what the game itself wrote there passes. A
+save of another version gets none, rather than a rule guessed for it: PES 2021's saves in the
+cup library pass under the same tables, but its screens are unseen, and PES 2015's pair on G:
+could not be read (its patch is a memory dump with detours outside the image, and no clean
+exe of its build is there).
 
 **Medal systems.** A tier a medal system names has no `count` and no `counts_as`, and no tier
 `counts_as` it; the tier that is the rest of the squad takes what the team's system leaves.
@@ -660,7 +687,10 @@ The illegal formation check (0.0.2c) is verified by fixtures, none of them a rul
 - **The game's own formations pass.** The distinct formations of PES 2017's own data (920, from
   `TacticsFormation.bin` and `TacticsFormation4.bin`) and the fifteen of the Game Plan menu's
   Change Formation list (read from saves the stock game wrote, one pick each), kept as one text
-  fixture of eleven `position x y` triples a line: none has a break.
+  fixture of eleven `position x y` triples a line: none has a break. PES 2019's has the same
+  shape: its fifteen presets, seven sets it wrote after drops (the three repairs, the drops
+  near the areas' edges and the range's, two just outside a swap box) and the 484 distinct
+  formations of its own teams in the cup library's saves.
 - **One formation per clause**, each the PES 17 fixture's team 701 first Kick-off set (a 4-4-2
   that passes) changed in one starter: the keeper at (52, 1); the LB at (2, 10), which breaks
   clause 2 and not 3; a CF at (52, 10); a second LMF at (14, 30); a midfielder made a sixth
@@ -668,6 +698,7 @@ The illegal formation check (0.0.2c) is verified by fixtures, none of them a rul
 - **Only fielded sets.** A broken In-possession set gives no warning while the preset's Fluid
   formation is off, and one when it is on.
 - **The flag and the version.** Under a ruleset with `illegal_formations` no team gets the
-  warning; a PES 2021 save's team holding the same broken set gets none under any ruleset.
+  warning; a PES 19 save's team holding the LB at (2, 10) gets it as the PES 17 save's does;
+  a PES 2021 save's team holding the same broken set gets none under any ruleset.
 - **A game-made repair passes.** The three saved sets the stock game wrote after a drop repaired
   each broken starter (the LB at x 5, the CF made a CB, the second LMF a CMF) have no break.
