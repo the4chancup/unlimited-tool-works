@@ -6,6 +6,7 @@
 //! widget used by one tool in that tool's `view/`. This file only re-exports.
 
 pub mod events;
+pub mod files;
 pub mod help;
 pub mod icons;
 pub mod pes_process;

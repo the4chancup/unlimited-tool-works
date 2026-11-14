@@ -275,18 +275,9 @@ fn write_picture(
     image
         .write_to(&mut png, image::ImageFormat::Png)
         .map_err(io::Error::other)?;
-    let temporary = folder.join(format!("{file_name}.tmp"));
-    let written = std::fs::write(&temporary, png.get_ref())
-        .and_then(|()| std::fs::rename(&temporary, folder.join(file_name)));
-    if let Err(error) = written {
-        // The write's error is the one to report; a temporary file left
-        // behind is a diagnostic.
-        if let Err(removal) = std::fs::remove_file(&temporary) {
-            log::debug!("{}: kept: {removal}", temporary.display());
-        }
-        return Err(error);
-    }
-    Ok(())
+    studio_core::files::replace_file(&folder.join(file_name), |temporary| {
+        std::fs::write(temporary, png.get_ref())
+    })
 }
 
 #[cfg(test)]

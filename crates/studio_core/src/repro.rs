@@ -211,7 +211,7 @@ mod bundle {
     //! The bundle writer's file: `journal.toml`'s shape and the zip.
 
     use std::fs;
-    use std::io::Write;
+    use std::io::{self, Write};
     use std::path::Path;
 
     use anyhow::Context;
@@ -327,20 +327,6 @@ mod bundle {
             .collect()
     }
 
-    /// Drops the leftover temp zip of a failed write: the failure, not
-    /// the litter, is what the caller sees. Nothing logged when `tmp`
-    /// never got made — nothing stays either way.
-    fn remove_tmp(tmp: &Path) {
-        if tmp.exists()
-            && let Err(error) = fs::remove_file(tmp)
-        {
-            log::debug!(
-                "{}: the failed bundle's temp file stays ({error})",
-                tmp.display()
-            );
-        }
-    }
-
     /// Writes the bundle; see `Recorder::write_bundle`.
     pub(super) fn write(
         journal: &Journal,
@@ -379,17 +365,22 @@ mod bundle {
             outputs: file_docs("outputs", &journal.outputs, home),
         })
         .context("cannot serialize the journal")?;
-        let mut tmp = out.to_path_buf();
-        tmp.as_mut_os_string().push(".tmp");
-        if let Err(error) = write_zip(&tmp, &doc, journal, words, &extras, state, home) {
-            // A half zip at `out`'s side is litter, not a half `out`.
-            remove_tmp(&tmp);
-            return Err(error);
-        }
-        if let Err(error) = fs::rename(&tmp, out) {
-            remove_tmp(&tmp);
-            return Err(error)
-                .with_context(|| format!("{}: cannot move the bundle into place", tmp.display()));
+        // A half zip at `out`'s side is litter, not a half `out`.
+        let mut zipped = false;
+        let written = crate::files::replace_file(out, |tmp| {
+            let wrote = write_zip(tmp, &doc, journal, words, &extras, state, home);
+            zipped = wrote.is_ok();
+            wrote.map_err(io::Error::other)
+        });
+        if let Err(error) = written {
+            return if zipped {
+                // The zip was written whole; the move onto `out` is what failed.
+                Err(error).with_context(|| {
+                    format!("{}.tmp: cannot move the bundle into place", out.display())
+                })
+            } else {
+                Err(error.into())
+            };
         }
         Ok(())
     }

@@ -107,17 +107,7 @@ pub(crate) fn load_working(path: Option<&Path>) -> anyhow::Result<TeamsList> {
 /// holds the previous list or the whole new one, never a half-written one the Compiler
 /// would then read.
 pub(crate) fn write(path: &Path, list: &TeamsList) -> io::Result<()> {
-    let temporary = path.with_extension("txt.tmp");
-    fs::write(&temporary, list.write())?;
-    if let Err(error) = fs::rename(&temporary, path) {
-        // The rename's error is the one to report; the temporary file is cleaned up best
-        // effort, a leftover being a diagnostic rather than a finding.
-        if let Err(removal) = fs::remove_file(&temporary) {
-            log::debug!("{}: kept: {removal}", temporary.display());
-        }
-        return Err(error);
-    }
-    Ok(())
+    studio_core::files::replace_file(path, |temporary| fs::write(temporary, list.write()))
 }
 
 #[cfg(test)]

@@ -336,21 +336,7 @@ pub(crate) fn write_text(path: &Path, text: &str) -> io::Result<()> {
             "the file is read-only",
         ));
     }
-    let mut tmp = path.as_os_str().to_owned();
-    tmp.push(".tmp");
-    let tmp = PathBuf::from(tmp);
-    let write_and_swap = || -> io::Result<()> {
-        fs::write(&tmp, text)?;
-        fs::rename(&tmp, path)
-    };
-    if let Err(error) = write_and_swap() {
-        // Best effort: the original error is the one to report.
-        if let Err(cleanup) = fs::remove_file(&tmp) {
-            log::debug!("could not remove {}: {cleanup}", tmp.display());
-        }
-        return Err(error);
-    }
-    Ok(())
+    studio_core::files::replace_file(path, |tmp| fs::write(tmp, text))
 }
 
 #[cfg(test)]
