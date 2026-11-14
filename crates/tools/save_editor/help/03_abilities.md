@@ -14,7 +14,10 @@ styles**. The third is his **Ability stats**.
 
 Each position's chosen rating is filled, green for A, blue for B, grey for C,
 and his registered position's cell is outlined. A click on a position's name makes it
-his registered position.
+his registered position. The Pitch | Left | List toggle under the heading picks one of
+three layouts: Pitch draws the positions as they stand on the pitch, Left starts every
+row at one left edge, and List gives each position a row of its own. Your pick is
+remembered the next time you open the editor.
 
 **Tricks and Free cards**
 

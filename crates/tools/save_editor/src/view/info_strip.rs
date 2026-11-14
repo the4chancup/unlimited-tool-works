@@ -830,44 +830,66 @@ fn combos(
         });
 }
 
-/// The `Left | Right` two-choice toggle of the `Stronger foot`/`Stronger
-/// hand` rows (the draft's `.rate.lr`: the two choices equal halves of
-/// `field_width`, a point apart, the held one filled the positions
-/// grid's C grey — `Button::selectable`, as the grid's ratings draw).
-/// The held side's word is the strong text colour, the other side's the
-/// normal text grey, so the chosen side reads white; the other side's
-/// hover still brightens it as a button's does (the draft's `.sel.on` and
-/// `.sel:not(.on):hover`). `FOOT` stores right 0 and left
-/// 1; the toggle draws Left first. Returns the picked side's stored
-/// index and its button's id value (the undo merge key) on a click.
-fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> {
+/// One row of a `.rate` toggle's segments: one `Button::selectable` per
+/// `(value, label, width)`, a point apart, the held one filled the
+/// positions grid's C grey with the strong text colour, the others'
+/// words in the normal text grey (the draft's `.sel.on` and
+/// `.sel:not(.on):hover`). An unheld segment is a resting button, whose
+/// own grey is lighter than the normal text grey the draft wants here:
+/// the resting colour is set to the normal text grey inside the row,
+/// where only these segments draw, and a hover still takes the hovered
+/// state's brighter grey. `small` makes the segments egui's small
+/// buttons (their words' height, no vertical padding: the draft's
+/// `.sel` segments); off, each is at least a control's height. Returns
+/// the picked segment's value and its button's id value (the undo merge
+/// key) on a click, `None` on the held segment's.
+pub(super) fn segment_row<T: Copy + PartialEq>(
+    ui: &mut egui::Ui,
+    segments: &[(T, &'static str, f32)],
+    held: T,
+    small: bool,
+) -> Option<(T, u64)> {
     let mut picked = None;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 1.0;
-        let side = (field_width - ui.spacing().item_spacing.x) / 2.0;
-        // An unselected side is a resting button, whose own grey is
-        // lighter than the normal text grey the draft wants here: the
-        // resting colour is set to the normal text grey inside the row,
-        // where only these two buttons draw (the held side's word takes
-        // the strong text colour explicitly). A hover still takes the
-        // hovered state's brighter grey.
         let strong = ui.visuals().strong_text_color();
         ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
-        for (label, stored) in [("Left", 1u8), ("Right", 0u8)] {
-            let held = held == stored;
-            let button = if held {
-                egui::Button::selectable(true, egui::RichText::new(label).color(strong))
+        for (value, label, width) in segments {
+            let button = if *value == held {
+                egui::Button::selectable(true, egui::RichText::new(*label).color(strong))
                     .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
             } else {
-                egui::Button::selectable(false, label)
+                egui::Button::selectable(false, *label)
             };
-            let response = ui.add_sized([side, ui.spacing().interact_size.y], button);
-            if response.clicked() && !held {
-                picked = Some((stored, response.id.value()));
+            let button = if small { button.small() } else { button };
+            let response = ui.add_sized([*width, ui.spacing().interact_size.y], button);
+            if response.clicked() && *value != held {
+                picked = Some((*value, response.id.value()));
             }
         }
     });
     picked
+}
+
+/// The `Left | Right` two-choice toggle of the `Stronger foot`/`Stronger
+/// hand` rows (the draft's `.rate.lr`: the two choices equal halves of
+/// `field_width`, `segment_row`'s point apart, the held one filled the
+/// positions grid's C grey — `Button::selectable`, as the grid's
+/// ratings draw).
+/// The held side's word is the strong text colour, the other side's the
+/// normal text grey, so the chosen side reads white; the other side's
+/// hover still brightens it as a button's does. `FOOT` stores right 0
+/// and left 1; the toggle draws Left first. Returns the picked side's
+/// stored index and its button's id value (the undo merge key) on a
+/// click.
+fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> {
+    let side = (field_width - 1.0) / 2.0;
+    segment_row(
+        ui,
+        &[(1u8, "Left", side), (0u8, "Right", side)],
+        held,
+        false,
+    )
 }
 
 /// How near `limit` a count of `n` is, as its colour: the grey under it,

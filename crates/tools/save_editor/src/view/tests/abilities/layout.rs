@@ -149,6 +149,18 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
     }
 }
 
+/// Player 701's slot 0's Stats screen at the default pane, the badge's
+/// run landed and the columns' widths settled over the first frames.
+fn positions_view(test: &str) -> (SaveView, Headless) {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    badge_landed(&mut window, &mut view);
+    (view, window)
+}
+
 /// The settled frame of player 701's slot 0 at the default pane: the
 /// columns' widths settle over the first frames and the Cards used
 /// badge's run lands.
@@ -159,12 +171,7 @@ fn settled_player_view(
     Vec<accesskit::Node>,
     Vec<egui::epaint::ClippedShape>,
 ) {
-    let path = fixture(PesVersion::Pes21, test);
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.selected = Some(Selection::Player(701, 0));
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    badge_landed(&mut window, &mut view);
+    let (mut view, mut window) = positions_view(test);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     (window, nodes, shapes)
 }
@@ -182,7 +189,8 @@ fn near_draft(actual: f64, draft: f64, what: &str) {
 // square 17 by 17, the cells of a row 66 apart (the 62-point `.poscell`
 // and the `.posrow`'s 4-point gap), the rows 43 apart (a cell's 2 and 3
 // points of padding and the grid's 4-point gap), the first row's squares
-// 38 under the panel's title, as the draft draws them.
+// 63.7 under the panel's title — the draft measures it so with the
+// layout toggle above the grid.
 #[test]
 fn the_positions_grid_stands_at_the_drafts_pitch() {
     let (_, nodes, _) = settled_player_view("positions_pitch");
@@ -206,7 +214,7 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
         }
     }
     let rows = ["LWF", "LMF", "CMF", "LB", "GK"].map(|position| c_of(position).y0);
-    near_draft(rows[0] - title_top, 38.0, "the first row under the title");
+    near_draft(rows[0] - title_top, 63.7, "the first row under the title");
     for pair in rows.windows(2) {
         near_draft(pair[1] - pair[0], 43.0, "the rows' pitch");
     }
@@ -215,6 +223,208 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
         near_draft(bounds.width(), 17.0, "a rating's width");
         near_draft(bounds.height(), 17.0, "a rating's height");
     }
+}
+
+/// The layout toggle's segments under the Playable positions title, in x
+/// order (the foot/hand rows' own `Left` sits in General info, above the
+/// title, so the filter by row).
+fn layout_segments(nodes: &[accesskit::Node]) -> Vec<&accesskit::Node> {
+    let title_bottom = label_bounds(nodes, "Playable positions").y1;
+    let mut segments: Vec<&accesskit::Node> = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && matches!(node.label(), Some("Pitch" | "Left" | "List"))
+                && node.bounds().is_some_and(|b| b.y0 > title_bottom)
+        })
+        .collect();
+    segments.sort_by(|a, b| {
+        let x = |node: &&accesskit::Node| node.bounds().expect("bounds").x0;
+        x(a).partial_cmp(&x(b)).expect("ordered bounds")
+    });
+    segments
+}
+
+/// The `C` `B` `A` buttons on `label`'s row to its right, in x order (the
+/// List layout's ratings, which stand beside their label rather than
+/// under it).
+fn row_ratings(nodes: &[accesskit::Node], label: accesskit::Rect) -> Vec<&accesskit::Node> {
+    let centre_y = (label.y0 + label.y1) / 2.0;
+    let mut ratings: Vec<&accesskit::Node> = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && matches!(node.label(), Some("C" | "B" | "A"))
+                && node.bounds().is_some_and(|b| {
+                    ((b.y0 + b.y1) / 2.0 - centre_y).abs() < 4.0 && b.x0 > label.x1 - 1.0
+                })
+        })
+        .collect();
+    ratings.sort_by(|a, b| {
+        let x = |node: &&accesskit::Node| node.bounds().expect("bounds").x0;
+        x(a).partial_cmp(&x(b)).expect("ordered bounds")
+    });
+    ratings
+}
+
+/// Whether the frame draws no scroll bar in the detail pane (a bar left
+/// of x 300 is the player list's own).
+fn detail_scroll_free(nodes: &[accesskit::Node]) -> bool {
+    !nodes
+        .iter()
+        .any(|node| node.role() == Role::ScrollBar && node.bounds().is_some_and(|b| b.x0 > 300.0))
+}
+
+// The layout toggle under the Playable positions title (the draft's
+// `#pos-layout`), Pitch held on a fresh editor: Left starts each of the
+// five rows' first cells at one left edge, the block the widest row
+// makes centred in the panel; List draws the 13 positions one a row in
+// the draft's `POS_LIST` order, each label's left edge at one x, its
+// C B A right of it. The detail pane shows whole in all three at the
+// default window.
+// SE-GUI-85
+#[test]
+fn the_layout_toggle_picks_one_of_three_grids() {
+    let (mut view, mut window) = positions_view("layout_toggle");
+    let nodes = draw(&mut window, &mut view);
+    let segments = layout_segments(&nodes);
+    assert_eq!(
+        segments
+            .iter()
+            .map(|node| node.label().unwrap_or("?"))
+            .collect::<Vec<_>>(),
+        ["Pitch", "Left", "List"],
+        "the toggle reads Pitch Left List"
+    );
+    assert_eq!(
+        segments[0].toggled(),
+        Some(accesskit::Toggled::True),
+        "Pitch held with the setting absent"
+    );
+    assert!(
+        detail_scroll_free(&nodes),
+        "Pitch: no scroll bar in the detail pane"
+    );
+
+    // Left: the five rows' first cells share one left x (each cell's
+    // ratings stand 3.5 in from its edge) and the widest row's block is
+    // centred in the panel.
+    click(&mut window, segments[1], &mut view);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        layout_segments(&nodes)[1].toggled(),
+        Some(accesskit::Toggled::True),
+        "the press holds Left"
+    );
+    let c_of = |position: &str| {
+        rating_buttons(&nodes, position)[0]
+            .bounds()
+            .expect("bounds")
+    };
+    let edge = c_of("LWF").x0;
+    for position in ["LMF", "CMF", "LB", "GK"] {
+        assert!(
+            (c_of(position).x0 - edge).abs() < 0.5,
+            "{position}'s cell starts at the block's left edge ({} vs {edge})",
+            c_of(position).x0
+        );
+    }
+    let column_centre = label_bounds(&nodes, "General info").x0 + 350.0 / 2.0;
+    let block_centre = (c_of("LWF").x0
+        + rating_buttons(&nodes, "RWF")[2]
+            .bounds()
+            .expect("bounds")
+            .x1)
+        / 2.0;
+    assert!(
+        (block_centre - column_centre).abs() <= 1.0,
+        "the widest row's block centred in the panel ({block_centre} vs {column_centre})"
+    );
+    assert!(
+        detail_scroll_free(&nodes),
+        "Left: no scroll bar in the detail pane"
+    );
+
+    // List: the 13 positions one a row in `POSITION_LIST`'s order, every
+    // label's left edge at the column's x, its three ratings right of it
+    // and on its row.
+    click(&mut window, layout_segments(&nodes)[2], &mut view);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        layout_segments(&nodes)[2].toggled(),
+        Some(accesskit::Toggled::True),
+        "the press holds List"
+    );
+    const LIST_ORDER: [&str; 13] = [
+        "CF", "SS", "LWF", "RWF", "AMF", "LMF", "RMF", "CMF", "DMF", "LB", "RB", "CB", "GK",
+    ];
+    let mut top = f64::MIN;
+    let mut left = None;
+    for position in LIST_ORDER {
+        let label = label_bounds(&nodes, position);
+        assert!(label.y0 > top + 3.0, "{position} on its own row");
+        top = label.y0;
+        match left {
+            None => left = Some(label.x0),
+            Some(left) => assert!(
+                (label.x0 - left).abs() < 0.5,
+                "{position}'s label at the column's left x ({left} vs {})",
+                label.x0
+            ),
+        }
+        let ratings = row_ratings(&nodes, label);
+        assert_eq!(ratings.len(), 3, "{position}'s three ratings on its row");
+        assert!(
+            ratings[0].bounds().expect("bounds").x0 >= label.x1 - 1.0,
+            "{position}'s ratings right of its label"
+        );
+    }
+    // The first row's square stands at the draft's measure under the
+    // title and the rows at the draft's pitch.
+    let title_top = label_bounds(&nodes, "Playable positions").y0;
+    let squares = LIST_ORDER.map(|position| {
+        row_ratings(&nodes, label_bounds(&nodes, position))[0]
+            .bounds()
+            .expect("bounds")
+            .y0
+    });
+    near_draft(
+        squares[0] - title_top,
+        45.9,
+        "the first List row under the title",
+    );
+    for pair in squares.windows(2) {
+        near_draft(pair[1] - pair[0], 19.75, "the List rows' pitch");
+    }
+    assert!(
+        detail_scroll_free(&nodes),
+        "List: no scroll bar in the detail pane"
+    );
+}
+
+// A rating not chosen paints its letter in the normal text colour, which
+// is darker than a resting button's own grey, so the chosen one stands
+// out (the draft's `.rate:not(.off) .sel:not(.on)`).
+// SE-GUI-85
+#[test]
+fn an_unchosen_rating_paints_the_normal_text_colour() {
+    let (mut view, mut window) = positions_view("unchosen_letter");
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
+    let text_color = visuals.text_color();
+    let resting = visuals.widgets.inactive.fg_stroke.color;
+    assert_ne!(
+        resting, text_color,
+        "premise: a resting button's grey differs from the text colour"
+    );
+    // 70101's LWF holds C (`a_playable_positions_rating_writes_its_own_slot_and_undoes`'s
+    // premise): its B letter is one not chosen.
+    let b = rating_buttons(&nodes, "LWF")[1].bounds().expect("bounds");
+    assert_eq!(
+        painted_text_color(&shapes, "B", b),
+        text_color,
+        "the unchosen B letter in the normal text colour"
+    );
 }
 
 // The Skills header's row is one line of text high, as the draft's: the

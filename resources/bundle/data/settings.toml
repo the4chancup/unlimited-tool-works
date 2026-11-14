@@ -130,6 +130,12 @@ scroll_names = true
 # Default: true
 portraits = true
 
+# How the Playable positions grid lays its positions out: "pitch" as the pitch reads,
+# "left" with every row starting at one left edge, or "list" with one position a row.
+# The same as the Pitch | Left | List toggle under the Playable positions heading.
+# Default: "pitch"
+positions_layout = "pitch"
+
 # Which teams the player list and its team dropdown show: "all" for every cup team,
 # "4cc" for the 4cc teams, "vgl" for the VGL teams or "invitational" for the
 # invitational teams.

@@ -69,6 +69,10 @@
   export carries them, Copy/swap stats leaves them as they were, and the Comparator lists
   them, and every motion, under Aesthetics. A Team TOML keeps them under
   `appearance.presentation`, and one written before still opens.
+- **Save editor**: a Pitch | Left | List toggle under the Playable positions heading shows the
+  13 positions as they stand on the pitch, as the same rows from one left edge, or one
+  position a row, and the choice is remembered. The letters of the ratings not chosen are
+  darker, so the chosen one stands out.
 
 ### New checks
 

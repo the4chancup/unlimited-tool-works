@@ -1,9 +1,10 @@
-//! The Save editor's section of the settings file: its nine keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its ten keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
 //! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
 //! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes),
+//! `positions_layout` (the Playable positions grid's layout toggle),
 //! `team_category` (the team selector's radio buttons) and `last_folder`
 //! (the folder the file
 //! picker starts in). A key enters with the code that reads
@@ -46,6 +47,12 @@ pub(crate) struct SaveEditorSettings {
     /// a view setting as `scroll_names` is.
     #[serde(default = "default_portraits")]
     pub(crate) portraits: bool,
+    /// The Playable positions grid's layout (the toggle under the panel's
+    /// title): `PositionsLayout`'s spellings (`pitch`, `left`, `list`);
+    /// an unknown one reads as `pitch`, kept in the file until the member
+    /// presses a segment. A view setting, as `scroll_names` is.
+    #[serde(default = "default_positions_layout")]
+    pub(crate) positions_layout: String,
     /// The team selector's category (the radio buttons under its teams): which of the cup's
     /// team ranges the dropdown and the list show. `TeamCategory`'s spellings
     /// (`all`, `4cc`, `vgl`, `invitational`); an unknown one reads as `all`, kept in the
@@ -68,6 +75,7 @@ impl Default for SaveEditorSettings {
             aesthetics_from_exports: false,
             scroll_names: default_scroll_names(),
             portraits: default_portraits(),
+            positions_layout: default_positions_layout(),
             team_category: default_team_category(),
             last_folder: None,
         }
@@ -82,6 +90,11 @@ fn default_scroll_names() -> bool {
 /// `portraits`'s default: the pitch draws the players' portraits.
 fn default_portraits() -> bool {
     true
+}
+
+/// `positions_layout`'s default: the pitch's rows.
+fn default_positions_layout() -> String {
+    crate::view::PositionsLayout::Pitch.setting().to_owned()
 }
 
 /// `team_category`'s default: every cup team listed.
