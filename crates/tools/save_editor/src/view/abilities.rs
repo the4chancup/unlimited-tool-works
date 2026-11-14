@@ -58,6 +58,58 @@ pub(super) const RATING_LABELS: [(&str, u8); 3] = [("C", 0), ("B", 1), ("A", 2)]
 /// from it (`terms::row_term`).
 pub(super) const PLAYABLE_POSITIONS_LABEL: &str = "Playable positions";
 
+/// The layout the Playable positions grid draws in (the draft's
+/// `POS_LAYOUT`): the toggle under the panel's title picks one of three,
+/// kept as the `positions_layout` setting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PositionsLayout {
+    /// The pitch's five rows, each centred in the panel (the draft's
+    /// `#pos-grid`).
+    Pitch,
+    /// The same rows starting at one left edge, the block the widest row
+    /// makes centred in the panel (`#pos-grid.left`).
+    Left,
+    /// One position a row, front to back (`POSITION_LIST`), its label
+    /// left of its C B A, the column centred (`#pos-grid.list`).
+    List,
+}
+
+impl PositionsLayout {
+    /// The layouts in the toggle's order.
+    pub(crate) const CHOICES: [PositionsLayout; 3] = [
+        PositionsLayout::Pitch,
+        PositionsLayout::Left,
+        PositionsLayout::List,
+    ];
+
+    /// The segment's text.
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            PositionsLayout::Pitch => "Pitch",
+            PositionsLayout::Left => "Left",
+            PositionsLayout::List => "List",
+        }
+    }
+
+    /// The `positions_layout` setting's spelling of the layout.
+    pub(crate) fn setting(self) -> &'static str {
+        match self {
+            PositionsLayout::Pitch => "pitch",
+            PositionsLayout::Left => "left",
+            PositionsLayout::List => "list",
+        }
+    }
+
+    /// The layout `setting` spells; an unknown spelling reads as `Pitch`.
+    pub(crate) fn from_setting(setting: &str) -> PositionsLayout {
+        match setting {
+            "left" => PositionsLayout::Left,
+            "list" => PositionsLayout::List,
+            _ => PositionsLayout::Pitch,
+        }
+    }
+}
+
 /// The line a tier check's failure draws in the badge's place: it opens
 /// the error in the refusal dialog (the quick actions' line's shape).
 const TIER_CHECK_FAILED_LINE: &str = "Tier check failed: click to see why.";
@@ -134,6 +186,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
         live,
         live_aatf,
         live_suggestions,
+        positions_layout,
         ..
     } = view;
     // Live AATF's held check while it is the selected player's team's:
@@ -204,7 +257,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                             marks.map(|marks| (marks, live_marks::MarkedField::PlayablePositions)),
                             0.0,
                             |ui| {
-                                playable_positions(ui, session, player_id, &positions);
+                                playable_positions(
+                                    ui,
+                                    session,
+                                    player_id,
+                                    &positions,
+                                    positions_layout,
+                                );
                             },
                         );
                     },
@@ -507,6 +566,35 @@ const POS_LABEL_GAP: f32 = 2.0;
 /// The gap between the grid's rows: the draft's `.poscell` padding, 2
 /// above and 3 below, and the `#pos-grid` 4px gap between them.
 const POS_ROW_GAP: f32 = 9.0;
+/// The gap between the layout toggle and the grid under it: the room
+/// that puts the first row's squares at the draft's offset under the
+/// title. The draft itself measures ~8 there (its `#pos-layout` margin,
+/// its block's line box and `#pos-grid`'s own margin); ours is wider,
+/// since the toggle stands ~1 higher under the title (the titles' own
+/// gap is 6 against the draft's ~7.4) and the cells pack the draft's
+/// `.poscell` top padding into `POS_ROW_GAP` rather than inside them.
+const TOGGLE_GRID_GAP: f32 = 10.5;
+/// The gap between the List layout's rows: a cell's padding, 1 above and
+/// 1 below, and the `#pos-grid.list` 1px gap between them.
+const LIST_ROW_GAP: f32 = 3.0;
+/// The List layout's order (the draft's `POS_LIST`): the forwards, the
+/// wide and attacking midfielders, the central ones, the full backs
+/// before the centre back, the keeper.
+const POSITION_LIST: [&str; 13] = [
+    "CF", "SS", "LWF", "RWF", "AMF", "LMF", "RMF", "CMF", "DMF", "LB", "RB", "CB", "GK",
+];
+/// A List row's label cell's width (the draft's `.plabel` 34px).
+const LIST_LABEL_WIDTH: f32 = 34.0;
+/// A List row's cell padding on each side (the draft's `.poscell` 1px
+/// 3px; its 1 above and below only widens the registered outline).
+const LIST_CELL_PAD: f32 = 3.0;
+/// The gap between a List row's label cell and its ratings (the draft's
+/// `.plabel` 6px margin right).
+const LIST_LABEL_GAP: f32 = 6.0;
+/// A List row's whole cell width: the padding, the label cell, the gap
+/// and the three rating squares.
+const LIST_CELL_WIDTH: f32 =
+    2.0 * LIST_CELL_PAD + LIST_LABEL_WIDTH + LIST_LABEL_GAP + RATINGS_WIDTH;
 
 /// The chosen rating's fill and text colours (the draft's `.sel.on`
 /// variants): A a deep green under a white letter, B the selection colour
@@ -525,128 +613,316 @@ fn rating_colors(ui: &egui::Ui, rating: u8) -> (egui::Color32, egui::Color32) {
     }
 }
 
-/// The 13 positions in `POSITION_ROWS` (the rows the Tactics pitch's
-/// formation name reads too), each row centred in the column (the
-/// draft's `#pos-grid .posrow` `justify-content: center`), each cell the
+/// `name`'s position byte (its `POSITIONS` index, as `registered` stores
+/// it) and its `playable` index — the label's index is not the array's.
+fn playable_index(name: &str) -> (usize, usize) {
+    let index = POSITIONS
+        .iter()
+        .position(|position| *position == name)
+        .expect("every grid position is a POSITIONS name");
+    let at = PLAYABLE_POSITIONS
+        .iter()
+        .position(|&position| position == index)
+        .expect("PLAYABLE_POSITIONS is a permutation of 0..13");
+    (index, at)
+}
+
+/// A `POSITION_ROWS` row's drawn width: its cells and the gaps between.
+fn row_width(row: &[&str]) -> f32 {
+    row.len() as f32 * POS_CELL_WIDTH + (row.len() - 1) as f32 * POS_CELL_GAP
+}
+
+/// The `Pitch` `Left` `List` toggle under the panel's title (the draft's
+/// `#pos-layout`), left-aligned, each segment its word padded 5 a side
+/// (`.rate .sel`): the held one filled in the quiet grey of the Stronger
+/// foot toggle's, not the selection's blue — the choice is set once and
+/// forgotten, and the accent would pull the eye to it. `layout` is the
+/// `positions_layout` setting's view field: a press on an unheld segment
+/// holds it, on the held one it writes nothing.
+fn layout_toggle(ui: &mut egui::Ui, layout: &mut PositionsLayout) {
+    // A Button's text is the Body style's here (the widget's own text
+    // style), the size the segments' galleys are measured at.
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let mut height = 0.0f32;
+    let segments = PositionsLayout::CHOICES.map(|choice| {
+        let galley = ui.painter().layout_no_wrap(
+            choice.label().to_owned(),
+            font.clone(),
+            egui::Color32::PLACEHOLDER,
+        );
+        height = height.max(galley.size().y);
+        // The draft's `.rate .sel` 5-point padding either side of the word.
+        (choice, choice.label(), galley.size().x + 10.0)
+    });
+    // The row a line of text tall (the draft gives its segments no
+    // vertical padding): `segment_row` sizes its buttons to
+    // `interact_size.y`, set to their words' height for the row and
+    // restored for the grid's rows.
+    let interact = ui.spacing().interact_size.y;
+    ui.spacing_mut().interact_size.y = height;
+    if let Some((picked, _)) = info_strip::segment_row(ui, &segments, *layout, true) {
+        *layout = picked;
+    }
+    ui.spacing_mut().interact_size.y = interact;
+}
+
+/// The 13 positions in the selected `layout` (the draft's `POS_LAYOUT`),
+/// behind `layout_toggle`: `Pitch` and `Left` draw `POSITION_ROWS` (the
+/// rows the Tactics pitch's formation name reads too), each cell the
 /// position's label above the three `C` `B` `A` ratings (stored 0, 1, 2;
 /// a stored 3 selects none), the cell's contents centred so the label
-/// sits over the B, the registered position's cell outlined in the
-/// selection colour (the draft's `.poscell.reg`). `playable[i]` is
-/// `POSITIONS[PLAYABLE_POSITIONS[i]]`'s rating: the label's index is not
-/// the array's.
+/// sits over the B — each Pitch row centred in the column, the Left
+/// rows starting at the block's left edge, the block as wide as the
+/// widest row itself centred (`#pos-grid.left`); `List` draws
+/// `POSITION_LIST` one position a row, the label in a fixed-width cell
+/// left of its ratings, the column centred (`#pos-grid.list`). The
+/// registered position's cell is outlined in the selection colour (the
+/// draft's `.poscell.reg`) in every layout. `playable[i]` is
+/// `POSITIONS[PLAYABLE_POSITIONS[i]]`'s rating.
 fn playable_positions(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     positions: &PlayerPositions,
+    layout: &mut PositionsLayout,
 ) {
+    // `item_spacing.y` is consumed by the advance after each drawn row:
+    // the gap under the toggle stands before `layout_toggle`, the rows'
+    // own pitch before theirs.
+    ui.spacing_mut().item_spacing.y = TOGGLE_GRID_GAP;
+    layout_toggle(ui, layout);
     let mut playable = positions.playable;
-    let body = egui::TextStyle::Body.resolve(ui.style());
-    let label_height = ui.text_style_height(&egui::TextStyle::Body);
-    ui.spacing_mut().item_spacing.y = POS_ROW_GAP;
     // The rows centre in the column: the nominal 350, or the fields'
     // flush edge and their inset where egui's text runs past it.
     let column_width = (info_strip::GENERAL_WIDTH.max(info_strip::general_content_width(ui))
         + f32::from(CELL_PADDING))
     .min(ui.available_width());
-    for row in POSITION_ROWS {
-        // `add_space` advances the cursor outright, no item spacing.
-        let row_width = row.len() as f32 * POS_CELL_WIDTH + (row.len() - 1) as f32 * POS_CELL_GAP;
-        ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = POS_CELL_GAP;
-            ui.add_space(((column_width - row_width) / 2.0).max(0.0));
-            for name in row {
-                let index = POSITIONS
-                    .iter()
-                    .position(|position| position == name)
-                    .expect("a POSITION_ROWS name is a POSITIONS name");
-                let at = PLAYABLE_POSITIONS
-                    .iter()
-                    .position(|&position| position == index)
-                    .expect("PLAYABLE_POSITIONS is a permutation of 0..13");
-                let cell = ui.vertical(|ui| {
-                    // The draft's `.poscell` 62px and `.rate`'s squares
-                    // 2 apart: `Button::selectable` is what
-                    // `selectable_value` draws.
-                    ui.set_width(POS_CELL_WIDTH);
-                    // The label's row one line of text high and the squares
-                    // `RATING_SIDE` high, as the draft's: egui would make
-                    // either row at least a control's height.
-                    ui.spacing_mut().interact_size.y = label_height;
-                    ui.spacing_mut().item_spacing.y = POS_LABEL_GAP;
-                    // The cell's contents centred (the draft's `align-items:
-                    // center`): the label padded to the cell's centre, so
-                    // over the B; the squares 3.5 in.
-                    let galley = ui.painter().layout_no_wrap(
-                        (*name).to_owned(),
-                        body.clone(),
-                        egui::Color32::PLACEHOLDER,
-                    );
-                    ui.horizontal(|ui| {
-                        ui.add_space(((POS_CELL_WIDTH - galley.size().x) / 2.0).max(0.0));
-                        // A label's click makes its position the registered
-                        // one (the draft's `.plabel`), the same edit as
-                        // General info's Registered position combo; on the
-                        // registered position's own label it writes nothing,
-                        // so no empty undo entry.
-                        let response = ui
-                            .add(
-                                egui::Label::new(*name)
-                                    .sense(egui::Sense::click())
-                                    .selectable(false),
-                            )
-                            .on_hover_cursor(egui::CursorIcon::PointingHand)
-                            .on_hover_text(format!("Make {name} the registered position"));
-                        if response.clicked() && index != usize::from(positions.registered) {
-                            edit_player(session, player_id, response.id.value(), |player| {
-                                player.positions.registered =
-                                    u8::try_from(index).expect("a POSITIONS index is a byte");
-                            });
-                        }
-                    });
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = RATING_GAP;
-                        ui.spacing_mut().button_padding = egui::vec2(0.0, 0.0);
-                        ui.add_space((POS_CELL_WIDTH - RATINGS_WIDTH) / 2.0);
-                        for (label, rating) in RATING_LABELS {
-                            let response = if playable[at] == rating {
-                                // The chosen rating filled (the draft's
-                                // `.sel.on.*`).
-                                let (fill, text) = rating_colors(ui, rating);
-                                ui.add(
-                                    egui::Button::selectable(
-                                        true,
-                                        egui::RichText::new(label).color(text),
-                                    )
-                                    .min_size(egui::vec2(RATING_SIDE, RATING_SIDE))
-                                    .fill(fill),
-                                )
-                            } else {
-                                ui.add(
-                                    egui::Button::selectable(false, label)
-                                        .min_size(egui::vec2(RATING_SIDE, RATING_SIDE)),
-                                )
-                            };
-                            if response.clicked() && playable[at] != rating {
-                                playable[at] = rating;
-                                edit_player(session, player_id, response.id.value(), |player| {
-                                    player.positions.playable = playable;
-                                });
-                            }
-                        }
-                    });
+    match *layout {
+        PositionsLayout::Pitch | PositionsLayout::Left => {
+            ui.spacing_mut().item_spacing.y = POS_ROW_GAP;
+            // Left starts every row at the block's left edge; Pitch
+            // centres each row's own width.
+            let widest = POSITION_ROWS
+                .iter()
+                .map(|row| row_width(row))
+                .fold(0.0_f32, f32::max);
+            for row in POSITION_ROWS {
+                let width = if *layout == PositionsLayout::Left {
+                    widest
+                } else {
+                    row_width(row)
+                };
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = POS_CELL_GAP;
+                    // `add_space` advances the cursor outright, no item
+                    // spacing.
+                    ui.add_space(((column_width - width) / 2.0).max(0.0));
+                    for name in row {
+                        grid_cell(ui, session, player_id, positions, &mut playable, name);
+                    }
                 });
-                if index == usize::from(positions.registered) {
-                    ui.painter().rect_stroke(
-                        cell.response.rect.expand(2.0),
-                        ui.visuals().widgets.inactive.corner_radius,
-                        egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
-                        egui::StrokeKind::Outside,
-                    );
-                }
             }
+        }
+        PositionsLayout::List => {
+            // The row a rating square tall, as the draft's list cells
+            // are; the column of them centred in the panel.
+            ui.spacing_mut().item_spacing.y = LIST_ROW_GAP;
+            ui.spacing_mut().interact_size.y = RATING_SIDE;
+            let pad = ((column_width - LIST_CELL_WIDTH) / 2.0).max(0.0);
+            for name in POSITION_LIST {
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    ui.add_space(pad);
+                    list_row(ui, session, player_id, positions, &mut playable, name);
+                });
+            }
+        }
+    }
+}
+
+/// One `POSITION_ROWS` cell (the draft's `.poscell`): the position's
+/// label above its three ratings, both centred in the 62-wide cell, the
+/// registered position's outlined around it.
+fn grid_cell(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    positions: &PlayerPositions,
+    playable: &mut [u8; 13],
+    name: &'static str,
+) {
+    let (index, at) = playable_index(name);
+    let cell = ui.vertical(|ui| {
+        // The draft's `.poscell` 62px and `.rate`'s squares 2 apart:
+        // `Button::selectable` is what `selectable_value` draws.
+        ui.set_width(POS_CELL_WIDTH);
+        // The label's row one line of text high and the squares
+        // `RATING_SIDE` high, as the draft's: egui would make either row
+        // at least a control's height.
+        ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
+        ui.spacing_mut().item_spacing.y = POS_LABEL_GAP;
+        // The cell's contents centred (the draft's `align-items:
+        // center`): the label padded to the cell's centre, so over the
+        // B; the squares 3.5 in.
+        let galley = ui.painter().layout_no_wrap(
+            name.to_owned(),
+            egui::TextStyle::Body.resolve(ui.style()),
+            egui::Color32::PLACEHOLDER,
+        );
+        ui.horizontal(|ui| {
+            ui.add_space(((POS_CELL_WIDTH - galley.size().x) / 2.0).max(0.0));
+            let label = ui
+                .add(
+                    egui::Label::new(name)
+                        .sense(egui::Sense::click())
+                        .selectable(false),
+                )
+                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                .on_hover_text(format!("Make {name} the registered position"));
+            register_on_click(&label, session, player_id, index, positions);
+        });
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = RATING_GAP;
+            ui.spacing_mut().button_padding = egui::vec2(0.0, 0.0);
+            ui.add_space((POS_CELL_WIDTH - RATINGS_WIDTH) / 2.0);
+            rating_squares(ui, session, player_id, playable, at);
+        });
+    });
+    if index == usize::from(positions.registered) {
+        registered_outline(ui, cell.response.rect.expand(2.0));
+    }
+}
+
+/// One `POSITION_LIST` row (the draft's `#pos-grid.list .poscell`): the
+/// position's label at the left of a fixed-width cell, its `C` `B` `A`
+/// at the right — the whole label cell the click target, as the draft's
+/// `.plabel` is — the registered position's outlined around the cell
+/// and its padding.
+fn list_row(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    positions: &PlayerPositions,
+    playable: &mut [u8; 13],
+    name: &'static str,
+) {
+    let (index, at) = playable_index(name);
+    let cell_min = ui.cursor().min;
+    ui.add_space(LIST_CELL_PAD);
+    // The label cell's click target is its whole box, so it is a hand-
+    // drawn galley over an interact rather than a Label widget (whose
+    // click region would be the text alone).
+    let (label_rect, cell) = ui.allocate_exact_size(
+        egui::vec2(LIST_LABEL_WIDTH, ui.spacing().interact_size.y),
+        egui::Sense::click(),
+    );
+    let cell = cell
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+        .on_hover_text(format!("Make {name} the registered position"));
+    cell.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::accesskit::Role::Label, true, name.to_owned())
+    });
+    register_on_click(&cell, session, player_id, index, positions);
+    let galley = ui.painter().layout_no_wrap(
+        name.to_owned(),
+        egui::TextStyle::Body.resolve(ui.style()),
+        egui::Color32::PLACEHOLDER,
+    );
+    ui.painter().galley(
+        egui::pos2(
+            label_rect.min.x,
+            label_rect.center().y - galley.size().y / 2.0,
+        ),
+        galley,
+        ui.style().interact(&cell).text_color(),
+    );
+    ui.add_space(LIST_LABEL_GAP);
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = RATING_GAP;
+        ui.spacing_mut().button_padding = egui::vec2(0.0, 0.0);
+        rating_squares(ui, session, player_id, playable, at);
+    });
+    if index == usize::from(positions.registered) {
+        // Around the whole cell, padding included (the draft's outline
+        // sits on the `.poscell` box): the cell's 1 point above and
+        // below the squares' row.
+        let cell_rect = egui::Rect::from_min_size(
+            cell_min - egui::vec2(0.0, 1.0),
+            egui::vec2(LIST_CELL_WIDTH, RATING_SIDE + 2.0),
+        );
+        registered_outline(ui, cell_rect);
+    }
+}
+
+/// `response`'s click makes `index` the registered position (the draft's
+/// `.plabel`, the same undoable edit as General info's Registered
+/// position combo); on the registered one's own label it writes nothing,
+/// so no empty undo entry.
+fn register_on_click(
+    response: &egui::Response,
+    session: &mut Session,
+    player_id: u32,
+    index: usize,
+    positions: &PlayerPositions,
+) {
+    if response.clicked() && index != usize::from(positions.registered) {
+        edit_player(session, player_id, response.id.value(), |player| {
+            player.positions.registered = u8::try_from(index).expect("a POSITIONS index is a byte");
         });
     }
+}
+
+/// The position `at`'s `C` `B` `A` squares (the draft's `.rate`): the
+/// chosen one filled (`rating_colors`), a click on another writing
+/// `playable` back as one undoable edit. The letters not chosen draw
+/// the normal text colour, darker than a resting button's own grey, so
+/// the chosen one stands out (the draft's `.rate:not(.off)
+/// .sel:not(.on)`): the row's resting colour is set to it inside, where
+/// only these squares draw, and a hover still takes the hovered state's
+/// brighter grey.
+fn rating_squares(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    playable: &mut [u8; 13],
+    at: usize,
+) {
+    ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
+    for (label, rating) in RATING_LABELS {
+        let response = if playable[at] == rating {
+            // The chosen rating filled (the draft's `.sel.on.*`).
+            let (fill, text) = rating_colors(ui, rating);
+            ui.add(
+                egui::Button::selectable(true, egui::RichText::new(label).color(text))
+                    .min_size(egui::vec2(RATING_SIDE, RATING_SIDE))
+                    .fill(fill),
+            )
+        } else {
+            ui.add(
+                egui::Button::selectable(false, label)
+                    .min_size(egui::vec2(RATING_SIDE, RATING_SIDE)),
+            )
+        };
+        if response.clicked() && playable[at] != rating {
+            playable[at] = rating;
+            let written = *playable;
+            edit_player(session, player_id, response.id.value(), |player| {
+                player.positions.playable = written;
+            });
+        }
+    }
+}
+
+/// The registered position's cell outline (the draft's `.poscell.reg`):
+/// the selection colour's stroke outside `rect`, rounded as the widgets'
+/// frames are.
+fn registered_outline(ui: &egui::Ui, rect: egui::Rect) {
+    ui.painter().rect_stroke(
+        rect,
+        ui.visuals().widgets.inactive.corner_radius,
+        egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
+        egui::StrokeKind::Outside,
+    );
 }
 
 /// The 25 stats of `ABILITY_STATS` in one column in the game's order (the

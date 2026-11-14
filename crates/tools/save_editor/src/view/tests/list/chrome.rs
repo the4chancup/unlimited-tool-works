@@ -1019,3 +1019,86 @@ fn the_category_setting_survives_a_restart_and_another_save() {
         "an unknown value reads as all"
     );
 }
+
+/// The Playable positions layout toggle's segment labeled `label` (the
+/// buttons under the panel's title; General info's own `Left` sits above
+/// it).
+fn layout_segment<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
+    let title_bottom = label_bounds(nodes, "Playable positions").y1;
+    nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::Button
+                && node.label() == Some(label)
+                && node.bounds().is_some_and(|b| b.y0 > title_bottom)
+        })
+        .unwrap_or_else(|| panic!("no {label:?} segment under Playable positions"))
+}
+
+// The layout the positions toggle holds is the `positions_layout`
+// setting, written on the press: a restarted editor holds the same
+// segment, and an unknown value in the file reads as `pitch` and stays
+// until a press.
+// SE-GUI-85
+#[test]
+fn the_positions_layout_setting_survives_a_restart() {
+    let dir = crate::test_support::scratch("positions_layout_setting");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, fixture_save(PesVersion::Pes21)).unwrap();
+    let (ctx, shared, _events_rx, _requests_rx) =
+        crate::test_support::shared_tool_context(&dir, studio_core::Settings::default());
+    let mut tool = crate::Tool::new();
+    tool.view.open(&path);
+    let mut window = Headless::new();
+
+    // Press List in the toggle under Playable positions, a pointer click
+    // as the member does it.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    press_release(&mut window, centre(layout_segment(&nodes, "List")), |ui| {
+        tool.view(ui, &ctx)
+    });
+    assert_eq!(
+        ctx.tool_settings(crate::messages::TOOL_ID)
+            .get("positions_layout")
+            .and_then(toml::Value::as_str),
+        Some("list"),
+        "the press wrote the setting"
+    );
+
+    // The editor started again holds List.
+    let mut restarted = crate::Tool::new();
+    restarted.view.open(&path);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| restarted.view(ui, &ctx));
+    assert_eq!(
+        layout_segment(&nodes, "List").toggled(),
+        Some(accesskit::Toggled::True),
+        "the restart holds List"
+    );
+
+    // An unknown value in the file reads as `pitch`, and stays: no press
+    // has named a layout, so the file is not rewritten.
+    let mut table = toml::Table::new();
+    table.insert(
+        "positions_layout".to_owned(),
+        toml::Value::String("grid".to_owned()),
+    );
+    shared
+        .lock()
+        .unwrap()
+        .set_tool(crate::messages::TOOL_ID, table);
+    let mut third = crate::Tool::new();
+    third.view.open(&path);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| third.view(ui, &ctx));
+    assert_eq!(
+        layout_segment(&nodes, "Pitch").toggled(),
+        Some(accesskit::Toggled::True),
+        "an unknown value reads as pitch"
+    );
+    assert_eq!(
+        ctx.tool_settings(crate::messages::TOOL_ID)
+            .get("positions_layout")
+            .and_then(toml::Value::as_str),
+        Some("grid"),
+        "the unknown value stays in the file"
+    );
+}

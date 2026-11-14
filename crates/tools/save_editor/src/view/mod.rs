@@ -57,6 +57,8 @@ use crate::session::journal;
 use crate::session::rules::{self, Imported};
 use crate::session::selection::{self, TeamCategory, TeamChoice};
 
+pub(crate) use abilities::PositionsLayout;
+
 /// The list row the selection names: a team by id, or a player by team
 /// and roster slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +106,11 @@ pub(crate) struct SaveView {
     /// `team_category` setting as `scroll_names` is synced, so it stands
     /// when another save opens.
     pub(crate) team_category: TeamCategory,
+    /// The layout the Playable positions grid draws in (the toggle under
+    /// the panel's title): `Tool::view` syncs it with the
+    /// `positions_layout` setting as `scroll_names` is synced, and a
+    /// press on a segment writes the pick back.
+    pub(crate) positions_layout: abilities::PositionsLayout,
     /// The filter box's text.
     filter: String,
     /// The selected row.
@@ -461,6 +468,7 @@ impl SaveView {
             recorder: Recorder::default(),
             team: TeamChoice::All,
             team_category: TeamCategory::All,
+            positions_layout: abilities::PositionsLayout::Pitch,
             filter: String::new(),
             selected: None,
             page: PlayerScreen::Stats,
