@@ -3064,10 +3064,11 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-14 (0.0.2-flatpitch 1b's sidekick): three copies of "write a temporary file
-  beside it, then rename it onto the name" (`teams_list::write`, `session::rules::import`,
-  the picture dialog's `write_picture`); CONTRIBUTING's third-copy rule makes it one
-  function, which crosses crates.
+- resolved 2026-11-14 (SWE-2, `513ef0af`): the copies of "write a temporary file beside it,
+  then rename it onto the name" are one function, `studio_core::files::replace_file`, called
+  by five sites (the repro bundle, the ruleset editor's `write_text`, the rules import, the
+  teams list, the picture dialog). `Settings::save` and the Team compiler's
+  `paths::replace_file` keep their own, since their temporary's name is unique per process.
 
 - resolved 2026-11-14 (SWE-2 and the lead, `ddde3243`): the pipeline on `93d9b548` left 15
   mutants alive in `save_editor` `appearance/mod.rs`; 10 are caught by new layout tests, 3
@@ -3373,6 +3374,8 @@ points there.
   member's machine running PES may also be. Not k5a's (it touches no crash path). Diagnose
   before trusting a dump on a loaded machine: rerun under the gates' load, read the
   monitor's own wait and the log it leaves; do not loosen the test
+  Seen again 2026-11-14 in the lead's `gates-changed 62e261fa` (`FileNotFound` at
+  `crash_dump.rs:70`, beside a SWE-2 census build); alone it passed in 0.27 s.
 
 - open 2026-10-28 — `studio_core`'s first-run tests depend on the portable hint's width
   (8.29b): a hint of about 100 characters made three of them fail as if a click were lost
