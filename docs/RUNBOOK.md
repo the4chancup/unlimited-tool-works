@@ -757,10 +757,10 @@ upgrader's output, the updater's swap): the three loops above. *Tier 2*, other s
 loop, then one round of one paid reviewer, which runs again only by the five-accepted rule.
 *Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a
 vital script, (e) above, keeps its own: SWE-2 rounds at least, Astra when a change reshapes
-how a run measures). A step's worklog line names its tier when it lands. A loop not started
-within seven days of the landing is not run on its own: the surface's next converge audit,
-(c) above, covers it, and the step's line says so. We do not give every slice the full
-stack: ten loops were once queued, some over code a week old, while it was the first rounds
+how a run measures). A step's worklog line names its tier when it lands. A loop that waits
+for its reviewer's usage stays queued until the usage comes back: the limits reset weekly at
+most, so the wait is bounded, and dropping the loop would lose its first round, the one that
+finds the most. We do not give every slice the full stack: ten loops were once queued, some over code a week old, while it was the first rounds
 that found the real defects and the one second round after a rework accepted none of its
 seven concerns.
 **The citation audit before every review round over code.** The lead runs `just

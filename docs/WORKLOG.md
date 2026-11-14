@@ -2117,7 +2117,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
       tactics says when the two numbers are disabled
     - [ ] the look in the built window, both themes (Pending looks)
-  - [ ] 0.0.2-sel the PES selector drawn only for a tool that targets the version, its place
+  - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
     2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
     "Set PES path", SE-GUI-26, 28 and 50). Tier 2
@@ -2414,7 +2414,7 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-poc11 the upgrader writes no team ID and needs no teams list (DECISIONS
     2026-11-09 "the Studio format names no team ID"; done 2026-11-09): the save's team found
     by name, `gk_kitN` for a keeper's `u0XXXgN`
-  - [ ] 0.0.2-poc12 no ambiguous Common spelling (the maintainer, 2026-11-09, ruling on
+  - [ ] 0.0.2-poc12 (tier 1) no ambiguous Common spelling (the maintainer, 2026-11-09, ruling on
     poc11's *lead* choices after Astra's round). Rulings in DECISIONS 2026-11-09 "no ambiguous
     Common spelling" and "the kit stand-in is written `team_kit`", 2026-11-11 for slice 4: the
     team's Common is `team_common_folder/…` (long form
@@ -2479,14 +2479,14 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] 0.0.2-poc.2 rebuilt with poc13e/f (2026-11-11; branch `9eafbfad`, archive SHA-256
       `1cabaa13…`): the Friendlies with `--legacy-ids` upgrade 36 of 39 and compile with only
       the expected Errors. Not checked in game (look: Pending looks)
-  - [x] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
+  - [x] 0.0.2-ux1 (tier 2) the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): ux1a and ux1b below
     - [x] ux1a the upgrader's line (EU-CLI-12): `PipelineEvent::ExportNamed` names the output
       half, the parts are the files written into staging (no test for a failed read's part)
     - [x] ux1b `--timestamps` on `check` and `compile` (TC-CLI-13): the time on the event
       envelope (`PipelineEventEnvelope.made_at`)
-    - [ ] review rounds over ux1a + ux1b (`03ce3612..2ea6e27c`): the Carbon loop waits for
-      `home`'s 2026-11-15 reset. Astra A-ux1: 2 accepted (a test of `write_batches`' finish
+    - [x] review rounds over ux1a + ux1b (`03ce3612..2ea6e27c`): Astra's round is tier 2's one
+      paid round, so no Carbon loop. Astra A-ux1: 2 accepted (a test of `write_batches`' finish
       times, the plan's `duplicate_path` timing), its loop ended. SWE-2 S-ux1 r1 (three
       parts): 1 accepted (TC-CLI-13's `check` test asserts no stderr), its loop ended
   - [x] 0.0.2-chk 2026-11-12 (the lead): the library's compile is measured against our own
@@ -2501,13 +2501,14 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): whole
     withdrawn areas in `docs/spec/withdrawn_ids.md`, runs of withdrawn IDs as range lines
   - [x] 0.0.2a JPEG XL sources (DECISIONS 2026-10-30; TC-TEX-22): `jxl` =0.8.0 decoded
-    directly, built without AVX-512 (DECISIONS 2026-11-11); Carbon after 11-15
+    directly, built without AVX-512 (DECISIONS 2026-11-11); tier 1: Carbon after 11-15, then Astra
   - [x] 0.0.2-ids the team's manager id (+4, u32) and home stadium id (+10, u16) on PES 17
-    and 18 (DECISIONS 2026-11-11; `8cb837d6`, merge `395e734c`); Carbon after 11-15
+    and 18 (DECISIONS 2026-11-11; `8cb837d6`, merge `395e734c`); tier 1: Carbon after 11-15, then
+    Astra
   - [x] 0.0.2-st15 the home stadium id on PES 2015 and 2016 (DECISIONS 2026-11-11;
     `9975abe6`, merge `9ae8e390`): the u16 at +6, shown live. Not checked in game (look:
-    Pending looks); Carbon after 11-15
-  - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
+    Pending looks); tier 1: Carbon after 11-15, then Astra
+  - [ ] 0.0.2b (tier 1) no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Compiler's tests and goldens that expect BC7
     follow, and the library parity against Red re-run (Red ships BC3). Pulled into the
