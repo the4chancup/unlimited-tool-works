@@ -1111,14 +1111,16 @@ fn under_illegal_formations_the_pitch_sets_a_starters_spot_and_position_apart() 
         "LB",
         "held over the SS his badge reads LB"
     );
-    // His badge is the last filled rect of the badge's size there.
+    // His badge is the last filled rect of the badge's size there: a
+    // medal's outline over it is a stroked rect, not the fill.
     let fill = shapes
         .iter()
         .rev()
         .find_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
                 if shape.rect.center().distance(badge.center()) <= 0.5
-                    && (shape.rect.size() - badge.size()).length() <= 0.5 =>
+                    && (shape.rect.size() - badge.size()).length() <= 0.5
+                    && shape.stroke.is_empty() =>
             {
                 Some(shape.fill)
             }

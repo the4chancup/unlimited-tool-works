@@ -92,6 +92,47 @@ fn an_items_hover_says_its_click_switches_to_the_player() {
     );
 }
 
+/// A row's Item cell offers the switch only while a roster holds the
+/// player: off every roster his rows hover nothing, a rostered
+/// teammate's rows hover the switch.
+#[test]
+fn an_unrostered_rows_item_cell_offers_no_switch() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_unrostered_tip");
+    // 71403's slot emptied: no roster holds him; the patch writes him
+    // and 71405, whose rows carry the switch.
+    let mut co = team_entry(&view, CO);
+    let slot = co
+        .roster
+        .iter()
+        .position(|entry| entry.player_id == CO_SLOT_3)
+        .expect("71403 is on 714's roster");
+    co.roster[slot].player_id = 0;
+    view.session.as_mut().unwrap().edit_team(1, co);
+    assert!(
+        !crate::view::comparator::roster_of(view.session.as_ref().unwrap().file())
+            .contains_key(&CO_SLOT_3),
+        "premise: no roster holds 71403"
+    );
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![team(CO, "/co/", co_two_players(&view))],
+    );
+    previewed(&mut window, &mut view, &text);
+
+    let unrostered = panel_cell(&mut window, &mut view, TWO_TEAM_ROWS[0][0]).expect("71403's item");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&unrostered), "this player"),
+        None,
+        "no roster holds him: no tooltip"
+    );
+    let rostered = panel_cell(&mut window, &mut view, TWO_TEAM_ROWS[2][0]).expect("71405's item");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&rostered), "this player").as_deref(),
+        Some("Click to switch to this player")
+    );
+}
+
 // SE-GUI-18
 #[test]
 fn a_row_of_the_second_player_selects_him() {
