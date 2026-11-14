@@ -1942,7 +1942,9 @@ briefs, review loops, gates and mutation runs as for any step.
     `just pipeline`'s load, two clean pipelines retire the watch entries
     Census done 2026-11-14 (SWE-2, `.tmp/determ/census.findings.md`): 1 certain race (the copy
     test), 3 clicks on a dialog a reply can move, 4 suspects, and 5-10 s hang bounds; the
-    slice runs on `sk/determ` (`../4cc-studio-temp/determ`, `.tmp/determ/brief_slice.md`).
+    slice merged 2026-11-14 (`c4eee271`): a held-run seam (`Pending::held`), the copy test's
+    check held, range picks after the dialog's check, every hang bound 120 s; mutation runs'
+    test timeout at least 150 s to match (`.cargo/mutants.toml`). Open: two clean pipelines.
     Left out, for the watch list: `export_upgrader/src/staging.rs:251` (a 300 ms releaser
     against a 1.9 s retry window) and `studio/tests/crash_dump.rs` (the child's 2 s
     connect bound is production code's)
@@ -2425,7 +2427,7 @@ briefs, review loops, gates and mutation runs as for any step.
       - the VGL27 Friendlies through the bundle 2026-11-09 (39 teams): 37 upgrade and compile
         clean for PES 2019; /wuwa/'s note colour `##8C96C5` refuses its upgrade, which stays
         (DECISIONS 2026-11-09)
-      Open: the hand-over to VGL's organizer (the maintainer's). The Linux tarball
+      Handed over: 0.0.2-poc.5, by the maintainer; the organizer has not tried it yet. The Linux tarball
       carries no `.bat` file (`release.py` `PLATFORMS`: Linux's launchers are none)
   - [x] 0.0.2-poc9 a legacy kit folder's file names lose their Studio tokens (DECISIONS
     2026-11-09, two entries; EU-MDL-28): an author's token written `kit_tex` (`975e68a7`)
