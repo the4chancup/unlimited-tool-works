@@ -236,6 +236,31 @@ fn golden_text() {
     );
 }
 
+/// The spec block's comments are the writer's: every comment line and
+/// `#`-tail it shows appears in the emitted text. Team 702's slot 03
+/// makes the block's `# player 70203` literally.
+#[test]
+fn every_comment_of_the_spec_block_is_emitted() {
+    let patch = patch_at(
+        PesVersion::Pes21,
+        vec![PatchTeam {
+            id: 702,
+            name: "/a/".to_string(),
+            players: BTreeMap::from([(3, named("Snuffy"))]),
+        }],
+    );
+    let text = patch.to_toml().expect("emit");
+    for comment in crate::test_support::spec_block_comments(
+        "docs/spec/pes_savefile/operations.md",
+        "cpks = [\"4cc_69.cpk\"]",
+    ) {
+        assert!(
+            text.contains(&comment),
+            "a comment the writer does not emit: {comment}"
+        );
+    }
+}
+
 /// The presentation table carries each key the patch's version holds:
 /// both on PES 21, `star` alone on PES 19, which stores no playing
 /// attitude.

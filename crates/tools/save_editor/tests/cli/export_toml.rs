@@ -47,8 +47,9 @@ fn all_teams_writes_one_file_per_team_replacing_an_older_one() {
     let value = |line: &str| line.split('#').next().unwrap().trim().to_owned();
     for id in &ids {
         let text = fs::read_to_string(sandbox.path(&format!("teams/{id}.toml"))).unwrap();
+        // The file's first line says what it is; the version is the second.
         assert_eq!(
-            value(text.lines().next().unwrap()),
+            value(text.lines().nth(1).unwrap()),
             "pes_version = 21",
             "{id}"
         );

@@ -225,7 +225,12 @@ pub(super) fn emit_tactics(
             out.push_str("]\n");
         }
         if let Some(instructions) = &preset.instructions {
-            out.push_str(&format!("\n[tactics.preset_{n}.instructions]\n"));
+            out.push('\n');
+            out.push_str(&padded(
+                &format!("[tactics.preset_{n}.instructions]"),
+                "PES 17 and later; names converted to the target version's on import",
+            ));
+            out.push('\n');
             let attack: Vec<String> = instructions.attack.iter().map(instruction_text).collect();
             let defence: Vec<String> = instructions.defence.iter().map(instruction_text).collect();
             out.push_str(&format!("attack = [{}]\n", attack.join(", ")));

@@ -76,6 +76,11 @@
   13 positions as they stand on the pitch, as the same rows from one left edge, or one
   position a row, and the choice is remembered. The letters of the ratings not chosen are
   darker, so the chosen one stands out.
+- **Save editor**: a Team TOML now opens by saying that a key left out of it changes nothing
+  on import, and its stats table says the game shows weak foot, form and injury resistance
+  one higher than the file.
+- **Export upgrader**: the comments of a kit's `config.toml` start at one column, so a
+  two-digit value no longer pushes its comment out of line.
 
 ### New checks
 
@@ -128,6 +133,10 @@
   share one corner rounding again.
 - **Save editor**: an event logo that opens the event's page is framed like a button while
   the pointer is on it, as the 4cc logo is.
+- **Save editor**: a Team TOML export opens with a line saying what the file is, and its
+  stats and instructions tables each carry a short note.
+- **Export upgrader**: a kit `config.toml`'s comments sit at one column whatever the
+  value's width.
 
 ## [0.0.1] - 2026-11-03
 

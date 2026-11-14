@@ -80,6 +80,46 @@ pub(crate) fn copy_appearance(target: &mut PlayerEntry, donor: &PlayerEntry) {
     target.edit_flags.strip = donor.edit_flags.strip;
 }
 
+/// Every comment the spec's TOML block at `doc_path` (repo-root-relative)
+/// shows: each whole-comment line and each `#`-tail of a key line, so a
+/// test can check the emitted text carries them all. `marker` is a
+/// substring inside the block, naming which `toml` fence to read where the
+/// document holds several. A `#` inside a quoted value is no comment, and a
+/// comment line or tail opening with `...`/`…` marks elided rows, which no
+/// writer writes.
+pub(crate) fn spec_block_comments(doc_path: &str, marker: &str) -> Vec<String> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../")
+        .join(doc_path);
+    let doc = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    let marker_at = doc.find(marker).expect("the block's marker");
+    let fence = doc[..marker_at]
+        .rfind("```toml")
+        .expect("a toml fence above the marker");
+    let body = fence + "```toml".len();
+    let end = doc[marker_at..]
+        .find("```")
+        .map(|i| marker_at + i)
+        .expect("the fence closes");
+    let mut comments = Vec::new();
+    for line in doc[body..end].lines() {
+        let line = line.trim_end();
+        let comment = if line.starts_with('#') {
+            line
+        } else if let Some(at) = line.find(" # ") {
+            &line[at + 1..]
+        } else {
+            continue;
+        };
+        let elided = comment[1..].trim_start().starts_with("...")
+            || comment[1..].trim_start().starts_with('…');
+        if !elided {
+            comments.push(comment.to_string());
+        }
+    }
+    comments
+}
+
 /// A fixture as an `EditFile`, plus the container bytes it decoded from.
 pub(crate) fn open(version: PesVersion) -> (crate::file::EditFile, Vec<u8>) {
     let container = fixture_container(version);

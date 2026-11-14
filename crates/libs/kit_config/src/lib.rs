@@ -346,6 +346,78 @@ mod tests {
         assert_eq!(config.encode(PesVersion::Pes21), bytes);
     }
 
+    /// The comments the spec's `config.toml` block shows: each whole-comment
+    /// line and each `#`-tail of a key line. A `#` inside a quoted value is
+    /// no comment, and a comment opening with `...`/`…` marks elided rows,
+    /// which no writer writes.
+    fn spec_block_comments() -> Vec<String> {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/spec/kit_config_editor.md");
+        let doc =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        let marker_at = doc.find("winter_collar = 105").expect("the block's marker");
+        let fence = doc[..marker_at]
+            .rfind("```toml")
+            .expect("a toml fence above the marker");
+        let body = fence + "```toml".len();
+        let end = doc[marker_at..]
+            .find("```")
+            .map(|i| marker_at + i)
+            .expect("the fence closes");
+        let mut comments = Vec::new();
+        for line in doc[body..end].lines() {
+            let line = line.trim_end();
+            let comment = if line.starts_with('#') {
+                line
+            } else if let Some(at) = line.find(" # ") {
+                &line[at + 1..]
+            } else {
+                continue;
+            };
+            let elided = comment[1..].trim_start().starts_with("...")
+                || comment[1..].trim_start().starts_with('…');
+            if !elided {
+                comments.push(comment.to_string());
+            }
+        }
+        comments
+    }
+
+    /// The block's comments are the writer's: every comment line and
+    /// `#`-tail the spec block shows appears in a generated file. One
+    /// remainder off the template makes `[unknown]` emit.
+    #[test]
+    fn every_comment_of_the_spec_block_is_emitted() {
+        let mut config = KitConfig::template();
+        config.unknown.insert(0x13, TEMPLATE[0x13].wrapping_add(1));
+        let text = config.to_toml();
+        assert!(text.contains("[unknown]"), "{text}");
+        for comment in spec_block_comments() {
+            assert!(
+                text.contains(&comment),
+                "a comment the writer does not emit: {comment}"
+            );
+        }
+    }
+
+    /// A two-digit value pushes no comment right: every `#` sits at the
+    /// same column, sized for the widest `key = value` the file writes
+    /// (`long_sleeves = "undershirt-only"`).
+    #[test]
+    fn a_two_digit_value_moves_no_comment() {
+        let mut config = KitConfig::template();
+        config.name.y = 31;
+        let text = config.to_toml();
+        let columns: Vec<usize> = text
+            .lines()
+            .filter(|line| line.contains(" # "))
+            .map(|line| line.find(" # ").expect("filtered"))
+            .collect();
+        assert!(!columns.is_empty());
+        // ` # ` at byte 32 is `#` at column 34.
+        assert!(columns.iter().all(|&c| c == 32), "{columns:?}");
+    }
+
     #[test]
     fn toml_round_trip_carries_everything() {
         assert!(!KitConfig::template().to_toml().contains("[unknown]"));

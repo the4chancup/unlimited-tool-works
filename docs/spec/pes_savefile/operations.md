@@ -382,12 +382,12 @@ types and celebrations past the editor's ranges, and a dump must carry them), wh
 `settings.toml` keeps the editor ranges (decision entry, 2.17h-3).
 
 ```toml
-# team.toml — one team of one save. Absent = untouched on import, at every level.
+# One team of one save. A key left out is left untouched on import, at every level.
 pes_version = 19                # the PES version of the save this was exported from; importing into another version converts the values
 
 [team]
 id = 841                        # the team this was exported from; the command line imports onto it, the Save editor onto the open team
-name = "/98hu/"                 # colour codes as in the save
+name = "/98hu/"
 short_name = "I1"
 manager_id = 1000               # PES 17 and later
 stadium_id = 12
@@ -421,7 +421,7 @@ offside_trap = false
 preset_change = false
 attack_defence_levels = false   # PES 17 and later
 
-[tactics.preset_1]              # preset_1 .. preset_3
+[tactics.preset_1]
 man_marking = [255, 255, 255, 255, 10, 255, 255, 2, 4, 255, 5]   # for each formation slot, the opponent's formation slot he marks; 255 = nobody
 [tactics.preset_1.style]
 attacking_style = "possession"  # "counter_attack" | "possession"
@@ -440,8 +440,8 @@ numbers_in_attack = 3           # 1 few, 2 medium, 3 many
 numbers_in_defence = 3          # 1 few, 2 medium, 3 many
 # players: where each starting_eleven player stands, in its order; roster slot 0 is [players.01]
 [tactics.preset_1.formation_1]  # formation_1 kick-off, formation_2 in possession, formation_3 out of possession
-players = [{ position = "GK", x = 52, y = 2 }, ...]  # eleven; position "GK" .. "CF"; x, y as stored
-[tactics.preset_1.instructions] # PES 17 and later; instruction names, converted to the target version's on import
+players = [{ position = "GK", x = 52, y = 2 }, ...]
+[tactics.preset_1.instructions] # PES 17 and later; names converted to the target version's on import
 attack = [{ instruction = "hug_the_touchline", player = 3 }, { instruction = "off", player = 0 }]
 defence = [{ instruction = "off", player = 0 }, { instruction = "off", player = 0 }]
 
@@ -457,7 +457,7 @@ boots_id = 3601
 gloves_id = 0
 base_copy_id = 84101            # the player whose look this one copies; his own id (the team id times 100 plus the slot) means none and becomes the target player's own id on import
 
-[players.01.stats]              # stored values; the comments give the game's editor range, the parser accepts the field's stored range
+[players.01.stats]              # stored values: the game shows weak foot, form and injury resistance one higher
 attacking_prowess = 77
 ball_control = 77
 dribbling = 77
@@ -487,18 +487,16 @@ weak_foot_usage = 1             # 0 to 3
 weak_foot_accuracy = 1          # 0 to 3
 form = 3                        # 0 to 7
 injury_resistance = 1           # 0 to 2
-star = 2                        # PES 19 and later; 0 to 7
-playing_attitude = 0            # PES 20 and later
 
 [players.01.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
-playable = { CF = "A", SS = "B", GK = "C", ... }   # thirteen keys; "C" | "B" | "A" (stored 0-2; a stored 3, which no save holds, reads "3")
+playable = { CF = "A", SS = "B", GK = "C", ... }   # "C" | "B" | "A"
 playing_style = "goal_poacher"  # the playing style's name, or "none"
 stronger_foot = "right"         # "right" | "left"
-stronger_hand = "right"         # PES 20 and later
+stronger_hand = "right"         # PES 20 and later; "right" | "left"
 
 [players.01.skills]
-skills = ["scissors_feint", "heading"]      # the player's skills (the names are listed below)
+skills = ["scissors_feint", "heading"]      # the player's skills
 com_styles = ["trickster"]                  # "trickster" "mazing_run" "speeding_bullet" "incisive_run" "long_ball_expert" "early_cross" "long_ranger"
 
 [players.01.edit_flags]         # the parts the game marked as edited, true or false
@@ -519,7 +517,7 @@ strip = false
 
 [players.01.appearance]         # the comments give the game's editor range; an import accepts the stored range
 skin_color = 1
-# ... [players.01.appearance.physique] / .strip / .motion / .face / .hair, as in settings.toml
+# ... [players.01.appearance.physique] / .strip / .motion / .presentation / .face / .hair, as in settings.toml
 ```
 
 Skill names, in the model's slot order 0-40: `scissors_feint flip_flap marseille_turn sombrero
@@ -796,7 +794,7 @@ other keys.
 pes_version = 21
 tool_version = "1.4.0"
 allocation_scheme_version = 1
-cpks = ["4cc_69.cpk"]          # the CPKs the run published; none for a sideload tree
+cpks = ["4cc_69.cpk"]
 compiled = 2026-09-12T14:03:00Z
 
 [[teams]]
@@ -804,16 +802,20 @@ id = 702
 name = "/a/"                 # for the reader; the id is what is applied
 
 [teams.players.03]           # player 70203
-name = "Snuffy"              # a write_names export's only; absent = not written
-shirt_name = "SNUFFY"        # likewise
-boots_id = 143               # the resolved ID; absent = the save keeps his
+name = "Snuffy"
+shirt_name = "SNUFFY"
+boots_id = 143
 gloves_id = 0
-base_copy_id = 101334        # a <id>.copy link's id; absent, an [appearance] clears his copy
+base_copy_id = 101334
 
 [teams.players.03.appearance]
 skin_color = 2
 # … every key the version holds: the physique, strip, motion, face, hair and iris tables
 ```
+
+An entry's keys appear only where they have something to write: `name` and
+`shirt_name` under a `write_names` export, the model IDs where the compile resolved
+them, `base_copy_id` where a `<id>.copy` link names one.
 
 **Applying a look also makes the record his.** For a player whose entry holds
 `[appearance]`, `apply`:

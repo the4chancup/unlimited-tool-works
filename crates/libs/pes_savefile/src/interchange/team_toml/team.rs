@@ -165,6 +165,9 @@ impl TeamToml {
     /// exists per entry in `players`.
     pub fn to_toml(&self) -> Result<String, TeamTomlError> {
         let mut out = String::new();
+        out.push_str(
+            "# One team of one save. A key left out is left untouched on import, at every level.\n",
+        );
         let version = self
             .pes_version
             .map(|v| u16::from(v).to_string())
@@ -983,17 +986,21 @@ mod tests {
             .to_toml()
             .expect("to_toml");
         let lines: Vec<&str> = text.lines().collect();
-        let version_body = "pes_version = 19";
         assert_eq!(
             lines[0],
+            "# One team of one save. A key left out is left untouched on import, at every level."
+        );
+        let version_body = "pes_version = 19";
+        assert_eq!(
+            lines[1],
             format!(
                 "{version_body}{}# the PES version of the save this was exported from; importing into another version converts the values",
                 " ".repeat(32 - version_body.len())
             )
         );
-        assert_eq!(lines[1], "");
-        assert_eq!(lines[2], "[team]");
-        assert!(lines[3].starts_with("id = "), "{:?}", lines[3]);
+        assert_eq!(lines[2], "");
+        assert_eq!(lines[3], "[team]");
+        assert!(lines[4].starts_with("id = "), "{:?}", lines[4]);
         let manager = lines
             .iter()
             .find(|l| l.starts_with("manager_id"))
@@ -1008,6 +1015,34 @@ mod tests {
             .expect("a stadium_id line");
         let expected = format!("stadium_id = {}", team.stadium_id.expect("PES 19 has it"));
         assert_eq!(*stadium, expected, "no version comment");
+    }
+
+    /// The block's comments are the writer's: every comment line and
+    /// `#`-tail the spec block shows appears in a real save's text, so a
+    /// comment added to the block without the writer (or dropped from the
+    /// writer) fails here. PES 19 is the block's `pes_version`.
+    #[test]
+    fn every_comment_of_the_spec_block_is_emitted() {
+        let (file, _) = open(PesVersion::Pes19);
+        let team = file
+            .teams()
+            .iter()
+            .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
+            .expect("a team with rostered players");
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let text = TeamToml::from_team(PesVersion::Pes19, team, &players)
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        for comment in crate::test_support::spec_block_comments(
+            "docs/spec/pes_savefile/operations.md",
+            "starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]",
+        ) {
+            assert!(
+                text.contains(&comment),
+                "a comment the writer does not emit: {comment}"
+            );
+        }
     }
 
     /// A tactics key the target's schema lacks is a `NotInThisVersion` note

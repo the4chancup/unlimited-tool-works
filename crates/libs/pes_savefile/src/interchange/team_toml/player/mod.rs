@@ -196,7 +196,12 @@ fn emit_player(
         }
     }
 
-    out.push_str(&format!("\n[{path}.stats]\n"));
+    out.push('\n');
+    out.push_str(&padded(
+        &format!("[{path}.stats]"),
+        "stored values: the game shows weak foot, form and injury resistance one higher",
+    ));
+    out.push('\n');
     for key in PlayerKey::ALL {
         // The two moved keys are read on import, never written: an export
         // carries them under `appearance.presentation` alone.

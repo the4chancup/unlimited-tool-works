@@ -476,6 +476,14 @@ fn shape_repr(value: NameShape) -> &'static str {
     }
 }
 
+/// `body` padded so `#` starts at column 34: `long_sleeves =
+/// "undershirt-only"` is the widest `key = value` the file writes (32
+/// characters), so no value's width can push its comment right.
+fn padded(body: &str, comment: &str) -> String {
+    let pad = 33_usize.saturating_sub(body.len()).max(1);
+    format!("{body}{}# {comment}", " ".repeat(pad))
+}
+
 /// A fresh document with the predefined per-field comments.
 pub fn to_toml(config: &KitConfig) -> String {
     let template = template();
@@ -487,42 +495,45 @@ pub fn to_toml(config: &KitConfig) -> String {
     };
 
     line("[shirt]");
-    line(&format!(
-        "model = {}                 # 144 / 160 / 176",
-        c.shirt.model
+    line(&padded(
+        &format!("model = {}", c.shirt.model),
+        "144 / 160 / 176",
     ));
-    line(&format!(
-        "collar = {}                # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
-        c.shirt.collar
+    line(&padded(
+        &format!("collar = {}", c.shirt.collar),
+        "1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
     ));
-    line(&format!(
-        "winter_collar = {}         # 1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
-        c.shirt.winter_collar
+    line(&padded(
+        &format!("winter_collar = {}", c.shirt.winter_collar),
+        "1-131 (PES 15: 1-101, 16: 1-105, 17-18: 1-116, 19: 1-124, 20: 1-127)",
     ));
-    line(&format!(
-        "tight = {}               # 144/160 only",
-        c.shirt.tight
+    line(&padded(
+        &format!("tight = {}", c.shirt.tight),
+        "144/160 only",
     ));
-    line(&format!(
-        "pattern = {}                 # 0-13 (PES 15: 0-11)",
-        c.shirt.pattern
+    line(&padded(
+        &format!("pattern = {}", c.shirt.pattern),
+        "0-13 (PES 15: 0-11)",
     ));
-    line(&format!(
-        "long_sleeves = {}     # \"normal\" / \"undershirt-only\" (144/160 only)",
-        long_sleeves_repr(c.shirt.long_sleeves)
+    line(&padded(
+        &format!("long_sleeves = {}", long_sleeves_repr(c.shirt.long_sleeves)),
+        "\"normal\" / \"undershirt-only\" (144/160 only)",
     ));
-    line(&format!(
-        "short_sleeves = {}    # \"normal\" / \"cut-out\" (144/160 only)",
-        short_sleeves_repr(c.shirt.short_sleeves)
+    line(&padded(
+        &format!(
+            "short_sleeves = {}",
+            short_sleeves_repr(c.shirt.short_sleeves)
+        ),
+        "\"normal\" / \"cut-out\" (144/160 only)",
     ));
     line("");
     line("[shorts]");
-    line(&format!(
-        "model = {}                  # 0-17",
-        c.shorts.model
-    ));
+    line(&padded(&format!("model = {}", c.shorts.model), "0-17"));
     line("");
-    line("[colors]                    # the kit's own colors; the menu's are in colors.txt");
+    line(&padded(
+        "[colors]",
+        "the kit's own colors; the menu's are in colors.txt",
+    ));
     line(&format!("shirt1 = \"{}\"", rgb_string(c.colors.shirt1)));
     line(&format!("shirt2 = \"{}\"", rgb_string(c.colors.shirt2)));
     line(&format!(
@@ -534,66 +545,48 @@ pub fn to_toml(config: &KitConfig) -> String {
     line("");
     line("[name]");
     line(&format!("show = {}", c.name.show));
-    line(&format!(
-        "shape = \"{}\"          # \"straight\" / \"light-curve\" / \"medium-curve\" / \"extreme-curve\"",
-        shape_repr(c.name.shape)
+    line(&padded(
+        &format!("shape = \"{}\"", shape_repr(c.name.shape)),
+        "\"straight\" / \"light-curve\" / \"medium-curve\" / \"extreme-curve\"",
     ));
-    line(&format!(
-        "y = {}                       # 0-39 (PES 15-20: 0-33)",
-        c.name.y
+    line(&padded(
+        &format!("y = {}", c.name.y),
+        "0-39 (PES 15-20: 0-33)",
     ));
-    line(&format!("size = {}                   # 0-20", c.name.size));
+    line(&padded(&format!("size = {}", c.name.size), "0-20"));
     line("");
     line("[number.back]");
-    line(&format!(
-        "y = {}                      # 0-29",
-        c.numbers.back.y
-    ));
-    line(&format!(
-        "size = {}                   # 0-13",
-        c.numbers.back.size
-    ));
-    line(&format!(
-        "spacing = {}                 # 0-2",
-        c.numbers.back.spacing
+    line(&padded(&format!("y = {}", c.numbers.back.y), "0-29"));
+    line(&padded(&format!("size = {}", c.numbers.back.size), "0-13"));
+    line(&padded(
+        &format!("spacing = {}", c.numbers.back.spacing),
+        "0-2",
     ));
     line("");
     line("[number.chest]");
-    line(&format!(
-        "x = {}                       # 0-14",
-        c.numbers.chest.x
-    ));
-    line(&format!(
-        "y = {}                       # 0-15",
-        c.numbers.chest.y
-    ));
-    line(&format!(
-        "size = {}                   # 0-15",
-        c.numbers.chest.size
-    ));
+    line(&padded(&format!("x = {}", c.numbers.chest.x), "0-14"));
+    line(&padded(&format!("y = {}", c.numbers.chest.y), "0-15"));
+    line(&padded(&format!("size = {}", c.numbers.chest.size), "0-15"));
     line("");
     line("[number.shorts]");
-    line(&format!(
-        "side = \"{}\"               # \"left\" / \"right\"",
-        match c.numbers.shorts.side {
-            Side::Left => "left",
-            Side::Right => "right",
-        }
+    line(&padded(
+        &format!(
+            "side = \"{}\"",
+            match c.numbers.shorts.side {
+                Side::Left => "left",
+                Side::Right => "right",
+            }
+        ),
+        "\"left\" / \"right\"",
     ));
-    line(&format!(
-        "x = {}                       # 0-14",
-        c.numbers.shorts.x
-    ));
-    line(&format!(
-        "y = {}                       # 0-14",
-        c.numbers.shorts.y
-    ));
-    line(&format!(
-        "size = {}                    # 0-13",
-        c.numbers.shorts.size
+    line(&padded(&format!("x = {}", c.numbers.shorts.x), "0-14"));
+    line(&padded(&format!("y = {}", c.numbers.shorts.y), "0-14"));
+    line(&padded(
+        &format!("size = {}", c.numbers.shorts.size),
+        "0-13",
     ));
     line("");
-    line("[badge]                     # sleeve badge positions; x 0-14, y 0-31");
+    line(&padded("[badge]", "sleeve badge positions; x 0-14, y 0-31"));
     for (name, position) in [
         ("right_short", c.badges.right_short),
         ("left_short", c.badges.left_short),
@@ -612,7 +605,10 @@ pub fn to_toml(config: &KitConfig) -> String {
         .collect();
     if !differing.is_empty() {
         line("");
-        line("[unknown]                   # bits not yet decoded, carried over unchanged;");
+        line(&padded(
+            "[unknown]",
+            "bits not yet decoded, carried over unchanged;",
+        ));
         line("# listed only where they differ from the default kit config");
         for (offset, value) in differing {
             line(&format!("\"0x{offset:02X}\" = {value}"));
