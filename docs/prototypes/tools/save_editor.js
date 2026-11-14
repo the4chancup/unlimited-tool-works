@@ -7617,7 +7617,8 @@ function drawPicturesRange() {
       button("Cancel", closeWindow)];
   } else if (run.timer != null) {
     body = h("div", {},
-      h("p", { id: "pic-progress" }, "Writing " + (run.done + 1) + " of " + run.teams.length + ": " + teamLabel(run.teams[run.done])),
+      h("p", { id: "pic-progress", style: "white-space:nowrap; overflow:hidden; text-overflow:ellipsis" },
+        "Writing " + (run.done + 1) + " of " + run.teams.length + ": " + teamLabel(run.teams[run.done])),
       progressBar(run.done / run.teams.length));
     buttons = [button("Stop", stopPicturesRun)];
   } else {
@@ -7629,12 +7630,17 @@ function drawPicturesRange() {
       button("Close", () => { picRange.run = null; closeWindow(); })];
   }
   window_("Save formation pictures for a range of teams", body, buttons, "pictures-range");
+  // The run and its result keep the picking state's width, so the dialog does not jump in
+  // width with each team's name; the progress line ends in an ellipsis when longer.
+  if (run) Object.assign(document.querySelector('#overlay [data-dlg="pictures-range"]').style,
+    { width: run.width + "px", maxWidth: "none", boxSizing: "border-box" });
   windowDrawer = drawPicturesRange;
 }
 // The draft's fake run: one team every half second, each picture drawn for
 // real (the preview shows the last).
 function startPicturesRun(teams) {
-  picRange.run = { teams, done: 0, stopped: false, timer: null, settings: picRange.settings };
+  const width = document.querySelector('#overlay [data-dlg="pictures-range"]').offsetWidth;
+  picRange.run = { teams, done: 0, stopped: false, timer: null, settings: picRange.settings, width };
   const tick = () => {
     const run = picRange.run;
     if (!run || run.timer == null) return;
