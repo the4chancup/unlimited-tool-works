@@ -69,7 +69,9 @@ and takes the extra height. The rail and the section keep the width they have wi
 stand centred in what is left, or from its left edge, the section narrower, where that is too
 little; with the preview hidden, the editor is centred like any view. We do not let the
 preview fill the extra width, because the section then keeps the default window's narrow
-share beside it, narrower than without the preview.
+share beside it, narrower than without the preview. The default window keeps the 100 columns
+too, though its section is then narrow: the preview there is for a quick look, and a member
+who works with it open maximizes the window.
 
 A tool's own bars (the Save editor's toolbar, the Ruleset editor's top and bottom bars, the
 Compiler's legend and run bar) are part of its view: they keep their default width and stand
