@@ -17496,3 +17496,18 @@ the paragraph "A window larger than the default").
 
 Why: the look is a list that scrolls, and the room is useful there: a box shows more of a long
 file or folder name. Both columns grow alike, so the map keeps its shape.
+
+## 2026-11-14: a view a larger window does not stretch is centred across the pane, not kept at its left; the team table hides the player list (maintainer)
+
+Decision: in a window larger than the default, a tool view keeps its default arrangement and
+size, centred across the pane at its top; this replaces the top-left anchor of the morning's
+entry. A panel allowed to take the extra width grows equally on both sides, so the rows above
+and below it stay where they were. On the planned team table's screen the Save editor hides its
+player list and keeps only the Team selector, on the row of the screen toggle
+(`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
+`plans/save_editor.md` "A team table, still to be drafted").
+
+Why: centred, the view sits in the middle of a large monitor, where the dialogs and the help
+window open, rather than beside an empty band a third of the window wide. The table shows the
+same players the list would, and without the list it has the whole pane's width to grow into,
+so switching to it moves nothing but the panels it replaces.
