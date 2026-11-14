@@ -17651,3 +17651,13 @@ Why: the maintainer compared the two formation picture dialogs built and drafted
 per checkbox, 8 looser before the buttons). They chose the draft's room, since a dialog shows
 little and need not be as small as it can be. They kept the build's checkbox rows, which read
 less cramped, and its gap before the buttons, which the draft made too large.
+
+## 2026-11-14 — gui — a dialog's form keeps the drafts' rows, 27 apart and 6 above what follows
+Decision: a form in a dialog spaces its rows 27 apart, 9 points between its controls, and
+stands 6 above what follows it. This replaces the 24 of the entry "dialogs take the drafts'
+room" above, which brought the form rows to the build's tighter spacing. `plans/core/gui.md`,
+the Modals and Form grids rows.
+Why: the maintainer's "extra room from the draft" meant the range dialog's room under its
+Teams and Folder rows as the draft drew them: 27 apart, then 6 above the first checkbox. The
+one-team dialog takes the same rule (its File name row 27 under Folder, where the draft had
+24), so both dialogs share one spacing.

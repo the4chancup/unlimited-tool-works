@@ -125,9 +125,10 @@ input[type=range]:focus { outline: none; }
 #unsaved-changes td, #unsaved-changes th { white-space: pre; vertical-align: baseline; }
 /* A colour's old and new value: a 12-point swatch before the hex. */
 /* A dialog's labels and fields on egui::Grid's two columns (formGrid): the
-   fields start at one x, 8 apart; the rows 24 apart, a dialog form's (gui.md "Form grids"). */
+   fields start at one x, 8 apart; the rows 27 apart and 6 above what follows the form, a
+   dialog form's room (gui.md "Form grids"). */
 .pform { display: grid; grid-template-columns: auto auto; justify-content: start;
-  align-items: center; gap: 6px 8px; margin: 3px 0; }
+  align-items: center; gap: 9px 8px; margin: 3px 0 6px; }
 .pform > * { justify-self: start; }
 .pform > .row { margin: 0; }
 /* Set boot/glove IDs: per group its title, then the options stacked, each one's field in a

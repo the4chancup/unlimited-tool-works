@@ -2035,11 +2035,11 @@ briefs, review loops, gates and mutation runs as for any step.
     `draft_compare.py pictures_range` and `picture_save` within 1 point on every row, then a
     sweep of the other dialogs
     - [x] the drafts (lead, 2026-11-14): every dialog's title 12 above its body; a dialog
-      form's rows (`formGrid`) 24 apart; stacked checkboxes 21; the range dialog's hint 8
+      form's rows (`formGrid`) 27 apart and 6 above what follows; stacked checkboxes 21; the range dialog's hint 8
       under the checkboxes and 10 above the buttons. The other 19 drafted dialogs only move
       4 down (`.tmp/dlgroom/boxes.py HEAD work`); before and after in
-      `.tmp/dlgroom/pair_*.png`
-    - [ ] the build (sidekick): the modal title's 12, a dialog form's 24, the sentence gap
+      `.tmp/dlgroom/pair2_*.png` (the draft before the step on the left)
+    - [ ] the build (sidekick): the modal title's 12, a dialog form's 27 and 6, the sentence gap
       above the range dialog's file-name line; the tests that pin dialog rows
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
