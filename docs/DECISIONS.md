@@ -17280,3 +17280,12 @@ Compiler" (`Open the Compiler`, "a patch the Compiler wrote"), because a capital
 the middle of a sentence reads as a typo. The article fits because it is the suite's one
 compiler, for every export kind, not one compiler among several. The command-line id stays
 `compiler`.
+
+## 2026-11-14: a stadium export's model folder is `models/`, not `#Win/`
+
+A stadium export keeps its models in `models/`, where the Fox stadium compiler's exports use
+`#Win/`. `#Win` is the game's name for its Windows asset folder and means nothing to a member,
+while `models/` says what the folder holds. The Compiler still writes the files under `#Win/`
+inside the CPK, which is where the game looks. Following the rule for every old layout, the
+Compiler refuses an export that still has `#Win/`, and the Export upgrader renames the folder
+once.

@@ -36,6 +36,12 @@ billboard CPK, or both) becomes the Compiler's choice of what to compile.
 - **A stadium export** is one folder per stadium in `exports/`, its name starting with the
   marker word `stadium`. A stadium belongs to a team, but council members rather than
   managers usually provide it, so a team export never has to carry one.
+- **Its models sit in `models/`**, where the old tool's exports have `#Win/`: `#Win` is the
+  game's own name for its Windows asset folder, which tells a member nothing, while
+  `models/` says what goes in it. The Compiler writes the files under `#Win/` in the CPK,
+  where the game looks. It refuses a stadium export's `#Win/` (the compiler stays strict),
+  and the Export upgrader renames it once, as it migrates every old layout
+  (`AGENTS.md` "Fundamental concepts", the upgrader absorbing the old format's slack).
 - **Its stadium ID comes from a list**, as the old tool's `stadium_list.txt` (`63
   4ccg_spankneseum`: the ID, then the folder). Later, maybe: the IDs ordered by team name,
   as the balls list's order should be.
