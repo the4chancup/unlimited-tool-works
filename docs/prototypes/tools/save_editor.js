@@ -112,9 +112,10 @@ input[type=range]:focus { outline: none; }
 #unsaved-changes th:nth-child(n+2), #unsaved-changes td:nth-child(n+2) { width: 30%; }
 #unsaved-changes th.undo, #unsaved-changes td.undo { width: 1%; position: sticky; right: 0;
   background: var(--panel); }
-/* The X: the error red, in a thin square so it reads as a button and not as an error mark. */
-#unsaved-changes td.undo button { color: var(--error); width: 16px; height: 16px; padding: 0;
-  line-height: 14px; border: 1px solid var(--text); }
+/* The X: the error red, centred under its column's Undo head, which tells it apart from an
+   error mark. */
+#unsaved-changes th.undo, #unsaved-changes td.undo { text-align: center; }
+#unsaved-changes td.undo button { color: var(--error); }
 /* A thin line between two rows, the separators' stroke: the changes table's, and the patch
    panel's, which the app draws as the same table. */
 #unsaved-changes tr + tr td, #pat-rows tr + tr td { border-top: 1px solid var(--stroke); }
@@ -3440,7 +3441,7 @@ function changesTable(undoable) {
       ? h("span", { class: "chswatch", style: "background:" + s }) : null, s); };
   const changes = h("table", { class: "grid", id: "unsaved-changes" },
     h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value"),
-      undoable ? h("th", { class: "undo" }) : null),
+      undoable ? h("th", { class: "undo" }, "Undo") : null),
     unsavedChanges().map(([item, o, n, revert, to]) => h("tr", {},
       undoable ? h("td", { class: "sel", title: to.title, onclick: () => { to.go(); render(); } }, item)
         : h("td", {}, item),

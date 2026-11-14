@@ -989,15 +989,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   cup's teams share no player, and no other team is shown ("Only the cup's teams are
   shown" above).
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
-  draft's `changesTable`). It ends the row, in the theme's error red inside a thin square
-  outline (1 point, the text colour, the buttons' corner radius), which makes it read as a
-  button and not as an error mark. Its column stays at the list's right edge while a wide row scrolls sideways
-  under it, so it never leaves the view: the X's are drawn right of the sideways scroll
-  area, inside the one that scrolls up and down, each on its row's line. At the row's start
-  it would never leave the view either, but there it reads as an error mark. Its tooltip is
-  "Undoes this change alone". It writes
-  the row's old value back into its field as one undo step, so Undo brings the change back,
-  and the list stays open, a row shorter. It is no step taken out of the undo stack: later
+  draft's `changesTable`). It ends the row, in the theme's error red, centred under the
+  head `Undo`, which the header row adds after `New value`: the head tells it apart from an
+  error mark. Its column stays at the list's right edge while a wide row scrolls sideways
+  under it, so it never leaves the view: the X's and their head are drawn right of the
+  sideways scroll area, inside the one that scrolls up and down, each on its row's line. At
+  the row's start it would never leave the view either, but there it reads as an error mark.
+  Its tooltip is "Undoes this change alone". It writes the row's old value back into its
+  field as one undo step, so Undo brings the change back, and the list stays open, a row
+  shorter. It is no step taken out of the undo stack: later
   steps may build on an earlier one, while a row is a field's difference from the file and
   already holds the value to write. On a `Player order` row the X puts the whole group back on
   their slots in the file, each player keeping the edits made on him. The close prompt's
@@ -2626,7 +2626,8 @@ SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a tea
                 last row's X clicked THEN the list closes and the save is clean; GIVEN a
                 row wider than the list, the list scrolled sideways to its end THEN every
                 X stands where it stood, at the list's right edge; every X is drawn in the
-                error red inside a 1-point square outline
+                error red, centred under the header row's `Undo`, which the close prompt's
+                table does not have
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked

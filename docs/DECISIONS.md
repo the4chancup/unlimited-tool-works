@@ -17413,3 +17413,13 @@ still take no click (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74).
 Why: the maintainer's ask. The list is where a member reviews changes, so going to one from it
 saves finding the player again. The outline tells the red X apart from an error mark, and the
 lines keep a long row's values with its item.
+
+## 2026-11-14: the unsaved changes list's X column has an `Undo` head, not squares (maintainer)
+
+Decision: the toolbar's unsaved changes list adds `Undo` to its header row, over the column of
+X's, each X centred under it in the error red with no outline. This replaces the thin square
+of the entry before (`plans/save_editor.md` "Editing UI", SE-GUI-74). The close prompt's table
+has no X and no head.
+
+Why: the maintainer's better idea. A head names what the column does once, where a square
+around every X only hinted that each is a button.
