@@ -2011,6 +2011,15 @@ briefs, review loops, gates and mutation runs as for any step.
       wording each one shared function; help page 05. Picture looked at beside the draft
       (`.tmp/flatpitch/look2/`)
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
+  - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
+    (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
+    DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
+    test drawing it at 1280 and at 1920 wide with every unnamed panel's rectangle unchanged;
+    the drafts and the built window at the whole monitor
+    - [ ] the census: every view of every tool, what grows or moves past the default (SWE-2;
+      draft evidence `.tmp/stretch/draft_*`)
+    - [ ] the drafts (lead)
+    - [ ] a slice per tool
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
     docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
     reference text). Waits for the maintainer, who decides after the weekly usage reset
