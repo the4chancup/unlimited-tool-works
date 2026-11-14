@@ -12,6 +12,9 @@
   one the Team compiler reads, and leaves the old export as it was. Its window comes later
   too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
   `old_exports`, or use its command line.
+- **Compiler**: its command line is `UTW.exe compiler`, and its settings sit under `[compiler]`
+  in `settings.toml`. A `[team-compiler]` table left there by an earlier build is not read:
+  move its settings under `[compiler]`.
 - **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.

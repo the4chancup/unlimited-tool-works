@@ -1930,6 +1930,9 @@ briefs, review loops, gates and mutation runs as for any step.
     0.0.2-applayout and -presentation a land, since it touches their files -> verify:
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
+    Code half merged 2026-11-14 (`31f44cda`, SWE-2, one comment fixed by the lead; workspace
+    gates green but for the two overlap tests below, green alone). Open: the docs half (SWE-2,
+    `.tmp/compilername/brief_docs_respell.md`), the built window's sidebar and title
   - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
@@ -1946,6 +1949,10 @@ briefs, review loops, gates and mutation runs as for any step.
     Left out, for the watch list: `export_upgrader/src/staging.rs:251` (a 300 ms releaser
     against a 1.9 s retry window) and `studio/tests/crash_dump.rs` (the child's 2 s
     connect bound is production code's)
+    Seen 2026-11-14 under the pipeline, a sidekick's run and two workspace test runs at once:
+    `save_editor` `overlap::no_two_widgets_overlap_on_the_{player_and_team_views,menus_dialogs}`
+    reached their 120 s bound ("a view worker never replied", `view/tests.rs:1511`) twice,
+    in the sidekick's run and the lead's; both pass alone in 29 s
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player
     and every edit writes one record) a `Select all similar players` button under the
