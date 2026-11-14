@@ -2029,6 +2029,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 3c (2026-11-14, `513b72bf`, Opus) after the maintainer's look: the range
       dialog's count ends the Teams row where Browse ends, and both results put the folder on
       a line of their own; the built look waits (Pending looks)
+  - [ ] 0.0.2-dlgroom every dialog's spacing as ruled 2026-11-14 (`plans/core/gui.md` the
+    Modals and Form grids rows; DECISIONS 2026-11-14 "dialogs take the drafts' room"; the
+    measurements `.tmp/flatpitch/look3c/compare*.log`, `rhythm_*_plain.png`) -> verify:
+    `draft_compare.py pictures_range` and `picture_save` within 1 point on every row, then a
+    sweep of the other dialogs
+    - [ ] the drafts (lead): checkboxes in a `.window` 21 apart, no margin under a closing
+      paragraph, the range dialog's dropdown row 24 like the other form rows
+    - [ ] the build (sidekick): the modal title's 12, a dialog form's 24, the sentence gap
+      above the range dialog's file-name line; the tests that pin dialog rows
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

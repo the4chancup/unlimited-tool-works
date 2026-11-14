@@ -17638,3 +17638,16 @@ against the built window, a full second drawing brought the stems' colour from 5
 under the app's to within 3, but the text then carried about 15% more ink than egui's, since a
 browser's antialiasing is wider, and the maintainer found it too heavy. At 30% the ink matches
 (median 0.99 of egui's over the six texts) and the stems stand 4 to 8 levels under.
+
+## 2026-11-14 — gui — dialogs take the drafts' room, the build's checkbox rows and closing gap
+Decision: every dialog's title stands 12 points above its body (was 8), and a form in a dialog
+spaces its rows 24 apart (was 22, `FORM_ROW_SPACING`, which the screens' forms keep).
+Checkboxes stacked in a dialog stay 21 apart, and the drafts follow. A sentence that ends the
+body leaves the buttons 10 under it, and the drafts drop their extra margin there. A sentence
+under a control stands 8 from it in the build too (the range dialog's file-name line had 3).
+`plans/core/gui.md`, the Modals and Form grids rows.
+Why: the maintainer compared the two formation picture dialogs built and drafted, title-aligned
+(`draft_compare.py`: the draft 4 points lower under the title, 2 to 5 per form row, 2 tighter
+per checkbox, 8 looser before the buttons). They chose the draft's room, since a dialog shows
+little and need not be as small as it can be. They kept the build's checkbox rows, which read
+less cramped, and its gap before the buttons, which the draft made too large.
