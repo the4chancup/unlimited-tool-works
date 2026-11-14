@@ -793,9 +793,9 @@ function askEditMode(run) {
     h("p", {}, "The CPKs are installed. One step is left: writing the compiled teams' aesthetics "
       + `settings into ${pes}'s save while the game is running.`),
     h("p", {}, "If the game's Edit mode is open, use its Data Management > Load once the save is "
-      + "updated, before you leave Edit mode: leaving Edit mode after changing anything in it "
-      + "writes the game's own copy over the save, and the settings are lost."),
-    h("p", {}, "If Edit mode is closed, the settings show when you open it.")),
+      + "updated, before you leave Edit mode. Leaving Edit mode after changing anything in it "
+      + "writes the game's own copy over the save, without the new settings."),
+    h("p", {}, "If Edit mode is closed, the new settings show when you open it.")),
     [button("Skip", () => go(false)), button("Update save", () => go(true))], "edit-mode");
 }
 function endRun() {
