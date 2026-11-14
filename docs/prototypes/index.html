@@ -519,7 +519,12 @@
   .tsep { flex: none; width: 1px; align-self: stretch; margin: 1px 2.5px; background: var(--stroke); }
   .modal-bg { position: fixed; inset: 0; background: #0008; display: flex; align-items: center; justify-content: center; z-index: 120; }
   .window { background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px; padding: 8px 12px; box-shadow: 0 8px 24px #000c; min-width: 360px; max-width: 640px; }
-  .window .title { color: var(--strong); font-size: 14px; margin-bottom: 8px; text-align: center; }
+  /* The title 12 above the body (gui.md "Modals"): a dialog shows little, so it takes room. */
+  .window .title { color: var(--strong); font-size: 14px; margin-bottom: 12px; text-align: center; }
+  /* A checkbox on a line of its own in a dialog: egui's 18-point row and its spacing of 3, so
+     stacked ones stand 21 apart; inline, the browser's line put them 19 apart. A row or a
+     grid (a form, the boot and glove IDs' options beside their fields) spaces its own. */
+  .window div:not(.row, .pform, .boglo) > label.cb { display: flex; width: fit-content; margin: 3px 0; }
   /* A tool's start page with nothing open: a dialog's frame in the middle of the view, no backdrop. */
   .start-page { flex: 1; min-height: 100%; display: flex; align-items: center; justify-content: center; }
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 2px; border: 1px solid #000; vertical-align: middle; }
@@ -605,7 +610,7 @@
   table.grid tr.sel:hover { background: var(--hover); }
   .window pre.mono { margin: 4px 0; }
   /* A dialog's sentence 8 from what is around it, as the app's modals space their rows
-     (8 under the title, 10 before the buttons, the larger margin winning): the browser's
+     (12 under the title, 10 before the buttons, the larger margin winning): the browser's
      own 1em made them 12.5. */
   .window p { margin: 8px 0; }
   /* The update's release notes: a framed box that scrolls past a few paragraphs, so a long

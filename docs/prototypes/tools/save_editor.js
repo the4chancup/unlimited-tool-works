@@ -125,10 +125,11 @@ input[type=range]:focus { outline: none; }
 #unsaved-changes td, #unsaved-changes th { white-space: pre; vertical-align: baseline; }
 /* A colour's old and new value: a 12-point swatch before the hex. */
 /* A dialog's labels and fields on egui::Grid's two columns (formGrid): the
-   fields start at one x, item spacing 8 x 3 as the theme's. */
+   fields start at one x, 8 apart; the rows 24 apart, a dialog form's (gui.md "Form grids"). */
 .pform { display: grid; grid-template-columns: auto auto; justify-content: start;
-  align-items: center; gap: 3px 8px; margin: 3px 0; }
+  align-items: center; gap: 6px 8px; margin: 3px 0; }
 .pform > * { justify-self: start; }
+.pform > .row { margin: 0; }
 /* Set boot/glove IDs: per group its title, then the options stacked, each one's field in a
    column beside it (egui::Grid in a ui.group). Both groups' option columns are at least the
    widest option's (Set values starting from:, 142.2) and their field columns the range's (two
@@ -7612,7 +7613,9 @@ function drawPicturesRange() {
     // hidden in the same cell, so the dialog is as wide as the longer and
     // keeps its width when the checkbox flips.
     const example = teams[0] || curSave().teams[0];
-    const nameLine = on => h("p", { style: "grid-area:1/1" + (on === picRange.settings ? "" : "; visibility:hidden"),
+    // The grid's own top margin, not the lines', so it collapses as a paragraph's would:
+    // 8 under the checkbox above, the buttons' 10 under it.
+    const nameLine = on => h("p", { style: "margin:0; grid-area:1/1" + (on === picRange.settings ? "" : "; visibility:hidden"),
         "aria-hidden": on === picRange.settings ? null : "true" },
       weak("One picture per team, named after it (" + pictureFileName(example, on) +
         "), overwriting files with the same names."));
@@ -7626,7 +7629,7 @@ function drawPicturesRange() {
       cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
       h("div", {}, picturesPortraitsBox()),
       h("div", {}, picturesFlatBox()),
-      h("div", { style: "display:grid" }, nameLine(false), nameLine(true)));
+      h("div", { style: "display:grid; margin-top:8px" }, nameLine(false), nameLine(true)));
     buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: !teams.length }),
       button("Cancel", closeWindow)];
   } else if (run.timer != null) {
