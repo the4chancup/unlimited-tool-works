@@ -2052,8 +2052,13 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the grids' drafts (lead, 2026-11-14; DECISIONS 2026-11-14 "every form takes the
       gaps"): every `table.grid` row holding a field 6 from the next, a row of checkboxes
       alone 8 between squares, text rows 19. Pairs in `.tmp/gridgaps/` (before on the left)
-    - [ ] the grids' build (sidekick, after the build above merges): every form on
-      `FORM_ROW_SPACING` takes the gaps, the help's Messages table keeping its 19
+    - [ ] the grids' build (Opus sidekick `sk_gaps2`, 2026-11-14, worktree
+      `4cc-studio-temp/gaps` branch `sk/gaps2`, brief `.tmp/brief_gaps2.md` there): every
+      form grid but the Stats screen's and the dialogs' matched to its draft as measured; a
+      row of checkboxes alone in a field grid drawn 16 tall, so the grid's 6 leaves its
+      square 7 under a field and 8 under another square, as the draft; the two text grids
+      (the help's Messages table, the changes table) keep 19 on `FORM_ROW_SPACING`, renamed
+      `TEXT_ROW_SPACING`
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
