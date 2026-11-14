@@ -521,10 +521,11 @@
   .window { background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px; padding: 8px 12px; box-shadow: 0 8px 24px #000c; min-width: 360px; max-width: 640px; }
   /* The title 12 above the body (gui.md "Modals"): a dialog shows little, so it takes room. */
   .window .title { color: var(--strong); font-size: 14px; margin-bottom: 12px; text-align: center; }
-  /* A checkbox on a line of its own in a dialog: egui's 18-point row and its spacing of 3, so
-     stacked ones stand 21 apart; inline, the browser's line put them 19 apart. A row or a
-     grid (a form, the boot and glove IDs' options beside their fields) spaces its own. */
-  .window div:not(.row, .pform, .boglo) > label.cb { display: flex; width: fit-content; margin: 3px 0; }
+  /* A checkbox on a line of its own in a dialog: its 14-point square 8 from the next one's,
+     egui's 18-point row and 4 (gui.md "Form grids"); inline, the browser's line put them 19
+     apart. A row or a grid (a form, the boot and glove IDs' options beside their fields)
+     spaces its own. */
+  .window div:not(.row, .pform, .boglo) > label.cb { display: flex; width: fit-content; margin: 4px 0; }
   /* A tool's start page with nothing open: a dialog's frame in the middle of the view, no backdrop. */
   .start-page { flex: 1; min-height: 100%; display: flex; align-items: center; justify-content: center; }
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 2px; border: 1px solid #000; vertical-align: middle; }

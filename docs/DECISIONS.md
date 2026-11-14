@@ -17661,3 +17661,16 @@ Why: the maintainer's "extra room from the draft" meant the range dialog's room 
 Teams and Folder rows as the draft drew them: 27 apart, then 6 above the first checkbox. The
 one-team dialog takes the same rule (its File name row 27 under Folder, where the draft had
 24), so both dialogs share one spacing.
+
+## 2026-11-14 — gui — stacked controls are spaced by their gaps: fields 6 apart, checkboxes 8
+
+The Save editor's Stats screen and every dialog space their stacked controls by the room
+between their boxes: a form's fields leave 6 points (rows 24 apart), stacked checkboxes 8
+between their squares (rows 22 apart). This replaces the dialogs' 27-point form rows and
+21-point checkboxes of the entries above. The other `table.grid` forms (the team view's fields,
+the settings menu, other tools' settings) keep their 22-point rows until their own look.
+`plans/core/gui.md`, the Modals and Form grids rows.
+Why: the maintainer, comparing renders of the Stats screen at 26 and 24, found 26 too loose,
+then saw that one pitch for every row left 10 points between checkbox squares against 6
+between fields: "let's focus on the gaps more than on the number 24". They set the
+checkboxes' gap to 8 by eye, and asked for the dialogs to follow for consistency.

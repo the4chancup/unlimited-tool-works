@@ -2037,6 +2037,16 @@ briefs, review loops, gates and mutation runs as for any step.
     dialogs, Set all stats and Kit slot assignments line up row for row, every row within
     1 point but the forms' row labels at 1.3 (a label centred beside its input). The
     settings window stays off its draft (the issue of 2026-11-14 below)
+  - [ ] 0.0.2-gaps stacked controls spaced by their gaps on the Stats screen and in every
+    dialog: fields 6 apart, checkboxes' squares 8 (`plans/core/gui.md` the Form grids and
+    Modals rows; DECISIONS 2026-11-14 "stacked controls are spaced by their gaps") -> verify:
+    `draft_compare.py player`, `picture_save` and `pictures_range` in the built window, every
+    row within 1 point; the tests that pin dialog rows at 27 and 21 pinning 24 and 22
+    - [x] the drafts (lead, 2026-11-14): General info, Other stats and the Ability stats'
+      boxes 6 apart, the Skills, Tricks and COM styles squares 8; the dialogs' `formGrid`
+      fields 6 apart and their stacked checkboxes 8. Before and after in
+      `.tmp/statsroom/pair8.png` and `pair_dlg.png` (before on the left)
+    - [ ] the build (sidekick)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

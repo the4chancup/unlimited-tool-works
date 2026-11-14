@@ -125,10 +125,10 @@ input[type=range]:focus { outline: none; }
 #unsaved-changes td, #unsaved-changes th { white-space: pre; vertical-align: baseline; }
 /* A colour's old and new value: a 12-point swatch before the hex. */
 /* A dialog's labels and fields on egui::Grid's two columns (formGrid): the
-   fields start at one x, 8 apart; the rows 27 apart and 6 above what follows the form, a
-   dialog form's room (gui.md "Form grids"). */
+   fields start at one x, 8 apart; their boxes 6 apart, as every form's (gui.md "Form
+   grids"), and 6 above what follows the form. */
 .pform { display: grid; grid-template-columns: auto auto; justify-content: start;
-  align-items: center; gap: 9px 8px; margin: 3px 0 6px; }
+  align-items: center; gap: 6px 8px; margin: 3px 0 6px; }
 .pform > * { justify-self: start; }
 .pform > .row { margin: 0; }
 /* Set boot/glove IDs: per group its title, then the options stacked, each one's field in a
@@ -385,19 +385,20 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    (the badge's top where the bare titles' was). Every title then sits 6
    points above the first thing drawn under it, a field's frame or a
    checkbox, as the team view's titles do: no margin under a title's row (the
-   badge's lower half overlaps the gap), the label blocks and the ability
-   stats 3 lower, the checkbox lists 1.5, the positions grid 1. */
+   badge's lower half overlaps the gap), the label blocks 3 lower (the ability
+   stats' cells pad them 3), the checkbox lists 1.5, the positions grid 1. */
 .pcols > * { margin-top: 3px; }
 .pcols .phead { margin: 0; }
 .pcols .phead.badged { margin: -3px 0 -3px; }
 .pcols .gen { padding-top: 3px; }
-.pcols .stats-grid { margin-top: 1px; }
+.pcols .stats-grid { margin-top: 0; }
 .pcols .skcols { margin-top: 1.5px; }
 .pcols #pos-grid { margin-top: 1px; }
 /* The skills' and COM styles' second columns start at the same x: one
    column width for both panels (and the values' pairs under them). */
 .skcols { display: flex; gap: 14px; align-items: flex-start; }
-.skcols > .col { width: 158px; flex: none; }
+/* The checkboxes' 14-point squares 8 apart: each 18-point row 4 from the next. */
+.skcols > .col { width: 158px; flex: none; gap: 4px; }
 /* A disabled card's wrapper as tall as its checkbox: inline-block, its line
    box added 2 points a cell, and the two columns' rows drifted apart. */
 .skcols .gate { display: flex; }
@@ -408,12 +409,14 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    their labels in one column so every combo starts at one x and ends on the
    right edge. The halves hold the longest pair label, "Injury resistance",
    beside its box. */
+/* The fields' boxes 6 apart, between blocks as within them, as the ability
+   stats' boxes: 18-point controls, rows 24 apart. */
 .gen { display: flex; flex-direction: column; gap: 6px; }
 .gen .gl.above { display: block; margin-bottom: 1px; }
 /* The first half as wide as the label-left rows' label column, their 12-point
    gap and a box, so its boxes start at the x those rows' fields start at; the
    halves are 28 apart. */
-.gen .pairs { display: grid; grid-template-columns: calc(109px + 12px + 54px) 1fr; column-gap: 28px; row-gap: 4px; }
+.gen .pairs { display: grid; grid-template-columns: calc(109px + 12px + 54px) 1fr; column-gap: 28px; row-gap: 6px; }
 /* The count reads as part of its label, and keeps one width as it changes. */
 .gen .count { font-variant-numeric: tabular-nums; color: #5a5a5a; }
 .gen .count.at { color: var(--warn); }
@@ -440,10 +443,10 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    flush with the second half's boxes (the first half, the 28-point gap, its
    72-point label column, 9, the 54-point box), not on the panel's right edge. */
 .gen .combos { display: grid; grid-template-columns: 109px 1fr; column-gap: 12px;
-  row-gap: 4px; align-items: center; width: calc(109px + 12px + 54px + 28px + 73px + 9px + 54px); }
+  row-gap: 6px; align-items: center; width: calc(109px + 12px + 54px + 28px + 73px + 9px + 54px); }
 .gen .combos > span:not(.gl), .gen .combos .gate > span { display: block; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
-/* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
+/* Each side 18 tall, a control's height, so the toggles' rows stand 24 apart as the
    combos' do. */
 .gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--text); }
 /* The chosen side in the quiet grey of the positions grid's C, not the
@@ -463,8 +466,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 td.ilabel { text-align: left; padding-left: 10px; }
 td.ilabel:first-child { padding-left: 0; }
 /* Each cell 6 a side, so a label and its box are at least 12 apart (the host's
-   table.grid td rule, 4 a side, would win over a plainer selector). */
-table.grid.stats-grid td { padding: 2px 6px; }
+   table.grid td rule, 4 a side, would win over a plainer selector), and 3 above
+   and below, so the boxes stand 6 apart as General info's. */
+table.grid.stats-grid td { padding: 3px 6px; }
 .stats-grid input[type=number] { width: 40px; }
 /* The positions in five rows by line of the pitch, left wing to right wing,
    GK alone in the last; each row centred in the panel, each label centred
