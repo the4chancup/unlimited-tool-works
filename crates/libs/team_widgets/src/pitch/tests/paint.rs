@@ -176,7 +176,7 @@ fn the_turf_is_each_screens_bands_with_its_grain() {
             3.5,
         ),
     ] {
-        let image = turf_image(pitch_look(version));
+        let image = turf_image(pitch_look(version), false);
         assert_eq!(image.size, TURF_SIZE);
         // A row's or band's mean channel.
         let mean = |rows: &[usize], channel: usize| {
@@ -236,7 +236,7 @@ fn the_turf_is_each_screens_bands_with_its_grain() {
             "{version:?}: the grain's luma deviation {std}"
         );
         assert_eq!(
-            turf_image(pitch_look(version)).pixels,
+            turf_image(pitch_look(version), false).pixels,
             image.pixels,
             "{version:?}: deterministic"
         );
@@ -247,7 +247,7 @@ fn the_turf_is_each_screens_bands_with_its_grain() {
 // look: the fixed-seed xorshift32's known answer.
 #[test]
 fn the_turf_grain_is_the_fixed_seed_xorshift() {
-    let image = turf_image(pitch_look(PesVersion::Pes21));
+    let image = turf_image(pitch_look(PesVersion::Pes21), false);
     for (x, expected) in [
         egui::Color32::from_rgb(43, 85, 27),
         egui::Color32::from_rgb(50, 92, 34),
@@ -258,6 +258,39 @@ fn the_turf_grain_is_the_fixed_seed_xorshift() {
     .enumerate()
     {
         assert_eq!(image.pixels[x], expected, "pixel {x}");
+    }
+}
+
+// The flat turf a picture may ask for: the grained turf's bands, each
+// one colour throughout, with no grain.
+#[test]
+fn the_flat_turf_is_the_bands_without_the_grain() {
+    for (version, starts, dark, light) in [
+        (
+            PesVersion::Pes17,
+            &[87, 167, 248, 327, 407, 488][..],
+            egui::Color32::from_rgb(0x1f, 0x4b, 0x17),
+            egui::Color32::from_rgb(0x2c, 0x5d, 0x24),
+        ),
+        (
+            PesVersion::Pes21,
+            &[53, 105, 158, 210, 262, 315, 367, 419, 472, 524][..],
+            egui::Color32::from_rgb(0x2d, 0x57, 0x1d),
+            egui::Color32::from_rgb(0x35, 0x60, 0x2a),
+        ),
+    ] {
+        let image = turf_image(pitch_look(version), true);
+        for y in 0..image.height() {
+            let band = starts.iter().filter(|&&start| start <= y).count();
+            let expected = if band % 2 == 0 { dark } else { light };
+            for x in 0..image.width() {
+                assert_eq!(
+                    image.pixels[y * image.width() + x],
+                    expected,
+                    "{version:?} ({x}, {y})"
+                );
+            }
+        }
     }
 }
 
@@ -528,7 +561,7 @@ fn each_version_paints_its_own_cached_turf() {
 // 2021's as PES 2019's own is.
 #[test]
 fn each_version_draws_its_screens_turf() {
-    let turf = |version: PesVersion| turf_image(pitch_look(version)).pixels;
+    let turf = |version: PesVersion| turf_image(pitch_look(version), false).pixels;
     for version in [PesVersion::Pes15, PesVersion::Pes16, PesVersion::Pes18] {
         assert_eq!(
             turf(version),

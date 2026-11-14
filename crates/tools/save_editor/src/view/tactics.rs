@@ -19,8 +19,8 @@ use std::sync::Arc;
 use aatf::TeamView;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::PLAYABLE_POSITIONS;
-use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
+use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::ExeCheck;
 use studio_core::widgets::{checkbox, menu_button};
@@ -57,7 +57,102 @@ const SET_FOLDER_SIDE_PADDING: f32 = 2.0;
 /// One roster slot's row data before the `RosterRow`s borrow it: the
 /// display name, the raw name, the registered position, the thirteen
 /// per-position overalls and the positions he is rated A or B at.
-type RosterSlot = (String, String, Option<u8>, Option<[u8; 13]>, [bool; 13]);
+pub(super) type RosterSlot = (String, String, Option<u8>, Option<[u8; 13]>, [bool; 13]);
+
+/// `team`'s `RosterSlot`s in `file`, one per roster slot in roster order.
+pub(super) fn roster_slots(file: &EditFile, team: &TeamEntry) -> Vec<RosterSlot> {
+    team.roster
+        .iter()
+        .map(|slot| roster_slot(file.player(slot.player_id)))
+        .collect()
+}
+
+/// `team`'s players' ids in `file`, one per roster slot (`None` an empty
+/// one): the ids the portraits are read for.
+pub(super) fn roster_player_ids(file: &EditFile, team: &TeamEntry) -> Vec<Option<u32>> {
+    team.roster
+        .iter()
+        .map(|slot| file.player(slot.player_id).map(|player| player.id))
+        .collect()
+}
+
+/// Each of a roster's `slots` slots' `FieldedNotA` marks among
+/// `violations`, Live AATF's check of team `team_id`: the Error and
+/// Warning violations of that kind on the slot, worded under `rules` and
+/// `version`'s stat names.
+pub(super) fn fielded_marks(
+    violations: &[aatf::Violation],
+    rules: &aatf::Rules,
+    team_id: u32,
+    version: PesVersion,
+    slots: usize,
+) -> Vec<Vec<FieldedMark>> {
+    (0..slots)
+        .map(|slot| {
+            violations
+                .iter()
+                .filter(|violation| {
+                    violation.slot.is_some_and(|s| usize::from(s) == slot)
+                        && matches!(
+                            violation.severity,
+                            aatf::Severity::Error | aatf::Severity::Warning
+                        )
+                })
+                .filter_map(|violation| {
+                    if let aatf::ViolationKind::FieldedNotA {
+                        preset, position, ..
+                    } = violation.kind
+                    {
+                        Some(FieldedMark {
+                            preset: usize::from(preset) - 1,
+                            position: position.byte(),
+                            error: violation.severity == aatf::Severity::Error,
+                            line: violation_line(
+                                violation,
+                                team_id,
+                                Wording {
+                                    ruleset: rules.ruleset(),
+                                    version,
+                                },
+                            ),
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        })
+        .collect()
+}
+
+/// The `RosterRow`s the pitch and the panels read, one per roster slot:
+/// each of `slots` with its portrait texture from `portraits`, its medal
+/// from `medals` (none without them) and its marks from `fielded`, all
+/// three indexed by roster slot.
+pub(super) fn roster_rows<'a>(
+    slots: &'a [RosterSlot],
+    portraits: Vec<Option<egui::TextureId>>,
+    medals: Option<&[Option<Medal>]>,
+    fielded: &'a [Vec<FieldedMark>],
+) -> Vec<RosterRow<'a>> {
+    slots
+        .iter()
+        .zip(portraits)
+        .enumerate()
+        .map(
+            |(index, ((name, raw_name, position, overalls, rated), portrait))| RosterRow {
+                name: name.as_str(),
+                raw_name: raw_name.as_str(),
+                registered_position: *position,
+                portrait,
+                medal: medals.and_then(|marks| marks.get(index)).copied().flatten(),
+                overalls: *overalls,
+                rated: *rated,
+                fielded: fielded[index].as_slice(),
+            },
+        )
+        .collect()
+}
 
 /// The `RosterSlot` of the roster slot holding `player`: his display name
 /// as the player list shows it, his raw name for the colour-coded rows,
@@ -119,22 +214,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     };
     // The roster as the widgets list it, indexed by roster slot.
-    let rows: Vec<RosterSlot> = team
-        .roster
-        .iter()
-        .map(|slot| roster_slot(session.file().player(slot.player_id)))
-        .collect();
+    let rows = roster_slots(session.file(), &team);
     // The roster's player ids (`None` an empty slot): the portrait source's ask.
-    let player_ids: Vec<Option<u32>> = team
-        .roster
-        .iter()
-        .map(|slot| {
-            session
-                .file()
-                .player(slot.player_id)
-                .map(|player| player.id)
-        })
-        .collect();
+    let player_ids = roster_player_ids(session.file(), &team);
     let textures = portraits.textures(ui.ctx(), &player_ids);
     // The badges' medal outlines: `player_tier` per roster slot under the
     // active ruleset, once per `MedalKey` (the open save's revision, the
@@ -178,70 +260,22 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             .filter(|(held_team, _)| *held_team == team_id)
             .map(|held| (held, active))
     });
-    let fielded: Vec<Vec<FieldedMark>> = (0..team.roster.len())
-        .map(|slot| {
-            let Some(((_, violations), active)) = &held else {
-                return Vec::new();
-            };
-            violations
-                .iter()
-                .filter(|violation| {
-                    violation.slot.is_some_and(|s| usize::from(s) == slot)
-                        && matches!(
-                            violation.severity,
-                            aatf::Severity::Error | aatf::Severity::Warning
-                        )
-                })
-                .filter_map(|violation| {
-                    if let aatf::ViolationKind::FieldedNotA {
-                        preset, position, ..
-                    } = violation.kind
-                    {
-                        Some(FieldedMark {
-                            preset: usize::from(preset) - 1,
-                            position: position.byte(),
-                            error: violation.severity == aatf::Severity::Error,
-                            line: violation_line(
-                                violation,
-                                team_id,
-                                Wording {
-                                    ruleset: active.rules.ruleset(),
-                                    version,
-                                },
-                            ),
-                        })
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        })
-        .collect();
+    let fielded = match &held {
+        Some(((_, violations), active)) => fielded_marks(
+            violations,
+            &active.rules,
+            team_id,
+            version,
+            team.roster.len(),
+        ),
+        None => vec![Vec::new(); team.roster.len()],
+    };
     // Whether the pitch sets a starter's spot and his position apart: the
     // active ruleset's cup plays a game that keeps any formation.
     let illegal_formations = rules
         .as_ref()
         .is_some_and(|active| active.rules.ruleset().universal.illegal_formations);
-    let roster: Vec<RosterRow> = rows
-        .iter()
-        .zip(textures)
-        .enumerate()
-        .map(
-            |(index, ((name, raw_name, position, overalls, rated), portrait))| RosterRow {
-                name: name.as_str(),
-                raw_name: raw_name.as_str(),
-                registered_position: *position,
-                portrait,
-                medal: held_medals
-                    .and_then(|marks| marks.get(index))
-                    .copied()
-                    .flatten(),
-                overalls: *overalls,
-                rated: *rated,
-                fielded: fielded[index].as_slice(),
-            },
-        )
-        .collect();
+    let roster = roster_rows(&rows, textures, held_medals.map(Vec::as_slice), &fielded);
     // Every widget id under the editor is the team's within this open
     // (the view's own salt on top of the team scope's): a combo's popup,
     // a DragValue's in-progress edit and the widget's state never cross
@@ -580,16 +614,7 @@ fn spawn_medals(
     key: MedalKey,
     slots: usize,
 ) -> Pending<MedalKey, Vec<Option<Medal>>> {
-    let team = match TeamView::new(file, key.team) {
-        Ok(team) => Some(team),
-        Err(error) => {
-            log::debug!(
-                "team {}'s badges get no medal: the team cannot be viewed: {error}",
-                key.team
-            );
-            None
-        }
-    };
+    let team = medal_team_view(file, key.team);
     let (sender, replies) = crossbeam_channel::unbounded();
     let rules = Arc::clone(rules);
     let ctx = ctx.clone();
@@ -606,12 +631,29 @@ fn spawn_medals(
     Pending { key, replies }
 }
 
+/// Team `team_id`'s view in `file`, which its badges' medals are read
+/// from; `None`, logged, when the team cannot be viewed, its badges then
+/// getting no medal.
+pub(super) fn medal_team_view(file: &EditFile, team_id: u32) -> Option<TeamView> {
+    match TeamView::new(file, team_id) {
+        Ok(team) => Some(team),
+        Err(error) => {
+            log::debug!("team {team_id}'s badges get no medal: the team cannot be viewed: {error}");
+            None
+        }
+    }
+}
+
 /// Each of `team`'s `slots` roster slots' badge medal under `rules`
 /// (the pitch markers' badge outlines): the tier `player_tier` reads the
 /// slot's player as, mapped through `Medal::from_tier_id`; `None` for an
 /// empty slot, no tier, a check that failed or a tier that is no medal
 /// — and for every slot when the team cannot be viewed (`None`).
-fn slot_medals(rules: &aatf::Rules, team: Option<&TeamView>, slots: usize) -> Vec<Option<Medal>> {
+pub(super) fn slot_medals(
+    rules: &aatf::Rules,
+    team: Option<&TeamView>,
+    slots: usize,
+) -> Vec<Option<Medal>> {
     let Some(team) = team else {
         return vec![None; slots];
     };

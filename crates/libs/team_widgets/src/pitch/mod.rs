@@ -71,9 +71,9 @@ pub(crate) enum LineupDrag {
 }
 
 /// The canvas' size: the screen's own pitch drawn at its 720p capture's
-/// scale (the widget allocates `PITCH_BOX`; the tests read this one).
-#[cfg(test)]
-pub(crate) const PITCH: egui::Vec2 = egui::vec2(320.0, 384.0);
+/// scale. The widget allocates `PITCH_BOX` around it; a picture's cell
+/// (`still_pitch`) is the canvas alone.
+pub const PITCH: egui::Vec2 = egui::vec2(320.0, 384.0);
 /// The widget's whole extent: `PITCH` plus the draft `.pitch`'s 1 px
 /// border a side. The settings and assignments panels beside it are as
 /// tall.
@@ -471,7 +471,14 @@ pub fn pitch(
         );
         let painter = ui.painter_at(canvas);
         let palette = theme::palette(ui.visuals());
-        paint_pitch(&painter, canvas, radius - 1, palette, pitch_look(version));
+        paint_pitch(
+            &painter,
+            canvas,
+            radius - 1,
+            palette,
+            pitch_look(version),
+            false,
+        );
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
@@ -730,18 +737,13 @@ pub fn pitch(
         // the portrait. The shown formation is always one the preset
         // fields: `lock_to_fielded` keeps a non-fluid preset on Kick-off.
         for index in order {
-            let marks: Vec<&FieldedMark> = roster
-                .get(usize::from(tactics.starting_eleven[index]))
-                .map(|row| {
-                    row.fielded
-                        .iter()
-                        .filter(|mark| {
-                            mark.preset == view.preset.min(2)
-                                && mark.position == players[index].position
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+            let marks = slot_marks(
+                roster,
+                tactics,
+                view.preset.min(2),
+                index,
+                players[index].position,
+            );
             if marks.is_empty() {
                 continue;
             }
@@ -750,13 +752,7 @@ pub fn pitch(
             } else {
                 centres[index]
             };
-            let portrait = portrait_rect(badge_rect(centre));
-            let color = if marks.iter().any(|mark| mark.error) {
-                palette.pitch_error
-            } else {
-                palette.pitch_warn
-            };
-            paint_portrait_cross(&painter, cross_centre(portrait, view), color, palette);
+            let portrait = paint_marks_cross(&painter, palette, view, centre, &marks);
             ui.interact(
                 portrait,
                 ui.scope_id().with(("live aatf pitch cross", index)),
@@ -779,6 +775,69 @@ pub fn pitch(
         *tactics != before
     })
     .inner
+}
+
+/// One formation painted still on `canvas`, `PITCH` in size, as a
+/// picture of the team's formations shows it (the draft's `paintPitch`
+/// with `live` off): the turf and its lines, a marker per starter, Live
+/// AATF's crosses where `roster` carries marks, and the formation's name
+/// in the corner. It draws none of the pitch widget's states: no drag,
+/// darkening, corners, join fill or popover, and a name wider than its
+/// badge holds still at the badge's left, as with Scroll off.
+///
+/// `view.preset` and `view.formation` pick the formation painted, which
+/// may be one the preset does not field; `view.portraits` says whether
+/// the portraits are drawn, and its other fields are not read. `flat`
+/// paints the turf's bands without their grain.
+pub fn still_pitch(
+    painter: &egui::Painter,
+    canvas: egui::Rect,
+    version: PesVersion,
+    tactics: &TeamTactics,
+    view: &TacticsView,
+    roster: &[RosterRow<'_>],
+    flat: bool,
+) {
+    let view = TacticsView {
+        assign: None,
+        popover: None,
+        scroll_names: false,
+        ..*view
+    };
+    let painter = painter.with_clip_rect(canvas);
+    let style = painter.ctx().global_style();
+    let palette = theme::palette(&style.visuals);
+    let radius = style.visuals.widgets.noninteractive.corner_radius;
+    paint_pitch(
+        &painter,
+        canvas,
+        radius - 1,
+        palette,
+        pitch_look(version),
+        flat,
+    );
+    let formation = &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
+    let centres = formation
+        .players
+        .map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
+    let order = draw_order(&centres);
+    for index in order {
+        let spot = Spot {
+            index,
+            slot: formation.players[index],
+            centre: centres[index],
+        };
+        // Still names never move, so there is no next move to wait for.
+        paint_marker(&painter, palette, tactics, &view, roster, spot, 0.0);
+    }
+    paint_formation_name(&painter, canvas, formation, palette);
+    for index in order {
+        let position = formation.players[index].position;
+        let marks = slot_marks(roster, tactics, view.preset.min(2), index, position);
+        if !marks.is_empty() {
+            paint_marks_cross(&painter, palette, &view, centres[index], &marks);
+        }
+    }
 }
 
 /// The per-position overalls on the roster row of the starter in
@@ -935,6 +994,47 @@ fn paint_portrait_cross(
     }
 }
 
+/// The `FieldedNotA` marks of the starter in `index` of the eleven that
+/// name preset `preset` (0 to 2) and the `position` his slot holds there;
+/// none for an empty slot.
+fn slot_marks<'a>(
+    roster: &[RosterRow<'a>],
+    tactics: &TeamTactics,
+    preset: usize,
+    index: usize,
+    position: u8,
+) -> Vec<&'a FieldedMark> {
+    roster
+        .get(usize::from(tactics.starting_eleven[index]))
+        .map(|row| {
+            row.fielded
+                .iter()
+                .filter(|mark| mark.preset == preset && mark.position == position)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Live AATF's cross for `marks` over the marker whose badge is centred
+/// at `centre`, in the colour of their highest severity. Answers the
+/// portrait's box, where the cross's tooltip is hovered.
+fn paint_marks_cross(
+    painter: &egui::Painter,
+    palette: &Palette,
+    view: &TacticsView,
+    centre: egui::Pos2,
+    marks: &[&FieldedMark],
+) -> egui::Rect {
+    let portrait = portrait_rect(badge_rect(centre));
+    let color = if marks.iter().any(|mark| mark.error) {
+        palette.pitch_error
+    } else {
+        palette.pitch_warn
+    };
+    paint_portrait_cross(painter, cross_centre(portrait, view), color, palette);
+    portrait
+}
+
 /// The screen's corner brackets around `rect` (the draft's `corners`):
 /// a 9 px arm inward from each corner.
 fn paint_corners(painter: &egui::Painter, rect: egui::Rect, color: egui::Color32) {
@@ -1059,12 +1159,14 @@ fn group_colour(
 /// The turf image (the draft's `turf`): the game texture's size, `look`'s
 /// horizontal bands at its boundaries scaled to the texture, and its
 /// grain as a fixed-seed xorshift32 — deterministic, so the loaded
-/// texture is made once per context and look.
-fn turf_image(look: &PitchLook) -> egui::ColorImage {
+/// texture is made once per context and look. `flat` leaves the grain
+/// out: a picture's turf in plain bands, which PNG compresses far better
+/// than noise.
+fn turf_image(look: &PitchLook, flat: bool) -> egui::ColorImage {
     let (width, height) = (TURF_SIZE[0], TURF_SIZE[1]);
     let mut pixels = Vec::with_capacity(width * height);
     // Uniform noise of this spread has the grain as its deviation.
-    let spread = look.grain * 12f32.sqrt();
+    let spread = if flat { 0.0 } else { look.grain * 12f32.sqrt() };
     // xorshift32 from a fixed seed: the same grain every run.
     let mut state = 0x9e37_79b9u32;
     for y in 0..height {
@@ -1094,15 +1196,20 @@ fn turf_image(look: &PitchLook) -> egui::ColorImage {
     egui::ColorImage::new(TURF_SIZE, pixels)
 }
 
-/// `look`'s turf texture, loaded once per context under an id of its
-/// name. One texture serves both themes: the turf's bands are a surface
-/// both themes share.
-fn turf(ctx: &egui::Context, look: &PitchLook) -> egui::TextureHandle {
-    let id = egui::Id::unique(look.name);
+/// `look`'s turf texture, `flat` its grainless variant (`turf_image`),
+/// loaded once per context under an id of its name. One texture serves
+/// both themes: the turf's bands are a surface both themes share.
+fn turf(ctx: &egui::Context, look: &PitchLook, flat: bool) -> egui::TextureHandle {
+    let name = if flat {
+        format!("{}, flat", look.name)
+    } else {
+        look.name.to_owned()
+    };
+    let id = egui::Id::unique(&name);
     if let Some(texture) = ctx.data(|data| data.get_temp::<egui::TextureHandle>(id)) {
         return texture;
     }
-    let texture = ctx.load_texture(look.name, turf_image(look), egui::TextureOptions::LINEAR);
+    let texture = ctx.load_texture(name, turf_image(look, flat), egui::TextureOptions::LINEAR);
     ctx.data_mut(|data| data.insert_temp(id, texture.clone()));
     texture
 }
@@ -1110,18 +1217,20 @@ fn turf(ctx: &egui::Context, look: &PitchLook) -> egui::TextureHandle {
 /// The turf and the lines (the draft's `drawLines`) of `look`: the
 /// halfway line, the centre circle, and per end the penalty box, the goal
 /// area and the penalty arc — no touchlines and no goal lines (the
-/// texture has none). The turf's corners are rounded by `turf_radius`.
+/// texture has none). The turf's corners are rounded by `turf_radius`;
+/// `flat` paints it without its grain.
 fn paint_pitch(
     painter: &egui::Painter,
     canvas: egui::Rect,
     turf_radius: egui::CornerRadius,
     palette: &Palette,
     look: &PitchLook,
+    flat: bool,
 ) {
     let stroke = egui::Stroke::new(2.0, palette.pitch_lines);
     painter.add(
         egui::epaint::RectShape::filled(canvas, turf_radius, theme::NO_TINT).with_texture(
-            turf(painter.ctx(), look).id(),
+            turf(painter.ctx(), look, flat).id(),
             egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         ),
     );
