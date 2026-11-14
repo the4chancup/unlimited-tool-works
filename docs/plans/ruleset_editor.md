@@ -43,6 +43,12 @@ plan](core/README.md).
 
 Recent files below, newest first.
 
+The start page is a dialog, as in the draft. The tool opens with no document, the start page
+over the empty window and no Close, since nothing lies behind it to go back to; File's
+**New from template…** opens it over the document, with Close. The editor does not open on
+Autumn 26 behind it, as the draft's backdrop does: a template's document counts as unsaved,
+so every close of the tool would then ask about changes nobody made.
+
 DBC7 is a template while Divegrass Before Christmas is the Save editor's first test ground
 (`core/development_plan.md` "Divegrass Before Christmas"): its organizers start from it (its
 managers get the rules file in the 0.0.1 bundle). It leaves the list when the cup ends, as a
@@ -374,7 +380,8 @@ The writer's round trips and the load rules are `libs/aatf`'s own tests, not res
 ```
 RE-GUI-01  GIVEN the tool opened with no document
            WHEN the start page is drawn
-           THEN it offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
+           THEN it is a dialog with no Close, and Escape or a click beside it leaves it open;
+                it offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
                 VTL10, DBC7 and Blank in that order; Random with Sensible, Weird and Crazy; Open
                 file; and the recent files, newest first; GIVEN two files opened in turn, or
                 one opened and one saved, and the tool restarted THEN the later heads the
