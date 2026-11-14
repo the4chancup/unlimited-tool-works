@@ -195,7 +195,7 @@ fn highest(severities: impl IntoIterator<Item = aatf::Severity>) -> Option<aatf:
 }
 
 /// A severity's colour, the list's and the fields' marks alike: the error
-/// red, the warning orange, the link blue for a suggestion.
+/// red, the warning amber, the link blue for a suggestion.
 fn severity_color(severity: aatf::Severity, visuals: &egui::Visuals) -> egui::Color32 {
     match severity {
         aatf::Severity::Error => visuals.error_fg_color,

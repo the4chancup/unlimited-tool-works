@@ -135,11 +135,11 @@ naming the ruleset, the team with its error and warning counts, then the same gr
 While it is on, the editor itself is marked too:
 
 - each player of the team gets a mark at the end of his row in the list: a red `✖` when he
-  breaks a rule, otherwise a `✔`, orange when he has a warning, blue when he has only
+  breaks a rule, otherwise a `✔`, amber when he has a warning, blue when he has only
   suggestions and green when there is nothing to fix (hover over it to see how many of each
   he has);
 - a field of the selected player that a row is about gets a mark just left of its label: a
-  red `✖` for an error, an orange `⚠` for a warning and a blue `ⓘ` for a suggestion (hover
+  red `✖` for an error, an amber `⚠` for a warning and a blue `ⓘ` for a suggestion (hover
   over it to read its rows);
 - on the tactics pitch, a player fielded at a position he is not rated A at has his portrait
   crossed out, on every formation the preset fields him at that position.

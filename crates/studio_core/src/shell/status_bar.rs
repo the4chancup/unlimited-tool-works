@@ -1157,6 +1157,7 @@ mod tests {
             ),
             (NoticeKind::Info, "heads up", visuals.hyperlink_color),
             (NoticeKind::Warning, "careful", visuals.warn_fg_color),
+            (NoticeKind::Error, "it failed", visuals.error_fg_color),
         ];
         for (kind, text, expected) in cases {
             ctx.notify(Notice {

@@ -2629,11 +2629,7 @@ fn a_fielded_mark_paints_an_x_over_the_starters_portrait() {
     let [black_a, black_b, red_a, red_b] = strokes.as_slice() else {
         panic!("expected one cross's four strokes, got {}", strokes.len())
     };
-    let error = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .error_fg_color;
+    let error = theme::palette(&window.ctx.style_of(window.ctx.theme()).visuals).pitch_error;
     // The two diagonals, corner to corner of the portrait 6 in.
     let inner = portrait.shrink(6.0);
     let diagonals = [
@@ -2779,7 +2775,7 @@ fn the_cross_draws_only_on_a_formation_the_preset_fields() {
 
 // A mark that is only a Warning paints the pitch's warning colour (the
 // severity's colour is the highest among the spot's marks): the dark
-// theme's orange on both themes, since the turf under it is the same in
+// theme's amber on both themes, since the turf under it is the same in
 // both, where the light theme's own warning colour is darkened for its panel.
 #[test]
 fn a_warning_only_mark_paints_the_pitchs_warn_colour_on_both_themes() {
@@ -2828,8 +2824,65 @@ fn a_warning_only_mark_paints_the_pitchs_warn_colour_on_both_themes() {
         );
         assert_eq!(
             *color,
-            egui::Color32::from_rgb(0xFF, 0x8F, 0x00),
-            "the dark theme's orange on the {theme:?} theme"
+            egui::Color32::from_rgb(0xD2, 0x99, 0x22),
+            "the dark theme's amber on the {theme:?} theme"
+        );
+    }
+}
+
+// A mark whose highest severity is an Error paints the pitch's error
+// colour: the dark theme's red on both themes, since the turf under it
+// is the same in both, where the light theme's own error colour is
+// darkened for its panel.
+#[test]
+fn an_error_mark_paints_the_pitchs_error_colour_on_both_themes() {
+    let light_error = Headless::sized(600.0, 450.0)
+        .ctx
+        .style_of(egui::Theme::Light)
+        .visuals
+        .error_fg_color;
+    assert_ne!(
+        Palette::LIGHT.pitch_error,
+        light_error,
+        "premise: the light theme's own error colour is not the pitch's"
+    );
+    for (theme, palette) in [
+        (egui::Theme::Dark, &Palette::DARK),
+        (egui::Theme::Light, &Palette::LIGHT),
+    ] {
+        let mut window = Headless::sized(600.0, 450.0);
+        window.ctx.set_theme(theme);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let mut roster = roster_rows(&rows);
+        let index = 4;
+        let slot = usize::from(tactics.starting_eleven[index]);
+        let position = tactics.presets[0].formations[0].players[index].position;
+        let marks = [fielded(
+            0,
+            position,
+            true,
+            "FieldedNotA: fielded at AMF in preset 1 without an A rating",
+        )];
+        roster[slot].fielded = &marks;
+
+        let (_, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+        let found = crosses(&shapes);
+        let [color] = found.as_slice() else {
+            panic!(
+                "expected one cross on the {theme:?} theme, got {}",
+                found.len()
+            )
+        };
+        assert_eq!(
+            *color, palette.pitch_error,
+            "the pitch's error colour on the {theme:?} theme"
+        );
+        assert_eq!(
+            *color,
+            egui::Color32::from_rgb(0xF8, 0x51, 0x49),
+            "the dark theme's red on the {theme:?} theme"
         );
     }
 }

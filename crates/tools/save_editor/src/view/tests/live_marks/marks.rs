@@ -200,12 +200,12 @@ fn each_fields_mark_stands_left_of_its_label() {
     }
 }
 
-/// A warning-only violation's mark is an orange warning sign: the
+/// A warning-only violation's mark is an amber warning sign: the
 /// official file gains a warning band on the regular tier, and 73401's
 /// attacking prowess goes one over its 77 target (a `Stat` warning, not
 /// an error).
 #[test]
-fn a_warnings_mark_is_an_orange_warning_sign() {
+fn a_warnings_mark_is_an_amber_warning_sign() {
     let (mut view, mut window) = open_734("live_marks_warning");
     view.live_aatf = true;
     pick_imported(
@@ -638,7 +638,7 @@ fn a_failed_check_marks_nothing() {
 
 /// A field's mark: one for every row about it, for the highest severity
 /// among them — a `✖` in the error colour for an Error, a `⚠` in the
-/// warning orange for a Warning, a `ⓘ` in the link blue for suggestions
+/// warning amber for a Warning, a `ⓘ` in the link blue for suggestions
 /// alone — its tooltip every row's line in the check's order. It is drawn
 /// in an 11-point box whose right edge stands 2 points left of the
 /// label's text, the glyph centred in the box and on the label's height.

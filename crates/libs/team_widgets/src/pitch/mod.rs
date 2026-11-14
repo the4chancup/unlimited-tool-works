@@ -752,7 +752,7 @@ pub fn pitch(
             };
             let portrait = portrait_rect(badge_rect(centre));
             let color = if marks.iter().any(|mark| mark.error) {
-                ui.visuals().error_fg_color
+                palette.pitch_error
             } else {
                 palette.pitch_warn
             };
