@@ -83,6 +83,10 @@ dribbling = 0
 goal_celebration_1 = 0
 goal_celebration_2 = 0
 
+[teams.players.05.appearance.presentation]
+star = 0
+playing_attitude = 0
+
 [teams.players.05.appearance.face]
 jawline = 0
 jaw_height = 0
@@ -230,6 +234,32 @@ fn golden_text() {
         AestheticsPatch::parse(GOLDEN).expect("the golden parses"),
         patch
     );
+}
+
+/// The presentation table carries each key the patch's version holds:
+/// both on PES 21, `star` alone on PES 19, which stores no playing
+/// attitude.
+#[test]
+fn the_presentation_table_carries_the_keys_the_patched_version_holds() {
+    let table_of = |version: PesVersion| {
+        let patch = patch_at(
+            version,
+            vec![team(
+                701,
+                BTreeMap::from([(5, look(AppearanceSettings::default().resolved(version)))]),
+            )],
+        );
+        let text = patch.to_toml().expect("emits");
+        text.split_once("[teams.players.05.appearance.presentation]\n")
+            .and_then(|(_, rest)| rest.split_once("\n["))
+            .map(|(block, _)| block.to_owned())
+            .unwrap_or_else(|| panic!("a presentation table in:\n{text}"))
+    };
+    assert_eq!(
+        table_of(PesVersion::Pes21),
+        "star = 0\nplaying_attitude = 0\n"
+    );
+    assert_eq!(table_of(PesVersion::Pes19), "star = 0\n");
 }
 
 /// A hand-built patch can hold a stored value no key's range expresses;

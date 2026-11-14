@@ -60,6 +60,37 @@ fn a_face_folder_gets_a_settings_toml_of_his_record_but_the_face_keys() {
     }
 }
 
+// EU-SET-10
+#[test]
+fn an_upgraded_export_keeps_a_seven_star_teams_seven() {
+    let sandbox = Sandbox::new("set_star");
+    for slot in ["05", "06", "07"] {
+        face(&sandbox, &format!("co Spring/Faces/XXX{slot} - A"));
+    }
+    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
+        for player in file.players_mut() {
+            player.stats.star = Some(7);
+        }
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    let written: Vec<String> = sandbox
+        .listing("co Full Spring/Players")
+        .into_iter()
+        .filter(|path| path.ends_with("settings.toml"))
+        .collect();
+    assert_eq!(written.len(), 3, "a settings.toml per folder: {written:?}");
+    for path in written {
+        let path = format!("co Full Spring/Players/{path}");
+        assert_eq!(
+            settings(&sandbox, &path).appearance.presentation.star,
+            Some(7),
+            "{path}: the save's star"
+        );
+    }
+}
+
 // EU-SET-02
 #[test]
 fn the_id_rules_stock_kept_zero_written_midcup_and_folder_claimed() {

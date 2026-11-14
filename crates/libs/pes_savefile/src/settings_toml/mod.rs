@@ -90,6 +90,8 @@ pub struct AppearanceSettings {
     pub strip: StripSettings,
     /// `[appearance.motion]`.
     pub motion: MotionSettings,
+    /// `[appearance.presentation]`.
+    pub presentation: PresentationSettings,
     /// `[appearance.face]`.
     pub face: FaceSettings,
     /// `[appearance.hair]`.
@@ -183,6 +185,17 @@ pub struct MotionSettings {
     pub goal_celebration_1: Option<u8>,
     /// Second goal celebration.
     pub goal_celebration_2: Option<u8>,
+}
+
+/// The `[appearance.presentation]` table, stored values: the two
+/// presentation settings, which no play uses (the pre-match screen's
+/// featured-player pick and the cutscenes).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct PresentationSettings {
+    /// Star rating, stored (PES 19+).
+    pub star: Option<u8>,
+    /// Playing attitude, stored (PES 20+).
+    pub playing_attitude: Option<u8>,
 }
 
 impl AppearanceSettings {
@@ -576,6 +589,8 @@ pub(crate) fn get_appearance(appearance: &AppearanceSettings, key: SettingKey) -
         SettingKey::Dribbling => a.motion.dribbling,
         SettingKey::GoalCelebration1 => a.motion.goal_celebration_1,
         SettingKey::GoalCelebration2 => a.motion.goal_celebration_2,
+        SettingKey::Star => a.presentation.star,
+        SettingKey::PlayingAttitude => a.presentation.playing_attitude,
         SettingKey::CheekType => a.face.cheek_type,
         SettingKey::ForeheadType => a.face.forehead_type,
         SettingKey::FacialHairType => a.face.facial_hair_type,
@@ -717,6 +732,8 @@ pub(crate) fn set_appearance(
         SettingKey::Dribbling => a.motion.dribbling = value,
         SettingKey::GoalCelebration1 => a.motion.goal_celebration_1 = value,
         SettingKey::GoalCelebration2 => a.motion.goal_celebration_2 = value,
+        SettingKey::Star => a.presentation.star = value,
+        SettingKey::PlayingAttitude => a.presentation.playing_attitude = value,
         SettingKey::CheekType => a.face.cheek_type = value,
         SettingKey::ForeheadType => a.face.forehead_type = value,
         SettingKey::FacialHairType => a.face.facial_hair_type = value,
@@ -820,6 +837,10 @@ fn read(player: &PlayerEntry, key: SettingKey) -> Result<Option<u8>, SettingsErr
         Source::Player(PlayerField::BootsId) => stock_id(player.appearance.boots_id),
         Source::Player(PlayerField::GlovesId) => stock_id(player.appearance.gloves_id),
         Source::Player(PlayerField::DribblingMotion) => player.motion.dribbling,
+        // Version-gated like the dribbling motion: `get` errors where the
+        // version has no field, the `Option` reads `None` instead.
+        Source::Player(PlayerField::Star) => player.stats.star,
+        Source::Player(PlayerField::PlayingAttitude) => player.stats.playing_attitude,
         Source::Player(field) => {
             Some(u8::try_from(player.get(field)?).expect("an appearance or motion field is a byte"))
         }
@@ -1209,6 +1230,16 @@ fn write_appearance(
             Source::Player(PlayerField::DribblingMotion) if next.motion.dribbling.is_none() => {
                 return Err(not_held(key));
             }
+            // `set` writes a `Some` without checking the schema, so the
+            // version-gated fields refuse here as the dribbling motion does.
+            Source::Player(PlayerField::Star) if next.stats.star.is_none() => {
+                return Err(not_held(key));
+            }
+            Source::Player(PlayerField::PlayingAttitude)
+                if next.stats.playing_attitude.is_none() =>
+            {
+                return Err(not_held(key));
+            }
             Source::Player(field) => next.set(field, u32::from(value))?,
             Source::Face(_) | Source::NoseAngle if !held_in(key, face.layout()) => {
                 return Err(not_held(key));
@@ -1300,7 +1331,9 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::PenaltyKickMotion
         | PlayerField::DribblingMotion
         | PlayerField::GoalCelebration1
-        | PlayerField::GoalCelebration2 => Ownership::Settings,
+        | PlayerField::GoalCelebration2
+        | PlayerField::Star
+        | PlayerField::PlayingAttitude => Ownership::Settings,
         PlayerField::Id
         | PlayerField::Nationality
         | PlayerField::Age
@@ -1337,10 +1370,8 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::Speed
         | PlayerField::StrongerFoot
         | PlayerField::StrongerHand
-        | PlayerField::Star
         | PlayerField::TightPossession
         | PlayerField::Aggression
-        | PlayerField::PlayingAttitude
         | PlayerField::PlayablePosition(_)
         | PlayerField::ComStyle(_)
         | PlayerField::Skill(_) => Ownership::Gameplay,

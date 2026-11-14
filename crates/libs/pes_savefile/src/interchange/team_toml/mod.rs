@@ -307,9 +307,11 @@ pub struct StatsSection {
     pub form: Option<u8>,
     /// Injury Resistance.
     pub injury_resistance: Option<u8>,
-    /// Star rating (PES 19+).
+    /// Star rating (PES 19+), parsed from its pre-presentation `stats.star`
+    /// place alone: an import moves it into `appearance.presentation`, which
+    /// an export writes instead.
     pub star: Option<u8>,
-    /// Playing attitude (PES 20+).
+    /// Playing attitude (PES 20+), as `star`.
     pub playing_attitude: Option<u8>,
 }
 
@@ -463,6 +465,16 @@ pub enum TeamTomlError {
     NotInThisVersion {
         /// The dotted key path.
         path: String,
+    },
+    /// A field given in its old place under `stats` and its new one under
+    /// `[players.NN.appearance]`: two values for one field, so the file is
+    /// refused rather than one picked.
+    #[error("{old} is also given as {new}: remove {old}")]
+    BothPlaces {
+        /// The old-place dotted path (`players.NN.stats.star`).
+        old: String,
+        /// The new-place dotted path (`players.NN.appearance.presentation.star`).
+        new: String,
     },
     /// A codec failure (a stored instruction value the version does not list).
     #[error(transparent)]

@@ -1360,15 +1360,15 @@ fn a_paste_leaving_a_value_changed_says_so_in_its_notice() {
 fn a_paste_leaving_one_value_out_uses_the_singular_tail() {
     let (mut window17, mut view17) = open_window(&fixture(PesVersion::Pes17, "clip_tail_one_17"));
     click_player_row(&mut window17, &mut view17, 701, 0);
-    // A PES 21 stats copy by hand: `playing_attitude`, the one key PES 17
+    // A PES 21 stats copy by hand: `tight_possession`, one key PES 17
     // lacks, so the staged import holds the one `NotInThisVersion` note.
     let text = "# Unlimited Tool Works: SOMEONE's stats\n# copied: stats\n\
-                pes_version = 21\n\n[players.01.stats]\nplaying_attitude = 1\n";
+                pes_version = 21\n\n[players.01.stats]\ntight_possession = 1\n";
     let placed = TeamToml {
         pes_version: Some(PesVersion::Pes21),
         players: BTreeMap::from([(
             1,
-            TeamToml::parse("pes_version = 21\n\n[players.01.stats]\nplaying_attitude = 1\n")
+            TeamToml::parse("pes_version = 21\n\n[players.01.stats]\ntight_possession = 1\n")
                 .expect("the document parses")
                 .players
                 .into_values()

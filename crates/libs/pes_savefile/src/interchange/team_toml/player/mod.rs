@@ -12,7 +12,7 @@ use toml_edit::{Item, TableLike, Value};
 use crate::codec::{TextMisfit, text_max, text_misfit};
 use crate::interchange::players_key;
 use crate::interchange::team_toml::labels;
-use crate::interchange::team_toml::player_keys::PlayerKey;
+use crate::interchange::team_toml::player_keys::{self, PlayerKey};
 use crate::interchange::team_toml::{
     ImportNote, PlayerSection, PositionsSection, SkillsSection, TeamTomlError,
 };
@@ -95,6 +95,13 @@ fn player_from(
         ..PlayerSection::default()
     };
     for key in PlayerKey::ALL {
+        // The two moved keys land through `appearance_from`, not `stats`.
+        if player_keys::MOVED_TO_PRESENTATION
+            .iter()
+            .any(|&(moved, _)| moved == key)
+        {
+            continue;
+        }
         if !fields.contains(&key.spec().field) {
             continue;
         }
@@ -191,7 +198,13 @@ fn emit_player(
 
     out.push_str(&format!("\n[{path}.stats]\n"));
     for key in PlayerKey::ALL {
-        if key.table() == "stats" {
+        // The two moved keys are read on import, never written: an export
+        // carries them under `appearance.presentation` alone.
+        if key.table() == "stats"
+            && !player_keys::MOVED_TO_PRESENTATION
+                .iter()
+                .any(|&(moved, _)| moved == key)
+        {
             emit_key(out, section, key)?;
         }
     }
@@ -432,6 +445,29 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
             AppearanceDocument::Team,
         )?;
     }
+    // The two keys' old place beside the stats: every file written before
+    // `appearance.presentation` existed holds them there. An import reads
+    // the old place into the new one, and a field given in both is refused.
+    for &(old_key, new_key) in player_keys::MOVED_TO_PRESENTATION {
+        let Some(value) = old_key.get_section(&section) else {
+            continue;
+        };
+        let old_path = format!("{path}.{}", old_key.spec().path);
+        let new_path = leaf_path(&format!("{path}.appearance"), &new_key.spec());
+        if get_appearance(&section.appearance, new_key).is_some() {
+            return Err(TeamTomlError::BothPlaces {
+                old: old_path,
+                new: new_path,
+            });
+        }
+        set_appearance(
+            &mut section.appearance,
+            new_key,
+            Some(u8::try_from(value).expect("the field's stored width is a byte")),
+        );
+    }
+    section.stats.star = None;
+    section.stats.playing_attitude = None;
     reject(
         table,
         path,

@@ -1350,7 +1350,7 @@ mod tests {
             ),
             (
                 ImportNote::NotInThisVersion {
-                    path: path("players.04.stats.playing_attitude"),
+                    path: path("players.04.appearance.presentation.playing_attitude"),
                 },
                 Some(4),
                 Some("MUH MAYA"),

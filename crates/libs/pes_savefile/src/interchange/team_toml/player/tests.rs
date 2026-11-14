@@ -303,7 +303,7 @@ fn a_pes21_document_on_a_pes19_target_notes_and_caps() {
     for suffix in [
         ".stats.tight_possession",
         ".stats.aggression",
-        ".stats.playing_attitude",
+        ".appearance.presentation.playing_attitude",
         ".positions.stronger_hand",
         ".appearance.motion.dribbling",
     ] {
@@ -1430,7 +1430,116 @@ fn a_key_the_version_lacks_emits_its_commented_neutral_line() {
         .find(|line| line.contains("star ="))
         .expect("a star line, commented or not");
     assert!(line.starts_with("# star = 0"), "{line}");
-    assert!(line.contains("# PES 19 and later; 0 to 7"), "{line}");
+    assert!(line.contains("# 0 to 7 (PES 19 and later)"), "{line}");
+}
+
+/// The star rating and playing attitude export under
+/// `[players.NN.appearance.presentation]` alone, never under `stats`. A file
+/// written before the table existed still imports them from their old place,
+/// which lands in the appearance as if written in the new one; a file giving
+/// a field in both places is refused.
+#[test]
+fn the_presentation_keys_export_under_appearance_and_the_old_place_still_reads() {
+    use crate::settings_toml::{SettingKey, get_appearance};
+
+    let (file, _) = open(PesVersion::Pes21);
+    let (team, _) = first_slot(&file);
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let doc = TeamToml::from_team(PesVersion::Pes21, team, &refs).expect("from_team");
+    let section = &doc.players[&1];
+    let source = file
+        .player(team.roster[0].player_id)
+        .expect("the rostered player");
+    assert_eq!(
+        get_appearance(&section.appearance, SettingKey::Star),
+        source.stats.star,
+        "the player's star is the section's presentation key"
+    );
+    assert_eq!(
+        get_appearance(&section.appearance, SettingKey::PlayingAttitude),
+        source.stats.playing_attitude
+    );
+    let text = doc.to_toml().expect("to_toml");
+    let table = |name: &str| {
+        text.split_once(&format!("[players.01.{name}]"))
+            .and_then(|(_, rest)| rest.split_once("\n["))
+            .map(|(block, _)| block)
+            .unwrap_or_else(|| panic!("a [players.01.{name}] table in:\n{text}"))
+    };
+    let stats = table("stats");
+    assert!(
+        !stats.contains("star") && !stats.contains("playing_attitude"),
+        "no star or playing_attitude line under stats: {stats}"
+    );
+    let presentation = table("appearance.presentation");
+    assert!(
+        presentation.contains("star = ") && presentation.contains("playing_attitude = "),
+        "the presentation table holds both keys: {presentation}"
+    );
+
+    // The old place imports into the new one.
+    let doc = TeamToml::parse("[players.01.stats]\nstar = 7\nplaying_attitude = 2\n")
+        .expect("the old place parses");
+    let section = &doc.players[&1];
+    assert_eq!(
+        get_appearance(&section.appearance, SettingKey::Star),
+        Some(7),
+        "stats.star lands in appearance.presentation"
+    );
+    assert_eq!(
+        get_appearance(&section.appearance, SettingKey::PlayingAttitude),
+        Some(2)
+    );
+    assert_eq!(
+        section.stats.star, None,
+        "the field's home is the new place"
+    );
+    assert_eq!(section.stats.playing_attitude, None);
+
+    // A field in both places is refused, the refusal naming both and which
+    // to remove.
+    let err = TeamToml::parse(
+        "[players.03.stats]\nstar = 7\n\n[players.03.appearance.presentation]\nstar = 3\n",
+    )
+    .expect_err("a field in both places");
+    assert!(matches!(err, TeamTomlError::BothPlaces { .. }), "{err:?}");
+    assert_eq!(
+        err.to_string(),
+        "players.03.stats.star is also given as players.03.appearance.presentation.star: \
+         remove players.03.stats.star"
+    );
+
+    // And the old place applies as the new one does: through the appearance
+    // write, so the version's gating and caps are the other keys'.
+    let (file, _) = open(PesVersion::Pes19);
+    let (team, slot) = first_slot(&file);
+    let id = team.roster[slot].player_id;
+    let before = file
+        .player(id)
+        .expect("the player")
+        .stats
+        .star
+        .expect("PES 19 stores the star");
+    let written = if before == 0 { 7 } else { 0 };
+    let mut target = team.clone();
+    let mut players = file.players().to_vec();
+    let doc = TeamToml::parse(&format!(
+        "[players.{:02}.stats]\nstar = {written}\n",
+        slot + 1
+    ))
+    .expect("parses");
+    doc.apply(PesVersion::Pes19, &mut target, &mut players)
+        .expect("applies");
+    assert_eq!(
+        players
+            .iter()
+            .find(|player| player.id == id)
+            .expect("the player")
+            .stats
+            .star,
+        Some(written),
+        "the old place's value wrote, and it differs from the target's own"
+    );
 }
 
 /// Stored-ranges mode is bounded by the field's widest bit width: neck

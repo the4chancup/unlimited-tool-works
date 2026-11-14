@@ -157,6 +157,36 @@ fn apply_writes_the_look_names_and_ids_and_nothing_else() {
     assert_eq!(back.teams(), &teams[..]);
 }
 
+/// The presentation keys land in the save as the other appearance keys
+/// do: a patch carrying `star` and `playing_attitude` writes both on PES
+/// 21.
+#[test]
+fn a_patchs_presentation_keys_land_in_the_save() {
+    let (mut save, _) = open(PesVersion::Pes21);
+    let id = 70105;
+    let player = save.player(id).expect("the fixture has the player");
+    assert_ne!(player.stats.star, Some(7), "premise");
+    assert_ne!(player.stats.playing_attitude, Some(3), "premise");
+    let patch = patch_at(
+        PesVersion::Pes21,
+        vec![team(
+            701,
+            BTreeMap::from([(
+                5,
+                look(look_of(
+                    player,
+                    PesVersion::Pes21,
+                    &[(SettingKey::Star, 7), (SettingKey::PlayingAttitude, 3)],
+                )),
+            )]),
+        )],
+    );
+    patch.apply(&mut save).expect("applies");
+    let player = save.player(id).expect("the player");
+    assert_eq!(player.stats.star, Some(7));
+    assert_eq!(player.stats.playing_attitude, Some(3));
+}
+
 /// A team or player the save lacks is skipped and reported, the rest
 /// applied.
 #[test]

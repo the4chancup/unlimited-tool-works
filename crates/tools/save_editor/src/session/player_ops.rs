@@ -74,8 +74,9 @@ impl Session {
     /// Copy stats from `source_id` onto `dest_id` (the dialog's Copy
     /// stats): the field set the parity row lists, and nothing else —
     /// names, nationality, age, every motion, the free kick's with them,
-    /// the motion and appearance flags and every appearance field stay
-    /// `dest`'s (`copy_stat_fields`). Picking the same player is a no-op
+    /// the star rating and playing attitude, the motion and appearance
+    /// flags and every appearance field stay `dest`'s
+    /// (`copy_stat_fields`). Picking the same player is a no-op
     /// (`edit_players` skips an unchanged record).
     pub(crate) fn copy_stats(&mut self, dest_id: u32, source_id: u32) {
         let (Some(source), Some(dest)) = (self.file.player(source_id), self.file.player(dest_id))
@@ -151,14 +152,20 @@ impl Session {
 }
 
 /// The field set Copy and Swap stats move (the parity row's field set):
-/// height, weight, the whole `stats`, `positions` and `skills`, and the
+/// height, weight, `stats` but the star rating and playing attitude
+/// (aesthetics: they change no play), `positions` and `skills`, and the
 /// eight gameplay edit flags. Everything else — name, shirt name,
 /// nationality, age, every motion, the free kick's with them, the motion
 /// and base-copy flags, every appearance field — stays `dest`'s.
 fn copy_stat_fields(source: &PlayerEntry, dest: &mut PlayerEntry) {
     dest.basic.height = source.basic.height;
     dest.basic.weight = source.basic.weight;
+    // Star and playing attitude sit inside `stats` but are the export's
+    // presentation keys: the target keeps his own.
+    let (star, playing_attitude) = (dest.stats.star, dest.stats.playing_attitude);
     dest.stats = source.stats.clone();
+    dest.stats.star = star;
+    dest.stats.playing_attitude = playing_attitude;
     dest.positions = source.positions.clone();
     dest.skills = source.skills.clone();
     dest.edit_flags.player = source.edit_flags.player;
@@ -311,6 +318,39 @@ mod tests {
         assert!(session.can_undo(), "one sealed entry");
         assert!(session.undo());
         assert_eq!(session.file().player(70101).unwrap(), &before);
+    }
+
+    // Copy and Swap stats move the stats but the presentation fields: the
+    // target's star rating and playing attitude stay his own in both.
+    #[test]
+    fn copy_and_swap_stats_keep_the_targets_star_and_playing_attitude() {
+        let mut session = open(PesVersion::Pes21, "copy_presentation");
+        let (a, b) = (70101, 70102);
+        session.file.player_mut(a).unwrap().stats.star = Some(3);
+        session.file.player_mut(a).unwrap().stats.playing_attitude = Some(1);
+        session.file.player_mut(a).unwrap().stats.speed = 50;
+        session.file.player_mut(b).unwrap().stats.star = Some(7);
+        session.file.player_mut(b).unwrap().stats.playing_attitude = Some(3);
+        session.file.player_mut(b).unwrap().stats.speed = 60;
+        assert_ne!(
+            session.file().player(a).unwrap().stats.star,
+            session.file().player(b).unwrap().stats.star,
+            "premise: the two stars differ"
+        );
+
+        session.copy_stats(b, a);
+        let dest = session.file().player(b).unwrap();
+        assert_eq!(dest.stats.speed, 50, "the stats moved");
+        assert_eq!(dest.stats.star, Some(7), "the target's star stays");
+        assert_eq!(dest.stats.playing_attitude, Some(3));
+
+        session.swap_stats(a, b);
+        let first = session.file().player(a).unwrap();
+        let second = session.file().player(b).unwrap();
+        assert_eq!(first.stats.star, Some(3));
+        assert_eq!(first.stats.playing_attitude, Some(1));
+        assert_eq!(second.stats.star, Some(7));
+        assert_eq!(second.stats.playing_attitude, Some(3));
     }
 
     // Set all stats leaves a `None` ability alone on a version that lacks

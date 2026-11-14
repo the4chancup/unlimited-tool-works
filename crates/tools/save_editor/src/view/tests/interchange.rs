@@ -365,7 +365,17 @@ fn a_team_toml_with_stats_alone_writes_the_abilities_as_one_undoable_edit() {
         .zip(before_players.iter().zip(&source))
         .enumerate()
     {
-        assert_eq!(after.stats, co.stats, "slot {slot}: /co/'s abilities");
+        // The presentation fields are aesthetics: /3/'s star and playing
+        // attitude stay, the rest of /co/'s stats write.
+        assert_eq!(
+            after.stats,
+            pes_savefile::model::PlayerStats {
+                star: before.stats.star,
+                playing_attitude: before.stats.playing_attitude,
+                ..co.stats
+            },
+            "slot {slot}: /co/'s abilities, /3/'s presentation"
+        );
         assert_eq!(after.name, before.name, "slot {slot}: the name is /3/'s");
         assert_eq!(
             after.shirt_name, before.shirt_name,
@@ -520,6 +530,7 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     assert!(view.aesthetics_locked(), "premise: the lock is on");
     let before_team = team_entry(&view, THREE);
     let before = rostered(&view, THREE);
+    let co_players = rostered(&view, CO);
     let co = export(&view, CO);
     let unlocked = Sections {
         stats: true,
@@ -549,7 +560,16 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     assert_imported(&view, THREE, &expected);
     let team = team_entry(&view, THREE);
     for (slot, (after, before)) in rostered(&view, THREE).iter().zip(&before).enumerate() {
-        assert_ne!(after.stats, before.stats, "premise: slot {slot} imported");
+        // /co/'s stats land but the presentation fields, which stay /3/'s.
+        assert_eq!(
+            after.stats,
+            pes_savefile::model::PlayerStats {
+                star: before.stats.star,
+                playing_attitude: before.stats.playing_attitude,
+                ..co_players[slot].stats
+            },
+            "slot {slot}: /co/'s abilities, /3/'s presentation"
+        );
         assert_eq!(after.name, before.name, "slot {slot}: the name");
         assert_eq!(
             after.shirt_name, before.shirt_name,
@@ -627,7 +647,17 @@ fn the_staged_import_follows_an_edit_made_after_the_pick() {
     apply(&mut window, &mut view);
 
     let after = player_entry(&view, edited.id);
-    assert_eq!(after.stats, source[0].stats, "the import applied");
+    // The import wrote /co/'s stats, keeping the target's star and
+    // playing attitude, which are aesthetics.
+    assert_eq!(
+        after.stats,
+        pes_savefile::model::PlayerStats {
+            star: edited.stats.star,
+            playing_attitude: edited.stats.playing_attitude,
+            ..source[0].stats
+        },
+        "the import applied"
+    );
     assert_eq!(after.name, "EDITED", "the edit survives");
 }
 
