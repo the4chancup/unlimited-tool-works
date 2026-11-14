@@ -490,6 +490,18 @@
   .rail .sel { padding: 3px 6px; display: flex; justify-content: space-between; }
   table.grid { border-collapse: collapse; }
   table.grid td, table.grid th { padding: 2px 4px; text-align: left; vertical-align: middle; }
+  /* A grid's rows spaced by the gaps between their controls (gui.md "Form grids"): a row
+     holding a field, a combo or a button pads 3 above and below, so its 18-point boxes stand
+     6 from the next row's (24 apart); a row of checkboxes alone keeps 2, so their squares
+     stand 8 apart (22), and a row of text alone 2 too (19, the help's Messages table). */
+  table.grid tr:has(input:not([type=checkbox], [type=radio]), select, button, textarea) > :is(td, th) {
+    padding-top: 3px; padding-bottom: 3px; }
+  /* A row of checkboxes alone as tall as egui's 18-point checkbox row and its padding (a cell's
+     height counts its padding): the browser's text line made it 17 around a bare checkbox and
+     19 around an inline label, leaving squares 7 or 9 apart. */
+  table.grid tr:has(input[type=checkbox]):not(:has(input:not([type=checkbox], [type=radio]), select, button, textarea)) > :is(td, th) {
+    height: 22px; }
+  table.grid td > label.cb { display: flex; }
   table.grid td > .row, table.grid td > span > .row { flex-wrap: nowrap; }
   table.grid th { font-weight: 400; color: var(--strong); }
   details { margin: 2px 0 4px; }

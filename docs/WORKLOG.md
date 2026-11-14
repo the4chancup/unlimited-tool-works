@@ -2046,7 +2046,12 @@ briefs, review loops, gates and mutation runs as for any step.
       boxes 6 apart, the Skills, Tricks and COM styles squares 8; the dialogs' `formGrid`
       fields 6 apart and their stacked checkboxes 8. Before and after in
       `.tmp/statsroom/pair8.png` and `pair_dlg.png` (before on the left)
-    - [ ] the build (sidekick)
+    - [ ] the build (sidekick): the Stats screen and the dialogs' forms and checkboxes
+    - [x] the grids' drafts (lead, 2026-11-14; DECISIONS 2026-11-14 "every form takes the
+      gaps"): every `table.grid` row holding a field 6 from the next, a row of checkboxes
+      alone 8 between squares, text rows 19. Pairs in `.tmp/gridgaps/` (before on the left)
+    - [ ] the grids' build (sidekick, after the build above merges): every form on
+      `FORM_ROW_SPACING` takes the gaps, the help's Messages table keeping its 19
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

@@ -17674,3 +17674,13 @@ Why: the maintainer, comparing renders of the Stats screen at 26 and 24, found 2
 then saw that one pitch for every row left 10 points between checkbox squares against 6
 between fields: "let's focus on the gaps more than on the number 24". They set the
 checkboxes' gap to 8 by eye, and asked for the dialogs to follow for consistency.
+
+## 2026-11-14 — gui — every form takes the gaps, the WIP screens included
+
+The gap rule of the entry above (fields 6 apart, stacked checkboxes 8) holds in every form that
+draws a drafts' `table.grid` too: the settings window, the Ruleset editor's grids, Copy/swap
+stats, Kit slot assignments. A grid row of checkboxes alone keeps the checkboxes' 8; a grid of
+text rows (the help's Messages table) keeps its 19. `plans/core/gui.md`, the Form grids row.
+Why: the maintainer, over the drafts' before-and-after renders: the Save editor's were the ones
+that mattered, and the Ruleset editor and the settings window, still WIP, "can take any global
+style rules we define".
