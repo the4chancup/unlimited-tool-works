@@ -2195,7 +2195,10 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] the look in the built window, both themes (Pending looks)
   - [ ] 0.0.2-num17 who reads the two numbers in PES 2017 (the open issue "who reads the
     attack and defence numbers in PES 2017" below; moved into 0.0.2 by the maintainer,
-    2026-11-14, who allowed installing whatever helps). `PES2017.exe` is 32-bit and the
+    2026-11-14, who allowed installing whatever helps). The cup's managers are convinced
+    PES 17 uses the two bytes while the automatic attack and defence levels are on; the
+    maintainer doubts their confidence, so the study seeks a counter-proof: every run with
+    the automatic levels on, and a control setting read on the same copy. `PES2017.exe` is 32-bit and the
     same file on `E:\PES2017` and `G:\Games\PES2017`; the two numbers are bytes 1 and 4 of
     each preset's five slider bytes, at 144, 304 and 464 in the team's 628-byte tactics
     record, whose first four bytes are the team id (`schema/pes17.rs`). Tools
