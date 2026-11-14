@@ -137,12 +137,14 @@ is not known. A memory watch during matches saw them read only by code that copi
 presets, and a search of the executable found two other readers, the game plan menu and a
 routine that packs every slider into a list (both 2026-11-14). Neither method found the match reading
 support range or defensive line either, which it must, so the match works from values
-taken out of the presets somewhere neither method reached. PES 21's executable
-ignores both (Marco's `pes-re-tactics.md` section 4, EV-TAC-0008: byte 1's only reader
-discards the value, byte 4 is read by the menu's copier alone, both default to 2; the men
-in the box come from the attack level). PES 18 to 20 are not looked at. The crate keeps both
-on every version, since a save holds them and 4ccEditor writes them; what the Save editor
-should draw for them on the versions that ignore them is the maintainer's to rule.
+taken out of the presets somewhere neither method reached. For PES 21, Marco's study of
+the executable reports that it ignores both (`pes-re-tactics.md` section 4, EV-TAC-0008:
+byte 1's only reader discards the value, byte 4 is read by the menu's copier alone, both
+default to 2; the men in the box come from the attack level), a claim not verified here.
+PES 18 to 20 are not looked at: PES 20 is expected to behave as PES 21, and PES 18 and 19
+may not use the bytes either. The crate keeps both on every version, since a save holds
+them and 4ccEditor writes them. What the Save editor draws for them is ruled in
+`plans/save_editor.md` "Tactics editor".
 
 ---
 

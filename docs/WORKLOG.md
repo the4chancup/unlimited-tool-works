@@ -2792,6 +2792,11 @@ briefs, review loops, gates and mutation runs as for any step.
   readers are the match's converted form (`4cc-studio-temp/pes17_re/out/report_re.md`
   section 4). If it shows the two numbers unused, SE-GUI-71's labels and second lock are
   revisited
+- [ ] after 0.0.2 (the maintainer, 2026-11-14), each version's turn as its support is stated:
+  whether PES 18 to 21 read the two numbers. Marco's PES 21 finding (both ignored,
+  `spec/pes_savefile/model.md` "Player/team/tactics model") is a claim to verify; PES 20 is
+  expected to match PES 21, and PES 18 and 19 may not use the bytes either. Until then
+  SE-GUI-71's labels and locks hold on PES 17 to 21 alike
 - [ ] after 0.0.2: the Tactics pitch of the versions not measured yet (`plans/save_editor.md`
   "Each version draws its own screen's pitch"; until then PES 2015 and PES 2016 draw PES
   2017's, the maintainer, 2026-11-13: "more similar to 17", moved by 0.0.2-range). Settled
