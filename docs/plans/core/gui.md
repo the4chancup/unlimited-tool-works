@@ -271,7 +271,7 @@ Top to bottom:
    a running compilation, or the match tracker holding live memory addresses).
    - **Live exe check**: the selector is colored against the exe actually present in the resolved
      `pes_folder_path`, **red** when the folder exists but holds a `PES20XX.exe` of a *different*
-     version (wrong selection or wrong path), **orange** when the folder is missing or holds no PES
+     version (wrong selection or wrong path), **amber** when the folder is missing or holds no PES
      exe at all (likely invalid path); the tooltip names what was found. Re-checked on version/path
      changes and on window focus (a cheap single directory listing). This is the GUI rendering of
      the same condition the team compiler's `pes_version_mismatch` warning reports at compile time
@@ -289,7 +289,7 @@ Top to bottom:
      always reflects the setting, no shadow session state.
 
      The poll also knows the running exe's *path*. When it differs from the resolved
-     `pes_folder_path` (e.g. the selector sits red/orange while the real install runs from
+     `pes_folder_path` (e.g. the selector sits red/amber while the real install runs from
      elsewhere), the same notice offers a **"Fix PES path"** action that rewrites the PES folder
      from the running process, strictly opt-in via the notice's button, never applied
      automatically. It rewrites:
@@ -1488,7 +1488,7 @@ ST-SIDE-03  GIVEN the selector at PES 21 and pes_folder_path resolving to a fold
                  PES2019.exe
             WHEN the sidebar is drawn
             THEN the selector is red and its tooltip names the exe found; GIVEN the folder
-                 holding no PES exe, or missing, THEN the selector is orange and the tooltip
+                 holding no PES exe, or missing, THEN the selector is amber and the tooltip
                  says what was found; GIVEN it holding PES2021.exe THEN neither
 ST-SIDE-04  GIVEN a tool reporting a version_change_blocker
             WHEN the sidebar is drawn

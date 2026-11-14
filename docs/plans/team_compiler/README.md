@@ -253,7 +253,7 @@ TC-GUI-14  GIVEN an export holding a finding whose effective disposition is Drop
            WHEN Compile is pressed
            THEN every player and kit cell of its row shows the blocked state, each tooltip
                 naming the export-level cause, and no task of that export runs; GIVEN a folder
-                with a DropFile finding THEN its cell ends done-with-errors (orange-red)
+                with a DropFile finding THEN its cell ends done-with-errors (red)
 TC-GUI-15  GIVEN a warning line in the log panel
            WHEN it is clicked
            THEN the cell of its scope is highlighted in the grid; a line whose scope is the

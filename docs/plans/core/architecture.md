@@ -329,7 +329,7 @@ and `kept anyway` for a finding passed through. A finding whose disposition drop
 (an Info, a kept Warning) gets none. The same phrase ends the finding in a grid cell's tooltip.
 
 Severity alone does not say it: two Warnings drop a whole folder (`player_unlisted`,
-`shared_folder_orphaned`), so a manager reading only the Errors, or skimming the yellow lines,
+`shared_folder_orphaned`), so a manager reading only the Errors, or skimming the amber lines,
 never learns the folder is gone.
 
 There is one disposition-to-phrase mapping in `studio_core`, never a phrase in each catalog

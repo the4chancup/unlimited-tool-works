@@ -956,7 +956,7 @@ const WALK = [
   ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
-  ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, yellow or orange-red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
+  ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, amber or red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
   ["TC-GUI-13", "Cancel during a run: every cell returns to its check colour, the log's last line says so"],
   ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],

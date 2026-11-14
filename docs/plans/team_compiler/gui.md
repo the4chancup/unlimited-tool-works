@@ -20,7 +20,7 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
   for export-scoped and non-slot task messages**: shared model folders, Logo, Common, Collars,
   RefMarker, and root-artifact scopes have no cells of their own, so their status and messages roll
-  up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns the label yellow,
+  up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns the label amber,
   with the details in its tooltip.
 - **Team ID cell**: between the team name and the first player column, showing the ID resolved from
   `teams_list.txt`. When the team is not on the teams list (`team_name_unknown`), the cell turns
@@ -222,9 +222,9 @@ the cache below are `libs/pipeline`'s, shared with the Balls compiler's list vie
 
 ```
         (folder watcher)
-unchecked (background) → checking (inverse background) → partial-ok (blue)/full-ok (purple)/warning (faint yellow)/partial-error (faint red)/error (red)
+unchecked (background) → checking (inverse background) → partial-ok (blue)/full-ok (purple), outlined in amber for a warning, in red for an error
         (Compile pressed — eligible cells are pending; effective DropFolder/DropExport scopes are blocked)
-processing (color kept, a light bar sweeping the cell's bottom edge) → done (green)/done with warning (yellow)/done with errors (orange-red, pass-through or DropFile only)
+processing (color kept, a light bar sweeping the cell's bottom edge) → done (green)/done with warning (amber)/done with errors (red, pass-through or DropFile only)
 ```
 
 Processing eligibility follows the effective disposition, not severity alone:
