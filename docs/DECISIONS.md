@@ -17486,3 +17486,13 @@ layout", the paragraph "A window larger than the default").
 Why: the table's point is a whole team in view and quick edits across players, and its
 columns outnumber what the default width shows; a wider window means less sideways scrolling,
 which is the room the stretch rule keeps for lists that scroll.
+
+## 2026-11-14: the Export upgrader's Files look takes a larger window's width, its two columns sharing it equally (maintainer)
+
+Decision: the Files look is one of the panels a larger window gives room to: its list takes the
+extra height, and its two columns of boxes, the old export's and the upgraded one's, grow
+equally with the width, as the draft already draws them (`plans/core/gui.md` "Shell layout",
+the paragraph "A window larger than the default").
+
+Why: the look is a list that scrolls, and the room is useful there: a box shows more of a long
+file or folder name. Both columns grow alike, so the map keeps its shape.

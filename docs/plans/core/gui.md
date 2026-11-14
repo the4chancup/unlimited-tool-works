@@ -53,7 +53,10 @@ to the panels allowed to stretch, each a list that scrolls, named here:
 - the log dock (Log panel), whose list takes the extra height;
 - the Save editor's team table, once drafted (`plans/save_editor.md` "A team table, still
   to be drafted"), which takes the extra width as well as the extra height, so it shows
-  more of its columns.
+  more of its columns;
+- the Export upgrader's Files look (`plans/export_upgrader.md`, the look toggle's
+  "Files"), whose list takes the extra height and whose two columns, the old export's
+  boxes and the upgraded one's, share the extra width equally, so longer names fit.
 
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
 at another, and each size would then need a look of its own: the Save editor's Player
