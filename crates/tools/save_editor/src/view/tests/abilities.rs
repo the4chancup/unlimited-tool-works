@@ -532,10 +532,10 @@ fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
     }
 }
 
-// The ability stats' rows stand 22 apart, as the draft's grid rows do: an
-// 18-point box with its cell's 2 points above and below.
+// The ability stats' rows stand 24 apart, as the draft's grid rows do: an
+// 18-point box with its cell's 3 points above and below.
 #[test]
-fn the_stats_rows_stand_22_apart() {
+fn the_stats_rows_stand_24_apart() {
     let path = fixture(PesVersion::Pes21, "stats_row_pitch");
     let mut view = SaveView::new();
     view.open(&path);
@@ -552,8 +552,8 @@ fn the_stats_rows_stand_22_apart() {
         let upper = label_bounds(&nodes, &pair[0]).y0;
         let lower = label_bounds(&nodes, &pair[1]).y0;
         assert!(
-            (lower - upper - 22.0).abs() <= 0.5,
-            "{} stands 22 below {}, not {}",
+            (lower - upper - 24.0).abs() <= 0.5,
+            "{} stands 24 below {}, not {}",
             pair[1],
             pair[0],
             lower - upper

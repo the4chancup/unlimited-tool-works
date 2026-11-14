@@ -1,13 +1,13 @@
-//! The gaps between General info's blocks (the draft's `.gen` gap): 6
-//! points between blocks, against the rows' own 4 inside one.
+//! The gaps between General info's rows (the draft's `.gen` and `.pairs`
+//! gaps): 6 points between boxes, between blocks as inside one.
 
 use super::*;
 
-// Between the counted fields and the pair rows, and between the pairs
-// and the combos, a block stands 6 points under the last; inside the
-// pairs the rows stand their own 4 (FORM_ROW_SPACING).
+// Between the counted fields and the pair rows, inside the pairs, and
+// between the pairs and the combos, a box stands 6 points under the last
+// (FIELD_SPACING).
 #[test]
-fn the_blocks_of_general_info_stand_six_apart() {
+fn the_rows_of_general_info_leave_six_between_their_boxes() {
     let path = fixture(PesVersion::Pes21, "strip_block_gaps");
     let mut view = SaveView::new();
     view.open(&path);
@@ -35,8 +35,8 @@ fn the_blocks_of_general_info_stand_six_apart() {
         .expect("the foot toggle's bounds");
     for (above, below, expected, what) in [
         (shirt, height, 6.0, "Shirt to Height"),
-        (height, weight, 4.0, "Height to Weight"),
-        (weight, age, 4.0, "Weight to Age"),
+        (height, weight, 6.0, "Height to Weight"),
+        (weight, age, 6.0, "Weight to Age"),
         (age, foot, 6.0, "Age to the foot toggle"),
     ] {
         let gap = below.y0 - above.y1;

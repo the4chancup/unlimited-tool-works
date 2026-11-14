@@ -9,7 +9,9 @@ use std::io;
 use std::path::Path;
 
 use pes_savefile::model::TeamEntry;
-use studio_core::widgets::{checkbox, dialog_form, modal, modal_buttons, text_box};
+use studio_core::widgets::{
+    CHECKBOX_SPACING, checkbox, dialog_form, modal, modal_buttons, text_box,
+};
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind};
 
 use super::{PictureOptions, PictureTeam, formations_picture, picture_file_name};
@@ -233,19 +235,24 @@ pub(super) fn folder_row(
     ui.end_row();
 }
 
-/// The three boxes under both picture dialogs' grids, one under the other:
-/// the settings box, Portraits and the grain box. Whether the settings box
-/// flipped this frame.
+/// The three boxes under both picture dialogs' grids, one under the other
+/// and `CHECKBOX_SPACING` apart: the settings box, Portraits and the grain
+/// box. Whether the settings box flipped this frame.
 pub(super) fn picture_boxes(
     ui: &mut egui::Ui,
     settings: &mut bool,
     portraits: &mut bool,
     flat: &mut bool,
 ) -> bool {
-    let flipped = checkbox(ui, settings, "With each preset's settings beside its row").changed();
-    checkbox(ui, portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
-    checkbox(ui, flat, "Without the pitch's grain (smaller file)").on_hover_text(FLAT_TIP);
-    flipped
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing.y = CHECKBOX_SPACING;
+        let flipped =
+            checkbox(ui, settings, "With each preset's settings beside its row").changed();
+        checkbox(ui, portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
+        checkbox(ui, flat, "Without the pitch's grain (smaller file)").on_hover_text(FLAT_TIP);
+        flipped
+    })
+    .inner
 }
 
 /// Writes team `team_id`'s picture as `file_name` in `folder`

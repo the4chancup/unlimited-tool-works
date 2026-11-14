@@ -1,6 +1,8 @@
 //! The modal window every dialog draws through, the drafts' `.window`: its
 //! frame, its title over the body, and its row of buttons at the right.
 
+use super::FIELD_SPACING;
+
 /// The drafts' `.window` frame: egui's popup frame with 12 points of margin across and 8 down.
 pub fn modal_frame(style: &egui::Style) -> egui::Frame {
     egui::Frame::popup(style).inner_margin(egui::Margin::symmetric(12, 8))
@@ -148,17 +150,14 @@ const TITLE_SPACING: f32 = 12.0;
 /// `.window p` margin.
 const SENTENCE_SPACING: f32 = 8.0;
 
-/// The row spacing of a dialog's form, which puts its 18-point rows 27 apart.
-const DIALOG_FORM_ROW_SPACING: f32 = 9.0;
-
 /// The space between a dialog's form and what follows it.
 const DIALOG_FORM_GAP: f32 = 6.0;
 
 /// A dialog's own form, a label and its control on each row, as an `egui::Grid` of two
-/// columns under `id_salt`. Its 18-point rows stand 27 apart, and what
-/// follows the form stands 6 under its last row, where egui would leave 3. A dialog shows
-/// little, so its form takes the room. A form on a screen, and one that draws the drafts'
-/// `table.grid` (the settings menu's), keep `FORM_ROW_SPACING`'s 22.
+/// columns under `id_salt`. Its rows leave `FIELD_SPACING` between their boxes, so its
+/// 18-point rows stand 24 apart, and what follows the form stands 6 under its last row,
+/// where egui would leave 3. The forms that still draw the drafts' `table.grid` (the
+/// settings menu's) keep `FORM_ROW_SPACING`'s 22.
 pub fn dialog_form<R>(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -166,10 +165,7 @@ pub fn dialog_form<R>(
 ) -> egui::InnerResponse<R> {
     let form = egui::Grid::new(id_salt)
         .num_columns(2)
-        .spacing(egui::vec2(
-            ui.spacing().item_spacing.x,
-            DIALOG_FORM_ROW_SPACING,
-        ))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, add_contents);
     ui.add_space(DIALOG_FORM_GAP - ui.spacing().item_spacing.y);
     form
@@ -394,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn a_dialog_forms_rows_stand_27_apart_and_what_follows_it_6_under_its_last_row() {
+    fn a_dialog_forms_rows_stand_24_apart_and_what_follows_it_6_under_its_last_row() {
         let ctx = context();
         // Each row's control is exactly 18 points high, whatever the font.
         let control = |ui: &mut egui::Ui| {
@@ -414,7 +410,7 @@ mod tests {
             .inner;
             (rows.0, rows.1, control(ui))
         });
-        assert_near(second.top(), first.top() + 27.0, "the second row's top");
+        assert_near(second.top(), first.top() + 24.0, "the second row's top");
         assert_near(
             after.top(),
             second.bottom() + 6.0,

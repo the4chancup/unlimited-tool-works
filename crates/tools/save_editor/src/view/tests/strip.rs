@@ -184,10 +184,10 @@ fn the_name_and_shirt_fields_share_the_rows_edges() {
     );
 }
 
-// General info's and Other stats' pair rows stand 22 apart, as the draft's
-// `.pairs` rows do: an 18-point box and the grid's 4-point row gap.
+// General info's and Other stats' pair rows stand 24 apart, as the draft's
+// `.pairs` rows do: an 18-point box and the 6 points between boxes.
 #[test]
-fn the_pair_rows_stand_22_apart() {
+fn the_pair_rows_stand_24_apart() {
     let path = fixture(PesVersion::Pes21, "pair_row_pitch");
     let mut view = SaveView::new();
     view.open(&path);
@@ -204,8 +204,8 @@ fn the_pair_rows_stand_22_apart() {
         let upper = label_bounds(&nodes, pair[0]).y0;
         let lower = label_bounds(&nodes, pair[1]).y0;
         assert!(
-            (lower - upper - 22.0).abs() <= 0.5,
-            "{} stands 22 below {}, not {}",
+            (lower - upper - 24.0).abs() <= 0.5,
+            "{} stands 24 below {}, not {}",
             pair[1],
             pair[0],
             lower - upper
@@ -213,13 +213,13 @@ fn the_pair_rows_stand_22_apart() {
     }
 }
 
-// General info's three blocks (Name and Shirt; the pairs; Stronger foot to
-// Playing style) stand 6 apart, 2 more than their rows, as the draft's
-// `.gen` blocks: each label's top below the panel title's top is the
-// draft's, measured in a browser, and Other stats
-// under the panel moves with them.
+// General info's rows stand where the draft's do, 24 apart within its
+// blocks (Name and Shirt; the pairs; Stronger foot to Playing style) and
+// between them: each label's top below the panel title's top is the
+// draft's, measured in a browser, and Other stats under the panel moves
+// with them.
 #[test]
-fn general_infos_blocks_stand_6_apart_as_the_drafts() {
+fn general_infos_rows_stand_where_the_drafts_do() {
     let path = fixture(PesVersion::Pes21, "general_blocks");
     let mut view = SaveView::new();
     view.open(&path);
@@ -254,16 +254,16 @@ fn general_infos_blocks_stand_6_apart_as_the_drafts() {
     }
     let draft = [
         ("Name", 22.5),
-        ("Height", 68.5),
-        ("Weight", 90.5),
-        ("Age", 112.5),
-        ("Stronger foot", 136.5),
-        ("Stronger hand", 158.5),
-        ("Registered position", 180.5),
-        ("Playing style", 202.5),
-        ("Other stats", 233.0),
-        ("Injury Resistance", 255.5),
-        ("Weak Foot: Usage", 277.5),
+        ("Height", 70.5),
+        ("Weight", 94.5),
+        ("Age", 118.5),
+        ("Stronger foot", 142.5),
+        ("Stronger hand", 166.5),
+        ("Registered position", 190.5),
+        ("Playing style", 214.5),
+        ("Other stats", 245.0),
+        ("Injury Resistance", 267.5),
+        ("Weak Foot: Usage", 291.5),
     ];
     for ((label, offset), (_, expected)) in offsets.iter().zip(draft) {
         assert!(
