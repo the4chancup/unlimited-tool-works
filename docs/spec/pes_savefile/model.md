@@ -131,9 +131,13 @@ the game fields after reloading a save it was switched on in is not measured.
 Numbers in attack and Numbers in defence are stored on every version, between the other
 sliders (support range, numbers in attack, defensive line, compactness, numbers in defence),
 but the game does not use them on every version. PES 16's game plan shows the two settings.
-PES 17's does not, and whether its match AI still reads the bytes is not known: its
-executable is packed on disk (measured 2026-11-12, a 38.7 MB section of entropy 8.00 and
-an empty `.text`), so only a memory dump of the running game could tell. PES 21's executable
+PES 17's does not, although its code keeps them: the game plan menu's tables still give
+each a three-way choice, and a new preset sets both to 2. Whether PES 17's match uses them
+is not known. A memory watch during matches saw them read only by code that copies whole
+presets, and a search of the executable found two other readers, the game plan menu and a
+routine that packs every slider into a list (both 2026-11-14). Neither method found the match reading
+support range or defensive line either, which it must, so the match works from values
+taken out of the presets somewhere neither method reached. PES 21's executable
 ignores both (Marco's `pes-re-tactics.md` section 4, EV-TAC-0008: byte 1's only reader
 discards the value, byte 4 is read by the menu's copier alone, both default to 2; the men
 in the box come from the attack level). PES 18 to 20 are not looked at. The crate keeps both

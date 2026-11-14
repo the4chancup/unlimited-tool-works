@@ -2262,10 +2262,21 @@ briefs, review loops, gates and mutation runs as for any step.
         the query worker `pes17_re/scripts/worker.py`. A census of the struct's fixed
         offsets (`out/q/01_disp_census.txt`) finds no read of the slider bytes or the flag
         from the struct's base: the presets are reached through pointers
-      - [ ] the search (Opus sidekick, brief `pes17_re/brief_re.md`, report
-        `pes17_re/out/report_re.md`): a "no reader" counts only if the same method finds
-        the controls' consumers
-    - [ ] the outcome: the spec's paragraph, and the two controls relabelled or kept
+      - [x] the search (2026-11-14, Opus sidekick, brief `pes17_re/brief_re.md`, report
+        `pes17_re/out/report_re.md`): inconclusive. Outside copiers, the numbers are read
+        only by the game plan menu's value lookup (`FUN_0431acc7`, item 5 of the attack
+        and defence pages, a three-way choice) and a slider serialiser (`FUN_0433f72b`);
+        the controls likewise (plus the game plan screen's summary `FUN_03170425`), so no
+        match-side reader of either was reached. The setter `FUN_0311e799` takes the
+        numbers under 4 and the other sliders under 11 (checked by the lead); a packed
+        form is unpacked by `FUN_0384b928` into a 0x520-byte team struct nothing was seen
+        to read. No reader of the automatic levels flag was found
+    - [x] the spec's paragraph (2026-11-14): what PES 17's code keeps, the two methods and
+      why their "no" is not one; the "packed on disk" claim gone
+    - [ ] the next method, waiting on the maintainer (`QUESTIONS.md` "The 0.0.2 Save
+      editor report", "PES 17's numbers: one more match"): a live watch that logs the field
+      copier's caller (`0x0311e929`, return address and ECX) during a match, whose
+      destination's readers are the conversion; then the two controls relabelled or kept
       disabled on PES 17 (the open issue's ruling waits on it)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
@@ -3237,10 +3248,8 @@ points there.
 - open 2026-11-12 (the maintainer; in 0.0.2 since 2026-11-14, step 0.0.2-num17): who reads the attack and
   defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
   shows them, PES 17's does not, and PES 21's executable ignores them
-  (`spec/pes_savefile/model.md` "Player/team/tactics model"). `E:\PES2017\PES2017.exe` is
-  packed on disk, so reading it takes a memory dump of the running game, then the analysis
-  the PES 2016 executable got (`4cc-studio-temp/pes16_re`): find the tactics sheet's five
-  slider bytes per preset and every reader of bytes 1 and 4. Now step 0.0.2-num17.
+  (`spec/pes_savefile/model.md` "Player/team/tactics model"). Now step 0.0.2-num17, which
+  holds the methods tried and what each found.
   The study also decides the two controls' labels. The Tactics view draws `Numbers in
   attack` and `Numbers in defence` on every version; the unofficial 4ccEditor, whose
   Tactics tab the view was ported from (the official one has none), keeps those names on
