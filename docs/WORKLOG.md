@@ -2005,10 +2005,11 @@ briefs, review loops, gates and mutation runs as for any step.
         `formations`, read from the program's folder) and grain settings, the confirmation
         shared with the ruleset picker, Open folder opening the folder; help page 05. Save
         takes 273 ms on /gbpen/ (release, warm, median of five)
-    - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88). Opus,
-      worktree `4cc-studio-temp/poslayout`, branch `sk/flatpitch2`, brief
-      `.tmp/flatpitch/brief_2.md`; the column's words come from the Tactics editor's
-      tables through a new `team_widgets::tactics::summary`
+    - [x] slice 2 (2026-11-14, `0b71f879`, Opus) the settings box, the 240-point column and
+      the Automatic settings line (SE-GUI-88); the words come from the Tactics editor's
+      tables through `team_widgets::tactics::summary`, the instruction and Substitution
+      wording each one shared function; help page 05. Picture looked at beside the draft
+      (`.tmp/flatpitch/look2/`)
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
     docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
