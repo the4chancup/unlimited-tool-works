@@ -283,6 +283,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 #squad-table td.ra { background: #129648; color: #fff; }
 #squad-table td.rb { background: var(--sel-bg); color: var(--sel-fg); }
 #squad-table td.rc { color: #6e6e6e; }
+/* The sorted column, faintly lighter from its heading down. */
+#squad-table td.sorted:not(.ra):not(.rb) { background: #161616; }
+#squad-table thead th.sorted { background: #262626; }
 #squad-table td.insel { box-shadow: inset 0 0 0 999px #005c8070; }
 #squad-table td.active { box-shadow: inset 0 0 0 2px var(--sel-fg); }
 #squad-table td.insel.active { box-shadow: inset 0 0 0 2px var(--sel-fg), inset 0 0 0 999px #005c8070; }
@@ -5459,6 +5462,9 @@ function squadTable(team) {
       h("span", { class: "gname" }, g === "held" ? "Cards" : squadGroupTitle(g))));
     i += n;
   }
+  // The column the rows are sorted by (every held column, for the count of cards).
+  const sortedCol = col => !!SQ.sort && (col.key === SQ.sort.key
+    || (col.kind === "held" && SQ.sort.key.startsWith("held:")));
   // A heading's clicks: greatest first, smallest first, back to the roster's order.
   const sortBy = col => {
     const s = SQ.sort && SQ.sort.key === col.key ? SQ.sort.dir : null;
@@ -5469,14 +5475,16 @@ function squadTable(team) {
     const dir = SQ.sort && SQ.sort.key === col.key ? SQ.sort.dir : null;
     // Upright under a rotated heading, so it points down for greatest first.
     const mark = dir ? h("span", { class: "sortmark" }, dir === "desc" ? "\u25BC" : "\u25B2") : null;
-    const th = h("th", { class: [cls, col.kind === "held" ? "sq-held" : ""].filter(Boolean).join(" "),
+    const th = h("th", { class: [cls, col.kind === "held" ? "sq-held" : "", sortedCol(col) ? "sorted" : ""]
+      .filter(Boolean).join(" "),
       colspan: span || null, onclick: () => sortBy(col) },
       col.short || col.kind === "held"
         ? h("span", { class: col.kind === "held" ? "gname" : "" }, col.kind === "held" ? col.label : col.short)
         : h("span", { class: "rot" }, col.label), mark);
-    const what = col.kind === "held" ? "Cards held, by how many" : col.label;
-    quickTip(th, what + (dir === "desc" ? " (greatest first; click for smallest first)"
-      : dir === "asc" ? " (smallest first; click for the roster's order)" : " (click to sort, greatest first)"));
+    const by = col.kind === "held" ? "by how many, " : "";
+    quickTip(th, col.label + (dir === "desc" ? " (" + by + "greatest first; click for smallest first)"
+      : dir === "asc" ? " (" + by + "smallest first; click for the roster's order)"
+      : " (click to sort " + by + "greatest first)"));
     return th;
   };
   const heldCount = cols.filter(c => c.kind === "held").length;
@@ -5495,7 +5503,7 @@ function squadTable(team) {
         c === 0 ? "fz fz2" : col.group !== cols[c - 1].group ? "gstart" : "",
         col.kind === "rating" ? "r" + col.get(p).toLowerCase() : "",
         inRect(q, r, c) ? "insel" : "", r === SQ.active.r && c === SQ.active.c ? "active" : "",
-        typing ? "typing" : "", mark ? "sqmarked" : ""].filter(Boolean).join(" ");
+        typing ? "typing" : "", mark ? "sqmarked" : "", sortedCol(col) ? "sorted" : ""].filter(Boolean).join(" ");
       return h("td", { class: cls, "data-cell": r + "," + c, title: mark ? mark.title : null,
         onmousedown: e => {
           if (e.button !== 0) return;
