@@ -2229,12 +2229,21 @@ briefs, review loops, gates and mutation runs as for any step.
       (`0x03832027`). Support range, the control, was read only by the same copiers, so the
       match decides from values derived at those events, and the live watch cannot say
       whether the two numbers feed them. A first reading of a "defence-only reader" was a
-      write by an unrelated object into freed memory (`0x03e8c520`)
-    - [ ] the static census: every instruction in `.trace` reading a preset's slider offsets
-      (0x8c-0x90 in a preset, 0x90-0x94 in a record, each preset 0xa0 on), the copiers set
-      aside, support range and defensive line as the control; then Ghidra on the dump
-      (`pes16_re/analyze.bat`'s settings) for the consumers found, with the PES 2016
-      tactics functions (`pes16_re/out/dec_tactics_*.c`) as the guide
+      write by an unrelated object into freed memory (`0x03e8c520`). A fifth run (a second
+      game session, the automatic levels on, four kick-offs) on the copy whose two numbers
+      were never read saw no read at all, support range and defensive line included. The
+      other match-load readers of the original record are a byte-copy loop (`0x02b843xx`),
+      zlib's Adler-32 (`0x02b84a70`, NMAX 5552), a 4-byte swap (`0x0415745x`) and a byte
+      writer (`0x0415869x`): no reader of the raw slider bytes uses them, the control's
+      included, so the match reads a converted form not yet found
+    - [ ] the static search: a one-byte census by displacement (`.tmp/num17/census.py`) is
+      noise, the offsets being common to many structures; so Ghidra on the dump
+      (`pes16_re/analyze.bat`'s settings, 16 GB heap, once the pipeline frees the memory),
+      typed from the field copier `0x0311e929` (its source and destination are presets),
+      then every reader of a preset's 0x8c-0x90 that is not a copier, support range and
+      defensive line as the control; the PES 2016 tactics functions
+      (`pes16_re/out/dec_tactics_*.c`) as the guide; the managers' claim names the in- and
+      out-of-possession mentality offsets (+1/-1 to 0/-1) as what the two numbers change
     - [ ] the outcome: the spec's paragraph, and the two controls relabelled or kept
       disabled on PES 17 (the open issue's ruling waits on it)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
