@@ -1207,7 +1207,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   one stat or card per column, edited in place; it takes a larger window's extra width and
   height (`plans/save_editor.md` "The Squad screen"). Drafted with the maintainer
   2026-11-14 (`docs/prototypes/tools/save_editor.js` `squadView`). Left: the acceptance
-  scenarios, then the code; no release named yet
+  scenarios, then the code; no release named yet. The grid: `egui_extras` is already linked (through
+  `egui_commonmark`, the help window's), so using it costs no download and little size; its
+  `TableBuilder` keeps a heading row in place and sizes columns to their content, but cannot
+  freeze columns at the left. The first slice tries it (with the frozen columns painted at
+  its scroll offset) beside a grid of our own, and keeps the simpler; the maintainer allows
+  the direct dependency (2026-11-14)
 
 ### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)
 
