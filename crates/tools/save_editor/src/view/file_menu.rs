@@ -261,7 +261,7 @@ fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
     let font = egui::TextStyle::Button.resolve(ui.style());
     let text_width = |text: &str| {
         ui.painter()
-            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::WHITE)
+            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
             .size()
             .x
     };
