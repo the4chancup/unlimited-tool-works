@@ -562,7 +562,7 @@ function titleRow() {
     th("Team"), th("ID", { class: "mid" }), vline(),
     th("Players", { colspan: String(SLOTS) }), gap(),
     th(h("div", {}, "Portraits"), { class: "mid" }), gap(),
-    th("Kits", { colspan: String(KIT_SLOTS.length) }), vline(), th(""));
+    th("Kits", { colspan: String(KIT_SLOTS.length) }), vline(), th("Actions"));
 }
 // The legend, above the grid and outside its scroll area, a line under it
 // as under a toolbar: what each cell colour means.

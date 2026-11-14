@@ -83,7 +83,9 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 
 What a member does about a row, from the row itself. Every action that writes into the
 exports folder is a rename, a marker or a copy the member asks for by a click; nothing is
-changed on its own.
+changed on its own. The buttons a row holds itself (**Enable**, **Disable**, **Move to unused**)
+sit in the grid's last column, right of the kits, titled **Actions** in the title row like the
+other columns, so on the rows with none the column reads as theirs, not as unused space.
 
 - **Open folder.** The detail panel and a log line's context menu carry **Open folder**,
   opening the scope's folder in the file manager, a file's folder with the file selected

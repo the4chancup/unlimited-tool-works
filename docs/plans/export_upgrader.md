@@ -286,7 +286,9 @@ members use (`quick_upgrade.bat`) reads the same two.
   (`coverage_tag_chosen`'s `source`). It is held on the name's tag when the name carries
   one, since the CLI refuses the other there. The run passes `--coverage` for an export
   only when the combo differs from the guess, so the report's `source` stays the name's
-  whenever the member left it alone. A referee export has no combo.
+  whenever the member left it alone. A referee export has no combo. The grid's column for it
+  is titled **Export type** in the title row like the others, so it does not read as unused
+  space on a row without the combo.
 - **A click** on a cell, a box, a label or a log line opens the Compiler's detail window:
   the old paths a cell is read from and the path it is written to, its state, its findings,
   who wears a boots or gloves folder (and so whether it moves or stays shared), the list of

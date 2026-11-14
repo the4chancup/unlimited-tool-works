@@ -343,7 +343,7 @@ function grid() {
   return h("table", { class: "tc-grid eu-grid", "data-panel": "grid" },
     h("tr", { class: "head" }, th("Team"), th(""), vline(), th("Players", { colspan: String(SLOTS) }), gap(),
       th(h("div", {}, "Portraits"), { class: "mid" }), gap(), th("Kits", { colspan: String(KIT_SLOTS.length) }),
-      vline(), th("")),
+      vline(), th("Export type")),
     rows().flatMap(gridRows),
     h("tr", { class: "fill" }, h("td", { colspan: "2" }), vline(), h("td", { colspan: String(SLOTS + RIGHT) }), vline()));
 }
