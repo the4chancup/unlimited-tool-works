@@ -1,4 +1,4 @@
-// The Team compiler's draft (plans/team_compiler/gui.md), a view of the drafts'
+// The Compiler's draft (plans/team_compiler/gui.md), a view of the drafts'
 // host page, index.html: the live-validating team grid (one row per export, a
 // cell per player at fixed positions 01-23, 01-35 on the referee row, and a
 // cell for its portraits and a cell per kit), the detail panel a cell opens, the toolbar (the run strip and
@@ -179,7 +179,7 @@ function labelColour(hex) {
 
 // ---- Sample rows ----
 // A cell: its check status, its folder, the codes of its findings (the
-// Team compiler's catalog rows), a kit's menu colours, and `dropFile` where
+// Compiler's catalog rows), a kit's menu colours, and `dropFile` where
 // the finding drops one file and the rest of the folder still compiles.
 const pad = n => String(n).padStart(2, "0");
 const players = (from, to, status = "fullOk", folder = n => `${pad(n)} - Player ${pad(n)}`) =>

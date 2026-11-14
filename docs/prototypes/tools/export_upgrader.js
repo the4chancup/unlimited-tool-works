@@ -2,7 +2,7 @@
 // drafts' host page, index.html. A second draft, for the maintainer to refine:
 // the view reads the old_exports folder beside the app and writes each upgraded
 // export into exports, in one of two looks by how many old exports it finds.
-// - Five or more: the Team compiler's grid, three lines an export (each
+// - Five or more: the Compiler's grid, three lines an export (each
 //   player's face folder, and under it the boots and the gloves folder the save
 //   has him wear), then the portraits, the kits and the team's files.
 // - Four or fewer: each export as the explanatory page's map (docs/web/
@@ -19,7 +19,7 @@
 // teams_list.txt's, /egg/ a real team the bundled list does not hold.
 // Drawn only with what egui can draw (docs/plans/core/gui.md "Prototypes
 // before implementation"). Widget mapping: the grid, its cells, the legend, the
-// toolbar and the detail window are the Team compiler's widgets (its draft's
+// toolbar and the detail window are the Compiler's widgets (its draft's
 // .tc- rules, one shared widget in the app); .eu-args = a Panel::top's row of
 // a TextEdit, two buttons and a Checkbox; .eu-box = a rect the Painter fills
 // and strokes with its text painted over it, Sense::click and hover; an
@@ -106,7 +106,7 @@ const EXPORT_UPGRADER_CSS = `
   .eu-detail .path { margin: 2px 0; white-space: normal; word-break: break-all; }
 `;
 
-// ---- Cell states: the Team compiler's colours, the upgrader's words ----
+// ---- Cell states: the Compiler's colours, the upgrader's words ----
 const WARN = "#d29922", ERR = "#f85149";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", fullOk: "#800080",
   done: "#008000", doneWarn: WARN, doneErr: ERR };

@@ -56,7 +56,7 @@ const STYLES = ["goal_poacher", "dummy_runner", "fox_in_the_box", "target_man",
 const VERSIONS = [15, 16, 17, 18, 19, 20, 21];
 const CHOICE_EFFECTS = ["stat_bonus", "cards", "free", "free_cards", "a_positions",
   "max_a_positions", "weak_foot"];
-// Every squad is 23 players: the Team compiler numbers a team's players 01 to 23, so
+// Every squad is 23 players: the Compiler numbers a team's players 01 to 23, so
 // no ruleset sets its own size.
 const SQUAD = 23;
 // The ids are link screens (#ruleset_editor/<id>), and the app's unbuilt sections link to

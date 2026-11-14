@@ -1190,7 +1190,7 @@ const S = { activeTool: "team-compiler", sidebarOpen: false, pesVersion: "2019",
   // Overlay (gui.md "The host's other review aids"): "off", "over" or
   // "beside", where the built window's capture of the screen draws.
   overlay: "off",
-  // Log panel (gui.md "Log panel"): the Team compiler's lines { severity, code,
+  // Log panel (gui.md "Log panel"): the Compiler's lines { severity, code,
   // scope, text }; its height, collapse and filter; the auto-scroll's stick, the
   // count of lines arrived while paused, the body's scrollTop kept across
   // render() rebuilds, and the grid scope a line click last highlighted.
@@ -1255,7 +1255,7 @@ S.dataDirUnwritable = false;
 // pes: true marks a tool that targets the PES version (StudioTool::targets_pes_version): the
 // sidebar draws the selector only while such a tool is active (gui.md "Sidebar" item 2).
 const TOOLS = [
-  { id: "team-compiler", pes: true, label: "Team compiler", icon: "\uE68E", registered: true, demo: false },
+  { id: "team-compiler", pes: true, label: "Compiler", icon: "\uE68E", registered: true, demo: false },
   { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true },
   { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false },
   { id: "export-upgrader", pes: true, label: "Export upgrader", icon: "\uE52E", registered: true, demo: false },
@@ -1748,7 +1748,7 @@ const UPDATE_SAMPLE = { version: "0.0.2", stage: "pre-alpha", notes: [
   "- PES 2019 saves, and VGL27's AATF check on them.",
   "- PgUp and PgDn step from team row to team row.",
   "",
-  "**Team compiler**",
+  "**Compiler**",
   "",
   "- Compiles a team's aesthetics into CPKs and the savefile patch, from the command line.",
 ].join("\n") };
@@ -1887,20 +1887,20 @@ const HELP = [
       "- **General**: the help window, searched from one box.",
       "",
       "## [0.1.0] - 2026-10-04",
-      "- **Team compiler**: first release.",
+      "- **Compiler**: first release.",
       "- **Save editor**: first release.",
       "- **Export upgrader**: first release."
     ].join("\n") },
   ] },
-  { id: "team-compiler", title: "Team compiler", topics: [
+  { id: "team-compiler", title: "Compiler", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
-      "The Team compiler also runs without its window, from a terminal opened in the folder that holds",
+      "The Compiler also runs without its window, from a terminal opened in the folder that holds",
       "`UTW.exe`:",
       "",
       "```text",
-      "UTW team-compiler check [exports-root] [--export <path>]...",
-      "UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy]",
-      "UTW team-compiler upgrade-dpfl [--yes]",
+      "UTW compiler check [exports-root] [--export <path>]...",
+      "UTW compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy]",
+      "UTW compiler upgrade-dpfl [--yes]",
       "```",
       "",
       "`check` reads your exports and reports what it finds, without writing anything. `compile` reads",
@@ -1939,7 +1939,7 @@ const HELP = [
   { id: "export-upgrader", title: "Export upgrader", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
       "The Export upgrader migrates an export in the old (AET) layout to the one",
-      "the Team compiler reads. Its commands run from a terminal opened in the",
+      "the Compiler reads. Its commands run from a terminal opened in the",
       "folder that holds `UTW.exe`.",
       "",
       "`upgrade` takes one old export: a folder, a `.zip` or a `.7z`. A team export",
@@ -2249,7 +2249,7 @@ const CATALOG = {
     { code: "pes_folder_not_found", severity: "Error", condition: "`pes_folder_path` invalid at deployment time (includes the no-PES-install machine; context: `path`, `output` the path the CPK is promoted to)", consequence: "deployment skipped; staged CPKs promoted to `output/`; savefile step skipped" },
     { code: "pes_version_mismatch", severity: "Warning", condition: "`pes_folder_path` exists but holds no `PES20{pes_version}.exe` - a different-version exe suggests a wrong `pes_version` setting (Red's suppressible console notice becomes a plain per-run warning, dropping `state/ver_mismatch_warned.txt`; the GUI also surfaces this live via the version selector's red/yellow state - see the core plan's Sidebar; context: `path` the PES folder, `exe` the file looked for)", consequence: "none; deployment proceeds" },
     { code: "dpfilelist_missing", severity: "E/W", condition: "no `DpFileList.bin` in download folder: an Error in a compile that deploys, a Warning in sideload and test mode and with `--no-deploy` (a clean run, \"Post-processing\"), which deploy nothing, so the user knows no bin from the download folder was used", consequence: "E: deployment skipped; staged CPKs promoted to `output/`; savefile step skipped. W: none; the bins are built on the bundled bases (`bin_source` `bundled`)" },
-    { code: "dpfilelist_not_official", severity: "Warning", condition: "the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW team-compiler upgrade-dpfl`)", consequence: "none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list" },
+    { code: "dpfilelist_not_official", severity: "Warning", condition: "the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW compiler upgrade-dpfl`)", consequence: "none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list" },
     { code: "dpfilelist_cpk_missing", severity: "Warning", condition: "the installed DpFileList names CPKs with no file in the download folder, other than this run's own target (context: `path` the download folder, `files` the file names in list order, `command` as `dpfilelist_not_official`'s). The game then rejects the whole download folder and runs vanilla", consequence: "none: the run compiles and deploys; the savefile step is skipped; `upgrade-dpfl` writes a placeholder for each" },
     { code: "dpfilelist_outdated", severity: "Fatal", condition: "installed DpFileList lacks a target of this run that the bundled official DPFL lists (old layout, e.g. no `teams` slots; context: `cpk` every CPK of the run the installed list lacks and the official one names, joined by `, ` in the run's order (the bins CPK, then the parts by slot number), `path` the installed list, `command` as `dpfilelist_not_official`'s)", consequence: "run aborted at the deploy preflight, before any export is read: nothing compiled, promoted, deployed or patched; CLI names `upgrade-dpfl`" },
     { code: "dpfilelist_cpk_renamed", severity: "Info", condition: "`upgrade-dpfl`: an old DLC's CPK renamed by stem to an official name (context: `from`, `to`, the file names)", consequence: "none" },
@@ -2610,7 +2610,7 @@ const REPORT_SAMPLE = {
   tools: [
     { label: "Save editor", steps: 14, opened: "EDIT00000000 (7.4 MB)",
       wrote: "EDIT00000000 at 02:41" },
-    { label: "Team compiler", steps: 2, opened: "2 exports (/dbg/, /4ccg/)",
+    { label: "Compiler", steps: 2, opened: "2 exports (/dbg/, /4ccg/)",
       wrote: "4cc_69_midcup.cpk at 02:44" }],
   exportsOpened: true, exportsSize: "312 MB",
   savedTo: "~\\Desktop\\utw-report-2026-11-07-0245.zip" };
@@ -2810,7 +2810,7 @@ const WALK = [
   ["ST-SIDE-06", "click the 4cc logo: the About block, its links and the Copy button"],
   ["ST-SIDE-07", "the grayed tool names under the registered ones: not clickable, each tooltip says Coming soon™"],
   ["ST-SET-01", "the gear: the common rows, then one section per tool with settings (none for the Export upgrader), the active tool's open"],
-  ["ST-SET-02", "change Threads in the menu: it saves at once, the Team compiler stub's Threads line follows"],
+  ["ST-SET-02", "change Threads in the menu: it saves at once, the Compiler stub's Threads line follows"],
   ["ST-SET-03", "Data folder unwritable plus a change: the value keeps for the session, Settings could not be saved shows in the bar"],
   ["ST-BAR-01", "nothing switched on: the bar shows v0.0.1 pre-alpha alone"],
   ["ST-BAR-02", "Save editor busy: its progress sits in the right slot, gone while the Save editor is the view"],
@@ -3265,7 +3265,7 @@ function noticeShown(n) { return S.notice === n; }
 const openOutputStub = () => window_("Open output",
   weak("Opens the output folder in the file browser"), [button("OK", closeWindow)]);
 
-// The Team compiler stub's fake run: 48 teams, one every 250 ms, elapsed counted
+// The Compiler stub's fake run: 48 teams, one every 250 ms, elapsed counted
 // from the start; its activity is what the right slot and the title read while
 // another tool is active. No cancel button: the tool's own draft owns that.
 let compileTimer = null;
@@ -3295,7 +3295,7 @@ function startCompile() {
   }, 250);
 }
 
-// ---- Log panel (gui.md "Log panel"), drawn in the Team compiler's stub ----
+// ---- Log panel (gui.md "Log panel"), drawn in the Compiler's stub ----
 // The simulated compile's 48 teams: teams_list.txt rows 701 to 748, so the
 // three grid rows (/3/, /a/, /co/) are real scopes.
 const COMPILE_TEAMS = ["/3/", "/a/", "/aco/", "/adv/", "/an/", "/asp/", "/b/", "/bant/",
@@ -3312,7 +3312,7 @@ function mkLine(code, scope) {
   return { severity: r.severity, code, scope,
     text: `${r.severity} - ${scope} - ${code}: ${r.condition.replaceAll("`", "")}` };
 }
-// The Team compiler's stub's options: the code links open its catalog, a line
+// The Compiler's stub's options: the code links open its catalog, a line
 // click highlights the scope's grid row.
 const LOG_COMPILER = { tool: "team-compiler", onLine: gotoScope };
 // The widget's single append point: while the view is not stuck to the bottom,

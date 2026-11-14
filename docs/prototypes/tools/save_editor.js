@@ -3942,7 +3942,7 @@ function teamMenu() {
   ], { frame0: true });
 }
 // The whole save's work: first what reads another file against it (a second
-// save, a Team compiler's patch, both floating panels), then the reports it
+// save, a Compiler's patch, both floating panels), then the reports it
 // writes out, then the repair. The panels sit here by what they act on, the
 // whole save, not by being panels.
 function databaseMenu() {
@@ -8077,7 +8077,7 @@ function patApply() {
 function patchPanel() {
   const c = h("div", {},
     h("div", { class: "row" },
-      button("Open patch\u2026", () => { patOpen(); render(); }, { title: "Pick a patch the Team compiler wrote" }),
+      button("Open patch\u2026", () => { patOpen(); render(); }, { title: "Pick a patch the Compiler wrote" }),
       S.pat.loaded && !S.pat.refused
         ? weak(PATCH21.path.split("\\").pop() + ": " + PATCH21.teams
             .filter(t => !S.pat.skipped.includes(t))

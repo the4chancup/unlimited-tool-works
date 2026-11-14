@@ -767,7 +767,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     fixes, Upgrade on an old export, the empty grid's drop, Compile only this export and the
     hidden compile column, disabled exports greyed with Enable and Disable on a clash, the save
     findings opening the Save editor; accepted 2026-10-25 as P3-P5, P7-P9, P15's Part A)
-    - [ ] the Team compiler's draft, `docs/prototypes/tools/team_compiler.js`: a first
+    - [x] the Team compiler's draft, approved 2026-11-14 (the maintainer), its text already
+      naming it the Compiler; `docs/prototypes/tools/team_compiler.js`: a first
       version 2026-11-13 (the lead; renders `.tmp/0_0_2/tc_draft/` by `shot_tc.py`): the
       grid on sample rows in every cell state, the row actions, the ID cell's entry, the
       detail panel, the split Compile button with its modes, the run strip, a fake run and
@@ -1926,7 +1927,8 @@ briefs, review loops, gates and mutation runs as for any step.
     the Team compiler becomes the Compiler: the sidebar, title, help, messages and
     `quick_compile.bat`, the command-line id `compiler` and the settings table `[compiler]`,
     no alias; the crate keeps its name (`plans/core/README.md`, the Compiler bullet); then
-    the docs respelled by the lead (spec, plans, drafts; DECISIONS and LOG stay). After
+    the docs respelled by the lead (spec, plans, drafts; DECISIONS and LOG stay; the drafts'
+    text is done, 2026-11-14, their tool id and page links still `team-compiler`). After
     0.0.2-applayout and -presentation a land, since it touches their files -> verify:
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
