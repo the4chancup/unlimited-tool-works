@@ -1203,9 +1203,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   shows; `star = -7` keeps the value, "only for special occasions"
   (`plans/aesthetics_export/settings_toml.md` "From 0.1.0, a pre-match screen that shows the
   kit"); after 0.0.2-presentation. Left: the scenarios, then the code
-- [ ] 8.49 the Save editor's team table (the maintainer, 2026-11-14): one player per row,
+- [ ] 8.49 the Save editor's Squad screen (the maintainer, 2026-11-14): one player per row,
   one stat or card per column, edited in place; it takes a larger window's extra width and
-  height (`plans/save_editor.md` "A team table, still to be drafted"). Left: the draft,
+  height (`plans/save_editor.md` "The Squad screen, still to be drafted"). Left: the draft,
   with the maintainer; no release named yet
 
 ### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)

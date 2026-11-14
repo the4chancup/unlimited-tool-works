@@ -52,8 +52,8 @@ named here:
 
 - the Save editor's player list, which takes the extra height; its width stays;
 - the log dock (Log panel), whose list takes the extra height;
-- the Save editor's team table, once drafted (`plans/save_editor.md` "A team table, still
-  to be drafted"), which takes the extra width as well as the extra height, so it shows
+- the Save editor's Squad screen, a team in one table, once drafted (`plans/save_editor.md`
+  "The Squad screen, still to be drafted"), which takes the extra width as well as the extra height, so it shows
   more of its columns;
 - the Export upgrader's Files look (`plans/export_upgrader.md`, the look toggle's
   "Files"), whose list takes the extra height and whose two columns, the old export's

@@ -17522,3 +17522,15 @@ the team the table showed last (`plans/save_editor.md` "A team table, still to b
 Why: the table shows one team, so it opens on the team the member was looking at. A member who
 browsed the whole save before gets the whole save back, rather than a list narrowed to one
 team they never chose to filter by.
+
+## 2026-11-14: the team table's screen is named Squad, not Table (maintainer)
+
+Decision: the screen toggle's fourth screen, the team in one table, is `Squad`
+(`plans/save_editor.md` "The Squad screen, still to be drafted"). This renames the morning's
+`Table`; its Team selector rule is unchanged, and the selector keeps the team the table showed
+last when it was on one team before.
+
+Why: Stats, Appearance and Gameplan name what each screen shows, and `Table` named the
+screen's shape. Squad pairs with Gameplan as the team's players beside the team's tactics.
+`Roster` would read as the Savefile menu's roster sheet, and `Team` as the Team menu or a team
+row.
