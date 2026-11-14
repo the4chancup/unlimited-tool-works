@@ -115,8 +115,9 @@ input[type=range]:focus { outline: none; }
 /* The X: the error red, in a thin square so it reads as a button and not as an error mark. */
 #unsaved-changes td.undo button { color: var(--error); width: 16px; height: 16px; padding: 0;
   line-height: 14px; border: 1px solid var(--text); }
-/* A thin line between two rows, the separators' stroke. */
-#unsaved-changes tr + tr td { border-top: 1px solid var(--stroke); }
+/* A thin line between two rows, the separators' stroke: the changes table's, and the patch
+   panel's, which the app draws as the same table. */
+#unsaved-changes tr + tr td, #pat-rows tr + tr td { border-top: 1px solid var(--stroke); }
 /* The prompt is as wide as its widest row, up to nine tenths of the window: a long player's
    name and its values read without scrolling sideways (save_editor.md, the closing bullet). */
 .window[data-dlg="unsaved-changes"] { max-width: 90%; }
