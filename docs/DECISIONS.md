@@ -17549,3 +17549,13 @@ Why: a scroll area can use the room to show what it would otherwise hide, where 
 only grows shows empty room, as the Gameplan starter lists did. The floating windows beside
 the centred view use the empty sides instead of covering the view. The census of
 2026-11-14 measured the log dock at 180 points whatever the window's height.
+
+## 2026-11-14: what takes a larger window's room is a panel that can scroll at the default size, not any scroll area (maintainer)
+
+Decision: the exception to the calibrated layout is a panel whose content can outgrow it in the
+default window. A panel whose content always fits there takes nothing, even though it scrolls
+in a window shorter than the default (`plans/core/gui.md` "Shell layout", the paragraph "A
+window larger than the default"). This narrows the entry before it.
+
+Why: the Gameplan screen's starter lists are scroll areas, but only become scrollable below
+the default height, since a roster never grows; grown, they would show empty room.

@@ -48,13 +48,15 @@ layout keeps the arrangement it has at the default size, centred across the pane
 the room on either side and below it left empty. This replaces the reflow `spec/core/gui.md`
 "Scaling with the width" describes at or above the design width ("wider rows spread").
 
-What scrolls is the exception. A scroll area may take a larger window's extra width and height,
+What can scroll at the default size is the exception. A panel whose content can outgrow it in
+the default window, so that it scrolls there, may take a larger window's extra width and height,
 so it shows more of what it holds (more rows, more columns, more of a long name), while what it
 holds keeps the layout it has at the default size. One that grows in width grows by the same
 amount on each side, so the rows above and below it, which keep their size, stay centred where
-they were. A list whose rows always fit at the default size is not a scroll area and takes
-nothing, since it would only show empty room: the Gameplan screen's starter lists, which a
-roster never outgrows. Two scroll areas keep part of their size:
+they were. A panel whose content always fits at the default size takes nothing, even though it
+scrolls in a window shorter than the default, since it would only show empty room: the Gameplan
+screen's starter lists, which a roster never outgrows. Two panels that can scroll keep part of
+their size:
 
 - the Save editor's player list takes the extra height; its width stays;
 - the log dock (Log panel) spans the window's width and keeps its 180-point height.
@@ -73,8 +75,8 @@ the centred view rather than covering it.
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
 at another, and each size would then need a look of its own: the Save editor's Player
 assignments chips grow to some 800 points for a name of 15 characters, and its Stats screen's
-three columns drift apart. A scroll area is the exception because the room lets it show what
-it would otherwise hide, where a panel that only grows shows empty room. The help window does
+three columns drift apart. A panel that can scroll at the default size is the exception
+because the room lets it show what it would otherwise hide, where a panel that only grows shows empty room. The help window does
 not take the room either: it first opens at its own size ("Help window"), since its text
 reflows, and a page as wide as a large window is hard to read. We centre the layout rather
 than keep it at the pane's left, so that on a large monitor it sits in the middle of the
