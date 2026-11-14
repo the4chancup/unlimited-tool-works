@@ -9597,7 +9597,7 @@ function linkKeys() {
   const k = {};
   if (!S.save) k.save = "none";
   else if (S.saveKey && S.saveKey !== "pes17") k.save = S.saveKey;
-  if (S.teamSel !== (S.saveKey === "pes17" ? "718" : "all")) k.team = S.teamSel;
+  if (S.save && S.teamSel !== (S.saveKey === "pes17" ? "718" : "all")) k.team = S.teamSel;
   if (S.sel && S.sel.slot !== undefined) k.player = S.sel.team + "." + S.sel.slot;
   else if (S.sel) k.selteam = String(S.sel.team);
   if (S.squad) k.page = "squad";
