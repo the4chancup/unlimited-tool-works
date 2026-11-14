@@ -1049,3 +1049,5 @@ fn the_dialog_keeps_its_width_through_the_run() {
     assert_folder_under(&nodes, "3 pictures written, they are here:", &folder);
     assert_eq!(scene.dialog_width(), picking, "the result");
 }
+
+mod rows;

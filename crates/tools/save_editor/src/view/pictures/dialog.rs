@@ -9,7 +9,7 @@ use std::io;
 use std::path::Path;
 
 use pes_savefile::model::TeamEntry;
-use studio_core::widgets::{FORM_ROW_SPACING, checkbox, modal, modal_buttons, text_box};
+use studio_core::widgets::{checkbox, dialog_form, modal, modal_buttons, text_box};
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind};
 
 use super::{PictureOptions, PictureTeam, formations_picture, picture_file_name};
@@ -99,19 +99,15 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         egui::Id::unique("save_editor_picture"),
         TITLE,
         |ui| {
-            egui::Grid::new("save_editor_picture_grid")
-                .num_columns(2)
-                .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-                .show(ui, |ui| {
-                    folder_row(ui, &mut dialog.folder, pick_folder_dialog);
-                    let label = ui.label("File name");
-                    ui.add(text_box(
-                        egui::TextEdit::singleline(&mut dialog.file_name)
-                            .desired_width(FIELD_WIDTH),
-                    ))
-                    .labelled_by(label.id);
-                    ui.end_row();
-                });
+            dialog_form(ui, "save_editor_picture_grid", |ui| {
+                folder_row(ui, &mut dialog.folder, pick_folder_dialog);
+                let label = ui.label("File name");
+                ui.add(text_box(
+                    egui::TextEdit::singleline(&mut dialog.file_name).desired_width(FIELD_WIDTH),
+                ))
+                .labelled_by(label.id);
+                ui.end_row();
+            });
             if picture_boxes(
                 ui,
                 &mut dialog.settings,

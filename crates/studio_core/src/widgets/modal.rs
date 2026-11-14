@@ -10,7 +10,7 @@ pub fn modal_frame(style: &egui::Style) -> egui::Frame {
 const MIN_WIDTH: f32 = 360.0;
 
 /// `egui::Modal` under `id` in `modal_frame`, at least 360 points wide with its margins and
-/// stroke: `title` centred over the dialog (`theme::window_title_text`), 8 points, then
+/// stroke: `title` centred over the dialog (`theme::window_title_text`), 12 points, then
 /// `body`.
 pub fn modal<R>(
     ctx: &egui::Context,
@@ -113,7 +113,7 @@ fn titled_body<R>(
         egui::FontSelection::Default,
     );
     let (_, title_row) = ui.allocate_space(title.size());
-    ui.add_space(8.0 - ui.spacing().item_spacing.y);
+    ui.add_space(TITLE_SPACING - ui.spacing().item_spacing.y);
     let inner = body(ui);
     let title_row = egui::Rect::from_x_y_ranges(ui.min_rect().x_range(), title_row.y_range());
     ui.new_child(
@@ -141,13 +141,43 @@ pub fn modal_buttons<R>(ui: &mut egui::Ui, buttons: impl FnOnce(&mut egui::Ui) -
     .inner
 }
 
-/// The space between a dialog's sentence and the element under it, the drafts' `.window p`
-/// margin.
+/// The space between a dialog's title and its body.
+const TITLE_SPACING: f32 = 12.0;
+
+/// The space between a dialog's sentence and the element above or under it, the drafts'
+/// `.window p` margin.
 const SENTENCE_SPACING: f32 = 8.0;
 
-/// The gap under a dialog's sentence when another sentence or a control follows it in the
-/// body, 8 points where a label alone leaves egui's 3. A sentence that ends the body takes
-/// none: the buttons' 10 under it stands for both margins.
+/// The row spacing of a dialog's form, which puts its 18-point rows 27 apart.
+const DIALOG_FORM_ROW_SPACING: f32 = 9.0;
+
+/// The space between a dialog's form and what follows it.
+const DIALOG_FORM_GAP: f32 = 6.0;
+
+/// A dialog's own form, a label and its control on each row, as an `egui::Grid` of two
+/// columns under `id_salt`. Its 18-point rows stand 27 apart, and what
+/// follows the form stands 6 under its last row, where egui would leave 3. A dialog shows
+/// little, so its form takes the room. A form on a screen, and one that draws the drafts'
+/// `table.grid` (the settings menu's), keep `FORM_ROW_SPACING`'s 22.
+pub fn dialog_form<R>(
+    ui: &mut egui::Ui,
+    id_salt: impl egui::AsIdSalt,
+    add_contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::InnerResponse<R> {
+    let form = egui::Grid::new(id_salt)
+        .num_columns(2)
+        .spacing(egui::vec2(
+            ui.spacing().item_spacing.x,
+            DIALOG_FORM_ROW_SPACING,
+        ))
+        .show(ui, add_contents);
+    ui.add_space(DIALOG_FORM_GAP - ui.spacing().item_spacing.y);
+    form
+}
+
+/// The gap between a dialog's sentence and a sentence or control under it, or between a
+/// control and a sentence under it: 8 points, where a label alone leaves egui's 3. A
+/// sentence that ends the body takes none: the buttons' 10 under it stands for both margins.
 pub fn modal_sentence_gap(ui: &mut egui::Ui) {
     ui.add_space(SENTENCE_SPACING - ui.spacing().item_spacing.y);
 }
@@ -296,7 +326,7 @@ mod tests {
         assert_near(outer.width(), 360.0, "the modal's width");
         assert_near(title.center().x, outer.center().x, "the title's centre");
         assert_near(title.top(), outer.top() + 9.0, "the title's top");
-        assert_near(label.top(), title.bottom() + 8.0, "the body's top");
+        assert_near(label.top(), title.bottom() + 12.0, "the body's top");
         assert_near(ok.right(), outer.right() - 13.0, "OK's right");
         assert_near(ok.top(), label.bottom() + 10.0, "OK's top");
         assert_near(outer.bottom(), ok.bottom() + 9.0, "the modal's bottom");
@@ -361,6 +391,35 @@ mod tests {
         });
         assert_near(field.top(), sentence.bottom() + 8.0, "the control's top");
         assert_near(ok.top(), last.bottom() + 10.0, "OK's top");
+    }
+
+    #[test]
+    fn a_dialog_forms_rows_stand_27_apart_and_what_follows_it_6_under_its_last_row() {
+        let ctx = context();
+        // Each row's control is exactly 18 points high, whatever the font.
+        let control = |ui: &mut egui::Ui| {
+            ui.allocate_exact_size(egui::vec2(120.0, 18.0), egui::Sense::hover())
+                .0
+        };
+        let ((first, second, after), _, _) = draw(&ctx, "Save pictures", |ui| {
+            let rows = dialog_form(ui, "form", |ui| {
+                ui.label("Folder");
+                let first = control(ui);
+                ui.end_row();
+                ui.label("File name");
+                let second = control(ui);
+                ui.end_row();
+                (first, second)
+            })
+            .inner;
+            (rows.0, rows.1, control(ui))
+        });
+        assert_near(second.top(), first.top() + 27.0, "the second row's top");
+        assert_near(
+            after.top(),
+            second.bottom() + 6.0,
+            "the control after the form's top",
+        );
     }
 
     #[test]

@@ -355,10 +355,10 @@ mod tests {
     }
 
     // The draft's `.firstrun { margin: 2px 0 8px }`, box to box: its top margin
-    // collapses into the title's 8, so the choices' row starts 8 points under
+    // collapses into the title's 12, so the choices' row starts 12 points under
     // the title's line, and the footer line 8 points under the row's lowest hint.
     #[test]
-    fn the_choices_row_sits_8_under_the_title_and_8_above_the_footer() {
+    fn the_choices_row_sits_12_under_the_title_and_8_above_the_footer() {
         let dir = TestDir::new("studio_core_first_run_margins");
         let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
@@ -391,8 +391,8 @@ mod tests {
 
         let above = row_top - title.y1;
         assert!(
-            (above - 8.0).abs() <= 0.5,
-            "the row starts 8 under the title, not {above}"
+            (above - 12.0).abs() <= 0.5,
+            "the row starts 12 under the title, not {above}"
         );
         let below = footer.y0 - row_bottom;
         assert!(

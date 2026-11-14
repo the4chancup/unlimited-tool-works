@@ -1526,11 +1526,11 @@ fn every_path_edit_shows_steams_pes_2019_folder_whole() {
     );
 }
 
-// The drafts' window: the common grid's first row starts 8 points under the
+// The drafts' window: the common grid's first row starts 12 points under the
 // title, and Close stands at the right, inside the stroke and the 12-point
 // margin.
 #[test]
-fn the_menu_starts_its_grid_8_under_the_title_and_ends_in_close_at_the_right() {
+fn the_menu_starts_its_grid_12_under_the_title_and_ends_in_close_at_the_right() {
     let dir = TestDir::new("studio_core_settings_window");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
@@ -1561,8 +1561,8 @@ fn the_menu_starts_its_grid_8_under_the_title_and_ends_in_close_at_the_right() {
 
     let gap = label.y0.min(selector.y0) - title.y1;
     assert!(
-        (gap - 8.0).abs() <= 0.5,
-        "the first row starts 8 under the title, not {gap}"
+        (gap - 12.0).abs() <= 0.5,
+        "the first row starts 12 under the title, not {gap}"
     );
     let right = f64::from(outer.right()) - close.x1;
     assert!(
