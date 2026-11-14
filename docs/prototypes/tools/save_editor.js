@@ -6638,12 +6638,23 @@ function fitText(g, text, width) {
   while (text && g.measureText(text + "…").width > width) text = text.slice(0, -1);
   return text + "…";
 }
+// Whether formation `f` has `kickoff`'s shape: its spots pair one to one with
+// Kick-off's, each within SHAPE_TOLERANCE on both axes, whoever stands on
+// them and whatever role they are labelled with. Players trading spots
+// changes no shape.
+const SHAPE_TOLERANCE = 2;
+function sameShape(f, kickoff) {
+  const pair = (spots, left) => !spots.length || left.some((k, i) =>
+    Math.abs(k.x - spots[0].x) <= SHAPE_TOLERANCE && Math.abs(k.y - spots[0].y) <= SHAPE_TOLERANCE
+    && pair(spots.slice(1), left.filter((_, j) => j !== i)));
+  return pair(f.players, kickoff.players);
+}
 // The formations a preset's row draws: the fielded ones, or all three when
-// Fluid formation is off and the other two are not exact copies of Kick-off.
+// Fluid formation is off and one of the other two is not Kick-off's shape.
 // PES 2015 has no switch, so nothing there can field them.
 function picturedFormations(pre) {
-  const [kickoff, ...rest] = pre.formations, same = f => JSON.stringify(f) === JSON.stringify(kickoff);
-  const hidden = version() >= 16 && !pre.style.fluid && !rest.every(same);
+  const [kickoff, ...rest] = pre.formations;
+  const hidden = version() >= 16 && !pre.style.fluid && !rest.every(f => sameShape(f, kickoff));
   return hidden ? pre.formations : fieldedFormations(pre).map(i => pre.formations[i]);
 }
 function formationsPicture(t, settings = false) {

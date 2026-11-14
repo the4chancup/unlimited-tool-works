@@ -17374,3 +17374,17 @@ RE-GUI-01).
 
 Why: the two tools' first views look and work alike, and the File menu stays where a member
 looks for it.
+
+## 2026-11-14: a formation picture compares hidden formations to Kick-off by shape (maintainer)
+
+Decision: a formation picture draws a fluid-off preset's In-possession and Out-of-possession
+formations only when one has a shape of its own: its stored spots do not pair one to one with
+Kick-off's within 2 on both axes. Which player stands on a spot, and which position it is
+labelled with, no longer count. This replaces the 2026-10-29 entry's "not an exact copy"
+(`plans/save_editor.md` "Formation pictures", SE-GUI-87).
+
+Why: some teams hide a copy of Kick-off with a few players traded (45 of the 1,276 hidden
+formations in a PES 2021 cup save; /gbpen/'s presets 1 and 3 among them). The exact rule drew
+those as three formations, as if the team hid another shape. The 2-point tolerance is the
+maintainer's; that save has no spot moved by 1 or 2, and its nearest real difference, one AMF
+moved 2 across and 3 down, is still drawn.

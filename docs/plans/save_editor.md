@@ -1499,10 +1499,15 @@ Win32 original hurt the most):
   name held still at the badge's left).
 
   The columns are the three formations under their names. A preset with fluid formation off
-  draws its Kick-off formation alone, the room beside it empty, unless its other two are not
-  exact copies of Kick-off. Then it draws all three, as a fluid preset does, since a team can
+  draws its Kick-off formation alone, the room beside it empty, unless one of its other two
+  has a shape of its own. Then it draws all three, as a fluid preset does, since a team can
   hide formations there and switch Fluid formation on in a match, and the picture is the
-  organizers' check (PES 2015, with no switch, draws Kick-off alone). The other two are drawn
+  organizers' check (PES 2015, with no switch, draws Kick-off alone). A formation has
+  Kick-off's shape when its stored spots pair one to one with Kick-off's, each within 2 on
+  both axes, whoever stands on them and whatever position they are labelled with. We compare
+  shapes, not whole formations, because some teams hide a copy of Kick-off with a few players
+  traded (45 of the 1,276 hidden formations in a PES 2021 cup save), and drawing it would
+  show three copies of one shape as if the team hid another. The other two are drawn
   at 60% opacity over the background (darker on the dark theme, paler on the light, receding
   either way), so they read as unused, perhaps left there forgotten by the manager, rather
   than as a fluid set. A team whose every row draws one formation gets one column and no
@@ -3075,7 +3080,7 @@ SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` abse
                 bytes as they were and Replace writes it again; GIVEN the grain box ticked
                 and the editor restarted THEN the dialog opens with it ticked
 SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws Kick-off
-                alone (Fluid formation off, the other two exact copies of Kick-off), and
+                alone (Fluid formation off, the other two of Kick-off's shape), and
                 of a team with a preset whose Fluid formation is on
            WHEN each is written without the settings
            THEN the first is one column of three pitches, 32 + 96 + 320 points wide and
@@ -3090,7 +3095,10 @@ SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws K
                 grain box ticked THEN the turf pixels of one band, away from the lines and
                 markers, are one colour, and the file is smaller than the grained one;
                 GIVEN the PES 2015 save THEN no row has a Fluid line, and every row draws
-                Kick-off alone
+                Kick-off alone; GIVEN a fluid-off preset whose other two hold Kick-off's
+                spots with two players traded, one spot relabelled from DMF to CMF, THEN
+                its row draws Kick-off alone; GIVEN one spot of them moved 2 across and 2
+                down THEN still alone, and moved 3 down THEN all three
 SE-GUI-88  GIVEN the PES 2021 save, a team whose presets hold an advanced instruction that
                 takes a player, with its target set
            WHEN its picture is written with the settings
