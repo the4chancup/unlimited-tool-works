@@ -1919,7 +1919,8 @@ briefs, review loops, gates and mutation runs as for any step.
     its rows are as wide as the widest entry where the draft's fill the frame. Left: after
     0.0.2-chpop (it owns save_editor `src/view/`), `dialog_page` takes `modal`'s 360-point
     minimum and the entries fill the frame, in this panel and in the Ruleset start page
-    (whose template buttons are as wide as their text) -> verify: the built window again
+    (whose template buttons are as wide as their text). Done 2026-11-14 (the lead, tests red
+    first). Left: the built window again
   - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
     item switches to its player or team, the list staying open; the X's are the error red,
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
@@ -3029,6 +3030,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-14 (the lead): `save_editor`'s
+  `under_illegal_formations_the_pitch_sets_a_starters_spot_and_position_apart` failed once in
+  the full suite beside a mutation run (`tactics.rs:1128`, "his badge at full opacity"), at
+  `c8ba1be7` plus a change outside tactics, and passed alone. The harness sets
+  `animation_time` to 0, so a fade is not the cause; a real-time threshold between the press
+  and the move frames is the first suspect. Next time: keep the assertion's values.
 - open 2026-11-14 (0.0.2-chpop's sidekick): the patch panel's Item cells all hover "Click to
   switch to this player", a player no roster holds too, whose click does nothing; the
   unsaved changes list offers no click there. Small: `patch.rs` `table` passes a tooltip

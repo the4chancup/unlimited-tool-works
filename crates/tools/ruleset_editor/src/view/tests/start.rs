@@ -46,6 +46,35 @@ fn the_start_page_offers_its_entries_in_order() {
     );
 }
 
+// The draft's template buttons fill the frame's width, so they share
+// both edges, the short names' with the longest's.
+#[test]
+fn the_start_pages_template_buttons_fill_its_frame() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let bounds = |label: &str| {
+        node(&frame.nodes, label)
+            .bounds()
+            .unwrap_or_else(|| panic!("{label:?}'s bounds"))
+    };
+    let longest = bounds("Blank: one tier, no height brackets, universal rules on");
+    for label in [
+        "4cc Spring 26",
+        "/vt/ League 10",
+        "Divegrass Before Christmas 7",
+    ] {
+        let short = bounds(label);
+        assert!(
+            (short.x0 - longest.x0).abs() <= 0.5 && (short.x1 - longest.x1).abs() <= 0.5,
+            "{label:?} spans {:.1}..{:.1}, Blank {:.1}..{:.1}",
+            short.x0,
+            short.x1,
+            longest.x0,
+            longest.x1
+        );
+    }
+}
+
 /// The generator is a later build's: the start page's Sensible, Weird
 /// and Crazy and the toolbar's Randomize menu are drawn disabled.
 #[test]

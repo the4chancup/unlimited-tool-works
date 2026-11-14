@@ -821,6 +821,23 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             .is_none(),
         "the panel registers no modal layer"
     );
+    // The rows fill the frame, a dialog's 360 points less its 12-point
+    // margins and 1-point stroke, as the draft's do; the picker stays a
+    // compact button.
+    let width = |node: &accesskit::Node| {
+        let bounds = node.bounds().expect("an entry's bounds");
+        bounds.x1 - bounds.x0
+    };
+    let rows = entries(&nodes, PES19_ENTRY);
+    for row in &rows[..4] {
+        assert!(
+            (width(row) - 334.0).abs() <= 0.5,
+            "{:?} is {:.1} wide",
+            row.label(),
+            width(row)
+        );
+    }
+    assert!(width(rows[4]) < 300.0, "Choose file… stays compact");
 
     click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
     let session = view.session.as_ref().expect("the PES 19 entry opened");

@@ -6,6 +6,9 @@ pub fn modal_frame(style: &egui::Style) -> egui::Frame {
     egui::Frame::popup(style).inner_margin(egui::Margin::symmetric(12, 8))
 }
 
+/// The drafts' `.window` minimum width, margins and stroke included.
+const MIN_WIDTH: f32 = 360.0;
+
 /// `egui::Modal` under `id` in `modal_frame`, at least 360 points wide with its margins and
 /// stroke: `title` centred over the dialog (`theme::window_title_text`), 8 points, then
 /// `body`.
@@ -15,7 +18,7 @@ pub fn modal<R>(
     title: impl Into<egui::RichText>,
     body: impl FnOnce(&mut egui::Ui) -> R,
 ) -> egui::ModalResponse<R> {
-    modal_with_min_width(ctx, id, title, Some(360.0), body)
+    modal_with_min_width(ctx, id, title, Some(MIN_WIDTH), body)
 }
 
 /// `modal` without the 360-point minimum: the window is as wide as its title and body. For a
@@ -57,9 +60,10 @@ fn modal_with_min_width<R>(
 }
 
 /// A dialog's look as a page (a tool's start page with nothing open):
-/// the modal's frame and centred title in the middle of `ui`'s rect,
-/// no backdrop and nothing outside the frame blocked. A real `modal`
-/// would block the whole window, the sidebar's tool switch included.
+/// the modal's frame and centred title in the middle of `ui`'s rect, at
+/// least `modal`'s 360 points wide, no backdrop and nothing outside the
+/// frame blocked. A real `modal` would block the whole window, the
+/// sidebar's tool switch included.
 pub fn dialog_page<R>(
     ui: &egui::Ui,
     id: egui::Id,
@@ -80,8 +84,13 @@ pub fn dialog_page<R>(
             ui.scope_builder(
                 egui::UiBuilder::new().sense(egui::Sense::CLICK | egui::Sense::DRAG),
                 |ui| {
-                    modal_frame(ui.style())
-                        .show(ui, |ui| titled_body(ui, title, body))
+                    let frame = modal_frame(ui.style());
+                    let margins = frame.total_margin().sum().x;
+                    frame
+                        .show(ui, |ui| {
+                            ui.set_min_width(MIN_WIDTH - margins);
+                            titled_body(ui, title, body)
+                        })
                         .inner
                 },
             )
@@ -404,5 +413,16 @@ mod tests {
             ctx.memory(|memory| memory.top_modal_layer()).is_some(),
             "premise: a modal registers a layer"
         );
+    }
+
+    // A short page is as wide as a short dialog: `modal`'s 360 points.
+    #[test]
+    fn a_short_dialog_page_is_360_wide() {
+        let ctx = context();
+        let rect = egui::Rect::from_min_max(egui::pos2(60.0, 0.0), egui::pos2(860.0, 600.0));
+        let ((), outer, _) = draw_page(&ctx, rect, "Save editor", |ui| {
+            ui.label("PES 2021");
+        });
+        assert_near(outer.width(), 360.0, "the page's width");
     }
 }

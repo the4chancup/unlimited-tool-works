@@ -249,7 +249,8 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The welcome panel's body: the heading "Saves in Documents", each save
-/// as a button filling the frame's width with its shortcut at the right
+/// as a button filling the frame's width (the widest entry's, when wider
+/// than the frame's minimum) with its shortcut at the right
 /// and its path as the tooltip (the weak line with none), then a
 /// separator and "Recent" when any opened earlier, a separator and
 /// `Choose file…` with Ctrl+O. Returns the clicked entry's `Pending`.
@@ -279,27 +280,35 @@ fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
         .map(row)
         .fold(0.0, f32::max)
         + 2.0 * ui.spacing().button_padding.x;
+    // Justified, each entry also fills what the frame's minimum width
+    // leaves past the widest one.
     let entry = |ui: &mut egui::Ui, open: &Open| {
         ui.add(open.button().min_size(egui::vec2(content, 0.0)))
             .on_hover_text(&open.tip)
             .clicked()
             .then(|| open.pending.clone())
     };
-    ui.strong("Saves in Documents");
-    let mut chosen = None;
-    for open in &opens.saves {
-        chosen = entry(ui, open).or(chosen);
-    }
-    if opens.saves.is_empty() {
-        ui.weak("No PES saves were found in Documents.");
-    }
-    if !opens.recents.is_empty() {
-        ui.separator();
-        ui.strong("Recent");
-        for open in &opens.recents {
-            chosen = entry(ui, open).or(chosen);
-        }
-    }
+    let layout = egui::Layout::top_down_justified(egui::Align::Min);
+    let mut chosen = ui
+        .with_layout(layout, |ui| {
+            let mut chosen = None;
+            ui.strong("Saves in Documents");
+            for open in &opens.saves {
+                chosen = entry(ui, open).or(chosen);
+            }
+            if opens.saves.is_empty() {
+                ui.weak("No PES saves were found in Documents.");
+            }
+            if !opens.recents.is_empty() {
+                ui.separator();
+                ui.strong("Recent");
+                for open in &opens.recents {
+                    chosen = entry(ui, open).or(chosen);
+                }
+            }
+            chosen
+        })
+        .inner;
     ui.separator();
     // The picker's entry is the draft's compact button, not a full row.
     if ui

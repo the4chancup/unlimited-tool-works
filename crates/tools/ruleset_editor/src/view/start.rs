@@ -75,17 +75,20 @@ fn body(
     settings: &RulesetEditorSettings,
 ) {
     ui.strong("New from template");
-    for (index, template) in templates().iter().enumerate() {
-        if ui.button(button_label(template)).clicked() {
-            guard(view, ctx, Pending::Template(index));
+    // The draft's template buttons fill the frame, their names centred.
+    ui.vertical_centered_justified(|ui| {
+        for (index, template) in templates().iter().enumerate() {
+            if ui.button(button_label(template)).clicked() {
+                guard(view, ctx, Pending::Template(index));
+            }
         }
-    }
-    if ui
-        .button("Blank: one tier, no height brackets, universal rules on")
-        .clicked()
-    {
-        guard(view, ctx, Pending::Blank);
-    }
+        if ui
+            .button("Blank: one tier, no height brackets, universal rules on")
+            .clicked()
+        {
+            guard(view, ctx, Pending::Blank);
+        }
+    });
     ui.separator();
     ui.horizontal(|ui| {
         ui.strong("Random");
