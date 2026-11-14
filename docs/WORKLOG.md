@@ -2022,7 +2022,10 @@ briefs, review loops, gates and mutation runs as for any step.
       tables through `team_widgets::tactics::summary`, the instruction and Substitution
       wording each one shared function; help page 05. Picture looked at beside the draft
       (`.tmp/flatpitch/look2/`)
-    - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
+    - [x] slice 3 (2026-11-14, `3c9b7baf`, Opus) the Savefile menu's range dialog: one picture
+      per team of a range, the progress line naming the picture being written, Stop keeping
+      what was written, the dialog's width held through the run (SE-GUI-89); help page 07.
+      Left: its look beside the draft's `dlgPicturesRange`
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
