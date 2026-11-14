@@ -586,7 +586,7 @@ function legend() {
   // The chevron points where a click sends the legend: up to fold it away,
   // down to bring it back. The title does what the chevron does.
   const title = h("span", { class: "both name", title: tip, style: "cursor:pointer", onclick: toggle },
-    button(S.legendShut ? "▾" : "▴", null, { frame0: true }), "Legend");
+    button(S.legendShut ? "▸" : "▾", null, { frame0: true }), "Legend");
   if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
   const sample = { key: "", label: {} };
   const entry = (k, alone) => {

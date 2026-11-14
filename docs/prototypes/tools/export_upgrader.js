@@ -368,7 +368,7 @@ function legend() {
     localStorage.setItem("drafts.eu.legend_shut", S.legendShut ? "1" : "0"); render(); };
   const title = h("span", { class: "both name", style: "cursor:pointer", onclick: toggle,
     title: S.legendShut ? "Show the legend" : "Hide the legend" },
-    button(S.legendShut ? "▾" : "▴", null, { frame0: true }), "Legend");
+    button(S.legendShut ? "▸" : "▾", null, { frame0: true }), "Legend");
   if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
   return h("div", { class: "tc-legend top weak", "data-panel": "legend" }, title,
     LEGEND.flatMap(col => col.map(k => h("span", { class: "k" }, sq(k), STATE_NAMES[k]))));
