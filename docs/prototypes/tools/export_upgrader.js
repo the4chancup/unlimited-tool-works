@@ -460,7 +460,7 @@ function flowBlock(x) {
     h("span", { class: "mono" }, x.old), weak("→"), h("span", { class: "mono" }, "exports\\" + outName(x)),
     why ? h("span", { style: `color:${ERR}` }, why) : null, why ? rowAct(x) : null,
     h("span", { style: "flex:1" }),
-    why ? null : combo([["Full", "Full"], ["Midcup", "Midcup"]], x.tag, v => { x.tag = v; },
+    why ? null : combo([["Full", "Full export"], ["Midcup", "Midcup export"]], x.tag, v => { x.tag = v; },
       { title: "Prefilled: " + x.guess, disabled: !!S.run }));
   if (why) return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head);
   const flow = flowOf(x);

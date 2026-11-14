@@ -281,7 +281,8 @@ members use (`quick_upgrade.bat`) reads the same two.
   - an upgraded export already in `exports`: **Open the existing folder**, so the member
     sees what the earlier run made and renames or removes it. The path comes from the
     error's field, never parsed from its text, which a Windows path's `:` would break.
-- **Full or Midcup** is a combo at each row's right (in Files, at the block's head),
+- **Full or Midcup** is a combo at each row's right (in Files, at the block's head, where
+  no column title names it, so its entries read Full export and Midcup export),
   prefilled with the name's guess, its tooltip naming what decided it
   (`coverage_tag_chosen`'s `source`). It is held on the name's tag when the name carries
   one, since the CLI refuses the other there. The run passes `--coverage` for an export
