@@ -2255,6 +2255,14 @@ briefs, review loops, gates and mutation runs as for any step.
       defensive line as the control; the PES 2016 tactics functions
       (`pes16_re/out/dec_tactics_*.c`) as the guide; the managers' claim names the in- and
       out-of-possession mentality offsets (+1/-1 to 0/-1) as what the two numbers change
+      - [x] the analysis (2026-11-14): `4cc-studio-temp/pes17_re/project/PES2017`, 48 minutes at
+        a 24 GB heap with the address table finder off (16 GB ran out in it, over `.data`);
+        the query worker `pes17_re/scripts/worker.py`. A census of the struct's fixed
+        offsets (`out/q/01_disp_census.txt`) finds no read of the slider bytes or the flag
+        from the struct's base: the presets are reached through pointers
+      - [ ] the search (Opus sidekick, brief `pes17_re/brief_re.md`, report
+        `pes17_re/out/report_re.md`): a "no reader" counts only if the same method finds
+        the controls' consumers
     - [ ] the outcome: the spec's paragraph, and the two controls relabelled or kept
       disabled on PES 17 (the open issue's ruling waits on it)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
