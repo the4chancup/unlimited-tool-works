@@ -243,6 +243,10 @@ pub(crate) struct SaveView {
     /// menu's `Save a picture of the formations…`); `None` while it is
     /// closed.
     picture: Option<pictures::PictureDialog>,
+    /// The range picture dialog's state while it is open (the Savefile
+    /// menu's `Save formation pictures for a range of teams…`); `None` while
+    /// it is closed.
+    pictures_range: Option<pictures::RangeDialog>,
     /// The `formation_pictures_folder` setting: `Tool::view` refreshes it
     /// each frame, a picture's Save sets the folder it wrote to and
     /// `Tool::view` writes that back, as `positions_layout` is. A relative
@@ -529,6 +533,7 @@ impl SaveView {
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             picture: None,
+            pictures_range: None,
             formation_pictures_folder: String::new(),
             formation_pictures_flat: false,
             exe_dir: PathBuf::new(),
@@ -637,6 +642,7 @@ impl SaveView {
                 self.copy_swap = None;
                 self.generate = None;
                 self.picture = None;
+                self.pictures_range = None;
                 self.fix_database = false;
                 self.kit_slots = None;
                 self.live.check.reset();
@@ -856,6 +862,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     multi_aatf::dialog(ui, view);
     generate::dialog(ui, view);
     pictures::dialog(ui, view);
+    pictures::range_dialog(ui, view);
     comparator::show(ui, view);
     patch::show(ui, view);
     interchange::show(ui, view);

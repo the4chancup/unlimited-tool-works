@@ -140,8 +140,8 @@ fn hovering_team_while_player_is_open_switches_the_menus() {
 
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
 /// by what it acts on: the Comparator and Apply aesthetics patch, a
-/// separator, the roster sheet and Multi-team AATF, a separator, Fix
-/// database.
+/// separator, the roster sheet, Multi-team AATF and the range's formation
+/// pictures, a separator, Fix database.
 #[test]
 fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
     let path = fixture(PesVersion::Pes21, "toolbar_savefile");
@@ -164,6 +164,7 @@ fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
             "Apply aesthetics patch\u{2026}",
             "Output rosters to TSV\u{2026}",
             "Multi-team AATF\u{2026}",
+            "Save formation pictures for a range of teams\u{2026}",
             "Fix database\u{2026}",
         ]
     );
@@ -173,7 +174,8 @@ fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
     );
     assert!(separated(&entries, &lines, 1, 2), "after the patch entry");
     assert!(!separated(&entries, &lines, 2, 3), "the reports together");
-    assert!(separated(&entries, &lines, 3, 4), "before Fix database");
+    assert!(!separated(&entries, &lines, 3, 4), "the pictures with them");
+    assert!(separated(&entries, &lines, 4, 5), "before Fix database");
 }
 
 /// A menu item's shortcut is drawn right of its label in the weak colour,

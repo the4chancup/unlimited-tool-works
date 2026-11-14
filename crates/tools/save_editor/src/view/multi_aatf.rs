@@ -117,7 +117,7 @@ pub(super) fn counted(n: usize, word: &str) -> String {
 
 /// The cup teams of `file` whose id lies between `first` and `last`, in id
 /// order.
-fn range_ids(file: &EditFile, first: u32, last: u32) -> Vec<u32> {
+pub(super) fn range_ids(file: &EditFile, first: u32, last: u32) -> Vec<u32> {
     let mut ids: Vec<u32> = cup_teams(file)
         .map(|team| team.id)
         .filter(|id| (first..=last).contains(id))
@@ -135,7 +135,13 @@ pub(super) fn team_label(file: &EditFile, id: u32) -> String {
 /// One end of the range: a combo of the save's cup teams from id `from` on,
 /// in id order, the order the range is taken in, as wide as its widest label
 /// so a pick never moves the other combo.
-fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, from: u32, picked: &mut u32) {
+pub(super) fn team_combo(
+    ui: &mut egui::Ui,
+    id_salt: &str,
+    file: &EditFile,
+    from: u32,
+    picked: &mut u32,
+) {
     let mut labels: Vec<(u32, String)> = cup_teams(file)
         .filter(|team| team.id >= from)
         .map(|team| (team.id, team_label(file, team.id)))

@@ -2,7 +2,8 @@
 //! `dlgPictureSave`): the folder and the file name on one grid, the
 //! settings, Portraits and grain boxes under it, and Save, which asks before it
 //! replaces a picture already in the folder, then writes the PNG and raises
-//! a notice with an Open folder action.
+//! a notice with an Open folder action. Its folder row, its boxes and its
+//! write are the range dialog's too (`range`).
 
 use std::io;
 use std::path::Path;
@@ -15,6 +16,7 @@ use super::{PictureOptions, PictureTeam, formations_picture, picture_file_name};
 use crate::messages::TOOL_ID;
 use crate::session::journal;
 use crate::view::SaveView;
+use crate::view::generate::PickFolderDialog;
 use crate::view::prompt::confirm;
 
 /// The dialog's title, the menu entry's label without its ellipsis.
@@ -101,20 +103,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 .num_columns(2)
                 .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
                 .show(ui, |ui| {
-                    let label = ui.label("Folder");
-                    ui.horizontal(|ui| {
-                        ui.add(text_box(
-                            egui::TextEdit::singleline(&mut dialog.folder)
-                                .desired_width(FIELD_WIDTH),
-                        ))
-                        .labelled_by(label.id);
-                        if ui.button("Browse\u{2026}").clicked()
-                            && let Some(folder) = pick_folder_dialog()
-                        {
-                            dialog.folder = folder.display().to_string();
-                        }
-                    });
-                    ui.end_row();
+                    folder_row(ui, &mut dialog.folder, pick_folder_dialog);
                     let label = ui.label("File name");
                     ui.add(text_box(
                         egui::TextEdit::singleline(&mut dialog.file_name)
@@ -123,22 +112,14 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     .labelled_by(label.id);
                     ui.end_row();
                 });
-            if checkbox(
+            if picture_boxes(
                 ui,
                 &mut dialog.settings,
-                "With each preset's settings beside its row",
-            )
-            .changed()
-            {
+                &mut dialog.portraits,
+                formation_pictures_flat,
+            ) {
                 dialog.file_name = settings_file_name(&dialog.file_name, dialog.settings);
             }
-            checkbox(ui, &mut dialog.portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
-            checkbox(
-                ui,
-                formation_pictures_flat,
-                "Without the pitch's grain (smaller file)",
-            )
-            .on_hover_text(FLAT_TIP);
             modal_buttons(ui, |ui| {
                 if ui.button("Cancel").clicked() {
                     close = true;
@@ -175,19 +156,28 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         close |= response.should_close();
     }
     if write {
-        let written = save_picture(ui.visuals(), view);
-        let dialog = view.picture.as_ref().expect("the open dialog");
+        let options = PictureOptions {
+            portraits: dialog.portraits,
+            flat: *formation_pictures_flat,
+            settings: dialog.settings,
+        };
+        let (team_id, folder, file_name) = (
+            dialog.team_id,
+            dialog.folder.clone(),
+            dialog.file_name.clone(),
+        );
+        let written = save_picture(ui.visuals(), view, team_id, options, &folder, &file_name);
         view.notice = Some(match &written {
             Ok(()) => Notice {
-                text: format!("{} written to {}", dialog.file_name, dialog.folder),
+                text: format!("{file_name} written to {folder}"),
                 kind: NoticeKind::Success,
                 action: Some(NoticeAction {
                     label: "Open folder".to_owned(),
-                    effect: ActionEffect::OpenFolder(dialog.folder.clone().into()),
+                    effect: ActionEffect::OpenFolder(folder.into()),
                 }),
             },
             Err(error) => Notice {
-                text: format!("Could not write {}: {error}", dialog.file_name),
+                text: format!("Could not write {file_name}: {error}"),
                 kind: NoticeKind::Error,
                 action: None,
             },
@@ -225,33 +215,71 @@ fn strip_suffix_any_case<'a>(text: &'a str, suffix: &str) -> Option<&'a str> {
     end.eq_ignore_ascii_case(suffix).then_some(stem)
 }
 
-/// Writes the open dialog's picture (`write_picture`): on success its
-/// folder is kept as the `formation_pictures_folder` setting and the
-/// journal gets a `wrote` step; a failure is a `could not write` step.
-fn save_picture(visuals: &egui::Visuals, view: &mut SaveView) -> io::Result<()> {
-    let dialog = view.picture.as_ref().expect("the open dialog");
+/// The grid row `Folder`, which both picture dialogs hold: `folder`'s box
+/// and Browse…, whose pick replaces it.
+pub(super) fn folder_row(
+    ui: &mut egui::Ui,
+    folder: &mut String,
+    pick_folder_dialog: &mut PickFolderDialog,
+) {
+    let label = ui.label("Folder");
+    ui.horizontal(|ui| {
+        ui.add(text_box(
+            egui::TextEdit::singleline(folder).desired_width(FIELD_WIDTH),
+        ))
+        .labelled_by(label.id);
+        if ui.button("Browse\u{2026}").clicked()
+            && let Some(picked) = pick_folder_dialog()
+        {
+            *folder = picked.display().to_string();
+        }
+    });
+    ui.end_row();
+}
+
+/// The three boxes under both picture dialogs' grids, one under the other:
+/// the settings box, Portraits and the grain box. Whether the settings box
+/// flipped this frame.
+pub(super) fn picture_boxes(
+    ui: &mut egui::Ui,
+    settings: &mut bool,
+    portraits: &mut bool,
+    flat: &mut bool,
+) -> bool {
+    let flipped = checkbox(ui, settings, "With each preset's settings beside its row").changed();
+    checkbox(ui, portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
+    checkbox(ui, flat, "Without the pitch's grain (smaller file)").on_hover_text(FLAT_TIP);
+    flipped
+}
+
+/// Writes team `team_id`'s picture as `file_name` in `folder`
+/// (`write_picture`), for either picture dialog: on success the folder is
+/// kept as the `formation_pictures_folder` setting and the journal gets a
+/// `wrote` step; a failure is a `could not write` step.
+pub(super) fn save_picture(
+    visuals: &egui::Visuals,
+    view: &mut SaveView,
+    team_id: u32,
+    options: PictureOptions,
+    folder: &str,
+    file_name: &str,
+) -> io::Result<()> {
     let session = view.session.as_ref().expect("the dialog's save");
     let file = session.file();
     let team = PictureTeam {
         file,
-        team: file.team(dialog.team_id).expect("the dialog's team"),
+        team: file.team(team_id).expect("the dialog's team"),
         rules: view.rules.as_ref().map(|active| active.rules.as_ref()),
         pes_folder: view.pes_folder.as_deref(),
     };
-    let options = PictureOptions {
-        portraits: dialog.portraits,
-        flat: view.formation_pictures_flat,
-        settings: dialog.settings,
-    };
-    let folder = Path::new(&dialog.folder);
-    let path = folder.join(&dialog.file_name);
-    let written = write_picture(&team, visuals, options, folder, &dialog.file_name);
+    let path = Path::new(folder).join(file_name);
+    let written = write_picture(&team, visuals, options, Path::new(folder), file_name);
     match &written {
         Ok(()) => {
             session
                 .recorder()
                 .step(TOOL_ID, format!("wrote {}", path.display()));
-            view.formation_pictures_folder = dialog.folder.clone();
+            view.formation_pictures_folder = folder.to_owned();
         }
         Err(error) => journal::write_failed(&path, session.recorder(), error),
     }

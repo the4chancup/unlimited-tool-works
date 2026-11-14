@@ -7,6 +7,8 @@ The **Savefile** menu works on the whole save:
   into a spreadsheet to check a cup's teams.
 - **Multi-team AATF…** checks a range of teams under the AATF ruleset picked on
   the toolbar, for an organizer checking a cup's teams.
+- **Save formation pictures for a range of teams…** writes a picture of the
+  formations for each team of a range.
 - **Fix database…** is a maintenance repair behind a confirmation.
 
 **Applying an aesthetics patch**
@@ -46,6 +48,17 @@ business.
 **Copy to clipboard** copies the list as plain text for a cup's thread, each
 team's line after a `>` so the thread shows it in green. The dialog only reads
 the save.
+
+**Formation pictures for a range of teams**
+
+**Save formation pictures for a range of teams…** writes the Team menu's picture
+of the formations for every cup team between the two you pick, picked as for
+Multi-team AATF. The folder and the three boxes work as in the Team menu's
+dialog (see **Saving a picture of the formations** in **The team view and the
+Team menu**). Each picture is named after its team, and one of that name already
+in the folder is replaced without asking. **Save pictures** writes them one team
+after another, and **Stop** ends the run early, keeping the pictures already
+written. When the run ends, **Open folder** opens their folder.
 
 **Fix database**
 
