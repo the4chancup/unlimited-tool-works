@@ -5120,8 +5120,8 @@ function appearanceTab(p) {
   const en = aesUnlocked();
   const dis = w => { w.querySelectorAll("input, select, button").forEach(x => x.disabled = !en);
     if (w.disabled !== undefined) w.disabled = !en; return w; };
-  const own = h("span", {}, "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch. ",
-    h("a", { href: "#", onclick: e => { e.preventDefault();
+  const own = h("span", {}, ownershipTip() + " ",
+    h("a", { href: "#", style: "white-space:nowrap", onclick: e => { e.preventDefault();
       S.panel = "patch"; render(); } }, "Apply aesthetics patch"));
   const sw = h("label", { class: "cb" },
     h("input", { type: "checkbox", id: "edit-anyway", checked: en,
