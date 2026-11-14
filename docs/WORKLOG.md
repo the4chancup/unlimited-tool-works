@@ -1914,7 +1914,12 @@ briefs, review loops, gates and mutation runs as for any step.
     framed in the middle of the view (`plans/save_editor.md` "Editing UI", the toolbar's
     bullet; SE-GUI-90; the draft's `welcomePanel`). Code done 2026-11-14 (`6fb65133`, SWE-2):
     the File menu and the panel draw one list of opens; the panel discovers once per stay.
-    Left: the built window (Pending looks)
+    The built window, checked 2026-11-14 (`.tmp/welcome/look/notes.md`): the panel is about
+    150 points wide where the draft's is 360, since `dialog_page` takes no minimum width, and
+    its rows are as wide as the widest entry where the draft's fill the frame. Left: after
+    0.0.2-chpop (it owns save_editor `src/view/`), `dialog_page` takes `modal`'s 360-point
+    minimum and the entries fill the frame, in this panel and in the Ruleset start page
+    (whose template buttons are as wide as their text) -> verify: the built window again
   - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
     item switches to its player or team, the list staying open; the X's are the error red,
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
@@ -1928,8 +1933,10 @@ briefs, review loops, gates and mutation runs as for any step.
     framed and titled like the dialog, with no backdrop, so the sidebar still switches tools
     (RE-GUI-01); the draft follows. The page landed 2026-11-14 (SWE-2): `studio_core`'s
     `dialog_page` draws the modal's frame and title centred, with no modal layer; the
-    toolbar stands over it, its document items disabled (`6fb65133`). Left: the built window
-    (Pending looks)
+    toolbar stands over it, its document items disabled (`6fb65133`). The built window,
+    checked 2026-11-14: the toolbar and File menu match; the draft now draws Random's buttons
+    beside its label and "Recent files" under Open file…, as the editor and the plan do. Left:
+    the width fix under 0.0.2-welcome
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks

@@ -1499,10 +1499,12 @@ function startBody() {
     button("Clouds' proposal, every item (from VGL26)", () => loadTemplate("clouds")),
     button("Blank: one tier, no height brackets, universal rules on", () => loadTemplate("blank")),
     h("div", { class: "sep" }),
-    strong("Random"),
-    row(["Sensible", "Weird", "Crazy"].map(p => button(p, () => {}, { disabled: true, title: "The generator is not faked in this draft" }))),
+    row(strong("Random"), ["Sensible", "Weird", "Crazy"].map(p => button(p, () => {}, { disabled: true, title: "The generator is not faked in this draft" }))),
     h("div", { class: "sep" }),
-    row(button("Open file…", () => {}, { disabled: true, title: "Not in this draft" }), weak("Recent: none")));
+    row(button("Open file…", () => {}, { disabled: true, title: "Not in this draft" })),
+    h("div", { class: "sep" }),
+    strong("Recent files"),
+    weak("none"));
 }
 function startPage() {
   // The `start` window's name is the link's mark for the start page open.
