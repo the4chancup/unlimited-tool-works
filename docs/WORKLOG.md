@@ -2039,8 +2039,9 @@ briefs, review loops, gates and mutation runs as for any step.
       under the checkboxes and 10 above the buttons. The other 19 drafted dialogs only move
       4 down (`.tmp/dlgroom/boxes.py HEAD work`); before and after in
       `.tmp/dlgroom/pair2_*.png` (the draft before the step on the left)
-    - [ ] the build (sidekick): the modal title's 12, a dialog form's 27 and 6, the sentence gap
-      above the range dialog's file-name line; the tests that pin dialog rows
+    - [x] the build (Opus sidekick, 2026-11-14, merged `887e2ae2`): the modal title's 12, a
+      dialog form's 27 and 6 (`widgets::dialog_form`), the sentence gap above the range
+      dialog's file-name line; the tests that pin dialog rows (`view/tests/pictures/rows.rs`)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
