@@ -17217,3 +17217,15 @@ GitHub's newer dark blue, `#4493F8`, was drawn and not taken (`.tmp/0_0_2/red/bl
 `greens.png`). The link blue is every link's, not only the Info notices'.
 Plan: `plans/core/gui.md`, the Dark/light theme row and "A notice is seen, not found"; the
 drafts' `--success` and `--link`.
+
+## 2026-11-14: the Compiler's and the upgrader's grids take the theme's error red
+
+The grids' Error ring, their Done with errors fill and a bad ID cell were egui's `#FF0000`
+(and `#DC3C3C` for the ID cell); the maintainer asked for the new error red there too, so
+both drafts' `ERR` is `#F85149`, the theme's dark error red, as the drafts' comment already
+said it was ("the suite's error red"). This replaces the earlier entry's line that the grids'
+colours were not changed. The Blocked and Not written dashed outline keeps its dim
+`#8C2A2A`, and the Warning ring its yellow `#DCC832`.
+Plan: the drafts `team_compiler.js` and `export_upgrader.js` (`ERR`, `.tc-id.bad`); the
+Compiler's colour list in `plans/team_compiler/gui.md` is rewritten from its draft when 8.10's
+draft is accepted.

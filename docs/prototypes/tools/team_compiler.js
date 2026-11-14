@@ -81,7 +81,7 @@ const TEAM_COMPILER_CSS = `
   .tc-name.hl, .tc-cell.hl { outline: 2px solid var(--sel-fg); outline-offset: 0; }
   .tc-id { width: 36px; text-align: center; height: 26px; border-radius: 2px;
     background: var(--widget); color: var(--strong); }
-  .tc-id.bad { background: #dc3c3c; color: #1b1b1b; }
+  .tc-id.bad { background: #f85149; color: #1b1b1b; }
   .tc-id input { width: 30px; box-sizing: border-box; text-align: center; }
   .tc-gap > div { width: 4px; }
   /* The compile column's checkbox, 4 from the panel's edge and 4 from the
@@ -160,7 +160,7 @@ const TEAM_COMPILER_CSS = `
 // the cell, which then turns solid in the same colour.
 // A warning's yellow and the suite's error red (the drafts' --error). Not the
 // suite's warning orange: as an outline it reads too close to the red.
-const WARN = "#dcc832", ERR = "#ff0000";
+const WARN = "#dcc832", ERR = "#f85149";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
   fullOk: "#800080", done: "#008000", doneWarn: WARN, doneErr: ERR };
 const OUTLINES = { warning: WARN, error: ERR, partialError: ERR };

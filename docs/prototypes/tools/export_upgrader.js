@@ -107,7 +107,7 @@ const EXPORT_UPGRADER_CSS = `
 `;
 
 // ---- Cell states: the Team compiler's colours, the upgrader's words ----
-const WARN = "#dcc832", ERR = "#ff0000";
+const WARN = "#dcc832", ERR = "#f85149";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", fullOk: "#800080",
   done: "#008000", doneWarn: WARN, doneErr: ERR };
 const OUTLINES = { warning: WARN, error: ERR };
