@@ -508,8 +508,7 @@ failed or ignored; acceptance 442 scenarios (4 manual, 9 withdrawn), all proven.
 ### Phase 6: Export upgrader (`tools/export_upgrader`)
 
 The one-time migration of AET exports to the Studio format ([Export upgrader](../export_upgrader.md)),
-the only place old-format knowledge lives, through the CLI: `upgrade` (steps 1 to 12) and
-`upgrade-models` (model-folder mode). The glTF pass (step 13) is Phase 7's, the view Phase 8's.
+the only place old-format knowledge lives, through the CLI's `upgrade` (steps 1 to 12). The glTF pass (step 13) is Phase 7's, the view Phase 8's.
 
 - Old-format export loading (a folder, `.zip` or `.7z`), the team resolved from the Note or the
   name, the savefile-driven ID→player mapping (or loose mode), player folders merged from

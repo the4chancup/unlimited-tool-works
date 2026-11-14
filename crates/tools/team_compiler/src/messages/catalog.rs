@@ -734,19 +734,19 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "fmdl_common_path_invalid",
         CatalogSeverity::Error,
         r#"An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own. Such a folder is `000` (the placeholder of the community's model templates), a team ID, `XXX` or a team's name. It is also reported for a folder the short spellings cannot write: one after `common_folder/` (`common_folder/x/`), or a directory starting `common/`."#,
-        r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). Write the team's Common as `team_common_folder/`, or `team_folder` in the long form. `export-upgrader upgrade-models` respells an `.fmdl` that names an old folder."#,
+        r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). Write the team's Common as `team_common_folder/`, or `team_folder` in the long form. `export-upgrader upgrade` respells an `.fmdl` that names an old folder, in an old export (a Midcup export, for a model on its own)."#,
     ),
     (
         "dummy_kit_name_old",
         CatalogSeverity::Error,
         r#"A model names the kit stand-in by its old spelling, the game's `dummy_kit` or `dummy_gk_kit` (any letter case, and with any suffix after an `_`, such as `dummy_kit_srm`), in an `.fmdl` texture entry or a `.mtl` texture path, whatever folder the path names. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any other `dummy_` name, are no stand-in."#,
-        r#"The model's or `.mtl`'s folder is left out (for a file in `Common/`, only the file is left out). Name the kit stand-in `team_kit` in the model (`team_gk_kit` for a keeper's); `export-upgrader upgrade` respells it in an export, `export-upgrader upgrade-models` in a model folder alone."#,
+        r#"The model's or `.mtl`'s folder is left out (for a file in `Common/`, only the file is left out). Name the kit stand-in `team_kit` in the model (`team_gk_kit` for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)."#,
     ),
     (
         "kit_token_old",
         CatalogSeverity::Error,
         r#"The name of a file or folder inside a player, Boots or Gloves folder or in `Common/`, or a path that a model, `.mtl` or `face.xml` there names, holds the old kit token: `u0`, three letters or digits, then `p` or `g` and a digit, with `u0`, `p` and `g` in lowercase as shown (`kit6_u0827p0.dds`, `Common/u0XXXp1/`, `u0714g1`). A folder so named is reported once, not each file in it."#,
-        r#"The folder holding the name or the file naming the path is left out (in `Common/`, only that file or folder is left out). Spell the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an export, `export-upgrader upgrade-models` in a model folder alone."#,
+        r#"The folder holding the name or the file naming the path is left out (in `Common/`, only that file or folder is left out). Spell the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)."#,
     ),
     (
         "folder_pack_failed",

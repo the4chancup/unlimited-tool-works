@@ -798,38 +798,6 @@ fn a_fox_hair_skeleton_is_renamed_to_pair_with_its_model() {
         fs::read(sandbox.path("co Full Spring/Players/06 - Ann/fcl_hair_sim.skl")).unwrap(),
         b"skeleton of Ann"
     );
-
-    // The two face folders copied into a folder of their own, then through
-    // `upgrade-models`.
-    for folder in ["XXX05 - Bob", "XXX06 - Ann"] {
-        fs::create_dir_all(sandbox.path(&format!("new models/{folder}"))).unwrap();
-        for entry in fs::read_dir(sandbox.path(&format!("co Spring/Faces/{folder}"))).unwrap() {
-            let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
-            fs::copy(
-                sandbox.path(&format!("co Spring/Faces/{folder}/{name}")),
-                sandbox.path(&format!("new models/{folder}/{name}")),
-            )
-            .unwrap();
-        }
-    }
-    let input = sandbox.arg("new models");
-    let run = sandbox.run(&["upgrade-models", &input]);
-    assert_eq!(
-        fs::read(sandbox.path("new models upgraded/05 - Bob/fcl_hair.skl")).unwrap(),
-        b"skeleton of Bob",
-        "{}",
-        run.stdout()
-    );
-    assert!(
-        !sandbox
-            .path("new models upgraded/05 - Bob/fcl_hair_sim.skl")
-            .exists()
-    );
-    assert!(
-        sandbox
-            .path("new models upgraded/06 - Ann/fcl_hair_sim.skl")
-            .exists()
-    );
 }
 
 // EU-PLY-15

@@ -160,40 +160,6 @@ fn fpk_xml_files_are_left_out_of_the_output_and_the_report() {
         !stdout.to_ascii_lowercase().contains(".fpk.xml"),
         "{stdout}"
     );
-
-    // The two item folders copied into a folder of their own, then through
-    // `upgrade-models`.
-    for (top, folder) in [("Faces", "XXX05 - Bob"), ("Boots", "k2180 - Bob")] {
-        fs::create_dir_all(sandbox.path(&format!("new models/{folder}"))).unwrap();
-        for entry in fs::read_dir(sandbox.path(&format!("co Spring/{top}/{folder}"))).unwrap() {
-            let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
-            fs::copy(
-                sandbox.path(&format!("co Spring/{top}/{folder}/{name}")),
-                sandbox.path(&format!("new models/{folder}/{name}")),
-            )
-            .unwrap();
-        }
-    }
-    let input = sandbox.arg("new models");
-    let run = sandbox.run(&["upgrade-models", &input]);
-    let stdout = run.stdout();
-    // The models migrated: without them the exclusions below hold of an
-    // empty or missing output too.
-    for model in ["05 - Bob/face.fmdl", "Bob/boots.fmdl"] {
-        assert!(
-            sandbox
-                .path(&format!("new models upgraded/{model}"))
-                .is_file(),
-            "{model}: {stdout}"
-        );
-    }
-    for entry in sandbox.listing("new models upgraded") {
-        assert!(!entry.to_ascii_lowercase().ends_with(".fpk.xml"), "{entry}");
-    }
-    assert!(
-        !stdout.to_ascii_lowercase().contains(".fpk.xml"),
-        "{stdout}"
-    );
 }
 
 // EU-IN-03

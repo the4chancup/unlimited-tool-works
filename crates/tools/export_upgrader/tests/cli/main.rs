@@ -11,7 +11,6 @@ mod cli;
 mod input;
 mod kits;
 mod loose;
-mod models;
 mod players;
 mod referees;
 mod report;

@@ -164,18 +164,12 @@ pub(crate) fn output_name(
             name.as_str().trim_matches('/'),
             Some(coverage_choice(export_name, flag)?),
         ),
-        Identity::ModelFolders => {
-            unreachable!("upgrade's resolve yields a team or the referees")
-        }
     };
     let tag = choice.map(|choice| choice.tag);
     let first_is_key = match team_name(export_name) {
         Some(found) => match identity {
             Identity::Team { name, .. } => found == *name,
             Identity::Referees => found.is_referees(),
-            Identity::ModelFolders => {
-                unreachable!("upgrade's resolve yields a team or the referees")
-            }
         },
         None => false,
     };

@@ -457,7 +457,7 @@ pub(crate) enum Code {
     /// `common_folder/`, are admitted). Every entry
     /// of the texture table is checked, a `dummy_` stem's included, and the folder is left
     /// out (a `Common/` FMDL's, the file alone, its linking players following
-    /// `link_target_dropped`). `export-upgrader upgrade-models` respells an old FMDL.
+    /// `link_target_dropped`). `export-upgrader upgrade` respells an old FMDL.
     FmdlCommonPathInvalid,
     /// A texture an export's model names by the kit stand-in's old spelling, the game's:
     /// a stem that, folded, is `dummy_kit` or `dummy_gk_kit`, alone or followed by `_`
@@ -468,9 +468,8 @@ pub(crate) enum Code {
     /// do not live on. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any
     /// other `dummy_` stem, are none. Every entry is checked, a mesh-unused one's
     /// included. The model's or `.mtl`'s folder is left out (a `Common/` file's, the
-    /// file alone), and `export-upgrader upgrade` (`upgrade-models` for a model alone)
-    /// respells it (`model`, an FMDL, or `file`, a `.mtl`; `texture`, the path as
-    /// written).
+    /// file alone), and `export-upgrader upgrade` respells it (`model`, an FMDL,
+    /// or `file`, a `.mtl`; `texture`, the path as written).
     DummyKitNameOld,
     /// A legacy kit token, the old export format's kit magic (`u0`, three ASCII letters or
     /// digits, `p` or `g` and a digit, in that letter case: `kit6_u0827p0.dds`,
@@ -1536,7 +1535,7 @@ mod tests {
         // and the upgrader for an FMDL he cannot edit by hand, the short form for a path.
         let effect = |code: &str| CATALOG.iter().find(|row| row.0 == code).unwrap().3;
         let fmdl = effect("fmdl_common_path_invalid");
-        for word in ["`team_folder`", "`export-upgrader upgrade-models`"] {
+        for word in ["`team_folder`", "export-upgrader upgrade", "Midcup export"] {
             assert!(fmdl.contains(word), "{word}: {fmdl}");
         }
         for code in ["xml_common_path_invalid", "mtl_common_path_invalid"] {

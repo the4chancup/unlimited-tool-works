@@ -77,12 +77,15 @@ folder.
   once renames apply (`A.dds` beside `a.dds`, or numbered copies of one kit
   texture, `u0731p2.dds` beside `u0799p2.dds`); `other=` names the one kept.
   Keep one of the two.
+  A copy spelled with letters (`u0XXXp2.dds`) beside numbered ones is no
+  conflict: it is the one the game loaded, so it is kept and each numbered
+  copy is dropped as a leftover.
 - `note_taken`: a second `.txt` at the export's root whose name holds `note`;
   `other=` names the file read as the Team Note. Keep one of the two.
 - `unclaimed`: the file sits where nothing reads it: directly in `Players/` or
   inside a folder the export does not use (a `Players/` folder in a team
-  export, `Kit Configs/` in a referee export), or loose at an `upgrade-models`
-  input's top level. Move it into a folder the export reads, or remove it.
+  export, `Kit Configs/` in a referee export). Move it into a folder the
+  export reads, or remove it.
 
 **Referee exports**
 
@@ -99,15 +102,3 @@ folder.
   (`face/face/`). Move the inner folder's files up into the outer one.
 - `roster_not_utf8`: `refs.txt` is not UTF-8, so no `players.txt` can be
   written. Save it with UTF-8 encoding.
-
-**`upgrade-models`**
-
-- `folder_name_invalid`: the folder's name is made only of characters a
-  folder name cannot hold (`?`, `:` and the like; `name=` names it). Rename
-  the folder.
-- `no_direct_files`: the folder holds no file directly in it, empty or only
-  other folders inside; the command reads one level, one folder per model.
-  Bring each model folder up to the input's top level.
-- `folder_name_taken`: two folders would get the same name in the output
-  (`XXX15 - A` beside `71415 - A`, or `Crocs` beside `k0430 - Crocs`);
-  `other=` names the folder kept. Rename one of the two.

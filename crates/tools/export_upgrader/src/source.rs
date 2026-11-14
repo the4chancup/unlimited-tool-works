@@ -98,24 +98,6 @@ impl OldExport {
         })
     }
 
-    /// Opens the folder at `path` listed as it is (model-folder mode): OS
-    /// artifacts left out and sorted as `open` does, but no wrapper folder and
-    /// no same-named subfolder rule, its top level being the model folders
-    /// (plan "Model-folder mode").
-    pub(crate) fn open_as_is(path: &Path) -> Result<OldExport, SourceFailure> {
-        let (files, folders) = list_folder(path)?;
-        let (files, folders) = below_root(paths_only(files), folders);
-        check_paths(&files, &folders)?;
-        Ok(OldExport {
-            name: source_name(path),
-            files,
-            folders,
-            prefix: String::new(),
-            flattened: Vec::new(),
-            reader: Reader::Folder(path.to_path_buf()),
-        })
-    }
-
     /// The bytes of the file at `path`, a path of `files` below the root. A
     /// failure names `path` as given: the export-relative path the report
     /// scopes to.
@@ -409,7 +391,6 @@ fn failure(path: &Path, error: &impl Display) -> SourceFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::scratch;
 
     /// `files` and `folders` as `below_root`'s caller builds them (unsorted is
     /// fine: it sorts).
@@ -589,21 +570,6 @@ mod tests {
             &[],
         );
         assert_eq!(files, ["XXX05 - Bob/face.fmdl".to_owned()]);
-    }
-
-    #[test]
-    fn open_as_is_keeps_the_inputs_top_level_while_open_reads_the_wrapper() {
-        let root = scratch("open_as_is");
-        fs::create_dir_all(root.join("models/XXX15 - Snuffy")).unwrap();
-        fs::write(root.join("models/XXX15 - Snuffy/face.fmdl"), b"x").unwrap();
-        let input = root.join("models");
-
-        let as_is = OldExport::open_as_is(&input).unwrap();
-        assert_eq!(as_is.files, ["XXX15 - Snuffy/face.fmdl".to_owned()]);
-        // `open`'s wrapper rule would read the one folder's contents as the
-        // root's: model-folder mode must not.
-        let wrapped = OldExport::open(&input).unwrap();
-        assert_eq!(wrapped.files, ["face.fmdl".to_owned()]);
     }
 
     #[test]

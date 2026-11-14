@@ -693,7 +693,7 @@ fn plan_link(planned: &mut BTreeMap<String, String>, ctx: &FileContext, common_r
 fn is_referee_file(ctx: &FileContext) -> bool {
     match ctx.identity {
         Identity::Referees => ctx.kind == FolderKind::Player,
-        Identity::Team { .. } | Identity::ModelFolders => false,
+        Identity::Team { .. } => false,
     }
 }
 

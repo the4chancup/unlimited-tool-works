@@ -13,9 +13,7 @@
 //! `kit_magic`, the pre-Fox model renames by `model_names`, the
 //! `settings.toml` files by `settings`, the output's name through `naming`,
 //! the staging folder by `staging`, and every finding goes through the
-//! `messages` catalog. The
-//! `upgrade-models` command's folder-of-model-folders mode lives in
-//! `model_folders`.
+//! `messages` catalog.
 
 mod carried;
 mod cli;
@@ -25,7 +23,6 @@ mod kit_magic;
 mod kits;
 mod materials;
 mod messages;
-mod model_folders;
 mod model_names;
 mod naming;
 mod note;

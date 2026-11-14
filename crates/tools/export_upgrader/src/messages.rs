@@ -170,10 +170,6 @@ pub(crate) enum Code {
     /// A player's `settings.toml` could not be generated at all (`slot`,
     /// `name`, `error` the failure's text).
     SettingsNotGenerated,
-    /// Model-folder mode: where an output folder goes once dropped into a
-    /// Studio export (`into`: `Players`, `Boots`, `Gloves`, or `root` for
-    /// `Common/`).
-    ModelFolderDestination,
     /// A team export's coverage tag, reported on every `upgrade` so the
     /// guess is never silent (`tag`, `source`;
     /// `spec/export_upgrader.md` "Message catalog").
@@ -220,7 +216,6 @@ impl Code {
             Code::CustomModelHidden => "custom_model_hidden",
             Code::SettingsValueRefused => "settings_value_refused",
             Code::SettingsNotGenerated => "settings_not_generated",
-            Code::ModelFolderDestination => "model_folder_destination",
             Code::CoverageTagChosen => "coverage_tag_chosen",
             Code::StagingFolderRemoved => "staging_folder_removed",
         }
@@ -262,7 +257,6 @@ impl Code {
         Code::CustomModelHidden,
         Code::SettingsValueRefused,
         Code::SettingsNotGenerated,
-        Code::ModelFolderDestination,
         Code::CoverageTagChosen,
         Code::StagingFolderRemoved,
     ];
@@ -346,21 +340,11 @@ pub(crate) enum UnmigratedReason {
     /// kept Note's path).
     NoteTaken,
     /// No step's folder claims the file: one directly in `Players/` or
-    /// below a top-level folder this export kind does not read, or one at
-    /// a model-folder input's top level.
+    /// below a top-level folder this export kind does not read.
     Unclaimed,
     /// Two inputs land on one output path once renamed or respelled
     /// (`other` the kept input's path).
     PathTaken,
-    /// Model-folder mode: a top-level folder's name cleans to nothing it
-    /// can be published under.
-    FolderNameInvalid,
-    /// Model-folder mode: a top-level folder holds no file directly in
-    /// it (empty, or the converters' two-level layout).
-    NoDirectFiles,
-    /// Model-folder mode: two top-level folders publish under one name
-    /// (`other` the kept folder's input name).
-    FolderNameTaken,
 }
 
 impl UnmigratedReason {
@@ -392,9 +376,6 @@ impl UnmigratedReason {
             UnmigratedReason::NoteTaken => "note_taken",
             UnmigratedReason::Unclaimed => "unclaimed",
             UnmigratedReason::PathTaken => "path_taken",
-            UnmigratedReason::FolderNameInvalid => "folder_name_invalid",
-            UnmigratedReason::NoDirectFiles => "no_direct_files",
-            UnmigratedReason::FolderNameTaken => "folder_name_taken",
         }
     }
 
@@ -426,9 +407,6 @@ impl UnmigratedReason {
         UnmigratedReason::NoteTaken,
         UnmigratedReason::Unclaimed,
         UnmigratedReason::PathTaken,
-        UnmigratedReason::FolderNameInvalid,
-        UnmigratedReason::NoDirectFiles,
-        UnmigratedReason::FolderNameTaken,
     ];
 }
 
@@ -641,12 +619,6 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Error,
         r#"A player's `settings.toml` could not be generated at all (the line names the error)."#,
         r#"The run is not clean, so nothing is written."#,
-    ),
-    (
-        "model_folder_destination",
-        Severity::Info,
-        r#"In `upgrade-models`, where an output folder goes once dropped into an export (`Players`, `Boots`, `Gloves`, or the export root for `Common/`)."#,
-        r#"Nothing to do."#,
     ),
     (
         "coverage_tag_chosen",

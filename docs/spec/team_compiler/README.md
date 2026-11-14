@@ -1384,7 +1384,7 @@ TC-MOD-103 GIVEN slot 05's boots.fmdl naming team_kit in
            linked by slot 08's legs.fmdl.common
            WHEN the export is checked for PES 21, then for PES 17
            THEN both times fmdl_common_path_invalid names slot 05's and slot 06's directories,
-                each text naming team_folder and upgrade-models, and drops their folders, names
+                each text naming team_folder, the upgrader and a Midcup export, and drops their folders, names
                 Common/legs.fmdl's, which is dropped, slot 08's folder following it with
                 link_target_dropped, and no finding names slot 07's model
 TC-MOD-104 GIVEN slot 05's face_high.fmdl naming hair in team_common_folder/, skin in
@@ -1404,7 +1404,7 @@ TC-MOD-105 GIVEN slot 05's face_high.fmdl naming hair in common_folder/jessie/, 
            naming hair in common/team_folder/sourceimages/
            WHEN the export is checked for PES 21
            THEN fmdl_common_path_invalid names both directories, each text naming
-                team_common_folder/ and upgrade-models, and drops both folders
+                team_common_folder/, the upgrader and a Midcup export, and drops both folders
 TC-MOD-106 GIVEN slot 05's face_high.fmdl naming dummy_kit in team_common_folder/, slot 06's
            naming Dummy_GK_Kit_Back in ./, slot 07's face_high.model whose face_high.mtl names
            team_common_folder/dummy_kit_srm.dds, and slot 08's face_high.fmdl naming dummy_nrm
