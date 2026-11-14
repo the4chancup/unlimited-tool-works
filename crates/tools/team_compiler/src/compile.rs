@@ -1470,7 +1470,7 @@ mod tests {
             drop(batches_tx);
             done_tx.send((change, budget.peak())).unwrap();
         });
-        done.recv_timeout(Duration::from_secs(30)).ok()
+        done.recv_timeout(Duration::from_secs(120)).ok()
     }
 
     /// The coordinator over `sources` and `tasks` on a pool of two threads, charging `budget`:

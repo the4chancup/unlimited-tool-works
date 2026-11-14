@@ -462,14 +462,14 @@ fn a_warning_logged_during_a_command_does_not_hang_it() {
         .stderr(fs::File::create(sandbox.root.join("stderr.txt")).unwrap())
         .spawn()
         .unwrap();
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
     let status = loop {
         if let Some(status) = child.try_wait().unwrap() {
             break status;
         }
         if std::time::Instant::now() > deadline {
             child.kill().unwrap();
-            panic!("the command was still running after 60 s: a stderr write is blocked");
+            panic!("the command was still running after 120 s: a stderr write is blocked");
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     };

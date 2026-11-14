@@ -498,7 +498,6 @@ fn field_words(name: &str) -> String {
         .map(|word| match word {
             "Id" => "ID".to_owned(),
             "Com" => "COM".to_owned(),
-            "Color" => "color".to_owned(),
             _ => word.to_lowercase(),
         })
         .collect();

@@ -973,7 +973,7 @@ fn a_cyclic_parents_override_terminates() {
         tx.send(model).expect("send the encoded model");
     });
     let model = rx
-        .recv_timeout(std::time::Duration::from_secs(30))
+        .recv_timeout(std::time::Duration::from_secs(120))
         .expect("encode hung on a cyclic parents slice");
     components_under_limits(&model);
 }

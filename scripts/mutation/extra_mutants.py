@@ -42,7 +42,8 @@ LISTER = ["cargo", "run", "-q", "--release", "-p", "extra_mutants", "--", "list"
 ALL_KINDS = ("bool", "guard", "literal", "normalize", "order")
 # Each mutant's `cargo test` may take up to this multiple of the unmutated baseline.
 TIMEOUT_FACTOR = 3
-MIN_TIMEOUT_SECONDS = 120
+# Above a test's 120 s bound on a wait (`.cargo/mutants.toml`'s `minimum_test_timeout` says why).
+MIN_TIMEOUT_SECONDS = 150
 # What `cargo test` prints, lowercase, when a test ran and failed: the only proof a mutant was
 # caught. A failure without it (a build script that could not run, a full disk) tested nothing.
 TEST_FAILED_SIGNS = ("test result: failed", "error: test failed", "error: doctest failed")

@@ -2282,3 +2282,33 @@ fn an_ordered_roster_emits_no_note() {
         "[players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18)"
     );
 }
+
+/// A Team TOML's key comments give the game's editor ranges while its import
+/// accepts the stored ones; each player's `appearance` header says so, and
+/// no other table's header does.
+#[test]
+fn only_the_appearance_header_notes_the_stored_ranges() {
+    let (file, _) = open(PesVersion::Pes21);
+    let team = file.team(701).expect("team 701");
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let doc = TeamToml::from_team(PesVersion::Pes21, team, &refs).expect("from_team");
+    let text = doc.to_toml().expect("to_toml");
+    let noted: Vec<&str> = text
+        .lines()
+        .filter(|line| line.contains("an import accepts the stored range"))
+        .collect();
+    assert_eq!(
+        noted.first().copied(),
+        Some(
+            "[players.01.appearance]         # the comments give the game's editor range; \
+             an import accepts the stored range"
+        ),
+        "the first player's appearance header carries the note"
+    );
+    assert!(
+        noted.iter().all(|line| line
+            .split_once(']')
+            .is_some_and(|(header, _)| header.ends_with(".appearance"))),
+        "only appearance headers carry it: {noted:?}"
+    );
+}

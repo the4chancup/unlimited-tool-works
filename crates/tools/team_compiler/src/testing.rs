@@ -167,11 +167,14 @@ pub(crate) fn run_events(timestamps: bool) -> (RunEvents, Receiver<PipelineEvent
 }
 
 /// Calls `poll`, which polls a run and says whether it is still running, every 10 ms until it
-/// says no; panics after 60 s.
+/// says no; panics after 120 s, a bound only a hang reaches.
 pub(crate) fn poll_until_done(mut poll: impl FnMut() -> bool) {
-    let deadline = Instant::now() + Duration::from_secs(60);
+    let deadline = Instant::now() + Duration::from_secs(120);
     while poll() {
-        assert!(Instant::now() < deadline, "the run did not end within 60 s");
+        assert!(
+            Instant::now() < deadline,
+            "the run did not end within 120 s"
+        );
         std::thread::sleep(Duration::from_millis(10));
     }
 }

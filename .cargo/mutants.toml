@@ -21,6 +21,13 @@ additional_cargo_test_args = ["--", "--test-threads=7"]
 # take 1-2 s) waited 751 s here; three times was tried then, and per-crate baselines replaced it.
 timeout_multiplier = 5.0
 
+# Never under 150 s, though: a test's wait for another thread gives up at 120 s (CONTRIBUTING.md
+# "A test fails, it never hangs"), so a mutant that breaks what the test waits for (the status
+# bar's update text) fails it only then. Under five times a fast crate's baseline (studio_core's
+# came to 20 s) that failure landed past the limit and counted as a timeout, not a catch. A
+# mutant that really hangs costs 150 s instead.
+minimum_test_timeout = 150
+
 # Each run copies the source tree to a `%TEMP%` build directory, and by default the copy includes
 # gitignored files: the session scratch `.tmp/` (17 GB of archived runs and probes, once) filled
 # the disk and killed two diff runs. No test reads a gitignored file.
