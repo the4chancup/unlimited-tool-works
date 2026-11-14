@@ -1925,8 +1925,9 @@ briefs, review loops, gates and mutation runs as for any step.
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
     patch panel too
     (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74; the draft's `changesTable`).
-    Brief `.tmp/chpop/brief_chpop.md`, running from 2026-11-14 (SWE-2) -> verify: SE-GUI-43 and 74 headless, the built window beside
-    `.tmp/chpop/draft_popup_zoom.png`
+    Code done 2026-11-14 (`c8ba1be7`, SWE-2): the rows' click targets computed with the rows,
+    a player no roster holds offering none. Left: the built window beside
+    `.tmp/chpop/draft_popup_zoom.png` (Pending looks)
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
@@ -3015,6 +3016,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The Save editor's welcome panel with no save open beside the draft's `welcomePanel`, and the
   Ruleset editor's toolbar over its start page; no PES; 0.0.2-welcome, 0.0.2-startdlg;
   harness, then maintainer
+- The unsaved changes list in the built window beside `.tmp/chpop/draft_popup_zoom.png`: the
+  red X's under `Undo`, the lines between rows, an item's click going to its player or team
+  with the list left open; no PES; 0.0.2-chpop; harness, then maintainer
 
 ---
 
@@ -3024,6 +3028,11 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
+
+- open 2026-11-14 (0.0.2-chpop's sidekick): the patch panel's Item cells all hover "Click to
+  switch to this player", a player no roster holds too, whose click does nothing; the
+  unsaved changes list offers no click there. Small: `patch.rs` `table` passes a tooltip
+  per row from the roster, as `changes_popup.rs` `switches` does.
 
 - resolved 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme's error red,
   egui's `#FF0000`, read at 3.8 on the light panel, under `plans/core/gui.md`'s contrast
