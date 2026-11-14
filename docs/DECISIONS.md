@@ -17534,3 +17534,18 @@ Why: Stats, Appearance and Gameplan name what each screen shows, and `Table` nam
 screen's shape. Squad pairs with Gameplan as the team's players beside the team's tactics.
 `Roster` would read as the Savefile menu's roster sheet, and `Team` as the Team menu or a team
 row.
+
+## 2026-11-14: in a larger window every scroll area may take the room; floating windows keep the window's edges; the log dock keeps its height (maintainer)
+
+Decision: a scroll area may take a larger window's extra width and height, its content keeping
+the default size's layout, instead of a named list of panels; a list whose rows always fit at
+the default size takes nothing. The player list keeps its width and the log dock its 180-point
+height. The Save editor's floating windows (Comparator, Apply aesthetics patch, Team file
+interchange, Live AATF's window, Copy/swap stats) open against the window's edges, and dialogs
+centred on the window (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than
+the default"). This replaces the morning's named list.
+
+Why: a scroll area can use the room to show what it would otherwise hide, where a panel that
+only grows shows empty room, as the Gameplan starter lists did. The floating windows beside
+the centred view use the empty sides instead of covering the view. The census of
+2026-11-14 measured the log dock at 180 points whatever the window's height.

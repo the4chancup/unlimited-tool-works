@@ -2018,8 +2018,8 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
-    test drawing it at 1280 and at 1920 wide, every unnamed panel the same size, moved right
-    by half the extra width;
+    test drawing it at 1280 and at 1920 wide, every panel but a scroll area the same size,
+    moved right by half the extra width;
     the drafts and the built window at the whole monitor
     - [ ] the census: every view of every tool, what grows or moves past the default (SWE-2;
       draft evidence `.tmp/stretch/draft_*`)

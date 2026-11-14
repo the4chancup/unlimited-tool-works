@@ -43,33 +43,43 @@ The window's opening size and fit, and its scaling under the design width, are b
 width".
 
 **A window larger than the default.** A tool view is calibrated for the default window (1280 ×
-780 for the main tools), and a larger window changes none of it: no panel grows, and the
+780 for the main tools), and a larger window changes none of its layout: no panel grows, and the
 layout keeps the arrangement it has at the default size, centred across the pane at its top,
 the room on either side and below it left empty. This replaces the reflow `spec/core/gui.md`
-"Scaling with the width" describes at or above the design width ("wider rows spread"). A
-larger window gives room only to the panels allowed to stretch, each a list that scrolls,
-named here:
+"Scaling with the width" describes at or above the design width ("wider rows spread").
 
-- the Save editor's player list, which takes the extra height; its width stays;
-- the log dock (Log panel), whose list takes the extra height;
-- the Save editor's Squad screen, a team in one table, once drafted (`plans/save_editor.md`
-  "The Squad screen, still to be drafted"), which takes the extra width as well as the extra height, so it shows
-  more of its columns;
-- the Export upgrader's Files look (`plans/export_upgrader.md`, the look toggle's
-  "Files"), whose list takes the extra height and whose two columns, the old export's
-  boxes and the upgraded one's, share the extra width equally, so longer names fit.
+What scrolls is the exception. A scroll area may take a larger window's extra width and height,
+so it shows more of what it holds (more rows, more columns, more of a long name), while what it
+holds keeps the layout it has at the default size. One that grows in width grows by the same
+amount on each side, so the rows above and below it, which keep their size, stay centred where
+they were. A list whose rows always fit at the default size is not a scroll area and takes
+nothing, since it would only show empty room: the Gameplan screen's starter lists, which a
+roster never outgrows. Two scroll areas keep part of their size:
 
-A panel that takes the extra width grows by the same amount on each side, so the rows above
-and below it, which keep their size, stay centred where they were.
+- the Save editor's player list takes the extra height; its width stays;
+- the log dock (Log panel) spans the window's width and keeps its 180-point height.
+
+The Save editor's Squad screen (`plans/save_editor.md` "The Squad screen, still to be
+drafted") and the Export upgrader's Files look, whose two columns share the extra width
+equally, show more columns; the Team compiler's export grid and the Ruleset editor's section
+rail and preview show more rows.
+
+Dialogs, the help window included, open centred on the window. The Save editor's floating
+windows open against the window's edges, as at the default size: the Comparator, Apply
+aesthetics patch and Team file interchange at the right, Live AATF's window at the bottom
+right, Copy/swap stats at the bottom centre. So in a larger window they take the room beside
+the centred view rather than covering it.
 
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
 at another, and each size would then need a look of its own: the Save editor's Player
 assignments chips grow to some 800 points for a name of 15 characters, and its Stats screen's
-three columns drift apart. The help window does not take the room either: it first opens at
-its own size ("Help window"), since its text reflows, and a page as wide as a large window is
-hard to read. We centre the layout rather than keep it at the pane's left, so that on a large
-monitor it sits in the middle of the screen, where the dialogs and the help window open,
-rather than beside an empty band a third of the window wide.
+three columns drift apart. A scroll area is the exception because the room lets it show what
+it would otherwise hide, where a panel that only grows shows empty room. The help window does
+not take the room either: it first opens at its own size ("Help window"), since its text
+reflows, and a page as wide as a large window is hard to read. We centre the layout rather
+than keep it at the pane's left, so that on a large monitor it sits in the middle of the
+screen, where the dialogs and the help window open, rather than beside an empty band a third
+of the window wide.
 
 **The graphics backend.** On Windows the window draws through Direct3D 12, with OpenGL as the
 fallback where it is missing; Vulkan is not asked for.
