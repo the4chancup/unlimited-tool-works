@@ -925,7 +925,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`.tmp/8_17/runs.py`); DECISIONS "The view's arguments and report, where the plan was
     silent"; the usability review's ideas `PROPOSALS.md` P32-P36. Waits for the maintainer's
     remarks
-    - [ ] 8.17c a second draft, replacing the first (the maintainer, 2026-11-13: two looks by
+    - [x] 8.17c a second draft, replacing the first (the maintainer, 2026-11-13: two looks by
       the number of old exports, a grid as the Team compiler's from five on with three
       lines an export for the face, boots and gloves folders, and under five the source
       and destination files in two columns, turning as the run goes, "feel free to
@@ -954,7 +954,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (renders `flow_*.png` by `shot_flow.py`). Accepted as drawn 2026-11-13 night (the
       maintainer); `plans/export_upgrader.md` "GUI" and its EU-GUI scenarios rewritten
       from it the same night, Copy report drawn in the Upgrade button's menu, model-folder
-      mode removed (0.0.2-nomodels). Not drawn: a referee export's row (8.17b)
+      mode removed (0.0.2-nomodels). Not drawn: a referee export's row (8.17b). Approved
+      2026-11-14 (the maintainer, after the Export type title, Files' Full export and
+      Midcup export, and the missing team's Browse…, `726ea87f`)
     - [ ] 8.17b a referee export's row in the second draft (no save, no Full or Midcup
       combo; `plans/export_upgrader.md` "GUI"); the first draft's items (P18's pair, P19's
       dialog, P32-P36) are in 8.17c's draft or ruled out with it → verify: the bundled
