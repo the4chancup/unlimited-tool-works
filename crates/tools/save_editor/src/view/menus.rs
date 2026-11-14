@@ -282,7 +282,8 @@ pub(crate) fn default_rosters_dialog() -> comparator::SaveFileDialog {
 /// read of the open save so never locked — `rosters_dialog` with
 /// `EDIT.tsv` as the default name, the open save refused as the
 /// destination and a write error shown as the refusal —
-/// and Multi-team AATF, a read too (`multi_aatf`); then Fix database,
+/// Multi-team AATF, a read too (`multi_aatf`), and Save formation pictures
+/// for a range of teams, another (`pictures`); then Fix database,
 /// under the aesthetics lock with the ownership line as its disabled hover
 /// (SE-GUI-22). The menu is disabled with no save open.
 pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -337,6 +338,18 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if ui.button("Multi-team AATF\u{2026}").clicked() {
             view.multi_aatf.open(session.file());
+            ui.close();
+        }
+        if ui
+            .button("Save formation pictures for a range of teams\u{2026}")
+            .clicked()
+        {
+            view.pictures_range = pictures::RangeDialog::open(
+                session.file(),
+                &view.formation_pictures_folder,
+                &view.exe_dir,
+                view.tactics.portraits,
+            );
             ui.close();
         }
         menu_separator(ui);

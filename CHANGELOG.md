@@ -47,6 +47,9 @@
 - **Save editor**: the Team menu's `Save a picture of the formations…` saves a PNG of the
   team's formations, a row per preset, to check its shapes or share them, optionally with
   each preset's settings beside its row; the notice that follows has an Open folder button.
+- **Save editor**: the Savefile menu's `Save formation pictures for a range of teams…` saves
+  that picture for every cup team between two you pick, into one folder. Stop ends the run
+  and keeps the pictures already saved.
 - **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the
   portraits so the formation's shape is easier to see. `Scroll names` beside it is now
   `Scroll`.

@@ -2,7 +2,8 @@
 //! preset and a column per formation, which organizers check a team's
 //! shapes with and share (the draft's `formationsPicture`).
 //!
-//! The Team menu's dialog that writes one is `dialog`.
+//! The Team menu's dialog that writes one is `dialog`; the Savefile menu's
+//! dialog that writes one per team of a range is `range`.
 //!
 //! A picture is painted in an egui context of its own that is never
 //! shown, by the Tactics view's own pitch painter (`pitch::still_pitch`),
@@ -11,6 +12,7 @@
 //! in step with the view's by hand, one shape kind at a time.
 
 mod dialog;
+mod range;
 mod raster;
 
 use std::path::Path;
@@ -28,6 +30,7 @@ use team_widgets::tactics::{SettingsLine, TacticsView, automatic_pairs, preset_s
 use crate::view::{portraits, tactics};
 
 pub(crate) use dialog::{PictureDialog, dialog};
+pub(crate) use range::{RangeDialog, range_dialog};
 
 /// The empty room around the picture's content.
 const MARGIN: f32 = 16.0;
