@@ -25,7 +25,7 @@ use std::path::Path;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{FORM_ROW_SPACING, add_enabled, modal, modal_buttons};
+use studio_core::widgets::{add_enabled, dialog_form, modal, modal_buttons, modal_sentence_gap};
 
 use super::dialog::{folder_row, picture_boxes, save_picture};
 use super::{PictureOptions, picture_file_name};
@@ -300,46 +300,43 @@ fn picking(
     pick_folder_dialog: &mut PickFolderDialog,
     flat: &mut bool,
 ) -> Asked {
-    let grid = egui::Grid::new("save_editor_pictures_range_grid")
-        .num_columns(2)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-        .show(ui, |ui| {
-            ui.label("Teams");
-            let (count, room) = ui
-                .horizontal(|ui| {
-                    team_combo(
-                        ui,
-                        "save_editor_pictures_first",
-                        file,
-                        u32::MIN,
-                        &mut dialog.first,
-                    );
-                    // The last end follows a first end picked past it, before
-                    // it is drawn, so the range is never reversed.
-                    dialog.last = dialog.last.max(dialog.first);
-                    ui.weak("to");
-                    team_combo(
-                        ui,
-                        "save_editor_pictures_last",
-                        file,
-                        dialog.first,
-                        &mut dialog.last,
-                    );
-                    let count = range_ids(file, dialog.first, dialog.last).len();
-                    // Room for the count, which is drawn after the grid, so
-                    // a row of long team names still widens the column.
-                    let font = egui::TextStyle::Body.resolve(ui.style());
-                    let size = ui
-                        .painter()
-                        .layout_no_wrap(counted(count, "team"), font, egui::Color32::PLACEHOLDER)
-                        .size();
-                    (count, ui.allocate_exact_size(size, egui::Sense::hover()).0)
-                })
-                .inner;
-            ui.end_row();
-            folder_row(ui, &mut dialog.folder, pick_folder_dialog);
-            (count, room)
-        });
+    let grid = dialog_form(ui, "save_editor_pictures_range_grid", |ui| {
+        ui.label("Teams");
+        let (count, room) = ui
+            .horizontal(|ui| {
+                team_combo(
+                    ui,
+                    "save_editor_pictures_first",
+                    file,
+                    u32::MIN,
+                    &mut dialog.first,
+                );
+                // The last end follows a first end picked past it, before
+                // it is drawn, so the range is never reversed.
+                dialog.last = dialog.last.max(dialog.first);
+                ui.weak("to");
+                team_combo(
+                    ui,
+                    "save_editor_pictures_last",
+                    file,
+                    dialog.first,
+                    &mut dialog.last,
+                );
+                let count = range_ids(file, dialog.first, dialog.last).len();
+                // Room for the count, which is drawn after the grid, so
+                // a row of long team names still widens the column.
+                let font = egui::TextStyle::Body.resolve(ui.style());
+                let size = ui
+                    .painter()
+                    .layout_no_wrap(counted(count, "team"), font, egui::Color32::PLACEHOLDER)
+                    .size();
+                (count, ui.allocate_exact_size(size, egui::Sense::hover()).0)
+            })
+            .inner;
+        ui.end_row();
+        folder_row(ui, &mut dialog.folder, pick_folder_dialog);
+        (count, room)
+    });
     let (count, room) = grid.inner;
     // The count ends where the grid's field column ends, which is where
     // the folder row's Browse ends. Only the drawn grid knows that end, so
@@ -349,6 +346,7 @@ fn picking(
     ui.new_child(egui::UiBuilder::new().max_rect(at))
         .add(egui::Label::new(egui::RichText::new(counted(count, "team")).weak()).extend());
     picture_boxes(ui, &mut dialog.settings, &mut dialog.portraits, flat);
+    modal_sentence_gap(ui);
     file_name_line(ui, file, dialog.first, dialog.settings);
     // The button row takes the content's width and never widens it.
     let width = ui.min_rect().width();
