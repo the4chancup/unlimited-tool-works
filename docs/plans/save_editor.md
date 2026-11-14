@@ -1086,9 +1086,17 @@ player per row and one stat or card per column, gives a view of the team at a gl
 lets a member edit several players' stats quickly, without opening each player. Its rows
 and columns scroll, so a window larger than the default shows more of its columns, with
 less sideways scrolling (`plans/core/gui.md` "Shell layout", "A window larger than the
-default"). On its screen the player list is hidden, since the table shows the same
-players: only the Team selector stays, on the row of the screen toggle, and picks the team
-the table shows. Its layout is drafted with the maintainer before it is planned further.
+default"). It is the screen toggle's fourth screen, `Table`. On it the player list is
+hidden, since the table shows the same players: only the Team selector stays, on the row
+of the screen toggle, and picks the team the table shows.
+
+- Switching to Table sets the Team selector to the selected row's team: the selected
+  player's team, or the selected team row.
+- Switching back to Stats, Appearance or Gameplan sets the selector to All teams again if
+  it showed All teams before Table was picked. Otherwise it keeps the team the table
+  showed last.
+
+Its layout is drafted with the maintainer before it is planned further.
 
 Improvements policy: each of the above exists to remove a real friction point
 (finding players, reordering, fear of misclicks). No animations-for-the-sake-of-it.

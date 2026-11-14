@@ -17511,3 +17511,14 @@ Why: centred, the view sits in the middle of a large monitor, where the dialogs 
 window open, rather than beside an empty band a third of the window wide. The table shows the
 same players the list would, and without the list it has the whole pane's width to grow into,
 so switching to it moves nothing but the panels it replaces.
+
+## 2026-11-14: the Table screen sets the Team selector to the selected row's team, and back to All teams on leaving if it showed All teams (maintainer)
+
+Decision: the team table is the screen toggle's fourth screen, `Table`. Switching to it sets
+the Team selector to the selected row's team. Switching back to Stats, Appearance or Gameplan
+sets it to All teams again if it showed All teams before Table was picked, and otherwise leaves
+the team the table showed last (`plans/save_editor.md` "A team table, still to be drafted").
+
+Why: the table shows one team, so it opens on the team the member was looking at. A member who
+browsed the whole save before gets the whole save back, rather than a list narrowed to one
+team they never chose to filter by.
