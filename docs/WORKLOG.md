@@ -1954,21 +1954,16 @@ briefs, review loops, gates and mutation runs as for any step.
     Ctrl+click adds or removes a row. Two slices: the selection of several rows, then the
     edits written to all as one undo step -> verify: draft, headless tests, the built
     window
-  - [ ] 0.0.2-flatpitch (plan written 2026-11-13, DECISIONS "eight things the maintainer asked"; left: the code) the two formation picture dialogs (8.33, 8.34, not built yet), the
-    maintainer's additions of 2026-11-13, drafted (`picturesFlatBox`,
-    `picturesPortraitsBox`), to enter `plans/save_editor.md` "Formation pictures" and be
-    built with 8.33:
-    - a checkbox "Without the pitch's grain (smaller file)": unticked by default, so the
-      grain stays; remembered and shared by both dialogs as the folder is; hover "Paint the
-      pitch in flat bands, without its grain. The picture looks plainer and its file is
-      smaller, which helps when sharing many." (the grain is noise, which PNG cannot
-      compress; "smaller" with no measure claimed)
-    - a checkbox "Portraits": it starts as the formation bar's Portraits is each time a
-      dialog opens, and a change in the dialog is that picture's alone, never written back
-      to the bar's setting; hover "Draw the players' portraits in the picture. Off, the
-      formation's shape is easier to see."
-    - the folder, until a member picks one: `formations` beside the program (the plan has
-      only "the folder last used")
+  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34; `plans/save_editor.md`
+    "Formation pictures", with the maintainer's additions of 2026-11-13; SE-GUI-86 to 89;
+    DECISIONS 2026-11-14 "formation pictures are painted off screen by the view's own
+    painters"; code map `.tmp/flatpitch/code_map.md` and `part2.md`) -> verify: the
+    scenarios headless, the pictures looked at
+    - [ ] slice 1: the one-team dialog and the picture without the settings (SE-GUI-86,
+      87): the pitch's painting split from the widget, the off-screen frame and its
+      rasterizer, the folder and grain settings, Open folder made to open one
+    - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88)
+    - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
     docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
     reference text). Waits for the maintainer, who decides after the weekly usage reset

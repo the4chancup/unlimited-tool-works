@@ -1533,11 +1533,18 @@ Win32 original hurt the most):
   before each picture, as the view reads them, so a cell never shows the placeholder where the
   view shows a face.
 
-  **Drawing the picture.** egui's Painter draws to the screen only, so the pitch painter draws
-  through a small target that both the view's `Painter` and an `image::RgbaImage` implement,
-  text through `ab_glyph` (already in the tree through epaint) from the view's fonts, the
-  symbols font after the body font for `↳`, rather than a software renderer (a new dependency)
-  or screenshot crops (the view would flicker through every formation).
+  **Drawing the picture.** egui's Painter draws to the screen only, so the picture is painted
+  in an egui context of its own that is never shown, by the view's own paint functions (the
+  pitch painter among them), at one pixel per point, with the portraits loaded into that
+  context as textures. epaint tessellates the frame's shapes into triangles, as it does for
+  the screen, and a small rasterizer of the tool's own fills them into an `image::RgbaImage`,
+  sampling the textures the frame used (the font atlas and the portraits), which is then
+  written as a PNG. egui's own font code shapes and draws the text from the view's fonts, `↳`
+  included, so a picture's text is the view's. We do not draw through a target that both the
+  `Painter` and an `RgbaImage` implement: that is a second painter for every shape kind, kept
+  in step with the first by hand, and its text would need `ab_glyph`, which egui 0.37 no
+  longer uses, so a new dependency. Nor do we crop screenshots: the view would flicker
+  through every formation.
 - Formation edits participate in undo/redo like everything else.
 
 What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc`) could differ:
@@ -3040,6 +3047,63 @@ SE-GUI-85  GIVEN a PES 2021 save open at the default window, a player's Stats sc
                 LMF RMF CMF DMF LB RB CB GK, their lefts equal, each position's ratings at
                 its label's right; the pane has no scroll bar in any of the three; WHEN the
                 editor restarts THEN List is still held
+SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` absent, the
+                formation bar's Portraits ticked
+           WHEN Team, `Save a picture of the formations…` is pressed
+           THEN a dialog of that title holds, on one grid, `Folder` with the program's
+                folder's `formations` and `Browse…`, `File name` with `718 f.png`; under
+                them `With each preset's settings beside its row` unticked, `Portraits`
+                ticked, `Without the pitch's grain (smaller file)` unticked, then Save and
+                Cancel; ticking the first makes the name `718 f settings.png`, unticking it
+                `718 f.png` again; WHEN Portraits is unticked and Save pressed THEN
+                `formations/718 f.png` is written (the folder created), the notice reads
+                `718 f.png written to <folder>` with Open folder, and the bar's
+                `portraits` setting is still on; GIVEN the dialog opened again THEN
+                Portraits is ticked; WHEN Save is pressed THEN `Replace the picture?` asks
+                `718 f.png is already in <folder>. Replace it?`, Cancel leaves the file's
+                bytes as they were and Replace writes it again; GIVEN the grain box ticked
+                and the editor restarted THEN the dialog opens with it ticked
+SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws Kick-off
+                alone (Fluid formation off, the other two exact copies of Kick-off), and
+                of a team with a preset whose Fluid formation is on
+           WHEN each is written without the settings
+           THEN the first is one column of three pitches, 32 + 96 + 320 points wide and
+                32 + 30 + 3 x 384 + 2 x 12 high, with no column heads; the second is
+                three columns (32 + 96 + 3 x 320 + 2 x 12 wide), headed `Kick-off`,
+                `In-possession`, `Out-of-possession`, 22 points higher; each row is
+                labelled `Preset n` with `Fluid On` or `Fluid Off` under it; the title holds
+                the team's name in its colour codes' colours, its id and `PES 2021`; a
+                fluid-off row whose other two formations differ from Kick-off draws all
+                three, the two at 60% opacity over the background; a turf pixel of a cell
+                is the view's turf colour at that point, its grain included; GIVEN the
+                grain box ticked THEN the turf pixels of one band, away from the lines and
+                markers, are one colour, and the file is smaller than the grained one;
+                GIVEN the PES 2015 save THEN no row has a Fluid line, and every row draws
+                Kick-off alone
+SE-GUI-88  GIVEN the PES 2021 save, a team whose presets hold an advanced instruction that
+                takes a player, with its target set
+           WHEN its picture is written with the settings
+           THEN it is 12 + 240 points wider and 30 higher than without; beside each row
+                stand `Formation settings`, the offensive half then the defensive half,
+                then `Advanced instructions` with `Attack 1`, `Attack 2`, `Defence 1`,
+                `Defence 2`, each value named as the Tactics editor's control names it
+                (`Counter Attack`, at full length); the target stands on a line of its own
+                after `↳`; a value wider than the column ends in `…`; under the grid one
+                line holds `Automatic settings` and its four pairs; GIVEN the PES 2016 save
+                THEN no `Advanced instructions` and three Automatic pairs
+SE-GUI-89  GIVEN a cup save open
+           WHEN Savefile, `Save formation pictures for a range of teams…` is pressed
+           THEN its dialog holds `Teams`, a combo with the save's first cup team, `to`, a
+                combo with its last, then the count line (`N teams`), the folder row,
+                the three boxes and the file-name line naming the first team's file;
+                the right combo lists only the teams from the left one on, and picking a
+                left one past it moves the right one to the left's team; the dialog keeps
+                its width when the settings box flips; WHEN Save pictures is pressed on a
+                range of three teams THEN it reads `Writing 1 of 3: <name> (<id>)` over a
+                progress bar with Stop, then `3 pictures written to <folder>` with Open
+                folder and Close, and the folder holds one PNG per team; WHEN Stop is
+                pressed after the first picture THEN it reads `Stopped after 1 of 3
+                pictures; they are in <folder>`, and the folder holds that one picture
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of

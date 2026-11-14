@@ -17313,3 +17313,18 @@ support is second-class.
 The rename from the Team compiler to the Compiler leaves the scenario IDs as they are
 (`TC-CLI-03`, `TC-BIN-11`): `TC` reads as "The Compiler" too. Renaming them would touch
 every plan, spec and test comment that cites one, and would gain nothing.
+
+## 2026-11-14: formation pictures are painted off screen by the view's own painters
+
+A formation picture is painted in an egui context of its own that is never shown, by the
+same paint functions the Tactics view uses. epaint turns the frame's shapes into triangles,
+and a small rasterizer of the Save editor's own fills them into the PNG's pixels
+(`plans/save_editor.md` "Formation pictures", "Drawing the picture").
+
+The plan had the pitch painter draw through a target that both egui's `Painter` and an image
+implement, with text through `ab_glyph`, "already in the tree through epaint". It is not: egui
+0.37 shapes text with `skrifa` and `harfrust`, and `ab_glyph` comes only with a Linux title
+bar crate, so on Windows it would be a new dependency. A second target would also be a
+second painter for every kind of shape, kept in step with the view's by hand. Painted off
+screen, a picture's shapes and text are the view's own, and the only new code is the
+rasterizer, whose output a test can check pixel by pixel.
