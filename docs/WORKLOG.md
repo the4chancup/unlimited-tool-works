@@ -1206,8 +1206,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
 - [ ] 8.49 the Save editor's Squad screen (the maintainer, 2026-11-14): one player per row,
   one stat or card per column, edited in place; it takes a larger window's extra width and
   height (`plans/save_editor.md` "The Squad screen"). Drafted with the maintainer
-  2026-11-14 (`docs/prototypes/tools/save_editor.js` `squadView`). Left: the acceptance
-  scenarios, then the code; no release named yet. The grid: `egui_extras` is already linked (through
+  2026-11-14 (`docs/prototypes/tools/save_editor.js` `squadView`); scenarios SE-GUI-94 to
+  101. Left: the code, in four slices (the read-only table and the selector; sorting, the
+  Show row and Live AATF's marks; keys and block edits; the pick lists); no release named
+  yet. The grid: `egui_extras` is already linked (through
   `egui_commonmark`, the help window's), so using it costs no download and little size; its
   `TableBuilder` keeps a heading row in place and sizes columns to their content, but cannot
   freeze columns at the left. The first slice tries it (with the frozen columns painted at

@@ -17573,3 +17573,15 @@ lie faint behind the values they flag (`plans/save_editor.md` "The Squad screen"
 Why: the screen is for a whole team at a glance and for quick edits across players, so it shows
 everything a player's Stats screen does, takes keys a spreadsheet user already knows, and marks
 offenders without widening a cell.
+
+## 2026-11-14 — save_editor — the Squad screen's scenarios: a fielded position marks the name, team-wide issues stay in the dock
+
+Decision: on the Squad screen, a `Fielded position` issue marks the player's name, since where
+he stands in the tactics is no column of the table; a team-wide issue (a tier count, a height
+quota, the goalkeepers' count) marks no cell, and the Live AATF dock, which stays under the
+table, lists it first as on the other screens (`plans/save_editor.md` "The Squad screen",
+SE-GUI-101).
+
+Why: the plan placed every player's issue on a cell or his name but was silent on the team's
+own; the dock already puts them first on every screen, and a mark on the title row would be a
+second home for the same line.

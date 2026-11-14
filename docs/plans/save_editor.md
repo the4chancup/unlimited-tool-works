@@ -1132,7 +1132,9 @@ The draft is `docs/prototypes/tools/save_editor.js` (`squadView`).
   warning or suggestion) faint behind its value, so the table keeps its size, and hovering
   the cell lists the rules. A rule on a whole group marks the cells that break it (the A and
   B ratings, the cards held). A rule no shown cell carries (a stat total, a name's colours, a
-  hidden group's rule) marks the name, at its cell's right end.
+  hidden group's rule, a fielded position) marks the name, at its cell's right end. A
+  team-wide issue (a tier count, a height quota) has no cell: the dock lists it first, as on
+  the other screens, and stays under the table on this one.
 
 Improvements policy: each of the above exists to remove a real friction point
 (finding players, reordering, fear of misclicks). No animations-for-the-sake-of-it.
@@ -3422,6 +3424,79 @@ SE-GUI-93  GIVEN /gd/'s player 10 selected
                 is Ctrl+clicked and then row 19 clicked THEN player 19 alone is selected; WHEN
                 Select all similar players is hovered with 12 and 13 selected THEN it is
                 disabled, its tooltip "Select one player first"
+SE-GUI-94  GIVEN the save open on All teams, /gd/'s player 72205 selected on his Stats screen
+           WHEN the screen toggle's Squad is clicked
+           THEN the player list is gone; the Team selector stands on the toggle's row, reads
+                /gd/ and lists no All teams; the table shows /gd/'s 23 players in roster
+                order; the toggle's four buttons stand where they stood on Stats; WHEN /f/ is
+                picked in the selector and Stats is clicked THEN the selector reads All teams;
+                GIVEN the selector on /e/ instead, its player 71701 selected, WHEN Squad is
+                clicked, /f/ picked and Stats clicked THEN the selector reads /f/
+SE-GUI-95  GIVEN the save open on /gd/, the official ruleset picked
+           WHEN Squad is drawn
+           THEN the slot, the name and Pos (the registered position) stand left of the group headings General info,
+                Other stats, Playable positions, Ability stats, Skills, Tricks and COM playing
+                styles, in that order; Scissors Feint is a column of Tricks, not of Skills; Ability
+                stats has a Tight Possession and an Aggression column and General info a
+                Stronger hand column; WHEN the pointer rests on the Speed heading THEN its
+                tooltip `Speed` shows in that frame; WHEN the table is scrolled to its right
+                and bottom ends THEN the slot, name and Pos columns and both heading rows are
+                drawn where they were; GIVEN the PES 15 save instead THEN there is no Tight
+                Possession, Aggression, Physical Contact, Clearing, Reflexes, Coverage or
+                Stronger hand column
+SE-GUI-96  GIVEN Squad on /gd/, the official ruleset picked, player 72203 holding Heading and
+                 Scissors Feint and 72207 Heading alone
+           WHEN the Show row's Ability stats is unticked
+           THEN the Ability stats heading and its columns are gone; WHEN None is clicked THEN
+                only the slot, name and Pos columns are left; WHEN All is clicked THEN every
+                group is shown; WHEN "Only the
+                cards each player has" is ticked THEN the Skills, Tricks and COM playing styles
+                columns give way to two Cards held columns, 72203's row reading Heading then
+                Scissors Feint, 72207's Heading in the first, every other row empty; WHEN a
+                held card is clicked and Space pressed THEN nothing changes; WHEN the view is
+                built again from the tool's settings THEN the box is still ticked
+SE-GUI-97  GIVEN Squad on /gd/, 72210's Speed set to 90 and 72204's to 70
+           WHEN the Speed heading is clicked
+           THEN 72210's row is first and 72204's last, the 21 others between them in roster
+                order, the heading's triangle pointing down and the column lighter than its
+                neighbours; WHEN it is clicked again THEN 72204's row is first, 72210's last,
+                the triangle pointing up; WHEN it is clicked a third time THEN the rows are in
+                roster order and no triangle is drawn; and the session's roster order is
+                unchanged and no unsaved change is listed; GIVEN SE-GUI-96's held cards and
+                "Only the cards each player has" ticked WHEN the first Cards held heading is
+                clicked THEN 72203's row is first and 72207's second
+SE-GUI-98  GIVEN Squad on /gd/
+           WHEN 72201's GK rating is clicked, 72203's Attacking Prowess Shift+clicked, 88
+                typed and Enter pressed
+           THEN the three players' Attacking Prowess read 88 and every rating in the block C,
+                the unsaved changes list shows three rows, and one Undo puts all three back to
+                77; WHEN the same block gets A typed and Enter THEN every rating in the block
+                reads A and the Attacking Prowess cells keep their values; WHEN 99 is typed
+                and Escape pressed, or 120 typed and Enter pressed over the same block, THEN
+                nothing changes; WHEN 72205's Speed is clicked, 66 typed and Down pressed THEN 72205's
+                Speed reads 66 and 72206's Speed is the active cell
+SE-GUI-99  GIVEN Squad on /gd/, 72201 the captain, 72203 holding Heading
+           WHEN 72202's Heading cell is clicked, 72203's Shift+clicked and Space pressed
+           THEN neither holds Heading; WHEN Space is pressed again THEN both hold it, each
+                press one undo step; WHEN 72205's Captain cell is clicked THEN its radio is
+                filled and 72201's empty, the team's captain is roster slot 4 (counting from
+                0), and one Undo makes 72201 the captain again
+SE-GUI-100 GIVEN Squad on /gd/
+           WHEN 72201's Pos cell is clicked, 72203's Shift+clicked and Enter pressed
+           THEN a list of the 13 positions opens at 72203's cell; WHEN LB is picked THEN the
+                three Pos cells read LB, as one undo step; WHEN 72204's Playing style cell is
+                double-clicked THEN its list of playing styles opens there
+SE-GUI-101 GIVEN Squad on /gd/, the official ruleset picked, Live AATF on and its first check
+                 returned (every /gd/ player is registered CB with no position rated A)
+           WHEN the table is drawn
+           THEN each of the 23 Pos cells carries the error's mark behind its value, its
+                tooltip naming Registered position; the names of the eleven starters, 72201 to
+                72211, carry the error's mark at the cell's right end, for Fielded position,
+                which no column shows, and the other twelve names none; the dock lists the
+                team-wide issues (Tier count, Height quota, Goalkeepers) first and no cell
+                carries them; every column is as wide, and every row as tall, as with Live
+                AATF off; WHEN 72215's CB rating is set to A and the check returns THEN his Pos
+                cell carries no mark
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
                  PES 19 one the newest, no folder remembered from an earlier open, and one of
                  the three opened earlier in the session
