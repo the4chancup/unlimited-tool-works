@@ -2224,7 +2224,6 @@ mod tests {
         }
     }
 
-    // TC-OUT-15
     #[test]
     fn a_single_cpk_longer_than_the_cap_is_cpk_size_over_limit_and_one_at_the_cap_is_not() {
         let temp = scratch("compile_size_over_limit");

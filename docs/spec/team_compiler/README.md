@@ -434,7 +434,9 @@ TC-STR-15  GIVEN player folders linking Common/torso.fmdl as torso.fmdl.common a
            torso.fmdl.common.txt, and a third linking missing.fmdl.common
            WHEN the export is checked
            THEN the first two links resolve with no finding; the third reports common_link_missing
-                naming the Common path, and only that player folder is dropped
+                naming the Common path, and only that player folder is dropped; GIVEN one player
+                folder holding both spellings of a link to Common/boots.fmdl WHEN it is compiled
+                for PES 21 THEN its boots package holds boots.fmdl once
 TC-STR-16  GIVEN strict_file_type_check on, Faces/Base/ holding a disallowed file, and a player
            folder linking it with Base.face
            WHEN the export is checked, then with pass_through on
@@ -1088,7 +1090,10 @@ TC-MOD-43  GIVEN slot 05 holding body.model, whose vertices carry skh_*_l and sk
                 (kit_variant_missing), its face.xml listing each part once, by
                 ./oral_body_kitN_*.model and its kitN hands; the third's holds the three split
                 models and no body.mtl, their entries naming
-                model/character/uniform/common/<team>/body.mtl
+                model/character/uniform/common/<team>/body.mtl; GIVEN instead Faces/Round/
+                holding body.model and body.mtl, linked by slot 05's Round.face, THEN his
+                face.xml lists the three split models as the first's does, model_hand_split
+                naming Faces/Round/body.model
 TC-MOD-44  GIVEN slot 05 holding ingame_face.toml, socks.model with socks.mtl naming skin.dds,
            and kit_boots.model.common; Common/ holding kit_boots.model, kit_boots.mtl naming
            studs and studs.dds
@@ -2142,7 +2147,9 @@ TC-CMN-26  GIVEN slot 05's face model referencing pants_kitN, with pants_kit1.dd
            WHEN the export is compiled for PES 21
            THEN no kit_variant_missing is reported, the CPK holds pants_kit1.ftex and
                 pants_kitN.ftex, pants_kitF's conversion, and no pants_kit2, pants_kit3 or
-                pants_kitF file
+                pants_kitF file; GIVEN instead the link pants_kitN.dds.common in slot 05, with
+                pants_kit1.dds and pants_kitF.dds in Common/, THEN the team's common textures
+                hold pants_kit1.ftex and pants_kitN.ftex, pants_kitF's conversion
 TC-CMN-27  GIVEN Kits/p1, p2 and p3, and slot 05 holding pants_kit1.model with pants_kit1.mtl
            and pants_kitF.model with pants_kitF.mtl
            WHEN the export is compiled for PES 17
@@ -2205,7 +2212,8 @@ TC-BIN-03  withdrawn: TC-KIT-14 proves the same behavior on the same input
 TC-BIN-04  GIVEN a /co/ export with p1, a root colors.txt, and Boots/Crocs/ (boots.model and
            boots.mtl) linked by slot 05
            WHEN it is compiled for PES 17
-           THEN UniColor.bin and TeamColor.bin are written with team 714's entries set, and no
+           THEN TeamColor.bin is written with team 714's colours from colors.txt, UniColor.bin
+                with p1's entry as the bundled one holds it (p1 has no colors.txt), and no
                 UniformParameter.bin, PlayerAppearance.bin, BootsList.bin or GloveList.bin is
                 written
 TC-BIN-05  GIVEN a PES folder whose download/DpFileList.bin lists 4cc_08_bins, 4cc_61_midcup and
@@ -2671,7 +2679,9 @@ TC-SAV-05  GIVEN a PES 19 savefile for a PES 21 compile, and a root holding the 
            THEN the first reports savefile_invalid, leaves the savefile byte-identical and the
                 PES folder's previous CPK in place; the second reports savefile_team_missing
                 naming 714 and applies 792's entries; the first exits 3 (its deployment rolled
-                back), the second 1
+                back), the second 1; WHEN the first is compiled with --mode sideload THEN it
+                reports savefile_invalid, leaves the savefile byte-identical and exits 1, the
+                new livecpk/ tree left in place, since a sideload has no deployment to roll back
 TC-SAV-06  GIVEN an output folder holding an aesthetics_patch.toml from an earlier run
            WHEN an export with kits and no player folder is compiled
            THEN no patch is written and the earlier one is now aesthetics_patch.toml.bak

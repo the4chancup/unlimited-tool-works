@@ -2026,6 +2026,9 @@ briefs, review loops, gates and mutation runs as for any step.
       per team of a range, the progress line naming the picture being written, Stop keeping
       what was written, the dialog's width held through the run (SE-GUI-89); help page 07.
       Looked at beside the draft by the lead (Pending looks)
+    - [x] slice 3c (2026-11-14, `513b72bf`, Opus) after the maintainer's look: the range
+      dialog's count ends the Teams row where Browse ends, and both results put the folder on
+      a line of their own; the built look waits (Pending looks)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

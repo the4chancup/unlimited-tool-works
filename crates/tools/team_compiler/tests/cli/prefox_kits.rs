@@ -347,10 +347,15 @@ fn a_pes_17_compile_writes_both_color_bins_and_no_fox_bin() {
         entries[UNI_COLOR] == base,
         "UniColor.bin is the base, the kit's entry kept"
     );
-    assert!(
-        !entries
-            .keys()
-            .any(|path| path.ends_with("UniformParameter.bin")),
-        "UniformParameter.bin"
-    );
+    for fox_bin in [
+        "UniformParameter.bin",
+        "PlayerAppearance.bin",
+        "BootsList.bin",
+        "GloveList.bin",
+    ] {
+        assert!(
+            !entries.keys().any(|path| path.ends_with(fox_bin)),
+            "{fox_bin} written"
+        );
+    }
 }

@@ -2786,8 +2786,13 @@ SE-GUI-09  GIVEN the official ruleset active
                 version has reads 85 and weak foot, form and injury resistance are unchanged,
                 as one undoable edit, and a typed 120 settles at 99 (the number is 40 to 99)
 SE-GUI-10  GIVEN the save open and a team's row clicked
-           WHEN its name, a color or the manager id is edited in the team view, and saved
-           THEN the reopened file holds the values; GIVEN #FF8000 picked as color 1 THEN the
+           WHEN the team view is drawn
+           THEN its title is the team's ID and name, then come its name, short name and
+                colors, the manager and stadium IDs and a `Kit slots…` button, the slots
+                themselves left to its dialog; WHEN `ltz` is typed as the short name THEN the
+                team holds LTZ, one undoable edit; WHEN its name, a color or the manager ID
+                is edited and the save saved THEN the reopened file holds the values;
+                GIVEN #FF8000 picked as color 1 THEN the
                 reopened team's color 1 is (63, 32, 0) and the team view shows it as #FF8200,
                 its row's swatch that color
 SE-GUI-11  GIVEN a player without FPC, his Appearance section open, and the aesthetics
@@ -2837,7 +2842,9 @@ SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that f
                 x 99, and WHEN he is released on the grass at each THEN his slot holds it;
                 WHEN his popover is opened at (99, 47) THEN its X's ⏵ and its Y's ⏵ are
                 disabled, and at x 5 its X's ⏴; GIVEN a slot stored at x 2 WHEN its popover's
-                X's ⏵ is clicked THEN it holds x 5
+                X's ⏵ is clicked THEN it holds x 5; GIVEN a slot stored at x 110 or 200 (a
+                hand-edited save) WHEN its popover is open THEN its X reads the stored value
+                and drawing it changes nothing
 SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF COWBOY BEBOP
                 (70223) at (40, 45), and DBC7, which allows illegal formations, the active
                 ruleset
@@ -2854,7 +2861,9 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 and the SS carries no corner brackets, and WHEN he is released there THEN his slot
                 holds LB at (64, 42) and the SS's slot is unchanged; WHEN the active ruleset is then switched to
                 /vg/ League 27, which does not allow them, and he is held at (42, 30) THEN
-                his badge reads AMF, as in SE-GUI-42, and his slot is as he left it
+                his badge reads AMF, as in SE-GUI-42, and his slot is as he left it; GIVEN
+                DBC7 again and a slot at x 104, the grid's end, WHEN its popover's X has the
+                keyboard and Up is pressed THEN the slot still holds x 104
 SE-GUI-71  GIVEN the PES 17 save's team view on Tactics, and /vg/ League 27, which does not
                 allow illegal formations, the active ruleset
            WHEN Formation settings is drawn
@@ -2917,7 +2926,9 @@ SE-GUI-15  GIVEN the PES 17 save open and no ruleset imported
                 import it replaces, and once accepted one row remains; WHEN a file named like a
                 built-in is imported THEN it is refused naming the built-in; WHEN the imported
                 row's × is clicked and the confirmation accepted THEN its copy is deleted, its
-                row gone, and the ruleset is the first built-in
+                row gone, and the ruleset is the first built-in; GIVEN no data folder WHEN a
+                clean file is imported THEN it is refused, saying there is no data folder to
+                keep its copy in, and the ruleset is unchanged
 SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
            WHEN the Savefile menu's Multi-team AATF… is used
            THEN a dialog titled `Multi-team AATF (<ruleset>)` holds on one row the range's two
@@ -3012,7 +3023,12 @@ SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team
                 of another kind than the target WHEN Ctrl+V is pressed THEN nothing changes
                 and no undo entry is pushed; GIVEN a team one of whose players stores a
                 playing style outside the version's list WHEN Ctrl+C is pressed on its team
-                row, on a preset and on a formation THEN each puts its copy on the clipboard
+                row, on a preset and on a formation THEN each puts its copy on the clipboard;
+                WHEN a PES 21 player's stats are pasted onto a PES 17 player THEN the notice
+                reads `<A>'s stats pasted onto <B>; <n> values PES 2017 does not store were
+                left out`, n the number of keys PES 17 lacks, and WHEN a Gameplan holding an
+                instruction PES 17 lacks is pasted THEN its notice ends `1 value was left out
+                or changed to fit PES 2017`
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before
@@ -3076,7 +3092,9 @@ SE-GUI-75  GIVEN a team's player list and row 02 held dragged
                 next row's background, a selected row's or a team row's, covers none of
                 it; GIVEN the pointer over his own row or
                 another team's row THEN no line is drawn; GIVEN the drag released outside
-                the list THEN no line is left
+                the list THEN no line is left; GIVEN row 05 held on the edge it shares with
+                row 06 THEN the line is across row 06's lower edge, and WHEN released there
+                THEN 05's player stands on place 06 and 06's on place 05
 SE-GUI-76  GIVEN SE-AATF-09's save open, Live AATF on, 4cc Spring 26 the active ruleset
            WHEN team 701's row is selected
            THEN the Live AATF list holds a warning reading `Preset 1, Kick-off: illegal
@@ -3112,7 +3130,8 @@ SE-GUI-78  GIVEN the save open on player A of team 701
                 step; WHEN a team dropdown is changed THEN its player dropdown shows that
                 team's first player; GIVEN a team's page shown WHEN the entry is clicked
                 THEN both rows start on the team's first player; WHEN the title bar is
-                dragged THEN the window moves and stays where it is dropped
+                dragged THEN the window moves and stays where it is dropped; WHEN another
+                save is opened THEN the window closes
 SE-GUI-79  GIVEN a save open with an edit made
            WHEN Ctrl+S is pressed
            THEN the status bar's notice reads `<the save's file name> saved (the replaced
@@ -3142,7 +3161,8 @@ SE-GUI-82  GIVEN the save open on team 718's player 05
                 shows, the toggle where it stood, and no undo entry or unsaved mark follows;
                 WHEN player 07's row is clicked THEN Appearance still shows, for 07; WHEN
                 Gameplan is pressed THEN team 718's row is selected and the team view shows,
-                Gameplan on; WHEN Stats is pressed THEN player 07 is selected and the Stats
+                Gameplan on, the Tactics bars' first choices 12 points under its fields' row
+                with no separator between them; WHEN Stats is pressed THEN player 07 is selected and the Stats
                 screen shows; GIVEN team 701's row selected with none of its players shown
                 since the save opened WHEN Appearance is pressed THEN 701's first player is
                 selected on the Appearance screen; and no team row reads `[click for
@@ -3164,7 +3184,9 @@ SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting 
            WHEN it is drawn
            THEN its groups stand in this order: Full Player Customization with Colors at
                 its right; Strip style; Physique with Motion at its right and Edit flags
-                under Motion; Presentation, each note at its box's right; the pane has no
+                under Motion; Presentation, each note at its box's right; each group's title
+                stands 6 points above the first row under it, as on the Stats screen; five
+                frames in a row draw no toolkit warning over it; the pane has no
                 scroll bar; Strip style's fifteen settings stand in the plan's three
                 columns by five rows, every field one width; the four colours are
                 dropdowns, the gloves' and the spectacles' naming White, Black, Red, Blue,
@@ -3182,8 +3204,9 @@ SE-GUI-85  GIVEN a PES 2021 save open at the default window, a player's Stats sc
                 x and the block's centre is the panel's (within 1 point); WHEN List is
                 pressed THEN the 13 labels stand one a row in the order CF SS LWF RWF AMF
                 LMF RMF CMF DMF LB RB CB GK, their lefts equal, each position's ratings at
-                its label's right; the pane has no scroll bar in any of the three; WHEN the
-                editor restarts THEN List is still held
+                its label's right; the pane has no scroll bar in any of the three; in each,
+                a rating not chosen draws its letter in the normal text colour, darker than
+                a button's; WHEN the editor restarts THEN List is still held
 SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` absent, the
                 formation bar's Portraits ticked
            WHEN Team, `Save a picture of the formations…` is pressed
@@ -3529,7 +3552,9 @@ SE-GUI-27  GIVEN the save open
                 4ccEditor's output does; WHEN
                 Fix database is chosen THEN a
                 confirmation dialog precedes it, its question naming only the repairs the
-                save's version has, and cancelling changes nothing
+                save's version has, and cancelling changes nothing; GIVEN a PES 21 save whose
+                player 70101 has 70102 as his base copy WHEN the repair runs THEN 70102 is
+                still his base copy, since PES 21's record has no base-copy flag to read
 SE-GUI-28  withdrawn: the editor reads the selector for nothing, so no
            version warning shows (0.0.2-sel)
 SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17 save, and (after

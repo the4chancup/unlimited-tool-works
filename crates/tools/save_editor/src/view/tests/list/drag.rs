@@ -745,7 +745,7 @@ fn on_a_shared_edge_the_upper_rows_mark_shows_and_drops() {
 // bounds take the pointer, the mark is the next row's alone (its lower
 // edge, the player coming from above), and the release there must reach
 // it, not stop at the dragged row, whose own drop moves nothing.
-// SE-GUI-75, SE-GUI-08
+// SE-GUI-75
 #[test]
 fn on_the_dragged_rows_lower_edge_the_release_reaches_the_marked_row() {
     let (_file, mut view, mut window, visuals) =
