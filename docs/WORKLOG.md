@@ -1903,7 +1903,8 @@ briefs, review loops, gates and mutation runs as for any step.
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
     - [ ] set aside by the rulings, decided by the maintainer 2026-11-15 (DECISIONS
-      2026-11-15 "the taping advice and the skills comment"), to build:
+      2026-11-15 "the taping advice and the skills comment"; the third, the Ruleset
+      editor's findings, after 0.0.2), to build:
       - `fpc_taping_shows_pieces`: "Some custom setups do this on purpose. If yours does
         not, take the taping off." in the Save editor, the Compiler's catalog row
         (`messages/catalog.rs`, its condition losing "(deliberate in custom setups)", its
@@ -1912,10 +1913,6 @@ briefs, review loops, gates and mutation runs as for any step.
       - the Team TOML's `skills` comment: `the player's skills: lowercase names, _ between
         words` (the writer, `team_toml/player/mod.rs`, and the spec block in
         `spec/pes_savefile/operations.md`, which a test reads)
-      - the Ruleset editor's findings as readable lines (`Line 12, column 5: …`,
-        `tiers[1]: …`) in its window; on the command line too, the maintainer's pick, but
-        every tool's command-line message line is `studio_core`'s one `key=value` form
-        (`events.rs` `message_line`), so how far that goes waits on the maintainer
     - [x] 2026-11-14 (`f90a92a0`) the Team TOML, patch and kit config spec blocks show what
       their writers write, each guarded by a test that reads the block; the Team TOML gains
       its first line, the instructions' note and the stats table's stored-values note; the
@@ -2761,6 +2758,13 @@ briefs, review loops, gates and mutation runs as for any step.
   (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
   for a player's stats, 143 for a preset. A form without the unset keys needs a writer
   option in `pes_savefile`'s `team_toml`
+- [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "the Ruleset editor's
+  findings read as text in its window"): the window's refused-open and refused-save lists show
+  each finding as `Line 12, column 39: …` or `tiers[1]: …` in place of `key=value` fields,
+  dropping the parser's own trailing "(line 12, position 39)"; the command line keeps every
+  tool's shared form (`studio_core` `events.rs` `message_line`). `ruleset_editor`
+  `messages.rs` `finding_text`, pinned by `view/tests/start.rs`. Examples and the options
+  weighed: `.tmp/text_choices/rules_lines.html`
 - [ ] after 0.0.2 (the maintainer, 2026-11-15): docstrings: every doc comment of the codebase reread under the Shakespeare rule's
   docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
   reference text). The maintainer decides whether SWE-2 or Opus runs it. The trial,

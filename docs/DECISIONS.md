@@ -17708,3 +17708,16 @@ taping on by mistake read "nothing to do" and moved on, and the old comment only
 the key. Claiming the game's names would need all 41 checked against each version first.
 Plan: no plan edit; the texts live in the messages' catalogs, `spec/libs/fpc.md` and the Team
 TOML block of `spec/pes_savefile/operations.md`, changed with the code.
+
+## 2026-11-15 — ruleset_editor — the Ruleset editor's findings read as text in its window
+Decision: when the Ruleset editor refuses to open or save a rules file, its window lists each
+problem as text with its place first (`Line 12, column 39: Expecting ',' to separate the
+items of this array literal`, `tiers[1]: tier id "gold" is used twice`) in place of
+`key=value` fields. The command line keeps the form every tool's messages share
+(`- Error rules_finding (line=12, …)`). Built after 0.0.2.
+Why: the maintainer, over real examples of three options: the window, where the fields read
+as code, gets the readable form; making the command line readable would either set one tool
+apart from the shared form or need a sentence for each of every tool's codes (240 in the
+Compiler alone), which is not wanted for now. After 0.0.2, since nobody uses the Ruleset
+editor in its current work-in-progress state.
+Plan: no plan edit; the format lives in `ruleset_editor`'s `messages.rs` and its tests.
