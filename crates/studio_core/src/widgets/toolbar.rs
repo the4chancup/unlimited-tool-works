@@ -10,13 +10,22 @@ const SEPARATOR_SIDE: f32 = 2.5;
 /// one menu open the pointer entering another menu's button opens that one,
 /// as a menu bar does. The bar draws with the menu bar's own style
 /// (`egui::containers::menu::menu_style`): its buttons have no frame or
-/// fill at rest, and show one under the pointer. A control that must stay
-/// framed goes in `toolbar_framed`.
+/// fill at rest, and show one under the pointer. They keep the window's
+/// button padding, which that style narrows to 2 × 0: the drafts' bar
+/// buttons are padded as every other button, so egui's would set the
+/// menus 4 points closer each. A control that must stay framed goes in
+/// `toolbar_framed`.
 pub fn toolbar<R>(
     ui: &mut egui::Ui,
     add_contents: impl FnOnce(&mut egui::Ui) -> R,
 ) -> egui::InnerResponse<R> {
-    egui::MenuBar::new().ui(ui, add_contents)
+    egui::MenuBar::new()
+        .style(|style: &mut egui::Style| {
+            let padding = style.spacing.button_padding;
+            egui::containers::menu::menu_style(style);
+            style.spacing.button_padding = padding;
+        })
+        .ui(ui, add_contents)
 }
 
 /// `add_contents` drawn inside a toolbar with the window's own style rather
@@ -213,6 +222,32 @@ mod tests {
         frame(&ctx, vec![egui::Event::PointerMoved(team)]);
         let (nodes, _, _) = frame(&ctx, Vec::new());
         assert!(button(&nodes, "Set edited flag").is_none());
+    }
+
+    // The bar's menus keep the window's button padding, as the drafts' bar
+    // buttons do: a menu in the bar is as wide as the same menu outside it.
+    #[test]
+    fn a_menu_in_the_bar_is_as_wide_as_the_same_menu_outside_it() {
+        let ctx = context();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(800.0, 600.0),
+            )),
+            ..Default::default()
+        };
+        let (mut inside, mut outside) = (egui::Rect::NOTHING, egui::Rect::NOTHING);
+        let output = ctx.run_ui(input, |ui| {
+            toolbar(ui, |ui| {
+                inside = menu_button(ui, "Team", |_| ()).response.rect
+            });
+            outside = menu_button(ui, "Team", |_| ()).response.rect;
+        });
+        // Nothing renders here, so the frame's texture deltas are dropped on
+        // purpose.
+        output.drop_without_applying_deltas();
+        assert!(inside.width() > 0.0, "the bar's menu is drawn");
+        assert_eq!(inside.width(), outside.width());
     }
 
     #[test]
