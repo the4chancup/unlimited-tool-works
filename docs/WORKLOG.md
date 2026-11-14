@@ -1919,26 +1919,7 @@ briefs, review loops, gates and mutation runs as for any step.
     Playable positions paragraphs); after 0.0.2-applayout lands, since both touch
     `view/abilities.rs` -> verify: SE-GUI-85, the built window
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
-  - [ ] 0.0.2-presentation (the maintainer, 2026-11-13; plan written, DECISIONS "star rating and
-    playing attitude are aesthetics") star and playing attitude become `settings.toml` keys
-    (`plans/aesthetics_export/settings_toml.md`, the star and attitude paragraph), in slices:
-    - [ ] a `pes_savefile`: the two keys in `settings_toml` (template comments, defaults 0,
-      generation, the ownership test), the patch writing them, the Team TOML's move with the
-      old place still read (`plans/pes_savefile/operations.md`), `PlayerDiff::scope` with
-      the motions, star and attitude as aesthetics -> verify: the fixture saves' round trip,
-      a 0.0.1 Team TOML imports, `diff` tags the three aesthetics
-    - [ ] b folded into a (2026-11-13): the compiler's patch and the upgrader's generation
-      carry the keys through `pes_savefile` with no code of their own; their goldens and
-      checks (a compiled player's star lands, an upgraded 7-star team keeps its 7) are a's.
-      Slice a runs on `sk/presentation-a` (`../4cc-studio-temp/presentation-a`, brief
-      `.tmp/presentation/brief_presentation_a.md`), with Copy stats and the import's
-      sections leaving the two to the target (DECISIONS 2026-11-13); reviewed and committed on
-      the branch 2026-11-14 (`3667be9b`, the lead's gates green, one lead fix: the
-      import's dead re-homing of an old-place star removed); merges after 0.0.2-applayout,
-      both touching `view/interchange.rs`
-    - [x] c the Save editor: the Presentation group under the lock, last on the screen,
-      each note beside its box, the help page (with 0.0.2-applayout, 2026-11-14); the
-      Comparator's scope is a's
+  - [x] 0.0.2-presentation (2026-11-14, `7b2e9ea2` merging `3667be9b`, and `b222d710`) star and playing attitude are `settings.toml` keys under `appearance.presentation`, which the patch and the upgrader carry; the Comparator counts them and every motion as Aesthetics, Copy/swap stats leaves them to the target, a 0.0.1 Team TOML still imports; the Save editor's Presentation group under the lock
   - [ ] 0.0.2-compilername (the maintainer, 2026-11-13; DECISIONS "named Compiler from 0.0.2")
     the Team compiler becomes the Compiler: the sidebar, title, help, messages and
     `quick_compile.bat`, the command-line id `compiler` and the settings table `[compiler]`,
@@ -1954,10 +1935,7 @@ briefs, review loops, gates and mutation runs as for any step.
     crosses the dark pair in both themes (`plans/core/gui.md` "A notice is seen, not found"
     and the Dark/light theme row); no publisher yet -> verify: ST-BAR-04 with four kinds, the
     pitch's crosses on both themes
-  - [ ] 0.0.2-nomodels (the maintainer, 2026-11-13; DECISIONS "model-folder mode is removed")
-    `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
-    "Model-folder mode"); the spec's section leaves with it -> verify: the upgrader's tests,
-    `UTW export-upgrader upgrade-models` refused as an unknown command
+  - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
     just because of some load on the computer") no test depends on a worker thread's timing or
     on geometry read from an earlier frame (`CONTRIBUTING.md` "Testing and verification"):
