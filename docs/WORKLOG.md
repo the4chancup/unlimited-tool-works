@@ -3055,6 +3055,10 @@ points there.
   the picture dialog's `write_picture`); CONTRIBUTING's third-copy rule makes it one
   function, which crosses crates.
 
+- resolved 2026-11-14 (SWE-2 and the lead, `ddde3243`): the pipeline on `93d9b548` left 15
+  mutants alive in `save_editor` `appearance/mod.rs`; 10 are caught by new layout tests, 3
+  are equivalences in `.cargo/mutants.toml`, and 2 sat in a Physique stretch no version
+  reaches (Physique is the taller side on every version), which is removed.
 - resolved 2026-11-14 (SWE-2, `46d9d235`): SE-GUI-45's test failed once under load because the
   medal worker's reply, landing before the move frame, drew the held badge's outline (a
   stroked rect of the badge's size, transparent fill), which the finder took for the badge.
