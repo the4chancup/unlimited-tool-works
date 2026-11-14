@@ -266,6 +266,92 @@ fn a_logo_without_a_page_names_the_event_and_opens_nothing() {
     );
 }
 
+/// The logo node's bounds.
+fn bounds(node: &accesskit::Node) -> egui::Rect {
+    let bounds = node.bounds().expect("the logo has bounds");
+    egui::Rect::from_min_max(
+        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+    )
+}
+
+/// Where each shape painted over exactly `rect` stands in the frame's
+/// paint order, with its fill: the picture, and the frame its hover
+/// shows once grown by the frame's room.
+fn painted_at(
+    shapes: &[egui::epaint::ClippedShape],
+    rect: egui::Rect,
+) -> Vec<(usize, egui::Color32)> {
+    shapes
+        .iter()
+        .enumerate()
+        .filter_map(|(index, clipped)| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.rect == rect => Some((index, shape.fill)),
+            _ => None,
+        })
+        .collect()
+}
+
+// The sidebar's 4cc logo frames as a button under the pointer; a linked
+// event logo does the same, 2 points out from its picture as the clover's
+// 28 sits in its 32 square, painted under the picture.
+#[test]
+fn a_linked_logo_shows_a_button_frame_under_it_while_hovered() {
+    let name = dbc7().name;
+    let (mut view, mut window) = opened_at("event_logo_hover", DEFAULT_PANE.x, |view| {
+        view.aatf_ruleset = "dbc7".to_owned();
+    });
+    let nodes = draw(&mut window, &mut view);
+    let picture = bounds(logo(&nodes, &name).expect("DBC7's logo is drawn"));
+    let frame = picture.expand(2.0);
+
+    let (_, _, resting) = window.frame(vec![egui::Event::PointerGone], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(painted_at(&resting, frame), Vec::new(), "no frame at rest");
+
+    let (hovered_fill, _, shapes) =
+        window.frame(vec![egui::Event::PointerMoved(picture.center())], |ui| {
+            show(ui, &mut view, &|| Vec::new());
+            ui.visuals().widgets.hovered.weak_bg_fill
+        });
+    let frames = painted_at(&shapes, frame);
+    assert_eq!(
+        frames.iter().map(|(_, fill)| *fill).collect::<Vec<_>>(),
+        vec![hovered_fill],
+        "one frame in the hovered button's fill"
+    );
+    let pictures = painted_at(&shapes, picture);
+    assert_eq!(
+        pictures.len(),
+        1,
+        "the picture is painted once: {pictures:?}"
+    );
+    assert!(
+        frames[0].0 < pictures[0].0,
+        "the frame is painted under the picture"
+    );
+}
+
+#[test]
+fn a_logo_without_a_page_shows_no_frame_while_hovered() {
+    let name = dbc7().name;
+    let (mut view, mut window) = opened_at("event_logo_hover_no_page", DEFAULT_PANE.x, |view| {
+        pick_imported(
+            view,
+            "dbc7.4ccrules",
+            &dbc7_file(|ruleset| ruleset.page = None),
+        );
+    });
+    let nodes = draw(&mut window, &mut view);
+    let picture = bounds(logo(&nodes, &name).expect("the logo is drawn"));
+
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(picture.center())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(painted_at(&shapes, picture.expand(2.0)), Vec::new());
+}
+
 // SE-GUI-44
 #[test]
 fn the_band_ends_14_points_left_of_the_logo_with_the_fullest_row_inside_it() {

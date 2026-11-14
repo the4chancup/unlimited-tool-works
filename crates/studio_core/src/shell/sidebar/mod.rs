@@ -948,26 +948,17 @@ fn paint_in_use_frame(
     response: &egui::Response,
     active: bool,
 ) -> egui::Color32 {
-    let enabled = ui.is_enabled();
-    let visuals = ui.style().interact_selectable(response, active);
-    // A row paints its button frame only when it is in use — active, hovered,
-    // pressed or focused — as the `Button::selectable` it replaced did
-    // (`frame_when_inactive`): an inactive, unhovered row is a plain row.
-    let in_use = active
-        || response.hovered()
-        || response.is_pointer_button_down_on()
-        || response.has_focus();
-    if enabled && in_use {
-        ui.painter().rect(
-            rect.expand(visuals.expansion),
-            visuals.corner_radius,
-            visuals.weak_bg_fill,
-            visuals.bg_stroke,
-            egui::StrokeKind::Inside,
-        );
+    // A row paints its button frame only when it is in use, as the
+    // `Button::selectable` it replaced did (`frame_when_inactive`): an
+    // inactive, unhovered row is a plain row.
+    if let Some(frame) = crate::widgets::in_use_frame(ui, rect, response, active) {
+        ui.painter().add(frame);
     }
-    if enabled {
-        visuals.fg_stroke.color
+    if ui.is_enabled() {
+        ui.style()
+            .interact_selectable(response, active)
+            .fg_stroke
+            .color
     } else {
         ui.visuals().weak_text_color()
     }

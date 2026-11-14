@@ -1,6 +1,7 @@
 //! The active ruleset's event logo at the view's top right (the draft's
 //! `.event-logo`), the sidebar clover mirrored: drawn past the toolbar
-//! band's end, moving nothing, and with an event page a link to it.
+//! band's end, moving nothing, and with an event page a link to it, framed
+//! as a button while in use as the clover is.
 
 use team_widgets::event_logo::HEIGHT;
 
@@ -14,6 +15,11 @@ pub(super) const RIGHT: f32 = 14.0;
 /// The logo's top below the view's, in points: as far as the clover's ink
 /// stands below the window's top.
 const TOP: f32 = 8.0;
+
+/// How far the frame a linked logo shows while in use stands out from the
+/// picture, in points: the room the clover has in the sidebar logo's
+/// square (28 inside 32), so the two logos' hovers look alike.
+const FRAME_ROOM: f32 = 2.0;
 
 /// Where the logo stands while a save is open and the active ruleset
 /// carries one: 28 points high, its right edge `RIGHT` from the window's,
@@ -60,6 +66,8 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, rect: Option<egui::Re
     let image = logo.image(ui.ctx()).alt_text(&ruleset.name);
     match &ruleset.page {
         Some(page) => {
+            // Reserved before the picture, so the frame lands under it.
+            let frame_slot = child.painter().add(egui::Shape::Noop);
             let response = child
                 .add(image.sense(egui::Sense::click()))
                 .on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -67,6 +75,12 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, rect: Option<egui::Re
                     "{}\n\nClick to open the event's page:\n{page}",
                     ruleset.name
                 ));
+            let frame_rect = response.rect.expand(FRAME_ROOM);
+            if let Some(frame) =
+                studio_core::widgets::in_use_frame(&child, frame_rect, &response, false)
+            {
+                child.painter().set(frame_slot, frame);
+            }
             if response.clicked() {
                 ui.ctx().open_url(egui::OpenUrl::new_tab(page));
             }
