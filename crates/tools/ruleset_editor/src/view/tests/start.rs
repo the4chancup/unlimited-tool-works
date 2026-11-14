@@ -1,6 +1,7 @@
 //! The start page: its entries in order (RE-GUI-01), each template and
 //! Blank opening clean on General and saving back equal (RE-GUI-02),
-//! and the refused-open listing (RE-FILE-03).
+//! the refused-open listing (RE-FILE-03), and the margin the page keeps
+//! while a document's layout bleeds to the view's edges.
 
 use super::*;
 
@@ -65,6 +66,24 @@ fn the_generators_entries_are_disabled() {
     assert!(
         !node(&frame.nodes, &menu_label("File")).is_disabled(),
         "premise: the other menus are enabled"
+    );
+}
+
+// With no document the draft keeps `.center`'s padding (it adds `bleed`
+// only with a ruleset open): nothing the page draws stands closer to
+// the view's left edge than the shell's 8-point margin.
+#[test]
+fn the_start_page_keeps_the_shells_margin() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let left = frame
+        .nodes
+        .iter()
+        .filter_map(accesskit::Node::bounds)
+        .fold(f64::MAX, |left, bounds| left.min(bounds.x0));
+    assert!(
+        left >= 8.0,
+        "every widget stands the margin in from the left edge: {left}"
     );
 }
 

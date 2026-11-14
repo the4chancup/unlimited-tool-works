@@ -88,7 +88,7 @@ impl Headless {
         &mut self,
         events: Vec<egui::Event>,
         focused: bool,
-        contents: impl FnMut(&mut egui::Ui),
+        mut contents: impl FnMut(&mut egui::Ui),
     ) -> Frame {
         let input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, self.screen)),
@@ -96,7 +96,12 @@ impl Headless {
             focused,
             ..Default::default()
         };
-        let mut output = self.ctx.run_ui(input, contents);
+        // The shell's `fn ui` draws every tool's view inside the window's
+        // `CentralPanel`: a `Headless` window stands for that panel's
+        // rect, so the tests see the edges the real window leaves.
+        let mut output = self.ctx.run_ui(input, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| contents(ui));
+        });
         let update = output
             .platform_output
             .accesskit_update

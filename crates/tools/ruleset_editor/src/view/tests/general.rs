@@ -1,7 +1,7 @@
 //! Undo and redo over General edits (RE-GUI-14): two edits in order,
 //! undone and redone by the keys and by the Edit menu's buttons; the
-//! toolbar's menus switching on hover; and the form scrolling sideways
-//! when the preview narrows it.
+//! toolbar's menus switching on hover; the form scrolling sideways when
+//! the preview narrows it; and the toolbar's band at the view's edges.
 
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 
@@ -304,18 +304,28 @@ fn the_checklists_draw_held_stats_checked_and_a_toggle_keeps_the_rest() {
     );
 }
 
-/// The outer rect of the panel `salt` names (egui persists a panel's
-/// `PanelState` under its scope's id; the central panel's right edge is
-/// the preview panel's left).
-fn panel_outer_rect(window: &Headless, salt: &str) -> egui::Rect {
-    let id = window
-        .ctx
-        .viewport_id()
-        .root_ui_id()
-        .with_salt(egui::IdSalt::new(salt));
-    egui::containers::panel::PanelState::load(&window.ctx, id)
-        .unwrap_or_else(|| panic!("the {salt} panel's state"))
-        .outer_rect
+/// The preview panel's left edge: its fill is the panel-coloured rect
+/// reaching the window's right edge between the toolbar and the bottom
+/// bar (the `PanelState`'s id follows the scope the panels are drawn
+/// in; the painted edge is what the member sees).
+fn preview_left(window: &Headless, frame: &Frame) -> f64 {
+    let panel_fill = window.ctx.global_style().visuals.panel_fill;
+    frame
+        .shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect)
+                if rect.fill == panel_fill
+                    && rect.rect.right() == window.screen.x
+                    && rect.rect.top() > 0.0
+                    && rect.rect.bottom() < window.screen.y =>
+            {
+                Some(rect.rect)
+            }
+            _ => None,
+        })
+        .map(|rect| f64::from(rect.left()))
+        .expect("the preview panel's fill")
 }
 
 // The draft's `.center` scrolls, it never clips: at the smallest default
@@ -335,7 +345,7 @@ fn the_form_scrolls_sideways_to_its_rightmost_checkbox() {
     // first drawn top to bottom is the rating one's.
     let label = crate::summary::human(ABILITY_STATS[4]);
     let frame = window.draw(&mut view, &ctx);
-    let right = f64::from(panel_outer_rect(&window, "ruleset_preview").min.x);
+    let right = preview_left(&window, &frame);
     let bounds = nodes_labeled(&frame.nodes, &label)[0]
         .bounds()
         .expect("the checkbox is drawn");
@@ -768,4 +778,38 @@ fn the_toolbars_row_stands_3_points_inside_its_panel() {
     // The stroke centres on `line`: its top stands `bottom` under the row.
     let line_top = line - 0.5 * f64::from(stroke.width);
     assert_eq!(line_top, file.y1 + 3.0, "the line 3 under the button");
+}
+
+/// With a document open the layout runs to the view's edges (the
+/// draft's `.bleed`): the toolbar's fill spans the view's width from
+/// its top, the File menu `TOOLBAR_MARGIN.left` in from the left.
+#[test]
+fn the_toolbars_band_starts_at_the_views_left_and_top_edges() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let file = node(&frame.nodes, &menu_label("File"))
+        .bounds()
+        .expect("the File menu button's bounds");
+    assert_eq!(
+        file.x0,
+        f64::from(TOOLBAR_MARGIN.left),
+        "the File menu stands the toolbar margin in from the left edge"
+    );
+    let panel_fill = window.ctx.global_style().visuals.panel_fill;
+    let band = frame
+        .shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect)
+                if rect.fill == panel_fill
+                    && rect.rect.left() == 0.0
+                    && rect.rect.top() == 0.0
+                    && rect.rect.height() < 100.0 =>
+            {
+                Some(rect.rect)
+            }
+            _ => None,
+        })
+        .expect("the band's fill at the view's top");
+    assert_eq!(band.right(), 800.0, "the band spans the view's width");
 }

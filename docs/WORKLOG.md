@@ -1912,11 +1912,7 @@ briefs, review loops, gates and mutation runs as for any step.
     dialog") the Ruleset editor draws its start page as a full page where the draft opens a
     dialog; it becomes a dialog with no Close over the empty window (RE-GUI-01). It waits for
     0.0.2-rebar, which edits the same files (`.tmp/rebar/brief_startdlg.md`)
-  - [ ] 0.0.2-rebar (found in the built window 2026-11-14, captures in `.tmp/looks/bar/`) the Ruleset
-    editor's toolbar band sits inside the shell's 8-point margin, its menus 8 points right of and
-    8 below its draft's and its line starting 8 in, where the draft and the Save editor run the band
-    from the rail's edge; its section list highlights the selected label alone, where the draft
-    fills the row across
+  - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02

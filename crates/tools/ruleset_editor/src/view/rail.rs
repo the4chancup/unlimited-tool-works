@@ -28,10 +28,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
                     continue;
                 }
                 let bad = problems.iter().any(|error| section_of(error) == section);
-                if ui
-                    .selectable_label(view.section == section, label(ui, section, bad))
-                    .clicked()
-                {
+                // The draft's `.rail .sel`: the row fills the rail's
+                // width, its mark at the right end.
+                let mut entry = egui::Button::selectable(view.section == section, section.label())
+                    .min_size(egui::vec2(ui.available_width(), 0.0));
+                if bad {
+                    entry = entry
+                        .right_text(egui::RichText::new("⚠").color(ui.visuals().error_fg_color));
+                }
+                if ui.add(entry).clicked() {
                     view.section = section;
                 }
             }
@@ -53,26 +58,6 @@ pub(crate) fn section_of(error: &RuleError) -> Section {
         // section is where an unmappable problem lands.
         _ => Section::General,
     }
-}
-
-/// A rail entry's text: the label, " ⚠" in the error colour when the
-/// section holds a problem (the draft's mark).
-fn label(ui: &egui::Ui, section: Section, bad: bool) -> egui::text::LayoutJob {
-    let font = egui::TextStyle::Button.resolve(ui.style());
-    let mut job = egui::text::LayoutJob::default();
-    job.append(
-        section.label(),
-        0.0,
-        egui::text::TextFormat::simple(font.clone(), ui.visuals().text_color()),
-    );
-    if bad {
-        job.append(
-            " ⚠",
-            0.0,
-            egui::text::TextFormat::simple(font, ui.visuals().error_fg_color),
-        );
-    }
-    job
 }
 
 #[cfg(test)]

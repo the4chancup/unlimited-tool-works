@@ -272,6 +272,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
     set_surrender_on_press(ui.ctx());
     let settings = read_settings(ctx);
     if view.document.is_some() {
+        // The draft's `.bleed`: with a ruleset open the view runs to the
+        // shell's edges, over the central panel's margin, so the layout
+        // is drawn in a child grown back over that margin.
+        let rect = ui.max_rect() + egui::Frame::central_panel(ui.style()).inner_margin;
+        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(rect));
         toolbar(ui, view, ctx, &settings);
         egui::Panel::bottom("ruleset_bottom").show(ui, |ui| bottom_bar(ui, view, ctx, &settings));
         if view.show_preview {
@@ -282,7 +287,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
         }
         egui::Panel::left("ruleset_rail")
             .resizable(false)
-            .exact_size(140.0)
+            // The draft's rail: 150 from the view's left edge to its
+            // line, the entries its padding in from each side.
+            .exact_size(150.0)
+            .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::same(6)))
             .show(ui, |ui| rail::show(ui, view));
         egui::CentralPanel::default().show(ui, |ui| {
             banners(ui, view);
