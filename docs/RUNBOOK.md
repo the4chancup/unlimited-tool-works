@@ -513,15 +513,20 @@ the third for a program needed as soon as possible (a quick tool, a build for a 
 **Every build and test job runs at below-normal priority**: at normal priority two jobs left
 the maintainer's machine barely usable, while a below-normal one yields every processor to
 their own programs and slows only while they use it. The priority is inherited, so it is set
-where a job starts: `scripts/mutation/mutants.py` starts cargo-mutants that way, the lead's
-sidekick launcher starts its `claude` process that way (everything the sidekick runs
-inherits it), and the lead starts its own gates, package tests and release builds through a
-wrapper that does the same (`~/.claude/tools/below_normal.py <command>`). A job found at normal
+where a job starts. Every `just` recipe lowers itself: on Windows the justfile's shell is
+`scripts/gates/low_priority.py`, which sets the priority and the core left free (below) on
+itself before it starts each line. A gate run bare is therefore already lowered; to run one
+at full speed, set `UTW_PRIORITY=normal` in the environment. So the lead runs cargo only
+through `just`: a recipe where one fits, and `just cargo <args>` for the rest (a package's
+tests, a release build). `scripts/mutation/mutants.py` starts cargo-mutants lowered, and the
+lead's sidekick launcher starts its `claude` process lowered, so everything the sidekick runs
+inherits it. A job found at normal
 priority is lowered with its whole process tree (`~/.claude/tools/lower_tree.ps1 -Match <text>`).
 Priority alone proved too little: a test gate that filled all sixteen logical processors at
-below-normal priority still slowed the desktop (2026-11-12). So the wrapper and the detached
-launcher also keep their job off two logical processors, one core, which the job's
-processes inherit as they inherit the priority (`~/.claude/tools/leave_cores.py`;
+below-normal priority still slowed the desktop (2026-11-12). So the justfile's shell and the
+detached launcher also keep their job off two logical processors, one core, which the job's
+processes inherit as they inherit the priority (`~/.claude/tools/leave_cores.py` for the
+launcher;
 `lower_tree.ps1 -Match <text> -Free 2` for a job already running).
 
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session

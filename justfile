@@ -4,7 +4,10 @@
 
 # Git for Windows' `sh` is not on PATH from a plain PowerShell, so recipes run under PowerShell
 # there (the fallback CONTRIBUTING.md names). Recipe lines stay bare commands either way.
-set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+# Every line starts at below-normal priority and off the first core, which cargo, rustc and the
+# test binaries inherit, so a gate leaves the machine usable; `UTW_PRIORITY=normal` in the
+# environment runs it at full speed (scripts/gates/low_priority.py).
+set windows-shell := ["python", "scripts/gates/low_priority.py", "powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
 python := if os_family() == "windows" { "python" } else { "python3" }
 # A script's tests run with a temp folder that is not its own real path, as a CI runner's is
@@ -22,6 +25,10 @@ gates-remote:
 remote +command:
     {{python}} scripts/mutation/remote_gates.py {{command}}
 
+# Any cargo command at the recipes' lowered priority, for what no recipe covers (`just cargo test -p save_editor pictures`, `just cargo build --release -p studio`)
+cargo +args:
+    cargo {{args}}
+
 # Gate 1: formatting
 fmt-check:
     cargo fmt --all --check
@@ -34,6 +41,7 @@ clippy:
 test:
     {{script_test}} scripts/gates/run_tests_test.py
     {{script_test}} scripts/gates/checkpoint_test.py
+    {{script_test}} scripts/gates/low_priority_test.py
     {{python}} scripts/gates/run_tests.py
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/review/perturb_check_test.py
@@ -69,6 +77,7 @@ checkpoint-status *args:
 test-changed base="HEAD":
     {{script_test}} scripts/gates/run_tests_test.py
     {{script_test}} scripts/gates/checkpoint_test.py
+    {{script_test}} scripts/gates/low_priority_test.py
     {{python}} scripts/gates/run_tests.py --changed {{base}}
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/review/perturb_check_test.py
