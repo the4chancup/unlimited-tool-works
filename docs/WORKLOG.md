@@ -3044,23 +3044,18 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-14 (the lead): `save_editor`'s
-  `under_illegal_formations_the_pitch_sets_a_starters_spot_and_position_apart` failed once in
-  the full suite beside a mutation run (`tactics.rs:1128`, "his badge at full opacity"), at
-  `c8ba1be7` plus a change outside tactics, and passed alone. The harness sets
-  `animation_time` to 0, so a fade is not the cause; a real-time threshold between the press
-  and the move frames is the first suspect. Next time: keep the assertion's values.
 - open 2026-11-14 (0.0.2-flatpitch 1b's sidekick): three copies of "write a temporary file
   beside it, then rename it onto the name" (`teams_list::write`, `session::rules::import`,
   the picture dialog's `write_picture`); CONTRIBUTING's third-copy rule makes it one
   function, which crosses crates.
-- open 2026-11-14 (0.0.2-chpop's sidekick): the patch panel's Item cells all hover "Click to
-  switch to this player", a player no roster holds too, whose click does nothing; the
-  unsaved changes list offers no click there. Small: `patch.rs` `table` passes a tooltip
-  per row from the roster, as `changes_popup.rs` `switches` does.
-  Running with the tactics test above on SWE-2 (worktree `4cc-studio-temp/small`, branch
-  `sk/small1`, brief `.tmp/small1/brief.md`).
 
+- resolved 2026-11-14 (SWE-2, `46d9d235`): SE-GUI-45's test failed once under load because the
+  medal worker's reply, landing before the move frame, drew the held badge's outline (a
+  stroked rect of the badge's size, transparent fill), which the finder took for the badge.
+  The finder takes the filled rect; the assertion's value is unchanged. Reproduced by
+  forcing the reply before the press.
+- resolved 2026-11-14 (SWE-2, `46d9d235`): the patch panel's Item cells hovered the switch on a
+  player no roster holds; the tooltip now follows the row's click target.
 - resolved 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme's error red,
   egui's `#FF0000`, read at 3.8 on the light panel, under `plans/core/gui.md`'s contrast
   rule. The maintainer found 3.8 fine and the dark red too bright: both themes take
