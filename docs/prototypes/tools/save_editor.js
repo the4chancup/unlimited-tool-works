@@ -7615,7 +7615,7 @@ function drawPicturesRange() {
     const nameLine = on => h("p", { style: "grid-area:1/1" + (on === picRange.settings ? "" : "; visibility:hidden"),
         "aria-hidden": on === picRange.settings ? null : "true" },
       weak("One picture per team, named after it (" + pictureFileName(example, on) +
-        "), an older one of that name replaced."));
+        "), overwriting files with the same names."));
     // The range's two ends on one row, as Multi-team AATF's.
     body = h("div", {},
       // The count on the combos' row, at its right end, where the folder row's Browse ends.

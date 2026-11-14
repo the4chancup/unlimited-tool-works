@@ -697,7 +697,7 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
     let first_name = team_entry(&scene.tool.view, first).name;
     let line = |settings: bool| {
         format!(
-            "One picture per team, named after it ({}), an older one of that name replaced.",
+            "One picture per team, named after it ({}), overwriting files with the same names.",
             picture_file_name(first, &first_name, settings)
         )
     };

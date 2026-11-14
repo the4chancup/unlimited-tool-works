@@ -373,7 +373,7 @@ fn file_name_line(ui: &mut egui::Ui, file: &EditFile, first: u32, settings: bool
     let name = &file.team(first).expect("the range's first team").name;
     let line = |settings: bool| {
         format!(
-            "One picture per team, named after it ({}), an older one of that name replaced.",
+            "One picture per team, named after it ({}), overwriting files with the same names.",
             picture_file_name(first, name, settings)
         )
     };

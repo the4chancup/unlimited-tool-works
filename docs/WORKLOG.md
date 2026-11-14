@@ -3057,10 +3057,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   the lead at `0b71f879` (`.tmp/flatpitch/look2/compare_dialog.png`,
   `built_3_settings_half.png`, `compare_wide.png`, `compare_narrow.png`, `app_row2_zoom.png`);
   no PES; 0.0.2-flatpitch; maintainer
-- The range dialog for formation pictures: picking, writing and stopped beside the draft's
-  `dlgPicturesRange`, the dialog 524 pixels wide in all three, the progress line in step with
-  the bar, Stop's result naming 191 of 210 pictures; checked by the lead at `3c9b7baf` on the
-  maintainer's PES 2021 save, read only (`.tmp/flatpitch/look3/compare.png`); no PES;
+- The range dialog for formation pictures after the maintainer's two changes: the count
+  ("210 teams") at the Teams row's right end, under Browse's right edge, and both results'
+  folder on a line under "they are here:" (stopped after 73 of 210, then all 210 written),
+  beside the draft's `dlgPicturesRange`; checked by the lead at `513b72bf` on the
+  maintainer's PES 2021 save, read only (`.tmp/flatpitch/look3c/compare.png`); no PES;
   0.0.2-flatpitch; maintainer
 - The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
   shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
