@@ -7618,8 +7618,9 @@ function drawPicturesRange() {
         "), an older one of that name replaced."));
     // The range's two ends on one row, as Multi-team AATF's.
     body = h("div", {},
-      formGrid(["Teams", h("span", { class: "row" }, pick("from"), weak("to"), pick("to"))],
-        [null, h("span", { class: "weak", id: "pic-count" }, count)],
+      // The count on the combos' row, at its right end, where the folder row's Browse ends.
+      formGrid(["Teams", h("span", { class: "row", style: "width:100%" }, pick("from"), weak("to"), pick("to"),
+          h("span", { class: "weak", id: "pic-count", style: "margin-left:auto" }, count))],
         ["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))]),
       cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
@@ -7636,9 +7637,11 @@ function drawPicturesRange() {
     buttons = [button("Stop", stopPicturesRun)];
   } else {
     const n = run.done, m = run.teams.length;
-    body = h("p", { id: "pic-result" }, !run.stopped ? n + " pictures written to " + folder
+    // The folder on a line of its own: a long path would otherwise wrap mid-sentence.
+    body = h("p", { id: "pic-result", style: "white-space:pre-line" },
+      !run.stopped ? (n === 1 ? "1 picture" : n + " pictures") + " written, they are here:\n" + folder
       : n === 0 ? "Stopped before any picture was written"
-      : "Stopped after " + n + " of " + m + " pictures; they are in " + folder);
+      : "Stopped after " + n + " of " + m + " pictures, they are here:\n" + folder);
     buttons = [n ? button("Open folder", openOutputStub) : null,
       button("Close", () => { picRange.run = null; closeWindow(); })];
   }

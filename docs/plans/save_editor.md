@@ -1650,16 +1650,19 @@ Win32 original hurt the most):
   - the right end lists only the teams from the left one on and follows the left one when it
     passes it, so the range is never reversed.
 
-  Under the combo boxes stand a count line ("4 teams"), the folder row with Browse, the same
-  checkbox, and the file-name line, which follows it. The dialog is as wide as its longer
+  The row ends in the count ("4 teams"), right-aligned where the folder row's Browse ends.
+  Under it stand the folder row with Browse, the same checkbox, and the file-name line, which
+  follows it. The dialog is as wide as its longer
   state, the file-name line sized for both of the checkbox's, so it keeps its width when the
   checkbox flips, and its labels and fields sit on one grid. An existing file is replaced, the
   file-name line saying so.
 
   The dialog then turns into the run's progress ("Writing 2 of 4: /f/ (718)", a ProgressBar,
-  Stop, which keeps the pictures written so far) and then its result ("4 pictures written to
-  …", or "Stopped after 2 of 4 pictures; they are in …", Open folder and Close): the run is the
-  tool's own, so it reports in its view, not the status bar. The teams' portraits are read
+  Stop, which keeps the pictures written so far) and then its result ("4 pictures written,
+  they are here:", or "Stopped after 2 of 4 pictures, they are here:", the folder on the line
+  under it, then Open folder and Close). The folder has a line of its own because the dialog
+  keeps its width through the run, and a long folder would otherwise break the sentence
+  wherever it wraps. The run is the tool's own, so it reports in its view, not the status bar. The teams' portraits are read
   before each picture, as the view reads them, so a cell never shows the placeholder where the
   view shows a face.
 
@@ -3231,16 +3234,17 @@ SE-GUI-88  GIVEN the PES 2021 save, a team whose presets hold an advanced instru
 SE-GUI-89  GIVEN a cup save open
            WHEN Savefile, `Save formation pictures for a range of teams…` is pressed
            THEN its dialog holds `Teams`, a combo with the save's first cup team, `to`, a
-                combo with its last, then the count line (`N teams`), the folder row,
+                combo with its last and `N teams` at the row's right end, the folder row,
                 the three boxes and the file-name line naming the first team's file;
                 the right combo lists only the teams from the left one on, and picking a
                 left one past it moves the right one to the left's team; the dialog keeps
                 its width when the settings box flips; WHEN Save pictures is pressed on a
                 range of three teams THEN it reads `Writing 1 of 3: <name> (<id>)` over a
-                progress bar with Stop, then `3 pictures written to <folder>` with Open
-                folder and Close, and the folder holds one PNG per team; WHEN Stop is
-                pressed after the first picture THEN it reads `Stopped after 1 of 3
-                pictures; they are in <folder>`, and the folder holds that one picture
+                progress bar with Stop, then `3 pictures written, they are here:` over a
+                line `<folder>`, with Open folder and Close, and the folder holds one PNG per
+                team; WHEN Stop is pressed after the first picture THEN it reads `Stopped
+                after 1 of 3 pictures, they are here:` over `<folder>`, and the folder holds
+                that one picture
 SE-DIF-07  GIVEN SE-GUI-77's save and its second copy
            WHEN diff is run, and with --json
            THEN the report holds the cup player's Height row and nothing of team 300, of
