@@ -1,4 +1,4 @@
-"""Write the Team compiler's `face_diff.xml` fixtures (step 4.5d).
+"""Write the Compiler's `face_diff.xml` fixtures (step 4.5d).
 
 No loose `face_diff.xml` exists on the maintainer's machine (Everything index, 2026-10-03), so
 the fixtures are two real `face_diff.bin` files from cup exports, encoded here in the two text

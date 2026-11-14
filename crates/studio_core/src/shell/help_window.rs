@@ -1318,7 +1318,7 @@ mod tests {
     #[test]
     fn a_long_catalog_cell_wraps_inside_the_pane() {
         let dir = TestDir::new("studio_core_help_wrap");
-        // A When cell the Team compiler's size: ~400 characters.
+        // A When cell the Compiler's size: ~400 characters.
         let long = Box::leak("plain words and more words ".repeat(16).into_boxed_str());
         let mut section = alpha_section();
         section.messages[0].when = long;

@@ -66,7 +66,7 @@ naming the team or the player, and nothing is written.
 
 **Applying an aesthetics patch**
 
-`apply-patch` applies the `aesthetics_patch.toml` the Team compiler writes beside its CPKs: the
+`apply-patch` applies the `aesthetics_patch.toml` the Compiler writes beside its CPKs: the
 compiled players' motions and, for exports carrying the `write_names` marker, their names. The
 patch must be for the save's PES version and the suite's boots and gloves allocation scheme, or
 it is refused with nothing written.
@@ -129,7 +129,7 @@ refused as well.
 **Updating the teams list**
 
 `export-teams-list` merges the save's teams into `teams_list.txt` in the data folder, the list
-the Team compiler looks export names up in; when that file does not exist yet, the merge starts
+the Compiler looks export names up in; when that file does not exist yet, the merge starts
 from the list shipped with Unlimited Tool Works. It takes every team whose name is
 slash-wrapped (`/co/`) and whose id is in the cup range, 701 to 920.
 

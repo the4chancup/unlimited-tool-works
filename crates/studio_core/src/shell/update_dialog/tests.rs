@@ -598,7 +598,7 @@ fn cancel_during_the_download_brings_the_offer_back() {
 }
 
 /// Release notes of one paragraph, wider than the download's dialog.
-const LONG_NOTES: &str = "Team compiler and Export upgrader: the launchers show warnings and \
+const LONG_NOTES: &str = "The Compiler and Export upgrader: the launchers show warnings and \
                           errors only, and write the whole report, Info messages included, to \
                           a log file beside them, so a long run's findings can be read after \
                           the window is closed.";

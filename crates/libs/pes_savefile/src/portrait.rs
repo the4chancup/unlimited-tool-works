@@ -1,4 +1,4 @@
-//! The CPK path a player's portrait DDS sits at, shared by the Team compiler's
+//! The CPK path a player's portrait DDS sits at, shared by the Compiler's
 //! writer and the Save editor's reader.
 
 use pes_version::PesVersion;

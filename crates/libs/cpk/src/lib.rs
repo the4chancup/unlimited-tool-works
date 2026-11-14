@@ -668,7 +668,7 @@ mod tests {
         assert_eq!(archive.entries()[0].modified, None);
     }
 
-    /// Twenty entries of team 714 (/co/) as the Team compiler writes them, with
+    /// Twenty entries of team 714 (/co/) as the Compiler writes them, with
     /// content lengths from 0 to 5000: short and long paths, one of 48
     /// characters (the boots package), several sharing a folder, and folders
     /// nested five deep and more.

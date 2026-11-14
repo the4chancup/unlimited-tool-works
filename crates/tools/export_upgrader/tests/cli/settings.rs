@@ -199,7 +199,7 @@ fn the_worn_item_folder_ids_are_recorded_in_legacy_ids_toml() {
     assert_eq!(
         fs::read_to_string(sandbox.path("co Full Spring/legacy_ids.toml")).unwrap(),
         concat!(
-            "# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n",
+            "# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n",
             "[05]\nboots = 430\n",
             "[06]\ngloves = 431\n",
             "[07]\ngloves = 431\n",

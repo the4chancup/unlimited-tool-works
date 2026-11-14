@@ -1,4 +1,4 @@
-"""Rebuild the Team compiler's tracer archives (`tests/fixtures/sources/egg Midcup Tracer*`) with
+"""Rebuild the Compiler's tracer archives (`tests/fixtures/sources/egg Midcup Tracer*`) with
 the respelled `fcl_hair.fmdl` (worklog 0.0.2-poc12: first its `dummy_kit` directory named
 `common/team_folder/`, no `000`; then the stand-in itself `team_kit`, `fmdl_team_kit.rs`).
 Run once after each respelling of the studio tracer's file, before it is committed.

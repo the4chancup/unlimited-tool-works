@@ -1,5 +1,5 @@
 //! The Save editor: the PES EDIT savefile's teams and players exchanged (Team TOML, the
-//! Team compiler's aesthetics patch, the teams list) and compared.
+//! Compiler's aesthetics patch, the teams list) and compared.
 //!
 //! `Tool` registers the tool with the shell: its settings section, its help chapter and its
 //! `save-editor` command line (`spec/save_editor.md` "CLI"), and the window (`view/`: the

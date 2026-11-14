@@ -41,7 +41,7 @@ pub(crate) const DPFILELIST: &str = "DpFileList.bin";
 /// key is how its line names the fix (the GUI offers a button instead). `upgrade-dpfl`'s own
 /// `dpfilelist_upgrade_planned` names it with `--yes`.
 pub(crate) const UPGRADE_COMMAND: &str =
-    concat!(studio_core::exe_name!(), " team-compiler upgrade-dpfl");
+    concat!(studio_core::exe_name!(), " compiler upgrade-dpfl");
 
 /// This run's id, `<pid>-<unix ms>`: the process id keeps two runs at once apart, the time two
 /// runs of a recycled process id.

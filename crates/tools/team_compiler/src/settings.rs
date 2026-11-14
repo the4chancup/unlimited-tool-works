@@ -1,5 +1,5 @@
-//! The Team compiler's section of the settings file
-//! (`spec/team_compiler/settings.md` "Team compiler settings"). A key enters with the code that
+//! The Compiler's section of the settings file
+//! (`spec/team_compiler/settings.md`). A key enters with the code that
 //! reads it, so the file never carries a setting nothing honors yet.
 
 use std::fmt;
@@ -9,7 +9,7 @@ use pes_version::{Engine, PesVersion};
 use serde::de::{self, Unexpected, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// The Team compiler's settings, the keys this version reads.
+/// The Compiler's settings, the keys this version reads.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub(crate) struct TeamCompilerSettings {

@@ -5,7 +5,7 @@ use super::kit_token::without_kit_token;
 
 /// The recognized model-name suffixes: what a model file's stem tail says the
 /// model is. The structure pass checks shared folders' names against it; the
-/// Team compiler routes a player folder's models by it.
+/// Compiler routes a player folder's models by it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ModelSuffix {
     /// `face_high`.

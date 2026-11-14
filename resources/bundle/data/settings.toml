@@ -114,7 +114,7 @@ live_suggestions = false
 live_window = false
 
 # If true, the save's aesthetics are locked: they come from the exports, through the
-# Team compiler. "Edit aesthetics anyway" in the Appearance section unlocks them.
+# Compiler. "Edit aesthetics anyway" in the Appearance section unlocks them.
 # If false, they are edited like any other field.
 # Default: false
 aesthetics_from_exports = false
@@ -144,7 +144,7 @@ positions_layout = "pitch"
 team_category = "all"
 
 
-[team-compiler]
+[compiler]
 
 # (Usually only needed when making a cup's DLC.)
 # If true, the teams are split over several numbered CPKs (4cc_41_teams, 4cc_42_teams

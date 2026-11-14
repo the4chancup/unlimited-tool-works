@@ -99,7 +99,7 @@ pub struct RootArtifacts {
     /// the aesthetics patch's to write.
     pub write_names: bool,
     /// A team export's `legacy_ids.toml`: VGL27's old boots and gloves IDs,
-    /// read by the Team compiler.
+    /// read by the Compiler.
     pub legacy_ids: Option<FileDescriptor>,
 }
 

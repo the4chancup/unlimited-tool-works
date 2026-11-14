@@ -1,7 +1,7 @@
 # Face templates
 
-The files the Team compiler packs into a Fox face package when the player folder does not bring
-its own (Team compiler plan, `pipeline.md` "3. Per-model-folder parallel steps", step 3 "Fox mode
+The files the Compiler packs into a Fox face package when the player folder does not bring
+its own (the Compiler's plan, `pipeline.md` "3. Per-model-folder parallel steps", step 3 "Fox mode
 fixups"; `player_folders.md` "What the injected files are"). They are embedded in the Studio
 binary.
 
@@ -20,7 +20,7 @@ is PES 21's `body.skl` (`../skeletons/pes21/`), as for `boots.skl`.
 
 ## `dummy.model` and `dummy.mtl`
 
-The pre-Fox face's `face_neck` stand-in (Team compiler plan, `pipeline.md` "2. Per-export
+The pre-Fox face's `face_neck` stand-in (the Compiler's plan, `pipeline.md` "2. Per-export
 serial steps" step 4, the blank face folder; `messages.md` `xml_face_neck_added`): a face CPK
 whose `face.xml` has no `face_neck` entry gets
 `<model level="0" type="face_neck" path="./oral_dummy_*.model" material="./dummy.mtl" />`,
@@ -40,7 +40,7 @@ released Red's `main`); `dummy.mtl` last changed in
 ## `DpFileList.txt`
 
 The official 4cc DpFileList as a list, one CPK per line in load order, with comments: the
-source that worklog step 4.25 writes the embedded `DpFileList.bin` from (Team compiler plan,
+source that worklog step 4.25 writes the embedded `DpFileList.bin` from (the Compiler's plan,
 `pipeline.md` "6. Post-processing", DpFileList upgrade). Fixed by the maintainer on
 2026-10-03, 53 entries: it started from the newest installed list (the PES 2015 and PES 2017
 installs', 39 entries), with the faces/uniform CPKs replaced by the size-split `teams` run,
@@ -61,7 +61,7 @@ official-list check of every compile (step 4.25).
 ## `referees_fox/`
 
 The Fox referee template tree: every file of it goes into the referee CPK of a Fox compile that
-compiles a refs export, at the path it has below this folder (Team compiler plan, `pipeline.md`
+compiles a refs export, at the path it has below this folder (the Compiler's plan, `pipeline.md`
 "5. Writer" step 5 and "Resolved decisions", embedded templates; `blue_port.md` "Referee
 export processing"). An override replaces one file: `templates/referees_fox/<the same path>`
 in the data directory.
@@ -89,7 +89,7 @@ CPK, never entries of the bins CPK's `UniformParameter.bin` (`blue_port.md`).
 
 The pre-Fox referee template tree, the `referees_fox/` tree's twin for PES 2015 to 2017: every
 file of it goes into the referee CPK of a pre-Fox compile that compiles a refs export, at the
-path it has below this folder (Team compiler plan, worklog step 4.19d; `blue_port.md` "Referee
+path it has below this folder (the Compiler's plan, worklog step 4.19d; `blue_port.md` "Referee
 export processing"). An override replaces one file: `templates/referees_prefox/<the same path>`
 in the data directory.
 
@@ -126,7 +126,7 @@ texture of the `referee_prop.model` the game draws under the referee by itself (
 ## `referee_marker.fmdl`
 
 The Fox referee marker: the model a Fox compile writes into the referee CPK as collar 77 when
-the refs export holds `ref_marker.dds` (Team compiler plan, `blue_port.md` "Referee export
+the refs export holds `ref_marker.dds` (the Compiler's plan, `blue_port.md` "Referee export
 processing"). A square 1.5 m wide on the ground: one mesh, 4 vertices, material
 `judge_watch` (shader `fox3ddf_blin`), each vertex weighted 255 to the bone `static` and to
 nothing else, so no animation moves it (static painting). Its textures are
@@ -147,7 +147,7 @@ base texture's directory (`common/999/sourceimages/`, `common/sourceimages/`). R
 The template environment cubemap: the `EnvironmentMap` texture a PES 15-17 compile gives a
 `Basic_CNSR` material converted from a Fox `metal` material (`fox3ddf_ggx`) that names no
 environment texture of its own (`docs/plans/model_format.md`, the `metal` row and the
-`environment` role; Team compiler worklog step 4.17, slice d), emitted into the player's
+`environment` role; the Compiler's worklog step 4.17, slice d), emitted into the player's
 common textures like any other fallback texture. A 128x128 DXT5 cubemap, six faces, eight mip
 levels, 131,360 bytes, SHA-256 `5dda088dc8325eef`.
 
@@ -161,7 +161,7 @@ member's own. Copied on 2026-10-08 by `.tmp/copy_env_template.py` (not kept: a o
 ## `uniform.mtl`
 
 PES 17's stock uniform material set: the `.mtl` a `.model` collar is read with, since a collar
-carries no materials of its own and the game draws it with the kit's (Team compiler plan,
+carries no materials of its own and the game draws it with the kit's (the Compiler's plan,
 `pipeline.md` "Collars" and step 3 "Format conversion"; worklog step 4.y-fix12). Ten
 materials; the two a collar names, `uni_collar` and `uni_shirts`, are both shader `Shirt_NB`,
 `uni_collar` with no sampler and `uni_shirts` with a `NormalMap` sampler, `./shirts_nrm.dds`

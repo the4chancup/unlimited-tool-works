@@ -6,7 +6,7 @@ from pathlib import Path
 
 from doc_pointers import anchors, broken_links, names_anchor, pointers, problems
 
-PLAN = """# Team compiler
+PLAN = """# The Compiler
 
 ## Pipeline
 

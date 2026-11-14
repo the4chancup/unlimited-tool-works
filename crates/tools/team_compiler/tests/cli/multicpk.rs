@@ -44,10 +44,10 @@ fn sandbox_with(name: &str, exports: &[&str]) -> Sandbox {
     sandbox
 }
 
-/// PES 21 settings with `multicpk_mode` on and the `[team-compiler]` lines `extra`.
+/// PES 21 settings with `multicpk_mode` on and the `[compiler]` lines `extra`.
 fn multicpk_settings(sandbox: &Sandbox, extra: &str) -> String {
     format!(
-        "{}[team-compiler]\nmulticpk_mode = true\n{extra}",
+        "{}[compiler]\nmulticpk_mode = true\n{extra}",
         pes21_settings(sandbox)
     )
 }
@@ -275,7 +275,7 @@ fn content_past_the_last_slot_aborts_the_run_naming_the_shortfall() {
 fn a_single_cpk_past_the_cap_is_a_warning_and_is_written_whole() {
     let sandbox = Sandbox::new("single_cpk_over_cap");
     let settings = format!(
-        "{}[team-compiler]\ncpk_part_max_size = 4096\n",
+        "{}[compiler]\ncpk_part_max_size = 4096\n",
         pes21_settings(&sandbox)
     );
 
@@ -456,7 +456,7 @@ fn a_list_without_the_teams_slots_is_one_dpfilelist_outdated_and_stops_the_run()
     // and nothing else — the run ends at the preflight, before any export is read.
     let expected = format!(
         "Fatal dpfilelist_outdated [AbortRun] (cpk={}, path={}, command={} \
-         team-compiler upgrade-dpfl)",
+         compiler upgrade-dpfl)",
         TEAMS_SLOTS.join(", "),
         sandbox.display("PES/download/DpFileList.bin"),
         studio_core::EXE_NAME
@@ -559,7 +559,7 @@ fn test_mode_writes_its_loose_files_as_without_multi_cpk_mode() {
     ] {
         let sandbox = Sandbox::new(name);
         let settings = format!(
-            "{}[team-compiler]\nmulticpk_mode = {multicpk}\n",
+            "{}[compiler]\nmulticpk_mode = {multicpk}\n",
             pes21_settings(&sandbox)
         );
         let run = sandbox.run(

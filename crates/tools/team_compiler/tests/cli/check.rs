@@ -100,10 +100,7 @@ fn a_disallowed_file_is_an_error_when_strict_and_an_info_when_lenient() {
     );
     sandbox.write("exports/co Midcup Spring/Players/03 - A/readme.doc", b"");
 
-    let strict = sandbox.run(
-        "[team-compiler]\nstrict_file_type_check = true\n",
-        &["check"],
-    );
+    let strict = sandbox.run("[compiler]\nstrict_file_type_check = true\n", &["check"]);
     assert_eq!(
         strict.messages(),
         [
@@ -113,10 +110,7 @@ fn a_disallowed_file_is_an_error_when_strict_and_an_info_when_lenient() {
     );
     assert_eq!(strict.exit_code(), 1);
 
-    let lenient = sandbox.run(
-        "[team-compiler]\nstrict_file_type_check = false\n",
-        &["check"],
-    );
+    let lenient = sandbox.run("[compiler]\nstrict_file_type_check = false\n", &["check"]);
     assert_eq!(
         lenient.messages(),
         [
@@ -132,7 +126,7 @@ fn a_disallowed_file_is_an_error_when_strict_and_an_info_when_lenient() {
 fn pass_through_keeps_a_disallowed_file_at_its_error_severity() {
     let sandbox = Sandbox::new("pass_through");
     sandbox.write("exports/co Midcup Spring/Players/03 - A/readme.doc", b"");
-    let run = sandbox.run("[team-compiler]\npass_through = true\n", &["check"]);
+    let run = sandbox.run("[compiler]\npass_through = true\n", &["check"]);
     assert_eq!(
         run.messages(),
         [
@@ -147,7 +141,7 @@ fn pass_through_keeps_a_disallowed_file_at_its_error_severity() {
 #[test]
 fn check_writes_nothing() {
     let sandbox = Sandbox::new("writes_nothing");
-    let settings = "[team-compiler]\ncpk_name = \"cup\"\n";
+    let settings = "[compiler]\ncpk_name = \"cup\"\n";
     sandbox.write("data/settings.toml", settings.as_bytes());
     sandbox.write(
         &format!("exports/co Midcup Spring/{CLEAN_PLAYER}"),

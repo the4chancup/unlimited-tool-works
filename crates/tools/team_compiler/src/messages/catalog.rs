@@ -1,4 +1,4 @@
-//! The Team compiler's catalog table: every code the tool emits, its severity and the
+//! The Compiler's catalog table: every code the tool emits, its severity and the
 //! member-facing `when`/`effect` the help's Messages topic shows (started as the spec's
 //! catalog cells in `spec/team_compiler/messages.md` "Catalog" and worded for members; the
 //! spec's table stays the design record, dispositions, context fields and the why). Kept
@@ -898,7 +898,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         concat!(
             "The run compiles and installs anyway. `",
             studio_core::exe_name!(),
-            " team-compiler upgrade-dpfl` installs the official list."
+            " compiler upgrade-dpfl` installs the official list."
         ),
     ),
     (
@@ -908,7 +908,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         concat!(
             "The run compiles and installs anyway, but the save step is skipped. `",
             studio_core::exe_name!(),
-            " team-compiler upgrade-dpfl` writes a placeholder for each official entry \
+            " compiler upgrade-dpfl` writes a placeholder for each official entry \
              missing its file."
         ),
     ),
@@ -920,7 +920,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
             "The run stops before compiling anything: nothing is installed or written, and the save is \
              not touched. `",
             studio_core::exe_name!(),
-            " team-compiler upgrade-dpfl` installs the official list; then compile again."
+            " compiler upgrade-dpfl` installs the official list; then compile again."
         ),
     ),
     (

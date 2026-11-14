@@ -24,7 +24,7 @@ use crate::messages::{
 use crate::session::{self, Session};
 use crate::{diff, settings, teams_list};
 
-// The exit codes are the command line's contract with scripts, the Team compiler's meanings.
+// The exit codes are the command line's contract with scripts, the Compiler's meanings.
 /// Exit code of a command that did its work with no Error finding.
 const DONE: u8 = 0;
 /// Exit code of a command that did its work with an Error finding (a patch's team the save
@@ -42,7 +42,7 @@ enum SaveEditorCommand {
     /// Patch a save's team from a Team TOML file. The team its [team] id names takes the
     /// file's keys, and the rest of the save is untouched.
     ImportToml(ApplyArgs),
-    /// Apply the Team compiler's aesthetics patch (its players' looks and names) to a save.
+    /// Apply the Compiler's aesthetics patch (its players' looks and names) to a save.
     ApplyPatch(ApplyArgs),
     /// List everything that differs between two saves of the same version, player by player.
     Diff(DiffArgs),

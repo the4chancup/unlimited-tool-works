@@ -1,6 +1,6 @@
 # Kit templates
 
-Textures the Team compiler fills a kit with when the export lacks them (Team compiler plan,
+Textures the Compiler fills a kit with when the export lacks them (the Compiler's plan,
 `pipeline.md` "Kits", the placeholder kit). They are embedded in the Studio binary.
 
 | File | Used for |

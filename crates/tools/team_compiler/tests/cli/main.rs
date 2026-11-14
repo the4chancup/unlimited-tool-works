@@ -1,4 +1,4 @@
-//! The Team compiler's command line run in-process (`spec/team_compiler/settings.md` "CLI"): the
+//! The Compiler's command line run in-process (`spec/team_compiler/settings.md` "CLI"): the
 //! preflight's refusals, `check`'s findings and what `compile` writes, observed as the exit
 //! code, the `Message` events the tool emits (which the binary prints one line each) and the
 //! CPK's entries.

@@ -1,6 +1,6 @@
 //! The window title: the one surface a user sees while the window is behind others, on the
 //! taskbar button and in alt-tab. While a tool reports an activity the title
-//! carries it (`Team compiler · 12/48 · 01:12 - Unlimited Tool Works`, `APP_NAME` last; the
+//! carries it (`The Compiler · 12/48 · 01:12 - Unlimited Tool Works`, `APP_NAME` last; the
 //! active tool's first, then sidebar order); idle with a notice that arrived unfocused it holds
 //! the notice's text until focus returns; idle it names the active tool, bracketing the
 //! open file's path when the tool has one (`Save editor [C:\…\EDIT00000000] - Unlimited
@@ -91,10 +91,10 @@ mod tests {
         assert_eq!(title.frame(&texts(&[]), true, "A", None), Some(idle()));
         assert_eq!(title.frame(&texts(&[]), true, "A", None), None);
 
-        let busy = texts(&["Team compiler · 12/48 · 01:12", "B · 00:03"]);
+        let busy = texts(&["The Compiler · 12/48 · 01:12", "B · 00:03"]);
         let busy_title = || {
             format!(
-                "Team compiler · 12/48 · 01:12 · B · 00:03 - {}",
+                "The Compiler · 12/48 · 01:12 · B · 00:03 - {}",
                 crate::APP_NAME
             )
         };
@@ -160,11 +160,11 @@ mod tests {
         assert_eq!(title.frame(&texts(&[]), true, "A", None), None);
 
         // The busy and held-notice titles keep their own text: no path in either.
-        let busy = texts(&["Team compiler · 12/48 · 01:12"]);
+        let busy = texts(&["The Compiler · 12/48 · 01:12"]);
         assert_eq!(
             title.frame(&busy, true, "A", detail),
             Some(format!(
-                "Team compiler · 12/48 · 01:12 - {}",
+                "The Compiler · 12/48 · 01:12 - {}",
                 crate::APP_NAME
             ))
         );
@@ -186,7 +186,7 @@ mod tests {
         } = shell();
         let egui_ctx = test_context();
 
-        calls[0].set_activity("Team compiler", Some((12, 48)), Duration::from_secs(72));
+        calls[0].set_activity("The Compiler", Some((12, 48)), Duration::from_secs(72));
         let mut sent = Vec::new();
         for _ in 0..3 {
             sent.extend(titles(&frame(&egui_ctx, &mut app, Vec::new(), true)));
@@ -194,7 +194,7 @@ mod tests {
         assert_eq!(
             sent,
             [format!(
-                "Team compiler · 12/48 · 01:12 - {}",
+                "The Compiler · 12/48 · 01:12 - {}",
                 crate::APP_NAME
             )],
             "one Title command while the string is unchanged"
@@ -231,12 +231,12 @@ mod tests {
         let out = frame(&egui_ctx, &mut app, Vec::new(), true);
         assert!(titles(&out).is_empty(), "sent once");
 
-        calls[0].set_activity("Team compiler", Some((12, 48)), Duration::from_secs(72));
+        calls[0].set_activity("The Compiler", Some((12, 48)), Duration::from_secs(72));
         let out = frame(&egui_ctx, &mut app, Vec::new(), true);
         assert_eq!(
             titles(&out),
             [format!(
-                "Team compiler · 12/48 · 01:12 - {}",
+                "The Compiler · 12/48 · 01:12 - {}",
                 crate::APP_NAME
             )],
             "the busy title carries no path"

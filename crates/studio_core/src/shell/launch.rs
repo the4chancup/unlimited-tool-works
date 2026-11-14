@@ -434,13 +434,13 @@ mod tests {
     fn the_help_subcommand_parses_its_chapter_topic_and_export() {
         assert_eq!(help_args(&["studio", "help"]), (None, None, None));
         assert_eq!(
-            help_args(&["studio", "help", "team-compiler"]),
-            (Some("team-compiler".to_owned()), None, None)
+            help_args(&["studio", "help", "compiler"]),
+            (Some("compiler".to_owned()), None, None)
         );
         assert_eq!(
-            help_args(&["studio", "help", "team-compiler", "command-line"]),
+            help_args(&["studio", "help", "compiler", "command-line"]),
             (
-                Some("team-compiler".to_owned()),
+                Some("compiler".to_owned()),
                 Some("command-line".to_owned()),
                 None
             )

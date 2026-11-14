@@ -622,7 +622,7 @@ fn assert_matches_reference(sandbox: &Sandbox, exports_root: &Path) {
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tracer");
     let output = sandbox.root.join("parity output");
     let settings = format!(
-        "[common]\npes_version = 21\n[team-compiler]\noutput_folder_path = '{}'\n",
+        "[common]\npes_version = 21\n[compiler]\noutput_folder_path = '{}'\n",
         output.display()
     );
     // Nothing to install into: the reference is the CPK itself.
@@ -678,7 +678,7 @@ fn the_upgraded_referee_tracer_matches_the_reference_tree() {
     let sandbox = Sandbox::new("parity_refs");
     let output = sandbox.root.join("parity output");
     let settings = format!(
-        "[common]\npes_version = 21\n[team-compiler]\noutput_folder_path = '{}'\n",
+        "[common]\npes_version = 21\n[compiler]\noutput_folder_path = '{}'\n",
         output.display()
     );
     // The golden compiles in place: a referee export takes no coverage tag.

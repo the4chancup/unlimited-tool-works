@@ -15,7 +15,7 @@ left out: no model references it. Everything else is byte-identical to the sourc
 
 ## `studio/egg Midcup Tracer/`
 
-`old/` migrated to the Studio layout by hand, for what `compile` handles (Team compiler plan,
+`old/` migrated to the Studio layout by hand, for what `compile` handles (the Compiler's plan,
 "Acceptance"): the face and the kit since Phase 3, the portrait since step 4.2, the boots and
 gloves since step 4.3.
 

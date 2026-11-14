@@ -999,7 +999,7 @@ fn a_common_model_s_texture_a_link_of_the_player_s_stands_for_is_in_the_team_s_c
         )],
     );
     let settings = format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes21_settings(&sandbox)
     );
 
@@ -1829,7 +1829,7 @@ fn a_common_model_s_team_folder_directory_names_the_team_s_common_output() {
         )],
     );
     let settings = format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes21_settings(&sandbox)
     );
 

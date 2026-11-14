@@ -1,5 +1,5 @@
 //! The installed `DpFileList.bin`, the list of CPKs the game loads from `download/`, read for
-//! the Team compiler's working-bin walk (compared there with the official list, `templates`)
+//! the Compiler's working-bin walk (compared there with the official list, `templates`)
 //! and the Save editor's portrait source. Its layout is the one
 //! measured in `spec/team_compiler/pipeline.md` "DpFileList upgrade" (the sub-bullet starting "The
 //! DPFL binary format is small"): a 16-byte header whose

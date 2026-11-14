@@ -7,7 +7,7 @@ them by hand; change the script and rerun it. The layout they follow is in
 
 | File | What it is |
 |---|---|
-| `walk.bin` | `4cc_08_bins.cpk`, `4cc_61_midcup.cpk`, `4cc_99_test.cpk`, in that load order, built in the layout of the maintainer's PES 2021 list (header word 0, 48-byte NUL-padded records), with that list's 1204-byte zero tail; 1,364 bytes. The Team compiler's `tests/fixtures/dpfl/walk.bin` is the same file, which its working-bin walk's tests install |
+| `walk.bin` | `4cc_08_bins.cpk`, `4cc_61_midcup.cpk`, `4cc_99_test.cpk`, in that load order, built in the layout of the maintainer's PES 2021 list (header word 0, 48-byte NUL-padded records), with that list's 1204-byte zero tail; 1,364 bytes. The Compiler's `tests/fixtures/dpfl/walk.bin` is the same file, which its working-bin walk's tests install |
 | `pes19_official.bin` | a real PES 2019 list, copied from an install's `download/` (2026-10-07): 29 entries, `4cc_01_db.cpk` to `4cc_69_midcup.cpk`; each record carries a number at offset 36 (28 for the first, down to 0 for the last), and record 4 (`4cc_08_bins.cpk`) a stray `0x0b` at offset 20; 3,173 bytes |
 | `pes20_header_100.bin` | a real PES 2020 list, copied from an install's `download/` (2026-10-07): header word 100 where the other lists hold 0, 45 entries, `4cc_01_db.cpk` to `4cc_90_test.cpk`; 3,075 bytes |
 | `pes17_official.bin` | a real PES 2017 list, copied byte for byte from `examples/DpFileList.bin` at the repository root (2026-10-28): 39 entries, `4cc_01_db.cpk` to `4cc_90_test.cpk`, a 905-byte zero tail; 2,793 bytes |

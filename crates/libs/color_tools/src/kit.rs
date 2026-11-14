@@ -1,4 +1,4 @@
-//! Dominant kit-color extraction: where the Team compiler's two menu colors come from when a
+//! Dominant kit-color extraction: where the Compiler's two menu colors come from when a
 //! kit folder has no `colors.txt`. The community kit template has a fixed UV layout, so the
 //! shirt and shorts sit in fixed normalized regions of `kit.dds`; the texture is sampled on a
 //! stride, quantized and greedily clustered, and the two menu colors are picked from the

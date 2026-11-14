@@ -1,4 +1,4 @@
-//! The Team compiler's command line, run through the real binary: what only the binary does,
+//! The Compiler's command line, run through the real binary: what only the binary does,
 //! which is loading the settings file, printing the console lines and a refusal's `error: ` line,
 //! and turning the tool's verdict into the process exit code. The tool's own refusals and
 //! findings are tested in-process, in the `team_compiler` crate's `tests/cli/`.
@@ -87,7 +87,7 @@ fn assert_refused(output: &Output, exit_code: i32, names: &[&str]) {
 #[test]
 fn a_refusal_prints_one_error_line_and_exits_with_its_code() {
     let sandbox = Sandbox::new("refusal", "");
-    let output = sandbox.run(&["team-compiler", "compile", "--no-deploy", "--mode", "test"]);
+    let output = sandbox.run(&["compiler", "compile", "--no-deploy", "--mode", "test"]);
     assert_refused(&output, 2, &["--no-deploy"]);
     assert!(
         stderr(&output).starts_with("error: "),
@@ -95,6 +95,41 @@ fn a_refusal_prints_one_error_line_and_exits_with_its_code() {
         stderr(&output)
     );
     assert!(output.stdout.is_empty());
+}
+
+// The tool's command-line id is `compiler`; `team-compiler` is no alias and is refused as
+// an unknown tool, the message any other unknown id gets.
+#[test]
+fn the_compiler_id_runs_check_and_team_compiler_is_refused() {
+    let sandbox = Sandbox::new("tool_id", "");
+    sandbox.write(
+        "data/settings.toml",
+        &format!("[common]\n{}", sandbox.pes_folder_line()),
+    );
+    sandbox.write("data/teams_list.txt", "ID\tName\n714\t/co/\n");
+    // `check` reads every model, so the clean export holds a real one with no finding: the
+    // tracer's right glove.
+    let glove = Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "../tools/team_compiler/tests/fixtures/tracer/studio/egg Midcup Tracer/Players/05 - The Chad Stormworks Player/glove_r.fmdl",
+    );
+    let clean = sandbox.root.join("exports/co Midcup Clean/Players/03 - A");
+    fs::create_dir_all(&clean).unwrap();
+    fs::copy(&glove, clean.join("face_high.fmdl")).unwrap();
+
+    let output = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Clean"]);
+    assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "- co Midcup Clean: Info export_identified (team=/co/, id=714)\n"
+    );
+
+    let output = sandbox.run(&["team-compiler", "check"]);
+    assert_eq!(output.status.code(), Some(2), "stderr: {}", stderr(&output));
+    assert!(
+        stderr(&output).contains("unrecognized subcommand 'team-compiler'"),
+        "{}",
+        stderr(&output)
+    );
 }
 
 #[test]
@@ -115,24 +150,14 @@ fn check_prints_one_line_per_finding_and_exits_with_the_worst() {
     fs::copy(&glove, clean.join("face_high.fmdl")).unwrap();
     sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", "");
 
-    let output = sandbox.run(&[
-        "team-compiler",
-        "check",
-        "--export",
-        "exports/co Midcup Clean",
-    ]);
+    let output = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Clean"]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
         "- co Midcup Clean: Info export_identified (team=/co/, id=714)\n"
     );
 
-    let output = sandbox.run(&[
-        "team-compiler",
-        "check",
-        "--export",
-        "exports/co Midcup Error",
-    ]);
+    let output = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Error"]);
     assert_eq!(output.status.code(), Some(1), "stderr: {}", stderr(&output));
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
@@ -176,14 +201,9 @@ fn check_with_timestamps_prefixes_each_line_with_the_seconds_since_the_run_start
     sandbox.write("data/teams_list.txt", "ID\tName\n714\t/co/\n");
     sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", "");
 
-    let untimed = sandbox.run(&[
-        "team-compiler",
-        "check",
-        "--export",
-        "exports/co Midcup Error",
-    ]);
+    let untimed = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Error"]);
     let timed = sandbox.run(&[
-        "team-compiler",
+        "compiler",
         "check",
         "--export",
         "exports/co Midcup Error",
@@ -226,7 +246,7 @@ fn compile_with_a_positional_root_compiles_it_and_leaves_the_settings_file_alone
         fs::copy(&kit, folder.join("kit.dds")).unwrap();
     }
 
-    let output = sandbox.run(&["team-compiler", "compile", "elsewhere", "--no-deploy"]);
+    let output = sandbox.run(&["compiler", "compile", "elsewhere", "--no-deploy"]);
 
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
     // The sandbox's PES folder does not exist, so every working bin is the bundled one.
@@ -266,7 +286,7 @@ fn a_compile_with_stderr_piped_draws_no_line_and_leaves_stderr_empty() {
     fs::create_dir_all(&folder).unwrap();
     fs::copy(&kit, folder.join("kit.dds")).unwrap();
 
-    let output = sandbox.run(&["team-compiler", "compile", "--no-deploy"]);
+    let output = sandbox.run(&["compiler", "compile", "--no-deploy"]);
 
     // The process's stderr is a pipe, so the progress line and the summary draw nothing:
     // stderr is empty and stdout holds exactly the lines it holds in a terminal.
@@ -312,7 +332,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
     // alone, and the file is neither created nor written.
     let unparsed = || {
         let output = sandbox.run(&[
-            "team-compiler",
+            "compiler",
             "check",
             "--export",
             "exports/co Midcup Kit",
@@ -330,7 +350,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
     assert_eq!(fs::read_to_string(&log).unwrap(), "the run before\n");
 
     let output = sandbox.run(&[
-        "team-compiler",
+        "compiler",
         "check",
         "--export",
         "exports/co Midcup Kit",
@@ -348,7 +368,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
         fs::read_to_string(&log).unwrap(),
         format!(
             "the run before\n\
-             $ {} team-compiler check --export \"exports/co Midcup Kit\" --log-file run_log.txt\n\
+             $ {} compiler check --export \"exports/co Midcup Kit\" --log-file run_log.txt\n\
              {warning}\n\
              - co Midcup Kit: Info export_identified (team=/co/, id=714)\n\
              exit 0\n",
@@ -359,7 +379,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
 
     // A refused command: its `error:` line ends the run's part of the file, then its code.
     let refused = sandbox.run(&[
-        "team-compiler",
+        "compiler",
         "compile",
         "--no-deploy",
         "--mode",
@@ -381,7 +401,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
     // A log file that cannot be opened refuses the run before anything is checked.
     let missing = sandbox.root.join("missing").join("run_log.txt");
     let missing_arg = missing.to_str().unwrap();
-    let output = sandbox.run(&["team-compiler", "check", "--log-file", missing_arg]);
+    let output = sandbox.run(&["compiler", "check", "--log-file", missing_arg]);
     assert_refused(&output, 2, &["cannot open the log file", missing_arg]);
     assert!(output.stdout.is_empty(), "nothing was checked");
 }
@@ -389,7 +409,7 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
 #[test]
 fn a_settings_file_that_is_not_toml_stops_the_binary_naming_it() {
     let sandbox = Sandbox::new("bad_settings", "this is = = not toml");
-    let output = sandbox.run(&["team-compiler", "check"]);
+    let output = sandbox.run(&["compiler", "check"]);
     assert_refused(&output, 2, &["settings.toml"]);
 }
 
@@ -397,13 +417,13 @@ fn a_settings_file_that_is_not_toml_stops_the_binary_naming_it() {
 fn the_settings_beside_the_executable_are_read_whatever_the_working_folder() {
     let sandbox = Sandbox::new("working_folder", "");
     let settings = format!(
-        "[common]\n{}[team-compiler]\ncpk_name = 'con'\n",
+        "[common]\n{}[compiler]\ncpk_name = 'con'\n",
         sandbox.pes_folder_line()
     );
     sandbox.write("data/settings.toml", &settings);
     let elsewhere = sandbox.root.join("elsewhere");
     fs::create_dir_all(&elsewhere).unwrap();
-    let output = sandbox.run_from(&elsewhere, &["team-compiler", "compile", "--no-deploy"]);
+    let output = sandbox.run_from(&elsewhere, &["compiler", "compile", "--no-deploy"]);
     assert_refused(&output, 2, &["cpk_name"]);
 }
 
@@ -423,7 +443,7 @@ fn a_read_only_data_dir_prints_the_condition_as_stderrs_first_line() {
     fs::set_permissions(&file, readonly).unwrap();
     // The file is made writable again before any assertion, or the sandbox could not be
     // cleared for the next run.
-    let output = sandbox.run(&["team-compiler", "check"]);
+    let output = sandbox.run(&["compiler", "check"]);
     let mut writable = fs::metadata(&file).unwrap().permissions();
     #[expect(
         clippy::permissions_set_readonly_false,
@@ -450,12 +470,12 @@ fn a_warning_logged_during_a_command_does_not_hang_it() {
     sandbox.write(
         "data/settings.toml",
         &format!(
-            "[common]\n{}\n[team-compiler]\nteams_list_path = 'missing/teams_list.txt'\n",
+            "[common]\n{}\n[compiler]\nteams_list_path = 'missing/teams_list.txt'\n",
             sandbox.pes_folder_line()
         ),
     );
     let mut child = Command::new(&sandbox.exe)
-        .args(["team-compiler", "compile", "--no-deploy"])
+        .args(["compiler", "compile", "--no-deploy"])
         .env("UTW_RELEASES_URL", NO_RELEASES_URL)
         .current_dir(&sandbox.root)
         .stdout(fs::File::create(sandbox.root.join("stdout.txt")).unwrap())
@@ -483,7 +503,7 @@ fn a_warning_logged_during_a_command_does_not_hang_it() {
 #[test]
 fn the_help_lists_the_commands_and_exits_zero() {
     let sandbox = Sandbox::new("help", "");
-    let output = sandbox.run(&["team-compiler", "--help"]);
+    let output = sandbox.run(&["compiler", "--help"]);
     assert_eq!(output.status.code(), Some(0));
     let text = String::from_utf8_lossy(&output.stdout);
     for command in ["compile", "check", "upgrade-dpfl"] {

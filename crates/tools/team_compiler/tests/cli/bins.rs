@@ -160,7 +160,7 @@ fn each_bin_comes_from_the_nearest_cpk_listed_below_the_run_s_own() {
 
     // The midcup CPK is the run's own: it and everything above it are skipped.
     let settings = format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_61_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_61_midcup\"\n",
         pes21_settings(&sandbox)
     );
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
@@ -1893,7 +1893,7 @@ pub(crate) const SHARED_IDS_714: &str = "unlimited-tool-works/shared_ids/714.tom
 /// The record file's text for `boots` (shared ID, folder name); the `[gloves]` table is
 /// always written, here empty.
 pub(crate) fn record(boots: &[(u16, &str)]) -> Vec<u8> {
-    let mut text = "# Written by the Team compiler; do not edit.\n[boots]\n".to_owned();
+    let mut text = "# Written by the Compiler; do not edit.\n[boots]\n".to_owned();
     for (id, name) in boots {
         text.push_str(&format!("{id} = \"{name}\"\n"));
     }

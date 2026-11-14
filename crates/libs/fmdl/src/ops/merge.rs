@@ -1,4 +1,4 @@
-//! Multi-FMDL merge: the Team compiler assembles several part models into
+//! Multi-FMDL merge: the Compiler assembles several part models into
 //! one model. Bones are unioned by name (per-mesh bone groups remapped to
 //! the unioned indices — per-vertex `bone_indices` index the group and do
 //! not change), materials merged by name with equal-definition checking,

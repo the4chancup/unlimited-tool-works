@@ -2,7 +2,7 @@
 //! teams in. Each module reads its format into `model/` entries; the crypto
 //! and layout tables live in `container`/`schema`.
 
-/// `aesthetics_patch.toml`: the Team compiler's resolved savefile writes.
+/// `aesthetics_patch.toml`: the Compiler's resolved savefile writes.
 pub mod aesthetics_patch;
 /// The `.4ccs` and `.4cct` interchange formats, read-only.
 pub mod legacy;

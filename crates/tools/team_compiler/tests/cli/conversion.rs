@@ -729,10 +729,7 @@ fn a_model_whose_conversion_fails_leaves_its_package_out_even_with_pass_through(
     // The card head's one bone stores an all-zero matrix: `pes_model` reads it and its check
     // finds nothing, and the conversion cannot invert it.
     let singular = edited_card(|model| model.bones[0].matrix = [0.0; 12]);
-    for (pass_through, extra) in [
-        (false, ""),
-        (true, "[team-compiler]\npass_through = true\n"),
-    ] {
+    for (pass_through, extra) in [(false, ""), (true, "[compiler]\npass_through = true\n")] {
         let sandbox = Sandbox::new(&format!("conversion_singular_{pass_through}"));
         write_boots_model(&sandbox, export, &singular);
 
@@ -1824,10 +1821,7 @@ fn compiled_metal_boots(sandbox: &Sandbox, export: &str) -> (Vec<String>, Materi
 /// the CPK's `env.dds` in the slot's texture home, unwrapped: it is zlibbed as every DDS the
 /// run emits. The run must exit 0.
 fn compiled_metal(sandbox: &Sandbox, mtl: &str) -> (Vec<String>, MaterialSet, Vec<u8>) {
-    let settings = format!(
-        "{}[team-compiler]\ndds_compression = true\n",
-        pes17(sandbox)
-    );
+    let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(sandbox));
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
@@ -1983,10 +1977,7 @@ fn an_env_texture_link_is_the_environment_map_a_metal_material_names() {
         &format!("exports/{export}/Common/env.dds"),
         &wezlib::compress(&small_dds()),
     );
-    let settings = format!(
-        "{}[team-compiler]\ndds_compression = true\n",
-        pes17(&sandbox)
-    );
+    let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(&sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 
@@ -2039,10 +2030,7 @@ fn a_shared_boots_folder_s_metal_material_reflects_the_environment_map_beside_it
         &format!("exports/{export}/Boots/Mud/boots.fmdl"),
         &metal_model(),
     );
-    let settings = format!(
-        "{}[team-compiler]\ndds_compression = true\n",
-        pes17(&sandbox)
-    );
+    let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(&sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 
@@ -2079,10 +2067,7 @@ fn compiled_common_metal(sandbox: &Sandbox, env: Option<&[u8]>) -> (MaterialSet,
     if let Some(env) = env {
         sandbox.write(&format!("{common}/env.dds"), env);
     }
-    let settings = format!(
-        "{}[team-compiler]\ndds_compression = true\n",
-        pes17(sandbox)
-    );
+    let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 

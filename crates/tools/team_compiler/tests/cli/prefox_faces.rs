@@ -1412,7 +1412,7 @@ fn a_linked_face_folder_s_model_takes_its_own_mtl_and_not_a_common_one_its_link_
     );
     sandbox.write(&format!("{common}/cloth.dds"), &small_dds());
     let settings = format!(
-        "{}[team-compiler]\nstrict_file_type_check = false\n",
+        "{}[compiler]\nstrict_file_type_check = false\n",
         pes17(&sandbox)
     );
 

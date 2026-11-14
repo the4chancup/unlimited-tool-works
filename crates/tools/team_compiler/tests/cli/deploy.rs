@@ -24,7 +24,7 @@ const TRACER_FINDINGS: [&str; 4] = [
 const UPGRADE: &str = concat!(
     "command=",
     studio_core::exe_name!(),
-    " team-compiler upgrade-dpfl"
+    " compiler upgrade-dpfl"
 );
 
 /// The repository's `resources/templates/` folder, which holds the official list.
@@ -293,7 +293,7 @@ fn a_list_not_naming_the_cpk_is_cpk_name_unlisted_and_stops_the_run() {
     // A name neither the installed list nor the official one holds.
     let run = sandbox.run(
         &format!(
-            "{}[team-compiler]\ncpk_name = \"4cc_80_mine\"\n",
+            "{}[compiler]\ncpk_name = \"4cc_80_mine\"\n",
             pes21_settings(&sandbox)
         ),
         &["compile", "--export", &tracer_export()],

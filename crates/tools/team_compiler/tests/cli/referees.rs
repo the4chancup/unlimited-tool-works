@@ -1393,7 +1393,7 @@ fn on_pes_17_a_referee_s_linked_boots_model_takes_its_own_mtl_and_not_a_common_o
     );
     sandbox.write(&format!("{REFS}/Common/cloth.dds"), &small_dds());
     let settings = format!(
-        "{}[team-compiler]\nstrict_file_type_check = false\n",
+        "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
     );
 

@@ -1,4 +1,4 @@
-//! The Team compiler's window, render-only (`spec/team_compiler/README.md` "Crate layout"): it
+//! The Compiler's window, render-only (`spec/team_compiler/README.md` "Crate layout"): it
 //! reads the tool's state and reports the user's intent (Compile clicked); it never calls into
 //! the pipeline itself. It shows the effective settings read-only, the Compile button and the
 //! log panel; the export grid and the toolbar are not built yet.

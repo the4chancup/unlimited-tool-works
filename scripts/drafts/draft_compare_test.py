@@ -76,11 +76,11 @@ class ToDialog(unittest.TestCase):
         # tree left of the heading is kept.
         draft = [["input", "Search the help", 150.0, 130.0, 980.0, 18.0],
                  ["text", "Help (WIP)", 600.0, 100.0, 70.0, 15.0],
-                 ["text", "Team compiler", 180.0, 150.0, 80.0, 15.0],
+                 ["text", "The Compiler", 180.0, 150.0, 80.0, 15.0],
                  ["text", "Running from a terminal", 380.0, 170.0, 150.0, 15.0],
                  ["button", "Setting up", 180.0, 170.0, 60.0, 18.0]]
         app = [["Window", "Help (WIP)", 140.0, 90.0, 1000.0, 600.0],
-               ["Text", "Team compiler", 6.0, 107.0, 43.0, 30.0],
+               ["Text", "The Compiler", 6.0, 107.0, 43.0, 30.0],
                ["Text", "Running from a terminal", 375.0, 168.0, 150.0, 18.0],
                ["Button", "Setting up", 173.0, 162.0, 60.0, 18.0]]
         _, kept, line, shifts = draft_compare.to_dialog(draft, app)

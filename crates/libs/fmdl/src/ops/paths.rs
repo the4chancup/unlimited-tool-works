@@ -1,4 +1,4 @@
-//! Texture path rewriting on the typed record layer: the Team compiler
+//! Texture path rewriting on the typed record layer: the Compiler
 //! edits texture directories in Konami-derived models constantly and must
 //! not relayout the whole file to do it. New strings are appended to the
 //! string table, de-duplicated against everything already there; existing

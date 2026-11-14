@@ -1,5 +1,5 @@
 The Export upgrader migrates an export in the old (AET) layout to the new
-format the Team compiler reads. Its commands run from a terminal opened in the
+format the Compiler reads. Its commands run from a terminal opened in the
 folder that holds `UTW.exe`.
 
 ```text
@@ -80,7 +80,7 @@ Content that never reached a player in game (a stray file, a folder nobody
 wore) is dropped and listed as `leftover_dropped`, a warning that does not
 stop the migration.
 
-The upgraded folder is checked against the same rules the Team compiler
+The upgraded folder is checked against the same rules the Compiler
 applies. Every finding prints as one line, which names:
 
 - the export it is about, when there is one;

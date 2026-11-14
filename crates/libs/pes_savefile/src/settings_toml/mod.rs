@@ -33,7 +33,7 @@ pub use keys::{KeySpec, KeyTable, Kind, SettingKey};
 #[derive(Debug, Clone, PartialEq)]
 pub enum NameSetting {
     /// Derive the name from the folder (`name = true`); `apply` does not
-    /// resolve it — the caller (the Team compiler) does, since the folder
+    /// resolve it — the caller (the Compiler) does, since the folder
     /// rules are its.
     FromFolder,
     /// Write the string as is, colour codes included.
@@ -448,7 +448,7 @@ pub struct IngameFaceSettings {
 }
 
 /// One `settings.toml` value `PlayerSettings::narrow_to` reset to its key's
-/// default for the compile target: what the Team compiler's
+/// default for the compile target: what the Compiler's
 /// `settings_value_out_of_range` reports.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NarrowedValue {
@@ -971,7 +971,7 @@ impl PlayerSettings {
     /// shirt-name fields differ between versions, so both strings are checked
     /// against that version's field before anything is written (a misfit is
     /// `WrongType` or `TextTooLong`). `NameSetting::FromFolder` is not
-    /// applied: the caller (the Team compiler) resolves it to `Explicit`
+    /// applied: the caller (the Compiler) resolves it to `Explicit`
     /// first, since the folder rules are its.
     ///
     /// Every appearance key writes: a `Some` its value, a `None` the key's
@@ -1046,7 +1046,7 @@ impl PlayerSettings {
     /// (`SettingKey::version_kind`) is reset to the key's `KeySpec` default
     /// (a face type 0, a motion the template's value, a custom skin the
     /// target lacks as 1), and one `NarrowedValue` per reset key is
-    /// returned, in the key table's order, for the Team compiler's
+    /// returned, in the key table's order, for the Compiler's
     /// `settings_value_out_of_range`. A key the version does not store is
     /// left alone: the write drops it (`held_on`), with no finding. A stored
     /// value outside the key's widest range too (a directly written field,
@@ -1083,7 +1083,7 @@ impl PlayerSettings {
     /// `ops::fpc::apply` maps them onto a savefile player, the preset's boots
     /// and gloves IDs aside: an export resolves those itself, from its own
     /// models, a numeric key or its FPC marker. Returns the dotted key
-    /// of each the file had set to another value, for the Team compiler's
+    /// of each the file had set to another value, for the Compiler's
     /// `fpc_strip_conflict`: `skin_color` only when a `SkinColor::Preset`
     /// preset resets an authored custom skin (7) to 1; any other skin it
     /// leaves alone. `SkinColor::Custom` writes 7 as `apply` does; no marker

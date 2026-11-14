@@ -90,7 +90,7 @@ mod tests {
         assert_eq!(
             HideIdsError::Boots(627).to_string(),
             "fpc_hide_boots_id = 627: must be 1 to 100 \
-             (above 100 the Team compiler allocates its own IDs)"
+             (above 100 the Compiler allocates its own IDs)"
         );
         assert_eq!(
             HideIdsError::Gloves(5).to_string(),

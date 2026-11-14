@@ -1,4 +1,4 @@
-//! The sandbox the in-process tests run the Team compiler's command line in: a fresh folder
+//! The sandbox the in-process tests run the Compiler's command line in: a fresh folder
 //! standing in for the executable's, with its own settings text and teams list.
 
 use std::fs;
@@ -58,7 +58,7 @@ impl Sandbox {
             .entry("pes_folder_path")
             .or_insert_with(|| toml::Value::String(self.root.join("PES").display().to_string()));
         let tool = root
-            .entry("team-compiler")
+            .entry("compiler")
             .or_insert_with(|| toml::Value::Table(toml::Table::new()))
             .as_table_mut()
             .unwrap();
@@ -74,7 +74,7 @@ impl Sandbox {
         toml::to_string(&root).unwrap()
     }
 
-    /// Runs `team-compiler <args>` with `settings` as the settings file's text, its game folder
+    /// Runs `compiler <args>` with `settings` as the settings file's text, its game folder
     /// the sandbox's unless it names one (`sandboxed`), and a probe reporting no game: no test
     /// reads the machine's processes.
     pub fn run(&self, settings: &str, args: &[&str]) -> Run {
@@ -105,7 +105,7 @@ impl Sandbox {
         );
         let matches = tool
             .cli_command()
-            .try_get_matches_from(std::iter::once("team-compiler").chain(args.iter().copied()))
+            .try_get_matches_from(std::iter::once("compiler").chain(args.iter().copied()))
             .unwrap();
         let result = tool.cli_run(&matches, &ctx);
         drop(ctx);

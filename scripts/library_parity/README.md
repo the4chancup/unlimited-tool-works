@@ -1,6 +1,6 @@
 # Library parity
 
-The measurement every phase close that changes the Team compiler or the Export upgrader reruns
+The measurement every phase close that changes the Compiler or the Export upgrader reruns
 (`docs/spec/team_compiler/testing.md`, RUNBOOK.md "Closing a phase"): every old (AET) export on
 the maintainer's machine is upgraded (the **upgrade census**), and each one that upgrades clean
 is compiled, its CPKs' entries listed by name, size and hash and compared with the last run's

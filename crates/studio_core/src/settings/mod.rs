@@ -1,5 +1,5 @@
 //! The settings framework: one TOML file holding the common settings under `[common]` and one
-//! table per tool under its id (`[team-compiler]`). Loading fills missing common keys with their
+//! table per tool under its id (`[compiler]`). Loading fills missing common keys with their
 //! defaults; each tool's `default_settings()` is merged into its table the same way, which is what
 //! carries settings across versions without a migration step.
 //!
@@ -468,7 +468,7 @@ mod tests {
         settings.common.thread_count = 4;
         settings.common.last_tool = Some("save-editor".to_owned());
         settings.set_tool(
-            "team-compiler",
+            "compiler",
             table("dt00_overwrite_allow = true\nlabel = 'x'"),
         );
 
@@ -538,7 +538,7 @@ mod tests {
                         # the version to target\n\
                         pes_version = 19\n\
                         thread_count = 4\n\
-                        last_tool = \"team-compiler\"\n\
+                        last_tool = \"compiler\"\n\
                         theme = \"dark\"\n\
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         exports_folder_path = \"exports\"\n\
@@ -546,7 +546,7 @@ mod tests {
                         check_for_updates = true\n\
                         check_interval_minutes = 120\n\
                         \n\
-                        [team-compiler]\n\
+                        [compiler]\n\
                         # its own note\n\
                         label = 'x'\n\
                         dt00_overwrite_allow = true\n";
@@ -556,10 +556,7 @@ mod tests {
         settings.common.last_tool = Some("save-editor".to_owned());
         settings.save(&path).unwrap();
 
-        let expected = original.replace(
-            "last_tool = \"team-compiler\"",
-            "last_tool = \"save-editor\"",
-        );
+        let expected = original.replace("last_tool = \"compiler\"", "last_tool = \"save-editor\"");
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
             expected,
@@ -580,7 +577,7 @@ mod tests {
                         theme = \"dark\"\n\
                         thread_count = 4\n\
                         \n\
-                        [team-compiler]\n\
+                        [compiler]\n\
                         label = 'x'\n";
         fs::write(&path, original).unwrap();
         let mut settings = Settings::load(&path).unwrap();
@@ -650,7 +647,7 @@ mod tests {
                                  # the version to target\n\
                                  pes_version = 17\n\
                                  \n\
-                                 [team-compiler]\n\
+                                 [compiler]\n\
                                  # the tool's note\n\
                                  label = 'x'\n";
 
@@ -658,7 +655,7 @@ mod tests {
     fn templated_settings() -> Settings {
         let mut settings = Settings::default().with_template(SAVE_TEMPLATE);
         settings.common.pes_version = PesVersion::Pes19;
-        settings.set_tool("team-compiler", table("label = 'x'"));
+        settings.set_tool("compiler", table("label = 'x'"));
         settings
     }
 
@@ -675,12 +672,12 @@ mod tests {
             "the template's comments, the session's value: {text}"
         );
         assert!(
-            text.contains("[team-compiler]\n# the tool's note\nlabel = 'x'\n"),
+            text.contains("[compiler]\n# the tool's note\nlabel = 'x'\n"),
             "{text}"
         );
         let loaded = Settings::load(path).unwrap();
         assert_eq!(loaded.common, settings.common);
-        assert_eq!(loaded.tool("team-compiler"), settings.tool("team-compiler"));
+        assert_eq!(loaded.tool("compiler"), settings.tool("compiler"));
     }
 
     // A save with a template and no file yet writes the template's comments with the
@@ -780,7 +777,7 @@ mod tests {
         let dir = test_dir("studio_core_settings_nested");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
-        let original = "[team-compiler.kits]\n\
+        let original = "[compiler.kits]\n\
                         # kept\n\
                         collar = 3\n\
                         sleeves = 1\n";
@@ -789,17 +786,17 @@ mod tests {
         let mut settings = Settings::load(&path).unwrap();
         // Set, not filled in as a default: a default is no change and is not written.
         settings.set_tool("export-upgrader", Table::new());
-        let mut tool = settings.tool("team-compiler").unwrap().clone();
+        let mut tool = settings.tool("compiler").unwrap().clone();
         tool["kits"]
             .as_table_mut()
             .unwrap()
             .insert("sleeves".to_owned(), Value::Integer(2));
-        settings.set_tool("team-compiler", tool);
+        settings.set_tool("compiler", tool);
         settings.save(&path).unwrap();
 
         let text = fs::read_to_string(&path).unwrap();
         assert!(
-            text.contains("[team-compiler.kits]\n# kept\ncollar = 3\nsleeves = 2\n"),
+            text.contains("[compiler.kits]\n# kept\ncollar = 3\nsleeves = 2\n"),
             "the nested table changed in place: {text}"
         );
         assert!(
@@ -856,15 +853,15 @@ mod tests {
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
                         check_interval_minutes = 120\n\
-                        last_tool = \"team-compiler\"\n\
+                        last_tool = \"compiler\"\n\
                         \n\
-                        [team-compiler]\n\
+                        [compiler]\n\
                         label = 'x'\n\
                         stale = 1\n";
         fs::write(&path, original).unwrap();
 
         let mut settings = Settings::load(&path).unwrap();
-        settings.set_tool("team-compiler", table("label = 'x'"));
+        settings.set_tool("compiler", table("label = 'x'"));
         settings.set_tool("save-editor", table("speed = 1"));
         settings.save(&path).unwrap();
 
@@ -877,9 +874,9 @@ mod tests {
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
                         check_interval_minutes = 120\n\
-                        last_tool = \"team-compiler\"\n\
+                        last_tool = \"compiler\"\n\
                         \n\
-                        [team-compiler]\n\
+                        [compiler]\n\
                         label = 'x'\n\
                         \n\
                         [save-editor]\n\
@@ -903,7 +900,7 @@ mod tests {
              thread_count = 4\n\
              theme = \"dark\"\n\
              \n\
-             [team-compiler]\n\
+             [compiler]\n\
              label = 'x'\n\
              dt00_overwrite_allow = false\n",
         )
@@ -912,9 +909,9 @@ mod tests {
         let mut session_a = Settings::load(&path).unwrap();
         let mut session_b = Settings::load(&path).unwrap();
         session_a.common.thread_count = 8;
-        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        let mut tool = session_a.tool("compiler").unwrap().clone();
         tool["dt00_overwrite_allow"] = Value::Boolean(true);
-        session_a.set_tool("team-compiler", tool);
+        session_a.set_tool("compiler", tool);
         session_a.save(&path).unwrap();
         let after_a = fs::read_to_string(&path).unwrap();
 
@@ -933,7 +930,7 @@ mod tests {
             "session B's change written: {text}"
         );
         assert_eq!(
-            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            loaded.tool("compiler").unwrap()["dt00_overwrite_allow"],
             Value::Boolean(true),
             "{text}"
         );
@@ -958,7 +955,7 @@ mod tests {
         assert_eq!(loaded.common.thread_count, 2);
         assert_eq!(loaded.common.theme, Theme::Light);
         assert_eq!(
-            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            loaded.tool("compiler").unwrap()["dt00_overwrite_allow"],
             Value::Boolean(true)
         );
         fs::remove_dir_all(&dir).unwrap();
@@ -1089,7 +1086,7 @@ mod tests {
             "[common]\n\
              theme = \"dark\"\n\
              \n\
-             [team-compiler]\n\
+             [compiler]\n\
              label = 'x'\n\
              stale = 1\n",
         )
@@ -1097,14 +1094,14 @@ mod tests {
 
         let mut session_a = Settings::load(&path).unwrap();
         let mut session_b = Settings::load(&path).unwrap();
-        session_a.set_tool("team-compiler", table("label = 'x'"));
+        session_a.set_tool("compiler", table("label = 'x'"));
         session_a.save(&path).unwrap();
         session_b.common.theme = Theme::Light;
         session_b.save(&path).unwrap();
 
         let loaded = Settings::load(&path).unwrap();
         assert_eq!(
-            loaded.tool("team-compiler").unwrap(),
+            loaded.tool("compiler").unwrap(),
             &table("label = 'x'"),
             "`stale` stayed removed"
         );
@@ -1120,15 +1117,15 @@ mod tests {
         let path = dir.join("settings.toml");
         fs::write(
             &path,
-            "[common]\ntheme = \"dark\"\n\n[team-compiler]\nlabel = 'x'\n",
+            "[common]\ntheme = \"dark\"\n\n[compiler]\nlabel = 'x'\n",
         )
         .unwrap();
 
         let mut session_a = Settings::load(&path).unwrap();
         let mut session_b = Settings::load(&path).unwrap();
-        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        let mut tool = session_a.tool("compiler").unwrap().clone();
         tool.insert("added".to_owned(), Value::Integer(7));
-        session_a.set_tool("team-compiler", tool);
+        session_a.set_tool("compiler", tool);
         session_a.set_tool("save-editor", table("speed = 1"));
         session_a.save(&path).unwrap();
         session_b.common.theme = Theme::Light;
@@ -1136,7 +1133,7 @@ mod tests {
 
         let loaded = Settings::load(&path).unwrap();
         assert_eq!(
-            loaded.tool("team-compiler").unwrap()["added"],
+            loaded.tool("compiler").unwrap()["added"],
             Value::Integer(7),
             "session B's save kept a key it never had"
         );
@@ -1223,15 +1220,11 @@ mod tests {
         let dir = test_dir("studio_core_settings_no_file");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
-        fs::write(
-            &path,
-            "# hand note\n[team-compiler]\nlabel = 'x'\nstale = 1\n",
-        )
-        .unwrap();
+        fs::write(&path, "# hand note\n[compiler]\nlabel = 'x'\nstale = 1\n").unwrap();
 
         let mut settings = Settings::default();
         settings.common.thread_count = 8;
-        settings.set_tool("team-compiler", table("label = 'x'"));
+        settings.set_tool("compiler", table("label = 'x'"));
         settings.save(&path).unwrap();
 
         let text = fs::read_to_string(&path).unwrap();
@@ -1250,7 +1243,7 @@ mod tests {
         let path = dir.join("settings.toml");
         fs::write(
             &path,
-            "[common]\ntheme = \"dark\"\n\n[team-compiler]\nlabel = 'x'\n",
+            "[common]\ntheme = \"dark\"\n\n[compiler]\nlabel = 'x'\n",
         )
         .unwrap();
         let compiler = table("label = ''\ndt00_overwrite_allow = false");
@@ -1259,12 +1252,12 @@ mod tests {
         let mut session_a = Settings::load(&path).unwrap();
         let mut session_b = Settings::load(&path).unwrap();
         for session in [&mut session_a, &mut session_b] {
-            session.merge_defaults("team-compiler", &compiler);
+            session.merge_defaults("compiler", &compiler);
             session.merge_defaults("save-editor", &editor);
         }
-        let mut tool = session_a.tool("team-compiler").unwrap().clone();
+        let mut tool = session_a.tool("compiler").unwrap().clone();
         tool["dt00_overwrite_allow"] = Value::Boolean(true);
-        session_a.set_tool("team-compiler", tool);
+        session_a.set_tool("compiler", tool);
         session_a.set_tool("save-editor", table("speed = 3"));
         session_a.save(&path).unwrap();
         session_b.common.theme = Theme::Light;
@@ -1272,7 +1265,7 @@ mod tests {
 
         let loaded = Settings::load(&path).unwrap();
         assert_eq!(
-            loaded.tool("team-compiler").unwrap()["dt00_overwrite_allow"],
+            loaded.tool("compiler").unwrap()["dt00_overwrite_allow"],
             Value::Boolean(true),
             "B's default did not undo A's change"
         );
@@ -1312,7 +1305,7 @@ mod tests {
         built.common.thread_count = 8;
         assert_ne!(loaded, built, "the common section");
         let mut with_tool = loaded.clone();
-        with_tool.set_tool("team-compiler", table("label = 'x'"));
+        with_tool.set_tool("compiler", table("label = 'x'"));
         assert_ne!(loaded, with_tool, "a tool's table");
         assert_ne!(loaded, loaded.clone().with_template(""), "the template");
     }
@@ -1411,7 +1404,7 @@ mod tests {
             loaded.tool("refs-arranger").unwrap()["future"],
             Value::Integer(1)
         );
-        assert!(loaded.tool("team-compiler").is_none());
+        assert!(loaded.tool("compiler").is_none());
     }
 
     #[test]

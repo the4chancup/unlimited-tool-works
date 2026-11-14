@@ -1,4 +1,4 @@
-//! Multi-part merge: the Team compiler assembles several part models into
+//! Multi-part merge: the Compiler assembles several part models into
 //! one `.model` + `.mtl`. Bones are unioned by name (per-mesh bone groups
 //! remapped to the unioned indices — per-vertex `bone_indices` index the
 //! group and do not change); a shared name must carry the same matrix

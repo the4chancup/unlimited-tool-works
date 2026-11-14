@@ -19,7 +19,7 @@ fn doc(tail: &str) -> String {
 /// 05's names, resolved model IDs and whole `[appearance]` — every key
 /// PES 21 holds, no comments — and slot 06's `base_copy_id` alone.
 const GOLDEN: &str = "\
-# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
+# aesthetics_patch.toml, written by the Compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
 pes_version = 21
 tool_version = \"0.1.0\"
 allocation_scheme_version = 1

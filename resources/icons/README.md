@@ -5,9 +5,9 @@ inside 16..240 but the Stadium compiler's (below), the form a font glyph takes. 
 How they were drawn: on Phosphor regular's convention (16-unit strokes, round caps and joins),
 then each icon's strokes outlined into one shape. A tool's kind is one mark: in the bottom-right
 corner an editor's pencil, a creator's or generator's plus, the Refs arranger's refresh sign;
-a compiler's open box across the icon's foot, under the Team compiler's figure. Each mark hides what lies
+a compiler's open box across the icon's foot, under the Compiler's figure. Each mark hides what lies
 under it: the base minus the mark's shape widened by a 12-unit gap, then the mark. The running
-figure (Team compiler, Player aesthetics editor) is a filled outline traced from the
+figure (the Compiler, Player aesthetics editor) is a filled outline traced from the
 maintainer's drawing. The Music player, the Music export editor and the Team creator take
 Phosphor's music notes and three figures (MIT), the latter scaled into 16..240.
 

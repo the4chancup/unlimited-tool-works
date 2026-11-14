@@ -1637,7 +1637,7 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
     let dir = TestDir::new("studio_core_sidebar_cli_only");
     let mut settings = test_settings(dir.path());
     settings.common.last_tool = Some("c".to_owned());
-    // C registered first, as `studio` registers the Team compiler: the fallback must skip
+    // C registered first, as `studio` registers the Compiler: the fallback must skip
     // it, not just take the first tool.
     let Shell {
         mut app,
@@ -2588,8 +2588,8 @@ fn the_rails_fixed_width_edge_shows_no_resize_cursor() {
 /// The suite's registry in sidebar order, as the binary lists it.
 const REGISTRY: &[PlannedTool] = &[
     PlannedTool {
-        id: "team-compiler",
-        label: "Team compiler",
+        id: "compiler",
+        label: "The Compiler",
         icon: crate::icons::TEAM_COMPILER,
     },
     PlannedTool {

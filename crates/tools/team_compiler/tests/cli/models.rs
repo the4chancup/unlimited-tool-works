@@ -841,7 +841,7 @@ fn a_subfolder_s_model_is_the_part_its_name_gives_wherever_it_sits() {
 
 /// `settings` with the strict file-type check off: a disallowed file is kept, as Info.
 fn lenient(settings: &str) -> String {
-    format!("{settings}[team-compiler]\nstrict_file_type_check = false\n")
+    format!("{settings}[compiler]\nstrict_file_type_check = false\n")
 }
 
 // TC-MOD-67
@@ -3126,7 +3126,7 @@ fn a_txt_note_beside_a_face_model_is_a_file_no_role_takes() {
     sandbox.write(&format!("{player}/face_high.fmdl"), &clean_model());
     sandbox.write(&format!("{player}/notes.txt"), b"a note");
     let settings = format!(
-        "{}[team-compiler]\nstrict_file_type_check = true\n",
+        "{}[compiler]\nstrict_file_type_check = true\n",
         pes21_settings(&sandbox)
     );
 

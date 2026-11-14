@@ -132,7 +132,7 @@ fn write_common_hair_mtl(sandbox: &Sandbox) -> String {
         &materials_at("team_common_folder/hair.dds"),
     );
     format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes17(sandbox)
     )
 }
@@ -248,7 +248,7 @@ fn write_subfolder_hair_mtl(sandbox: &Sandbox) -> String {
         &materials_at("model/character/uniform/common/team_folder/jessie/hair.dds"),
     );
     format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes17(sandbox)
     )
 }

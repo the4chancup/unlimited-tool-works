@@ -922,7 +922,7 @@ fn a_panel_shown_after_the_dock_never_covers_the_grip() {
 fn from_event_maps_a_message_to_its_severity_and_code() {
     let mut formatter = EventLines::new();
     let code = MessageCode {
-        tool_id: "team-compiler",
+        tool_id: "compiler",
         code: Cow::Borrowed("player_unlisted"),
     };
     let event = PipelineEvent::Message(Message {
@@ -996,7 +996,7 @@ fn the_text_after_the_code_is_drawn() {
     let mut formatter = EventLines::new();
     let event = PipelineEvent::Message(Message {
         code: MessageCode {
-            tool_id: "team-compiler",
+            tool_id: "compiler",
             code: Cow::Borrowed("player_unlisted"),
         },
         severity: Severity::Warning,

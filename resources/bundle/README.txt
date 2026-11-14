@@ -9,7 +9,7 @@ work in progress preview of the Ruleset editor: it builds and edits a brand-new 
 cup rules file, called 4ccrules. Some of its sections are not editable yet, but the link it
 shows opens a demo webpage of how it'll look once it's finished.
 
-The Team compiler and the Export upgrader are greyed out on the sidebar, because their
+The Compiler and the Export upgrader are greyed out on the sidebar, because their
 windows come in a later version. In this one they run through two launchers in this folder,
 quick_upgrade.bat and quick_compile.bat.
 
@@ -33,7 +33,7 @@ Getting started
 On Linux the archive holds no .bat file. Wherever this readme names one, run its command
 from a terminal in this folder instead. For quick_compile.bat:
 
-    ./utw --log-file compile_log.txt team-compiler compile exports
+    ./utw --log-file compile_log.txt compiler compile exports
 
 For quick_upgrade.bat, with the path of your PES savefile:
 
@@ -94,7 +94,7 @@ Compiling
    UTW.exe, click the address bar at the top of the window, type cmd and press Enter. In
    the black window that opens, type
 
-       UTW.exe team-compiler upgrade-dpfl
+       UTW.exe compiler upgrade-dpfl
 
    and press Enter. It changes nothing yet: it lists what it would do (CPKs renamed to their
    official names, empty placeholders for the ones missing, the list replaced and the old one
@@ -103,7 +103,7 @@ Compiling
    everything this command and the compiles after it change there. If what it lists looks
    right, run the command again with --yes at the end:
 
-       UTW.exe team-compiler upgrade-dpfl --yes
+       UTW.exe compiler upgrade-dpfl --yes
 
    This is needed once per game folder. If the report said dpfilelist_outdated, the
    compile stopped before compiling anything, so double-click quick_compile.bat again
@@ -121,7 +121,7 @@ For VGL's organizer
       To undo all of that, delete the download folder and put the copy back.
 
    b. Install the cup's official DpFileList.bin. Step 4 of "Compiling" above shows how:
-      run UTW.exe team-compiler upgrade-dpfl, read what it lists, then run it again with
+      run UTW.exe compiler upgrade-dpfl, read what it lists, then run it again with
       --yes. Do it now, not when a compile asks for it: the game loads only the CPKs its
       DpFileList.bin names, and a compile stops when the list lacks the CPKs it writes.
       This is needed once per game folder.

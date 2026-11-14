@@ -414,11 +414,11 @@ mod tests {
         }
     }
 
-    /// A Team compiler finding of `severity` with `code` and no context, on export 1.
+    /// A Compiler finding of `severity` with `code` and no context, on export 1.
     fn finding(severity: Severity, code: &'static str) -> PipelineEvent {
         PipelineEvent::Message(Message {
             code: MessageCode {
-                tool_id: "team-compiler",
+                tool_id: "compiler",
                 code: Cow::Borrowed(code),
             },
             severity,

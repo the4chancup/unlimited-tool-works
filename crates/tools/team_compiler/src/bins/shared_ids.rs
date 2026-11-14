@@ -35,7 +35,7 @@ impl SharedIds {
     /// The record's bytes in the file's layout: the comment line, then the `[boots]` and
     /// `[gloves]` tables, each written even when empty.
     pub(crate) fn write(&self) -> Vec<u8> {
-        let mut text = "# Written by the Team compiler; do not edit.\n".to_owned();
+        let mut text = "# Written by the Compiler; do not edit.\n".to_owned();
         for (name, table) in [("boots", &self.boots), ("gloves", &self.gloves)] {
             text.push_str(&format!("[{name}]\n"));
             for (id, folder) in table {

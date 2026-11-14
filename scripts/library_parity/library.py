@@ -1,7 +1,7 @@
 """The library run against Red: every input an upgrade census upgraded clean (exit 0 in the
 `--census` outcomes file; index `n` is its position among those rows) is upgraded again with
 the frozen release binary (`--loose` unless a referee export), the upgraded export compiled
-with `team-compiler compile --no-deploy` (`config.FOX_VERSION` for a Fox export,
+with `compiler compile --no-deploy` (`config.FOX_VERSION` for a Fox export,
 `config.PREFOX_VERSION` for a pre-Fox one, the cups' versions), the old export compiled by
 Red (`config.RED` at `config.RED_COMMIT`) from a fresh copy of its checkout for the same
 version, and the two outputs compared by `red_parity` into `jobs/<n>/parity.tsv`. Everything
@@ -102,7 +102,7 @@ def prepare_bin(exe, worker, version):
         "[common]\n"
         f"pes_version = {version}\n"
         f"pes_folder_path = '{os.path.join(root, 'nonexistent_pes')}'\n"
-        "[team-compiler]\n"
+        "[compiler]\n"
         f"output_folder_path = '{output}'\n"
         f"savefile_path = '{os.path.join(root, 'save', 'EDIT00000000')}'\n"
     )
@@ -253,7 +253,7 @@ def run_ours(index, path, exe, worker):
     bin_exe, output = prepare_bin(exe, worker, version)
     assert not os.path.exists(output), f"{output} exists: the previous compile's output was not moved"
     code, compile_output, seconds = run(
-        [bin_exe, "team-compiler", "compile", "--no-deploy", "--export", upgraded], os.path.join(job, "compile.txt"))
+        [bin_exe, "compiler", "compile", "--no-deploy", "--export", upgraded], os.path.join(job, "compile.txt"))
     outcome = outcome_of(code, compile_output)
     if os.path.exists(output):
         os.replace(output, out)

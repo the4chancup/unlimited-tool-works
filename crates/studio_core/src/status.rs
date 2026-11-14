@@ -92,7 +92,7 @@ impl ShellCondition {
 /// on screen, and in the window title for every tool.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolActivity {
-    /// The tool's label (`Team compiler`).
+    /// The tool's label (`The Compiler`).
     pub tool_label: &'static str,
     /// `(done, total)` when the work has a countable size.
     pub progress: Option<(usize, usize)>,
@@ -101,7 +101,7 @@ pub struct ToolActivity {
 }
 
 impl ToolActivity {
-    /// `Team compiler · 12/48 · 01:12`, or `Team compiler · 01:12` with no progress; the
+    /// `The Compiler · 12/48 · 01:12`, or `The Compiler · 01:12` with no progress; the
     /// elapsed minutes are not capped at 59 (the draft's `activityText`). The status bar's
     /// right slot and the window title share this line.
     pub(crate) fn text(&self) -> String {

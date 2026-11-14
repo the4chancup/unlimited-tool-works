@@ -1,10 +1,10 @@
-The Team compiler also runs without its window, from a terminal opened in the folder that holds
+The Compiler also runs without its window, from a terminal opened in the folder that holds
 `UTW.exe`:
 
 ```text
-UTW team-compiler check [exports-root] [--export <path>]...
-UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
-UTW team-compiler upgrade-dpfl [--yes]
+UTW compiler check [exports-root] [--export <path>]...
+UTW compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
+UTW compiler upgrade-dpfl [--yes]
 ```
 
 `check` reads your exports and reports what it finds, without writing anything. `compile`
@@ -1035,7 +1035,7 @@ the output folder where it was left instead (`output=...`), `pes_version_mismatc
   compile for. Check `pes_version` and `pes_folder_path`. The CPK is still installed.
 - `dpfilelist_outdated`: the game's `DpFileList.bin` is an older list that does not have the
   CPK, so the game would not load it. The compile stops before compiling anything.
-  `UTW team-compiler upgrade-dpfl` installs the cup's official list, which has it; then
+  `UTW compiler upgrade-dpfl` installs the cup's official list, which has it; then
   compile again.
 - `cpk_name_unlisted`: neither the game's `DpFileList.bin` nor the cup's official list has the
   CPK's name, so the game would not load it. The compile stops before compiling anything.
@@ -1051,7 +1051,7 @@ says the list is not the cup's official one, although it has every CPK of this r
 names the entries it is missing, the entries the official list does not have, or says that the
 order differs. `dpfilelist_cpk_missing` names CPKs the list has that are not in the `download`
 folder, in which case the game loads none of the CPKs there. Both lines name
-`UTW team-compiler upgrade-dpfl`, which installs the official list.
+`UTW compiler upgrade-dpfl`, which installs the official list.
 
 A game folder with no `DpFileList.bin` in its `download` folder is the error
 `dpfilelist_missing`, and the CPK is left in the output folder the same way.

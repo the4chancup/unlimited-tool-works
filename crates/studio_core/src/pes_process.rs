@@ -346,7 +346,7 @@ mod tests {
         // structure", the running-PES probe), and every other test runs with none open. The
         // fake game is PES 2020 because the tools' tests use that version
         // least: while it lives, any other test probing at the same moment (a
-        // parallel mutation job, the Save editor's or Team compiler's own
+        // parallel mutation job, the Save editor's or Compiler's own
         // tests) sees a running PES 2020 and a PES 2020 write refuses, so the
         // window is kept to the one poll that lists it.
         let folder =

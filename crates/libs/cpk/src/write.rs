@@ -76,9 +76,9 @@ impl<W: Write + Seek> CpkWriter<W> {
 
     /// The length in bytes of the file [`finish`](Self::finish) would write if
     /// an entry were first added for each `(path, content length)` of `more`, in
-    /// that order, without a modification time (as the Team compiler adds its
+    /// that order, without a modification time (as the Compiler adds its
     /// entries). `more` empty gives the length of the file finished now. The
-    /// Team compiler asks this before it puts a whole team into a teams part, to
+    /// Compiler asks this before it puts a whole team into a teams part, to
     /// keep the part under its size cap, table of contents included.
     ///
     /// The answer is exact: the tables are laid out by the same code `finish`

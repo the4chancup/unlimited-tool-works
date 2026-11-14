@@ -143,7 +143,7 @@ pub struct MeshGroup {
 
 /// A texture reference: the path split into directory and file name, verbatim from the
 /// source (`/Assets/.../sourceimages/`, `./`); the extension is kept as found. Final
-/// in-game paths are the Team compiler's texture relocation step, not this crate's.
+/// in-game paths are the Compiler's texture relocation step, not this crate's.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Texture {
     /// The directory part, including any trailing slash.

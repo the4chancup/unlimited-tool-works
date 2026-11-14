@@ -437,7 +437,7 @@ fn pass_through_keeps_a_common_mtl_s_eligible_error_and_the_player_whose_link_pa
     sandbox.write(&format!("{export}/Common/legs.mtl"), ztest_zero.as_bytes());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
     let settings = format!(
-        "{}[team-compiler]\npass_through = true\n",
+        "{}[compiler]\npass_through = true\n",
         pes_settings(&sandbox, 17)
     );
 

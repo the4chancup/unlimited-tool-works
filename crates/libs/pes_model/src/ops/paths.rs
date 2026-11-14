@@ -1,4 +1,4 @@
-//! Texture path editing on a `.mtl`: the Team compiler rewrites texture
+//! Texture path editing on a `.mtl`: the Compiler rewrites texture
 //! directories in Konami-derived material sets constantly. A path is split
 //! at its last `/` so an edit sees directory and file name separately; the
 //! material and sampler names the reference is listed under name the slot,
