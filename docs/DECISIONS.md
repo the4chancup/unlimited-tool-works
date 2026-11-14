@@ -17611,3 +17611,17 @@ window larger than the default").
 Why: the maintainer, looking at the draft at 1920 wide: the preview filling the room left the
 section narrower than with the preview hidden. A preview as wide as its longest line shows the
 whole block and leaves the rest to the form.
+
+## 2026-11-14 — review process — the citation audit asks Snap 1.2, at P 0.2; spec drift stays unchecked
+
+Decision: `citation_audit.py` asks `subq-snap-1.2` by its versioned ID (never
+`subq-snap-latest`, which moves with each release) and flags the pairs under P 0.2, not 0.3
+(`CONTRIBUTING.md` "Citation audit"). Snap 1.2 is not used to check spec drift.
+Why: SubQ retired `subq-snap-preview` on 2026-11-11 and routes it to 1.2, whose probabilities
+run lower: re-measured on the 2026-10-17 pairs, 1.2 separates cited from swapped scenarios a
+little better (AUC 0.997 against 0.995), and 0.2 flags 33 of the 732 citations, the preview's
+budget at 0.3 (32), while it catches 721 of the 732 swapped pairs (714) and both citations the
+project removed as wrong. At 0.3 it would flag 54. On spec drift it reaches AUC 0.59 on the 12
+real corrections (0.68 before) and 0.73 on 160 planted errors (0.68), catching 34 of them at
+0.5, errors a reader catches every time. The evaluation is outside the repository
+(`SystemOne/jev-eval/round3/RESULTS.md` "Round 5").

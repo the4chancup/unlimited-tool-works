@@ -124,8 +124,8 @@ class ReportTests(unittest.TestCase):
 
         low, ruled, high = pair("TC-KIT-01", "a"), pair("TC-KIT-01", "b"), pair("TC-KIT-02", "c")
         text = report([(low, THRESHOLD - 0.1), (ruled, 0.01), (high, THRESHOLD)], {ruled.key})
-        self.assertIn("3 citations asked, 2 under P 0.3: 1 new, 1 already ruled", text)
-        self.assertIn("## TC-KIT-01 ← a (P 0.200)", text)
+        self.assertIn("3 citations asked, 2 under P 0.2: 1 new, 1 already ruled", text)
+        self.assertIn("## TC-KIT-01 ← a (P 0.100)", text)
         self.assertNotIn("← b", text)
         self.assertNotIn("← c", text)
 

@@ -9,7 +9,8 @@ scripts read them one way. The state is the scenario's text, the test (its citat
 through the brace closing the function) and the functions of the test's own file it calls, one
 level deep, since a test's work often sits in a helper. Measured on 2026-10-17 (DECISIONS.md):
 the 732 citations at 7bd0bba against the same tests paired with a neighbouring scenario they
-do not cite, AUC 0.995; 32 citations flagged, the three read in full all real.
+do not cite, AUC 0.995; 32 citations flagged, the three read in full all real. Measured again
+on Snap 1.2 on 2026-11-14, the same pairs: AUC 0.997.
 
 Answers are cached in snap.out/cache.json by a hash of the model, question and state, so a
 second run pays only for changed pairs. A flag is ruled like a reviewer concern and its row
@@ -39,11 +40,15 @@ from pathlib import Path
 
 from acceptance import CITATION, ROOT, STARTS_WITH_ID, Scan, scan_repository
 
-MODEL = "subq-snap-preview"
+# A versioned ID, never `subq-snap-latest`: the alias moves to each new release, whose
+# probabilities differ, and the cache keys on this string.
+MODEL = "subq-snap-1.2"
 URL = "https://api.subq.ai/v1/systemone"
-# Under it a pair is flagged. 0.3 flagged 32 of 732 citations and missed 18 of 732 swapped
-# negatives; both real wrong citations of the project's history scored under it.
-THRESHOLD = 0.3
+# Under it a pair is flagged. On Snap 1.2, 0.2 flags 33 of the 732 measured citations and
+# misses 11 of the 732 swapped negatives; both real wrong citations of the project's history
+# score under it. Its probabilities run lower than the preview's, whose 0.3 flagged 32: at 0.3
+# 1.2 flags 54. Measure again whenever MODEL changes.
+THRESHOLD = 0.2
 OUT = ROOT / "snap.out"
 RULINGS = ROOT / "scripts" / "gates" / "citation_rulings.md"
 QUESTION = {

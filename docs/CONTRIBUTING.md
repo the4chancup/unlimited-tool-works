@@ -436,13 +436,16 @@ Requirements:
   the scenarios stop reading as the tool's whole behaviour. `just citation-audit` asks SubQ
   Snap (a decision model with a 384K-token window, hosted by Subquadratic) of every (scenario,
   citing test) pair whether the test proves the scenario, given the scenario's text, the test
-  and the functions of its own file it calls, and lists the pairs under P 0.3
+  and the functions of its own file it calls, and lists the pairs under P 0.2
   (`snap.out/citations.md`, gitignored). Measured on 2026-10-17 (`DECISIONS.md`): the 732
   citations then in the code against the same tests paired with a neighbouring scenario they
   do not cite, AUC 0.995; 32 flagged, the three read in full all real (a refusal test citing a
   filter scenario, a deadlock regression citing the determinism scenario, a gloves-ID test
   citing a boots-ID scenario), and both citations the project had removed as wrong scored
-  under 0.3. Every cited scenario had a test above 0.5, so a flag says a test checks an
+  under the threshold. Measured again on Snap 1.2 (2026-11-14), the same pairs: AUC 0.997,
+  33 flagged at 0.2, the threshold that flags as many as the preview's 0.3 did, since 1.2's
+  probabilities run lower; the threshold is measured again whenever the model changes.
+  Every cited scenario had a test above 0.5, so a flag says a test checks an
   unstated case, never that a scenario is unproven. It runs at a phase's close (the
   design-health pass) and before every review round over code (`RUNBOOK.md` "Review rounds"),
   never as a gate: it needs the network and a key, read from
@@ -452,7 +455,7 @@ Requirements:
   into `scripts/gates/citation_rulings.md`: accepted, the scenario is widened, a scenario is added,
   or the test's citation moves to the scenario it proves; rejected, with a one-line reason.
   Answers are cached by state (`snap.out/cache.json`), so a second pass pays for changed pairs
-  only; a full pass sends about 1.5M tokens ($0.08).
+  only; a full pass sends about 1.5M tokens ($0.06).
 - Code must build on Windows and Linux. No external converters or runtimes (texconv, 7z, ffmpeg,
   libmpv are all replaced in-process); the only subprocesses are the ones the plan names (Blender,
   PES, the elevated self-relaunch).
