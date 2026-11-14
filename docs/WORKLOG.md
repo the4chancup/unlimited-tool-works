@@ -23,7 +23,7 @@ is in `AGENTS.md` ("Working documents").
 4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon, from 2026-11-15) and the maintainer's looks ("Pending looks").
+   (Carbon) and the maintainer's looks ("Pending looks").
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1589,11 +1589,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] cv24 event logos resampled to the box's pixels (Lanczos3). Merged `da2ce96d`
   - [x] cv25 the colour picker's popup as wide as its widest row. Merged `da2ce96d`
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
-    2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
+    2026-10-31): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
     `../4cc-studio-temp/wt-argon` at `2c5fe5a9`, outputs `.tmp/argon/parts/`, rulings
-    `.tmp/argon/rulings.md`). Stopped 06:04 by the maintainer (Devin `work` at 93%, the rest
-    kept for Astra): 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
+    `.tmp/argon/rulings.md`). Stopped by the maintainer, to keep
+    usage for Astra: 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
     started; no new Argon review without the maintainer's word. The accepted concerns become
     one step per crate (cvA1: the fixes first, the mutation run after, an order the
     30-hour chain set)
@@ -1902,12 +1902,20 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
-    - [ ] set aside by the rulings, each to decide or do: the Ruleset editor's window shows
-      a finding as console `key=value` text (`sh_ui_msg` P12: a format, not a wording);
-      `fpc_taping_shows_pieces` says "nothing to do" where a member may have left taping on
-      by mistake (P11: the added advice is the maintainer's call); the Team TOML's `skills`
-      comment could say how a skill is spelt, once each label is checked against the game
-      (`sh_toml_b` 11)
+    - [ ] set aside by the rulings, decided by the maintainer 2026-11-15 (DECISIONS
+      2026-11-15 "the taping advice and the skills comment"), to build:
+      - `fpc_taping_shows_pieces`: "Some custom setups do this on purpose. If yours does
+        not, take the taping off." in the Save editor, the Compiler's catalog row
+        (`messages/catalog.rs`, its condition losing "(deliberate in custom setups)", its
+        advice the same sentence after "It is written as authored.") and
+        `spec/libs/fpc.md`'s line
+      - the Team TOML's `skills` comment: `the player's skills: lowercase names, _ between
+        words` (the writer, `team_toml/player/mod.rs`, and the spec block in
+        `spec/pes_savefile/operations.md`, which a test reads)
+      - the Ruleset editor's findings as readable lines (`Line 12, column 5: …`,
+        `tiers[1]: …`) in its window; on the command line too, the maintainer's pick, but
+        every tool's command-line message line is `studio_core`'s one `key=value` form
+        (`events.rs` `message_line`), so how far that goes waits on the maintainer
     - [x] 2026-11-14 (`f90a92a0`) the Team TOML, patch and kit config spec blocks show what
       their writers write, each guarded by a test that reads the block; the Team TOML gains
       its first line, the instructions' note and the stats table's stored-values note; the
@@ -2117,7 +2125,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] SWE-2's round over Astra's fixes, 2026-11-12: 2 of 4 concerns accepted, both in
       the new tests (the notice test read the machine's own settings; no test kept a
       failure a failure after Cancel), which ends the subloop
-    - [x] Carbon's round 1, 2026-11-12 (on Devin `work`; `a1b233ea`, Opus; merge
+    - [x] Carbon's round 1, 2026-11-12 (`a1b233ea`, Opus; merge
       `067f5222`): 7 of 11 concerns accepted: Restart now started the new program before
       the closing one released its lock, so it opened as a second instance (seen in the
       three manual runs' `utw.2.lock`); a succeeded update whose temp folder could not be
@@ -2128,8 +2136,7 @@ briefs, review loops, gates and mutation runs as for any step.
       concerns accepted, all tests that passed on wrong code (a kept file below the
       backup's top level, no mark after a failed update, a version that is not the
       build's, a cancel set before the call), which ends SWE-2's loop
-    - [ ] Carbon's round 2 by the rule (`work` at 97% of its week: after the Sunday reset,
-      2026-11-15)
+    - [ ] Carbon's round 2 by the rule
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `PROPOSALS.md` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2166,8 +2173,7 @@ briefs, review loops, gates and mutation runs as for any step.
       10 concerns accepted (`a6174e84`, Opus; merge `78212109`): the New value cut with an
       ellipsis as the other two columns are, and three tests that passed on wrong code
       (the cut's width bounded from below, the whole dragged row watched, the float gone
-      after the release); its loop ended. One paid round is owed (Carbon, from
-      2026-11-15)
+      after the release); its loop ended. One paid round is owed (Carbon)
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2188,7 +2194,7 @@ briefs, review loops, gates and mutation runs as for any step.
       tests pin the framed dropdown and Live AATF, the Ruleset editor's row 3 points
       inside its panel, the team view's last row at 739 and no logo on the frame a save
       opens
-    - [ ] one paid round (Carbon, from 2026-11-15)
+    - [ ] one paid round (Carbon)
   - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
     unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
     `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12)
@@ -2363,7 +2369,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] review rounds (tier 2). SWE-2 "S-inst r1", 2026-11-12: 3 of 4 concerns accepted,
       none of them the crash, which the look found. "S-inst r2" over the fix: 1 of 3,
       its loop ended; the checkpoint's survivor (`set_relaunch` replaced by nothing) got
-      its test (`9d12e100`). Owed: one paid round (Carbon, after the Sunday reset)
+      its test (`9d12e100`). Owed: one paid round (Carbon)
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -2374,7 +2380,7 @@ briefs, review loops, gates and mutation runs as for any step.
       table being absent from the file while empty: a table a side lacks is merged as an
       empty one); its loop ended. The checkpoint's three survivors got two tests (the
       settings' equality; the read-back check, now one helper). Carbon "C-drift r1",
-      2026-11-12 (on Devin `work`): 3 of 7 concerns accepted (`5f1f8488`, SWE-2; merge
+      2026-11-12: 3 of 7 concerns accepted (`5f1f8488`, SWE-2; merge
       `1e3fdf67`): a folder row written by hand under the four-digit year kept its old key
       beside a changed row and won the next start, and two tests for what none pinned;
       the paid round is done. SWE-2 "S-drift c1" over the fixes: one concern, a branch
@@ -2389,7 +2395,7 @@ briefs, review loops, gates and mutation runs as for any step.
       helpers gone; six tests for SE-GUI-72, one from PES 2019 to PES 2021. Both of the
       brief's doubts held: a stats document writes what Copy stats writes, a preset and a
       formation survive the document. Not tried in two real windows (look: Pending looks)
-    - [ ] its review rounds (tier 2): SWE-2, then Carbon after 2026-11-15. SWE-2 "S-clip
+    - [ ] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
       r1" 2026-11-12 (three parts): 14 of 18 accepted (`.tmp/duck_rulings.md`): a copy
       of a Gameplan, preset or formation no longer builds the players' tables, whose odd
       byte could stop it; eight on the tests (a wrong-kind test green without the kind
@@ -2440,7 +2446,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the SWE-2 round over `27f7b59a`, 2026-11-12: 2 of 4 concerns accepted, both
       wording (the help and the plan name the `.upgrading` folder `--all` passes over),
       which ends SWE-2's loop
-    - [ ] Carbon's round 2, eight having been accepted in its first (from 2026-11-15)
+    - [ ] Carbon's round 2, eight having been accepted in its first
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
@@ -2540,7 +2546,7 @@ briefs, review loops, gates and mutation runs as for any step.
         game-supplied names; the catalog row's text): rework by Opus sidekick `sk_kto`
         (`4cded58e`, merge `46fc9622`; DECISIONS 2026-11-11), then SWE-2 r2: 0 accepted (the
         paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`; a doc nit
-        fixed), its loop ended; Carbon after 11-15
+        fixed), its loop ended; Carbon owed
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
@@ -2596,13 +2602,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): whole
     withdrawn areas in `docs/spec/withdrawn_ids.md`, runs of withdrawn IDs as range lines
   - [x] 0.0.2a JPEG XL sources (DECISIONS 2026-10-30; TC-TEX-22): `jxl` =0.8.0 decoded
-    directly, built without AVX-512 (DECISIONS 2026-11-11); tier 1: Carbon after 11-15, then Astra
+    directly, built without AVX-512 (DECISIONS 2026-11-11); tier 1: Carbon, then Astra
   - [x] 0.0.2-ids the team's manager id (+4, u32) and home stadium id (+10, u16) on PES 17
-    and 18 (DECISIONS 2026-11-11; `8cb837d6`, merge `395e734c`); tier 1: Carbon after 11-15, then
+    and 18 (DECISIONS 2026-11-11; `8cb837d6`, merge `395e734c`); tier 1: Carbon, then
     Astra
   - [x] 0.0.2-st15 the home stadium id on PES 2015 and 2016 (DECISIONS 2026-11-11;
     `9975abe6`, merge `9ae8e390`): the u16 at +6, shown live. Not checked in game (look:
-    Pending looks); tier 1: Carbon after 11-15, then Astra
+    Pending looks); tier 1: Carbon, then Astra
   - [ ] 0.0.2b (tier 1) no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Compiler's tests and goldens that expect BC7
@@ -2623,8 +2629,7 @@ briefs, review loops, gates and mutation runs as for any step.
       logos not seen, which Edit mode never places (look: Pending looks)
     - Astra A-nobc7 r1 (3 accepted) and its rework 2026-11-08; SWE-2 S-nobc7 r1 2026-11-11
       (3 accepted, among them `texture_not_div4` skipping a pre-Fox texture written
-      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended, Carbon after
-      11-15
+      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended, Carbon owed
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation

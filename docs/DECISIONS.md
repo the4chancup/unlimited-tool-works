@@ -15723,11 +15723,10 @@ Why: on the VPS alone a whole-crate run takes days; waiting for it would leave t
 idle, and the main goal is to avoid that downtime.
 Plan: `AGENTS.md` "Closing a phase".
 
-## 2026-11-06 — reviews — Argon between SWE-2 and Astra; Devin home no longer runs Astra
+## 2026-11-06 — reviews — Argon between SWE-2 and Astra
 Decision: every review loop runs three layers, cheapest first: SWE-2's loop, then Gemini 4
 Argon High (`gemini-4-argon-high`), then Astra, each looping by the five-accepted rule and the
-cheaper loops rerun after a dearer round's fixes. Argon runs on Devin `home` while it has
-usage, else on `work`; Astra no longer runs on `home` (the maintainer).
+cheaper loops rerun after a dearer round's fixes (the maintainer).
 Why: Argon is better than SWE-2 and much cheaper than Astra, so it catches what SWE-2 misses
 before Astra's rounds are spent on it.
 Plan: `RUNBOOK.md` "Review rounds"; `AGENTS.md` "Second opinion".
@@ -15813,11 +15812,11 @@ comes and, never published, is offered to no one; 0.0.1's test pre-releases were
 version-bumped branch the same way (2026-11-02, "How CI's release workflow builds").
 Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2-poc8.
 
-## 2026-11-08 — reviews — Astra reviews ahead of the SWE-2 loops while the `own` window expires
-Decision (the maintainer: spend the expiring Codex `own` window, the lead's order): Astra
+## 2026-11-08 — reviews — Astra reviews ahead of the SWE-2 loops while its usage would expire
+Decision (the maintainer: spend Astra's usage before it expires, the lead's order): Astra
 reviewed 0.0.2b (`6834fbdb`, unreviewed until then) and repro slice 3a before their SWE-2
 loops; each surface's SWE-2 loop runs after its Astra rework, and Argon follows as usual.
-Why: the slot's window would otherwise go unused, and the order exists so Astra's attention
+Why: that usage would otherwise go unused, and the order exists so Astra's attention
 goes past what SWE-2 catches, a cost paid once here against a review that would not happen.
 Plan: `docs/RUNBOOK.md` "Review rounds".
 
@@ -17697,3 +17696,15 @@ Why: the maintainer, after the PES 2017 study came back inconclusive: for 0.0.2,
 cups' managers are right that the game reads the two values only while the automatic levels
 are on.
 Plan: `plans/save_editor.md` "Tactics editor" (the sliders' item) and SE-GUI-71 edited.
+
+## 2026-11-15 — save_editor, team_compiler, pes_savefile — the taping advice and the skills comment
+Decision: the `fpc_taping_shows_pieces` finding's advice reads "Some custom setups do this on
+purpose. If yours does not, take the taping off." in the Save editor and the Compiler alike,
+in place of "nothing to do". The Team TOML writer's `skills` comment reads "the player's
+skills: lowercase names, _ between words", which says how a member writes a skill to add
+without claiming the names are the game's own.
+Why: the maintainer, picking between the text reread's set-aside proposals: a member who left
+taping on by mistake read "nothing to do" and moved on, and the old comment only repeated
+the key. Claiming the game's names would need all 41 checked against each version first.
+Plan: no plan edit; the texts live in the messages' catalogs, `spec/libs/fpc.md` and the Team
+TOML block of `spec/pes_savefile/operations.md`, changed with the code.

@@ -806,7 +806,7 @@ worklog passed 7,000 lines.
   `scripts/clef_scan.py`, `just clef-diff [base]` and `just clef <crate>`, rulings in
   `scripts/clef_rulings.md`, a queue for days the free tier's neurons run out. Checked offline
   with a fake client (windowing, an injected bug flagged and located, cache, rulings, the queue
-  across a date change); the live check waits for the quota reset. Next for it: one
+  across a date change); the live check is still to run. Next for it: one
   `just clef all` pass over the current code, its flags ruled.
 - **2026-10-06** — Clef scan: windows measured positional vs function-sized (positional kept,
   decision entry); the report merges overlapping flagged windows; production code now ends at
@@ -1196,8 +1196,8 @@ worklog passed 7,000 lines.
     fold lines, not `skeleton_retargeted` (TC-MOD-49 to 52 reworded). Two rework rounds: R1 the `model_for_pre_fox` shape (the bytes to pack returned) and the hand split over a Common `.mtl` allowed, both from the sidekick's own report; R2 one test for the mutation run's survivor.
     Mutants: 26 (21 caught, 5 unviable: type-driven defaults; the first run's one survivor, the dedup in `linked_common_materials`, caught by R2's two-links test). Next: 4.19d.
 - **2026-10-09** — Reviews run by the lead from now on: the maintainer wired the `duck` skill
-  (Astra, SWE-2 rounds) for Claude Code, so cross-family reviews are no longer queued except on
-  an Astra quota stop (five-hour quota, five or six reviews; retried hourly). The S7-S16
+  (Astra, SWE-2 rounds) for Claude Code, so cross-family reviews are no longer queued except
+  when Astra cannot run. The S7-S16
   backlog and the four queued 4.14/4.17 reviews run as the first half of converge, after the
   remaining slices (maintainer: finish the crate first). "Handover" rule and `AGENTS.md`
   "Second opinion" reworded. 4.17g started as g1, a measurement brief (`.tmp/4_17/brief_4_17g1.md`):
@@ -1341,8 +1341,8 @@ worklog passed 7,000 lines.
   started over `23f68ae`.
 - **2026-10-09** — The `duck` reviews started: S7 and S8 (briefs `.tmp/duck_brief.md`,
   `.tmp/duck_brief_S8.md`, pointers only, the current code as the surface) launched in
-  parallel at 11:11 and 11:15, both stopped at 11:16 by Astra's five-hour quota
-  mid-review with no report; retried from 14:50 one at a time, the queue as in
+  parallel, both stopped mid-review with no report when Astra's usage ran out; retried
+  one at a time, the queue as in
   "Handover". 4.c-threshold done meanwhile: 0.7 kept (decision entry).
 - **2026-10-09** — 4.y-fix2 done (sidekick, landed first time, two contradictions accepted:
   the `pipeline` survivors were the documented platform arms; two of the three `deploy.rs`
@@ -1358,8 +1358,8 @@ worklog passed 7,000 lines.
   `.mtl`; a boots or gloves link never combining with a linked face's parts or the split
   hands; the plan's tolerance rule for IR-derived skeletons, narrowed by a decision entry
   rather than built), one rejected (one Common model linked twice from one player).
-  Rulings `.tmp/4_y/duck_rulings.md` S7.A1. S8's run at 15:00 stopped on the five-hour
-  quota again ("try again at 4:44 PM"): the reset bought one review; retried hourly.
+  Rulings `.tmp/4_y/duck_rulings.md` S7.A1. S8's run stopped on Astra's usage again;
+  retried later.
 - **2026-10-09** — 4.y-fix4 done (sidekick, landed first time): S7's two code concerns.
   TC-MOD-58 to 60 proven; acceptance 283 of 283. One open issue filed (the deep pass's
   link answer without the hand-weighted set).
@@ -1367,30 +1367,28 @@ worklog passed 7,000 lines.
   three accepted (a Common model converted with the player's local `.mtl` pointing its
   textures at Common; a signed-format DDS in `Common/` failing the whole Common textures
   task; an FTEX portrait keeping its single level), one rejected (S7.A1-4 again). Rulings
-  `.tmp/4_y/duck_rulings.md` S8.A1. S9's run at 16:52 stopped on the quota ("try again at
-  9:45 PM"): one review per reset so far.
+  `.tmp/4_y/duck_rulings.md` S8.A1. S9's run stopped on Astra's usage
+  again.
 - **2026-10-09** — 4.y-fix5 done (sidekick, landed first time): S8's three concerns.
   TC-MOD-61, TC-TEX-14 and TC-TEX-15 proven; acceptance 286 of 286.
 - **2026-10-09** — The Astra reviews moved to the Devin CLI (`duck.py --reviewer astra-devin`,
-  read-only, the user's three Devin logins rotated by `devin_account.py`; no Codex call until
-  the user says otherwise). S9's three runs that evening all died on the accounts' daily
-  usage (one review of this size exceeds a Pro plan's day; no export is written when a run
-  dies mid-turn), so S9 stays queued. Step 4.y-fix6 opened for the VGL stream's PES 19
+  read-only; no Codex call until the user says otherwise). S9's three runs that evening all
+  died on usage limits (no export is written when a run dies mid-turn), so S9 stays
+  queued. Step 4.y-fix6 opened for the VGL stream's PES 19
   crash on a DX10-header portrait (maintainer's report).
 - **2026-10-09** — 4.y-fix6 done (sidekick, one rework round): a DX10-header DDS portrait
   re-headered, `portrait_header_rewritten`. TC-PRT-04 proven; acceptance 287 of 287. The
   maintainer traced the header to paint.net's "BC3 (sRGB, DX 10+)" save option. The reviews
-  wait for the maintainer's instructions (every Devin daily quota spent on S9's attempts).
-- **2026-10-09** — S9's Astra round ran on the user's own ChatGPT Plus through Codex (one
-  whole-module review took 78% of the five-hour window and 12% of the weekly one): six
+  wait for the maintainer's instructions.
+- **2026-10-09** — S9's Astra round ran through Codex: six
   concerns, five accepted. The duck skill's SWE-2 loop after each Astra round, skipped for
   S7 to S9 until the user asked, ran on S9 before the rework (two halves, one round each:
   13 concerns, 5 accepted, both loops ended); S7's and S8's are queued. Step 4.y-fix7
   opened.
 - **2026-10-09** — 4.y-fix7 slice (a) done (sidekick, landed first time): the deep pass
   checks what `compile` reads. Eight scenarios proven; acceptance 295 of 295. S10 and S11
-  ran on the brother's Plus through Codex (2 and 3 concerns, all accepted: step 4.y-fix8
-  to open); Astra's windows then ran out, and by the maintainer's directive Phase 4
+  ran through Codex (2 and 3 concerns, all accepted: step 4.y-fix8
+  to open); Astra could then run no more, and by the maintainer's directive Phase 4
   closes on SWE-2 reviews alone, the rest of Astra queued as a re-audit (Handover).
 - **2026-10-09** — S10's and S11's SWE-2 loops ran from the review worktree (`15270a5`): 3
   and 3 items, 1 and 2 accepted, both loops ended. Their reports, which `duck.py` overwrote
@@ -1441,8 +1439,7 @@ worklog passed 7,000 lines.
 - **2026-10-10** — 4.y-fix10 done (sidekick): a pre-Fox per-kit model set is completed
   against the export's kit numbers, a member's xml's set too; TC-CMN-17 proven, the
   fix9 survivor caught. A lone variant stays an ordinary model (plan).
-- **2026-10-10** — Astra's rounds on S12 and S13 ran on the maintainer's own ChatGPT
-  Plus (one concern each, both accepted: fix11 items (11) and (12); both loops ended).
+- **2026-10-10** — Astra's rounds on S12 and S13 ran (one concern each, both accepted: fix11 items (11) and (12); both loops ended).
   Step 4.y-ingame2 started: the harness knows PES 19's and 21's test slots and the
   pad's triggers; on PES 21 a collar ID beyond the stock set loads when its model
   exists (201, no model, draws a plain neckline), and sock design A's visible part
@@ -1450,7 +1447,7 @@ worklog passed 7,000 lines.
   team sheet: the DX10 header crashes PES 21's BC3 portrait reader with either
   colour-space id, the legacy header and full-chain BC7 under DX10 draw; the cup's BC7
   portraits all have D's shape, so the QUESTIONS entry is closed.
-- **2026-10-10** — S9's second Astra round ran on the brother's ChatGPT Plus (five
+- **2026-10-10** — S9's second Astra round ran (five
   concerns, all accepted after an evidence pass over the worktree: step 4.y-fix16; a
   third round after the rework).
 - **2026-10-10** — The maintainer's subfolder rule landed in the plans (step 4.y-sub opened):
@@ -1522,22 +1519,19 @@ worklog passed 7,000 lines.
   nothing written with the Info `model_hidden_dropped` (the step respecified in the
   morning from the lead's FMDL scan: 61 hidden meshes, 38 all-hidden files, deliberate
   placeholders). Three all-hidden edge cases no file reaches filed as one issue.
-- **2026-10-10** — S9's third Astra round ran on the user's own ChatGPT Plus (a fresh
-  five-hour window, 85% of it): three concerns, two accepted (a link's search may fall back
+- **2026-10-10** — S9's third Astra round ran: three concerns, two accepted (a link's search may fall back
   to a Common `.mtl` the pass never read; a non-model file in `Collars/` under the lenient
   check is a false `collar_id_invalid`), one rejected (a shared folder holding only a higher
   kit variant: a hand-built shape). Under five accepted, so the S9 Astra loop ends with the
   rework, step 4.y-fix19, briefed with 4.y-fix15's one open item ((1) and (3) landed with
   4.y-fix17 and 4.y-fix16).
-- **2026-10-10** — S15's first Astra round ran on the brother's ChatGPT Plus (a fresh
-  five-hour window, 48% of it): no concerns over run planning, the overrides and source
+- **2026-10-10** — S15's first Astra round ran: no concerns over run planning, the overrides and source
   pinning, so the S15 Astra loop ends at its first round; its SWE-2 round is still owed.
 - **2026-10-10** — 4.y-fix15 and 4.y-fix19 done (sidekick, one run): a `.face` link counts
   as a face only when the linked folder gives one; the deep pass reads every direct Common
   `.mtl` once a link's search lands in `Common/`; a non-model file in `Collars/` gets no
   collar finding. S14's second SWE-2 round and its first Astra round run on the rework.
-- **2026-10-10** — S14's first Astra round ran on the brother's ChatGPT Plus (41% of the
-  window) on the 4.y-fix15 rework: one concern, accepted as a plan correction with no code
+- **2026-10-10** — S14's first Astra round ran on the 4.y-fix15 rework: one concern, accepted as a plan correction with no code
   (the blank face's `.fpkd` is generated empty, not the template `generic.fpkd` the plan
   named: Red's file is that empty package, the face parity row proves the bytes), so the
   S14 Astra loop ends at its first round; its second SWE-2 round is still owed.
@@ -1581,15 +1575,13 @@ worklog passed 7,000 lines.
   it; the sidekick found that `aesthetics_export` never took a player or shared folder's
   own file off on `DropFile` and that the cascade followed a dropped link (decision);
   a package's names collide case-folded; the hand split's tests compare faces.
-- **2026-10-10** — S18's first Astra round (4.y-sub (a) and 4.y-fix20 together, the
-  brother's ChatGPT Plus, 54% of a fresh five-hour window; the slot is off until its
-  weekly reset, Friday): five concerns, five accepted (a nested `.mtl.common` link
+- **2026-10-10** — S18's first Astra round (4.y-sub (a) and 4.y-fix20 together): five concerns, five accepted (a nested `.mtl.common` link
   panics a lenient compile; the singletons below a subfolder, already slice (b1)'s;
   TC-MOD-64's two identical meshes; TC-MOD-67 and TC-MOD-68 claiming a strict run's
   survival, corrected; a dropped shared link still counted), so a second Astra round
-  follows the rework, step 4.y-fix21 opened. The maintainer: SWE-2 runs free on Devin
-  `work` whatever its usage, so the queued SWE-2 rounds run now: S7's and S14's second
-  rounds and S17's first launched at 13:55 from the review worktree (`36f646f`); S12's
+  follows the rework, step 4.y-fix21 opened. The maintainer: SWE-2 runs whatever the
+  usage, so the queued SWE-2 rounds run now: S7's and S14's second rounds and S17's first
+  launched at 13:55 from the review worktree (`36f646f`); S12's
   and S13's post-Astra rounds, S15's two halves and S18's first follow.
 - **2026-10-10** — 4.y-sub (b1) done (sidekick, two rework rounds, one survivor each): a subfolder's textures at their
   paths under the texture home on both engines, a texture name resolving nearest first
@@ -1598,8 +1590,7 @@ worklog passed 7,000 lines.
   texture's own directory, decision and in-game item (f); the shared writer resolves
   nearest first too; a nested singleton gets no role); TC-MOD-65 reworded to the rule
   and proven.
-- **2026-10-10** — S7's second SWE-2 round and S17's first ran on Devin `work` (the
-  maintainer: SWE-2 runs free there whatever its usage) from the review worktree
+- **2026-10-10** — S7's second SWE-2 round and S17's first ran from the review worktree
   (`36f646f`): S7 five concerns, four accepted (two already closed by 4.y-sub (b1), a
   textures-only folder's textures discarded with no finding (decision), stale doc text;
   the cross-folder kit-set edge case rejected), its loop ends; S17 three concerns, three
@@ -1609,8 +1600,8 @@ worklog passed 7,000 lines.
   defect (the subfolder singletons seen again, slice (b1)'s), its loop ends and S14 is
   closed; its note that the 4.12 step's "known, not fixed" list is stale (item 1 fixed
   by 4.y-fix1 (h), item 3's parenthetical wrong since 4.y-fix15) is for the collapse.
-- **2026-10-10** — S12's and S13's post-Astra SWE-2 rounds and S15's two halves ran on
-  Devin `work` from the review worktree (`36f646f`): S12 five concerns, two accepted (plan
+- **2026-10-10** — S12's and S13's post-Astra SWE-2 rounds and S15's two halves ran
+  from the review worktree (`36f646f`): S12 five concerns, two accepted (plan
   text: a codec the suite cannot encode is encoded whole; `resize`'s consumers), its loop
   ends and S12 is closed; S13 six concerns, five accepted (a left-out kit number's second
   file merged, validation's one-folder variant sets, a Common `.mtl`'s stems looked for in
@@ -1619,7 +1610,7 @@ worklog passed 7,000 lines.
   visibility) and half b two of three (a file named `overrides` read as none, its test),
   both loops end. Step 4.y-fix22 opened. The retag (4.y-retag) is ready but its history
   rewrite was refused by the session's permission classifier: the maintainer runs it.
-- **2026-10-10** — S18's first SWE-2 round ran on Devin `work` (`36f646f`): five concerns,
+- **2026-10-10** — S18's first SWE-2 round ran (`36f646f`): five concerns,
   four accepted (two stale comments and a finding's order into 4.y-fix22; a lenient
   check's nested shared-face file resolved by a member's xml, into slice (b2)); a third
   panic site of S18.A1-1's class rejected as the same defect (slice (b3)'s fix at the
@@ -3099,7 +3090,7 @@ worklog passed 7,000 lines.
 - 2026-11-06: Astra over poc6's tests accepted 5 test gaps in the pairing rules, fixed by a SWE-2 sidekick. Decided with the maintainer: an uncompressed texture stays uncompressed (a PES 15-17 main kit texture and normal maps excepted), briefed with 0.0.2b, whose BC7 encodes were the only slow ones in their PES 21 test compile.
 - 2026-11-06: Whole-crate mutation runs go to the VPS alone from now on (the maintainer); `mutants.py` gets that as its only whole-run path before `team_widgets`'s run (worklog issue).
 - 2026-11-06: No 0.x.x release waits on whole-crate mutation runs: release, then patch what they find (the maintainer).
-- 2026-11-06: Reviews gain a middle layer: SWE-2, then Gemini 4 Argon High (on Devin home), then Astra; home no longer runs Astra (the maintainer).
+- 2026-11-06: Reviews gain a middle layer: SWE-2, then Gemini 4 Argon High, then Astra (the maintainer).
 - 2026-11-08: The Argon and Astra review loops run one after the other, each paid round between two SWE-2 subloops; Astra's fixes no longer go back through Argon (the maintainer).
 - 2026-11-08: The Save editor's whole-crate mutation run triaged; its first slice of missing tests landed (an out-of-range physique, Injury Resistance or Star drawn as stored, Esc on the rules-file questions, the id order of the prompt and Multi-team lists, among others), 22 equivalent mutants excluded.
 - 2026-11-08: Repro bundles slice 2 (the journal, the bundle writer, the Save editor's recording) through its review loops: eleven SWE-2 rounds, one Astra and three Argon; the last fixes record the rules-file import and each failure's whole error chain.
@@ -3161,12 +3152,12 @@ worklog passed 7,000 lines.
 - 2026-11-11: report17 closed: a PES 2017 Texport of 772 from the fixed writer shows its starting eleven in game.
 - 2026-11-11: 0.0.2a JPEG XL sources landed (`026d14c4`, merge `0875f013`): `jxl` =0.8.0 called directly in `dds_convert`, a lossless `.jxl` compiling byte for byte as its PNG (TC-TEX-22), the extension table, the compiler's sniffing and the Ruleset editor's logo picker (RE-GUI-19 widened); exe +2.8 MiB. Opus sidekick; lead review reran the four crates' tests, clippy, fmt, deny. Astra review pending.
 - 2026-11-11: the JPEG XL decoder is built without AVX-512 (the maintainer's pick after a size and speed measurement: `jxl-oxide` no smaller than `jxl` with SSE4.2 alone and up to 2x slower); the spec records the levels and that a lossy file can compile a level apart on two CPUs.
-- 2026-11-11: SWE-2 rounds (Devin `home`, which SWE-2 never draws limits from): 0.0.2a 2 accepted (a container-form JXL fixture `76f25a58`, a comment), ux1 in three parts 1 accepted (TC-CLI-13's check asserts no stderr, `4139c751`); both loops ended, Carbon's wait for 11-15.
+- 2026-11-11: SWE-2 rounds: 0.0.2a 2 accepted (a container-form JXL fixture `76f25a58`, a comment), ux1 in three parts 1 accepted (TC-CLI-13's check asserts no stderr, `4139c751`); both loops ended, Carbon's to follow.
 - 2026-11-11: the manager id and home stadium id read and written on PES 2017 and 2018 (Opus sidekick `8cb837d6`, merge `395e734c`): measured fields in the generator, pes17/pes18 tables regenerated, tests on the 17/18 fixtures; the lead reran every consumer's tests and filled the Save editor draft's PES 17 sample ids from their saves.
-- 2026-11-11: SWE-2 S-ids r1 (2 accepted) and Astra A-r17 r1 (Codex `brother`, 1 accepted, the same defect): a Texport's coach record now follows the team's edited manager id, `NoCoach` naming it; both loops ended.
-- 2026-11-11: Astra A-jxl r1 over 0.0.2a (Codex `brother`): 2 accepted, both tests: JPEG XL fixtures without alpha, greyscale and 16-bit, and a probe of a file cut after its header; the loop ended, Carbon after 11-15.
+- 2026-11-11: SWE-2 S-ids r1 (2 accepted) and Astra A-r17 r1 (1 accepted, the same defect): a Texport's coach record now follows the team's edited manager id, `NoCoach` naming it; both loops ended.
+- 2026-11-11: Astra A-jxl r1 over 0.0.2a: 2 accepted, both tests: JPEG XL fixtures without alpha, greyscale and 16-bit, and a probe of a file cut after its header; the loop ended, Carbon owed.
 - 2026-11-11: SWE-2 S-poc12s4 r1 over slice 4 (two parts): part a 2 nits (`aa38922c`); part b 5 accepted, `kit_token_old` wider than the upgrader's respelling (`Faces/`, collars, game-supplied names, the catalog text): Opus sidekick `sk_kto` on the rework; a worklog issue asks whether Red's kit magic reached collars.
 - 2026-11-11: `kit_token_old` checks only what the Export upgrader respells (Opus sidekick `sk_kto`, `4cded58e`, merge `46fc9622`): not in `Faces/` or collars, not on game-supplied paths but a `.mtl`'s `./` one; catalog and spec rows, TC-MOD-107 widened.
-- 2026-11-11: SWE-2 S-poc12s4 r2 over the `kit_token_old` rework: 0 accepted (the paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`), a doc nit (`1ea4c205`); the loop ended, Carbon after 11-15.
+- 2026-11-11: SWE-2 S-poc12s4 r2 over the `kit_token_old` rework: 0 accepted (the paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`), a doc nit (`1ea4c205`); the loop ended, Carbon owed.
 - 2026-11-11: The home stadium id on PES 2015 and 2016, the team record's u16 at +6 (Opus sidekick `sk_st15`, `9975abe6`, merge `9ae8e390`): measured on the reference saves, a generator measured field; the Save editor shows it live there.
 - 2026-11-11: SWE-2 S-nobc7 r1 over 0.0.2b (two parts): 3 accepted: `texture_not_div4` dropped a PES 15–17 folder whose uncompressed texture is now written as it is (76 real textures; DECISIONS), an uncovered `keep_uncompressed` literal, no CHANGELOG line; SWE-2 sidekick on the rework.
