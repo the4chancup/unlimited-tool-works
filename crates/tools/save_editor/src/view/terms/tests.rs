@@ -443,16 +443,16 @@ fn the_strip_fields_rows() {
         "premise"
     );
     assert_term(
-        &row_term(version, &field(PlayerField::WristTapeColorLeft, 0, 4)),
+        &row_term(version, &field(PlayerField::WristTapeColorLeft, 0, 3)),
         "Wrist tape left",
-        "0",
-        "4",
+        "Strip color",
+        "Beige",
     );
     assert_term(
-        &row_term(version, &field(PlayerField::WristTapeColorRight, 4, 0)),
+        &row_term(version, &field(PlayerField::WristTapeColorRight, 5, 0)),
         "Wrist tape right",
-        "4",
-        "0",
+        "5",
+        "Strip color",
     );
     assert_term(
         &row_term(version, &field(PlayerField::SpectaclesColor, 0, 3)),

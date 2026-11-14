@@ -363,9 +363,13 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::EditedStrip => flag(appearance::STRIP_LABEL, old, new),
         PlayerField::EditedMotion => flag(appearance::MOTION_LABEL, old, new),
         PlayerField::BaseCopy => flag(appearance::BASE_COPY_LABEL, old, new),
-        PlayerField::WristTapeColorLeft
-        | PlayerField::WristTapeColorRight
-        | PlayerField::SpectaclesColor => {
+        PlayerField::WristTapeColorLeft => {
+            keyed(field, appearance::WRIST_TAPE_LEFT_LABEL, old, new)
+        }
+        PlayerField::WristTapeColorRight => {
+            keyed(field, appearance::WRIST_TAPE_RIGHT_LABEL, old, new)
+        }
+        PlayerField::SpectaclesColor => {
             let key = key_writing(|key| key.player_field() == Some(field))
                 .expect("the strip palettes have settings keys");
             let palette = fields::palette(version, key);

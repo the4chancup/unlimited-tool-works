@@ -83,6 +83,11 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
   "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
   does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.
+- **The wrist tape's colours in the other games** (worklog 0.0.2-text, the wrist tape item).
+  PES 2019's Edit mode lists four: Strip Colour, White, Black, Beige (you, 2026-11-13), and
+  the suite now names those four in every version. Do PES 2015 to 2018, 2020 and 2021 list
+  the same four, in the same order? A look at the wrist tape's list in each game's Edit mode
+  confirms or corrects it.
 
 ## Sentences the plans and the spec leave open
 

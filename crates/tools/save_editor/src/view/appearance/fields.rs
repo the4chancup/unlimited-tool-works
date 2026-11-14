@@ -296,9 +296,7 @@ pub(crate) const MOTIONS: [MotionField; 9] = [
 
 /// The strip palettes' swatch colours, approximations of the spectacles
 /// colours' names (`SettingKey::SpectaclesColor`). The gloves colour has the
-/// same eight in the same order, as PES 2019's Edit mode lists them. The
-/// wrist tape's are drawn from this set too, wrongly: the game offers four
-/// (the strip's colour, white, black, beige).
+/// same eight in the same order, as PES 2019's Edit mode lists them.
 const STRIP_COLORS: [[u8; 3]; 8] = [
     [0xE8, 0xE8, 0xE8],
     [0x1C, 0x1C, 0x1C],
@@ -342,7 +340,7 @@ const IRIS_COLORS: [[u8; 3]; 11] = [
 /// key the entry names come from, the last index drawn and the swatch
 /// colours (the draft's approximations).
 pub(crate) struct Palette {
-    /// The swatch labels' stem (`"Skin"`, `"Wrist tape left"`).
+    /// The swatch labels' stem (`"Skin"`, `"Gloves color"`).
     pub(crate) label: &'static str,
     /// The settings key the entry names come from (`named_values`).
     pub(super) key: SettingKey,
@@ -372,8 +370,6 @@ pub(crate) fn palette(version: PesVersion, key: SettingKey) -> Palette {
     let (label, colors) = match key {
         SettingKey::SkinColor => ("Skin", SKIN_COLORS.as_slice()),
         SettingKey::IrisColor => ("Iris", IRIS_COLORS.as_slice()),
-        SettingKey::WristTapeColorLeft => (super::WRIST_TAPE_LEFT_LABEL, STRIP_COLORS.as_slice()),
-        SettingKey::WristTapeColorRight => (super::WRIST_TAPE_RIGHT_LABEL, STRIP_COLORS.as_slice()),
         SettingKey::SpectaclesColor => (super::SPECTACLES_COLOR_LABEL, STRIP_COLORS.as_slice()),
         SettingKey::GlovesColor => (super::GLOVES_COLOR_LABEL, STRIP_COLORS.as_slice()),
         _ => unreachable!("{key:?} is not a palette key"),
@@ -543,7 +539,15 @@ mod tests {
                 "turquoise".to_owned(),
             ]),
         );
-        assert_eq!(named_values(SettingKey::WristTapeColorLeft), None);
+        assert_eq!(
+            named_values(SettingKey::WristTapeColorLeft),
+            Some(vec![
+                "strip color".to_owned(),
+                "white".to_owned(),
+                "black".to_owned(),
+                "beige".to_owned(),
+            ]),
+        );
         assert_eq!(
             named_values(SettingKey::GlovesColor),
             named_values(SettingKey::SpectaclesColor)

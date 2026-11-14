@@ -645,8 +645,20 @@ impl SettingKey {
                 comment: "\"off\", \"right\", \"left\", \"both\"",
                 default: Some(0),
             },
-            SettingKey::WristTapeColorLeft => seven_color("wrist_tape_color_left"),
-            SettingKey::WristTapeColorRight => seven_color("wrist_tape_color_right"),
+            SettingKey::WristTapeColorLeft => KeySpec {
+                table: KeyTable::Strip,
+                name: "wrist_tape_color_left",
+                kind: Kind::Number { min: 0, max: 3 },
+                comment: "0 strip color, 1 white, 2 black, 3 beige",
+                default: Some(0),
+            },
+            SettingKey::WristTapeColorRight => KeySpec {
+                table: KeyTable::Strip,
+                name: "wrist_tape_color_right",
+                kind: Kind::Number { min: 0, max: 3 },
+                comment: "0 strip color, 1 white, 2 black, 3 beige",
+                default: Some(0),
+            },
             SettingKey::Spectacles => KeySpec {
                 table: KeyTable::Strip,
                 name: "spectacles",
@@ -1579,16 +1591,6 @@ fn bool_key(name: &'static str, comment: &'static str, default: bool) -> KeySpec
         kind: Kind::Bool,
         comment,
         default: Some(u8::from(default)),
-    }
-}
-
-fn seven_color(name: &'static str) -> KeySpec {
-    KeySpec {
-        table: KeyTable::Strip,
-        name,
-        kind: Kind::Number { min: 0, max: 7 },
-        comment: "0 to 7",
-        default: Some(0),
     }
 }
 

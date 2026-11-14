@@ -1631,6 +1631,40 @@ fn a_one_based_or_plus_one_key_is_bounded_by_its_stored_width() {
     }
 }
 
+/// A wrist tape colour the game's editor never offers still fits the
+/// field's 3-bit stored width: an import keeps it, where `settings.toml`'s
+/// editor range would refuse it.
+#[test]
+fn a_wrist_tape_colour_past_the_editor_range_imports_as_stored() {
+    use crate::settings_toml::{SettingKey, get_appearance};
+
+    let doc = TeamToml::parse("[players.01.appearance.strip]\nwrist_tape_color_left = 5\n")
+        .expect("5 fits the 3-bit field");
+    assert_eq!(
+        get_appearance(&doc.players[&1].appearance, SettingKey::WristTapeColorLeft),
+        Some(5)
+    );
+
+    let (file, _) = open(PesVersion::Pes19);
+    let team = file
+        .teams()
+        .iter()
+        .find(|team| team.roster.first().is_some_and(|slot| slot.player_id != 0))
+        .expect("a team with slot 01 rostered");
+    let id = team.roster[0].player_id;
+    let mut players = file.players().to_vec();
+    let mut target = team.clone();
+    doc.apply(PesVersion::Pes19, &mut target, &mut players)
+        .expect("the stored value imports");
+    let written = players
+        .iter()
+        .find(|player| player.id == id)
+        .expect("the player")
+        .appearance
+        .wrist_tape_color_left;
+    assert_eq!(written, 5);
+}
+
 /// A stored value a `Kind::Labels` list does not name emits as the
 /// integer and reparses to the same document.
 #[test]

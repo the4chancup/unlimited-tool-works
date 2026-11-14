@@ -899,6 +899,67 @@ fn the_strip_colours_are_dropdowns_and_the_swatch_rows_stay_in_colors() {
     }
 }
 
+// The wrist tape dropdowns list the game's four colours by name (the
+// strip's own, White, Black, Beige), not the strip palette's eight: a
+// pick of Beige stores 3, one undo entry.
+#[test]
+fn the_wrist_tape_dropdown_lists_the_four_named_colours() {
+    let path = fixture(PesVersion::Pes21, "wrist_tape_dropdown");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    view.edit_aesthetics = true;
+    let tape = |view: &SaveView| player_entry(view, 70101).appearance.wrist_tape_color_left;
+    assert_ne!(tape(&view), 3, "premise: not Beige");
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Wrist tape left")
+    });
+    let combo = right_of_label(&nodes, "Wrist tape left", Role::ComboBox)
+        .first()
+        .copied()
+        .expect("the Wrist tape left dropdown");
+    click(&mut window, combo, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // The open list's rows are the Buttons inside the popup's `ListBox`.
+    let by_id: HashMap<accesskit::NodeId, &accesskit::Node> =
+        pairs.iter().map(|(id, node)| (*id, node)).collect();
+    let (list, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::ListBox)
+        .expect("the open list");
+    let mut rows = Vec::new();
+    let mut stack = vec![*list];
+    while let Some(id) = stack.pop() {
+        let node = by_id[&id];
+        stack.extend(node.children());
+        if node.role() == Role::Button {
+            rows.push((id, node));
+        }
+    }
+    rows.sort_by(|a, b| {
+        let y =
+            |row: &(accesskit::NodeId, &accesskit::Node)| row.1.bounds().expect("row bounds").y0;
+        y(a).partial_cmp(&y(b)).expect("ordered bounds")
+    });
+    let labels: Vec<&str> = rows
+        .iter()
+        .map(|(_, node)| node.label().expect("a labeled row"))
+        .collect();
+    assert_eq!(labels, ["Strip color", "White", "Black", "Beige"]);
+
+    let (beige, _) = rows
+        .iter()
+        .find(|(_, node)| node.label() == Some("Beige"))
+        .expect("the Beige row");
+    action_click(&mut window, &mut view, *beige);
+    assert_eq!(tape(&view), 3, "Beige stores 3");
+    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
+}
+
 // The id controls take the record's own bound (`player_max_value`, the
 // codec's 14-bit field — wider than `settings.toml`'s 0 to 100 stock
 // range): a compile-allocated 627 types and stores.

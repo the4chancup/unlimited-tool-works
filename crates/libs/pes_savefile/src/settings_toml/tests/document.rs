@@ -534,6 +534,32 @@ fn a_value_the_kind_cannot_represent_is_refused_everywhere() {
     assert_eq!(player, before, "the refused write changed the player");
 }
 
+/// The wrist tape colours' range is the game's four (strip color, white,
+/// black, beige): 3 compiles to 3, one past it is the `0 to 3` refusal.
+#[test]
+fn the_wrist_tape_colours_range_is_the_games_four() {
+    let parsed =
+        PlayerSettings::parse("[appearance.strip]\nwrist_tape_color_left = 3\n").expect("3 parses");
+    assert_eq!(parsed.appearance.strip.wrist_tape_color_left, Some(3));
+    let mut player = find_player(
+        &payload(PesVersion::Pes19),
+        schema_for(PesVersion::Pes19),
+        70101,
+    );
+    parsed
+        .apply(&mut player, PesVersion::Pes19)
+        .expect("applies");
+    assert_eq!(player.appearance.wrist_tape_color_left, 3);
+
+    match PlayerSettings::parse("[appearance.strip]\nwrist_tape_color_left = 4\n") {
+        Err(SettingsError::OutOfRange { key, value, range }) => {
+            assert_eq!(key, "appearance.strip.wrist_tape_color_left");
+            assert_eq!((value, range.as_str()), (4, "0 to 3"));
+        }
+        other => panic!("expected OutOfRange, got {other:?}"),
+    }
+}
+
 #[test]
 fn apply_writes_a_set_shirt_name_and_leaves_an_unset_one() {
     let payload = payload(PesVersion::Pes19);

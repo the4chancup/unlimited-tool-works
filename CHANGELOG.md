@@ -93,6 +93,10 @@
   places with him, as in the starting eleven, instead of shifting the players between.
 - **Save editor**: a starter moved on the Tactics pitch stays inside the area the game's
   Formation screen allows, so an edit can no longer make a formation Live AATF warns about.
+- **Save editor**: the Wrist tape left and right dropdowns list the game's four colors,
+  Strip color, White, Black and Beige, where they offered the numbers 0 to 7. An export's
+  `settings.toml` names the four in its comment, and the Team compiler refuses 4 to 7 there,
+  which the game never offers.
 
 ### Minor fixes
 
@@ -119,6 +123,8 @@
   with nothing picked.
 - **General**: menus, dialogs, dropdown lists, text fields and the update's progress bar
   share one corner rounding again.
+- **Save editor**: an event logo that opens the event's page is framed like a button while
+  the pointer is on it, as the 4cc logo is.
 
 ## [0.0.1] - 2026-11-03
 
