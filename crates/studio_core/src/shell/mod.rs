@@ -986,6 +986,11 @@ mod tests {
     use crate::shell::sidebar::SETTINGS_LABEL;
     use crate::status::{Notice, NoticeKind};
 
+    /// A hang bound on a worker's reply, never a speed bound: a passing
+    /// wait returns as soon as the reply lands, and a tighter one fails a
+    /// starved worker.
+    const GUARD: Duration = Duration::from_secs(120);
+
     /// `apply_requests` outside a frame: a default egui context.
     fn apply_requests(app: &mut StudioApp) {
         app.apply_requests(&egui::Context::default());
@@ -1456,7 +1461,7 @@ mod tests {
         // whole timeout out inside `frame` and come back a failed check the
         // asserts below refuse; the bound keeps that a failure, not a hang.
         app.update_fetch = std::sync::Arc::new(move || {
-            if gate_rx.recv_timeout(Duration::from_secs(10)).is_err() {
+            if gate_rx.recv_timeout(GUARD).is_err() {
                 return Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
                     503,
                 )));
@@ -1477,7 +1482,7 @@ mod tests {
         // The worker answers as soon as the gate opens, but the test cannot
         // join it: draw frames until its reply lands, giving up only past the
         // deadline so a reply that never comes fails instead of hanging.
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         let nodes = loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             if ctx.common().last_update_check.is_some() {
@@ -1535,7 +1540,7 @@ mod tests {
 
         // Wait on the stamp, which a drained check writes however it ended:
         // before it, "no offer" holds of a check still in flight.
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         let nodes = loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             if ctx.common().last_update_check.is_some() {
@@ -1580,6 +1585,12 @@ mod tests {
                 Ok(crate::updater::RELEASES_FIXTURE.to_owned())
             });
             idle(&egui_ctx, &mut app, 3);
+            // A started check shows in the state the frame sets itself,
+            // which a starved worker cannot delay.
+            assert!(
+                matches!(app.update_poll, UpdatePoll::Idle { .. }),
+                "no check in flight ({last_check:?})"
+            );
             assert!(
                 started_rx.try_recv().is_err(),
                 "no check starts ({last_check:?})"
@@ -1610,7 +1621,7 @@ mod tests {
         // giving up only past the deadline: the asserts below would hold for a
         // check still in flight, so a reply that never comes fails here, not
         // silently.
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         let nodes = loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             if matches!(app.update_poll, UpdatePoll::Idle { retry_at } if retry_at > 0) {
@@ -1657,7 +1668,7 @@ mod tests {
         // Wait on the stamp, not the fetch's count: the reply is drained (and
         // the check stamped) a frame or more after the fetch ran, so the
         // rewind below must follow the drain or the drain overwrites it.
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         loop {
             frame(&egui_ctx, &mut app, Vec::new(), true);
             if ctx.common().last_update_check.is_some() {
@@ -1674,7 +1685,7 @@ mod tests {
             crate::updater::now_secs()
                 .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60),
         );
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         loop {
             frame(&egui_ctx, &mut app, Vec::new(), true);
             if fetches.load(std::sync::atomic::Ordering::SeqCst) >= 2 {
@@ -1715,7 +1726,7 @@ mod tests {
         // `before`/`after` bound the drain's `now_secs`: the retry instant is
         // the drain plus one interval.
         let before = crate::updater::now_secs();
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         loop {
             frame(&egui_ctx, &mut app, Vec::new(), true);
             if matches!(app.update_poll, UpdatePoll::Idle { retry_at } if retry_at > 0) {
@@ -1835,7 +1846,7 @@ mod tests {
         let egui_ctx = test_context();
 
         // The first check's reply offers v0.0.2.
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             if has_text(&out.nodes, "Update available: v0.0.2") {
@@ -1852,7 +1863,7 @@ mod tests {
             crate::updater::now_secs()
                 .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60),
         );
-        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let deadline = std::time::Instant::now() + GUARD;
         let nodes = loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
             if has_text(&out.nodes, "Update available: v0.0.3") {

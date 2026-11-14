@@ -203,7 +203,7 @@ impl Read for HeldBody {
             return Ok(read);
         }
         if let Some(gate) = self.gate.take()
-            && gate.recv_timeout(Duration::from_secs(10)) == Err(RecvTimeoutError::Timeout)
+            && gate.recv_timeout(Duration::from_secs(120)) == Err(RecvTimeoutError::Timeout)
         {
             return Err(io::Error::other("the test never let the download go on"));
         }

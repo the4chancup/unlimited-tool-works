@@ -730,6 +730,10 @@ mod tests {
     use crate::templates::Templates;
     use crate::testing::scratch;
 
+    /// Long enough that a scheduling hiccup never outlives it; short enough that a permit that
+    /// never comes fails the test rather than hanging it.
+    const GUARD: Duration = Duration::from_secs(120);
+
     /// The bins a PES 21 run with no installed bin builds on.
     fn bundled() -> WorkingBins {
         WorkingBins::bundled(PesVersion::Pes21, &Templates::embedded())
@@ -2054,7 +2058,7 @@ mod tests {
         let (admitted_tx, admitted) = mpsc::channel();
         thread::spawn(move || admitted_tx.send(budget.acquire(1).is_ok()).unwrap());
         assert_eq!(
-            admitted.recv_timeout(Duration::from_secs(5)),
+            admitted.recv_timeout(GUARD),
             Ok(true),
             "the waiting batch's permit was released"
         );
@@ -2732,7 +2736,7 @@ mod tests {
     fn drained(budget: Arc<MemoryBudget>) -> bool {
         let (admitted_tx, admitted) = mpsc::channel();
         thread::spawn(move || admitted_tx.send(budget.acquire(1).is_ok()).unwrap());
-        admitted.recv_timeout(Duration::from_secs(5)) == Ok(true)
+        admitted.recv_timeout(GUARD) == Ok(true)
     }
 
     // `commit` itself, not `submit`: `submit` drops every batch it decided before it returns,

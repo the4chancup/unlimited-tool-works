@@ -782,6 +782,10 @@ mod tests {
     const NEWER_RELEASE: &str =
         r#"[{"tag_name": "v999.0.0", "body": null, "html_url": "u", "assets": []}]"#;
 
+    /// A hang bound on another thread's report, never a speed bound: a
+    /// passing wait returns as soon as the report comes.
+    const GUARD: std::time::Duration = std::time::Duration::from_secs(120);
+
     /// The check's reply for `body`, as the check's thread parses it.
     fn reply_of(body: &str) -> CheckReply {
         updater::newest_release(body)
@@ -828,7 +832,7 @@ mod tests {
         };
         let reply = start_update_check(&common, Arc::clone(&fetch))
             .expect("checks on: a check starts")
-            .recv_timeout(std::time::Duration::from_secs(10))
+            .recv_timeout(GUARD)
             .expect("the check replies");
         let newest = reply.expect("the list parses").expect("a release");
         assert_eq!(newest.version.to_string(), "999.0.0");
@@ -863,10 +867,7 @@ mod tests {
         // The reply comes only if the report has not returned within the wait: a report
         // that waited for it would then write the line and fail the test, not hang it.
         let check = std::thread::spawn(move || {
-            if go_rx
-                .recv_timeout(std::time::Duration::from_secs(10))
-                .is_err()
-            {
+            if go_rx.recv_timeout(GUARD).is_err() {
                 tx.send(reply_of(NEWER_RELEASE)).unwrap();
             }
         });

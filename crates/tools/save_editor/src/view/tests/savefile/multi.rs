@@ -146,6 +146,7 @@ fn the_multi_list_and_combos_run_in_id_order_not_record_order() {
     open_multi_aatf(&mut window, &mut view);
     let ids = all_team_ids(&view);
     let last = label(&view, *ids.last().unwrap());
+    multi_checked(&mut window, &mut view, &ids[..1]);
     pick_range_end(&mut window, &mut view, 1, &last);
 
     // The checked list's rows: 702's line above 703's. The wait compares
@@ -227,6 +228,7 @@ fn the_counts_line_lists_the_systems_the_range_was_read_under() {
     let label =
         |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
     let (first, last) = (label(&view, 706), label(&view, 707));
+    multi_checked(&mut window, &mut view, &[701]);
     pick_range_end(&mut window, &mut view, 0, &first);
     pick_range_end(&mut window, &mut view, 1, &last);
     let pairs = multi_checked(&mut window, &mut view, &[706, 707]);
@@ -364,11 +366,8 @@ fn a_press_held_while_the_check_lands_leaves_the_dialog_open() {
         .pending
         .take()
         .expect("the opening check is in flight");
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.multi_aatf.check.pending = Some(worker::Pending {
-        key: real.key.clone(),
-        replies,
-    });
+    let (held, sender) = worker::Pending::held(real.key.clone());
+    view.multi_aatf.check.pending = Some(held);
     let reply = real
         .replies
         .recv_timeout(Duration::from_secs(120))

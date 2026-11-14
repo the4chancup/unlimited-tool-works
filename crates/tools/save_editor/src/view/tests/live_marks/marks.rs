@@ -167,15 +167,19 @@ fn each_fields_mark_stands_left_of_its_label() {
     view.live_suggestions = true;
     let revision = view.session.as_ref().expect("the save opened").revision();
     for (severity, kind, label) in &cases {
-        view.live.check.result = Some((
-            aatf_check::CheckKey {
-                revision,
-                ids: vec![734],
-                ruleset: "autumn26".to_owned(),
-                suggestions: true,
-            },
-            vec![checked(vec![violation(Some(0), *severity, kind.clone())])],
-        ));
+        live_result_held(
+            &mut window,
+            &mut view,
+            (
+                aatf_check::CheckKey {
+                    revision,
+                    ids: vec![734],
+                    ruleset: "autumn26".to_owned(),
+                    suggestions: true,
+                },
+                vec![checked(vec![violation(Some(0), *severity, kind.clone())])],
+            ),
+        );
         // The dock's bottom panel can clip a low control (the COM header
         // at ~582 sits below it at 800 tall): scroll the label into
         // view, a no-op when it already shows.
@@ -400,15 +404,6 @@ fn a_long_name_truncates_before_the_rows_mark() {
     // The held result injected for team 701, clean: every row passes
     // and carries the `✔` the name truncates before.
     let revision = view.session.as_ref().expect("the save opened").revision();
-    view.live.check.result = Some((
-        aatf_check::CheckKey {
-            revision,
-            ids: vec![701],
-            ruleset: "autumn26".to_owned(),
-            suggestions: false,
-        },
-        vec![checked(Vec::new())],
-    ));
     let item_spacing = f64::from(
         window
             .ctx
@@ -418,7 +413,19 @@ fn a_long_name_truncates_before_the_rows_mark() {
             .x,
     );
     let needle = narrow.to_string().repeat(4);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, shapes) = live_result_held(
+        &mut window,
+        &mut view,
+        (
+            aatf_check::CheckKey {
+                revision,
+                ids: vec![701],
+                ruleset: "autumn26".to_owned(),
+                suggestions: false,
+            },
+            vec![checked(Vec::new())],
+        ),
+    );
     let row = nodes
         .iter()
         .find(|node| player_row(node) && node.label().is_some_and(|label| label.contains(&needle)))
@@ -495,17 +502,19 @@ fn no_cross_overlaps_text_and_no_field_moves() {
         error(K::PlayingStyleRange),
     ];
     let revision = view.session.as_ref().expect("the save opened").revision();
-    view.live.check.result = Some((
-        aatf_check::CheckKey {
-            revision,
-            ids: vec![734],
-            ruleset: "autumn26".to_owned(),
-            suggestions: false,
-        },
-        vec![checked(violations)],
-    ));
-    let (_, nodes_mark, shapes_mark) =
-        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes_mark, shapes_mark) = live_result_held(
+        &mut window,
+        &mut view,
+        (
+            aatf_check::CheckKey {
+                revision,
+                ids: vec![734],
+                ruleset: "autumn26".to_owned(),
+                suggestions: false,
+            },
+            vec![checked(violations)],
+        ),
+    );
     let crosses: Vec<_> = mark_shapes(&shapes_mark, "\u{2716}")
         .into_iter()
         .filter(|shape| f64::from(shape.pos.x) > 250.0)
@@ -833,15 +842,6 @@ fn a_dirty_rows_dot_survives_truncation() {
         "premise: the player is dirty"
     );
     let revision = view.session.as_ref().expect("the save opened").revision();
-    view.live.check.result = Some((
-        aatf_check::CheckKey {
-            revision,
-            ids: vec![701],
-            ruleset: "autumn26".to_owned(),
-            suggestions: false,
-        },
-        vec![checked(Vec::new())],
-    ));
     let (item_spacing, warn) = {
         let style = window.ctx.style_of(window.ctx.theme());
         (
@@ -849,7 +849,19 @@ fn a_dirty_rows_dot_survives_truncation() {
             style.visuals.warn_fg_color,
         )
     };
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, shapes) = live_result_held(
+        &mut window,
+        &mut view,
+        (
+            aatf_check::CheckKey {
+                revision,
+                ids: vec![701],
+                ruleset: "autumn26".to_owned(),
+                suggestions: false,
+            },
+            vec![checked(Vec::new())],
+        ),
+    );
     let row = nodes
         .iter()
         .find(|node| player_row(node) && node.label().is_some_and(|label| label.contains(&needle)))
@@ -922,16 +934,19 @@ fn a_dirty_rows_dot_survives_truncation() {
         "premise: the team is dirty"
     );
     let revision = view.session.as_ref().expect("the save opened").revision();
-    view.live.check.result = Some((
-        aatf_check::CheckKey {
-            revision,
-            ids: vec![701],
-            ruleset: "autumn26".to_owned(),
-            suggestions: false,
-        },
-        vec![checked(Vec::new())],
-    ));
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, shapes) = live_result_held(
+        &mut window,
+        &mut view,
+        (
+            aatf_check::CheckKey {
+                revision,
+                ids: vec![701],
+                ruleset: "autumn26".to_owned(),
+                suggestions: false,
+            },
+            vec![checked(Vec::new())],
+        ),
+    );
     let row = team_row(&nodes, &view, 701);
     let bounds = row.bounds().expect("the team row's bounds");
     let name_shape = shapes

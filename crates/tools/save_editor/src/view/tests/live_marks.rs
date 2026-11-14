@@ -90,6 +90,24 @@ fn checked(violations: Vec<aatf::Violation>) -> crate::session::rules::TeamCheck
     })
 }
 
+/// `result` injected as the dock's held check, then one frame asserting
+/// none started: a key that differs from the frame's own is due, and a
+/// real run's reply would overwrite the injected result mid-test. Returns
+/// the frame's nodes and shapes.
+fn live_result_held(
+    window: &mut Headless,
+    view: &mut SaveView,
+    result: (aatf_check::CheckKey, Vec<crate::session::rules::TeamCheck>),
+) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+    view.live.check.result = Some(result);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    assert!(
+        view.live.check.pending.is_none(),
+        "the injected result's key differs from the frame's: a real check started"
+    );
+    (nodes, shapes)
+}
+
 /// `marked_field` maps each kind to the field it is about, `None` for the
 /// row- and team-only kinds, one arm per kind.
 #[test]

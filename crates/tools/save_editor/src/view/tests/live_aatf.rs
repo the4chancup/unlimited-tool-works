@@ -2598,10 +2598,11 @@ fn copying_after_suggestions_turned_off_holds_none() {
 }
 
 /// Before a result is held the button is never greyed out either, and its
-/// click copies the `Checking <team>…` the panel shows. The pointer is held
-/// on the toolbar's empty end, so no check starts before the copy's own
-/// frames (the press frame holds it, the release starts one — too late for
-/// its reply to land inside the click).
+/// click copies the `Checking <team>…` the panel shows. The pointer held on
+/// the toolbar's empty end keeps a check from starting before the copy's
+/// own frames: the press frame holds it and the release frame starts one.
+/// That run is held unanswered, since a real one's reply could land on the
+/// click's frames and turn the line into the result's.
 // SE-GUI-63
 #[test]
 fn copying_before_a_result_copies_the_checking_line() {
@@ -2620,6 +2621,14 @@ fn copying_before_a_result_copies_the_checking_line() {
     window.frame(pointer_at(at_bar, false), |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
+    let real = view
+        .live
+        .check
+        .pending
+        .take()
+        .expect("the release frame started the check");
+    let (held, _sender) = worker::Pending::held(real.key);
+    view.live.check.pending = Some(held);
     let text =
         live_copied(&mut window, &mut view, centre(copy)).expect("the click copies the list");
     assert_eq!(text, "Checking /lit/\u{2026}");

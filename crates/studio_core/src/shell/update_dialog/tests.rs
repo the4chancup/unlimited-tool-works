@@ -147,7 +147,7 @@ fn frame_until(
     what: &str,
     mut done: impl FnMut(&StudioApp, &FrameOutput) -> bool,
 ) -> FrameOutput {
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let deadline = Instant::now() + Duration::from_secs(120);
     loop {
         let out = frame(egui_ctx, app, Vec::new(), true);
         if done(app, &out) {
