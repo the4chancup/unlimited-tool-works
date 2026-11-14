@@ -6098,7 +6098,7 @@ function paintPitch(g, t, f0, live) {
   // game draws it on is not observed: no capture has a marker there).
   g.font = FORMATION_LABEL.font; g.fillStyle = "#ffffff";
   g.textAlign = "left"; g.textBaseline = "alphabetic";
-  g.fillText(formationName(tacFormation(t)), FORMATION_LABEL.x, PITCH.h - FORMATION_LABEL.bottom);
+  g.fillText(formationName(f0), FORMATION_LABEL.x, PITCH.h - FORMATION_LABEL.bottom);
   if (target >= 0) corners(g, ...badgeAt(t, target), "#14fbff");
   for (const [cx, cy, color] of crosses) pitchCross(g, cx, cy, color);
 }
