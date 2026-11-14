@@ -1,9 +1,327 @@
 use super::*;
 
-// The Appearance section lays out the draft's two physique pairs a row
-// at the default pane (1224 x 756) — Neck length and Neck size share a
-// row's top, Shoulder height opens the next, and the seven left-column
-// labels share one x0.
+/// The `Frame::group` rect holding `point`: the smallest rect among
+/// `shapes` carrying `stroke` (the group frame's own) and covering it —
+/// a titled group's painted frame.
+fn frame_around(
+    shapes: &[egui::epaint::ClippedShape],
+    stroke: egui::Stroke,
+    point: egui::Pos2,
+) -> egui::Rect {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect) if rect.rect.contains(point) && rect.stroke == stroke => {
+                Some(rect.rect)
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.area().partial_cmp(&b.area()).expect("ordered areas"))
+        .expect("a group frame around the point")
+}
+
+// SE-GUI-84
+#[test]
+fn the_groups_stand_in_the_drafts_order() {
+    let path = fixture(PesVersion::Pes21, "appearance_groups_order");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = |title: &str| {
+        let bounds = label_bounds(&nodes, title);
+        frame_around(
+            &shapes,
+            window
+                .ctx
+                .global_style()
+                .visuals
+                .widgets
+                .noninteractive
+                .bg_stroke,
+            egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
+        )
+    };
+    let fpc = frame("Full Player Customization");
+    let colors = frame("Colors");
+    let strip = frame("Strip style");
+    let physique = frame("Physique");
+    let motion = frame("Motion");
+    let flags = frame("Edit flags");
+    let presentation = frame("Presentation");
+
+    assert!(
+        colors.min.x > fpc.max.x && (colors.min.y - fpc.min.y).abs() <= 1.0,
+        "Colors at Full Player Customization's right, tops level"
+    );
+    assert!(
+        strip.min.y > fpc.max.y && strip.min.y > colors.max.y,
+        "Strip style below both"
+    );
+    assert!(physique.min.y > strip.max.y, "Physique below Strip style");
+    assert!(
+        motion.min.x > physique.max.x && (motion.min.y - physique.min.y).abs() <= 1.0,
+        "Motion at Physique's right, tops level"
+    );
+    assert!(
+        flags.min.y > motion.max.y && (flags.min.x - motion.min.x).abs() <= 1.0,
+        "Edit flags under Motion, lefts level"
+    );
+    assert!(
+        presentation.min.y > physique.max.y && presentation.min.y > flags.max.y,
+        "Presentation below the row"
+    );
+
+    // The Presentation group's rows: star then playing attitude, each
+    // label, box, then the group's note at the box's right on the box's
+    // own row.
+    for (label, note) in [
+        (
+            "Star",
+            "How likely the player is to show up as the team's featured player in the pre-match screen.",
+        ),
+        ("Playing attitude", "Only affects cutscenes."),
+    ] {
+        let bounds = right_of_label(&nodes, label, Role::SpinButton)
+            .first()
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("the {label} box"));
+        let note_bounds = label_bounds(&nodes, note);
+        assert!(
+            note_bounds.x0 >= bounds.x1 - 1.0,
+            "{label}'s note past its box's right"
+        );
+        let row_y = (bounds.y0 + bounds.y1) / 2.0;
+        let note_y = (note_bounds.y0 + note_bounds.y1) / 2.0;
+        assert!(
+            (note_y - row_y).abs() <= 2.0,
+            "{label}'s note on its box's row"
+        );
+    }
+    assert!(
+        label_bounds(&nodes, "Playing attitude").y0 > label_bounds(&nodes, "Star").y1,
+        "the attitude row stands below the star row"
+    );
+}
+
+// SE-GUI-84
+#[test]
+fn the_screen_shows_whole_at_the_default_window() {
+    // Lock off, and lock on with the switch unticked (the lock's three
+    // lines drawn): no scroll bar in the detail pane in either. The same
+    // frame scrolled before the groups' layout (the section ran to over
+    // a thousand points — every older test scrolled to reach its rows).
+    for (setting, test) in [
+        (false, "appearance_whole_unlocked"),
+        (true, "appearance_whole_locked"),
+    ] {
+        let path = fixture(PesVersion::Pes21, test);
+        let mut view = SaveView::new();
+        view.open(&path);
+        view.aesthetics_from_exports = setting;
+        let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+        open_appearance(&mut window, &mut view);
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert!(
+            !nodes.iter().any(|node| {
+                node.role() == Role::ScrollBar
+                    && node.bounds().is_some_and(|bounds| bounds.x0 > 300.0)
+            }),
+            "{test}: the detail pane has no scroll bar"
+        );
+    }
+}
+
+// SE-GUI-84
+#[test]
+fn the_strip_grid_stands_three_columns_by_five_rows_with_its_lines() {
+    let path = fixture(PesVersion::Pes21, "strip_grid");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // The fifteen settings, in the draft's order.
+    let rows: [[&str; 3]; 5] = [
+        ["Boots ID", "Sleeves", "Inners"],
+        ["Gloves ID", "Socks", "Undershorts"],
+        ["Wrist taping", "Wrist tape left", "Wrist tape right"],
+        ["Outfielder gloves", "Gloves color", "Ankle taping"],
+        ["Spectacles", "Spectacles color", "Shirttail out"],
+    ];
+    for (col, label) in rows[0].iter().enumerate() {
+        let x0 = label_bounds(&nodes, label).x0;
+        for row in &rows[1..] {
+            assert!(
+                (label_bounds(&nodes, row[col]).x0 - x0).abs() < 1.0,
+                "{:?} shares the column's x0",
+                row[col]
+            );
+        }
+    }
+    for (row, labels) in rows.iter().enumerate() {
+        let y0 = label_bounds(&nodes, labels[0]).y0;
+        for label in &labels[1..] {
+            assert!(
+                (label_bounds(&nodes, label).y0 - y0).abs() < 1.0,
+                "{label:?} shares the row's top (row {row})"
+            );
+        }
+    }
+    // Every label's field starts 8 past its 104-wide label cell; the sized
+    // controls are the field's one width (the checkboxes sit in a cell of
+    // it, their own box narrower).
+    for (row, labels) in rows.iter().enumerate() {
+        for (col, label) in labels.iter().enumerate() {
+            let label_bounds = label_bounds(&nodes, label);
+            let control = control_right_of(&nodes, label);
+            let bounds = control.bounds().expect("bounds");
+            assert!(
+                (bounds.x0 - label_bounds.x0 - 104.0 - 8.0).abs() <= 1.0,
+                "{label:?} (row {row}, col {col}): the field 8 past the label cell"
+            );
+            if control.role() != Role::CheckBox {
+                assert!(
+                    (bounds.x1 - bounds.x0 - 118.0).abs() <= 0.5,
+                    "{label:?}: the field's rect is 118 wide ({bounds:?})"
+                );
+            }
+        }
+    }
+
+    // The lines: under the second row across the three columns, and at
+    // the third column's left on rows four and five.
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let lines: Vec<[egui::Pos2; 2]> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s } if *s == stroke => Some(*points),
+            _ => None,
+        })
+        .collect();
+    let centre = |label: &str| {
+        let b = label_bounds(&nodes, label);
+        egui::pos2(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32)
+    };
+    let row2 = centre("Gloves ID");
+    let row3 = centre("Wrist taping");
+    assert!(
+        lines.iter().any(|&[a, b]| {
+            a.y == b.y
+                && a.y > row2.y
+                && a.y < row3.y
+                && a.x.min(b.x) <= label_bounds(&nodes, "Boots ID").x0 as f32 + 4.0
+                && a.x.max(b.x) >= control_right_of(&nodes, "Inners").bounds().unwrap().x1 as f32
+        }),
+        "the line under the second row, across the three columns"
+    );
+    let gloves_colour = control_right_of(&nodes, "Gloves color")
+        .bounds()
+        .expect("bounds");
+    let ankle = label_bounds(&nodes, "Ankle taping");
+    let row4 = centre("Outfielder gloves");
+    let row5 = centre("Spectacles");
+    assert!(
+        lines.iter().any(|&[a, b]| {
+            a.x == b.x
+                && a.x > gloves_colour.x1 as f32
+                && a.x < ankle.x0 as f32
+                && a.y.min(b.y) <= row4.y
+                && a.y.max(b.y) >= row5.y
+        }),
+        "the line at the third column's left on rows four and five"
+    );
+}
+
+// SE-GUI-84
+#[test]
+fn the_edit_flags_stand_three_a_row_over_copy_from_id() {
+    let path = fixture(PesVersion::Pes21, "edit_flags_grid");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let flag = |label: &str| {
+        node_labeled(&nodes, Role::CheckBox, label)
+            .bounds()
+            .expect("bounds")
+    };
+    let first = ["Face", "Hair", "Physique"].map(flag);
+    let second = ["Strip", "Motion", "Base copy"].map(flag);
+    for bounds in &first[1..] {
+        assert!(
+            (bounds.y0 - first[0].y0).abs() < 1.0,
+            "the first row's flags share a top"
+        );
+    }
+    for bounds in &second[1..] {
+        assert!(
+            (bounds.y0 - second[0].y0).abs() < 1.0,
+            "the second row's flags share a top"
+        );
+    }
+    assert!(
+        second[0].y0 - first[0].y0 >= 22.0 - 1.0,
+        "the second row opens 22 under the first"
+    );
+    let copy = label_bounds(&nodes, "Copy from ID");
+    assert!(
+        copy.y0
+            > first
+                .iter()
+                .chain(&second)
+                .map(|b| b.y1)
+                .fold(0.0, f64::max),
+        "Copy from ID on a row under all six"
+    );
+}
+
+// SE-GUI-84
+#[test]
+fn the_physique_and_motion_flag_column_end_at_one_bottom() {
+    let path = fixture(PesVersion::Pes21, "row_bottoms_level");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let frame = |title: &str| {
+        let bounds = label_bounds(&nodes, title);
+        frame_around(
+            &shapes,
+            stroke,
+            egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
+        )
+    };
+    let physique = frame("Physique");
+    let flags = frame("Edit flags");
+    assert!(
+        (physique.max.y - flags.max.y).abs() <= 1.0,
+        "the row's two sides end at one bottom"
+    );
+}
+
+// The Appearance screen lays out the draft's two physique pairs a row,
+// each field 82 points long on a 34-tall row — Neck length and Neck
+// size share a row's top, Shoulder height opens the next, the seven
+// left-column labels share one x0 and the second column's share another.
 #[test]
 fn the_physique_grid_holds_two_pairs_a_row() {
     let (mut view, _) = open_734_with("physique_two_pairs", &[], 0);
@@ -22,7 +340,7 @@ fn the_physique_grid_holds_two_pairs_a_row() {
         label_bounds(&nodes, "Shoulder height").y0 > first + 5.0,
         "Shoulder height opens the second row"
     );
-    let x0 = label_bounds(&nodes, "Neck length").x0;
+    let left = label_bounds(&nodes, "Neck length").x0;
     for label in [
         "Shoulder height",
         "Chest",
@@ -32,87 +350,31 @@ fn the_physique_grid_holds_two_pairs_a_row() {
         "Head width",
     ] {
         assert!(
-            (label_bounds(&nodes, label).x0 - x0).abs() < 1.0,
+            (label_bounds(&nodes, label).x0 - left).abs() < 1.0,
             "{label} shares the left column's x0"
         );
     }
-}
-
-// The draft's strip table at the default pane (1224 x 756): four pairs
-// a row — Boots ID, Gloves ID, Sleeves, Inners on one row, Socks,
-// Undershorts and the two checkboxes on the next, the checkboxes a label
-// cell and a bare box (the header's Captain shape); the wrist-taping,
-// spectacles and gloves rows a second grid below, a label cell and a
-// contents cell each.
-#[test]
-fn the_strip_groups_hold_the_drafts_rows() {
-    let (mut view, _) = open_734_with("strip_grid_rows", &[], 0);
-    view.aesthetics_from_exports = true;
-    view.edit_aesthetics = true;
-    let untucked = |view: &SaveView| player_entry(view, 73401).appearance.untucked;
-    assert!(untucked(&view), "premise: the shirt is out (untucked)");
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_appearance(&mut window, &mut view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-
-    let first = label_bounds(&nodes, "Boots ID").y0;
-    for label in ["Gloves ID", "Sleeves", "Inners"] {
+    let right = label_bounds(&nodes, "Neck size").x0;
+    for label in ["Neck size", "Shoulder width", "Waist", "Calf", "Head depth"] {
         assert!(
-            (label_bounds(&nodes, label).y0 - first).abs() < 1.0,
-            "{label} shares the first row"
+            (label_bounds(&nodes, label).x0 - right).abs() < 1.0,
+            "{label} shares the second column's x0"
         );
     }
-    let second = label_bounds(&nodes, "Socks").y0;
-    assert!(second > first + 5.0, "the second row below the first");
-    for label in ["Undershorts", "Shirttail out", "Ankle taping"] {
-        assert!(
-            (label_bounds(&nodes, label).y0 - second).abs() < 1.0,
-            "{label} shares the second row"
-        );
-    }
-    assert_eq!(
-        label_bounds(&nodes, "Socks").x0,
-        label_bounds(&nodes, "Boots ID").x0,
-        "the rows' first label columns share an x0"
-    );
-    assert_eq!(
-        label_bounds(&nodes, "Shirttail out").x0,
-        label_bounds(&nodes, "Sleeves").x0,
-        "the rows' third label columns share an x0"
-    );
-
-    // The second grid: the three rows' labels in one column, each below
-    // the one before, all below the strip table's last row.
-    let rows_x0 = label_bounds(&nodes, "Wrist taping").x0;
-    let mut last_y = second;
-    for label in ["Wrist taping", "Spectacles", "Player gloves"] {
-        let bounds = label_bounds(&nodes, label);
-        assert_eq!(bounds.x0, rows_x0, "{label} shares the grid's column");
-        assert!(bounds.y0 > last_y + 5.0, "{label} sits below the row above");
-        last_y = bounds.y0;
-    }
-
-    // Shirttail out's control is the bare checkbox right of its label
-    // cell; a click writes `untucked` as one undoable edit. The row sits
-    // below the fold: scroll until the clip covers it (its label's row: the
-    // bare checkbox carries no label of its own).
-    let nodes = scroll_into_view(&mut window, &mut view, |node| {
-        node.role() == Role::Label && node.value() == Some("Shirttail out")
-    });
-    let shirttail = right_of_label(&nodes, "Shirttail out", Role::CheckBox)
+    let field = right_of_label(&nodes, "Neck length", Role::SpinButton)
         .first()
-        .copied()
-        .expect("the Shirttail out checkbox");
-    click(&mut window, shirttail, &mut view);
-    assert!(!untucked(&view), "the click stores untucked");
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
+        .and_then(|node| node.bounds())
+        .expect("the Neck length field");
+    assert!(
+        (field.x1 - field.x0 - 82.0).abs() <= 0.5,
+        "the field is 82 points long"
+    );
 }
 
-// The draft's motion rows at the default pane (1224 x 756, two pairs a
-// row — `COL_PANELS` `[2, 194, 14]`): the labels take two x positions,
-// the hunching pair the first row, the arm pair the second, the kicks
-// the third, the penalty and dribbling motions the fourth, the
-// celebrations the fifth.
+// The draft's motion rows two pairs a row: the labels take two x
+// positions, the hunching pair the first row, the arm pair the second,
+// the kicks the third, the penalty and dribbling motions the fourth,
+// the celebrations the fifth.
 #[test]
 fn the_motion_grid_holds_two_pairs_a_row_in_two_columns() {
     let (mut view, _) = open_734_with("motion_two_pairs", &[], 0);

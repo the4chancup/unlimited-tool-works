@@ -417,7 +417,9 @@ fn the_player_views_pane_ends_8_from_the_windows_edge() {
     let mut view = SaveView::new();
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));
-    let mut window = Headless::new();
+    // The default width, and short enough that the Appearance screen,
+    // whole at the default window, scrolls.
+    let mut window = Headless::sized(DEFAULT_PANE.x, 600.0);
     open_appearance(&mut window, &mut view);
     // Three frames: the scroll's claimed content size lands a frame late.
     let mut nodes = Vec::new();

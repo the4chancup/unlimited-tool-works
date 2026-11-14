@@ -35,8 +35,8 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
 
     // Locked: the ownership line with the patch step and the Apply
     // aesthetics patch link, every control of the groups disabled, the
-    // switch and the Cutscenes group's two controls the ones that are not
-    // (star and playing attitude sit outside the lock).
+    // switch the one that is not (Presentation's two lock with the rest:
+    // the group sits under the lock like the others).
     assert!(
         label_value(
             &nodes,
@@ -50,19 +50,8 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
             .any(|node| node.label() == Some("Apply aesthetics patch")),
         "the patch link"
     );
-    for label in ["Star", "Playing attitude"] {
-        let control = right_of_label(&nodes, label, Role::SpinButton)
-            .into_iter()
-            .next()
-            .unwrap_or_else(|| panic!("the {label} control"));
-        assert!(
-            !control.is_disabled(),
-            "{label} stays editable while locked"
-        );
-    }
     // The self-labeled controls (checkboxes, the switch, a swatch, the
-    // button) and the label/pair ones (a Label node beside its control —
-    // Player gloves' box is bare, its label in the cell before it).
+    // button) and the label/pair ones (a Label node beside its control).
     for (label, role) in [
         ("Face", Role::CheckBox),
         ("Motion", Role::CheckBox),
@@ -84,12 +73,15 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
         ("Chest", Role::SpinButton),
         ("Corner kick", Role::SpinButton),
         ("Goal celebration 1", Role::SpinButton),
+        ("Star", Role::SpinButton),
+        ("Playing attitude", Role::SpinButton),
         ("Boots ID", Role::SpinButton),
         ("Copy from ID", Role::SpinButton),
         ("Sleeves", Role::ComboBox),
+        ("Outfielder gloves", Role::ComboBox),
+        ("Gloves color", Role::ComboBox),
         ("Shirttail out", Role::CheckBox),
         ("Ankle taping", Role::CheckBox),
-        ("Player gloves", Role::CheckBox),
     ] {
         let control = right_of_label(&nodes, label, role)
             .into_iter()
@@ -267,9 +259,9 @@ fn the_section_is_locked_on_a_pre_fox_save_with_the_patch_step() {
 // SE-GUI-06
 #[test]
 fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
-    // The Cutscenes group's half of the scenario (the stronger hand's is
-    // the Abilities test): star and playing attitude draw in the
-    // Appearance section, disabled `-` with the `PES NN+` tooltip on PES 17,
+    // The Presentation group's half of the scenario (the stronger hand's
+    // is the Abilities test): star and playing attitude draw in the
+    // Appearance screen, disabled `-` with the `PES NN+` tooltip on PES 17,
     // enabled in the same rects on PES 21.
     let bounds_of = |version: PesVersion, test: &str| {
         let path = fixture(version, test);
@@ -289,9 +281,9 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
         (view, window, nodes, (star, attitude))
     };
     let (mut view17, mut window17, _nodes17, (star17, attitude17)) =
-        bounds_of(PesVersion::Pes17, "gated_cutscenes_17");
+        bounds_of(PesVersion::Pes17, "gated_presentation_17");
     let (_view21, _window21, nodes21, (star21, attitude21)) =
-        bounds_of(PesVersion::Pes21, "gated_cutscenes_21");
+        bounds_of(PesVersion::Pes21, "gated_presentation_21");
 
     for (control, tooltip) in [("Star", "PES 19+"), ("Playing attitude", "PES 20+")] {
         // Each hover needs its own dash inside the clip: scrolling for one
@@ -321,11 +313,12 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
 
 // SE-GUI-07
 #[test]
-fn the_cutscenes_group_stays_editable_above_the_ownership_line() {
-    // Locked PES 21: the group's two controls draw above the ownership
-    // line, enabled, while the groups below it stay disabled; a Star edit
-    // lands as one undoable edit.
-    let (mut view, mut window, nodes) = locked_section(PesVersion::Pes21, "cutscenes_editable");
+fn the_presentation_group_locks_with_the_groups_below_the_ownership_line() {
+    // Locked PES 21: the group's two controls draw disabled under the
+    // ownership line like every other group's, the line itself first over
+    // Full Player Customization's title; the switch on, a Star edit lands
+    // as one undoable edit.
+    let (mut view, mut window, nodes) = locked_section(PesVersion::Pes21, "presentation_locked");
     let ownership_y = nodes
         .iter()
         .find(|node| {
@@ -337,22 +330,24 @@ fn the_cutscenes_group_stays_editable_above_the_ownership_line() {
         .and_then(accesskit::Node::bounds)
         .map(|bounds| bounds.y0)
         .expect("the ownership line");
+    assert!(
+        ownership_y < label_bounds(&nodes, "Full Player Customization").y0,
+        "the ownership line stands above Full Player Customization's title"
+    );
     for label in ["Star", "Playing attitude"] {
         let control = right_of_label(&nodes, label, Role::SpinButton)
             .into_iter()
             .next()
             .unwrap_or_else(|| panic!("the {label} control"));
-        assert!(!control.is_disabled(), "{label} is editable while locked");
+        assert!(control.is_disabled(), "{label} is locked with the rest");
         assert!(
-            control.bounds().expect("bounds").y0 < ownership_y,
-            "{label} sits above the ownership line"
+            control.bounds().expect("bounds").y0 > ownership_y,
+            "{label} sits under the ownership line"
         );
     }
-    assert!(
-        right_of_label(&nodes, "Chest", Role::SpinButton)[0].is_disabled(),
-        "the groups below the line stay locked"
-    );
 
+    // The switch on: the group's controls edit like the rest.
+    view.edit_aesthetics = true;
     let star_of = |view: &SaveView| {
         view.session
             .as_ref()
@@ -365,7 +360,7 @@ fn the_cutscenes_group_stays_editable_above_the_ownership_line() {
     };
     assert_eq!(star_of(&view), Some(0), "premise: star 0");
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
-        node.role() == Role::Label && node.value() == Some("Playing attitude")
+        node.role() == Role::Label && node.value() == Some("Star")
     });
     let star = right_of_label(&nodes, "Star", Role::SpinButton)
         .first()

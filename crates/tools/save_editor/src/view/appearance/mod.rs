@@ -1,16 +1,18 @@
-//! The Appearance section (the draft's `appearanceTab` and `paletteRow`):
-//! the Cutscenes group first (star and playing attitude,
-//! which change only cutscenes and so sit outside the lock), then the
-//! groups — Edit flags, Physique, Strip style, Motion, Colors. With the
-//! "Aesthetics from exports" setting off the section edits as every other does;
-//! with it on, the ownership line and the "Edit aesthetics anyway" switch
-//! (`SaveView`'s `edit_aesthetics`, off at every start of the tool) draw
-//! over the groups, every control disabled under the ownership line as
-//! hover and the switch re-enabling them for the rest of the run. Edits go
-//! through `Session::edit_player` under the widget's id,
-//! one undo entry per gesture, as `abilities.rs` does; a stored value past
-//! a control's range draws as stored (`clamp_existing_to_range` off) and
-//! changes only when edited.
+//! The Appearance screen (the draft's `appearanceTab` and `paletteRow`):
+//! six titled groups in `Frame::group` frames, laid out to show whole in
+//! the default window — Full Player Customization with Colors at its
+//! right, Strip style, Physique with Motion over Edit flags at its right,
+//! and Presentation last (star and playing attitude, aesthetics like the
+//! rest, so under the lock too). With the "Aesthetics from exports"
+//! setting off the screen edits as every other does; with it on, the
+//! ownership line and the "Edit aesthetics anyway" switch (`SaveView`'s
+//! `edit_aesthetics`, off at every start of the tool) draw over the
+//! groups, every control disabled under the ownership line as hover and
+//! the switch re-enabling them for the rest of the run. Edits go through
+//! `Session::edit_player` under the widget's id, one undo entry per
+//! gesture, as `abilities.rs` does; a stored value past a control's range
+//! draws as stored (`clamp_existing_to_range` off) and changes only when
+//! edited.
 
 pub(super) mod fields;
 
@@ -29,10 +31,9 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
-use crate::view::abilities::{gating_tooltip, maybe_end_row, number, small_stat};
+use crate::view::abilities::{self, gating_tooltip, maybe_end_row, number, small_stat};
 use crate::view::appearance::fields::{
-    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, option_name,
-    palette,
+    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
 };
 use crate::view::{Panel, SaveView, edit_player, selected_player};
 
@@ -58,14 +59,60 @@ pub(super) const GLOVES_ID_LABEL: &str = "Gloves ID";
 pub(super) const SHIRTTAIL_OUT_LABEL: &str = "Shirttail out";
 /// The strip grid's ankle-taping checkbox.
 pub(super) const ANKLE_TAPING_LABEL: &str = "Ankle taping";
-/// The wrist taping combo.
+/// The strip grid's wrist taping combo.
 pub(super) const WRIST_TAPING_LABEL: &str = "Wrist taping";
-/// The spectacles combo.
+/// The strip grid's left wrist-tape colour dropdown.
+pub(super) const WRIST_TAPE_LEFT_LABEL: &str = "Wrist tape left";
+/// The strip grid's right wrist-tape colour dropdown.
+pub(super) const WRIST_TAPE_RIGHT_LABEL: &str = "Wrist tape right";
+/// The strip grid's spectacles combo.
 pub(super) const SPECTACLES_LABEL: &str = "Spectacles";
-/// The player-gloves checkbox.
-pub(super) const PLAYER_GLOVES_LABEL: &str = "Player gloves";
+/// The strip grid's spectacles colour dropdown.
+pub(super) const SPECTACLES_COLOR_LABEL: &str = "Spectacles color";
+/// The strip grid's gloves colour dropdown.
+pub(super) const GLOVES_COLOR_LABEL: &str = "Gloves color";
+/// The strip grid's outfielder-gloves dropdown.
+pub(super) const OUTFIELDER_GLOVES_LABEL: &str = "Outfielder gloves";
+/// The outfielder-gloves dropdown's two readings — `gloves == 0` and any
+/// non-zero — in the combo's pick order.
+pub(super) const GLOVES_OPTIONS: [&str; 2] = ["Off", "Worn in winter"];
 /// The dribbling motion's number.
 pub(super) const DRIBBLING_MOTION_LABEL: &str = "Dribbling motion";
+/// The Presentation group's title.
+const PRESENTATION_LABEL: &str = "Presentation";
+/// The star box's note.
+const STAR_NOTE: &str =
+    "How likely the player is to show up as the team's featured player in the pre-match screen.";
+/// The playing attitude box's note.
+const ATTITUDE_NOTE: &str = "Only affects cutscenes.";
+
+/// Between two groups one under another (the draft's `.group` margin).
+const GROUP_GAP: f32 = 4.0;
+/// Between two groups side by side (the draft's `.aprow` `gap`).
+const SIDE_GAP: f32 = 8.0;
+/// A strip cell's label slot (the draft's `.slabel`).
+const LABEL_W: f32 = 104.0;
+/// Between a strip cell's label and its field (the draft's `.scell` `gap`).
+const LABEL_FIELD_GAP: f32 = 8.0;
+/// A strip cell's field slot: the dropdowns, the two ID boxes and the
+/// checkboxes' cells (the draft's `.scell` inputs).
+const FIELD_W: f32 = 118.0;
+/// Between a strip cell's field and the next cell's label (the draft's
+/// `.scell` padding, 14 on each side).
+const CELL_GAP: f32 = 28.0;
+/// One strip column's pitch: its cell and the gap after it.
+const STRIP_PITCH: f32 = LABEL_W + LABEL_FIELD_GAP + FIELD_W + CELL_GAP;
+/// A strip grid row's height (the draft's `.scell` `height`).
+const STRIP_ROW_H: f32 = 24.0;
+/// A physique row's height: the rows a little further apart, so the group
+/// fills to the right column's height (the draft's physique `td` padding).
+const PHYSIQUE_ROW_H: f32 = 34.0;
+/// A physique field's length (the draft's `input[type=range]` 82).
+const PHYSIQUE_FIELD_W: f32 = 82.0;
+/// An edit-flags cell's height (the draft's `#edit-flags-grid td`).
+const FLAG_CELL_H: f32 = 22.0;
+/// Between an edit-flags row's cells (the draft's `td` padding-right).
+const FLAG_CELL_GAP: f32 = 12.0;
 
 /// The Appearance screen's content for the selected player.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -102,13 +149,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // cross between the sections.
     let mut open_patch = false;
     ui.push_id(("appearance", generation, player_id), |ui| {
-        cutscenes(ui, session, player_id, &player.stats);
         if setting {
             open_patch = ownership_line(ui);
             studio_core::widgets::checkbox(ui, edit_aesthetics, "Edit aesthetics anyway");
             if *edit_aesthetics {
                 ui.weak("A later patch overwrites whatever is edited by hand.");
             }
+            ui.add_space(GROUP_GAP);
         }
         add_enabled_ui(ui, !locked, |ui| {
             groups(
@@ -129,7 +176,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
-/// The five groups, the draft's order.
+/// The screen's groups, `GROUP_GAP` apart: Full Player Customization with
+/// Colors at its right, Strip style the pane's width, Physique with
+/// Motion over Edit flags at its right, and Presentation the pane's
+/// width, last.
 fn groups(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -139,48 +189,196 @@ fn groups(
     draw: &mut dyn FnMut(u8) -> u8,
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
 ) {
-    ui.strong("Edit flags");
-    ui.horizontal_wrapped(|ui| {
-        edit_flags(
-            ui,
-            session,
-            player_id,
-            &player.edit_flags,
-            player.appearance.base_copy_id,
-        );
+    ui.spacing_mut().item_spacing.y = 0.0;
+    fpc_colors_row(ui, session, player_id, version, player, hide_ids);
+    ui.add_space(GROUP_GAP);
+    group(ui, "Strip style", |ui| {
+        ui.set_min_width(ui.available_width());
+        strip_grid(ui, session, player_id, version, &player.appearance);
     });
-    ui.separator();
-    ui.strong(PHYSIQUE_LABEL);
-    physique_grid(ui, session, player_id, &player.appearance);
-    ui.separator();
-    ui.strong("Strip style");
-    strip_rows(ui, session, player_id, version, &player.appearance);
-    ui.separator();
-    ui.strong(MOTION_LABEL);
-    motion_grid(ui, session, player_id, version, &player.motion, draw);
-    ui.separator();
-    ui.strong("Colors");
-    colour_rows(ui, session, player_id, version, &player.appearance);
-    ui.separator();
-    ui.strong("Full Player Customization");
-    fpc_group(ui, session, player_id, player, hide_ids);
+    ui.add_space(GROUP_GAP);
+    physique_motion_flags_row(ui, session, player_id, version, player, draw);
+    ui.add_space(GROUP_GAP);
+    group(ui, PRESENTATION_LABEL, |ui| {
+        ui.set_min_width(ui.available_width());
+        presentation(ui, session, player_id, &player.stats);
+    });
 }
 
-/// The Cutscenes group (the draft's `#cutscenes`), first in the section and
-/// outside the lock: star and playing attitude change only cutscenes, so
-/// they are no aesthetic the export owns — editable while the groups
-/// below stay locked, gated per version like the other fields.
-fn cutscenes(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &PlayerStats) {
-    ui.strong("Cutscenes");
-    ui.weak("These only change how the player appears in cutscenes.");
-    egui::Grid::new("appearance cutscenes")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-        .show(ui, |ui| {
-            for small in &fields::CUTSCENE_STATS {
-                small_stat(ui, session, player_id, stats, small);
+/// One titled group (the draft's `.group`): egui's group frame, the title
+/// in the strong colour and `TITLE_GAP` above the first thing drawn under
+/// it, as the Stats screen's panels leave under theirs.
+fn group(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::group(ui.style()).show(ui, |ui| {
+        ui.strong(title);
+        ui.add_space(abilities::TITLE_GAP - ui.spacing().item_spacing.y);
+        add(ui);
+    });
+}
+
+/// `prepared`'s `content_ui` grown to `height` before its frame paints:
+/// `Frame::begin` reserves the frame's shape, so the `paint` after the
+/// stretch draws the taller frame (the bottom padding takes the extra).
+fn stretch(prepared: &mut egui::containers::frame::Prepared, height: f32) {
+    let min = prepared.content_ui.min_rect();
+    prepared
+        .content_ui
+        .advance_cursor_after_rect(egui::Rect::from_min_max(
+            min.min,
+            egui::pos2(min.max.x, min.min.y + height),
+        ));
+}
+
+/// A group frame's margin on one axis: inner margin and stroke, which
+/// `Prepared::outer_rect` adds to the content's `min_rect` (its outer
+/// margin is 0 for `Frame::group`).
+fn frame_margin(frame: &egui::Frame) -> f32 {
+    frame.inner_margin.sum().y + frame.stroke.width * 2.0
+}
+
+/// A group frame's inside for the rows: a top-down scope from the frame's
+/// left (a right-to-left row's frame would inherit the row's layout),
+/// `title` in the strong colour and `TITLE_GAP` under it, as the Stats
+/// screen's panels leave under theirs.
+fn frame_content(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
+    ui.scope_builder(
+        egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
+        |ui| {
+            ui.strong(title);
+            ui.add_space(abilities::TITLE_GAP - ui.spacing().item_spacing.y);
+            add(ui);
+        },
+    );
+}
+
+/// The egui memory id `fpc_colors_row` writes the Colors group's measured
+/// outer width to each pass (FPC's width reads the previous pass's; a pass
+/// that measures a different one is discarded).
+const COLORS_WIDTH_ID: &str = "save_editor appearance colors width";
+
+/// The first row: Full Player Customization filling the room Colors
+/// leaves (the draft's `.aprow.fpcrow`: FPC flexes, Colors keeps its own
+/// width), `SIDE_GAP` between them and the two frames' bottoms level —
+/// the shorter one's frame repainted to the row's height.
+fn fpc_colors_row(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    version: PesVersion,
+    player: &PlayerEntry,
+    hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
+) {
+    let group_frame = egui::Frame::group(ui.style());
+    let width_id = egui::Id::unique(COLORS_WIDTH_ID);
+    let measured: Option<f32> = ui.ctx().data(|data| data.get_temp(width_id));
+    // Left to right, FPC first at the width the last pass's Colors leaves.
+    // Not a right-to-left row adding Colors first: a frame's content in it
+    // spans the whole row, and a right-aligned top-down content puts its
+    // grid's cursor at -inf (`Negative desired size: [NaN 18.0]`).
+    ui.scope_builder(
+        egui::UiBuilder::new().layout(egui::Layout::left_to_right(egui::Align::Min)),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = SIDE_GAP;
+            let fpc_width = ui.available_width() - SIDE_GAP - measured.unwrap_or(0.0);
+            let mut fpc = group_frame.begin(ui);
+            frame_content(&mut fpc.content_ui, "Full Player Customization", |ui| {
+                ui.set_min_width(fpc_width - group_frame.total_margin().sum().x);
+                fpc_group(ui, session, player_id, player, hide_ids);
+            });
+            fpc.allocate_space(ui);
+            let mut colors = group_frame.begin(ui);
+            frame_content(&mut colors.content_ui, "Colors", |ui| {
+                colour_rows(ui, session, player_id, version, &player.appearance);
+            });
+            let width = colors.allocate_space(ui).rect.width();
+            ui.ctx().data_mut(|data| data.insert_temp(width_id, width));
+            if measured != Some(width) {
+                ui.ctx()
+                    .request_discard("the Appearance screen's Colors width changed");
             }
-            ui.end_row();
-        });
+            let height = fpc
+                .content_ui
+                .min_rect()
+                .height()
+                .max(colors.content_ui.min_rect().height());
+            stretch(&mut fpc, height);
+            fpc.paint(ui);
+            stretch(&mut colors, height);
+            colors.paint(ui);
+        },
+    );
+}
+
+/// The second row: Physique at its own width, and beside it a column
+/// taking the rest — Motion over Edit flags, `GROUP_GAP` between them —
+/// the two sides ending at one bottom (the draft's `.aprow` stretch: the
+/// shorter side's frame repainted to the taller's height).
+fn physique_motion_flags_row(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    version: PesVersion,
+    player: &PlayerEntry,
+    draw: &mut dyn FnMut(u8) -> u8,
+) {
+    let group_frame = egui::Frame::group(ui.style());
+    let margin = frame_margin(&group_frame);
+    ui.scope_builder(
+        egui::UiBuilder::new().layout(egui::Layout::left_to_right(egui::Align::Min)),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = SIDE_GAP;
+            let mut physique = group_frame.begin(ui);
+            frame_content(&mut physique.content_ui, PHYSIQUE_LABEL, |ui| {
+                physique_grid(ui, session, player_id, &player.appearance)
+            });
+            physique.allocate_space(ui);
+            let physique_outer = physique.content_ui.min_rect().height() + margin;
+            let row_height = ui
+                .scope_builder(
+                    egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
+                    |ui| {
+                        ui.set_min_width(ui.available_width());
+                        ui.spacing_mut().item_spacing.y = GROUP_GAP;
+                        let mut motion = group_frame.begin(ui);
+                        frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
+                            ui.set_min_width(ui.available_width());
+                            motion_grid(ui, session, player_id, version, &player.motion, draw);
+                        });
+                        let motion_outer = motion.content_ui.min_rect().height() + margin;
+                        motion.end(ui);
+                        let mut flags = group_frame.begin(ui);
+                        frame_content(&mut flags.content_ui, "Edit flags", |ui| {
+                            ui.set_min_width(ui.available_width());
+                            edit_flags_grid(
+                                ui,
+                                session,
+                                player_id,
+                                &player.edit_flags,
+                                player.appearance.base_copy_id,
+                            );
+                        });
+                        flags.allocate_space(ui);
+                        let column_height = ui.min_rect().height();
+                        let row_height = physique_outer.max(column_height);
+                        if column_height < row_height {
+                            stretch(&mut flags, row_height - motion_outer - GROUP_GAP - margin);
+                            let column = ui.min_rect();
+                            ui.advance_cursor_after_rect(egui::Rect::from_min_max(
+                                column.min,
+                                egui::pos2(column.max.x, column.min.y + row_height),
+                            ));
+                        }
+                        flags.paint(ui);
+                        row_height
+                    },
+                )
+                .inner;
+            if physique_outer < row_height {
+                stretch(&mut physique, row_height - margin);
+            }
+            physique.paint(ui);
+        },
+    );
 }
 
 /// The ownership row: the sentence itself and the Apply aesthetics patch
@@ -203,7 +401,7 @@ pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, s
                                         settings.toml (or its ingame_face.toml, for the face, \
                                         hair and iris), recompile, then apply the patch.";
 
-/// The FPC group, last in the section (the draft's `fpcGroup`): the
+/// The FPC group, the first row's left side (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'
 /// hide IDs — a player hidden by his model's own boots ID reads as shown,
 /// so no checkbox), the Hide default body and Show default body buttons
@@ -295,92 +493,126 @@ fn fpc_group(
     }
 }
 
-/// The edit flags' row (the draft's Edit flags group): the six flags, then
-/// the copy-from id. `base_copy` exists on PES 15 to 18 only; like a gated
-/// field it keeps its place, disabled. Ticking it also sets the seven
-/// gameplay flags, since a copy's sections count as edited; unticking
-/// clears `base_copy` alone.
-fn edit_flags(
+/// The Presentation group's two rows: star and playing attitude one under
+/// the other, label then box, each with its note at the box's right in the
+/// weak colour. `PRESENTATION_STATS` because the pair shares the Profile
+/// fields' `SmallStat` shape.
+fn presentation(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &PlayerStats) {
+    egui::Grid::new("appearance presentation")
+        .num_columns(3)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            for (small, note) in fields::PRESENTATION_STATS
+                .iter()
+                .zip([STAR_NOTE, ATTITUDE_NOTE])
+            {
+                small_stat(ui, session, player_id, stats, small);
+                ui.weak(note);
+                ui.end_row();
+            }
+        });
+}
+
+/// The edit flags' grid (the draft's `#edit-flags-grid`): the six flags
+/// three a row, `Copy from ID` on a row of its own under them. `base_copy`
+/// exists on PES 15 to 18 only; like a gated field it keeps its place,
+/// disabled. Ticking it also sets the seven gameplay flags, since a copy's
+/// sections count as edited; unticking clears `base_copy` alone.
+fn edit_flags_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     flags: &PlayerEditFlags,
     base_copy_id: u32,
 ) {
-    checkbox(ui, session, player_id, FACE_LABEL, flags.face, |p, v| {
-        p.edit_flags.face = v;
-    });
-    checkbox(ui, session, player_id, HAIR_LABEL, flags.hair, |p, v| {
-        p.edit_flags.hair = v;
-    });
-    checkbox(
-        ui,
-        session,
-        player_id,
-        PHYSIQUE_LABEL,
-        flags.physique,
-        |p, v| {
-            p.edit_flags.physique = v;
-        },
-    );
-    checkbox(ui, session, player_id, STRIP_LABEL, flags.strip, |p, v| {
-        p.edit_flags.strip = v;
-    });
-    checkbox(
-        ui,
-        session,
-        player_id,
-        MOTION_LABEL,
-        flags.motion,
-        |p, v| {
-            p.edit_flags.motion = v;
-        },
-    );
-    match flags.base_copy {
-        Some(held) => checkbox(ui, session, player_id, BASE_COPY_LABEL, held, |p, v| {
-            p.edit_flags.base_copy = Some(v);
-            if v {
-                p.edit_flags.abilities = true;
-                p.edit_flags.com_styles = true;
-                p.edit_flags.motion = true;
-                p.edit_flags.playable_positions = true;
-                p.edit_flags.registered_position = true;
-                p.edit_flags.skills = true;
-                p.edit_flags.playing_style = true;
+    egui::Grid::new("appearance edit flags")
+        .num_columns(3)
+        .min_row_height(FLAG_CELL_H)
+        .spacing(egui::vec2(FLAG_CELL_GAP, 0.0))
+        .show(ui, |ui| {
+            checkbox(ui, session, player_id, FACE_LABEL, flags.face, |p, v| {
+                p.edit_flags.face = v;
+            });
+            checkbox(ui, session, player_id, HAIR_LABEL, flags.hair, |p, v| {
+                p.edit_flags.hair = v;
+            });
+            checkbox(
+                ui,
+                session,
+                player_id,
+                PHYSIQUE_LABEL,
+                flags.physique,
+                |p, v| {
+                    p.edit_flags.physique = v;
+                },
+            );
+            ui.end_row();
+            checkbox(ui, session, player_id, STRIP_LABEL, flags.strip, |p, v| {
+                p.edit_flags.strip = v;
+            });
+            checkbox(
+                ui,
+                session,
+                player_id,
+                MOTION_LABEL,
+                flags.motion,
+                |p, v| {
+                    p.edit_flags.motion = v;
+                },
+            );
+            match flags.base_copy {
+                Some(held) => checkbox(ui, session, player_id, BASE_COPY_LABEL, held, |p, v| {
+                    p.edit_flags.base_copy = Some(v);
+                    if v {
+                        p.edit_flags.abilities = true;
+                        p.edit_flags.com_styles = true;
+                        p.edit_flags.motion = true;
+                        p.edit_flags.playable_positions = true;
+                        p.edit_flags.registered_position = true;
+                        p.edit_flags.skills = true;
+                        p.edit_flags.playing_style = true;
+                    }
+                }),
+                None => {
+                    add_enabled(ui, false, |ui: &mut egui::Ui| {
+                        studio_core::widgets::checkbox(ui, &mut false, BASE_COPY_LABEL)
+                    })
+                    .on_disabled_hover_text("PES 15 to 18 only");
+                }
             }
-        }),
-        None => {
-            add_enabled(ui, false, |ui: &mut egui::Ui| {
-                studio_core::widgets::checkbox(ui, &mut false, BASE_COPY_LABEL)
-            })
-            .on_disabled_hover_text("PES 15 to 18 only");
-        }
-    }
-    number(
-        ui,
-        session,
-        player_id,
-        COPY_FROM_ID_LABEL,
-        base_copy_id,
-        0..=u32::MAX,
-        |player, shown| {
-            player.appearance.base_copy_id = shown;
-        },
-    );
+            ui.end_row();
+        });
+    ui.add_space(FORM_ROW_SPACING);
+    ui.horizontal(|ui| {
+        number(
+            ui,
+            session,
+            player_id,
+            COPY_FROM_ID_LABEL,
+            base_copy_id,
+            0..=u32::MAX,
+            |player, shown| {
+                player.appearance.base_copy_id = shown;
+            },
+        );
+    });
 }
 
 /// The 14 physique fields in an aligned grid of label and field cells,
-/// the draft's two pairs a row. Each field is on its key's `Signed`
-/// scale (±7: `shown - limit` stores `shown + limit`).
+/// two pairs a row on `PHYSIQUE_ROW_H`-tall rows, each field `PHYSIQUE_FIELD_W`
+/// long (the draft's `.stats-grid` pairs and 82-point sliders). Each field
+/// is on its key's `Signed` scale (±7: `shown - limit` stores `shown +
+/// limit`).
 fn physique_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     appearance: &PlayerAppearance,
 ) {
-    let per_row = 2;
     egui::Grid::new("appearance physique")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .num_columns(4)
+        .min_row_height(PHYSIQUE_ROW_H)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, 0.0))
         .show(ui, |ui| {
             for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
                 let Kind::Signed { limit } = key.spec().kind else {
@@ -390,11 +622,13 @@ fn physique_grid(
                 let stored = get(appearance);
                 let mut shown = i32::from(stored) - limit;
                 ui.label(*label);
+                let height = ui.spacing().interact_size.y;
                 let mut response = number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
                     ui.add(
                         egui::DragValue::new(value)
                             .range(-limit..=limit)
-                            .clamp_existing_to_range(false),
+                            .clamp_existing_to_range(false)
+                            .min_size(egui::vec2(PHYSIQUE_FIELD_W, height)),
                     )
                 });
                 if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
@@ -409,208 +643,389 @@ fn physique_grid(
                         );
                     });
                 }
-                maybe_end_row(ui, index + 1, per_row);
+                maybe_end_row(ui, index + 1, 2);
             }
         });
 }
 
-/// The draft's Strip style group: the ids, the enums and the two
-/// checkboxes as label and field cells in one grid (the draft's four
-/// pairs a row — its two table rows fall out at four: the ids and the
-/// first two enums, then the rest with the checkboxes), then the
-/// wrist-taping, spectacles and player-gloves rows as a second grid, a
-/// label cell and a contents cell each. The draft's
-/// colspan rows cannot share the first grid (an egui grid has no span),
-/// so their labels align among themselves instead.
-fn strip_rows(
+/// One strip-grid cell (the draft's `stripCells` entries): a `STRIP_ENUMS`
+/// tuple's own kind, or one of the five kinds the grid holds besides
+/// (the two ID boxes, the colour dropdowns, the outfielder-gloves
+/// dropdown and the two checkboxes).
+#[derive(Clone, Copy)]
+enum StripCell {
+    /// The boots ID box, on the record's own bound (`id_box`).
+    BootsId,
+    /// The same for the gloves ID, with the any-player hover.
+    GlovesId,
+    /// A `STRIP_ENUMS` entry (`label`, `SettingKey`, `get`, `set`).
+    Enum(&'static fields::AppearanceField),
+    /// The wrist taping dropdown.
+    WristTaping,
+    /// The left wrist tape's colour dropdown (`combo_options`' labels).
+    WristTapeLeft,
+    /// The right wrist tape's colour dropdown.
+    WristTapeRight,
+    /// `Off`/`Worn in winter` over the face run's PlayerGloves (not a
+    /// checkbox: beside the colours it read as one of them, and it did not
+    /// say when the gloves show).
+    OutfielderGloves,
+    /// The gloves colour dropdown over the face run's PlayerGlovesColor.
+    GlovesColor,
+    /// The ankle-taping checkbox, a bare box in the field slot.
+    AnkleTaping,
+    /// The spectacles style dropdown.
+    Spectacles,
+    /// The spectacles colour dropdown.
+    SpectaclesColor,
+    /// The shirttail-out checkbox, a bare box in the field slot.
+    ShirttailOut,
+}
+
+/// The fifteen cells in the draft's order, three columns by five
+/// rows (the draft's `STRIP_ORDER`).
+const STRIP_ORDER: [[StripCell; 3]; 5] = [
+    [
+        StripCell::BootsId,
+        StripCell::Enum(&STRIP_ENUMS[0]),
+        StripCell::Enum(&STRIP_ENUMS[1]),
+    ],
+    [
+        StripCell::GlovesId,
+        StripCell::Enum(&STRIP_ENUMS[2]),
+        StripCell::Enum(&STRIP_ENUMS[3]),
+    ],
+    [
+        StripCell::WristTaping,
+        StripCell::WristTapeLeft,
+        StripCell::WristTapeRight,
+    ],
+    [
+        StripCell::OutfielderGloves,
+        StripCell::GlovesColor,
+        StripCell::AnkleTaping,
+    ],
+    [
+        StripCell::Spectacles,
+        StripCell::SpectaclesColor,
+        StripCell::ShirttailOut,
+    ],
+];
+
+/// `cell`'s label, drawn in its `LABEL_W` slot.
+fn cell_label(cell: StripCell) -> &'static str {
+    match cell {
+        StripCell::BootsId => BOOTS_ID_LABEL,
+        StripCell::GlovesId => GLOVES_ID_LABEL,
+        StripCell::Enum(&(label, ..)) => label,
+        StripCell::WristTaping => WRIST_TAPING_LABEL,
+        StripCell::WristTapeLeft => WRIST_TAPE_LEFT_LABEL,
+        StripCell::WristTapeRight => WRIST_TAPE_RIGHT_LABEL,
+        StripCell::OutfielderGloves => OUTFIELDER_GLOVES_LABEL,
+        StripCell::GlovesColor => GLOVES_COLOR_LABEL,
+        StripCell::AnkleTaping => ANKLE_TAPING_LABEL,
+        StripCell::Spectacles => SPECTACLES_LABEL,
+        StripCell::SpectaclesColor => SPECTACLES_COLOR_LABEL,
+        StripCell::ShirttailOut => SHIRTTAIL_OUT_LABEL,
+    }
+}
+
+/// The Strip style group's grid (the draft's `#strip-grid`): the fifteen
+/// settings three columns by five rows, each cell `LABEL_W` for its label
+/// then `FIELD_W` for its field, `CELL_GAP` between a field and the next
+/// label, rows `STRIP_ROW_H` tall and touching, with the thin lines in
+/// the group frame's stroke colour parting what belongs together — under
+/// the second and third rows across the three columns, under the fourth
+/// across the first two, between the columns on the first two rows and
+/// at the third column's left on the last two (the draft's `lr`/`lb`
+/// cells).
+fn strip_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     version: PesVersion,
     appearance: &PlayerAppearance,
 ) {
-    let per_row = 4;
-    egui::Grid::new("appearance strip")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-        .show(ui, |ui| {
-            // The id fields take the record's own bound (`player_max_value`,
-            // wider than `settings.toml`'s stock range): a compile-allocated
-            // ID such as 627 is a value the save holds.
-            number(
+    let mut rows = Vec::with_capacity(STRIP_ORDER.len());
+    ui.spacing_mut().item_spacing.y = 0.0;
+    for row in STRIP_ORDER {
+        let inner = ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            ui.set_min_height(STRIP_ROW_H);
+            for cell in row {
+                strip_cell(ui, session, player_id, version, appearance, cell);
+            }
+        });
+        rows.push(inner.response.rect);
+    }
+    let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+    let painter = ui.painter();
+    let left = rows[0].min.x;
+    // The lines under rows two, three (the three columns) and four (the
+    // first two), at the touched rows' shared bottom, ending mid-gap where
+    // a column line stands.
+    for (under, columns) in [(1usize, 3usize), (2, 3), (3, 2)] {
+        let y = rows[under].max.y;
+        painter.line_segment(
+            [
+                egui::pos2(left, y),
+                egui::pos2(left + columns as f32 * STRIP_PITCH - CELL_GAP / 2.0, y),
+            ],
+            stroke,
+        );
+    }
+    // The column lines, centred in the `CELL_GAP` between a field and the
+    // next label: between the columns on rows one and two, at the third
+    // column's left on rows four and five.
+    for (column, first_row, last_row) in [(1usize, 0usize, 1usize), (2, 0, 1), (2, 3, 4)] {
+        let x = left + column as f32 * STRIP_PITCH - CELL_GAP / 2.0;
+        painter.line_segment(
+            [
+                egui::pos2(x, rows[first_row].min.y),
+                egui::pos2(x, rows[last_row].max.y),
+            ],
+            stroke,
+        );
+    }
+}
+
+/// One strip cell: `cell`'s label in its `LABEL_W` slot, `LABEL_FIELD_GAP`,
+/// then its field in the `FIELD_W` slot, `CELL_GAP` after it.
+fn strip_cell(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    version: PesVersion,
+    appearance: &PlayerAppearance,
+    cell: StripCell,
+) {
+    ui.allocate_ui_with_layout(
+        egui::vec2(LABEL_W, STRIP_ROW_H),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.set_min_size(egui::vec2(LABEL_W, STRIP_ROW_H));
+            ui.label(cell_label(cell));
+        },
+    );
+    ui.add_space(LABEL_FIELD_GAP);
+    ui.allocate_ui_with_layout(
+        egui::vec2(FIELD_W, STRIP_ROW_H),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.set_min_size(egui::vec2(FIELD_W, STRIP_ROW_H));
+            strip_field(ui, session, player_id, version, appearance, cell);
+        },
+    );
+    ui.add_space(CELL_GAP);
+}
+
+/// `cell`'s field in its `FIELD_W` slot.
+fn strip_field(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    version: PesVersion,
+    appearance: &PlayerAppearance,
+    cell: StripCell,
+) {
+    match cell {
+        StripCell::BootsId => {
+            id_box(
                 ui,
                 session,
                 player_id,
-                BOOTS_ID_LABEL,
+                version,
+                PlayerField::BootsId,
                 appearance.boots_id,
-                0..=u32::try_from(
-                    player_max_value(version, PlayerField::BootsId)
-                        .expect("the boots id is stored on every version"),
-                )
-                .expect("the boots id's bound fits u32"),
-                |player, shown| {
-                    player.appearance.boots_id = shown;
+                |p, v| {
+                    p.appearance.boots_id = v;
                 },
             );
-            maybe_end_row(ui, 1, per_row);
-            number(
+        }
+        StripCell::GlovesId => {
+            id_box(
                 ui,
                 session,
                 player_id,
-                GLOVES_ID_LABEL,
+                version,
+                PlayerField::GlovesId,
                 appearance.gloves_id,
-                0..=u32::try_from(
-                    player_max_value(version, PlayerField::GlovesId)
-                        .expect("the gloves id is stored on every version"),
-                )
-                .expect("the gloves id's bound fits u32"),
-                |player, shown| {
-                    player.appearance.gloves_id = shown;
+                |p, v| {
+                    p.appearance.gloves_id = v;
                 },
             )
             .on_hover_text(
                 "Any player can wear gloves, not only goalkeepers; 0 means normal hands.",
             );
-            maybe_end_row(ui, 2, per_row);
-            for (index, (label, key, get, set)) in STRIP_ENUMS.iter().enumerate() {
-                combo(
-                    ui,
-                    session,
-                    player_id,
-                    label,
-                    *key,
-                    get(appearance),
-                    move |player, shown| {
-                        set(&mut player.appearance, shown);
-                    },
-                );
-                maybe_end_row(ui, 3 + index, per_row);
-            }
-            // The checkboxes draw as a label cell and a bare box in the field
-            // cell (the header's Captain shape).
-            bare_checkbox(
+        }
+        StripCell::Enum(&(label, key, get, set)) => {
+            combo_box(
                 ui,
                 session,
                 player_id,
-                SHIRTTAIL_OUT_LABEL,
-                appearance.untucked,
-                |p, v| {
-                    p.appearance.untucked = v;
+                label,
+                &combo_options(key),
+                get(appearance),
+                move |player, shown| {
+                    set(&mut player.appearance, shown);
                 },
             );
-            maybe_end_row(ui, 3 + STRIP_ENUMS.len(), per_row);
-            bare_checkbox(
+        }
+        StripCell::WristTaping => combo_box(
+            ui,
+            session,
+            player_id,
+            WRIST_TAPING_LABEL,
+            &combo_options(SettingKey::WristTaping),
+            appearance.wrist_taping,
+            |player, shown| {
+                player.appearance.wrist_taping = shown;
+            },
+        ),
+        StripCell::WristTapeLeft => combo_box(
+            ui,
+            session,
+            player_id,
+            WRIST_TAPE_LEFT_LABEL,
+            &combo_options(SettingKey::WristTapeColorLeft),
+            appearance.wrist_tape_color_left,
+            |player, shown| {
+                player.appearance.wrist_tape_color_left = shown;
+            },
+        ),
+        StripCell::WristTapeRight => combo_box(
+            ui,
+            session,
+            player_id,
+            WRIST_TAPE_RIGHT_LABEL,
+            &combo_options(SettingKey::WristTapeColorRight),
+            appearance.wrist_tape_color_right,
+            |player, shown| {
+                player.appearance.wrist_tape_color_right = shown;
+            },
+        ),
+        StripCell::OutfielderGloves => {
+            let gloves = face(appearance, IngameFaceField::PlayerGloves);
+            combo_box(
                 ui,
                 session,
                 player_id,
-                ANKLE_TAPING_LABEL,
+                OUTFIELDER_GLOVES_LABEL,
+                &GLOVES_OPTIONS.map(str::to_owned),
+                u8::from(gloves != 0),
+                |player, shown| {
+                    player
+                        .appearance
+                        .ingame_face
+                        .set(IngameFaceField::PlayerGloves, shown)
+                        .expect("a loaded player's face run holds player gloves");
+                },
+            );
+        }
+        StripCell::GlovesColor => {
+            let stored = face(appearance, IngameFaceField::PlayerGlovesColor);
+            combo_box(
+                ui,
+                session,
+                player_id,
+                GLOVES_COLOR_LABEL,
+                &combo_options(SettingKey::GlovesColor),
+                stored,
+                |player, shown| {
+                    player
+                        .appearance
+                        .ingame_face
+                        .set(IngameFaceField::PlayerGlovesColor, shown)
+                        .expect("a loaded player's face run holds the gloves colour");
+                },
+            );
+        }
+        StripCell::AnkleTaping => {
+            checkbox(
+                ui,
+                session,
+                player_id,
+                "",
                 appearance.ankle_taping,
                 |p, v| {
                     p.appearance.ankle_taping = v;
                 },
             );
-        });
-    egui::Grid::new("appearance strip rows")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-        .show(ui, |ui| {
-            strip_row(ui, WRIST_TAPING_LABEL, |ui| {
-                combo_box(
-                    ui,
-                    session,
-                    player_id,
-                    WRIST_TAPING_LABEL,
-                    SettingKey::WristTaping,
-                    appearance.wrist_taping,
-                    |player, shown| {
-                        player.appearance.wrist_taping = shown;
-                    },
-                );
-                ui.label("Left");
-                palette_row(
-                    ui,
-                    session,
-                    player_id,
-                    &palette(version, SettingKey::WristTapeColorLeft),
-                    appearance.wrist_tape_color_left,
-                    |player, shown| {
-                        player.appearance.wrist_tape_color_left = shown;
-                    },
-                );
-                ui.label("Right");
-                palette_row(
-                    ui,
-                    session,
-                    player_id,
-                    &palette(version, SettingKey::WristTapeColorRight),
-                    appearance.wrist_tape_color_right,
-                    |player, shown| {
-                        player.appearance.wrist_tape_color_right = shown;
-                    },
-                );
+        }
+        StripCell::Spectacles => combo_box(
+            ui,
+            session,
+            player_id,
+            SPECTACLES_LABEL,
+            &combo_options(SettingKey::Spectacles),
+            appearance.spectacles_style,
+            |player, shown| {
+                player.appearance.spectacles_style = shown;
+            },
+        ),
+        StripCell::SpectaclesColor => {
+            combo_box(
+                ui,
+                session,
+                player_id,
+                SPECTACLES_COLOR_LABEL,
+                &combo_options(SettingKey::SpectaclesColor),
+                appearance.spectacles_color,
+                |player, shown| {
+                    player.appearance.spectacles_color = shown;
+                },
+            );
+        }
+        StripCell::ShirttailOut => {
+            checkbox(ui, session, player_id, "", appearance.untucked, |p, v| {
+                p.appearance.untucked = v;
             });
-            strip_row(ui, SPECTACLES_LABEL, |ui| {
-                combo_box(
-                    ui,
-                    session,
-                    player_id,
-                    SPECTACLES_LABEL,
-                    SettingKey::Spectacles,
-                    appearance.spectacles_style,
-                    |player, shown| {
-                        player.appearance.spectacles_style = shown;
-                    },
-                );
-                palette_row(
-                    ui,
-                    session,
-                    player_id,
-                    &palette(version, SettingKey::SpectaclesColor),
-                    appearance.spectacles_color,
-                    |player, shown| {
-                        player.appearance.spectacles_color = shown;
-                    },
-                );
-            });
-            strip_row(ui, PLAYER_GLOVES_LABEL, |ui| {
-                let gloves = face(appearance, IngameFaceField::PlayerGloves);
-                checkbox(ui, session, player_id, "", gloves != 0, |p, v| {
-                    p.appearance
-                        .ingame_face
-                        .set(IngameFaceField::PlayerGloves, u8::from(v))
-                        .expect("a loaded player's face run holds player gloves");
-                });
-                let gloves_color = face(appearance, IngameFaceField::PlayerGlovesColor);
-                palette_row(
-                    ui,
-                    session,
-                    player_id,
-                    &palette(version, SettingKey::GlovesColor),
-                    gloves_color,
-                    |player, shown| {
-                        player
-                            .appearance
-                            .ingame_face
-                            .set(IngameFaceField::PlayerGlovesColor, shown)
-                            .expect("a loaded player's face run holds the gloves colour");
-                    },
-                );
-            });
-        });
+        }
+    }
 }
 
-/// One strip row of the second grid: `label`'s cell, then `add`'s
-/// controls in one `ui.horizontal`, `end_row` (the draft's colspan
-/// rows' shape).
-fn strip_row(ui: &mut egui::Ui, label: &'static str, add: impl FnOnce(&mut egui::Ui)) {
-    ui.label(label);
-    ui.horizontal(add);
-    ui.end_row();
+/// A strip cell's ID box: a `FIELD_W` `DragValue` over the record's own
+/// bound (`player_max_value`, wider than `settings.toml`'s stock range —
+/// a compile-allocated ID such as 627 is a value the save holds), the
+/// wheel and arrow-key steps `abilities`' `number` gives.
+fn id_box(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    version: PesVersion,
+    field: PlayerField,
+    stored: u32,
+    set: impl FnOnce(&mut PlayerEntry, u32),
+) -> egui::Response {
+    let range = 0..=u32::try_from(
+        player_max_value(version, field).expect("the id is stored on every version"),
+    )
+    .expect("the id's bound fits u32");
+    let mut shown = stored;
+    let height = ui.spacing().interact_size.y;
+    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+        ui.add(
+            egui::DragValue::new(value)
+                .range(range.clone())
+                .clamp_existing_to_range(false)
+                .min_size(egui::vec2(FIELD_W, height)),
+        )
+    });
+    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+        response.mark_changed();
+    }
+    if response.changed() {
+        edit_player(session, player_id, response.id.value(), |player| {
+            set(player, shown);
+        });
+    }
+    response
 }
 
-/// The draft's Motion group: the nine measured motions in the draft's
-/// order as label/field pairs, the draft's two a row as a cap a narrower
-/// pane lowers, the dribbling motion
-/// between the kicks and the celebrations (PES 20+, drawn disabled with
-/// the version tooltip before it).
+/// The Motion group: the nine measured motions in the draft's order as
+/// label/field pairs, two a row, the dribbling motion between the kicks
+/// and the celebrations (PES 20+, drawn disabled with the version tooltip
+/// before it), Randomize under the grid.
 fn motion_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -748,9 +1163,10 @@ fn randomize(
     );
 }
 
-/// The draft's Colours group: skin and iris, each its palette's entries as
-/// swatches. The skin palette drops the Custom entry on Fox (PES 15 to 17
-/// alone have it, the three pre-Fox versions).
+/// The Colors group's two swatch rows (the draft's Colours group): skin
+/// and iris, each its palette's entries as swatches, the two rows' first
+/// squares at one x. The skin palette drops the Custom entry on Fox (PES
+/// 15 to 17 alone have it, the three pre-Fox versions).
 fn colour_rows(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -758,29 +1174,34 @@ fn colour_rows(
     version: PesVersion,
     appearance: &PlayerAppearance,
 ) {
-    for key in [SettingKey::SkinColor, SettingKey::IrisColor] {
-        let field = key
-            .face_field()
-            .expect("a colour palette's is a face field");
-        let palette = palette(version, key);
-        let stored = face(appearance, field);
-        ui.horizontal_wrapped(|ui| {
-            ui.label(palette.label);
-            palette_row(ui, session, player_id, &palette, stored, |player, shown| {
-                player
-                    .appearance
-                    .ingame_face
-                    .set(field, shown)
-                    .expect("a loaded player's face run holds the section's colour fields");
-            });
+    egui::Grid::new("appearance colours")
+        .num_columns(2)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            for key in [SettingKey::SkinColor, SettingKey::IrisColor] {
+                let field = key
+                    .face_field()
+                    .expect("a colour palette's is a face field");
+                let palette = palette(version, key);
+                let stored = face(appearance, field);
+                ui.label(palette.label);
+                ui.horizontal(|ui| {
+                    palette_row(ui, session, player_id, &palette, stored, |player, shown| {
+                        player
+                            .appearance
+                            .ingame_face
+                            .set(field, shown)
+                            .expect("a loaded player's face run holds the section's colour fields");
+                    });
+                });
+                ui.end_row();
+            }
         });
-    }
 }
 
 /// One checkbox pair, the label inside the widget (the edit flags'
-/// shape; `""` draws the bare box — the strip grids' checkboxes and the
-/// gloves row's). A change writes `set` through `edit_player` under the
-/// widget's id.
+/// shape; `""` draws the bare box — the strip grid's checkboxes'). A
+/// change writes `set` through `edit_player` under the widget's id.
 fn checkbox(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -798,53 +1219,29 @@ fn checkbox(
     }
 }
 
-/// `label` in its own cell, then `checkbox`'s bare box in the field cell
-/// (the strip grids' pair shape, as the header's Captain cell); the same
-/// write.
-fn bare_checkbox(
-    ui: &mut egui::Ui,
-    session: &mut Session,
-    player_id: u32,
-    label: &'static str,
-    held: bool,
-    set: impl FnOnce(&mut PlayerEntry, bool),
-) {
-    ui.label(label);
-    checkbox(ui, session, player_id, "", held, set);
-}
-
-/// One label/`ComboBox` pair over `key`'s option labels (`combo_options`);
-/// a stored index past the list shows its number, a pick writes it.
-fn combo(
-    ui: &mut egui::Ui,
-    session: &mut Session,
-    player_id: u32,
-    label: &'static str,
-    key: SettingKey,
-    stored: u8,
-    set: impl FnOnce(&mut PlayerEntry, u8),
-) {
-    ui.label(label);
-    combo_box(ui, session, player_id, label, key, stored, set);
-}
-
-/// `combo`'s `ComboBox` alone, for a caller whose label sits in its own
-/// cell (the strip rows' grid).
+/// A strip cell's `ComboBox`, `FIELD_W` wide, `options` its rows' labels
+/// in pick order (`combo_options`' for a `SettingKey`, `GLOVES_OPTIONS`' for
+/// the outfielder gloves); `stored` the held index, its number shown when
+/// past the list. A pick, or a wheel notch stepping through the rows,
+/// writes `set`.
 fn combo_box(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     label: &'static str,
-    key: SettingKey,
+    options: &[String],
     stored: u8,
     set: impl FnOnce(&mut PlayerEntry, u8),
 ) {
-    let options = combo_options(key);
     let mut picked = stored;
-    let selected = option_name(key, stored);
-    let index = |at: usize| u8::try_from(at).expect("the key's options fit a u8");
+    let selected = options
+        .get(usize::from(stored))
+        .cloned()
+        .unwrap_or_else(|| stored.to_string());
+    let index = |at: usize| u8::try_from(at).expect("the options fit a u8");
     let combo = egui::ComboBox::from_id_salt(("appearance", label))
         .selected_text(selected)
+        .width(FIELD_W)
         .show_ui(ui, |ui| {
             for (at, option) in options.iter().enumerate() {
                 combo_item(ui, &mut picked, index(at), option);

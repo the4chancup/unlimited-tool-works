@@ -84,7 +84,7 @@ fn the_export_writes_one_markdown_file_per_chapter() {
         ("team-compiler", NOTES_ENCODING_INVALID),
         (
             "save-editor",
-            "| `fpc_gloves_checkbox_winter_gloves` | Warning | The Player gloves checkbox is on with Gloves ID 0, so the player wears winter gloves in winter conditions. | Nothing is changed for you. Untick Player gloves, or give the player a gloves ID, if that is not wanted. |",
+            "| `fpc_gloves_checkbox_winter_gloves` | Warning | Outfielder gloves is Worn in winter with Gloves ID 0, so the player wears winter gloves in winter conditions. | Nothing is changed for you. Set Outfielder gloves to Off, or give the player a gloves ID, if that is not wanted. |",
         ),
         ("export-upgrader", UPGRADER_NOTES_ENCODING_INVALID),
         (

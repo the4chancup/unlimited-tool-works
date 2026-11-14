@@ -254,8 +254,9 @@ fn an_ability_edit_marks_the_row_until_ctrl_s_writes_the_save() {
 // SE-GUI-06
 #[test]
 fn version_gated_controls_are_disabled_in_place_with_their_first_version() {
-    // The stronger hand (the Profile block's gated control; the Cutscenes
-    // pair's half of the scenario lives on the Appearance section's test):
+    // The stronger hand (the Profile block's gated control; the
+    // Presentation pair's half of the scenario lives on the Appearance
+    // screen's test):
     // the same player on PES 17 (no hand stored) and PES 21 (stored), the
     // Left | Right toggle in the same span, disabled with the `PES NN+`
     // tooltip on 17, Right held as on every save without the field.
@@ -874,7 +875,7 @@ fn a_card_tick_on_another_player_is_its_own_undo_entry() {
 // The fields shown one above their stored value (star and playing
 // attitude are stored as shown): a stored 3 shows 4; typing 8 stores 7.
 // The other fields of the same player are untouched by each edit. The Profile
-// block's four sit in this view, the Cutscenes group's two on Appearance.
+// block's four sit in this view, the Presentation group's two on Appearance.
 #[test]
 fn the_shifted_fields_show_one_above_stored_and_store_one_below() {
     let path = fixture(PesVersion::Pes21, "shifted_fields");
@@ -930,8 +931,8 @@ fn the_shifted_fields_show_one_above_stored_and_store_one_below() {
     // The same round trip for the other five fields: each shows the
     // stored value plus its shift (star and playing attitude shift by
     // zero), a typed value stores one less, and the groups' other fields
-    // keep their stored values. Star and playing attitude sit in the
-    // Appearance section's Cutscenes group, editable while it is locked.
+    // keep their stored values. Star and playing attitude sit on the
+    // Appearance screen, in its Presentation group.
     for (appearance, label, shown, typed, expected) in [
         (
             false,
@@ -959,7 +960,7 @@ fn the_shifted_fields_show_one_above_stored_and_store_one_below() {
     ] {
         let nodes = if appearance {
             open_appearance(&mut window, &mut view);
-            // The Cutscenes group sits below the fold: the click needs
+            // The Presentation group sits below the fold: the click needs
             // the control inside the scroll's clip.
             scroll_into_view(&mut window, &mut view, |node| {
                 node.role() == Role::Label && node.value() == Some(label)

@@ -6,10 +6,10 @@
 //! the 25 ability stats in the
 //! third — one gap apart (`view::show` splits the room the columns leave
 //! into four equal gaps), tops aligned, wrapping to the next line where
-//! the pane cannot hold the next column. Star and playing attitude, which
-//! change only cutscenes, sit in the Appearance section's Cutscenes group
-//! (`appearance::CUTSCENE_STATS`); the quick actions sit under the player
-//! list (`quick_actions`).
+//! the pane cannot hold the next column. Star and playing attitude sit on
+//! the Appearance screen, in its Presentation group
+//! (`appearance::fields::PRESENTATION_STATS`); the quick actions sit under
+//! the player list (`quick_actions`).
 //! Every control edits a copy of the player's entry and, when it changes,
 //! pushes it with `Session::edit_player` under the control's `egui::Id`
 //! value, as `info_strip.rs` does; edit flags are not touched. A field
@@ -67,8 +67,9 @@ const TIER_CHECK_FAILED_LINE: &str = "Tier check failed: click to see why.";
 const PANEL_GAP: f32 = 14.0;
 /// The gap a panel's title stands above the first thing drawn under it —
 /// a field's frame, a checkbox's painted square or a label row's text:
-/// the team view's titles' spacing, so the two views read alike.
-const TITLE_GAP: f32 = 6.0;
+/// the team view's titles' spacing, so the two views read alike. The
+/// Appearance screen's groups leave the same under their titles.
+pub(super) const TITLE_GAP: f32 = 6.0;
 /// The padding of the ability stats' cells, either side of a label and
 /// of a box (the draft's `stats-grid` `td`), and how far General info's
 /// and Other stats' labels and fields stand in from their titles (the
@@ -385,10 +386,10 @@ pub(crate) fn maybe_end_row(ui: &mut egui::Ui, index: usize, per_row: usize) {
 }
 
 /// One small stored field of the Other stats panel or the Appearance
-/// section's Cutscenes group: the term's name, the drawn label, its schema
-/// field, the shown range and the shift between shown and stored (the
-/// shifted fields are stored one below the game's numbers, the draft's
-/// `+ 1`/`v - 1`).
+/// screen's Presentation group: the term's name, the drawn label, its
+/// schema field, the shown range and the shift between shown and stored
+/// (the shifted fields are stored one below the game's numbers, the
+/// draft's `+ 1`/`v - 1`).
 #[derive(Clone, Copy)]
 pub(super) struct SmallStat {
     /// The diff row's name for the field (`terms::row_term`); the control
@@ -413,8 +414,8 @@ pub(super) struct SmallStat {
 
 /// The Other stats panel's four stored fields, in the draft's order: form
 /// 1-8, injury resistance 1-3, weak foot usage and accuracy 1-4 (each
-/// stored one lower). Star and playing attitude, which change only
-/// cutscenes, sit in the Appearance section's `CUTSCENE_STATS`.
+/// stored one lower). Star and playing attitude sit on the Appearance
+/// screen, in `appearance::fields::PRESENTATION_STATS`.
 pub(super) const SMALL_STATS: [SmallStat; 4] = [
     SmallStat {
         label: "Form",
@@ -460,8 +461,8 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
 
 /// One `SmallStat`'s label/control pair: `number` for a stored field, the
 /// `-` stand-in for a gated one (the label stays too: the gated control
-/// keeps its cell). The Appearance section's Cutscenes group uses it; the
-/// Other stats panel's `small` pairs draw the halves apart.
+/// keeps its cell). The Appearance screen's Presentation group uses it;
+/// the Other stats panel's `small` pairs draw the halves apart.
 pub(super) fn small_stat(
     ui: &mut egui::Ui,
     session: &mut Session,

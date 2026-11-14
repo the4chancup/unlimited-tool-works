@@ -255,7 +255,7 @@ fn report_fields(field: impl std::fmt::Debug, old: u32, new: u32) -> (String, St
 }
 
 /// A `Field` row's term: the views' own tables first (`SMALL_STATS`,
-/// `CUTSCENE_STATS`, `MOTIONS`, `PHYSIQUE`, `STRIP_ENUMS`, the ability
+/// `PRESENTATION_STATS`, `MOTIONS`, `PHYSIQUE`, `STRIP_ENUMS`, the ability
 /// stats), then the fields the views draw one-off, then a field no view
 /// draws named in words — the `_` arm IS the rule for those, not an
 /// oversight.
@@ -265,7 +265,7 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     };
     if let Some(small) = abilities::SMALL_STATS
         .iter()
-        .chain(fields::CUTSCENE_STATS.iter())
+        .chain(fields::PRESENTATION_STATS.iter())
         .find(|stat| stat.field == field)
     {
         let shift = u32::from(small.shift);
@@ -382,17 +382,17 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     }
 }
 
-/// A `Face` row's term: the checkbox and the palettes are drawn, the rest
-/// of the run's fields are not (named in words).
+/// A `Face` row's term: the gloves dropdown and the palettes are drawn,
+/// the rest of the run's fields are not (named in words).
 fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     let PlayerDiff::Face { field, old, new } = *diff else {
         unreachable!("face_field_term gets a Face row")
     };
     match field {
         IngameFaceField::PlayerGloves => Term {
-            label: appearance::PLAYER_GLOVES_LABEL.to_owned(),
-            old: on_off(u32::from(old)).to_owned(),
-            new: on_off(u32::from(new)).to_owned(),
+            label: appearance::OUTFIELDER_GLOVES_LABEL.to_owned(),
+            old: gloves_reading(old).to_owned(),
+            new: gloves_reading(new).to_owned(),
             swatches: None,
         },
         IngameFaceField::SkinColor
@@ -461,6 +461,12 @@ fn rating_label(stored: u32) -> &'static str {
 /// `stored`'s checkbox reading: a set bit reads "on".
 fn on_off(stored: u32) -> &'static str {
     if stored == 0 { "off" } else { "on" }
+}
+
+/// `stored`'s reading in the gloves dropdown: any non-zero is worn (the
+/// flag's reading, as the view words it).
+fn gloves_reading(stored: u8) -> &'static str {
+    appearance::GLOVES_OPTIONS[usize::from(stored != 0)]
 }
 
 /// A field no view draws, named in words from its report name: a word

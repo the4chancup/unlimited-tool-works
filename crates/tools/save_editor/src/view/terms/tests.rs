@@ -515,7 +515,7 @@ fn the_edit_flags_rows() {
     }
 }
 
-/// The ingame-face fields the view draws: the gloves checkbox and the
+/// The ingame-face fields the view draws: the gloves dropdown and the
 /// colour palettes. The Custom skin is pre-Fox only — on Fox a stored
 /// 7 draws its number.
 #[test]
@@ -578,9 +578,9 @@ fn the_face_fields_rows() {
             PesVersion::Pes17,
             &face_row(IngameFaceField::PlayerGloves, 0, 1),
         ),
-        "Player gloves",
-        "off",
-        "on",
+        "Outfielder gloves",
+        "Off",
+        "Worn in winter",
     );
 }
 
@@ -655,7 +655,7 @@ fn every_table_driven_field_has_a_term() {
     let version = PesVersion::Pes17;
     for stat in abilities::SMALL_STATS
         .iter()
-        .chain(fields::CUTSCENE_STATS.iter())
+        .chain(fields::PRESENTATION_STATS.iter())
     {
         let term = row_term(version, &field(stat.field, 0, 0));
         assert_eq!(term.label, stat.label, "{:?}", stat.field);

@@ -24,12 +24,12 @@ pub(crate) type AppearanceField = (
     fn(&mut PlayerAppearance, u8),
 );
 
-/// The Cutscenes group's two stored fields: star 0-7 (PES 19+) and
-/// playing attitude 0-3 (PES 20+), stored as shown. They change only
-/// cutscenes, so they sit outside the export's ownership, above the
-/// section's lock — `abilities`' `SmallStat` because the pair shares the
-/// Profile fields' shape.
-pub(crate) const CUTSCENE_STATS: [SmallStat; 2] = [
+/// The Presentation group's two stored fields: star 0-7 (PES 19+) and
+/// playing attitude 0-3 (PES 20+), stored as shown. They affect no play,
+/// so they are aesthetics and lock with the rest of the screen —
+/// `abilities`' `SmallStat` because the pair shares the Profile fields'
+/// shape.
+pub(crate) const PRESENTATION_STATS: [SmallStat; 2] = [
     SmallStat {
         label: "Star",
         shown: "Star",
@@ -168,9 +168,9 @@ pub(crate) const PHYSIQUE: [AppearanceField; 14] = [
     ),
 ];
 
-/// The strip's `ComboBox` fields inside the grid, the draft's order (the
-/// wrist-taping and spectacles combos draw beside their palettes, below;
-/// `Kind::Labels` keys).
+/// The strip grid's `Kind::Labels` combos: the cells' labels and the
+/// stored accessors, `STRIP_ORDER`'s `StripCell::Enum`s (the diff rows read the
+/// same table).
 pub(crate) const STRIP_ENUMS: [AppearanceField; 4] = [
     (
         "Sleeves",
@@ -365,16 +365,17 @@ impl Palette {
     }
 }
 
-/// The palette `key` draws at `version`, in `colour_rows`' and
-/// `strip_rows`' place: its label stem, swatch set and drawn top.
+/// The palette `key` draws at `version`, the Colors group's swatch rows
+/// and the colour diff rows' label and shown value: its label stem,
+/// swatch set and drawn top.
 pub(crate) fn palette(version: PesVersion, key: SettingKey) -> Palette {
     let (label, colors) = match key {
         SettingKey::SkinColor => ("Skin", SKIN_COLORS.as_slice()),
         SettingKey::IrisColor => ("Iris", IRIS_COLORS.as_slice()),
-        SettingKey::WristTapeColorLeft => ("Wrist tape left", STRIP_COLORS.as_slice()),
-        SettingKey::WristTapeColorRight => ("Wrist tape right", STRIP_COLORS.as_slice()),
-        SettingKey::SpectaclesColor => ("Spectacles color", STRIP_COLORS.as_slice()),
-        SettingKey::GlovesColor => ("Gloves color", STRIP_COLORS.as_slice()),
+        SettingKey::WristTapeColorLeft => (super::WRIST_TAPE_LEFT_LABEL, STRIP_COLORS.as_slice()),
+        SettingKey::WristTapeColorRight => (super::WRIST_TAPE_RIGHT_LABEL, STRIP_COLORS.as_slice()),
+        SettingKey::SpectaclesColor => (super::SPECTACLES_COLOR_LABEL, STRIP_COLORS.as_slice()),
+        SettingKey::GlovesColor => (super::GLOVES_COLOR_LABEL, STRIP_COLORS.as_slice()),
         _ => unreachable!("{key:?} is not a palette key"),
     };
     Palette {

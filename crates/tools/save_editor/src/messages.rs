@@ -91,8 +91,8 @@ pub(crate) enum Code {
     /// The Appearance section's FPC group: the player wears wrist or ankle taping under a
     /// hidden body, so the taped pieces still show.
     FpcTapingShowsPieces,
-    /// The Appearance section's FPC group: the gloves checkbox is on with gloves ID 0, so the
-    /// player wears winter gloves in winter conditions.
+    /// The Appearance section's FPC group: outfielder gloves is worn in winter with gloves
+    /// ID 0, so the player wears winter gloves in winter conditions.
     FpcGlovesCheckboxWinterGloves,
 }
 
@@ -350,8 +350,8 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::FpcGlovesCheckboxWinterGloves,
-        r#"The Player gloves checkbox is on with Gloves ID 0, so the player wears winter gloves in winter conditions."#,
-        r#"Nothing is changed for you. Untick Player gloves, or give the player a gloves ID, if that is not wanted."#,
+        r#"Outfielder gloves is Worn in winter with Gloves ID 0, so the player wears winter gloves in winter conditions."#,
+        r#"Nothing is changed for you. Set Outfielder gloves to Off, or give the player a gloves ID, if that is not wanted."#,
     ),
 ];
 

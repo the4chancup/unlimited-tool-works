@@ -686,8 +686,8 @@ fn path_place(path: &str) -> Option<u8> {
 /// ability stat by its name in that game, a skill or COM style by its card
 /// name, a motion, an edit flag and a preset's instructions with what they
 /// belong to, any other key (another stat included: `Playing attitude`, as
-/// the Cutscenes row labels it) by its last part (`Manager ID`); an empty
-/// slot's note is `Empty roster slot`.
+/// the Presentation group labels it) by its last part (`Manager ID`); an
+/// empty slot's note is `Empty roster slot`.
 fn note_subject(version: PesVersion, note: &ImportNote) -> String {
     let Some(path) = note_path(note) else {
         return "Empty roster slot".to_owned();

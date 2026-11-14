@@ -58,6 +58,13 @@
   message included, and leaves Info messages out of the console.
 - **Ruleset editor**: the Event logo can be a JPEG XL file (`.jxl`).
 - **Help**: a What's new chapter holds this list.
+- **Save editor**: the Appearance screen fits the window without scrolling, its settings in
+  titled groups. Full Player Customization comes first, with the skin and iris colors beside
+  it, then the strip style in a grid of three columns, then Physique beside Motion and the
+  edit flags. Star and Playing attitude close the screen in a Presentation group and, like
+  the rest of the look, are locked while the team's export owns it. The strip's colors are
+  dropdowns, and the Player gloves checkbox is an Outfielder gloves dropdown, Off or Worn in
+  winter.
 
 ### New checks
 

@@ -1912,7 +1912,7 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-tomlname (2026-11-13, `bba7eee1`) a Team TOML export suggests the team's name less its slashes, then the short name, then the ID
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
-  - [ ] 0.0.2-applayout (plan and draft: the "Appearance" list, SE-GUI-84; brief `.tmp/eight/brief_appearance.md` written, carrying 0.0.2-presentation c) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last -> verify: SE-GUI-07 and 84, the built window
+  - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
   - [ ] 0.0.2-poslayout (the maintainer, 2026-11-13, drafted and approved; DECISIONS "Pitch | Left | List")
     the Playable positions grid's layout toggle under its title, the `positions_layout`
     view setting, the darker unchosen letters (`plans/save_editor.md` "Editing UI", the
@@ -1936,9 +1936,9 @@ briefs, review loops, gates and mutation runs as for any step.
       the branch 2026-11-14 (`3667be9b`, the lead's gates green, one lead fix: the
       import's dead re-homing of an old-place star removed); merges after 0.0.2-applayout,
       both touching `view/interchange.rs`
-    - [ ] c the Save editor: the Presentation group under the lock, last on the screen,
-      each note beside its box (folded into `.tmp/eight/brief_appearance.md`, SE-GUI-84);
-      the Comparator's scope; the help pages -> verify: SE-GUI-07 and 84
+    - [x] c the Save editor: the Presentation group under the lock, last on the screen,
+      each note beside its box, the help page (with 0.0.2-applayout, 2026-11-14); the
+      Comparator's scope is a's
   - [ ] 0.0.2-compilername (the maintainer, 2026-11-13; DECISIONS "named Compiler from 0.0.2")
     the Team compiler becomes the Compiler: the sidebar, title, help, messages and
     `quick_compile.bat`, the command-line id `compiler` and the settings table `[compiler]`,
@@ -1958,6 +1958,12 @@ briefs, review loops, gates and mutation runs as for any step.
     `upgrade-models`, its module, help and EU-MF scenarios removed (`plans/export_upgrader.md`
     "Model-folder mode"); the spec's section leaves with it -> verify: the upgrader's tests,
     `UTW export-upgrader upgrade-models` refused as an unknown command
+  - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
+    just because of some load on the computer") no test depends on a worker thread's timing or
+    on geometry read from an earlier frame (`CONTRIBUTING.md` "Testing and verification"):
+    a SWE-2 census of the tests that do, then one slice making them deterministic (a test
+    controls when a background reply lands) -> verify: the census's tests pass under
+    `just pipeline`'s load, two clean pipelines retire the watch entries
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player
     and every edit writes one record) a `Select all similar players` button under the
@@ -2957,6 +2963,8 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
 - The Save editor's eight help chapters and the two core ones read in the built window; any
   PES; 8.29e's e1; harness
+- The Appearance screen in the built window at 1280 × 800: the six groups whole with no
+  scroll bar, lock off and on, the strip grid's lines; any PES; 0.0.2-applayout; harness
 - The Live AATF pitch's warning cross (`#D29922` from 0.0.2-noticeerr), drawn for a Warning-severity position mark (no
   real save under 4cc Autumn 26 raises one); any PES; 8.9m's m4; harness
 - ov7b's Import and × dialogs, ov10's pitch drag and ov12's popover steppers in the built
@@ -3024,6 +3032,10 @@ points there.
   rule. The maintainer found 3.8 fine and the dark red too bright: both themes take
   GitHub's danger pair, `#F85149` and `#D1242F` (DECISIONS "the error red is GitHub's"),
   in 0.0.2-noticeerr.
+- watch 2026-11-14: the Save editor's
+  `view::tests::live_aatf::copying_before_a_result_copies_the_checking_line` failed once
+  in a loaded full run (448 s) and passed alone five times, in its module and in a full
+  rerun: its premise races the Live AATF check's worker thread. Fixed by 0.0.2-determ.
 - watch 2026-11-13: the Save editor's
   `view::tests::savefile::cup::a_team_outside_the_cup_is_neither_listed_nor_checked_nor_repaired`
   failed twice under load ("the range's first team: left `702 /a/`, right `701 /3/`"), the

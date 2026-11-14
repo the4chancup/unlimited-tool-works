@@ -135,12 +135,12 @@ fn the_aside_holds_the_tricks_else_the_free_skills() {
 
 // Every range's top fits the field's bit width on every version
 // storing it (after the stored-one-lower shift). The Appearance
-// section's Cutscenes pair is a `SmallStat` too.
+// screen's Presentation pair is a `SmallStat` too.
 #[test]
 fn every_ranges_top_fits_the_fields_bit_width() {
     for (field, top, shift) in SMALL_STATS
         .iter()
-        .chain(crate::view::appearance::fields::CUTSCENE_STATS.iter())
+        .chain(crate::view::appearance::fields::PRESENTATION_STATS.iter())
         .map(|small| (small.field, small.max, small.shift))
         .chain(ABILITY_FIELDS.iter().map(|&field| (field, 99u8, 0u8)))
     {

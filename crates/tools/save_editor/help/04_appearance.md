@@ -1,13 +1,9 @@
-The **Appearance** screen holds a player's look: the game's own edit flags, his
-physique, his strip style, his motions, and his skin and iris colors. The toggle
-beside the player's name picks one of three screens: **Stats** shows his fields,
+The **Appearance** screen holds a player's look, in groups from top to bottom:
+**Full Player Customization** with his skin and iris **Colors** at its right,
+his **Strip style**, his **Physique** with his **Motion** and the game's own
+**Edit flags** beside it, and last **Presentation**. The toggle beside the
+player's name picks one of three screens: **Stats** shows his fields,
 **Appearance** his look, and **Gameplan** his team's fields and tactics.
-
-**Cutscenes**
-
-The **Cutscenes** group comes first and stays editable when the rest is locked
-(see below). Star and playing attitude only change how the player appears in cutscenes, so
-they are not part of the look the team's export owns.
 
 **When it is locked**
 
@@ -34,15 +30,9 @@ save keeps it unlocked. Starting the tool again turns it back off.
 The note under the switch warns that a later patch overwrites whatever you edit
 by hand.
 
-**Randomize**
-
-**Randomize** draws new values for the hunching, arm movement, kick and
-celebration motions, each within the range the game's Edit mode offers, and the
-dribbling motion is left as it is. One Undo restores them all.
-
 **Full Player Customization**
 
-The **Full Player Customization** group, last on the screen, is where FPC
+The **Full Player Customization** group, first on the screen, is where FPC
 invisibility lives: a line reading from the save whether his default body is
 hidden, then the **Hide default body** and **Show default body** buttons.
 
@@ -68,8 +58,9 @@ is no longer the hide ID).
 
 Under the reading the group lists the strip settings that would interfere with a
 hidden body (inners or undershorts that break the hiding, taping that still
-shows) and the gloves checkbox with ID 0, which gives winter gloves to any
-player. They are reported, never changed for you. The inners, undershorts and
+shows) and **Outfielder gloves** set to Worn in winter with a gloves ID of 0,
+which puts winter gloves on the player in winter conditions. They are reported,
+never changed for you. The inners, undershorts and
 taping follow the save's own reading, so they are listed only for a player the
 save calls hidden.
 
@@ -77,3 +68,18 @@ For a player hidden by his model's own boots ID (a compile-allocated one such
 as 627), whom the reading calls shown, the inners, undershorts and taping are
 not listed, though the game hides his body all the same. The Team compiler's check knows the player folder's
 FPC marker, so it reports them for a compiled team.
+
+**Randomize**
+
+**Randomize**, in the Motion group, draws new values for the hunching, arm
+movement, kick and celebration motions, each within the range the game's Edit
+mode offers, and the dribbling motion is left as it is. One Undo restores them
+all.
+
+**Presentation**
+
+The **Presentation** group, last on the screen, holds **Star**, which sets how
+likely the player is to show up as the team's featured player in the pre-match
+screen, and **Playing attitude**, which only affects cutscenes. Neither changes
+how he plays, but both belong to his team's export with the rest of his look,
+so the lock covers them too.
