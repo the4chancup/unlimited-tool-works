@@ -110,8 +110,9 @@ being true. Permanent toolchain facts go in `docs/CONTRIBUTING.md` "Toolchain no
 - A compile killed between moving a CPK aside and renaming its `.partial` in leaves that CPK
   missing, and one killed between the install and the savefile write leaves the new CPKs with
   the old save; the next compile repairs both (0.0.1c, `.tmp/release_0_0_1/0_0_1/interrupt/`).
-- The VGL27 Friendlies set (39 teams, the organizer's save) is sorted in main's
-  `.tmp/vgl27f/sorted/` (`sort_copy_c.py`): `F:/VGL27 Friendlies sorted` was found emptied.
+- The VGL27 Friendlies set (39 teams, the organizer's save) is no longer on this machine: its
+  sorted copy in `.tmp/vgl27f/sorted/` was deleted 2026-11-14 to free disk, and the maintainer
+  holds the exports elsewhere; ask for them before a step needs the set.
 
 ---
 
