@@ -17331,13 +17331,12 @@ rasterizer, whose output a test can check pixel by pixel.
 
 ## 2026-11-14: the Ruleset editor's start page is a dialog, over the empty window on first open
 
-Decision: the start page is always a dialog, as the draft draws it. On the tool's first open
-there is no document: the dialog stands over the empty window with no Close, and Escape or a
-click beside it leaves it open. File's New from template… opens the same dialog over the
+Decision: the start page is always a dialog, as the draft draws it. When the tool opens there
+is no document yet, so the dialog stands over the empty window with no Close, and Escape or a
+click outside it leaves it open. File's New from template… opens the same dialog over the
 document, with Close (`plans/ruleset_editor.md` "Start page", RE-GUI-01).
 
-Why: the draft opens the dialog, but the editor drew the start page as a full page. The
-draft's backdrop is Autumn 26 opened behind the dialog. The editor does not copy that: a
-template's document counts as unsaved, so every close of the tool would ask about changes
-nobody made, and making a first template count as saved would treat one template unlike the
-others.
+Why: the draft opens a dialog, where the editor drew the start page as a full page. The draft
+also shows Autumn 26 open behind the dialog, which the editor does not copy. A document opened
+from a template counts as unsaved, so the tool would ask about changes nobody made every time
+it closed. Counting that one template as saved would set it apart from every other.

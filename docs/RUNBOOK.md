@@ -75,9 +75,9 @@ down as one the maintainer is asked about. The look's line names its capture pai
 (`.tmp/<step>/look/`), so a line without one is not ready to hand over. The maintainer's look
 is a second pair of eyes on what was already checked, never the first: a checklist once went
 out with the Appearance screen's Physique group laid out unlike its draft, which one capture
-would have shown. The states include each tool's first open from a fresh start, beside
-the draft's first view: the Ruleset editor once opened on a full page where its draft opens
-a dialog, and only the maintainer saw it. Starting the built window takes the screen, so in an interactive session the
+would have shown. The states captured include each tool's first open, from a fresh start,
+beside the draft's first view: the Ruleset editor once opened on a full page where its draft
+opens a dialog, and only the maintainer saw it. Starting the built window takes the screen, so in an interactive session the
 lead asks once before a batch of captures, and a SWE-2 sidekick, which cannot judge a look,
 never makes this check.
 

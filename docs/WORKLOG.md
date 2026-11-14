@@ -1909,15 +1909,15 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "start page is a
-    dialog") the Ruleset editor opens on its start page drawn as a full page, where the draft
-    opens it as a dialog: a dialog with no Close over the empty window (RE-GUI-01), after
-    0.0.2-rebar lands in the same files (`.tmp/rebar/brief_startdlg.md`)
+    dialog") the Ruleset editor draws its start page as a full page where the draft opens a
+    dialog; it becomes a dialog with no Close over the empty window (RE-GUI-01). It waits for
+    0.0.2-rebar, which edits the same files (`.tmp/rebar/brief_startdlg.md`)
   - [ ] 0.0.2-rebar (found in the built window 2026-11-14, captures in `.tmp/looks/bar/`) the Ruleset
     editor's toolbar band sits inside the shell's 8-point margin, its menus 8 points right of and
     8 below its draft's and its line starting 8 in, where the draft and the Save editor run the band
     from the rail's edge; its section list highlights the selected label alone, where the draft
     fills the row across
-  - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) the sidebar opened in a tall window and kept open while the window shrinks stays the rail's height, its entries scrolling between the head and the tail (the overlay's `Area` kept the size it measured in the tall window)
+  - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [x] 0.0.2-presentation (2026-11-14, `7b2e9ea2` merging `3667be9b`, and `b222d710`) star and playing attitude are `settings.toml` keys under `appearance.presentation`, which the patch and the upgrader carry; the Comparator counts them and every motion as Aesthetics, Copy/swap stats leaves them to the target, a 0.0.1 Team TOML still imports; the Save editor's Presentation group under the lock
@@ -1932,8 +1932,8 @@ briefs, review loops, gates and mutation runs as for any step.
     history, the built window's sidebar and title
     Code half merged 2026-11-14 (`31f44cda`, SWE-2, one comment fixed by the lead; workspace
     gates green but for the two overlap tests below, green alone). Docs half 2026-11-14 (SWE-2,
-    84 files; five links split by the swap rejoined by the lead). Open: the built window's
-    sidebar and title, on the looks pass's next release build
+    84 files; the lead rejoined five links the swap had split). Open: the sidebar and title in
+    the built window, on the looks pass's next release build
   - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
