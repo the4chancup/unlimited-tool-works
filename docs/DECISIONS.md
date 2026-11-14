@@ -17388,3 +17388,15 @@ formations in a PES 2021 cup save; /gbpen/'s presets 1 and 3 among them). The ex
 those as three formations, as if the team hid another shape. The 2-point tolerance is the
 maintainer's; that save has no spot moved by 1 or 2, and its nearest real difference, one AMF
 moved 2 across and 3 down, is still drawn.
+
+## 2026-11-14: a formation picture's file name is the team's name, without its id (maintainer)
+
+Decision: a formation picture is named after the team alone: its name less the characters a
+file name cannot hold, ` settings` before `.png` on a picture with the settings (`f.png`,
+`f settings.png` for /f/), and its id only when nothing of the name is left. The one-team
+dialog fills this name in, and a range of teams writes the same names
+(`plans/save_editor.md` "Formation pictures").
+
+Why: the maintainer's ask; the id adds nothing a member needs in the name. The range follows
+so that a team's picture has one name whichever dialog wrote it, and saving it again offers
+to replace the file rather than leaving a second copy beside it.

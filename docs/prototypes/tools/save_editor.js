@@ -6735,15 +6735,13 @@ function formationsPicture(t, settings = false) {
   }
   return c;
 }
-// The file's name: the id, then the name less the characters a file name
-// cannot hold (`/f/` becomes `718 f.png`); a name with nothing left is the id
-// alone. The id first, so a folder of pictures sorts as the teams list does;
-// " settings" before the extension on a picture with the settings, so the
-// two kinds of one team sit side by side in a folder rather than replace
-// each other.
+// The file's name: the team's name less the characters a file name cannot
+// hold (`/f/` becomes `f.png`); a name with nothing left is the id. " settings"
+// before the extension on a picture with the settings, so the two kinds of one
+// team sit side by side in a folder rather than replace each other.
 function pictureFileName(t, settings) {
   const name = displayName(t.name).replace(/[\\/:*?"<>|]/g, "").trim();
-  return t.id + (name ? " " + name : "") + (settings ? " settings" : "") + ".png";
+  return (name || String(t.id)) + (settings ? " settings" : "") + ".png";
 }
 // The draft writes no file: the pictures a run drew are kept for the draft
 // control's preview (`dlgLastPicture`).
@@ -6889,7 +6887,7 @@ function drawPicturesRange() {
     const example = teams[0] || curSave().teams[0];
     const nameLine = on => h("p", { style: "grid-area:1/1" + (on === picRange.settings ? "" : "; visibility:hidden"),
         "aria-hidden": on === picRange.settings ? null : "true" },
-      weak("One picture per team, named by its id and name (" + pictureFileName(example, on) +
+      weak("One picture per team, named after it (" + pictureFileName(example, on) +
         "), an older one of that name replaced."));
     // The range's two ends on one row, as Multi-team AATF's.
     body = h("div", {},

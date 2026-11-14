@@ -1469,8 +1469,9 @@ Win32 original hurt the most):
   - the folder last used (the tool's `formation_pictures_folder` setting, which the range
     dialog shares) with Browse for rfd's folder picker; until a member picks one it is
     `formations` beside the program;
-  - the file name `<id> <name>.png` filled in (the name less the characters a file name
-    cannot hold, `718 f.png`; the id first so a folder sorts as the teams list does);
+  - the file name `<name>.png` filled in: the team's name less the characters a file name
+    cannot hold (`f.png` for /f/), or its id when nothing is left. A range writes the same
+    names, so a team's picture has one name whichever dialog wrote it;
   - the checkbox "With each preset's settings beside its row", which adds or removes
     " settings" before the extension, so a team's two pictures do not replace each other;
   - the checkbox "Portraits", which starts as the formation bar's Portraits is each time the
@@ -3067,16 +3068,16 @@ SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` abse
                 formation bar's Portraits ticked
            WHEN Team, `Save a picture of the formations…` is pressed
            THEN a dialog of that title holds, on one grid, `Folder` with the program's
-                folder's `formations` and `Browse…`, `File name` with `718 f.png`; under
+                folder's `formations` and `Browse…`, `File name` with `f.png`; under
                 them `With each preset's settings beside its row` unticked, `Portraits`
                 ticked, `Without the pitch's grain (smaller file)` unticked, then Save and
-                Cancel; ticking the first makes the name `718 f settings.png`, unticking it
-                `718 f.png` again; WHEN Portraits is unticked and Save pressed THEN
-                `formations/718 f.png` is written (the folder created), the notice reads
-                `718 f.png written to <folder>` with Open folder, and the bar's
+                Cancel; ticking the first makes the name `f settings.png`, unticking it
+                `f.png` again; WHEN Portraits is unticked and Save pressed THEN
+                `formations/f.png` is written (the folder created), the notice reads
+                `f.png written to <folder>` with Open folder, and the bar's
                 `portraits` setting is still on; GIVEN the dialog opened again THEN
                 Portraits is ticked; WHEN Save is pressed THEN `Replace the picture?` asks
-                `718 f.png is already in <folder>. Replace it?`, Cancel leaves the file's
+                `f.png is already in <folder>. Replace it?`, Cancel leaves the file's
                 bytes as they were and Replace writes it again; GIVEN the grain box ticked
                 and the editor restarted THEN the dialog opens with it ticked
 SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws Kick-off
