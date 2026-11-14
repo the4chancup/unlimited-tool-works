@@ -107,7 +107,7 @@ const EXPORT_UPGRADER_CSS = `
 `;
 
 // ---- Cell states: the Team compiler's colours, the upgrader's words ----
-const WARN = "#dcc832", ERR = "#f85149";
+const WARN = "#d29922", ERR = "#f85149";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", fullOk: "#800080",
   done: "#008000", doneWarn: WARN, doneErr: ERR };
 const OUTLINES = { warning: WARN, error: ERR };
@@ -118,7 +118,9 @@ const STATE_NAMES = { unchecked: "Not read yet", checking: "Reading", fullOk: "R
 const OUTCOME = { fullOk: "done", warning: "doneWarn" };
 function labelColour(hex) {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return 0.299 * r + 0.587 * g + 0.114 * b > 140 ? "#1b1b1b" : "#dcdcdc";
+  // 125, not the usual 140: the error red (#f85149) weighs 130 and takes the
+  // dark grey, light text on it reading poorly; no other state colour lies between.
+  return 0.299 * r + 0.587 * g + 0.114 * b > 125 ? "#1b1b1b" : "#dcdcdc";
 }
 
 // ---- Sample exports ----

@@ -348,12 +348,14 @@ Requirements:
   shows, Ctrl+Z until the undo stack is empty) has a bound and panics past it, naming what
   never happened. Broken code then fails in seconds; unbounded, it spins until the mutation
   run's timeout: one such helper once hung ten mutants for 17 minutes each.
-- **A worker's in-between state is read on a frame no reply can reach.** A view that starts a
-  check on a worker thread and marks the list as checking until it replies cannot be tested
-  by drawing the frame that starts it: egui runs a window's or panel's first frame in two
-  passes, and the worker can reply between them, so the frame draws the result instead (one
-  full-suite run in eight). The mark is read on a frame where no check can start (the
-  pointer held over an unsettled edit); the test never widens its assertion to pass both ways.
+- **A test never races a worker thread or an earlier frame.** A view that hands work to a
+  worker thread (a Live AATF check, a save's read) is tested with the reply delivered when
+  the test says so, never by drawing frames and counting on the worker to have replied, or
+  not yet: under a loaded full-suite run the order of the two is not fixed. Holding the
+  pointer so that no check starts was the earlier answer, and a test built on it still
+  failed under load. Geometry a test acts on (a popup's edge, a row's place) is read in
+  the frame it acts in, never in the one before. A test that passes only on an idle
+  machine is broken, not flaky: the fix is never a wider assertion, a sleep or a retry.
 - **A test never reaches the developer's own files.** A setting whose default finds something on
   the machine (`savefile_path = auto` walks Documents\KONAMI, `pes_folder_path` names the real
   install) is set to a path under the test's own folder by every test context that runs the

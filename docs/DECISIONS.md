@@ -17229,3 +17229,25 @@ colours were not changed. The Blocked and Not written dashed outline keeps its d
 Plan: the drafts `team_compiler.js` and `export_upgrader.js` (`ERR`, `.tc-id.bad`); the
 Compiler's colour list in `plans/team_compiler/gui.md` is rewritten from its draft when 8.10's
 draft is accepted.
+
+## 2026-11-14: a warning is amber in the grids too; dark text on the red; Copy report and the size in the Compiler
+
+The maintainer, on the rendered comparison (`.tmp/0_0_2/red/cmp_*.png`): the Compiler's and
+the upgrader's Warning ring and Done with warnings fill take the theme's amber `#D29922`, so
+a warning is one colour in the grid, the legend and the log; the yellow `#DCC832` had been
+kept only because the old orange sat too close to the red. A cell filled with the error red
+takes the dark text: the label rule's brightness threshold is 125, not 140, which moves the
+red alone (it weighs 130; every other state colour lies outside 125 to 140). The Compiler's
+Compile menu gains Copy report, as the upgrader's Upgrade menu has it, and its last run's
+line gives the written files' total size beside their count (`1184 files written (612 MB)`).
+Plan: `plans/team_compiler/gui.md` (the Compile button's dropdown, the Run strip),
+`plans/team_compiler/README.md` TC-GUI-11 and 12; the drafts' `WARN` and `labelColour`.
+
+## 2026-11-14: a test controls when a worker's reply lands
+
+The maintainer: "we really can't keep having tests that fail just because of some load on
+the computer." Relaxing the tests does not help, since they race a worker thread rather than
+miss a tolerance: a test now delivers a background reply when it says so, and reads the
+geometry it acts on in the frame it acts in. `CONTRIBUTING.md` "Testing and verification"
+replaces the held-pointer rule, which a test built on it still broke under load; the tests
+that race today are found and fixed in 0.0.2-determ.

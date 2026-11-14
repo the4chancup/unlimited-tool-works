@@ -158,9 +158,8 @@ const TEAM_COMPILER_CSS = `
 // A check's warning or error is no fill of its own: it outlines the cell's
 // colour (checked, or shallow-checked) until the compile has gone through
 // the cell, which then turns solid in the same colour.
-// A warning's yellow and the suite's error red (the drafts' --error). Not the
-// suite's warning orange: as an outline it reads too close to the red.
-const WARN = "#dcc832", ERR = "#f85149";
+// The suite's warning amber and error red (the drafts' --warn and --error).
+const WARN = "#d29922", ERR = "#f85149";
 const COLOURS = { unchecked: "#0a0a0a", checking: "#dcdcdc", partialOk: "#3278dc",
   fullOk: "#800080", done: "#008000", doneWarn: WARN, doneErr: ERR };
 const OUTLINES = { warning: WARN, error: ERR, partialError: ERR };
@@ -173,7 +172,9 @@ const STATE_NAMES = { unchecked: "Unchecked", checking: "Checking",
 // grey on a dark cell, a soft dark grey on a light one.
 function labelColour(hex) {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return 0.299 * r + 0.587 * g + 0.114 * b > 140 ? "#1b1b1b" : "#dcdcdc";
+  // 125, not the usual 140: the error red (#f85149) weighs 130 and takes the
+  // dark grey, light text on it reading poorly; no other state colour lies between.
+  return 0.299 * r + 0.587 * g + 0.114 * b > 125 ? "#1b1b1b" : "#dcdcdc";
 }
 
 // ---- Sample rows ----
@@ -712,7 +713,11 @@ function modeMenu(btn, sideloadOff) {
     h("div", { class: "sep", style: "margin:5.5px 0" }),
     item(S.column ? "Hide the compile column" : "Show the compile column",
       () => { S.column = !S.column; if (!S.column) S.unticked = {}; render(); }),
-    item("Open output folder", openOutputStub));
+    item("Open output folder", openOutputStub),
+    h("div", { class: "sep", style: "margin:5.5px 0" }),
+    item("Copy report", () => window_("Copy report", h("p", {},
+      "The run's lines, as the console prints them, are put on the clipboard."),
+      button("Close", closeWindow), "more")));
   document.getElementById("win").append(m);
   // Opens upward and right-aligned: the toolbar sits above the log.
   m.style.left = (left - m.offsetWidth) + "px";
@@ -736,7 +741,7 @@ function startRun(only) {
     .map((task, i) => ({ ...task, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
   const start = Date.now();
   S.finished = false;
-  S.run = { stage: "Processing", elapsed: 0, files: 0, memory: 310, tasks, at: 0, rows: rows.length };
+  S.run = { stage: "Processing", elapsed: 0, files: 0, mb: 0, memory: 310, tasks, at: 0, rows: rows.length };
   L.log.push({ severity: "Info", code: null, scope: null,
     text: `Info - ${MODES[S.mode]}: ${rows.length} exports` });
   S.run.timer = setInterval(() => {
@@ -746,7 +751,7 @@ function startRun(only) {
     const ended = run.tasks[run.at - BUSY];
     if (ended) { delete ended.cell.busy;
       ended.cell.out = ended.cell.dropFile ? "doneErr" : OUTCOME[ended.cell.status];
-      run.files += 4; }
+      run.files += 4; run.mb += 2.1; }
     const next = run.tasks[run.at++];
     if (next) { next.cell.busy = true; next.cell.busyAt = performance.now(); run.memory = 310 + (run.at * 37) % 900; }
     else if (run.at - BUSY < run.tasks.length) { /* the last ones in hand end */ }
@@ -793,7 +798,7 @@ function endRun() {
   const run = S.run;
   stopRun();
   S.run = null;
-  S.last = `${MODES[S.mode]} finished in ${mmss(run.elapsed)} · ${run.files} files written`;
+  S.last = `${MODES[S.mode]} finished in ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB)`;
   S.finished = true;
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Compiled ${run.rows} exports` }], L);
   publishNotice(`Compiled ${run.rows} exports`, { label: "Open output", run: openOutputStub }, "success");
@@ -992,7 +997,7 @@ function linkOpen(scr, keys) {
       if (eligible(r) && (OUTCOME[cell.status] || cell.dropFile))
         cell.out = cell.dropFile ? "doneErr" : OUTCOME[cell.status];
     }
-    S.last = "Compile finished in 00:42 · 1184 files written";
+    S.last = "Compile finished in 00:42 · 1184 files written (612 MB)";
     S.finished = true;
   } else if (keys.run !== undefined) linkWarn("run=" + keys.run);
 }

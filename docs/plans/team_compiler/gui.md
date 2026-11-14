@@ -388,9 +388,13 @@ A single primary action:
 
   The button carries the **destination writability badge** (PES running / elevation needed;
   see `spec/team_compiler/pipeline.md` "Post-processing") with the reason and remedy in its
-  tooltip, and its dropdown always contains **Open output folder**.
+  tooltip, and its dropdown always contains **Open output folder** and **Copy report** (the
+  run's lines as the console prints them, for a member asking for help in the cup's thread,
+  as the Export upgrader's Upgrade menu offers).
 - **Run strip**: a one-line bar next to the button: current stage, elapsed time, files written,
-  memory in use. (The one name for it across the plans: "strip" alone means a kit here, and
+  memory in use. Once a run ends it gives the run's line, `Compile finished in 00:42 · 1184
+  files written (612 MB)`, the written files' total size beside their count, so a member sees
+  what the run put on disk. (The one name for it across the plans: "strip" alone means a kit here, and
   "status strip" would be confused with the shell's status bar.) The core plan's current
   `Progress { processed, total }` payload is insufficient; extend it with these metrics or add
   separate `StageChanged`/`MetricsUpdated` events before implementing this view

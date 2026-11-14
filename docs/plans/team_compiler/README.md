@@ -233,7 +233,7 @@ TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker 
 TC-GUI-11  GIVEN the toolbar at rest
            WHEN the Compile button's arrow is clicked
            THEN the list offers Compile, Compile for sideloading (disabled on PES 15 and 16),
-                Test output and Open output folder; picking a mode relabels the main part and
+                Test output, Open output folder and Copy report; picking a mode relabels the main part and
                 the next main-part click runs that mode; the mode is normal again at the next
                 launch
 TC-GUI-12  GIVEN a run in flight
@@ -242,7 +242,8 @@ TC-GUI-12  GIVEN a run in flight
                 sweeping its bottom edge above any Warning or Error ring, then turns
                 done, done-with-warning or done-with-errors as its task ends; the run strip
                 shows the stage, the elapsed time, the files written and the memory in use;
-                the Compile button reads Cancel
+                the Compile button reads Cancel; once the run ends the strip reads `Compile
+                finished in mm:ss · N files written (S MB)`, S the written files' total size
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
