@@ -180,12 +180,19 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
             // The draft's `.sel` is text-high, where a button stands a
             // control's `interact_size` tall.
             ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
-            [Segment::Stats, Segment::Appearance, Segment::Gameplan]
-                .iter()
-                .find_map(|&segment| {
-                    let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
-                    response.clicked().then_some(segment)
-                })
+            // Every segment is drawn before the press is acted on: stopping
+            // at the pressed one left the segments after it undrawn for a
+            // frame, and the title stood beside it.
+            let mut pressed = None;
+            for segment in [Segment::Stats, Segment::Appearance, Segment::Gameplan] {
+                if ui
+                    .add(egui::Button::selectable(on == segment, segment.label()))
+                    .clicked()
+                {
+                    pressed = Some(segment);
+                }
+            }
+            pressed
         })
         .inner;
     let Some(segment) = pressed else {

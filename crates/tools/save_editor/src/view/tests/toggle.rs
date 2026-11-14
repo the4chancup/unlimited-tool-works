@@ -64,6 +64,56 @@ fn pane_line_below(
         .min_by(f64::total_cmp)
 }
 
+/// The nodes of the frame `label`'s segment is pressed in (the AccessKit
+/// click), not of the frame after it.
+fn press_frame(window: &mut Headless, view: &mut SaveView, label: &str) -> Vec<accesskit::Node> {
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (id, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(label))
+        .unwrap_or_else(|| panic!("the {label} segment"));
+    let event = egui::Event::AccessKitActionRequest(accesskit::ActionRequest {
+        action: accesskit::Action::Click,
+        target_tree: accesskit::TreeId::ROOT,
+        target_node: *id,
+        data: None,
+    });
+    let (_, nodes, _) = window.frame(vec![event], |ui| show(ui, view, &|| Vec::new()));
+    nodes
+}
+
+/// The frame a press lands in draws the whole row, so the name never
+/// stands beside the pressed segment for a frame: the three segments, then
+/// the id and the name after Gameplan. Pressing Stats or Appearance once
+/// left the segments after it undrawn in that frame.
+#[test]
+fn the_frame_of_a_press_draws_the_three_segments_then_the_title() {
+    let path = fixture(PesVersion::Pes17, "toggle_press_frame");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(718, 4));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    draw(&mut window, &mut view);
+
+    for label in ["Appearance", "Stats"] {
+        let nodes = press_frame(&mut window, &mut view, label);
+        for drawn in ["Stats", "Appearance", "Gameplan"] {
+            assert!(
+                nodes
+                    .iter()
+                    .any(|node| node.role() == Role::Button && node.label() == Some(drawn)),
+                "pressing {label}: {drawn} is drawn in the press's frame"
+            );
+        }
+        let title = right_of(&nodes, segment(&nodes, "Gameplan"), Role::Label);
+        assert!(
+            title.value().is_some_and(|v| v.starts_with("71805 ")),
+            "pressing {label}: the id and name after Gameplan: {:?}",
+            title.value()
+        );
+    }
+}
+
 /// The title's row with its three segments on all three screens, the
 /// toggle following the selection and moving it.
 // SE-GUI-82
