@@ -17423,3 +17423,19 @@ has no X and no head.
 
 Why: the maintainer's better idea. A head names what the column does once, where a square
 around every X only hinted that each is a button.
+
+## 2026-11-14: Select all similar players compares three groups of fields and edits the Copy stats set together (lead)
+
+Decision: the window's three boxes compare the registered position (Position), the skill and
+COM style sets (Cards) and every ability stat (Stats); nothing else is compared. The players it
+selects are shown as one view titled `N players`, which edits the Copy stats field set: a field
+they all share writes to every one of them as one undo step, and one they do not share is empty
+and locked (a checkbox in its mixed state). Fields outside the set are locked. Ctrl+click adds
+or removes a row; any other selection ends the group. The quick actions, Set and Bump all stats
+and Ctrl+V act on each selected player; FPC and Generate settings.toml are disabled
+(`plans/save_editor.md` "Editing UI", SE-GUI-91 to 93).
+
+Why: the maintainer agreed to edit stats alone and to empty, locked fields that differ, and asked
+for position, cards and stats boxes. Comparing height or the feet would part a tier's players,
+whose heights and feet differ, while a field they do not share is locked anyway. A mixed
+checkbox says "some have it" where an empty one would say "none".

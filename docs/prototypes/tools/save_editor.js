@@ -223,6 +223,16 @@ input[type=range]:focus { outline: none; }
 .plist .rows .trow .thint { color: #6e6e6e; min-width: 0; overflow: hidden;
   text-overflow: ellipsis; flex: 0 1000 auto; }
 .plist .qagrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+.plist .qagrid > .wide { grid-column: 1 / -1; }
+.plist .qagrid > .wide > button { width: 100%; }
+/* A field the selected players do not share, or one outside the stats they share: shown
+   empty and locked (save_editor.md "Several players selected"). */
+#player-page .locked { pointer-events: none; opacity: .55; }
+/* A position's label while the registered position is not shared: no click, its look kept. */
+#player-page .inert { pointer-events: none; }
+#page-toggle .sel.off { opacity: .55; }
+/* egui's mixed checkbox: a bar where the tick goes. */
+input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cline x1='3' y1='7' x2='11' y2='7' stroke='%23c0deff' stroke-width='2'/%3E%3C/svg%3E"); }
 /* Every quick action one height, their own: the theme's controls are 18. */
 .plist #quick-actions button, .plist #quick-actions input { height: 20px; box-sizing: border-box; }
 .plist #quick-actions .row { flex-wrap: nowrap; margin: 0; }
@@ -3012,6 +3022,7 @@ function cardLimits(p, t, tier) {
 // stats, registered position and height read as, per recognizedTier), the
 // error colour when overdrawn. sample wording: the tooltip.
 function cardBadges(p, t) {
+  if (p.group) return null;
   const tier = recognizedTier(p, RULESETS[D.ruleset]);
   return h("span", { class: "row", id: "card-badges",
       title: "Cards used under the player's own tier of the active ruleset (paid cards vs its limit)" },
@@ -3184,6 +3195,7 @@ function requestOpen(key, path) {
 // Edits: one undo entry is a list of (object-path, before, after) patches plus
 // the touched player keys. Reorder pushes a team's slot order, not a field.
 function edit(label, fn, run) {
+  if (S.editing) { fn(); return; }
   const before = snapshot();
   fn();
   // A run of steps to one value (wheel notches, arrow presses, a stepper's
@@ -3498,6 +3510,11 @@ function setAllStats(p, n) {
 }
 // A small field write helper: every control's change is one undoable edit.
 function set(p, get, put, v, label) {
+  if (p.group) {
+    if (p.group.every(x => get(x) === v)) return;
+    edit(label || "edit", () => p.group.forEach(x => put(x, v)), true);
+    return;
+  }
   if (get(p) === v) return;
   edit(label || "edit", () => put(p, v), true);
 }
@@ -3755,7 +3772,7 @@ function onKey(e) {
   if ((e.ctrlKey || e.metaKey) && S.save) {
     if (e.key === "s") { e.preventDefault(); saveFile(); render(); }
     else if (e.key === "b" && !isTeamSel()) { e.preventDefault(); dlgBumpStats(); }
-    else if (e.key === "i" && aesUnlocked()) { e.preventDefault(); fpcToggle(curPlayer()); render(); }
+    else if (e.key === "i" && aesUnlocked() && !groupOn()) { e.preventDefault(); fpcToggle(curPlayer()); render(); }
     else if (e.key === "f" && aesUnlocked()) { e.preventDefault(); clearVisualFlags(); }
     else if ((e.key === "c" || e.key === "v") && S.clickKind
         && !document.activeElement.matches("input, textarea")
@@ -3829,6 +3846,7 @@ function clipKind() {
 }
 function clipCopy() {
   const kind = clipKind(), t = selTeam();
+  if (kind === "player" && groupOn()) return;
   const data = kind === "player" ? statFields(curPlayer())
     : kind === "team" ? clone(t.tactics)
     : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
@@ -3854,7 +3872,7 @@ function clipPaste() {
   const d = S.clip.data;
   const what = { player: "stats", team: "Gameplan", preset: "preset", formation: "formation" }[kind];
   edit("Paste " + what, () => {
-    if (kind === "player") Object.assign(curPlayer(), clone(d));
+    if (kind === "player") (groupOn() ? groupPlayers() : [curPlayer()]).forEach(x => Object.assign(x, clone(d)));
     else if (kind === "team") t.tactics = clone(d);
     else if (kind === "preset") t.tactics.presets[S.tac.preset] = clone(d);
     else tacPreset(t).formations[S.tac.formation] = clone(d);
@@ -3862,7 +3880,7 @@ function clipPaste() {
   // The paste names what it wrote and where. From a save of another PES version the
   // same line would end with what the target does not store or caps ("; 3 values PES
   // 2017 does not store were left out"); the draft's clipboard holds one save's copies.
-  const onto = kind === "player" ? displayName(curPlayer().name)
+  const onto = kind === "player" ? (groupOn() ? S.group.length + " players" : displayName(curPlayer().name))
     : kind === "team" ? t.name
     : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
     : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
@@ -3912,20 +3930,22 @@ function fpcFindings(p) {
 // The ownership line is the disabled items' tooltip (SE-GUI-22).
 const ownershipTip = () => "The team's export owns the aesthetics, so edit its settings.toml (or its ingame_face.toml, for the face, hair and iris), recompile, then apply the patch.";
 // sample wording: the menu labels.
+// Whose stats a Player menu dialog names: the player's, or the selected players'.
+const whoseStats = p => p.group ? "the " + p.group.length + " players'" : displayName(p.name) + "'s";
 function dlgSetStats() {
-  const p = curPlayer();
+  const p = groupOn() ? groupPlayer() : curPlayer();
   dlgNum("set-stats", "Set all stats",
-    "Set all of " + displayName(p.name) + "'s ability stats to", p.stats.speed,
-    n => setAllStats(p, n));
+    "Set all of " + whoseStats(p) + " ability stats to", p.stats.speed,
+    n => eachSelected(p, x => setAllStats(x, n), "Set stats " + n));
 }
 function dlgBumpStats() {
-  const p = curPlayer();
+  const p = groupOn() ? groupPlayer() : curPlayer();
   dlgNum("bump-stats", "Bump all stats",
-    "Add to all of " + displayName(p.name) + "'s ability stats, each kept within 40 to 99", 0, n => {
-      edit("Bump stats " + (n > 0 ? "+" : "") + n, () => {
-        for (const s of ABILITY_STATS) if (p.stats[s] !== undefined)
-          p.stats[s] = Math.min(99, Math.max(40, p.stats[s] + n));
-      }); });
+    "Add to all of " + whoseStats(p) + " ability stats, each kept within 40 to 99", 0, n => {
+      eachSelected(p, x => edit("Bump stats " + (n > 0 ? "+" : "") + n, () => {
+        for (const s of ABILITY_STATS) if (x.stats[s] !== undefined)
+          x.stats[s] = Math.min(99, Math.max(40, x.stats[s] + n));
+      }), "Bump stats " + (n > 0 ? "+" : "") + n); });
 }
 // The open-save stub stands for a discovered save by its version; the link's
 // `open` key names which one it opens for.
@@ -3948,18 +3968,19 @@ function dlgChooseFile() {
 function playerMenu() {
   const p = curPlayer(), off = isTeamSel();
   const tip = off ? "The Player menu acts on a player: pick a player row" : null;
+  const oneTip = groupOn() ? "Acts on one player: select one row" : null;
   return menu("Player", [
     ["Set all stats\u2026", dlgSetStats, off, tip],
     ["Bump all stats\u2026\tCtrl+B", dlgBumpStats, off, tip],
     // One entry that says what Ctrl+I will do to this player, by the Appearance
     // section's own reading of him (a toggle's name left that to be guessed).
     [(isFpc(p) ? "Show default body (Disable FPC)" : "Hide default body (Enable FPC)") + "\tCtrl+I", () => { fpcToggle(p); render(); },
-      off || !aesUnlocked(), tip || ownershipTip()],
+      off || groupOn() || !aesUnlocked(), tip || oneTip || ownershipTip()],
     "-",
     // On a team's page too: the window then starts on the team's first player.
     ["Copy/swap stats\u2026", winCopyStats],
     "-",
-    ["Generate settings.toml\u2026", dlgSettings, off, tip],
+    ["Generate settings.toml\u2026", dlgSettings, off || groupOn(), tip || oneTip],
     ["Generate in-game face\u2026", dlgIngameFace, off, tip],
   ], { frame0: true });
 }
@@ -4611,9 +4632,14 @@ function clearDropLine() {
     row.classList.remove("dropabove", "dropbelow");
 }
 function playerRow(team, p) {
-  const r = h("div", { class: "prow" + (S.sel && S.sel.team === team.id && S.sel.slot === p.slot ? " on" : ""),
+  const on = groupOn() ? S.group.some(g => g.team === team.id && g.slot === p.slot)
+    : S.sel && S.sel.team === team.id && S.sel.slot === p.slot;
+  const r = h("div", { class: "prow" + (on ? " on" : ""),
       draggable: "true", "data-slot": p.slot, "data-team": team.id,
-      onclick: () => { S.sel = { team: team.id, slot: p.slot }; render(); } },
+      onclick: e => {
+        if (e.ctrlKey || e.metaKey) toggleInGroup(team.id, p.slot);
+        else S.sel = { team: team.id, slot: p.slot };
+        render(); } },
     h("span", { class: "handle" }, "≡"),
     h("span", { class: "num" }, String(p.slot).padStart(2, "0")),
     h("span", { class: "pos" }, p.positions.registered),
@@ -4650,6 +4676,136 @@ function playerRow(team, p) {
     if (Number(tid) === team.id) { movePlayer(team, Number(slot), p.slot); render(); }
   });
   return r;
+}
+
+// ---- Select all similar players (save_editor.md "Select all similar players") ----
+// The rows selected together, {team, slot} each, the first of them S.sel itself: any
+// other way of selecting puts a new object in S.sel, which ends the group with no reset
+// at each place that selects.
+const groupOn = () => !!(S.group && S.group.length > 1 && S.sel === S.group[0]);
+const groupPlayers = () => S.group.map(g => findPlayer(g.team, g.slot));
+// The view's stand-in for the selected players: the first one's values, the players
+// behind it in `group`, which set() writes and the locks compare.
+function groupPlayer() {
+  const players = groupPlayers();
+  return Object.assign(clone(players[0]), { group: players });
+}
+// A player action (a Make button, Set stats, Bump stats) on the selected player, or on
+// each selected one as one undo step: edit() inside it joins the outer one.
+function eachSelected(p, act, label) {
+  if (!p.group) return act(p);
+  edit(label, () => {
+    S.editing = true;
+    try { p.group.forEach(act); } finally { S.editing = false; }
+  });
+}
+// Ctrl+click: the row joins the selected players or leaves them. One left is a plain
+// selection again, and the last one stays selected.
+function toggleInGroup(team, slot) {
+  const cur = groupOn() ? S.group : isTeamSel() ? [] : [S.sel];
+  const at = cur.findIndex(g => g.team === team && g.slot === slot);
+  const next = at < 0 ? [...cur, { team, slot }] : cur.filter((_, i) => i !== at);
+  if (!next.length) return;
+  S.group = next.length > 1 ? next : null;
+  S.sel = next[0];
+}
+function similarButton() {
+  const off = isTeamSel() || groupOn();
+  return button("Select all similar players", dlgSimilar, { disabled: off,
+    title: off ? "Select one player first"
+      : "Select the players like this one, to edit their stats together" });
+}
+// The window's boxes: what each compares, as text.
+const SIMILAR_BOXES = [
+  ["position", "Position", "registered", p => p.positions.registered],
+  ["cards", "Cards", "skills, COM playing styles", p => [...p.skills].sort() + "|" + [...p.com_styles].sort()],
+  ["stats", "Stats", "ability stats", p => ABILITY_STATS.map(s => p.stats[s]).join()],
+];
+// sample wording: the window's lines, boxes and buttons.
+function dlgSimilar() {
+  const p = curPlayer(), team = teamOf(p);
+  const ticked = new Set(SIMILAR_BOXES.map(b => b[0]));
+  let every = false;
+  const matches = () => (every ? curSave().teams : [team]).flatMap(t => t.players
+    .filter(x => SIMILAR_BOXES.every(([k, , , f]) => !ticked.has(k) || f(x) === f(p)))
+    .map(x => ({ team: t.id, slot: x.slot })));
+  const go = button("", () => {
+    const found = matches();
+    // He leads the group, so the view's stand-in holds his values.
+    const me = found.find(g => g.team === team.id && g.slot === p.slot);
+    S.group = [me, ...found.filter(g => g !== me)];
+    S.sel = me;
+    if (every) { S.teamSel = "all"; S.filter = ""; }
+    closeWindow(); render(); updateLink();
+  });
+  const count = () => {
+    const n = matches().length;
+    go.disabled = n < 2;
+    go.textContent = n < 2 ? "No other player matches" : "Select " + n + " players";
+  };
+  const box = ([k, label, hint]) => h("label", { class: "cb" },
+    h("input", { type: "checkbox", checked: true, "data-box": k,
+      onchange: e => { if (e.target.checked) ticked.add(k); else ticked.delete(k); count(); } }),
+    " " + label + " ", weak("(" + hint + ")"));
+  const scope = (label, value) => h("label", { class: "cb" },
+    h("input", { type: "radio", name: "similar-scope", checked: every === value, "data-scope": value ? "every" : "team",
+      onchange: () => { every = value; count(); } }), " " + label);
+  count();
+  dlg("similar", "Select all similar players", h("div", { class: "col", style: "gap:4px" },
+    h("div", {}, "Match ", ...nameSpans(p.name), " on:"),
+    SIMILAR_BOXES.map(box),
+    h("div", { class: "row", style: "margin-top:6px" }, "Look in",
+      scope(displayName(team.name), false), scope("Every team", true))),
+    [go, button("Cancel", closeWindow)]);
+}
+// Locks what the selected players do not share, and every field outside the stats they
+// are edited by, each shown empty (save_editor.md "Several players selected"). The
+// panels draw the first player's values; this pass takes back what is not all of theirs.
+function lockGroupView(root, players) {
+  const same = get => players.every(x => JSON.stringify(get(x)) === JSON.stringify(get(players[0])));
+  const lock = el => {
+    if (!el) return;
+    if (el.matches("input, select")) {
+      el.disabled = true;
+      if (el.matches("select")) el.selectedIndex = -1;
+      else if (el.matches("[type=checkbox], [type=radio]")) el.checked = false;
+      else el.value = "";
+    } else {
+      el.classList.add("locked");
+      el.querySelectorAll(".sel.on").forEach(x => x.classList.remove("on"));
+    }
+  };
+  // The name and the shirt name, their counts with them.
+  lock(root.querySelector("#f-name"));
+  lock(root.querySelector("#f-shirt"));
+  root.querySelectorAll(".count").forEach(c => { c.textContent = ""; });
+  // General info's and Other stats' boxes, by their labels: the four outside the set
+  // (shirt number, nation, age, captain) always, the others when not shared.
+  const pairs = { "Height": x => x.height, "Weight": x => x.weight,
+    "Injury Resistance": x => x.stats.injury_resistance, "Form": x => x.stats.form,
+    "Weak Foot: Usage": x => x.stats.weak_foot_usage, "Accuracy": x => x.stats.weak_foot_accuracy };
+  root.querySelectorAll(".gen .pair").forEach(pair => {
+    const get = pairs[pair.querySelector(".gl").textContent.trim()];
+    if (!get || !same(get)) pair.querySelectorAll("input").forEach(lock);
+  });
+  for (const [id, get] of [["f-regpos", x => x.positions.registered],
+      ["f-style", x => x.positions.playing_style], ["f-foot", x => x.positions.stronger_foot],
+      ["f-hand", x => x.positions.stronger_hand]])
+    if (!same(get)) lock(root.querySelector("#" + id));
+  root.querySelectorAll("[data-stat]").forEach(i => { if (!same(x => x.stats[i.dataset.stat])) lock(i); });
+  root.querySelectorAll("#pos-grid [data-pos]").forEach(cell => {
+    const pos = cell.dataset.pos;
+    if (!same(x => x.positions.playable[pos])) lock(cell.querySelector(".rate"));
+    if (!same(x => x.positions.registered)) { cell.classList.remove("reg"); cell.querySelector(".plabel").classList.add("inert"); }
+  });
+  // A card some of them hold: the mixed mark, locked.
+  const mixed = (sel, has) => root.querySelectorAll(sel).forEach(cb => {
+    const n = players.filter(x => has(x, cb)).length;
+    if (n && n < players.length) { lock(cb); cb.indeterminate = true; }
+  });
+  mixed("[data-skill]", (x, cb) => x.skills.includes(cb.dataset.skill));
+  mixed("[data-com]", (x, cb) => x.com_styles.includes(cb.dataset.com));
+  return root;
 }
 
 // ---- Detail: the player and team views ----
@@ -4768,6 +4924,7 @@ function generalPanel(p, team) {
   reg.id = "f-regpos";
   const style = combo(PLAY_STYLES.map(x => [x, cardName(x)]), p.positions.playing_style,
     v => { set(p, x => x.positions.playing_style, (x, v2) => x.positions.playing_style = v2, v, "playing style"); });
+  style.id = "f-style";
   // Stronger foot and hand: two-choice toggles, Left | Right, the choices
   // halving the field's width (the maintainer, 2026-10-26).
   const sides = (cur, setTo) => h("span", { class: "rate lr" }, ["left", "right"].map(v =>
@@ -4775,6 +4932,7 @@ function generalPanel(p, team) {
       onclick: () => { if (cur !== v) setTo(v); } }, titleCase(v))));
   const foot = sides(p.positions.stronger_foot,
     v => { set(p, x => x.positions.stronger_foot, (x, v2) => x.positions.stronger_foot = v2, v, "stronger foot"); render(); });
+  foot.id = "f-foot";
   const hand = sides(p.positions.stronger_hand ?? "right",
     v => { set(p, x => x.positions.stronger_hand, (x, v2) => x.positions.stronger_hand = v2, v, "stronger hand"); render(); });
   hand.id = "f-hand";
@@ -4804,13 +4962,14 @@ function generalPanel(p, team) {
 // room under the baseline than over the capitals, so equal box gaps of 7
 // read as 9 above and 11 below on the maintainer's screen. The toolbar's 4
 // of margin and 5 more.
-function viewTitle(id, name) {
+function viewTitle(id, name, plain) {
   // The line under the row is the one the team view drew under its fields: it parts the
   // toggle from the screen it switches, on all three.
   return h("div", {},
     h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
       pageToggle(),
-      h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name))),
+      plain ? h("span", {}, plain)
+        : h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name))),
     h("div", { class: "sep" }));
 }
 // The three screens, as one sliding toggle left of the name (4ccEditor's tabs, which
@@ -4819,7 +4978,7 @@ function viewTitle(id, name) {
 // first player if none was; from a player Gameplan selects his team's row, so the list
 // shows where the screen came from.
 function pageToggle() {
-  const on = isTeamSel() ? "gameplan" : (S.page || "stats");
+  const on = isTeamSel() ? "gameplan" : groupOn() ? "stats" : (S.page || "stats");
   const go = page => {
     const team = selTeam();
     if (page === "gameplan") S.sel = { team: team.id };
@@ -4834,18 +4993,20 @@ function pageToggle() {
   };
   return h("span", { class: "rate tri", id: "page-toggle", style: "font-weight:400" },
     [["stats", "Stats"], ["appearance", "Appearance"], ["gameplan", "Gameplan"]].map(([page, label]) =>
-      h("span", { class: "sel" + (on === page ? " on" : ""),
-        onclick: () => { if (on !== page) go(page); } }, label)));
+      groupOn() && page === "appearance"
+        ? h("span", { class: "sel off", title: "Appearance is one player's: select one row" }, label)
+        : h("span", { class: "sel" + (on === page ? " on" : ""),
+            onclick: () => { if (on !== page) go(page); } }, label)));
 }
 // One "Make X" per tier of the active ruleset in its order, plus Set stats
 // (SE-GUI-09), in two columns under the player list. They act on the selected
 // player, so a team row leaves them disabled with the reason on hover.
 function quickActions() {
-  const p = curPlayer(), off = isTeamSel();
+  const p = groupOn() ? groupPlayer() : curPlayer(), off = isTeamSel();
   const tip = off ? "These buttons act on a player: pick a player row" : null;
   const input = h("input", { type: "number", id: "set-stats", value: 77, min: 0, max: 99,
     disabled: off, title: tip });
-  const make = t => button("Make " + t.label, () => { applyTier(p, t); render(); },
+  const make = t => button("Make " + t.label, () => { eachSelected(p, x => applyTier(x, t), "Make " + t.label); render(); },
     { disabled: off, title: tip || "Give this player the " + t.label + " tier's values from the AATF rules in use" });
   // The medal tiers in the left column, in the ruleset's order; the others,
   // then Set stats, in the right (the maintainer, 2026-10-26: Gold, Silver,
@@ -4854,12 +5015,13 @@ function quickActions() {
   const setStats = h("div", { class: "row" },
     button("Set stats", () => {
       const n = parseInt(input.value, 10);
-      if (!Number.isNaN(n)) { setAllStats(p, n); render(); }
+      if (!Number.isNaN(n)) { eachSelected(p, x => setAllStats(x, n), "Set stats " + n); render(); }
     }, { disabled: off, title: tip || "Set every ability stat to the value next to this button" }),
     input);
   return h("div", { class: "qagrid", id: "quick-actions", "data-panel": "quick-actions" },
     h("div", { class: "qacol" }, tiers.filter(t => MEDAL_MARK[t.id]).map(make)),
-    h("div", { class: "qacol" }, tiers.filter(t => !MEDAL_MARK[t.id]).map(make), setStats));
+    h("div", { class: "qacol" }, tiers.filter(t => !MEDAL_MARK[t.id]).map(make), setStats),
+    h("div", { class: "wide" }, similarButton()));
 }
 // The detail view: a player row shows the player view (the fixed columns,
 // then the Appearance section), a team row the team view. No tabs.
@@ -4871,6 +5033,7 @@ let detailScroll = 0;
 function renderDetail() {
   const d = h("div", { class: "detail", onscroll: e => { detailScroll = e.target.scrollTop; } });
   if (isTeamSel()) d.append(teamView(selTeam()));
+  else if (groupOn()) d.append(playerView(groupPlayer(), teamOf(curPlayer())));
   else { const p = curPlayer(); d.append(playerView(p, teamOf(p))); }
   // Restored once the frame's layout has given the pane its height, as the
   // player list's offset is.
@@ -4882,18 +5045,24 @@ function renderDetail() {
 // Skills in two, the ability stats in one - then the collapsing Appearance
 // section, closed by default.
 function playerView(p, team) {
+  if (p.group) return lockGroupView(h("div", { id: "player-page" },
+    viewTitle(null, null, p.group.length + " players"), playerColumns(p, team)), p.group);
   (S.lastPlayer = S.lastPlayer || {})[team.id] = p.slot;
   // Appearance is a screen of its own: the section that collapsed under the columns.
   // The title's row stands outside the columns' grid, at the pane's left as the team
   // view's does: a toggle that moved between two screens would slip from under the pointer.
   if (S.page === "appearance")
     return h("div", { id: "player-page" }, viewTitle(p.id, p.name), named(appearanceTab(p), "appearance"));
-  return h("div", { id: "player-page" }, viewTitle(p.id, p.name), h("div", { id: "player-view" },
+  return h("div", { id: "player-page" }, viewTitle(p.id, p.name), playerColumns(p, team));
+}
+// The Stats screen's three columns.
+function playerColumns(p, team) {
+  return h("div", { id: "player-view" },
     h("div", { class: "pcols" },
       h("div", { class: "col pcol first" }, generalPanel(p, team), otherStatsPanel(p),
         positionsPanel(p)),
       h("div", { class: "col pcol" }, skillsPanel(p, team), asidePanel(p), comStylesPanel(p)),
-      abilityPanel(p))));
+      abilityPanel(p)));
 }
 // The team view: the team's name as the title, the name/short-name/colour
 // fields the team bar carried, the gated ids, the kit slots behind a button
@@ -5018,7 +5187,7 @@ function positionsPanel(p) {
   };
   const posTable = h("div", { id: "pos-grid", class: layout === "pitch" ? "" : layout },
     posRows.map(row => h("div", { class: "posrow" }, row.map(pos =>
-      h("div", { class: "poscell" + (pos === p.positions.registered ? " reg" : "") },
+      h("div", { class: "poscell" + (pos === p.positions.registered ? " reg" : ""), "data-pos": pos },
         h("div", { class: "plabel", title: "Make " + pos + " the registered position",
           onclick: () => register(pos) }, pos), rating(pos))))));
   return namedCols(h("div", { class: "col" },
@@ -7728,6 +7897,7 @@ function violationField(rule, kv) {
 // tooltip their lines as the dock shows them, one per line. Several
 // fields share one mark where one label heads them (the Skills header).
 function fieldMark(p, ...fields) {
+  if (p.group) return null;
   const rows = (liveRowsOf(teamOf(p).id) || []).filter(r => r[2] === p.id
     && fields.includes(violationField(r[3], kvOf(r[4]))));
   if (!rows.length) return null;
@@ -8895,7 +9065,7 @@ const DLGS = { "set-stats": dlgSetStats, "bump-stats": dlgBumpStats, "multi-aatf
   settings: dlgSettings, "ingame-face": dlgIngameFace, boglo: dlgBoglo, tsv: dlgTsv, fixdb: dlgFixDb,
   "kit-slots": dlgKitSlots,
   "picture-save": () => dlgPictureSave(false), "picture-save-settings": () => dlgPictureSave(true),
-  "pictures-range": dlgPicturesRange,
+  "pictures-range": dlgPicturesRange, similar: dlgSimilar,
   "choose-file": dlgChooseFile, "game-running": () => dlgGameRunning(),
   "save-as": saveAs, "export-toml": ixExportToml, "export-ted": ixExportTed,
   "open-save": () => dlgOpenSave(openStub

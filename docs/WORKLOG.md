@@ -1966,17 +1966,17 @@ briefs, review loops, gates and mutation runs as for any step.
     `save_editor` `overlap::no_two_widgets_overlap_on_the_{player_and_team_views,menus_dialogs}`
     reached their 120 s bound ("a view worker never replied", `view/tests.rs:1511`) twice,
     in the sidekick's run and the lead's; both pass alone in 29 s
-  - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
-    0.0.2, and only if time is left**: the largest, since the view has one selected player
-    and every edit writes one record) a `Select all similar players` button under the
-    player list opens a window of checkboxes (position, cards, stats) choosing what must
-    match the selected player, and a choice between his team (the default) and the whole
-    save; the matching players are then selected together and edited as one unnamed
-    player. Stats alone are edited together (the Copy stats field set); the name, the shirt
-    name and whatever differs show empty and locked. Clicking any row ends the selection;
-    Ctrl+click adds or removes a row. Two slices: the selection of several rows, then the
-    edits written to all as one undo step -> verify: draft, headless tests, the built
-    window
+  - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; after everything else of
+    0.0.2, and only if time is left) Select all similar players: planned and drafted
+    2026-11-14 (`plans/save_editor.md` "Editing UI", the bullets "Select all similar players"
+    and "Several players selected"; SE-GUI-91 to 93; DECISIONS 2026-11-14; the draft's
+    `dlgSimilar`, `toggleInGroup`, `lockGroupView`; captures `.tmp/similar/draft_*.png`).
+    Next: the maintainer's look at the draft, then two slices -> verify: headless tests, the
+    built window
+    - [ ] slice 1: several rows selected (the window, Ctrl+click, the filled rows, the view
+      titled `N players` with its locks)
+    - [ ] slice 2: the edits written to every selected player as one undo step (the fields,
+      the quick actions, Set and Bump all stats, Ctrl+V)
   - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34; `plans/save_editor.md`
     "Formation pictures", with the maintainer's additions of 2026-11-13; SE-GUI-86 to 89;
     DECISIONS 2026-11-14 "formation pictures are painted off screen by the view's own

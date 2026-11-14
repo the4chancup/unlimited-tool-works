@@ -69,6 +69,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   coach record, and should the import give the target its own manager id when the file's
   equals the file's team id?
 
+- **Select all similar players: the draft.** Worklog 0.0.2-similar waits on your look at the
+  draft (Save editor, PES 2021 sample, /gd/'s player 10, then the button under the quick
+  actions; captures `.tmp/similar/draft_window_nopos.png`, `draft_four.png`, `draft_five.png`)
+  and at the plan's two bullets "Select all similar players" and "Several players selected".
+  The calls to weigh: only the registered position, the cards and the ability stats are
+  compared; a card some of the selected hold shows the mixed mark, locked; Live AATF's marks
+  and the Cards used badge are left out while several are selected.
+
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

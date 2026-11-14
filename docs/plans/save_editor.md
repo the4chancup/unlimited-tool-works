@@ -359,6 +359,56 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   They act on the selected player, so a team row leaves them disabled, their tooltip "The make
   buttons act on a player: pick a player row". The Player menu's entries are disabled too,
   their tooltip "The Player menu acts on a player: pick a player row".
+- **Select all similar players** (0.0.2-similar), a button under the quick actions as wide as
+  their grid, selects with the selected player every player who shares what its window
+  asks, so a member edits a tier's players as one; its tooltip "Select the players
+  like this one, to edit their stats together". A team row, or several players already
+  selected, leaves it disabled, its tooltip "Select one player first". The window, titled
+  `Select all similar players`, holds:
+  - `Match <name> on:` above three checkboxes, all ticked when it opens, each with what it
+    compares in brackets in the weak colour: `Position (registered)`, the registered
+    position; `Cards (skills, COM playing styles)`, both sets; `Stats (ability stats)`, every
+    ability stat, the ones Set stats writes. An unticked box leaves its fields out of the
+    match. Height, weight, the weak foot, form, injury resistance, the playable positions,
+    the playing style and the stronger foot and hand are never compared: a tier's players
+    share their abilities and cards while their heights and feet differ, and a field the
+    selected players do not share is locked anyway (below);
+  - `Look in`, two radio buttons: the player's team, by its name (the default), and `Every
+    team`, since a cup save holds about 4,600 players, most of them on other teams;
+  - `Select N players`, N counting him, and Cancel. When he alone matches, the button is
+    disabled and reads `No other player matches`; with no box ticked, every player in the
+    chosen teams matches.
+
+  The window remembers nothing: each opening starts with the three boxes ticked and his
+  team.
+- **Several players selected.** Each selected row is filled as the selected row is. After
+  `Every team`, the team selector moves to `All teams` and the filter is cleared, so every
+  selected row is in the list. Ctrl+click on a player row adds it to the selection or takes
+  it out, a lone selected player included, so a selection can also be built without the
+  window. Taking out all but one leaves that one selected as usual, and Ctrl+click on the
+  last one does nothing. Any other way of selecting (a plain click on any row, Up or Down,
+  the team selector, the toggle's Gameplan, a jump from a list or a panel) ends the
+  selection.
+
+  The view shows the selected players as one, titled `N players` (no id, no name), with the
+  toggle's Appearance disabled, its tooltip "Appearance is one player's: select one row". It
+  edits the Copy stats field set ("Feature inventory", Player operations):
+  - a field every selected player shares shows its value, and an edit writes it to all of
+    them as one undo step;
+  - a field they do not share is empty and locked: a number box empty, a skill's or COM
+    style's checkbox in its mixed state, a position's C B A with none lit (and no position
+    marked registered when the registered position differs), a combo or a toggle with no
+    choice shown;
+  - the fields outside the set (the name, the shirt name, the shirt number, the nation, the
+    age, the captain) are empty and locked.
+
+  Live AATF's marks and the Cards used badge are left out of the view, since each player's
+  own count may differ; the list's rows keep their marks. The quick actions, Set all stats,
+  Bump all stats and Ctrl+V act on every selected player, one undo step each, and Ctrl+C
+  copies nothing. The Player menu's FPC entry and Generate settings.toml are disabled, their
+  tooltip "Acts on one player: select one row", and Copy/swap stats opens on the first
+  selected player. The unsaved changes list shows an edit to several players as one row per
+  player, as it lists every edit.
 - **The event logo.** While a save is open and the active ruleset carries a logo
   (`plans/aatf_rules.md` "The ruleset schema", the event's logo and page), the view draws it
   at its top right. With no save open it is not drawn, because it heads an open save's view
@@ -3292,6 +3342,31 @@ SE-GUI-90  GIVEN SE-GUI-26's three discovered saves, one of them opened earlier 
                 that save opens and the panel is gone; GIVEN no save discovered and none
                 opened THEN the panel reads "No PES saves were found in Documents." above
                 Choose file…
+SE-GUI-91  GIVEN the PES 2021 save on /gd/ (722), its player 10 selected (LB; 12 and 17 share
+                 his ability stats and cards as RBs, 13 his ability stats alone, 19 all
+                 three)
+           WHEN Select all similar players is clicked
+           THEN its window shows Position, Cards and Stats ticked and /gd/ chosen, its button
+                `Select 2 players`; WHEN Position is unticked THEN `Select 4 players`; WHEN
+                Cards is unticked too THEN `Select 5 players`; WHEN Every team is chosen THEN
+                the count adds every other team's player with his ability stats; WHEN the
+                three are ticked again on /gd/ and Select is clicked THEN rows 10 and 19 are
+                filled and the view is titled `2 players`
+SE-GUI-92  GIVEN /gd/'s players 10, 12, 17 and 19 selected together
+           WHEN the view is drawn
+           THEN it is titled `4 players`, the toggle's Appearance disabled; Height reads 175
+                and Speed 82, both editable; the Name and Shirt boxes, the Registered
+                position combo, the Stronger foot toggle and the LB and RB ratings are empty
+                and locked; no AATF mark and no Cards used badge are drawn; WHEN Speed is set
+                to 85 THEN all four read 85, the unsaved changes list shows four Speed rows,
+                and one Undo puts all four back to 82, the four still selected
+SE-GUI-93  GIVEN /gd/'s player 10 selected
+           WHEN player 12's row is Ctrl+clicked
+           THEN rows 10 and 12 are filled and the view is titled `2 players`; WHEN row 10 is
+                Ctrl+clicked THEN player 12 alone is selected, his own view shown; WHEN row 13
+                is Ctrl+clicked and then row 19 clicked THEN player 19 alone is selected; WHEN
+                Select all similar players is hovered with 12 and 13 selected THEN it is
+                disabled, its tooltip "Select one player first"
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
                  PES 19 one the newest, no folder remembered from an earlier open, and one of
                  the three opened earlier in the session
