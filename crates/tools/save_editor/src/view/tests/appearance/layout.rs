@@ -20,6 +20,28 @@ fn frame_around(
         .expect("a group frame around the point")
 }
 
+/// The `Frame::group` rect around the group titled `title` on the drawn
+/// frame (`frame_around` on the title label's point).
+fn group_frame(
+    window: &Headless,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+    title: &str,
+) -> egui::Rect {
+    let bounds = label_bounds(nodes, title);
+    frame_around(
+        shapes,
+        window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke,
+        egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
+    )
+}
+
 // SE-GUI-84
 #[test]
 fn the_groups_stand_in_the_drafts_order() {
@@ -29,20 +51,7 @@ fn the_groups_stand_in_the_drafts_order() {
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     open_appearance(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let frame = |title: &str| {
-        let bounds = label_bounds(&nodes, title);
-        frame_around(
-            &shapes,
-            window
-                .ctx
-                .global_style()
-                .visuals
-                .widgets
-                .noninteractive
-                .bg_stroke,
-            egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
-        )
-    };
+    let frame = |title: &str| group_frame(&window, &nodes, &shapes, title);
     let fpc = frame("Full Player Customization");
     let colors = frame("Colors");
     let strip = frame("Strip style");
@@ -103,6 +112,100 @@ fn the_groups_stand_in_the_drafts_order() {
         label_bounds(&nodes, "Playing attitude").y0 > label_bounds(&nodes, "Star").y1,
         "the attitude row stands below the star row"
     );
+}
+
+// SE-GUI-84
+#[test]
+fn the_group_titles_leave_title_gap_under_them() {
+    // Every group title stands TITLE_GAP (6) above the first row under
+    // it, as the Stats screen's panels leave under theirs; a label's
+    // bounds add its row's own centering (the 24- and 34-tall rows sit
+    // their text mid-cell).
+    let path = fixture(PesVersion::Pes21, "group_title_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    for (title, first, gap) in [
+        ("Colors", "Skin", 7.5),
+        ("Strip style", "Boots ID", 10.5),
+        ("Physique", "Neck length", 15.5),
+        ("Motion", "Hunching (dribbling)", 7.5),
+        ("Presentation", "Star", 7.5),
+    ] {
+        let measured = label_bounds(&nodes, first).y0 - label_bounds(&nodes, title).y1;
+        assert!(
+            (measured - gap).abs() <= 1.0,
+            "{title:?} leaves TITLE_GAP under it ({measured} vs {gap})"
+        );
+    }
+    let flags_gap = node_labeled(&nodes, Role::CheckBox, "Face")
+        .bounds()
+        .expect("the Face flag's bounds")
+        .y0
+        - label_bounds(&nodes, "Edit flags").y1;
+    assert!(
+        (flags_gap - 8.0).abs() <= 1.0,
+        "\"Edit flags\" leaves TITLE_GAP under it ({flags_gap} vs 8.0)"
+    );
+}
+
+// SE-GUI-84
+#[test]
+fn the_first_row_fills_the_pane_and_ends_at_one_bottom() {
+    // The draft's `.aprow.fpcrow`: Full Player Customization flexes to
+    // the room Colors leaves — Colors keeps its own width at the pane's
+    // right edge, SIDE_GAP between the frames — and the two frames'
+    // bottoms stand level, the shorter repainted to the row's height.
+    let path = fixture(PesVersion::Pes21, "first_row_bottom");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let fpc = group_frame(&window, &nodes, &shapes, "Full Player Customization");
+    let colors = group_frame(&window, &nodes, &shapes, "Colors");
+    assert!(
+        (colors.min.x - fpc.max.x - 8.0).abs() <= 1.0,
+        "SIDE_GAP between the two frames"
+    );
+    assert!(
+        (colors.max.x - PANE_RIGHT).abs() <= 1.0,
+        "the row ends at the pane's right edge ({:?} vs {PANE_RIGHT})",
+        colors.max.x
+    );
+    assert!(
+        (fpc.max.y - colors.max.y).abs() <= 0.5,
+        "the two frames' bottoms stand level"
+    );
+}
+
+// SE-GUI-84
+#[test]
+fn the_screen_settles_its_passes_once_the_colors_width_is_measured() {
+    // `fpc_colors_row` asks egui to rerun the pass only when the width it
+    // measured changed: once the measurement settles the screen draws in
+    // one pass a frame. A guard that asked every frame instead would keep
+    // every frame multipass, and egui paints its perf warning on screen
+    // after three in a row — the settled screen carries none.
+    let path = fixture(PesVersion::Pes21, "settled_passes");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    for frame in 0..5 {
+        let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert!(
+            !shapes.iter().any(|clipped| matches!(
+                &clipped.shape,
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text.contains("PERF WARNING")
+            )),
+            "frame {frame}: no discarded passes once the width settles"
+        );
+    }
 }
 
 // SE-GUI-84
@@ -191,8 +294,10 @@ fn the_strip_grid_stands_three_columns_by_five_rows_with_its_lines() {
         }
     }
 
-    // The lines: under the second row across the three columns, and at
-    // the third column's left on rows four and five.
+    // The lines: under the second and third rows across the three
+    // columns and under the fourth across the first two, each ending
+    // mid-gap half a CELL_GAP (14) past the last covered column's
+    // field; and at the third column's left on rows four and five.
     let stroke = window
         .ctx
         .global_style()
@@ -211,18 +316,29 @@ fn the_strip_grid_stands_three_columns_by_five_rows_with_its_lines() {
         let b = label_bounds(&nodes, label);
         egui::pos2(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32)
     };
-    let row2 = centre("Gloves ID");
-    let row3 = centre("Wrist taping");
-    assert!(
-        lines.iter().any(|&[a, b]| {
-            a.y == b.y
-                && a.y > row2.y
-                && a.y < row3.y
-                && a.x.min(b.x) <= label_bounds(&nodes, "Boots ID").x0 as f32 + 4.0
-                && a.x.max(b.x) >= control_right_of(&nodes, "Inners").bounds().unwrap().x1 as f32
-        }),
-        "the line under the second row, across the three columns"
-    );
+    let left = label_bounds(&nodes, "Boots ID").x0 as f32;
+    for (under, next, last_field) in [
+        ("Gloves ID", "Wrist taping", "Inners"),
+        ("Wrist taping", "Outfielder gloves", "Inners"),
+        ("Outfielder gloves", "Spectacles", "Gloves color"),
+    ] {
+        let above = centre(under);
+        let below = centre(next);
+        let field_right = control_right_of(&nodes, last_field)
+            .bounds()
+            .expect("bounds")
+            .x1 as f32;
+        assert!(
+            lines.iter().any(|&[a, b]| {
+                a.y == b.y
+                    && a.y > above.y
+                    && a.y < below.y
+                    && a.x.min(b.x) <= left + 4.0
+                    && (a.x.max(b.x) - field_right - 14.0).abs() <= 1.0
+            }),
+            "the line under {under:?}'s row, ending mid-gap"
+        );
+    }
     let gloves_colour = control_right_of(&nodes, "Gloves color")
         .bounds()
         .expect("bounds");
@@ -295,26 +411,22 @@ fn the_physique_and_motion_flag_column_end_at_one_bottom() {
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     open_appearance(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let stroke = window
-        .ctx
-        .global_style()
-        .visuals
-        .widgets
-        .noninteractive
-        .bg_stroke;
-    let frame = |title: &str| {
-        let bounds = label_bounds(&nodes, title);
-        frame_around(
-            &shapes,
-            stroke,
-            egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
-        )
-    };
-    let physique = frame("Physique");
-    let flags = frame("Edit flags");
+    let physique = group_frame(&window, &nodes, &shapes, "Physique");
+    let flags = group_frame(&window, &nodes, &shapes, "Edit flags");
     assert!(
-        (physique.max.y - flags.max.y).abs() <= 1.0,
+        (physique.max.y - flags.max.y).abs() <= 0.5,
         "the row's two sides end at one bottom"
+    );
+    // The row's bottom is its frames' painted bottom, and Presentation
+    // opens GROUP_GAP under it: the frame margin the row's height is
+    // counted with is the frames' own, a point off moving the next
+    // group's top by that much.
+    let presentation = group_frame(&window, &nodes, &shapes, "Presentation");
+    let row_bottom = physique.max.y.max(flags.max.y);
+    assert!(
+        (presentation.min.y - row_bottom - 4.0).abs() <= 0.5,
+        "Presentation opens GROUP_GAP under the row ({:?} vs {row_bottom})",
+        presentation.min.y
     );
 }
 

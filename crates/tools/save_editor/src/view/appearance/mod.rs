@@ -312,7 +312,10 @@ fn fpc_colors_row(
 /// The second row: Physique at its own width, and beside it a column
 /// taking the rest — Motion over Edit flags, `GROUP_GAP` between them —
 /// the two sides ending at one bottom (the draft's `.aprow` stretch: the
-/// shorter side's frame repainted to the taller's height).
+/// Edit flags frame repainted down to Physique's bottom). Physique is the
+/// taller side on every version, since every row of the three grids is
+/// drawn whether or not the version stores it, and grids never wrap; a
+/// test pins the bottoms level, so a column that grows past it fails there.
 fn physique_motion_flags_row(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -333,49 +336,43 @@ fn physique_motion_flags_row(
             });
             physique.allocate_space(ui);
             let physique_outer = physique.content_ui.min_rect().height() + margin;
-            let row_height = ui
-                .scope_builder(
-                    egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
-                    |ui| {
+            ui.scope_builder(
+                egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
+                |ui| {
+                    ui.set_min_width(ui.available_width());
+                    ui.spacing_mut().item_spacing.y = GROUP_GAP;
+                    let mut motion = group_frame.begin(ui);
+                    frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
                         ui.set_min_width(ui.available_width());
-                        ui.spacing_mut().item_spacing.y = GROUP_GAP;
-                        let mut motion = group_frame.begin(ui);
-                        frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
-                            ui.set_min_width(ui.available_width());
-                            motion_grid(ui, session, player_id, version, &player.motion, draw);
-                        });
-                        let motion_outer = motion.content_ui.min_rect().height() + margin;
-                        motion.end(ui);
-                        let mut flags = group_frame.begin(ui);
-                        frame_content(&mut flags.content_ui, "Edit flags", |ui| {
-                            ui.set_min_width(ui.available_width());
-                            edit_flags_grid(
-                                ui,
-                                session,
-                                player_id,
-                                &player.edit_flags,
-                                player.appearance.base_copy_id,
-                            );
-                        });
-                        flags.allocate_space(ui);
-                        let column_height = ui.min_rect().height();
-                        let row_height = physique_outer.max(column_height);
-                        if column_height < row_height {
-                            stretch(&mut flags, row_height - motion_outer - GROUP_GAP - margin);
-                            let column = ui.min_rect();
-                            ui.advance_cursor_after_rect(egui::Rect::from_min_max(
-                                column.min,
-                                egui::pos2(column.max.x, column.min.y + row_height),
-                            ));
-                        }
-                        flags.paint(ui);
-                        row_height
-                    },
-                )
-                .inner;
-            if physique_outer < row_height {
-                stretch(&mut physique, row_height - margin);
-            }
+                        motion_grid(ui, session, player_id, version, &player.motion, draw);
+                    });
+                    let motion_outer = motion.content_ui.min_rect().height() + margin;
+                    motion.end(ui);
+                    let mut flags = group_frame.begin(ui);
+                    frame_content(&mut flags.content_ui, "Edit flags", |ui| {
+                        ui.set_min_width(ui.available_width());
+                        edit_flags_grid(
+                            ui,
+                            session,
+                            player_id,
+                            &player.edit_flags,
+                            player.appearance.base_copy_id,
+                        );
+                    });
+                    flags.allocate_space(ui);
+                    let column_height = ui.min_rect().height();
+                    let row_height = physique_outer.max(column_height);
+                    if column_height < row_height {
+                        stretch(&mut flags, row_height - motion_outer - GROUP_GAP - margin);
+                        let column = ui.min_rect();
+                        ui.advance_cursor_after_rect(egui::Rect::from_min_max(
+                            column.min,
+                            egui::pos2(column.max.x, column.min.y + row_height),
+                        ));
+                    }
+                    flags.paint(ui);
+                },
+            );
             physique.paint(ui);
         },
     );
