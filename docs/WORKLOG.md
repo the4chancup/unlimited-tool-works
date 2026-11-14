@@ -1895,10 +1895,11 @@ briefs, review loops, gates and mutation runs as for any step.
       `fpc_taping_shows_pieces` says "nothing to do" where a member may have left taping on
       by mistake (P11: the added advice is the maintainer's call); the Team TOML's `skills`
       comment could say how a skill is spelt, once each label is checked against the game
-      (`sh_toml_b` 11); the Team TOML, patch and kit config spec blocks show comments the
-      writers do not write, and the patch block's `# slot 03 -> player 70203` contradicts
-      its prose (`sh_toml_b` "Wrong or stale" 4, 5, 7: trim the blocks or write the useful
-      comments); the kit config's comment columns drift with the value's width
+      (`sh_toml_b` 11)
+    - [x] 2026-11-14 (`f90a92a0`) the Team TOML, patch and kit config spec blocks show what
+      their writers write, each guarded by a test that reads the block; the Team TOML gains
+      its first line, the instructions' note and the stats table's stored-values note; the
+      kit config's comments start at one column
   - [x] 0.0.2-copywin (2026-11-13, `30b1109c`) `Copy/swap stats…` opens a non-modal window (Source and Destination by team and player; the list's selection sets the Destination; Copy and Swap leave it open); help page 06. Left: a look at the built window
   - [x] 0.0.2-fpcmenu (2026-11-13, `bba7eee1`) the Player menu's FPC entry reads `Hide default body (Enable FPC)` or `Show default body (Disable FPC)`, whichever Ctrl+I will do; the Team menu's two carry the same brackets; help pages 05 and 06
   - [x] 0.0.2-clipmsg (2026-11-13, `bba7eee1`) Ctrl+C and Ctrl+V publish a notice naming the copy and the target, a cross-version paste's with the count of values left out or changed; the clipboard text's first line holds the notice's words
