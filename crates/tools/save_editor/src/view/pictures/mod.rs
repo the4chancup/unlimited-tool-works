@@ -2,12 +2,15 @@
 //! preset and a column per formation, which organizers check a team's
 //! shapes with and share (the draft's `formationsPicture`).
 //!
+//! The Team menu's dialog that writes one is `dialog`.
+//!
 //! A picture is painted in an egui context of its own that is never
 //! shown, by the Tactics view's own pitch painter (`pitch::still_pitch`),
 //! and `raster` fills the triangles epaint tessellates the frame into.
 //! A second painter drawing straight into an image would have to be kept
 //! in step with the view's by hand, one shape kind at a time.
 
+mod dialog;
 mod raster;
 
 use std::path::Path;
@@ -23,6 +26,8 @@ use team_widgets::pitch::{self, FORMATIONS, PITCH};
 use team_widgets::tactics::TacticsView;
 
 use crate::view::{portraits, tactics};
+
+pub(crate) use dialog::{PictureDialog, dialog};
 
 /// The empty room around the picture's content.
 const MARGIN: f32 = 16.0;
@@ -58,20 +63,16 @@ pub(crate) struct PictureOptions {
     pub(crate) flat: bool,
 }
 
-/// The team a picture is of, and where its markers' medals, crosses and
-/// portraits come from.
+/// The team a picture is of, and where its markers' medals and portraits
+/// come from.
 pub(crate) struct PictureTeam<'a> {
     /// The open save.
     pub(crate) file: &'a EditFile,
     /// The team, one of `file`'s.
     pub(crate) team: &'a TeamEntry,
-    /// The active ruleset, which the badges' medal outlines and the
-    /// crosses' wording come from; `None` draws neither.
+    /// The active ruleset, which the badges' medal outlines come from;
+    /// `None` draws none.
     pub(crate) rules: Option<&'a aatf::Rules>,
-    /// Live AATF's violations of the team under `rules`: a starter they
-    /// name as fielded where he is not rated A gets a cross. Empty draws
-    /// none.
-    pub(crate) violations: &'a [aatf::Violation],
     /// The save's version's PES folder, the portraits' source; `None`
     /// draws every starter's placeholder portrait.
     pub(crate) pes_folder: Option<&'a Path>,
@@ -200,16 +201,9 @@ fn paint(
         let view = tactics::medal_team_view(file, team.team.id);
         tactics::slot_medals(rules, view.as_ref(), team.team.roster.len())
     });
-    let fielded = match team.rules {
-        Some(rules) => tactics::fielded_marks(
-            team.violations,
-            rules,
-            team.team.id,
-            version,
-            team.team.roster.len(),
-        ),
-        None => vec![Vec::new(); team.team.roster.len()],
-    };
+    // No Live AATF crosses: most teams of a range have no check held, and
+    // a team's picture reads the same whichever dialog wrote it.
+    let fielded = vec![Vec::new(); team.team.roster.len()];
     let slots = tactics::roster_slots(file, team.team);
     let roster = tactics::roster_rows(
         &slots,
@@ -418,13 +412,12 @@ mod tests {
         ctx.style_of(egui::Theme::Dark).visuals.clone()
     }
 
-    /// `team` of `file` with no ruleset, no crosses and no PES folder.
+    /// `team` of `file` with no ruleset and no PES folder.
     fn bare<'a>(file: &'a EditFile, team: &'a TeamEntry) -> PictureTeam<'a> {
         PictureTeam {
             file,
             team,
             rules: None,
-            violations: &[],
             pes_folder: None,
         }
     }
@@ -437,8 +430,8 @@ mod tests {
         }
     }
 
-    /// `team`'s picture from `file` in the dark theme, with no ruleset,
-    /// no crosses and no portraits.
+    /// `team`'s picture from `file` in the dark theme, with no ruleset
+    /// and no portraits.
     fn picture(file: &EditFile, team: &TeamEntry, flat: bool) -> (RgbaImage, Vec<ClippedShape>) {
         paint(&bare(file, team), &dark(), without_portraits(flat))
     }

@@ -18,6 +18,7 @@ use studio_core::{Notice, NoticeKind};
 
 use crate::session::journal;
 use crate::session::rules::{self, ImportCheck, builtins};
+use crate::view::prompt::confirm;
 use crate::view::{Refusal, SaveView, comparator};
 
 /// The dropdown's tooltip (the draft's).
@@ -309,27 +310,6 @@ fn remove_dialog(
             description,
         }),
     }
-}
-
-/// A confirmation modal: `title`, `text`, then `accept` and Cancel. The
-/// answer, `None` while it waits; closing it is Cancel.
-fn confirm(ui: &egui::Ui, id: &str, title: &str, text: &str, accept: &str) -> Option<bool> {
-    let mut answer = None;
-    let response = modal(ui.ctx(), egui::Id::unique(id), title, |ui| {
-        ui.label(text);
-        modal_buttons(ui, |ui| {
-            if ui.button("Cancel").clicked() {
-                answer = Some(false);
-            }
-            if ui.button(accept).clicked() {
-                answer = Some(true);
-            }
-        });
-    });
-    if answer.is_none() && response.should_close() {
-        answer = Some(false);
-    }
-    answer
 }
 
 /// The dropdown for one frame: the active ruleset's description closed,

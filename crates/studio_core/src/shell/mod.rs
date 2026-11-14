@@ -650,8 +650,8 @@ impl StudioApp {
     /// folder, the main row or the version's own entry once any exists, then saves as any
     /// change; `OpenSettings` opens the settings menu on the active tool's section;
     /// `OpenHelp` opens the help window at the target; `OpenUpdateDetails` opens the update
-    /// offer's dialog. `OpenFolder` has no target yet (the
-    /// compile's "Open output" is a later GUI-phase step): it only dismisses.
+    /// offer's dialog; `OpenFolder` opens the folder in the system's file manager
+    /// (`folder_command`), and a file manager that cannot start is a warning in the log.
     fn apply_notice_effect(&mut self, effect: ActionEffect) {
         match effect {
             ActionEffect::SwitchTool(id) => self.switch_to(&id),
@@ -666,11 +666,38 @@ impl StudioApp {
             ActionEffect::OpenUpdateDetails => {
                 debug!("the update dialog does not exist in the browser build");
             }
+            #[cfg(not(target_arch = "wasm32"))]
+            ActionEffect::OpenFolder(folder) => {
+                // Not waited on: the file manager runs on its own, and
+                // explorer exits with 1 even when it opened the folder.
+                if let Err(error) = folder_command(&folder).spawn() {
+                    warn!(
+                        "cannot open the folder {} in the file manager: {error}",
+                        folder.display()
+                    );
+                }
+            }
+            #[cfg(target_arch = "wasm32")]
             effect @ ActionEffect::OpenFolder(_) => {
-                debug!("notice action {effect:?} has no target yet");
+                debug!("the browser build has no file manager for {effect:?}");
             }
         }
     }
+}
+
+/// The command that opens `folder` in the system's file manager: `explorer` on Windows,
+/// `open` on macOS, `xdg-open` elsewhere.
+#[cfg(not(target_arch = "wasm32"))]
+fn folder_command(folder: &std::path::Path) -> std::process::Command {
+    #[cfg(windows)]
+    let program = "explorer";
+    #[cfg(target_os = "macos")]
+    let program = "open";
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let program = "xdg-open";
+    let mut command = std::process::Command::new(program);
+    command.arg(folder);
+    command
 }
 
 impl eframe::App for StudioApp {
@@ -994,6 +1021,20 @@ mod tests {
     /// `apply_requests` outside a frame: a default egui context.
     fn apply_requests(app: &mut StudioApp) {
         app.apply_requests(&egui::Context::default());
+    }
+
+    #[test]
+    fn open_folder_runs_the_system_s_file_manager_on_the_folder() {
+        let folder = std::path::Path::new("C:/Data/UTW/formations");
+        let command = folder_command(folder);
+        #[cfg(windows)]
+        let program = "explorer";
+        #[cfg(target_os = "macos")]
+        let program = "open";
+        #[cfg(not(any(windows, target_os = "macos")))]
+        let program = "xdg-open";
+        assert_eq!(command.get_program(), program);
+        assert_eq!(command.get_args().collect::<Vec<_>>(), [folder.as_os_str()]);
     }
 
     #[test]

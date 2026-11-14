@@ -127,6 +127,7 @@ impl StudioTool for Tool {
         let tool_settings = settings::from_table(&table).unwrap_or_default();
         if !self.imports_read {
             self.view.data_dir = ctx.paths().data_dir.clone();
+            self.view.exe_dir = ctx.paths().exe_dir.clone();
             self.view.imported = session::rules::imported(self.view.data_dir.as_deref());
             // State the tool writes itself (an open's last folder), so it is
             // read once: a per-frame sync would overwrite an open that ran
@@ -145,6 +146,8 @@ impl StudioTool for Tool {
         self.view.team_category = team_category;
         let positions_layout = PositionsLayout::from_setting(&tool_settings.positions_layout);
         self.view.positions_layout = positions_layout;
+        self.view.formation_pictures_folder = tool_settings.formation_pictures_folder.clone();
+        self.view.formation_pictures_flat = tool_settings.formation_pictures_flat;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
         // Everything the editor needs of a PES version is the open save's: its
@@ -170,8 +173,8 @@ impl StudioTool for Tool {
         // The toolbar's ruleset dropdown, its toggle and Show suggestions,
         // where Live AATF's list stands, the formation bar's Scroll and
         // Portraits checkboxes, the positions grid's layout toggle, the
-        // selector's category and
-        // the picker's last folder are settings: the table as read with only
+        // selector's category, the formation pictures' folder and grain box
+        // and the picker's last folder are settings: the table as read with only
         // those keys replaced, so any other key survives (as `settings_view`
         // writes `aesthetics_from_exports`).
         if self.view.aatf_ruleset != tool_settings.aatf_ruleset
@@ -182,6 +185,8 @@ impl StudioTool for Tool {
             || self.view.tactics.portraits != tool_settings.portraits
             || self.view.positions_layout != positions_layout
             || self.view.team_category != team_category
+            || self.view.formation_pictures_folder != tool_settings.formation_pictures_folder
+            || self.view.formation_pictures_flat != tool_settings.formation_pictures_flat
             || self.view.last_folder != tool_settings.last_folder
         {
             let mut table = table;
@@ -216,6 +221,14 @@ impl StudioTool for Tool {
             table.insert(
                 "team_category".to_owned(),
                 toml::Value::String(self.view.team_category.setting().to_owned()),
+            );
+            table.insert(
+                "formation_pictures_folder".to_owned(),
+                toml::Value::String(self.view.formation_pictures_folder.clone()),
+            );
+            table.insert(
+                "formation_pictures_flat".to_owned(),
+                toml::Value::Boolean(self.view.formation_pictures_flat),
             );
             match &self.view.last_folder {
                 Some(folder) => table.insert(

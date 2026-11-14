@@ -2,7 +2,8 @@
 //! toggle, Copy/swap stats window (`copy_stats`) and two Generate items,
 //! the Team menu's operations over the
 //! selected row's team, each a sealed undo entry
-//! (`session/{player,team}_ops.rs`), the Savefile menu's Comparator, Apply
+//! (`session/{player,team}_ops.rs`) and its formation picture dialog
+//! (`pictures`), the Savefile menu's Comparator, Apply
 //! aesthetics patch, roster sheet, Multi-team AATF and Fix database
 //! (`session/database.rs`), and the dialogs they open (`Boglo`,
 //! `StatNum` and the Fix database confirmation; the draft's
@@ -25,14 +26,15 @@ use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{
-    NUMBER_BOX, Panel, Refusal, SaveView, comparator, copy_stats, interchange,
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, copy_stats, interchange, pictures,
     refuse_save_being_read, selected_player, selected_team_id,
 };
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
 /// boots/gloves dialog, Set player names to positions, Clear visual flags
 /// (its Ctrl+F drawn beside), the two FPC items, then Import / export team
-/// file opening the team file panel (`interchange`). Every item acts on the
+/// file opening the team file panel (`interchange`) and Save a picture of
+/// the formations opening its dialog (`pictures`). Every item acts on the
 /// selected row's team — a player's or a team row's own — so the menu is
 /// disabled only with no row selected; the boots/gloves dialog prefills
 /// from the selected player, on a team row from the team's first filled
@@ -125,6 +127,19 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         menu_separator(ui);
         if ui.button("Import / export team file\u{2026}").clicked() {
             view.panel = Some(Panel::Interchange);
+            ui.close();
+        }
+        if ui
+            .button("Save a picture of the formations\u{2026}")
+            .clicked()
+        {
+            let team = session.file().team(team_id).expect("the selected team");
+            view.picture = Some(pictures::PictureDialog::open(
+                team,
+                &view.formation_pictures_folder,
+                &view.exe_dir,
+                view.tactics.portraits,
+            ));
             ui.close();
         }
     });

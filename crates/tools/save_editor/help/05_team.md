@@ -40,6 +40,8 @@ row's, and writes every filled roster slot in one undoable step:
   and standard socks on them all, and on PES 2015 to 2017 both FPC items also
   turn a Custom skin into Light.
 - **Import / export team file…** opens a panel beside the views.
+- **Save a picture of the formations…** saves a picture of the team's formations
+  (below).
 
 The boots and gloves item, Clear visual flags and the FPC items stay disabled
 while the aesthetics lock is on (see the Appearance section), because they write
@@ -108,3 +110,18 @@ choices and Apply is disabled; untick that section to import the rest.
 save. When the team already holds every value the ticked sections would write
 (its own file, or a file applied already), Apply stays disabled and the panel
 says so.
+
+**Saving a picture of the formations**
+
+**Save a picture of the formations…** writes a PNG of the team's formations, a
+row per preset and a column per formation, for checking a team's shapes or
+sharing them. Its dialog asks for:
+
+- the **Folder**, `formations` in UTW.exe's folder until you save a picture
+  elsewhere, then the last one used; **Browse…** picks another;
+- the **File name**, the team's name (`f.png` for /f/).
+
+**Portraits** draws the players' portraits, starting as the formation bar's box
+reads, and **Without the pitch's grain (smaller file)** paints the pitch plain.
+If the file is already in the folder, Save asks before replacing it. The notice
+that says the picture was written has an **Open folder** button.
