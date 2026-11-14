@@ -2011,7 +2011,7 @@ fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
     // upgrader respells it.
     crate::assert_row_says(
         "dummy_kit_name_old",
-        &["`team_kit`", "export-upgrader upgrade", "upgrade-models"],
+        &["`team_kit`", "export-upgrader upgrade", "Midcup export"],
     );
 }
 
@@ -2121,7 +2121,7 @@ fn a_path_holding_the_legacy_kit_token_is_refused() {
     // The finding's text names the upgrader that respells the token.
     assert_row_says(
         "kit_token_old",
-        &["`kitN`", "export-upgrader upgrade", "upgrade-models"],
+        &["`kitN`", "export-upgrader upgrade", "Midcup export"],
     );
 }
 
@@ -2273,7 +2273,11 @@ fn an_fmdl_directory_with_anything_after_common_folder_or_starting_common_is_ref
         .iter()
         .find(|row| row.code == "fmdl_common_path_invalid")
         .unwrap();
-    for word in ["`team_common_folder/`", "upgrade-models"] {
+    for word in [
+        "`team_common_folder/`",
+        "export-upgrader upgrade",
+        "Midcup export",
+    ] {
         assert!(
             row.when.contains(word) || row.effect.contains(word),
             "{word}: {} / {}",

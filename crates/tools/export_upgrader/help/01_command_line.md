@@ -4,7 +4,6 @@ folder that holds `UTW.exe`.
 
 ```text
 UTW export-upgrader upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
-UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
 `upgrade` takes one or more old exports, `--all <DIR>`, or both. Each export
@@ -73,30 +72,6 @@ left as it was, and the cause reported, when:
 
 In a referee folder that folds, a `common/` model no `face.xml` of the referee
 names is left out and reported.
-
-`upgrade-models` takes a folder of old model folders instead: the face, boots
-and gloves folders lying directly in it, plus an optional `Common` folder.
-Each becomes one folder to drop into an export. A face folder becomes a player
-folder `NN - Name` (its number and name from its own name, or its own name
-alone when it has no number), a boots or gloves folder becomes a folder named
-by its name part (`k0430 - Crocs` becomes `Crocs`) or by its ID when it has
-none, and `Common` is upgraded as an export's would be.
-
-The report names each output folder and where it goes: a player folder into
-`Players/`, `Common` at the export's root, and a boots or gloves folder into
-`Boots/` or `Gloves/`. For a boots or gloves folder, you then add a link file
-to the folder of each player who wears it, or move its files into a player
-folder with the model renamed `boots.fmdl` or `glove_*.fmdl`.
-
-A top-level folder holding no file directly in it (such as a folder of player
-folders) is reported as `unmigrated_content` and left out. Two copies of a
-file whose names differ only in the team's ID keep the one spelled with
-letters (`u0XXXp2.dds` beside `u0731p2.dds`), the copy the game loaded, and
-each numbered copy is dropped as a leftover. Only numbered copies alone
-(`u0731p2.dds` beside `u0799p2.dds`) are reported as `unmigrated_content`,
-since which of them shipped depended on the team's ID. The output is the
-folder `<folder> upgraded`
-beside the input, or the folder `-o` names, which must not exist yet.
 
 The original export is never modified. A file, a folder or a Team Note entry the migration
 cannot place yet is listed in the report as `unmigrated_content`, the line naming the cause

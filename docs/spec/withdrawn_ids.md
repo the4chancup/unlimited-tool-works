@@ -21,6 +21,24 @@ EU-SET-05  withdrawn: restated as EU-SET-11 (`spec/export_upgrader.md`), his
 EU-SET-06  withdrawn: no save is stripped (step 8.36b), so settings_from_stripped_record is gone
 ```
 
+## `spec/export_upgrader.md`, Model-folder mode (the area withdrawn whole)
+
+```
+EU-MF-01  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-02   withdrawn: restated as EU-MF-08 (`spec/export_upgrader.md`), a kept Common path
+           written common/team_folder/ since step 0.0.2-poc11
+EU-MF-08   withdrawn: restated as EU-MF-10 (`spec/export_upgrader.md`), a kept Common path
+           written team_common_folder/ since step 0.0.2-poc12
+EU-MF-10  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-03  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-04   withdrawn: restated as EU-MF-09 (`spec/export_upgrader.md`), the keeper's token
+           written gk_kitN in both modes since step 0.0.2-poc11
+EU-MF-09  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-05  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-06  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+EU-MF-07  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
+```
+
 ## `spec/save_editor.md`, Transplant (the area withdrawn whole)
 
 ```

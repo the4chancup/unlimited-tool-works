@@ -428,35 +428,6 @@ fn a_staging_folder_left_by_an_earlier_run_is_removed_and_reported() {
         "{}",
         run.stdout()
     );
-
-    // `upgrade-models` clears its staging folder the same way.
-    fs::create_dir_all(sandbox.path("new models/XXX15 - A")).unwrap();
-    fs::write(sandbox.path("new models/XXX15 - A/face.fmdl"), b"face").unwrap();
-    fs::create_dir_all(sandbox.path("new models upgraded.upgrading")).unwrap();
-    fs::write(
-        sandbox.path("new models upgraded.upgrading/left.txt"),
-        b"left behind",
-    )
-    .unwrap();
-    let input = sandbox.arg("new models");
-    let run = sandbox.run(&["upgrade-models", &input]);
-    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
-    assert!(
-        sandbox.path("new models upgraded").is_dir(),
-        "{}",
-        run.stdout()
-    );
-    assert!(
-        !sandbox.path("new models upgraded.upgrading").exists(),
-        "the staging folder is gone: {}",
-        run.stdout()
-    );
-    assert!(
-        run.stdout().contains("staging_folder_removed")
-            && run.stdout().contains("new models upgraded.upgrading"),
-        "{}",
-        run.stdout()
-    );
 }
 
 #[cfg(windows)]
@@ -939,4 +910,18 @@ fn a_team_export_among_referee_exports_needs_its_flag() {
             "Upgraded: 1. Not upgraded: 1.",
         ]
     );
+}
+
+// EU-CLI-16
+#[test]
+fn upgrade_models_is_refused_as_an_unknown_command() {
+    let sandbox = Sandbox::new("cli_upgrade_models_gone");
+    fs::create_dir_all(sandbox.path("new models/XXX15 - A")).unwrap();
+    fs::write(sandbox.path("new models/XXX15 - A/face.fmdl"), b"face").unwrap();
+    let input = sandbox.arg("new models");
+    let before = sandbox.listing("");
+
+    let run = sandbox.run(&["upgrade-models", &input]);
+    run.assert_refused(2, &["upgrade-models"]);
+    assert_eq!(sandbox.listing(""), before, "nothing is written");
 }

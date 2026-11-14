@@ -99,9 +99,9 @@ pub(crate) fn verdict(worst: Option<Severity>, dropped: bool) -> (Code, u8) {
     }
 }
 
-/// What the run upgrades: a team's export, the referee package, or a
-/// folder of model folders (no team). The Studio format names no team ID:
-/// the save's team is found by name, whatever ID the save gives it.
+/// What the run upgrades: a team's export or the referee package. The
+/// Studio format names no team ID: the save's team is found by name,
+/// whatever ID the save gives it.
 #[derive(Debug)]
 pub(crate) enum Identity {
     /// A team, by the canonical `/xx/` name.
@@ -111,8 +111,6 @@ pub(crate) enum Identity {
     },
     /// A referee export; its name's first word is `refs`.
     Referees,
-    /// Model-folder mode's: no team.
-    ModelFolders,
 }
 
 /// A run's event stream: the findings it reports to the console (one line
@@ -526,7 +524,7 @@ fn upgrade_export(
                 )));
             }
         },
-        (None, _) | (Some(_), Identity::Referees | Identity::ModelFolders) => None,
+        (None, _) | (Some(_), Identity::Referees) => None,
     };
 
     // Step 2: the team's roster, when a save is given — its players by slot,
@@ -563,7 +561,7 @@ fn upgrade_export(
                 }
             }
         }
-        Identity::Team { .. } | Identity::ModelFolders => None,
+        Identity::Team { .. } => None,
     };
 
     // "CLI": the output folder, refused when it exists or cannot be made.
@@ -791,9 +789,6 @@ fn upgrade_export(
                 |path| export.read(path),
             );
             (plan, kits, settings)
-        }
-        Identity::ModelFolders => {
-            unreachable!("upgrade's resolve yields a team or the referees")
         }
     };
     // The dropped models' files are accounted for, so the unmigrated

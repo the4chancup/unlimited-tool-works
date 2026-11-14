@@ -93,7 +93,7 @@ pub(crate) fn face_xml_rewrites(
         // `face.xml` needs no folder listing.
         let folder_files = match identity {
             Identity::Referees => folder_files(copies, output),
-            Identity::Team { .. } | Identity::ModelFolders => BTreeSet::new(),
+            Identity::Team { .. } => BTreeSet::new(),
         };
         let respelled = xml_text(&payload).and_then(|(bom, text)| {
             match respell_face_xml(text, identity, &folder_files) {
@@ -312,7 +312,7 @@ fn respell_face_xml<'a>(
             let raw = &text[attribute.range_value()];
             let flattened = match identity {
                 Identity::Referees => flattened_common_value(raw, folder_files),
-                Identity::Team { .. } | Identity::ModelFolders => None,
+                Identity::Team { .. } => None,
             };
             let value = flattened.as_deref().unwrap_or(raw);
             if !(value.starts_with("./") || strip_prefix_ci(value, COMMON_PREFIX).is_some()) {
@@ -513,19 +513,6 @@ mod tests {
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
             "<config><model path=\"team_common_folder/oral_shirt_*.model\" material=\"team_common_folder/a.mtl\"/></config>"
-        );
-    }
-
-    #[test]
-    fn model_folder_mode_writes_team_folder_too() {
-        let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
-        let text = "<config><model path=\"model/character/uniform/common/o/x.model\"/></config>";
-        let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
-        let rewrites = face_xml_rewrites(&copies, &Identity::ModelFolders, &mut read);
-        assert_eq!(rewrites.len(), 1);
-        assert_eq!(
-            String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"team_common_folder/x.model\"/></config>"
         );
     }
 

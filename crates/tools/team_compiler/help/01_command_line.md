@@ -881,14 +881,15 @@ textures as `common_folder/`. The long forms work too: `team_folder` or the game
 `/Assets/pes16/model/character/common/team_folder/Boots/sourceimages/`. Anything else there,
 `000` (the placeholder the community's model templates carry), a team ID, `XXX`, a team's name
 or a folder after `common_folder/`, is refused as the error `fmdl_common_path_invalid`, which
-leaves the model's folder out. `export-upgrader upgrade-models` respells an old model's folder.
+leaves the model's folder out. `export-upgrader upgrade` respells an old model's folder in an
+old export (a Midcup export, for a model on its own).
 
 A texture whose name starts with `dummy_` is never looked for: the game puts its own in its
 place. The same goes for `team_kit` and its family (`team_kit_srm`, and `team_gk_kit` for a
 keeper): the modded exe puts the team's kit texture there, and the compiler writes the name the
 exe looks for, `dummy_kit`. A model naming `dummy_kit` itself, the old spelling, is refused
-(`dummy_kit_name_old`), and `export-upgrader upgrade-models` respells it. `check` does not look
-for these textures, only `compile` does.
+(`dummy_kit_name_old`), and `export-upgrader upgrade` respells it in an old export. `check`
+does not look for these textures, only `compile` does.
 
 A texture in the game's own kit texture folder
 (`/Assets/pes16/model/character/uniform/texture/`) is not looked for either. The modded exe

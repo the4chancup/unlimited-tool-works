@@ -15,7 +15,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 
 1. **Reads the old export** (folders / .zip / .7z): Faces/Boots/Gloves item folders with embedded
    IDs, Kit Configs + Kit Textures folders, Common, Portraits, Collars, Logo, Other, Team Note
-   txt. (A bare folder of item folders is the other accepted input; see "Model-folder mode".)
+   txt.
 
    Folder names are matched in any letter case, as Red matches them, while an item folder's `k`
    or `g` is lower case, as Red requires (a `K0430` folder is unmigrated content). A top folder
@@ -1222,120 +1222,14 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 13. **Optional glTF conversion** (`--convert-to-gltf`): not built (Phase 7); its design is
     `plans/export_upgrader.md` "What it does", step 13.
 
-## Model-folder mode
-
-The second input shape, alongside whole exports: **a folder of old-format model folders**: the
-item folders that used to live under `Faces/`, `Boots/`, `Gloves/` (`XXX15 - Snuffy`,
-`k0915 - Crocs`, …), placed loose in one directory, optionally with a `Common/` beside them.
-
-This is what the community's export converters accept in their "player folders" mode, and it
-exists for the same reason here. Once a team's export has been upgraded, new models keep
-arriving in the old spelling (a face made in an old workflow, a boots folder from a previous
-cup), and the kit-dependent magic in particular (`u0???pN` → `kitN`) is not something an author
-should hand-edit inside FMDL path tables. The user upgrades the folder and drops the results into
-their Studio export.
-
-Each top-level folder is migrated as **one model folder** with the per-folder rules of step 7:
-
-- `kitN` rewriting in names and path tables;
-- `.mtl` stem normalization;
-- pre-Fox type prefix → suffix and the `oral_`/`_win32` drop with their `.mtl` rule (xml-less
-  folders only);
-- `ingame_face`/`ingame_face.txt` → `ingame_face.toml` normalization;
-- `.mtl.common` → kept as is (a `Common/` in the input is upgraded with the Common rules and
-  carried over, so the links keep resolving).
-
-Output naming follows steps 3–4 so the result is directly droppable:
-
-- a face folder becomes a player folder `NN - Name/` (NN from its `XXX` suffix, Name from its
-  name part; without a suffix, the name part alone);
-- a boots/gloves folder becomes a shared-style folder named by its name part (`Crocs/`), or by
-  its old ID when it has no name: the user drops it into `Boots/`/`Gloves/` and adds the link
-  file, or moves its contents into a player folder (renaming the model to `boots.fmdl` /
-  `glove_*.fmdl` as the Studio format expects).
-
-The report lists, per output folder, where it goes (`model_folder_destination`, I, on the output
-folder, `into` = `Players`, `Boots`, `Gloves`, or `root` for `Common/`).
-
-The shared validation ("Verification") runs on the output as it would sit once dropped in, not
-on the published layout, which no export reads as player or shared folders. The upgrader
-validates a listing that places each player folder under `Players/`, each boots or gloves folder
-under `Boots/` or `Gloves/` and the upgraded `Common/` beside them, as a Midcup export (which
-needs no kits), and reports the findings against the published folders. The listing's version
-is "Verification"'s: PES 16 when the output holds a `.model` file, PES 21 otherwise.
-
-The findings about where a folder will sit rather than what it holds are left out, since the
-mode has no destination export:
-
-- the identity findings (the listing is named `models Midcup`, so none arises);
-- the roster's numbering (`player_folder_number_invalid`, `player_number_duplicate`: the
-  folder's number, and its siblings', are the destination's, and a `players.txt` there may name
-  a folder without one);
-- `shared_folder_orphaned` (the link naming a boots or gloves folder is the user's to add).
-
-We do not keep them, because every boots or gloves folder would then drop
-(`shared_folder_orphaned` is a `DropFolder`) and no run holding one could exit 0.
-
-The input is read as it is: a folder (no archive), its top level the model folders. So step 1's
-root rules (the one wrapper folder, the same-named subfolder) do not apply, because they would
-read a folder holding one model folder as that model folder.
-
-A top-level folder's kind is its name's:
-
-- `Common` in any letter case;
-- a boots or gloves folder by steps 3-4's item grammar (`k` or `g`, lower case, four digits,
-  then the name part; `g` and three digits);
-- any other name a face folder.
-
-A face folder's name is step 3's: a slot (characters 4-5 making 01 to 23) gives `NN - Name`, or
-`NN` alone with no name part; without one the folder keeps its own name (`Snuffy`). Every name
-is cleaned as step 3 cleans a candidate. In a face folder only the `ingame_face` spellings are
-normalized (either becomes `ingame_face.toml`); its other files keep their names, the portrait
-included (no `Portraits/` to compare it with).
-
-Two folders whose output names match, letter case aside (`XXX15 - A` and `71415 - A`, or a face
-folder `Crocs` beside `k0430 - Crocs`, both published at the output's top level), keep the first
-by input name. The later is unmigrated content as a whole folder (`DropFolder`), as step 3's
-second face folder of a slot. A file directly in the input folder is unmigrated content (step
-10).
-
-Not in this mode: kits, portraits, logo, `settings.toml`, the savefile, loose mode, the roster. No
-savefile is read: there are no wearers to resolve.
-
-A top-level folder that holds no file directly in it (OS artifacts aside; `Common/` included, an
-empty one having nothing to carry) is reported as unmigrated content (step 10) and left out. The
-converters' two-level `players/<player>/<model folders>/` layout is therefore *not* accepted:
-one level, one folder per model, so that "what is a model folder" never has to be guessed. We do
-not ask for a model file directly in it, because a real Fox face folder may carry no model of
-its own (5 of the 23 face folders of the real /jp/ 2024 Winter Cup export hold `face_diff.bin`
-and a portrait only), and `upgrade` carries such a folder: the two modes agree on what a face
-folder is.
-
-Verification: fixtures with
-
-- one face folder carrying `u0XXXp1` textures and path-table references (asserting `kit1`
-  everywhere, folder renamed `NN - Name`);
-- one boots folder with a prefix-typed pre-Fox model (asserting the suffix form and the `Crocs/`
-  output name);
-- a `Common/` with an `.mtl` whose references stay as written (step 7: a `Common/` `.mtl` keeps
-  them, extension included) while the player folder's `.mtl.common` link still resolves against
-  the migrated Common through `aesthetics_export`'s validation;
-- plus one player `.mtl` referencing `model/character/uniform/common/XXX/hair.dds` (asserting
-  `./hair.dds` in the migrated `.mtl`, a `hair.dds.common` link beside it, and the stem
-  resolving into Common through validation);
-- and one such reference whose file is absent from `Common/` (asserting it is reported and kept
-  a game path, written `team_common_folder/hair.dds`).
-
 ## CLI
 
 ```text
 UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
-UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
 `upgrade` takes one old export (folder, `.zip` or `.7z`); the output is a folder beside the
-input, or inside the directory `-o` names (created when missing), as `upgrade-models` writes
-into its `-o`.
+input, or inside the directory `-o` names (created when missing).
 
 **The output's name.** Its name, wherever it is written, is the one the compiler reads a team
 export by:
@@ -1385,16 +1279,9 @@ referee export takes no tag and refuses the flag (exit 2).
 - An export whose Note's `Team:` value or name gives no team name is reported
   (`team_name_unknown`, the compiler's code) and nothing is written.
 
-**`upgrade-models`.** `upgrade-models` is model-folder mode. Its output is one folder per
-migrated input folder under the output directory, by default a sibling folder named after the
-input with ` upgraded` appended, or the directory `-o` names. That directory is the output
-folder, refused like `upgrade`'s when it exists: we do not write into an existing one, because
-an earlier run's folders, edited since, would sit beside this run's with nothing telling them
-apart.
-
-**Report and exit codes.** Both print step 10's report, one line per finding naming its code
+**Report and exit codes.** `upgrade` prints step 10's report, one line per finding naming its code
 and, for a finding about a file or folder, its path (the input's, or the output's for a check
-run on the output), and exit with the Team compiler's mapping (`spec/team_compiler/settings.md`
+run on the output), and exits with the Team compiler's mapping (`spec/team_compiler/settings.md`
 "CLI"):
 
 - **0** clean (Warning and Info findings allowed when they drop nothing but a leftover, step
@@ -1403,13 +1290,13 @@ run on the output), and exit with the Team compiler's mapping (`spec/team_compil
   the unknown team, or an archive that does not extract, reported `export_extract_failed` as
   the compiler does; nothing is written, "Verification");
 - **2** invalid invocation (a missing input path, an `upgrade` input that is a file other than a
-  `.zip` or `.7z`, an `upgrade-models` input that is not a folder, the flags above, a savefile
+  `.zip` or `.7z`, the flags above, a savefile
   that does not read as a save or lacks the team; nothing is written);
 - **3** aborted: before anything is written (the output folder exists, or it or its staging
   folder below cannot be created), or when a file of the output cannot be written, the error
   naming it and the incomplete staging folder.
 
-**The staging folder.** Both commands write into a **staging folder**, the output's name with
+**The staging folder.** `upgrade` writes into a **staging folder**, the output's name with
 `.upgrading` appended, beside where the output goes. The shared validation reads it there, and
 the verdict then renames it to the output when the run is clean or removes it when not
 ("Verification": nothing is written). We stage rather than validate an in-memory listing
@@ -1572,12 +1459,12 @@ Note's `Team:` line, unless the scenario says otherwise (one naming pre-Fox file
 AET page names them (`XXX15 - Snuffy`, `k0430 - Crocs`, `g0432 - Mitts`,
 `XXX_DEF_1st_realUni.bin`, `u0XXXp1.dds`).
 
-A GIVEN names the files that decide its outcome. "The output" is the folder `upgrade` or
-`upgrade-models` writes; "the report" is step 10's, printed on stdout, one line per finding
+A GIVEN names the files that decide its outcome. "The output" is the folder `upgrade`
+writes; "the report" is step 10's, printed on stdout, one line per finding
 naming its code and, for a finding about a file or folder, its path.
 
-**Phase 6 scope.** Phase 6 delivered the structural migration (steps 1 to 12) and model-folder
-mode, through the CLI: the GUI's two drop targets are Phase 8's, and step 13, the glTF pass, is
+**Phase 6 scope.** Phase 6 delivered the structural migration (steps 1 to 12) through the
+CLI: the GUI's two drop targets are Phase 8's, and step 13, the glTF pass, is
 Phase 7's, their scenarios with them in `plans/export_upgrader.md`. Observed are the output's
 files, the report and the exit code.
 
@@ -1609,9 +1496,8 @@ EU-IN-03   GIVEN the folder "co Spring" holding only a readme.pdf
            THEN it is reported as no old export, nothing is written, and the exit code is 1
 EU-IN-04   GIVEN a Fox export whose face folder "XXX05 - Bob" holds face.fpk.xml and whose
                 boots folder "k2180 - Bob", worn by slot 05, holds boots.fpk.xml
-           WHEN it is upgraded, and when the folder holding those two folders is upgraded with
-                upgrade-models
-           THEN neither output holds a .fpk.xml file and neither report names one
+           WHEN it is upgraded
+           THEN the output holds no .fpk.xml file and the report names none
 ```
 
 **Team identity and root files**
@@ -1735,8 +1621,7 @@ EU-PLY-12  GIVEN boots folders "k0430 - Crocs", worn by slots 03 and 05, and "k0
                 08 k0432.boots
 EU-PLY-13  GIVEN a Fox face folder "XXX05 - Bob" holding fcl_hair.fmdl and fcl_hair_sim.skl,
                 and one "XXX06 - Ann" holding fcl_hair_sim.skl and no fcl_hair.fmdl
-           WHEN the export is upgraded, and when the folder holding the two face folders is
-                upgraded with upgrade-models
+           WHEN the export is upgraded
            THEN Bob's output folder holds fcl_hair.skl, its bytes fcl_hair_sim.skl's, and no
                 fcl_hair_sim.skl, and Ann's keeps fcl_hair_sim.skl as named
 EU-PLY-15  GIVEN the files Faces/71406 - Civic cool.7z, Boots/boots.fmdl and
@@ -2357,55 +2242,6 @@ EU-REP-03  GIVEN an old export whose migration needs no manual attention
                 exit code is 0
 ```
 
-**Model-folder mode**
-
-```
-EU-MF-01   GIVEN a folder holding a Fox face folder "XXX15 - Snuffy" whose file names and FMDL
-                path table name u0XXXp1, a pre-Fox gloves folder "g0430 - Crocs" with
-                gloveL_crocs.model, the boots folder "k0431", a face folder "Snuffy" holding a
-                hair model and ingame_face.txt, and Common/
-           WHEN upgrade-models runs
-           THEN the output holds 15 - Snuffy/ with kit1 in every file name and reference,
-                Crocs/ with crocs_gloveL.model, k0431/, Snuffy/ with a bare ingame_face.toml,
-                and an upgraded Common/, and the report names each output folder with where it goes
-EU-MF-02   withdrawn: restated as EU-MF-08 (`spec/export_upgrader.md`), a kept Common path
-           written common/team_folder/ since step 0.0.2-poc11
-EU-MF-08   withdrawn: restated as EU-MF-10 (`spec/export_upgrader.md`), a kept Common path
-           written team_common_folder/ since step 0.0.2-poc12
-EU-MF-10   GIVEN a player folder's .mtl referencing model/character/uniform/common/XXX/hair.dds
-                and model/character/uniform/common/XXX/fur.dds, a .mtl.common link, and Common/
-                holding hair.dds and a .mtl referencing face.dds
-           WHEN upgrade-models runs
-           THEN the player's .mtl references ./hair.dds beside the link hair.dds.common, the fur
-                reference is reported and kept as team_common_folder/fur.dds, Common's .mtl keeps
-                its reference to face.dds as written, the .mtl.common link is kept, the shared
-                validation finds every link resolving, and the exit code is 0
-EU-MF-03   GIVEN a top-level folder holding no file directly in it (a players/ folder of model
-                folders, or a folder holding only Thumbs.db)
-           WHEN upgrade-models runs
-           THEN it is reported as unmigrated content, nothing is written, and the exit code is 1
-EU-MF-04   withdrawn: restated as EU-MF-09 (`spec/export_upgrader.md`), the keeper's token
-           written gk_kitN in both modes since step 0.0.2-poc11
-EU-MF-09   GIVEN a model folder holding u0XXXg1.dds and u0XXXg2.dds, whose FMDL names u0XXXg1
-                and u0XXXg0
-           WHEN upgrade-models runs
-           THEN the folder holds gk_kit1.dds and gk_kit2.dds, and the FMDL names gk_kit1 and
-                gk_kitN
-EU-MF-05   GIVEN two face folders of one slot ("XXX15 - A", "XXX15 - B"), a face folder without
-                a number and a boots folder no player folder links
-           WHEN upgrade-models runs
-           THEN the report holds no finding on a folder's number or a missing link, the
-                destination export's to make, and the exit code is 0
-EU-MF-06   GIVEN a Fox face folder "XXX01 - Dekinai" holding face_diff.bin and portrait.dds and
-                no model
-           WHEN upgrade-models runs
-           THEN the output holds 01 - Dekinai/ with both files, reported as going into Players
-EU-MF-07   GIVEN a boots folder "k0431" holding boots.fmdl and "boots - Copy.fmdl"
-           WHEN upgrade-models runs
-           THEN k0431/ holds boots.fmdl alone, leftover_dropped is reported for the copy, and
-                the exit code is 0
-```
-
 **CLI**
 
 ```
@@ -2422,9 +2258,8 @@ EU-CLI-03  GIVEN a team export upgraded with both --savefile and --loose, or wit
            THEN it is refused naming the two flags, with exit code 2, and nothing is written
 EU-CLI-04  GIVEN in turn an export path that does not exist, an export path naming a .txt file,
                 a --savefile that is not a save, and a savefile that does not hold the resolved
-                team, and an upgrade-models folder that does not exist or names a file, and an
-                upgrade-models -o whose path names no folder (it ends in ..)
-           WHEN upgrade, or upgrade-models for the last two, runs
+                team
+           WHEN upgrade runs
            THEN it is refused naming the path, the file or the team, with exit code 2, and
                 nothing is written
 EU-CLI-07  GIVEN a corrupt .zip export
@@ -2432,16 +2267,10 @@ EU-CLI-07  GIVEN a corrupt .zip export
            THEN export_extract_failed is reported naming it, nothing is written, and the exit
                 code is 1
 EU-CLI-05  GIVEN an output folder that already exists, or one that cannot be created
-           WHEN upgrade or upgrade-models runs
+           WHEN upgrade runs
            THEN it is refused naming the folder, with exit code 3, nothing is written, and an
                 existing folder is unchanged
-EU-CLI-06  GIVEN a folder "new models" of old model folders
-           WHEN upgrade-models runs without -o
-           THEN the output is the sibling folder "new models upgraded", one folder per input
-                folder
-           WHEN it runs with -o out/done, out/ missing
-           THEN out/done/ holds one folder per input folder directly, and no "new models
-                upgraded" folder exists
+EU-CLI-06  withdrawn: model-folder mode (`upgrade-models`) is removed (0.0.2-nomodels)
 EU-CLI-08  GIVEN the old export "co Spring" named on the command line as "co Spring/." and as
                 "co Spring/Other/.."
            WHEN each is upgraded
@@ -2462,7 +2291,8 @@ EU-CLI-10  GIVEN `co - Spring` and its output's staging folder `co Full - Spring
            THEN the staging folder is removed, staging_folder_removed names it, and the run is
                 clean with its output written; GIVEN (Windows, where an open file blocks its
                 removal) a file of the staging folder held open THEN exit 3 naming the
-                folder, nothing written; GIVEN EU-CLI-06's "new models" and its output's
-                staging folder `new models upgraded.upgrading` left by an earlier run, WHEN
-                `upgrade-models` runs, THEN it is removed and named the same way
+                folder, nothing written
+EU-CLI-16  GIVEN a folder of old model folders
+           WHEN `upgrade-models` runs on it
+           THEN it is refused as an unknown command, with exit code 2, and nothing is written
 ```

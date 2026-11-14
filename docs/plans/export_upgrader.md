@@ -117,8 +117,8 @@ step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step
 
 ## Model-folder mode
 
-Model-folder mode (`spec/export_upgrader.md` "Model-folder mode") is removed in 0.0.2: the
-`upgrade-models` command, its module, its help and its scenarios (EU-MF-*) go, and the view
+Model-folder mode is removed in 0.0.2: the `upgrade-models` command, its module, its help,
+its spec section and its scenarios (EU-MF-*, `spec/withdrawn_ids.md`) go, and the view
 has no second input. An old model that arrives after a team's upgrade comes in a Midcup
 export, a team export holding only what it adds, so the upgrader knows the team and reads
 the save's settings for its players as for any export. A bare folder of model folders names

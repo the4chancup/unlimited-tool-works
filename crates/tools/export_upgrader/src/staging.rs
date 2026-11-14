@@ -15,10 +15,10 @@ use crate::messages::{INPUT, read_failed};
 use crate::source::SourceFailure;
 use crate::upgrade::{RunEvents, aborted};
 
-/// The claim on the output folder both commands make before anything is
-/// written, one rule for both modes: an existing `output` is refused rather
-/// than replaced; a staging folder an earlier run left is removed, retried
-/// while locked as the finish step's removals are (a removal that stays
+/// The claim on the output folder made before anything is written: an
+/// existing `output` is refused rather than replaced; a staging folder an
+/// earlier run left is removed, retried while locked as the finish step's
+/// removals are (a removal that stays
 /// locked aborts, naming the folder and the error: a second run writing it
 /// at that moment loses this run, never a finished output); `output`'s
 /// missing parent is made (the default output sits beside the input, whose
@@ -26,8 +26,7 @@ use crate::upgrade::{RunEvents, aborted};
 /// `create_dir`, so one that appeared between the removal and the create is
 /// never written into. Returns the staging folder and whether a leftover
 /// was removed, for the caller's `staging_folder_removed` report. `output`
-/// has a folder name: `upgrade`'s always does, `upgrade-models` checks it
-/// first.
+/// has a folder name: `upgrade`'s always does.
 pub(crate) fn claim_staging(output: &Path) -> Result<(PathBuf, bool), CliError> {
     if output.exists() {
         return Err(aborted(anyhow!(

@@ -959,24 +959,6 @@ fn a_common_mtl_s_segment_of_another_length_is_respelled_team_folder() {
     );
 }
 
-#[test]
-fn model_folder_mode_writes_team_folder_too() {
-    // No team to name: the kept references' folder after `common/` is
-    // `team_folder` all the same, whatever the input spelled.
-    let file = mtl(&[
-        "model/character/uniform/common/vg/x.dds",
-        "model/character/uniform/common/abc/x.dds",
-    ]);
-    let rewrites = plan_for(
-        &Identity::ModelFolders,
-        &[("k0431/x.mtl", "Boots/k0431/x.mtl")],
-        &[],
-        &[("k0431/x.mtl", &file)],
-    );
-    let out = written_text(&rewrites, "Boots/k0431/x.mtl");
-    assert_eq!(out.matches("team_common_folder/x.dds").count(), 2, "{out}");
-}
-
 /// The one output path's `.mtl` text, parsed back.
 fn written_text(rewrites: &MaterialRewrites, output: &str) -> String {
     let (_, bytes) = rewrites
@@ -1517,23 +1499,20 @@ fn a_referee_fmdl_names_his_folder_s_texture_and_links_a_bare_common_one() {
 }
 
 #[test]
-fn a_kept_common_reference_writes_team_folder_in_either_mode() {
-    // The kept reference's folder after `common/` is `team_folder` in
-    // model-folder mode as in a team's run, its kit magic still
-    // respelled, the missing file still reported.
+fn a_kept_common_reference_writes_team_folder_its_kit_magic_respelled() {
+    // The kept reference's folder after `common/` is `team_folder`, its
+    // kit magic still respelled, the missing file still reported.
     let face = mtl(&["model/character/uniform/common/XXX/u0XXXp1/missing.dds"]);
-    for identity in [Identity::ModelFolders, team()] {
-        let rewrites = plan_for(
-            &identity,
-            &[("face", "Players/15 - Snuffy/face.mtl")],
-            &[],
-            &[("face", &face)],
-        );
-        let text = written_text(&rewrites, "Players/15 - Snuffy/face.mtl");
-        assert!(
-            text.contains("path=\"team_common_folder/kit1/missing.dds\""),
-            "{text}"
-        );
-        assert_eq!(codes(&rewrites), ["common_reference_kept"]);
-    }
+    let rewrites = plan_for(
+        &team(),
+        &[("face", "Players/15 - Snuffy/face.mtl")],
+        &[],
+        &[("face", &face)],
+    );
+    let text = written_text(&rewrites, "Players/15 - Snuffy/face.mtl");
+    assert!(
+        text.contains("path=\"team_common_folder/kit1/missing.dds\""),
+        "{text}"
+    );
+    assert_eq!(codes(&rewrites), ["common_reference_kept"]);
 }
