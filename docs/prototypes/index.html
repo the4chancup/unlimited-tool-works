@@ -535,9 +535,9 @@
   .window .title { color: var(--strong); font-size: 14px; margin-bottom: 12px; text-align: center; }
   /* A checkbox on a line of its own in a dialog: its 14-point square 8 from the next one's,
      egui's 18-point row and 4 (gui.md "Form grids"); inline, the browser's line put them 19
-     apart. A row or a grid (a form, the boot and glove IDs' options beside their fields)
-     spaces its own. */
-  .window div:not(.row, .pform, .boglo) > label.cb { display: flex; width: fit-content; margin: 4px 0; }
+     apart. A row, a column or a grid (a form, the boot and glove IDs' options beside their
+     fields) spaces its own: a `.col`'s gap of 4 already leaves its squares 8 apart. */
+  .window div:not(.row, .col, .pform, .boglo) > label.cb { display: flex; width: fit-content; margin: 4px 0; }
   /* A tool's start page with nothing open: a dialog's frame in the middle of the view, no backdrop. */
   .start-page { flex: 1; min-height: 100%; display: flex; align-items: center; justify-content: center; }
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 2px; border: 1px solid #000; vertical-align: middle; }
