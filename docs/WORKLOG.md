@@ -2046,7 +2046,9 @@ briefs, review loops, gates and mutation runs as for any step.
       boxes 6 apart, the Skills, Tricks and COM styles squares 8; the dialogs' `formGrid`
       fields 6 apart and their stacked checkboxes 8. Before and after in
       `.tmp/statsroom/pair8.png` and `pair_dlg.png` (before on the left)
-    - [ ] the build (sidekick): the Stats screen and the dialogs' forms and checkboxes
+    - [x] the build (Opus sidekick, 2026-11-14, merged `81e6166a`): `FIELD_SPACING` (6) and
+      `CHECKBOX_SPACING` (4) in `studio_core::widgets`; the Stats screen, the Skills lists
+      (`team_widgets::cards`) and the picture dialogs; General info's block gap gone
     - [x] the grids' drafts (lead, 2026-11-14; DECISIONS 2026-11-14 "every form takes the
       gaps"): every `table.grid` row holding a field 6 from the next, a row of checkboxes
       alone 8 between squares, text rows 19. Pairs in `.tmp/gridgaps/` (before on the left)
