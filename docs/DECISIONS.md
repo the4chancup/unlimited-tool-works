@@ -17400,3 +17400,16 @@ dialog fills this name in, and a range of teams writes the same names
 Why: the maintainer's ask; the id adds nothing a member needs in the name. The range follows
 so that a team's picture has one name whichever dialog wrote it, and saving it again offers
 to replace the file rather than leaving a second copy beside it.
+
+## 2026-11-14: the unsaved changes list's rows switch to what they name; its X is red in a square (maintainer)
+
+Decision: in the toolbar's unsaved changes list, a click on a row's item switches to its player,
+or to its team for a team's own row or a `Player order` row, and the list stays open. The X
+ending each row is the theme's error red inside a thin square outline, at the buttons' corner
+radius. A thin line parts each row of the changes table from the next, in the list, the close
+prompt and the patch panel alike, since all three draw the one table. The close prompt's items
+still take no click (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74).
+
+Why: the maintainer's ask. The list is where a member reviews changes, so going to one from it
+saves finding the player again. The outline tells the red X apart from an error mark, and the
+lines keep a long row's values with its item.

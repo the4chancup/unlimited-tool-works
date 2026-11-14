@@ -112,7 +112,11 @@ input[type=range]:focus { outline: none; }
 #unsaved-changes th:nth-child(n+2), #unsaved-changes td:nth-child(n+2) { width: 30%; }
 #unsaved-changes th.undo, #unsaved-changes td.undo { width: 1%; position: sticky; right: 0;
   background: var(--panel); }
-#unsaved-changes td.undo button { color: var(--link); }
+/* The X: the error red, in a thin square so it reads as a button and not as an error mark. */
+#unsaved-changes td.undo button { color: var(--error); width: 16px; height: 16px; padding: 0;
+  line-height: 14px; border: 1px solid var(--text); }
+/* A thin line between two rows, the separators' stroke. */
+#unsaved-changes tr + tr td { border-top: 1px solid var(--stroke); }
 /* The prompt is as wide as its widest row, up to nine tenths of the window: a long player's
    name and its values read without scrolling sideways (save_editor.md, the closing bullet). */
 .window[data-dlg="unsaved-changes"] { max-width: 90%; }
@@ -3365,12 +3369,14 @@ function unsavedChanges() {
       if (!bp) continue;
       const out = []; flatDiff(bp, p, [], out);
       for (const [path, o, n] of out)
-        rows.push([displayName(p.name) + " · " + changeLabel(path), o, n, () => setAt(p, path, o)]);
+        rows.push([displayName(p.name) + " · " + changeLabel(path), o, n, () => setAt(p, path, o),
+          { title: "Click to switch to this player", go: () => jumpToPlayer(t.id, p.slot) }]);
     }
   }
   for (const t of S.save.teams) {
     const bt = base.find(x => x.id === t.id);
     if (!bt) continue;
+    const toTeam = { title: "Click to switch to this team", go: () => jumpToTeam(t.id) };
     // A move is one row per group that traded places: its places with the
     // players the file has on them, then with the players now on them, one
     // place per line, so the two values read side by side.
@@ -3378,7 +3384,7 @@ function unsavedChanges() {
       const places = name => group.map(p => String(p.slot).padStart(2, "0") + " " + name(p)).join("\n");
       rows.push([t.name + " · Player order",
         places(p => displayName(bt.players.find(x => x.id === p.id).name)),
-        places(p => displayName(p.name)), () => restoreOrder(t, group)]);
+        places(p => displayName(p.name)), () => restoreOrder(t, group), toTeam]);
     }
     // A colour is one row with the hex the team view shows, not a row per
     // stored channel.
@@ -3386,7 +3392,7 @@ function unsavedChanges() {
     for (const [key, label] of [["color_1", "Color 1"], ["color_2", "Color 2"]])
       if (shownHex(bt[key]) !== shownHex(t[key]))
         rows.push([t.name + " · " + label, shownHex(bt[key]).toUpperCase(), shownHex(t[key]).toUpperCase(),
-          () => { t[key] = clone(bt[key]); }]);
+          () => { t[key] = clone(bt[key]); }, toTeam]);
     const out = [];
     flatDiff({ ...bt, ...skip }, { ...t, ...skip }, [], out);
     for (const [path, o, n] of out) {
@@ -3398,10 +3404,10 @@ function unsavedChanges() {
         const marker = rosterPlayer(t, t.tactics.starting_eleven[Number(path[at + 1])]);
         const marked = v => v === 255 ? "None" : "Opponent's starter " + (v + 1);
         rows.push([t.name + " · Preset " + (Number(path[at - 1]) + 1) + " · Man marking · "
-          + playerName(marker), marked(o), marked(n), () => setAt(t, path, o)]);
+          + playerName(marker), marked(o), marked(n), () => setAt(t, path, o), toTeam]);
         continue;
       }
-      rows.push([t.name + " · " + changeLabel(path), o, n, () => setAt(t, path, o)]);
+      rows.push([t.name + " · " + changeLabel(path), o, n, () => setAt(t, path, o), toTeam]);
     }
   }
   return rows;
@@ -3434,7 +3440,10 @@ function changesTable(undoable) {
   const changes = h("table", { class: "grid", id: "unsaved-changes" },
     h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value"),
       undoable ? h("th", { class: "undo" }) : null),
-    unsavedChanges().map(([item, o, n, revert]) => h("tr", {}, h("td", {}, item), cell(o), cell(n),
+    unsavedChanges().map(([item, o, n, revert, to]) => h("tr", {},
+      undoable ? h("td", { class: "sel", title: to.title, onclick: () => { to.go(); render(); } }, item)
+        : h("td", {}, item),
+      cell(o), cell(n),
       undoable ? h("td", { class: "undo" }, button("×", () => undoChange(item, revert),
         { frame0: true, title: "Undoes this change alone" })) : null)));
   return h("div", { style: "max-height:240px; overflow:auto" }, changes);

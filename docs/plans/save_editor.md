@@ -961,7 +961,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   table spans the prompt's width, the two value columns sharing its right part. The prompt is
   as wide as its widest row, up to nine tenths of the window, each row on one line, so a
   renamed player's long name reads in full without a sideways scroll; only a row wider than
-  that scrolls.
+  that scrolls. A thin line in the separators' stroke parts each row from the next, so a
+  long row's values stay with its item.
 
   The table has one row per changed field against the file as opened or last saved (the dots'
   baseline, so an edit undone back is not listed), the players' rows first, then the teams'
@@ -988,8 +989,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   cup's teams share no player, and no other team is shown ("Only the cup's teams are
   shown" above).
 - **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
-  draft's `changesTable`). It ends the row, in the link blue of the label that opened the
-  list, and its column stays at the list's right edge while a wide row scrolls sideways
+  draft's `changesTable`). It ends the row, in the theme's error red inside a thin square
+  outline (1 point, the text colour, the buttons' corner radius), which makes it read as a
+  button and not as an error mark. Its column stays at the list's right edge while a wide row scrolls sideways
   under it, so it never leaves the view: the X's are drawn right of the sideways scroll
   area, inside the one that scrolls up and down, each on its row's line. At the row's start
   it would never leave the view either, but there it reads as an error mark. Its tooltip is
@@ -1004,7 +1006,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
   a popup under it holding the close prompt's table (the same rows, computed when the popup
   opens, the table scrolling past 240 points) and none of the prompt's answers. The popup is
-  460 to 640 points wide, its whole box.
+  460 to 640 points wide, its whole box. A click on a row's item switches to what the row
+  names: its player, or its team for a team's own row or a `Player order` row (tooltip
+  `Click to switch to this player` or `Click to switch to this team`). The list stays open,
+  so a member can go through the changes one by one. The prompt's items take no click: it
+  asks one question about all the changes.
 
   The popup closes on a click outside it, Esc, a second click on the label, or any edit, undo
   or redo (its rows would otherwise go stale under it); the Edit menu's Undo is a click outside,
@@ -2619,7 +2625,8 @@ SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a tea
                 them after the move still his; the close prompt's table has no X; GIVEN the
                 last row's X clicked THEN the list closes and the save is clean; GIVEN a
                 row wider than the list, the list scrolled sideways to its end THEN every
-                X stands where it stood, at the list's right edge
+                X stands where it stood, at the list's right edge; every X is drawn in the
+                error red inside a 1-point square outline
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked
@@ -2628,8 +2635,10 @@ SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 
                 whose old and new values each draw their swatch before the hex) and none of
                 the prompt's save, discard and cancel; a click outside it, Esc, a second click
                 on the label or another edit closes it; GIVEN the Edit menu's Undo chosen
-                THEN it closes and a click on the label reopens it two rows long; a row's
-                item takes no click; GIVEN the pointer over the label THEN it is the pointing
+                THEN it closes and a click on the label reopens it two rows long; a thin
+                line parts each row from the next; GIVEN the Height row's item clicked THEN
+                the player view shows that player and the list stays open; GIVEN the colour
+                row's item clicked THEN the team view shows team 701; GIVEN the pointer over the label THEN it is the pointing
                 hand, the tooltip `Lists the changes since the save was opened or last
                 saved`; GIVEN team 701's 23 players' heights edited THEN the popup's rows stop
                 at 240 points and scroll; GIVEN a 52-letter name THEN the popup holds at 640
