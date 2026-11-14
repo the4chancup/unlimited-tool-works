@@ -2193,6 +2193,25 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
       tactics says when the two numbers are disabled
     - [ ] the look in the built window, both themes (Pending looks)
+  - [ ] 0.0.2-num17 who reads the two numbers in PES 2017 (the open issue "who reads the
+    attack and defence numbers in PES 2017" below; moved into 0.0.2 by the maintainer,
+    2026-11-14, who allowed installing whatever helps). `PES2017.exe` is 32-bit and the
+    same file on `E:\PES2017` and `G:\Games\PES2017`; the two numbers are bytes 1 and 4 of
+    each preset's five slider bytes, at 144, 304 and 464 in the team's 628-byte tactics
+    record, whose first four bytes are the team id (`schema/pes17.rs`). Tools
+    installed: x64dbg (x32dbg) by winget, pe-sieve 0.4.1.1 in
+    `C:\Data\Downloads\Development\pe-sieve`; Ghidra 12.2 as for PES 2016. -> verify: each
+    reader of bytes 1 and 4 named by address and function, with whether a match reads them
+    with the automatic levels on and off
+    - [ ] the dump: the game at its main menu, pe-sieve32 with import rebuilding, then
+      Ghidra's headless analysis as `pes16_re/analyze.bat`; the readers found statically,
+      the PES 2016 tactics functions (`pes16_re/out/dec_tactics_*.c`) as the guide
+    - [ ] the watch: a script that finds a team's tactics record in the running game's
+      memory and puts hardware read breakpoints on the two bytes, logging each reader,
+      during a match with the automatic levels on, then off (x32dbg with ScyllaHide if the
+      game refuses a debugger)
+    - [ ] the outcome: the spec's paragraph, and the two controls relabelled or kept
+      disabled on PES 17 (the open issue's ruling waits on it)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
     2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
@@ -3152,14 +3171,13 @@ points there.
   the finding is an Error, so nothing is written, and "left as it was" is the run's plan,
   which keeps the folder's old paths so later findings name the files where they are. The
   spec's paragraph and the module's comment now say so; no behaviour changed.
-- open 2026-11-12 (the maintainer; queued for after 0.0.2): who reads the attack and
+- open 2026-11-12 (the maintainer; in 0.0.2 since 2026-11-14, step 0.0.2-num17): who reads the attack and
   defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
   shows them, PES 17's does not, and PES 21's executable ignores them
   (`spec/pes_savefile/model.md` "Player/team/tactics model"). `E:\PES2017\PES2017.exe` is
   packed on disk, so reading it takes a memory dump of the running game, then the analysis
   the PES 2016 executable got (`4cc-studio-temp/pes16_re`): find the tactics sheet's five
-  slider bytes per preset and every reader of bytes 1 and 4. A dumping tool attached to
-  the game is a change on the maintainer's machine: ask before.
+  slider bytes per preset and every reader of bytes 1 and 4. Now step 0.0.2-num17.
   The study also decides the two controls' labels. The Tactics view draws `Numbers in
   attack` and `Numbers in defence` on every version; the unofficial 4ccEditor, whose
   Tactics tab the view was ported from (the official one has none), keeps those names on
