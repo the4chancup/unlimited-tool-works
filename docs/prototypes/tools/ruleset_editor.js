@@ -21,17 +21,21 @@ const RULESET_CSS = `
 .center.bleed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 /* A larger window keeps the bars and the panes at their default width (the pane's whole width,
    the scroll-bar strip being the pane's gutter), centred; the rail, the section and the preview
-   take the extra height. While the preview shows, the view spans the pane instead: the rail
-   and the section keep their default widths at its left and the preview takes the rest
-   (plans/core/gui.md "A window larger than the default"). */
+   take the extra height. While the preview shows, the view spans the pane: the preview is as
+   wide as the data block's 100 columns (the writer's wrap width) at the pane's right, and the
+   rail and the section, at their width without the preview, stand centred in what is left, or
+   from its left edge, the section narrower, where that is too little (plans/core/gui.md "A
+   window larger than the default"). */
 .center.bleed > .top, .center.bleed > .main, .center.bleed > .bottom { width: 100%;
   box-sizing: border-box; max-width: calc(var(--calib-w) + 16px);
   margin-left: auto; margin-right: auto; }
 .center.bleed.with-preview > .top, .center.bleed.with-preview > .main,
   .center.bleed.with-preview > .bottom { max-width: none; }
-.with-preview #rs-content { flex: 0 1 calc(var(--calib-w) + 16px - 150px - 590px); }
-.with-preview #rail { flex: none; }
-.with-preview #data { flex: 1 0 590px; width: auto; min-width: 0; }
+.with-preview #rail { flex: none; margin-left: auto; }
+.with-preview #rs-content { flex: 0 1 calc(var(--calib-w) + 16px - 150px); min-width: 0; margin-right: auto; }
+.with-preview #data { flex: none; width: auto; }
+/* 100 columns of the block's own font, its scroll bar beside them. */
+.with-preview #data pre { width: calc(100ch + var(--sbw, 0px)); scrollbar-gutter: stable; }
 #rail { width: 150px; }
 .data.hidden { display: none; }
 #rs-bottom { height: auto; min-height: 26px; padding: 3px 8px; overflow: visible; }

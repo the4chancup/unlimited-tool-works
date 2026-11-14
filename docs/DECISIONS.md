@@ -17599,3 +17599,15 @@ Why: the preview is a long block of text that scrolls both ways, so the room sho
 while the form beside it would only spread. The bars belong to the view's layout, which the
 plan keeps at its default size; a band spanning the window would put the menus far from the
 view they act on.
+
+## 2026-11-14 — gui — the Ruleset editor's preview: 100 columns wide, the editor centred beside it
+
+Decision: while it shows, the Ruleset editor's preview is as wide as the data block's 100
+columns at every window size; the rail and the section, at their width without the preview,
+stand centred in the rest of the pane, from its left edge where that is too little. This
+replaces the same day's entry giving the preview all the extra width (`plans/core/gui.md` "A
+window larger than the default").
+
+Why: the maintainer, looking at the draft at 1920 wide: the preview filling the room left the
+section narrower than with the preview hidden. A preview as wide as its longest line shows the
+whole block and leaves the rest to the form.
