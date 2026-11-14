@@ -76,14 +76,16 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   The calls to weigh: only the registered position, the cards and the ability stats are
   compared; a card some of the selected hold shows the mixed mark, locked; Live AATF's marks
   and the Cards used badge are left out while several are selected.
-- **Three built-window looks, checked by the lead first.** Worklog "Pending looks": the Save
+- **Four built-window looks, checked by the lead first.** Worklog "Pending looks": the Save
   editor's welcome panel with no save open and the Ruleset editor's start page under its
   toolbar (`.tmp/welcome/look/built2_first.png`, `built2_ruleset.png`, beside
   `draft_welcome.png` and `draft_ruleset.png`); the unsaved changes list's red X's under
   `Undo`, its row lines and a row's click switching to its player
   (`.tmp/chpop/look/list_zoom.png`, `switched_top.png`, `prompt.png`, beside
-  `.tmp/chpop/draft_popup_zoom.png`). Each matched its draft; anything you see otherwise
-  goes back as a fix.
+  `.tmp/chpop/draft_popup_zoom.png`); the Team menu's `Save a picture of the formations…`
+  dialog, its Save and its notice's Open folder (`.tmp/flatpitch/look1b/built_dialog_zoom.png`,
+  `built_saved.png`, beside `draft_dialog_zoom.png`). Each matched its draft; anything you
+  see otherwise goes back as a fix.
 
 ## After the release
 

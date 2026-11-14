@@ -2001,9 +2001,10 @@ briefs, review loops, gates and mutation runs as for any step.
       - [x] 1a (2026-11-14, `349ca307`) the picture's painter: the pitch's painting split
         from the widget, the off-screen frame and its rasterizer, the shape rule, the file
         name; nothing calls it outside its tests yet
-      - [ ] 1b the dialog, the folder and grain settings, Open folder made to open one.
-        Brief `.tmp/flatpitch/brief_1b.md`, running from 2026-11-14 (Opus, worktree
-        `4cc-studio-temp/poslayout`, branch `sk/flatpitch1b` at `62b9776b`)
+      - [x] 1b (2026-11-14, `b0c2f105`, Opus) the Team menu's dialog, the folder (default
+        `formations`, read from the program's folder) and grain settings, the confirmation
+        shared with the ruleset picker, Open folder opening the folder; help page 05. Save
+        takes 273 ms on /gbpen/ (release, warm, median of five)
     - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88)
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
@@ -3011,6 +3012,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
   update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
   0.0.2-rad; maintainer
+- The formation picture dialog: the Team menu's entry, the dialog beside the draft's
+  `dlgPictureSave` (without slice 2's settings box), Save writing the picture and its notice,
+  Open folder opening Explorer on the folder; checked by the lead at `b0c2f105`
+  (`.tmp/flatpitch/look1b/built_menu.png`, `built_dialog_zoom.png`, `built_saved.png` beside
+  `draft_dialog_zoom.png`); no PES; 0.0.2-flatpitch; maintainer
 - The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
   shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
   the cell as one layer, so the turf shows through the players; and a fluid-off row with one
@@ -3041,6 +3047,10 @@ points there.
   `c8ba1be7` plus a change outside tactics, and passed alone. The harness sets
   `animation_time` to 0, so a fade is not the cause; a real-time threshold between the press
   and the move frames is the first suspect. Next time: keep the assertion's values.
+- open 2026-11-14 (0.0.2-flatpitch 1b's sidekick): three copies of "write a temporary file
+  beside it, then rename it onto the name" (`teams_list::write`, `session::rules::import`,
+  the picture dialog's `write_picture`); CONTRIBUTING's third-copy rule makes it one
+  function, which crosses crates.
 - open 2026-11-14 (0.0.2-chpop's sidekick): the patch panel's Item cells all hover "Click to
   switch to this player", a player no roster holds too, whose click does nothing; the
   unsaved changes list offers no click there. Small: `patch.rs` `table` passes a tooltip
