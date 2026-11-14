@@ -2001,7 +2001,9 @@ briefs, review loops, gates and mutation runs as for any step.
       - [x] 1a (2026-11-14, `349ca307`) the picture's painter: the pitch's painting split
         from the widget, the off-screen frame and its rasterizer, the shape rule, the file
         name; nothing calls it outside its tests yet
-      - [ ] 1b the dialog, the folder and grain settings, Open folder made to open one
+      - [ ] 1b the dialog, the folder and grain settings, Open folder made to open one.
+        Brief `.tmp/flatpitch/brief_1b.md`, running from 2026-11-14 (Opus, worktree
+        `4cc-studio-temp/poslayout`, branch `sk/flatpitch1b` at `62b9776b`)
     - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88)
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
