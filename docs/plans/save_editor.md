@@ -1817,6 +1817,12 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   him, so a drag meant only to move a player shows the swap before the release and can be
   steered off it onto the grass. The dragged marker's own spot is never the target: the drop
   hits the marker drawn on top among the others, so the mark and the release always agree.
+  A row of the starting eleven or the bench held over a pitch player marks him with the same
+  brackets, so the swap shows before the release there too. Where markers overlap, the
+  marked one is the top one, which the drop lands on. Unlike a pitch drag's, this mark also
+  falls on the keeper, and under a ruleset that allows illegal formations, since a row's
+  drop swaps whoever it lands on. A starter's row held over
+  his own marker marks no one, since its drop changes nothing.
 - **A held starter** moves a whole stored unit at a time (2.8 points across, 6.8 down),
   standing where a release would put him, and the point of his marker first pressed stays
   under the pointer: the press's offset from his badge centre is kept for the whole drag, so
@@ -3056,7 +3062,10 @@ SE-GUI-58  GIVEN a team's Tactics view
 SE-GUI-59  GIVEN a team's lineup list and a row dragged
            WHEN the drag is held over another starter's row
            THEN that row alone is outlined in the selection colour; released off the
-                list, no row is
+                list, no row is; WHEN a bench row is held over a pitch player THEN that
+                player alone carries the selected player's corner brackets, and WHEN it
+                moves onto the grass THEN no one does; WHEN a starter's row is held over
+                his own marker THEN no one does
 SE-GUI-60  GIVEN a PES 19 save under the VGL 27 ruleset and a captain whose cards are under
                 his tier's limit, using no COM style or A position past it (the tester's
                 VGL27 Friendlies save reproduces it by hand)

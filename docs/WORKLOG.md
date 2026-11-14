@@ -2195,9 +2195,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-dragmark (the maintainer, 2026-11-15) a player dragged from the starting eleven
     or the bench lists onto the Tactics pitch marks the pitch player he would swap with by
     the same cursor a drag between two pitch players shows on its destination
-    (`plans/save_editor.md` "Tactics editor"): the plan's sentence, the draft, then the
-    build -> verify: a headless test holding a list row over a pitch player draws the mark
-    there; the built window beside the draft
+    (`plans/save_editor.md` "Tactics editor", SE-GUI-59)
+    - [x] the plan's sentence and the draft (`paintPitch`'s `S.lineupOver`), the
+      maintainer's "looks good as drafted"
+    - [ ] the build -> verify: SE-GUI-59's new legs as headless tests; the built window
+      beside the draft
   - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
     unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
     `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12)

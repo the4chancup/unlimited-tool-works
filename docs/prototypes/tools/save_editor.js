@@ -6737,7 +6737,10 @@ function paintPitch(g, t, f0, live) {
   // selection, so a drag meant only to move him can still be steered off.
   // The dragged marker sits on him, so it goes half transparent over him
   // and his corners are drawn over both.
-  const target = d && d.moved ? dropTarget(t, d.px, d.py, d.i) : -1;
+  // A lineup row held over the pitch marks the starter its drop swaps out
+  // the same way (`S.lineupOver`, set by the canvas's dragover).
+  const target = d && d.moved ? dropTarget(t, d.px, d.py, d.i)
+    : live && S.lineupOver !== undefined ? S.lineupOver : -1;
   const crosses = [];
   for (const i of order) {
     const s = f[i], roster = tac.starting_eleven[i], p = rosterPlayer(t, roster);
@@ -6911,9 +6914,24 @@ function pitchCanvas(t) {
   });
   // A bench row dropped on the pitch: onto a marker swaps the two roster
   // spots; an XI row swaps the two starters; onto grass does nothing.
-  cv.addEventListener("dragover", e => e.preventDefault());
+  // While a row is held over a marker, that starter carries the corners
+  // a pitch drag's target does. The browser hides the drag's data until
+  // the drop, so the row is read from `S.lineupDrag`; an XI row over his
+  // own marker marks no one, since its drop changes nothing.
+  const lineupOver = i => {
+    if (i !== S.lineupOver) { S.lineupOver = i; drawPitch(t); }
+  };
+  cv.addEventListener("dragover", e => {
+    e.preventDefault();
+    const m = (S.lineupDrag || "").match(/^(bench|xi):(\d+)$/);
+    if (!m) return;
+    const i = hitMarker(t, ...pitchPoint(cv, e));
+    lineupOver(m[1] === "xi" && i === Number(m[2]) ? -1 : i);
+  });
+  cv.addEventListener("dragleave", () => lineupOver(-1));
   cv.addEventListener("drop", e => {
     e.preventDefault();
+    S.lineupOver = -1;
     const m = e.dataTransfer.getData("text/plain").match(/^(bench|xi):(\d+)$/);
     if (!m) return;
     const i = hitMarker(t, ...pitchPoint(cv, e));
@@ -6984,6 +7002,11 @@ function listRowDrag(row, data) {
   row.addEventListener("dragstart", e => {
     e.dataTransfer.setData("text/plain", data);
     e.dataTransfer.effectAllowed = "move";
+    S.lineupDrag = data;
+  });
+  row.addEventListener("dragend", () => {
+    S.lineupDrag = null; S.lineupOver = -1;
+    drawPitch(selTeam());
   });
 }
 function rowDrop(row, apply) {

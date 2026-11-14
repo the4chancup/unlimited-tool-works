@@ -17721,3 +17721,16 @@ apart from the shared form or need a sentence for each of every tool's codes (24
 Compiler alone), which is not wanted for now. After 0.0.2, since nobody uses the Ruleset
 editor in its current work-in-progress state.
 Plan: no plan edit; the format lives in `ruleset_editor`'s `messages.rs` and its tests.
+
+## 2026-11-15 — save_editor — a lineup row held over a pitch player marks the player it swaps out
+Decision: while a starting eleven or bench row is held over the Tactics pitch, the player its
+drop would swap out carries the selected player's corner brackets, as a pitch drag's target
+does. Where markers overlap, the marked player is the one on top, which the drop lands on. A
+starter's row held over his own marker marks no one.
+Why: the maintainer asked for the pitch drag's mark on a list drag too. The mark uses the
+drop's own hit test, not a pitch drag's target rule (which skips the keeper and every player
+under a ruleset that allows illegal formations), because a list drop swaps players in those
+cases too, and the mark must show what the release does. A starter's own marker is left
+unmarked because dropping his row there changes nothing.
+Plan: `plans/save_editor.md` "Tactics editor", the paragraph on the dragged starter's mark,
+and SE-GUI-59.
