@@ -1,13 +1,14 @@
-//! The start page (the draft's `startPage`, as a page rather than a
-//! window): the whole view with no document (`page`), a modal over one
-//! from File's "New from template…" (`modal`).
+//! The start page (the draft's `startPage`): with no document the
+//! dialog's frame and title centred on the page, the draft's
+//! `.start-page` (`page`); over a document, the modal File's "New from
+//! template…" opens (`modal`). The two share `body`.
 
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use aatf::Template;
 use studio_core::ToolContext;
-use studio_core::widgets::{add_enabled, modal_buttons};
+use studio_core::widgets::{add_enabled, dialog_page, modal_buttons, modal_frame};
 
 use crate::settings::RulesetEditorSettings;
 use crate::view::{Pending, RulesetView, file_label, guard, refused_block};
@@ -19,16 +20,32 @@ pub(crate) fn templates() -> &'static [Template] {
     TEMPLATES.get_or_init(aatf::templates)
 }
 
-/// The whole view when no document is open.
+/// The whole view when no document is open: `body` in the modal's
+/// frame and title, centred on `ui`'s rect. Not a real dialog, which
+/// would hold the whole window — the sidebar's tool switch included —
+/// until a ruleset is picked.
 pub(crate) fn page(
     ui: &mut egui::Ui,
     view: &mut RulesetView,
     ctx: &ToolContext,
     settings: &RulesetEditorSettings,
 ) {
-    egui::ScrollArea::vertical()
-        .auto_shrink(false)
-        .show(ui, |ui| body(ui, view, ctx, settings));
+    let rect = ui.max_rect();
+    dialog_page(
+        ui,
+        egui::Id::unique("ruleset_start"),
+        "Ruleset editor",
+        |ui| {
+            // The body scrolls when the window is too short, the bound
+            // `view::modal` gives the dialog form's: the frame's margins
+            // and the title's row off the rect's height.
+            let frame = modal_frame(ui.style()).total_margin().sum().y;
+            let title = ui.cursor().top() - ui.min_rect().top();
+            egui::ScrollArea::vertical()
+                .max_height(rect.height() - frame - title)
+                .show(ui, |ui| body(ui, view, ctx, settings));
+        },
+    );
 }
 
 /// The start page over the document (File's "New from template…"), with

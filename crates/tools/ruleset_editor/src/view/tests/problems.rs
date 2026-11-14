@@ -97,24 +97,6 @@ fn a_problem_marks_only_its_section_in_the_rail() {
     );
 }
 
-/// The panel-coloured fill shapes matching `pred`.
-fn panel_fill_at(
-    frame: &Frame,
-    ctx: &egui::Context,
-    pred: impl Fn(&egui::Rect) -> bool,
-) -> Vec<egui::Rect> {
-    let panel_fill = ctx.global_style().visuals.panel_fill;
-    frame
-        .shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(rect) if rect.fill == panel_fill => Some(rect.rect),
-            _ => None,
-        })
-        .filter(pred)
-        .collect()
-}
-
 // With a document open the layout runs to the view's edges (the draft's
 // `.bleed`): the bottom bar's and the rail's fills stand at the view's
 // left edge, the rail the draft's 150 wide to its line.

@@ -309,23 +309,10 @@ fn the_checklists_draw_held_stats_checked_and_a_toggle_keeps_the_rest() {
 /// bar (the `PanelState`'s id follows the scope the panels are drawn
 /// in; the painted edge is what the member sees).
 fn preview_left(window: &Headless, frame: &Frame) -> f64 {
-    let panel_fill = window.ctx.global_style().visuals.panel_fill;
-    frame
-        .shapes
-        .iter()
-        .find_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(rect)
-                if rect.fill == panel_fill
-                    && rect.rect.right() == window.screen.x
-                    && rect.rect.top() > 0.0
-                    && rect.rect.bottom() < window.screen.y =>
-            {
-                Some(rect.rect)
-            }
-            _ => None,
-        })
-        .map(|rect| f64::from(rect.left()))
-        .expect("the preview panel's fill")
+    let fills = panel_fill_at(frame, &window.ctx, |rect| {
+        rect.right() == window.screen.x && rect.top() > 0.0 && rect.bottom() < window.screen.y
+    });
+    f64::from(fills.first().expect("the preview panel's fill").left())
 }
 
 // The draft's `.center` scrolls, it never clips: at the smallest default
@@ -795,21 +782,14 @@ fn the_toolbars_band_starts_at_the_views_left_and_top_edges() {
         f64::from(TOOLBAR_MARGIN.left),
         "the File menu stands the toolbar margin in from the left edge"
     );
-    let panel_fill = window.ctx.global_style().visuals.panel_fill;
-    let band = frame
-        .shapes
-        .iter()
-        .find_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(rect)
-                if rect.fill == panel_fill
-                    && rect.rect.left() == 0.0
-                    && rect.rect.top() == 0.0
-                    && rect.rect.height() < 100.0 =>
-            {
-                Some(rect.rect)
-            }
-            _ => None,
-        })
-        .expect("the band's fill at the view's top");
-    assert_eq!(band.right(), 800.0, "the band spans the view's width");
+    let band = panel_fill_at(&frame, &window.ctx, |rect| {
+        rect.left() == 0.0 && rect.top() == 0.0 && rect.height() < 100.0
+    });
+    assert_eq!(
+        band.first()
+            .expect("the band's fill at the view's top")
+            .right(),
+        800.0,
+        "the band spans the view's width"
+    );
 }

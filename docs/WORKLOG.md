@@ -1917,8 +1917,9 @@ briefs, review loops, gates and mutation runs as for any step.
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
     framed and titled like the dialog, with no backdrop, so the sidebar still switches tools
-    (RE-GUI-01); the
-    draft follows (`.tmp/rebar/brief_startdlg_r1.md`)
+    (RE-GUI-01); the draft follows. The page landed 2026-11-14 (SWE-2): `studio_core`'s
+    `dialog_page` draws the modal's frame and title centred, with no modal layer. Left: the
+    toolbar above it (0.0.2-welcome's brief, ruling 6), then the built window
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks

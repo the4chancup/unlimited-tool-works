@@ -194,14 +194,8 @@ fn click_labeled(
     click(window, node(nodes, label), view, ctx);
 }
 
-/// A click on the first node whose label starts with `label`, as drawn
-/// on a fresh frame (menu items carry their shortcut in the label).
-fn click_drawn(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, label: &str) {
-    let frame = window.draw(view, ctx);
-    click_prefix(window, &frame.nodes, label, view, ctx);
-}
-
-/// `click_drawn` for the `nth` of several same-labeled nodes.
+/// A click on the `nth` node labeled `label`, as drawn on a fresh
+/// frame.
 fn click_drawn_nth(
     window: &mut Headless,
     view: &mut RulesetView,
@@ -360,6 +354,24 @@ fn drawn(nodes: &[accesskit::Node], label: &str) -> bool {
 /// Whether a label (or value) containing `fragment` was drawn.
 fn contains_label(nodes: &[accesskit::Node], fragment: &str) -> bool {
     labels(nodes).iter().any(|label| label.contains(fragment))
+}
+
+/// The panel-coloured fill shapes matching `pred`.
+fn panel_fill_at(
+    frame: &Frame,
+    ctx: &egui::Context,
+    pred: impl Fn(&egui::Rect) -> bool,
+) -> Vec<egui::Rect> {
+    let panel_fill = ctx.global_style().visuals.panel_fill;
+    frame
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(rect) if rect.fill == panel_fill => Some(rect.rect),
+            _ => None,
+        })
+        .filter(pred)
+        .collect()
 }
 
 /// `view`'s Save as dialog stubbed to return `path`, then File's "Save

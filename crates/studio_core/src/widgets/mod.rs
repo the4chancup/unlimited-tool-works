@@ -41,7 +41,9 @@ pub use in_use_frame::in_use_frame;
 pub use ink::ink_span;
 pub use log_panel::{LogLine, LogPanel, well_frame};
 pub use menu_button::{menu_button, menu_separator};
-pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap};
+pub use modal::{
+    dialog_page, modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap,
+};
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use slider::slider;
 pub use text_box::{text_box, text_box_border};

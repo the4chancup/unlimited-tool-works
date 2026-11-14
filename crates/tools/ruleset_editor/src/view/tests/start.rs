@@ -1,7 +1,7 @@
-//! The start page: its entries in order (RE-GUI-01), each template and
-//! Blank opening clean on General and saving back equal (RE-GUI-02),
-//! the refused-open listing (RE-FILE-03), and the margin the page keeps
-//! while a document's layout bleeds to the view's edges.
+//! The start page: a dialog with no document and over one, no Close on
+//! the first (RE-GUI-01), its entries in order (RE-GUI-01), each
+//! template and Blank opening clean on General and saving back equal
+//! (RE-GUI-02), and the refused-open listing (RE-FILE-03).
 
 use super::*;
 
@@ -22,7 +22,7 @@ fn assert_order(labels: &[String], expected: &[&str]) {
 #[test]
 fn the_start_page_offers_its_entries_in_order() {
     let (ctx, _events, mut window, mut view) = fresh();
-    let frame = window.draw(&mut view, &ctx);
+    let frame = settled(&mut window, &mut view, &ctx);
     let labels = labels(&frame.nodes);
     assert_order(
         &labels,
@@ -51,7 +51,7 @@ fn the_start_page_offers_its_entries_in_order() {
 #[test]
 fn the_generators_entries_are_disabled() {
     let (ctx, _events, mut window, mut view) = fresh();
-    let frame = window.draw(&mut view, &ctx);
+    let frame = settled(&mut window, &mut view, &ctx);
     for preset in ["Sensible", "Weird", "Crazy"] {
         assert!(node(&frame.nodes, preset).is_disabled(), "{preset}");
     }
@@ -69,21 +69,57 @@ fn the_generators_entries_are_disabled() {
     );
 }
 
-// With no document the draft keeps `.center`'s padding (it adds `bleed`
-// only with a ruleset open): nothing the page draws stands closer to
-// the view's left edge than the shell's 8-point margin.
+// RE-GUI-01's first clause: with no document the start page is the
+// dialog's frame and title centred on the view (the draft's
+// `.start-page`), not a real dialog — one would hold the sidebar's tool
+// switch too, so nothing of it is a modal.
 #[test]
-fn the_start_page_keeps_the_shells_margin() {
+fn the_first_start_page_is_the_dialogs_frame_not_a_modal() {
     let (ctx, _events, mut window, mut view) = fresh();
-    let frame = settled(&mut window, &mut view, &ctx);
-    let left = frame
-        .nodes
-        .iter()
-        .filter_map(accesskit::Node::bounds)
-        .fold(f64::MAX, |left, bounds| left.min(bounds.x0));
+    window.draw(&mut view, &ctx);
+    window.draw(&mut view, &ctx);
+    let frame = window.draw(&mut view, &ctx);
+    assert!(drawn(&frame.nodes, "Ruleset editor"), "the title");
+    assert_order(
+        &labels(&frame.nodes),
+        &[
+            "New from template",
+            "4cc Autumn 26 (the official rules)",
+            "4cc Spring 26",
+            "/vg/ League 27",
+            "/vg/ League 26",
+            "/vt/ League 11",
+            "/vt/ League 10",
+            "Divegrass Before Christmas 7",
+            "Blank: one tier, no height brackets, universal rules on",
+            "Sensible",
+            "Weird",
+            "Crazy",
+            "Random",
+            "Open file…",
+            "Recent files",
+        ],
+    );
     assert!(
-        left >= 8.0,
-        "every widget stands the margin in from the left edge: {left}"
+        !drawn(&frame.nodes, "Close"),
+        "no Close with no document behind"
+    );
+    assert!(
+        window
+            .ctx
+            .memory(|memory| memory.top_modal_layer())
+            .is_none(),
+        "the page is no modal"
+    );
+
+    let rect = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("ruleset_start")))
+        .expect("the start page's area rect");
+    let centre = egui::pos2(window.screen.x / 2.0, window.screen.y / 2.0);
+    assert!(
+        (rect.center().x - centre.x).abs() <= 1.0 && (rect.center().y - centre.y).abs() <= 1.0,
+        "the entries centred in the view: {rect:?} vs {centre:?}"
     );
 }
 
@@ -102,7 +138,7 @@ fn the_recent_files_list_the_later_open_first_and_skip_a_deleted_file() {
     open_path(&mut view, &ctx, &second);
     let mut restarted = RulesetView::new();
     let mut window = Headless::new();
-    let frame = window.draw(&mut restarted, &ctx);
+    let frame = settled(&mut window, &mut restarted, &ctx);
     assert_order(
         &labels(&frame.nodes),
         &["second.4ccrules", "first.4ccrules"],
@@ -112,12 +148,12 @@ fn the_recent_files_list_the_later_open_first_and_skip_a_deleted_file() {
     let mut view = opened_view(&ctx, &first);
     assert!(save_to(&mut view, &ctx, &saved));
     let mut restarted = RulesetView::new();
-    let frame = window.draw(&mut restarted, &ctx);
+    let frame = settled(&mut window, &mut restarted, &ctx);
     assert_order(&labels(&frame.nodes), &["saved.4ccrules", "first.4ccrules"]);
 
     // A listed file deleted is no longer listed.
     std::fs::remove_file(&saved).unwrap();
-    let frame = window.draw(&mut restarted, &ctx);
+    let frame = settled(&mut window, &mut restarted, &ctx);
     assert!(
         !drawn(&frame.nodes, "saved.4ccrules"),
         "the deleted file is filtered"
@@ -168,7 +204,14 @@ fn template_opens_clean(index: usize, test: &str) {
     let template = &templates[index];
     let dir = crate::test_support::scratch(test);
     let (ctx, _events, mut window, mut view) = fresh();
-    click_drawn(&mut window, &mut view, &ctx, &template.ruleset.name);
+    let frame = settled(&mut window, &mut view, &ctx);
+    click_prefix(
+        &mut window,
+        &frame.nodes,
+        &template.ruleset.name,
+        &mut view,
+        &ctx,
+    );
 
     let document = view.document.as_ref().expect("a document opened");
     assert_eq!(document.ruleset.name, template.ruleset.name);
@@ -199,11 +242,13 @@ fn each_template_opens_clean_and_saves_back_equal() {
 fn blank_opens_as_new_ruleset_and_saves_back_equal() {
     let dir = crate::test_support::scratch("template_blank");
     let (ctx, _events, mut window, mut view) = fresh();
-    click_drawn(
+    let frame = settled(&mut window, &mut view, &ctx);
+    click_prefix(
         &mut window,
+        &frame.nodes,
+        "Blank: one tier, no height brackets, universal rules on",
         &mut view,
         &ctx,
-        "Blank: one tier, no height brackets, universal rules on",
     );
 
     let document = view.document.as_ref().expect("a document opened");
@@ -231,7 +276,7 @@ fn refused_open_labels(test: &str, text: &str) -> Vec<String> {
     let (ctx, _events, mut window, mut view) = fresh();
     open_path(&mut view, &ctx, &file);
     assert!(view.document.is_none(), "not opened in the forms");
-    let frame = window.draw(&mut view, &ctx);
+    let frame = settled(&mut window, &mut view, &ctx);
     labels(&frame.nodes)
 }
 
@@ -310,7 +355,7 @@ fn a_template_pick_clears_the_refused_open_lines() {
     );
     let (ctx, _events, mut window, mut view) = fresh();
     open_path(&mut view, &ctx, &broken);
-    let frame = window.draw(&mut view, &ctx);
+    let frame = settled(&mut window, &mut view, &ctx);
     assert!(contains_label(
         &frame.nodes,
         "Could not open broken.4ccrules:"
