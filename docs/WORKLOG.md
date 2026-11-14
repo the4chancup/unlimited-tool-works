@@ -2029,19 +2029,14 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 3c (2026-11-14, `513b72bf`, Opus) after the maintainer's look: the range
       dialog's count ends the Teams row where Browse ends, and both results put the folder on
       a line of their own; the built look waits (Pending looks)
-  - [ ] 0.0.2-dlgroom every dialog's spacing as ruled 2026-11-14 (`plans/core/gui.md` the
-    Modals and Form grids rows; DECISIONS 2026-11-14 "dialogs take the drafts' room"; the
-    measurements `.tmp/flatpitch/look3c/compare*.log`, `rhythm_*_plain.png`) -> verify:
-    `draft_compare.py pictures_range` and `picture_save` within 1 point on every row, then a
-    sweep of the other dialogs
-    - [x] the drafts (lead, 2026-11-14): every dialog's title 12 above its body; a dialog
-      form's rows (`formGrid`) 27 apart and 6 above what follows; stacked checkboxes 21; the range dialog's hint 8
-      under the checkboxes and 10 above the buttons. The other 19 drafted dialogs only move
-      4 down (`.tmp/dlgroom/boxes.py HEAD work`); before and after in
-      `.tmp/dlgroom/pair2_*.png` (the draft before the step on the left)
-    - [x] the build (Opus sidekick, 2026-11-14, merged `887e2ae2`): the modal title's 12, a
-      dialog form's 27 and 6 (`widgets::dialog_form`), the sentence gap above the range
-      dialog's file-name line; the tests that pin dialog rows (`view/tests/pictures/rows.rs`)
+  - [x] 0.0.2-dlgroom (2026-11-14, merged `887e2ae2`) every dialog's spacing as ruled
+    (`plans/core/gui.md` the Modals and Form grids rows): the title 12 above the body, a
+    dialog's own form's rows 27 apart and 6 above what follows (`widgets::dialog_form`),
+    stacked checkboxes 21, in the drafts and the build. The built window beside fresh
+    draft renders (`.tmp/dlgroom/look/compare_*.log`, `pair_*.png`): the two picture
+    dialogs, Set all stats and Kit slot assignments line up row for row, every row within
+    1 point but the forms' row labels at 1.3 (a label centred beside its input). The
+    settings window stays off its draft (the issue of 2026-11-14 below)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -3153,6 +3148,14 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-14 (the lead, 0.0.2-dlgroom's sweep): two built dialogs differ from their
+  drafts in ways the step did not touch.
+  - The settings window (`.tmp/dlgroom/look/compare_settings.log`, `pair_settings.png`): the
+    draft's window is wider and lists The Compiler's section, which the build leaves out,
+    so its labels stand 12 points further right of the title and its Save editor section
+    20 lower; its rows also stand 3 to 4 points lower against the title than the build's.
+  - The range picture dialog's team selectors: the build writes each team's ID before its
+    name (`701 /3/`), the draft only the name (`/a/`).
 - resolved 2026-11-14 (SWE-2, `513ef0af`): the copies of "write a temporary file beside it,
   then rename it onto the name" are one function, `studio_core::files::replace_file`, called
   by five sites (the repro bundle, the ruleset editor's `write_text`, the rules import, the
