@@ -1,6 +1,6 @@
 //! The two picture dialogs' vertical room: the body 12 under the title, the
-//! form's rows 27 apart and the first checkbox 6 under the form, the
-//! checkboxes 21 apart, the range dialog's hint 8 under them and the buttons
+//! form's rows 24 apart and the first checkbox 6 under the form, the
+//! checkboxes 22 apart, the range dialog's hint 8 under them and the buttons
 //! 10 under what is above them.
 
 use super::*;
@@ -21,29 +21,29 @@ fn assert_gap(upper: f64, lower: f64, expected: f64, what: &str) {
     );
 }
 
-/// The three checkboxes' bounds, top to bottom. Asserts they stand 21
+/// The three checkboxes' bounds, top to bottom. Asserts they stand 22
 /// apart, top to top.
 #[track_caller]
-fn boxes_21_apart(nodes: &[accesskit::Node]) -> [accesskit::Rect; 3] {
+fn boxes_22_apart(nodes: &[accesskit::Node]) -> [accesskit::Rect; 3] {
     let boxes = [SETTINGS_BOX, "Portraits", FLAT_BOX]
         .map(|label| bounds(node_labeled(nodes, Role::CheckBox, label)));
     assert_gap(
         boxes[0].y0,
         boxes[1].y0,
-        21.0,
+        22.0,
         "Portraits' top under the settings box's",
     );
     assert_gap(
         boxes[1].y0,
         boxes[2].y0,
-        21.0,
+        22.0,
         "the grain box's top under Portraits'",
     );
     boxes
 }
 
 #[test]
-fn the_picture_dialog_stands_12_under_its_title_its_rows_27_apart() {
+fn the_picture_dialog_stands_12_under_its_title_its_rows_24_apart() {
     let mut scene = Scene::new("pictures_rows");
     let nodes = scene.open_dialog();
     let title = label_bounds(&nodes, "Save a picture of the formations");
@@ -58,10 +58,10 @@ fn the_picture_dialog_stands_12_under_its_title_its_rows_27_apart() {
     assert_gap(
         folder.y0,
         file_name.y0,
-        27.0,
+        24.0,
         "the File name box's top under the Folder box's",
     );
-    let boxes = boxes_21_apart(&nodes);
+    let boxes = boxes_22_apart(&nodes);
     assert_gap(
         file_name.y1,
         boxes[0].y0,
@@ -78,7 +78,7 @@ fn the_picture_dialog_stands_12_under_its_title_its_rows_27_apart() {
 }
 
 #[test]
-fn the_range_dialog_stands_12_under_its_title_its_rows_27_apart_its_hint_8_under_the_boxes() {
+fn the_range_dialog_stands_12_under_its_title_its_rows_24_apart_its_hint_8_under_the_boxes() {
     let mut scene = Scene::new("pictures_range_rows");
     scene.open_range();
     let nodes = scene.range_nodes();
@@ -94,10 +94,10 @@ fn the_range_dialog_stands_12_under_its_title_its_rows_27_apart_its_hint_8_under
     assert_gap(
         first.y0,
         folder.y0,
-        27.0,
+        24.0,
         "the Folder box's top under the first combo's",
     );
-    let boxes = boxes_21_apart(&nodes);
+    let boxes = boxes_22_apart(&nodes);
     assert_gap(
         folder.y1,
         boxes[0].y0,

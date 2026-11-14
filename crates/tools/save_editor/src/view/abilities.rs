@@ -27,9 +27,7 @@ use pes_savefile::interchange::team_toml::labels::{
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
-use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, number_arrows, step_number, wheel_steps,
-};
+use studio_core::widgets::{FIELD_SPACING, add_enabled, number_arrows, step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
@@ -240,13 +238,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
                         panel(ui, spacing, "General info", None, 0.0, |ui| {
                             inset(ui, |ui| {
-                                ui.spacing_mut().item_spacing.y = FORM_ROW_SPACING;
+                                ui.spacing_mut().item_spacing.y = FIELD_SPACING;
                                 info_strip::general(ui, session, team_id, slot, player_id, marks);
                             });
                         });
                         panel(ui, spacing, "Other stats", None, 0.0, |ui| {
                             inset(ui, |ui| {
-                                ui.spacing_mut().item_spacing.y = FORM_ROW_SPACING;
+                                ui.spacing_mut().item_spacing.y = FIELD_SPACING;
                                 info_strip::other_stats(ui, session, player_id, &stats, marks);
                             });
                         });
@@ -949,7 +947,7 @@ fn ability_stats(
     let version = session.version();
     egui::Grid::new("abilities stats")
         .num_columns(2)
-        .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FORM_ROW_SPACING))
+        .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FIELD_SPACING))
         .show(ui, |ui| {
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
                 let name = stat_name(version, label);

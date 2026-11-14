@@ -816,3 +816,73 @@ fn a_players_first_frame_draws_where_every_later_one_does() {
         "General info's x on the first frame and the next, of {passes:?}"
     );
 }
+
+// The Stats screen's stacked controls are spaced by the gaps between
+// their boxes: its 18-point fields leave 6 between them, standing 24
+// apart top to top (General info, between its blocks as inside them, and
+// Ability stats), and its stacked checkboxes leave 8 between their
+// 14-point squares, their 18-point rows standing 22 apart.
+#[test]
+fn the_stats_screens_fields_stand_24_apart_and_its_checkboxes_22() {
+    let (_, nodes, _) = settled_player_view("stats_gaps");
+    let top = |node: &accesskit::Node| node.bounds().expect("drawn bounds").y0;
+    let first_right_of = |label: &str, role: Role| {
+        top(right_of_label(&nodes, label, role)
+            .first()
+            .unwrap_or_else(|| panic!("a {role:?} right of {label}")))
+    };
+    let name = top(field_right_of_label(&nodes, "Name (", Role::TextInput));
+    let shirt = top(field_right_of_label(&nodes, "Shirt (", Role::TextInput));
+    let height = first_right_of("Height", Role::SpinButton);
+    let age = first_right_of("Age", Role::SpinButton);
+    let foot = first_right_of("Stronger foot", Role::Button);
+    let hand = first_right_of("Stronger hand", Role::Button);
+    let registered = first_right_of("Registered position", Role::ComboBox);
+    let stats: Vec<String> = pes_savefile::interchange::team_toml::labels::ABILITY_STATS[..2]
+        .iter()
+        .map(|name| pes_savefile::interchange::team_toml::labels::title_case(name))
+        .collect();
+    let first_stat = first_right_of(&stats[0], Role::SpinButton);
+    let second_stat = first_right_of(&stats[1], Role::SpinButton);
+    // The checkbox under Heading, the first card of the Skills' first
+    // column: the nearest one below it at its x.
+    let heading = node_labeled(&nodes, Role::CheckBox, "Heading")
+        .bounds()
+        .expect("Heading's bounds");
+    let under_heading = nodes
+        .iter()
+        .filter(|node| node.role() == Role::CheckBox)
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| (b.x0 - heading.x0).abs() <= 0.5 && b.y0 > heading.y0)
+        .map(|b| b.y0)
+        .fold(f64::INFINITY, f64::min);
+    for (upper, lower, expected, what) in [
+        (name, shirt, 24.0, "the Shirt box under the Name box"),
+        (shirt, height, 24.0, "the Height box under the Shirt box"),
+        (age, foot, 24.0, "the Stronger foot row under the Age box"),
+        (
+            hand,
+            registered,
+            24.0,
+            "the Registered position combo under the Stronger hand row",
+        ),
+        (
+            first_stat,
+            second_stat,
+            24.0,
+            "the second ability stat's box under the first's",
+        ),
+        (
+            heading.y0,
+            under_heading,
+            22.0,
+            "the checkbox under Heading's",
+        ),
+    ] {
+        assert!(
+            (lower - upper - expected).abs() <= 0.5,
+            "{what}: {} apart, expected {expected}",
+            lower - upper
+        );
+    }
+}

@@ -16,7 +16,7 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled_ui, combo_item, number_arrows, radio, step_choice, step_number,
+    FIELD_SPACING, add_enabled_ui, combo_item, number_arrows, radio, step_choice, step_number,
     text_box, wheel_steps,
 };
 use team_widgets::cards;
@@ -64,10 +64,6 @@ pub(super) const FIELD_ROW_GAP: f32 = 12.0;
 /// The gap between a pair row's two halves (the draft's `.pairs`
 /// `column-gap`, 28 points).
 const PAIR_HALF_GAP: f32 = 28.0;
-/// The gap between General info's blocks (Name and Shirt, the pairs, the
-/// combos): the draft's `.gen` gap, 2 points more than the rows' own, so
-/// each block reads as one.
-const BLOCK_GAP: f32 = 6.0;
 
 /// A player name as the strip draws it: its `\x11` spelled as the four
 /// characters `\\x11` (the draft's `escName`); the field turns it back on
@@ -421,7 +417,6 @@ pub(super) fn general(
     // The label-left pairs on two halves: each label at its half's left,
     // its 54-wide box on the first half's right edge, after the label
     // column on the second.
-    ui.add_space(BLOCK_GAP - ui.spacing().item_spacing.y);
     pair_row(ui, |ui| {
         pair_half(
             ui,
@@ -521,7 +516,6 @@ pub(super) fn general(
     });
 
     // The combos, on the same label-left rows as Name's and Shirt's.
-    ui.add_space(BLOCK_GAP - ui.spacing().item_spacing.y);
     combos(
         ui,
         session,
@@ -756,7 +750,7 @@ fn combos(
 ) {
     egui::Grid::new("general combos")
         .num_columns(2)
-        .spacing(egui::vec2(FIELD_ROW_GAP, FORM_ROW_SPACING))
+        .spacing(egui::vec2(FIELD_ROW_GAP, FIELD_SPACING))
         .show(ui, |ui| {
             ui.label(STRONGER_FOOT_LABEL);
             if let Some((side, key)) = side_row(ui, field_width, positions.stronger_foot) {

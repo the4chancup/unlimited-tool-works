@@ -9,7 +9,9 @@ use pes_savefile::interchange::team_toml::labels::{self, card_name};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
-use studio_core::widgets::{add_enabled, checkbox, combo_item, step_choice, wheel_steps};
+use studio_core::widgets::{
+    CHECKBOX_SPACING, add_enabled, checkbox, combo_item, step_choice, wheel_steps,
+};
 
 /// A skills or COM styles column's width (the draft's `.skcols` 158px):
 /// the host sizes the panels that hold the two columns from it.
@@ -43,9 +45,9 @@ pub enum CardsBadge<'a> {
 }
 
 /// `names`' cards' checkboxes in two columns `CARD_COLUMN_WIDTH` wide,
-/// `CARD_COLUMN_GAP` apart, filled column by column (the draft's
-/// `.skcols`): `shown` is the indices into `names` to draw, in draw
-/// order; every card is drawn on every
+/// `CARD_COLUMN_GAP` apart, filled column by column, each column's rows
+/// `CHECKBOX_SPACING` apart (the draft's `.skcols`): `shown` is the
+/// indices into `names` to draw, in draw order; every card is drawn on every
 /// version; one the version cannot store stays in its cell, disabled
 /// with a `PES NN+` tooltip naming the first version that has it.
 /// Returns whether a card was ticked or unticked this frame.
@@ -70,6 +72,7 @@ pub fn card_columns(
         for chunk in shown.chunks(per_column) {
             ui.vertical(|ui| {
                 ui.set_width(CARD_COLUMN_WIDTH);
+                ui.spacing_mut().item_spacing.y = CHECKBOX_SPACING;
                 for &index in chunk {
                     let field = field(index);
                     let index = usize::from(index);
