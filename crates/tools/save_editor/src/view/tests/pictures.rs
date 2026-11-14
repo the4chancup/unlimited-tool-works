@@ -15,6 +15,9 @@ const ENTRY: &str = "Save a picture of the formations\u{2026}";
 /// The grain box's label.
 const FLAT_BOX: &str = "Without the pitch's grain (smaller file)";
 
+/// The settings box's label.
+const SETTINGS_BOX: &str = "With each preset's settings beside its row";
+
 /// The size of /f/'s picture: one column of three pitches under the title.
 const ONE_COLUMN: (u32, u32) = (32 + 96 + 320, 32 + 30 + 3 * 384 + 2 * 12);
 
@@ -238,6 +241,30 @@ fn the_formations_picture_dialog_writes_one_png() {
         assert_eq!(shown.as_deref(), Some(tip), "{label}'s hover");
     }
 
+    // The settings box, unticked between the grid and Portraits: ticking
+    // it puts " settings" before the name's extension, unticking takes it
+    // off.
+    let nodes = scene.draw();
+    let settings = node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX);
+    assert!(!ticked(&nodes, SETTINGS_BOX), "the settings box unticked");
+    let file_name = field_right_of_label(&nodes, "File name", Role::TextInput);
+    let portraits = node_labeled(&nodes, Role::CheckBox, "Portraits");
+    let (box_top, name_bottom, portraits_top) = (
+        settings.bounds().expect("bounds").y0,
+        file_name.bounds().expect("bounds").y1,
+        portraits.bounds().expect("bounds").y0,
+    );
+    assert!(
+        name_bottom < box_top && box_top < portraits_top,
+        "under the grid, over Portraits: {name_bottom} < {box_top} < {portraits_top}"
+    );
+    let nodes = scene.click(settings);
+    assert!(ticked(&nodes, SETTINGS_BOX));
+    assert_eq!(field(&nodes, "File name"), "f settings.png");
+    let nodes = scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
+    assert!(!ticked(&nodes, SETTINGS_BOX));
+    assert_eq!(field(&nodes, "File name"), "f.png");
+
     // Portraits unticked, Save: the picture written without them, the
     // bar's setting untouched.
     let nodes = scene.draw();
@@ -288,6 +315,28 @@ fn the_formations_picture_dialog_writes_one_png() {
     scene.draw();
     let nodes = scene.open_dialog();
     assert!(!ticked(&nodes, "Portraits"), "Portraits as the bar's");
+}
+
+// SE-GUI-86
+// SE-GUI-88
+#[test]
+fn a_ticked_settings_box_writes_the_settings_picture() {
+    let mut scene = Scene::new("picture_dialog_settings");
+    let folder = scene.ctx.paths().exe_dir.join("formations");
+    let nodes = scene.open_dialog();
+    scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
+    scene.press("Save");
+    assert_eq!(
+        png_size(&folder.join("f settings.png")),
+        (ONE_COLUMN.0 + 12 + 240, ONE_COLUMN.1 + 30),
+        "the picture with the settings column and the Automatic settings line"
+    );
+    assert!(!folder.join("f.png").exists(), "no picture without them");
+
+    // Not remembered: the next dialog starts unticked, on the plain name.
+    let nodes = scene.open_dialog();
+    assert!(!ticked(&nodes, SETTINGS_BOX));
+    assert_eq!(field(&nodes, "File name"), "f.png");
 }
 
 // SE-GUI-86

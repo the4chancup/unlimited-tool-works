@@ -1,6 +1,6 @@
 //! The Team menu's "Save a picture of the formations…" dialog (the draft's
 //! `dlgPictureSave`): the folder and the file name on one grid, the
-//! Portraits and grain boxes under it, and Save, which asks before it
+//! settings, Portraits and grain boxes under it, and Save, which asks before it
 //! replaces a picture already in the folder, then writes the PNG and raises
 //! a notice with an Open folder action.
 
@@ -39,6 +39,9 @@ pub(crate) struct PictureDialog {
     folder: String,
     /// The picture's file name, as filled in or typed.
     file_name: String,
+    /// The settings box: each preset's settings beside its row. Unticked
+    /// each time the dialog opens.
+    settings: bool,
     /// The Portraits box: this picture's alone, never written back to the
     /// formation bar's setting.
     portraits: bool,
@@ -62,6 +65,7 @@ impl PictureDialog {
             // An absolute setting replaces `exe_dir` in the join.
             folder: exe_dir.join(folder_setting).display().to_string(),
             file_name: picture_file_name(team.id, &team.name, false),
+            settings: false,
             portraits,
             asking_replace: false,
         }
@@ -119,6 +123,15 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     .labelled_by(label.id);
                     ui.end_row();
                 });
+            if checkbox(
+                ui,
+                &mut dialog.settings,
+                "With each preset's settings beside its row",
+            )
+            .changed()
+            {
+                dialog.file_name = settings_file_name(&dialog.file_name, dialog.settings);
+            }
             checkbox(ui, &mut dialog.portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
             checkbox(
                 ui,
@@ -186,6 +199,32 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
+/// `file_name` after the settings box flips to `settings`: a trailing
+/// ` settings.png` goes back to `.png`, then, ticked, a trailing `.png`
+/// becomes ` settings.png`, both in any case. A team's two pictures so
+/// get two names, and a name typed without `.png` stays as it is.
+fn settings_file_name(file_name: &str, settings: bool) -> String {
+    let plain = match strip_suffix_any_case(file_name, " settings.png") {
+        Some(stem) => format!("{stem}.png"),
+        None => file_name.to_owned(),
+    };
+    if !settings {
+        return plain;
+    }
+    match strip_suffix_any_case(&plain, ".png") {
+        Some(stem) => format!("{stem} settings.png"),
+        None => plain,
+    }
+}
+
+/// `text` without `suffix` at its end, compared in any ASCII case; `None`
+/// when it does not end so.
+fn strip_suffix_any_case<'a>(text: &'a str, suffix: &str) -> Option<&'a str> {
+    let start = text.len().checked_sub(suffix.len())?;
+    let (stem, end) = (text.get(..start)?, text.get(start..)?);
+    end.eq_ignore_ascii_case(suffix).then_some(stem)
+}
+
 /// Writes the open dialog's picture (`write_picture`): on success its
 /// folder is kept as the `formation_pictures_folder` setting and the
 /// journal gets a `wrote` step; a failure is a `could not write` step.
@@ -202,6 +241,7 @@ fn save_picture(visuals: &egui::Visuals, view: &mut SaveView) -> io::Result<()> 
     let options = PictureOptions {
         portraits: dialog.portraits,
         flat: view.formation_pictures_flat,
+        settings: dialog.settings,
     };
     let folder = Path::new(&dialog.folder);
     let path = folder.join(&dialog.file_name);
@@ -247,4 +287,33 @@ fn write_picture(
         return Err(error);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_settings_box_moves_settings_before_the_extension() {
+        for (file_name, settings, expected) in [
+            ("f.png", true, "f settings.png"),
+            ("f settings.png", false, "f.png"),
+            ("f settings.png", true, "f settings.png"),
+            ("f.PNG", true, "f settings.png"),
+            ("f Settings.PNG", false, "f.png"),
+            // A name typed without the extension is the member's own.
+            ("f", true, "f"),
+            ("f settings", false, "f settings"),
+            // A name shorter than the suffix, or one whose suffix would
+            // start inside a character.
+            ("png", true, "png"),
+            ("\u{20ac}\u{20ac}\u{20ac}", true, "\u{20ac}\u{20ac}\u{20ac}"),
+        ] {
+            assert_eq!(
+                settings_file_name(file_name, settings),
+                expected,
+                "{file_name:?}, ticked {settings}"
+            );
+        }
+    }
 }

@@ -25,8 +25,11 @@ use crate::pitch::{FORMATIONS, position_label};
 mod assignments;
 /// The "Advanced instructions" table and its rows.
 mod instructions;
+/// The settings as lines of text, for a picture of the formations.
+mod summary;
 
 pub(crate) use assignments::{Assign, OpenSlot};
+pub use summary::{SettingsLine, automatic_pairs, preset_settings};
 
 /// What the tactics editor shows that the record does not hold: the
 /// preset and the formation on screen, the armed assignment mode, the
@@ -872,8 +875,8 @@ fn auto_row(
 /// The Substitution combo's offered choices (the draft's list): Off,
 /// Very late and Flexible, plus Very early from PES 2017 on (measured
 /// on 2017 and 2021, the versions between taken to match).
-/// `tactics_term` words the stored value the same way, so the row and
-/// the combo cannot drift.
+/// `substitution_text` words a stored value from it, so the combo, the
+/// unsaved-changes row and the picture cannot drift.
 fn substitution_choices(version: PesVersion) -> Vec<(u8, &'static str)> {
     [(0, "Off"), (1, "Very late"), (2, "Flexible")]
         .into_iter()
@@ -889,6 +892,15 @@ fn substitution_choices(version: PesVersion) -> Vec<(u8, &'static str)> {
             .then_some((3, "Very early")),
         )
         .collect()
+}
+
+/// A stored Substitution byte as the combo names it: its choice's label,
+/// or its number when `version` offers no choice for it.
+fn substitution_text(version: PesVersion, stored: u8) -> String {
+    substitution_choices(version)
+        .into_iter()
+        .find(|(value, _)| *value == stored)
+        .map_or_else(|| stored.to_string(), |(_, label)| label.to_owned())
 }
 
 /// The Substitution cell (the draft's `subs` row): the label, then the
@@ -911,15 +923,10 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
             if !choices.iter().any(|(value, _)| value == stored) {
                 choices.push((*stored, stored.to_string()));
             }
-            let selected = choices
-                .iter()
-                .find(|(value, _)| value == stored)
-                .map(|(_, label)| label.clone())
-                .expect("the stored value is always offered");
             let mut pick = *stored;
             let combo = egui::ComboBox::from_id_salt("automatic substitution")
                 .width(ui.available_width())
-                .selected_text(selected)
+                .selected_text(substitution_text(version, *stored))
                 .truncate()
                 .show_ui(ui, |ui| {
                     for (value, label) in &choices {
@@ -1074,19 +1081,11 @@ pub fn tactics_term(
                 index + 1
             );
             match part {
-                InstructionPart::Instruction => {
-                    let value = |stored: u32| {
-                        let stored = byte(stored);
-                        instruction::decode(version, stored)
-                            .ok()
-                            .flatten()
-                            .map_or_else(
-                                || format!("Unknown (0x{stored:02X})"),
-                                |inst| instructions::instruction_label(inst).to_owned(),
-                            )
-                    };
-                    (row, value(old), value(new))
-                }
+                InstructionPart::Instruction => (
+                    row,
+                    instruction_text(version, byte(old)),
+                    instruction_text(version, byte(new)),
+                ),
                 InstructionPart::PlayerId => (
                     format!("{row} · Target"),
                     instructions::target_text(
@@ -1136,16 +1135,11 @@ pub fn tactics_term(
             role_holder(old_roster, byte(old)),
             role_holder(new_roster, byte(new)),
         ),
-        TacticsField::AutoSubstitution => {
-            let value = |stored: u32| {
-                substitution_choices(version)
-                    .iter()
-                    .find(|(value, _)| u32::from(*value) == stored)
-                    .map(|(_, label)| (*label).to_owned())
-                    .unwrap_or_else(|| stored.to_string())
-            };
-            (SUBSTITUTION_LABEL.to_owned(), value(old), value(new))
-        }
+        TacticsField::AutoSubstitution => (
+            SUBSTITUTION_LABEL.to_owned(),
+            substitution_text(version, byte(old)),
+            substitution_text(version, byte(new)),
+        ),
         TacticsField::AutoOffsideTrap => (
             OFFSIDE_TRAP_LABEL.to_owned(),
             on_off(old).to_owned(),
@@ -1177,6 +1171,18 @@ pub fn tactics_term(
             role_holder(new_roster, byte(new)),
         ),
     }
+}
+
+/// A stored instruction byte as the editor names it: its label, or
+/// `Unknown (0xNN)` for a byte `version`'s table does not decode.
+fn instruction_text(version: PesVersion, stored: u8) -> String {
+    instruction::decode(version, stored)
+        .ok()
+        .flatten()
+        .map_or_else(
+            || format!("Unknown (0x{stored:02X})"),
+            |inst| instructions::instruction_label(inst).to_owned(),
+        )
 }
 
 /// A preset field's label on the tab (`SLIDERS`, `STYLE_TOGGLES` or the
