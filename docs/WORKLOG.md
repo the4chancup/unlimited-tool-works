@@ -2203,6 +2203,15 @@ briefs, review loops, gates and mutation runs as for any step.
     `C:\Data\Downloads\Development\pe-sieve`; Ghidra 12.2 as for PES 2016. -> verify: each
     reader of bytes 1 and 4 named by address and function, with whether a match reads them
     with the automatic levels on and off
+    - [x] the scripts (lead, 2026-11-14), scratch in `.tmp/num17/`: `find_tactics.py
+      [TEAM_ID]` finds the records read-only; `watch.py --seconds N NAME=0xADDR` sets
+      one-byte hardware watches through the debug API and logs each reader. Tested on a
+      32-bit stand-in (`fake_target.py` under a 32-bit Python copied as `fakepes.exe`,
+      `NUM17_PROCESS=fakepes.exe`): the read byte logged ~180 hits a second, the unread one
+      none, and the stand-in ran on to its end once detached. A detach must suspend every
+      thread, drain the queued events, clear the watches and resume before
+      `DebugActiveProcessStop` (a queued hit killed the process; resuming after it left
+      every thread suspended)
     - [ ] the dump: the game at its main menu, pe-sieve32 with import rebuilding, then
       Ghidra's headless analysis as `pes16_re/analyze.bat`; the readers found statically,
       the PES 2016 tactics functions (`pes16_re/out/dec_tactics_*.c`) as the guide
