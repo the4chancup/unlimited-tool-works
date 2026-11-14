@@ -434,6 +434,19 @@ fn line_starting(nodes: &[accesskit::Node], prefix: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// Asserts that `nodes` hold the label `sentence` and the label `folder`
+/// under it, starting where it starts, as the range dialog's result does.
+/// `reading_rows` cannot tell that from a folder beside the sentence,
+/// which wraps, so its middle falls on a row of its own.
+fn assert_folder_under(nodes: &[accesskit::Node], sentence: &str, folder: &Path) {
+    let above = label_bounds(nodes, sentence);
+    let under = label_bounds(nodes, &folder.display().to_string());
+    assert!(
+        under.y0 >= above.y1 && under.x0 == above.x0,
+        "the folder, at {under:?}, on the line under {sentence:?}, at {above:?}"
+    );
+}
+
 /// The id of the button labelled `label` among `pairs`.
 fn button_id(pairs: &[(accesskit::NodeId, accesskit::Node)], label: &str) -> accesskit::NodeId {
     pairs
@@ -703,8 +716,8 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
                 first_label.clone(),
                 "to".to_owned(),
                 last_label.clone(),
+                count.clone(),
             ],
-            vec![count.clone()],
             vec![
                 "Folder".to_owned(),
                 folder.display().to_string(),
@@ -716,21 +729,6 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
             vec![line(false)],
             vec!["Save pictures".to_owned(), "Cancel".to_owned()],
         ]
-    );
-    let left = |nodes: &[accesskit::Node], role: Role, text: &str| {
-        nodes
-            .iter()
-            .find(|node| {
-                node.role() == role && (node.value() == Some(text) || node.label() == Some(text))
-            })
-            .and_then(accesskit::Node::bounds)
-            .unwrap_or_else(|| panic!("no {role:?} {text:?}"))
-            .x0
-    };
-    assert_eq!(
-        left(&nodes, Role::Label, &count),
-        left(&nodes, Role::ComboBox, &first_label),
-        "the count line in the field column"
     );
     assert!(!ticked(&nodes, SETTINGS_BOX), "the settings box unticked");
     assert!(ticked(&nodes, "Portraits"), "Portraits as the bar's");
@@ -817,6 +815,34 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
 
 // SE-GUI-89
 #[test]
+fn the_range_count_ends_the_teams_row_where_browse_ends() {
+    let mut scene = Scene::new("pictures_range_count");
+    let count = format!("{} teams", scene.cup_ids().len());
+
+    scene.open_range();
+    let nodes = scene.range_nodes();
+    let at = label_bounds(&nodes, &count);
+    let last = combos(&nodes)[1].bounds().expect("drawn bounds");
+    let middle = (at.y0 + at.y1) / 2.0;
+    assert!(
+        (last.y0..=last.y1).contains(&middle),
+        "the count's middle, {middle}, on the combos' row, {} to {}",
+        last.y0,
+        last.y1
+    );
+    let browse = node_labeled(&nodes, Role::Button, "Browse\u{2026}")
+        .bounds()
+        .expect("drawn bounds");
+    assert!(
+        (at.x1 - browse.x1).abs() <= 0.5,
+        "the count ends at {}, where Browse ends, {}",
+        at.x1,
+        browse.x1
+    );
+}
+
+// SE-GUI-89
+#[test]
 fn a_range_run_writes_one_picture_per_team_and_reports_it() {
     let mut scene = Scene::new("pictures_range_run");
     let teams = [FIRST, MIDDLE, LAST];
@@ -870,15 +896,8 @@ fn a_range_run_writes_one_picture_per_team_and_reports_it() {
         assert!(has_button(&nodes, "Stop"), "Stop on frame {frame}");
         assert_eq!(files_so_far(&folder), written, "after frame {frame}");
     }
-    let nodes = scene.draw();
-    assert!(
-        label_value(
-            &nodes,
-            &format!("3 pictures written to {}", folder.display())
-        ),
-        "the result: {:?}",
-        line_starting(&nodes, "3 ")
-    );
+    let nodes = scene.range_nodes();
+    assert_folder_under(&nodes, "3 pictures written, they are here:", &folder);
     assert!(has_button(&nodes, "Open folder"));
     let mut expected: Vec<String> = teams.iter().map(|id| scene.file_name(*id)).collect();
     expected.sort_unstable();
@@ -926,15 +945,11 @@ fn stop_ends_the_run_with_the_pictures_written_so_far() {
         line_starting(&nodes, "Writing 3 of 3: ").is_some(),
         "Stop pressed on the fourth frame"
     );
-    let nodes = scene.draw();
-    let result = format!(
-        "Stopped after 2 of 3 pictures; they are in {}",
-        kept.display()
-    );
-    assert!(
-        label_value(&nodes, &result),
-        "{:?}",
-        line_starting(&nodes, "Stopped")
+    let nodes = scene.range_nodes();
+    assert_folder_under(
+        &nodes,
+        "Stopped after 2 of 3 pictures, they are here:",
+        &kept,
     );
     assert!(has_button(&nodes, "Open folder"));
     assert!(has_button(&nodes, "Close"));
@@ -1000,14 +1015,13 @@ fn a_failed_write_ends_the_run_and_names_the_error() {
 }
 
 /// The dialog keeps the picking state's width through the run and its
-/// result, though the result's line, naming a long folder, would be wider.
+/// result, though the result's folder, a long one, would be wider.
 #[test]
 fn the_dialog_keeps_its_width_through_the_run() {
     let mut scene = Scene::new("pictures_range_width");
     let folder = scene
         .dir
         .join("formation pictures of every team of the cup, from the first to the last");
-    let result = format!("3 pictures written to {}", folder.display());
 
     scene.start_run(&folder);
     let picking = scene.dialog_width();
@@ -1015,13 +1029,13 @@ fn the_dialog_keeps_its_width_through_the_run() {
     let font = egui::TextStyle::Body.resolve(&style);
     let line = scene.window.ctx.fonts_mut(|fonts| {
         fonts
-            .layout_no_wrap(result.clone(), font, egui::Color32::WHITE)
+            .layout_no_wrap(folder.display().to_string(), font, egui::Color32::WHITE)
             .size()
             .x
     });
     assert!(
         line > picking,
-        "premise: the result's line, {line}, is wider than the picking state's {picking}"
+        "premise: the folder's line, {line}, is wider than the picking state's {picking}"
     );
     for frame in 0..4 {
         let nodes = scene.draw();
@@ -1031,7 +1045,7 @@ fn the_dialog_keeps_its_width_through_the_run() {
         );
         assert_eq!(scene.dialog_width(), picking, "writing frame {frame}");
     }
-    let nodes = scene.draw();
-    assert!(label_value(&nodes, &result), "the result");
+    let nodes = scene.range_nodes();
+    assert_folder_under(&nodes, "3 pictures written, they are here:", &folder);
     assert_eq!(scene.dialog_width(), picking, "the result");
 }

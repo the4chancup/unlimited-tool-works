@@ -290,9 +290,9 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
-/// The picking state: the range's two combos on the `Teams` row, the count
-/// line and the folder on one grid, the three boxes, the file-name line,
-/// then Save pictures and Cancel.
+/// The picking state: one grid holding the `Teams` row (the range's two
+/// combos and its count) and the folder row, then the three boxes, the
+/// file-name line, Save pictures and Cancel.
 fn picking(
     ui: &mut egui::Ui,
     dialog: &mut RangeDialog,
@@ -300,40 +300,54 @@ fn picking(
     pick_folder_dialog: &mut PickFolderDialog,
     flat: &mut bool,
 ) -> Asked {
-    let count = egui::Grid::new("save_editor_pictures_range_grid")
+    let grid = egui::Grid::new("save_editor_pictures_range_grid")
         .num_columns(2)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
         .show(ui, |ui| {
             ui.label("Teams");
-            ui.horizontal(|ui| {
-                team_combo(
-                    ui,
-                    "save_editor_pictures_first",
-                    file,
-                    u32::MIN,
-                    &mut dialog.first,
-                );
-                // The last end follows a first end picked past it, before
-                // it is drawn, so the range is never reversed.
-                dialog.last = dialog.last.max(dialog.first);
-                ui.weak("to");
-                team_combo(
-                    ui,
-                    "save_editor_pictures_last",
-                    file,
-                    dialog.first,
-                    &mut dialog.last,
-                );
-            });
-            ui.end_row();
-            let count = range_ids(file, dialog.first, dialog.last).len();
-            ui.label("");
-            ui.weak(counted(count, "team"));
+            let (count, room) = ui
+                .horizontal(|ui| {
+                    team_combo(
+                        ui,
+                        "save_editor_pictures_first",
+                        file,
+                        u32::MIN,
+                        &mut dialog.first,
+                    );
+                    // The last end follows a first end picked past it, before
+                    // it is drawn, so the range is never reversed.
+                    dialog.last = dialog.last.max(dialog.first);
+                    ui.weak("to");
+                    team_combo(
+                        ui,
+                        "save_editor_pictures_last",
+                        file,
+                        dialog.first,
+                        &mut dialog.last,
+                    );
+                    let count = range_ids(file, dialog.first, dialog.last).len();
+                    // Room for the count, which is drawn after the grid, so
+                    // a row of long team names still widens the column.
+                    let font = egui::TextStyle::Body.resolve(ui.style());
+                    let size = ui
+                        .painter()
+                        .layout_no_wrap(counted(count, "team"), font, egui::Color32::PLACEHOLDER)
+                        .size();
+                    (count, ui.allocate_exact_size(size, egui::Sense::hover()).0)
+                })
+                .inner;
             ui.end_row();
             folder_row(ui, &mut dialog.folder, pick_folder_dialog);
-            count
-        })
-        .inner;
+            (count, room)
+        });
+    let (count, room) = grid.inner;
+    // The count ends where the grid's field column ends, which is where
+    // the folder row's Browse ends. Only the drawn grid knows that end, so
+    // the count is drawn after the grid, in a child that takes no room of
+    // its own: the Teams row already kept room for it.
+    let at = room.translate(egui::vec2(grid.response.rect.right() - room.right(), 0.0));
+    ui.new_child(egui::UiBuilder::new().max_rect(at))
+        .add(egui::Label::new(egui::RichText::new(counted(count, "team")).weak()).extend());
     picture_boxes(ui, &mut dialog.settings, &mut dialog.portraits, flat);
     file_name_line(ui, file, dialog.first, dialog.settings);
     // The button row takes the content's width and never widens it.
@@ -449,9 +463,12 @@ fn progress_bar(ui: &mut egui::Ui, fraction: f32) {
     painter.rect_stroke(rect, radius, stroke, egui::StrokeKind::Inside);
 }
 
-/// The result: what was written and where, the error that ended the run
-/// on its own line if one did, then Open folder (when a picture was
-/// written) and Close.
+/// The result: the sentence saying what was written, with the folder on
+/// the line under it when a picture was; the error that ended the run, if
+/// one did, on its own line; then Open folder (when a picture was written)
+/// and Close. The folder has a line of its own because the dialog keeps
+/// its width, so a long folder would otherwise break the sentence wherever
+/// it wrapped.
 fn result(
     ui: &mut egui::Ui,
     folder: &str,
@@ -460,13 +477,16 @@ fn result(
     error: Option<&str>,
 ) -> Asked {
     let line = if written == total {
-        format!("{} written to {folder}", counted(written, "picture"))
+        format!("{} written, they are here:", counted(written, "picture"))
     } else if written == 0 {
         "Stopped before any picture was written".to_owned()
     } else {
-        format!("Stopped after {written} of {total} pictures; they are in {folder}")
+        format!("Stopped after {written} of {total} pictures, they are here:")
     };
     ui.add(egui::Label::new(line).wrap());
+    if written > 0 {
+        ui.add(egui::Label::new(folder).wrap());
+    }
     if let Some(error) = error {
         ui.add(egui::Label::new(error).wrap());
     }
