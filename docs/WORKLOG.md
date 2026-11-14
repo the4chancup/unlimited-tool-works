@@ -3021,6 +3021,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   Open folder opening Explorer on the folder; checked by the lead at `b0c2f105`
   (`.tmp/flatpitch/look1b/built_menu.png`, `built_dialog_zoom.png`, `built_saved.png` beside
   `draft_dialog_zoom.png`); no PES; 0.0.2-flatpitch; maintainer
+- The formation picture's settings: the dialog's box ticked beside the draft's, and the
+  settings picture of /3/ the built app wrote, its columns beside the draft's; checked by
+  the lead at `0b71f879` (`.tmp/flatpitch/look2/compare_dialog.png`,
+  `built_3_settings_half.png`, `compare_wide.png`, `compare_narrow.png`, `app_row2_zoom.png`);
+  no PES; 0.0.2-flatpitch; maintainer
 - The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
   shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
   the cell as one layer, so the turf shows through the players; and a fluid-off row with one
