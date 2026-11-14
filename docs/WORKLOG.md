@@ -1940,6 +1940,12 @@ briefs, review loops, gates and mutation runs as for any step.
     a SWE-2 census of the tests that do, then one slice making them deterministic (a test
     controls when a background reply lands) -> verify: the census's tests pass under
     `just pipeline`'s load, two clean pipelines retire the watch entries
+    Census done 2026-11-14 (SWE-2, `.tmp/determ/census.findings.md`): 1 certain race (the copy
+    test), 3 clicks on a dialog a reply can move, 4 suspects, and 5-10 s hang bounds; the
+    slice runs on `sk/determ` (`../4cc-studio-temp/determ`, `.tmp/determ/brief_slice.md`).
+    Left out, for the watch list: `export_upgrader/src/staging.rs:251` (a 300 ms releaser
+    against a 1.9 s retry window) and `studio/tests/crash_dump.rs` (the child's 2 s
+    connect bound is production code's)
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; **after everything else of
     0.0.2, and only if time is left**: the largest, since the view has one selected player
     and every edit writes one record) a `Select all similar players` button under the
