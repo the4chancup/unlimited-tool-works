@@ -65,6 +65,10 @@
   the rest of the look, are locked while the team's export owns it. The strip's colors are
   dropdowns, and the Player gloves checkbox is an Outfielder gloves dropdown, Off or Worn in
   winter.
+- **Save editor**: Star and Playing attitude count as part of a player's look: his team's
+  export carries them, Copy/swap stats leaves them as they were, and the Comparator lists
+  them, and every motion, under Aesthetics. A Team TOML keeps them under
+  `appearance.presentation`, and one written before still opens.
 
 ### New checks
 
