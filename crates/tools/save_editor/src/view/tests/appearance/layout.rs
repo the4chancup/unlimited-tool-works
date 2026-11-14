@@ -319,9 +319,10 @@ fn the_physique_and_motion_flag_column_end_at_one_bottom() {
 }
 
 // The Appearance screen lays out the draft's two physique pairs a row,
-// each field 82 points long on a 34-tall row — Neck length and Neck
-// size share a row's top, Shoulder height opens the next, the seven
-// left-column labels share one x0 and the second column's share another.
+// each field a slider on a 34-tall row, its rail 82 points long and its
+// value box at the rail's right — Neck length and Neck size share a
+// row's top, Shoulder height opens the next, the seven left-column
+// labels share one x0 and the second column's share another.
 #[test]
 fn the_physique_grid_holds_two_pairs_a_row() {
     let (mut view, _) = open_734_with("physique_two_pairs", &[], 0);
@@ -361,13 +362,21 @@ fn the_physique_grid_holds_two_pairs_a_row() {
             "{label} shares the second column's x0"
         );
     }
-    let field = right_of_label(&nodes, "Neck length", Role::SpinButton)
+    let rail = right_of_label(&nodes, "Neck length", Role::Slider)
         .first()
         .and_then(|node| node.bounds())
-        .expect("the Neck length field");
+        .expect("the Neck length slider");
     assert!(
-        (field.x1 - field.x0 - 82.0).abs() <= 0.5,
-        "the field is 82 points long"
+        (rail.x1 - rail.x0 - 82.0).abs() <= 0.5,
+        "the slider's rail is 82 points long"
+    );
+    let value_box = right_of_label(&nodes, "Neck length", Role::SpinButton)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("the Neck length value box");
+    assert!(
+        value_box.x0 > rail.x1 && (value_box.y0 + value_box.y1 - rail.y0 - rail.y1).abs() <= 1.0,
+        "the value box at the rail's right, on its line"
     );
 }
 

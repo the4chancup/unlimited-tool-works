@@ -26,7 +26,7 @@ use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, step_choice,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, slider, step_choice,
     step_number, wheel_steps,
 };
 
@@ -107,8 +107,8 @@ const STRIP_ROW_H: f32 = 24.0;
 /// A physique row's height: the rows a little further apart, so the group
 /// fills to the right column's height (the draft's physique `td` padding).
 const PHYSIQUE_ROW_H: f32 = 34.0;
-/// A physique field's length (the draft's `input[type=range]` 82).
-const PHYSIQUE_FIELD_W: f32 = 82.0;
+/// A physique slider's rail length (the draft's `input[type=range]` 82).
+const PHYSIQUE_RAIL_W: f32 = 82.0;
 /// An edit-flags cell's height (the draft's `#edit-flags-grid td`).
 const FLAG_CELL_H: f32 = 22.0;
 /// Between an edit-flags row's cells (the draft's `td` padding-right).
@@ -598,9 +598,11 @@ fn edit_flags_grid(
     });
 }
 
-/// The 14 physique fields in an aligned grid of label and field cells,
-/// two pairs a row on `PHYSIQUE_ROW_H`-tall rows, each field `PHYSIQUE_FIELD_W`
-/// long (the draft's `.stats-grid` pairs and 82-point sliders). Each field
+/// The 14 physique fields in an aligned grid of label and slider cells,
+/// two pairs a row on `PHYSIQUE_ROW_H`-tall rows, each slider's rail
+/// `PHYSIQUE_RAIL_W` long with its value box at the right (the draft's
+/// `.stats-grid` pairs and 82-point sliders). The arrow keys step the
+/// value box by one, as the suite's other number boxes do. Each field
 /// is on its key's `Signed` scale (±7: `shown - limit` stores `shown +
 /// limit`).
 fn physique_grid(
@@ -622,18 +624,10 @@ fn physique_grid(
                 let stored = get(appearance);
                 let mut shown = i32::from(stored) - limit;
                 ui.label(*label);
-                let height = ui.spacing().interact_size.y;
-                let mut response = number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
-                    ui.add(
-                        egui::DragValue::new(value)
-                            .range(-limit..=limit)
-                            .clamp_existing_to_range(false)
-                            .min_size(egui::vec2(PHYSIQUE_FIELD_W, height)),
-                    )
+                let wheel_id = ui.scope_id().with(*label);
+                let response = number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
+                    slider(ui, value, -limit..=limit, PHYSIQUE_RAIL_W, wheel_id)
                 });
-                if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
-                    response.mark_changed();
-                }
                 if response.changed() {
                     edit_player(session, player_id, response.id.value(), |player| {
                         set(

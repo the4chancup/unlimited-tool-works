@@ -15,8 +15,8 @@ use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, checkbox, combo_item, cycle_choice, step_choice, step_number,
-    wheel_steps,
+    add_enabled, add_enabled_ui, checkbox, combo_item, cycle_choice, slider as suite_slider,
+    step_choice, wheel_steps,
 };
 
 use crate::pitch::{FORMATIONS, position_label};
@@ -692,58 +692,14 @@ fn number_choices(
 }
 
 /// One slider's control (the draft's `.row`: the rail filling the half
-/// less the value's field and their gap, the value at the right). The
-/// rail's fill and the handle take the selection blue — egui fills the
-/// handle with the widget state's `bg_fill`, the rail's grey, and has
-/// no field for the handle's fill alone, so it is painted over. The
-/// wheel over the rail or the value box steps the value by one a notch,
-/// up adding one, within 1 to the range's top.
+/// less the value's field and their gap, the value at the right), the
+/// suite's `slider` within 1 to the range's top.
 fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
     let width = (ui.available_width() - ui.spacing().item_spacing.x - ui.spacing().interact_size.x)
         .max(0.0);
-    ui.spacing_mut().slider_width = width;
     let mut value = (spec.get)(sliders);
-    // egui's slider answers for the rail and the value box together: the
-    // wheel over either is hovering it.
-    let mut response = ui.add(
-        egui::Slider::new(&mut value, 1..=spec.max)
-            .clamping(egui::SliderClamping::Edits)
-            .trailing_fill(true),
-    );
-    // The handle's rect as egui computes it (its slider geometry is
-    // private, so it is recomputed here): the rail widget is the
-    // first `slider_width` of the row `response` shares with the value
-    // box, its radius the row's height / 2.5, the centre travelling
-    // `radius * 0.75` in from each end for the default rectangle
-    // handle. `interact` keeps the widget state's stroke (inactive,
-    // hovered or active), `expansion` the state's own.
-    if ui.is_rect_visible(response.rect) {
-        let rail =
-            egui::Rect::from_min_size(response.rect.min, egui::vec2(width, response.rect.height()));
-        let radius = rail.height() / 2.5;
-        let place = ((f32::from(value) - 1.0) / f32::from(spec.max - 1)).clamp(0.0, 1.0);
-        let centre = egui::pos2(
-            egui::lerp(rail.x_range().shrink(radius * 0.75), place),
-            rail.center().y,
-        );
-        let visuals = ui.style().interact(&response);
-        ui.painter().rect(
-            egui::Rect::from_center_size(centre, egui::vec2(radius * 1.5, radius * 2.0))
-                .expand(visuals.expansion),
-            visuals.corner_radius,
-            ui.visuals().selection.bg_fill,
-            visuals.fg_stroke,
-            egui::StrokeKind::Inside,
-        );
-    }
-    // egui answers with the value box's id while the box has or just lost
-    // the keyboard, and the wheel keys a notch's delayed step on the id, so
-    // it gets one that stays put.
-    let mut wheel_response = response.clone();
-    wheel_response.id = ui.scope_id().with(spec.field);
-    if step_number(&mut value, wheel_steps(ui, &wheel_response), 1..=spec.max) {
-        response.mark_changed();
-    }
+    let wheel_id = ui.scope_id().with(spec.field);
+    let response = suite_slider(ui, &mut value, 1..=spec.max, width, wheel_id);
     if response.changed() {
         (spec.set)(sliders, value);
     }

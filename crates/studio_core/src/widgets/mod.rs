@@ -10,7 +10,7 @@
 //! header every view draws (`collapsing_header`), a tool's
 //! toolbar row with its group separator and its framed scope (`toolbar`), the measure that
 //! places text by its ink (`ink`), the button frame a clickable picture shows while in
-//! use (`in_use_frame`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
+//! use (`in_use_frame`), the slider with its value box (`slider`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), and the row spacing every form
 //! shares (`FORM_ROW_SPACING`).
 //! Where they sit in a tool's view is that tool's choice; the widgets
@@ -27,6 +27,7 @@ mod log_panel;
 mod menu_button;
 mod modal;
 mod settings_row;
+mod slider;
 mod text_box;
 mod toolbar;
 mod wheel;
@@ -42,6 +43,7 @@ pub use log_panel::{LogLine, LogPanel, well_frame};
 pub use menu_button::{menu_button, menu_separator};
 pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap};
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
+pub use slider::slider;
 pub use text_box::{text_box, text_box_border};
 pub use toolbar::{toolbar, toolbar_framed, toolbar_separator};
 pub use wheel::{cycle_choice, number_arrows, set_inverted, step_choice, step_number, wheel_steps};
