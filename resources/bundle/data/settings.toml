@@ -143,6 +143,18 @@ positions_layout = "pitch"
 # Default: "all"
 team_category = "all"
 
+# The folder that "Save a picture of the formations" in the Team menu offers.
+# Kept by the window: each picture saved writes its folder here.
+# A relative path starts from the folder UTW.exe is in.
+# Default: "formations"
+formation_pictures_folder = "formations"
+
+# If true, the formation pictures show the pitch in flat bands, without its grain, so
+# their files are smaller.
+# The same as the "Without the pitch's grain (smaller file)" box when saving a picture.
+# Default: false
+formation_pictures_flat = false
+
 
 [compiler]
 

@@ -1767,6 +1767,7 @@ mod live_aatf;
 mod live_marks;
 mod overlap;
 mod patch;
+mod pictures;
 mod player;
 mod prompt;
 mod quick_actions;

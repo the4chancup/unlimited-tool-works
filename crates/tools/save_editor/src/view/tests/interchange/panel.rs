@@ -56,7 +56,7 @@ fn the_close_button_closes_the_panel() {
 }
 
 #[test]
-fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
+fn the_team_menu_s_last_group_starts_with_the_entry_that_opens_the_panel() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_menu", CO);
     open_menu(&mut window, &mut view, "Team", "Import / export team file");
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -94,6 +94,7 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
         "Hide default body (Enable FPC)",
         "Show default body (Disable FPC)",
         "Import / export team file\u{2026}",
+        "Save a picture of the formations\u{2026}",
     ];
     assert!(
         labels.len() == entries.len()
@@ -101,16 +102,16 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
                 .iter()
                 .zip(entries)
                 .all(|(label, entry)| label.starts_with(entry)),
-        "the entries in order, the new one last: {labels:?}"
+        "the entries in order: {labels:?}"
     );
 
     // The separator: a horizontal line across the popup between the FPC
-    // entry and the new one.
+    // entry and the panel's.
     let nodes: Vec<accesskit::Node> = pairs.into_iter().map(|(_, node)| node).collect();
     let fpc = menu_item(&nodes, "Show default body (Disable FPC)")
         .bounds()
         .expect("drawn");
-    let last = menu_item(&nodes, "Import / export team file")
+    let interchange = menu_item(&nodes, "Import / export team file")
         .bounds()
         .expect("drawn");
     let separated = shapes.iter().any(|clipped| match &clipped.shape {
@@ -122,13 +123,13 @@ fn the_team_menu_ends_with_the_entry_that_opens_the_panel() {
             );
             points[0].y == points[1].y
                 && y > fpc.y1
-                && y < last.y0
-                && left < last.x1
-                && right > last.x0
+                && y < interchange.y0
+                && left < interchange.x1
+                && right > interchange.x0
         }
         _ => false,
     });
-    assert!(separated, "a separator before the new entry");
+    assert!(separated, "a separator before the panel's entry");
 
     click(
         &mut window,

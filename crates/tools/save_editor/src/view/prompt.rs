@@ -4,6 +4,8 @@
 //! of the File menu's opens. The save's running-game question
 //! (`edit_mode_dialog`) shares the module: the window's Save and Save as
 //! ask it first while the save's own PES runs (SE-GUI-21's window rule).
+//! So does `confirm`, the question a dialog asks before it replaces or
+//! removes a file.
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -23,6 +25,33 @@ use crate::session::selection::{self, TeamCategory, TeamChoice};
 use crate::session::{MovedPlace, PutBack, Session};
 use crate::view::terms::{self, Term};
 use crate::view::{Refusal, SaveView, info_strip, save, write_now};
+
+/// A confirmation modal: `title`, `text`, then `accept` and Cancel. The
+/// answer, `None` while it waits; closing it is Cancel.
+pub(super) fn confirm(
+    ui: &egui::Ui,
+    id: &str,
+    title: &str,
+    text: &str,
+    accept: &str,
+) -> Option<bool> {
+    let mut answer = None;
+    let response = modal(ui.ctx(), egui::Id::unique(id), title, |ui| {
+        ui.label(text);
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                answer = Some(false);
+            }
+            if ui.button(accept).clicked() {
+                answer = Some(true);
+            }
+        });
+    });
+    if answer.is_none() && response.should_close() {
+        answer = Some(false);
+    }
+    answer
+}
 
 /// What the prompt does once answered.
 #[derive(Debug, Clone)]

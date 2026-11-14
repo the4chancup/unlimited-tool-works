@@ -1,11 +1,12 @@
-//! The Save editor's section of the settings file: its ten keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its twelve keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
 //! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
 //! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes),
 //! `positions_layout` (the Playable positions grid's layout toggle),
-//! `team_category` (the team selector's radio buttons) and `last_folder`
+//! `team_category` (the team selector's radio buttons), `formation_pictures_folder` and
+//! `formation_pictures_flat` (the formation pictures' folder and grain box) and `last_folder`
 //! (the folder the file
 //! picker starts in). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
@@ -59,6 +60,13 @@ pub(crate) struct SaveEditorSettings {
     /// file until the member picks a category.
     #[serde(default = "default_team_category")]
     pub(crate) team_category: String,
+    /// The folder the formation pictures are written to, as Save last wrote one there. A
+    /// relative path starts from the program's folder, as the Compiler's folders do; the
+    /// default is `formations` there.
+    pub(crate) formation_pictures_folder: String,
+    /// The formation pictures' "Without the pitch's grain (smaller file)" box, off by
+    /// default: on, the pitch is painted in flat bands, which a PNG holds in a smaller file.
+    pub(crate) formation_pictures_flat: bool,
     /// The folder the last save was opened from, by whichever of the opens: the file
     /// picker starts there while it exists, so a member who keeps his saves in a folder
     /// of his own is taken back to it. Written on every open, as `scroll_names` is.
@@ -77,6 +85,8 @@ impl Default for SaveEditorSettings {
             portraits: default_portraits(),
             positions_layout: default_positions_layout(),
             team_category: default_team_category(),
+            formation_pictures_folder: "formations".to_owned(),
+            formation_pictures_flat: false,
             last_folder: None,
         }
     }
@@ -171,6 +181,41 @@ mod tests {
         assert_eq!(default_table()["team_category"].as_str(), Some("all"));
         let table: toml::Table = toml::from_str("team_category = \"vgl\"").unwrap();
         assert_eq!(from_table(&table).unwrap().team_category, "vgl");
+    }
+
+    #[test]
+    fn the_formation_pictures_start_in_the_program_s_folder_with_the_grain_and_round_trip() {
+        let defaults = default_table();
+        assert_eq!(
+            defaults["formation_pictures_folder"].as_str(),
+            Some("formations"),
+            "the formations folder, read from the program's folder"
+        );
+        assert_eq!(
+            defaults["formation_pictures_flat"].as_bool(),
+            Some(false),
+            "the grain drawn by default"
+        );
+        let without: toml::Table = toml::from_str("live_aatf = true").unwrap();
+        let read = from_table(&without).unwrap();
+        assert_eq!(
+            (
+                read.formation_pictures_folder.as_str(),
+                read.formation_pictures_flat
+            ),
+            ("formations", false),
+            "a file without the keys reads the defaults"
+        );
+        let table: toml::Table = toml::from_str(
+            "formation_pictures_folder = 'D:\\cup\\pictures'\nformation_pictures_flat = true",
+        )
+        .unwrap();
+        let written = toml::Table::try_from(from_table(&table).unwrap()).unwrap();
+        assert_eq!(
+            written["formation_pictures_folder"].as_str(),
+            Some("D:\\cup\\pictures")
+        );
+        assert_eq!(written["formation_pictures_flat"].as_bool(), Some(true));
     }
 
     #[test]

@@ -28,10 +28,6 @@ mod live_marks;
 mod menus;
 mod multi_aatf;
 mod patch;
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "no menu entry writes a picture yet")
-)]
 mod pictures;
 mod player_list;
 mod portraits;
@@ -239,10 +235,27 @@ pub(crate) struct SaveView {
     /// The Generate dialog's state while it is open (the Player menu's
     /// `settings.toml` and in-game face items); `None` while it is closed.
     generate: Option<generate::Generate>,
-    /// The Pick-a-folder dialog of the Generate dialog and of the pitch's
-    /// Set PES path button (`rfd`, stubbed in tests — the same pattern
-    /// as `open_save_dialog`).
+    /// The Pick-a-folder dialog of the Generate dialog, of the formation
+    /// picture dialog's Browse and of the pitch's Set PES path button
+    /// (`rfd`, stubbed in tests — the same pattern as `open_save_dialog`).
     pick_folder_dialog: generate::PickFolderDialog,
+    /// The formation picture dialog's state while it is open (the Team
+    /// menu's `Save a picture of the formations…`); `None` while it is
+    /// closed.
+    picture: Option<pictures::PictureDialog>,
+    /// The `formation_pictures_folder` setting: `Tool::view` refreshes it
+    /// each frame, a picture's Save sets the folder it wrote to and
+    /// `Tool::view` writes that back, as `positions_layout` is. A relative
+    /// path starts from `exe_dir`.
+    pub(crate) formation_pictures_folder: String,
+    /// The picture dialog's "Without the pitch's grain" box, refreshed
+    /// from and written back to the `formation_pictures_flat` setting as
+    /// `live_aatf` is.
+    pub(crate) formation_pictures_flat: bool,
+    /// The program's own folder, where a picture's default folder sits:
+    /// `Tool::view` sets it on its first frame; empty in the tests'
+    /// view-only frames.
+    pub(crate) exe_dir: PathBuf,
     /// The exe check of the open save's version's PES folder, refreshed from
     /// the context each `Tool::view` frame: while it is `Some` and not
     /// `Found`, the pitch carries the Set PES path button. `None` in the
@@ -515,6 +528,10 @@ impl SaveView {
             team_export_dialog: interchange::default_export_dialog(),
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
+            picture: None,
+            formation_pictures_folder: String::new(),
+            formation_pictures_flat: false,
+            exe_dir: PathBuf::new(),
             pes_exe_check: None,
             pes_folder: None,
             picked_pes_folder: None,
@@ -619,6 +636,7 @@ impl SaveView {
                 self.stat_num = None;
                 self.copy_swap = None;
                 self.generate = None;
+                self.picture = None;
                 self.fix_database = false;
                 self.kit_slots = None;
                 self.live.check.reset();
@@ -837,6 +855,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     menus::fix_database_dialog(ui, view);
     multi_aatf::dialog(ui, view);
     generate::dialog(ui, view);
+    pictures::dialog(ui, view);
     comparator::show(ui, view);
     patch::show(ui, view);
     interchange::show(ui, view);
