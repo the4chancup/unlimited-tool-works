@@ -87,7 +87,7 @@ pub(crate) fn pes_settings(sandbox: &Sandbox, version: u8) -> String {
 /// `pes21_settings` with `pass_through` on.
 pub(crate) fn pass_through_settings(sandbox: &Sandbox) -> String {
     format!(
-        "{}[team-compiler]\npass_through = true\n",
+        "{}[compiler]\npass_through = true\n",
         pes21_settings(sandbox)
     )
 }
@@ -165,7 +165,7 @@ fn an_output_folder_that_cannot_be_created_refuses_compile_before_any_export_is_
     // Absolute, as `pes21_settings` writes the PES path; a file is in the way of its parent.
     let output = format!("{}/blocker/out", sandbox.root.display());
     let settings = format!(
-        "{}[team-compiler]\noutput_folder_path = '{output}'\n",
+        "{}[compiler]\noutput_folder_path = '{output}'\n",
         pes21_settings(&sandbox)
     );
 

@@ -1,6 +1,6 @@
 //! Respells the team folder of every FMDL texture directory below the Fox common directory
 //! (`/Assets/pes16/model/character/common/000/…`) as the Studio format's `team_folder`, in
-//! place, for the Team compiler's Studio-format fixtures, which the compiler refuses with
+//! place, for the Compiler's Studio-format fixtures, which the compiler refuses with
 //! any other folder there (`fmdl_common_path_invalid`). The game's own
 //! `common/sourceimages/` is no team folder and is kept.
 //!

@@ -39,7 +39,7 @@ pub struct HelpSection {
 /// One topic of a chapter: a Markdown body embedded with `include_str!`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HelpTopic {
-    /// Link target within the chapter (`exports` in `[text](team-compiler#exports)`).
+    /// Link target within the chapter (`exports` in `[text](compiler#exports)`).
     pub slug: &'static str,
     /// Title shown in the chapter tree.
     pub title: &'static str,
@@ -50,7 +50,7 @@ pub struct HelpTopic {
 /// Where a link, a search result or a message-id click opens the help window.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct HelpTarget {
-    /// Tool id owning the chapter (`team-compiler`), or the core chapter's id.
+    /// Tool id owning the chapter (`compiler`), or the core chapter's id.
     pub tool: String,
     /// Topic slug within the chapter; `None` opens the chapter's first topic.
     pub topic: Option<String>,

@@ -8,7 +8,7 @@
 //! box its subject drops into, across the icon's foot. The Music player, the Match
 //! tracker, the Export upgrader and the Stadium compiler carry none.
 
-/// The Team compiler's sidebar glyph: a running figure dropping into an open box.
+/// The Compiler's sidebar glyph: a running figure dropping into an open box.
 pub const TEAM_COMPILER: &str = "\u{E68E}";
 /// The Save editor's sidebar glyph: a floppy disk with the editors' pencil.
 pub const SAVE_EDITOR: &str = "\u{E34C}";

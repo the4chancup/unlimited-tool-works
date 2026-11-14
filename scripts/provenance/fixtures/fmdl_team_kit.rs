@@ -1,7 +1,7 @@
 //! Respells every FMDL texture entry naming the kit stand-in in the game's spelling
 //! (`dummy_kit`, `dummy_kit_<rest>`, `dummy_gk_kit`, `dummy_gk_kit_<rest>`, folded) in the
 //! Studio format's (`team_kit…`, `team_gk_kit…`: the stem in lowercase with `dummy_` replaced
-//! by `team_`, the extension kept), in place, for the Team compiler's Studio-format fixtures,
+//! by `team_`, the extension kept), in place, for the Compiler's Studio-format fixtures,
 //! which the compiler refuses in the old spelling (`dummy_kit_name_old`). The game's own
 //! `dummy_nrm`, `dummy_srm` and `dummy_bsm` are no stand-in and are kept.
 //!

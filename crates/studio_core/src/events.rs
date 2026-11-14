@@ -38,7 +38,7 @@ pub struct PipelineEventEnvelope {
     /// The export revision the event was computed from, if any.
     pub export_revision: Option<ExportRevision>,
     /// When the event was made, measured from the run's start: `Some` only on a `Message`
-    /// of a run asked to time its findings (`team-compiler`'s `--timestamps`), `None` on
+    /// of a run asked to time its findings (`compiler`'s `--timestamps`), `None` on
     /// every other event.
     pub made_at: Option<Duration>,
     /// The event itself.
@@ -48,7 +48,7 @@ pub struct PipelineEventEnvelope {
 /// What a pipeline reports while it runs. Tool-neutral: team names, team ids and other
 /// tool-specific identity belong in tool state or in a `Message`'s context, not here.
 ///
-/// `Progress` and `Complete` are placeholder shapes: the Team compiler plan extends them (run strip
+/// `Progress` and `Complete` are placeholder shapes: the Compiler's plan extends them (run strip
 /// metrics, structured compile/deployment outcomes) before the views that need them are built.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PipelineEvent {
@@ -101,7 +101,7 @@ pub enum PipelineEvent {
     // The run strip needs stage, elapsed time, files written, and memory in
     // use — more than `Progress` carries. Extend `Progress` with these fields
     // or add separate `StageChanged`/`MetricsUpdated` events before implementing
-    // the run strip view (see "Toolbar" in the Team compiler plan).
+    // the run strip view (see "Toolbar" in the Compiler's plan).
     /// Coarse run progress: `processed` of `total` units done.
     Progress {
         /// Units finished so far.
@@ -109,10 +109,10 @@ pub enum PipelineEvent {
         /// Units in the run.
         total: usize,
     },
-    // The Team compiler needs separate compile and deployment outcomes (rollback,
+    // The Compiler needs separate compile and deployment outcomes (rollback,
     // "artifacts built but installation failed"). Replace the boolean `success`
     // with structured CompileOutcome/DeploymentOutcome/CancellationOutcome before
-    // implementing the run-result semantics described in the Team compiler plan.
+    // implementing the run-result semantics described in the Compiler's plan.
     // At that point the placeholder folder-only counters below become task/scoped-
     // outcome counts, so typed non-folder tasks are represented in the summary.
     /// The run ended.
@@ -171,7 +171,7 @@ pub enum FolderStatus {
 /// links to it through the tool id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct MessageCode {
-    /// The tool whose catalog defines the code (`team-compiler`).
+    /// The tool whose catalog defines the code (`compiler`).
     pub tool_id: &'static str,
     /// The code within that catalog (`player_number_duplicate`); borrowed for catalog constants,
     /// owned when a code is built at run time.
@@ -389,7 +389,7 @@ mod tests {
     #[test]
     fn same_code_in_two_tools_is_two_identities() {
         let compiler = MessageCode {
-            tool_id: "team-compiler",
+            tool_id: "compiler",
             code: Cow::Borrowed("bad_file"),
         };
         let upgrader = MessageCode {
@@ -400,7 +400,7 @@ mod tests {
         assert_eq!(
             compiler,
             MessageCode {
-                tool_id: "team-compiler",
+                tool_id: "compiler",
                 code: Cow::Owned("bad_file".to_owned())
             }
         );
@@ -423,7 +423,7 @@ mod tests {
     fn message(severity: Severity, code: &'static str, scope: Scope) -> PipelineEvent {
         PipelineEvent::Message(Message {
             code: MessageCode {
-                tool_id: "team-compiler",
+                tool_id: "compiler",
                 code: Cow::Borrowed(code),
             },
             severity,

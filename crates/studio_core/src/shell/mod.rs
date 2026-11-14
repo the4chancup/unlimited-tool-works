@@ -87,7 +87,7 @@ pub const EXE_NAME: &str = exe_name!();
 /// The display name: `app_name!()` where a `concat!` needs the literal (the tools' catalogs
 /// use the macro, so the constant serves the shell alone).
 pub(crate) const APP_NAME: &str = app_name!();
-/// The `Tvers` field of every CPK the suite writes (the Team compiler's output CPK and the
+/// The `Tvers` field of every CPK the suite writes (the Compiler's output CPK and the
 /// pre-Fox face CPKs nested in it, the Save editor's bins CPK): the display name and the
 /// version, naming the tool that wrote the file. One string per release, so a release
 /// compiling the same exports writes the same bytes.

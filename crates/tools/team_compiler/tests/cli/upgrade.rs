@@ -82,7 +82,7 @@ fn dropped(cpk: &str) -> String {
 const PLANNED: &str = concat!(
     "Info dpfilelist_upgrade_planned [Keep] (command=",
     studio_core::exe_name!(),
-    " team-compiler upgrade-dpfl --yes)"
+    " compiler upgrade-dpfl --yes)"
 );
 
 /// The PES 2017 list's entries the official list lacks, but `4cc_40_faces.cpk`, in its order:

@@ -807,7 +807,7 @@ fn a_player_s_own_xml_beside_a_face_link_drops_his_folder_even_under_pass_throug
 
     for settings in [
         pes17(&sandbox),
-        format!("{}[team-compiler]\npass_through = true\n", pes17(&sandbox)),
+        format!("{}[compiler]\npass_through = true\n", pes17(&sandbox)),
     ] {
         let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 

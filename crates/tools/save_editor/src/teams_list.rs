@@ -104,7 +104,7 @@ pub(crate) fn load_working(path: Option<&Path>) -> anyhow::Result<TeamsList> {
 }
 
 /// Writes `list` at `path` through a sibling temporary file renamed over it, so the file
-/// holds the previous list or the whole new one, never a half-written one the Team compiler
+/// holds the previous list or the whole new one, never a half-written one the Compiler
 /// would then read.
 pub(crate) fn write(path: &Path, list: &TeamsList) -> io::Result<()> {
     let temporary = path.with_extension("txt.tmp");

@@ -1,4 +1,4 @@
-//! `apply-patch`: the Team compiler's aesthetics patch applied to a save.
+//! `apply-patch`: the Compiler's aesthetics patch applied to a save.
 
 use std::collections::BTreeMap;
 use std::fs;

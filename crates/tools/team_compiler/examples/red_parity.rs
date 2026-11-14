@@ -1,4 +1,4 @@
-//! Red parity over one library export: the CPKs the Team compiler wrote for an upgraded
+//! Red parity over one library export: the CPKs the Compiler wrote for an upgraded
 //! export, against the CPKs Red wrote for the old one, one report line per entry of Red's
 //! output (and per entry of ours that no Red entry accounts for), each classified under the
 //! tiers and the intentional differences of

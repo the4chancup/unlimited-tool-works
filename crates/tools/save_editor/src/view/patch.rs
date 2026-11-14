@@ -1,5 +1,5 @@
 //! The Apply aesthetics patch panel (the draft's `patchPanel`): an
-//! `egui::Window` that opens the `aesthetics_patch.toml` a Team compiler
+//! `egui::Window` that opens the `aesthetics_patch.toml` a Compiler
 //! run wrote and lists every value it would change in the open save in the
 //! unsaved-changes table's columns (Item, Old value, New value, in the
 //! views' terms), an Item's click selecting the player. The preview is the
@@ -350,7 +350,7 @@ fn contents(ui: &mut egui::Ui, patch: &Patch, revision: u64) -> Option<Action> {
     ui.horizontal_wrapped(|ui| {
         if ui
             .button("Open patch\u{2026}")
-            .on_hover_text("Pick a patch the Team compiler wrote")
+            .on_hover_text("Pick a patch the Compiler wrote")
             .clicked()
         {
             action = Some(Action::Open);

@@ -824,7 +824,7 @@ fn a_collar_below_a_collars_subfolder_is_kept_by_the_lenient_check_and_not_a_col
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
     let settings = format!(
-        "{}[team-compiler]\nstrict_file_type_check = false\n",
+        "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
     );
 
@@ -855,7 +855,7 @@ fn a_file_of_no_model_kind_in_collars_kept_by_the_lenient_check_gets_no_collar_f
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
     let settings = format!(
-        "{}[team-compiler]\nstrict_file_type_check = false\n",
+        "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
     );
 

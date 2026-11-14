@@ -39,7 +39,7 @@ impl RunLog {
         self.formatter = EventLines::new();
         let matches = cli::command()
             .try_get_matches_from([TOOL_ID, "compile"])
-            .expect("`compile` with no arguments is a valid team-compiler command line");
+            .expect("`compile` with no arguments is a valid compiler command line");
         let (sender, events) = unbounded();
         let ctx = ctx.with_events(sender);
         let thread = std::thread::spawn(move || cli::run(&matches, &ctx, running));
@@ -242,7 +242,7 @@ mod tests {
     fn a_refused_compile_logs_the_error_line_then_its_exit_code() {
         let temp = sandbox("gui_run_refused");
         let root = temp.path();
-        let ctx = tool_context(root, "[team-compiler]\ncpk_name = 'a/b'\n");
+        let ctx = tool_context(root, "[compiler]\ncpk_name = 'a/b'\n");
         let mut log = RunLog::default();
         log.start_compile(&ctx, Vec::new);
         finish(&mut log);

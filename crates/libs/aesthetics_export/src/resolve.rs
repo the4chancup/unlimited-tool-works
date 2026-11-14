@@ -39,7 +39,7 @@ pub struct IdentityError {
 
 impl ValidatedAestheticsExport {
     /// `/refs/` resolves to `Referees` without reading the list; anything else
-    /// needs a teams-list row, else `IdentityError` (the Team compiler's
+    /// needs a teams-list row, else `IdentityError` (the Compiler's
     /// `team_name_unknown`).
     pub fn resolve_identity(
         self,

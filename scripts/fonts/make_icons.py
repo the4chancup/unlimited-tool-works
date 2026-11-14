@@ -49,7 +49,7 @@ TIMESTAMP = 3_876_076_800
 # Cu2Qu's tolerance, in font units: well under a pixel at any size the UI draws.
 MAX_ERROR = 1.0
 CODEPOINTS = {
-    "team-compiler": 0xE68E,
+    "compiler": 0xE68E,
     "save-editor": 0xE34C,
     "stadium-compiler": 0xE102,
     "export-upgrader": 0xE52E,

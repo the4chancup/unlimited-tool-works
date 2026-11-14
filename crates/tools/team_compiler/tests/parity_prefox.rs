@@ -522,7 +522,7 @@ fn assert_matches_reference(
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tracer_prefox");
     let output = sandbox.root.join("parity output");
     let settings = format!(
-        "[common]\npes_version = 17\n[team-compiler]\noutput_folder_path = '{}'\n",
+        "[common]\npes_version = 17\n[compiler]\noutput_folder_path = '{}'\n",
         output.display()
     );
     // Nothing to install into: the reference is the CPK itself.

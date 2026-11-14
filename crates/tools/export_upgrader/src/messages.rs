@@ -413,10 +413,10 @@ impl UnmigratedReason {
 /// Every code this tool emits, with its severity and its member-facing
 /// `when`/`effect`: the tool's own, then the structure pass's
 /// (`aesthetics_export::ISSUE_CODES`) in `ISSUE_CODES` order. A structure-pass
-/// row's `when` is the Team compiler's cell word for word (the same condition on
+/// row's `when` is the Compiler's cell word for word (the same condition on
 /// the upgraded export), unless this tool's own table describes the row
 /// (`team_name_unknown`, `source_read_failed`), and its `effect` the upgrade's.
-/// The issue severities are the Team compiler's catalog's, each run-dependent
+/// The issue severities are the Compiler's catalog's, each run-dependent
 /// row taken as for a compile that deploys with pass-through and the strict
 /// file-type check on (the output's check runs with it), and an E/F row as an
 /// Error (`spec/export_upgrader.md` "Message catalog").
@@ -1296,7 +1296,7 @@ mod tests {
             "The input holds nothing an old export holds: no Team Note, none of the old format's folders, no `refs.txt` or `refs list.txt`."
         );
         assert_eq!(row.3, "Nothing is written.");
-        // A structure-pass row takes the Team compiler's `when` cell word for word
+        // A structure-pass row takes the Compiler's `when` cell word for word
         // (pinned here: the same text as `team_compiler`'s catalog row of the code) and
         // the upgrader's own `effect`, unless this tool's own table describes the row
         // (`team_name_unknown`, `source_read_failed`).

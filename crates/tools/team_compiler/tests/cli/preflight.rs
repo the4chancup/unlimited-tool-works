@@ -22,7 +22,7 @@ fn an_invalid_cpk_name_refuses_compile_before_any_export_is_read() {
 
         // This exports root does not exist: reaching it would refuse naming it instead.
         let run = sandbox.run(
-            &format!("[team-compiler]\ncpk_name = \"{name}\"\n"),
+            &format!("[compiler]\ncpk_name = \"{name}\"\n"),
             &["compile", "--no-deploy", &sandbox.arg("no such exports")],
         );
 
@@ -94,16 +94,38 @@ fn a_missing_default_exports_folder_is_created_and_reported_empty() {
 
 // TC-CLI-05
 #[test]
+fn the_settings_table_is_compiler_and_a_team_compiler_table_is_unread() {
+    let sandbox = Sandbox::new("settings_table");
+    // `[team-compiler]` is a table no tool reads, as any unknown tool's is: the invalid
+    // `cpk_name` under it is not seen, and the run proceeds to find no exports.
+    let run = sandbox.run(
+        "[team-compiler]\ncpk_name = \"con\"\n",
+        &["compile", "--no-deploy"],
+    );
+    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
+    let exports = sandbox.root.join("exports");
+    assert_eq!(
+        run.messages(),
+        bundled_bins_then([format!(
+            "Warning no_exports_found [Keep] (folder={})",
+            exports.display()
+        )])
+    );
+
+    // The same value under `[compiler]`, the Compiler's table, refuses the run.
+    let run = sandbox.run(
+        "[compiler]\ncpk_name = \"con\"\n",
+        &["compile", "--no-deploy"],
+    );
+    run.assert_refused(2, &["cpk_name = \"con\""]);
+}
+
+// TC-CLI-05
+#[test]
 fn a_setting_of_the_wrong_type_is_a_configuration_error_naming_it() {
     let sandbox = Sandbox::new("wrong_type");
-    let run = sandbox.run(
-        "[team-compiler]\nstrict_file_type_check = \"yes\"\n",
-        &["check"],
-    );
-    run.assert_refused(
-        2,
-        &["the [team-compiler] settings", "strict_file_type_check"],
-    );
+    let run = sandbox.run("[compiler]\nstrict_file_type_check = \"yes\"\n", &["check"]);
+    run.assert_refused(2, &["the [compiler] settings", "strict_file_type_check"]);
     let Err(error) = &run.result else {
         unreachable!("assert_refused checked the refusal")
     };

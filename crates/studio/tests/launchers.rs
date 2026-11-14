@@ -51,7 +51,7 @@ impl Sandbox {
             root.join("data/settings.toml"),
             format!(
                 "[common]\npes_version = 21\npes_folder_path = '{}'\n\
-                 [team-compiler]\nsavefile_path = '{}'\n",
+                 [compiler]\nsavefile_path = '{}'\n",
                 root.join("PES").display(),
                 root.join("save").join("EDIT00000000").display()
             ),

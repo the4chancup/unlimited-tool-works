@@ -14,7 +14,7 @@ use crate::patch::read_patch;
 
 /// TC-LEG-01's `legacy_ids.toml`: slot 05's boots under 2305, slots 06 and 07's gloves
 /// under 2310.
-const LEGACY_IDS: &[u8] = b"# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n[05]\nboots = 2305\n[06]\ngloves = 2310\n[07]\ngloves = 2310\n";
+const LEGACY_IDS: &[u8] = b"# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n[05]\nboots = 2305\n[06]\ngloves = 2310\n[07]\ngloves = 2310\n";
 
 /// The sandbox's `/gbfg/` export `gbfg Full Legacy` (team 796, its Studio block 3901 to
 /// 3940): slot 05 holds boots, slots 06 and 07 the same gloves model byte for byte, slot

@@ -1,4 +1,4 @@
-//! The Team compiler's message catalog (`spec/team_compiler/messages.md` "Catalog"): each code's
+//! The Compiler's message catalog (`spec/team_compiler/messages.md` "Catalog"): each code's
 //! severity, its member-facing `when`/`effect` for the help's generated Messages topic (started
 //! as the spec's catalog cells and worded for members; the spec's table stays the design
 //! record, dispositions, context fields and the why), and the mapping of the structure pass's
@@ -15,7 +15,7 @@ mod catalog;
 use catalog::CATALOG;
 
 /// The tool's id: its CLI subcommand, its settings section and the owner of its message codes.
-pub(crate) const TOOL_ID: &str = "team-compiler";
+pub(crate) const TOOL_ID: &str = "compiler";
 
 /// The codes the tool reports itself, beside the structure pass's issues (whose codes are the
 /// lib's strings): discovery, routing, identity, planning, processing and output findings.
@@ -1420,7 +1420,7 @@ mod tests {
             assert_eq!(
                 message.code,
                 MessageCode {
-                    tool_id: "team-compiler",
+                    tool_id: "compiler",
                     code: Cow::Borrowed("fpc_conflict")
                 }
             );
@@ -1460,7 +1460,7 @@ mod tests {
             Disposition::DropExport,
             vec![("exports", "refs a, refs b".to_owned())],
         );
-        assert_eq!(message.code.tool_id, "team-compiler");
+        assert_eq!(message.code.tool_id, "compiler");
         assert_eq!(message.code.code, "multiple_ref_exports");
         assert_eq!(message.severity, Severity::Error);
         assert_eq!(message.scope, Scope::Run);

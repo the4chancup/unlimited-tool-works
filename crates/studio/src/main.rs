@@ -49,8 +49,8 @@ use crate::gui_log::{
 /// `icon()` returns.
 const PLANNED: [PlannedTool; 14] = [
     PlannedTool {
-        id: "team-compiler",
-        label: "Team compiler",
+        id: "compiler",
+        label: "The Compiler",
         icon: icons::TEAM_COMPILER,
     },
     PlannedTool {
@@ -122,9 +122,9 @@ const PLANNED: [PlannedTool; 14] = [
 
 /// The registered tools this build shows on the sidebar only as planned entries, grayed
 /// and not clickable: the 0.0.1 preview's two tools whose views come later
-/// (`team-compiler`, `export-upgrader`). Their CLI and help chapter stay; the settings
+/// (`compiler`, `export-upgrader`). Their CLI and help chapter stay; the settings
 /// menu draws no section for them. The list goes when their views land.
-const CLI_ONLY: [&str; 2] = ["team-compiler", "export-upgrader"];
+const CLI_ONLY: [&str; 2] = ["compiler", "export-upgrader"];
 
 /// The settings file's template: the bundle ships this same `data/settings.toml`, comments
 /// included, and a file written fresh starts from it.
@@ -668,7 +668,7 @@ mod tests {
 
     // The settings menu draws a section for the tools with a settings form alone: the
     // Ruleset editor's table holds only what it writes for itself, the Export upgrader's
-    // nothing, and the Team compiler's form is not built yet.
+    // nothing, and the Compiler's form is not built yet.
     #[test]
     fn the_save_editor_alone_has_a_settings_form() {
         let mut with_form: Vec<&str> = tools()
@@ -901,7 +901,7 @@ mod tests {
         // A refused command: the run has a line of its own, and reads no game folder.
         let args = [
             "utw",
-            "team-compiler",
+            "compiler",
             "compile",
             "--no-deploy",
             "--mode",

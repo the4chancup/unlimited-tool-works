@@ -8,7 +8,7 @@ player's name picks one of three screens: **Stats** shows his fields,
 **When it is locked**
 
 A player's look can belong to his team's export: the export's `settings.toml`
-and models decide it, and the Team compiler writes it into the save through the
+and models decide it, and the Compiler writes it into the save through the
 aesthetics patch. A hand edit here would be silently overwritten the next time
 the team is recompiled or patched.
 
@@ -66,7 +66,7 @@ save calls hidden.
 
 For a player hidden by his model's own boots ID (a compile-allocated one such
 as 627), whom the reading calls shown, the inners, undershorts and taping are
-not listed, though the game hides his body all the same. The Team compiler's check knows the player folder's
+not listed, though the game hides his body all the same. The Compiler's check knows the player folder's
 FPC marker, so it reports them for a compiled team.
 
 **Randomize**

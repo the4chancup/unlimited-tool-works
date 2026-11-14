@@ -21,10 +21,10 @@ use crate::status::{Notice, ToolActivity};
 
 /// A tool of the suite. Implemented once per tool crate, by its `Tool` type.
 pub trait StudioTool {
-    /// Stable identifier, used for CLI dispatch and as the settings key (`team-compiler`).
+    /// Stable identifier, used for CLI dispatch and as the settings key (`compiler`).
     fn id(&self) -> &'static str;
 
-    /// Sidebar label (`Team compiler`).
+    /// Sidebar label (`The Compiler`).
     fn label(&self) -> &'static str;
 
     /// The tool's icon glyph (`crate::icons`), drawn at 24 points in the
@@ -76,7 +76,7 @@ pub trait StudioTool {
     }
 
     /// Whether the tool works with the PES version the sidebar's selector holds:
-    /// `true` for a tool whose work is for the selected game (the Team compiler
+    /// `true` for a tool whose work is for the selected game (the Compiler
     /// compiles for it, the Export upgrader upgrades into it). The selector shows
     /// the version only while the active tool does; under one it governs nothing
     /// in (the Save editor follows its open save's version, a ruleset names no
@@ -134,7 +134,7 @@ pub struct PlannedTool {
 #[derive(Debug, thiserror::Error)]
 #[error("{error:#}")]
 pub struct CliError {
-    /// The process exit code: the tool's own mapping (the Team compiler's 2 or 3).
+    /// The process exit code: the tool's own mapping (the Compiler's 2 or 3).
     pub exit_code: u8,
     /// What went wrong, printed as `error: …`.
     pub error: anyhow::Error,

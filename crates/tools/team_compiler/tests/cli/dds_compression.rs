@@ -58,14 +58,14 @@ fn sandbox_with_export(name: &str, face_model: bool) -> Sandbox {
     sandbox
 }
 
-/// Compiles the export with `compile --no-deploy` for PES `version` with the `[team-compiler]`
+/// Compiles the export with `compile --no-deploy` for PES `version` with the `[compiler]`
 /// lines `team_compiler`, in a sandbox of its own, `name`, and asserts the run succeeded. A
 /// PES 21 export holds no face model: the textures are what the tests here compare, and the
 /// `.model` face would only add a conversion to the run.
 fn compile(name: &str, version: u8, team_compiler: &str) -> Sandbox {
     let sandbox = sandbox_with_export(name, version == 17);
     let settings = format!(
-        "{}[team-compiler]\n{team_compiler}",
+        "{}[compiler]\n{team_compiler}",
         pes_settings(&sandbox, version)
     );
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
@@ -169,10 +169,10 @@ fn a_dds_compression_other_than_true_false_or_auto_is_a_configuration_error_nami
     for (name, value) in [("integer", "1"), ("word", "\"yes\"")] {
         let sandbox = Sandbox::new(&format!("dds_compression_invalid_{name}"));
         let settings = format!(
-            "{}[team-compiler]\ndds_compression = {value}\n",
+            "{}[compiler]\ndds_compression = {value}\n",
             pes_settings(&sandbox, 17)
         );
         let run = sandbox.run(&settings, &["check"]);
-        run.assert_refused(2, &["the [team-compiler] settings", "dds_compression"]);
+        run.assert_refused(2, &["the [compiler] settings", "dds_compression"]);
     }
 }

@@ -133,7 +133,7 @@ NODES = [
      "Flags tests whose cited scenario they may not prove; every flag is ruled before a crate's "
      "review."),
     ("parity", "Library parity vs Red", "checks", 5, 1,
-     "A phase that changes the Team compiler or the Export upgrader recompiles the library and "
+     "A phase that changes the Compiler or the Export upgrader recompiles the library and "
      "diagnoses each new difference from Red's output."),
     ("census", "Census", "checks", 5, 2,
      "A format crate's close reads every file of its format on the machine, round trips and "

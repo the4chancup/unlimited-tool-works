@@ -525,7 +525,7 @@ pub(crate) mod tests {
         // The same path written by another tool is a second output, not a
         // replacement.
         recorder.keep_output(
-            "team-compiler",
+            "compiler",
             Path::new("/home/member/out/EDIT00000000"),
             Arc::from(&b"TEAM"[..]),
         );
@@ -642,7 +642,7 @@ pub(crate) mod tests {
             "SHA-256 of b\"NEW_BYTES\""
         );
         assert_eq!(outputs[0]["entry"].as_str(), Some("outputs/0-EDIT00000000"));
-        assert_eq!(outputs[1]["tool"].as_str(), Some("team-compiler"));
+        assert_eq!(outputs[1]["tool"].as_str(), Some("compiler"));
         assert_eq!(
             outputs[1]["path"].as_str(),
             Some("~/out/EDIT00000000"),

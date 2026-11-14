@@ -495,7 +495,7 @@ fn field_max(schema: &VersionSchema, field: TeamField) -> u64 {
 }
 
 /// The shown 8-bit channel for a stored 6-bit one (`v * 255 / 63` rounded,
-/// the widening of 5:6:5 colours the Team compiler uses).
+/// the widening of 5:6:5 colours the Compiler uses).
 pub(super) fn channel_to_show(v: u8) -> u8 {
     u8::try_from((u16::from(v) * 255 + 31) / 63).expect("63 maps to 255")
 }

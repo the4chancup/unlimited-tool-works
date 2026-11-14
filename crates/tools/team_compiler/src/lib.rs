@@ -1,7 +1,7 @@
-//! The Team compiler: Studio-format aesthetics exports compiled to CPK archives.
+//! The Compiler: Studio-format aesthetics exports compiled to CPK archives.
 //!
 //! `Tool` registers the tool with the shell: its window (`view`, over the run log in
-//! `gui_run`), its settings section, its help chapter and its `team-compiler` command line,
+//! `gui_run`), its settings section, its help chapter and its `compiler` command line,
 //! whose preflight refuses an invalid invocation or configuration. `check` runs validation (the
 //! structure pass, then the deep pass over file contents) on every export; `compile` runs the
 //! same validation, plans the kept exports' face and kit tasks, processes them and writes the
@@ -41,7 +41,7 @@ use studio_core::{
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
 
-/// The Team compiler, as registered with the `studio` binary. Its window state is
+/// The Compiler, as registered with the `studio` binary. Its window state is
 /// the run log — the `compile` the Compile button started, and its lines — and the
 /// log panel's own view state.
 pub struct Tool {
@@ -97,7 +97,7 @@ impl StudioTool for Tool {
     }
 
     fn label(&self) -> &'static str {
-        "Team compiler"
+        "The Compiler"
     }
 
     fn icon(&self) -> &'static str {
@@ -115,7 +115,7 @@ impl StudioTool for Tool {
     }
 
     fn settings_view(&mut self, ui: &mut egui::Ui, _ctx: &ToolContext) {
-        ui.label("The Team compiler's settings are not built yet.");
+        ui.label("The Compiler's settings are not built yet.");
     }
 
     fn default_settings(&self) -> toml::Table {
@@ -124,7 +124,7 @@ impl StudioTool for Tool {
 
     fn help(&self) -> HelpSection {
         HelpSection {
-            title: "Team compiler",
+            title: "The Compiler",
             topics: vec![HelpTopic {
                 slug: "command-line",
                 title: "Running from a terminal",
@@ -154,10 +154,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_tool_is_registered_as_the_team_compiler() {
+    fn the_tool_is_registered_as_the_compiler() {
         let tool = Tool::new();
-        assert_eq!(tool.id(), "team-compiler");
-        assert_eq!(tool.label(), "Team compiler");
+        assert_eq!(tool.id(), "compiler");
+        assert_eq!(tool.label(), "The Compiler");
         assert_eq!(
             tool.default_settings()["cpk_name"].as_str(),
             Some("4cc_99_test")

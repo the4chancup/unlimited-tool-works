@@ -96,7 +96,7 @@ fn loose_mode_records_the_inferred_ids() {
     assert_eq!(
         fs::read_to_string(sandbox.path("a Full Spring/legacy_ids.toml")).unwrap(),
         concat!(
-            "# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n",
+            "# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n",
             "[03]\nboots = 128\n",
             "[05]\nboots = 130\n",
         )

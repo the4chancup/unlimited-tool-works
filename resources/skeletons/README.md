@@ -24,7 +24,7 @@ Pre-Fox games ship no face or hand skeleton files; the pre-Fox targets use pes19
 
 `boots.skl` is the game's real four-bone boots skeleton (`sk_foot_*`, `dsk_toe_*`), kept for
 reference. It is **not** the compiler's `boots.skl` template: that is `body.skl` renamed, because 4cc
-exports put full-body models in the boots folder (see "SKL pairing" in the Team compiler plan).
+exports put full-body models in the boots folder (see "SKL pairing" in the Compiler's plan).
 The boots Konami ships (`dt33_g4.cpk`, `Asset/model/character/boots/<id>/#Win/boots.fpk`) carry
 a six-bone copy of it, `dsk_foot_*` added at `sk_foot_*`'s pose; its pose is the same on PES
 2017's stock `.model` boots (measured 2026-10-09, to 0.0000) and 7° off the body table on every

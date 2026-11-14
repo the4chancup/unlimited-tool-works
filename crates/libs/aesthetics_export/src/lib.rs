@@ -4,7 +4,7 @@
 //! each structural issue's disposition, and projects the sanitized export the
 //! consumers compile or repair from.
 //!
-//! Five consumers (Team compiler, Export upgrader, Kit config editor, Refs
+//! Five consumers (the Compiler, Export upgrader, Kit config editor, Refs
 //! arranger, Team Creator) read this crate, so its layout is organized by the
 //! progression stage a consumer can stop at.
 

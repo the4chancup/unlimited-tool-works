@@ -82,7 +82,7 @@ pub struct Ruleset {
     pub suggestions: Vec<String>,
 }
 
-/// Every squad's size in players, the same for every ruleset: the Team compiler numbers a
+/// Every squad's size in players, the same for every ruleset: the Compiler numbers a
 /// team's players 01 to 23 and gives each team 23 boots and gloves IDs, so a squad of
 /// another size could never be compiled.
 pub const SQUAD_SIZE: u8 = 23;

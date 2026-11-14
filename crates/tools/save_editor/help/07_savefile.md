@@ -2,7 +2,7 @@ The **Savefile** menu works on the whole save:
 
 - **Comparator…** opens a window comparing the open save against a second save
   (see **The window**).
-- **Apply aesthetics patch…** opens a panel for a patch the Team compiler wrote.
+- **Apply aesthetics patch…** opens a panel for a patch the Compiler wrote.
 - **Output rosters to TSV…** writes the roster sheet, the file members paste
   into a spreadsheet to check a cup's teams.
 - **Multi-team AATF…** checks a range of teams under the AATF ruleset picked on
@@ -12,7 +12,7 @@ The **Savefile** menu works on the whole save:
 **Applying an aesthetics patch**
 
 The panel's **Open patch…** reads the patch; a patch made for another PES
-version, or by a Team compiler that numbers custom boots and gloves differently
+version, or by a Compiler that numbers custom boots and gloves differently
 from the one in this program, is refused and the save is left alone. The panel
 then lists every value the patch would change, player by player, with
 the old value and the new one; click a row to select that player.

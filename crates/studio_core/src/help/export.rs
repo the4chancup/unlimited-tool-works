@@ -141,7 +141,7 @@ mod tests {
 
     fn section() -> HelpSection {
         HelpSection {
-            title: "Team compiler",
+            title: "The Compiler",
             topics: vec![
                 HelpTopic {
                     slug: "command-line",
@@ -175,7 +175,7 @@ mod tests {
     fn a_chapter_prints_its_topics_then_the_messages_table() {
         assert_eq!(
             chapter_markdown(&section()),
-            "# Team compiler\n\
+            "# The Compiler\n\
              \n\
              ## Running from a terminal\n\
              \n\

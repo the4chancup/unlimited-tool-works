@@ -320,7 +320,7 @@ fn a_savefile_path_naming_a_missing_file_is_a_warning_and_the_patch_is_written()
     motion_export(&sandbox, "co Full Motions");
     let missing = sandbox.root.join("save/MISSING");
     let settings = format!(
-        "{}[team-compiler]\nsavefile_path = '{}'\n",
+        "{}[compiler]\nsavefile_path = '{}'\n",
         pes21_settings(&sandbox),
         missing.display()
     );
@@ -782,7 +782,7 @@ fn a_deployed_run_the_game_runs_vanilla_leaves_the_savefile_alone() {
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
     let expected = format!(
-        "Warning dpfilelist_cpk_missing [Keep] (path={}, files=4cc_62_midcup.cpk, command={} team-compiler upgrade-dpfl)",
+        "Warning dpfilelist_cpk_missing [Keep] (path={}, files=4cc_62_midcup.cpk, command={} compiler upgrade-dpfl)",
         sandbox.display("PES/download"),
         studio_core::EXE_NAME
     );

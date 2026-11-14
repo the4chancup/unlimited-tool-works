@@ -1,7 +1,7 @@
 # Fallback bins
 
-The bases the Team compiler builds a bin on when no installed CPK supplies one (a from-scratch
-compile; Team compiler plan, `pipeline.md` "Bins accumulation"). They are embedded in the Studio
+The bases the Compiler builds a bin on when no installed CPK supplies one (a from-scratch
+compile; the Compiler's plan, `pipeline.md` "Bins accumulation"). They are embedded in the Studio
 binary.
 
 | File | Used for | Source | SHA-256 (first 12) |
@@ -30,7 +30,7 @@ The `UniColor.bin` base holds two kinds of record. Teams 701 to 771 (71 records)
 cup's kits: a count of 3 to 10, entries in ascending kit number, unused entries after them.
 The other 750 are the base game's placeholder for a team with no kit colors: a count of 2 over
 ten identical entries, kit number 0, icon 0, both colors white (`00 00 FF FF FF FF FF FF`). The
-Team compiler reads a placeholder as holding no kit (Team compiler plan, `pipeline.md` "Bins
+Compiler reads a placeholder as holding no kit (the Compiler's plan, `pipeline.md` "Bins
 accumulation"). Measured on 2026-10-04.
 
 All integers are little-endian. The cup's own files in each install's `4cc_08_bins.cpk` have
@@ -43,6 +43,6 @@ compiler supports.
 Some installed `TeamColor.bin` records are corrupt: their colors were written from the
 record's first byte, over the ID and the count. The last VGL's file has three (teams 799, 829
 and 831, nine color bytes each), the older PES 21 cup's had one (team 761, twelve bytes). What
-wrote them is not known; Red writes a team's colors after the header. The Team compiler sets
-every record's header on every run (Team compiler plan, `pipeline.md` "Bins accumulation"), so
+wrote them is not known; Red writes a team's colors after the header. The Compiler sets
+every record's header on every run (the Compiler's plan, `pipeline.md` "Bins accumulation"), so
 a bin it writes has none.

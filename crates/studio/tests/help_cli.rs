@@ -23,7 +23,7 @@ fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).into_owned()
 }
 
-/// The Team compiler's last catalog row (`notes_encoding_invalid`).
+/// The Compiler's last catalog row (`notes_encoding_invalid`).
 const NOTES_ENCODING_INVALID: &str = "| `notes_encoding_invalid` | Error | The root `notes.txt` is not valid UTF-8. | The note is left out; the export otherwise compiles. |";
 /// The Export upgrader's last catalog row: the same code, the upgrader's own effect.
 const UPGRADER_NOTES_ENCODING_INVALID: &str = "| `notes_encoding_invalid` | Error | The root `notes.txt` is not valid UTF-8. | The run is not clean, so nothing is written. |";
@@ -31,10 +31,10 @@ const UPGRADER_NOTES_ENCODING_INVALID: &str = "| `notes_encoding_invalid` | Erro
 // ST-HELP-04
 #[test]
 fn a_chapter_prints_its_markdown_ending_with_the_messages_table() {
-    let output = studio(&["help", "team-compiler"]);
+    let output = studio(&["help", "compiler"]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
     let stdout = stdout(&output);
-    assert!(stdout.starts_with("# Team compiler\n"), "{stdout}");
+    assert!(stdout.starts_with("# The Compiler\n"), "{stdout}");
     assert!(stdout.contains("## Running from a terminal"), "{stdout}");
     assert!(
         stdout.contains(
@@ -68,12 +68,12 @@ fn the_export_writes_one_markdown_file_per_chapter() {
     assert_eq!(
         files,
         [
+            "compiler.md",
             "export-upgrader.md",
             "first-run.md",
             "ruleset-editor.md",
             "save-editor.md",
             "setting-up.md",
-            "team-compiler.md",
             "updates.md",
             "whats-new.md"
         ]
@@ -81,7 +81,7 @@ fn the_export_writes_one_markdown_file_per_chapter() {
 
     // Each file is what `help <id>` prints; each tool's ends with its last catalog row.
     let last_rows = [
-        ("team-compiler", NOTES_ENCODING_INVALID),
+        ("compiler", NOTES_ENCODING_INVALID),
         (
             "save-editor",
             "| `fpc_gloves_checkbox_winter_gloves` | Warning | Outfielder gloves is Worn in winter with Gloves ID 0, so the player wears winter gloves in winter conditions. | Nothing is changed for you. Set Outfielder gloves to Off, or give the player a gloves ID, if that is not wanted. |",
@@ -224,13 +224,13 @@ fn no_member_visible_text_names_4cc_studio() {
     );
     let compiler = &pages
         .iter()
-        .find(|(source, _)| source == "team-compiler.md")
-        .expect("the export wrote the Team compiler's page")
+        .find(|(source, _)| source == "compiler.md")
+        .expect("the export wrote the Compiler's page")
         .1;
     // A Markdown page cannot follow the platform, so the pages spell `UTW` on both.
     assert!(
-        compiler.contains("UTW team-compiler compile"),
-        "the Team compiler's page names the executable"
+        compiler.contains("UTW compiler compile"),
+        "the Compiler's page names the executable"
     );
 }
 

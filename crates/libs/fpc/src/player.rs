@@ -63,7 +63,7 @@ impl HideIds {
         boots: 55,
         gloves: 11,
     };
-    /// The band a boots hide ID is valid in: above 100 the Team compiler
+    /// The band a boots hide ID is valid in: above 100 the Compiler
     /// allocates its per-team blocks, so an ID there would be another
     /// player's real model.
     pub const BOOTS: RangeInclusive<u16> = 1..=100;
@@ -101,7 +101,7 @@ pub enum HideIdsError {
     /// `fpc_hide_boots_id` outside 1 to 100.
     #[error(
         "fpc_hide_boots_id = {0}: must be 1 to 100 \
-         (above 100 the Team compiler allocates its own IDs)"
+         (above 100 the Compiler allocates its own IDs)"
     )]
     Boots(u16),
     /// `fpc_hide_gloves_id` outside 11 to 100.

@@ -1408,7 +1408,7 @@ fn write_common_hair_player(sandbox: &Sandbox) {
 /// Settings compiling `4cc_62_midcup` for PES 21 with the sandbox's PES folder.
 fn midcup_62_settings(sandbox: &Sandbox) -> String {
     format!(
-        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes21_settings(sandbox)
     )
 }

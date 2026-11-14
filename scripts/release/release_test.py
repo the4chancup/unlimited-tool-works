@@ -274,8 +274,8 @@ class Pure(unittest.TestCase):
         stems = re.findall(r'^\s*\("([a-z0-9]+)",', blocks, re.MULTILINE)
         self.assertIn("autumn26", stems, "the stems are read from the table")
         self.assertIn(settings["save-editor"]["aatf_ruleset"], stems)
-        self.assertIs(settings["team-compiler"]["multicpk_mode"], False)
-        self.assertEqual(settings["team-compiler"]["cpk_name"], "4cc_99_test")
+        self.assertIs(settings["compiler"]["multicpk_mode"], False)
+        self.assertEqual(settings["compiler"]["cpk_name"], "4cc_99_test")
 
     def test_expected_entries(self) -> None:
         self.assertEqual(

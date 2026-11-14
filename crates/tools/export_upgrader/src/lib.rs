@@ -1,5 +1,5 @@
 //! The Export upgrader: exports in the old (AET) layout migrated to the Studio
-//! player-folder format the Team compiler reads (`spec/export_upgrader.md`).
+//! player-folder format the Compiler reads (`spec/export_upgrader.md`).
 //!
 //! `Tool` registers the tool with the shell: its help chapter and its
 //! `export-upgrader` command line. The window is a later phase's; until then

@@ -1,4 +1,4 @@
-//! The Team compiler's command line (`spec/team_compiler/settings.md` "CLI"): a parsed command turned
+//! The Compiler's command line (`spec/team_compiler/settings.md` "CLI"): a parsed command turned
 //! into a run, refused before any export is read when its invocation or configuration is
 //! invalid, and the run's outcome turned into the exit code scripts read.
 
@@ -117,12 +117,12 @@ pub(crate) struct RunInputs {
     pub(crate) timestamps: bool,
 }
 
-/// The `team-compiler` subcommand and its own subcommands.
+/// The `compiler` subcommand and its own subcommands.
 pub(crate) fn command() -> Command {
     TeamCompilerCommand::augment_subcommands(Command::new(TOOL_ID).subcommand_required(true))
 }
 
-/// Runs a parsed `team-compiler` command: the preflight, then the command. `running` is the
+/// Runs a parsed `compiler` command: the preflight, then the command. `running` is the
 /// running-PES probe `compile`'s savefile step asks: the real process list, or a test's.
 pub(crate) fn run(
     matches: &clap::ArgMatches,
@@ -639,7 +639,7 @@ mod tests {
 
     fn parse(args: &[&str]) -> TeamCompilerCommand {
         let matches = command()
-            .try_get_matches_from(std::iter::once("team-compiler").chain(args.iter().copied()))
+            .try_get_matches_from(std::iter::once("compiler").chain(args.iter().copied()))
             .unwrap();
         TeamCompilerCommand::from_arg_matches(&matches).unwrap()
     }
@@ -670,17 +670,17 @@ mod tests {
         assert!(args.edit_mode_closed);
         assert!(
             command()
-                .try_get_matches_from(["team-compiler", "check", EDIT_MODE_CLOSED_FLAG])
+                .try_get_matches_from(["compiler", "check", EDIT_MODE_CLOSED_FLAG])
                 .is_err()
         );
     }
 
     #[test]
     fn a_command_is_required_and_check_takes_no_mode() {
-        assert!(command().try_get_matches_from(["team-compiler"]).is_err());
+        assert!(command().try_get_matches_from(["compiler"]).is_err());
         assert!(
             command()
-                .try_get_matches_from(["team-compiler", "check", "--mode", "normal"])
+                .try_get_matches_from(["compiler", "check", "--mode", "normal"])
                 .is_err()
         );
     }

@@ -1,4 +1,4 @@
-//! `aesthetics_patch.toml`: the file the Team compiler writes to its output
+//! `aesthetics_patch.toml`: the file the Compiler writes to its output
 //! folder with its CPKs, holding every compiled player's resolved look —
 //! his `settings.toml` and `ingame_face.toml` joined into the one
 //! `[appearance]` table, beside the resolved model IDs and a `write_names`
@@ -26,7 +26,7 @@ use crate::settings_toml::{
 #[cfg(test)]
 mod tests;
 
-/// The version of the Team compiler's boots and gloves ID allocation scheme. A patch from
+/// The version of the Compiler's boots and gloves ID allocation scheme. A patch from
 /// another scheme is refused.
 pub const ALLOCATION_SCHEME_VERSION: u32 = 1;
 
@@ -35,7 +35,7 @@ pub const ALLOCATION_SCHEME_VERSION: u32 = 1;
 const MODEL_ID_MAX: u16 = 16383;
 
 /// The first line of a generated `aesthetics_patch.toml`.
-const HEADER: &str = "# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch\n";
+const HEADER: &str = "# aesthetics_patch.toml, written by the Compiler: apply it with the Save editor's Savefile > Apply aesthetics patch\n";
 
 /// `aesthetics_patch.toml`: the compiler's resolved savefile writes for its compiled players.
 #[derive(Debug, Clone, PartialEq)]
