@@ -17289,3 +17289,21 @@ while `models/` says what the folder holds. The Compiler still writes the files 
 inside the CPK, which is where the game looks. Following the rule for every old layout, the
 Compiler refuses an export that still has `#Win/`, and the Export upgrader renames the folder
 once.
+
+## 2026-11-14: a stadium export keeps the Fox tool's layout, open to pre-Fox stadiums
+
+A stadium export keeps the Fox stadium compiler's folders (`plans/stadium_compiler.md`
+"Stadium export format"), spelled as that tool spells them. So the model folder is `Models/`,
+capitalized like its neighbours `Textures/` and `Pitch/` (and like the billboard patterns'
+own `Models/`). Lookup ignores letter case, as a team export's does, so `models/` reads the
+same. Where the old tool was loose, the Compiler is strict:
+- the picture and the audience folder each have one name;
+- a folder holds loose files or premade archives, not both;
+- the stadium ID is rewritten in every file, every time. The old tool skipped the rewrite
+  when its scan found no other ID.
+
+Pre-Fox stadiums fit the same export. The engine follows from `Models/` (`.fmdl` or
+`.model`). A pre-Fox component folder holds the game's own tree for the component, and only
+the stadium's own ID is rewritten, because a pre-Fox `.mtl` may name another stadium's
+textures. Nothing pre-Fox is built until a cup goes back to PES 2015-2017: pre-Fox
+support is second-class.
