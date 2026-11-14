@@ -23,8 +23,7 @@ is in `AGENTS.md` ("Working documents").
 4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon, from 2026-11-15), the maintainer's looks ("Pending looks") and the bundle's
-   hand-over to VGL's organizer.
+   (Carbon, from 2026-11-15) and the maintainer's looks ("Pending looks").
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1981,38 +1980,12 @@ briefs, review loops, gates and mutation runs as for any step.
     onto a sentence it does not support), corrected by the lead. For the full pass: one
     crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
     with the sentence it documents"; the lead reads each edit against the code
-  - [ ] 0.0.2-lib the library rerun against checkpoint `p11`
-    (`scripts/library_parity/README.md` "A rerun, in order"; tag `002`, binaries built
-    from `24fa2b40`) -> verify: `regress_check.py p11 002` and `checkpoint.py diff p11 002`,
-    every change traced to a commit since `3c512628` or made a step here
-    - [x] the run 2026-11-13: census 649 inputs, of which 58 are no longer on disk (the
-      maintainer removed `Lab\VGL26`; scratch copies under `Downloads` and `D:`), 586 the
-      same outcome, 5 changed; checkpoint `002` holds 422 clean inputs, 419 in both, 120
-      differing (`.tmp/library_parity/checkpoints/diff_p11_002.txt`). Traced:
-      63 inputs whose faces, boots, gloves and portraits moved by one or two team IDs, with
-      their TeamColor, UniColor and UniformParameter bins, and `egg_Configs.7z` now
-      `team_name_unknown`: the embedded list carries VGL27's allocation (`6268280c`);
-      404 model packages (`face.fpk`, `boots.fpk`, `glove.fpk`) a few bytes larger in the
-      other inputs: the upgrader writes the short Common forms into an `.fmdl` (`a2b948c6`;
-      diagnosed on `Teams_Guest\adv\adv aesthetic export` with both checkpoints' binaries:
-      the tree the old upgrader wrote compiles byte for byte the same with both compilers,
-      and the new upgrader's `hair_high.fmdl` gains `common_folder/`);
-      `JP Winter 2025 Aesthetic Export` (folder and `.7z`) builds 7 more entries, its
-      `texture_not_div4` gone (`33e5d5a1`)
-    - [x] traced 2026-11-13, both meant by `e6c672e4` (poc12 slice 1, after the `p11`
-      checkpoint): four JP inputs went from the Error `unmigrated_content` at
-      `Boots/k0860 - Get out of JP/u0XXXp2.dds` to a clean run with `leftover_dropped` on
-      `u0731p2.dds`, because the copies-differing-only-in-the-token rule stopped needing a
-      team ID (`kit_magic.rs` `renamed_winner`; `spec/export_upgrader.md` "Copies differing
-      only in the token" names this very folder and why the `XXX` copy is the one the cup
-      showed); one Discord-backup archive gained two `common_reference_kept` warnings on
-      `common/mlpol/sourceimages/`, because any folder but `sourceimages` after the Fox
-      Common directory now counts as the team's (`materials/mod.rs` `fox_common_folder`),
-      where only a three-character one did
-    - [ ] the respelled `.fmdl` still holds the long path
-      (`/Assets/pes16/model/character/common/sourceimages/`) beside the new
-      `common_folder/`: check whether a texture still uses it or the string is left
-      unused in the table (harmless in game either way; the file is 31 bytes larger)
+  - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
+    (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
+    traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
+    forms in an `.fmdl` (`a2b948c6`), `texture_not_div4` gone (`33e5d5a1`), and two
+    upgrader rules (`e6c672e4`). The respelled `.fmdl` keeps the long Common path as a
+    string no texture names (checked 2026-11-14; the `p11` file holds one such string too)
   - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
     DECISIONS "Update now waits for 0.0.2", "Update now's dialog: what the plan left open"),
     postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand
