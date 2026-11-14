@@ -1205,8 +1205,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   kit"); after 0.0.2-presentation. Left: the scenarios, then the code
 - [ ] 8.49 the Save editor's Squad screen (the maintainer, 2026-11-14): one player per row,
   one stat or card per column, edited in place; it takes a larger window's extra width and
-  height (`plans/save_editor.md` "The Squad screen, still to be drafted"). Left: the draft,
-  with the maintainer; no release named yet
+  height (`plans/save_editor.md` "The Squad screen"). Drafted with the maintainer
+  2026-11-14 (`docs/prototypes/tools/save_editor.js` `squadView`). Left: the acceptance
+  scenarios, then the code; no release named yet
 
 ### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)
 

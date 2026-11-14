@@ -5172,7 +5172,7 @@ function playerColumns(p, team) {
       h("div", { class: "col pcol" }, skillsPanel(p, team), asidePanel(p), comStylesPanel(p)),
       abilityPanel(p)));
 }
-// ---- The Squad screen (plans/save_editor.md "The Squad screen, still to be drafted") ----
+// ---- The Squad screen (plans/save_editor.md "The Squad screen") ----
 // The team in one table: a row per player in roster order, a column per value of the Stats
 // screen under its group's heading. The slot, the name and the registered position stay at
 // the left while the rest scrolls sideways, and the two heading rows stay at the top while

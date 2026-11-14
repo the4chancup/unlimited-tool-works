@@ -61,8 +61,7 @@ their size:
 - the Save editor's player list takes the extra height; its width stays;
 - the log dock (Log panel) spans the window's width and keeps its 180-point height.
 
-The Save editor's Squad screen (`plans/save_editor.md` "The Squad screen, still to be
-drafted") and the Export upgrader's Files look, whose two columns share the extra width
+The Save editor's Squad screen (`plans/save_editor.md` "The Squad screen") and the Export upgrader's Files look, whose two columns share the extra width
 equally, show more columns; the Team compiler's export grid and the Ruleset editor's section
 rail and preview show more rows.
 

@@ -1081,7 +1081,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   2019's, and the status bar warning that said otherwise explained a control the editor had
   no use for; with nothing read from the selector, there is nothing left to warn about.
 
-**The Squad screen, still to be drafted.** A screen showing a whole team in one table, one
+**The Squad screen.** A screen showing a whole team in one table, one
 player per row and one stat or card per column, gives a view of the team at a glance and
 lets a member edit several players' stats quickly, without opening each player. Its rows
 and columns scroll, so a window larger than the default shows more of its columns, with
@@ -1089,7 +1089,8 @@ less sideways scrolling (`plans/core/gui.md` "Shell layout", "A window larger th
 default"). It is the screen toggle's fourth screen, `Squad`, named for what it shows, the
 team's players, as the other three are; `Roster` would read as the Savefile menu's roster
 sheet. On it the player list is hidden, since the table shows the same players: only the
-Team selector stays, on the row of the screen toggle, and picks the team the table shows.
+Team selector stays, on the row of the screen toggle, and picks the team the table shows; it
+lists no All teams there, since the table shows one team.
 
 - Switching to Squad sets the Team selector to the selected row's team: the selected
   player's team, or the selected team row.
@@ -1097,7 +1098,41 @@ Team selector stays, on the row of the screen toggle, and picks the team the tab
   it showed All teams before Squad was picked. Otherwise it keeps the team the table
   showed last.
 
-Its layout is drafted with the maintainer before it is planned further.
+The draft is `docs/prototypes/tools/save_editor.js` (`squadView`).
+
+- **Columns.** Every value of the Stats screen, under its group's heading in the Stats
+  screen's order: General info, Other stats (at the game's numbers), Playable positions,
+  Ability stats, Skills, the ruleset's Tricks or Free cards, COM playing styles. A value the
+  save's version does not have gets no column, rather than a disabled one, since a column of
+  dashes would take the room the table exists to save. The slot, the name and the registered
+  position stay at the left, and the two heading rows at the top, while the rest scrolls both
+  ways. The name is not edited here, but on Stats.
+- **Headings** read upwards, so a column is only as wide as its values, and give their full
+  name in a tooltip that opens at once, since a member scanning for a column cannot wait for
+  egui's usual delay. A position's heading is its code.
+- **Showing columns.** A Show row over the table's right end has a box per group, then All
+  and None, then "Only the cards each player has". That mode replaces the card groups'
+  columns with each player's cards in order, the n-th card of every player in the n-th
+  column, so they line up and each column is as wide as its widest card; it is for reading
+  only. The boxes are a tool setting, as the positions' layout is.
+- **Cells.** A rating is its letter: A on green, B on the selection colour, C plain and weak,
+  so the playable positions stand out. A card is a checkbox, Captain a radio (a team has
+  one), Stronger foot and hand L or R.
+- **Editing, as in a spreadsheet.** Arrows and Tab move; Shift with an arrow, Shift+click or
+  a drag selects a block. Typing replaces the value, and Enter or a move writes it into
+  every selected cell that takes it, as one undo step: 88 typed over abilities and positions
+  changes the abilities. Escape drops what was typed. Space flips the selected cards to the
+  opposite of the active cell's. Enter or a double-click on Registered position or Playing
+  style opens its list, whose pick goes into the selected cells of that column.
+- **Sorting.** A heading's click sorts the rows by its column, greatest first (▼); a second
+  click sorts smallest first (▲), a third goes back to the roster's order. Cards held sorts
+  by how many. Ties keep the roster's order, and the sort moves no record. The sorted column
+  is faintly lighter from its heading down, its triangle upright under the heading.
+- **Live AATF.** A cell whose value breaks the ruleset carries the rule's mark (error,
+  warning or suggestion) faint behind its value, so the table keeps its size, and hovering
+  the cell lists the rules. A rule on a whole group marks the cells that break it (the A and
+  B ratings, the cards held). A rule no shown cell carries (a stat total, a name's colours, a
+  hidden group's rule) marks the name, at its cell's right end.
 
 Improvements policy: each of the above exists to remove a real friction point
 (finding players, reordering, fear of misclicks). No animations-for-the-sake-of-it.

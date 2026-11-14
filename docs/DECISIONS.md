@@ -17559,3 +17559,17 @@ window larger than the default"). This narrows the entry before it.
 
 Why: the Gameplan screen's starter lists are scroll areas, but only become scrollable below
 the default height, since a roster never grows; grown, they would show empty room.
+
+## 2026-11-14: the Squad screen's design, drafted with the maintainer (maintainer)
+
+Decision: the Squad screen holds every Stats value as a column under its group's heading, the
+slot, name and registered position frozen at the left; headings read upwards with tooltips that
+open at once; a Show row hides or shows each group (All, None) and lists only the cards each
+player has, in aligned columns; editing works as in a spreadsheet, a typed value going into
+every selected cell that takes it as one undo step; a heading's clicks sort greatest first,
+smallest first, then back to the roster's order, the sorted column tinted; Live AATF's marks
+lie faint behind the values they flag (`plans/save_editor.md` "The Squad screen").
+
+Why: the screen is for a whole team at a glance and for quick edits across players, so it shows
+everything a player's Stats screen does, takes keys a spreadsheet user already knows, and marks
+offenders without widening a cell.
