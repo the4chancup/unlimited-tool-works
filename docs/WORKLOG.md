@@ -2072,17 +2072,6 @@ briefs, review loops, gates and mutation runs as for any step.
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
     - [ ] a slice per tool
-  - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
-    docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
-    reference text). Waits for the maintainer, who decides after the weekly usage reset
-    (Thursday 01:00) whether SWE-2 or Opus runs it. The trial, 2026-11-13: SWE-2 on `fpc`
-    and `vtree` (branch `text/docstrings`, worktree `4cc-studio-temp/docstrings`, one commit,
-    not merged; brief and report in its `.tmp/docstrings/`): 104 blocks read, 15 edited,
-    mostly chained sentences split, three pointers given their file, one stale claim found
-    and reported (`StripStyle` "as booleans"); one slip in fifteen (a source pointer moved
-    onto a sentence it does not support), corrected by the lead. For the full pass: one
-    crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
-    with the sentence it documents"; the lead reads each edit against the code
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
@@ -2767,6 +2756,17 @@ briefs, review loops, gates and mutation runs as for any step.
   (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
   for a player's stats, 143 for a preset. A form without the unset keys needs a writer
   option in `pes_savefile`'s `team_toml`
+- [ ] after 0.0.2 (the maintainer, 2026-11-15): docstrings: every doc comment of the codebase reread under the Shakespeare rule's
+  docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
+  reference text). The maintainer decides whether SWE-2 or Opus runs it. The trial,
+  2026-11-13: SWE-2 on `fpc`
+  and `vtree` (branch `text/docstrings`, worktree `4cc-studio-temp/docstrings`, one commit,
+  not merged; brief and report in its `.tmp/docstrings/`): 104 blocks read, 15 edited,
+  mostly chained sentences split, three pointers given their file, one stale claim found
+  and reported (`StripStyle` "as booleans"); one slip in fifteen (a source pointer moved
+  onto a sentence it does not support), corrected by the lead. For the full pass: one
+  crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
+  with the sentence it documents"; the lead reads each edit against the code
 - [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
   2026-11-12: "The draft should ideally use a palette like the app does"): every colour
   that follows the theme is a variable of the host page named as `studio_core`'s
