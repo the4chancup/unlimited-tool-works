@@ -17340,3 +17340,15 @@ Why: the draft opens a dialog, where the editor drew the start page as a full pa
 also shows Autumn 26 open behind the dialog, which the editor does not copy. A document opened
 from a template counts as unsaved, so the tool would ask about changes nobody made every time
 it closed. Counting that one template as saved would set it apart from every other.
+
+## 2026-11-14: the Ruleset editor's first start page is a page that looks like a dialog (maintainer)
+
+Decision: this replaces the entry above of the same day. When the tool opens with no document,
+the start page is a page, not a dialog: its entries sit in the middle of the tool's area, in a
+titled frame that looks like the dialog, with no dimmed backdrop and no Close. Over an open
+document, File's New from template… still opens them as a dialog, with Close
+(`plans/ruleset_editor.md` "Start page", RE-GUI-01).
+
+Why: a dialog blocks the sidebar too, so a member who opened the Ruleset editor by mistake
+could not switch to another tool without first picking a ruleset. A dialog that leaves the
+sidebar usable would serve as well, but egui's modal dims and blocks the whole window.

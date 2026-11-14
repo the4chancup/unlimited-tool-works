@@ -18,6 +18,7 @@
 // once, at registration): bleed makes the central panel a column the skeleton fills, and the
 // host's 24px status-bar rule would shrink the view's bottom bar under it.
 const RULESET_CSS = `
+.start-page { min-height: 100%; display: flex; align-items: center; justify-content: center; }
 .center.bleed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 #rail { width: 150px; }
 .data.hidden { display: none; }
@@ -1377,7 +1378,15 @@ function summary(r) {
 // The top bar's "Show preview" toggle; off at every start.
 let showPreview = false;
 function drawView(center) {
-  if (!R) return;
+  if (!R) {
+    // The page form of the start page: the dialog's frame and title in the
+    // middle of the view, no backdrop, so the sidebar still switches tools.
+    center.classList.remove("bleed");
+    center.innerHTML = "";
+    center.append(h("div", { class: "start-page", "data-panel": "start-page" },
+      h("div", { class: "window" }, h("div", { class: "title" }, START_TITLE), startBody())));
+    return;
+  }
   closeMenus();
   const probs = problems(R);
   center.classList.add("bleed");
@@ -1466,9 +1475,11 @@ function save() {
   }
   render(); // the link carries the open window's name
 }
-function startPage() {
-  // The `start` window's name is the link's mark for the start page open.
-  window_("Ruleset editor - Unlimited Tool Works", h("div", { class: "col" },
+const START_TITLE = "Ruleset editor - Unlimited Tool Works";
+// The start page's entries: in the page drawn with no ruleset open, and in the
+// dialog File's "New from template…" opens over one.
+function startBody() {
+  return h("div", { class: "col" },
     strong("New from template"),
     button("4cc Autumn 26 (the official rules)", () => loadTemplate("autumn26")),
     button("4cc Spring 26", () => loadTemplate("spring26")),
@@ -1483,7 +1494,11 @@ function startPage() {
     strong("Random"),
     row(["Sensible", "Weird", "Crazy"].map(p => button(p, () => {}, { disabled: true, title: "The generator is not faked in this draft" }))),
     h("div", { class: "sep" }),
-    row(button("Open file…", () => {}, { disabled: true, title: "Not in this draft" }), weak("Recent: none"))),
+    row(button("Open file…", () => {}, { disabled: true, title: "Not in this draft" }), weak("Recent: none")));
+}
+function startPage() {
+  // The `start` window's name is the link's mark for the start page open.
+  window_(START_TITLE, startBody(),
     R ? [button("Close", closeWindow)] : [], "start");
   render(); // the link carries the start page's mark off its keys
 }
@@ -1902,13 +1917,13 @@ function effectsEditor(e, path, inChoice) {
   return box;
 }
 
-function firstShow() { load(AUTUMN26, "autumn26", true); startPage(); }
-// The view's screen is the open section (the host's layout edit keys its
-// tweaks by it).
-const screen = () => section;
+// The view opens with no ruleset: the start page.
+function firstShow() { R = null; }
+// The view's screen is the open section, or "start" with no ruleset open (the
+// host's layout edit keys its tweaks by it).
+const screen = () => R ? section : "start";
 // The link's keys (plans/core/gui.md "Links"): the loaded template, the
-// preview pane, the start page open or not (the view's start has it open, so
-// a link that reached a section carries start=0).
+// preview pane, and start=1 while the start dialog stands over the ruleset.
 const startMarked = () => !!document.querySelector('#overlay .window[data-dlg="start"]');
 function linkKeys() {
   const k = {};
@@ -1918,7 +1933,7 @@ function linkKeys() {
   // the host's named windows are the host's `win` key).
   const w = document.querySelector("#overlay .window");
   if (w && DLGS[w.dataset.dlg]) k.dialog = w.dataset.dlg;
-  if (!startMarked()) k.start = "0";
+  if (startMarked()) k.start = "1";
   return k;
 }
 // A `dialog` value to its opener: save() picks Saved or Not saved by the
@@ -1926,6 +1941,8 @@ function linkKeys() {
 const DLGS = { saved: save, "not-saved": save };
 const linkWarn = what => console.warn("ruleset-editor link: " + what);
 function linkOpen(scr, keys) {
+  if (scr === "start") { R = null; closeWindow(); return; }
+  if (keys.ruleset === undefined && !R) load(AUTUMN26, "autumn26", true);
   if (keys.ruleset !== undefined) {
     if (TEMPLATES[keys.ruleset]) load(TEMPLATES[keys.ruleset](), keys.ruleset, true);
     else linkWarn("ruleset=" + keys.ruleset);
@@ -1948,10 +1965,10 @@ function linkOpen(scr, keys) {
 }
 registerTool({ id: "ruleset-editor", css: RULESET_CSS, draw: drawView, firstShow, onKey, commit, screen, linkKeys, linkOpen,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
-  shots: ["ruleset_editor/general", "ruleset_editor/general?start=0", "ruleset_editor/tiers?start=0",
-    "ruleset_editor/heights?start=0", "ruleset_editor/cards?start=0",
-    "ruleset_editor/universal?start=0", "ruleset_editor/specials?start=0",
-    "ruleset_editor/suggestions?start=0", "ruleset_editor/custom?ruleset=custom-check&start=0",
-    "ruleset_editor/summary?start=0", "ruleset_editor/general?preview=1&start=0",
-    "ruleset_editor/general?dialog=saved&start=0"] });
+  shots: ["ruleset_editor/start", "ruleset_editor/general?start=1", "ruleset_editor/general", "ruleset_editor/tiers",
+    "ruleset_editor/heights", "ruleset_editor/cards",
+    "ruleset_editor/universal", "ruleset_editor/specials",
+    "ruleset_editor/suggestions", "ruleset_editor/custom?ruleset=custom-check",
+    "ruleset_editor/summary", "ruleset_editor/general?preview=1",
+    "ruleset_editor/general?dialog=saved"] });
 })();

@@ -1908,10 +1908,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
-  - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "start page is a
-    dialog") the Ruleset editor draws its start page as a full page where the draft opens a
-    dialog; it becomes a dialog with no Close over the empty window (RE-GUI-01). It waits for
-    0.0.2-rebar, which edits the same files (`.tmp/rebar/brief_startdlg.md`)
+  - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
+    looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
+    draft shows a dialog; it becomes a page with its entries in the middle, framed and titled
+    like the dialog, with no backdrop, so the sidebar still switches tools (RE-GUI-01); the
+    draft follows (`.tmp/rebar/brief_startdlg_r1.md`)
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks

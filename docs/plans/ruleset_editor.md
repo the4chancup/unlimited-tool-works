@@ -43,12 +43,13 @@ plan](core/README.md).
 
 Recent files below, newest first.
 
-The start page is a dialog. When the tool opens there is no document yet, so the dialog
-stands over the empty window with no Close button: there is nothing behind it to go back to.
-File's **New from template…** opens the same dialog over the open document, with Close. The
-draft shows Autumn 26 open behind the first dialog, which the editor does not copy: a document
-opened from a template counts as unsaved, so the tool would ask about changes nobody made
-every time it closed.
+The start page has two forms. When the tool opens there is no document yet, so the start
+page fills the tool's area: its entries sit in the middle, in a titled frame that looks like a
+dialog but has no dimmed backdrop and no Close. It must not be a real dialog, because a dialog
+also blocks the sidebar: a member who opened the Ruleset editor by mistake could not switch to
+another tool without first picking a ruleset. Over an open document, File's **New from
+template…** shows the same entries as a dialog, with Close, since there is a document to go
+back to.
 
 DBC7 is a template while Divegrass Before Christmas is the Save editor's first test ground
 (`core/development_plan.md` "Divegrass Before Christmas"): its organizers start from it (its
@@ -381,8 +382,8 @@ The writer's round trips and the load rules are `libs/aatf`'s own tests, not res
 ```
 RE-GUI-01  GIVEN the tool opened with no document
            WHEN the start page is drawn
-           THEN it is a dialog with no Close, and Escape or a click outside it leaves it open;
-                it offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
+           THEN it is drawn in the middle of the tool's area, framed and titled as the dialog
+                is, with no Close, and the sidebar still switches tools; it offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
                 VTL10, DBC7 and Blank in that order; Random with Sensible, Weird and Crazy; Open
                 file; and the recent files, newest first; GIVEN two files opened in turn, or
                 one opened and one saved, and the tool restarted THEN the later heads the
