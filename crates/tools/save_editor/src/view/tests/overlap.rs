@@ -169,8 +169,11 @@ fn collisions(
 
 /// Three frames, then the last one's widgets and labels as drawn: a modal
 /// re-centres once its content's size is known, and a scroll's claimed
-/// content size lands a frame late.
+/// content size lands a frame late. Every view worker's reply is waited
+/// on first, so none lands mid-capture and changes the screen under the
+/// comparison.
 fn settled(window: &mut Headless, view: &mut SaveView) -> Vec<Drawn> {
+    workers_replied(window, view);
     let mut pairs = Vec::new();
     for _ in 0..3 {
         let (_, frame, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));

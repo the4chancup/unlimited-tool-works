@@ -123,6 +123,9 @@ fn a_reopened_multi_team_aatf_keeps_its_range() {
     view.open(&path);
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
+    // The range opens on the save's first team alone.
+    let ids = all_team_ids(&view);
+    multi_checked(&mut window, &mut view, &ids[..1]);
     pick_range_end(&mut window, &mut view, 0, "734 /lit/");
     pick_range_end(&mut window, &mut view, 1, "734 /lit/");
     let pairs = multi_checked(&mut window, &mut view, &[734]);
@@ -342,16 +345,13 @@ fn a_list_checked_under_another_ruleset_is_not_drawn_nor_copied() {
     );
 
     view.aatf_ruleset = "spring26".to_owned();
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.multi_aatf.check.pending = Some(aatf_check::PendingCheck {
-        key: aatf_check::CheckKey {
-            revision: view.session.as_ref().expect("the save opened").revision(),
-            ids: ids.clone(),
-            ruleset: "spring26".to_owned(),
-            suggestions: false,
-        },
-        replies,
+    let (held, sender) = aatf_check::PendingCheck::held(aatf_check::CheckKey {
+        revision: view.session.as_ref().expect("the save opened").revision(),
+        ids: ids.clone(),
+        ruleset: "spring26".to_owned(),
+        suggestions: false,
     });
+    view.multi_aatf.check.pending = Some(held);
     let title = "Multi-team AATF (4cc Spring 26)";
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(

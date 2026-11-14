@@ -16,6 +16,19 @@ pub(super) struct Pending<K, R> {
     pub(super) replies: Receiver<(K, R)>,
 }
 
+impl<K, R> Pending<K, R> {
+    /// A run in flight on `key` whose reply the caller holds: none reaches
+    /// a frame until the caller sends one on the returned sender or drops
+    /// it (a real run can reply between one frame's two passes, so a test
+    /// that needs the in-flight frame holds the run rather than wait on a
+    /// real one).
+    #[cfg(test)]
+    pub(super) fn held(key: K) -> (Pending<K, R>, crossbeam_channel::Sender<(K, R)>) {
+        let (sender, replies) = crossbeam_channel::unbounded();
+        (Pending { key, replies }, sender)
+    }
+}
+
 /// A worker computation's state: the last run's result with the key it ran
 /// for, and the run in flight, if one is.
 pub(super) struct WorkerResult<K, R> {

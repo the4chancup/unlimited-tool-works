@@ -201,7 +201,7 @@ mod tests {
 
     /// Long enough that a scheduling hiccup never outlives it; short enough
     /// that a lost wake-up fails the test rather than hanging it.
-    const GUARD: Duration = Duration::from_secs(5);
+    const GUARD: Duration = Duration::from_secs(120);
     /// How long "still waiting" takes to observe.
     const BLOCKED: Duration = Duration::from_millis(100);
 

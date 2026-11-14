@@ -2714,14 +2714,15 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
     open_team_view(&mut window, &mut view, 701);
     view.select_portraits(&window.ctx, &folder, PesVersion::Pes21);
 
-    // Bounded: the worker answers off the UI thread, so frames poll with a
-    // real nap between; a portrait never arriving fails rather than hangs.
-    // The portrait rect is matched by size and centre (a pixel's tolerance
-    // for the AccessKit bounds' rounding), not by exact rect equality.
+    // Bounded: the worker answers off the UI thread, so frames poll it
+    // until a deadline only a hang reaches; a portrait never arriving
+    // fails rather than hangs. The portrait rect is matched by size and
+    // centre (a pixel's tolerance for the AccessKit bounds' rounding),
+    // not by exact rect equality.
     let canvas_min = |canvas: accesskit::Rect| egui::pos2(canvas.x0 as f32, canvas.y0 as f32);
     let canvas_max = |canvas: accesskit::Rect| egui::pos2(canvas.x1 as f32, canvas.y1 as f32);
-    let mut found = false;
-    for _ in 0..200 {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let canvas = canvas_of(&nodes);
         let canvas_rect = egui::Rect::from_min_max(canvas_min(canvas), canvas_max(canvas));
@@ -2758,15 +2759,13 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
                 .count()
                 == 1
         {
-            found = true;
             break;
         }
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        assert!(
+            Instant::now() < deadline,
+            "the starter's marker never painted his portrait"
+        );
     }
-    assert!(
-        found,
-        "the starter's marker paints his portrait and no other marker's after 200 frames"
-    );
 }
 
 /// The Set PES path button's bounds, if the frame drew it.

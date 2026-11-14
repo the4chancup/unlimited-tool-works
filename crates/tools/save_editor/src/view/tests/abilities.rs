@@ -90,11 +90,8 @@ fn current_badge_key(view: &SaveView) -> BadgeKey {
 /// or drops it (a real run can reply between one frame's two passes, so
 /// it cannot be waited on where a test needs the in-flight frame).
 fn hold_badge_run(view: &mut SaveView) -> crossbeam_channel::Sender<(BadgeKey, OwnBadge)> {
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.cards.pending = Some(worker::Pending {
-        key: current_badge_key(view),
-        replies,
-    });
+    let (pending, sender) = worker::Pending::held(current_badge_key(view));
+    view.cards.pending = Some(pending);
     sender
 }
 

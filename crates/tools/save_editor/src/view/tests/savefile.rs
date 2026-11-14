@@ -467,6 +467,13 @@ fn range_items(window: &mut Headless, view: &mut SaveView, nth: usize) -> Vec<St
 /// then a click on the title, which closes the popup the action leaves
 /// open.
 pub(super) fn pick_range_end(window: &mut Headless, view: &mut SaveView, nth: usize, label: &str) {
+    // The pick's frames read the combo's bounds and click them: a check's
+    // reply landing between grows the dialog and moves the combo, so the
+    // caller waits the check out or holds it first.
+    assert!(
+        view.multi_aatf.check.pending.is_none(),
+        "a check in flight can move the dialog"
+    );
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     let combo = range_combos(&pairs)[nth];
     // The popup's items stand under the combo: the player list's team row

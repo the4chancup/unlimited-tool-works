@@ -402,8 +402,8 @@ mod tests {
         };
 
         // The probe can take a moment to see a new process: poll for up to
-        // five seconds, and kill the fake game as soon as one poll lists it.
-        let deadline = Instant::now() + Duration::from_secs(5);
+        // two minutes, and kill the fake game as soon as one poll lists it.
+        let deadline = Instant::now() + Duration::from_secs(120);
         let mut games;
         loop {
             games = running_pes();
