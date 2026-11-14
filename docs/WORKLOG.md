@@ -2025,7 +2025,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] slice 3 (2026-11-14, `3c9b7baf`, Opus) the Savefile menu's range dialog: one picture
       per team of a range, the progress line naming the picture being written, Stop keeping
       what was written, the dialog's width held through the run (SE-GUI-89); help page 07.
-      Left: its look beside the draft's `dlgPicturesRange`
+      Looked at beside the draft by the lead (Pending looks)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -3051,6 +3051,11 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   the lead at `0b71f879` (`.tmp/flatpitch/look2/compare_dialog.png`,
   `built_3_settings_half.png`, `compare_wide.png`, `compare_narrow.png`, `app_row2_zoom.png`);
   no PES; 0.0.2-flatpitch; maintainer
+- The range dialog for formation pictures: picking, writing and stopped beside the draft's
+  `dlgPicturesRange`, the dialog 524 pixels wide in all three, the progress line in step with
+  the bar, Stop's result naming 191 of 210 pictures; checked by the lead at `3c9b7baf` on the
+  maintainer's PES 2021 save, read only (`.tmp/flatpitch/look3/compare.png`); no PES;
+  0.0.2-flatpitch; maintainer
 - The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
   shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
   the cell as one layer, so the turf shows through the players; and a fluid-off row with one
