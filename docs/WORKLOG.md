@@ -1983,8 +1983,11 @@ briefs, review loops, gates and mutation runs as for any step.
     painters"; code map `.tmp/flatpitch/code_map.md` and `part2.md`) -> verify: the
     scenarios headless, the pictures looked at
     - [ ] slice 1: the one-team dialog and the picture without the settings (SE-GUI-86,
-      87): the pitch's painting split from the widget, the off-screen frame and its
-      rasterizer, the folder and grain settings, Open folder made to open one
+      87)
+      - [x] 1a (2026-11-14, `349ca307`) the picture's painter: the pitch's painting split
+        from the widget, the off-screen frame and its rasterizer, the shape rule, the file
+        name; nothing calls it outside its tests yet
+      - [ ] 1b the dialog, the folder and grain settings, Open folder made to open one
     - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88)
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
@@ -2992,6 +2995,12 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
   update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
   0.0.2-rad; maintainer
+- The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
+  shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
+  the cell as one layer, so the turf shows through the players; and a fluid-off row with one
+  formation of a shape of its own draws the other hidden one too, even when it has
+  Kick-off's shape (2-4-1-3 twice); no PES;
+  0.0.2-flatpitch; maintainer
 
 ---
 
