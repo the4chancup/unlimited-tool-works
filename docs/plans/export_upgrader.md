@@ -274,8 +274,8 @@ members use (`quick_upgrade.bat`) reads the same two.
 - **An export that cannot be read** is one line in place of its cells, in the error
   colour, with the action that resolves it beside the message, never in the rightmost
   column:
-  - a team the save does not hold: the line only, since picking another save or ticking
-    the loose switch resolves it;
+  - a team the save does not hold: **Browse…**, the Save field's own, since picking another
+    save resolves it (ticking the loose switch does too);
   - an export already in the Studio format: **Move to exports**, which moves it into
     `exports` as it is;
   - an upgraded export already in `exports`: **Open the existing folder**, so the member
@@ -420,8 +420,9 @@ EU-GUI-04  GIVEN two exports, one of a team the save does not hold, one whose up
                  already exists in exports
            WHEN the view is drawn
            THEN each is one line in the error colour: the first's names the team and the Save
-                field is red, its tooltip naming the team; the second's carries Open the
-                existing folder beside its message; Upgrade is disabled; WHEN the loose switch
+                field is red, its tooltip naming the team, and Browse… beside its message
+                opens the same file picker as the Save field's; the second's carries Open
+                the existing folder beside its message; Upgrade is disabled; WHEN the loose switch
                 is ticked THEN the first is read and Upgrade is enabled
 EU-GUI-05  GIVEN EU-GUI-01's folder, the loose switch ticked
            WHEN Upgrade is clicked

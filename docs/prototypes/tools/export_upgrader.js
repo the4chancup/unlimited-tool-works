@@ -300,6 +300,9 @@ function rowAct(x) {
   if (x.special === "newFormat")
     return button("Move to exports", () => { SETS[D.size] = rows().filter(o => o !== x); render(); },
       { title: "It needs no upgrade: moves the folder into exports" });
+  // A team the save lacks: another save resolves it, so the save's own
+  // Browse… is repeated where the eye already is.
+  if (x.special === "noTeam") return browseButton();
   if (x.special === "exists")
     return button("Open the existing folder", () => window_("Open folder",
       h("p", {}, "The file manager opens here, on ", h("span", { class: "mono" }, `${EXE_FOLDER}\\exports\\${outName(x)}`), "."),
@@ -552,6 +555,9 @@ function detailPanel() {
 }
 
 // ---- The arguments: the save the players' looks are read from, or none ----
+const browseButton = () => button("Browse…", () => window_("Savefile",
+  h("p", {}, "The system's file picker opens here, in the selected version's save folder."),
+  button("Close", closeWindow), "pick-savefile"), { disabled: S.loose || !!S.run });
 const LOOSE_TIP = "Each boots or gloves folder goes to the player at its ID's position in the team's old block of 25 IDs, and no player's looks are read";
 function argsRow() {
   const missing = !S.loose && rows().filter(x => x.special === "noTeam").map(x => x.name);
@@ -563,8 +569,7 @@ function argsRow() {
       title: S.loose ? "Not read while the box beside it is ticked"
         : missing && missing.length ? "It holds no team named " + missing.join(", ")
         : "The save the teams were made in: each player's skin, build and strip style, and who wears which boots and gloves, are read from it. It is never changed" }, input),
-    button("Browse…", () => window_("Savefile", h("p", {}, "The system's file picker opens here, in the selected version's save folder."),
-      button("Close", closeWindow), "pick-savefile"), { disabled: S.loose || !!S.run }),
+    browseButton(),
     h("span", { title: LOOSE_TIP }, cb("Upgrade without the save", S.loose, v => { S.loose = v; })),
     weak("into"), h("span", { class: "mono", title: "Each upgraded export is written beside the others the Compiler reads" },
       EXE_FOLDER + "\\exports"),

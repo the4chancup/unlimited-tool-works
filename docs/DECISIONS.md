@@ -17262,3 +17262,12 @@ aesthetics settings into that game's save. Only then does it give the Save edito
 advice. Its buttons are **Skip** and **Update save**, in place of the Save editor's Cancel and
 Save. The Save editor asks after the member pressed Save, but here the member pressed Compile.
 With only the advice, the member would wonder which save it means and what would be written.
+
+## 2026-11-14: an export of a team the save lacks offers Browse… beside its line
+
+In the Export upgrader, the line `The save holds no team named /x/` carries a copy of the
+Save field's **Browse…**, which opens the same file picker. Until now that line had no
+button, because picking another save, or ticking "Upgrade without the save", already
+resolved it. But the member is reading the line, not the field at the top, so the action
+that resolves it sits where they are looking, as Move to exports and Open the existing
+folder do on the other lines.
