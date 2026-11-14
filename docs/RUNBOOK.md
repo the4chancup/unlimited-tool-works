@@ -306,10 +306,10 @@ default to (`ingame/`, `library_parity/`, `draft_shots/`,
 `draft_compare/`, `0_0_1s4t_v2/app`, the built-window copy), the two files the lead's tools
 append to (`report.md`, `duck_rulings.md`),
 and a folder a running job is writing until the job ends. **`.old/` holds what is done
-with**: a closed phase's folder whole, a topic untouched for weeks. It is kept when the disk
-needs room, and deleted only on the maintainer's word; a cleanup frees the build folders,
-finished worktrees and job outputs first. A save backup is never deleted with its folder: it
-moves aside first. A pointer into `.tmp/` in a document is a historical
+with**: a closed phase's folder whole, a topic untouched for weeks. A cleanup may delete
+it once checked that nothing in it is needed: a save backup never goes with its folder (it
+moves aside to `.tmp/kept_saves/` first), and what may be the only copy of cup data is asked
+about. A pointer into `.tmp/` in a document is a historical
 note, never kept current: what matters past its step is in the documents, and scratch is
 scratch. A folder's name being unique, a stale path still finds it (`.tmp/4_17/` is
 `.tmp/.old/phase_04/4_17/` now) through the Everything index. **A temporary folder outside the repository** (a git worktree for a review, a
