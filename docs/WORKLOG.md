@@ -1928,13 +1928,7 @@ briefs, review loops, gates and mutation runs as for any step.
     0.0.2-applayout and -presentation a land, since it touches their files -> verify:
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
-  - [ ] 0.0.2-noticeerr (the maintainer, 2026-11-13; DECISIONS "no alias or deprecation shim")
-    `NoticeKind::Error`, drawn in the theme's error red; both themes' error and warning
-    colours become GitHub's (red `#F85149`/`#D1242F`, amber `#D29922`/`#9A6700`), with its
-    green `#3FB950`/`#1A7F37` and link blue `#58A6FF`/`#0969DA`, the pitch's
-    crosses the dark pair in both themes (`plans/core/gui.md` "A notice is seen, not found"
-    and the Dark/light theme row); no publisher yet -> verify: ST-BAR-04 with four kinds, the
-    pitch's crosses on both themes
+  - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
     just because of some load on the computer") no test depends on a worker thread's timing or

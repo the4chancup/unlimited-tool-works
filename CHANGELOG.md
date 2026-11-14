@@ -92,6 +92,9 @@
 
 ### Minor fixes
 
+- **All tools**: warnings are amber instead of orange and errors a softer red, so the two
+  stand apart. The success green and the link blue changed with them, and on the light
+  theme links are easier to read.
 - **Save editor**: a save is edited as its own version, whatever the sidebar shows: the
   portraits and Set PES path follow it, and no warning says it is not the sidebar's version.
   The file picker starts in the folder of the last save opened.
