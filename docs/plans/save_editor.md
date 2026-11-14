@@ -1553,7 +1553,8 @@ Win32 original hurt the most):
   with "Fluid On" or "Fluid Off" under it in the text colour (PES 2016 on), with or without the
   settings. Each cell is the pitch as the view paints it at its own 320 x 384, the formation's
   name in its corner, with none of the view's states (no drag, corners or join fill, a wider
-  name held still at the badge's left).
+  name held still at the badge's left), and no Live AATF crosses: most teams of a range have
+  no check held, and a team's picture reads the same whichever dialog wrote it.
 
   The columns are the three formations under their names. A preset with fluid formation off
   draws its Kick-off formation alone, the room beside it empty, unless one of its other two

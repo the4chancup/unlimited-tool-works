@@ -17439,3 +17439,14 @@ Why: the maintainer agreed to edit stats alone and to empty, locked fields that 
 for position, cards and stats boxes. Comparing height or the feet would part a tier's players,
 whose heights and feet differ, while a field they do not share is locked anyway. A mixed
 checkbox says "some have it" where an empty one would say "none".
+
+## 2026-11-14: a formation picture draws no Live AATF crosses (lead)
+
+Decision: the picture's cells draw the pitch, the markers and the formation's name, never Live
+AATF's crosses, from either dialog (`plans/save_editor.md` "Formation pictures", "The
+picture").
+
+Why: the plan was silent and the painter could draw them. A range of teams has no check held
+for most of them, so its pictures would carry no crosses while the one-team dialog's did, and
+one team would get two different pictures. The checker already lists the findings, and the
+picture is for a team's shapes.
