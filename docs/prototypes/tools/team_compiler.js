@@ -680,7 +680,7 @@ function summary() {
 function toolbar() {
   const run = S.run;
   const strip = run
-    ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written · ${run.memory} MB of system memory in use`
+    ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB) · ${run.memory} MB of system memory in use`
     : [S.last, summary()].filter(Boolean).join("  —  ");
   const sideloadOff = ["2015", "2016"].includes(shellPesVersion());
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(), {});
@@ -773,8 +773,9 @@ function stopRun() {
 }
 // The savefile step with the save's own PES running (gui.md "Row actions",
 // the save findings): the Save editor's Edit mode question, in place of the
-// command line's --edit-mode-closed. Save runs the step as the flag does;
-// Cancel leaves the save as it was, the run going on to its end.
+// command line's --edit-mode-closed, opening on what the step writes, since
+// the member asked for a compile, not a save. Update save runs the step as
+// the flag does; Skip leaves the save as it was, the run going on to its end.
 // sample wording: the dialog's text and the log lines.
 function askEditMode(run) {
   render();
@@ -787,12 +788,15 @@ function askEditMode(run) {
     endRun();
     render();
   };
-  window_(`PES ${shellPesVersion()} is running`, h("div", {},
-    h("p", {}, "If the game's Edit mode is open, use its Data Management > Load after the save is "
-      + "updated, before you leave Edit mode. Leaving Edit mode after changing anything in it "
-      + "writes the game's own copy over the save."),
-    h("p", {}, "If Edit mode is closed, the changes show when you open it.")),
-    [button("Cancel", () => go(false)), button("Save", () => go(true))], "edit-mode");
+  const pes = `PES ${shellPesVersion()}`;
+  window_(`Update ${pes}'s save?`, h("div", {},
+    h("p", {}, "The CPKs are installed. One step is left: writing the compiled teams' aesthetics "
+      + `settings into ${pes}'s save while the game is running.`),
+    h("p", {}, "If the game's Edit mode is open, use its Data Management > Load once the save is "
+      + "updated, before you leave Edit mode: leaving Edit mode after changing anything in it "
+      + "writes the game's own copy over the save, and the settings are lost."),
+    h("p", {}, "If Edit mode is closed, the settings show when you open it.")),
+    [button("Skip", () => go(false)), button("Update save", () => go(true))], "edit-mode");
 }
 function endRun() {
   const run = S.run;
@@ -963,7 +967,7 @@ const WALK = [
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
   ["live check", "Check every export again: every cell reads Checking, then flips to its result as its check ends, scattered over the rows"],
   ["drop", "drag a folder or a .zip from the desktop onto the grid (or use the two Drop controls): a new name is copied in and checked live; a name already there is refused, naming it"],
-  ["Edit mode", "set the destination to \"locked: PES is running\" and Compile: once the CPKs are packed, the save's step asks the Edit mode question; Save updates the save, Cancel leaves it and logs why"],
+  ["Edit mode", "set the destination to \"locked: PES is running\" and Compile: once the CPKs are packed, the save's step asks whether to update the save; Update save does, Skip leaves it and logs why"],
   ["autorun", "Start as quick_compile.bat: the check runs, then Compile presses itself; with quick_compile_close_on_success ticked, the window would close at the end of a run with no error (the sample run ends with /adv/ done with errors, so it stays: untick /adv/ in the compile column first to see the close)"],
   ["row actions", "/b/ (old layout) offers Upgrade; /bant/ (NO_USE) is greyed with Enable; the two /biz/ exports clash: Disable on the folder, Move to unused on the archive; a right click on a row's label offers Compile only this export"],
 ];

@@ -17251,3 +17251,14 @@ miss a tolerance: a test now delivers a background reply when it says so, and re
 geometry it acts on in the frame it acts in. `CONTRIBUTING.md` "Testing and verification"
 replaces the held-pointer rule, which a test built on it still broke under load; the tests
 that race today are found and fixed in 0.0.2-determ.
+
+## 2026-11-14: the Compiler's save question names what it writes, and the strip shows the size as it grows
+
+The Compiler's run strip gives the written files' total size beside their count throughout the
+run, summed as each file is written, not only once the run ends. When the savefile step meets
+the target's PES running, the window's question is titled `Update PES 2019's save?`. Its text
+first says that the CPKs are installed and that the step left writes the compiled teams'
+aesthetics settings into that game's save. Only then does it give the Save editor's Edit mode
+advice. Its buttons are **Skip** and **Update save**, in place of the Save editor's Cancel and
+Save. The Save editor asks after the member pressed Save, but here the member pressed Compile.
+With only the advice, the member would wonder which save it means and what would be written.

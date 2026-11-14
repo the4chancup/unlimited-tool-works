@@ -241,9 +241,10 @@ TC-GUI-12  GIVEN a run in flight
            THEN each cell being processed keeps its check color and label, a light bar
                 sweeping its bottom edge above any Warning or Error ring, then turns
                 done, done-with-warning or done-with-errors as its task ends; the run strip
-                shows the stage, the elapsed time, the files written and the memory in use;
-                the Compile button reads Cancel; once the run ends the strip reads `Compile
-                finished in mm:ss · N files written (S MB)`, S the written files' total size
+                shows the stage, the elapsed time, the files written with their total size
+                so far and the memory in use; the Compile button reads Cancel; once the run
+                ends the strip reads `Compile finished in mm:ss · N files written (S MB)`, S
+                the written files' total size
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or

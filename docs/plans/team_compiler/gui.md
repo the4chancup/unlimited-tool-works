@@ -134,7 +134,11 @@ changed on its own.
   `savefile_skipped_pes_running` gets no button: the view asks the Save editor's Edit mode
   question (`plans/save_editor.md` "Writing a save while its game runs") in place of the
   command line's `--edit-mode-closed` (`spec/team_compiler/pipeline.md` "6. Post-processing"),
-  its Save running the savefile step as the flag does. The question is drafted before it is
+  its **Update save** running the savefile step as the flag does and its **Skip** leaving the
+  save as it was. Its title asks whether to update the game's save, and its text opens on what
+  the step writes, the compiled teams' aesthetics settings into that save, before the Edit
+  mode advice: the Save editor asks after the member pressed Save, where here the member
+  pressed Compile, and the advice alone would leave them wondering which save it means. The question is drafted before it is
   built. Until then the window's Compile runs without the flag, and the skip's catalog text,
   which names the flag, is the command line's.
 - **Disabled exports stay visible.** An export with its `NO_USE` marker is a greyed row with
@@ -391,10 +395,10 @@ A single primary action:
   tooltip, and its dropdown always contains **Open output folder** and **Copy report** (the
   run's lines as the console prints them, for a member asking for help in the cup's thread,
   as the Export upgrader's Upgrade menu offers).
-- **Run strip**: a one-line bar next to the button: current stage, elapsed time, files written,
+- **Run strip**: a one-line bar next to the button: current stage, elapsed time, files written
+  with their total size so far (`592 files written (306 MB)`, summed as each file is written),
   memory in use. Once a run ends it gives the run's line, `Compile finished in 00:42 · 1184
-  files written (612 MB)`, the written files' total size beside their count, so a member sees
-  what the run put on disk. (The one name for it across the plans: "strip" alone means a kit here, and
+  files written (612 MB)`, so a member sees what the run put on disk. (The one name for it across the plans: "strip" alone means a kit here, and
   "status strip" would be confused with the shell's status bar.) The core plan's current
   `Progress { processed, total }` payload is insufficient; extend it with these metrics or add
   separate `StageChanged`/`MetricsUpdated` events before implementing this view
