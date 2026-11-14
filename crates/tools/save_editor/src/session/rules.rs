@@ -166,16 +166,12 @@ pub(crate) fn import(data_dir: &Path, import: &Import, recorder: &Recorder) -> s
         journal::write_failed(&copy, recorder, &error);
         return Err(error);
     }
-    // Not a `.4ccrules` file, so `imported` never lists a leftover one.
-    let temporary = folder.join(format!("{}.tmp", import.file_name));
-    let written =
-        std::fs::write(&temporary, &import.text).and_then(|()| std::fs::rename(&temporary, &copy));
+    // The temporary's name ends `.tmp`, never `.4ccrules`, so `imported`
+    // never lists a leftover one.
+    let written = studio_core::files::replace_file(&copy, |temporary| {
+        std::fs::write(temporary, &import.text)
+    });
     if let Err(error) = written {
-        // The write's error is the one to report; a temporary file left
-        // behind is a diagnostic.
-        if let Err(removal) = std::fs::remove_file(&temporary) {
-            log::debug!("{}: kept: {removal}", temporary.display());
-        }
         journal::write_failed(&copy, recorder, &error);
         return Err(error);
     }
