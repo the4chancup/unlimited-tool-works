@@ -42,6 +42,23 @@ The window's opening size and fit, and its scaling under the design width, are b
 `spec/core/gui.md` "Shell layout", the paragraphs "The window's size" and "Scaling with the
 width".
 
+**A window larger than the default.** A tool view is calibrated for the default window (1280 ×
+780 for the main tools), and a larger window changes none of it: no panel grows, none moves,
+and the layout stays at the tool view's top left as it stands at the default size, the room
+past it left empty. This replaces the reflow `spec/core/gui.md` "Scaling with the width"
+describes at or above the design width ("wider rows spread"). A larger window gives room only
+to the panels allowed to stretch, each a list that scrolls, named here:
+
+- the Save editor's player list, which takes the extra height; its width stays;
+- the log dock (Log panel), whose list takes the extra height.
+
+We do not spread a view over a wider window, because a layout drawn for one size reads worse
+at another, and each size would then need a look of its own: the Save editor's Player
+assignments chips grow to some 800 points for a name of 15 characters, and its Stats screen's
+three columns drift apart. The help window does not take the room either: it first opens at
+its own size ("Help window"), since its text reflows, and a page as wide as a large window is
+hard to read.
+
 **The graphics backend.** On Windows the window draws through Direct3D 12, with OpenGL as the
 fallback where it is missing; Vulkan is not asked for.
 

@@ -17461,3 +17461,16 @@ starts from the folder UTW.exe is in, as the Compiler's `exports_folder_path` an
 Why: a member who opens the settings file reads the folder the pictures go to, where `""`
 would need a comment to explain it. One rule for every folder setting of the file also means
 a relative path typed by hand works the same in each.
+
+## 2026-11-14: no panel stretches unless it is allowed to; a larger window gives room only to the named lists (maintainer)
+
+Decision: a tool view is calibrated for the default window, and a larger one changes none of
+it: no panel grows or moves, and the layout stays at the tool view's top left. Only the
+panels the plan names take the extra room: the Save editor's player list (height only) and
+the log dock. The help window keeps opening at its own size. The rule holds in every tool
+(`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default").
+
+Why: a layout drawn for one size reads worse at another, as the Gameplan screen's Player
+assignments chips some 800 points wide and the Stats screen's drifting columns show, and each
+size would need a look of its own. It replaces the reflow at or above the design width,
+where wider rows spread.
