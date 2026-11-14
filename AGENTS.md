@@ -199,6 +199,9 @@ and a plan section only the writing session understood are not done, whatever th
 an outcome fails this test, say so and simplify before reporting. (The code half is
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
 
+No look reaches the maintainer unchecked: the built window is captured beside its draft and
+compared first (`RUNBOOK.md` "Looks owed are one list").
+
 End every turn that changed something with a short report: what changed, which gates ran and their
 result, what was not verified, second-opinion concerns and how each was answered, worklog steps
 updated, decisions logged in `docs/DECISIONS.md`, and open questions.

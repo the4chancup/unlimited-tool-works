@@ -67,6 +67,18 @@ decision that says "not checked in game" adds its line there in the same edit. T
 sends what the harness can do to a SWE-2 in-game run whenever the list holds a
 game-facing write, and hands the maintainer the rest as one batch per game session.
 
+**No look reaches the maintainer unchecked.** A built-window look goes on that list, into a
+checklist or into a report only after the lead or an Opus sidekick has made it first: the
+release build captured at each state the look names (`scripts/built_window/`), the draft
+rendered at the same state, the two read side by side, and every difference fixed or written
+down as one the maintainer is asked about. The look's line names its capture pair
+(`.tmp/<step>/look/`), so a line without one is not ready to hand over. The maintainer's look
+is a second pair of eyes on what was already checked, never the first: a checklist once went
+out with the Appearance screen's Physique group laid out unlike its draft, which one capture
+would have shown. Starting the built window takes the screen, so in an interactive session the
+lead asks once before a batch of captures, and a SWE-2 sidekick, which cannot judge a look,
+never makes this check.
+
 **Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
 that own disjoint files, the release path's first. The limits are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
