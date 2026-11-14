@@ -347,9 +347,12 @@ Requirements:
 - **A test fails, it never hangs.** A loop that waits for a condition (frames until a state
   shows, Ctrl+Z until the undo stack is empty) has a bound and panics past it, naming what
   never happened. Broken code then fails in seconds; unbounded, it spins until the mutation
-  run's timeout: one such helper once hung ten mutants for 17 minutes each.
+  run's timeout: one such helper once hung ten mutants for 17 minutes each. A bound on a wait
+  for another thread or process (a worker's reply, a child process starting) only stops a hang,
+  never measures speed, so it is the same 120 seconds everywhere: a tighter one, 5 or 10
+  seconds, is a test that fails under a loaded full-suite run.
 - **A test never races a worker thread or an earlier frame.** A view that hands work to a
-  worker thread (a Live AATF check, a save's read) is tested with the reply delivered when
+  worker thread (a Live AATF check, a comparison) is tested with the reply delivered when
   the test says so, never by drawing frames and counting on the worker to have replied, or
   not yet: under a loaded full-suite run the order of the two is not fixed. Holding the
   pointer so that no check starts was the earlier answer, and a test built on it still
