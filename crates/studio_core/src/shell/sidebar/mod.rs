@@ -325,6 +325,13 @@ impl Sidebar {
             .show(egui_ctx, |ui| {
                 let shown = frame.show(ui, |ui| {
                     ui.set_min_size(inner);
+                    // egui's `Area` keeps the measured size of the last frame it
+                    // was open, and a bottom-up tail keeps the measured size
+                    // from ever shrinking: opened once in a taller window, the
+                    // overlay would stay that tall, the tail pinned below the
+                    // window and every entry fitting without a scroll. `inner`
+                    // is the rail's height, so it is the maximum as well.
+                    ui.set_max_size(inner);
                     self.contents(ui, cell, false, args)
                 });
                 let line = ui.visuals().widgets.noninteractive.bg_stroke;

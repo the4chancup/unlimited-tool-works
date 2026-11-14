@@ -349,6 +349,139 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
     }
 }
 
+// ST-SIDE-10
+#[test]
+fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the_tail() {
+    let Shell { mut app, _dir, .. } = shell14();
+    let egui_ctx = test_context();
+    let labels = TOOLS.map(|(_, label)| label);
+
+    // The rail drawn in the 381-point window: the band and the head's and
+    // tail's spots, for the open assertions below.
+    let rail = frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(1.0), 381.0);
+    let (band_top, band_bottom) = scroll_band(&rail.nodes);
+    let head = [
+        bounds(entry(&rail.nodes, "4cc")),
+        bounds(combo(&rail.nodes)),
+    ];
+    let tail = [
+        bounds(entry(&rail.nodes, HELP_LABEL)),
+        bounds(entry(&rail.nodes, SETTINGS_LABEL)),
+    ];
+    for label in labels {
+        let (_, clip) = icon_in(&rail, bounds(entry(&rail.nodes, label)))
+            .unwrap_or_else(|| panic!("{label}'s icon is painted"));
+        assert!(
+            f64::from(clip.max.y) <= band_bottom + 0.5,
+            "{label}'s clip reaches the tail's separator: {clip:?} past {band_bottom}"
+        );
+    }
+
+    // The sidebar opened in a taller window — the window's default height,
+    // as a member's hover would open it before shrinking — then the window
+    // shrank to 381 with the pointer still on the rail, so it stays open.
+    let rail_pos = centre(entry(&rail.nodes, "T01"));
+    frame_at_height(
+        &egui_ctx,
+        &mut app,
+        vec![egui::Event::PointerMoved(rail_pos)],
+        Some(1.5),
+        780.0,
+    );
+    frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(1.8), 780.0);
+    let opened = frame_at_height(&egui_ctx, &mut app, Vec::new(), Some(2.0), 381.0);
+    let cell = bounds(entry(&rail.nodes, "T01")).x1 - bounds(entry(&rail.nodes, "T01")).x0;
+    assert!(
+        bounds(entry(&opened.nodes, "T01")).x1 - bounds(entry(&opened.nodes, "T01")).x0 > cell,
+        "the sidebar stayed open through the shrink"
+    );
+
+    // In the opened sidebar every entry's paint is clipped at or above the
+    // tail's separator, and Help and Settings are painted inside the window at
+    // the rail's positions.
+    for label in labels {
+        let (_, clip) = icon_in(&opened, bounds(entry(&opened.nodes, label)))
+            .unwrap_or_else(|| panic!("{label}'s icon is painted"));
+        assert!(
+            f64::from(clip.max.y) <= band_bottom + 0.5,
+            "{label}'s clip reaches the tail's separator in the opened sidebar: \
+             {clip:?} past {band_bottom}"
+        );
+    }
+    let window = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 381.0));
+    for (name, before) in ["4cc", HELP_LABEL, SETTINGS_LABEL]
+        .into_iter()
+        .zip([head[0]].into_iter().chain(tail))
+    {
+        let after = bounds(entry(&opened.nodes, name));
+        assert!(
+            (before.x0 - after.x0).abs() < 0.5 && (before.y0 - after.y0).abs() < 0.5,
+            "{name} moved on open: {before:?} -> {after:?}"
+        );
+    }
+    for name in [HELP_LABEL, SETTINGS_LABEL] {
+        assert!(
+            text_shape_in(&opened, name, window).is_some(),
+            "{name} is painted inside the window"
+        );
+    }
+    let opened_head = [
+        bounds(entry(&opened.nodes, "4cc")),
+        bounds(combo(&opened.nodes)),
+    ];
+    let opened_tail = [
+        bounds(entry(&opened.nodes, HELP_LABEL)),
+        bounds(entry(&opened.nodes, SETTINGS_LABEL)),
+    ];
+
+    // The wheel over the opened sidebar's entries scrolls them, the pointer
+    // resting inside it: the entries move until the last is in view, head and
+    // tail standing.
+    let spot = egui::pos2(80.0, ((band_top + band_bottom) / 2.0) as f32);
+    let mut previous = f64::MAX;
+    for notch in 0..60 {
+        let out = frame_at_height(
+            &egui_ctx,
+            &mut app,
+            wheel_notch_at(spot, false),
+            None,
+            381.0,
+        );
+        let y0 = bounds(entry(&out.nodes, "T14")).y0;
+        if (y0 - previous).abs() < 0.01 {
+            break;
+        }
+        assert!(
+            notch < 59,
+            "the opened sidebar's entries still move after 60 notches"
+        );
+        previous = y0;
+    }
+    let out = frame_at_height(&egui_ctx, &mut app, Vec::new(), None, 381.0);
+    let last = bounds(entry(&out.nodes, "T14"));
+    assert!(
+        last.y1 <= band_bottom + 0.5 && last.y0 >= band_top - 0.5,
+        "the last entry scrolled into view in the opened sidebar: {last:?} vs band {band_top:.1}..{band_bottom:.1}"
+    );
+    let (icon, clip) = icon_in(&out, last).expect("T14's icon is painted");
+    assert!(
+        clip.contains(icon.pos),
+        "the last entry is in view: icon at {:?} clipped to {clip:?}",
+        icon.pos
+    );
+    for (name, before) in ["4cc", "the selector", HELP_LABEL, SETTINGS_LABEL]
+        .into_iter()
+        .zip(opened_head.into_iter().chain(opened_tail))
+    {
+        let after = if name == "the selector" {
+            bounds(combo(&out.nodes))
+        } else {
+            bounds(entry(&out.nodes, name))
+        };
+        assert_eq!(before, after, "{name} moved while the entries scrolled");
+    }
+}
+
 // ST-SIDE-10's tall-window clause at its edge: in a window one point taller
 // than head, entries and tail need, every entry is in view and a wheel turn
 // moves none. A tail that kept more room would push the last entries under
