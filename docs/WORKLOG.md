@@ -1913,6 +1913,13 @@ briefs, review loops, gates and mutation runs as for any step.
     framed in the middle of the view (`plans/save_editor.md` "Editing UI", the toolbar's
     bullet; SE-GUI-90; the draft's `welcomePanel`). It waits for 0.0.2-startdlg, whose
     `dialog_page` widget it uses
+  - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
+    item switches to its player or team, the list staying open; the X is the error red in a
+    thin square; a thin line parts each row of the changes table, prompt and patch panel too
+    (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74; the draft's `changesTable`).
+    Brief `.tmp/chpop/brief_chpop.md`, after 0.0.2-welcome merges (both own `save_editor`'s
+    `view/`) -> verify: SE-GUI-43 and 74 headless, the built window beside
+    `.tmp/chpop/draft_popup_zoom.png`
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
