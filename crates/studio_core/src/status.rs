@@ -139,8 +139,12 @@ pub enum NoticeKind {
     Info,
     /// Something the member should look at: `Teams list is read-only`, a switch whose
     /// `Fix PES path` action points at another folder's exe. Drawn in the theme's
-    /// warning orange.
+    /// warning amber.
     Warning,
+    /// Something asked for failed: a file that could not be written, a run that
+    /// stopped on an error. Drawn in the theme's error red
+    /// (`Visuals::error_fg_color`).
+    Error,
 }
 
 /// The clickable part of a notice.

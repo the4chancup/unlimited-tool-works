@@ -177,7 +177,7 @@ pub enum ShellRequest {
 }
 
 /// What the sidebar's exe check found at its last listing of the resolved PES folder
-/// (ST-SIDE-03): the PES selector is red on `OtherVersion`, orange on `NoExe` and
+/// (ST-SIDE-03): the PES selector is red on `OtherVersion`, amber on `NoExe` and
 /// `NoFolder`, uncolored on `Found`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExeCheck {

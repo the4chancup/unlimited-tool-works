@@ -6,9 +6,9 @@
 //! widget states are egui 0.36's, the look the drafts were reviewed in, but
 //! for the light fills, each a step lighter than the grey that keeps the dark
 //! fill's contrast with the panel. The rest of the presets stays egui's own
-//! `Visuals` until the curated one lands, but for the light warning colour,
-//! darkened to read at 4.5 on the light panel, and the corner radii: one
-//! radius, 2 points, on every corner egui or the suite draws.
+//! `Visuals` until the curated one lands, but for the error, warning and link
+//! colours, GitHub's pairs in both themes, and the corner radii: one radius,
+//! 2 points, on every corner egui or the suite draws.
 
 use crate::settings::Theme;
 use crate::status::NoticeKind;
@@ -23,8 +23,8 @@ pub struct Palette {
     /// The success notices' bright green (the draft's `--success`). egui's
     /// `Visuals` has a warning colour and an error colour but no success one,
     /// so the suite carries its own. On the light theme a darker green: the
-    /// dark one reads at a contrast of 1.7 against egui's light panel, where
-    /// the darker one reads at 5.6 (the light theme's own link and warning
+    /// dark one reads at a contrast of 2.4 against egui's light panel, where
+    /// the darker one reads at 4.8 (the light theme's own link and warning
     /// colours are darker for the same reason).
     pub success: egui::Color32,
     /// The boots/gloves dialog's range end ID (the draft's
@@ -107,11 +107,17 @@ pub struct Palette {
     /// a portrait of its own colour.
     pub cross_outline: egui::Color32,
     /// Live AATF's pitch cross over a Warning's portrait: the dark theme's
-    /// warning orange in both themes, because it sits on the turf and the
+    /// warning amber in both themes, because it sits on the turf and the
     /// badges, which do not follow the theme. The light theme's warning colour,
-    /// darkened for the light panel, would read at 1.5 to 1.8 on the turf's
-    /// bands, where this one reads at 3.2 to 3.7.
+    /// darkened for the light panel, would read at 1.5 to 1.7 on the turf's
+    /// bands, where this one reads at 2.9 to 3.3.
     pub pitch_warn: egui::Color32,
+    /// Live AATF's pitch cross over an Error's portrait: the dark theme's
+    /// error red in both themes, because it sits on the turf and the badges,
+    /// which do not follow the theme. The light theme's error colour,
+    /// darkened for the light panel, would read at 1.4 to 1.6 on the turf's
+    /// bands, where this one reads at 2.2 to 2.5.
+    pub pitch_error: egui::Color32,
     /// The captain mark's box over his portrait.
     pub captain_fill: egui::Color32,
     /// The captain mark's `C`.
@@ -143,7 +149,7 @@ pub struct Palette {
 impl Palette {
     /// The dark theme's colours, the default look.
     pub const DARK: Palette = Palette {
-        success: egui::Color32::from_rgb(0x4c, 0xd9, 0x64),
+        success: egui::Color32::from_rgb(0x3f, 0xb9, 0x50),
         readout: egui::Color32::from_gray(0xa0),
         count_grey: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
         // egui's fade draws the resting text, 180, at a measured `#6c6c6c`
@@ -169,7 +175,8 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
-        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
+        pitch_warn: egui::Color32::from_rgb(0xd2, 0x99, 0x22),
+        pitch_error: egui::Color32::from_rgb(0xf8, 0x51, 0x49),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -187,7 +194,7 @@ impl Palette {
     /// Each is written out rather than copied from `DARK`, so a colour added
     /// to the struct is a compile error here until it has a light value.
     pub const LIGHT: Palette = Palette {
-        success: egui::Color32::from_rgb(0x13, 0x73, 0x33),
+        success: egui::Color32::from_rgb(0x1a, 0x7f, 0x37),
         readout: egui::Color32::from_gray(0x5f),
         count_grey: egui::Color32::from_gray(0x9f),
         // The light resting text unchanged: the drafts are dark only, so the
@@ -212,7 +219,8 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
-        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
+        pitch_warn: egui::Color32::from_rgb(0xd2, 0x99, 0x22),
+        pitch_error: egui::Color32::from_rgb(0xf8, 0x51, 0x49),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -265,6 +273,7 @@ pub fn notice_color(kind: NoticeKind, visuals: &egui::Visuals) -> egui::Color32 
         NoticeKind::Success => palette(visuals).success,
         NoticeKind::Info => visuals.hyperlink_color,
         NoticeKind::Warning => visuals.warn_fg_color,
+        NoticeKind::Error => visuals.error_fg_color,
     }
 }
 
@@ -328,13 +337,25 @@ pub fn install(ctx: &egui::Context) {
             style.visuals.window_corner_radius = egui::CornerRadius::same(CORNER_RADIUS);
             style.visuals.menu_corner_radius = egui::CornerRadius::same(CORNER_RADIUS);
             match theme {
-                egui::Theme::Dark => style.visuals.widgets = widgets_dark(),
+                egui::Theme::Dark => {
+                    style.visuals.widgets = widgets_dark();
+                    // GitHub's pairs for both themes (the light values
+                    // below): egui's #FF0000, fully saturated, glares on
+                    // the dark panel although it reads at only 4.3
+                    // there, its orange stands too close to that red,
+                    // and its light link blue reads at 2.8.
+                    style.visuals.error_fg_color = egui::Color32::from_rgb(0xF8, 0x51, 0x49);
+                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0xD2, 0x99, 0x22);
+                    style.visuals.hyperlink_color = egui::Color32::from_rgb(0x58, 0xA6, 0xFF);
+                }
                 egui::Theme::Light => {
                     style.visuals.widgets = widgets_light();
-                    // egui's light orange, #FF6400, reads at 2.8 on the light
-                    // panel; darkened in linear light it reads at 4.5, as
-                    // every light text colour must.
-                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0xC5, 0x4B, 0x00);
+                    // The light values of the same three pairs, each
+                    // reading at 4.5 or more on the light panel, where
+                    // egui's light orange and link blue read at 2.8.
+                    style.visuals.error_fg_color = egui::Color32::from_rgb(0xD1, 0x24, 0x2F);
+                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0x9A, 0x67, 0x00);
+                    style.visuals.hyperlink_color = egui::Color32::from_rgb(0x09, 0x69, 0xDA);
                 }
             }
         });
@@ -565,6 +586,10 @@ mod tests {
                 notice_color(NoticeKind::Warning, &visuals),
                 visuals.warn_fg_color
             );
+            assert_eq!(
+                notice_color(NoticeKind::Error, &visuals),
+                visuals.error_fg_color
+            );
         }
     }
 
@@ -612,6 +637,7 @@ mod tests {
             pitch_text,
             cross_outline,
             pitch_warn,
+            pitch_error,
             captain_fill,
             captain_text,
             lit_dim,
@@ -648,6 +674,7 @@ mod tests {
             ("pitch_text", *pitch_text),
             ("cross_outline", *cross_outline),
             ("pitch_warn", *pitch_warn),
+            ("pitch_error", *pitch_error),
             ("captain_fill", *captain_fill),
             ("captain_text", *captain_text),
             ("lit_dim", *lit_dim),
@@ -911,27 +938,105 @@ mod tests {
         }
     }
 
-    // The light warning colour reads at 4.5 on the light panel, as the light
-    // text colours do, where egui's own light orange reads at 2.8; the dark
-    // one stays egui's.
+    // The warning colours are GitHub's attention amber pair, replacing
+    // egui's oranges, which stood too close to the error red; the light
+    // one reads at 4.6 on the light panel, where egui's `#FF6400` read
+    // at 2.8.
     #[test]
-    fn install_darkens_the_light_warning_colour_to_read_at_4_5() {
+    fn install_sets_githubs_attention_amber_for_warnings() {
         let ctx = egui::Context::default();
         install(&ctx);
-        let light = ctx.style_of(egui::Theme::Light);
-        assert_eq!(
-            light.visuals.warn_fg_color,
-            egui::Color32::from_rgb(0xC5, 0x4B, 0x00)
-        );
-        let light_contrast = contrast(light.visuals.warn_fg_color, light.visuals.panel_fill);
-        assert!(
-            light_contrast >= 4.5,
-            "the light warning colour reads at {light_contrast:.3} on the light panel"
-        );
-        assert_eq!(
-            ctx.style_of(egui::Theme::Dark).visuals.warn_fg_color,
-            egui::Color32::from_rgb(0xFF, 0x8F, 0x00)
-        );
+        for (theme, warning) in [
+            (egui::Theme::Dark, egui::Color32::from_rgb(0xD2, 0x99, 0x22)),
+            (
+                egui::Theme::Light,
+                egui::Color32::from_rgb(0x9A, 0x67, 0x00),
+            ),
+        ] {
+            let style = ctx.style_of(theme);
+            assert_eq!(style.visuals.warn_fg_color, warning, "{theme:?}");
+            let on_panel = contrast(warning, style.visuals.panel_fill);
+            assert!(
+                on_panel >= 4.5,
+                "the {theme:?} warning colour reads at {on_panel:.3} on its panel"
+            );
+        }
+    }
+
+    // The error colours are GitHub's danger red pair, in place of egui's
+    // `#FF0000` in both themes: fully saturated, it glared on the dark
+    // panel although it reads at only 4.3 there.
+    #[test]
+    fn install_sets_githubs_danger_red_for_errors() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        for (theme, error) in [
+            (egui::Theme::Dark, egui::Color32::from_rgb(0xF8, 0x51, 0x49)),
+            (
+                egui::Theme::Light,
+                egui::Color32::from_rgb(0xD1, 0x24, 0x2F),
+            ),
+        ] {
+            let style = ctx.style_of(theme);
+            assert_eq!(style.visuals.error_fg_color, error, "{theme:?}");
+            let on_panel = contrast(error, style.visuals.panel_fill);
+            assert!(
+                on_panel >= 4.5,
+                "the {theme:?} error colour reads at {on_panel:.3} on its panel"
+            );
+        }
+    }
+
+    // The link blue is GitHub's pair too, so the four notice kinds'
+    // colours come from one set: egui's light `#009BFF` reads at 2.8 on
+    // the light panel.
+    #[test]
+    fn install_sets_githubs_link_blue() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        for (theme, link) in [
+            (egui::Theme::Dark, egui::Color32::from_rgb(0x58, 0xA6, 0xFF)),
+            (
+                egui::Theme::Light,
+                egui::Color32::from_rgb(0x09, 0x69, 0xDA),
+            ),
+        ] {
+            let style = ctx.style_of(theme);
+            assert_eq!(style.visuals.hyperlink_color, link, "{theme:?}");
+            let on_panel = contrast(link, style.visuals.panel_fill);
+            assert!(
+                on_panel >= 4.5,
+                "the {theme:?} link colour reads at {on_panel:.3} on its panel"
+            );
+        }
+    }
+
+    // The palette's success green is GitHub's pair from the same set:
+    // the light one reads at 4.8 on the light panel, where the dark
+    // green itself reads at 2.4.
+    #[test]
+    fn the_palettes_success_green_is_githubs() {
+        for (name, success, expected, panel) in [
+            (
+                "dark",
+                Palette::DARK.success,
+                egui::Color32::from_rgb(0x3F, 0xB9, 0x50),
+                egui::Visuals::dark().panel_fill,
+            ),
+            (
+                "light",
+                Palette::LIGHT.success,
+                egui::Color32::from_rgb(0x1A, 0x7F, 0x37),
+                egui::Visuals::light().panel_fill,
+            ),
+        ] {
+            assert_eq!(success, expected, "{name}");
+            let on_panel = contrast(success, panel);
+            assert!(
+                on_panel >= 4.5,
+                "the {name} success green reads at {on_panel:.3} on its panel"
+            );
+        }
     }
 
     // The lineup lists' position colours: the pitch's on the dark theme; on

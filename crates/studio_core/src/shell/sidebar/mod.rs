@@ -1027,7 +1027,7 @@ pub(super) fn version_label(version: PesVersion, rail: bool) -> String {
 }
 
 /// The selector's colour for an exe-check verdict (ST-SIDE-03): red on a different
-/// version's exe, orange on no exe or no folder, none when the selection is installed.
+/// version's exe, amber on no exe or no folder, none when the selection is installed.
 pub(super) fn selector_color(check: ExeCheck, visuals: &egui::Visuals) -> Option<egui::Color32> {
     match check {
         ExeCheck::OtherVersion(_) => Some(visuals.error_fg_color),

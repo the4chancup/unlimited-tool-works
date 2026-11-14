@@ -329,7 +329,7 @@ fn marked_field_maps_every_kind() {
 
 /// `row_mark` counts the slot's errors, warnings and suggestions — a zero
 /// count left out, the other slots' rows counted nowhere — and draws a
-/// `✖` in the error colour on an Error, else a `✔`: orange on a Warning,
+/// `✖` in the error colour on an Error, else a `✔`: amber on a Warning,
 /// blue on suggestions alone, green on none (the draft's `rowMark`).
 #[test]
 fn row_mark_counts_the_slots_rows_and_picks_its_glyph() {

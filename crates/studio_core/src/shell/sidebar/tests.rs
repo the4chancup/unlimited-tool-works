@@ -1034,7 +1034,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     );
     fs::remove_dir_all(&dir).unwrap();
 
-    // No PES exe: orange, the tooltip says none was found.
+    // No PES exe: amber, the tooltip says none was found.
     let dir = test_dir("studio_core_sidebar_noexe");
     fs::create_dir_all(&dir).unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
@@ -1043,7 +1043,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         app.sidebar.exe_check.as_ref().map(|(_, _, check)| *check),
         Some(ExeCheck::NoExe)
     );
-    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "orange");
+    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
     let nodes = hover_selector(&mut app);
     assert!(has_text(
         &nodes,
@@ -1062,11 +1062,11 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         app.sidebar.exe_check.as_ref().map(|(_, _, check)| *check),
         Some(ExeCheck::NoExe)
     );
-    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "orange");
+    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
     fs::remove_dir_all(&dir).unwrap();
 
     // A directory named like the exe is not an exe (the compiler's preflight
-    // counts files only): orange like an empty folder.
+    // counts files only): amber like an empty folder.
     let dir = test_dir("studio_core_sidebar_dir_named_exe");
     fs::create_dir_all(dir.join("PES2021.exe")).unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
@@ -1075,10 +1075,10 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         app.sidebar.exe_check.as_ref().map(|(_, _, check)| *check),
         Some(ExeCheck::NoExe)
     );
-    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "orange");
+    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
     fs::remove_dir_all(&dir).unwrap();
 
-    // The folder missing: orange too, the tooltip names it.
+    // The folder missing: amber too, the tooltip names it.
     let dir = test_dir("studio_core_sidebar_missing");
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1086,7 +1086,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         app.sidebar.exe_check.as_ref().map(|(_, _, check)| *check),
         Some(ExeCheck::NoFolder)
     );
-    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "orange");
+    assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
     let nodes = hover_selector(&mut app);
     assert!(has_text(
         &nodes,
@@ -1295,7 +1295,7 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
 
     // Stub A targets the version, stub B does not. The resolved PES folder
     // holds no exe, so the exe check fails: under A the selector takes the
-    // check's orange, the premise B must not share.
+    // check's amber, the premise B must not share.
     let dir = TestDir::new("studio_core_sidebar_not_targeted");
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
@@ -1317,7 +1317,7 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     let middle = egui::pos2(400.0, 300.0);
     let visuals = egui_ctx.global_style().visuals.clone();
 
-    // Under A the rail's selector shows the year in the failing check's orange.
+    // Under A the rail's selector shows the year in the failing check's amber.
     let out = frame(&egui_ctx, &mut app, Vec::new(), true);
     let cell = entry(&out.nodes, "A").bounds().unwrap().width();
     let selector = combo(&out.nodes);
@@ -1328,7 +1328,7 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     assert_eq!(
         year.galley.job.sections[0].format.color, visuals.warn_fg_color,
         "the premise: under a tool that targets the version the missing exe \
-         colours the selector orange"
+         colours the selector amber"
     );
     let rail_icons = icons(&out.nodes);
 
