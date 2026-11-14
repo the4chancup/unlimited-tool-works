@@ -239,6 +239,62 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .plist .qacol { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .plist #quick-actions .row button { flex: 1; }
 .detail { flex: 1; min-width: 0; }
+/* The Squad screen (squadView): the Team selector where the list's top is, the title row
+   beside it, then the table, which takes the pane's width and height (plans/core/gui.md "A
+   window larger than the default" names it). One scroll area both ways; the slot, name and
+   registered position columns and the two heading rows stay put (position: sticky stands
+   for egui painting them outside the ScrollArea). */
+.squad-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.squad-head { display: flex; gap: 12px; align-items: flex-start; }
+.squad-head > select { width: 245px; flex: none; }
+.squad-title { flex: 1; min-width: 0; }
+.squad-filters { display: flex; justify-content: flex-end; gap: 10px; align-items: center;
+  white-space: nowrap; margin-top: 4px; }
+.squad-filters .vsep { width: 1px; align-self: stretch; background: var(--stroke); }
+.squad-scroll { flex: 1; min-height: 0; overflow: auto; margin-top: 4px; outline: none;
+  background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px; }
+#squad-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums;
+  user-select: none; }
+#squad-table th, #squad-table td { padding: 0 4px; height: 20px; white-space: nowrap;
+  text-align: center; border-bottom: 1px solid var(--faint); background: var(--extreme); }
+#squad-table thead th { position: sticky; z-index: 2; background: var(--panel); font-weight: 400;
+  cursor: pointer; }
+#squad-table .sqgroups th { top: 0; height: 18px; color: var(--strong); text-align: left; cursor: default; }
+#squad-table .sqheads th { top: 19px; vertical-align: bottom; padding-bottom: 4px; }
+#squad-table .sqheads th:hover { color: var(--strong); }
+/* A heading reads upwards, so a column is as narrow as its values. */
+#squad-table .rot { writing-mode: vertical-rl; transform: rotate(180deg); display: inline-block; }
+#squad-table .fz { position: sticky; z-index: 1; }
+#squad-table thead .fz { z-index: 3; }
+/* The frozen columns' widths are set, so each one's sticky offset is the widths before it. */
+#squad-table .fz0 { left: 0; width: 30px; min-width: 30px; max-width: 30px; box-sizing: border-box; }
+#squad-table .fz1 { left: 30px; width: 158px; min-width: 158px; max-width: 158px; box-sizing: border-box;
+  text-align: left; overflow: hidden; text-overflow: ellipsis; }
+#squad-table .fz2 { left: 188px; width: 44px; min-width: 44px; max-width: 44px; box-sizing: border-box;
+  box-shadow: inset -1px 0 var(--stroke); }
+#squad-table .gstart { border-left: 1px solid var(--stroke); }
+#squad-table td.sq-num { min-width: 22px; }
+/* A rating as the positions grid draws its chosen letter: A green, B the selection's
+   colour; C, the most common, plain and weak so the playable ones stand out. */
+#squad-table td.ra { background: #129648; color: #fff; }
+#squad-table td.rb { background: var(--sel-bg); color: var(--sel-fg); }
+#squad-table td.rc { color: #6e6e6e; }
+#squad-table td.insel { box-shadow: inset 0 0 0 999px #005c8070; }
+#squad-table td.active { box-shadow: inset 0 0 0 2px var(--sel-fg); }
+#squad-table td.insel.active { box-shadow: inset 0 0 0 2px var(--sel-fg), inset 0 0 0 999px #005c8070; }
+#squad-table td.typing { color: var(--strong); text-align: left; }
+#squad-table td.sq-held, #squad-table th.sq-held { text-align: left; }
+#squad-table .gname { position: sticky; left: 236px; }
+#squad-table .sqbox { display: inline-flex; width: 12px; height: 12px; box-sizing: border-box;
+  border: 1px solid var(--stroke); border-radius: 2px; align-items: center; justify-content: center;
+  font-size: 10px; line-height: 1; background: var(--widget); cursor: pointer; vertical-align: middle; }
+#squad-table .sqbox.on { background: var(--sel-bg); color: var(--sel-fg); }
+#squad-table .chip { display: inline-block; padding: 0 5px; margin-right: 4px; line-height: 15px;
+  border-radius: 2px; background: var(--faint); border: 1px solid var(--stroke); }
+/* A tooltip that opens at once (quickTip), egui's tooltip frame. */
+.qtip { position: fixed; z-index: 1000; display: none; pointer-events: none; padding: 3px 6px;
+  background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
+  color: var(--text); box-shadow: 0 2px 8px #000a; }
 /* The player view's fixed columns: General info over Playable positions,
    the skills in two with the COM styles and the non-ability values under
    them, the ability stats in one, then the Appearance section. Four equal
@@ -4453,7 +4509,8 @@ function renderView(center) {
   center.append(host);
   if (live) center.append(live);
   host.append(renderToolbar());
-  host.append(h("div", { class: "master" }, renderMaster(), renderDetail()));
+  host.append(S.squad ? squadView()
+    : h("div", { class: "master" }, renderMaster(), renderDetail()));
   const logo = eventLogo();
   if (logo) center.append(logo);
   const panel = renderPanel();
@@ -4511,9 +4568,10 @@ function catTeams() {
   const [, , lo, hi] = TEAM_CATS.find(c => c[0] === (S.teamCat || "all"));
   return curSave().teams.filter(t => t.id >= lo && t.id <= hi);
 }
-function renderMaster() {
-  const box = h("div", { class: "plist", "data-panel": "player-list" });
-  const sel = combo([["all", "All teams"]].concat(catTeams().map(t => [String(t.id), t.name])),
+// The Team selector: over the player list, and on the Squad screen's title row, where the
+// table shows one team, so without All teams (`withAll` false).
+function teamSelector(withAll) {
+  const sel = combo((withAll ? [["all", "All teams"]] : []).concat(catTeams().map(t => [String(t.id), t.name])),
     // A team picked selects its team row, so the view shows its tactics; ALL
     // keeps the selection.
     S.teamSel, v => { S.teamSel = v; if (v !== "all") S.sel = { team: Number(v) }; });
@@ -4523,14 +4581,20 @@ function renderMaster() {
   sel.comboRadios = { options: TEAM_CATS.map(([key, label]) => [key, label]), value: S.teamCat || "all",
     set: v => {
       S.teamCat = v;
-      if (S.teamSel !== "all" && !catTeams().some(t => String(t.id) === S.teamSel)) S.teamSel = "all";
       // A selection the category no longer lists moves to the list's first player.
       const listed = catTeams();
+      if (S.teamSel !== "all" && !listed.some(t => String(t.id) === S.teamSel))
+        S.teamSel = withAll || !listed.length ? "all" : String(listed[0].id);
       if (listed.length && !listed.includes(selTeam()))
         S.sel = { team: listed[0].id, slot: listed[0].players[0].slot };
       render(); updateLink();
       comboPopup(document.getElementById("team-sel"));
     } };
+  return sel;
+}
+function renderMaster() {
+  const box = h("div", { class: "plist", "data-panel": "player-list" });
+  const sel = teamSelector(true);
   // sample wording: the filter's placeholder and the rows' tooltips.
   const filter = h("input", { type: "text", id: "filter-box",
     placeholder: "Team or player: name, shirt name or ID", value: S.filter,
@@ -4978,9 +5042,22 @@ function viewTitle(id, name, plain) {
 // first player if none was; from a player Gameplan selects his team's row, so the list
 // shows where the screen came from.
 function pageToggle() {
-  const on = isTeamSel() ? "gameplan" : groupOn() ? "stats" : (S.page || "stats");
+  const on = S.squad ? "squad" : isTeamSel() ? "gameplan" : groupOn() ? "stats" : (S.page || "stats");
   const go = page => {
     const team = selTeam();
+    // Squad shows one team: the selector moves to the selected row's team, and back to All
+    // teams on leaving if it showed All teams before (a team picked in between stays).
+    if (page === "squad") {
+      S.squadAll = S.teamSel === "all";
+      S.teamSel = String(team.id);
+      S.squad = true;
+      render(); updateLink();
+      return;
+    }
+    if (S.squad) {
+      S.squad = false;
+      if (S.squadAll) S.teamSel = "all";
+    }
     if (page === "gameplan") S.sel = { team: team.id };
     else {
       S.page = page;
@@ -4992,7 +5069,7 @@ function pageToggle() {
     render(); updateLink();
   };
   return h("span", { class: "rate tri", id: "page-toggle", style: "font-weight:400" },
-    [["stats", "Stats"], ["appearance", "Appearance"], ["gameplan", "Gameplan"]].map(([page, label]) =>
+    [["stats", "Stats"], ["appearance", "Appearance"], ["gameplan", "Gameplan"], ["squad", "Squad"]].map(([page, label]) =>
       groupOn() && page === "appearance"
         ? h("span", { class: "sel off", title: "Appearance is one player's: select one row" }, label)
         : h("span", { class: "sel" + (on === page ? " on" : ""),
@@ -5064,6 +5141,355 @@ function playerColumns(p, team) {
       h("div", { class: "col pcol" }, skillsPanel(p, team), asidePanel(p), comStylesPanel(p)),
       abilityPanel(p)));
 }
+// ---- The Squad screen (plans/save_editor.md "The Squad screen, still to be drafted") ----
+// The team in one table: a row per player in roster order, a column per value of the Stats
+// screen under its group's heading. The slot, the name and the registered position stay at
+// the left while the rest scrolls sideways, and the two heading rows stay at the top while
+// the rows scroll (egui: one ScrollArea both ways, the frozen cells and the headings painted
+// outside it). The player list is hidden, since the table shows the same players: the Team
+// selector stands on the title row, where the list's top is on the other screens.
+// The column groups, in the Stats screen's order; `aside` is the ruleset's Tricks or Free
+// cards (asideCards), split from Skills there too.
+const SQUAD_GROUPS = ["general", "other", "positions", "abilities", "skills", "aside", "com"];
+const squadGroupTitle = g => ({ general: "General info", other: "Other stats",
+  positions: "Playable positions", abilities: "Ability stats", skills: "Skills",
+  aside: asideCards().title, com: "COM playing styles" })[g];
+// The groups shown and the cards-held mode: a tool setting, as the positions' layout is
+// (localStorage stands for the settings file).
+const SQUAD_SHOW = (() => {
+  const saved = JSON.parse(localStorage.getItem("save_editor.squad") || "null") || {};
+  return { groups: saved.groups || SQUAD_GROUPS.slice(), held: !!saved.held };
+})();
+const saveSquadShow = () => localStorage.setItem("save_editor.squad", JSON.stringify(SQUAD_SHOW));
+// The cell selection (row and column indices of the table as drawn), the value being typed,
+// the sort and the scroll offsets, kept across redraws as egui keeps a widget's state.
+const SQ = { anchor: { r: 0, c: 0 }, active: { r: 0, c: 0 }, typed: null, sort: null,
+  scroll: { left: 0, top: 0 }, dragging: false, reveal: false };
+
+// One column: its group, its heading (`label`, the full name, also the tooltip's), how a
+// cell draws (`kind`) and the value's read and write. `num` takes digits in [min, max];
+// `rating` C, B or A; `side` L or R; `pick` a choice of `choices`; `check` Space or a click.
+function squadColumns(team) {
+  const v = version();
+  const num = (key, group, label, get, put, min, max) => ({ key, group, label, kind: "num", get, put, min, max });
+  const shown = (stored, max) => [stored + 1, max];
+  const card = (group, list, k) => ({ key: group + ":" + k, group, label: cardName(k), kind: "check",
+    get: p => list(p).includes(k),
+    put: (p, on) => { const arr = list(p).filter(s => s !== k); if (on) arr.push(k); setList(p, group, arr); } });
+  const setList = (p, group, arr) => { if (group === "com") p.com_styles = arr; else p.skills = arr; };
+  const cols = [
+    { key: "registered", group: "frozen", label: "Registered position", short: "Pos", kind: "pick",
+      choices: POSITIONS.map(x => [x, x]), get: p => p.positions.registered,
+      put: (p, x) => { p.positions.registered = x; } },
+    num("height", "general", "Height", p => p.height, (p, x) => { p.height = x; }, 0, 255),
+    num("weight", "general", "Weight", p => p.weight, (p, x) => { p.weight = x; }, 0, 255),
+    num("age", "general", "Age", p => p.age, (p, x) => { p.age = x; }, 0, 255),
+    num("number", "general", "Shirt number", p => p.number, (p, x) => { p.number = x; }, 1, 99),
+    num("nation", "general", "Nation", p => p.nationality, (p, x) => { p.nationality = x; }, 0, 999),
+    { key: "captain", group: "general", label: "Captain", kind: "check",
+      get: p => team.captain === p.slot - 1, put: (p, on) => { if (on) team.captain = p.slot - 1; } },
+    { key: "foot", group: "general", label: "Stronger foot", kind: "side",
+      get: p => p.positions.stronger_foot, put: (p, x) => { p.positions.stronger_foot = x; } },
+  ];
+  if (v >= 20) cols.push({ key: "hand", group: "general", label: "Stronger hand", kind: "side",
+    get: p => p.positions.stronger_hand ?? "right", put: (p, x) => { p.positions.stronger_hand = x; } });
+  cols.push({ key: "style", group: "general", label: "Playing style", kind: "pick",
+    choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
+    put: (p, x) => { p.positions.playing_style = x; } });
+  // Drawn at the game's numbers, stored one lower, as the Other stats panel does.
+  for (const [key, label, max] of [["injury_resistance", "Injury Resistance", 3], ["form", "Form", 8],
+      ["weak_foot_usage", "Weak Foot Usage", 4], ["weak_foot_accuracy", "Weak Foot Accuracy", 4]])
+    cols.push(num(key, "other", label, p => p.stats[key] + 1, (p, x) => { p.stats[key] = x - 1; }, 1, max));
+  for (const pos of POSITIONS)
+    cols.push({ key: "pos:" + pos, group: "positions", label: POS_FULL[pos], short: pos, kind: "rating",
+      get: p => p.positions.playable[pos], put: (p, x) => { p.positions.playable[pos] = x; } });
+  // A stat or card the save's version does not have is no column at all.
+  for (const s of ABILITY_STATS.filter(s => v >= (STAT_MIN_VERSION[s] || 15)))
+    cols.push(num("stat:" + s, "abilities", statLabel(s), p => p.stats[s], (p, x) => { p.stats[s] = x; }, 40, 99));
+  const aside = asideCards().cards;
+  const has = k => v >= skillMinVersion(SKILLS.indexOf(k));
+  for (const k of SKILLS.filter(k => has(k) && !aside.includes(k))) cols.push(card("skills", p => p.skills, k));
+  for (const k of aside.filter(has)) cols.push(card("aside", p => p.skills, k));
+  for (const k of COM_STYLES) cols.push(card("com", p => p.com_styles, k));
+  const groups = SQUAD_SHOW.groups;
+  const wanted = cols.filter(c => c.group === "frozen" || groups.includes(c.group));
+  if (!SQUAD_SHOW.held) return wanted;
+  // Cards held: the card groups' columns give way to one cell listing each player's cards,
+  // left-aligned, in the groups' order.
+  const cardGroups = ["skills", "aside", "com"].filter(g => groups.includes(g));
+  const rest = wanted.filter(c => !cardGroups.includes(c.group));
+  if (!cardGroups.length) return rest;
+  const heldCols = wanted.filter(c => cardGroups.includes(c.group));
+  rest.push({ key: "held", group: "held", label: "Cards held", kind: "held",
+    get: p => heldCols.filter(c => c.get(p)).map(c => c.label) });
+  return rest;
+}
+
+// A value typed into a cell, as the cell's column reads it; undefined when it takes none.
+function squadParse(col, text) {
+  const t = text.trim().toUpperCase();
+  if (col.kind === "num") {
+    if (!/^\d+$/.test(t)) return undefined;
+    const n = parseInt(t, 10);
+    return n >= col.min && n <= col.max ? n : undefined;
+  }
+  if (col.kind === "rating") return ["C", "B", "A"].includes(t) ? t : undefined;
+  if (col.kind === "side") return t === "L" ? "left" : t === "R" ? "right" : undefined;
+  if (col.kind === "pick") {
+    const hit = col.choices.find(([k, label]) => k.toUpperCase() === t || label.toUpperCase() === t);
+    return hit ? hit[0] : undefined;
+  }
+  return undefined;
+}
+
+// The rows as drawn: the team's players in roster order, or sorted by one column for a
+// look (greatest first; A over B over C; a card held first), the roster's order breaking ties.
+function squadRows(team, cols) {
+  const rows = team.players.slice();
+  const col = SQ.sort && cols.find(c => c.key === SQ.sort);
+  if (!col) return rows;
+  const rank = p => { const x = col.get(p);
+    return col.kind === "rating" ? "CBA".indexOf(x) : col.kind === "check" ? (x ? 1 : 0)
+      : col.kind === "held" ? x.length : x; };
+  return rows.sort((a, b) => {
+    const ra = rank(a), rb = rank(b);
+    if (ra === rb) return a.slot - b.slot;
+    return typeof ra === "string" ? ra.localeCompare(rb) : rb - ra;
+  });
+}
+
+// The selection's rectangle, as row and column index ranges.
+function squadRect() {
+  const { anchor: a, active: b } = SQ;
+  return { r0: Math.min(a.r, b.r), r1: Math.max(a.r, b.r), c0: Math.min(a.c, b.c), c1: Math.max(a.c, b.c) };
+}
+const inRect = (q, r, c) => r >= q.r0 && r <= q.r1 && c >= q.c0 && c <= q.c1;
+
+// Writes `value` (or, for a card, `value(p, col)`) into every selected cell whose column
+// takes it, as one undo step: a block set is one edit, whatever its size.
+function squadSetBlock(rows, cols, accepts, value, label) {
+  const q = squadRect(), cells = [];
+  for (let r = q.r0; r <= q.r1; r++)
+    for (let c = q.c0; c <= q.c1; c++) if (accepts(cols[c])) cells.push([rows[r], cols[c]]);
+  const changes = cells.map(([p, col]) => [p, col, typeof value === "function" ? value(p, col) : value])
+    .filter(([p, col, x]) => col.get(p) !== x);
+  if (!changes.length) return;
+  edit(label + (changes.length > 1 ? " (" + changes.length + " values)" : ""),
+    () => changes.forEach(([p, col, x]) => col.put(p, x)));
+}
+
+// The typed text written into the selection, where each column takes it.
+function squadCommit(rows, cols) {
+  const text = SQ.typed;
+  SQ.typed = null;
+  if (text === null || text === "") return;
+  const head = cols[SQ.active.c];
+  squadSetBlock(rows, cols, col => squadParse(col, text) !== undefined,
+    (p, col) => squadParse(col, text), head.label);
+}
+
+// Moves the active cell by (dr, dc), clamped; `extend` keeps the anchor (Shift).
+function squadMove(rows, cols, dr, dc, extend) {
+  SQ.active = { r: Math.max(0, Math.min(rows.length - 1, SQ.active.r + dr)),
+    c: Math.max(0, Math.min(cols.length - 1, SQ.active.c + dc)) };
+  if (!extend) SQ.anchor = { ...SQ.active };
+  SQ.reveal = true;
+}
+
+// The table's keys, spreadsheet-like: arrows and Tab move (Shift with an arrow extends the
+// selection); typing replaces the value, Enter or a move writes it into every selected cell
+// that takes it and Escape drops it; Space flips the selected cards to the opposite of the
+// active cell's; Enter on a choice opens its list.
+function squadKey(e, rows, cols) {
+  const k = e.key, col = cols[SQ.active.c];
+  const moves = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (moves[k]) { squadCommit(rows, cols); squadMove(rows, cols, ...moves[k], e.shiftKey); }
+  else if (k === "Tab") { squadCommit(rows, cols); squadMove(rows, cols, 0, e.shiftKey ? -1 : 1, false); }
+  else if (k === "Enter") {
+    if (SQ.typed === null && col.kind === "pick") { e.preventDefault(); squadPick(rows, cols); return; }
+    squadCommit(rows, cols); squadMove(rows, cols, e.shiftKey ? -1 : 1, 0, false);
+  }
+  else if (k === "Escape") { if (SQ.typed === null) return; SQ.typed = null; }
+  else if (k === "Backspace") SQ.typed = (SQ.typed ?? "").slice(0, -1);
+  else if (k === " " && SQ.typed === null) {
+    if (col.kind !== "check") return;
+    const to = !col.get(rows[SQ.active.r]);
+    squadSetBlock(rows, cols, c => c.kind === "check", to, col.label);
+  }
+  else if (k.length === 1 && /[0-9a-z]/i.test(k)) SQ.typed = (SQ.typed ?? "") + k;
+  else return;
+  e.preventDefault();
+  render();
+}
+
+// A choice column's list (Registered position, Playing style), opened by Enter or a
+// double-click: the pick goes into every selected cell of a column with the same choices.
+function squadPick(rows, cols) {
+  const col = cols[SQ.active.c], p = rows[SQ.active.r];
+  const cell = document.querySelector('#squad-table [data-cell="' + SQ.active.r + "," + SQ.active.c + '"]');
+  if (!cell) return;
+  const s = combo(col.choices, col.get(p), x => {
+    squadSetBlock(rows, cols, c => c.choices === col.choices, x, col.label);
+  });
+  cell.innerHTML = "";
+  cell.append(s);
+  comboPopup(s);
+}
+
+// A tooltip that opens at once, for the rotated headings: a member scanning for a column
+// reads the name under the pointer without waiting egui's usual delay (egui: the heading's
+// on_hover_text inside a scope whose tooltip_delay is 0).
+let squadTipEl = null;
+function quickTip(el, text) {
+  el.addEventListener("mouseenter", () => {
+    squadTipEl = squadTipEl || document.body.appendChild(h("div", { class: "qtip" }));
+    squadTipEl.textContent = text;
+    const r = el.getBoundingClientRect();
+    squadTipEl.style.left = r.left + "px";
+    squadTipEl.style.top = (r.bottom + 4) + "px";
+    squadTipEl.style.display = "block";
+  });
+  el.addEventListener("mouseleave", () => { if (squadTipEl) squadTipEl.style.display = "none"; });
+}
+
+// One cell's content as drawn.
+function squadCellContent(col, p) {
+  const x = col.get(p);
+  if (col.kind === "check") return h("span", { class: "sqbox" + (x ? " on" : "") }, x ? "✓" : "");
+  if (col.kind === "side") return x === "left" ? "L" : "R";
+  if (col.kind === "pick") return col.short ? x : cardName(x);
+  if (col.kind === "held") return x.map(name => h("span", { class: "chip" }, name));
+  return String(x);
+}
+
+function squadTable(team) {
+  const cols = squadColumns(team), rows = squadRows(team, cols);
+  // A redraw replaces the heading under the pointer without a mouseleave.
+  if (squadTipEl) squadTipEl.style.display = "none";
+  // A selection left past a narrower table (a group hidden, another team) comes back inside it.
+  const clampAt = q => ({ r: Math.min(q.r, rows.length - 1), c: Math.min(q.c, cols.length - 1) });
+  SQ.anchor = clampAt(SQ.anchor); SQ.active = clampAt(SQ.active);
+  const q = squadRect();
+  // The group headings' row: the frozen columns' corner, then one cell per group run.
+  const groupRow = h("tr", { class: "sqgroups" }, h("th", { class: "fz fz0 corner", colspan: 3 }));
+  let i = 1;
+  while (i < cols.length) {
+    const g = cols[i].group;
+    let n = 0;
+    while (i + n < cols.length && cols[i + n].group === g) n++;
+    // The name sticks beside the frozen columns while its group is partly in view.
+    groupRow.append(h("th", { colspan: n, class: "gstart" },
+      h("span", { class: "gname" }, g === "held" ? "Cards" : squadGroupTitle(g))));
+    i += n;
+  }
+  const sortBy = col => { SQ.sort = SQ.sort === col.key ? null : col.key; render(); };
+  const headCell = (col, cls) => {
+    const mark = SQ.sort === col.key ? " ▼" : "";
+    const th = h("th", { class: [cls, col.kind === "held" ? "sq-held" : ""].filter(Boolean).join(" "),
+      onclick: () => sortBy(col) },
+      col.short || col.kind === "held"
+        ? h("span", { class: col.kind === "held" ? "gname" : "" }, (col.short || col.label) + mark)
+        : h("span", { class: "rot" }, col.label + mark));
+    quickTip(th, col.label + (SQ.sort === col.key ? " (sorted; click again for the roster's order)" : " (click to sort)"));
+    return th;
+  };
+  const headRow = h("tr", { class: "sqheads" },
+    h("th", { class: "fz fz0" }, "#"), h("th", { class: "fz fz1" }, "Name"),
+    headCell(cols[0], "fz fz2"),
+    ...cols.slice(1).map((col, c) => headCell(col, col.group !== cols[c].group ? "gstart" : "")));
+  const body = rows.map((p, r) => h("tr", {},
+    h("td", { class: "fz fz0 weak" }, String(p.slot).padStart(2, "0")),
+    h("td", { class: "fz fz1 sqname" }, ...nameSpans(p.name)),
+    ...cols.map((col, c) => {
+      const typing = SQ.typed !== null && r === SQ.active.r && c === SQ.active.c;
+      const cls = ["sq-" + col.kind,
+        c === 0 ? "fz fz2" : col.group !== cols[c - 1].group ? "gstart" : "",
+        col.kind === "rating" ? "r" + col.get(p).toLowerCase() : "",
+        inRect(q, r, c) ? "insel" : "", r === SQ.active.r && c === SQ.active.c ? "active" : "",
+        typing ? "typing" : ""].filter(Boolean).join(" ");
+      return h("td", { class: cls, "data-cell": r + "," + c,
+        onmousedown: e => {
+          if (e.button !== 0) return;
+          squadCommit(rows, cols);
+          SQ.active = { r, c };
+          if (!e.shiftKey) SQ.anchor = { r, c };
+          SQ.dragging = true;
+          // A click on a card's box flips that card alone.
+          if (col.kind === "check" && e.target.classList.contains("sqbox") && !e.shiftKey) {
+            const to = !col.get(p);
+            edit(col.label, () => col.put(p, to));
+          }
+          render();
+          // A double click on a choice opens its list (the redraw replaced the cell the
+          // first click landed on, so no dblclick event would reach it).
+          if (e.detail === 2 && col.kind === "pick") squadPick(rows, cols);
+        },
+        // A drag extends the selection while the button is held; the button's state is read
+        // here, since the release can land outside the table.
+        onmouseenter: e => {
+          if (!SQ.dragging || !(e.buttons & 1)) { SQ.dragging = false; return; }
+          SQ.active = { r, c };
+          render();
+        },
+      },
+        typing ? SQ.typed : squadCellContent(col, p));
+    })));
+  const table = h("table", { id: "squad-table" }, h("thead", {}, groupRow, headRow), h("tbody", {}, body));
+  const scroller = h("div", { class: "squad-scroll", tabindex: 0,
+    onkeydown: e => squadKey(e, rows, cols),
+    onscroll: e => { SQ.scroll = { left: e.target.scrollLeft, top: e.target.scrollTop }; } }, table);
+  // Restored once laid out, as the player list's offset is; the focus with it, so the keys
+  // keep landing on the table after a redraw.
+  requestAnimationFrame(() => {
+    scroller.scrollLeft = SQ.scroll.left; scroller.scrollTop = SQ.scroll.top;
+    // The active cell kept in view past the frozen columns and the headings, which cover the
+    // scroll area's edges (scrollIntoView would count them as room).
+    // Only after a key moved the active cell: a redraw for anything else (a group shown, a
+    // sort) leaves the table where the member scrolled it.
+    const active = SQ.reveal && scroller.querySelector("td.active:not(.fz)");
+    SQ.reveal = false;
+    if (active) {
+      const left = table.querySelector(".sqheads .fz2"), head = table.tHead;
+      const minX = active.offsetLeft - (left.offsetLeft + left.offsetWidth);
+      const maxX = active.offsetLeft + active.offsetWidth - scroller.clientWidth;
+      if (scroller.scrollLeft > minX) scroller.scrollLeft = minX;
+      else if (scroller.scrollLeft < maxX) scroller.scrollLeft = maxX;
+      const minY = active.offsetTop - head.offsetHeight;
+      const maxY = active.offsetTop + active.offsetHeight - scroller.clientHeight;
+      if (scroller.scrollTop > minY) scroller.scrollTop = minY;
+      else if (scroller.scrollTop < maxY) scroller.scrollTop = maxY;
+    }
+    if (!document.querySelector("#overlay .window") && !comboOpen) scroller.focus({ preventScroll: true });
+  });
+  return scroller;
+}
+
+// The groups' boxes and the cards-held mode, right-aligned on a row of their own over the
+// table: on the title row they left the team's name too little room.
+function squadFilters() {
+  const box = (label, on, flip) => cb(label, on, flip);
+  const groups = SQUAD_GROUPS.filter(g => g !== "aside" || asideCards().cards.length);
+  return h("div", { class: "squad-filters", id: "squad-filters" }, weak("Show"),
+    ...groups.map(g => box(squadGroupTitle(g), SQUAD_SHOW.groups.includes(g), on => {
+      SQUAD_SHOW.groups = on ? SQUAD_GROUPS.filter(x => x === g || SQUAD_SHOW.groups.includes(x))
+        : SQUAD_SHOW.groups.filter(x => x !== g);
+      saveSquadShow();
+    })),
+    h("span", { class: "vsep" }),
+    box("Only the cards each player has", SQUAD_SHOW.held, on => { SQUAD_SHOW.held = on; saveSquadShow(); }));
+}
+
+function squadView() {
+  const team = selTeam();
+  const title = h("div", { class: "squad-title" },
+    h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
+      pageToggle(), h("span", {}, h("span", { class: "weak" }, String(team.id)), " ", ...nameSpans(team.name))),
+    h("div", { class: "sep" }), squadFilters());
+  return h("div", { class: "squad-view", "data-panel": "squad" },
+    h("div", { class: "squad-head" }, teamSelector(false), title), squadTable(team));
+}
+
 // The team view: the team's name as the title, the name/short-name/colour
 // fields the team bar carried, the gated ids, the kit slots behind a button
 // (rarely edited), then the Tactics.
@@ -9040,6 +9466,7 @@ function linkKeys() {
   if (S.teamSel !== (S.saveKey === "pes17" ? "718" : "all")) k.team = S.teamSel;
   if (S.sel && S.sel.slot !== undefined) k.player = S.sel.team + "." + S.sel.slot;
   else if (S.sel) k.selteam = String(S.sel.team);
+  if (S.squad) k.page = "squad";
   if (S.panel) k.panel = S.panel;
   const w = document.querySelector("#overlay .window");
   // Only a name of this view's own windows: the host's named windows (About)
@@ -9117,6 +9544,13 @@ function linkOpen(scr, keys) {
     if (curSave().teams.some(t => String(t.id) === keys.selteam))
       S.sel = { team: Number(keys.selteam) };
     else linkWarn("selteam=" + keys.selteam);
+  }
+  if (keys.page !== undefined) {
+    if (keys.page === "squad") {
+      S.squad = true;
+      S.squadAll = S.teamSel === "all";
+      if (S.squadAll) S.teamSel = String(selTeam().id);
+    } else linkWarn("page=" + keys.page);
   }
   if (keys.panel !== undefined) {
     if (["aatf", "comparator", "patch", "interchange"].includes(keys.panel)) S.panel = keys.panel;
