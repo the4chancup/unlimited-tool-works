@@ -1919,16 +1919,17 @@ briefs, review loops, gates and mutation runs as for any step.
     its rows are as wide as the widest entry where the draft's fill the frame. Left: after
     0.0.2-chpop (it owns save_editor `src/view/`), `dialog_page` takes `modal`'s 360-point
     minimum and the entries fill the frame, in this panel and in the Ruleset start page
-    (whose template buttons are as wide as their text). Done 2026-11-14 (the lead, tests red
-    first). Left: the built window again
+    (whose template buttons are as wide as their text). Done 2026-11-14 (`852b5f91`, the
+    lead, tests red first); the built window matches both drafts. Left: the maintainer's look
+    (Pending looks)
   - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
     item switches to its player or team, the list staying open; the X's are the error red,
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
     patch panel too
     (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74; the draft's `changesTable`).
     Code done 2026-11-14 (`c8ba1be7`, SWE-2): the rows' click targets computed with the rows,
-    a player no roster holds offering none. Left: the built window beside
-    `.tmp/chpop/draft_popup_zoom.png` (Pending looks)
+    a player no roster holds offering none. The built window matches the draft (the lead,
+    2026-11-14). Left: the maintainer's look (Pending looks)
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
@@ -1938,7 +1939,7 @@ briefs, review loops, gates and mutation runs as for any step.
     toolbar stands over it, its document items disabled (`6fb65133`). The built window,
     checked 2026-11-14: the toolbar and File menu match; the draft now draws Random's buttons
     beside its label and "Recent files" under Open file…, as the editor and the plan do. Left:
-    the width fix under 0.0.2-welcome
+    the maintainer's look (Pending looks)
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
@@ -3014,12 +3015,14 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   formation of a shape of its own draws the other hidden one too, even when it has
   Kick-off's shape (2-4-1-3 twice); no PES;
   0.0.2-flatpitch; maintainer
-- The Save editor's welcome panel with no save open beside the draft's `welcomePanel`, and the
-  Ruleset editor's toolbar over its start page; no PES; 0.0.2-welcome, 0.0.2-startdlg;
-  harness, then maintainer
-- The unsaved changes list in the built window beside `.tmp/chpop/draft_popup_zoom.png`: the
-  red X's under `Undo`, the lines between rows, an item's click going to its player or team
-  with the list left open; no PES; 0.0.2-chpop; harness, then maintainer
+- The Save editor's welcome panel with no save open, and the Ruleset editor's toolbar over
+  its start page: checked by the lead at `852b5f91` (`.tmp/welcome/look/built2_first.png`
+  beside `draft_welcome.png`, `built2_ruleset.png` beside `draft_ruleset.png`); no PES;
+  0.0.2-welcome, 0.0.2-startdlg; maintainer
+- The unsaved changes list: the red X's under `Undo`, the lines between rows, an item's click
+  going to its player with the list left open, the close prompt's lines; checked by the lead
+  at `852b5f91` (`.tmp/chpop/look/list_zoom.png`, `hover_zoom.png`, `switched_top.png`,
+  `prompt.png` beside `.tmp/chpop/draft_popup_zoom.png`); no PES; 0.0.2-chpop; maintainer
 
 ---
 
