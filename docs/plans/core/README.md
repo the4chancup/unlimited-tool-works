@@ -34,8 +34,11 @@ rationale. Structural points worth noting here:
   balls, stadium and billboard exports, each into its own CPK in one run), with a Balls arranger
   editing the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one
   Compiler for every export kind"). It takes the name from 0.0.2, before the other kinds
-  join: the sidebar, the window's title and the help say Compiler, the command-line id is
-  `compiler` and its settings table `[compiler]`. No `team-compiler` alias stays: none is
+  join: the sidebar, the window's title, the help chapter's title and a changelog entry's
+  label say **The Compiler**, the article for the suite's one compiler, while a sentence says
+  "the Compiler" (`Open the Compiler`), since a capital article inside a sentence reads
+  as a typo. The command-line id is `compiler` and its settings table `[compiler]`. No
+  `team-compiler` alias stays: none is
   kept before 1.0.0 (`spec/core/distribution.md`, the `0.x` paragraph), and the bundle's
   `quick_compile.bat`, the one launcher that calls the id, is overwritten by self-update. The crate stays `team_compiler` until Phase 9 settles the crate
   layout, and `export_balls_skipped` waits for the balls kind;

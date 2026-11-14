@@ -17271,3 +17271,12 @@ button, because picking another save, or ticking "Upgrade without the save", alr
 resolved it. But the member is reading the line, not the field at the top, so the action
 that resolves it sits where they are looking, as Move to exports and Open the existing
 folder do on the other lines.
+
+## 2026-11-14: the Compiler's label is "The Compiler"
+
+Where the name stands alone like a title, it is **The Compiler**: the sidebar, the window's
+title, the help chapter's title and a changelog entry's label. Inside a sentence it stays "the
+Compiler" (`Open the Compiler`, "a patch the Compiler wrote"), because a capital article in
+the middle of a sentence reads as a typo. The article fits because it is the suite's one
+compiler, for every export kind, not one compiler among several. The command-line id stays
+`compiler`.
