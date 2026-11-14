@@ -4,8 +4,8 @@ Part of the [Library crates spec](README.md).
 
 ## `libs/archives`: reading `.zip` and `.7z` exports
 
-Members submit exports as folders, `.zip` or `.7z`; the Team compiler reads them in place
-(Team compiler spec, "Load": structure eagerly, contents lazily per folder, the export never
+Members submit exports as folders, `.zip` or `.7z`; the Compiler reads them in place
+(Compiler spec, "Load": structure eagerly, contents lazily per folder, the export never
 written to). `archives` is the one place that knows the two containers. It works over any
 `Read + Seek` source so the crate stays `wasm32`-clean, with the disk-path opener behind
 `cfg(not(target_arch = "wasm32"))`:
@@ -38,7 +38,7 @@ API, and the cost is one seek per entry against an archive that will be decompre
 `read` on a zip inflates that one entry (random access, which is what makes per-folder lazy
 loading possible). On a 7z the first `read` decompresses the whole archive into memory and later
 reads are lookups, because 7-Zip's default is one solid LZMA2 block and per-entry extraction of a
-solid archive is quadratic. The Team compiler's memory budget charges a 7z export by the sum of
+solid archive is quadratic. The Compiler's memory budget charges a 7z export by the sum of
 its `entries()` sizes for that reason (its spec already says so); dropping the `Archive` releases
 the buffer.
 
@@ -46,7 +46,7 @@ Names are normalized (`\` to `/`, empty segments collapsed, a leading `/` or `./
 directory entry's trailing `/` too).
 
 Directory entries are listed apart, by `folders()`, not in `entries()`. An empty folder exists in
-an archive only as a directory entry, and an empty kit folder is a placeholder kit (Team compiler
+an archive only as a directory entry, and an empty kit folder is a placeholder kit (Compiler
 spec), so dropping them lost a kit. Keeping `entries()` to files only keeps the sum of its sizes
 equal to what a 7z read decompresses, which is what the budget charges.
 
@@ -71,7 +71,7 @@ back correctly; a name outside cp437 from a non-Western Windows will come out wr
 exists without knowing the writer's code page. `.7z` names are always UTF-16 and safe.
 
 Password-protected archives are refused at open with `Encrypted`, never at `read` and never with
-a prompt: the Team compiler's live shallow check opens an archive the moment it appears, so the
+a prompt: the Compiler's live shallow check opens an archive the moment it appears, so the
 member sees the refusal then, not at compile start.
 
 - A zip with any encrypted entry is refused (the flag comes from each entry's raw view, already

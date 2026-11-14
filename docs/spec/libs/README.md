@@ -3,12 +3,12 @@
 Covers the small shared lib crates: the binary format parsers (`cpk`, `fpk`, `fmdl`,
 `pes_model`, `ftex`, `fox2`, `uniparam`, `wezlib`), `dds_convert`, `color_tools`,
 `vtree`, `pes_version`, `archives`, `elevation`, `fpc`, and `teams_list`. `cpk` also reads an
-install's `download/DpFileList.bin` (`cpk::dp_file_list`, for the Team compiler's working-bin
-walk and the Save editor's portraits; the layout is in the Team compiler's
+install's `download/DpFileList.bin` (`cpk::dp_file_list`, for the Compiler's working-bin
+walk and the Save editor's portraits; the layout is in the Compiler's
 [pipeline](../team_compiler/pipeline.md) "DpFileList upgrade").
 
 - The aesthetics export format's object model, folder conventions, and validation live in
-  `aesthetics_export` (shared by the Team compiler, Export upgrader, Kit config editor, Refs
+  `aesthetics_export` (shared by the Compiler, Export upgrader, Kit config editor, Refs
   arranger, and Team creator), specified in the [aesthetics export
   spec](../aesthetics_export/README.md).
 - The two big libs have their own specs: [Model conversion](../model_conversion/README.md)
@@ -16,7 +16,7 @@ walk and the Save editor's portraits; the layout is in the Team compiler's
   [Savefile](../pes_savefile/README.md) (`pes_savefile`).
 - The `pipeline` crate (reader/writer scaffolding, memory budget, folder watcher, check cache,
   shared `CpkStem` validation) has its contract in [pipeline](pipeline.md); the reasons are in
-  the [core spec](../core/README.md) (Parallelism) and the [Team compiler
+  the [core spec](../core/README.md) (Parallelism) and the [Compiler
   spec](../team_compiler/README.md) (walkthrough, live validation).
 - The music lib crates (`music_export`, `audio_engine`) are specified in the [Music player
   plan](../../plans/music_player.md).

@@ -18,7 +18,7 @@ libs those crates sit next to.**
 Replace Blue's `ThreadPoolExecutor` + `console_lock` with `rayon` work-stealing:
 
 ```rust
-// The Team compiler resolves exports into a run-level BuildManifest
+// The Compiler resolves exports into a run-level BuildManifest
 // (serial planning: IDs, dependencies, output paths, collision decisions),
 // then processes each manifest task independently. The object model lives in
 // libs/aesthetics_export; compile behavior is in tool-local free functions.
@@ -80,19 +80,19 @@ model, kit, logo, Common, collar, portrait, or referee-marker task loads content
 its lease and derived Arc clones until the writer drains its `TaskBatch`. Memory therefore drains
 continuously during a run rather than in whole-export steps.
 
-- The bounded exception is a Team-compiler `PlayerBatchGroup`: face/boots/gloves child
+- The bounded exception is a Compiler `PlayerBatchGroup`: face/boots/gloves child
   processing remains independent, but permit-charged bytes shared by those children stay charged
   until every child reports and the group's one shared-texture batch commits.
 - Solid `.7z` archives are the other exception (one-pass decompression forces whole-export
   residency); plain folders and `.zip` support lazy per-folder loading.
 
-Details are in the Team compiler spec's walkthrough.
+Details are in the Compiler spec's walkthrough.
 
 A task's charge includes source bytes, decoded textures, converted/merged models, and packed
 entries; shared bytes and the bounded conversion cache stay charged while retained. Source size
 alone does not bound peak memory: texture decoding and conversion can expand it substantially.
 The goal is to bound live work independently of the number of teams, not to promise a fixed 2×
-source-size multiplier. Complete accounting is an implementation gate (see the Team compiler spec).
+source-size multiplier. Complete accounting is an implementation gate (see the Compiler spec).
 
 Admission must remain progress-safe when a task already owns source/archive bytes and needs
 conversion workspace, and when canonical writer order delays later batches. Do not let all workers

@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler spec: Testing
+# Unlimited Tool Works: Compiler spec: Testing
 
-Part of the [Team compiler spec](README.md).
+Part of the [Compiler spec](README.md).
 
 ## Testing: parity against Red (adapted from Blue)
 
@@ -54,8 +54,8 @@ these (the fixture's README lists each):
   `UniformParameter.bin`.
 
 Beyond the tracers, whose small trees are committed, the compile of the maintainer's whole
-library of old exports is a **measurement rerun at each phase close** that changes the Team
-compiler or the Export upgrader, not a committed test. It is measured against our own last
+library of old exports is a **measurement rerun at each phase close** that changes the
+Compiler or the Export upgrader, not a committed test. It is measured against our own last
 run, a **checkpoint**, not against Red. Every input the upgrade census upgrades clean is
 upgraded and compiled, and every entry of every CPK written is listed by name, size and hash
 (`scripts/library_parity/checkpoint.py`). The list is compared with the last checkpoint's,

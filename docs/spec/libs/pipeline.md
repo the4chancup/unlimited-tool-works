@@ -1,13 +1,13 @@
 # Unlimited Tool Works: Library crates spec: `libs/pipeline`
 
-Part of the [Library crates spec](README.md). The shared scaffolding every compiling tool (Team
-compiler, Balls compiler, Stadium compiler) runs on. The reasons behind each piece are in the core
-spec's [Parallelism](../core/parallelism.md) section and the Team compiler's
+Part of the [Library crates spec](README.md). The shared scaffolding every compiling tool
+(Compiler, Balls compiler, Stadium compiler) runs on. The reasons behind each piece are in the core
+spec's [Parallelism](../core/parallelism.md) section and the Compiler's
 [pipeline walkthrough](../team_compiler/pipeline.md); this part is the crate's contract.
 
 The crate holds four pieces, built in Phase 3: the memory budget and its cap, the thread count
 and `CpkStem`. The folder watcher and the check cache join with live validation (Phase 8; their
-design is `plans/team_compiler/gui.md` "Live validation", their consumers the Team compiler's
+design is `plans/team_compiler/gui.md` "Live validation", their consumers the Compiler's
 `check/` and the Balls compiler's list view). The browser variants (`spec/core/gui.md` "Browser
 deployment: Studio Web") join with the web build's pipeline tier.
 
@@ -265,4 +265,4 @@ The `spec/team_compiler/testing.md` "Infrastructure" cases for these three:
   it is 1, on 8 it is 7.
 - **`CpkStem`:** accepted: `4cc_99_test`, a 28-character stem, `a.b`; refused with its variant:
   empty, 29 characters, a space, `/` and `\`, `con`, `CON.x`, `com1`, `lpt9`, `x.`, `x.CPK`.
-  Case collisions are the consumer's (TC-CLI-05 is the Team compiler's, cited in 3.8).
+  Case collisions are the consumer's (TC-CLI-05 is the Compiler's, cited in 3.8).

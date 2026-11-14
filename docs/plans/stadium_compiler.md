@@ -161,15 +161,15 @@ of the export. The Decompiler (`decompiler.md`) rebuilds the exports from them.
 
 | Component | Source | Size | Notes |
 |-----------|--------|------|-------|
-| Stage orchestration | `stadium_compiler.py`, `stages/*.py` | 61KB | Maps to the same reader/coordinator/writer pattern as the Team compiler |
+| Stage orchestration | `stadium_compiler.py`, `stages/*.py` | 61KB | Maps to the same reader/coordinator/writer pattern as the Compiler |
 | Components handling | `util/components.py` | 27KB | Stadium component validation and copying |
 | Billboards | `util/billboards.py` | 30KB | Billboard content processing |
 | Packing | `util/packing.py` | 16KB | FPK/FPKD + directory assembly |
 | ID remapping | `util/remap.py` | 2KB | Stadium ID rewriting across file types |
 | Stadium configs | `util/stadium_configs.py` | 7KB | Per-stadium configuration |
 
-The stadium pipeline emits the same `PipelineEvent` stream as the Team compiler, so the GUI progress
+The stadium pipeline emits the same `PipelineEvent` stream as the Compiler, so the GUI progress
 grid works for stadium compilation without modification (rows = stadiums, cells = components). Its
 warnings/errors likewise use the shared `Message` structure with a tool-owned `MessageCode` catalog,
-to be specified when the tool is planned in detail (see "Message catalog" in the [Team compiler
+to be specified when the tool is planned in detail (see "Message catalog" in the [Compiler
 plan](team_compiler/messages.md)).

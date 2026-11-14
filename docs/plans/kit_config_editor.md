@@ -26,7 +26,7 @@ Two ways in, per the suite's export-first philosophy:
   `ParsedAestheticsExport` plus kit-scoped validation, not a whole-export
   `ValidatedAestheticsExport`, so an unrelated roster/player error never prevents opening and
   repairing a kit. The shared crate still owns locating and validating the folders (see the
-  [Team compiler plan](team_compiler/README.md)), so this tool never carries its own idea of
+  [Compiler plan](team_compiler/README.md)), so this tool never carries its own idea of
   the export layout.
 
   The same picker accepts a single loose file (`config.toml`, a game `.bin`, old-export
@@ -82,7 +82,7 @@ listed item, and stock data exceeds them: collars up to 131 against its 106), an
 outside the selected version's range shows that version's warning beside the field.
 
 An FPC indicator chip shows when the config carries the FPC values, linking the concept to the
-Team compiler's reconciliation rather than leaving it as four magic numbers.
+Compiler's reconciliation rather than leaving it as four magic numbers.
 
 **Kit menu colors**: in export-folder mode each tab also edits the kit folder's
 `colors.txt` (the two `UniColor.bin` menu colors that drive the match-UI
@@ -157,7 +157,7 @@ What exists of this is in `spec/kit_config_editor.md` "Improvements over Kit Man
    UniformParameter container editing; the original opened one file at a time.
 4. **Live preview from the kit's real textures** instead of 51MB of canned bitmaps.
 5. **Suite integration**: global PES version drives the encoding; FPC values are
-   shared constants with the Team compiler, not folklore numbers; built-in color
+   shared constants with the Compiler, not folklore numbers; built-in color
    pickers with texture-derived suggestions.
 6. **Kit menu colors in the same place**: each kit's `colors.txt` (UniColor menu
    colors) and `icon_<N>` marker (menu icon, picked from a live-tinted visual gallery)

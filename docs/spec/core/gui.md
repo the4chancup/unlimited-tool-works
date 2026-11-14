@@ -104,7 +104,7 @@ default. Rules:
 
 - Settings persist to a single file:
   - `[common]` holds `CommonSettings`;
-  - each tool's values live in a table under its `id()` key (`[team-compiler]`; `common` is
+  - each tool's values live in a table under its `id()` key (`[compiler]`; `common` is
     therefore not a valid tool id), with `default_settings()` merged in for missing values,
     recursively into nested tables (this replaces Red's settings-transfer mechanism for new
     versions).
@@ -132,7 +132,7 @@ Three slots, each admitting one typed item kind from `studio_core::status`:
 | Slot | Item | Admits |
 |---|---|---|
 | Left | `ShellCondition` | Persistent environment states the **shell** computes itself: `settings_save_failed`, `update_available`. Not a PES folder that is missing or holds no exe or another version's: the version selector's coloring already owns that, in every tool's sidebar, so no condition repeats it |
-| Middle | `ToolActivity` | Tools working in the background while a **different** tool's view is shown: `activity()` polled each frame for every registered tool except the active one, e.g. `Team compiler · 12/48 · 01:12` while the save editor is open. The active tool's own run strip is unchanged, so nothing shows twice |
+| Middle | `ToolActivity` | Tools working in the background while a **different** tool's view is shown: `activity()` polled each frame for every registered tool except the active one, e.g. `The Compiler · 12/48 · 01:12` while the save editor is open. The active tool's own run strip is unchanged, so nothing shows twice |
 | Right | `Notice` | The most recent one-off event, published by a tool through `ctx.notify(Notice)` or by the shell: `Switched to PES 2021, which is running · [Fix PES path]`, `Compiled 48 teams · [Open output]`, `Teams list is read-only`. Text plus at most one action |
 
 Rules that keep it worth the row:

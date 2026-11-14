@@ -24,7 +24,7 @@ pipeline plus the `pes-models` extension's PES glTF codec, no Rust involved).
 ### glTF import (`gltf_to_ir`)
 
 `gltf_to_ir` takes the glTF document plus the folder's **resolved material layers** for that
-glTF. The caller (the Team compiler's folder task) performs name matching, `.common` link
+glTF. The caller (the Compiler's folder task) performs name matching, `.common` link
 resolution, and the least→most-specific ordering per the format plan. `model_convert` performs
 the field-level deep merge and schema validation, so the merge rule has one implementation shared
 by every consumer. Each layer is tagged with its origin folder (player folder or Common), because
@@ -42,7 +42,7 @@ What exists of this is in `spec/model_conversion/gltf.md` "glTF export (`ir_to_g
 
 glTF is also an IR **target**, for the [Player aesthetics editor](../player_aesthetics_editor.md)'s
 convert-to-glTF migration and the [Export upgrader](../export_upgrader.md)'s optional glTF conversion
-pass (the Team compiler never emits glTF: its targets are the game formats).
+pass (the Compiler never emits glTF: its targets are the game formats).
 
 `ir_to_gltf` emits a single `.glb` per model carrying the `PES_bone`/`PES_mesh` extension schema
 that `gltf_to_ir` reads. The exporter and importer share the schema tables, so a Studio-emitted
@@ -93,8 +93,8 @@ the contract all three share (`fmdl::ops::merge`, `pes_model::ops::merge` and `m
 pub fn merge_ir_parts(parts: Vec<CanonicalModel>) -> Result<CanonicalModel, MergeError>;
 
 pub enum MergeError {
-    MaterialConflict { name: String },          // → team-compiler `merge_material_conflict`
-    SkeletonConflict,                           // → team-compiler `skl_merge_conflict`
+    MaterialConflict { name: String },          // → compiler `merge_material_conflict`
+    SkeletonConflict,                           // → compiler `skl_merge_conflict`
     SourceFormatMismatch,                       // parts must share `source_format`
 }
 ```
@@ -112,11 +112,11 @@ Rules (identical to the `fmdl` merge unless stated):
   populated field (for `.model` sources that includes `state_settings`, i.e. the `.mtl` content),
   otherwise `MaterialConflict`. Mesh `material` indices are remapped. Because `model_to_ir` consumes
   the `.model` + `.mtl` bundle, merging materials *is* the `.mtl` merge: `ir_to_model` emits one
-  `.mtl` for the merged model, so the Team compiler never has to splice MTL XML itself.
+  `.mtl` for the merged model, so the Compiler never has to splice MTL XML itself.
 - **Textures** are unioned by path (same path → one entry, indices remapped).
 - **`extension_headers`** are unioned per key with values deduplicated, in canonical order.
 - **`source_format`** must be the same for all parts (the caller converts foreign-format parts
-  first, as the Team compiler already does before Fox merging).
+  first, as the Compiler already does before Fox merging).
 
 Deterministic by construction: the caller supplies canonical order and every union uses ordered
 collections, satisfying the byte-reproducible output contract.

@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler spec: Blue features to port
+# Unlimited Tool Works: Compiler spec: Blue features to port
 
-Part of the [Team compiler spec](README.md).
+Part of the [Compiler spec](README.md).
 
 ## Unimplemented Blue Features to Port
 

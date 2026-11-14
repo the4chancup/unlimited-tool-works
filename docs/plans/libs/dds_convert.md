@@ -8,7 +8,7 @@
 
 What exists of this is in `spec/libs/dds_convert.md` "In-memory conversion cache".
 
-- The Studio creates one `Converter` at startup and passes it into each Team compiler run. The
+- The Studio creates one `Converter` at startup and passes it into each Compiler run. The
   cache lives for the application session and is dropped on exit: **no disk persistence**, so
   it never fills the user's drive with temporary files.
 - **Retention is separately bounded and budgeted.** Repeated edits or switching between teams must
@@ -17,7 +17,7 @@ What exists of this is in `spec/libs/dds_convert.md` "In-memory conversion cache
   so they cannot prevent working tasks from acquiring memory. Bypassing the cache for a large run
   does not by itself release entries retained by earlier small runs.
 
-  The policy belongs to the Team compiler pipeline's memory budget and is built with the
+  The policy belongs to the Compiler pipeline's memory budget and is built with the
   first caller that keeps a `Converter` across runs, the GUI's compile (Phase 8).
 
 ### Once the GPU encoder is in: BC7 and uncompressed sources

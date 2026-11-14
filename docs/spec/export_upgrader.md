@@ -2,7 +2,7 @@
 
 The Export upgrader (`crates/tools/export_upgrader`) migrates exports from the old
 format (the AET layout, `GLOSSARY.md` "AET") to the Studio player-folder format defined in the
-[Team compiler spec](team_compiler/README.md): the compiler only supports the Studio format,
+[Compiler spec](team_compiler/README.md): the compiler only supports the Studio format,
 so this is the one-time migration path for every existing export.
 Platform context is in the [core spec](core/README.md).
 
@@ -1026,8 +1026,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    Warning names it for the author.
 10. **Reports** anything that couldn't be migrated automatically (e.g. contents of the Other folder,
     unassigned model folders) for manual attention: the `UnmigratedContentFound` pipeline event;
-    the tool defines its own message catalog on the shared `Message` structure (see the Team
-    compiler spec's "Message catalog").
+    the tool defines its own message catalog on the shared `Message` structure (see the
+    Compiler spec's "Message catalog").
 
     Content is reported entry by entry. Where Red discarded a whole folder for one bad entry
     (every `Kit Configs/` config when one name breaks the grammar, as the real `CIV4XG` VGL26
@@ -1281,7 +1281,7 @@ referee export takes no tag and refuses the flag (exit 2).
 
 **Report and exit codes.** `upgrade` prints step 10's report, one line per finding naming its code
 and, for a finding about a file or folder, its path (the input's, or the output's for a check
-run on the output), and exits with the Team compiler's mapping (`spec/team_compiler/settings.md`
+run on the output), and exits with the Compiler's mapping (`spec/team_compiler/settings.md`
 "CLI"):
 
 - **0** clean (Warning and Info findings allowed when they drop nothing but a leftover, step
@@ -1346,7 +1346,7 @@ validation's findings on what was written.
 | `coverage_tag_chosen` | I | `upgrade` of a team export: the coverage tag the output's name took ("CLI") | `tag`, `source` |
 | `staging_folder_removed` | I | an earlier run's staging folder for this output removed before the write ("CLI") | `path` |
 
-The shared validation's codes (`aesthetics_export::ISSUE_CODES`) keep the Team compiler's
+The shared validation's codes (`aesthetics_export::ISSUE_CODES`) keep the Compiler's
 severity (`spec/team_compiler/messages.md` "Catalog"):
 
 - each run-dependent one is taken as for a compile that deploys with pass-through and the
@@ -1468,8 +1468,8 @@ CLI: the GUI's two drop targets are Phase 8's, and step 13, the glTF pass, is
 Phase 7's, their scenarios with them in `plans/export_upgrader.md`. Observed are the output's
 files, the report and the exit code.
 
-That a migrated export compiles to Red's output for the old one is the parity test's (Team
-compiler spec, `testing.md`), not a scenario's, and so is a converted kit config's content
+That a migrated export compiles to Red's output for the old one is the parity test's
+(Compiler spec, `testing.md`), not a scenario's, and so is a converted kit config's content
 beyond the keys named here (`kit_config`'s fixtures).
 
 Test data:

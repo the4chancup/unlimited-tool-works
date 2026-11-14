@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler spec: Message catalog
+# Unlimited Tool Works: Compiler spec: Message catalog
 
-Part of the [Team compiler spec](README.md).
+Part of the [Compiler spec](README.md).
 
 ## Message catalog
 
@@ -17,7 +17,7 @@ presentation.
 use std::borrow::Cow;
 
 pub struct MessageCode {
-    pub tool_id: &'static str,             // "team-compiler"
+    pub tool_id: &'static str,             // "compiler"
     pub code: Cow<'static, str>,            // "player_number_duplicate"
 }
 
@@ -64,7 +64,7 @@ display stem.
 
 The `MessageCode`/`Message`/`Severity`/`Disposition`/`Scope` types live in `studio_core` alongside
 `PipelineEvent` (all tools emit them). Each tool owns its code strings and text catalog under its
-stable tool ID; the catalog below belongs to `team-compiler`, while the stadium compiler and export
+stable tool ID; the catalog below belongs to `compiler`, while the stadium compiler and export
 upgrader define their own codes on the same structure.
 
 Principles:
@@ -714,7 +714,7 @@ The one addition guards the reserved collar on regular teams:
 | `pes_folder_not_found` | E | `pes_folder_path` invalid at deployment time (includes the no-PES-install machine; context: `path`, `output` the path the CPK is promoted to) | deployment skipped; staged CPKs promoted to `output/`; savefile step skipped |
 | `pes_version_mismatch` | W | `pes_folder_path` exists but holds no `PES20{pes_version}.exe`. A different-version exe suggests a wrong `pes_version` setting (Red's suppressible console notice becomes a plain per-run warning, dropping `state/ver_mismatch_warned.txt`; the GUI also surfaces this live via the version selector's red/yellow state, see the core plan's Sidebar; context: `path` the PES folder, `exe` the file looked for) | none; deployment proceeds |
 | `dpfilelist_missing` | E/W | no `DpFileList.bin` in download folder: an Error in a compile that deploys, a Warning in sideload and test mode and with `--no-deploy` (a clean run, "Post-processing"), which deploy nothing, so the user knows no bin from the download folder was used | E: deployment skipped; staged CPKs promoted to `output/`; savefile step skipped. W: none; the bins are built on the bundled bases (`bin_source` `bundled`) |
-| `dpfilelist_not_official` | W | the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW team-compiler upgrade-dpfl`) | none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list |
+| `dpfilelist_not_official` | W | the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW compiler upgrade-dpfl`) | none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list |
 | `dpfilelist_cpk_missing` | W | the installed DpFileList names CPKs with no file in the download folder, other than this run's own target (context: `path` the download folder, `files` the file names in list order, `command` as `dpfilelist_not_official`'s). The game then rejects the whole download folder and runs vanilla | none: the run compiles and deploys; the savefile step is skipped; `upgrade-dpfl` writes a placeholder for each |
 | `dpfilelist_outdated` | F | installed DpFileList lacks a target of this run that the bundled official DPFL lists (old layout, e.g. no `teams` slots; context: `cpk` every CPK of the run the installed list lacks and the official one names, joined by `, ` in the run's order (the bins CPK, then the parts by slot number), `path` the installed list, `command` as `dpfilelist_not_official`'s) | run aborted at the deploy preflight, before any export is read: nothing compiled, promoted, deployed or patched (`AbortRun`); CLI names `upgrade-dpfl`. Fatal, not the deployment failures' Error that promotes the CPKs to `output/`: a member whose list is outdated has to upgrade it and compile again anyway, so a full compile first is minutes spent on CPKs nobody installs, and `--no-deploy` still builds them without the check |
 | `dpfilelist_cpk_renamed` | I | `upgrade-dpfl`: an old DLC's CPK renamed by stem to an official name (context: `from`, `to`, the file names) | none |

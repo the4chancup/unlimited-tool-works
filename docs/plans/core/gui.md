@@ -34,7 +34,7 @@ The tool view belongs to each tool; pipeline tools subdivide it into grid, toolb
 └─────────────────────────────────────────────────────────┘
 ```
 
-The sidebar lists the registered tools in registry order (today the Team compiler, the Save
+The sidebar lists the registered tools in registry order (today the Compiler, the Save
 editor, the Ruleset editor, the Export upgrader), then the planned ones in parentheses here,
 grayed in the window ("Sidebar").
 
@@ -239,7 +239,7 @@ Top to bottom:
    No version is shown beside the logo itself: the status bar already shows it 300 px away, and
    the icon rail has no room for it, so it would be the one element that came and went with the
    hover.
-2. **PES version selector**: a *global* setting, not per-tool: the Team compiler targets it,
+2. **PES version selector**: a *global* setting, not per-tool: the Compiler targets it,
    integrated conversion uses it as the destination format, and the Export upgrader, the Kit
    config editor, the Refs arranger and the match tracker read it. One setting, not one per
    tool: a member works on one cup's game across the tools, and a control in each tool would
@@ -274,7 +274,7 @@ Top to bottom:
      version (wrong selection or wrong path), **amber** when the folder is missing or holds no PES
      exe at all (likely invalid path); the tooltip names what was found. Re-checked on version/path
      changes and on window focus (a cheap single directory listing). This is the GUI rendering of
-     the same condition the team compiler's `pes_version_mismatch` warning reports at compile time
+     the same condition the Compiler's `pes_version_mismatch` warning reports at compile time
      (the warning remains for the CLI).
    - **Auto-switch to the running PES** (desktop, wherever the running-PES probe reads processes:
      Windows, and Linux under Wine or Proton): a lightweight background poll watches for
@@ -331,7 +331,7 @@ Top to bottom:
    interface") are listed after the registered ones, grayed and not clickable, each tooltip
    saying "Coming soon™" and nothing more: the list communicates the suite roadmap.
 
-   A registered tool the registry marks **CLI-only** (in the 0.0.1 preview the Team compiler
+   A registered tool the registry marks **CLI-only** (in the 0.0.1 preview the Compiler
    and the Export upgrader, whose views come later; `development_plan.md` "Divegrass Before
    Christmas") is drawn as its planned entry, grayed and not clickable, its tooltip the same
    "Coming soon™" (its window is what is coming; the command line is the help's to explain,
@@ -495,7 +495,7 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   see `distribution.md` "Changelog and version display"), which come first in the chapter
   tree; the tools' chapters follow in sidebar order. Red's `readme_advanced.md` maps onto
   this almost one-to-one: its refs, format, texture-handling and special-files headings become
-  Team compiler topics, its updater and first-run headings core topics.
+  Compiler topics, its updater and first-run headings core topics.
 - **The Messages topic is generated.** Each chapter ends with a "Messages" topic rendered from the
   tool's `messages.rs` catalog (ID, severity, condition, consequence) so it is always complete
   and never hand-maintained; `help()` carries prose only. This is Red's "Message Types" chapter
@@ -733,7 +733,7 @@ project's name"), the same here and in ST-TTL:
 |---|---|
 | Idle | `Save editor - <app>` (the active tool's name) |
 | Idle, the active tool names its open file | `Save editor [C:\…\EDIT00000000] - <app>` |
-| A tool reports a `ToolActivity` | `Team compiler · 12/48 · 01:12 - <app>` |
+| A tool reports a `ToolActivity` | `The Compiler · 12/48 · 01:12 - <app>` |
 | Idle, window unfocused, a `Notice` arrived since focus was lost | `Compiled 48 teams - <app>` |
 
 Rules:
@@ -1270,7 +1270,7 @@ state (the run wrote nothing of theirs, so nothing is "done"), and the log's las
 run was cancelled, so a later reader of the log does not take a short run for a finished one.
 
 **Closing the window** asks every tool, not only the one in view, and so does every close the
-shell performs itself (the Team compiler's quick-compile close on success included).
+shell performs itself (the Compiler's quick-compile close on success included).
 
 A tool holding unsaved work (the Save editor's edits) reports it through a `StudioTool` hook
 beside `version_change_blocker`, `fn hold_close(&mut self) -> bool` (default `false`). The
@@ -1288,8 +1288,8 @@ the edits of a tool whose view was not drawn.
 A tool with a run in flight (a compile, an upgrade) reports it through the same hook, and its
 prompt offers two choices:
 
-- to close once the run has ended, cancelling it first where the tool has a Cancel (the Team
-  compiler's, above; an upgrade has none and runs to its end), the close request going back
+- to close once the run has ended, cancelling it first where the tool has a Cancel (the
+  Compiler's, above; an upgrade has none and runs to its end), the close request going back
   when the run ends;
 - or to keep the window.
 
@@ -1317,7 +1317,7 @@ via the browser's File System Access API (`showDirectoryPicker`).
 | Tier | Tools | Web cost |
 |---|---|---|
 | Web-eligible, cheap | Save editor, Kit config editor, Music export editor, Export upgrader checks: tools that read a few user-picked files and write results back | Only the async file-access adapter; the lib crates and the egui shell compile unchanged |
-| Web-eligible, pipeline-bound | Team compiler (single team), Balls compiler, Stadium compiler | The pipeline adapters below; single-export scale only |
+| Web-eligible, pipeline-bound | Compiler (single team), Balls compiler, Stadium compiler | The pipeline adapters below; single-export scale only |
 | Desktop-only by construction | Match tracker (Win32 memory), Player aesthetics editor's Blender launch, self-update, elevation, live folder watching | Not offered; the WASM build hides them (saved-match viewing stays available; see the Match tracker plan) |
 
 Differences from the desktop build:
@@ -1376,7 +1376,7 @@ Differences from the desktop build:
   multi-team run does not. Studio Web enforces a small in-flight limit (one or two exports) rather
   than exposing the desktop thread/memory settings.
 - **Embedded resources**: the ~6 MB of templates and fallback bins embedded in the desktop exe (see
-  "Resolved decisions" in the Team compiler plan) are demand-paged on desktop but fully downloaded
+  "Resolved decisions" in the Compiler's plan) are demand-paged on desktop but fully downloaded
   and resident in a `.wasm`. The template accessor (embedded → shadowed by the `templates/` override
   directory) is the single seam: the web build may swap the embedded source for lazy fetches behind
   it if the download size matters.
@@ -1416,7 +1416,7 @@ dialog or a running game.
 
 The tools in a scenario are stub tools registered with the test's shell unless a real one is
 named; "the settings file" is one under the test's own folder (`AppPaths` pointed there),
-never the developer's. The Team compiler's own toolbar, grid and cancellation are `TC-GUI`
+never the developer's. The Compiler's own toolbar, grid and cancellation are `TC-GUI`
 scenarios (`plans/team_compiler/README.md` "Acceptance"), the Save editor's view `SE-GUI` and
 the Export upgrader's `EU-GUI`.
 
@@ -1691,10 +1691,10 @@ ST-UPD-06   GIVEN a settings file whose `last_run_version` is `0.0.1`, in a buil
                  `0.0.2`; WHEN the notice's What's new is clicked THEN the help opens on its
                  What's new chapter; GIVEN it absent, or `0.0.2`, or `0.0.3`, or not a version
                  THEN no notice, and the file says `0.0.2`
-ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
+ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "The Compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn
-            THEN the viewport title command reads "Team compiler · 12/48 · 01:12 - <app>",
+            THEN the viewport title command reads "The Compiler · 12/48 · 01:12 - <app>",
                  sent once and not again while the string is unchanged; GIVEN no activity and
                  a stub tool "Stub A" active THEN "Stub A - <app>"; GIVEN "Stub A" naming its
                  open file `C:\saves\EDIT00000000` (`title_detail`) THEN
@@ -1716,9 +1716,9 @@ ST-TTL-03   GIVEN the window focused, two stub tools, the second's view active, 
 **Help**
 
 ```
-ST-HELP-01  GIVEN the Team compiler active
+ST-HELP-01  GIVEN the Compiler active
             WHEN F1 is pressed, or the sidebar's ? clicked
-            THEN the help window opens on the Team compiler's chapter, the chapter tree lists
+            THEN the help window opens on the Compiler's chapter, the chapter tree lists
                  one chapter per registered tool in sidebar order after the core chapters, and
                  the chapter's last topic, Messages, lists every code of the tool's catalog with
                  its severity
@@ -1734,7 +1734,7 @@ ST-HELP-03  GIVEN a tool's log panel showing a finding line
                  in-doc link `[text](tool-id#topic-slug)` to another tool's topic WHEN the link
                  is clicked THEN that topic is shown
 ST-HELP-04  GIVEN the built binary
-            WHEN `UTW help team-compiler` runs
+            WHEN `UTW help compiler` runs
             THEN stdout is the chapter's Markdown; WHEN `UTW help --export <dir>` runs
                  THEN <dir> holds one .md file per chapter, each tool's ending with its Messages
                  topic
@@ -1783,7 +1783,7 @@ ST-RUN-03   GIVEN a tool whose gui_run does not implement the command
                  command runs as if its button had been pressed
 ST-RUN-04   manual  GIVEN the Windows bundle
                     WHEN the exe is double-clicked
-                    THEN no console window opens beside the GUI; WHEN `UTW team-compiler
+                    THEN no console window opens beside the GUI; WHEN `UTW compiler
                          check` runs from a terminal THEN its output reaches that terminal
 ST-RUN-05   GIVEN two stub tools each reporting unsaved work, a third tool's view active
             WHEN the window's close is requested

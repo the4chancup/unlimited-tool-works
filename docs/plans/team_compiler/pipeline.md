@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Team compiler plan: Pipeline
+# Unlimited Tool Works: Compiler plan: Pipeline
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

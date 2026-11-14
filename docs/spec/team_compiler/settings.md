@@ -1,12 +1,12 @@
-# Unlimited Tool Works: Team compiler spec: Settings
+# Unlimited Tool Works: Compiler spec: Settings
 
-Part of the [Team compiler spec](README.md).
+Part of the [Compiler spec](README.md).
 
 ## Settings
 
 Inherited from Red/Blue (`settings.ini`, `settings_default.ini`), reorganized into the suite's
 two-level settings model: **common settings** live in `studio_core` (shared by all tools), **tool
-settings** live in the Team compiler's own settings section.
+settings** live in the Compiler's own settings section.
 
 ### Common settings (studio_core)
 
@@ -28,7 +28,7 @@ settings** live in the Team compiler's own settings section.
 | `fpc_hide_boots_id` | - | `55`: the boots ID the FPC hide preset writes, one the game has no boots model for |
 | `fpc_hide_gloves_id` | - | `11`: the gloves ID it writes (gloves 1 to 10 are the goalkeepers' real ones) |
 
-### Team compiler settings
+### Compiler settings
 
 "Old default" is Red's value ("-" for settings Red did not have); "New default" is the Studio's. A
 differing new default is a deliberate decision, explained in the Controls column.
@@ -131,9 +131,9 @@ resolved export source.
 ### CLI
 
 ```text
-UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
-UTW team-compiler check [exports-root] [--export <path>]...
-UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList with the bundled official one
+UTW compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
+UTW compiler check [exports-root] [--export <path>]...
+UTW compiler upgrade-dpfl [--yes]      # replace the installed DpFileList with the bundled official one
 ```
 
 (Refreshing `teams_list.txt` from a savefile is the Save editor's `export-teams-list`; see the
@@ -190,7 +190,7 @@ saves the model into the player folder it was loaded from (it knows the export f
 manifest; see the Player aesthetics editor plan), then runs
 
 ```text
-UTW team-compiler compile --mode sideload --export "D:\exports\aaa_export"
+UTW compiler compile --mode sideload --export "D:\exports\aaa_export"
 ```
 
 and PES, with its sideloading runtime serving `livecpk\` (FoxDen on 18–21, Sider 3 on 17), shows

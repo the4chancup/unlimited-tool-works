@@ -5,7 +5,7 @@ schema-driven payload codec, player/team/tactics model), the cross-version playe
 data conversion, the save-to-save operations (the comparator, aesthetics
 fingerprinting), and the interchange formats (Team TOML, legacy `.4ccs`/`.4cct`
 readers, Texport, the aesthetics patch). Shared by the [Save editor](../save_editor.md), the
-[Team compiler](../team_compiler/README.md), the integrated
+[Compiler](../team_compiler/README.md), the integrated
 [model conversion](../model_conversion/README.md), and the
 [Export upgrader](../export_upgrader.md). Platform context is in the
 [core spec](../core/README.md).
@@ -137,7 +137,7 @@ Placement rules:
   `../../CONTRIBUTING.md` keeps legacy tool names out of code), and `codec.md` "Schema-driven save codec"
   holds the derivation method, so a mismatch found by a roundtrip test can be traced in one hop.
 - Lib dependencies are `fpc` (the FPC system's data) and nothing format-specific; no Blender, egui,
-  or tool dependency. This crate is consumed by `aatf`, the Team compiler, the Save editor, the
+  or tool dependency. This crate is consumed by `aatf`, the Compiler, the Save editor, the
   Export upgrader, and the Player aesthetics editor, and must stay `wasm32`-checkable (core spec
   guardrail 6); discovery's filesystem walk is `cfg`-gated for non-desktop targets.
 

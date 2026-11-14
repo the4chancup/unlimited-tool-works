@@ -4,7 +4,7 @@ This spec specifies **`libs/kit_config`**, the lib crate holding the format know
 shared by:
 
 - the Kit config editor;
-- the [Team compiler](team_compiler/README.md) (config generation, FPC reconciliation,
+- the [Compiler](team_compiler/README.md) (config generation, FPC reconciliation,
   compile-time emission);
 - the [Export upgrader](export_upgrader.md) (binary → TOML migration).
 
@@ -137,7 +137,7 @@ Notes:
   shirt/shorts regions (see the [library crates spec](libs/README.md)). The old editor does gate
   other fields on it, as noted below.
 - **Collar IDs** index the game's stock collar model set (`nocloth`). Exports can
-  replace a stock collar with a custom model (the Team compiler's pass-through
+  replace a stock collar with a custom model (the Compiler's pass-through
   Collars folder) and point every kit config's collar at the replaced ID: the
   quick way to put a custom model on the whole team.
 - **Cross-field constraints** (enforced by the old editor with modal errors, by ours
@@ -254,7 +254,7 @@ name = "00000000000000000000000000000000"
   Standalone binary → TOML conversion is the exception: because it has no team/slot/
   folder context from which to rederive the original bytes, it preserves imported
   names in an optional source-only `[source_texture_names]` table. Export-folder mode
-  and the Team compiler ignore that table and always rederive names from actual files.
+  and the Compiler ignore that table and always rederive names from actual files.
 - **Version-neutral**: the TOML stores plain values; the version-specific bit
   packing (Name Y, PES15 pattern) is applied when emitting binary.
 
@@ -287,7 +287,7 @@ The format knowledge as a lib crate:
     undecoded bits, a remainder outside that offset's mask, two spellings of one offset) rather
     than dropping it on the next write.
 - The template defaults (from the bundled `XXX_DEF_xxx_realUni.bin` template) and
-  `apply_fpc` / `matches_fpc`, used by the Team compiler's reconciliation
+  `apply_fpc` / `matches_fpc`, used by the Compiler's reconciliation
   (`kit_config_fpc_adjusted`) and by this tool's FPC indicator. The FPC values
   themselves come from the leaf crate `libs/fpc` (see [libs](libs/README.md)), which also holds the
   player-side presets `pes_savefile` applies: one description of the system for every tool.
@@ -306,7 +306,7 @@ The format knowledge as a lib crate:
   implementation for the editor's inline hints, the compiler's checks, and the CLI.
 
 Consumers: this tool, `team_compiler` (generation, reconciliation, compile-time
-emission), `export_upgrader` (binary → TOML migration). The Team compiler spec's
+emission), `export_upgrader` (binary → TOML migration). The Compiler spec's
 kit sections defer to this crate.
 
 ## Testing
@@ -338,5 +338,5 @@ kit sections defer to this crate.
 | Texture-name fields | Derived from kit-folder textures in export mode; optional raw `[source_texture_names]` preservation only for standalone binary conversion | Removes export desync while retaining bit-identical context-free CLI roundtrips |
 | Unknown bits | Preserved via `[unknown]` table + optional raw view | Real configs have undecoded bits set; silent loss would corrupt them; the raw view aids future decoding |
 | Version handling | Global PES version selector; version-neutral TOML, encode on emission | Matches the suite; the 2021 Name Y and PES15 pattern quirks are encoding details, not user concerns |
-| Format logic placement | `libs/kit_config`, shared with Team compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core spec's lib-crate rule) |
+| Format logic placement | `libs/kit_config`, shared with Compiler and Export upgrader | One crate owns the format; all consumers agree on validity (the core spec's lib-crate rule) |
 | Menu icon storage | Own optional empty `icon_<N>` marker per kit folder (0–23, absent = 3) | Fits neither `colors.txt` (it's not a color) nor `config.toml` (it's UniColor data, not kit-config data) |

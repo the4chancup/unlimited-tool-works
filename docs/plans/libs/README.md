@@ -5,7 +5,7 @@
 ## First-release desktop GPU BC7
 
 GPU BC7 for PES 19–21 is a first-release (1.0.0) target, using `block_compression`'s existing wgpu
-backend inside `dds_convert`, built in Phase 16 on the Team compiler's texture step; Release 0.1.0
+backend inside `dds_convert`, built in Phase 16 on the Compiler's texture step; Release 0.1.0
 ships the CPU encoder only (`plans/core/development_plan.md` "Releases").
 
 The library supplies the kernels; Studio implements bounded batching, upload/readback, pipeline
@@ -64,7 +64,7 @@ So:
   costs less than one 1024² BC7 encode on the CPU, so a ready GPU takes every BC7 texture. A
   start not finished yet (the rare cold one) leaves the CPU encoding, and the GPU takes the
   textures still waiting once it is ready. Whether the GPU starts at all is decided by whether
-  the version's compile has BC7 work (it starts with the Team compiler, below), not by a
+  the version's compile has BC7 work (it starts with the Compiler, below), not by a
   predicted cost: a cold start cannot be predicted.
 - **Submissions are bounded in pixels, not textures:** each one encodes at most a fixed slab of
   rows (`add_compression_task`'s row offset), sized so it runs a small fraction of the 2 s
@@ -95,7 +95,7 @@ So:
   build also warms the driver's shader cache, so the cold start it pays is not paid again in
   the compile. The alternative, a list of known bad drivers, only covers drivers someone has
   already seen crash.
-- **The encoder starts when the Team compiler opens, not at the first Compile** (the
+- **The encoder starts when the Compiler opens, not at the first Compile** (the
   maintainer, 2026-11-02), on a PES version whose compile encodes BC7 (19-21; on 15-18 no
   GPU starts): the probe when the adapter's driver has no recorded outcome, then the
   encoder on its thread, both off the UI thread, so a Compile clicked a while later finds it
@@ -135,7 +135,7 @@ maintenance item the library spares us. The measurement deciding all this is wor
 
 **Built ahead (16.x a, before Release 0.1.0):** the encoder itself, in `dds_convert` behind
 `cfg(not(target_arch = "wasm32"))`, with its quality and fallback tests. Wiring it into the
-Team compiler's texture step stays after 0.1.0, which ships the CPU encoder only.
+Compiler's texture step stays after 0.1.0, which ships the CPU encoder only.
 
 **Reproducibility:** explicit CPU mode remains the byte-reproducible reference. The user accepts
 valid GPU-encoded texture bytes differing across GPUs/drivers; containing CPKs may differ as a

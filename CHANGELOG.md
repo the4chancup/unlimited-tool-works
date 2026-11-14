@@ -4,12 +4,12 @@
 
 ### Important
 
-- **Team compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the teams'
+- **The Compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the teams'
   aesthetics exports, compiles them into the CPKs the game loads, and writes the aesthetics
   patch that carries their settings into the official save. Its window comes later: run
   `quick_compile.bat`, which keeps the whole report in `compile_log.txt`, or its command line.
 - **Export upgrader**: the first preview. It upgrades exports made in the old format to the
-  one the Team compiler reads, and leaves the old export as it was. Its window comes later
+  one the Compiler reads, and leaves the old export as it was. Its window comes later
   too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
   `old_exports`, or use its command line.
 - **Compiler**: its command line is `UTW.exe compiler`, and its settings sit under `[compiler]`
@@ -98,7 +98,7 @@
   Formation screen allows, so an edit can no longer make a formation Live AATF warns about.
 - **Save editor**: the Wrist tape left and right dropdowns list the game's four colors,
   Strip color, White, Black and Beige, where they offered the numbers 0 to 7. An export's
-  `settings.toml` names the four in its comment, and the Team compiler refuses 4 to 7 there,
+  `settings.toml` names the four in its comment, and the Compiler refuses 4 to 7 there,
   which the game never offers.
 
 ### Minor fixes

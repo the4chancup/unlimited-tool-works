@@ -9,7 +9,7 @@ Team TOML format, legacy `.4ccs`/`.4cct` import, Texport read/write) and FPC inv
 
 It can also **generate `settings.toml` files from an existing savefile** (via `pes_savefile`'s
 `PlayerSettings` model). This gives teams a migration path from the manual-editing workflow to
-the [Team compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
+the [Compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
 through the aesthetics patch).
 
 The savefile codec, the data model, and all interchange formats live in the `pes_savefile` lib
@@ -130,8 +130,8 @@ Planned files that do not exist yet:
     - An RGB one (the team colors, the only RGB fields a view draws) is `color_tools`' picker,
       `libs/color_tools.md`, not a widget of this crate. The host converts between the
       picker's 8 bits and the save's 6 per channel: a picked channel `c` is stored as
-      `c * 63 / 255` rounded, a stored `v` shown as `v * 255 / 63` rounded (the Team
-      compiler's widening of 5:6:5 colors), so a save always holds the nearest color it can.
+      `c * 63 / 255` rounded, a stored `v` shown as `v * 255 / 63` rounded (the
+      Compiler's widening of 5:6:5 colors), so a save always holds the nearest color it can.
       4ccEditor stores `ceil(c / 4.05)` and shows `floor(4.05 v)`, so a value can read one
       higher here (`v` 32: 130, where 4ccEditor shows 129). The difference is kept on
       purpose, since the stored value is what reaches the game.
@@ -433,7 +433,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
   Menus group by what an entry acts on, not by what it opens:
   - the `Savefile` menu holds the whole save's work: the Comparator and Apply aesthetics patch
-    first (each reads another file against the save, a second save or a Team compiler's
+    first (each reads another file against the save, a second save or the Compiler's
     patch), a separator, Output rosters to TSV, Save formation pictures for a range of teams
     (after 0.0.1) and Multi-team AATF, a separator, Fix database;
   - the `Team` menu ends with the team's files, Import / export team file (the interchange
@@ -1052,7 +1052,7 @@ version's save.
   Edit mode is closed. That is the one state that keeps the write with no step in game after
   it, a step a run from a script or a launcher cannot remind the member of
   (`spec/save_editor.md` "CLI", "Writing a save").
-- The Team compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
+- The Compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
   "Savefile update").
 - Scenario: SE-GUI-21 (the Acceptance section).
 
@@ -1319,17 +1319,17 @@ Win32 original hurt the most):
     a press or a drop hits the marker drawn on top.
   - **Portraits** come from the selected game (the sidebar's PES and the "PES folder"
     setting): the CPKs its `download/DpFileList.bin` lists, a later CPK's portrait winning
-    as in game, at the path the Team compiler writes portraits to (`player_<id>.dds` up to
+    as in game, at the path the Compiler writes portraits to (`player_<id>.dds` up to
     PES 2018, `<id>.dds` from PES 2019; a WESYS-wrapped DDS unwrapped). The list and the
     CPKs' tables are read, and the shown team's portraits decoded, off the UI thread.
 
     A folder, list or CPK that cannot be read leaves every marker with the placeholder, the
     reason logged. A listed CPK that is missing counts as one that cannot be read: the game
-    then loads none of `download/`'s CPKs (the Team compiler's `dpfilelist_cpk_missing`), so
+    then loads none of `download/`'s CPKs (the Compiler's `dpfilelist_cpk_missing`), so
     portraits from the others would show what the game does not.
 
     The DpFileList reader is `cpk`'s and the portrait path `pes_savefile`'s, shared with the
-    Team compiler, so the editor finds a portrait wherever the compiler put it.
+    Compiler, so the editor finds a portrait wherever the compiler put it.
   - **The screen's selection marks** are reused for the editor's states: the open popover's
     marker gets the selected player's corner brackets (`#14fbff`), and every marker the armed
     assignment mode can take gets the candidates' (`#ff4e7f`), each a 50 x 50 box of corners
@@ -1833,7 +1833,7 @@ on/off that apply `libs/fpc`'s FPC enable/disable presets (their fields are list
 [libs/fpc spec](../spec/libs/fpc.md)). The strip settings that break or bend hiding (inners,
 undershorts, taping, the gloves checkbox) are reported by its interference rules in the
 Appearance section, not cleared. The same presets serve the
-[Team compiler's](team_compiler/README.md) per-player-folder `fpc_on`/`fpc_off` marker
+[Compiler's](team_compiler/README.md) per-player-folder `fpc_on`/`fpc_off` marker
 files, so the editor's toggle and the compiler's markers cannot drift apart.
 
 - **The hide IDs are a common setting.** Any boots or gloves ID the game has no model for
@@ -1893,13 +1893,13 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
 ## Read-only aesthetics
 
 A player's aesthetics are owned by the team's export: `settings.toml` and the models decide them.
-On every engine the Team compiler resolves them into an **aesthetics patch** (format in
+On every engine the Compiler resolves them into an **aesthetics patch** (format in
 "Aesthetics patch" of the [Savefile plan](pes_savefile/operations.md)), and the save editor
 applies the patch. Hand-editing the same fields here would create the two-sources problem:
 the next patch silently overwrites the hand edit, or the hand edit silently diverges from the
 DLC.
 
-That holds for a cup whose looks this suite's Team compiler builds. A cup whose save is the
+That holds for a cup whose looks this suite's Compiler builds. A cup whose save is the
 looks' home (DBC7: PES 17, compiled with the old tooling) edits them in the save as 4ccEditor
 did. So the lock is a setting of the Save editor's section, **"Aesthetics from exports"**
 (`aesthetics_from_exports`), **off by default**. Off, every aesthetics path below edits as
@@ -2057,7 +2057,7 @@ The panel over the spec's `diff` report:
 
 Built after Release 0.1.0 (0.2.0 or later); 0.0.1 and 0.1.0 ship without it.
 
-A team's looks copied from a save into the team's export, the files the Team compiler compiles
+A team's looks copied from a save into the team's export, the files the Compiler compiles
 from, never into a save: aesthetics live in the exports, and a look written into a save is one the
 next compile overwrites.
 
@@ -2069,7 +2069,7 @@ remaining use, a team with no export, is served by generating the export from th
 - The team's roster as checkboxes, one per filled slot, `NN name` (the slot, 01-23, and the
   display name): the roster slot is what identifies a player, as it names his folder in the
   export (`NN - Name` or a root `players.txt`); shirt numbers are free text and identify nobody.
-- The target is that team's own export in the exports folder, found the way the Team compiler
+- The target is that team's own export in the exports folder, found the way the Compiler
   finds a team's export; each checked slot's player folder in it. Cross-team copies are out of
   scope (a member copies the TOML files by hand). A missing export or a checked slot with no
   folder refuses the whole run before anything is written, naming what is missing.
@@ -2190,10 +2190,10 @@ the editor exposes them as:
   So organizers retype each name (`/gsg/`) after importing the cup's Texports in game; the
   other versions likely do the same, unconfirmed (worklog 8.9k5 k5g). Editing that bin, which
   would spare them, is future work with no plan yet.
-- **Aesthetics patch apply**: see "Read-only aesthetics"; the patch is written by the Team
-  compiler, never by the editor.
+- **Aesthetics patch apply**: see "Read-only aesthetics"; the patch is written by the
+  Compiler, never by the editor.
 - **`settings.toml` generation**: per player folder, for migrating a team to the
-  [Team compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
+  [Compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
   through the aesthetics patch). Uses the shared authorable `PlayerSettings` subset;
   boots/gloves IDs are emitted only when they name a stock model (1 to 100), since custom IDs
   are compiler-assigned from models/links, not export settings. Full Team TOML remains a
@@ -2370,7 +2370,7 @@ What this editor adds on top of the lib:
   `LIVE.height`): lower than the log's 180, since the views above it need the height more
   than a compile's output does. At the bottom, not at a side: the player list holds the left
   and the views need their width (the player view's three columns), and a bottom strip is
-  where the Team compiler's log already sits.
+  where the Compiler's log already sits.
 
   The toggle is drawn as a button, framed, its label a play sign (`▶`, U+25B6, from the
   suite's symbols font the marks' glyphs come from) then `Live AATF` whether on or off, filled
@@ -2576,7 +2576,7 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 old and new value as the view shows them); cancel leaves the session as it
                 was; save writes the edits to the open file, then closes or opens the other
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
-                Team compiler's view active when the window is closed THEN the close waits,
+                Compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
 SE-GUI-73  GIVEN the save open and team 701's player on slot 04 dragged onto slot 07
            WHEN the unsaved changes list or the close prompt is opened

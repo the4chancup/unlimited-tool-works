@@ -245,8 +245,8 @@ not just player blocks.
 The consumer-facing entry point wraps the container crypto and the schema codec:
 `EditFile::load` (version auto-detected by trying master keys / container shape;
 decrypt, parse) and `EditFile::save` (serialize, re-encrypt, and preserve the original in a `.bak`
-before replacement, the shared convention behind the save editor's save action and the Team
-compiler's savefile update stage).
+before replacement, the shared convention behind the save editor's save action and the
+Compiler's savefile update stage).
 
 An open `EditFile` keeps its detected version; changing the suite selector cannot reinterpret it.
 Compiler updates require a save matching the compile target.
@@ -309,7 +309,7 @@ RESULT\x11d WAS GOOD`). `display_name` strips both; any other `0x11` sequence is
 The savefile does **not** live in the PES install folder: it is always under the user's
 **Documents** folder, in a per-game KONAMI subfolder. Discovery therefore never looks at
 `pes_folder_path`; it is a function of the PES version and the user profile, provided by this crate
-(`discover_savefiles(version) -> Vec<SavefileCandidate>`) and used by the Team compiler's savefile
+(`discover_savefiles(version) -> Vec<SavefileCandidate>`) and used by the Compiler's savefile
 stage (`savefile_path = auto`) and the Save editor's Open dialog (initial folder / quick-open list).
 
 Two layouts exist, verified on a live machine with PES 15, 16, 17, 18, 19 and 21 saves present

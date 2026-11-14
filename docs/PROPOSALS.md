@@ -133,10 +133,10 @@ call at each of those places goes through the disabled-widget helper, and each g
 line in a test; a member who reads a dimmed label as "locked by the aesthetics switch" (the
 Appearance section dims for that reason too) has one more thing dimmed there.
 
-## P55: The Team compiler's help as two topics
+## P55: The Compiler's help as two topics
 
-From the text rereading of 2026-11-13 (worklog 0.0.2-text, `sh_tc.full.md`). The Team
-compiler's help is one topic, "Running from a terminal", of about 1,200 lines. Two thirds of
+From the text rereading of 2026-11-13 (worklog 0.0.2-text, `sh_tc.full.md`). The
+Compiler's help is one topic, "Running from a terminal", of about 1,200 lines. Two thirds of
 it is what goes in an export and what each file becomes, which a member using the window
 needs as much as one using a terminal and would not look for under that title; the
 run-level text a member opens the page for (the exports folder, `--export`, `--no-deploy`,

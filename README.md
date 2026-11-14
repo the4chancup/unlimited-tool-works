@@ -1,14 +1,14 @@
 # Unlimited Tool Works
 
-One suite for every tool the 4chan Cup community uses to run its PES (2015-2021) cups: a
-Team compiler (aesthetics exports to CPK archives), a save editor, and the smaller tools around
+One suite for every tool the 4chan Cup community uses to run its PES (2015-2021) cups: the
+Compiler (aesthetics exports to CPK archives), a save editor, and the smaller tools around
 them (kit configs, referees, balls, music, match tracking, model conversion), in a single binary
 that is both a GUI and a CLI.
 
 **Status: in development, with a first preview out.** 0.0.1, released 2026-11-03, is the save
 editor alone, for the Divegrass Before Christmas cup on PES 2017: players, teams and tactics,
 the aesthetics patch, the roster sheet, Live and Multi-team AATF checks, the comparator, undo
-and redo, and a command line for batch work. The next preview, 0.0.2, adds the Team compiler
+and redo, and a command line for batch work. The next preview, 0.0.2, adds the Compiler
 and the Export upgrader for /vg/ League 27 on PES 2019, run from two launchers
 (`quick_upgrade.bat`, `quick_compile.bat`); a pre-release build of it is being tried before
 it goes to the league's organizer. `CHANGELOG.md` lists what each release changed.
@@ -19,7 +19,7 @@ Six of twenty phases are done:
   FTEX, DDS, WESYS, uniparam, zip/7z), both model families (FMDL for PES 18-21, `.model`/`.mtl`
   for PES 15-17) with conversion between versions, kit configs, the teams list, and the
   savefile (real saves decrypted, edited and rewritten byte for byte).
-- **Phases 3 and 4**, the Team compiler: a cup's aesthetics exports checked and compiled into
+- **Phases 3 and 4**, the Compiler: a cup's aesthetics exports checked and compiled into
   CPK archives for PES 2015 to 2021 (faces, boots, gloves, kits, portraits, referees), compared
   with the community's current compiler on its library of real exports.
 - **Phase 5**, the savefile side: the settings an export carries written into a save, the AATF

@@ -68,7 +68,7 @@ Costs accepted: the tool's viewing half is desktop-only (no WASM launch path),
 and Blender plus the ported addons must be installed.
 
 Blender stays the **accurate, primary** viewing path permanently. An in-app viewport re-enters
-only as a byproduct: if/when the [Team compiler plan](team_compiler/README.md)'s
+only as a byproduct: if/when the [Compiler plan](team_compiler/README.md)'s
 future 3D-preview feature is built, its widget lands in a shared
 **`libs/model_viewport`** crate and this tool embeds it too, as a quick
 approximate preview beside the launcher, labeled "preview only: open in
@@ -106,7 +106,7 @@ Selecting a player folder shows its summary:
 - `fpc_on`/`fpc_off` marker;
 - settings.toml presence.
 
-(Once `libs/model_viewport` exists, created with the Team compiler's future 3D-preview
+(Once `libs/model_viewport` exists, created with the Compiler's future 3D-preview
 feature and not for this tool, the summary also gains the quick approximate preview described
 in "Why Blender, not a custom viewport".)
 
@@ -259,8 +259,8 @@ location per launch:
   a clear message instead of misloading.
 - **`player.export_path` and `studio.exe`** exist for the plugin's **"Export model and compile for
   sideloading"** button: after saving the model into `player.folder`, the plugin runs
-  `<UTW.exe> team-compiler compile --mode sideload --export <export_path>` and reports the exit
-  code (see "CLI" in the Team compiler plan). The CLI is the whole integration: no IPC with the
+  `<UTW.exe> compiler compile --mode sideload --export <export_path>` and reports the exit
+  code (see "CLI" in the Compiler's plan). The CLI is the whole integration: no IPC with the
   running Studio, no Python-side knowledge of the pipeline.
 
   `studio.pes_version` is informational, letting the plugin label the button with the target
@@ -386,7 +386,7 @@ The point of planning this tool early, what moves where:
 | Export/folder/link/settings parsing + validation | `libs/aesthetics_export` | Existing; gains this tool as a consumer |
 | Comment-preserving `settings.toml`/`materials.toml` writes | `toml_edit` dep, used from this tool | Existing workspace dependency (`pes_savefile`, `kit_config`), no new crate |
 | Base-model extraction from installed CPKs | this tool crate | Single consumer, stays in-tool per the guardrails |
-| In-app 3D viewport (`libs/model_viewport`) | future lib, created with the Team compiler's 3D-preview feature | **Not created by this tool**; when it exists, this tool embeds it as a labeled approximate preview: the second consumer that justifies the crate |
+| In-app 3D viewport (`libs/model_viewport`) | future lib, created with the Compiler's 3D-preview feature | **Not created by this tool**; when it exists, this tool embeds it as a labeled approximate preview: the second consumer that justifies the crate |
 | Blender loader | module of the all-in-one `pes-models` extension, Blender 5.2 project (outside this repo) | New; consumes the manifest contract only; extension planned in `blender_project/pes_models_plan.md` |
 
 ## Settings (tool section)
@@ -441,7 +441,7 @@ expensive, roughly in drop order:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Viewing | Launch Blender 5.2 via a loader, not an in-app viewport | Deletes the viewport and outliner work; Blender's viewport/Outliner are better than any bespoke wgpu pass; the community already lives in Blender |
-| Future embedded preview | When the Team compiler's 3D-preview feature creates `libs/model_viewport`, embed it beside the launcher, labeled "preview only: open in Blender for the accurate version" | Free at that point (two consumers justify the shared crate); Blender stays the accurate view, so the label keeps expectations straight |
+| Future embedded preview | When the Compiler's 3D-preview feature creates `libs/model_viewport`, embed it beside the launcher, labeled "preview only: open in Blender for the accurate version" | Free at that point (two consumers justify the shared crate); Blender stays the accurate view, so the label keeps expectations straight |
 | Blender-side packaging | Loader ships as a module of the all-in-one `pes-models` extension (fmdl + .model + PES glTF import/export) | The loader needs all three importers anyway; PES glTF round-trip (import with `materials.toml` + `PES_bone`/`PES_mesh` restored) exists nowhere else; one install, one schema, one retirement path (see `blender_project/pes_models_plan.md`) |
 | Studio↔plugin contract | Versioned JSON manifest, loader stays dumb | All export-folder knowledge stays in `aesthetics_export`/Rust; no logic duplicated in Python |
 | Settings editing | Both a Studio panel and a Blender sidebar panel, both generated from the `PlayerSettings` schema (carried in the manifest as `settings_schema`) | Quick edits without Blender; in-Blender edits see FPC/strip reflected live (same file, last writer wins); generated forms cannot fall behind the schema, which is the only route to the save |

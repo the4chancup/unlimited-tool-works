@@ -8,7 +8,7 @@ The pipeline operates on typed objects, not a flat dict of path strings to bytes
 canonicalizes a flat `CanonicalListing` into a `vtree::VirtualTree`, and `vtree::ScopePath` spells
 every path and issue scope the model carries.
 
-**The model and its validation live in `libs/aesthetics_export`, not in the Team compiler.** The
+**The model and its validation live in `libs/aesthetics_export`, not in the Compiler.** The
 export format is shared knowledge: the Export upgrader writes it, the Kit config editor edits kit
 folders inside it, and the Team creator generates it from scratch. So one crate owns the object
 model, the folder conventions described under "Player folders (the Studio export format)", and the
@@ -22,8 +22,8 @@ own filesystem/archive I/O. Lazy per-folder *content* loading, source-provider i
 and the memory budget remain pipeline concerns. The Load step's eager structure loading builds
 on this parser, and the Refs arranger supplies a plain-filesystem listing.
 
-The Team compiler is the crate's biggest consumer, and the compile-time behavior (processing
-steps, packing, bins, GUI, CLI) stays in it. The Team compiler itself is deliberately *not* split
+The Compiler is the crate's biggest consumer, and the compile-time behavior (processing
+steps, packing, bins, GUI, CLI) stays in it. The Compiler itself is deliberately *not* split
 into a companion lib crate. See "Lib crates" in the [core spec](../core/README.md).
 
 `TeamName`, `TeamId` and the `teams_list.txt` parse/reconcile logic live in the leaf crate
@@ -59,7 +59,7 @@ Deep format validation (FMDL/XML/MTL/glTF/texture/kit-config content checks) liv
 respective format crates and applies the same sanitized-scope rule before planning. The
 consuming tool maps `ValidationIssue`s to `Message`s with its own catalog policy, so the Refs
 arranger and Kit config editor can consume the same structural checks without inheriting
-Team-compiler-specific catalog entries.
+Compiler-specific catalog entries.
 
 The compile progression is **`ParsedAestheticsExport` → `ValidatedAestheticsExport` (structural + deep
 validation, sanitized) → `ResolvedAestheticsExport` (identity attached) → build manifest (run-level
@@ -69,7 +69,7 @@ starts.
 
 ### Validation semantics
 
-These settle the Team compiler spec's pre-Phase-3 gates (identity boundary, sanitized versus
+These settle the Compiler spec's pre-Phase-3 gates (identity boundary, sanitized versus
 eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 
 - **Identity boundary.** The export kind follows from the canonical `team_name`: `/refs/` is a
@@ -78,7 +78,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   (required `players.txt`, slots 01–35, repeated folders) need no input from the consumer.
   `resolve_identity` maps `/refs/` to `ExportIdentity::Referees` without reading the teams list,
   and any other name to `ExportIdentity::Team { id, name }` by `TeamsList` lookup, or to
-  `IdentityError` (the Team compiler's `team_name_unknown`). No referee value is ever a `TeamId`;
+  `IdentityError` (the Compiler's `team_name_unknown`). No referee value is ever a `TeamId`;
   999 appears only where a game format writes it. An export stem with no token has no team name:
   it is reported as `team_name_unknown` with an empty name and dropped.
 - **Coverage tag.** A team export's name says what the export covers, as its second word, right
@@ -92,7 +92,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   two kits looks like a midcup export bringing two kits).
 
   The tag is in the name, not in a marker file, so whoever handles the export sees it without
-  opening it. A name with neither word is an error that drops the export (the Team compiler's
+  opening it. A name with neither word is an error that drops the export (the Compiler's
   `export_tag_missing`) rather than a guess: a full export taken for a midcup one leaves the
   kits of a past cup on offer, and the reverse wipes a team's kits. Only the second word counts,
   so a later `Full` in a description changes nothing. A referee export carries no tag: it is
@@ -100,7 +100,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 - **Who decides a consequence.** This crate decides each structural issue's disposition, because
   it builds the sanitized export from them. A `ValidationIssue` carries its code, scope, context,
   effective disposition, and whether `pass_through` changed it. The consuming tool owns only
-  severity, text and hint (the Team compiler's catalog in `messages.md`). The tool tests that
+  severity, text and hint (the Compiler's catalog in `messages.md`). The tool tests that
   every code in `ISSUE_CODES` has a catalog row, and its scenario tests observe the consequence
   each row states.
 
@@ -198,7 +198,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
   from one that was not read, so that addition changes no shape.
 - **Refused listings.** A listing `vtree` refuses (a path escaping the root, two names that fold
   to one) is a `SourceError` from `parse_listing`: there is no draft to report on, and the
-  consumer reports it as a source failure naming the path (the Team compiler's
+  consumer reports it as a source failure naming the path (the Compiler's
   `export_extract_failed`).
 - **File-type allowlist.** What a file may be depends on where it sits; a file the row does not
   admit gets the row's code.
@@ -299,7 +299,7 @@ eligible, roster-entry scope and disposition; confirmed 2026-09-30).
 
 ### `aesthetics_export` crate layout
 
-Five consumers (Team compiler, Export upgrader, Kit config editor, Refs arranger, future Team
+Five consumers (Compiler, Export upgrader, Kit config editor, Refs arranger, future Team
 Creator) read this crate, so its layout is organized by the **progression stage** a consumer can
 stop at, and each stage is produced by the previous one's entry point:
 
@@ -339,7 +339,7 @@ Placement rules:
   a file or archive.
 - **No message text.** `validate/issues.rs` yields stable codes with scope and context; each tool
   maps them to its own catalog. This is what lets the Refs arranger and Kit config editor share the
-  checks without inheriting Team compiler wording.
+  checks without inheriting Compiler wording.
 - **Structure, not contents.** Descriptor types carry names and sizes; processing model/texture
   types (`ModelFolder`, …) and everything that converts or packs them live in `team_compiler`.
 - **Conventions are data.** A new allowed model name or kit file is a table entry in

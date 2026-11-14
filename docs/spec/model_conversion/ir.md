@@ -90,7 +90,7 @@ pub struct MeshGroup {
 pub struct Texture {
     pub directory: String,           // verbatim from the source (`/Assets/.../sourceimages/`,
     pub file_name: String,           //   `./`); extension kept as found. Final in-game paths are
-}                                    //   the Team compiler's texture relocation step, not this crate's
+}                                    //   the Compiler's texture relocation step, not this crate's
 
 pub struct BoundingBox { pub min: [f32; 4], pub max: [f32; 4] }
 ```
@@ -208,8 +208,8 @@ components.
 
 **Deterministic collections.** Order-bearing IR metadata uses `BTreeMap`/`BTreeSet` (or equivalently
 sorted vectors), never serialization by `HashMap`/`HashSet` iteration. Importers normalize extension
-keys, and exporters/merge routines emit them in canonical order. This is required by the Team
-compiler's byte-reproducible Rust-output contract.
+keys, and exporters/merge routines emit them in canonical order. This is required by the
+Compiler's byte-reproducible Rust-output contract.
 
 ### Material sources per format
 
@@ -225,7 +225,7 @@ different places; the IR's `Material` is the merge point:
   (`.model` + `.mtl`): `model_to_ir` consumes both and `ir_to_model` emits both.
   Conversion never changes one without the other. The `.mtl` codec lives in
   `pes_model` alongside the `.model` codec (it's the same format family; the
-  Team compiler's MTL validation and path rewriting use the same parser).
+  Compiler's MTL validation and path rewriting use the same parser).
 
 **Engine mapping.** The IR `Material` is engine-neutral in its core (`family`,
 booleans, canonical texture roles, parameters) with an optional native table per
@@ -361,7 +361,7 @@ The FMDL importer still strips them (`antiblur::decode`), so a converted model n
 them, and splits a material by its meshes' alpha and shadow flags only, never by their anti-blur
 request, which nothing downstream reads.
 
-The Team compiler's pass-through route (a native FMDL packed as it is) neither looks for the
+The Compiler's pass-through route (a native FMDL packed as it is) neither looks for the
 copies nor touches them, and `fmdl`'s merge, which assembles native parts on that route, takes
 parts whatever their anti-blur state ("Extension algorithms" below).
 
@@ -419,10 +419,10 @@ A part with repeated bone names is refused (union by name is ambiguous). Parts m
 their anti-blur state: every mesh is kept as it is and the parts' extension flags are OR-ed,
 since nothing encodes anti-blur after a merge.
 
-The merge is not an IR operation: the Team compiler calls it directly to assemble multi-part
+The merge is not an IR operation: the Compiler calls it directly to assemble multi-part
 models and to bake Common-linked models into player FMDLs on Fox targets, where the engine cannot
-load models from the Common folder (see "Common model links and model merging" in the [Team
-compiler spec](../team_compiler/README.md)). The pre-Fox counterpart is
+load models from the Common folder (see "Common model links and model merging" in the
+[Compiler spec](../team_compiler/README.md)). The pre-Fox counterpart is
 `pes_model::ops::merge`, native over `Model` + `MaterialSet` (see "`pes_model::ops::merge`" in
 the [Libraries spec](../libs/format_crates.md)), which follows the same rules.
 

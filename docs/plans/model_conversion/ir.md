@@ -11,7 +11,7 @@ What exists of this is in `spec/model_conversion/ir.md` "When the IR is used".
 - **glTF → FMDL**: glTF → IR → FMDL
 - **glTF → .model**: glTF → IR → .model
 - **FMDL / .model → glTF**: native → IR → glTF (`ir_to_gltf`: the [Player aesthetics
-  editor](../player_aesthetics_editor.md)'s conversion; the Team compiler never emits glTF)
+  editor](../player_aesthetics_editor.md)'s conversion; the Compiler never emits glTF)
 
 ### IR struct
 

@@ -1,7 +1,7 @@
 # Unlimited Tool Works - Agent briefing
 
 Unlimited Tool Works is a Rust suite of every tool the 4cc community uses to run its PES (2015–2021) cups:
-a Team compiler (aesthetics exports → CPK archives), a save editor, and a dozen smaller tools, all
+the Compiler (aesthetics exports → CPK archives), a save editor, and a dozen smaller tools, all
 in one `egui` binary that also works as a CLI. What the suite does is specified in `docs/spec/`
 (index: `docs/spec/README.md`), what comes next is planned in `docs/plans/` (index:
 `docs/plans/README.md`). This file is the short version: how the project is organized, how

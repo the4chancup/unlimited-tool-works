@@ -50,7 +50,7 @@ question for the maintainer.
 
 The current teams list is not a bundle file: it is embedded in the binary and materialized as
 `data/teams_list.txt` by the first `compile` that has a data directory (a `check` never writes it;
-see the [Team compiler spec](../team_compiler/README.md), "Resolved
+see the [Compiler spec](../team_compiler/README.md), "Resolved
 decisions", "Teams list").
 
 **Size budget:** the release binary stays under about 30 MB, and up to 50 MB is acceptable where
@@ -64,7 +64,7 @@ per-crate split is an estimate, as the tool itself says):
   17.1 MiB on 2026-10-02 (Phase 3). The growth is features, not an accident (`cargo bloat`,
   crate by crate):
   - `rhai` and the `aatf` crate 2.6 MiB of code;
-  - the Phase 4 and 5 crates (the Team compiler's later steps, `pes_savefile`, `pes_model`,
+  - the Phase 4 and 5 crates (the Compiler's later steps, `pes_savefile`, `pes_model`,
     `model_convert`, the Save editor, the image formats) about 5 MiB;
   - read-only data from 5.4 to 10.9 MiB (embedded files about 4.2 MiB of it: the referee
     templates about 3 MiB, the kit bins, the help chapters and the AATF sample team).
@@ -186,7 +186,7 @@ directory (`AppPaths::data_dir` is `None`). Data-dir cargo is then read from its
 start.
 
 `data/teams_list.txt` *is* data-dir cargo (member-edited; the grid's inline ID writes are the
-[Team compiler spec](../team_compiler/pipeline.md)'s, "Resolved decisions", "Teams list"). Writes
+[Compiler spec](../team_compiler/pipeline.md)'s, "Resolved decisions", "Teams list"). Writes
 to it are best-effort: an unwritable data directory makes the list read-only, never triggers
 elevation.
 
@@ -199,7 +199,7 @@ The following things are *not* data-dir cargo:
 - The `output/` folder (the default `output_folder_path`) likewise lives next to the binary. It is
   Red's `patches_output/`, where users look for a CPK when a deployment could not happen or
   `--no-deploy` was given. It also hosts the run-scoped staging folder (see "Post-processing" in
-  the Team compiler spec).
+  the Compiler spec).
 
 ### Update state
 
@@ -217,11 +217,11 @@ settings or lost their reason to exist:
 
 | Red state file | Fate |
 |---|---|
-| `dt00_write_allowed.txt` | Dropped. The Team compiler never writes `dt00_x64.cpk`: the Fox referee marker is a reserved collar inside the refs CPK (`spec/team_compiler/blue_port.md` "Referee export processing") |
+| `dt00_write_allowed.txt` | Dropped. The Compiler never writes `dt00_x64.cpk`: the Fox referee marker is a reserved collar inside the refs CPK (`spec/team_compiler/blue_port.md` "Referee export processing") |
 | `first_run_done.txt` | Presence-based data-location resolution: the settings file's existence *is* the first-run marker (see "Data location") |
 | `admin_warned.txt` | Dropped: the one-time console explanation before Red's UAC relaunch becomes the `elevation` lib's GUI prompt, which explains itself every time it appears |
-| `sideload_warned.txt` | Dropped: the one-time sideload explanation becomes the per-run `overrides_active` Info message (Red's `sideload/` folder is the compiler's `overrides/`) (team compiler catalog) |
-| `ver_mismatch_warned.txt` | Dropped: the suppressible console notice becomes the plain per-run `pes_version_mismatch` warning (team compiler catalog) plus the version selector's live red/amber exe check (see `plans/core/gui.md` "Sidebar") |
+| `sideload_warned.txt` | Dropped: the one-time sideload explanation becomes the per-run `overrides_active` Info message (Red's `sideload/` folder is the compiler's `overrides/`) (Compiler catalog) |
+| `ver_mismatch_warned.txt` | Dropped: the suppressible console notice becomes the plain per-run `pes_version_mismatch` warning (Compiler catalog) plus the version selector's live red/amber exe check (see `plans/core/gui.md` "Sidebar") |
 
 ### Versioning: one workspace version, one exception
 

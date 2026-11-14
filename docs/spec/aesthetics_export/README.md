@@ -6,7 +6,7 @@ FPC marker files.
 
 The format is shared knowledge, so one spec and one crate own it:
 
-- the [Team compiler](../team_compiler/README.md) compiles it;
+- the [Compiler](../team_compiler/README.md) compiles it;
 - the [Export upgrader](../export_upgrader.md) writes it;
 - the [Kit config editor](../kit_config_editor.md) edits kit folders inside it;
 - the [Refs arranger](../../plans/refs_arranger.md) edits referee slot allocations inside it;
@@ -14,7 +14,7 @@ The format is shared knowledge, so one spec and one crate own it:
   player folders in it;
 - the Team creator generates it.
 
-Compile-time behavior (what the compiler *does* with an export) stays in the Team compiler spec.
+Compile-time behavior (what the compiler *does* with an export) stays in the Compiler spec.
 Model-level format details (glTF + PES extensions, `materials.toml`) are in the [Unified model
 format spec](../model_format.md). Platform context is in the [core spec](../core/README.md).
 

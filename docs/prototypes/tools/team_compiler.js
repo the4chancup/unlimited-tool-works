@@ -296,7 +296,7 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
-const catalog = code => CATALOG["team-compiler"].find(r => r.code === code);
+const catalog = code => CATALOG["compiler"].find(r => r.code === code);
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
   return s === "W" ? "Warning" : s.startsWith("E") ? "Error" : s;
@@ -650,7 +650,7 @@ function detailPanel() {
         h("div", { class: "find " + (severity(code) === "Warning" ? "warn" : severity(code) === "Info" ? "" : "err") },
           severity(code), " ",
           h("span", { class: "msg-link", title: "Open the help at this message",
-            onclick: () => openHelp({ tool: "team-compiler", topic: "messages", anchor: code }) }, code),
+            onclick: () => openHelp({ tool: "compiler", topic: "messages", anchor: code }) }, code),
           h("div", {}, messageOf(code))))
         : h("div", { class: "find weak" }, "No findings."),
       row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + folder)),
@@ -761,7 +761,7 @@ function startRun(only) {
       if (D.writable === "running") { stopTimer(); return askEditMode(run); }
     }
     else return endRun();
-    toolActivity("team-compiler", { done: Math.min(run.at, run.tasks.length), total: run.tasks.length, elapsed: run.elapsed });
+    toolActivity("compiler", { done: Math.min(run.at, run.tasks.length), total: run.tasks.length, elapsed: run.elapsed });
     render();
   }, 60);
   render();
@@ -769,7 +769,7 @@ function startRun(only) {
 function stopTimer() { clearInterval(S.run.timer); }
 function stopRun() {
   stopTimer();
-  toolActivity("team-compiler", null);
+  toolActivity("compiler", null);
 }
 // The savefile step with the save's own PES running (gui.md "Row actions",
 // the save findings): the Save editor's Edit mode question, in place of the
@@ -923,7 +923,7 @@ function drawView(center) {
     D.empty ? null : legend(),
     dropZone(h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))),
     toolbar(),
-    named(logPanel(L, { tool: "team-compiler", onLine: gotoCell }), "log"),
+    named(logPanel(L, { tool: "compiler", onLine: gotoCell }), "log"),
     detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
@@ -950,7 +950,7 @@ function draftControls() {
       button("Start as quick_compile.bat", () => { if (S.run) return; S.autorun = true; S.mode = "normal";
         liveCheck(S.rows.filter(r => !r.special), () => startRun()); }),
       cb("quick_compile_close_on_success", D.closeOnSuccess, v => D.closeOnSuccess = v)),
-    collapsing("team-compiler/walk", "How to walk the scenarios", () =>
+    collapsing("compiler/walk", "How to walk the scenarios", () =>
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }
 const WALK = [
@@ -983,7 +983,7 @@ function linkKeys() {
   if (S.finished && !S.run) k.run = "done";
   return k;
 }
-const linkWarn = what => console.warn("team-compiler link: " + what);
+const linkWarn = what => console.warn("compiler link: " + what);
 function linkOpen(scr, keys) {
   if (scr !== "main") linkWarn("unknown screen " + scr);
   if (keys.mode !== undefined) { if (MODES[keys.mode]) S.mode = keys.mode; else linkWarn("mode=" + keys.mode); }
@@ -1006,10 +1006,10 @@ function linkOpen(scr, keys) {
   } else if (keys.run !== undefined) linkWarn("run=" + keys.run);
 }
 
-registerTool({ id: "team-compiler", css: TEAM_COMPILER_CSS, draw: drawView,
+registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
   controls: draftControls, screen, linkKeys, linkOpen,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
-  shots: ["team_compiler/main", "team_compiler/main?detail=a.player.15",
-    "team_compiler/main?run=done", "team_compiler/main?mode=sideload&column=1",
-    "team_compiler/main?empty=1", "team_compiler/main?dest=running"] });
+  shots: ["compiler/main", "compiler/main?detail=a.player.15",
+    "compiler/main?run=done", "compiler/main?mode=sideload&column=1",
+    "compiler/main?empty=1", "compiler/main?dest=running"] });
 })();

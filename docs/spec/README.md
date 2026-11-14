@@ -4,12 +4,12 @@ What the suite does now, and why: one document per concern, with the same files 
 the [plans](../plans/README.md), which hold the work not built yet. A section partly built
 appears in both trees under the same heading. Start with the [core spec](core/README.md)
 (overview, crate structure, tool plugin system, parallelism, the phases delivered so far, key
-decisions); the Team compiler and the library crates have their own documents.
+decisions); the Compiler and the library crates have their own documents.
 
 | Spec | Covers |
 |------|--------|
 | [Core](core/README.md) | Platform architecture and cross-cutting decisions |
-| [Team compiler](team_compiler/README.md) | The flagship tool: pipeline, planning, processing, packing, deployment, referee support, messages, settings, the CLI |
+| [Compiler](team_compiler/README.md) | The flagship tool: pipeline, planning, processing, packing, deployment, referee support, messages, settings, the CLI |
 | [Save editor](save_editor.md) | The Save editor's CLI over `pes_savefile`: Team TOML, the aesthetics patch, AATF checks, the comparator, the teams list; its messages |
 | [AATF rules](aatf_rules.md) | `libs/aatf`: the ruleset schema, the interpreter and host, the embedded rulesets |
 | [Export upgrader](export_upgrader.md) | The one-time migration of AET exports to the Studio format, and of old model folders, through the CLI; its messages |

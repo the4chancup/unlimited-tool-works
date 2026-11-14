@@ -1,4 +1,4 @@
-# Unlimited Tool Works: Team compiler plan
+# Unlimited Tool Works: Compiler plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -268,7 +268,7 @@ TC-GUI-17  manual  GIVEN the sideload mode selected and PES 21 installed in pes_
                    WHEN Launch PES is clicked
                    THEN PES2021.exe starts from that folder, not through Steam, and the button
                         is disabled while it runs
-TC-GUI-18  GIVEN `UTW --gui team-compiler compile` with an export in the exports folder
+TC-GUI-18  GIVEN `UTW --gui compiler compile` with an export in the exports folder
            WHEN the initial check completes
            THEN the compile starts by itself, its grid and log indistinguishable from a click's;
                 GIVEN quick_compile_close_on_success set THEN the window closes when the run
@@ -277,9 +277,9 @@ TC-GUI-18  GIVEN `UTW --gui team-compiler compile` with an export in the exports
                 window") (`settings.md`:
                 warnings alone still close it), and stays open otherwise; a manual Compile click
                 with the setting on never closes it
-TC-GUI-19  GIVEN the settings menu open on the Team compiler's section
+TC-GUI-19  GIVEN the settings menu open on the Compiler's section
            WHEN cpk_name is edited
-           THEN the settings file's [team-compiler] table holds the new value and the next
+           THEN the settings file's [compiler] table holds the new value and the next
                 compile writes a CPK of that name
 TC-GUI-20  GIVEN a referee export whose players.txt lists slots 1, 2 and 35, slots 1 and 35
                  backed by the same model folder
@@ -300,7 +300,7 @@ TC-GUI-22  GIVEN exports_folder_path an absolute path to a folder that does not 
                 instead THEN the frame woken after its thread ends shows the exit-code line
 TC-GUI-23  GIVEN a run in flight over two exports, another tool's view active
            WHEN the window's close is requested
-           THEN the Team compiler's view is active with its prompt; WHEN it keeps the window
+           THEN the Compiler's view is active with its prompt; WHEN it keeps the window
                 THEN the run ends as it would have; GIVEN close chosen instead THEN the run is
                 cancelled as by TC-GUI-13 (no CPK written or replaced, the previous outputs as
                 they were) and the window closes after its last line, not before

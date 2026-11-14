@@ -13,7 +13,7 @@ The suite follows a **platform + plugins** model with strict modularity rules:
    trait, the settings framework, and the common settings (PES version, paths, threads, memory cap).
 2. **Every tool is a separate crate**, no matter how small.
 3. **Every shared set of functionality is a separate library crate.** Example: savefile
-   loading/saving is a lib crate used by both the save editor tool and the Team compiler tool. A
+   loading/saving is a lib crate used by both the save editor tool and the Compiler tool. A
    future "CPK explorer" tool and a "CPK packer" tool would both import the shared `cpk` lib crate.
 4. **Each tool crate owns its own GUI view, its own settings section, and its own CLI commands**
    (see "Tool plugin interface" below).
@@ -32,7 +32,7 @@ The suite follows a **platform + plugins** model with strict modularity rules:
 │   ├── studio_core/                  # Platform: app shell, tool trait, settings framework,
 │   │                                 #   common widgets (grid, log panel), PipelineEvent types
 │   ├── tools/
-│   │   ├── team_compiler/            # Team compiler (pipeline, loaded processing model, packing, GUI)
+│   │   ├── team_compiler/            # Compiler (pipeline, loaded processing model, packing, GUI)
 │   │   ├── save_editor/              # Save editor: settings, the CLI and the session its commands drive
 │   │   └── export_upgrader/          # Export upgrader: old-format exports and model folders to the Studio format
 │   └── libs/
@@ -116,7 +116,7 @@ crates.io, so no blanket prefix is needed):
   project's name: Unlimited Tool Works"). It ships standalone and lands in download folders,
   where a bare `studio.exe` would say nothing about what it is. The crates keep
   `studio`/`studio_core`: no user sees crate names, and renaming them needs no migration.
-- **CLI subcommands and tool ids keep hyphens** (`UTW team-compiler ...`, id `"team-compiler"`):
+- **CLI subcommands and tool ids keep hyphens** (`UTW save-editor ...`, id `"save-editor"`):
   that's CLI convention, independent of package names.
 
 **`studio_core`** (the platform, containing only what runs with zero tools):
@@ -217,7 +217,7 @@ The small tools (Kit config editor, Refs arranger, Balls compiler, Export upgrad
 aesthetics editor, Music player, Music export editor) add their logic as flat modules next to these
 (`compile.rs`, `arrange.rs`, …) and need no further prescription. The two flagship tools and the
 Match tracker elaborate below the skeleton; their trees are in their own documents ("Crate layout"
-in the [Team compiler](../team_compiler/README.md) and [Save editor](../save_editor.md) specs and
+in the [Compiler](../team_compiler/README.md) and [Save editor](../save_editor.md) specs and
 the [Match tracker](../../plans/match_tracker/README.md) plan).
 
 Lib crates with a mandated layout are `pes_savefile`, `model_convert`, and `aesthetics_export` (in
@@ -232,28 +232,28 @@ their specs) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
   standalone formats (e.g. `uniparam`); single-consumer helpers stay with their owner (e.g.
   CRILAYLA lives inside `cpk`).
 
-**No per-tool companion libs.** Even the largest tool, the Team compiler, at an estimated 15–25k
+**No per-tool companion libs.** Even the largest tool, the Compiler, at an estimated 15–25k
 lines, stays a single crate, organized by internal modules mirroring its pipeline stages
 (`reader/`, `check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/`; the full tree and
-placement rules are the "Crate layout" section of the [Team compiler
+placement rules are the "Crate layout" section of the [Compiler
 spec](../team_compiler/README.md)). A `team_compiler_lib` next to it would have exactly one
 consumer, which rule 3 below calls out, and it would buy nothing for navigation that the module
 tree doesn't already give.
 
 What *is* extracted is the part with real multiple consumers: `aesthetics_export` (the export
-format's object model, folder conventions, and validation). It is shared by the Team compiler, the
+format's object model, folder conventions, and validation). It is shared by the Compiler, the
 Export upgrader that writes the format, the Kit config editor that edits kit folders inside
 exports, the Refs arranger that edits referee slot allocations inside refs exports, and the Team
 creator, so all of them agree on what a valid export is.
 
-Should the Team compiler ever need splitting for compile times or a headless build, the
+Should the Compiler ever need splitting for compile times or a headless build, the
 principled seam is logic vs. egui view (see the trade-off note under "Workspace guardrails"), not
 a catch-all lib.
 
 This rule has already survived its first pressure test. The [Refs
 arranger](../../plans/refs_arranger.md) was initially conceived as a "refs compiler" owning its own
 compile step, which would have forced the engine extraction for one thin extra consumer. Instead it
-only prepares the refs export's `players.txt` and hands compilation off to the Team compiler (see
+only prepares the refs export's `players.txt` and hands compilation off to the Compiler (see
 "Why an arranger, not a compiler" in its plan).
 
 `fmdl` and `pes_model` have a second consumer outside this workspace: the Blender addons (see
@@ -303,9 +303,9 @@ dynamic loading complexity.
 ```rust
 // studio_core
 pub trait StudioTool {
-    /// Stable identifier, used for CLI dispatch and settings keys ("team-compiler")
+    /// Stable identifier, used for CLI dispatch and settings keys ("compiler")
     fn id(&self) -> &'static str;
-    /// Sidebar label ("Team compiler")
+    /// Sidebar label ("The Compiler")
     fn label(&self) -> &'static str;
 
     /// The tool's main view, rendered in the panel right of the tool selector
@@ -349,7 +349,7 @@ pub trait StudioTool {
     /// perform the already-parsed CLI command inside the GUI, as if the user had
     /// pressed the corresponding button. Called once by the shell after the
     /// tool's view has been created; the tool may queue the action until its
-    /// own readiness condition holds (the Team compiler waits for the initial
+    /// own readiness condition holds (the Compiler waits for the initial
     /// exports check). Default: no command is GUI-runnable, so the launch fails
     /// with a message instead of silently opening the GUI.
     fn gui_run(&mut self, matches: &clap::ArgMatches, ctx: &ToolContext) -> anyhow::Result<()> {
@@ -380,9 +380,9 @@ pub trait StudioTool {
   never see the file or its path.
 - **Events**, through `ctx.emit(envelope)`, the one place a gone receiver is handled (logged at
   debug, dropped).
-- A **tool-switch request**: `ctx.switch_to_tool("team-compiler")` asks the shell to make the
+- A **tool-switch request**: `ctx.switch_to_tool("compiler")` asks the shell to make the
   named tool the active view at the end of the frame. It is id-string based, so tools can link to
-  each other (the Refs arranger's handoff to the Team compiler) without depending on each other's
+  each other (the Refs arranger's handoff to the Compiler) without depending on each other's
   crates.
 - `ctx.notify(Notice)`, the one way a tool puts something in the status bar (see `gui.md` "Status
   bar"). `Notice` is a typed item, not a string, so the bar cannot become a free-text dumping
@@ -398,7 +398,7 @@ pub trait StudioTool {
 #[derive(Debug, thiserror::Error)]
 #[error("{error:#}")]
 pub struct CliError {
-    /// The process exit code: the tool's own mapping (the Team compiler's 2 or 3).
+    /// The process exit code: the tool's own mapping (the Compiler's 2 or 3).
     pub exit_code: u8,
     /// What went wrong, printed as `error: …`.
     pub error: anyhow::Error,
@@ -416,7 +416,7 @@ pub struct AppPaths {
 ```
 
 The exit code is a `u8` returned by the tool, not an `anyhow` error the binary maps, because
-the meaning of each code is the tool's contract (the Team compiler's 0/1/2/3,
+the meaning of each code is the tool's contract (the Compiler's 0/1/2/3,
 `spec/team_compiler/settings.md` "CLI"). The binary prints an `Err` as `error: …` before exiting
 with its code, and adds only the codes no tool can see, in the same meanings:
 
@@ -425,7 +425,7 @@ with its code, and adds only the codes no tool can see, in the same meanings:
 - 3 when the executable's folder cannot be found or the console printer stops (an environment
   failure; a lost printer may have lost findings, so the tool's own verdict cannot stand).
 
-Today the `studio` binary's `tools()` registers the Team compiler, the Save editor and the
+Today the `studio` binary's `tools()` registers the Compiler, the Save editor and the
 Export upgrader, in that sidebar order, and takes no context. The `egui::Context` parameter
 arrives with the match feed (Phase 11), its first user. The full registry is the plan's
 (`plans/core/architecture.md` "Tool plugin interface").
@@ -434,11 +434,11 @@ CLI dispatch uses standard clap subcommands (each tool contributes one), which i
 CLI shape:
 
 ```
-UTW team-compiler compile ./exports_folder
-UTW team-compiler check ./exports_folder
+UTW compiler compile ./exports_folder
+UTW compiler check ./exports_folder
 ```
 
-(An argument-flag style like `UTW --team-compiler compile ...` would work too, but subcommands
+(An argument-flag style like `UTW --compiler compile ...` would work too, but subcommands
 are what clap and CLI conventions are built around: better help output, completion support, and
 per-subcommand argument validation.)
 
@@ -530,7 +530,7 @@ pub enum PipelineEvent {
     FolderStatus { export_id: ExportId, path: vtree::ScopePath, status: FolderStatus },
     // Warnings/errors are structured messages (stable code + severity +
     // disposition + scope + context fields), not prebaked strings; each tool
-    // defines its message catalog (see "Message catalog" in the Team compiler
+    // defines its message catalog (see "Message catalog" in the Compiler's
     // plan). Display text is rendered from a per-catalog template table.
     Message(Message),
     // A command's result text (a JSON report, a document), printed as it is: see

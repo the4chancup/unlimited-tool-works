@@ -78,7 +78,7 @@ default, over the edit.
   compile's save step ran or was skipped.
 
   Studio compares the save against the record whenever the fingerprint differs: at start, when
-  the Team compiler's or the Save editor's view opens, before every compile, and on the save
+  the Compiler's or the Save editor's view opens, before every compile, and on the save
   file's change while it runs (the watch only makes it sooner).
 
   A key whose save value differs from the record's resolved value is an edit made in PES, for
@@ -111,7 +111,7 @@ comparison's list above is read from Test 1 of the old stripped route, not measu
 key).
 
 The record-to-keys conversion is `pes_savefile`'s `PlayerSettings::from_player`, a lib both
-tools already reach, never a copy in a tool crate: the Team compiler finds and brings the
+tools already reach, never a copy in a tool crate: the Compiler finds and brings the
 edits, and one tool crate never depends on another.
 
 The in-game hair ranges of PES 16 to 20, which no game measured, are assumed from PES 21's. The

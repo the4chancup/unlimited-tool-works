@@ -15,9 +15,9 @@ a headless consumer, the widget module can move behind a feature flag.
 Kit colors (the two per-kit menu colors compiled into `UniColor.bin`) matter: they
 drive the match UI scoreboard and the kit-selection color dots, which is what lets
 teams pick non-clashing kits when a preview player's custom body hides the actual
-kit. Managers often don't bother providing them, so the Team compiler derives them
-from the kit's main texture when a kit folder has no `colors.txt` (see the Team
-compiler spec's kit steps and `kit_colors_derived` message).
+kit. Managers often don't bother providing them, so the Compiler derives them
+from the kit's main texture when a kit folder has no `colors.txt` (see the
+Compiler spec's kit steps and `kit_colors_derived` message).
 
 The extraction (`color_tools::kit::extract_kit_colors(rgba, width, height) -> Option<KitColors>`;
 the caller decodes, so the crate stays pure logic with no image dependency):

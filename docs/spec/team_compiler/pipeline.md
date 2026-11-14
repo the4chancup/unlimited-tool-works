@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler spec: Pipeline
+# Unlimited Tool Works: Compiler spec: Pipeline
 
-Part of the [Team compiler spec](README.md).
+Part of the [Compiler spec](README.md).
 
 ## Per-export pipeline walkthrough
 
@@ -110,7 +110,7 @@ export format.
      one model folder: `texture_stem_conflict`), without loading model, texture, or archive
      payloads. This is the pass used by shallow archive checks.
    - **Deep format pass (format crates)**: runs over the sanitized export the structure pass
-     leaves, before identity and planning. The Team compiler materializes each scope under the
+     leaves, before identity and planning. The Compiler materializes each scope under the
      memory budget and delegates FMDL, `.model`/MTL/XML, glTF, texture, kit-config and
      `settings.toml` parsing to their owning crates. What they find goes back to
      `aesthetics_export` as content findings, and the sanitized export is derived again with
@@ -1917,7 +1917,7 @@ not a serial scheduling requirement.
     placeholder in every unused slot. The run compiles and deploys; the upgrade below writes
     the placeholders.
 
-  With any of these findings the CLI prints the subcommand, `UTW team-compiler upgrade-dpfl`,
+  With any of these findings the CLI prints the subcommand, `UTW compiler upgrade-dpfl`,
   and never upgrades on its own.
   - The upgrade is an **override, not a merge**: the bundled official DPFL replaces the
     installed file byte for byte, the old one kept as `DpFileList.bin.bak` (replacing an older

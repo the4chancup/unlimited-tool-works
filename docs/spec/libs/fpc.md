@@ -67,7 +67,7 @@ Consumers:
   auto-reverts them.
 - `pes_savefile`: `ops/fpc.rs` maps `fpc::player` presets onto `PlayerEntry` and runs the
   interference check.
-- through them, the Team compiler (`fpc_on`/`fpc_off` markers, kit reconciliation,
+- through them, the Compiler (`fpc_on`/`fpc_off` markers, kit reconciliation,
   `settings.toml` validation).
 
 The editors' uses are in `plans/libs/fpc.md`. The wiki's FPC guide (`resources/FPC.wikitext` in

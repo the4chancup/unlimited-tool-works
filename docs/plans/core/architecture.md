@@ -22,7 +22,7 @@ These planned crates extend the spec's workspace tree:
 │   │   ├── match_tracker/            # Live match stat/event tracker (SEN:P-AI successor)
 │   │   ├── kit_config_editor/        # Kit config editor (Kit Manager successor)
 │   │   ├── refs_arranger/            # Referee slot allocation → players.txt (compiles via the
-│   │   │                             #   Team compiler, which owns referee processing)
+│   │   │                             #   Compiler, which owns referee processing)
 │   │   ├── balls_compiler/           # Balls export → ball selection CPK (own bins, own paths;
 │   │   │                             #   the format knowledge lives here, single consumer)
 │   │   ├── player_aesthetics_editor/ # Player-folder browser → Blender launch (manifest for the
@@ -40,7 +40,7 @@ These planned crates extend the spec's workspace tree:
 │       ├── model_convert/            # glTF+PES_bone/PES_mesh extension import/export + materials.toml
 │       │                             #   read/write lives here, via the external `gltf` crate
 │       ├── model_viewport/           # (future) shared wgpu model-preview widget — created with the
-│       │                             #   Team compiler's 3D-preview feature; consumers: team_compiler
+│       │                             #   Compiler's 3D-preview feature; consumers: team_compiler
 │       │                             #   and player_aesthetics_editor (labeled approximate preview)
 │       ├── music_export/             # (Phase 10) .4ccm music export format: parse/write + condition model
 │       ├── audio_engine/             # (Phase 10) Audio playback (kira/symphonia) + loudness analysis (ebur128)
@@ -93,12 +93,12 @@ Besides the tools' subcommands, the shell owns `UTW help`, `UTW update` and `UTW
 
 The `--gui` form exists for the release bundle's **`quick_compile.bat`**, the successor to Red's
 `0_all_in_one.bat`, the one script almost every user runs: copy an export into `exports/`,
-double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui team-compiler
+double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui compiler
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
 no launcher (`distribution.md`, the bundle's list). Red's other staged bats (`1_`–`3_`) have no successor: the
 unified pipeline has no stages to run separately. Users who want the plain GUI double-click the exe.
 
-Until the Team compiler's view exists, the 0.0.2 bundle's `quick_compile.bat` runs the plain CLI
+Until the Compiler's view exists, the 0.0.2 bundle's `quick_compile.bat` runs the plain CLI
 compile in its console instead, beside an interim `quick_upgrade.bat` (`development_plan.md`
 "The /vg/ League 27 (VGL)").
 
@@ -107,7 +107,7 @@ modes) and hands the parsed `ArgMatches` to the tool's `gui_run` hook (see the t
 its view exists. Commands a tool does not implement in `gui_run` fail at startup with a clear
 message rather than silently opening the GUI.
 
-A tool decides its own readiness. The Team compiler queues the autorun until the initial
+A tool decides its own readiness. The Compiler queues the autorun until the initial
 exports check has completed, then fires it: the same precondition as a manual Compile click,
 so the grid never compiles unchecked state.
 
@@ -280,16 +280,16 @@ disabled one) names no folder, and counting it as none would end a run that left
 When stderr is not a terminal (piped, redirected, a script or CI) neither is drawn, and stdout
 carries exactly the finding lines and result text it carries without them, so the CLI tests and
 any script reading stdout see no change. No flag turns it on or off. The printer is
-tool-neutral, so every tool that emits `Progress` gets the line; the Team compiler is the first.
+tool-neutral, so every tool that emits `Progress` gets the line; the Compiler is the first.
 
 The exports counter is the printer's own count of the run's `ExportStarted` (the total: every
 export starts in the validation pass, before any is compiled) and `ExportProcessed` events, so
-the Team compiler needs no event of its own for it and the counter draws from the first
+the Compiler needs no event of its own for it and the counter draws from the first
 export. A command that starts each export when its turn comes (the Export upgrader's
 `upgrade`) cannot give the total that way: it announces it first with
 `PipelineEvent::ExportsExpected`.
 
-The parts counter is `Progress`, which the Team compiler emits as each task of its build
+The parts counter is `Progress`, which the Compiler emits as each task of its build
 manifest commits (`spec/team_compiler/pipeline.md` "3. Per-model-folder parallel steps
 (rayon)", its first paragraph: a model folder, a kit, the logo, a Common directory, the
 collars, the portraits, the referee marker), `total` being the manifest's task count. The
@@ -342,12 +342,12 @@ These notes extend the spec's `PipelineEvent` enum, the first at `Progress`, the
     // The run strip needs stage, elapsed time, files written, and memory in
     // use — more than `Progress` carries. Extend `Progress` with these fields
     // or add separate `StageChanged`/`MetricsUpdated` events before implementing
-    // the run strip view (see "Toolbar" in the Team compiler plan).
+    // the run strip view (see "Toolbar" in the Compiler's plan).
 
-    // The Team compiler needs separate compile and deployment outcomes (rollback,
+    // The Compiler needs separate compile and deployment outcomes (rollback,
     // "artifacts built but installation failed"). Replace the boolean `success`
     // with structured CompileOutcome/DeploymentOutcome/CancellationOutcome before
-    // implementing the run-result semantics described in the Team compiler plan.
+    // implementing the run-result semantics described in the Compiler's plan.
     // At that point the placeholder folder-only counters below become task/scoped-
     // outcome counts, so typed non-folder tasks are represented in the summary.
 ```
@@ -536,8 +536,8 @@ there is. A repro bundle is that traceback: every step that changed what a tool 
 the window opened, the files it started from and the ones it wrote, in one zip a member saves
 from a button and posts.
 
-Every tool that opens a member's files takes part: the Save editor first, then the Team
-compiler and the Export upgrader, then the rest as they are built.
+Every tool that opens a member's files takes part: the Save editor first, then the
+Compiler and the Export upgrader, then the rest as they are built.
 
 - **The journal records model steps, not input events.** Each step is what a tool's model
   saw:

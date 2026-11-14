@@ -7,7 +7,7 @@
 What exists of this is in `spec/core/development_plan.md` "Development Plan".
 
 **Releases.** The suite first ships as **0.1.0 at the end of Phase 8** ("Release 0.1.0" below):
-the Team compiler with compile-time aesthetics (written to the savefile through the
+the Compiler with compile-time aesthetics (written to the savefile through the
 aesthetics patch), the Save editor and the Export upgrader, on Windows, with the CPU texture
 encoder and the native model formats only.
 
@@ -73,7 +73,7 @@ check is rock solid (`libs/aatf`), so after Phase 6 closes the work runs in this
 4. Phase 8's other views and Release 0.1.0 as above.
 
 Members get the Save editor as a **preview build, 0.0.1**, cut once its view is done: the shell
-with that tool active, and the Team compiler, the Export upgrader and the Ruleset editor, whose
+with that tool active, and the Compiler, the Export upgrader and the Ruleset editor, whose
 views come later, greyed out on the sidebar as the planned tools are.
 
 The exe embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), DBC7
@@ -81,7 +81,7 @@ and VGL27 among them, and the bundle's settings pick DBC7 as the Save editor's `
 and PES 2017, DBC's game, as the sidebar's `pes_version`. 0.0.1 is DBC's alone, its testers
 DBC's managers, whose first open shows no version warning (the app's own default stays PES
 2019). Only the Save editor serves DBC7: the event's aesthetics are compiled with Red, as
-before, so nothing of the Team compiler's output (its CPKs, its aesthetics patch) reaches
+before, so nothing of the Compiler's output (its CPKs, its aesthetics patch) reaches
 DBC7's save.
 
 No rules file rides beside the exe: one in the data folder's `rules/` would list as an import,
@@ -90,7 +90,7 @@ the same ruleset twice in the dropdown, its copy one click on its × from being 
 The settings file lives in the bundle's `data/` folder, `data/settings.toml`, which makes the
 bundle portable (`spec/core/distribution.md` "Data location: asked on first run"), so 0.0.1's
 first start asks nothing: the location choice is what a preview's testers lose, in exchange
-for a check that is DBC's from the first open. The settings file also carries the Team compiler's
+for a check that is DBC's from the first open. The settings file also carries the Compiler's
 `multicpk_mode` and `cpk_name` at their defaults, the two lines VGL's organizer changes in
 0.0.2 (below), so that readme can say which line to edit rather than what to add.
 
@@ -125,7 +125,7 @@ In the demo mode:
 - the window is at its default size on a page it can be moved and resized over (a page smaller
   than that is the monitor the window is fitted to, as the app fits its window to a small
   one);
-- the tools whose drafts are too early to show (the Team compiler, the Export upgrader) are
+- the tools whose drafts are too early to show (the Compiler, the Export upgrader) are
   greyed there, "Not in the demo yet";
 - the title ends "(Demo)", so a visitor in the Save editor knows no save is edited.
 
@@ -144,7 +144,7 @@ what is built has been reviewed, and it lets an organizer change a ruleset's tie
 settings in a window rather than in the rules file's text.
 
 **The /vg/ League 27 (VGL): preview 0.0.2.** The league starts in late November 2026 on PES
-2019 with FoxDen, and its organizer tests the Team compiler there. Managers send their exports
+2019 with FoxDen, and its organizer tests the Compiler there. Managers send their exports
 in the old format, as for any cup; the maintainer and the organizer upgrade them with the
 Export upgrader, compile them, and fall back to Red if a major issue surfaces. So a second
 preview, 0.0.2, carries those two tools through their CLI.
@@ -161,9 +161,9 @@ and the window stays as above, the two greyed out.
 The bundle's launchers run the CLI in their console window, as Red's own bat runs its CLI, and
 wait for a key at the end so the report can be read:
 
-- `quick_compile.bat` runs `team-compiler compile` over the bundle's `exports/` (through
+- `quick_compile.bat` runs `compiler compile` over the bundle's `exports/` (through
   `UTW.exe`, "The project's name" below).
-  It takes its `--gui` form (`architecture.md` "Launch modes") when the Team compiler's view
+  It takes its `--gui` form (`architecture.md` "Launch modes") when the Compiler's view
   lands.
 - `quick_upgrade.bat` upgrades every export in the bundle's `old_exports/` (folders, `.zip`,
   `.7z`) into `exports/` against the savefile dropped onto it, in one run of the exe
@@ -191,7 +191,7 @@ wait for a key at the end so the report can be read:
   were left out and where the full report is.
 
 The organizer's PES 2019 install carries the official DpFileList. An install with another list
-takes it with `team-compiler upgrade-dpfl`, run once from a console in the bundle's folder; no
+takes it with `compiler upgrade-dpfl`, run once from a console in the bundle's folder; no
 launcher runs it, so the readme gives the line.
 
 The league's initial DLC compiles in multi-CPK mode (`multicpk_mode` set in the settings file,
@@ -293,7 +293,7 @@ Markdown page, a batch file and a build script cannot read a Rust constant. A te
 `UnlimitedToolWorks` or bare "Studio" left.
 
 Text a file format keeps names no product at all (a ruleset file's header and its logic banner,
-the shared-IDs file's comment: "written by the Ruleset editor", "by the Team compiler"; the
+the shared-IDs file's comment: "written by the Ruleset editor", "by the Compiler"; the
 aesthetics patch's `tool_version` key, `studio_version` until the rename). The logic banner is
 hashed into the ruleset's identity, and a product's name in a format ties every file to it.
 
@@ -373,7 +373,7 @@ sizes holds its own crop, and they are committed, so a build needs no image tool
 
 ### Phase 7: glTF support
 
-Runs after Release 0.1.0 (see "Releases" above). Besides the codec, it lifts the Team compiler's
+Runs after Release 0.1.0 (see "Releases" above). Besides the codec, it lifts the Compiler's
 interim refusal of glTF sources (Phase 4) and enables the Export upgrader's `--convert-to-gltf`
 pass (`export_upgrader.md` step 13).
 
@@ -414,7 +414,7 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
   rendering (the grid's kit-cell miniatures, pattern-only mode) and the color-picker popup (the
   Save editor's team color fields; the Kit config editor and the Team creator later)
 - Implement each tool's `view()`:
-  - Team compiler grid (live validation)
+  - Compiler grid (live validation)
   - save editor (player/team/tactics editing, AATF checks, comparator; build order in the
     [Save editor plan](../save_editor.md)). The `session/` wiring only the view drives (undo,
     selection, recent files, the FPC toggle and AATF quick actions) lands with it. The tactics
@@ -423,13 +423,13 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
   - export upgrader
 - Implement the exports folder watcher (`notify` + debouncing) and the check cache in
   `libs/pipeline` (`spec/libs/pipeline.md`; the design is `plans/team_compiler/gui.md` "Live
-  validation"), and the Team compiler's `check/` scheduling its two-tier check over them
+  validation"), and the Compiler's `check/` scheduling its two-tier check over them
 - Each view over the receivers its tool's `tick` drains (`gui.md` "Event wiring"): the grid,
   the log panel and the run strip read the tool's state, never a shell-owned channel
 - Implement cancellation (`spec/core/gui.md` "Cancellation"): the Compile button's Cancel, the pipeline
   checking it between tasks and between a texture task's textures, the cancelled run's staging
   discarded
-- The Team compiler's `run_pes` and sideload mode's Launch PES button as one launcher of
+- The Compiler's `run_pes` and sideload mode's Launch PES button as one launcher of
   `PES20{version}.exe` (`spec/team_compiler/pipeline.md` "Post-processing", Run PES): both start the
   same exe the same way, and this phase holds its only manual check
 - Test on Windows (Linux is a Phase 16 item: no Linux machine is available, and 0.1.0 is
@@ -447,7 +447,7 @@ change in person, nothing a compatibility contract yet). It is a milestone rathe
 numbered phase: its deliverables are the slice of Phase 16 an early release cannot do without,
 pulled forward.
 
-**Ships:** the Team compiler (Phases 3–5: native FMDL/`.model` sources, CPU texture encoding,
+**Ships:** the Compiler (Phases 3–5: native FMDL/`.model` sources, CPU texture encoding,
 compile-time aesthetics, written to the savefile through the aesthetics patch),
 the Save editor (Phase 5 logic and the full Phase 8 view), and the
 Export upgrader (Phase 6, structural migration; its glTF pass waits for Phase 7), as the Windows
@@ -480,7 +480,7 @@ A later test release (or a later `0.x`; "Releases" above), with what a wide audi
 tester told in person does not:
 
 - Help chapters for the shipped tools beyond their views' topics (Red's two readmes migrated
-  into the Team compiler and core chapters, "Updates" and "What's new"); `UTW help
+  into the Compiler and core chapters, "Updates" and "What's new"); `UTW help
   --export` wired into the release process
 - The updater's check and notice (`distribution.md` "Self-update: in-place binary swap", step 1,
   and step 2 reduced to a notice): the release notes and a link to the release page, with *Skip
@@ -574,14 +574,14 @@ and Phase 8 (the shell).
 - Lists mode for PES 18–21 (the Fox referee hook decides who appears): one home slot per referee,
   ordered five-position lists built by hand or randomized, the weighted fallback fill of the
   leftover slots, `ref_lists.txt` writer
-- players.txt writing (overwrite confirmation) + Team compiler handoff (`ToolContext` tool switch);
+- players.txt writing (overwrite confirmation) + Compiler handoff (`ToolContext` tool switch);
   `chances` and `randomize` CLI
 
 **Verification:** players.txt round-trips through `aesthetics_export`'s roster reader and
 writer, ref_lists.txt through the arranger's own; chance-math
 unit tests against the measured tables; randomizer and fallback-fill invariants;
 interrupted/observed atomic replacement tests (including Windows); a refs export arranged, saved,
-and compiled by the Team compiler.
+and compiled by the Compiler.
 
 ### Phase 14: Balls compiler (`tools/balls_compiler`)
 

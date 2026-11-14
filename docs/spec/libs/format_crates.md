@@ -103,10 +103,10 @@ Rules:
   the vertices past the limit): a vertex more than 5000 units from the origin (Euclidean
   distance of its position; exactly 5000 passes) makes the game lag persistently for the whole
   matchday. Every vertex counts, referenced by a face or loose; edges and faces need no test of
-  their own, since every point of one lies within the reach of its farthest vertex. The Team
-  compiler refuses such a model (`vertex_too_far_from_origin` in its catalog).
+  their own, since every point of one lies within the reach of its farthest vertex. The
+  Compiler refuses such a model (`vertex_too_far_from_origin` in its catalog).
 - **The `python_bindings` surface is `format/`'s entry points**, exposed as-is; if a function is
-  awkward to expose, that is a hint it belongs in the Team compiler rather than here.
+  awkward to expose, that is a hint it belongs in the Compiler rather than here.
 
   Today the wheel carries each codec's `read`/`write` (`fmdl`'s `FmdlFile` and `SklFile`,
   `pes_model`'s `PreFoxModel` and `MaterialSet`) and nothing more; the `ops/` exposure is in

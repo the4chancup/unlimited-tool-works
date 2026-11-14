@@ -14,13 +14,13 @@ export:
 Where the draw cannot be overridden (PES 15–17, or Fox without the hook) the arranger falls
 back to shaping the draw statistically, against each PES version's measured slot appearance
 rates, with drag-and-drop assignment and live appearance-chance feedback. It then hands the
-compile itself off to the [Team compiler](team_compiler/README.md), which already owns
+compile itself off to the [Compiler](team_compiler/README.md), which already owns
 referee compilation. It is deliberately **not** a compiler (see "Why an arranger,
 not a compiler"). Platform context is in the [core plan](core/README.md).
 
 The tool consumes `libs/aesthetics_export` (the export object model, folder conventions,
 and `players.txt` slot mapping; see "Player numbering" in the Aesthetics export spec and
-"Referee export processing" in the Team compiler plan).
+"Referee export processing" in the Compiler's plan).
 
 ---
 
@@ -185,15 +185,15 @@ role-bound (slot 7 appears as upper, main, and lower in different patterns).
 
 ## Why an arranger, not a compiler
 
-The Team compiler **already compiles refs exports**: a `refs`-prefixed export routes
+The Compiler **already compiles refs exports**: a `refs`-prefixed export routes
 through its pipeline as `ExportIdentity::Referees`, with numeric ID 999 rendered only
 at game-format boundaries (999 is not a normal 701–920 `TeamId`) and slot-mapped
-packing (see "Referee export processing" in the [Team compiler plan](team_compiler/blue_port.md)).
+packing (see "Referee export processing" in the [Compiler plan](team_compiler/blue_port.md)).
 
 A "Refs compiler" tool owning its own compile step would add no compilation behavior: it would
 only need to *trigger* one. Since tool crates must not depend on tool crates (core spec,
-workspace guardrail 1), that would force extracting the compilation engine (~80% of the Team
-compiler crate: pipeline, processing, packing, message catalog, settings ownership) into a lib
+workspace guardrail 1), that would force extracting the compilation engine (~80% of the
+Compiler crate: pipeline, processing, packing, message catalog, settings ownership) into a lib
 crate with exactly one thin extra consumer. That is guardrail 3's over-splitting warning sign,
 and the convenience it buys is one saved click. Rejected; the engine split stays available
 along the blessed logic-vs-view seam if a substantial second consumer ever appears (see
@@ -202,10 +202,10 @@ along the blessed logic-vs-view seam if a substantial second consumer ever appea
 The handoff instead rides on machinery that already exists:
 
 1. **Save** writes `players.txt` into the refs export under the exports folder.
-2. The Team compiler's **folder watcher** picks the change up like any file edit and
+2. The Compiler's **folder watcher** picks the change up like any file edit and
    revalidates the refs row immediately.
-3. The **"Save & open in Team compiler"** button saves (if unsaved) and asks the
-   shell to switch the active tool (`ctx.switch_to_tool("team-compiler")`, an
+3. The **"Save & open in the Compiler"** button saves (if unsaved) and asks the
+   shell to switch the active tool (`ctx.switch_to_tool("compiler")`, an
    id-string request to `ToolContext`, no crate dependency; see "Tool plugin
    interface" in the core plan). The user presses Compile there.
 
@@ -219,7 +219,7 @@ Hence the name: the tool arranges, the compiler compiles.
 
 The arranger reads the refs export from the common `exports_folder_path` (core plan). If multiple
 non-disabled `refs`-prefixed exports are found, the arranger is inactive until the user resolves the
-conflict. The Team compiler's Reader detects the conflict before validation and emits an
+conflict. The Compiler's Reader detects the conflict before validation and emits an
 export-scoped `multiple_ref_exports` blocker for every conflicting row; the arranger shows a
 notice pointing at them. `NO_USE`/`NO_USE.txt` sources are disabled and do not participate. Only
 one plain-folder refs export can be edited at a time.
@@ -364,7 +364,7 @@ One format, one home, a few lines of parsing on each side:
 Grammar: five integers 1..35 separated by whitespace, then zero or more `key=value` tokens,
 then an optional `#` comment. The arranger rejects a line with a repeated id or an id above
 N with a scoped issue on load, and never writes one. The file's reader and writer live in the
-arranger's crate, its only consumer: the Team compiler admits the file at a refs export's
+arranger's crate, its only consumer: the Compiler admits the file at a refs export's
 root without reading or packing it.
 
 The reading script is the hook author's; the arranger's responsibility ends at the file, and
@@ -411,8 +411,8 @@ writer `aesthetics_export` gains for it. The Export upgrader, which writes the s
 from a `refs.txt` today with a function of its own, moves onto it.
 
 Each write goes to a sibling temporary file renamed onto the target, so folder watchers can
-never observe a half-written file. The Team compiler and the settings file each do this with a
-private helper today; the Team compiler's moves into `studio_core`, and settings, the compiler
+never observe a half-written file. The Compiler and the settings file each do this with a
+private helper today; the Compiler's moves into `studio_core`, and settings, the compiler
 and the arranger share it.
 
 Overwriting an existing `players.txt` asks for confirmation; creating one where none existed
@@ -453,7 +453,7 @@ hand is GUI-only; drag-and-drop has no meaningful CLI analogue.
 
 Both commands read the export as the GUI does: a `players.txt` beside a `refs.txt` wins with
 the same warning, and an archived export is refused with the GUI's notice and a failing exit
-code. The PES version is the saved common setting, as for the Team compiler's CLI; there is
+code. The PES version is the saved common setting, as for the Compiler's CLI; there is
 no version flag.
 
 ### Settings
@@ -468,7 +468,7 @@ are constants, not settings.
   schedule order) and send it to the streamers, who drop it into the hook's folder; nobody
   else receives anything. No recompile, no Studio required at the venue.
 - **PES 15/16**: before each matchday, open the arranger, reshuffle names across the slot rows
-  (guided by the chances in the storage box), save, switch to the Team compiler,
+  (guided by the chances in the storage box), save, switch to the Compiler,
   recompile the refs CPK. A possible future helper (tracking cumulative appearances
   across saved lists and suggesting the next assignment that equalizes them) is
   noted but not part of the initial scope.

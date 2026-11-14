@@ -62,7 +62,7 @@ names capitalized and file names lower case (`Players/`, `Kits/`, `settings.toml
   `write_names` marker) as it is. A marker beside `tactics.toml` is a warning saying the
   tactical file's names are used.
 - **One fixed name, recognized everywhere.** `tactics.toml` at the root is a known root file
-  for the Team compiler, the Export upgrader (which carries it over untouched) and the export
+  for the Compiler, the Export upgrader (which carries it over untouched) and the export
   checks (which parse it as a Team TOML, its texts against the portable limits). Any other
   `.toml` at the root stays `root_file_unexpected`, as now.
 - **`Music/` is the music export as it stands alone**: one `.4ccm` directly inside (its file
@@ -70,7 +70,7 @@ names capitalized and file names lower case (`Players/`, `Kits/`, `settings.toml
   `.4ccm`'s always are (`plans/music_player.md` "File resolution"), so the folder copied out
   loads in the Music player or in Rigdio unchanged.
 
-  It is a known root folder of a team export: the Team compiler never reads its songs and packs
+  It is a known root folder of a team export: the Compiler never reads its songs and packs
   nothing of it, the Export upgrader carries it over untouched, and the export checks parse its
   `.4ccm` and resolve its songs. What they find is a Warning, never an Error, because no
   compiled output depends on it (a missing goalhorn cannot spoil a DLC). A `Music/` holding no

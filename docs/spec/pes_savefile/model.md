@@ -168,7 +168,7 @@ This crate exposes the raw name and a `display_name()` helper that strips the co
 uses a fixed-length match: the colour is exactly the 8 bytes after `\x11c`, hex or not, so a
 name letter `a`–`f` following a code is never eaten. The 2-byte reset `\x11d` is stripped too.
 `codec.md` "Whole-file API" has the measurement for both. The save editor renders the colours from
-the raw name and allows editing them, while folder-name derivation (Team compiler, Export
+the raw name and allows editing them, while folder-name derivation (Compiler, Export
 upgrader) and search use the stripped form. Any other control character in a name is not a
 known code and is left alone.
 
@@ -238,7 +238,7 @@ impl PlayerSettings {
     /// unchanged. `version` is the compile target: the names are checked against its text
     /// fields and a key its schema lacks (`dribbling` before PES 20) is skipped, set or
     /// not, so an export written for a newer version compiles for an older one as it is.
-    /// `NameSetting::FromFolder` is not applied: the caller (the Team compiler)
+    /// `NameSetting::FromFolder` is not applied: the caller (the Compiler)
     /// resolves it to `Explicit` first, since the folder rules are its.
     pub fn apply(&self, player: &mut PlayerEntry, version: PesVersion) -> Result<(), SettingsError>;
     /// The complete template: every key in table order, set ones as values, unset ones
@@ -506,7 +506,7 @@ through `from_player`'s stock-band rule.
 The crate also applies the **FPC enable/disable presets**, which `libs/fpc` owns: Full Player
 Customization invisibility, made of nonexistent boots/gloves IDs plus strip settings (their
 fields are listed in the [libs/fpc spec](../libs/fpc.md)). Both the save editor's FPC toggle and
-the Team compiler's `fpc_on`/`fpc_off` marker files use the same preset values.
+the Compiler's `fpc_on`/`fpc_off` marker files use the same preset values.
 
 The compiler composes the boots/gloves ID fields with asset outcomes by the precedence rule in
 the [Aesthetics export spec](../aesthetics_export/settings_toml.md)'s "Player settings in

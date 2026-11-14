@@ -560,7 +560,7 @@ or a plan section naming one). A crate that reads a file format also gets a **ce
 machine (found through the Everything index, archives opened) run through read, the semantic
 round trip and `check`, tallied by outcome, each failing class diagnosed before it is fixed or
 recorded as a refusal, and re-run after every fix with a regression check (`scripts/census/`: the file list, the tally
-and the regression check; its README says how a run fits them). A phase that changes the Team compiler or the Export upgrader also reruns the
+and the regression check; its README says how a run fits them). A phase that changes the Compiler or the Export upgrader also reruns the
 upgrade census and our compile of the library, compared entry by entry with the last checkpoint
 (`scripts/library_parity/`, its README's rerun order; `spec/team_compiler/testing.md`
 "Testing: parity against Red (adapted from Blue)"), each changed entry traced to a commit of

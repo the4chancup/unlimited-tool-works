@@ -56,13 +56,13 @@ implementation:
   crate; hexed.exe (byte-poking `Ball.bin` together) → a typed `Ball.bin` writer;
   the pes-file-tools Python scripts (DDS↔FTEX) → `ftex`/`dds_convert`;
   `fmdl_id_change.py` → the `fmdl` crate's texture-path rewriting (the same
-  mechanism the Team compiler uses); the admin batch dance → the `elevation` lib.
+  mechanism the Compiler uses); the admin batch dance → the `elevation` lib.
 - **Temp folders** → in-memory processing (`vtree`), like every suite compiler.
 - **The DpFileList appender**: dropped deliberately. Red removed its own appender
   ("Please never modify your dpfl") and the suite's policy is **check-only**. The
   Balls compiler reports equivalent tool-owned codes
   (`balls_dpfilelist_missing` / `balls_cpk_name_unlisted`) rather than reusing
-  Team-compiler catalog identities.
+  Compiler catalog identities.
 - **`ball.fpk.xml`**: pure GzsTool boilerplate (a one-entry manifest), generated
   internally now; no longer part of the format.
 - **`name.txt` shipped inside the CPK**: a 2.03 artifact (the batch moved it into
@@ -74,9 +74,9 @@ Balls move from a tool-private library to an **export**, the suite's third expor
 kind after team and referee exports. It lives in `exports/` with its siblings.
 
 The export name's first word being `balls` is the discriminant, exactly as `refs` is for
-referee exports (the Team compiler skips `balls` exports with an info message pointing here;
+referee exports (the Compiler skips `balls` exports with an info message pointing here;
 see "Per-export pipeline walkthrough" step 2 in the
-[Team compiler spec](../spec/team_compiler/pipeline.md)).
+[Compiler spec](../spec/team_compiler/pipeline.md)).
 **One balls export at a time**: the cup has one ball list, so finding several `balls*` exports
 is an error, like with referees.
 
@@ -164,7 +164,7 @@ For each listed ball at 1-based position N (id `ball%03d`):
    MTL makes that representation unavailable, and FMDL/glTF→pre-Fox produces and
    commits both outputs together.
 
-   glTF uses `model_convert`'s caller-supplied resolver contract exactly as the Team compiler
+   glTF uses `model_convert`'s caller-supplied resolver contract exactly as the Compiler
    does: external buffer/image URIs are canonicalized and restricted to the source ball folder,
    absolute/traversing/remote paths are rejected, and buffers/images are exactly-once,
    permit-charged dependencies rather than ancillary output files.
@@ -188,7 +188,7 @@ For each listed ball at 1-based position N (id `ball%03d`):
      `Asset/model/ball/ballXXX/#windx11/`.
 
    Only the textures the rewritten FMDL names ship; any other file in the folder is
-   `file_not_used` (W), as in the Team compiler. 2.03 shipped every `.ftex`, which the game
+   `file_not_used` (W), as in the Compiler. 2.03 shipped every `.ftex`, which the game
    never loads; the warning is also how a model that never names its own textures shows.
 3. **Pre-Fox path** (PES ≤17): convert FTEX textures to DDS; emit `ball.model`,
    `ball.mtl`, and the textures the `.mtl` names, loose to
@@ -205,9 +205,9 @@ For each listed ball at 1-based position N (id `ball%03d`):
    (`elevation` lib when needed), and **check** the name is listed in `DpFileList.bin`; never
    write to it.
 
-   Deployment follows the Team compiler's model: staged under `output/.staging/`, always
+   Deployment follows the Compiler's model: staged under `output/.staging/`, always
    attempted, degraded to `output/{name}.cpk` with the reason when it cannot happen, CLI-only
-   `--no-deploy` for the deliberate case (see "Post-processing" in the Team compiler plan). The
+   `--no-deploy` for the deliberate case (see "Post-processing" in the Compiler's plan). The
    shared `pipeline` crate carries the staging/promotion scaffolding so both compilers behave
    identically.
 
@@ -345,7 +345,7 @@ or thumbnails) are reported for user selection, not silently overwritten.
 
 | Setting | Default | Purpose |
 |---------|---------|---------|
-| `cpk_name` | `4cc_38_balls` | Output `pipeline::CpkStem`, using the same filename-stem contract as the Team compiler |
+| `cpk_name` | `4cc_38_balls` | Output `pipeline::CpkStem`, using the same filename-stem contract as the Compiler |
 
 `CpkStem`:
 
@@ -368,7 +368,7 @@ The tests:
   unavailable, atomic FMDL/glTF→`.model`+`.mtl` output, `materials.toml` parsing, native-model
   raster texture sources, and resolved glTF image dependencies, all producing target PES
   textures.
-- **`CpkStem` boundary tests** are shared with the Team compiler, including
+- **`CpkStem` boundary tests** are shared with the Compiler, including
   empty/29-character, invalid-character, reserved-name, explicit-extension, and case-collision
   cases.
 - **Legacy-import fixtures** cover the DDS winning a same-stem pair, single-format content
@@ -392,5 +392,5 @@ Phase 14 in the core plan's Development Plan. Needs the format/archive libs and
   reference above gives the layout). Carrying the template verbatim matches 2.03 and works
   in-game; decoding is only needed if a future feature wants to edit it.
 - **Pre-Fox version quirks**: 2.03 treated PES 14–17 as one path and never
-  zlib-compressed ball DDS textures (unlike the Team compiler's optional PES ≤17
+  zlib-compressed ball DDS textures (unlike the Compiler's optional PES ≤17
   compression). Assumed fine as-is until a version-specific issue surfaces.

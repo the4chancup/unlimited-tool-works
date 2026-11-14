@@ -94,7 +94,7 @@ being true. Permanent toolchain facts go in `docs/CONTRIBUTING.md` "Toolchain no
 - `dds_convert`'s CPU BC1 core (`block_compression`, PCA plus one refinement) trails DirectXTex
   by about 2.5 mean error on an 8x4 grey-ramp mip while matching it within 1.0 at the top mip;
   the encode tests compare the chain-wide mean for that reason. Revisit with representative kit
-  and face textures when the Team compiler can produce them (plan: "tune against representative
+  and face textures when the Compiler can produce them (plan: "tune against representative
   textures").
 - `just mutants-diff` reuses `mutants.out/`: it wipes a whole-crate run's results. Keep the
   whole-crate run's summary aside (to `.tmp/mutants_<step>_whole/`, only `*.txt` and
@@ -135,14 +135,14 @@ releases".
 |---|---|---|---|
 | 1 | Workspace bootstrap + core skeleton | workspace, CI, non-GUI `studio_core`, `vtree`, `pes_version` | done |
 | 2 | Library crates (standalone-verifiable) | `wezlib` `cpk` `fpk` `ftex` `dds_convert` `fmdl` `pes_model` `uniparam` `fox2` `archives` `fpc` `teams_list` `kit_config` `color_tools` `elevation` `model_convert` (native) `pes_savefile` `python_bindings` | done |
-| 3 | Team compiler skeleton | `team_compiler`, `aesthetics_export`, `pipeline` | done |
+| 3 | Compiler skeleton | `team_compiler`, `aesthetics_export`, `pipeline` | done |
 | 4 | Processing logic | `team_compiler` (`plan/` `processing/` `bins/` `output/`), `aesthetics_export` deep validation | done |
 | 5 | Savefile integration | `save_editor` logic, `aatf`, `team_compiler` `output/savefile.rs` | done |
 | 6 | Export upgrader | `export_upgrader` | done |
 | 7 | glTF support (runs after Release 0.1.0) | `model_convert` (glTF half) | todo |
 | 8 | GUI | `studio_core` shell, `studio`, tool views, `color_tools` widget | todo |
 | 0.0.1 | Preview build: the Save editor for DBC alone, with DBC7's rules file and PES 2017 picked (`core/development_plan.md` "Divegrass Before Christmas") | `just release` | todo |
-| 0.0.2 | Preview build: 0.0.1 plus the Team compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers (the console's progress line done in 0.0.1a) | todo |
+| 0.0.2 | Preview build: 0.0.1 plus the Compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers (the console's progress line done in 0.0.1a) | todo |
 | 0.1.0 | Release 0.1.0, after Phase 8, a test release (`core/development_plan.md` "Release 0.1.0") | `just release`, `CHANGELOG.md` | todo |
 | 0.2.0 | Release 0.2.0 or a later `0.x` (`core/development_plan.md` "Release 0.2.0") | help chapters, update check + notice, teams-list merge | todo |
 | 9 | Stadium compiler | `stadium_compiler` | todo |
@@ -185,7 +185,7 @@ mutation runs, censuses and reviewer rulings) in git history up to commit `7de61
 forward: 2.5b GPU BC7 is step 16.x, the `dds_convert` cache bound is step 4.y, and the
 phase's open questions are under "Issues".
 
-### Phase 3 — Team compiler skeleton
+### Phase 3 — Compiler skeleton
 
 Done 2026-10-02, its cross-family reviews still queued (the maintainer's directive; "Handover"
 lists them, 3.7's and 3.8's among them; what they find becomes steps under this heading). Spec
@@ -417,7 +417,7 @@ Done 2026-10-17. Spec now describes what exists: `docs/spec/core/development_pla
 scenarios, 442 proven under `just acceptance strict`), `aesthetics_export/settings_toml.md`.
 Step detail (5.0-5.0m4: the 4ccEditor fork survey, the Red inventory and its Fox gaps, the
 plans/spec split; 5.1a-d the schema widening to PES 18-19; 5.2a-i `aatf`: schema, interpreter,
-host, the eight rulesets, their review loops; 5.3a-b the Team compiler's rows, patch and
+host, the eight rulesets, their review loops; 5.3a-b the Compiler's rows, patch and
 savefile transaction; 5.4a-c the Save editor's CLI; 5.5 the in-game check; 5.y-gloves; the
 5.6a-f converge: the lead's audit, the design-health pass, the `pes_savefile` census, the
 cross-family reviews, the citation audit, 5.6e this rewrite) in git history up to commit
@@ -551,7 +551,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   active view, `studio_core/src/shell/mod.rs`); no `ST` or `SE-GUI` scenario is proven, and
   neither `libs/team_widgets` nor `color_tools`' widgets exist. The steps run in DBC's order
   (`plans/core/development_plan.md` "Divegrass Before Christmas"): what the 0.0.1 preview needs
-  first, the Team compiler's and the Export upgrader's views after it. Each step builds against
+  first, the Compiler's and the Export upgrader's views after it. Each step builds against
   its draft (the host page `docs/prototypes/index.html` and its `tools/*.js`) and its plan, and cites its scenarios in tests
   through the shell's headless harness (`shell/mod.rs`'s tests). The drafts wait for the
   maintainer's remarks, so the steps that draw least of what a remark would change come first
@@ -583,7 +583,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] 8.6e the window opens at 1440 × 900 points, centered, fitted to a smaller monitor;
       the help window at 90% of it (ST-WIN-01, ST-HELP-05). Done 2026-10-23 (SWE-2)
   - [ ] 8.7 `color_tools`' colour-picker popup (`plans/libs/color_tools.md` Phase 8), the
-    Save editor's team colours; the kit menu icons wait for the Team compiler's grid
+    Save editor's team colours; the kit menu icons wait for the Compiler's grid
     - [x] 8.7a the picker popup drawn in the Save editor's draft. Done 2026-10-21 (SWE-2)
     - [x] 8.7b `color_tools`' picker widget against the draft, tested headless. Done
       2026-10-21 (SWE-2, seven reworks over the S1-S3 and A1-A3 rounds): `picker::color_field`
@@ -756,11 +756,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (`.tmp/release_0_0_1/se21b/shots/12_dialog.png`, `11_after_load_squad.png`)
   - [ ] 8.10 after 0.0.1: the progress grid (with the log panel's cross-link: a warning or
     error line's click highlights its grid cell, `plans/core/gui.md` "Log panel", which 8.6d3 leaves for
-    the grid), the run strip, the exports folder watcher and check cache, cancellation, the launcher (`quick_compile.bat` to its `--gui` form, `quick_upgrade.bat` dropped once the upgrader's view lands), the Team
-    compiler's and the Export upgrader's views (their drafts first); the notice action
+    the grid), the run strip, the exports folder watcher and check cache, cancellation, the launcher (`quick_compile.bat` to its `--gui` form, `quick_upgrade.bat` dropped once the upgrader's view lands), the
+    Compiler's and the Export upgrader's views (their drafts first); the notice action
     `OpenFolder` opens the system file browser for the compile's "Open output" (8.6b leaves it
     a dismiss; eframe's `open_url` opens a browser even for a local path, so not through it),
-    and the Team compiler's view stops requesting repaints itself (`ToolContext::emit` wakes
+    and the Compiler's view stops requesting repaints itself (`ToolContext::emit` wakes
     the GUI since 8.6b); the first tool that publishes a notice during a CLI command gets a
     binary test of ST-CLI-01's notice half (8.6b proves it through the printer's loop only);
     the grid's row actions (`plans/team_compiler/gui.md` "Row actions": Open folder, one-click
@@ -1023,7 +1023,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Done 2026-10-30 (Opus sidekick, branch `s36b`)
     - [ ] c after 0.0.1 and before 0.0.2 (VGL 27 plays on PES 2019, a Fox version, with no
       stripped save; `plans/core/development_plan.md` "The /vg/ League 27"), the full-look
-      patch and the Team compiler: the aesthetics patch on
+      patch and the Compiler: the aesthetics patch on
       every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
       over the whole allocation, filled after their tasks commit, and clears a compiled
       player's base copy, or writes the one his `<id>.copy` link names (the link's validation
@@ -1123,7 +1123,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] a3 the help chapters and the draft `docs/prototypes/tools/save_editor.js`: 93 lines
     - [x] b the shell (`studio_core`) and the drafts host `docs/prototypes/index.html`: 35 lines
       rewritten (Opus, worktree `wt-829b`)
-    - [ ] c the Team compiler and the Export upgrader: their message catalogs, help chapters,
+    - [ ] c the Compiler and the Export upgrader: their message catalogs, help chapters,
       CLI output and the comments injected into `settings.toml`/`config.toml`/`materials.toml`
       (side-lead U, branch `side/text`), in six slices, the last outside its locks. Left by
       c4-c5 for whoever holds the files: `libs/fpc`'s hide-ID refusals keep a "key = value:
@@ -1173,7 +1173,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] e1 before 0.0.1: the Save editor's eight chapters and the two core ones. Done
         2026-10-30 (Opus sidekick, merged `db1b149d`); e1r the search's labels as plain text
         (merged `1c1fb403`). The read in the built window was left open (look: Pending looks)
-      - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
+      - [ ] e2 after 0.0.1: the Compiler's, the Export upgrader's and the other tools'
         chapters
     - [ ] f a second read of every string a member reads, for how a person would say it
       (the maintainer, 2026-11-12, after two lines of the Save editor's import panel that
@@ -1184,7 +1184,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       which edit the same files. To settle in it: the `Applied. The changes stay unsaved
       until Save.` notices beside the reworded line, which now says "until you click Save"
       - [ ] f1 the shell (`studio_core`) and the drafts host
-      - [ ] f2 the Team compiler and the Export upgrader (window, CLI, catalogs, help)
+      - [ ] f2 the Compiler and the Export upgrader (window, CLI, catalogs, help)
       - [ ] f3 the Save editor (window, CLI, catalog, help, draft)
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
@@ -1192,7 +1192,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     within a few points
 - [x] 8.2 the shell's draft, `docs/prototypes/shell.html` (2026-10-19, side-lead E, SWE-2 in
   seven slices): every `core/gui.md` shell screen, walked by a 29-check headless harness
-- [ ] 8.47 for 0.1.0 (the maintainer, 2026-11-13): the Team compiler takes hand-made mip
+- [ ] 8.47 for 0.1.0 (the maintainer, 2026-11-13): the Compiler takes hand-made mip
   levels beside a raster texture, so a model can show or hide with the camera's distance:
   `body_mip2.png` gives `body`'s mip 2, `body_mip4-6.png` mips 4 to 6, `body_mip8+.png` mip 8
   and below, and `_mips_alpha255-255-127-0` on the texture's name fades it. Plan written
@@ -1913,11 +1913,7 @@ briefs, review loops, gates and mutation runs as for any step.
     8 below its draft's and its line starting 8 in, where the draft and the Save editor run the band
     from the rail's edge; its section list highlights the selected label alone, where the draft
     fills the row across
-  - [ ] 0.0.2-sideopen (found in the built window 2026-11-14, `.tmp/looks/side/`; brief
-    `.tmp/side_overlay/brief_side_overlay.md`) in a window too short for the sidebar's entries,
-    the sidebar opened by the resting pointer draws its entries on past the foot, Help and Settings
-    out of view, and the wheel scrolls nothing; ST-SIDE-10 passes headless with registered stub
-    tools only and the pointer leaving the rail between notches
+  - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) the sidebar opened in a tall window and kept open while the window shrinks stays the rail's height, its entries scrolling between the head and the tail (the overlay's `Area` kept the size it measured in the tall window)
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [x] 0.0.2-presentation (2026-11-14, `7b2e9ea2` merging `3667be9b`, and `b222d710`) star and playing attitude are `settings.toml` keys under `appearance.presentation`, which the patch and the upgrader carry; the Comparator counts them and every motion as Aesthetics, Copy/swap stats leaves them to the target, a 0.0.1 Team TOML still imports; the Save editor's Presentation group under the lock
@@ -1931,8 +1927,9 @@ briefs, review loops, gates and mutation runs as for any step.
     `UTW compiler compile` on the tracer exports, `git grep team-compiler` empty outside
     history, the built window's sidebar and title
     Code half merged 2026-11-14 (`31f44cda`, SWE-2, one comment fixed by the lead; workspace
-    gates green but for the two overlap tests below, green alone). Open: the docs half (SWE-2,
-    `.tmp/compilername/brief_docs_respell.md`), the built window's sidebar and title
+    gates green but for the two overlap tests below, green alone). Docs half 2026-11-14 (SWE-2,
+    84 files; five links split by the swap rejoined by the lead). Open: the built window's
+    sidebar and title, on the looks pass's next release build
   - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
@@ -2505,7 +2502,7 @@ briefs, review loops, gates and mutation runs as for any step.
     Pending looks); Carbon after 11-15
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
     and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
-    PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
+    PES 15–18, BC7 sources kept; the Compiler's tests and goldens that expect BC7
     follow, and the library parity against Red re-run (Red ships BC3). Pulled into the
     0.0.2-poc bundle (the maintainer, 2026-11-06). With it, uncompressed sources stay
     uncompressed (`spec/libs/dds_convert.md` "In-process DDS conversion (replaces texconv)";
@@ -2713,7 +2710,7 @@ briefs, review loops, gates and mutation runs as for any step.
   "Tactics editor", the Portraits bullet), the Save editor looks in the exports folder
   (`exports_folder_path`) for the shown team's aesthetics export and takes every portrait it
   holds from there; `download/` stays the fallback for each player the export has none for,
-  and the placeholder after both → first read how the Team compiler finds an export's team
+  and the placeholder after both → first read how the Compiler finds an export's team
   (`aesthetics_export` `resolve_identity` over the teams list) and which player a portrait
   belongs to (`spec/aesthetics_export/player_folders.md` "Savefile identity" and
   "Portraits": a player folder's `portrait.*` or the standalone `Portraits/NN.*`, any
@@ -2788,7 +2785,7 @@ Steps are itemized when Phase 15 closes; three are fixed already:
   on the `dds_convert` fixtures; the fallback path exercised by forcing no adapter
   - [x] 16.x a `dds_convert`'s half, built ahead and unwired (2026-10-19, DECISIONS "the GPU
     BC7 encoder is built ahead of 0.1.0"): `gpu::GpuEncoder`, `just gpu-tests`
-  - [ ] 16.x b the Team compiler's texture step on the encoder, after 0.1.0: the CPU starts at
+  - [ ] 16.x b the Compiler's texture step on the encoder, after 0.1.0: the CPU starts at
     once and the GPU joins when its device is ready, started when the run has BC7 work
     (`plans/libs/README.md` "First-release desktop GPU BC7"); start it after the window's
     renderer is up, a failed start this run's CPU fallback with its reason in the report
@@ -2936,7 +2933,7 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   box and dimmed label; no test pins the label's colour), both themes; no PES; 0.0.2-num;
   maintainer
 - The PES selector disabled and empty under the Save editor and the Ruleset editor, as
-  before under the Team compiler and the Export upgrader, no icon moving between them, in
+  before under the Compiler and the Export upgrader, no icon moving between them, in
   the rail and the opened sidebar; a PES 2017 save open with the selector on another
   version: its portraits and Set PES path's tooltip; Choose file starting in the last
   opened folder; both themes; no PES; 0.0.2-sel; maintainer
@@ -3153,7 +3150,7 @@ points there.
   `keeps_archive` declines the archive and `source.content.is_some()` fails; it passed on a
   rerun with 2.2 GB free. The test should pin the cap (the budget it plans with) rather than
   read the host's; a flaky gate trains everyone to rerun until green.
-- open (2026-11-07) — The Team compiler's recovery manifest (`plans/team_compiler/pipeline.md`
+- open (2026-11-07) — The Compiler's recovery manifest (`plans/team_compiler/pipeline.md`
   "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
   ships carry it. One slice in the writer (each team and referee export's manifest and the
   files it packs beside it, the round trip read back from a compiled CPK); no in-game check
@@ -3186,7 +3183,7 @@ points there.
   current state through the tool interface, and replay comparing that state last: slice 2
   built the writer and nothing calls it outside tests yet, so no member can write a bundle
   until this lands, and it lands after (3) so the first bundles members post replay; (5) the
-  panic hook's bundle; (6) the Team compiler and the Export upgrader; the rest as each tool
+  panic hook's bundle; (6) the Compiler and the Export upgrader; the rest as each tool
   is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
   crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
@@ -3411,7 +3408,7 @@ points there.
 - open (2026-10-16, 5.6b mutation runs) — three GUI views are placeholder lines no test reads:
   `save_editor`'s `view` and `settings_view` and `team_compiler`'s `settings_view`
   (`lib.rs`), each a survivor when replaced with `()`. Their tests come with the views they
-  stand in for (the Save editor's window, the Team compiler's settings editor, Phase 8), with
+  stand in for (the Save editor's window, the Compiler's settings editor, Phase 8), with
   `team_compiler`'s headless `view/mod.rs` harness.
 - open (2026-10-15, Astra review B.A1 of 5.3b) — nothing refuses an `output_folder_path` that
   resolves to the PES folder's `download/` (or inside the PES install): a degraded or
@@ -3704,7 +3701,7 @@ points there.
   bare hands). Request for FoxDen's maintainer: keep the original value when the player has no
   save appearance record, for outfield players too (p1 routes them through the goalkeeper path),
   then an in-game retest with a `GloveList.bin` row for an outfield and a goalkeeper player.
-  The Team compiler's gloves output on Fox depends on it. Probably moot since 8.36: no
+  The Compiler's gloves output on Fox depends on it. Probably moot since 8.36: no
   `GloveList.bin` row is written, and the patch writes the record's gloves id, which
   `[rsi+0x2C]` probably holds (not checked); 8.36d's in-game check settles it.
 - open — `pes_savefile::ops::fpc::is_fpc_player` finds no FPC player in a real cup save (step

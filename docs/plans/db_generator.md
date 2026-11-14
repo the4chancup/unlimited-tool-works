@@ -231,7 +231,7 @@ CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out .
 ## Open questions
 
 - **Database CPK file name and DpFileList position** in the 4cc DLC: take from the current
-  cup's DLC layout when the Team compiler's deployment stage is specified (Phase 4); until
+  cup's DLC layout when the Compiler's deployment stage is specified (Phase 4); until
   then the CPK is written under the name the user gives.
 - **Whether PES 20/21 also need the populated EDIT**: the scripts' README says the quirk starts
   at 19 and was seen to persist on 20+. The invitational save on the reference machine has

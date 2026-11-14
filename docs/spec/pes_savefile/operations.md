@@ -18,7 +18,7 @@ editor's cross-version import is `from_team` and `apply`, one team at a time.
 
 The converters were also the compiler of their day. Half of what they write (boots/gloves IDs
 against the models present, the edit flags, taping and player gloves cleared) is compile policy,
-not layout translation, and in this suite that policy belongs to the Team compiler's
+not layout translation, and in this suite that policy belongs to the Compiler's
 `PlayerSettings`/`ops::fpc` pass.
 
 A cross-version `apply` does the version-dependent half only: **every key the target can hold
@@ -710,7 +710,7 @@ bytes, the longest 59), and a cut nobody was told about renames the player.
 
 ### Aesthetics patch (new)
 
-The file the Team compiler writes to its output folder with its CPKs and the save editor
+The file the Compiler writes to its output folder with its CPKs and the save editor
 applies: the resolved savefile writes for the compiled players, so that the people who build the
 DLC and the people who build the official savefile can be different people.
 
@@ -722,7 +722,7 @@ the patch, and the savefile builder applies the patch to the official save.
 [`plans/pes_savefile/operations.md`](../../plans/pes_savefile/operations.md) "Aesthetics patch
 (new)".
 
-The Team compiler writes the file to the output folder with the CPKs a compile publishes, its
+The Compiler writes the file to the output folder with the CPKs a compile publishes, its
 header naming the CPKs (empty for a sideload tree, which publishes loose files).
 
 A compile with nothing to put in it (no player holding a key once the IDs of tasks that did not
@@ -731,7 +731,7 @@ backup replaced each time. The write happens once the run's outputs are in place
 publishes nothing leaves the previous CPK and its patch alone.
 
 The compiler's own savefile stage is "apply the patch just produced to the local save" (see
-"Savefile update" in the [Team compiler spec](../team_compiler/pipeline.md)). It is one path,
+"Savefile update" in the [Compiler spec](../team_compiler/pipeline.md)). It is one path,
 so a patch applied a week later by someone else yields the same bytes the DLC builder's machine
 wrote.
 
@@ -792,7 +792,7 @@ version holds, since a missing key means a broken patch whose apply would reset 
 other keys.
 
 ```toml
-# aesthetics_patch.toml, written by the Team compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
+# aesthetics_patch.toml, written by the Compiler: apply it with the Save editor's Savefile > Apply aesthetics patch
 pes_version = 21
 tool_version = "1.4.0"
 allocation_scheme_version = 1

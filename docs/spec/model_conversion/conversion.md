@@ -4,7 +4,7 @@ Part of the [Model conversion spec](README.md).
 
 ## Model Format Conversion
 
-**Conversion is not offered as a standalone tool.** It is integrated into the Team compiler: exports
+**Conversion is not offered as a standalone tool.** It is integrated into the Compiler: exports
 may contain models in the native formats (`.fmdl`, `.model`), and the pipeline converts them to
 the target PES version's format at compile time. `.glb`/`.gltf` are detected too and refused until
 the glTF importer lands (`model_gltf_unsupported`). The logic lives in the `model_convert` lib

@@ -1161,7 +1161,7 @@ function closeWindow() {
 }
 
 // ---- State and registry ----
-const S = { activeTool: "team-compiler", sidebarOpen: false, pesVersion: "2019",
+const S = { activeTool: "compiler", sidebarOpen: false, pesVersion: "2019",
   // The selector's live check (gui.md "Sidebar" 2): pes_folder_path (** stands
   // for the version's two digits, studio_core's DEFAULT_PES_FOLDER), what the
   // last exe check found ("selected" / "other" / "none" / "no_folder", with
@@ -1232,7 +1232,7 @@ S.settings = {
     last_tool: null,
   },
   tools: {
-    "team-compiler": {
+    "compiler": {
       cpk_name: "4cc_99_test", output_folder_path: "output", savefile_path: "auto",
       multicpk_mode: false, teams_cpk_name: "teams", cpk_part_max_size: 3221225472,
       bins_cpk_name: "4cc_08_bins", refs_cpk_name: "4cc_18_referees",
@@ -1255,7 +1255,7 @@ S.dataDirUnwritable = false;
 // pes: true marks a tool that targets the PES version (StudioTool::targets_pes_version): the
 // sidebar draws the selector only while such a tool is active (gui.md "Sidebar" item 2).
 const TOOLS = [
-  { id: "team-compiler", pes: true, label: "The Compiler", icon: "\uE68E", registered: true, demo: false },
+  { id: "compiler", pes: true, label: "The Compiler", icon: "\uE68E", registered: true, demo: false },
   { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true },
   { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false },
   { id: "export-upgrader", pes: true, label: "Export upgrader", icon: "\uE52E", registered: true, demo: false },
@@ -1892,7 +1892,7 @@ const HELP = [
       "- **Export upgrader**: first release."
     ].join("\n") },
   ] },
-  { id: "team-compiler", title: "The Compiler", topics: [
+  { id: "compiler", title: "The Compiler", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
       "The Compiler also runs without its window, from a terminal opened in the folder that holds",
       "`UTW.exe`:",
@@ -2022,7 +2022,7 @@ const HELP = [
 ];
 // The source tables' own third and fourth header names, per tool id.
 const CATALOG_HEADERS = {
-  "team-compiler": ["Condition", "Consequence"],
+  "compiler": ["Condition", "Consequence"],
   "save-editor": ["When", "Effect"],
   "export-upgrader": ["When", "Context"],
 };
@@ -2034,7 +2034,7 @@ const CATALOG_HEADERS = {
 // severity spelled out (a combined cell like E/F kept as written), the
 // two text cells verbatim, Markdown spans included.
 const CATALOG = {
-  "team-compiler": [
+  "compiler": [
     { code: "export_extract_failed", severity: "Error", condition: "archive cannot be extracted/parsed, or its listing is refused (a path escaping the root, two names that fold to one; context: the path)", consequence: "export skipped (`DropExport`)" },
     { code: "no_exports_found", severity: "Warning", condition: "discovery finds no export folder, `.zip` or `.7z` in the exports folder (Run scope; context: the folder) - what a fresh install's created `exports/` reports until the user fills it", consequence: "none; nothing is checked or compiled" },
     { code: "export_disabled", severity: "Info", condition: "root `NO_USE` / `NO_USE.txt` marker disables this source", consequence: "export skipped; omitted from duplicate-ref detection" },
@@ -2397,7 +2397,7 @@ function settingChanged() { saveSettings(); render(); }
 // The Export upgrader has no settings, so the menu draws no section for it.
 // sample wording: the labels and the tips.
 const TOOL_SETTINGS_SPEC = {
-  "team-compiler": [
+  "compiler": [
     ["cpk_name", "Output CPK name", "text", "The single output CPK's name, without .cpk."],
     ["output_folder_path", "Output folder", "folder", "Where compiled CPKs go; a relative path resolves beside the executable."],
     ["savefile_path", "Savefile", "file", "The local savefile the compile's aesthetics patch is applied to."],
@@ -2905,7 +2905,7 @@ function renderDraftControls() {
     cb("Data folder unwritable", S.dataDirUnwritable, v => S.dataDirUnwritable = v),
     grp("Help"),
     button("Open help at portrait_conflict", () =>
-      openHelp({ tool: "team-compiler", topic: "messages", anchor: "portrait_conflict" })),
+      openHelp({ tool: "compiler", topic: "messages", anchor: "portrait_conflict" })),
     grp("Log"),
     button("Add 400 log lines", () => appendLog(Array.from({ length: 400 }, (_, i) =>
       ({ severity: "Info", code: null, scope: "bulk",
@@ -3166,8 +3166,8 @@ function renderCenter() {
   center.innerHTML = "";
   center.append(h("h2", {}, t.label),
     weak("This view will be drawn in its own draft, tools/" + t.id.replaceAll("-", "_") + ".js."));
-  if (t.id === "team-compiler") {
-    const a = S.activities["team-compiler"];
+  if (t.id === "compiler") {
+    const a = S.activities["compiler"];
     const compileBtn = button("Compile", startCompile, { disabled: !!a, title: "A fake run of 48 teams" });
     compileBtn.id = "compile-btn";
     // The pipeline tool's claim order (gui.md "Shell layout"): the grid in what
@@ -3271,11 +3271,11 @@ const openOutputStub = () => window_("Open output",
 let compileTimer = null;
 function startCompile() {
   const start = Date.now();
-  S.activities["team-compiler"] = { done: 0, total: 48, elapsed: 0 };
+  S.activities["compiler"] = { done: 0, total: 48, elapsed: 0 };
   let warnFlip = 0; // every fourth team reports logo_upscaled, kit_colors_derived in turn
   render();
   compileTimer = setInterval(() => {
-    const a = S.activities["team-compiler"];
+    const a = S.activities["compiler"];
     if (!a) { clearInterval(compileTimer); compileTimer = null; return; }
     const team = COMPILE_TEAMS[a.done];
     a.done++;
@@ -3287,7 +3287,7 @@ function startCompile() {
     appendLog(lines);
     if (a.done >= a.total) {
       clearInterval(compileTimer); compileTimer = null;
-      delete S.activities["team-compiler"];
+      delete S.activities["compiler"];
       appendLog([{ severity: "Info", code: null, scope: null, text: "Info - Compiled 48 teams" }]);
       publishNotice("Compiled 48 teams", { label: "Open output", run: openOutputStub }, "success");
       return;
@@ -3308,13 +3308,13 @@ const LOG_CAP = 300;
 // the code (drawn as a link) and the condition's text with its `code` spans
 // unwrapped.
 function mkLine(code, scope) {
-  const r = CATALOG["team-compiler"].find(r => r.code === code);
+  const r = CATALOG["compiler"].find(r => r.code === code);
   return { severity: r.severity, code, scope,
     text: `${r.severity} - ${scope} - ${code}: ${r.condition.replaceAll("`", "")}` };
 }
 // The Compiler's stub's options: the code links open its catalog, a line
 // click highlights the scope's grid row.
-const LOG_COMPILER = { tool: "team-compiler", onLine: gotoScope };
+const LOG_COMPILER = { tool: "compiler", onLine: gotoScope };
 // The widget's single append point: while the view is not stuck to the bottom,
 // arrivals are counted for the jump indicator instead of moving it. st is the
 // panel state (the shell's S, or a view's own copy of its six log* fields).

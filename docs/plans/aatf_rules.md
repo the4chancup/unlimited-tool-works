@@ -623,7 +623,7 @@ function:
 
 - this check;
 - Team TOML's export (a note per slot, since the file lands its players by slot);
-- the Team compiler applying a Complete export's `tactics.toml`, which refuses onto a local
+- the Compiler applying a Complete export's `tactics.toml`, which refuses onto a local
   save whose team breaks the rule (`plans/aesthetics_export/player_folders.md` "Complete
   export").
 

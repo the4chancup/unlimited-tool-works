@@ -426,7 +426,7 @@ pub enum Severity {
 counts and a medal system's counts fit the squad, a height pool's quotas add up to it) and
 the logic's "rest of the squad" count read `SQUAD_SIZE`, 23, one constant of `libs/aatf`.
 
-The Team compiler numbers a team's players 01 to 23 (player folders, `players.txt`,
+The Compiler numbers a team's players 01 to 23 (player folders, `players.txt`,
 portraits) and gives each team 23 exclusive boots and gloves IDs in its 40-ID block, the
 blocks of teams 701 to 920 ending at 8900 below the referees' `99XX` band. So a ruleset of
 another size could not be met by a compiled team, and widening the compiler would move

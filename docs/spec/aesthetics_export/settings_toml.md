@@ -486,14 +486,14 @@ Compile-time flow:
 3. Compile.
 4. Resolve the settings and the IDs of content that was actually written: each compiled player's
    look, his resolved IDs and a `write_names` export's names go into the **aesthetics patch**
-   written with the CPKs (see "Post-processing" in the [Team compiler
+   written with the CPKs (see "Post-processing" in the [Compiler
    spec](../team_compiler/pipeline.md)).
 
 If a local savefile is configured, the compiler applies that patch to it through `pes_savefile`
 (decrypt, apply, re-encrypt, `.bak`). An entry's `[appearance]` also makes the record the
 player's own, his appearance id and base copy set to his own id. The patch is what a DLC builder
 hands to the savefile builder, who applies it in the save editor; the compiler has no other
-savefile write path (see "Post-processing" in the [Team compiler
+savefile write path (see "Post-processing" in the [Compiler
 spec](../team_compiler/pipeline.md)).
 
 ---

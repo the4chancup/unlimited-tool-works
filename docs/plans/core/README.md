@@ -21,16 +21,16 @@ rationale. Structural points worth noting here:
 
 - the **Stadium compiler**'s codebase contributes the in-process DDS conversion that eliminates
   the texconv.exe dependency;
-- the **Export upgrader** exists because the Team compiler only supports the Studio
+- the **Export upgrader** exists because the Compiler only supports the Studio
   player-folder format;
 - the three stream-side tools (Music player, Music export editor, Match tracker) operate on
   audio and game memory rather than game files, sharing only the platform and their own lib
   crates: the tracker feeds live match events to the Music player, letting it run the match
   soundboard autonomously;
 - the **Refs arranger** prepares referee exports' `players.txt` and hands the compile off to the
-  Team compiler, which owns referee compilation;
+  Compiler, which owns referee compilation;
 - the **balls export** is the suite's third export kind, compiled into its own CPK;
-- the Team compiler grows into the suite's one **Compiler** for every export kind (team, refs,
+- the **Compiler** grows into the suite's one compiler for every export kind (team, refs,
   balls, stadium and billboard exports, each into its own CPK in one run), with a Balls arranger
   editing the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one
   Compiler for every export kind"). It takes the name from 0.0.2, before the other kinds
@@ -45,7 +45,7 @@ rationale. Structural points worth noting here:
   their `TC-` prefix, which reads as The Compiler as well;
 - the **Player aesthetics editor** hands model viewing to Blender (launched with a manifest
   consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
-  preview: it only gains a labeled approximate in-app preview if the Team compiler's future
+  preview: it only gains a labeled approximate in-app preview if the Compiler's future
   3D-preview feature creates the shared `model_viewport` lib;
 - the **Team creator** is a wizard that takes a name and a list of players to a legal Team TOML
   plus a compilable aesthetics export built from embedded starter heads: it owns no format and
@@ -91,7 +91,7 @@ match structures):
 What exists of this is in `spec/core/README.md` "GUI framework choice: egui".
 
 The suite also uses wgpu for first-release desktop GPU BC7 and the future 3D preview's
-`egui_wgpu` render callback. See the [Team compiler plan](../team_compiler/README.md).
+`egui_wgpu` render callback. See the [Compiler plan](../team_compiler/README.md).
 
 Trade-offs accepted:
 - **No CSS transitions**: cell color changes are instant rather than smoothly fading. egui's
@@ -106,12 +106,12 @@ Trade-offs accepted:
   `theme` setting and switched live: egui's light `Visuals` with the same accent, rounding and
   status colors applied, checked once for legibility rather than per view. Views take their
   colors from the preset's semantic palette (status, warning, accent), never a hard-coded color,
-  which is what keeps light readable at no per-view cost (the Team compiler's grid derives its
+  which is what keeps light readable at no per-view cost (the Compiler's grid derives its
   label contrast from the cell for the same reason).
 
   Icon glyphs for sidebar/toolbar/status icons come from the suite's own single-colour icon font,
   registered through `FontDefinitions` like any font: one SVG per icon, each tool's drawn to say
-  what the tool does. The Team compiler's is the maintainer's running stickman dropping into an
+  what the tool does. The Compiler's is the maintainer's running stickman dropping into an
   open box drawn from the front, flaps out: a box in perspective reads as a pedestal at 24 px,
   and an arrow does not show there. The stickman is a filled outline traced from the
   maintainer's drawing, which the build takes as it is.
@@ -120,7 +120,7 @@ Trade-offs accepted:
   - an editor's carries a pencil (Phosphor's note-and-pencil pencil, redrawn smaller), and a
     creator's or generator's a plus, each one shape at one size and place, the bottom-right
     corner;
-  - a compiler's the open box of the Team compiler's, across the icon's foot.
+  - a compiler's the open box of the Compiler's, across the icon's foot.
 
   A mark hides what lies under it with a 12-unit gap cut around it, as Phosphor's
   note-and-pencil does, so a member reads the kind before the subject and no line runs through
@@ -158,7 +158,7 @@ Trade-offs accepted:
   LLM-assisted coding) reconfirmed egui; the visual gap is closed with this theme work, not a
   framework change.
 - **3D preview requires `wgpu`**: the future model preview viewport (see Future Features in the
-  [Team compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui
+  [Compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui
   rather than Three.js in a webview. More work, but it's a post-MVP feature: three.js would bring
   the glTF loader, the orbit camera and the skeleton overlay for free, where egui needs a small
   renderer of our own (shaders, a depth target, the camera), a one-off cost on one widget kept
@@ -207,11 +207,11 @@ What exists of this is in `spec/core/README.md` "Key Decisions Summary".
 | GUI validation | Live, no Check/Refresh buttons | Folder watcher + deep checks for extracted folders, shallow (blue) for archives |
 | GUI actions | Single Compile button (becomes Cancel) | Staged operations superseded by the unified pipeline |
 | Export upgrader | Dedicated tool crate | Merges single-user model folders into player folders; shared folders + link files; savefile-driven ID mapping |
-| Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Team compiler for the compile: a compile-engine lib crate would have one thin extra consumer |
-| Balls tooling | Balls arranger + balls export, compiled by the Compiler | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the balls kind keeps its own pipeline and CPK inside the Compiler's run; balls become the third export kind in `exports/` (first word `balls`, skipped by the Team compiler until the kind lands) |
+| Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Compiler for the compile: a compile-engine lib crate would have one thin extra consumer |
+| Balls tooling | Balls arranger + balls export, compiled by the Compiler | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the balls kind keeps its own pipeline and CPK inside the Compiler's run; balls become the third export kind in `exports/` (first word `balls`, skipped by the Compiler until the kind lands) |
 | One Compiler | Every export kind (team, refs, balls, stadium, billboards) compiled in one run, each into its own CPK; stadiums one export per stadium (`stadium`), billboards their own kind (`billboards`) | The organizer compiles one DLC: one check pass, one deploy, one settings page, where three tools meant three; the kinds already share the pipeline, conversion and packing libs and the progress grid. Crate layout settled when Phase 9 opens (guardrail 3) |
 | Distribution | Portable `.7z` (binary + `quick_compile.bat` + exports/ + teams list + readme), no installer | Extract anywhere and run; no elevation, no registry. Extract-and-run with no external runtime is the requirement, not file count: Red's many-file bundle causes users no trouble |
-| Quick-compile launcher | `quick_compile.bat` → `UTW --gui team-compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
+| Quick-compile launcher | `quick_compile.bat` → `UTW --gui compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
 | Studio Web | Post-release lite browser edition, not a first-release gate; lib crates `wasm32`-checked in CI from Phase 1 | Convenience for compiling/editing one's own team from another PC via a bookmark, never full-cup compilation (4 GB `wasm32` ceiling); the cheap file-picking tier ships first, the pipeline tier needs adapters + COOP/COEP hosting on the community server |
 | Self-update | In-place binary swap (move-running-exe pattern) + teams-list merge; previous binary kept in `old/` | Inverts Red's sibling-folder update: the folder is a few files, user data stays put; settings need no transfer (default-merge handles new keys); the `old/` subfolder keeps the previous binary out of misclick range |
 | Save editor scope | Full 4ccEditor parity + direct-manipulation tactics UI | Every 4ccEditor feature carried over; drag-and-drop replaces spinner/dropdown friction |
@@ -228,4 +228,4 @@ What exists of this is in `spec/core/README.md` "Key Decisions Summary".
 | Match events interface | In-process `libs/match_feed` (typed pub/sub + snapshot replay); no pipe/socket, `watch` CLI for external scripts | Tracker and music player share one binary; the old pipe protocol has no surviving consumers |
 | Match records | New JSON format (`.match.json`); binary `.sen` dropped | Readable and schema-stable; old archives keep old SEN:P-AI |
 | Music autopilot | Tracker-driven team loading/scoring/goalhorns/event clips; Full, Co-pilot (highlights + automatic buttonless clips), Assist (highlight-only), or Off (suppresses tracker-triggered playback/highlights but does not transfer score authority); manual override always live | The suite's end goal: the music player runs the match unattended, with Co-pilot/Assist/Off as trust-building middle steps |
-| Player aesthetics viewing | Blender launch via a versioned JSON manifest consumed by the `pes-models` extension's loader; the in-app quick preview waits for `libs/model_viewport`, created only with the Team compiler's future 3D-preview feature | Blender's viewport/Outliner beat any bespoke wgpu pass and stay the accurate view (the future embedded preview is labeled approximate); export-format knowledge stays in Rust (the loader is manifest-driven); glTF conversion stays Studio-side in `model_convert` (`ir_to_gltf` + superset merge) |
+| Player aesthetics viewing | Blender launch via a versioned JSON manifest consumed by the `pes-models` extension's loader; the in-app quick preview waits for `libs/model_viewport`, created only with the Compiler's future 3D-preview feature | Blender's viewport/Outliner beat any bespoke wgpu pass and stay the accurate view (the future embedded preview is labeled approximate); export-format knowledge stays in Rust (the loader is manifest-driven); glTF conversion stays Studio-side in `model_convert` (`ir_to_gltf` + superset merge) |

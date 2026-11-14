@@ -1,8 +1,8 @@
-# Unlimited Tool Works: Team compiler plan: GUI grid
+# Unlimited Tool Works: Compiler plan: GUI grid
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
+Part of the [Compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
 ## GUI: the live-validating team grid
 

@@ -4,7 +4,7 @@ Covers the `model_convert` lib crate (the IR plus importers/exporters and skelet
 data) and the format-extension algorithms that live in the `fmdl` and `pes_model`
 format crates (mesh splitting, split vertex encoding, anti-blur). Model format
 conversion is not a standalone tool: it runs inside the
-[Team compiler](../team_compiler/README.md) at compile time, converting models to the target
+[Compiler](../team_compiler/README.md) at compile time, converting models to the target
 PES version's format. The glTF + `materials.toml` authoring format that `gltf_to_ir`
 reads and `ir_to_gltf` writes (Phase 7) is specified in the [Unified model format
 spec](../model_format.md). Platform context is in the [core spec](../core/README.md).
@@ -89,9 +89,9 @@ Placement rules:
   it must remain independent of `formats/` so the schema can be tested without any model file.
 - **Same-format paths do not enter this crate** unless an explicitly planned IR operation is
   requested (hand split, part merge, retargeting); ordinary FMDL→FMDL processing uses the `fmdl`
-  crate directly from the Team compiler. This is a consumer-side rule, restated here because the
+  crate directly from the Compiler. This is a consumer-side rule, restated here because the
   temptation is to add a "convenient" pass-through.
-- Stays `wasm32`-checkable and GUI-free (consumer today: the Team compiler; the Balls
+- Stays `wasm32`-checkable and GUI-free (consumer today: the Compiler; the Balls
   compiler, Export upgrader and Player aesthetics editor join it in the plans).
 
 ---

@@ -5,15 +5,15 @@ Part of the [Aesthetics export spec](README.md).
 ## Player folders (the Studio export format)
 
 **This is a primary motivation for the project.** The export format itself is new: it is called
-the **Studio export format** and was designed for Unlimited Tool Works. The Team compiler is its
+the **Studio export format** and was designed for Unlimited Tool Works. The Compiler is its
 only consumer, and nothing writes it yet.
 
 A "player folder" holds all of a player's models (face, boots, and gloves) in a single folder,
 without the old split into separate Faces/Boots/Gloves item folders. Red's referee export layout
 was the prototype of this idea, tested only on referees. Its per-referee face/boots/gloves/common
 subfolders are not kept: the Export upgrader flattens them ("Subfolders" below). The unified
-format is used by team and referee exports alike (see "Referee export processing" in the [Team
-compiler spec](../team_compiler/README.md)).
+format is used by team and referee exports alike (see "Referee export processing" in the
+[Compiler spec](../team_compiler/README.md)).
 
 ```
 Players/
@@ -65,7 +65,7 @@ stages:
 - Shared preparation (parse, convert, and merge) runs once per distinct source player folder.
 - The results are then rendered and packed per mapped slot (IDs, paths, portraits, savefile
   entries). The folder's relocated textures are emitted once, into their name-keyed common
-  subfolder shared by all mapped slots (see "Texture relocation to common" in the [Team compiler
+  subfolder shared by all mapped slots (see "Texture relocation to common" in the [Compiler
   spec](../team_compiler/README.md)).
 
 Both stages commit as one atomic unit, so a partial set of slot instances is never written.
@@ -443,7 +443,7 @@ The type column applies **only when targeting pre-Fox and only when the compiler
 interpreted for typing. A user-written `face.xml` is accepted as a second-class path: it is the
 way to experiment with what the pre-Fox engines can do beyond this table. The compiler checks it,
 with errors for what is known to break and warnings for everything outside the vocabulary it
-generates itself ("User-supplied `face.xml`" in the [Team compiler
+generates itself ("User-supplied `face.xml`" in the [Compiler
 spec](../team_compiler/README.md)).
 
 Fox has nothing resembling designable model types, so on Fox a type maps to a destination and
@@ -550,7 +550,7 @@ A folder holding both `face_diff.bin` and `face_diff.xml` gives one datum twice 
 (`xml_dif_conflict`). A player folder's own file over a combined shared face's is the ordinary
 layering, whichever form each has.
 
-Both findings are the Team compiler's deep pass's. `check` reports them, the folder holding the
+Both findings are the Compiler's deep pass's. `check` reports them, the folder holding the
 file is dropped before any ID is planned for it, and neither is pass-through-eligible, as there is
 no usable diff to keep.
 
@@ -620,7 +620,7 @@ inherit from. It still declares that the slot exists, and the compiler fills it 
 - a bundled placeholder main texture (the magenta/black "missing texture" checkerboard);
 - the template `config.toml`;
 - a `UniColor` entry as for any kit (colors from the kit's `colors.txt`, else the loud
-  magenta/black "no colors chosen" pair; see "Kit colors fallback" in the [Team compiler
+  magenta/black "no colors chosen" pair; see "Kit colors fallback" in the [Compiler
   spec](../team_compiler/README.md)).
 
 Teams whose whole roster is full-body models never render a kit texture (except a pre-Fox player
@@ -629,7 +629,7 @@ texture and a config. The empty folder says "pretend a kit exists here" without 
 draw one. The same fill applies to any kit whose effective texture set lacks `kit.dds`, so a
 folder holding only a `kit_back.dds` is a placeholder kit with a custom number font, not an error.
 None of this fill applies in a `Midcup` export: its kit folder gives only what it holds, and the
-slot keeps the installed rest ("Bins accumulation" in the [Team compiler
+slot keeps the installed rest ("Bins accumulation" in the [Compiler
 pipeline](../team_compiler/pipeline.md)).
 
 Kit textures follow the export-wide texture rule: matched by **stem**, in **any accepted image
@@ -650,7 +650,7 @@ the Notepad forms `pre-fox.txt` / `fox.txt` are tolerated, as for `ingame_face`)
 layout the kit's `kit.dds` and its `kit_mask.dds` / `kit_srm.dds` are drawn for.
 
 - When the marker names the other engine than the compile target, the compiler re-lays those
-  textures out (see "Kits" under "Processing" in the [Team compiler
+  textures out (see "Kits" under "Processing" in the [Compiler
   spec](../team_compiler/README.md)).
 - When it names the target's engine, or is absent, nothing is edited: **no marker means "drawn for
   whatever you compile for"**, which is today's behavior.
@@ -784,7 +784,7 @@ byte-identical files are one portrait.
 
   The color is what follows the line's last `:`. Bytes that are not UTF-8 make their own line
   invalid, not the file. The reader is `aesthetics_export::colors_txt` (the Kit config editor
-  reads the same files); the Team compiler's deep pass reports its refused lines, so `check`
+  reads the same files); the Compiler's deep pass reports its refused lines, so `check`
   shows them.
 - **Marker names**: a marker is an empty file whose name says something about its folder, and
   every marker with a value is written `<name>_<value>`, like `collar_12` and `player_05`:

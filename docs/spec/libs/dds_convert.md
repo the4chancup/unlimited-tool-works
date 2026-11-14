@@ -62,13 +62,13 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
     there).
 
   `Decoded::uncompressed` records an uncompressed source, and a re-laid or re-arranged kit
-  texture keeps it. `Target::keep_uncompressed`, which the Team compiler sets false only for that
+  texture keeps it. `Target::keep_uncompressed`, which the Compiler sets false only for that
   main kit texture, asks for the encode. Whether the Fox games crash on an uncompressed main kit
   texture is not known yet; Red passes one through on Fox, and so does Studio until an in-game
   check says otherwise.
 - **Mipmaps**: each mip level is decoded and re-encoded individually.
   - A DDS/FTEX source keeps its own mip count whatever its codec, uncompressed included (Konami
-    ships single-mip pre-Fox textures; on Fox the Team compiler's deep pass refuses a mipped
+    ships single-mip pre-Fox textures; on Fox the Compiler's deep pass refuses a mipped
     texture with neither side a power of two, as `texture_not_pow2`).
   - A raster source gets the full chain down to 1×1 by 2×2 box averaging on straight alpha (odd
     sides floor, never below 1).
@@ -212,7 +212,7 @@ The rule is one wherever a picture is picked:
 
 - the aesthetics export's extension table (`aesthetics_export` "conventions") counts `.jxl` as a
   texture;
-- the Team compiler's format sniffing knows both its signatures (the bare codestream's `FF 0A`
+- the Compiler's format sniffing knows both its signatures (the bare codestream's `FF 0A`
   and the ISOBMFF container's `00 00 00 0C 4A 58 4C 20 0D 0A 87 0A`);
 - and the Ruleset editor's logo picker lists it (the Save editor picks no picture: its portraits
   come from the game's CPKs).
@@ -251,7 +251,7 @@ spec](../aesthetics_export/player_folders.md)) names its codec, and gets a DDS o
 too.
 
 `resize` is the suite's one resampler (Lanczos3, through the `image` crate this crate already
-decodes rasters with, so no tool crate depends on `image` for it). The Team compiler resamples a
+decodes rasters with, so no tool crate depends on `image` for it). The Compiler resamples a
 sock band of a kit and a number atlas's digit glyphs with it ("Layout conversion" in the
 [pipeline spec](../team_compiler/pipeline.md)), and sizes the logo with it.
 
@@ -403,7 +403,7 @@ The DDS header knowledge (`DdsHeader`, `Dx10Header`, the FourCC/mask/DXGI table)
 `dds_convert` uses that instead of carrying a second copy. Encoder settings join the cache key
 with 2.5b, when a second encoder exists.
 
-`probe` reads a texture's size from its header alone. It exists for the Team compiler's deep
+`probe` reads a texture's size from its header alone. It exists for the Compiler's deep
 pass, which checks every texture of an export and must not pay a decode for each:
 
 - a DDS's layout through `ftex::dds::read_layout` (a WESYS-wrapped one unwrapped first);

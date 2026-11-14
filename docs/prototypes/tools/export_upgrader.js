@@ -605,7 +605,7 @@ function toolbar() {
     // The step after an upgrade. Always there; once a run has finished it
     // turns the accent blue (egui: the button's fill set to the selection
     // colour), the view's one blue button, until the next run starts.
-    named(Object.assign(button("Open the Compiler", () => switchToTool("team-compiler"),
+    named(Object.assign(button("Open the Compiler", () => switchToTool("compiler"),
       { disabled: !!run, title: "The upgraded exports are in its exports folder: it checks them like any other" }),
       { className: S.finished && !run ? "eu-next" : "" }), "next"),
     h("div", { class: "tc-split" }, main, arrow));

@@ -37,8 +37,8 @@ What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "Wh
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
 
-With worklog 0.0.2-poc13, `upgrade --legacy-ids` is the legacy mode whose output the Team
-compiler packs on the old boots and gloves IDs (`plans/team_compiler/pipeline.md` "Legacy
+With worklog 0.0.2-poc13, `upgrade --legacy-ids` is the legacy mode whose output the
+Compiler packs on the old boots and gloves IDs (`plans/team_compiler/pipeline.md` "Legacy
 boots and gloves IDs (VGL27)"). The organizer upgrades every VGL27 export with it, midcups
 included, while managers keep sending Red exports. It changes two things and nothing else:
 
@@ -62,7 +62,7 @@ included, while managers keep sending Red exports. It changes two things and not
   wearers included. The tables sit under a comment saying what reads the file:
 
   ```toml
-  # The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).
+  # The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).
   [05]
   boots = 2305
   gloves = 2310

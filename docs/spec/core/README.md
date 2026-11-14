@@ -23,12 +23,12 @@ Unlimited Tool Works is a Rust-based **suite of all the tools used by the 4cc co
 tightly integrated main tools. The second, the Save editor, is built in part
 (`spec/save_editor.md`; the rest is in `plans/core/README.md` "Overview"). The first:
 
-1. **The Team compiler** (successor to the AET Compiler): compiles aesthetics exports into CPK archives,
+1. **The Compiler** (successor to the AET Compiler): compiles aesthetics exports into CPK archives,
    with compile-time model format conversion and compile-time aesthetics (the aesthetics patch,
    written to the savefile on every engine)
 
 Model format conversion (pre-Fox ↔ Fox) is **not** offered as a standalone tool: it is integrated
-into the Team compiler, which converts models to the target PES version's format at compile time.
+into the Compiler, which converts models to the target PES version's format at compile time.
 
 The spec documents form a standalone architectural spec derived from a feasibility analysis of the
 existing codebases.
@@ -67,7 +67,7 @@ Three prior compiler implementations exist:
 
 All three are stopgaps towards Unlimited Tool Works: they define *what* the compiler must produce (Red's CPK
 output is the golden standard for parity), not *how* the new implementation works (see "Relationship
-to the older compilers" in the [Team compiler spec](../team_compiler/README.md)).
+to the older compilers" in the [Compiler spec](../team_compiler/README.md)).
 
 The save editor exists as a Win32 C++ application, accompanied by a set of standalone savefile
 scripts:
@@ -83,7 +83,7 @@ Some standalone format converters also exist:
 |-----------|-----------|----------|
 | 4cc-aet-converter-19to16 | FMDL (PES 19) → .model (PES 16) | `Tools_4cc/4cc-aet-converter-19to16` |
 | aes_converter_16to21 | .model (PES 16) → FMDL (PES 21) | `Tools_4cc/aes_converter_16to21` |
-| 4cc-model-simplifier-15 | .model (PES 16/17) → .model (PES 15): folds weights of bones PES15 lacks or poses differently (absorbed by the Team compiler's per-version skeleton retargeting) | `Tools_4cc/4cc-model-simplifier-15` |
+| 4cc-model-simplifier-15 | .model (PES 16/17) → .model (PES 15): folds weights of bones PES15 lacks or poses differently (absorbed by the Compiler's per-version skeleton retargeting) | `Tools_4cc/4cc-model-simplifier-15` |
 
 Two Blender addons provide import/export for the community:
 
@@ -165,8 +165,8 @@ Key reasons:
 | `md-5` | FPK checksums, PES15 save integrity hashes | Production-ready |
 | `unicode-normalization` | NFC normalization for `vtree`'s collision detection (two spellings of `é` are one file name on disk) | Production-ready (0.1.25 in use) |
 | `indexmap` | `music_export`'s slot map, the `.4ccm` slots in file order (the plan's `Model` names it); already in the build through `toml_edit` | Production-ready (2.14.2 in use) |
-| `roxmltree` | Read-only XML tree for `.mtl` material sets, `face.xml`, `face_diff.xml` (`pes_model`, the Team compiler) and `fox2`'s XML form; writing those small fixed shapes is done by hand so Konami's formatting is reproducible | Production-ready (0.21.1 in use) |
-| `base64` | Decoding the vertex blocks of a Fox `face_diff.xml` (the Team compiler); chosen over a hand-written decoder because it leaves no bit-twiddling to own and mutation-test | Production-ready |
+| `roxmltree` | Read-only XML tree for `.mtl` material sets, `face.xml`, `face_diff.xml` (`pes_model`, the Compiler) and `fox2`'s XML form; writing those small fixed shapes is done by hand so Konami's formatting is reproducible | Production-ready (0.21.1 in use) |
+| `base64` | Decoding the vertex blocks of a Fox `face_diff.xml` (the Compiler); chosen over a hand-written decoder because it leaves no bit-twiddling to own and mutation-test | Production-ready |
 | `directories` | User config dir resolution (data-location choice) and `pes_savefile`'s save discovery under the user's Documents folder | Production-ready |
 | `toml` | Export text formats (`settings.toml`, `config.toml`; `materials.toml` joins with glTF), app settings | Production-ready |
 | `toml_edit` | Comment/formatting-preserving edits to the auto-generated tomls (`settings.toml`, `config.toml`; `materials.toml` joins with glTF); comments are app-injected (predefined per-field documentation) and preserved across edits | Production-ready (the `toml` crate's own foundation) |
@@ -213,9 +213,9 @@ pattern and the schema-driven save codec collapsing 4ccEditor's six per-version 
 | 7z extraction | Native `sevenz-rust2` crate | Eliminates subprocess and temp-folder dance |
 | Compression | Archive-level only | Exports already submitted as .zip/.7z; no format-level compression needed |
 | Testing | Upgrader+compile parity + IR roundtrips; CPU reproducibility + GPU quality checks | CPU mode is the byte-reproducible reference. GPU texture bytes and containing CPKs may differ across devices/drivers; decoded quality and all non-texture identities/ordering remain constrained |
-| Suite scope | Team compiler + save editor first | Shared `libs/pes_savefile` crate; other tools build on the same libs later |
+| Suite scope | Compiler + save editor first | Shared `libs/pes_savefile` crate; other tools build on the same libs later |
 | Crate architecture | Minimal core + tool crates + lib crates | `studio_core` = shell/trait/settings only; every tool its own crate; all shared functionality in lib crates |
-| Tool crate granularity | One crate per tool, no companion libs | Even the Team compiler (15–25k lines) stays one crate with internal modules; only genuinely shared parts move down, hence `libs/aesthetics_export` (compiler + upgrader + kit config editor + refs arranger + future tools), not a single-consumer `team_compiler_lib` |
+| Tool crate granularity | One crate per tool, no companion libs | Even the Compiler (15–25k lines) stays one crate with internal modules; only genuinely shared parts move down, hence `libs/aesthetics_export` (compiler + upgrader + kit config editor + refs arranger + future tools), not a single-consumer `team_compiler_lib` |
 | Tool modularity | Tools own their GUI, settings, CLI, and help | `StudioTool` trait: view, settings section (injected into settings menu), clap subcommand, help chapter (injected into the help window, Messages topic generated from the catalog) |
 | CLI shape | `UTW <tool-id> <command>` subcommands | Standard clap subcommands; better help/completion than flag-style dispatch |
 | License | `MIT OR Apache-2.0`; game-derived data excluded and named as Konami's | The suite is libraries first, for a community that writes tools in every language; copyleft would confine the libs to GPL consumers for a protection this community has never needed. See `distribution.md` "License" |

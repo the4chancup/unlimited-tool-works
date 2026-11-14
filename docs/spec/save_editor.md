@@ -67,7 +67,7 @@ implementation is measured against.
 |-----------|------|
 | AATF: current team / select teams | Kept (rules become configurable; see below) |
 | Compare EDITs | Kept, merged with Midcupping's aesthetics diff (see "Comparator") |
-| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses; added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler spec](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
+| - | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses; added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Compiler spec](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
 
 ### New (from Midcupping)
 
@@ -76,7 +76,7 @@ implementation is measured against.
 | Aesthetics transplant | Not carried over as a save-to-save copy; its successor writes the team's export, after Release 0.1.0 ("Aesthetics transplant" in the [Save editor plan](../plans/save_editor.md)) |
 | Aesthetics diff | Part of the merged comparator |
 
-### New (from the Team compiler)
+### New (from the Compiler)
 
 | Feature | Notes |
 |---------|-------|
@@ -281,7 +281,7 @@ UTW save-editor export-teams-list ./EDIT00000000 [--yes]     # merge the save's 
 
 Rules every command shares:
 
-- **Exit codes**, the Team compiler's meanings:
+- **Exit codes**, the Compiler's meanings:
   - 0 done;
   - 1 done with an error reported (a patch's team the save lacks, an AATF error);
   - 2 refused before anything was written (a bad argument, a version mismatch, an unreadable

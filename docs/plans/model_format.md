@@ -7,7 +7,7 @@ with two small PES extensions** plus a **`materials.toml`** sibling holding the 
 properties. One model folder authored in this format compiles to either PES engine, Fox (`.fmdl`,
 PES 18–21) or pre-Fox (`.model` + `.mtl`, PES 15–17), through the `model_convert` lib's IR (see the
 [Model conversion plan](model_conversion/README.md), which owns the IR, the importers/exporters, and the
-Blender integration that writes this format). The [Team compiler plan](team_compiler/README.md) owns where
+Blender integration that writes this format). The [Compiler plan](team_compiler/README.md) owns where
 model folders sit inside an export and how models are categorized and merged.
 
 **Design goal: user friendliness.** The format exists so that a member can author one model that
@@ -332,7 +332,7 @@ overrides. No material link is needed for this case: the link is for the reverse
 ### Emission
 
 `ir_to_gltf` (the [Player aesthetics editor](player_aesthetics_editor.md)'s convert-to-glTF and the
-[Export upgrader](export_upgrader.md)'s optional glTF pass; the Team compiler never emits glTF)
+[Export upgrader](export_upgrader.md)'s optional glTF pass; the Compiler never emits glTF)
 writes **one `materials.toml` per folder** (the catch-all), with app-injected comments, so that most
 users edit one file and have changes reflected across all models. The modular `*.materials.toml`
 layout and `.common` links are an advanced opt-in that users create manually; the exporter

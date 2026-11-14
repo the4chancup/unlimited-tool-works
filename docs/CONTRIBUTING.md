@@ -12,7 +12,7 @@ Workspace guardrails (details: `spec/core/architecture.md` "Workspace guardrails
 2. Every shared dependency is declared once in the root `Cargo.toml` `[workspace.dependencies]`;
    crates inherit with `dep.workspace = true`. egui must be in lock-step workspace-wide.
 3. Don't over-split. A lib crate earns its existence through multiple consumers or by being a
-   conceptually standalone format. No per-tool companion libs; the Team compiler stays one crate.
+   conceptually standalone format. No per-tool companion libs; the Compiler stays one crate.
 4. `fmdl` and `pes_model` stay PyO3-buildable: no dependency on `studio_core`, `studio`, any tool
    crate, `model_convert`, `egui`, `eframe`, `wgpu`, `tokio`, `smol`, `async-std`, `pyo3`.
 5. `cargo clippy` is clean with `-D warnings` from the first commit. Lints are declared once in
@@ -52,7 +52,7 @@ Placement:
   plan to a release); its steps and arrows are the tables in `scripts/dev_cycle_map.py`,
   redrawn by hand when `AGENTS.md` or `RUNBOOK.md` changes the process.
 - Directory name = package name, with underscores (`pes_savefile`). Hyphens only in CLI subcommands
-  and tool ids (`team-compiler`).
+  and tool ids (`compiler`).
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the module that uses it; one used
   by several modules belongs to the lib that owns the concept. Files, not folders, until a module
   passes roughly a thousand lines; then a folder with a `mod.rs` of the same name. Test modules
@@ -386,7 +386,7 @@ Requirements:
              THEN kit colors are derived from kit.dds AND finding kit_colors_derived is emitted
   ```
 
-  `TC` is the tool's short code (`TC` team compiler, `SE` save editor, `EU` export upgrader, `SC`
+  `TC` is the tool's short code (`TC` Compiler, `SE` save editor, `EU` export upgrader, `SC`
   stadium compiler, `MP` music player, `ME` music export editor, `MT` match tracker, `KC` kit config
   editor, `RA` refs arranger, `BC` balls compiler, `PA` player aesthetics editor, `RE` ruleset
   editor; `ST` the shell,
@@ -539,8 +539,8 @@ a new or changed behavior, a speed-up worth telling) adds its line under `[Unrel
 display" gives it (a corner-case fix under `### Minor fixes`), in one or two lines; a fix for
 something no release has shipped, or for a PES version no release has promised, adds none,
 and neither does a change to a tool no release has presented in its notes or the `README.md`:
-the release that first presents it describes it whole, in one bullet (0.0.2 does for the Team
-compiler and the Export upgrader), and `just changelog` fails on an entry for a tool on its
+the release that first presents it describes it whole, in one bullet (0.0.2 does for the
+Compiler and the Export upgrader), and `just changelog` fails on an entry for a tool on its
 list of those not presented yet. There is one `fix` type for both:
 `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note owes its readers. Do
 not include agent co-authoring lines.

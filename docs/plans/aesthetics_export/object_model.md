@@ -41,7 +41,7 @@ Placement rules:
 What exists of this is in `spec/aesthetics_export/object_model.md` "Structure pass types".
 
 `ExportSlot` (a team or referee slot, `split_player`'s input) and `BootsId`/`GlovesId` belong to
-the Team compiler's planning, not to this crate. `players_txt.rs` gets its shape with its
+the Compiler's planning, not to this crate. `players_txt.rs` gets its shape with its
 consumer, the Refs arranger.
 
 ### Model files
@@ -149,5 +149,5 @@ pub fn split_player(
 What exists of this is in `spec/aesthetics_export/object_model.md` "Design constraints".
 
 The strong-types list there additionally names `ExportSlot` (distinguishing team vs referee
-slots), `BootsId` and `GlovesId`, none built yet: the Team compiler's planning keys its slots
+slots), `BootsId` and `GlovesId`, none built yet: the Compiler's planning keys its slots
 `PlayerSlot`/`RefSlot` and its boots/gloves IDs are plain `u16` (`plan/ids.rs`).

@@ -39,7 +39,7 @@ pages and four programs. Reduced to what the games and the rules actually requir
 Nothing in that table needs a format or a rule the suite does not already own:
 
 - The savefile side is `pes_savefile`'s team model and `libs/aatf`'s rules.
-- The export side is the Studio export format and the Team compiler's fill-in rules (a kit
+- The export side is the Studio export format and the Compiler's fill-in rules (a kit
   folder with no texture gets the placeholder, no `config.toml` gets the template, no
   `colors.txt` gets derived colors).
 - The model side is a player folder with one texture swapped.
@@ -227,7 +227,7 @@ Shows what will be written and where, then writes it:
   - how to replace a starter with a real model (a "blender", in the community's word) through
     the Player aesthetics editor's Blender path and the wiki's Blender tutorials;
   - how to make a real kit (the online designer, the wiki's kits pages, the Kit config editor);
-  - how to compile and test (Team compiler);
+  - how to compile and test (Compiler);
   - how to get the roster into a save (Save editor, `import-toml`);
   - how to submit (zip the export folder; the AET rules).
 
@@ -236,7 +236,7 @@ Shows what will be written and where, then writes it:
 Then the hand-offs, each a `ctx.switch_to_tool(...)` request (see "Tool plugin interface" in the
 core plan):
 
-- **Compile now** (Team compiler: its watcher has already seen the new folder);
+- **Compile now** (Compiler: its watcher has already seen the new folder);
 - **Edit a player** (Player aesthetics editor);
 - **Edit kits** (Kit config editor);
 - **Import roster into a save** (Save editor).

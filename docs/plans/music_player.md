@@ -47,7 +47,7 @@ build) via the `python-mpv` binding. Loudness analysis shells out to a custom-mi
 
 ### Relationship to the old codebase
 
-As with the Team compiler, Rigdio defines *what* the new tool must do (the `.4ccm`
+As with the Compiler, Rigdio defines *what* the new tool must do (the `.4ccm`
 format, the selection semantics, the soundboard behavior), not *how*. The codebase is
 the product of years of accretion and is not a porting reference:
 

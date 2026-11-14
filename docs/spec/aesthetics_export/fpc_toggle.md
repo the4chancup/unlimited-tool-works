@@ -98,7 +98,7 @@ An export's **team kit-FPC status** is two-state (`EffectiveTeamKitFpc::{On, Unk
   needs a kit export. The slots are the kits the game offers the team (its `UniColor.bin`
   record), not all ten (`spec/team_compiler/pipeline.md` "Bins accumulation").
 - **A custom collar wins over the FPC collar value**: collar rewriting (see "Collars" in the
-  [Team compiler spec](../team_compiler/README.md)) runs after FPC reconciliation, so an FPC team
+  [Compiler spec](../team_compiler/README.md)) runs after FPC reconciliation, so an FPC team
   with a custom collar keeps its replacement collar ID while the other FPC kit values stand.
 
 The kit-config field logic this needs (reading/writing the shirt/shorts/collar model fields, plus

@@ -257,8 +257,8 @@ Rules:
   its folder under the linked name.
 - **Where a texture resolves decides where it is packed**: resolved in the player folder, the
   player's own; resolved in `Common/`, the team's, packed once (one 2048² hair texture for twenty
-  players is one file). The rule and its paths: "Texture relocation to common" in the [Team
-  compiler pipeline](team_compiler/pipeline.md).
+  players is one file). The rule and its paths: "Texture relocation to common" in the
+  [Compiler pipeline](team_compiler/pipeline.md).
 - Link files are folder-level references, not model content: the linked file is read from Common,
   never copied into the output, and the link file itself is not emitted. For pre-Fox `.mtl.common`
   the generated XML points the model at the Common MTL path (Red's behavior).
@@ -476,7 +476,7 @@ expects, and order states `ztest, zwrite, twosided, alphatest, alpharef, alphabl
 | `kit_variant_missing` | W | a `kitN` reference lacks the variant for a kit number the export defines and its set has no `kitF` (the lowest variant serves it) |
 | `kit_variant_model_left_out` | W | per-kit model variants on a Fox target (the set's fallback used: `kitF`, else the lowest variant) |
 
-Consequences follow the Team compiler's disposition rules (E → folder discarded). The full
-catalog is in the [Team compiler spec](team_compiler/README.md).
+Consequences follow the Compiler's disposition rules (E → folder discarded). The full
+catalog is in the [Compiler spec](team_compiler/README.md).
 
 ---

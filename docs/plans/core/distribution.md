@@ -13,7 +13,7 @@ There is no installer. Each release is a `.7z` archive containing:
 - `UTW.exe` (or the `utw` Linux binary), the single self-contained binary
   (`development_plan.md` "The project's name: Unlimited Tool Works")
 - `quick_compile.bat`, the double-click launcher: opens the GUI on
-  the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture).
+  the Compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture).
   The Windows archive alone has launchers. The Linux one ships none, not a `.sh` twin: a Linux
   member can be expected to work from a terminal, where the launcher's one command is typed as
   easily, and the bundle's readme gives each launcher's command for them
@@ -223,7 +223,7 @@ server-side.
 0.0.1 ships steps 1 and 2, in the window only, its dialog without **Update now** (a disabled
 one reads as an update that is not there), so a 0.0.1 member downloads 0.0.2 from the release
 page, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04) and the command line's notice.
-Step 5 and the `update` subcommand come with the Team compiler.
+Step 5 and the `update` subcommand come with the Compiler.
 
 The HTTP client is `ureq` pinned to `=3.5.0`, with default features off, `rustls-no-provider`
 and `platform-verifier`, `rustls` on `ring` handed to it as the crypto provider, the system's
@@ -354,7 +354,7 @@ processor.
    close prompts.
 5. **Teams list reconciliation** (on the first start of the new binary, not during the swap): the
    new binary carries the new upstream list embedded. The working `data/teams_list.txt` may
-   contain user-added ID assignments (the grid's inline ID-cell writes; see the [Team compiler
+   contain user-added ID assignments (the grid's inline ID-cell writes; see the [Compiler
    plan](../team_compiler/README.md)), so it can't just be overwritten.
 
    The `studio` coordinator calls `teams_list`'s reconciliation, not the generic core updater,
@@ -413,7 +413,7 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
 shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Each
-bullet opens with its tool (`**Team compiler**: …`, `**Save editor**: …`, `**General**: …` for
+bullet opens with its tool (`**The Compiler**: …`, `**Save editor**: …`, `**General**: …` for
 what every tool shares), because that is how a member reads it even though the version axis is
 one.
 
@@ -450,7 +450,7 @@ A fix for something no release has shipped gets none, so the file itself tells t
 fix apart and commit types do not have to.
 
 A tool no release has presented (named in its notes or in the `README.md`) gets no entry either,
-even when its code ships in the bundle. The Team compiler and the Export upgrader were in
+even when its code ships in the bundle. The Compiler and the Export upgrader were in
 0.0.1's binary but in neither, so no member uses them yet, and a list of changes to a tool
 nobody has been told about reads as noise. The release that first presents a tool describes it
 whole, in one bullet, as 0.0.1 did the Save editor.

@@ -1,6 +1,6 @@
-# Unlimited Tool Works: Team compiler spec
+# Unlimited Tool Works: Compiler spec
 
-The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
+The Compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK
 archives. Model format conversion happens at compile time (see the
 [Model conversion spec](../model_conversion/README.md)), and so do the aesthetics: the run
@@ -255,7 +255,7 @@ methods), the `BuildManifest`, planning, processing, packing, bins, GUI, and CLI
     `ExportIdentity` boundary, the sanitized validated-versus-eligible projection and the
     roster-entry semantics of "Validation semantics" in the
     [Aesthetics export spec](../aesthetics_export/object_model.md));
-  - the Team compiler settings/CLI surface;
+  - the Compiler settings/CLI surface;
   - the reader/coordinator/writer over `libs/pipeline` compiling the subset in "Phase 3 scope"
     below;
   - the shell slice's view.
@@ -708,7 +708,7 @@ TC-GUI-02  GIVEN the tracer bullet's export in the exports folder
                 run's exit code
 TC-GUI-03  GIVEN the shell with registered tools
            WHEN a tool's sidebar entry is clicked
-           THEN that entry is marked active and its view is the one drawn; the Team compiler's
+           THEN that entry is marked active and its view is the one drawn; the Compiler's
                 view shows its settings section, collapsed, opening on the effective settings
                 as `key = value` lines, a Compile button enabled while no run is in flight and
                 disabled while one is, and the run log, which follows its newest line

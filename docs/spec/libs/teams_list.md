@@ -5,8 +5,8 @@ Part of the [Library crates spec](README.md).
 ## `libs/teams_list`
 
 The 4cc team identity space and the file that records it, in one **leaf crate with no
-dependencies beyond `thiserror`**. Three consumers need it and none is a natural owner: the Team
-compiler resolves export names against it, the Save editor writes it from a savefile ("Export
+dependencies beyond `thiserror`**. Three consumers need it and none is a natural owner: the
+Compiler resolves export names against it, the Save editor writes it from a savefile ("Export
 teams list"), and the `studio` binary merges a new release's embedded list into the working copy
 after an update. It used to be a module of `aesthetics_export`, which made the Save editor and the
 updater depend on the whole export object model for one file format.
@@ -17,9 +17,9 @@ updater depend on the whole export object model for one file format.
   lives, so the export-name side and the list side cannot drift. `is_referees()` / `is_balls()` /
   `is_reserved()`. Splitting an export display name into its first token is export-format
   knowledge and stays in `aesthetics_export::identity`, which calls `TeamName::new`.
-- `id.rs` (`TeamId`): validated 701–920. Referees' fixed 999 is not a `TeamId` (see the Team
-  compiler spec, "Export identity resolution").
-- `file.rs` (`TeamsList`): parse / write `teams_list.txt` per the contract in the Team compiler
+- `id.rs` (`TeamId`): validated 701–920. Referees' fixed 999 is not a `TeamId` (see the
+  Compiler spec, "Export identity resolution").
+- `file.rs` (`TeamsList`): parse / write `teams_list.txt` per the contract in the Compiler
   spec ("Export identity resolution" and the "`teams_list.txt` contract" open question):
   - tab-split, `ID` and `Name` columns located by header label in any order;
   - every other cell carried verbatim and written back in place;

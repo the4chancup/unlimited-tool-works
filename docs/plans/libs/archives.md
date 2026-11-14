@@ -6,5 +6,5 @@
 
 What exists of this is in `spec/libs/archives.md` "`libs/archives`: reading `.zip` and `.7z` exports".
 
-The Team creator and the Export upgrader also extract exports through `archives` (the Team
-compiler reads them in place).
+The Team creator and the Export upgrader also extract exports through `archives` (the
+Compiler reads them in place).
