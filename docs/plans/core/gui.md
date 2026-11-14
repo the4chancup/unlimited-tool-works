@@ -1139,7 +1139,13 @@ added to the table first (a new dependency, asked for first):
     Windows metrics, 16 at 12.5);
   - egui's floor under a widget's height, `interact_size.y` (18: a button, combo, drag value,
     checkbox row or list row), is stated as a `min-height`, which the browser's 16-point line
-    plus the padding used to supply by accident.
+    plus the padding used to supply by accident;
+  - text is drawn a second time in one place at 30% strength (a `text-shadow` on the body,
+    which form controls are told to inherit), because egui's dark theme turns a glyph's
+    coverage c into alpha 2c − c², which a full second drawing gives: without it a draft's
+    text reads thinner and dimmer than the app's. A browser's antialiasing is wider than
+    egui's, so a full second drawing reads heavier than the app; 30% gives the same ink.
+    Canvas text, which no shadow reaches, is drawn once.
 
   A font named but not installed falls back silently: the drafts named Ubuntu, which no
   machine they were opened on had, and every layout was reviewed and calibrated in Segoe UI.

@@ -17625,3 +17625,16 @@ project removed as wrong. At 0.3 it would flag 54. On spec drift it reaches AUC 
 real corrections (0.68 before) and 0.73 on 160 planted errors (0.68), catching 34 of them at
 0.5, errors a reader catches every time. The evaluation is outside the repository
 (`SystemOne/jev-eval/round3/RESULTS.md` "Round 5").
+
+## 2026-11-14 — drafts — text drawn twice, as egui's dark theme draws it
+Decision: the drafts draw every text a second time in one place at 30% strength (`text-shadow:
+0 0 0 rgb(from currentColor r g b / 0.3)` on the body, form controls inheriting it;
+`plans/core/gui.md` "Prototypes before implementation", the Fonts bullet). Canvas text stays
+drawn once.
+Why: the maintainer saw a draft's text read thinner than the built app's. egui's dark theme
+turns a glyph's coverage c into alpha 2c − c² (epaint's `TwoCoverageMinusCoverageSq`), and a
+second drawing over the first gives exactly that. Measured on the range dialog's six texts
+against the built window, a full second drawing brought the stems' colour from 5 to 9 levels
+under the app's to within 3, but the text then carried about 15% more ink than egui's, since a
+browser's antialiasing is wider, and the maintainer found it too heavy. At 30% the ink matches
+(median 0.99 of egui's over the six texts) and the stems stand 4 to 8 levels under.

@@ -253,8 +253,17 @@
     /* egui's row height: the font's hhea height (1.17 times the size) rounded to whole
        pixels, 15 at 12.5 and 18 at 15, where a browser's normal line keeps the fraction. */
     font: 400 12.5px/1.2 var(--font-body);
+    /* egui's dark theme turns a glyph's coverage c into alpha 2c - c² (epaint's
+       FontColorTransferFunction::TwoCoverageMinusCoverageSq), which drawing the glyph twice in
+       one place gives: without it a draft's text reads thinner and dimmer than the app's. The
+       second drawing is at 30% strength because a browser's antialiasing is wider than
+       egui's, so a full one reads heavier than the app. Inherited, and currentColor is each
+       element's own. */
+    text-shadow: 0 0 0 rgb(from currentColor r g b / 0.3);
     display: flex; align-items: flex-start; overflow: auto;
   }
+  /* The browser's own stylesheet sets form controls' text-shadow to none. */
+  button, input, select, textarea, option { text-shadow: inherit; }
   /* The simulated window: Studio's window at its default size (plans/core/gui.md "Shell
      layout"), on a desktop-colored page, so the draft shows what fits at that size. The
      harness, not the UI, like the draft controls. Its transform makes the fixed-position

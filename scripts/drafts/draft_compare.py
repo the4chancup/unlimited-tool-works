@@ -31,7 +31,8 @@ width is not compared: the draft's label spans its grid cell, egui's checkbox it
 - Ink: every text is also measured in both captures (the draft's page screenshot, the build's
   PrintWindow capture): its glyphs' core colour and its ink mass (`ink`). A colour more than
   `COLOUR_STEP` levels apart, or a weight more than `WEIGHT_STEP` off the screen's median
-  ratio (the two rasterizers differ by a steady amount, egui's about 15% heavier), is listed
+  ratio (the two rasterizers differ by a steady amount, which the drafts' second drawing of
+  each text at 30% mostly evens out: plans/core/gui.md, the Fonts bullet), is listed
   under "text colour differs" or "text weight differs": a colour reads as weight to the eye,
   and a box's place says nothing of either.
 - Fill: a pair of two widgets (a button, an input, a selectable label, a checkbox) is measured
@@ -89,6 +90,8 @@ SCREENS = {
     "aatf": "#save_editor/player?pes=2021&player=718.1",
     "set_stats": f"#save_editor/player?{SAVE}&player=701.1&dialog=set-stats",
     "kit_slots": f"#save_editor/team?{SAVE}&selteam=701&dialog=kit-slots",
+    "pictures_range": f"#save_editor/player?{SAVE}&player=701.1&dialog=pictures-range",
+    "picture_save": f"#save_editor/player?{SAVE}&player=701.1&dialog=picture-save",
 }
 # Scripts run before a screen's page loads: Live AATF is a tool setting the draft keeps in
 # localStorage, not a link key.
@@ -97,7 +100,7 @@ INIT = {"aatf": "localStorage.setItem('save_editor.live_aatf', 'true')"}
 BANDS = ("over 2 px", "1 to 2 px", "within 1 px")
 KINDS_DIFFER = "box kinds differ"
 # A text's ink differs when its core colour is more than this many levels apart on a channel
-# (the two rasterizers leave body text about 10 apart in its stems), or its weight more than
+# (the two rasterizers leave body text a few levels apart in its stems), or its weight more than
 # this share off its screen's median.
 COLOUR_STEP = 20
 WEIGHT_STEP = 0.2
@@ -268,7 +271,8 @@ def ink_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift=
     """Every pair whose draft side is a text, its ink on both sides: `{pair index: (draft
     colour, built colour, colour step, weight)}`, the step the largest channel difference and
     the weight the built side's ink mass over the draft's, divided by the screen's median
-    ratio: a browser and egui raster a font apart (egui's about 15% heavier at 12.5 points), so
+    ratio: a browser and egui raster a font apart (a steady gap the drafts' 30% second drawing
+    mostly evens out), so
     only a text heavier or lighter than its screen's others is a finding. The built side is
     measured in its own box, or in the draft's where the app's box is the widget holding the
     text (box kinds differ), whose text lines up. The shifts put a dialog's rows, measured from
