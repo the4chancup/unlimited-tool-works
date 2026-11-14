@@ -13,7 +13,7 @@ use pes_version::PesVersion;
 use studio_core::widgets::{add_enabled_ui, combo_item, step_choice, wheel_steps};
 
 use super::assignments::{Assign, chip};
-use super::{RosterRow, TacticsView, gate_tip, name_at, text_width};
+use super::{RosterRow, TacticsView, gate_tip, instruction_text, name_at, text_width};
 
 /// The stored "no player" value of an instruction's target.
 pub(super) const NO_TARGET: u8 = 0xFF;
@@ -69,14 +69,10 @@ fn instruction_combo(
     {
         list.push(inst);
     }
-    let selected = match current {
-        Some(inst) => instruction_label(inst).to_owned(),
-        None => format!("Unknown (0x{:02X})", entry.instruction),
-    };
     let mut pick = current;
     let combo = egui::ComboBox::from_id_salt(id_salt)
         .width(ui.available_width())
-        .selected_text(selected.clone())
+        .selected_text(instruction_text(version, entry.instruction))
         .truncate()
         .show_ui(ui, |ui| {
             for inst in &list {

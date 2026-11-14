@@ -23,7 +23,7 @@ use pes_savefile::model::tactics::{Formation, FormationSlot, TacticsPreset};
 use pes_version::PesVersion;
 use team_widgets::names::append_name;
 use team_widgets::pitch::{self, FORMATIONS, PITCH};
-use team_widgets::tactics::TacticsView;
+use team_widgets::tactics::{SettingsLine, TacticsView, automatic_pairs, preset_settings};
 
 use crate::view::{portraits, tactics};
 
@@ -52,6 +52,21 @@ const ID_GAP: f32 = 8.0;
 /// The opacity of a formation drawn though its preset does not field it,
 /// so it reads as unused rather than as part of a fluid set.
 const HIDDEN_OPACITY: f32 = 0.6;
+/// The settings column's width, right of the grid: the widest fixed
+/// value, Attacking Full-Backs, fits at `VALUE_X` with a few points to
+/// spare, and a longer target's name is cut.
+const SETTINGS_WIDTH: f32 = 240.0;
+/// A value's x in the settings column, from the column's left.
+const VALUE_X: f32 = 120.0;
+/// The Automatic settings line's room under the grid.
+const FOOT_HEIGHT: f32 = 30.0;
+/// How far the Automatic settings line sits below the middle of its room
+/// (the draft's nudge), so it does not crowd the pitches above it.
+const FOOT_NUDGE: f32 = 4.0;
+/// The room after the Automatic settings heading and after each pair.
+const PAIR_GAP: f32 = 16.0;
+/// The room between an Automatic setting's label and its value.
+const PAIR_LABEL_GAP: f32 = 6.0;
 
 /// What a picture draws besides the formations.
 #[derive(Debug, Clone, Copy)]
@@ -61,6 +76,9 @@ pub(crate) struct PictureOptions {
     /// The turf in flat bands, without its grain, which PNG cannot
     /// compress: a smaller file.
     pub(crate) flat: bool,
+    /// Each preset's settings in a column right of its row, and the
+    /// team's Automatic settings on a line under the grid.
+    pub(crate) settings: bool,
 }
 
 /// The team a picture is of, and where its markers' medals and portraits
@@ -183,9 +201,14 @@ fn paint(
     let head = if columns > 1 { HEAD_HEIGHT } else { 0.0 };
     let grid_width = columns as f32 * PITCH.x + (columns - 1) as f32 * GAP;
     let grid_height = rows.len() as f32 * PITCH.y + (rows.len() - 1) as f32 * GAP;
+    let (settings_width, foot) = if options.settings {
+        (GAP + SETTINGS_WIDTH, FOOT_HEIGHT)
+    } else {
+        (0.0, 0.0)
+    };
     let size = egui::vec2(
-        2.0 * MARGIN + LABEL_WIDTH + grid_width,
-        2.0 * MARGIN + TITLE_HEIGHT + head + grid_height,
+        2.0 * MARGIN + LABEL_WIDTH + grid_width + settings_width,
+        2.0 * MARGIN + TITLE_HEIGHT + head + grid_height + foot,
     );
 
     let ctx = egui::Context::default();
@@ -282,6 +305,21 @@ fn paint(
                     options.flat,
                 );
             }
+            if options.settings {
+                let lines = preset_settings(version, &team.team.tactics, row, &roster);
+                paint_settings(
+                    painter,
+                    egui::pos2(grid.x + grid_width + GAP, label.y),
+                    &lines,
+                );
+            }
+        }
+        if options.settings {
+            paint_automatic(
+                painter,
+                grid.y + grid_height + FOOT_HEIGHT / 2.0 + FOOT_NUDGE,
+                &automatic_pairs(version, &team.team.tactics),
+            );
         }
     });
     let shapes = output.shapes.clone();
@@ -335,6 +373,90 @@ fn paint_title(painter: &egui::Painter, width: f32, team: &TeamEntry, version: P
         text,
         visuals.text_color(),
     );
+}
+
+/// A preset's settings column (the draft's `presetLines` as
+/// `formationsPicture` lists them): its first line's left centre at
+/// `start`, each line `LINE` below the one before and a gap half that. A
+/// heading is strong, a setting's label in the text colour with its value
+/// at `VALUE_X`, a target at `VALUE_X` after `↳`.
+fn paint_settings(painter: &egui::Painter, start: egui::Pos2, lines: &[SettingsLine]) {
+    let visuals = &painter.ctx().global_style().visuals;
+    let text = egui::FontId::proportional(TEXT_SIZE);
+    let mut y = start.y;
+    for line in lines {
+        let at = egui::pos2(start.x, y);
+        let value_at = egui::pos2(start.x + VALUE_X, y);
+        y += match line {
+            SettingsLine::Heading(heading) => {
+                painter.text(
+                    at,
+                    egui::Align2::LEFT_CENTER,
+                    *heading,
+                    text.clone(),
+                    visuals.strong_text_color(),
+                );
+                LINE
+            }
+            SettingsLine::Setting { label, value } => {
+                painter.text(
+                    at,
+                    egui::Align2::LEFT_CENTER,
+                    label,
+                    text.clone(),
+                    visuals.text_color(),
+                );
+                paint_value(painter, value_at, value.clone());
+                LINE
+            }
+            SettingsLine::Target(name) => {
+                paint_value(painter, value_at, format!("\u{21B3} {name}"));
+                LINE
+            }
+            SettingsLine::Gap => LINE / 2.0,
+        };
+    }
+}
+
+/// A settings value strong, its left centre at `at`, cut with an ellipsis
+/// to the column's room right of `VALUE_X`: only a long target's name
+/// needs the cut, and widening every picture for the few would leave the
+/// rest with empty room on the right.
+fn paint_value(painter: &egui::Painter, at: egui::Pos2, value: String) {
+    let strong = painter.ctx().global_style().visuals.strong_text_color();
+    let mut job = egui::text::LayoutJob::simple_singleline(
+        value,
+        egui::FontId::proportional(TEXT_SIZE),
+        strong,
+    );
+    job.wrap = egui::text::TextWrapping::truncate_at_width(SETTINGS_WIDTH - VALUE_X);
+    let galley = painter.layout_job(job);
+    painter.galley(at - egui::vec2(0.0, galley.size().y / 2.0), galley, strong);
+}
+
+/// The team's Automatic settings on one line centred at `centre_y`, from
+/// the picture's margin: "Automatic settings" strong, then each pair's
+/// label in the text colour and its value strong. No preset owns them,
+/// so they stand under the grid rather than beside a row.
+fn paint_automatic(painter: &egui::Painter, centre_y: f32, pairs: &[(&str, String)]) {
+    let visuals = &painter.ctx().global_style().visuals;
+    let text = egui::FontId::proportional(TEXT_SIZE);
+    let mut x = MARGIN;
+    let mut put = |words: &str, colour: egui::Color32, after: f32| {
+        let rect = painter.text(
+            egui::pos2(x, centre_y),
+            egui::Align2::LEFT_CENTER,
+            words,
+            text.clone(),
+            colour,
+        );
+        x = rect.right() + after;
+    };
+    put("Automatic settings", visuals.strong_text_color(), PAIR_GAP);
+    for (label, value) in pairs {
+        put(label, visuals.text_color(), PAIR_LABEL_GAP);
+        put(value, visuals.strong_text_color(), PAIR_GAP);
+    }
 }
 
 /// The portraits of `team`'s starters loaded into `ctx`, one handle per
@@ -399,6 +521,10 @@ mod tests {
     /// preset 2 has it off with a formation of a shape of its own, preset
     /// 3 has it off with two of Kick-off's shape.
     const HIDDEN: u32 = 813;
+    /// The PES 2021 fixture's /trick/: preset 2's Attack 1 is Anchoring,
+    /// its target set to a player whose name is wider than the settings
+    /// column's room for a value.
+    const TARGETED: u32 = 826;
 
     /// `version`'s fixture save.
     fn save(version: PesVersion) -> EditFile {
@@ -427,6 +553,7 @@ mod tests {
         PictureOptions {
             portraits: false,
             flat,
+            settings: false,
         }
     }
 
@@ -434,6 +561,74 @@ mod tests {
     /// and no portraits.
     fn picture(file: &EditFile, team: &TeamEntry, flat: bool) -> (RgbaImage, Vec<ClippedShape>) {
         paint(&bare(file, team), &dark(), without_portraits(flat))
+    }
+
+    /// `picture` with each preset's settings beside its row, the turf
+    /// grained.
+    fn settings_picture(file: &EditFile, team: &TeamEntry) -> (RgbaImage, Vec<ClippedShape>) {
+        let options = PictureOptions {
+            settings: true,
+            ..without_portraits(false)
+        };
+        paint(&bare(file, team), &dark(), options)
+    }
+
+    /// A text the frame painted, as a member sees it.
+    #[derive(Debug)]
+    struct Placed {
+        /// Its left edge.
+        left: f32,
+        /// Its right edge.
+        right: f32,
+        /// Its middle, the y it was placed at.
+        centre: f32,
+        /// What its glyphs read, an ellipsis ending a cut one.
+        shown: String,
+        /// Its first run's colour.
+        colour: Color32,
+    }
+
+    /// The texts the frame painted in `area`, in paint order. A text whose
+    /// start its clip hides is left out: a marker's long name starts past
+    /// its pitch's edge, clipped to its badge.
+    fn texts_in(shapes: &[ClippedShape], area: egui::Rect) -> Vec<Placed> {
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                Shape::Text(text) => {
+                    let placed = Placed {
+                        left: text.pos.x,
+                        right: text.pos.x + text.galley.size().x,
+                        centre: text.pos.y + text.galley.size().y / 2.0,
+                        shown: text.galley.rows.iter().map(|row| row.text()).collect(),
+                        colour: text.galley.job.sections[0].format.color,
+                    };
+                    let start = egui::pos2(placed.left, placed.centre);
+                    (clipped.clip_rect.contains(start) && area.contains(start)).then_some(placed)
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// `text`'s width at the picture's text size, in the window's fonts.
+    fn text_width(text: &str) -> f32 {
+        let ctx = egui::Context::default();
+        studio_core::theme::install(&ctx);
+        let mut width = 0.0;
+        let output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            width = ui
+                .painter()
+                .layout_no_wrap(
+                    text.to_owned(),
+                    egui::FontId::proportional(TEXT_SIZE),
+                    Color32::WHITE,
+                )
+                .size()
+                .x;
+        });
+        output.drop_without_applying_deltas();
+        width
     }
 
     /// The top-left corner of a picture's grid, under its column heads
@@ -854,6 +1049,198 @@ mod tests {
         crowded.formations[2] = crowded.formations[0].clone();
         crowded.formations[1].players[10] = corner(94);
         assert_eq!(pictured_formations(&crowded), [0]);
+    }
+
+    /// The texts of a picture's Automatic settings line: those under the
+    /// grid, in its foot's room.
+    fn foot_texts(image: &RgbaImage, shapes: &[ClippedShape]) -> Vec<Placed> {
+        let (width, height) = (image.width() as f32, image.height() as f32);
+        texts_in(
+            shapes,
+            egui::Rect::from_min_max(
+                egui::pos2(0.0, height - MARGIN - FOOT_HEIGHT),
+                egui::pos2(width, height),
+            ),
+        )
+    }
+
+    // SE-GUI-88
+    #[test]
+    fn a_settings_picture_lists_each_preset_s_settings_beside_its_row() {
+        let file = save(PesVersion::Pes21);
+        let visuals = dark();
+        let (strong, text) = (visuals.strong_text_color(), visuals.text_color());
+        let team = file.team(TARGETED).expect("the fixture holds /trick/");
+        let attack = team.tactics.presets[1]
+            .attack_instructions
+            .expect("PES 2021 stores instructions")[0];
+        let target = file
+            .player(team.roster[usize::from(attack.player)].player_id)
+            .expect("the target's player");
+        let target = display_name(&target.name);
+        assert_eq!(
+            target, "xXThe Dark Bullet Wandering Oscuro DExitXx",
+            "premise: preset 2's Attack 1 targets him"
+        );
+        let room = SETTINGS_WIDTH - VALUE_X;
+        assert!(
+            text_width(&format!("\u{21B3} {target}")) > room,
+            "premise: his name is wider than a value's room"
+        );
+        assert!(
+            text_width("Attacking Full-Backs") < room,
+            "the widest fixed value fits uncut"
+        );
+
+        let (plain, _) = picture(&file, team, false);
+        let (image, shapes) = settings_picture(&file, team);
+        assert_eq!(
+            image.dimensions(),
+            (plain.width() + 12 + 240, plain.height() + 30),
+            "the column's gap and width, the foot's height"
+        );
+
+        // Each row's column starts level with its Preset label.
+        let column = plain.width() as f32 - MARGIN + GAP;
+        let in_row = |row: u32| {
+            let cell = cell(grid(true), row, 0);
+            let area = egui::Rect::from_min_max(
+                egui::pos2(column, cell.top()),
+                egui::pos2(image.width() as f32, cell.bottom()),
+            );
+            texts_in(&shapes, area)
+                .into_iter()
+                .map(|placed| {
+                    let centre = (placed.centre * 100.0).round() / 100.0;
+                    (placed.left, centre, placed.shown, placed.colour)
+                })
+                .collect::<Vec<_>>()
+        };
+        for row in 0..3 {
+            let top = cell(grid(true), row, 0).top() + LABEL_TOP;
+            assert_eq!(
+                in_row(row)[0],
+                (column, top, "Formation settings".to_owned(), strong),
+                "row {row}"
+            );
+        }
+        // Preset 2's, line by line: a gap is half a line.
+        let top = cell(grid(true), 1, 0).top() + LABEL_TOP;
+        let line =
+            |at: f32, x: f32, words: &str, colour| (x, top + at * LINE, words.to_owned(), colour);
+        let heading = |at, words| line(at, column, words, strong);
+        let setting = |at, label, value| {
+            [
+                line(at, column, label, text),
+                line(at, column + VALUE_X, value, strong),
+            ]
+        };
+        let mut expected = vec![heading(0.0, "Formation settings")];
+        for (at, label, value) in [
+            (1.0, "Attacking style", "Counter Attack"),
+            (2.0, "Buildup", "Short Pass"),
+            (3.0, "Attacking zone", "Wide"),
+            (4.0, "Positioning", "Maintain"),
+            (5.0, "Support range", "4"),
+            (6.0, "Numbers in attack", "Medium"),
+            (7.5, "Defensive style", "Frontline Pressure"),
+            (8.5, "Containment area", "Middle"),
+            (9.5, "Pressure", "Conservative"),
+            (10.5, "Defensive line", "5"),
+            (11.5, "Compactness", "5"),
+            (12.5, "Numbers in defence", "Medium"),
+        ] {
+            expected.extend(setting(at, label, value));
+        }
+        expected.push(heading(14.0, "Advanced instructions"));
+        expected.extend(setting(15.0, "Attack 1", "Anchoring"));
+        expected.push(line(
+            16.0,
+            column + VALUE_X,
+            "\u{21B3} xXThe Dark Bulle\u{2026}",
+            strong,
+        ));
+        for (at, label) in [(17.0, "Attack 2"), (18.0, "Defence 1"), (19.0, "Defence 2")] {
+            expected.extend(setting(at, label, "Unassigned"));
+        }
+        assert_eq!(in_row(1), expected);
+        let cut = texts_in(&shapes, egui::Rect::EVERYTHING)
+            .into_iter()
+            .find(|placed| placed.shown.starts_with('\u{21B3}'))
+            .expect("the target's line");
+        assert!(cut.right - cut.left <= room, "{cut:?} fits its room");
+
+        // The Automatic settings under the grid: 16 points after the
+        // heading and each value, 6 after a label.
+        let foot = foot_texts(&image, &shapes);
+        let words: Vec<(&str, Color32)> = foot
+            .iter()
+            .map(|placed| (placed.shown.as_str(), placed.colour))
+            .collect();
+        assert_eq!(
+            words,
+            [
+                ("Automatic settings", strong),
+                ("Substitution", text),
+                ("Off", strong),
+                ("Preset change", text),
+                ("Off", strong),
+                ("Offside trap", text),
+                ("Off", strong),
+                ("Attack/defence levels", text),
+                ("Off", strong),
+            ]
+        );
+        let bottom = cell(grid(true), 2, 0).bottom();
+        assert_eq!(foot[0].left, MARGIN);
+        for placed in &foot {
+            assert_eq!(
+                (placed.centre * 100.0).round() / 100.0,
+                bottom + FOOT_HEIGHT / 2.0 + FOOT_NUDGE,
+                "{placed:?}"
+            );
+        }
+        for (index, pair) in foot.windows(2).enumerate() {
+            let gap = if index % 2 == 0 {
+                PAIR_GAP
+            } else {
+                PAIR_LABEL_GAP
+            };
+            assert_eq!(pair[1].left, pair[0].right + gap, "{pair:?}");
+        }
+    }
+
+    // SE-GUI-88
+    #[test]
+    fn a_pes_2016_settings_picture_has_no_instructions_and_three_automatic_settings() {
+        let file = save(PesVersion::Pes16);
+        let team = file.team(KICK_OFF_ALONE).expect("the fixture holds /f/");
+        let (image, shapes) = settings_picture(&file, team);
+        let shown: Vec<String> = texts_in(&shapes, egui::Rect::EVERYTHING)
+            .into_iter()
+            .map(|placed| placed.shown)
+            .collect();
+        assert!(
+            shown.iter().any(|text| text == "Formation settings"),
+            "premise: the column is drawn"
+        );
+        assert!(!shown.iter().any(|text| text == "Advanced instructions"));
+        let foot: Vec<String> = foot_texts(&image, &shapes)
+            .into_iter()
+            .map(|placed| placed.shown)
+            .collect();
+        assert_eq!(
+            foot,
+            [
+                "Automatic settings",
+                "Substitution",
+                "Off",
+                "Preset change",
+                "Off",
+                "Offside trap",
+                "Off"
+            ]
+        );
     }
 
     #[test]
