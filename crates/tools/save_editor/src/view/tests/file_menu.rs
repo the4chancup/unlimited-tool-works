@@ -126,14 +126,16 @@ fn press_ctrl(window: &mut Headless, view: &mut SaveView, pressed: egui::Key) {
     });
 }
 
-/// Whether the frame's nodes hold the File menu's popup.
-fn menu_shown(nodes: &[accesskit::Node]) -> bool {
-    nodes.iter().any(|node| {
-        node.role() == Role::Button
-            && node
-                .label()
-                .is_some_and(|label| label.starts_with("Choose file"))
-    })
+/// Whether the frame's nodes hold the File menu's popup (a real open
+/// popup, not the welcome panel's copy of the opens).
+fn menu_shown(window: &Headless, nodes: &[accesskit::Node]) -> bool {
+    egui::Popup::is_any_open(&window.ctx)
+        && nodes.iter().any(|node| {
+            node.role() == Role::Button
+                && node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Choose file"))
+        })
 }
 
 // SE-GUI-26
@@ -212,7 +214,10 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
     // The menu stayed open through every frame above: discovery ran once
     // per version, when it opened.
     let nodes = draw(&mut window, &mut view);
-    assert!(menu_shown(&nodes), "premise: the menu is still open");
+    assert!(
+        menu_shown(&window, &nodes),
+        "premise: the menu is still open"
+    );
     assert_eq!(calls.get(), PesVersion::ALL.len(), "one call per version");
 
     // A discovered entry opens its save.
@@ -417,7 +422,7 @@ fn a_versions_shortcut_opens_its_newest_save_with_the_menu_closed() {
     let mut window = Headless::new();
     let nodes = draw(&mut window, &mut view);
     assert!(view.session.is_none(), "premise: no save open");
-    assert!(!menu_shown(&nodes), "premise: the menu is closed");
+    assert!(!menu_shown(&window, &nodes), "premise: the menu is closed");
 
     press_ctrl(&mut window, &mut view, egui::Key::Num1);
     let session = view.session.as_ref().expect("Ctrl+1 opened a save");
@@ -768,5 +773,99 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
             .by_name("inputs/2-no-such-file")
             .is_err(),
         "a file that cannot be read keeps nothing"
+    );
+}
+
+// SE-GUI-90: with no save open the middle of the view is the welcome
+// panel, titled "Save editor" — the File menu's opens again, no modal up.
+#[test]
+fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
+    let tree = tree("welcome_panel");
+    let mut view = SaveView::new();
+    view.open(&tree.elsewhere);
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        label_value(&nodes, "Save editor"),
+        "the panel's title in the middle of the view"
+    );
+    assert!(
+        label_value(&nodes, "Saves in Documents") && label_value(&nodes, "Recent"),
+        "the panel's two headings"
+    );
+    let recent = "welcome_panel\\elsewhere\\EDIT00000000";
+    let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
+        .iter()
+        .filter_map(|node| node.label())
+        .collect();
+    assert_eq!(
+        labels,
+        [
+            "PES 2019 Ctrl+9",
+            "PES 2021 Ctrl+1",
+            "PES 2021",
+            recent,
+            "Choose file\u{2026} Ctrl+O",
+        ],
+        "the saves by version, the first of each with its shortcut, then the recent \
+         file, then the picker — the File menu's opens"
+    );
+    assert!(
+        window
+            .ctx
+            .memory(|memory| memory.top_modal_layer())
+            .is_none(),
+        "the panel registers no modal layer"
+    );
+
+    click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
+    let session = view.session.as_ref().expect("the PES 19 entry opened");
+    assert_eq!(session.path(), tree.pes19.as_path());
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        !label_value(&nodes, "Save editor"),
+        "the panel is gone with a save open"
+    );
+}
+
+// SE-GUI-90's last clause: nothing discovered and none opened reads the
+// weak line over Choose file….
+#[test]
+fn the_welcome_panel_with_nothing_found_reads_so_over_the_picker() {
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    let mut window = Headless::new();
+
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    let line = label_bounds(&nodes, "No PES saves were found in Documents.");
+    let picker = menu_item(&nodes, "Choose file")
+        .bounds()
+        .expect("Choose file…'s bounds");
+    assert!(line.y0 < picker.y0, "the weak line above Choose file…");
+    assert!(
+        !label_value(&nodes, "Recent"),
+        "no Recent heading with no recent file"
+    );
+}
+
+// The panel scans the disk once when it appears and keeps the list while
+// it stays up: never a scan per frame.
+#[test]
+fn the_welcome_panel_scans_once_not_every_frame() {
+    let tree = tree("welcome_once");
+    let mut view = SaveView::new();
+    let calls = discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+
+    idle_frames(&mut window, &mut view, 5);
+    assert_eq!(
+        calls.get(),
+        PesVersion::ALL.len(),
+        "one discovery call per version, once for the panel's whole stay"
     );
 }

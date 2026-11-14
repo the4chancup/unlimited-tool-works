@@ -986,6 +986,7 @@ fn the_category_setting_survives_a_restart_and_another_save() {
 
     // The editor started again ticks it; opening another save keeps it.
     let mut restarted = crate::Tool::new();
+    restarted.view.discover = Box::new(|_| Vec::new());
     window.frame(Vec::new(), |ui| restarted.view(ui, &ctx));
     assert_eq!(
         restarted.view.team_category,
@@ -1012,6 +1013,7 @@ fn the_category_setting_survives_a_restart_and_another_save() {
         .unwrap()
         .set_tool(crate::messages::TOOL_ID, table);
     let mut third = crate::Tool::new();
+    third.view.discover = Box::new(|_| Vec::new());
     window.frame(Vec::new(), |ui| third.view(ui, &ctx));
     assert_eq!(
         third.view.team_category,

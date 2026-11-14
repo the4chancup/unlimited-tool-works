@@ -373,8 +373,13 @@ mod tests {
             pes_version::PesVersion::Pes17,
             dir.join("Pro Evolution Soccer 2017"),
         ));
+        // With no save open the welcome panel's discovery would reach the
+        // real Documents folder.
+        tool.view.discover = Box::new(|_| Vec::new());
 
         let egui_ctx = egui::Context::default();
+        // The welcome panel's title draws in the theme's window-title style.
+        studio_core::theme::install(&egui_ctx);
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
         output.drop_without_applying_deltas();
         assert_eq!(
@@ -460,12 +465,17 @@ mod tests {
         let (ctx, _shared, _events_rx, _requests_rx) =
             crate::test_support::shared_tool_context(&dir, studio_core::Settings::default());
         let mut tool = Tool::new();
+        // With no save open the welcome panel's discovery would reach the
+        // real Documents folder.
+        tool.view.discover = Box::new(|_| Vec::new());
         assert!(
             ctx.tool_settings(TOOL_ID).get("last_folder").is_none(),
             "premise: the setting holds no folder yet"
         );
         let expected = backups.display().to_string();
         let egui_ctx = egui::Context::default();
+        // The welcome panel's title draws in the theme's window-title style.
+        studio_core::theme::install(&egui_ctx);
         // The first frame reads the setting into the view; the open, as every
         // open, writes it back on its own frame.
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
@@ -480,6 +490,7 @@ mod tests {
         );
 
         let mut restarted = Tool::new();
+        restarted.view.discover = Box::new(|_| Vec::new());
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| restarted.view(ui, &ctx));
         output.drop_without_applying_deltas();
         assert_eq!(
@@ -497,7 +508,12 @@ mod tests {
         let (ctx, _events_rx, _requests_rx) =
             crate::test_support::tool_context(&dir, studio_core::Settings::default());
         let mut tool = Tool::new();
+        // With no save open the welcome panel's discovery would reach the
+        // real Documents folder.
+        tool.view.discover = Box::new(|_| Vec::new());
         let egui_ctx = egui::Context::default();
+        // The welcome panel's title draws in the theme's window-title style.
+        studio_core::theme::install(&egui_ctx);
         let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
         output.drop_without_applying_deltas();
 

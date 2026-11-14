@@ -5,6 +5,8 @@
 //! from, or the newest discovered save's; then Save and Save as. The opens'
 //! shortcuts (the draft's `OPEN_KEYS`)
 //! open a version's newest save, or the picker, with the menu closed.
+//! The welcome panel (the draft's `welcomePanel`), the view with no save
+//! open, draws the same opens in the middle of the view.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -76,6 +78,90 @@ pub(super) enum Write {
     SaveAs,
 }
 
+/// One of the File menu's opens: a discovered save, a recent file, or the
+/// picker. The menu and the welcome panel draw the one list `opens`
+/// builds, so the two can never disagree.
+struct Open {
+    /// The entry's label (the version's name, the recent's path tail,
+    /// "Choose file…").
+    label: String,
+    /// The shortcut the entry carries at its right, empty with none (the
+    /// first of each version's saves, and the picker's, have one).
+    shortcut: String,
+    /// The entry's tooltip (the save's or the file's path, the picker's
+    /// start rule).
+    tip: String,
+    /// What the click asks for.
+    pending: Pending,
+}
+
+impl Open {
+    /// The entry's button: its label, with its shortcut at the right in
+    /// weak when it has one.
+    fn button(&self) -> egui::Button<'_> {
+        let button = egui::Button::new(&self.label);
+        if self.shortcut.is_empty() {
+            button
+        } else {
+            button.shortcut_text(self.shortcut.as_str())
+        }
+    }
+}
+
+/// The opens' entries, in the order the File menu draws them.
+struct Opens {
+    /// The discovered saves, each labelled by its version, the first of
+    /// each version's with its shortcut.
+    saves: Vec<Open>,
+    /// The files opened earlier in this run.
+    recents: Vec<Open>,
+    /// The file picker, `Choose file…` with Ctrl+O.
+    picker: Open,
+}
+
+/// The opens `discovered` and `view`'s recents make. Discovery lists a
+/// version's saves newest first, and the newest is the one its shortcut
+/// opens.
+fn opens(view: &SaveView, discovered: &[(PesVersion, SavefileCandidate)]) -> Opens {
+    let mut saves = Vec::new();
+    let mut previous = None;
+    for (version, candidate) in discovered {
+        let shortcut = if previous != Some(*version) {
+            shortcut_text(*version)
+        } else {
+            String::new()
+        };
+        previous = Some(*version);
+        saves.push(Open {
+            label: version.to_string(),
+            shortcut,
+            tip: candidate.path.display().to_string(),
+            pending: Pending::Open(candidate.path.clone()),
+        });
+    }
+    let recents = view
+        .recents
+        .iter()
+        .map(|path| Open {
+            label: recent_label(path),
+            shortcut: String::new(),
+            tip: path.display().to_string(),
+            pending: Pending::Open(path.clone()),
+        })
+        .collect();
+    let picker = Open {
+        label: "Choose file\u{2026}".to_owned(),
+        shortcut: "Ctrl+O".to_owned(),
+        tip: CHOOSE_FILE_TIP.to_owned(),
+        pending: choose_file(view.last_folder.as_deref(), discovered),
+    };
+    Opens {
+        saves,
+        recents,
+        picker,
+    }
+}
+
 /// The File menu button. Discovery lists folders on disk, so it runs once
 /// when the menu opens and its list is kept until the menu closes. An
 /// open clicked with unsaved changes asks first (the unsaved-changes
@@ -87,47 +173,26 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         if view.discovered.is_none() {
             view.discovered = Some(discover_all(view));
         }
-        let discovered = view.discovered.as_ref().expect("filled above");
+        let opens = opens(view, view.discovered.as_ref().expect("filled above"));
         let mut chosen = None;
-        let mut previous = None;
-        for (version, candidate) in discovered.iter() {
-            let mut button = egui::Button::new(version.to_string());
-            // Discovery lists a version's saves newest first, and the
-            // newest is the one its shortcut opens.
-            if previous != Some(*version) {
-                button = button.shortcut_text(shortcut_text(*version));
+        let mut entry = |ui: &mut egui::Ui, open: &Open| {
+            if ui.add(open.button()).on_hover_text(&open.tip).clicked() {
+                chosen = Some(open.pending.clone());
             }
-            previous = Some(*version);
-            if ui
-                .add(button)
-                .on_hover_text(candidate.path.display().to_string())
-                .clicked()
-            {
-                chosen = Some(Pending::Open(candidate.path.clone()));
-            }
+        };
+        for open in &opens.saves {
+            entry(ui, open);
         }
-        if !discovered.is_empty() && !view.recents.is_empty() {
+        if !opens.saves.is_empty() && !opens.recents.is_empty() {
             menu_separator(ui);
         }
-        for path in &view.recents {
-            if ui
-                .button(recent_label(path))
-                .on_hover_text(path.display().to_string())
-                .clicked()
-            {
-                chosen = Some(Pending::Open(path.clone()));
-            }
+        for open in &opens.recents {
+            entry(ui, open);
         }
-        if !discovered.is_empty() || !view.recents.is_empty() {
+        if !opens.saves.is_empty() || !opens.recents.is_empty() {
             menu_separator(ui);
         }
-        if ui
-            .add(egui::Button::new("Choose file\u{2026}").shortcut_text("Ctrl+O"))
-            .on_hover_text(CHOOSE_FILE_TIP)
-            .clicked()
-        {
-            chosen = Some(choose_file(view.last_folder.as_deref(), discovered));
-        }
+        entry(ui, &opens.picker);
         menu_separator(ui);
         let mut write = None;
         if add_enabled(
@@ -155,6 +220,96 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         request(view, pending);
     }
     write
+}
+
+/// The welcome panel (the draft's `welcomePanel`), drawn in place of the
+/// panes with no save open: the File menu's opens in the dialog's frame
+/// and title in the middle of the view, but a page, not a modal — nothing
+/// under it is blocked, the sidebar's tool switch included. Discovery
+/// runs once when the panel appears and the list is kept while it stays
+/// up, never a scan a frame.
+pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
+    if view.welcome_discovered.is_none() {
+        view.welcome_discovered = Some(discover_all(view));
+    }
+    let opens = opens(
+        view,
+        view.welcome_discovered.as_ref().expect("filled above"),
+    );
+    let chosen = studio_core::widgets::dialog_page(
+        ui,
+        egui::Id::unique("save_editor_welcome"),
+        "Save editor",
+        |ui| welcome_body(ui, &opens),
+    )
+    .inner;
+    if let Some(pending) = chosen {
+        request(view, pending);
+    }
+}
+
+/// The welcome panel's body: the heading "Saves in Documents", each save
+/// as a button filling the frame's width with its shortcut at the right
+/// and its path as the tooltip (the weak line with none), then a
+/// separator and "Recent" when any opened earlier, a separator and
+/// `Choose file…` with Ctrl+O. Returns the clicked entry's `Pending`.
+fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
+    // The widest entry's row — its label, the draft's 24-point gap and
+    // its shortcut, in the button's padding — is the width every entry
+    // fills, the shortcut ending at the frame's edge.
+    let font = egui::TextStyle::Button.resolve(ui.style());
+    let text_width = |text: &str| {
+        ui.painter()
+            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::WHITE)
+            .size()
+            .x
+    };
+    let row = |open: &Open| {
+        text_width(&open.label)
+            + if open.shortcut.is_empty() {
+                0.0
+            } else {
+                24.0 + text_width(&open.shortcut)
+            }
+    };
+    let content = opens
+        .saves
+        .iter()
+        .chain(&opens.recents)
+        .map(row)
+        .fold(0.0, f32::max)
+        + 2.0 * ui.spacing().button_padding.x;
+    let entry = |ui: &mut egui::Ui, open: &Open| {
+        ui.add(open.button().min_size(egui::vec2(content, 0.0)))
+            .on_hover_text(&open.tip)
+            .clicked()
+            .then(|| open.pending.clone())
+    };
+    ui.strong("Saves in Documents");
+    let mut chosen = None;
+    for open in &opens.saves {
+        chosen = entry(ui, open).or(chosen);
+    }
+    if opens.saves.is_empty() {
+        ui.weak("No PES saves were found in Documents.");
+    }
+    if !opens.recents.is_empty() {
+        ui.separator();
+        ui.strong("Recent");
+        for open in &opens.recents {
+            chosen = entry(ui, open).or(chosen);
+        }
+    }
+    ui.separator();
+    // The picker's entry is the draft's compact button, not a full row.
+    if ui
+        .add(opens.picker.button())
+        .on_hover_text(&opens.picker.tip)
+        .clicked()
+    {
+        chosen = Some(opens.picker.pending.clone());
+    }
+    chosen
 }
 
 /// What an Open shortcut asks for.

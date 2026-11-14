@@ -372,6 +372,7 @@ fn only_the_active_rulesets_row_reads_selected() {
 #[test]
 fn the_dropdown_is_drawn_with_no_save_open() {
     let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
     let mut window = Headless::new();
     let nodes = draw(&mut window, &mut view);
     assert_eq!(dropdown(&nodes).value(), Some("4cc Autumn 26"));
@@ -582,6 +583,7 @@ fn an_imported_copy_is_listed_after_the_builtins_and_picked() {
 #[test]
 fn the_wheel_over_the_closed_dropdown_steps_the_rulesets_and_never_imports() {
     let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
     pick_imported(&mut view, "cup.4ccrules", &aatf::official_file());
     let stems: Vec<&str> = crate::session::rules::builtins()
         .iter()

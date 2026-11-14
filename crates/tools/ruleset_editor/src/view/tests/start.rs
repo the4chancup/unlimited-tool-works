@@ -69,10 +69,57 @@ fn the_generators_entries_are_disabled() {
     );
 }
 
+// RE-GUI-01's toolbar clause: with no document the toolbar stands over
+// the start page — File, Edit and Randomize in the band, what needs a
+// document disabled inside File (Open… working), no name and no Show
+// preview — and the page's title under it.
+#[test]
+fn the_toolbar_stands_over_the_start_page_with_its_document_items_disabled() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    let frame = settled(&mut window, &mut view, &ctx);
+    for menu in ["File", "Edit", "Randomize"] {
+        let top = node(&frame.nodes, &menu_label(menu))
+            .bounds()
+            .expect("drawn")
+            .y0;
+        assert!(top < 40.0, "{menu} is drawn at the band's place: {top}");
+    }
+    assert!(
+        !drawn(&frame.nodes, "Show preview"),
+        "no Show preview with no document"
+    );
+
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        &menu_label("File"),
+        &mut view,
+        &ctx,
+    );
+    let frame = window.draw(&mut view, &ctx);
+    for entry in ["New from template…", "Save", "Save as…"] {
+        assert!(node(&frame.nodes, entry).is_disabled(), "{entry}");
+    }
+    assert!(
+        !node(&frame.nodes, "Open…").is_disabled(),
+        "Open… works with no document"
+    );
+    let title = node(&frame.nodes, "Ruleset editor")
+        .bounds()
+        .expect("drawn");
+    let band = node(&frame.nodes, &menu_label("File"))
+        .bounds()
+        .expect("drawn");
+    assert!(
+        title.y0 > band.y1,
+        "the start page's title stands under the band"
+    );
+}
+
 // RE-GUI-01's first clause: with no document the start page is the
-// dialog's frame and title centred on the view (the draft's
-// `.start-page`), not a real dialog — one would hold the sidebar's tool
-// switch too, so nothing of it is a modal.
+// dialog's frame and title centred on the view under the toolbar (the
+// draft's `.start-page`), not a real dialog — one would hold the
+// sidebar's tool switch too, so nothing of it is a modal.
 #[test]
 fn the_first_start_page_is_the_dialogs_frame_not_a_modal() {
     let (ctx, _events, mut window, mut view) = fresh();
@@ -116,10 +163,21 @@ fn the_first_start_page_is_the_dialogs_frame_not_a_modal() {
         .ctx
         .memory(|memory| memory.area_rect(egui::Id::unique("ruleset_start")))
         .expect("the start page's area rect");
-    let centre = egui::pos2(window.screen.x / 2.0, window.screen.y / 2.0);
+    // The toolbar's band (the panel-coloured fill across the top) leaves
+    // the rest of the window for the page to centre on.
+    let band_bottom = panel_fill_at(&frame, &window.ctx, |rect| {
+        rect.min.y <= 1.0 && rect.height() < 60.0 && rect.width() >= window.screen.x
+    })
+    .into_iter()
+    .map(|rect| f64::from(rect.max.y))
+    .fold(0.0_f64, f64::max);
+    let centre = egui::pos2(
+        window.screen.x / 2.0,
+        ((f64::from(window.screen.y) + band_bottom) / 2.0) as f32,
+    );
     assert!(
         (rect.center().x - centre.x).abs() <= 1.0 && (rect.center().y - centre.y).abs() <= 1.0,
-        "the entries centred in the view: {rect:?} vs {centre:?}"
+        "the entries centred under the band: {rect:?} vs {centre:?}"
     );
 }
 

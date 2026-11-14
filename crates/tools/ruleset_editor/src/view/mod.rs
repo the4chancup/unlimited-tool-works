@@ -266,18 +266,19 @@ fn suggested_name(name: &str) -> String {
     )
 }
 
-/// Shows the window for one frame: the settings are read each frame
-/// (the recent files follow a file written elsewhere).
+/// Shows the window for one frame: the toolbar over the document's
+/// layout or over the start page when there is none. The settings are
+/// read each frame (the recent files follow a file written elsewhere).
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext) {
     set_surrender_on_press(ui.ctx());
     let settings = read_settings(ctx);
+    // The draft's `.bleed`: the view runs to the shell's edges, over the
+    // central panel's margin, so the layout is drawn in a child grown
+    // back over that margin.
+    let rect = ui.max_rect() + egui::Frame::central_panel(ui.style()).inner_margin;
+    let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(rect));
+    toolbar(ui, view, ctx, &settings);
     if view.document.is_some() {
-        // The draft's `.bleed`: with a ruleset open the view runs to the
-        // shell's edges, over the central panel's margin, so the layout
-        // is drawn in a child grown back over that margin.
-        let rect = ui.max_rect() + egui::Frame::central_panel(ui.style()).inner_margin;
-        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(rect));
-        toolbar(ui, view, ctx, &settings);
         egui::Panel::bottom("ruleset_bottom").show(ui, |ui| bottom_bar(ui, view, ctx, &settings));
         if view.show_preview {
             egui::Panel::right("ruleset_preview")
@@ -555,7 +556,9 @@ const TOOLBAR_MARGIN: egui::Margin = egui::Margin {
 /// The toolbar (the draft's top bar): the File, Edit and Randomize
 /// menus, unframed in a menu bar, so with one open the pointer entering
 /// another opens it; the document's name with the unsaved dot, and
-/// right-aligned the framed **Show preview** toggle.
+/// right-aligned the framed **Show preview** toggle. With no document it
+/// stands over the start page all the same, what needs a document
+/// disabled or not drawn (the page already offers the templates).
 fn toolbar(
     ui: &mut egui::Ui,
     view: &mut RulesetView,
@@ -567,6 +570,7 @@ fn toolbar(
     // None of them act behind a modal (the prompt, a dialog, the modal
     // start page): an undo under the prompt would write a state it
     // never showed.
+    let document_open = view.document.is_some();
     let keys_free = !modal_open(view);
     let save_key =
         keys_free && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::S));
@@ -591,16 +595,16 @@ fn toolbar(
                 // "New from template…" opens the start page over the
                 // document at once: it loses nothing (Close returns to
                 // it), so no prompt; the picks inside are guarded.
-                if menu_item(ui, true, egui::Button::new("New from template…")) {
+                if menu_item(ui, document_open, egui::Button::new("New from template…")) {
                     view.start_open = true;
                 }
                 if menu_item(ui, true, egui::Button::new("Open…")) {
                     guard(view, ctx, Pending::OpenFile);
                 }
-                if menu_item(ui, true, egui::Button::new("Save")) {
+                if menu_item(ui, document_open, egui::Button::new("Save")) {
                     save_now(view, ctx, settings);
                 }
-                if menu_item(ui, true, egui::Button::new("Save as…")) {
+                if menu_item(ui, document_open, egui::Button::new("Save as…")) {
                     save_as(view, ctx, settings);
                 }
             });
@@ -637,13 +641,13 @@ fn toolbar(
                     ""
                 };
                 ui.strong(format!("{}{marker}", document.ruleset.name));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    preview_toggle(ui, view);
+                });
             }
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                preview_toggle(ui, view);
-            });
         });
     });
-    if save_key {
+    if save_key && document_open {
         save_now(view, ctx, settings);
     }
     if undo_key {

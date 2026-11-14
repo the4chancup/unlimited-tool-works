@@ -167,12 +167,17 @@ pub(crate) struct SaveView {
     open_dialog: file_menu::OpenDialog,
     /// Save as's picker (`rfd`, stubbed in tests).
     save_as_dialog: SaveAsDialog,
-    /// The File menu's discovery (`discover_savefiles`, stubbed in tests).
-    discover: file_menu::Discover,
+    /// The File menu's discovery (`discover_savefiles`, stubbed in tests;
+    /// `pub(crate)` so the crate root's tests reach it too).
+    pub(crate) discover: file_menu::Discover,
     /// What discovery found when the File menu opened, each save with its
     /// version, in `PesVersion::ALL`'s order; `None` while the menu is
     /// closed, so the next opening looks again.
     discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
+    /// The welcome panel's own discovery, run once when it appears (the
+    /// tool's first frame, or a save closing) and kept while it stays up,
+    /// never a scan a frame; `open` drops it, so the next stay rescans.
+    welcome_discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
     /// The files opened or written by Save as in this run of the program,
     /// the most recent first: the File menu's opens' middle group. Not a
     /// setting.
@@ -490,6 +495,7 @@ impl SaveView {
             save_as_dialog: default_save_as_dialog(),
             discover: file_menu::default_discover(),
             discovered: None,
+            welcome_discovered: None,
             recents: Vec::new(),
             last_folder: None,
             refusal: None,
@@ -619,6 +625,7 @@ impl SaveView {
                 self.multi_aatf.reset();
                 self.cards.reset();
                 self.medals.reset();
+                self.welcome_discovered = None;
             }
             Err(error) => {
                 self.refusal = Some(Refusal {
@@ -710,7 +717,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     let band_end = logo_rect.map(|logo| logo.left() - event_logo::RIGHT);
     toolbar(ui, view, running, band_end);
     if view.session.is_none() {
-        ui.weak("No save is open.");
+        file_menu::welcome_panel(ui, view);
     } else {
         // The panes under the toolbar end `PANE_BOTTOM_MARGIN` over the
         // status bar, the draft's padding under the view, where the

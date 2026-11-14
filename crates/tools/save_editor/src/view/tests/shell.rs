@@ -579,7 +579,7 @@ fn ctrl_z_while_a_rating_cell_holds_the_keyboard_undoes_the_step() {
 }
 
 // `Tool::view` draws the window through the tool impl (a settings error
-// counts as the defaults).
+// counts as the defaults): the welcome panel with no save open.
 #[test]
 fn the_tool_view_draws_the_window() {
     use studio_core::StudioTool;
@@ -587,13 +587,16 @@ fn the_tool_view_draws_the_window() {
     let dir = crate::test_support::scratch("tool_view_window");
     let (ctx, _events_rx, _requests_rx) = tool_context(&dir, studio_core::Settings::default());
     let mut tool = crate::Tool::new();
+    tool.view.discover = Box::new(|_| Vec::new());
     let mut window = Headless::new();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    // The page's area draws its contents past its first sizing frame.
+    let mut nodes = Vec::new();
+    for _ in 0..3 {
+        (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    }
     assert!(
-        nodes
-            .iter()
-            .any(|node| node.value() == Some("No save is open.")),
-        "the window drew"
+        nodes.iter().any(|node| node.value() == Some("Save editor")),
+        "the welcome panel drew"
     );
 }
 

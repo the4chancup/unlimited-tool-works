@@ -534,6 +534,7 @@ fn with_no_data_folder_an_import_is_refused() {
     let dir = crate::test_support::scratch("ruleset_import_no_data_folder");
     let path = picked(&dir, "autumn25.4ccrules", &renamed("4cc Autumn 25"));
     let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
     view.rules_file_dialog = Box::new({
         let path = path.clone();
         move || Some(path.clone())

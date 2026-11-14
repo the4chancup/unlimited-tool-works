@@ -26,7 +26,7 @@ use crate::view::terms::{self, Term};
 use crate::view::{Refusal, SaveView, info_strip, save, write_now};
 
 /// What the prompt does once answered.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Pending {
     /// The window's close (`Tool::hold_close`): Discard drops the session
     /// and asks the shell to close again, so the re-asked `hold_close`

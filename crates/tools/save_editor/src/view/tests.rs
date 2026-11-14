@@ -272,12 +272,18 @@ fn key(key: egui::Key, modifiers: egui::Modifiers, pressed: bool) -> egui::Event
 }
 
 /// The Button whose label starts with `label` (a menu item's label carries
-/// its shortcut text after the name).
+/// its shortcut text after the name). The welcome panel draws the same
+/// opens under the menu, so the leftmost match answers: a menu popup
+/// anchors at the toolbar's left, the panel is centred.
 fn menu_item<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
     nodes
         .iter()
-        .find(|node| {
+        .filter(|node| {
             node.role() == Role::Button && node.label().is_some_and(|item| item.starts_with(label))
+        })
+        .min_by(|a, b| {
+            let x = |node: &&accesskit::Node| node.bounds().map(|b| b.x0).unwrap_or(f64::MAX);
+            x(a).partial_cmp(&x(b)).expect("ordered bounds")
         })
         .unwrap_or_else(|| panic!("no menu item {label:?}"))
 }
@@ -311,10 +317,14 @@ fn open_menu(
     menu: &str,
     item: &str,
 ) -> Vec<accesskit::Node> {
+    // The welcome panel draws the File menu's opens too: only a real
+    // popup's showing counts as the menu open.
+    let ctx = window.ctx.clone();
     let shows_item = |nodes: &[accesskit::Node]| {
-        nodes.iter().any(|node| {
-            node.role() == Role::Button && node.label().is_some_and(|l| l.starts_with(item))
-        })
+        egui::Popup::is_any_open(&ctx)
+            && nodes.iter().any(|node| {
+                node.role() == Role::Button && node.label().is_some_and(|l| l.starts_with(item))
+            })
     };
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     if shows_item(&nodes) {
@@ -404,6 +414,13 @@ fn team_row<'a>(
 
 /// A click on `team_id`'s row in the list: the team view's selection.
 fn open_team_view(window: &mut Headless, view: &mut SaveView, team_id: u32) {
+    // The player view's worker runs land only while it is drawn: let
+    // every reply in flight land before the click leaves it, or a later
+    // wait for quiet workers would wait on a reply nobody polls. The one
+    // such run is the Skills panel's, drawn on the Stats screen alone.
+    if matches!(view.selected, Some(Selection::Player(..))) && view.page == PlayerScreen::Stats {
+        workers_replied(window, view);
+    }
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     click(window, team_row(&nodes, view, team_id), view);
     assert_eq!(
