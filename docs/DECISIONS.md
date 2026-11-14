@@ -17363,3 +17363,14 @@ the line "No save is open." and lands in 0.0.2 (`plans/save_editor.md` "Editing 
 Why: a member who opens the Save editor meets an empty page whose only way forward is the File
 menu. The panel puts the saves a click away where the eye lands. It draws the menu's own lists,
 so the two cannot disagree, and it blocks nothing, so the sidebar still switches tools.
+
+## 2026-11-14: the Ruleset editor's start page keeps the toolbar above it (maintainer)
+
+Decision: with no document open, the Ruleset editor draws its toolbar above the start page, as
+the Save editor draws its toolbar above the welcome panel with no save open. What needs a
+document is disabled (Save, Save as… and New from template…, which the page already offers),
+and the document's name and Show preview are not drawn (`plans/ruleset_editor.md` "Start page",
+RE-GUI-01).
+
+Why: the two tools' first views look and work alike, and the File menu stays where a member
+looks for it.

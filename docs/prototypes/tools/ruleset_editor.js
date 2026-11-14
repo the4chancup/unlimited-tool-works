@@ -1376,17 +1376,41 @@ function summary(r) {
 // ---- Layout ----
 // The top bar's "Show preview" toggle; off at every start.
 let showPreview = false;
+// The top bar. With no ruleset open (the start page under it) what needs one is
+// disabled, New from template… too, since the page already offers it, and the
+// name and Show preview are not drawn.
+function topBar() {
+  const none = !R;
+  return [
+    menu("File", [["New from template…", startPage, none], ["Open…", () => {}, true, "Not in this draft"],
+      ["Save", save, none], ["Save as…", save, none], ["-"],
+      ["Open the sample with a custom check", () => load(TEMPLATES["custom-check"](), "custom-check")]], { frame0: true }),
+    menu("Edit", [["Undo  (Ctrl+Z)", doUndo, !undo.length], ["Redo  (Ctrl+Y)", doRedo, !redo.length]], { frame0: true }),
+    menu("Randomize", [["Sensible", () => {}, true, "The generator is not faked in this draft"],
+      ["Weird", () => {}, true, "The generator is not faked in this draft"],
+      ["Crazy", () => {}, true, "The generator is not faked in this draft"]], { frame0: true }),
+    none ? [] : [h("span", { class: "sep", style: "border-top:0; border-left:1px solid var(--stroke); height:14px; margin:0 4px" }),
+      strong(R.name + (JSON.stringify(R) !== saved ? " •" : ""))],
+    h("span", { style: "flex:1" }),
+    weak("Draft: sample data, nothing is written"),
+    // A toggle_value: the data block pane right of the form, off at every start
+    // (plans/ruleset_editor.md "The editor").
+    none ? [] : h("span", { class: "sel" + (showPreview ? " on" : ""), title: "Show the rules file's data block as the editor writes it",
+      onclick: () => { showPreview = !showPreview; render(); } }, "Show preview")].flat();
+}
 function drawView(center) {
+  closeMenus();
   if (!R) {
-    // The page form of the start page: the dialog's frame and title in the
-    // middle of the view, no backdrop, so the sidebar still switches tools.
-    center.classList.remove("bleed");
+    // The page form of the start page under the top bar: the dialog's frame
+    // and title in the middle of the view, no backdrop, so the sidebar still
+    // switches tools.
+    center.classList.add("bleed");
     center.innerHTML = "";
-    center.append(h("div", { class: "start-page", "data-panel": "start-page" },
-      h("div", { class: "window" }, h("div", { class: "title" }, START_TITLE), startBody())));
+    center.append(h("div", { class: "top", "data-panel": "top-bar" }, ...topBar()),
+      h("div", { class: "start-page", "data-panel": "start-page" },
+        h("div", { class: "window" }, h("div", { class: "title" }, START_TITLE), startBody())));
     return;
   }
-  closeMenus();
   const probs = problems(R);
   center.classList.add("bleed");
   // The page's own <body> skeleton, built into the host's central panel on the
@@ -1407,22 +1431,7 @@ function drawView(center) {
   }
   const top = document.getElementById("top");
   top.innerHTML = "";
-  top.append(
-    menu("File", [["New from template…", startPage], ["Open…", () => {}, true, "Not in this draft"],
-      ["Save", save], ["Save as…", save], ["-"],
-      ["Open the sample with a custom check", () => load(TEMPLATES["custom-check"](), "custom-check")]], { frame0: true }),
-    menu("Edit", [["Undo  (Ctrl+Z)", doUndo, !undo.length], ["Redo  (Ctrl+Y)", doRedo, !redo.length]], { frame0: true }),
-    menu("Randomize", [["Sensible", () => {}, true, "The generator is not faked in this draft"],
-      ["Weird", () => {}, true, "The generator is not faked in this draft"],
-      ["Crazy", () => {}, true, "The generator is not faked in this draft"]], { frame0: true }),
-    h("span", { class: "sep", style: "border-top:0; border-left:1px solid var(--stroke); height:14px; margin:0 4px" }),
-    strong(R.name + (JSON.stringify(R) !== saved ? " •" : "")),
-    h("span", { style: "flex:1" }),
-    weak("Draft: sample data, nothing is written"),
-    // A toggle_value: the data block pane right of the form, off at every start
-    // (plans/ruleset_editor.md "The editor").
-    h("span", { class: "sel" + (showPreview ? " on" : ""), title: "Show the rules file's data block as the editor writes it",
-      onclick: () => { showPreview = !showPreview; render(); } }, "Show preview"));
+  top.append(...topBar());
   document.getElementById("data").classList.toggle("hidden", !showPreview);
   const rail = document.getElementById("rail");
   rail.innerHTML = "";
@@ -1474,7 +1483,7 @@ function save() {
   }
   render(); // the link carries the open window's name
 }
-const START_TITLE = "Ruleset editor - Unlimited Tool Works";
+const START_TITLE = "Ruleset editor";
 // The start page's entries: in the page drawn with no ruleset open, and in the
 // dialog File's "New from template…" opens over one.
 function startBody() {

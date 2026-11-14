@@ -1915,8 +1915,9 @@ briefs, review loops, gates and mutation runs as for any step.
     `dialog_page` widget it uses
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
-    draft shows a dialog; it becomes a page with its entries in the middle, framed and titled
-    like the dialog, with no backdrop, so the sidebar still switches tools (RE-GUI-01); the
+    draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
+    framed and titled like the dialog, with no backdrop, so the sidebar still switches tools
+    (RE-GUI-01); the
     draft follows (`.tmp/rebar/brief_startdlg_r1.md`)
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window

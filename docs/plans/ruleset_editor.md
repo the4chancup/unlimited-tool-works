@@ -44,8 +44,10 @@ plan](core/README.md).
 Recent files below, newest first.
 
 The start page has two forms. When the tool opens there is no document yet, so the start
-page fills the tool's area: its entries sit in the middle, in a titled frame that looks like a
-dialog but has no dimmed backdrop and no Close. It must not be a real dialog, because a dialog
+page fills the tool's area under the toolbar: its entries sit in the middle, in a titled frame
+that looks like a dialog but has no dimmed backdrop and no Close. The toolbar is the Save
+editor's with no save open: what needs a document is disabled (Save, Save as… and New from
+template…, which the page already offers), and the name and Show preview are not drawn. It must not be a real dialog, because a dialog
 also blocks the sidebar: a member who opened the Ruleset editor by mistake could not switch to
 another tool without first picking a ruleset. Over an open document, File's **New from
 template…** shows the same entries as a dialog, with Close, since there is a document to go
@@ -382,8 +384,10 @@ The writer's round trips and the load rules are `libs/aatf`'s own tests, not res
 ```
 RE-GUI-01  GIVEN the tool opened with no document
            WHEN the start page is drawn
-           THEN it is drawn in the middle of the tool's area, framed and titled as the dialog
-                is, with no Close, and the sidebar still switches tools; it offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
+           THEN it is drawn under the toolbar, in the middle of the area left, framed and
+                titled as the dialog is, with no Close, and the sidebar still switches tools;
+                the toolbar's Save, Save as… and New from template… are disabled and it draws
+                no name and no Show preview; the page offers New from template with Autumn 26, Spring 26, VGL27, VGL26, VTL11,
                 VTL10, DBC7 and Blank in that order; Random with Sensible, Weird and Crazy; Open
                 file; and the recent files, newest first; GIVEN two files opened in turn, or
                 one opened and one saved, and the tool restarted THEN the later heads the
