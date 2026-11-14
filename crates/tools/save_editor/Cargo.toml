@@ -17,6 +17,8 @@ crossbeam-channel.workspace = true
 dds_convert.workspace = true
 egui.workspace = true
 fpc.workspace = true
+# The formation pictures' pixels and their PNG.
+image.workspace = true
 log.workspace = true
 pes_savefile.workspace = true
 pes_version.workspace = true

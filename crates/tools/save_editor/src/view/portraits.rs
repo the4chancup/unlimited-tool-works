@@ -192,12 +192,12 @@ impl Portraits {
         {
             return texture.id();
         }
-        let (name, png) = placeholder_file(version);
-        let decoded = dds_convert::decode(png, dds_convert::SourceFormat::Png).expect(name);
-        let size = [decoded.width as usize, decoded.height as usize];
-        let image =
-            egui::ColorImage::from_rgba_unmultiplied(size, decoded.mips.first().expect(name));
-        let texture = ctx.load_texture(name, image, egui::TextureOptions::LINEAR);
+        let (name, _) = placeholder_file(version);
+        let texture = ctx.load_texture(
+            name,
+            placeholder_image(version),
+            egui::TextureOptions::LINEAR,
+        );
         let id = texture.id();
         self.placeholder = Some((version, texture));
         id
@@ -228,6 +228,36 @@ impl Portraits {
     }
 }
 
+/// `version`'s bundled placeholder portrait decoded (`placeholder_file`): the game's own
+/// portrait for a player who has none. A bundled file that does not decode is a build
+/// defect, so a decode failure panics naming the file rather than drawing nothing.
+pub(crate) fn placeholder_image(version: PesVersion) -> egui::ColorImage {
+    let (name, png) = placeholder_file(version);
+    let decoded = dds_convert::decode(png, dds_convert::SourceFormat::Png).expect(name);
+    let size = [decoded.width as usize, decoded.height as usize];
+    egui::ColorImage::from_rgba_unmultiplied(size, decoded.mips.first().expect(name))
+}
+
+/// The portraits of `player_ids` (a roster's, `None` an empty slot) read now, on the calling
+/// thread, from the CPKs of `pes_folder`, in order: a player's decoded portrait, `None` for an
+/// empty slot and for a player the CPKs hold no readable portrait of. No folder (or an empty
+/// setting) reads none, and so does a folder whose CPKs cannot be read, the reason logged. For
+/// a one-off read such as a picture's; the view reads through `Portraits`' worker.
+pub(crate) fn read_images(
+    pes_folder: Option<&Path>,
+    version: PesVersion,
+    player_ids: &[Option<u32>],
+) -> Vec<Option<egui::ColorImage>> {
+    let Some(folder) = pes_folder.filter(|folder| !folder.as_os_str().is_empty()) else {
+        return vec![None; player_ids.len()];
+    };
+    let mut game = Game::open(folder);
+    player_ids
+        .iter()
+        .map(|id| id.and_then(|id| game.image(version, id)))
+        .collect()
+}
+
 /// The selection's worker (`Worker::spawn`): the index read, then request batches served until
 /// the sender drops, each answered batch followed by a repaint request.
 fn run(
@@ -237,13 +267,7 @@ fn run(
     replies: Sender<(u32, Option<egui::ColorImage>)>,
     ctx: egui::Context,
 ) {
-    let mut game = Game::read(&folder).unwrap_or_else(|error| {
-        log::warn!("{}: no portraits: {error:#}", folder.display());
-        Game {
-            archives: Vec::new(),
-            entries: HashMap::new(),
-        }
-    });
+    let mut game = Game::open(&folder);
     while let Ok(ids) = requests.recv() {
         for id in ids {
             // The send fails once the selection is dropped mid-batch.
@@ -265,6 +289,18 @@ struct Game {
 }
 
 impl Game {
+    /// `folder`'s index (`read`), or an empty one when it cannot be read, the reason logged:
+    /// no portrait is shown then.
+    fn open(folder: &Path) -> Game {
+        Game::read(folder).unwrap_or_else(|error| {
+            log::warn!("{}: no portraits: {error:#}", folder.display());
+            Game {
+                archives: Vec::new(),
+                entries: HashMap::new(),
+            }
+        })
+    }
+
     /// `folder`'s index: `download/DpFileList.bin` read, each listed CPK opened and its
     /// `PORTRAITS` entries recorded. A folder, list or CPK that cannot be read is the error:
     /// a listed CPK that is missing is one, the game itself loading none of `download/`'s CPKs
@@ -409,6 +445,29 @@ mod tests {
             assert_eq!(image.size, [128, 128], "{case}");
             close(image.pixels[64 * 128 + 64], expected);
         }
+    }
+
+    // The one-off read a picture makes, on the calling thread: a held portrait decoded, none
+    // for a player the CPKs lack or an empty slot, and none at all without a folder.
+    #[test]
+    fn a_one_off_read_decodes_the_held_portraits() {
+        let path = portrait_path(PesVersion::Pes21, 75823);
+        let folder = pes_folder(
+            "portraits_one_off",
+            &[("4cc_40_faces.cpk", &[(path.as_str(), FACES)])],
+        );
+        let ids = [Some(75823), Some(75824), None];
+        let images = read_images(Some(&folder), PesVersion::Pes21, &ids);
+        let held = images[0].as_ref().expect("75823's portrait");
+        close(held.pixels[64 * 128 + 64], [148, 219, 247, 255]);
+        assert!(images[1].is_none(), "75824 has no portrait");
+        assert!(images[2].is_none(), "an empty slot");
+        assert!(
+            read_images(None, PesVersion::Pes21, &ids)
+                .iter()
+                .all(Option::is_none),
+            "no folder"
+        );
     }
 
     // The same source on a pre-Fox portrait: `player_71801.dds`, WESYS-wrapped as the game

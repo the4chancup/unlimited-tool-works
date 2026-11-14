@@ -28,6 +28,11 @@ mod live_marks;
 mod menus;
 mod multi_aatf;
 mod patch;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "no menu entry writes a picture yet")
+)]
+mod pictures;
 mod player_list;
 mod portraits;
 pub(crate) mod prompt;

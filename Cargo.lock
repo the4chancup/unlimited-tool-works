@@ -4246,6 +4246,7 @@ dependencies = [
  "dds_convert",
  "egui",
  "fpc",
+ "image",
  "log",
  "pes_savefile",
  "pes_version",
