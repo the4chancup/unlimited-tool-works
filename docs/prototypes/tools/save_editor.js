@@ -246,7 +246,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    for egui painting them outside the ScrollArea). */
 .squad-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .squad-head { display: flex; gap: 12px; align-items: flex-start; }
-.squad-head > select { width: 245px; flex: none; }
+/* As wide as over the player list, and as far from the title: the toggle stays where the
+   other screens draw it. */
+.squad-head > select { width: 245px; flex: none; margin-right: 10px; }
 .squad-title { flex: 1; min-width: 0; }
 .squad-filters { display: flex; justify-content: flex-end; gap: 10px; align-items: center;
   white-space: nowrap; margin-top: 4px; }
@@ -260,7 +262,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 #squad-table thead th { position: sticky; z-index: 2; background: var(--panel); font-weight: 400;
   cursor: pointer; }
 #squad-table .sqgroups th { top: 0; height: 18px; color: var(--strong); text-align: left; cursor: default; }
+/* Under the group row: its top is set from the group row's height once laid out. */
 #squad-table .sqheads th { top: 19px; vertical-align: bottom; padding-bottom: 4px; }
+#squad-table .sortmark { display: block; line-height: 10px; font-size: 9px; }
 #squad-table .sqheads th:hover { color: var(--strong); }
 /* A heading reads upwards, so a column is as narrow as its values. */
 #squad-table .rot { writing-mode: vertical-rl; transform: rotate(180deg); display: inline-block; }
@@ -289,8 +293,32 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
   border: 1px solid var(--stroke); border-radius: 2px; align-items: center; justify-content: center;
   font-size: 10px; line-height: 1; background: var(--widget); cursor: pointer; vertical-align: middle; }
 #squad-table .sqbox.on { background: var(--sel-bg); color: var(--sel-fg); }
-#squad-table .chip { display: inline-block; padding: 0 5px; margin-right: 4px; line-height: 15px;
+/* A held card fills its column, which is as wide as the widest card in it. */
+#squad-table td.sq-held { padding: 0 2px; }
+#squad-table .chip { display: block; padding: 0 5px; line-height: 15px; text-align: left;
   border-radius: 2px; background: var(--faint); border: 1px solid var(--stroke); }
+#squad-table .sqradio { display: inline-block; width: 12px; height: 12px; box-sizing: border-box;
+  border: 1px solid var(--stroke); border-radius: 50%; background: var(--widget);
+  vertical-align: middle; cursor: pointer; position: relative; }
+#squad-table .sqradio.on { background: var(--sel-bg); }
+#squad-table .sqradio.on::after { content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: var(--sel-fg); }
+/* Live AATF's mark over the value that breaks the ruleset, faint so the value reads through
+   it and the cell keeps its size (egui: the glyph painted over the cell at low alpha). */
+/* A marked cell is its own stacking context, so its value and mark stay under the frozen
+   columns when the row scrolls beneath them. */
+#squad-table td.sqmarked { position: relative; z-index: 0; }
+#squad-table td.fz.sqmarked { position: sticky; z-index: 1; }
+#squad-table .sqmark { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 19px; opacity: .4; pointer-events: none; }
+/* The value over its mark, so the digits stay crisp. */
+#squad-table td.sqmarked > .sqval { position: relative; z-index: 1; }
+/* A name's mark at the cell's right end, clear of a short name. */
+#squad-table td.sqname .sqmark { justify-content: flex-end; padding-right: 4px; }
+#squad-table .sqmark.err { color: var(--error); }
+#squad-table .sqmark.warn { color: var(--warn); }
+#squad-table .sqmark.sugg { color: var(--link); }
+.squad-filters .mini { padding: 0 6px; }
 /* A tooltip that opens at once (quickTip), egui's tooltip frame. */
 .qtip { position: fixed; z-index: 1000; display: none; pointer-events: none; padding: 3px 6px;
   background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
@@ -5171,22 +5199,27 @@ const SQ = { anchor: { r: 0, c: 0 }, active: { r: 0, c: 0 }, typed: null, sort: 
 // `rating` C, B or A; `side` L or R; `pick` a choice of `choices`; `check` Space or a click.
 function squadColumns(team) {
   const v = version();
-  const num = (key, group, label, get, put, min, max) => ({ key, group, label, kind: "num", get, put, min, max });
+  // `field` is the Live AATF field whose marks the column's cells carry (violationField's
+  // names); `markOn` limits a group-wide field to the cells that break it.
+  const num = (key, group, label, get, put, min, max, field) =>
+    ({ key, group, label, kind: "num", get, put, min, max, field });
   const shown = (stored, max) => [stored + 1, max];
+  const cardFields = { skills: ["skills", "cards"], aside: ["aside", "cards"], com: ["com_styles"] };
   const card = (group, list, k) => ({ key: group + ":" + k, group, label: cardName(k), kind: "check",
+    field: cardFields[group], markOn: p => list(p).includes(k),
     get: p => list(p).includes(k),
     put: (p, on) => { const arr = list(p).filter(s => s !== k); if (on) arr.push(k); setList(p, group, arr); } });
   const setList = (p, group, arr) => { if (group === "com") p.com_styles = arr; else p.skills = arr; };
   const cols = [
     { key: "registered", group: "frozen", label: "Registered position", short: "Pos", kind: "pick",
-      choices: POSITIONS.map(x => [x, x]), get: p => p.positions.registered,
+      field: "registered", choices: POSITIONS.map(x => [x, x]), get: p => p.positions.registered,
       put: (p, x) => { p.positions.registered = x; } },
-    num("height", "general", "Height", p => p.height, (p, x) => { p.height = x; }, 0, 255),
-    num("weight", "general", "Weight", p => p.weight, (p, x) => { p.weight = x; }, 0, 255),
-    num("age", "general", "Age", p => p.age, (p, x) => { p.age = x; }, 0, 255),
+    num("height", "general", "Height", p => p.height, (p, x) => { p.height = x; }, 0, 255, "height"),
+    num("weight", "general", "Weight", p => p.weight, (p, x) => { p.weight = x; }, 0, 255, "weight"),
+    num("age", "general", "Age", p => p.age, (p, x) => { p.age = x; }, 0, 255, "age"),
     num("number", "general", "Shirt number", p => p.number, (p, x) => { p.number = x; }, 1, 99),
     num("nation", "general", "Nation", p => p.nationality, (p, x) => { p.nationality = x; }, 0, 999),
-    { key: "captain", group: "general", label: "Captain", kind: "check",
+    { key: "captain", group: "general", label: "Captain", kind: "radio",
       get: p => team.captain === p.slot - 1, put: (p, on) => { if (on) team.captain = p.slot - 1; } },
     { key: "foot", group: "general", label: "Stronger foot", kind: "side",
       get: p => p.positions.stronger_foot, put: (p, x) => { p.positions.stronger_foot = x; } },
@@ -5194,18 +5227,20 @@ function squadColumns(team) {
   if (v >= 20) cols.push({ key: "hand", group: "general", label: "Stronger hand", kind: "side",
     get: p => p.positions.stronger_hand ?? "right", put: (p, x) => { p.positions.stronger_hand = x; } });
   cols.push({ key: "style", group: "general", label: "Playing style", kind: "pick",
-    choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
+    field: "playing_style", choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
     put: (p, x) => { p.positions.playing_style = x; } });
   // Drawn at the game's numbers, stored one lower, as the Other stats panel does.
   for (const [key, label, max] of [["injury_resistance", "Injury Resistance", 3], ["form", "Form", 8],
       ["weak_foot_usage", "Weak Foot Usage", 4], ["weak_foot_accuracy", "Weak Foot Accuracy", 4]])
-    cols.push(num(key, "other", label, p => p.stats[key] + 1, (p, x) => { p.stats[key] = x - 1; }, 1, max));
+    cols.push(num(key, "other", label, p => p.stats[key] + 1, (p, x) => { p.stats[key] = x - 1; }, 1, max, key));
   for (const pos of POSITIONS)
     cols.push({ key: "pos:" + pos, group: "positions", label: POS_FULL[pos], short: pos, kind: "rating",
+      field: "positions", markOn: p => p.positions.playable[pos] !== "C",
       get: p => p.positions.playable[pos], put: (p, x) => { p.positions.playable[pos] = x; } });
   // A stat or card the save's version does not have is no column at all.
   for (const s of ABILITY_STATS.filter(s => v >= (STAT_MIN_VERSION[s] || 15)))
-    cols.push(num("stat:" + s, "abilities", statLabel(s), p => p.stats[s], (p, x) => { p.stats[s] = x; }, 40, 99));
+    cols.push(num("stat:" + s, "abilities", statLabel(s), p => p.stats[s], (p, x) => { p.stats[s] = x; }, 40, 99,
+      "stat:" + s));
   const aside = asideCards().cards;
   const has = k => v >= skillMinVersion(SKILLS.indexOf(k));
   for (const k of SKILLS.filter(k => has(k) && !aside.includes(k))) cols.push(card("skills", p => p.skills, k));
@@ -5219,9 +5254,14 @@ function squadColumns(team) {
   const cardGroups = ["skills", "aside", "com"].filter(g => groups.includes(g));
   const rest = wanted.filter(c => !cardGroups.includes(c.group));
   if (!cardGroups.length) return rest;
+  // Cards held: one column per place in the longest list, the n-th card of every player in
+  // the n-th column, so the cards line up and each column is as wide as its widest card.
   const heldCols = wanted.filter(c => cardGroups.includes(c.group));
-  rest.push({ key: "held", group: "held", label: "Cards held", kind: "held",
-    get: p => heldCols.filter(c => c.get(p)).map(c => c.label) });
+  const held = p => heldCols.filter(c => c.get(p));
+  const most = Math.max(1, ...team.players.map(p => held(p).length));
+  for (let i = 0; i < most; i++)
+    rest.push({ key: "held:" + i, group: "held", label: "Cards held", kind: "held", place: i,
+      count: p => held(p).length, get: p => held(p)[i] || null });
   return rest;
 }
 
@@ -5243,18 +5283,20 @@ function squadParse(col, text) {
 }
 
 // The rows as drawn: the team's players in roster order, or sorted by one column for a
-// look (greatest first; A over B over C; a card held first), the roster's order breaking ties.
+// look (greatest first, then smallest first; A over B over C; a card held over none), the
+// roster's order breaking ties.
 function squadRows(team, cols) {
   const rows = team.players.slice();
-  const col = SQ.sort && cols.find(c => c.key === SQ.sort);
+  const col = SQ.sort && cols.find(c => c.key === SQ.sort.key);
   if (!col) return rows;
   const rank = p => { const x = col.get(p);
-    return col.kind === "rating" ? "CBA".indexOf(x) : col.kind === "check" ? (x ? 1 : 0)
-      : col.kind === "held" ? x.length : x; };
+    return col.kind === "rating" ? "CBA".indexOf(x) : col.kind === "check" || col.kind === "radio" ? (x ? 1 : 0)
+      : col.kind === "held" ? col.count(p) : x; };
+  const sign = SQ.sort.dir === "desc" ? 1 : -1;
   return rows.sort((a, b) => {
     const ra = rank(a), rb = rank(b);
     if (ra === rb) return a.slot - b.slot;
-    return typeof ra === "string" ? ra.localeCompare(rb) : rb - ra;
+    return sign * (typeof ra === "string" ? rb.localeCompare(ra) : rb - ra);
   });
 }
 
@@ -5312,6 +5354,10 @@ function squadKey(e, rows, cols) {
   }
   else if (k === "Escape") { if (SQ.typed === null) return; SQ.typed = null; }
   else if (k === "Backspace") SQ.typed = (SQ.typed ?? "").slice(0, -1);
+  else if (k === " " && SQ.typed === null && col.kind === "radio") {
+    const p = rows[SQ.active.r];
+    edit(col.label, () => col.put(p, true));
+  }
   else if (k === " " && SQ.typed === null) {
     if (col.kind !== "check") return;
     const to = !col.get(rows[SQ.active.r]);
@@ -5353,14 +5399,44 @@ function quickTip(el, text) {
   el.addEventListener("mouseleave", () => { if (squadTipEl) squadTipEl.style.display = "none"; });
 }
 
+// The Live AATF mark a cell carries: its column's field's, on the cells that break a
+// group-wide rule only (a held card carries its own column's). A rule no shown cell of the
+// row carries (a name's colours, a stat total, a group whose columns are hidden) marks the name.
+function squadMark(p, col) {
+  if (col.kind === "held") { const c = col.get(p); return c ? squadMark(p, c) : null; }
+  if (!col.field || (col.markOn && !col.markOn(p))) return null;
+  return fieldMark(p, ...[].concat(col.field));
+}
+function squadNameMark(p, cols) {
+  const fields = (liveRowsOf(teamOf(p).id) || []).filter(r => r[2] === p.id)
+    .map(r => violationField(r[3], kvOf(r[4])));
+  const carried = f => cols.some(c => c.kind !== "held" && [].concat(c.field || []).includes(f)
+      && (!c.markOn || c.markOn(p)))
+    || cols.some(c => c.kind === "held" && c.get(p) && [].concat(c.get(p).field).includes(f));
+  const left = [...new Set(fields)].filter(f => !carried(f));
+  return left.length ? fieldMark(p, ...left) : null;
+}
+// A mark laid over its cell: the glyph faint and centred, the rules in the cell's tooltip.
+function overMark(mark) {
+  return h("span", { class: "sqmark " + mark.className.replace("xmark", "").trim() }, mark.textContent);
+}
+
 // One cell's content as drawn.
 function squadCellContent(col, p) {
   const x = col.get(p);
   if (col.kind === "check") return h("span", { class: "sqbox" + (x ? " on" : "") }, x ? "✓" : "");
+  if (col.kind === "radio") return h("span", { class: "sqradio" + (x ? " on" : "") });
   if (col.kind === "side") return x === "left" ? "L" : "R";
   if (col.kind === "pick") return col.short ? x : cardName(x);
-  if (col.kind === "held") return x.map(name => h("span", { class: "chip" }, name));
+  if (col.kind === "held") return x ? h("span", { class: "chip" }, x.label) : "";
   return String(x);
+}
+
+// The name cell, with a mark for a rule no other cell of the row shows.
+function squadNameCell(p, cols) {
+  const mark = squadNameMark(p, cols);
+  return h("td", { class: "fz fz1 sqname" + (mark ? " sqmarked" : ""), title: mark ? mark.title : null },
+    mark ? h("span", { class: "sqval" }, ...nameSpans(p.name)) : nameSpans(p.name), mark ? overMark(mark) : null);
 }
 
 function squadTable(team) {
@@ -5383,32 +5459,44 @@ function squadTable(team) {
       h("span", { class: "gname" }, g === "held" ? "Cards" : squadGroupTitle(g))));
     i += n;
   }
-  const sortBy = col => { SQ.sort = SQ.sort === col.key ? null : col.key; render(); };
-  const headCell = (col, cls) => {
-    const mark = SQ.sort === col.key ? " ▼" : "";
+  // A heading's clicks: greatest first, smallest first, back to the roster's order.
+  const sortBy = col => {
+    const s = SQ.sort && SQ.sort.key === col.key ? SQ.sort.dir : null;
+    SQ.sort = s === null ? { key: col.key, dir: "desc" } : s === "desc" ? { key: col.key, dir: "asc" } : null;
+    render();
+  };
+  const headCell = (col, cls, span) => {
+    const dir = SQ.sort && SQ.sort.key === col.key ? SQ.sort.dir : null;
+    // Upright under a rotated heading, so it points down for greatest first.
+    const mark = dir ? h("span", { class: "sortmark" }, dir === "desc" ? "\u25BC" : "\u25B2") : null;
     const th = h("th", { class: [cls, col.kind === "held" ? "sq-held" : ""].filter(Boolean).join(" "),
-      onclick: () => sortBy(col) },
+      colspan: span || null, onclick: () => sortBy(col) },
       col.short || col.kind === "held"
-        ? h("span", { class: col.kind === "held" ? "gname" : "" }, (col.short || col.label) + mark)
-        : h("span", { class: "rot" }, col.label + mark));
-    quickTip(th, col.label + (SQ.sort === col.key ? " (sorted; click again for the roster's order)" : " (click to sort)"));
+        ? h("span", { class: col.kind === "held" ? "gname" : "" }, col.kind === "held" ? col.label : col.short)
+        : h("span", { class: "rot" }, col.label), mark);
+    const what = col.kind === "held" ? "Cards held, by how many" : col.label;
+    quickTip(th, what + (dir === "desc" ? " (greatest first; click for smallest first)"
+      : dir === "asc" ? " (smallest first; click for the roster's order)" : " (click to sort, greatest first)"));
     return th;
   };
+  const heldCount = cols.filter(c => c.kind === "held").length;
   const headRow = h("tr", { class: "sqheads" },
     h("th", { class: "fz fz0" }, "#"), h("th", { class: "fz fz1" }, "Name"),
     headCell(cols[0], "fz fz2"),
-    ...cols.slice(1).map((col, c) => headCell(col, col.group !== cols[c].group ? "gstart" : "")));
+    ...cols.slice(1).flatMap((col, c) => col.kind === "held" && col.place > 0 ? []
+      : [headCell(col, col.group !== cols[c].group ? "gstart" : "", col.kind === "held" ? heldCount : 0)]));
   const body = rows.map((p, r) => h("tr", {},
     h("td", { class: "fz fz0 weak" }, String(p.slot).padStart(2, "0")),
-    h("td", { class: "fz fz1 sqname" }, ...nameSpans(p.name)),
+    squadNameCell(p, cols),
     ...cols.map((col, c) => {
       const typing = SQ.typed !== null && r === SQ.active.r && c === SQ.active.c;
+      const mark = squadMark(p, col);
       const cls = ["sq-" + col.kind,
         c === 0 ? "fz fz2" : col.group !== cols[c - 1].group ? "gstart" : "",
         col.kind === "rating" ? "r" + col.get(p).toLowerCase() : "",
         inRect(q, r, c) ? "insel" : "", r === SQ.active.r && c === SQ.active.c ? "active" : "",
-        typing ? "typing" : ""].filter(Boolean).join(" ");
-      return h("td", { class: cls, "data-cell": r + "," + c,
+        typing ? "typing" : "", mark ? "sqmarked" : ""].filter(Boolean).join(" ");
+      return h("td", { class: cls, "data-cell": r + "," + c, title: mark ? mark.title : null,
         onmousedown: e => {
           if (e.button !== 0) return;
           squadCommit(rows, cols);
@@ -5420,6 +5508,8 @@ function squadTable(team) {
             const to = !col.get(p);
             edit(col.label, () => col.put(p, to));
           }
+          if (col.kind === "radio" && e.target.classList.contains("sqradio") && !col.get(p))
+            edit(col.label, () => col.put(p, true));
           render();
           // A double click on a choice opens its list (the redraw replaced the cell the
           // first click landed on, so no dblclick event would reach it).
@@ -5433,9 +5523,14 @@ function squadTable(team) {
           render();
         },
       },
-        typing ? SQ.typed : squadCellContent(col, p));
+        mark ? h("span", { class: "sqval" }, typing ? SQ.typed : squadCellContent(col, p))
+          : typing ? SQ.typed : squadCellContent(col, p), mark ? overMark(mark) : null);
     })));
   const table = h("table", { id: "squad-table" }, h("thead", {}, groupRow, headRow), h("tbody", {}, body));
+  // The headings' row sticks right under the group row, at its height as laid out.
+  requestAnimationFrame(() => {
+    for (const th of headRow.children) th.style.top = groupRow.offsetHeight + "px";
+  });
   const scroller = h("div", { class: "squad-scroll", tabindex: 0,
     onkeydown: e => squadKey(e, rows, cols),
     onscroll: e => { SQ.scroll = { left: e.target.scrollLeft, top: e.target.scrollTop }; } }, table);
@@ -5469,6 +5564,7 @@ function squadTable(team) {
 // table: on the title row they left the team's name too little room.
 function squadFilters() {
   const box = (label, on, flip) => cb(label, on, flip);
+  const mini = (text, act, title) => { const b = button(text, act, { title }); b.classList.add("mini"); return b; };
   const groups = SQUAD_GROUPS.filter(g => g !== "aside" || asideCards().cards.length);
   return h("div", { class: "squad-filters", id: "squad-filters" }, weak("Show"),
     ...groups.map(g => box(squadGroupTitle(g), SQUAD_SHOW.groups.includes(g), on => {
@@ -5476,6 +5572,10 @@ function squadFilters() {
         : SQUAD_SHOW.groups.filter(x => x !== g);
       saveSquadShow();
     })),
+    mini("All", () => { SQUAD_SHOW.groups = SQUAD_GROUPS.slice(); saveSquadShow(); render(); },
+      "Show every group of columns"),
+    mini("None", () => { SQUAD_SHOW.groups = []; saveSquadShow(); render(); },
+      "Hide every group of columns, leaving the number, the name and the position"),
     h("span", { class: "vsep" }),
     box("Only the cards each player has", SQUAD_SHOW.held, on => { SQUAD_SHOW.held = on; saveSquadShow(); }));
 }
