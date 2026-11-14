@@ -81,6 +81,10 @@
   one higher than the file.
 - **Export upgrader**: the comments of a kit's `config.toml` start at one column, so a
   two-digit value no longer pushes its comment out of line.
+- **Save editor**: with no save open, the middle of the window lists the saves found in
+  Documents, the files opened earlier and Choose file, each with its shortcut.
+- **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open is
+  there before a ruleset is open.
 
 ### New checks
 

@@ -1912,23 +1912,24 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-welcome (the maintainer, 2026-11-14: in 0.0.2 if simple) the Save editor shows a
     welcome panel when no save is open, in place of "No save is open.": the File menu's opens,
     framed in the middle of the view (`plans/save_editor.md` "Editing UI", the toolbar's
-    bullet; SE-GUI-90; the draft's `welcomePanel`). It waits for 0.0.2-startdlg, whose
-    `dialog_page` widget it uses
+    bullet; SE-GUI-90; the draft's `welcomePanel`). Code done 2026-11-14 (`6fb65133`, SWE-2):
+    the File menu and the panel draw one list of opens; the panel discovers once per stay.
+    Left: the built window (Pending looks)
   - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
     item switches to its player or team, the list staying open; the X's are the error red,
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
     patch panel too
     (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74; the draft's `changesTable`).
-    Brief `.tmp/chpop/brief_chpop.md`, after 0.0.2-welcome merges (both own `save_editor`'s
-    `view/`) -> verify: SE-GUI-43 and 74 headless, the built window beside
+    Brief `.tmp/chpop/brief_chpop.md`, running from 2026-11-14 (SWE-2) -> verify: SE-GUI-43 and 74 headless, the built window beside
     `.tmp/chpop/draft_popup_zoom.png`
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
     framed and titled like the dialog, with no backdrop, so the sidebar still switches tools
     (RE-GUI-01); the draft follows. The page landed 2026-11-14 (SWE-2): `studio_core`'s
-    `dialog_page` draws the modal's frame and title centred, with no modal layer. Left: the
-    toolbar above it (0.0.2-welcome's brief, ruling 6), then the built window
+    `dialog_page` draws the modal's frame and title centred, with no modal layer; the
+    toolbar stands over it, its document items disabled (`6fb65133`). Left: the built window
+    (Pending looks)
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
@@ -1966,7 +1967,9 @@ briefs, review loops, gates and mutation runs as for any step.
     Seen 2026-11-14 under the pipeline, a sidekick's run and two workspace test runs at once:
     `save_editor` `overlap::no_two_widgets_overlap_on_the_{player_and_team_views,menus_dialogs}`
     reached their 120 s bound ("a view worker never replied", `view/tests.rs:1511`) twice,
-    in the sidekick's run and the lead's; both pass alone in 29 s
+    in the sidekick's run and the lead's; both pass alone in 29 s. Fixed 2026-11-14
+    (`6fb65133`): `open_team_view` waits for the Stats screen's card count before its click
+    (red with a 3 s sleep in `spawn_badge`, green with the fix)
   - [ ] 0.0.2-similar (asked and answered by the maintainer 2026-11-13; after everything else of
     0.0.2, and only if time is left) Select all similar players: planned and drafted
     2026-11-14 (`plans/save_editor.md` "Editing UI", the bullets "Select all similar players"
@@ -3002,6 +3005,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   formation of a shape of its own draws the other hidden one too, even when it has
   Kick-off's shape (2-4-1-3 twice); no PES;
   0.0.2-flatpitch; maintainer
+- The Save editor's welcome panel with no save open beside the draft's `welcomePanel`, and the
+  Ruleset editor's toolbar over its start page; no PES; 0.0.2-welcome, 0.0.2-startdlg;
+  harness, then maintainer
 
 ---
 
