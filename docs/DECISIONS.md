@@ -17307,3 +17307,9 @@ Pre-Fox stadiums fit the same export. The engine follows from `Models/` (`.fmdl`
 the stadium's own ID is rewritten, because a pre-Fox `.mtl` may name another stadium's
 textures. Nothing pre-Fox is built until a cup goes back to PES 2015-2017: pre-Fox
 support is second-class.
+
+## 2026-11-14: the Compiler's scenario IDs keep their `TC-` prefix
+
+The rename from the Team compiler to the Compiler leaves the scenario IDs as they are
+(`TC-CLI-03`, `TC-BIN-11`): `TC` reads as "The Compiler" too. Renaming them would touch
+every plan, spec and test comment that cites one, and would gain nothing.

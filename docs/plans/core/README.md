@@ -41,7 +41,8 @@ rationale. Structural points worth noting here:
   `team-compiler` alias stays: none is
   kept before 1.0.0 (`spec/core/distribution.md`, the `0.x` paragraph), and the bundle's
   `quick_compile.bat`, the one launcher that calls the id, is overwritten by self-update. The crate stays `team_compiler` until Phase 9 settles the crate
-  layout, and `export_balls_skipped` waits for the balls kind;
+  layout, and `export_balls_skipped` waits for the balls kind. Its scenario IDs keep
+  their `TC-` prefix, which reads as The Compiler as well;
 - the **Player aesthetics editor** hands model viewing to Blender (launched with a manifest
   consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
   preview: it only gains a labeled approximate in-app preview if the Team compiler's future
