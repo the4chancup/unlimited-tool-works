@@ -157,9 +157,9 @@ pub(super) fn table_rows(nodes: &[&accesskit::Node]) -> Vec<(String, String, Str
         .collect()
 }
 
-/// The Item cell `value` of a `selectable(false)` changes table: its
-/// hover names no action — a selectable cell would offer to switch to
-/// the row's player, an answer the table's caller ignores.
+/// The Item cell `value` of a `switch: None` changes table: its hover
+/// names no action — a cell offering a switch would hover it, and a
+/// click would answer with an index the table's caller ignores.
 pub(super) fn assert_item_cell_takes_no_click(
     window: &mut Headless,
     view: &mut SaveView,
@@ -179,7 +179,7 @@ pub(super) fn assert_item_cell_takes_no_click(
 
 /// The prompt's painted rect: the modal's `egui::Area` id is the one
 /// `prompt::show` registers (the `Role::Dialog` node carries no bounds).
-fn prompt_rect(window: &mut Headless) -> egui::Rect {
+pub(super) fn prompt_rect(window: &mut Headless) -> egui::Rect {
     window
         .ctx
         .memory(|memory| memory.area_rect(egui::Id::unique("save_editor_unsaved")))

@@ -96,6 +96,23 @@ pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Opt
     }
 }
 
+/// A row's click for a team itself (the unsaved changes list's team and
+/// `Player order` rows): the team's own row selected and the selector
+/// moved to it unless it reads ALL (the list must show the row it
+/// selects), the filter cleared as `select_player` clears it.
+pub(super) fn select_team(
+    team_id: u32,
+    selected: &mut Option<Selection>,
+    team: &mut TeamChoice,
+    filter: &mut String,
+) {
+    *selected = Some(Selection::Team(team_id));
+    if *team != TeamChoice::All {
+        *team = TeamChoice::Team(team_id);
+    }
+    filter.clear();
+}
+
 /// A violation row's click: the player selected and the selector moved to
 /// his team unless it reads ALL (the list must show the row it selects).
 /// A `FieldedNotA` row selects his team's row instead (the pitch his

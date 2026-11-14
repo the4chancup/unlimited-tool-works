@@ -20,7 +20,7 @@ use pes_savefile::ops::compare::compare_players;
 use pes_savefile::schema::schema_for;
 use pes_savefile::settings_toml::SettingsError;
 use studio_core::widgets::add_enabled;
-use team_widgets::violations::SelectedPlayer;
+use team_widgets::violations::{SWITCH_TOOLTIP, SelectedPlayer};
 
 use crate::messages::TOOL_ID;
 use crate::session::journal;
@@ -415,6 +415,9 @@ fn summary_line(path: &Path, preview: &Preview) -> String {
 /// panel grew some 200 points of blank under a five-row patch); the player
 /// whose Item cell was clicked.
 fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
+    // Every row's item offers the switch; a player no roster holds
+    // resolves to `None` below.
+    let tips: Vec<Option<&'static str>> = rows.iter().map(|_| Some(SWITCH_TOOLTIP)).collect();
     egui::ScrollArea::both()
         .id_salt("save_editor_patch_rows")
         .auto_shrink([false, true])
@@ -423,7 +426,7 @@ fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
                 ui,
                 "save_editor_patch_table",
                 rows.iter().map(|row| &row.cells),
-                true,
+                Some(&tips),
             )
         })
         .inner

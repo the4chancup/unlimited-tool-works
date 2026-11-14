@@ -40,7 +40,8 @@
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list has an ×, which puts that one change
-  back. A player dragged in the player list shows there as one `Player order` row.
+  back, and a click on the row's item goes to its player or team. A player dragged in the
+  player list shows there as one `Player order` row.
 - **Save editor**: a player dragged in the player list moves with the pointer, and a line
   shows where he will land.
 - **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the

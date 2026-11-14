@@ -18,7 +18,6 @@ use studio_core::widgets::{
     FORM_ROW_SPACING, modal, modal_buttons, modal_frame, modal_sentence_gap,
 };
 use team_widgets::tactics::RosterRow;
-use team_widgets::violations::SWITCH_TOOLTIP;
 
 use crate::session::selection::{self, TeamCategory, TeamChoice};
 use crate::session::{MovedPlace, PutBack, Session};
@@ -60,23 +59,31 @@ pub(super) struct ChangeRow {
     pub(super) term: Term,
 }
 
-/// One row of the unsaved changes (`rows`): its cells, and what its X in
-/// the toolbar's list puts back.
+/// One row of the unsaved changes (`rows`): its cells, and the change it
+/// shows — what its X in the toolbar's list puts back and what its
+/// item's click switches to.
 pub(super) struct UnsavedRow {
     /// The row's three cells.
     pub(super) cells: ChangeRow,
-    /// The change the row shows, to put back alone.
+    /// The change the row shows, to put back alone (its X) and to switch
+    /// to what it names (its item).
     pub(super) put_back: PutBack,
 }
 
 /// What `changes_table` drew: the row whose Item cell was clicked (a
-/// `selectable` table's), and each row's Item cell, on the row's first line,
-/// where a column beside the table lines its own controls up.
+/// `switch` table's), the header row's and each row's Item cell on its
+/// line (a column beside the table lines its own controls up with them),
+/// and the lines drawn between the rows.
 pub(super) struct TableResponse {
     /// The index of the row whose Item cell was clicked.
     pub(super) clicked: Option<usize>,
     /// Each row's Item cell, in the rows' order.
     pub(super) items: Vec<egui::Rect>,
+    /// The header row's Item cell.
+    pub(super) head: egui::Rect,
+    /// The y of the line drawn between each two rows, the header's
+    /// included, centred in the grid's row gap.
+    pub(super) lines: Vec<f32>,
 }
 
 /// The prompt's buttons.
@@ -400,7 +407,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                 ui,
                 "unsaved changes",
                 prompt.rows.iter().map(|row| &row.cells),
-                false,
+                None,
             );
         });
         modal_buttons(ui, |ui| {
@@ -441,29 +448,48 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 /// header row `Item`, `Old value`, `New value`, then one row per
 /// `ChangeRow`, the Item cell `<item> · <label>` and the values in
 /// monospace, a team colour's each after its swatch, no line wrapped. A
+/// thin line in the separators' stroke parts each row from the next, the
+/// header's included, centred in the grid's row gap across the table's
+/// width, so a tall row's values stay with its item. A
 /// value holding several lines (a `Player order` row's places) makes its
 /// row that many lines high, the Item on the first (the draft's cells sit
-/// on their baseline); every other row is one line. `selectable` makes
-/// each Item cell a click target selecting the row's player.
+/// on their baseline); every other row is one line. `switch` gives each
+/// row's Item cell its hover text: `None` makes none a click target (the
+/// prompt's items take no click), `Some(tips)` makes row `i`'s one where
+/// `tips[i]` is `Some`.
 pub(super) fn changes_table<'a>(
     ui: &mut egui::Ui,
     id: &str,
     rows: impl IntoIterator<Item = &'a ChangeRow>,
-    selectable: bool,
+    switch: Option<&[Option<&'static str>]>,
 ) -> TableResponse {
+    let separator = ui.visuals().widgets.noninteractive.bg_stroke;
+    let column_gap = ui.spacing().item_spacing.x;
     egui::Grid::new(id)
         .num_columns(3)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(column_gap, FORM_ROW_SPACING))
         .show(ui, |ui| {
-            for head in ["Item", "Old value", "New value"] {
-                ui.add(cell(egui::RichText::new(head).weak()));
+            let mut head = egui::Rect::NOTHING;
+            let mut right = f32::NEG_INFINITY;
+            let mut lines = Vec::new();
+            for (column, text) in ["Item", "Old value", "New value"].into_iter().enumerate() {
+                let response = ui.add(cell(egui::RichText::new(text).weak()));
+                if column == 0 {
+                    head = response.rect;
+                }
             }
+            // A row's right edge sits where its last cell's advance left
+            // the cursor, one column gap back; a row gap below the ended
+            // row centres the line.
+            right = right.max(ui.cursor().min.x - column_gap);
             ui.end_row();
+            lines.push(ui.cursor().min.y - 0.5 * FORM_ROW_SPACING);
             let mut clicked = None;
             let mut items = Vec::new();
             for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
                 let item = cell(format!("{item} · {}", term.label));
-                let item = if selectable {
+                let tip = switch.and_then(|tips| tips.get(index)).copied().flatten();
+                let item = if tip.is_some() {
                     item.sense(egui::Sense::click())
                 } else {
                     item
@@ -477,7 +503,9 @@ pub(super) fn changes_table<'a>(
                     ui.add(item)
                 };
                 items.push(response.rect);
-                if selectable && response.on_hover_text(SWITCH_TOOLTIP).clicked() {
+                if let Some(tip) = tip
+                    && response.on_hover_text(tip).clicked()
+                {
                     clicked = Some(index);
                 }
                 let [old_swatch, new_swatch] = match term.swatches {
@@ -486,9 +514,23 @@ pub(super) fn changes_table<'a>(
                 };
                 value_cell(ui, &term.old, old_swatch);
                 value_cell(ui, &term.new, new_swatch);
+                right = right.max(ui.cursor().min.x - column_gap);
                 ui.end_row();
+                lines.push(ui.cursor().min.y - 0.5 * FORM_ROW_SPACING);
             }
-            TableResponse { clicked, items }
+            // The last `end_row`'s gap borders only the row it ends.
+            lines.pop();
+            // Painted with the rows done, the table's width being known
+            // only once its widest row has been measured.
+            for y in &lines {
+                ui.painter().hline(head.left()..=right, *y, separator);
+            }
+            TableResponse {
+                clicked,
+                items,
+                head,
+                lines,
+            }
         })
         .inner
 }

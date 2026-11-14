@@ -252,22 +252,67 @@ fn the_labels_click_lists_the_changes_without_the_prompts_answers() {
     );
 }
 
-// The list's Item cells read the rows; they are no click targets — a
-// selectable table would hover `Click to switch to this player` and answer with an
-// index the popup ignores.
+// A row's item is a click to what the row names — its player or its
+// team — the list staying open, so a member can go through the changes
+// one by one.
 // SE-GUI-43
 #[test]
-fn the_lists_item_cells_take_no_click() {
-    let (mut view, _) = three_changes("changes_list_no_click");
+fn a_rows_item_switches_to_its_player_or_team() {
+    let (mut view, _) = three_changes("changes_list_switch");
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    super::prompt::assert_item_cell_takes_no_click(
-        &mut window,
-        &mut view,
-        &list_nodes(&pairs),
-        "PLACEHOLDER · Height",
+    let item = |window: &mut Headless, view: &mut SaveView, value: &str| {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        list_nodes(&pairs)
+            .into_iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(value))
+            .unwrap_or_else(|| panic!("no item {value:?}"))
+            .clone()
+    };
+    let height = item(&mut window, &mut view, "PLACEHOLDER · Height");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&height), "this player").as_deref(),
+        Some("Click to switch to this player")
     );
+    click(&mut window, &height, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "70101's row selected"
+    );
+    assert!(view.changes_list.is_some(), "the list stays open");
+    assert_eq!(
+        list_rows(&mut window, &mut view).len(),
+        3,
+        "and still lists the rows"
+    );
+
+    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&colour), "this team").as_deref(),
+        Some("Click to switch to this team")
+    );
+    click(&mut window, &colour, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "the team's own row selected"
+    );
+    assert!(view.changes_list.is_some(), "the list stays open");
+
+    // A `Player order` row's item selects the rostering team.
+    let mut view = told_apart("changes_list_switch_order");
+    let mut window = Headless::new();
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    click_label(&mut window, &mut view);
+    let order = item(&mut window, &mut view, "/3/ · Player order");
+    click(&mut window, &order, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "the team's own row selected"
+    );
+    assert!(view.changes_list.is_some(), "the list stays open");
 }
 
 // SE-GUI-43
@@ -875,6 +920,39 @@ fn undo_and_reopen(window: &mut Headless, view: &mut SaveView) -> Vec<(String, S
     list_rows(window, view)
 }
 
+/// Wheels sideways over the open list at `at` until the x `read` reports
+/// stops moving: the table has scrolled to its end.
+fn scroll_table_to_end(
+    window: &mut Headless,
+    view: &mut SaveView,
+    at: egui::Pos2,
+    mut read: impl FnMut(&mut Headless, &mut SaveView) -> f64,
+) {
+    let mut last = read(window, view);
+    for notch in 0.. {
+        assert!(notch < 20, "the table never reached its end");
+        window.frame(
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(-400.0, 0.0),
+                    phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+            |ui| show(ui, view, &|| Vec::new()),
+        );
+        idle_frames(window, view, 31);
+        let now = read(window, view);
+        if (now - last).abs() < 0.5 {
+            break;
+        }
+        last = now;
+    }
+}
+
 // SE-GUI-74
 #[test]
 fn a_rows_x_puts_that_change_back_alone() {
@@ -1006,29 +1084,9 @@ fn every_x_stays_at_the_lists_right_edge_while_a_wide_row_scrolls() {
     // Over the row's start, inside the list: the long value itself begins
     // past the list's right edge.
     let at = egui::pos2(popup.left() + 60.0, (cell.y0 + cell.y1) as f32 / 2.0);
-    let mut last = cell;
-    for notch in 0.. {
-        assert!(notch < 20, "the table never reached its end");
-        window.frame(
-            vec![
-                egui::Event::PointerMoved(at),
-                egui::Event::MouseWheel {
-                    unit: egui::MouseWheelUnit::Point,
-                    delta: egui::vec2(-400.0, 0.0),
-                    phase: egui::TouchPhase::Move,
-                    source: egui::MouseWheelSource::Wheel,
-                    modifiers: egui::Modifiers::NONE,
-                },
-            ],
-            |ui| show(ui, &mut view, &|| Vec::new()),
-        );
-        idle_frames(&mut window, &mut view, 31);
-        let (_, cell) = read(&mut window, &mut view);
-        if (cell.x0 - last.x0).abs() < 0.5 {
-            break;
-        }
-        last = cell;
-    }
+    scroll_table_to_end(&mut window, &mut view, at, |window, view| {
+        read(window, view).1.x0
+    });
     let (after, cell) = read(&mut window, &mut view);
     assert!(
         cell.x1 <= after[0].x0,
@@ -1063,10 +1121,14 @@ fn a_narrow_lists_xs_end_at_the_boxs_inner_right_edge() {
         .filter_map(|node| node.bounds())
         .collect();
     assert_eq!(xs.len(), 3, "premise: one X per row");
+    // The column's own labels (the `Undo` head) stand at its left, so
+    // the table's right edge is measured over the labels left of it.
+    let column_left = xs.iter().map(|x| x.x0).fold(f64::MAX, f64::min);
     let table_right = nodes
         .iter()
         .filter(|node| node.role() == Role::Label)
         .filter_map(|node| node.bounds())
+        .filter(|bounds| bounds.x0 < column_left - 1.0)
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max);
     let spacing = f64::from(window.ctx.global_style().spacing.item_spacing.x);
@@ -1097,4 +1159,286 @@ fn a_narrow_lists_xs_end_at_the_boxs_inner_right_edge() {
             "the X ends at the box's inner right edge: {x:?}, {popup:?}"
         );
     }
+}
+
+// The head tells the X's apart from an error mark: a weak `Undo` on the
+// header row's line, every X in the error red centred under it, where it
+// still stands when a wide row has scrolled the table sideways under it.
+// SE-GUI-74
+#[test]
+fn every_x_is_red_under_the_undo_head() {
+    let (mut view, _) = three_changes("changes_list_x_head");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    // Weak as the table's other heads are, on their line, right of `New
+    // value`.
+    let head = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Undo"))
+        .and_then(|node| node.bounds())
+        .expect("the Undo head is drawn");
+    let new_value = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("New value"))
+        .and_then(|node| node.bounds())
+        .expect("the New value head");
+    assert!(
+        ((head.y0 + head.y1) / 2.0 - (new_value.y0 + new_value.y1) / 2.0).abs() <= 0.5,
+        "the head on the header row's line: {head:?} vs {new_value:?}"
+    );
+    assert!(
+        head.x0 > new_value.x1,
+        "the head right of `New value`: {head:?} vs {new_value:?}"
+    );
+    let visuals = window.ctx.global_style().visuals.clone();
+    assert_eq!(
+        painted_text_color(&shapes, "Undo", head),
+        visuals.weak_text_color(),
+        "the head weak"
+    );
+    let head_centre = (head.x0 + head.x1) / 2.0;
+    for item in [
+        "PLACEHOLDER · Height",
+        "PLACEHOLDER · Speed",
+        "/3/ · Col. 1",
+    ] {
+        let x = x_of(&nodes, item).bounds().expect("an X's bounds");
+        assert_eq!(
+            painted_text_color(&shapes, X, x),
+            visuals.error_fg_color,
+            "{item}'s X in the error red"
+        );
+        assert!(
+            ((x.x0 + x.x1) / 2.0 - head_centre).abs() <= 0.5,
+            "{item}'s X centred under the head: {x:?}, the head {head:?}"
+        );
+    }
+
+    // On a table wide enough to scroll sideways: the head and the X's
+    // stand where they stood at the scroll's end (the column is outside
+    // the sideways scroll area).
+    let mut view = long_name_change("changes_list_x_head_wide");
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(2, edited);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let long = "W".repeat(52);
+    let items = [format!("{long} · Name"), format!("{long} · Height")];
+    let read = |window: &mut Headless, view: &mut SaveView| {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let nodes = list_nodes(&pairs);
+        let head = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some("Undo"))
+            .and_then(|node| node.bounds())
+            .expect("the Undo head is drawn");
+        let xs: Vec<accesskit::Rect> = items
+            .iter()
+            .map(|item| x_of(&nodes, item).bounds().expect("an X's bounds"))
+            .collect();
+        let cell = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(long.as_str()))
+            .and_then(|node| node.bounds())
+            .expect("the long name's cell");
+        (head, xs, cell)
+    };
+    let (head, before, cell) = read(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    let at = egui::pos2(popup.left() + 60.0, (cell.y0 + cell.y1) as f32 / 2.0);
+    scroll_table_to_end(&mut window, &mut view, at, |window, view| {
+        read(window, view).2.x0
+    });
+    let (head_after, after, cell) = read(&mut window, &mut view);
+    assert!(
+        cell.x1 <= head_after.x0,
+        "premise: scrolled to its end, the long value ends left of the column: {cell:?}"
+    );
+    assert!(
+        (head_after.x0 - head.x0).abs() < 0.5 && (head_after.y0 - head.y0).abs() < 0.5,
+        "the head stands where it stood: {head:?}, {head_after:?}"
+    );
+    for (x_before, x_after) in before.iter().zip(&after) {
+        assert!(
+            (x_before.x0 - x_after.x0).abs() < 0.5 && (x_before.y0 - x_after.y0).abs() < 0.5,
+            "the X stands where it stood: {x_before:?}, {x_after:?}"
+        );
+    }
+
+    // The close prompt's table has no head: it asks one question about
+    // all the changes.
+    crate::view::prompt::open(&mut view, crate::view::prompt::Pending::Close);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dialog = super::prompt::dialog_nodes(&pairs, "Unsaved changes");
+    assert!(
+        !dialog
+            .iter()
+            .any(|node| node.role() == Role::Label && node.value() == Some("Undo")),
+        "no Undo head in the close prompt"
+    );
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert!(view.prompt.is_none(), "the prompt cancelled");
+}
+
+// A thin line in the separators' stroke parts each row from the next,
+// header and first row included, across the table's width — in the
+// popup carried on under the X column — so a tall row's values stay
+// with its item. The close prompt's table, the same `changes_table`,
+// draws them too.
+// SE-GUI-43
+#[test]
+fn a_line_parts_each_row_from_the_next() {
+    let (mut view, _) = three_changes("changes_list_lines");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    let separators = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke
+        .color;
+    // The separator-coloured 1-point horizontal segments inside `inside`
+    // (the popup's box or the prompt's rect), as (y, left, right); the
+    // toolbar band's own separator spans the window and is left out.
+    let segments = |shapes: &[egui::epaint::ClippedShape], inside: egui::Rect| {
+        let mut found: Vec<(f64, f64, f64)> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if stroke.width == 1.0
+                        && stroke.color == separators
+                        && points[0].y == points[1].y
+                        && inside.contains(points[0])
+                        && inside.contains(points[1]) =>
+                {
+                    Some((
+                        f64::from(points[0].y),
+                        f64::from(points[0].x.min(points[1].x)),
+                        f64::from(points[0].x.max(points[1].x)),
+                    ))
+                }
+                _ => None,
+            })
+            .collect();
+        found.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
+        found
+    };
+    // The segments of one gap's line merged (the table's and the
+    // continuation under the X column): (y, left, right).
+    let merge = |segments: Vec<(f64, f64, f64)>| {
+        let mut merged: Vec<(f64, f64, f64)> = Vec::new();
+        for (y, x0, x1) in segments {
+            match merged.last_mut() {
+                Some(last) if (last.0 - y).abs() <= 0.5 => {
+                    last.1 = last.1.min(x0);
+                    last.2 = last.2.max(x1);
+                }
+                _ => merged.push((y, x0, x1)),
+            }
+        }
+        merged
+    };
+    // The header's `Item` cell then each row's, as the lines' bounds.
+    let row_cells = |nodes: &[&accesskit::Node]| {
+        [
+            "Item",
+            "PLACEHOLDER · Height",
+            "PLACEHOLDER · Speed",
+            "/3/ · Col. 1",
+        ]
+        .iter()
+        .map(|value| {
+            nodes
+                .iter()
+                .find(|node| node.role() == Role::Label && node.value() == Some(*value))
+                .and_then(|node| node.bounds())
+                .unwrap_or_else(|| panic!("no cell {value:?}"))
+        })
+        .collect::<Vec<accesskit::Rect>>()
+    };
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    let cells = row_cells(&nodes);
+    let lines = merge(segments(&shapes, popup));
+    assert_eq!(
+        lines.len(),
+        3,
+        "a line under the head and between each two rows: {lines:?}"
+    );
+    let inner_right = f64::from(popup.right())
+        - 8.0
+        - f64::from(
+            window
+                .ctx
+                .global_style()
+                .visuals
+                .widgets
+                .noninteractive
+                .bg_stroke
+                .width,
+        );
+    for (index, (y, x0, x1)) in lines.iter().enumerate() {
+        let centre = (cells[index].y1 + cells[index + 1].y0) / 2.0;
+        assert!(
+            (y - centre).abs() <= 1.5,
+            "line {index} centred between the rows: {y} vs {centre}"
+        );
+        assert!(
+            (x0 - cells[0].x0).abs() <= 0.5,
+            "line {index} starts at the table's left edge: {x0} vs {:?}",
+            cells[0].x0
+        );
+        assert!(
+            (x1 - inner_right).abs() <= 0.5,
+            "line {index} runs the whole row under the X column: {x1} vs {inner_right}"
+        );
+    }
+
+    // The close prompt's table draws them too, spanning its own width.
+    crate::view::prompt::open(&mut view, crate::view::prompt::Pending::Close);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let rect = super::prompt::prompt_rect(&mut window);
+    let dialog = super::prompt::dialog_nodes(&pairs, "Unsaved changes");
+    let cells = row_cells(&dialog);
+    let lines = merge(segments(&shapes, rect));
+    assert_eq!(lines.len(), 3, "the prompt's lines: {lines:?}");
+    let table_right = dialog
+        .iter()
+        .filter(|node| node.role() == Role::Label)
+        .filter_map(|node| node.bounds())
+        .filter(|bounds| bounds.y0 >= cells[0].y0 - 1.0)
+        .map(|bounds| bounds.x1)
+        .fold(f64::MIN, f64::max);
+    for (index, (y, x0, x1)) in lines.iter().enumerate() {
+        let centre = (cells[index].y1 + cells[index + 1].y0) / 2.0;
+        assert!(
+            (y - centre).abs() <= 1.5,
+            "line {index} centred between the rows: {y} vs {centre}"
+        );
+        assert!(
+            (x0 - cells[0].x0).abs() <= 0.5,
+            "line {index} starts at the table's left edge: {x0} vs {:?}",
+            cells[0].x0
+        );
+        assert!(
+            (x1 - table_right).abs() <= 0.5,
+            "line {index} spans the table's width: {x1} vs {table_right}"
+        );
+    }
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert!(view.prompt.is_none(), "the prompt cancelled");
 }
