@@ -1916,11 +1916,7 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
-  - [ ] 0.0.2-poslayout (the maintainer, 2026-11-13, drafted and approved; DECISIONS "Pitch | Left | List")
-    the Playable positions grid's layout toggle under its title, the `positions_layout`
-    view setting, the darker unchosen letters (`plans/save_editor.md` "Editing UI", the
-    Playable positions paragraphs); after 0.0.2-applayout lands, since both touch
-    `view/abilities.rs` -> verify: SE-GUI-85, the built window
+  - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [x] 0.0.2-presentation (2026-11-14, `7b2e9ea2` merging `3667be9b`, and `b222d710`) star and playing attitude are `settings.toml` keys under `appearance.presentation`, which the patch and the upgrader carry; the Comparator counts them and every motion as Aesthetics, Copy/swap stats leaves them to the target, a 0.0.1 Team TOML still imports; the Save editor's Presentation group under the lock
   - [ ] 0.0.2-compilername (the maintainer, 2026-11-13; DECISIONS "named Compiler from 0.0.2")
@@ -2997,6 +2993,9 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   scrolls the tool entries, the logo, the selector, Help and Settings stay put, the
   opened sidebar shows the same entries, and the entries fade at the cut edge (egui's
   own; say if it should go); no PES; 0.0.2-side; maintainer
+- The Playable positions toggle in the built window: Pitch, Left and List at the default
+  window, no scroll bar in any, the pick kept after a restart, the unchosen letters darker;
+  both themes; no PES; 0.0.2-poslayout; maintainer
 - The corners in the built window, all 2 points: a toolbar menu, a dropdown list, a
   dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
   update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
