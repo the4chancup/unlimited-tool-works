@@ -1908,6 +1908,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
+  - [ ] 0.0.2-welcome (the maintainer, 2026-11-14: in 0.0.2 if simple) the Save editor shows a
+    welcome panel when no save is open, in place of "No save is open.": the File menu's opens,
+    framed in the middle of the view (`plans/save_editor.md` "Editing UI", the toolbar's
+    bullet; SE-GUI-90; the draft's `welcomePanel`). It waits for 0.0.2-startdlg, whose
+    `dialog_page` widget it uses
   - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page with its entries in the middle, framed and titled

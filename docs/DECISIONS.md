@@ -17352,3 +17352,14 @@ document, File's New from template… still opens them as a dialog, with Close
 Why: a dialog blocks the sidebar too, so a member who opened the Ruleset editor by mistake
 could not switch to another tool without first picking a ruleset. A dialog that leaves the
 sidebar usable would serve as well, but egui's modal dims and blocks the whole window.
+
+## 2026-11-14: the Save editor gets a welcome panel with no save open (maintainer)
+
+Decision: with no save open, the Save editor shows the File menu's opens in the middle of the
+view, in a titled frame like the Ruleset editor's start page, with no backdrop: the saves found
+in Documents by version with their shortcuts, the recent files, and Choose file…. It replaces
+the line "No save is open." and lands in 0.0.2 (`plans/save_editor.md` "Editing UI", SE-GUI-90).
+
+Why: a member who opens the Save editor meets an empty page whose only way forward is the File
+menu. The panel puts the saves a click away where the eye lands. It draws the menu's own lists,
+so the two cannot disagree, and it blocks nothing, so the sidebar still switches tools.

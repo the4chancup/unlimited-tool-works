@@ -424,6 +424,17 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   remembered, or the folder gone, it starts in the newest discovered save's folder, of
   whatever version.
 
+  With no save open, the view under the toolbar is a welcome panel: the File menu's opens in
+  the middle of the view, in a titled frame that looks like a dialog but has no backdrop, so
+  the sidebar still switches tools (the Ruleset editor's start page is drawn the same way,
+  `ruleset_editor.md` "Start page"). The panel draws its entries from the same lists as the
+  menu, so the two never disagree:
+  - *Saves in Documents*: each discovered save, labelled by its version, the newest of each
+    version with its shortcut, its path in the tooltip; with none found, the line "No PES
+    saves were found in Documents.";
+  - *Recent*: the files opened earlier in this run, when there are any;
+  - *Choose file…*, with `Ctrl+O`: the picker.
+
   With one menu open, the pointer entering another menu's button opens that one instead, as a
   menu bar does (`MenuBar` switches on hover).
 
@@ -3252,6 +3263,16 @@ SE-GUI-25  GIVEN the team view's Tactics on preset 1
                 with In-possession
            THEN preset 2 equals preset 1 before the swap, the two formations are exchanged, each
                 as one undoable edit
+SE-GUI-90  GIVEN SE-GUI-26's three discovered saves, one of them opened earlier in the session,
+                 and no save open
+           WHEN the view is drawn
+           THEN the welcome panel in the middle of the view, titled "Save editor", lists the
+                three saves by version, the first PES 21 one with Ctrl+1 beside it and the PES
+                19 one with Ctrl+9, then under Recent the file opened earlier, then Choose
+                file… with Ctrl+O; no modal layer is up; WHEN the PES 19 entry is clicked THEN
+                that save opens and the panel is gone; GIVEN no save discovered and none
+                opened THEN the panel reads "No PES saves were found in Documents." above
+                Choose file…
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
                  PES 19 one the newest, no folder remembered from an earlier open, and one of
                  the three opened earlier in the session

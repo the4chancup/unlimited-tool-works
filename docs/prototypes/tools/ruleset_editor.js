@@ -18,7 +18,6 @@
 // once, at registration): bleed makes the central panel a column the skeleton fills, and the
 // host's 24px status-bar rule would shrink the view's bottom bar under it.
 const RULESET_CSS = `
-.start-page { min-height: 100%; display: flex; align-items: center; justify-content: center; }
 .center.bleed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 #rail { width: 150px; }
 .data.hidden { display: none; }

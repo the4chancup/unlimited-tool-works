@@ -3632,6 +3632,33 @@ function fileMenu() {
   items.push(["Save as\u2026", saveAs, !S.save]);
   return menu("File", items, { frame0: true });
 }
+// With no save open, the welcome panel (plans/save_editor.md "Welcome panel"):
+// the File menu's opens in the middle of the view, framed and titled as a
+// dialog but blocking nothing, so the sidebar still switches tools. A
+// version's newest save carries its shortcut, as in the menu; the path is the
+// tooltip.
+function welcomePanel() {
+  const entry = (label, shortcut, onclick, title) => h("button",
+    { onclick, title, style: "display:flex; justify-content:space-between; gap:24px" },
+    h("span", {}, label), shortcut ? weak(shortcut) : "");
+  const found = DISCOVERED.map((d, i) => {
+    const first = DISCOVERED.findIndex(o => o.version === d.version) === i;
+    return entry("PES " + d.version, first ? "Ctrl+" + openKeyOf(d.version) : "", () => openDiscovered(d), d.path);
+  });
+  const recent = S.recents.map(path => {
+    const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
+    return entry(path.split("\\").slice(-3).join("\\"), "", () => key ? requestOpen(key, path) : null, path);
+  });
+  return h("div", { class: "start-page", "data-panel": "welcome" },
+    h("div", { class: "window" }, h("div", { class: "title" }, "Save editor"),
+      h("div", { class: "col" },
+        strong("Saves in Documents"),
+        found.length ? found : weak("No PES saves were found in Documents."),
+        recent.length ? [h("div", { class: "sep" }), strong("Recent"), ...recent] : [],
+        h("div", { class: "sep" }),
+        row(entry("Choose file\u2026", "Ctrl+O", dlgChooseFile,
+          "Opens in the selected version's save folder when it exists")))));
+}
 // The Edit menu: Undo and Redo, each dead with nothing to do, its tooltip
 // the button's own (the last step's label).
 function editMenu() {
@@ -3653,11 +3680,14 @@ function renderToolbar() {
   const tsep = () => h("span", { class: "tsep" });
   return h("div", { class: "toolbar top", "data-panel": "toolbar",
     style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -8px" },
-    fileMenu(), editMenu(), playerMenu(), teamMenu(), databaseMenu(), tsep(),
+    // With no save open the save's menus are stand-ins: the draft has no
+    // entries to show in them (the editor draws them, their entries disabled).
+    fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]
+      : ["Player", "Team", "Database"].map(name => menu(name, [], { frame0: true }))), tsep(),
     rulesetPicker(), liveButton(), LIVE.on ? suggestionsToggle() : null,
     // The save's path is in the window title (`titleDetail`): beside the
     // unsaved mark it could wrap the toolbar onto a second row.
-    dirty() ? unsavedLabel() : null);
+    S.save && dirty() ? unsavedLabel() : null);
 }
 // The unsaved-changes label (a Label with Sense::click; the pointing-hand
 // cursor and a tooltip say it opens something) and, while open, its popup
@@ -4382,7 +4412,7 @@ function dlgFixDb() {
 function renderView(center) {
   scheduleLiveCheck();
   center.innerHTML = "";
-  if (!S.save) { center.append(weak("No save is open.")); return; }
+  if (!S.save) { center.append(renderToolbar(), welcomePanel()); return; }
   // The view fills the pane; Live AATF docks at the bottom (egui's
   // Panel::bottom inside the view), the view above it.
   const live = livePanel();
@@ -8815,7 +8845,8 @@ const screen = () => isTeamSel() ? "team" : "player";
 // that change what is drawn.
 function linkKeys() {
   const k = {};
-  if (S.saveKey && S.saveKey !== "pes17") k.save = S.saveKey;
+  if (!S.save) k.save = "none";
+  else if (S.saveKey && S.saveKey !== "pes17") k.save = S.saveKey;
   if (S.teamSel !== (S.saveKey === "pes17" ? "718" : "all")) k.team = S.teamSel;
   if (S.sel && S.sel.slot !== undefined) k.player = S.sel.team + "." + S.sel.slot;
   else if (S.sel) k.selteam = String(S.sel.team);
@@ -8867,7 +8898,8 @@ function linkOpen(scr, keys) {
     else linkWarn(name + "=" + keys[name]);
   }
   if (keys.save !== undefined) {
-    if (SAVES[keys.save]) openSave(keys.save);
+    if (keys.save === "none") { S.save = null; S.saveKey = null; S.path = null; }
+    else if (SAVES[keys.save]) openSave(keys.save);
     else linkWarn("save=" + keys.save);
   }
   if (keys.aesexp !== undefined) {
@@ -8913,7 +8945,7 @@ function linkOpen(scr, keys) {
 registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, closeRequest, screen, linkKeys, linkOpen,
   titleDetail: () => S.path ? "[" + S.path + "]" : null,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
-  shots: ["save_editor/player", "save_editor/team?selteam=718",
+  shots: ["save_editor/player?save=none", "save_editor/player", "save_editor/team?selteam=718",
     "save_editor/player?save=pes21&player=701.1&pes=2021",
     "save_editor/team?save=pes21&selteam=701&pes=2021",
     "save_editor/player?panel=aatf", "save_editor/player?panel=comparator",
