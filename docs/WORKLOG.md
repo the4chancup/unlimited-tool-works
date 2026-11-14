@@ -2212,13 +2212,26 @@ briefs, review loops, gates and mutation runs as for any step.
       thread, drain the queued events, clear the watches and resume before
       `DebugActiveProcessStop` (a queued hit killed the process; resuming after it left
       every thread suspended)
-    - [ ] the dump: the game at its main menu, pe-sieve32 with import rebuilding, then
-      Ghidra's headless analysis as `pes16_re/analyze.bat`; the readers found statically,
-      the PES 2016 tactics functions (`pes16_re/out/dec_tactics_*.c`) as the guide
-    - [ ] the watch: a script that finds a team's tactics record in the running game's
-      memory and puts hardware read breakpoints on the two bytes, logging each reader,
-      during a match with the automatic levels on, then off (x32dbg with ScyllaHide if the
-      game refuses a debugger)
+    - [x] the dump (2026-11-14, the October 2016 `PES2017.exe`, game at its main menu):
+      `.tmp/num17/dump/process_22340/400000.PES2017.exe`, realigned, imports rebuilt (6,072,
+      18 not fixed). Correction to the spec's "packed on disk": the code is plain in the
+      file's `.trace` section (29 MB at 0x02600000, identical on disk and in memory); `.text`
+      is empty and the 36 MB `.data` is the high-entropy part
+    - [x] the watch (2026-11-14, the maintainer playing /tsab/, team 701, in an exhibition;
+      logs `.tmp/num17/watch_2026*.log`): the game keeps every team's tactics in memory in
+      the save's layout, and the match works on four copies of it. Over four runs (automatic
+      levels on and off, kick-offs, a goal, a card) the two numbers were read only by
+      copiers: 160-byte preset copies (`0x042eb1a1`, `0x042ec12f`), a field-by-field preset
+      copier (`0x0311e929`-`0x0311e963`) and a 1,264-byte match snapshot at each event
+      (`0x03832027`). Support range, the control, was read only by the same copiers, so the
+      match decides from values derived at those events, and the live watch cannot say
+      whether the two numbers feed them. A first reading of a "defence-only reader" was a
+      write by an unrelated object into freed memory (`0x03e8c520`)
+    - [ ] the static census: every instruction in `.trace` reading a preset's slider offsets
+      (0x8c-0x90 in a preset, 0x90-0x94 in a record, each preset 0xa0 on), the copiers set
+      aside, support range and defensive line as the control; then Ghidra on the dump
+      (`pes16_re/analyze.bat`'s settings) for the consumers found, with the PES 2016
+      tactics functions (`pes16_re/out/dec_tactics_*.c`) as the guide
     - [ ] the outcome: the spec's paragraph, and the two controls relabelled or kept
       disabled on PES 17 (the open issue's ruling waits on it)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
