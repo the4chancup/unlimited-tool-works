@@ -2005,7 +2005,10 @@ briefs, review loops, gates and mutation runs as for any step.
         `formations`, read from the program's folder) and grain settings, the confirmation
         shared with the ruleset picker, Open folder opening the folder; help page 05. Save
         takes 273 ms on /gbpen/ (release, warm, median of five)
-    - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88)
+    - [ ] slice 2: the settings column and the Automatic settings line (SE-GUI-88). Opus,
+      worktree `4cc-studio-temp/poslayout`, branch `sk/flatpitch2`, brief
+      `.tmp/flatpitch/brief_2.md`; the column's words come from the Tactics editor's
+      tables through a new `team_widgets::tactics::summary`
     - [ ] slice 3: the range dialog and its run, with progress and Stop (SE-GUI-89)
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
     docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
@@ -3055,6 +3058,8 @@ points there.
   switch to this player", a player no roster holds too, whose click does nothing; the
   unsaved changes list offers no click there. Small: `patch.rs` `table` passes a tooltip
   per row from the roster, as `changes_popup.rs` `switches` does.
+  Running with the tactics test above on SWE-2 (worktree `4cc-studio-temp/small`, branch
+  `sk/small1`, brief `.tmp/small1/brief.md`).
 
 - resolved 2026-11-14 (the lead, briefing 0.0.2-noticeerr): the light theme's error red,
   egui's `#FF0000`, read at 3.8 on the light panel, under `plans/core/gui.md`'s contrast
