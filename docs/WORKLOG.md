@@ -2210,79 +2210,18 @@ briefs, review loops, gates and mutation runs as for any step.
       Kick-off marks it the same way
     - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
       tactics says when the two numbers are disabled
+    - [ ] the auto levels (the maintainer, 2026-11-14; DECISIONS 2026-11-14 "on PES 17 to 21
+      the two numbers are the auto attack and defence levels"; SE-GUI-71): labelled Auto
+      attack level and Auto defence level on PES 17 to 21, and also disabled while
+      Attack/defence levels is off, with its own tooltip. The draft (lead, 2026-11-14); the
+      build (sidekick)
     - [ ] the look in the built window, both themes (Pending looks)
-  - [ ] 0.0.2-num17 who reads the two numbers in PES 2017 (the open issue "who reads the
-    attack and defence numbers in PES 2017" below; moved into 0.0.2 by the maintainer,
-    2026-11-14, who allowed installing whatever helps). The cup's managers are convinced
-    PES 17 uses the two bytes while the automatic attack and defence levels are on; the
-    maintainer doubts their confidence, so the study seeks a counter-proof: every run with
-    the automatic levels on, and a control setting read on the same copy. `PES2017.exe` is 32-bit and the
-    same file on `E:\PES2017` and `G:\Games\PES2017`; the two numbers are bytes 1 and 4 of
-    each preset's five slider bytes, at 144, 304 and 464 in the team's 628-byte tactics
-    record, whose first four bytes are the team id (`schema/pes17.rs`). Tools
-    installed: x64dbg (x32dbg) by winget, pe-sieve 0.4.1.1 in
-    `C:\Data\Downloads\Development\pe-sieve`; Ghidra 12.2 as for PES 2016. -> verify: each
-    reader of bytes 1 and 4 named by address and function, with whether a match reads them
-    with the automatic levels on and off
-    - [x] the scripts (lead, 2026-11-14), scratch in `.tmp/num17/`: `find_tactics.py
-      [TEAM_ID]` finds the records read-only; `watch.py --seconds N NAME=0xADDR` sets
-      one-byte hardware watches through the debug API and logs each reader. Tested on a
-      32-bit stand-in (`fake_target.py` under a 32-bit Python copied as `fakepes.exe`,
-      `NUM17_PROCESS=fakepes.exe`): the read byte logged ~180 hits a second, the unread one
-      none, and the stand-in ran on to its end once detached. A detach must suspend every
-      thread, drain the queued events, clear the watches and resume before
-      `DebugActiveProcessStop` (a queued hit killed the process; resuming after it left
-      every thread suspended)
-    - [x] the dump (2026-11-14, the October 2016 `PES2017.exe`, game at its main menu):
-      `.tmp/num17/dump/process_22340/400000.PES2017.exe`, realigned, imports rebuilt (6,072,
-      18 not fixed). Correction to the spec's "packed on disk": the code is plain in the
-      file's `.trace` section (29 MB at 0x02600000, identical on disk and in memory); `.text`
-      is empty and the 36 MB `.data` is the high-entropy part
-    - [x] the watch (2026-11-14, the maintainer playing /tsab/, team 701, in an exhibition;
-      logs `.tmp/num17/watch_2026*.log`): the game keeps every team's tactics in memory in
-      the save's layout, and the match works on four copies of it. Over four runs (automatic
-      levels on and off, kick-offs, a goal, a card) the two numbers were read only by
-      copiers: 160-byte preset copies (`0x042eb1a1`, `0x042ec12f`), a field-by-field preset
-      copier (`0x0311e929`-`0x0311e963`) and a 1,264-byte match snapshot at each event
-      (`0x03832027`). Support range, the control, was read only by the same copiers, so the
-      match decides from values derived at those events, and the live watch cannot say
-      whether the two numbers feed them. A first reading of a "defence-only reader" was a
-      write by an unrelated object into freed memory (`0x03e8c520`). A fifth run (a second
-      game session, the automatic levels on, four kick-offs) on the copy whose two numbers
-      were never read saw no read at all, support range and defensive line included. The
-      other match-load readers of the original record are a byte-copy loop (`0x02b843xx`),
-      zlib's Adler-32 (`0x02b84a70`, NMAX 5552), a 4-byte swap (`0x0415745x`) and a byte
-      writer (`0x0415869x`): no reader of the raw slider bytes uses them, the control's
-      included, so the match reads a converted form not yet found
-    - [ ] the static search: a one-byte census by displacement (`.tmp/num17/census.py`) is
-      noise, the offsets being common to many structures; so Ghidra on the dump
-      (`pes16_re/analyze.bat`'s settings, 16 GB heap, once the pipeline frees the memory),
-      typed from the field copier `0x0311e929` (its source and destination are presets),
-      then every reader of a preset's 0x8c-0x90 that is not a copier, support range and
-      defensive line as the control; the PES 2016 tactics functions
-      (`pes16_re/out/dec_tactics_*.c`) as the guide; the managers' claim names the in- and
-      out-of-possession mentality offsets (+1/-1 to 0/-1) as what the two numbers change
-      - [x] the analysis (2026-11-14): `4cc-studio-temp/pes17_re/project/PES2017`, 48 minutes at
-        a 24 GB heap with the address table finder off (16 GB ran out in it, over `.data`);
-        the query worker `pes17_re/scripts/worker.py`. A census of the struct's fixed
-        offsets (`out/q/01_disp_census.txt`) finds no read of the slider bytes or the flag
-        from the struct's base: the presets are reached through pointers
-      - [x] the search (2026-11-14, Opus sidekick, brief `pes17_re/brief_re.md`, report
-        `pes17_re/out/report_re.md`): inconclusive. Outside copiers, the numbers are read
-        only by the game plan menu's value lookup (`FUN_0431acc7`, item 5 of the attack
-        and defence pages, a three-way choice) and a slider serialiser (`FUN_0433f72b`);
-        the controls likewise (plus the game plan screen's summary `FUN_03170425`), so no
-        match-side reader of either was reached. The setter `FUN_0311e799` takes the
-        numbers under 4 and the other sliders under 11 (checked by the lead); a packed
-        form is unpacked by `FUN_0384b928` into a 0x520-byte team struct nothing was seen
-        to read. No reader of the automatic levels flag was found
-    - [x] the spec's paragraph (2026-11-14): what PES 17's code keeps, the two methods and
-      why their "no" is not one; the "packed on disk" claim gone
-    - [ ] the next method, waiting on the maintainer (`QUESTIONS.md` "The 0.0.2 Save
-      editor report", "PES 17's numbers: one more match"): a live watch that logs the field
-      copier's caller (`0x0311e929`, return address and ECX) during a match, whose
-      destination's readers are the conversion; then the two controls relabelled or kept
-      disabled on PES 17 (the open issue's ruling waits on it)
+  - [x] 0.0.2-num17 2026-11-14 (`b518585a`; lead, Opus sidekick): who reads the two numbers
+    in PES 2017, inconclusive. A live memory watch (`.tmp/num17/`) and a static search of the
+    dump in Ghidra (`4cc-studio-temp/pes17_re`, report `out/report_re.md`) found only copiers,
+    the game plan menu and a serialiser reading them, and no match-side reader of any slider;
+    the spec's paragraph says so. The live caller trace moves after 0.0.2 (below), and 0.0.2
+    follows the managers' reading (0.0.2-num's auto levels item)
   - [ ] 0.0.2-sel (tier 2) the PES selector drawn only for a tool that targets the version, its place
     kept; the Save editor follows the open save (the maintainer, 2026-11-12; DECISIONS
     2026-11-12; `plans/core/gui.md` "Sidebar" item 2, ST-SIDE-09; `plans/save_editor.md`
@@ -2845,6 +2784,13 @@ briefs, review loops, gates and mutation runs as for any step.
   wider than its room it shows only once scrolled to the end (S-undo-b-4; a mock of both,
   `.tmp/0_0_2/undo/bar_edge.png` and `bar_under_top.png`, by `shot_bar.py`). The wheel
   still scrolls sideways
+- [ ] after 0.0.2 (the maintainer, 2026-11-14): PES 2017's two numbers, the live caller
+  trace. The maintainer plays one exhibition with the automatic levels on while
+  `.tmp/num17/watch.py`, extended to log the return address and ECX at the field copier's
+  hit (`0x0311e929`), names the match code that copies the presets; that destination's
+  readers are the match's converted form (`4cc-studio-temp/pes17_re/out/report_re.md`
+  section 4). If it shows the two numbers unused, SE-GUI-71's labels and second lock are
+  revisited
 - [ ] after 0.0.2: the Tactics pitch of the versions not measured yet (`plans/save_editor.md`
   "Each version draws its own screen's pitch"; until then PES 2015 and PES 2016 draw PES
   2017's, the maintainer, 2026-11-13: "more similar to 17", moved by 0.0.2-range). Settled
@@ -3250,24 +3196,6 @@ points there.
   the finding is an Error, so nothing is written, and "left as it was" is the run's plan,
   which keeps the folder's old paths so later findings name the files where they are. The
   spec's paragraph and the module's comment now say so; no behaviour changed.
-- open 2026-11-12 (the maintainer; in 0.0.2 since 2026-11-14, step 0.0.2-num17): who reads the attack and
-  defence numbers in PES 2017. The save stores them on every version, PES 16's game plan
-  shows them, PES 17's does not, and PES 21's executable ignores them
-  (`spec/pes_savefile/model.md` "Player/team/tactics model"). Now step 0.0.2-num17, which
-  holds the methods tried and what each found.
-  The study also decides the two controls' labels. The Tactics view draws `Numbers in
-  attack` and `Numbers in defence` on every version; the unofficial 4ccEditor, whose
-  Tactics tab the view was ported from (the official one has none), keeps those names on
-  PES 16 only and labels the same two combos `Auto Atk. level:` and `Auto Def. level:` on
-  PES 17 to 21, with the same save bytes and the same Few, Medium and Many
-  (`4ccEditor-1/main.cpp`, "Update the numbers in attack combo boxes with the correct
-  labels"). The maintainer's ruling (2026-11-12): the bytes being the same, nothing is
-  relabelled yet; once the study says whether PES 17 uses them, and how, the two controls
-  are relabelled or disabled there. A claim to test in the study (heard by the maintainer,
-  2026-11-12, no source checked): PES 17 does read the two numbers, but only while the
-  team's automatic attack and defence levels are on, which would also explain the
-  unofficial editor's labels. So the readers are looked for on the paths the automatic
-  levels take, not only the game plan's.
 - open 2026-11-11 (the worklog's collapse) — What the collapse left for the lead, from its
   report (`.tmp/sidelead/sk_wl.report.md`): (1) the closed issues' in-game results, Tests 2,
   4, 4b, 4c and 5 (the BootsList and GloveList rows, the referee collars on PES 17 and 21),

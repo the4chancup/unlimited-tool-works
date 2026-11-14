@@ -89,15 +89,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   (`.tmp/flatpitch/look2/compare_dialog.png`, the built app's `built_3_settings_half.png`,
   and the column beside the draft's in `compare_wide.png` and `app_row2_zoom.png`). Each
   matched its draft; anything you see otherwise goes back as a fix.
-- **PES 17's numbers: one more match.** The search for what PES 2017 does with Numbers in
-  attack and Numbers in defence is inconclusive. Its game plan menu still has a three-way
-  choice for each. But neither the memory watch nor the search of the executable reached
-  the code that uses any slider during a match, Defensive line included
-  (`spec/pes_savefile/model.md` "Player/team/tactics model"; worklog 0.0.2-num17). The
-  next method needs you to play one exhibition with the automatic levels on, for a few
-  minutes, while a script logs which code copies the presets at kick-off. Do you want that
-  session before 0.0.2, after it, or not at all? Until it runs, the two controls keep
-  their names and stay disabled on PES 17 under rulesets without illegal formations.
 
 ## After the release
 

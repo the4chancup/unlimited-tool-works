@@ -1189,16 +1189,27 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   attack and defence (stored 1 to 3, `spec/pes_savefile/operations.md`, each a three-choice
   toggle, Few | Medium | Many, rather than a three-step slider whose number a member had to
   hover to read). From PES 2017 on the game's own game plan no longer shows the two numbers
-  (`spec/pes_savefile/model.md` "Player/team/tactics model"), so on a PES 17 to 21 save the
-  two toggles are drawn disabled, their stored choice drawn as a disabled button is (its
-  box and its dimmed label) rather than on the selection's blue faded, which would read as
-  a control still live, with the
-  tooltip "Not
-  editable in the game from PES 2017 on", unless the active ruleset allows illegal
-  formations ("Illegal formations" below): a member of a cup on the stock game cannot give
-  his team a value the game would never let him pick, while a cup that already edits past
-  the game's menus keeps them. Only the two toggles are disabled: a pasted or imported
-  preset still carries its numbers;
+  (`spec/pes_savefile/model.md` "Player/team/tactics model"), and the cups' managers hold
+  that the game reads them only while the team's automatic attack and defence levels are
+  on. On a PES 17 to 21 save the toggles are therefore labelled **Auto attack level** and
+  **Auto defence level** wherever the label shows (the toggle, the unsaved changes list, the
+  comparator, a picture's settings column), as the unofficial 4ccEditor labels the same
+  bytes there (`Auto Atk. level:`, `Auto Def. level:`); PES 15 and 16 keep Numbers in
+  attack and Numbers in defence. On PES 17 to 21 the two toggles are drawn disabled, their stored choice
+  drawn as a disabled button is (its box and its dimmed label) rather than on the
+  selection's blue faded, which would read as a control still live:
+  - with the tooltip "Not editable in the game from PES 2017 on" unless the active ruleset
+    allows illegal formations ("Illegal formations" below): a member of a cup on the stock
+    game cannot give his team a value the game would never let him pick, while a cup that
+    already edits past the game's menus keeps them;
+  - otherwise with the tooltip "Used only while Attack/defence levels is on, in Automatic
+    settings" while that flag (Automatic settings below) is off, since the game would not
+    read the value; switching the flag on enables them at once.
+
+  The managers' reading is not proven: the PES 2017 study found the game plan menu still
+  wiring both numbers but not the match code that reads any slider (the spec section above), so
+  the labels and the second lock follow the managers until a study says otherwise. Only the
+  two toggles are disabled: a pasted or imported preset still carries its numbers;
 - formation settings toggles (attacking style, zone, buildup, positioning, defensive style,
   containment, pressure);
 - advanced instructions (2 attack + 2 defense, with target player where applicable);
@@ -2867,12 +2878,18 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
 SE-GUI-71  GIVEN the PES 17 save's team view on Tactics, and /vg/ League 27, which does not
                 allow illegal formations, the active ruleset
            WHEN Formation settings is drawn
-           THEN the choices of Numbers in attack and Numbers in defence are disabled, the
-                stored one still shown as picked, a click or a wheel step over them changes
-                nothing, and their tooltip reads "Not editable in the game from PES 2017 on";
-                the same with no ruleset active, and on a PES 21 save; WHEN the active
-                ruleset is DBC7, which allows them, THEN a click on Many of Numbers in attack
-                stores 3; GIVEN a PES 16 save under /vg/ League 27 THEN the choices are
+           THEN the two numbers are labelled Auto attack level and Auto defence level, their
+                choices disabled, the stored one still shown as picked, a click or a wheel
+                step over them changes nothing, and their tooltip reads "Not editable in the
+                game from PES 2017 on", whether Automatic settings' Attack/defence levels is
+                on or off; the same with no ruleset active, and on a PES 21 save; WHEN the
+                active ruleset is DBC7, which allows them, and Attack/defence levels is off
+                THEN the choices are disabled with the tooltip "Used only while
+                Attack/defence levels is on, in Automatic settings"; WHEN Attack/defence
+                levels is then switched on THEN the choices are enabled: a click on Many of
+                Auto attack level stores 3 and the unsaved changes list names the change
+                "Auto attack level"; GIVEN a PES 16 save under /vg/ League 27 THEN the two are
+                labelled Numbers in attack and Numbers in defence and their choices are
                 enabled
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn

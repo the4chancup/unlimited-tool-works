@@ -2830,9 +2830,11 @@ const TAC_DEFENSIVE = ["defensive_style", "containment_area", "pressure",
 const SLIDERS = [["support_range", "Support range", 10],
   ["defensive_line", "Defensive line", 10], ["compactness", "Compactness", 10]];
 // The two numbers as three-choice toggles (the maintainer, 2026-10-26): their
-// stored 1-3 named Few, Medium and Many.
-const TRI_SETTINGS = [["numbers_in_attack", "Numbers in attack"],
-  ["numbers_in_defence", "Numbers in defence"]];
+// stored 1-3 named Few, Medium and Many. From PES 2017 on they are named for the
+// automatic levels the cup's managers say they feed (SE-GUI-71).
+const TRI_SETTINGS = [["numbers_in_attack", "Numbers in attack", "Auto attack level"],
+  ["numbers_in_defence", "Numbers in defence", "Auto defence level"]];
+const triLabel = tri => version() >= 17 ? tri[2] : tri[1];
 const TRI_CHOICES = ["Few", "Medium", "Many"];
 const FORMATIONS = ["Kick-off", "In-possession", "Out-of-possession"];
 // Auto substitution's stored 0-3 as the game names them (the Tactics
@@ -3713,7 +3715,7 @@ const WALK = [
   ["SE-GUI-35", "the 'Aesthetics from exports' draft control off (the default): the Appearance section draws no ownership line and no switch and every path edits; on, the lock draws"],
   ["SE-GUI-12", "a team row's view, the tactics: drag a pitch marker (it snaps to the stored grid, undoable), drop a bench row on a marker to swap, arm a set-piece chip and click a marker, arm Join attack and click two markers"],
   ["SE-GUI-45", "illegal formations: under 4cc Autumn 26 or Divegrass Before Christmas 7 a dragged starter keeps his position wherever he lands, down to y 0, and his popover lists every outfield position with Y from 0; under /vg/ League 27 the game's drop rule and the y 4 floor are back"],
-  ["SE-GUI-71", "PES 17 or 21 sample under /vg/ League 27: Numbers in attack and Numbers in defence are disabled, the stored choice shown, the tooltip saying why; under DBC7 or 4cc Autumn 26 they are editable"],
+  ["SE-GUI-71", "PES 17 or 21 sample: the two numbers read Auto attack level and Auto defence level; under /vg/ League 27 they are disabled, the stored choice shown, the tooltip saying why; under DBC7 or 4cc Autumn 26 they are editable while Automatic settings' Attack/defence levels is on, disabled with their own tooltip while it is off"],
   ["SE-GUI-48", "Live AATF on: the icon at the dock header's right end opens the list in a window of its own (one column, its dock icon left of the close button); the dock icon puts it back; the close button turns Live AATF off, and turning it on again opens the window again"],
   ["SE-GUI-49", "Live AATF on, the list in the dock: the ✕ right of the pop-out icon turns Live AATF off; turned on again, the list is back in the dock"],
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
@@ -7154,20 +7156,25 @@ function tacticsTab(t) {
       h("span", { class: "sel" + (pre.style[key] === v ? " on" : ""),
         onclick: () => { if (pre.style[key] !== v) { edit(label, () => { pre.style[key] = v; }); render(); } },
         title: titleCase(v) }, STYLE_SHORT[v] || titleCase(v)))));
-  // From PES 2017 on the game's own game plan no longer shows the two numbers:
-  // their toggles are disabled, the stored choice still shown, unless the
-  // active ruleset allows illegal formations (SE-GUI-71).
-  const triOff = version() >= 17 && !illegalFormations();
+  // From PES 2017 on the game's own game plan no longer shows the two numbers,
+  // and the managers say the game reads them only while the automatic attack
+  // and defence levels are on: their toggles are disabled, the stored choice
+  // still shown, unless the active ruleset allows illegal formations and that
+  // flag is on (SE-GUI-71).
+  const triTip = version() < 17 ? null
+    : !illegalFormations() ? "Not editable in the game from PES 2017 on"
+    : !tac.auto.attack_defence_levels ? "Used only while Attack/defence levels is on, in Automatic settings"
+    : null;
+  const triOff = triTip !== null;
   const tri = (key, label) => h("div", { class: "tset" }, h("div", {}, label),
-    h("span", { class: "rate tri" + (triOff ? " off" : " wheel"),
-      title: triOff ? "Not editable in the game from PES 2017 on" : null },
+    h("span", { class: "rate tri" + (triOff ? " off" : " wheel"), title: triTip },
       TRI_CHOICES.map((name, i) =>
         h("span", { class: "sel" + (pre.sliders[key] === i + 1 ? " on" : ""),
           onclick: () => { if (!triOff && pre.sliders[key] !== i + 1) {
             edit(label, () => { pre.sliders[key] = i + 1; }); render(); } } }, name))));
   const setting = key => {
     const three = TRI_SETTINGS.find(([k]) => k === key);
-    if (three) return tri(...three);
+    if (three) return tri(three[0], triLabel(three));
     const range = SLIDERS.find(([k]) => k === key);
     return range ? slider(...range) : toggle(...STYLE_TOGGLES.find(([k]) => k === key));
   };
@@ -7341,7 +7348,7 @@ function presetLines(t, pre) {
   const v = version();
   const line = key => {
     const tri = TRI_SETTINGS.find(([k]) => k === key);
-    if (tri) return [tri[1], TRI_CHOICES[pre.sliders[key] - 1] || String(pre.sliders[key])];
+    if (tri) return [triLabel(tri), TRI_CHOICES[pre.sliders[key] - 1] || String(pre.sliders[key])];
     const range = SLIDERS.find(([k]) => k === key);
     if (range) return [range[1], String(pre.sliders[key])];
     const [, label] = STYLE_TOGGLES.find(([k]) => k === key);

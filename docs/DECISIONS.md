@@ -17684,3 +17684,16 @@ text rows (the help's Messages table) keeps its 19. `plans/core/gui.md`, the For
 Why: the maintainer, over the drafts' before-and-after renders: the Save editor's were the ones
 that mattered, and the Ruleset editor and the settings window, still WIP, "can take any global
 style rules we define".
+
+## 2026-11-14 — save_editor — on PES 17 to 21 the two numbers are the auto attack and defence levels
+
+On a PES 17 to 21 save the Tactics view labels Numbers in attack and Numbers in defence
+**Auto attack level** and **Auto defence level**, everywhere the label shows. Their toggles stay
+disabled unless the active ruleset allows illegal formations (as before) and also while the
+team's Attack/defence levels flag in Automatic settings is off, each lock with its own tooltip.
+PES 15 and 16 keep the old labels and no lock. The live study of PES 17 (one more match, the
+preset copier's caller logged) moves after the 0.0.2 release.
+Why: the maintainer, after the PES 2017 study came back inconclusive: for 0.0.2, assume the
+cups' managers are right that the game reads the two values only while the automatic levels
+are on.
+Plan: `plans/save_editor.md` "Tactics editor" (the sliders' item) and SE-GUI-71 edited.
