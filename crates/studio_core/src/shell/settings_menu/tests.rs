@@ -934,12 +934,13 @@ fn a_path_row_draws_browse_right_of_the_edit() {
     );
 }
 
-// The common grid's rows stand 22 apart, as the draft's grid rows do: an
-// 18-point control with its cell's 2 points above and below. The folder
-// toggle's row, whose label cell is empty, is placed by its checkbox.
+// The common grid spaces its rows by the gaps between their boxes, as the
+// draft's grid does: a field's 18-point box stands 6 under the box above it,
+// 24 apart top to top, and a row of a checkbox alone puts its 14-point square
+// 7 under a field's box, 8 under another square and 7 above the next field.
 #[test]
-fn the_common_rows_stand_22_apart() {
-    let dir = TestDir::new("studio_core_settings_row_pitch");
+fn the_common_fields_stand_24_apart_and_the_checkboxes_squares_8() {
+    let dir = TestDir::new("studio_core_settings_row_gaps");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
@@ -953,29 +954,74 @@ fn the_common_rows_stand_22_apart() {
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
-    let row_centre = |role: Role, text: &str| {
-        let node = nodes
+    let field = |label: &str, role: Role| {
+        let bounds = widget_on_row(&nodes, label, role)
+            .bounds()
+            .expect("a field has bounds");
+        (bounds.y0, bounds.y1)
+    };
+    // A checkbox's square is 14 points tall, centred on its widget.
+    let square = |node: &accesskit::Node| {
+        let y = f64::from(centre(node).y);
+        (y - 7.0, y + 7.0)
+    };
+    let folder_per_version = square(
+        nodes
             .iter()
             .find(|node| {
-                node.role() == role && (node.value() == Some(text) || node.label() == Some(text))
+                node.role() == Role::CheckBox && node.label() == Some("A folder per version")
             })
-            .unwrap_or_else(|| panic!("no {role:?} {text:?}"));
-        f64::from(centre(node).y)
-    };
+            .expect("the folder toggle"),
+    );
     let rows = [
-        (Role::Label, "PES version"),
-        (Role::Label, "PES folder"),
-        (Role::CheckBox, "A folder per version"),
-        (Role::Label, "Exports folder"),
-        (Role::Label, "Threads"),
-        (Role::Label, "Memory cap"),
+        ("PES version", field("PES version", Role::ComboBox)),
+        ("PES folder", field("PES folder", Role::TextInput)),
+        ("A folder per version", folder_per_version),
+        ("Exports folder", field("Exports folder", Role::TextInput)),
+        ("Threads", field("Threads", Role::SpinButton)),
+        ("Memory cap", field("Memory cap", Role::SpinButton)),
+        (
+            "FPC hide boots ID",
+            field("FPC hide boots ID", Role::SpinButton),
+        ),
+        (
+            "FPC hide gloves ID",
+            field("FPC hide gloves ID", Role::SpinButton),
+        ),
+        ("Theme", field("Theme", Role::ComboBox)),
+        (
+            "Invert value scrolling",
+            square(widget_on_row(
+                &nodes,
+                "Invert value scrolling",
+                Role::CheckBox,
+            )),
+        ),
+        (
+            "Check for updates",
+            square(widget_on_row(&nodes, "Check for updates", Role::CheckBox)),
+        ),
+        (
+            "Check interval (minutes)",
+            field("Check interval (minutes)", Role::SpinButton),
+        ),
+    ];
+    let squares = [
+        "A folder per version",
+        "Invert value scrolling",
+        "Check for updates",
     ];
     for pair in rows.windows(2) {
-        let (upper, lower) = (pair[0].1, pair[1].1);
-        let pitch = row_centre(pair[1].0, lower) - row_centre(pair[0].0, upper);
+        let ((upper, (_, upper_bottom)), (lower, (lower_top, _))) = (pair[0], pair[1]);
+        let expected = match (squares.contains(&upper), squares.contains(&lower)) {
+            (false, false) => 6.0,
+            (true, true) => 8.0,
+            _ => 7.0,
+        };
+        let gap = lower_top - upper_bottom;
         assert!(
-            (pitch - 22.0).abs() <= 0.5,
-            "{lower} stands 22 below {upper}, not {pitch}"
+            (gap - expected).abs() <= 0.5,
+            "{lower} stands {expected} under {upper}, not {gap}"
         );
     }
 }

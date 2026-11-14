@@ -557,6 +557,69 @@ fn a_shared_tier_id_marks_the_rail_and_blocks_save() {
     assert_eq!(ruleset(&view).tiers[1].id, "silver");
 }
 
+/// The Tiers section's grids space their rows by the gaps between their
+/// boxes, as the draft's do: a tier's closed expander header stands centred
+/// 32.5 under the tier's Label box top (6 under the box, the header's text
+/// line centred on it), an open expander's per-stat targets rows stand 24
+/// apart, and the first medal system's label box stands 22 under the
+/// header's checkbox squares. The header is the grid's first row, which egui
+/// keeps at least 18 tall, so its checkboxes keep their own 18-point row.
+#[test]
+fn the_tier_grids_stand_as_the_drafts() {
+    const EXPANDER: &str = "Stat targets, free cards and conditions";
+    let (ctx, _events, mut window, mut view) =
+        tiers_view(template("Divegrass Before Christmas 7"), true);
+    let frame = settled(&mut window, &mut view, &ctx);
+    let ruleset = ruleset(&view).clone();
+    let bounds = |nodes: &[accesskit::Node], role: Role, text: &str| {
+        role_labeled(nodes, role, text)
+            .bounds()
+            .expect("a drawn node")
+    };
+    let tier = bounds(&frame.nodes, Role::TextInput, &ruleset.tiers[0].label);
+    let expander = nodes_labeled(&frame.nodes, EXPANDER)[0]
+        .bounds()
+        .expect("a drawn header");
+    let medal = bounds(&frame.nodes, Role::CheckBox, &ruleset.tiers[0].label);
+    // A checkbox's 14-point square is centred on its widget.
+    let square = (medal.y0 + medal.y1) / 2.0 - 7.0;
+    let system = bounds(
+        &frame.nodes,
+        Role::TextInput,
+        &ruleset.medal_systems[0].label,
+    );
+    click_nth(&mut window, &frame.nodes, EXPANDER, 0, &mut view, &ctx);
+    let frame = settled(&mut window, &mut view, &ctx);
+    let first_row = bounds(&frame.nodes, Role::CheckBox, "Attacking Prowess");
+    let second_row = bounds(&frame.nodes, Role::CheckBox, "Finishing");
+    for (upper, lower, expected, what) in [
+        (
+            tier.y0,
+            (expander.y0 + expander.y1) / 2.0,
+            32.5,
+            "the first tier's expander header's centre under its Label box",
+        ),
+        (
+            square,
+            system.y0,
+            22.0,
+            "the first medal system's box under the header's squares",
+        ),
+        (
+            first_row.y0,
+            second_row.y0,
+            24.0,
+            "the per-stat targets' second row under the first",
+        ),
+    ] {
+        assert!(
+            (lower - upper - expected).abs() <= 0.5,
+            "{what}: {} apart, expected {expected}",
+            lower - upper
+        );
+    }
+}
+
 // RE-GUI-06
 #[test]
 fn the_medal_checkbox_moves_a_tier_into_and_out_of_the_systems() {

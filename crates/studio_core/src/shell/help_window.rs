@@ -9,7 +9,7 @@
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::help::{HelpSection, HelpTarget, MESSAGES_SLUG};
-use crate::widgets::{FORM_ROW_SPACING, text_box};
+use crate::widgets::{TEXT_ROW_SPACING, text_box};
 
 use super::sidebar::HELP_LABEL;
 
@@ -547,7 +547,7 @@ fn messages(
     // rows are otherwise at least a control's height, 3 points more than a line of text.
     egui::Grid::new(("help-messages", section.title))
         .num_columns(4)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, TEXT_ROW_SPACING))
         .min_row_height(ui.text_style_height(&egui::TextStyle::Body))
         .show(ui, |ui| {
             if scroll && !ui.is_sizing_pass() {

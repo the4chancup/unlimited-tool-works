@@ -46,6 +46,20 @@ pub fn checkbox_without_text(ui: &mut egui::Ui, checked: &mut bool) -> egui::Res
     response
 }
 
+/// Draws `add_contents`, a grid cell's checkbox, on a row `CHECKBOX_ROW_HEIGHT`
+/// tall in a grid of fields: egui sizes a checkbox to the ui's `interact_size`,
+/// which the cell lowers to that height. The grid needs a `min_row_height` of at
+/// most `CHECKBOX_ROW_HEIGHT`, or it keeps every row at least 18 tall. A grid's
+/// first row stays 18 tall whatever its cells, since egui lays the grid out inside
+/// a horizontal layout that tall: the row cannot be a grid's first.
+pub fn checkbox_row<R>(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui) -> R) -> R {
+    ui.scope(|ui| {
+        ui.spacing_mut().interact_size.y = super::CHECKBOX_ROW_HEIGHT;
+        add_contents(ui)
+    })
+    .inner
+}
+
 /// A radio button labelled `text`, drawn `selected` or not: egui's
 /// `RadioButton`, a selected one filled in the selection blue with its dot in
 /// the selection's text colour, for the same reason as [`checkbox`]. A click
@@ -427,6 +441,53 @@ mod tests {
             let ours = layout(|ui| radio(ui, checked, "Current team"));
             let egui_s = layout(|ui| ui.radio(checked, "Current team"));
             assert_eq!(ours, egui_s, "a radio button selected: {checked}");
+        }
+    }
+
+    // In a grid of fields spaced by `FIELD_SPACING`, a row drawn through
+    // `checkbox_row` is 16 points tall with its 14-point square centred: the
+    // square stands 7 under a field's box, 8 under the square of the row
+    // above and 7 above the next field's box.
+    #[test]
+    fn a_checkbox_rows_square_stands_7_from_a_field_and_8_from_another_square() {
+        let rects = settled(None, |ui| {
+            // Each field is exactly 18 points high, whatever the font.
+            let field = |ui: &mut egui::Ui| {
+                ui.allocate_exact_size(egui::vec2(120.0, 18.0), egui::Sense::hover())
+                    .0
+            };
+            let mut rects = Vec::new();
+            egui::Grid::new("form")
+                .num_columns(2)
+                .spacing(egui::vec2(8.0, super::super::FIELD_SPACING))
+                .min_row_height(super::super::CHECKBOX_ROW_HEIGHT)
+                .show(ui, |ui| {
+                    ui.label("Folder");
+                    rects.push(field(ui));
+                    ui.end_row();
+                    for text in ["Portraits", "Settings"] {
+                        ui.label("");
+                        let mut checked = true;
+                        rects.push(checkbox_row(ui, |ui| checkbox(ui, &mut checked, text)).rect);
+                        ui.end_row();
+                    }
+                    ui.label("File name");
+                    rects.push(field(ui));
+                    ui.end_row();
+                });
+            rects
+        })
+        .1;
+        // A checkbox's square is centred on its widget.
+        let square =
+            |rect: egui::Rect| egui::Rect::from_center_size(rect.center(), egui::vec2(14.0, 14.0));
+        let boxes = [rects[0], square(rects[1]), square(rects[2]), rects[3]];
+        for (pair, expected) in boxes.windows(2).zip([7.0, 8.0, 7.0]) {
+            let gap = pair[1].top() - pair[0].bottom();
+            assert!(
+                (gap - expected).abs() <= 0.5,
+                "{gap} between the boxes, expected {expected}: {boxes:?}"
+            );
         }
     }
 }

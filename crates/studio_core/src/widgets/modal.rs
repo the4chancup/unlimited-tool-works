@@ -156,8 +156,7 @@ const DIALOG_FORM_GAP: f32 = 6.0;
 /// A dialog's own form, a label and its control on each row, as an `egui::Grid` of two
 /// columns under `id_salt`. Its rows leave `FIELD_SPACING` between their boxes, so its
 /// 18-point rows stand 24 apart, and what follows the form stands 6 under its last row,
-/// where egui would leave 3. The forms that still draw the drafts' `table.grid` (the
-/// settings menu's) keep `FORM_ROW_SPACING`'s 22.
+/// where egui would leave 3.
 pub fn dialog_form<R>(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,

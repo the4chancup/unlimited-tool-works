@@ -7,7 +7,7 @@ use std::path::Path;
 use aatf::{NON_STAT_TARGETS, Ruleset, Stat};
 use dds_convert::SourceFormat;
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
-use studio_core::widgets::{checkbox, text_box};
+use studio_core::widgets::{CHECKBOX_SPACING, FIELD_SPACING, checkbox, text_box};
 use team_widgets::event_logo::EventLogo;
 
 use super::Section;
@@ -70,6 +70,7 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
     ui.heading(Section::General.label());
     egui::Grid::new("general-fields")
         .num_columns(2)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             ui.label("Name");
             ui.add(text_box(
@@ -237,6 +238,7 @@ fn checklist(ui: &mut egui::Ui, ruleset: &mut Ruleset, list: Checklist, names: &
         },
     ))
     .num_columns(5)
+    .spacing(egui::vec2(ui.spacing().item_spacing.x, CHECKBOX_SPACING))
     .show(ui, |ui| {
         for (index, &name) in names.iter().enumerate() {
             let mut on = holds(ruleset, list, name);

@@ -17,7 +17,7 @@ use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_savefile::schema::fields::RosterField;
 use studio_core::RunningPes;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, modal, modal_buttons, modal_frame, modal_sentence_gap,
+    TEXT_ROW_SPACING, modal, modal_buttons, modal_frame, modal_sentence_gap,
 };
 use team_widgets::tactics::RosterRow;
 
@@ -496,7 +496,7 @@ pub(super) fn changes_table<'a>(
     let column_gap = ui.spacing().item_spacing.x;
     egui::Grid::new(id)
         .num_columns(3)
-        .spacing(egui::vec2(column_gap, FORM_ROW_SPACING))
+        .spacing(egui::vec2(column_gap, TEXT_ROW_SPACING))
         .show(ui, |ui| {
             let mut head = egui::Rect::NOTHING;
             let mut right = f32::NEG_INFINITY;
@@ -512,7 +512,7 @@ pub(super) fn changes_table<'a>(
             // row centres the line.
             right = right.max(ui.cursor().min.x - column_gap);
             ui.end_row();
-            lines.push(ui.cursor().min.y - 0.5 * FORM_ROW_SPACING);
+            lines.push(ui.cursor().min.y - 0.5 * TEXT_ROW_SPACING);
             let mut clicked = None;
             let mut items = Vec::new();
             for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
@@ -545,7 +545,7 @@ pub(super) fn changes_table<'a>(
                 value_cell(ui, &term.new, new_swatch);
                 right = right.max(ui.cursor().min.x - column_gap);
                 ui.end_row();
-                lines.push(ui.cursor().min.y - 0.5 * FORM_ROW_SPACING);
+                lines.push(ui.cursor().min.y - 0.5 * TEXT_ROW_SPACING);
             }
             // The last `end_row`'s gap borders only the row it ends.
             lines.pop();
