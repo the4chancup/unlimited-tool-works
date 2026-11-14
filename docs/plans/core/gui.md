@@ -50,7 +50,10 @@ describes at or above the design width ("wider rows spread"). A larger window gi
 to the panels allowed to stretch, each a list that scrolls, named here:
 
 - the Save editor's player list, which takes the extra height; its width stays;
-- the log dock (Log panel), whose list takes the extra height.
+- the log dock (Log panel), whose list takes the extra height;
+- the Save editor's team table, once drafted (`plans/save_editor.md` "A team table, still
+  to be drafted"), which takes the extra width as well as the extra height, so it shows
+  more of its columns.
 
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
 at another, and each size would then need a look of its own: the Save editor's Player

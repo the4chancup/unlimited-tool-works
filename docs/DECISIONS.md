@@ -17474,3 +17474,15 @@ Why: a layout drawn for one size reads worse at another, as the Gameplan screen'
 assignments chips some 800 points wide and the Stats screen's drifting columns show, and each
 size would need a look of its own. It replaces the reflow at or above the design width,
 where wider rows spread.
+
+## 2026-11-14: the Save editor's team table, still to be drafted, takes a larger window's width as well as its height (maintainer)
+
+Decision: the Save editor gets a team table, one player per row and one stat or card per
+column, drafted with the maintainer before it is planned further. It is one of the panels
+a larger window gives room to, in width as well as height, so it shows more of its columns
+(`plans/save_editor.md` "A team table, still to be drafted"; `plans/core/gui.md` "Shell
+layout", the paragraph "A window larger than the default").
+
+Why: the table's point is a whole team in view and quick edits across players, and its
+columns outnumber what the default width shows; a wider window means less sideways scrolling,
+which is the room the stretch rule keeps for lists that scroll.
