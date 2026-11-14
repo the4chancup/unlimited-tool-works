@@ -17450,3 +17450,14 @@ Why: the plan was silent and the painter could draw them. A range of teams has n
 for most of them, so its pictures would carry no crosses while the one-team dialog's did, and
 one team would get two different pictures. The checker already lists the findings, and the
 picture is for a team's shapes.
+
+## 2026-11-14: the formation pictures' folder setting defaults to "formations", read from the program's folder (lead)
+
+Decision: `formation_pictures_folder` defaults to `"formations"`, and a relative path in it
+starts from the folder UTW.exe is in, as the Compiler's `exports_folder_path` and
+`output_folder_path` do. It does not default to an empty string standing for that folder
+(`plans/save_editor.md` "Formation pictures", the one-team dialog's folder).
+
+Why: a member who opens the settings file reads the folder the pictures go to, where `""`
+would need a comment to explain it. One rule for every folder setting of the file also means
+a relative path typed by hand works the same in each.

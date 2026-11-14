@@ -1523,8 +1523,9 @@ Win32 original hurt the most):
   selected row's team through a dialog of the tool's own, not rfd's save-file dialog, since a
   native dialog cannot hold the checkbox the range dialog has too. The dialog holds:
   - the folder last used (the tool's `formation_pictures_folder` setting, which the range
-    dialog shares) with Browse for rfd's folder picker; until a member picks one it is
-    `formations` beside the program;
+    dialog shares) with Browse for rfd's folder picker; until a member picks one it is the
+    setting's default, `formations`, a relative path that starts from the program's folder
+    as the Compiler's folder settings do;
   - the file name `<name>.png` filled in: the team's name less the characters a file name
     cannot hold (`f.png` for /f/), or its id when nothing is left. A range writes the same
     names, so a team's picture has one name whichever dialog wrote it;
