@@ -39,6 +39,11 @@ const EXPORT_UPGRADER_CSS = `
   /* The arguments: one row under the title bar, a line under it. */
   .eu-args { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
   .eu-args .fld { flex: 1; min-width: 120px; }
+  /* A larger window keeps the arguments and the Files look's legend at their default width,
+     centred, as the Compiler's rule keeps the grid look's bands; the Files look's two columns
+     share the extra width (plans/core/gui.md "A window larger than the default"). */
+  .tc-view .eu-args, .tc-view .eu-flow-legend { width: 100%; box-sizing: border-box;
+    max-width: calc(var(--calib-w) + 16px + var(--sbw, 0px)); margin-left: auto; margin-right: auto; }
   .eu-args .fld input { width: 100%; box-sizing: border-box; }
   .eu-args .fld.bad input { border-color: var(--error); color: var(--error); }
   .eu-look { display: inline-flex; gap: 2px; margin-left: 8px; }

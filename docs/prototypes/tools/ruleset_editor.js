@@ -19,6 +19,19 @@
 // host's 24px status-bar rule would shrink the view's bottom bar under it.
 const RULESET_CSS = `
 .center.bleed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* A larger window keeps the bars and the panes at their default width (the pane's whole width,
+   the scroll-bar strip being the pane's gutter), centred; the rail, the section and the preview
+   take the extra height. While the preview shows, the view spans the pane instead: the rail
+   and the section keep their default widths at its left and the preview takes the rest
+   (plans/core/gui.md "A window larger than the default"). */
+.center.bleed > .top, .center.bleed > .main, .center.bleed > .bottom { width: 100%;
+  box-sizing: border-box; max-width: calc(var(--calib-w) + 16px);
+  margin-left: auto; margin-right: auto; }
+.center.bleed.with-preview > .top, .center.bleed.with-preview > .main,
+  .center.bleed.with-preview > .bottom { max-width: none; }
+.with-preview #rs-content { flex: 0 1 calc(var(--calib-w) + 16px - 150px - 590px); }
+.with-preview #rail { flex: none; }
+.with-preview #data { flex: 1 0 590px; width: auto; min-width: 0; }
 #rail { width: 150px; }
 .data.hidden { display: none; }
 #rs-bottom { height: auto; min-height: 26px; padding: 3px 8px; overflow: visible; }
@@ -1413,6 +1426,7 @@ function drawView(center) {
   }
   const probs = problems(R);
   center.classList.add("bleed");
+  center.classList.toggle("with-preview", showPreview);
   // The page's own <body> skeleton, built into the host's central panel on the
   // first draw and after another tool held it.
   if (!document.getElementById("rs-content")) {

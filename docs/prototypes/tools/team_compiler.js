@@ -35,6 +35,13 @@ const TEAM_COMPILER_CSS = `
   .center.tc-view { overflow: hidden; scrollbar-gutter: auto; padding: 0; }
   .tc-view .log-panel { margin: 0 8px 8px; }
   .tc-view .pipe { position: relative; }
+  /* A larger window keeps the legend, the grid's area and the run bar at their default width
+     (the pane's whole width with the scroll-bar strip, this view having no margins of its own),
+     centred; the grid takes
+     the extra height, the log panel the width (plans/core/gui.md "A window larger than the
+     default"). */
+  .tc-view .tc-legend, .tc-view .tc-top, .tc-view .tc-bar { width: 100%; box-sizing: border-box;
+    max-width: calc(var(--calib-w) + 16px + var(--sbw, 0px)); margin-left: auto; margin-right: auto; }
   /* Every margin of the grid is 8: the panel's left and top, each side of a
      vertical line, between the players, the portraits and the kits. The
      table's own 2 between cells counts in each, so the paddings and the

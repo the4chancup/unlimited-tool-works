@@ -253,6 +253,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .squad-filters { display: flex; justify-content: flex-end; gap: 10px; align-items: center;
   white-space: nowrap; margin-top: 4px; }
 .squad-filters .vsep { width: 1px; align-self: stretch; background: var(--stroke); }
+/* The table takes a larger window's width, the same on each side, while the rows above keep
+   the view's: 100cqw is the pane's width, 100% the view's. */
+.squad-scroll { width: 100cqw; max-width: none; margin-left: calc((100% - 100cqw) / 2); }
 .squad-scroll { flex: 1; min-height: 0; overflow: auto; margin-top: 4px; outline: none;
   background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px; }
 #squad-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums;
@@ -680,10 +683,20 @@ table.grid.stats-grid td { padding: 2px 6px; }
    over the toolbar row's empty end, it moves nothing; where the toolbar
    reaches its place it is not drawn (eventLogo). */
 .event-logo { position: absolute; top: 8px; right: 14px; height: 28px; max-width: 84px; object-fit: contain; object-position: right; }
+/* Inside the view's body, which starts 8 below the pane's top and ends 8 plus the strip short
+   of its right edge: the same place at the default window, and centred with the view in a
+   larger one. */
+.view-body > .event-logo { top: 0; right: calc(6px - var(--sbw, 0px)); }
 .event-logo.link { cursor: pointer; border-radius: 2px; }
 /* The sidebar logo's hover (.logo:hover), 2px round the picture as the clover's 28 sits in its 32. */
 .event-logo.link:hover { background: var(--hover); box-shadow: 0 0 0 2px var(--hover); }
 .center.filled .view-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* The view keeps its default width in a larger window, centred; the player list takes the
+   extra height, Live AATF's dock (outside the body) the width. The pane is a size container
+   so the Squad table can span it (cqw). */
+.center.filled { container-type: inline-size; }
+.view-cap { max-width: var(--calib-w); margin: 0 auto; }
+.center.filled .view-body { width: 100%; max-width: var(--calib-w); margin: 0 auto; position: relative; }
 .center.filled .master { flex: 1; min-height: 0; align-items: stretch; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
@@ -4531,7 +4544,7 @@ function dlgFixDb() {
 function renderView(center) {
   scheduleLiveCheck();
   center.innerHTML = "";
-  if (!S.save) { center.append(renderToolbar(), welcomePanel()); return; }
+  if (!S.save) { center.append(h("div", { class: "view-cap" }, renderToolbar()), welcomePanel()); return; }
   // The view fills the pane; Live AATF docks at the bottom (egui's
   // Panel::bottom inside the view), the view above it.
   const live = livePanel();
@@ -4543,7 +4556,7 @@ function renderView(center) {
   host.append(S.squad ? squadView()
     : h("div", { class: "master" }, renderMaster(), renderDetail()));
   const logo = eventLogo();
-  if (logo) center.append(logo);
+  if (logo) host.append(logo);
   const panel = renderPanel();
   if (panel) center.append(panel);
   const liveWin = liveWindow();

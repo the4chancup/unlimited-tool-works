@@ -362,6 +362,11 @@
   .ph { font-family: "Icons"; font-size: 24px; line-height: 1; }
   /* Its scroll bar in the window's strip, kept while nothing scrolls (the .win comment). */
   .center { flex: 1; overflow: auto; padding: 8px 8px 40px; min-width: 0; scrollbar-gutter: stable; }
+  /* A tool view's width at the default window: 1280 less the rail's 56 and the center's two
+     8-point margins. A larger window keeps a view at this width, centred at the pane's top;
+     only a panel that can scroll at the default size takes the room (plans/core/gui.md "A
+     window larger than the default"). */
+  :root { --calib-w: 1208px; }
   .data { width: 590px; border-left: 1px solid var(--stroke); display: flex; flex-direction: column; min-height: 0; }
   .data pre { flex: 1; margin: 0; overflow: auto; background: var(--extreme); padding: 6px; font: 12px/1.2 var(--font-mono); color: #b4b4b4; }
   .data pre div { white-space: pre; min-height: 14px; }

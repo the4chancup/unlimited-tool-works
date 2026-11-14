@@ -63,7 +63,14 @@ their size:
 
 The Save editor's Squad screen (`plans/save_editor.md` "The Squad screen") and the Export upgrader's Files look, whose two columns share the extra width
 equally, show more columns; the Team compiler's export grid and the Ruleset editor's section
-rail and preview show more rows.
+rail show more rows. The Ruleset editor's preview takes the extra width as well as the height
+while it shows: the editor then stands at the pane's left edge, its rail and section at their
+default widths, and the preview fills the rest; with the preview hidden, the editor is centred
+like any view.
+
+A tool's own bars (the Save editor's toolbar, the Ruleset editor's top and bottom bars, the
+Compiler's legend and run bar) are part of its view: they keep their default width and stand
+centred with it, the Save editor's event logo at the end of its toolbar.
 
 Dialogs, the help window included, open centred on the window. The Save editor's floating
 windows open against the window's edges, as at the default size: the Comparator, Apply

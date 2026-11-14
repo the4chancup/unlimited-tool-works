@@ -17585,3 +17585,17 @@ SE-GUI-101).
 Why: the plan placed every player's issue on a cell or his name but was silent on the team's
 own; the dock already puts them first on every screen, and a mark on the title row would be a
 second home for the same line.
+
+## 2026-11-14 — gui — a larger window: the Ruleset editor's preview takes the width; a tool's bars centre with its view
+
+Decision: while the Ruleset editor's preview shows, a larger window's extra width and height go
+to the preview, the rail and the section keeping their default widths at the pane's left
+edge; with the preview hidden the editor is centred like any view. A tool's own bars (the Save
+editor's toolbar and its event logo, the Ruleset editor's top and bottom bars, the Compiler's
+and the Export upgrader's legend and run bar) keep their default width, centred with the view;
+only the log dock spans the window (`plans/core/gui.md` "A window larger than the default").
+
+Why: the preview is a long block of text that scrolls both ways, so the room shows more of it,
+while the form beside it would only spread. The bars belong to the view's layout, which the
+plan keeps at its default size; a band spanning the window would put the menus far from the
+view they act on.

@@ -2032,9 +2032,12 @@ briefs, review loops, gates and mutation runs as for any step.
     test drawing it at 1280 and at 1920 wide, every panel that cannot scroll at the default size the same size,
     moved right by half the extra width;
     the drafts and the built window at the whole monitor
-    - [ ] the census: every view of every tool, what grows or moves past the default (SWE-2;
-      draft evidence `.tmp/stretch/draft_*`)
-    - [ ] the drafts (lead)
+    - [x] the census (2026-11-14, SWE-2): `.tmp/stretch/census_findings.md`
+    - [x] the drafts (2026-11-14, lead): `--calib-w` (1208, the view's width at the default
+      window) caps each view, centred; the Squad table, the Files look, the Compiler's grid
+      (height), the Ruleset editor's rail and shown preview and the player list take the room;
+      measured at default (unchanged) and at 1920 x 1080 with
+      `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
     - [ ] a slice per tool
   - [ ] docstrings: every doc comment of the codebase reread under the Shakespeare rule's
     docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
