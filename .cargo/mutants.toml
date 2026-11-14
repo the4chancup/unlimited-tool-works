@@ -388,6 +388,17 @@ exclude_re = [
     # the first loop's seven. Column 22 also matches the first loop's own `+= 1`, caught only by
     # its underflow panic: accepted loss. Re-check if `per_row` changes.
     "save_editor/src/view/appearance/mod\\.rs:\\d+:(18|22): replace \\+= with -= in motion_grid",
+    # save_editor: `group`'s `TITLE_GAP - item_spacing.y` -> `+` is the same 6.0 while the
+    # spacing is 0: `group` draws only inside `groups`, which zeroes `item_spacing.y` before
+    # the rows. `frame_content` beside it stays measured: its Motion and Edit flags scopes
+    # run under `GROUP_GAP` (`the_group_titles_leave_title_gap_under_them`).
+    "save_editor/src/view/appearance/mod\\.rs:\\d+:\\d+: replace - with \\+ in group",
+    # save_editor: the second row's guard `column_height < row_height` compares the column
+    # to `row_height`, the two sides' max: `<` -> `<=` adds only the level case, where the
+    # stretch's target is the Edit flags frame's own height and the column's advance lands
+    # where it already ends. Pinned by column; its `==` stays measured (the flags' stretch
+    # is a real point).
+    "save_editor/src/view/appearance/mod\\.rs:\\d+:42: replace < with <= in physique_motion_flags_row",
     # save_editor: the Set PES folder button's `2.0 * SET_FOLDER_SIDE_PADDING` -> `+` is the
     # same 4.0 while the padding is 2.0; re-check if the constant changes.
     "save_editor/src/view/tactics\\.rs:\\d+:35: replace \\* with \\+ in set_pes_folder_button",
