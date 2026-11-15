@@ -2036,8 +2036,8 @@ ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, p
                  one notch up over Numbers in attack THEN the choice left of the held one is
                  held, or the rightmost when the held one is the leftmost; WHEN one notch down
                  over the preset selector THEN the next preset is held, or preset 1 after
-                 preset 3; each step, taken more than a second after the one before, is one
-                 undo entry; GIVEN Invert number scrolling on THEN every step above is the
+                 preset 3; each step but the preset's, taken more than a second after the one
+                 before, is one undo entry, and the preset's writes nothing; GIVEN Invert number scrolling on THEN every step above is the
                  same but the value box's, which one notch down makes one more
 ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert number scrolling on
             WHEN the pointer is over the drag value and the wheel turns one notch down

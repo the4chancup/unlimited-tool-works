@@ -2633,7 +2633,7 @@ briefs, review loops, gates and mutation runs as for any step.
       beside a changed row and won the next start, and two tests for what none pinned;
       the paid round is done. SWE-2 "S-drift c1" over the fixes: one concern, a branch
       no test reached removed (`9d12e100`). The review rounds are done
-  - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
+  - [x] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
     presets, gameplans copied in one instance and pasted in another (the maintainer,
     2026-11-03). Possible, as text: Ctrl+C puts a Team TOML document of the copy on the
     system clipboard, which Ctrl+V parses (DECISIONS 2026-11-12; `plans/save_editor.md`
@@ -2646,7 +2646,7 @@ briefs, review loops, gates and mutation runs as for any step.
       `look-clipboard`. Open: a paste notice with a tail ends without a full stop, unlike
       every other notice (DECISIONS 2026-11-15 "Every copy and paste notice ends with a full
       stop"); fixed by 0.0.2-namelight (`40ce82da`)
-    - [ ] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
+    - [x] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
       r1" 2026-11-12 (three parts): 14 of 18 accepted (`.tmp/duck_rulings.md`): a copy
       of a Gameplan, preset or formation no longer builds the players' tables, whose odd
       byte could stop it; eight on the tests (a wrong-kind test green without the kind
@@ -2684,7 +2684,9 @@ briefs, review loops, gates and mutation runs as for any step.
         section, SE-GUI-56 and the changelog's Edit menu line (the lead's)
       - [x] the rework (SWE-2, 2026-11-15; `9307edd8`, merge `0434295b`): the Edit menu's
         hovers tested for every target, the notices' counts exact from the source save
-      - [ ] Carbon's round 4 (at `0434295b`)
+      - [x] Carbon's round 4 (at `0434295b`): 3 of 3 accepted, which ends the loop: a hover
+        test that passed on wrong code, the lapse test stopping short of 701, two comments
+        naming the wrong row; the rework (SWE-2, `d84dda67`, merge `917a202a`)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
