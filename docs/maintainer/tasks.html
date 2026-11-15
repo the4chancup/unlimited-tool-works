@@ -332,19 +332,25 @@ otherwise goes back as a fix.</p>
 
 <section class="entry" id="look-name-colours">
   <h3>The players' name colour codes in the light theme</h3>
-  <p class="from">From: 0.0.1ov's ov11b; checked by the lead at <code>4b9f2258</code> on your PES 2021 save, opened read-only</p>
+  <p class="from">From: 0.0.1ov's ov11b; checked by the lead at <code>4b9f2258</code>, and after the fix at <code>40ce82da</code>, on your PES 2021 save, opened read-only</p>
   <p>/f/'s players in the light theme: the white and pale parts of their names vanish on the
   light panel ("PEP MAN" is PEPSI MAN, its "SI" white; "GARD O", "BILLY … TON", "BOUR N
   HOU"). Below, the draft's older copy of the team in the dark theme, where the same white
   reads.</p>
-  <p>Being fixed (worklog 0.0.2-namelight): in the light theme a code's colour that reads
-  under 4.5 on the panel is darkened until it does, its hue kept, the rule the light theme's
-  own text colours follow. The dark theme keeps every code as it is.</p>
+  <p>Fixed (worklog 0.0.2-namelight): in the light theme, a code whose colour reads under a
+  contrast of 4.5 on the panel is darkened until it does, keeping its hue. In the build, the
+  last two pictures, the "SI" of PEPSI MAN draws in grey 115, about 5 to 1 on the list's
+  white, and GARDEVOIR, BILLY ♂HERRING♂TON and BOURBON HOUSE read whole, in the list and in
+  the Gameplan's lineup lists. The names under the pitch's badges keep the game's colours,
+  since the turf looks the same in both themes, and the dark theme draws every code as it
+  is.</p>
   <div class="shots">
-    <figure><a href="img/name_colours_light.png"><img src="img/name_colours_light.png" alt="Coloured names in the light theme and the dark draft"></a><figcaption>The build (light), the draft (dark)</figcaption></figure>
+    <figure><a href="img/name_colours_light.png"><img src="img/name_colours_light.png" alt="Coloured names in the light theme and the dark draft"></a><figcaption>Before: the build (light), the draft (dark)</figcaption></figure>
+    <figure><a href="img/name_colours_light_list.png"><img src="img/name_colours_light_list.png" alt="/f/'s players in the light theme after the fix"></a><figcaption>After: the list (light)</figcaption></figure>
+    <figure><a href="img/name_colours_light_lineup.png"><img src="img/name_colours_light_lineup.png" alt="/f/'s lineup lists in the light theme after the fix"></a><figcaption>After: the lineup lists (light)</figcaption></figure>
   </div>
   <div class="options">
-    <label class="opt"><input type="radio" value="fix as planned"><b>Fix it as planned</b>
+    <label class="opt"><input type="radio" value="looks right"><b>Looks right</b>
       <div class="note">Darkened in the light theme only, hue kept.</div></label>
     <label class="opt"><input type="radio" value="keep the game's colours"><b>Keep the game's colours</b>
       <div class="note">Leave the light theme's names as the game colours them.</div></label>

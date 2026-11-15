@@ -768,6 +768,108 @@ fn a_dragged_player_is_one_player_order_row() {
     );
 }
 
+/// The name of the player the selection's slot holds (`slot_player` on
+/// it), `""` when no player row is selected.
+fn selected_player_name(view: &SaveView) -> String {
+    selected_player(view)
+        .map(|(_, _, id)| player_entry(view, id).name)
+        .unwrap_or_default()
+}
+
+// The selection names a slot: left where it was it would land on another
+// player, so an undo, a redo and the move row's X each carry it with the
+// record it showed.
+// SE-GUI-08
+#[test]
+fn an_undone_or_redone_move_keeps_the_moved_player_selected() {
+    let mut view = told_apart("changes_list_move_selected");
+    let mut window = Headless::new();
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 6)),
+        "premise: the drop selected P04's new slot"
+    );
+    assert_eq!(selected_player_name(&view), "P04");
+
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 3)),
+        "the undo kept the selection on P04"
+    );
+    assert_eq!(selected_player_name(&view), "P04");
+
+    choose(&mut window, &mut view, "Edit", "Redo");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 6)),
+        "the redo kept the selection on P04"
+    );
+    assert_eq!(selected_player_name(&view), "P04");
+
+    click_label(&mut window, &mut view);
+    click_x(&mut window, &mut view, "/3/ · Player order");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 3)),
+        "the row's X kept the selection on P04"
+    );
+    assert_eq!(selected_player_name(&view), "P04");
+}
+
+// An undo past a save works through the same map: `save_to` clears the
+// origins, and the undo's trade is applied to the empty map.
+#[test]
+fn an_undo_past_a_save_keeps_the_moved_player_selected() {
+    let mut view = told_apart("changes_list_save_undo_selected");
+    let mut window = Headless::new();
+    drag_row(&mut window, &mut view, "04 CB P04", "07 CB P07");
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(!view.is_dirty(), "premise: the save is written");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 6)),
+        "premise: P04's slot still selected"
+    );
+
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 3)),
+        "the undo kept the selection on P04"
+    );
+    assert_eq!(selected_player_name(&view), "P04");
+}
+
+// A step that trades nothing leaves the selection where it was.
+#[test]
+fn an_undone_edit_keeps_the_selection() {
+    let mut view = told_apart("changes_list_edit_selected");
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, row(&nodes, "02 CB P02"), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "premise: P02's row selected"
+    );
+    let mut edited = player_entry(&view, 70102);
+    assert_ne!(edited.basic.height, 190, "premise: a real change");
+    edited.basic.height = 190;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "the edit's undo left the selection on P02"
+    );
+    assert_eq!(selected_player_name(&view), "P02");
+}
+
 // The order row's new side names the players now on the places, as they
 // are now: a moved player renamed after the move shows his new name there,
 // while the old side keeps the file's. (A new side read from the record he

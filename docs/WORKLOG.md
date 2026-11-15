@@ -2111,12 +2111,12 @@ briefs, review loops, gates and mutation runs as for any step.
     bundles read with `save-editor diff` until then (DECISIONS 2026-11-08); the dialog's
     rulings and `jiff` (DECISIONS 2026-11-15 "Report a problem: the dialog's rulings")
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
-  - [ ] 0.0.2-namelight in the light theme a name's colour codes read at 4.5 on the panel,
-    hue kept, as the light theme's own text colours do (`plans/save_editor.md` "Player
-    list", the colour codes paragraph; DECISIONS 2026-11-15 "Name colour codes in the light
-    theme read at 4.5"): the lead's look found white and pale codes vanished (card
-    `look-name-colours`) -> verify: a test drawing a white-coded name in each theme, its
-    colour unchanged in the dark one and at 4.5 on the light panel; the built window
+  - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
+    colour code reading under 4.5 on the panel is darkened until it does, hue kept
+    (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
+    pitch's turf and the dark theme draw codes as they are. The changes table's heads are
+    strong and the paste notice's tails end with a full stop. Look checked in the built
+    window, card `look-name-colours`
   - [ ] 0.0.2-undosel an undo or a redo of a player list move, or the X on its row of the
     unsaved changes list, keeps the moved player selected, in whichever slot the step puts
     him (`plans/save_editor.md` "Player list", the
@@ -2354,7 +2354,7 @@ briefs, review loops, gates and mutation runs as for any step.
       `look-undo-x`. Open: the table's heads (Item, Old value, New value, Undo) are drawn
       weak, grey 95 measured, where the draft's `table.grid th` draws them in the strong
       colour, 220; the close prompt's share them (`view/prompt.rs` `changes_table`); fixed
-      with 0.0.2-namelight's brief
+      by 0.0.2-namelight (`40ce82da`)
     - [x] b's SWE-2 review 2026-11-13 (S-undo-b r1, 3 of 5 accepted, the loop ends): a
       doc comment and a help sentence fixed
   - [x] 0.0.2-line the player list's drop place as a line between two rows, not an outline
@@ -2493,7 +2493,7 @@ briefs, review loops, gates and mutation runs as for any step.
       formation survive the document. Tried in two real windows 2026-11-15 at `4b9f2258`, card
       `look-clipboard`. Open: a paste notice with a tail ends without a full stop, unlike
       every other notice (DECISIONS 2026-11-15 "Every copy and paste notice ends with a full
-      stop"); fixed with 0.0.2-namelight's brief
+      stop"); fixed by 0.0.2-namelight (`40ce82da`)
     - [ ] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
       r1" 2026-11-12 (three parts): 14 of 18 accepted (`.tmp/duck_rulings.md`): a copy
       of a Gameplan, preset or formation no longer builds the players' tables, whose odd
