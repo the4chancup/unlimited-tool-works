@@ -2203,11 +2203,13 @@ briefs, review loops, gates and mutation runs as for any step.
       row off screen, the own-team button overflows its line (now a row of its own under
       it: plan and draft edited), untested clauses, a scenario cited on a unit test, stale
       help and changelog lines
-      - [ ] the rework (SWE-2, `.tmp/rework_carbon1.md` in `listrw1`), then Carbon's round 2
+      - [x] the rework (SWE-2, merge `7017c4bd`); its overlap screen for the own-team
+        button passed on the old layout too (egui keeps a row inside the window's rect)
+      - [ ] Carbon's round 2 (`review30`, `.tmp/carbon_list2.md`)
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
-      - [ ] the rework of SWE-2's round 1 (12 accepted; SWE-2, `.tmp/rework_notices.md` in
-        `noticesrw`), then SWE-2's round 2
+      - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
+      - [ ] SWE-2's round 2 (`review31`, `.tmp/0_0_2/revdebt/swe_notices_r2.md`)
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -2236,8 +2238,8 @@ briefs, review loops, gates and mutation runs as for any step.
     "the File menu: the picker and the writes first"): Open…, Save, Save as… with
     Ctrl+Shift+S, the headings Open from Documents and Recent files, Close save with Ctrl+W,
     Exit with Ctrl+Q (the shell's key); the welcome panel in the menu's order. Draft and
-    plan edited (SE-GUI-26, 90, 105; ST-RUN-05). After the notices' rework merges
-    (`menus.rs`). Brief: `.tmp/0_0_2/recents/brief.md`, to extend with the menu. Tier 2
+    plan edited (SE-GUI-26, 90, 105; ST-RUN-05). Running (SWE-2, `.tmp/brief.md` in
+    `recents`, from `a07139bd`). Tier 2
   - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
