@@ -7499,12 +7499,11 @@ function formationsPicture(t, settings = false) {
   return c;
 }
 // The file's name: the team's name less the characters a file name cannot
-// hold (`/f/` becomes `f.png`); a name with nothing left is the id. " settings"
-// before the extension on a picture with the settings, so the two kinds of one
-// team sit side by side in a folder rather than replace each other.
-function pictureFileName(t, settings) {
+// hold (`/f/` becomes `f.png`); a name with nothing left is the id. A picture
+// with the settings is named the same.
+function pictureFileName(t) {
   const name = displayName(t.name).replace(/[\\/:*?"<>|]/g, "").trim();
-  return (name || String(t.id)) + (settings ? " settings" : "") + ".png";
+  return (name || String(t.id)) + ".png";
 }
 // The draft writes no file: the pictures a run drew are kept for the draft
 // control's preview (`dlgLastPicture`).
@@ -7531,7 +7530,7 @@ const formGrid = (...pairs) => h("div", { class: "pform" },
 // used (the tool's `formation_pictures_folder` setting, which the range
 // dialog shares), with Browse for rfd's folder picker; the name
 // `<id> <name>.png` is filled in, so a member names the picture they share,
-// and the checkbox adds or removes " settings" before its extension. A name
+// with the settings or without. A name
 // already in the folder asks before it is replaced, as the native dialog
 // did. The picture is then written and a notice names it, with an Open
 // folder action.
@@ -7555,13 +7554,12 @@ const picturesPortraitsBox = () => h("label", { class: "cb", id: "pic-portraits"
 function dlgPictureSave() {
   const t = selTeam();
   S.picturesPortraits = S.pitchPortraits !== false;
-  let settings = false;
+  // The settings box is remembered, one value for both dialogs (`formation_pictures_settings`).
+  let settings = S.picturesSettings === true;
   const folderIn = h("input", { type: "text", id: "pic-folder", style: "width:380px", value: S.picturesFolder });
-  const nameIn = h("input", { type: "text", id: "pic-name", style: "width:380px", value: pictureFileName(t, false) });
-  const toggle = h("input", { type: "checkbox", id: "pic-settings", onchange: e => {
-    settings = e.target.checked;
-    const plain = nameIn.value.replace(/ settings\.png$/i, ".png");
-    nameIn.value = settings ? plain.replace(/\.png$/i, " settings.png") : plain; } });
+  const nameIn = h("input", { type: "text", id: "pic-name", style: "width:380px", value: pictureFileName(t) });
+  const toggle = h("input", { type: "checkbox", id: "pic-settings", checked: settings, onchange: e => {
+    settings = S.picturesSettings = e.target.checked; } });
   const write = () => {
     const file = folderIn.value + "\\" + nameIn.value;
     S.picturesFolder = folderIn.value;
@@ -7604,7 +7602,7 @@ function dlgPictureSave() {
 // the choice. The dialog is a drawer (windowDrawer), rebuilt on every render
 // as the run advances.
 // sample wording: the dialog's lines and buttons.
-const picRange = { from: null, to: null, run: null, settings: false };
+const picRange = { from: null, to: null, run: null };
 const picTeamsIn = (from, to) => curSave().teams.filter(t => t.id >= from && t.id <= to);
 // A range's two picks (Multi-team AATF's, the pictures'): the left one
 // offers every team, the right one the teams from the left one on.
@@ -7644,15 +7642,10 @@ function drawPicturesRange() {
     const count = teams.length === 1 ? "1 team" : teams.length + " teams";
     const folderIn = h("input", { type: "text", id: "pic-folder", style: "width:380px", value: folder,
       onchange: e => { S.picturesFolder = e.target.value; } });
-    // The file-name line in both of the checkbox's states, the other one
-    // hidden in the same cell, so the dialog is as wide as the longer and
-    // keeps its width when the checkbox flips.
     const example = teams[0] || curSave().teams[0];
-    // The grid's own top margin, not the lines', so it collapses as a paragraph's would:
     // 8 under the checkbox above, the buttons' 10 under it.
-    const nameLine = on => h("p", { style: "margin:0; grid-area:1/1" + (on === picRange.settings ? "" : "; visibility:hidden"),
-        "aria-hidden": on === picRange.settings ? null : "true" },
-      weak("One picture per team, named after it (" + pictureFileName(example, on) +
+    const nameLine = h("p", { style: "margin:8px 0 0" },
+      weak("One picture per team, named after it (" + pictureFileName(example) +
         "), overwriting files with the same names."));
     // The range's two ends on one row, as Multi-team AATF's.
     body = h("div", {},
@@ -7661,10 +7654,10 @@ function drawPicturesRange() {
           h("span", { class: "weak", id: "pic-count", style: "margin-left:auto" }, count))],
         ["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))]),
-      cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
+      cb("With each preset's settings beside its row", S.picturesSettings === true, v => { S.picturesSettings = v; }),
       h("div", {}, picturesPortraitsBox()),
       h("div", {}, picturesFlatBox()),
-      h("div", { style: "display:grid; margin-top:8px" }, nameLine(false), nameLine(true)));
+      nameLine);
     buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: !teams.length }),
       button("Cancel", closeWindow)];
   } else if (run.timer != null) {
@@ -7694,13 +7687,13 @@ function drawPicturesRange() {
 // real (the preview shows the last).
 function startPicturesRun(teams) {
   const width = document.querySelector('#overlay [data-dlg="pictures-range"]').offsetWidth;
-  picRange.run = { teams, done: 0, stopped: false, timer: null, settings: picRange.settings, width };
+  picRange.run = { teams, done: 0, stopped: false, timer: null, settings: S.picturesSettings === true, width };
   const tick = () => {
     const run = picRange.run;
     if (!run || run.timer == null) return;
     const t = run.teams[run.done];
     if (!portraitsReady(t)) { run.timer = setTimeout(tick, 50); return; }
-    writePicture(t, S.picturesFolder + "\\" + pictureFileName(t, run.settings), run.settings);
+    writePicture(t, S.picturesFolder + "\\" + pictureFileName(t), run.settings);
     run.done++;
     run.timer = run.done === run.teams.length ? null : setTimeout(tick, 500);
     render();

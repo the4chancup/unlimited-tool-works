@@ -1596,9 +1596,9 @@ Win32 original hurt the most):
   - the file name `<name>.png` filled in: the team's name less the characters a file name
     cannot hold (`f.png` for /f/), or its id when nothing is left. A range writes the same
     names, so a team's picture has one name whichever dialog wrote it;
-  - the checkbox "With each preset's settings beside its row", which adds or removes
-    " settings" before the extension, so a team's two pictures do not replace each other. It
-    is unticked at first and remembered as the folder is, shared by both dialogs, since a
+  - the checkbox "With each preset's settings beside its row", which leaves the file name as
+    it is: a member needs one kind of picture, so after a change of mind the new kind replaces
+    the old one in the folder (the replace question asks first). It is unticked at first and remembered as the folder is, shared by both dialogs, since a
     member who wants the settings in a picture wants them in the next one too;
   - the checkbox "Portraits", which starts as the formation bar's Portraits is each time the
     dialog opens. A change here is this picture's alone and is never written back to the
@@ -1666,9 +1666,7 @@ Win32 original hurt the most):
 
   The row ends in the count ("4 teams"), right-aligned where the folder row's Browse ends.
   Under it stand the folder row with Browse, the same checkbox, and the file-name line, which
-  follows it. The dialog is as wide as its longer
-  state, the file-name line sized for both of the checkbox's, so it keeps its width when the
-  checkbox flips, and its labels and fields sit on one grid. An existing file is replaced, the
+  follows it. Its labels and fields sit on one grid. An existing file is replaced, the
   file-name line saying so.
 
   The dialog then turns into the run's progress ("Writing 2 of 4: /f/ (718)", a ProgressBar,
@@ -3243,8 +3241,7 @@ SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` abse
                 folder's `formations` and `Browse…`, `File name` with `f.png`; under
                 them `With each preset's settings beside its row` unticked, `Portraits`
                 ticked, `Without the pitch's grain (smaller file)` unticked, then Save and
-                Cancel; ticking the first makes the name `f settings.png`, unticking it
-                `f.png` again; WHEN Portraits is unticked and Save pressed THEN
+                Cancel; ticking the first leaves the name `f.png`; WHEN Portraits is unticked and Save pressed THEN
                 `formations/f.png` is written (the folder created), the notice reads
                 `f.png written to <folder>` with Open folder, and the bar's
                 `portraits` setting is still on; GIVEN the dialog opened again THEN
@@ -3252,7 +3249,7 @@ SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` abse
                 `f.png is already in <folder>. Replace it?`, Cancel leaves the file's
                 bytes as they were and Replace writes it again; GIVEN the grain box and the
                 settings box ticked and the editor restarted THEN the dialog opens with both
-                ticked, the name `f settings.png`
+                ticked, the name `f.png`
 SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws Kick-off
                 alone (Fluid formation off, the other two of Kick-off's shape), and
                 of a team with a preset whose Fluid formation is on
@@ -3292,7 +3289,8 @@ SE-GUI-89  GIVEN a cup save open
                 settings box ticked when it was ticked in the one-team dialog;
                 the right combo lists only the teams from the left one on, and picking a
                 left one past it moves the right one to the left's team; the dialog keeps
-                its width when the settings box flips; WHEN Save pictures is pressed on a
+                its width when the settings box flips, the file-name line naming the same file
+                in both states; WHEN Save pictures is pressed on a
                 range of three teams THEN it reads `Writing 1 of 3: <name> (<id>)` over a
                 progress bar with Stop, then `3 pictures written, they are here:` over a
                 line `<folder>`, with Open folder and Close, and the folder holds one PNG per

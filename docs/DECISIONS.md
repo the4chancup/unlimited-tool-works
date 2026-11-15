@@ -17835,3 +17835,14 @@ as the grain box and the folder are, one value for both dialogs.
 Why: the maintainer asked for it. A member who wants the settings in a picture wants them in
 the next one too; the grain box beside it was already remembered, so the two now behave alike.
 Plan: `plans/save_editor.md` "Formation pictures". Worklog: 0.0.2-picsettings.
+
+## 2026-11-15 — save_editor — A picture with the settings is named as one without
+Decision: a formation picture with each preset's settings is named `<name>.png`, as one
+without, in both dialogs; the " settings" suffix goes. Saving one kind over the other
+replaces it: the one-team dialog asks first, as for any file already there, and a range
+replaces, its file-name line saying so.
+Why: the maintainer asked for it. A member needs only one kind of picture, so the
+replacement is the point: after a change of mind, the old pictures do not stay beside the
+new ones. The suffix existed to keep both kinds side by side.
+Plan: `plans/save_editor.md` "Formation pictures", SE-GUI-86, SE-GUI-89. Worklog:
+0.0.2-picsettings.
