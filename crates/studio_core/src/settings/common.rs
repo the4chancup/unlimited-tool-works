@@ -46,9 +46,9 @@ pub struct CommonSettings {
     /// The wheel's steps over a value turned the other way: wheel down takes
     /// one more, wheel up one less. Scrolling a pane is unchanged.
     pub invert_value_scrolling: bool,
-    /// Whether the shell looks for new releases.
+    /// Whether the window and tool commands look for new releases.
     pub check_for_updates: bool,
-    /// Minutes between release checks.
+    /// Minutes between the window's release checks.
     pub check_interval_minutes: u32,
     /// When the last release check ran, in seconds since the Unix epoch.
     pub last_update_check: Option<u64>,

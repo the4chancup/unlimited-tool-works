@@ -61,10 +61,11 @@ The window has three buttons:
 - `Open release page` lets you download the new version by hand instead;
 - `Close` closes the window and leaves the offer in the status bar.
 
-In the rare case where the old files could not be put back either, the message
-does not say that nothing was changed, and it names the folder that holds them.
-Move them back into the program's folder, or delete the folder they are in,
-because no other update starts until you do.
+If the update stops while it replaces the program's files, it puts the old ones
+back. In the rare case where it cannot put them all back, the message does not
+say that nothing was changed, and it names the folder holding them: move them
+back into the program's folder. No other update starts while that folder holds
+files.
 
 **Restarting**
 

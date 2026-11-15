@@ -53,7 +53,7 @@ invert_value_scrolling = false
 # Default: true
 check_for_updates = true
 
-# The minutes between two checks while the window is open.
+# The minutes between two of the window's checks.
 # Default: 120
 check_interval_minutes = 120
 
