@@ -17872,3 +17872,14 @@ unreadable"; name codes are text too. The dark theme's look was approved as it i
 keeps the in-game colours.
 Plan: `plans/save_editor.md` "Player list", the colour codes paragraph. Worklog:
 0.0.2-namelight.
+
+## 2026-11-15 — save_editor — An undone or redone move keeps the moved player selected
+Decision: an undo or a redo of a drag-and-drop move in the player list keeps the selection
+on the moved player, in whichever slot the step puts him. A drop already selects him in his
+new slot.
+Why: the selection names a slot. The lead's look at the drop line found that after an undo it
+stayed on the slot the drop had used, so the panels beside the list switched to the player now
+in that slot (on PES 2021's /3/, dropping 3DSMAX on slot 06 and undoing left NO >YOUR<
+PROGRAM SUCKS selected). An undo should leave the member where they were.
+Plan: `plans/save_editor.md` "Player list", the drag-and-drop reordering's paragraph "A drop
+selects the moved player". Worklog: 0.0.2-undosel.

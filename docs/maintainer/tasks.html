@@ -409,12 +409,34 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-drop-line">
+  <h3>The player list's drop line</h3>
+  <p class="from">From: the pending looks; checked by the lead at <code>4b9f2258</code> on your PES 2021 save, each drop undone and nothing saved</p>
+  <p>A player held over a row of his team, three times: over a row in the middle, over the
+  first row in view and over the last. Each time the line sits where the draft draws it, on
+  the lower edge when he comes from above and on the upper edge when he comes from below,
+  2 points thick with a serif at each end. The held row floats under the pointer with no
+  background, so its text crosses the row it passes over, as a held lineup row's does and as
+  the browser's see-through drag picture does in the draft.</p>
+  <p>Found on the way, and being fixed without a question: after an undo of a drop, the
+  selection stayed on the slot the player had been dropped in, so the panels showed whoever
+  holds that slot now. An undo or a redo will keep the moved player selected.</p>
+  <div class="shots">
+    <figure><a href="img/drop_line.png"><img src="img/drop_line.png" alt="The drop line in the draft and the build, on a middle, first and last row"></a><figcaption>Left the draft, right the build</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
-  <li>The player list's drop line while a player is dragged, and on the first and last row in view (0.0.2-line).</li>
   <li>The illegal formation warning on a PES 2017 or 2019 save under Spring 26, gone once the named starter is dragged (0.0.2c).</li>
   <li>The X on each row of the unsaved changes list, and the list after a drag in the player list (0.0.2-undo a and b).</li>
   <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>

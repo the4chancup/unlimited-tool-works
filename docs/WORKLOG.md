@@ -2126,6 +2126,12 @@ briefs, review loops, gates and mutation runs as for any step.
     theme read at 4.5"): the lead's look found white and pale codes vanished (card
     `look-name-colours`) -> verify: a test drawing a white-coded name in each theme, its
     colour unchanged in the dark one and at 4.5 on the light panel; the built window
+  - [ ] 0.0.2-undosel an undo or a redo of a player list move keeps the moved player
+    selected, in whichever slot the step puts him (`plans/save_editor.md` "Player list", the
+    paragraph "A drop selects the moved player"; DECISIONS 2026-11-15 "An undone or redone
+    move keeps the moved player selected"): the lead's look found the selection left on the
+    drop's slot, another player after the undo -> verify: a session test dropping slot 3 on
+    slot 6, then undo, the selection on slot 3, then redo, on slot 6; the built window
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -2346,7 +2352,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the slice 2026-11-13 (`da849d2a`, SWE-2 and the lead's rerun: 823 and 54 tests,
       clippy, fmt): three painter calls in `player_row`, the SE-GUI-75 test reading the
       line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
-      of the line outside a row flush with the view's edge. Look: Pending looks
+      of the line outside a row flush with the view's edge. Look: checked 2026-11-15 at
+      `4b9f2258`, card `look-drop-line` in `docs/maintainer/tasks.html`
     - [x] its SWE-2 review: "S-line r1" 2026-11-13, 5 of 7 accepted (`.tmp/duck_rulings.md`):
       the next row's fill covered the line's lower half (a team row under ALL, a selected
       row), and a pointer on the edge two rows share drew two lines; the mark is painted
