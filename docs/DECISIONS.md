@@ -17827,3 +17827,11 @@ fails near the window's middle, and in the smallest window (600 high) for a thir
 dropdowns.
 Plan: `plans/core/gui.md` "Dark/light theme"; `plans/save_editor.md` "Team selector". Worklog:
 0.0.2-teamscroll.
+
+## 2026-11-15 — save_editor — The formation pictures' settings box is remembered
+Decision: the "With each preset's settings beside its row" box of both formation picture
+dialogs is remembered in the tool's settings (`formation_pictures_settings`, off at first),
+as the grain box and the folder are, one value for both dialogs.
+Why: the maintainer asked for it. A member who wants the settings in a picture wants them in
+the next one too; the grain box beside it was already remembered, so the two now behave alike.
+Plan: `plans/save_editor.md` "Formation pictures". Worklog: 0.0.2-picsettings.

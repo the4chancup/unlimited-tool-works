@@ -2106,6 +2106,11 @@ briefs, review loops, gates and mutation runs as for any step.
     under them (`plans/save_editor.md` "Team selector", the radios paragraph), where the build
     fitted teams and radios into one 200, leaving the teams about 97 -> verify: the theme
     test, a headless test of the teams' scroll area, then the built window beside the draft
+  - [ ] 0.0.2-picsettings (the maintainer, 2026-11-15) the formation pictures' "With each
+    preset's settings beside its row" box remembered in the tool's settings
+    (`formation_pictures_settings`, beside `formation_pictures_flat`), shared by both dialogs
+    (`plans/save_editor.md` "Formation pictures", the dialog's checkbox list) -> verify: a
+    headless test that a tick survives the dialog's close and a restart, in each dialog
   - [ ] 0.0.2-report (the maintainer, 2026-11-15, who expected it in 0.0.2) the "Report a
     problem" button and dialog: the repro bundles issue's slice (4) (`plans/core/architecture.md`
     "Repro bundles"; the draft's `drawReport`), writing the Save editor's bundle from the journal

@@ -1597,7 +1597,9 @@ Win32 original hurt the most):
     cannot hold (`f.png` for /f/), or its id when nothing is left. A range writes the same
     names, so a team's picture has one name whichever dialog wrote it;
   - the checkbox "With each preset's settings beside its row", which adds or removes
-    " settings" before the extension, so a team's two pictures do not replace each other;
+    " settings" before the extension, so a team's two pictures do not replace each other. It
+    is unticked at first and remembered as the folder is, shared by both dialogs, since a
+    member who wants the settings in a picture wants them in the next one too;
   - the checkbox "Portraits", which starts as the formation bar's Portraits is each time the
     dialog opens. A change here is this picture's alone and is never written back to the
     bar's setting: a member who keeps portraits off and wants them in one picture finds them
@@ -3248,8 +3250,9 @@ SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` abse
                 `portraits` setting is still on; GIVEN the dialog opened again THEN
                 Portraits is ticked; WHEN Save is pressed THEN `Replace the picture?` asks
                 `f.png is already in <folder>. Replace it?`, Cancel leaves the file's
-                bytes as they were and Replace writes it again; GIVEN the grain box ticked
-                and the editor restarted THEN the dialog opens with it ticked
+                bytes as they were and Replace writes it again; GIVEN the grain box and the
+                settings box ticked and the editor restarted THEN the dialog opens with both
+                ticked, the name `f settings.png`
 SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws Kick-off
                 alone (Fluid formation off, the other two of Kick-off's shape), and
                 of a team with a preset whose Fluid formation is on
@@ -3285,7 +3288,8 @@ SE-GUI-89  GIVEN a cup save open
            WHEN Savefile, `Save formation pictures for a range of teams…` is pressed
            THEN its dialog holds `Teams`, a combo with the save's first cup team, `to`, a
                 combo with its last and `N teams` at the row's right end, the folder row,
-                the three boxes and the file-name line naming the first team's file;
+                the three boxes and the file-name line naming the first team's file, the
+                settings box ticked when it was ticked in the one-team dialog;
                 the right combo lists only the teams from the left one on, and picking a
                 left one past it moves the right one to the left's team; the dialog keeps
                 its width when the settings box flips; WHEN Save pictures is pressed on a
