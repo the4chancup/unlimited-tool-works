@@ -17989,3 +17989,15 @@ the period is one nobody would change.
 Plan: `plans/core/distribution.md` "Self-update" step 1 and "The command line's notice";
 `plans/core/gui.md` the settings menu's rows and ST-UPD-01; the draft's Settings rows and
 help topic. Worklog: 0.0.2-upd.
+
+## 2026-11-15 — studio_core — A save removes the two retired update-check keys from an older settings file
+Decision: the window's save removes `check_interval_minutes` and `last_update_check` from
+`[common]`, with the comments above them. Any other key the program does not know stays as
+read.
+Why: a 0.0.1 settings file holds both keys, and the bundled file's comment says the first sets
+the minutes between checks. Kept as read, they would stay in the file forever, unused, while
+the comment still told a member editing it by hand what they did. Removing every unknown
+`[common]` key would also undo a newer version's keys in a file two versions share, and
+silently drop a mistyped key; naming the two retired keys does neither.
+Plan: `plans/core/distribution.md` "Self-update" step 1, the paragraph starting "A settings
+file written by 0.0.1". Worklog: 0.0.2-upd.

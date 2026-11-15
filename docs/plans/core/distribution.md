@@ -259,6 +259,12 @@ processor.
    allows one address without a token. The period is fixed, not a setting: nobody would
    change it.
 
+   A settings file written by 0.0.1 still holds `check_interval_minutes` and
+   `last_update_check`, the first under a comment saying it sets the minutes between checks.
+   The window's next save removes both keys and their comments, because a member editing the file by
+   hand would take that comment at its word. Other keys the program does not know stay as
+   read, since they may belong to a newer version sharing the file.
+
    Pre-releases are included: `releases/latest` skips a release marked Pre-release, which a
    0.0.x may be. A tag that is not `v` and a semver is passed over. The release's
    `body` (its notes) comes in the same response.
