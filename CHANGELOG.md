@@ -157,6 +157,8 @@
   the taping off unless it is meant to show.
 - **Save editor**: in a Team TOML export, the comment beside `skills` says how a skill's
   name is spelt.
+- **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
+  hair color comment in `settings.toml` spell "color", as the rest of the program does.
 
 ## [0.0.1] - 2026-11-03
 

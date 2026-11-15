@@ -1902,15 +1902,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
-    - [ ] "colour" left in member texts, against DECISIONS 2026-11-13's "color is always
-      spelt color" (found 2026-11-15): the violations list's `Name colour` row and its two
-      sentences (`team_widgets::violations`), the Ruleset editor's summary lines "name in
-      colour" and "named in colour" (`summary.rs`) and the tier name colour picker's tooltip,
-      the AATF load error "a name colour code is not eight bytes", the settings comment "0
-      custom (the colour above)" (`settings_toml/keys.rs`), the AATF sample's README; with
-      the tests, templates and spec block pinning them. The drafts' same texts change first
-      (the lead's: the summary goldens are made from the draft's `summary()`). Red's
-      `Team Colours:` heading in a note is the old file's own text and stays
+    - [x] 2026-11-15 (SWE-2, merged `63bb0696`) the member texts left spell "color" (violations, the
+      ruleset summary, the rules load error, the hair color comment, the FPC error); Red's
+      `Team Colours:` note heading stays
     - [x] 2026-11-15 (lead) the two texts the maintainer picked (DECISIONS 2026-11-15 "the
       taping advice and the skills comment"): `fpc_taping_shows_pieces`'s advice in the
       Save editor and the Compiler, and the Team TOML's `skills` comment; the third, the
