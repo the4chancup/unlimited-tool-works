@@ -94,6 +94,11 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   the ID (718), labelled "Bound team ID" as Team ID and Manager ID are; the draft shows
   the stored number (45952), labelled "Bound team id". Which should both show? (Found
   checking the built window beside the drafts, worklog 0.0.2-gaps.)
+- **The draft's checkboxes in Settings: centred, as the build draws them?** In the draft's
+  Settings window a checkbox standing alone in its cell sat 1.5 points above its row's
+  middle, where the build centres it. On 2026-11-15 the lead changed the draft to centre
+  it (`040d85de`, `index.html`'s `table.grid td > input[type=checkbox]`), without asking.
+  Keep the change, or restore the draft and move the build's checkboxes up?
 
 ## After the release
 
