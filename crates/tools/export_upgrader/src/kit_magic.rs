@@ -54,11 +54,11 @@ pub(crate) enum Spelling {
 pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling) -> Cow<'a, str> {
     // The edits, as (start, end, replacement) byte ranges of `text`,
     // disjoint: the legacy respells, and the `kit`→`kit_tex` of every Studio
-    // kit token in a segment holding a legacy `p` one, the file name's when
+    // kit token in a segment holding a legacy one, the file name's when
     // a directory segment holds one.
     let mut edits: Vec<(usize, usize, Cow<str>)> = Vec::new();
     let mut marked = BTreeSet::new();
-    // The file-name segment's start: a `p` token in a directory segment
+    // The file-name segment's start: a legacy token in a directory segment
     // marks it too.
     let name_start = text.rfind('/').map_or(0, |slash| slash + 1);
     for token in legacy_kit_tokens(text) {
@@ -106,7 +106,7 @@ pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling) -> Cow<'a, str> {
 
 /// `directory` (ending in `/` when it names one) and `file_name`, the two
 /// halves of one path an FMDL path-table entry or a `.mtl` sampler stores
-/// apart, respelled as `respell` respells their joined path: a `u0???p`
+/// apart, respelled as `respell` respells their joined path: a legacy
 /// token in `directory` marks `file_name`'s Studio tokens as it does a
 /// whole path's. Both borrowed when nothing changed.
 pub(crate) fn respell_split<'a, 'b>(
