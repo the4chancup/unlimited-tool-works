@@ -1,6 +1,6 @@
 //! Ctrl+C and Ctrl+V, the draft's `clipCopy`/`clipPaste`, acting on the
-//! selected row (which Up and Down move without a click) or, while a
-//! team row stays selected, on what the last press on a Tactics
+//! selected row (which Up and Down move without a click) or, while its
+//! team's row stays selected, on what the last press on a Tactics
 //! selector named: the shown preset or the shown formation.
 //!
 //! The copy is text on the system clipboard, so it pastes into another

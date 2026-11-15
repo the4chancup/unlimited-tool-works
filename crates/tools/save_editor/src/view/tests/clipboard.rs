@@ -560,7 +560,7 @@ fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
     );
 }
 
-// A selector's press names its target only while a team row stays
+// A selector's press names its target only while its team's row stays
 // selected: Down moved the selection to a player row, which a preset
 // or a formation copy does not paste onto.
 // SE-GUI-56
@@ -616,7 +616,8 @@ fn ctrl_v_of_a_selector_copy_after_an_arrow_key_to_a_player_row_pastes_nothing()
 
 // A selector's target ends when the selection leaves its team's row:
 // the team selector's pick of 702 selects its row without a list press,
-// and Ctrl+C then copies 702's Gameplan, not the shown preset.
+// and Ctrl+C then copies 702's Gameplan, not the shown preset — and the
+// pick of 701 after it copies 701's own Gameplan, not the preset either.
 // SE-GUI-56
 #[test]
 fn a_selector_target_ends_when_the_team_selector_picks_another_team() {
@@ -641,6 +642,24 @@ fn a_selector_target_ends_when_the_team_selector_picks_another_team() {
             "# copied: gameplan"
         ],
         "702's Gameplan is the copy, not 701's shown preset"
+    );
+
+    let name = display_name(&team_entry(&view, 701).name);
+    pick_team(&mut window, &mut view, &name);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "the pick returned to 701's team row"
+    );
+
+    let copied = copy(&mut window, &mut view);
+    assert_eq!(
+        head(&copied),
+        [
+            format!("# Unlimited Tool Works: {name}'s Gameplan").as_str(),
+            "# copied: gameplan"
+        ],
+        "701's Gameplan is the copy, not the preset pressed before"
     );
 }
 
@@ -2146,14 +2165,17 @@ fn assert_edit_menu_tips(
 
 // Each enabled entry's hover says what it does, in the notices' words:
 // Copy names its copy (`Copies …`), Paste the copy's kind and the
-// target (`Pastes the copied … onto …`), for each kind of target.
+// target (`Pastes the copied … onto …`), for each kind of target — the
+// selector checks run with another preset and formation shown, so a
+// text built from preset 1's Kick-off alone could not pass.
 // SE-GUI-56
 #[test]
 fn the_edit_menus_hovers_name_the_copy_and_the_target() {
-    let (mut window, mut view) = open_window(&stats_fixture("clip_menu_tips_row"));
-    view.team = TeamChoice::Team(701);
+    let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips"));
+    let team = display_name(&team_entry(&view, 701).name);
     click_player_row(&mut window, &mut view, 701, 0);
-    let name = display_name(&player_entry(&view, 70101).name);
+    let name =
+        display_name(&player_entry(&view, file(&view).team(701).unwrap().roster[0].player_id).name);
     assert_edit_menu_tips(
         &mut window,
         &mut view,
@@ -2161,35 +2183,34 @@ fn the_edit_menus_hovers_name_the_copy_and_the_target() {
         &format!("Pastes the copied stats onto {name}"),
     );
 
-    let (mut window, mut view) = open_window(&stats_fixture("clip_menu_tips_team"));
+    // The hovers leave the menu open: closed before the next press, or
+    // the press closes it and never reaches the row or the selector.
+    egui::Popup::close_all(&window.ctx);
     click_team_row(&mut window, &mut view, 701);
-    let name = display_name(&team_entry(&view, 701).name);
     assert_edit_menu_tips(
         &mut window,
         &mut view,
-        &format!("Copies {name}'s Gameplan"),
-        &format!("Pastes the copied Gameplan onto {name}"),
+        &format!("Copies {team}'s Gameplan"),
+        &format!("Pastes the copied Gameplan onto {team}"),
     );
 
-    let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips_preset"));
-    open_team_view(&mut window, &mut view, 701);
-    click_button(&mut window, &mut view, "1");
-    let name = display_name(&team_entry(&view, 701).name);
+    egui::Popup::close_all(&window.ctx);
+    click_button(&mut window, &mut view, "2");
+    assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
     assert_edit_menu_tips(
         &mut window,
         &mut view,
-        &format!("Copies {name}'s preset 1"),
-        &format!("Pastes the copied preset onto {name}'s preset 1"),
+        &format!("Copies {team}'s preset 2"),
+        &format!("Pastes the copied preset onto {team}'s preset 2"),
     );
 
-    let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips_formation"));
-    open_team_view(&mut window, &mut view, 701);
-    click_button(&mut window, &mut view, "Kick-off");
-    let name = display_name(&team_entry(&view, 701).name);
+    egui::Popup::close_all(&window.ctx);
+    click_button(&mut window, &mut view, "In-possession");
+    assert_eq!(view.tactics.formation, 1, "in-possession is on screen");
     assert_edit_menu_tips(
         &mut window,
         &mut view,
-        &format!("Copies {name}'s preset 1 Kick-off formation"),
-        &format!("Pastes the copied formation onto {name}'s preset 1 Kick-off formation"),
+        &format!("Copies {team}'s preset 2 In-possession formation"),
+        &format!("Pastes the copied formation onto {team}'s preset 2 In-possession formation"),
     );
 }
