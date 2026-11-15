@@ -3450,7 +3450,8 @@ SE-GUI-16  GIVEN the save open on a team
                 in the error colour, Apply disabled, until Stats is unticked
 SE-GUI-104 GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team TOML picked in
                 the interchange dialog
-           WHEN `Select /co/ (714)` on the `Import into` line is clicked
+           WHEN `Select the team with this file's ID (714 /co/)` on the `Import into` line is
+                clicked
            THEN team 714's row is selected, the line reads `Import into /co/ (714)` with no
                 button, and Apply writes 714, 701 untouched; GIVEN the file's `[team] id`
                 set to one the save lacks THEN the button is disabled, its tooltip naming

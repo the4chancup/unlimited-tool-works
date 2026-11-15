@@ -969,18 +969,23 @@ fn contents(
             match file.team(id) {
                 Some(own) => {
                     if ui
-                        .button(format!("Select {} ({id})", display_name(&own.name)))
-                        .on_hover_text(
-                            "Select the team this file was exported from, so the import goes onto it",
-                        )
+                        .button(format!(
+                            "Select the team with this file's ID ({id} {})",
+                            display_name(&own.name)
+                        ))
+                        .on_hover_text("The import then goes onto that team")
                         .clicked()
                     {
                         action = Some(Action::SelectTeam(id));
                     }
                 }
                 None => {
-                    add_enabled(ui, false, egui::Button::new(format!("Select team {id}")))
-                        .on_disabled_hover_text(format!("The save has no team {id}"));
+                    add_enabled(
+                        ui,
+                        false,
+                        egui::Button::new(format!("Select the team with this file's ID ({id})")),
+                    )
+                    .on_disabled_hover_text(format!("The save has no team {id}"));
                 }
             }
         }

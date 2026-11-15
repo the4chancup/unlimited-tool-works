@@ -720,8 +720,13 @@ fn the_files_own_team_is_selected_in_one_click() {
         "premise: /3/ is the target at the pick"
     );
 
-    let button = panel_node(&mut window, &mut view, Role::Button, "Select /co/ (714)")
-        .expect("the own-team button");
+    let button = panel_node(
+        &mut window,
+        &mut view,
+        Role::Button,
+        "Select the team with this file's ID (714 /co/)",
+    )
+    .expect("the own-team button");
     click(&mut window, &button, &mut view);
     assert_eq!(
         view.selected,
@@ -735,7 +740,13 @@ fn the_files_own_team_is_selected_in_one_click() {
         "the new target named: {lines:#?}"
     );
     assert!(
-        panel_node(&mut window, &mut view, Role::Button, "Select /co/ (714)").is_none(),
+        panel_node(
+            &mut window,
+            &mut view,
+            Role::Button,
+            "Select the team with this file's ID (714 /co/)"
+        )
+        .is_none(),
         "the button goes once the file's team is the target"
     );
 
@@ -763,8 +774,13 @@ fn the_own_team_button_is_disabled_on_a_team_the_save_lacks() {
     let text = document.to_toml().expect("the document writes");
     picked(&mut window, &mut view, "co_missing.toml", text.as_bytes());
 
-    let button = panel_node(&mut window, &mut view, Role::Button, "Select team 99999")
-        .expect("the own-team button");
+    let button = panel_node(
+        &mut window,
+        &mut view,
+        Role::Button,
+        "Select the team with this file's ID (99999)",
+    )
+    .expect("the own-team button");
     assert!(button.is_disabled(), "disabled on a missing team");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&button), "no team 99999"),
