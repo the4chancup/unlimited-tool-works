@@ -490,7 +490,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   `File` is the opens first (the discovered saves by version, the session's recent files,
   the picker), then under a separator `Save` (`Ctrl+S`) and `Save as…`, both dead with no
   save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
-  undo or redo.
+  undo or redo, then under a separator `Copy` (`Ctrl+C`) and `Paste` (`Ctrl+V`), which do
+  what the two keys do, on the same target ("Ctrl+C and Ctrl+V" below). `Copy` is dead when
+  Ctrl+C would copy nothing. `Paste` is dead only with no target: the window cannot read the
+  clipboard before it asks for it, so `Paste` asks egui (`ViewportCommand::RequestPaste`),
+  which hands the clipboard's text over as Ctrl+V does, and a copy of another kind changes
+  nothing, as with Ctrl+V. A member who does not know the keys finds both in the menu.
 
   The picker starts in the folder the last save was opened from, by whichever of the opens,
   remembered in the tool's settings (`last_folder`) across starts: a member who keeps his
@@ -3091,7 +3096,11 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
                 the field's own: no record is written and the clipboard keeps A's stats;
                 GIVEN a label's text selected by a drag WHEN Ctrl+C is pressed THEN the
-                clipboard holds that text alone, not the selected row's copy
+                clipboard holds that text alone, not the selected row's copy; GIVEN
+                player A's row selected WHEN the Edit menu's Copy is chosen, then player
+                B's row selected and its Paste chosen THEN the clipboard, B's record and
+                both notices are as with Ctrl+C and Ctrl+V; GIVEN a player the export
+                refuses selected THEN the Edit menu's Copy is disabled
 SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team's Gameplan, a
                 preset or a formation) and a second window with another save open, of the
                 same PES version or another

@@ -17947,3 +17947,15 @@ so keeping it is safe; refilling only when the eleven or the twelve change keeps
 the Import window and the paste.
 Plan: `spec/pes_savefile/operations.md`, the line starting "A `bench_order` writes its
 twelve". Worklog: 0.0.2-clip's review rounds.
+
+## 2026-11-15 — save_editor — The Edit menu holds Copy and Paste under Undo and Redo
+Decision: the Save editor's Edit menu adds `Copy` (`Ctrl+C`) and `Paste` (`Ctrl+V`) under a
+separator below `Undo` and `Redo`. Each does what its key does, on the same target. `Copy` is
+disabled when Ctrl+C would copy nothing, and `Paste` only when there is no target. `Paste`
+asks egui for the clipboard (`ViewportCommand::RequestPaste`), whose text then arrives as
+Ctrl+V's does.
+Why: a member who does not know the keys never finds copy and paste, since no menu named
+them. `Paste` stays enabled with a target because the window cannot see the clipboard before
+it asks, and a copy of another kind already changes nothing under Ctrl+V.
+Plan: `plans/save_editor.md` "The toolbar", the paragraph starting "`File` is the opens
+first"; SE-GUI-56. Worklog: 0.0.2-clip.
