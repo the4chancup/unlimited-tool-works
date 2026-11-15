@@ -19,9 +19,7 @@ settings** live in the Compiler's own settings section.
 | `thread_count` | 0 (auto) | Was a Blue CLI arg; auto = logical cores − 1 |
 | `memory_cap_percent` | 80.0 | Was a Blue CLI arg; memory budget cap, as a percent of the physical memory available at run start (`spec/libs/pipeline.md` "Memory cap"); `0 < percent <= 100` |
 | `check_for_updates` | 1 | Was per-compiler (`updates_check` in Red's ini); becomes a suite-wide update check |
-| `check_interval_minutes` | 60 minutes (hardcoded) | `120`: minutes between release checks. With `last_update_check` and `skipped_version` (both empty by default), the update state of `spec/core/distribution.md` "Update state" |
-| `last_update_check` | - | Update state (above): when the last release check ran. No row |
-| `skipped_version` | - | Update state (above): a release the member chose to skip. No row |
+| `skipped_version` | - | A release the member chose to skip, empty by default: with `check_for_updates`, the update state of `spec/core/distribution.md` "Update state". No row |
 | `theme` | - | `dark` or `light`, default `dark`: the GUI's color theme |
 | `last_tool` | - | The tool active when the GUI last closed, which it reopens; empty on a first run. Written by the shell, no row |
 | `window_main` | - | The main window's last place, `[x, y, width, height, scale, maximized]`, written when the window closes, the sixth number 1 when it was maximized (the first five then being the place its restore button gives back) and 0 when not; a record of five numbers reads as not maximized; empty until the first close. No row |

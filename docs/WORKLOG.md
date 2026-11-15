@@ -2295,12 +2295,9 @@ briefs, review loops, gates and mutation runs as for any step.
       loop. Astra rerunning round 5's brief (the maintainer's comparison) found two
       Carbon had not: the command line's notice pointing at an offer a reopened window
       lacks, and a test racing its worker on a 300 ms sleep ("A-upd r5x")
-    - [ ] every start checks; the open window rechecks every 5 minutes; `last_update_check`
-      and `check_interval_minutes` go (DECISIONS 2026-11-15) -> verify: ST-UPD-01 as
-      rewritten, with the bundled `settings.toml`, the help's Updates chapter and A-upd
-      r5x-2's race (SWE-2, `.tmp/0_0_2/upd/redesign.md`); then the spec's settings tables.
-      No test or script that starts the real program reaches GitHub: the built-window
-      launcher was the only one, and now checks a closed local port (`1ae7e171`)
+    - [x] every start checks and the open window rechecks every 5 minutes, the two keys
+      gone (merge `ff033e52`; the spec's tables and the changelog's Important line after
+      it). No test or script that starts the real program reaches GitHub (`1ae7e171`)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of

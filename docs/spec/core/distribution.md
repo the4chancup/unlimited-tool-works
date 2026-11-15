@@ -208,15 +208,14 @@ Stored with the settings (common settings, `studio_core`):
 | Key | Replaces (Red) | Default |
 |-----|----------------|---------|
 | `check_for_updates` | `updates_check` ini key | `true` |
-| `check_interval_minutes` | hardcoded 60 minutes | `120`: minutes between release checks |
-| `last_update_check` | `state/update_check_last.txt` | - |
 | `skipped_version` | `state/update_skip_last.txt` | - |
 
-This closes out Red's entire `Engines/state/` folder. The remaining five files either became
+This closes out Red's entire `Engines/state/` folder. The remaining six files either became
 settings or lost their reason to exist:
 
 | Red state file | Fate |
 |---|---|
+| `update_check_last.txt` | Dropped: the window checks at every start and every 5 minutes while it stays open, so no check is held off across starts (`plans/core/distribution.md`, the update check's step 1) |
 | `dt00_write_allowed.txt` | Dropped. The Compiler never writes `dt00_x64.cpk`: the Fox referee marker is a reserved collar inside the refs CPK (`spec/team_compiler/blue_port.md` "Referee export processing") |
 | `first_run_done.txt` | Presence-based data-location resolution: the settings file's existence *is* the first-run marker (see "Data location") |
 | `admin_warned.txt` | Dropped: the one-time console explanation before Red's UAC relaunch becomes the `elevation` lib's GUI prompt, which explains itself every time it appears |

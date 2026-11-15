@@ -26,7 +26,9 @@
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
   installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
   mentions a newer version too. The Help
-  window's new Updates chapter explains each step.
+  window's new Updates chapter explains each step. The window checks each time it starts and
+  every 5 minutes while it stays open, so the setting for the time between checks is gone: a
+  `check_interval_minutes` line left in `settings.toml` does nothing.
 
 ### Useful
 
