@@ -127,6 +127,11 @@ Key reasons:
   works everywhere, instant startup.
 - **Single language**: the entire codebase is Rust. No second technology stack (web frontend) to
   maintain alongside Rust.
+- **Tests run in process**: every screen is tested headless, in Rust, through egui's AccessKit
+  tree, thousands of tests in a full run, which is already slow. Driven through a browser or a
+  simulator, as a web frontend's would be, they would take far longer. Building each screen
+  twice, as an HTML draft and in egui, costs more, but each change is compared with its draft
+  once, so that cost falls away as the UI settles.
 - **Resource goal**: avoid a separate webview process alongside PES. Measure actual idle and
   processing memory on the intended machines; egui/wgpu does not guarantee a particular RAM budget.
 - **Cross-platform consistency**: identical GPU rendering on all platforms. No webview rendering

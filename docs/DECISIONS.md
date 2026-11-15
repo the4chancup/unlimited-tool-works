@@ -17734,3 +17734,12 @@ cases too, and the mark must show what the release does. A starter's own marker 
 unmarked because dropping his row there changes nothing.
 Plan: `plans/save_editor.md` "Tactics editor", the paragraph on the dragged starter's mark,
 and SE-GUI-59.
+
+## 2026-11-15 — core — egui stays, and the move to a web frontend is not reopened
+Decision: the suite stays on egui. A move to a web frontend (Tauri) is not reopened, and no
+trial build of one is planned.
+Why: the maintainer, weighing it again: the tests settle it. The suite's thousands of headless
+UI tests run in process, in Rust, and a full run is already slow; driven through a browser or
+a simulator they would take far longer. Building each screen twice costs, but each change is
+compared with its draft once, so the cost falls away as the UI settles.
+Plan: `spec/core/README.md` "GUI framework choice: egui", the bullet "Tests run in process".
