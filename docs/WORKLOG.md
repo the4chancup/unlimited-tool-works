@@ -2146,6 +2146,30 @@ briefs, review loops, gates and mutation runs as for any step.
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
+    failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
+    picking state 522.71875), where it passes in a worktree: the tree's copy sits at a
+    longer path, so the test's long folder line is longer -> verify: reproduced with a
+    longer scratch path, then the dialog (or the test, if its premise is wrong) fixed;
+    SWE-2
+  - [ ] 0.0.2-mutfast save_editor's mutation runs stop at a mutant's first failing test.
+    Its last diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's
+    build 20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's
+    tests 468 s median against the full suite's 578, since libtest runs every test after
+    the first failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally).
+    -> verify: the same 20 save_editor mutants run with libtest and with cargo-nextest
+    (`test_tool = "nextest"`, fail-fast by default; installed here, check the VPS), wall
+    time per caught and per missed mutant compared, the per-test process cost through
+    `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate whose
+    estimate passes a budget (about an hour a side) runs detached from the checkpoint,
+    which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the
+    baseline from depending on the tree's path
+  - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
+    egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
+    row is filled with mid grey at 48 of 255 instead (DECISIONS 2026-11-15) -> verify: a
+    test of the row's colour over the list in both themes (`#202020`, grey 231), then
+    the built list captured beside the draft (brief `.tmp/0_0_2/teamfill/brief.md`, SWE-2,
+    after barrw2)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

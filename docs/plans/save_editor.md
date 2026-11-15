@@ -260,8 +260,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   frame's right edge, not at the bar's, so the column reads as one box; Set stats and its box
   still fit at that width.
 
-  A **team row** heads each team's players, set apart from a player row by the faint fill
-  under it and its name in the strong text colour (no bold: the app installs no bold face, and
+  A **team row** heads each team's players, set apart from a player row by a fill and its
+  name in the strong text colour. The fill is mid grey (127) at 48 of 255 over the list's
+  own colour, one palette value for both themes: the draft's `#202020` on the dark list,
+  grey 231 on the light one's white, so each theme sets the row apart by the same contrast
+  (about 1.2). Not egui's faint colour, which adds a little light: on the dark list it
+  came out `#0f0f0f`, nearly the list's own, and on the light list's white it adds nothing (no bold: the app installs no bold face, and
   a second font file for one row costs more than it shows). It shows the team's id, its
   colours 1-2 as swatches and its name (no `[click for gameplan]` after it: the toggle's
   Gameplan goes there and selects the row, which shows what the row is for, and the label
