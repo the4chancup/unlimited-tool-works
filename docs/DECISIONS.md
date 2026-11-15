@@ -18137,3 +18137,14 @@ shortcuts' weak grey, not a new shade.
 Plan: `plans/save_editor.md` "The toolbar" (the File menu) and the welcome panel's
 paragraph; SE-GUI-26, SE-GUI-90, new SE-GUI-105; `plans/core/gui.md` "Closing the window",
 ST-RUN-05.
+
+## 2026-11-16 — save_editor, team_widgets — with the portraits off, a marker is its badge for clicks and brackets
+Decision: with the Tactics pitch's Portraits unticked, the corner brackets (a selected
+marker, an armed role's candidates, a drop's target) frame the badge, their upright arms
+shortened to its 14-point height, and a marker takes clicks and drops from its badge's top
+down. The badges stay where they stand with the portraits.
+Why: the portrait's box, not drawn, took a click or a drop meant for the badge of the
+player standing above (a DMF behind an AMF in one lane), and brackets around it framed
+empty turf. Moving the badges up to close the gap instead would change the shape the
+manager reads as the checkbox is ticked.
+Plan: `plans/save_editor.md` "Tactics editor", the Portraits paragraph.

@@ -615,8 +615,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   `core/gui.md` "Status bar" gives (the thing first, then what was done to it): Save and
   Save as (`<file> saved (the replaced file is kept once as <file>.bak)`, the brackets only
   when the write replaced a file: a Save as onto a new name reads `<file> saved`), Output
-  rosters to TSV, the two Generate actions, each team file export and the Comparator's Export
-  (`<file> written`, with its detail after), an imported ruleset (`<label> imported.`), the
+  rosters to TSV, the two Generate actions and each team file export (`<file> written`, with
+  its detail after: `(team 701 as a PES 2021 Texport)`), the Comparator's Export (`<file>
+  written`, SE-GUI-13), an imported ruleset (`<label> imported.`), the
   Multi-team AATF and Live AATF copies, and Ctrl+C and Ctrl+V (below). The draft's
   `publishNotice` calls are the list; an action added later gets its notice with it.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
@@ -1518,7 +1519,12 @@ Win32 original hurt the most):
     players' portraits on the pitch. Off, the formation's shape is easier to see." With the
     portraits off the captain's mark stands on the badge's top edge at the badge's left end,
     and Live AATF's cross stands on the badge too, centred, its lower ends touching it, where
-    both would otherwise float over the turf. Each
+    both would otherwise float over the turf. The corner brackets (a selected marker's, an
+    armed role's candidates', a drop's target) frame the badge then, their upright arms
+    shortened to its height, and a marker takes clicks and drops from its badge's top down:
+    a portrait not drawn would take a click meant for the badge above it, and brackets
+    around it would frame empty turf. The badges stay where they stand with the portraits.
+    Each
     name's period starts when the pitch first shows it, still first. The game staggers names by
     a rule not established (two names 2.1 s apart); the editor's start together when the team
     view opens, until the game's delays are measured (a worklog step after 0.0.2).
@@ -3313,9 +3319,9 @@ SE-GUI-79  GIVEN a save open with an edit made
                 file is kept once as <file name>.bak)`, in the success colour; WHEN Save
                 as… writes a save THEN `<file name> saved`, with the same `.bak` detail
                 when it replaced a file; WHEN Output rosters to TSV, a Team TOML export, a
-                Texport export, each Generate action and the Comparator's Export each write
-                their file THEN each publishes `<file> written` with its detail, and none
-                reads `Wrote`;
+                Texport export and each Generate action each write their file THEN each
+                publishes `<file> written` with its detail, and the Comparator's Export
+                `<file> written`; none reads `Wrote`, and each is a Success notice;
                 WHEN a ruleset is imported THEN the notice reads `<label> imported.`
 SE-GUI-80  GIVEN team 718 /f/ selected in the interchange panel
            WHEN Team TOML's export is clicked

@@ -6548,9 +6548,12 @@ function clampBadge(x, y) {
     Math.min(PITCH.h - MARKER.nameDy - 7, Math.max(top, y))];
 }
 // The marker's whole box: portrait top to name bottom, the badge's width.
+// With the portraits off it starts at the badge's top: a portrait not drawn
+// would take a click or a drop meant for the badge above it.
 function markerRect(t, i, f = tacFormation(t)) {
   const [x, y] = badgeAt(t, i, f);
-  const top = MARKER.badgeH / 2 + MARKER.gap + MARKER.portrait;
+  const top = MARKER.badgeH / 2
+    + (S.pitchPortraits !== false ? MARKER.gap + MARKER.portrait : 0);
   return { x: x - MARKER.badgeW / 2, y: y - top, w: MARKER.badgeW, h: top + MARKER.nameDy + 7 };
 }
 // The order the game draws markers in: top of the screen first, so a lower
@@ -6731,12 +6734,15 @@ function drawLines(g) {
   }
 }
 // The selection corners the game draws around a portrait: a 50 x 50 box,
-// its bottom on the badge's top.
+// its bottom on the badge's top. With the portraits off they frame the badge,
+// their upright arms shortened to fit its height, not a box of empty turf.
 function corners(g, x, y, colour) {
-  const L = x - 25, T = y - MARKER.badgeH / 2 - 50, a = 9;
+  const faces = S.pitchPortraits !== false;
+  const H = faces ? 50 : MARKER.badgeH, L = x - 25, a = 9, av = faces ? 9 : 5;
+  const T = faces ? y - MARKER.badgeH / 2 - 50 : y - MARKER.badgeH / 2;
   g.strokeStyle = colour; g.lineWidth = 2;
-  for (const [px, py, dx, dy] of [[L, T, 1, 1], [L + 50, T, -1, 1], [L, T + 50, 1, -1], [L + 50, T + 50, -1, -1]]) {
-    g.beginPath(); g.moveTo(px, py + dy * a); g.lineTo(px, py); g.lineTo(px + dx * a, py); g.stroke();
+  for (const [px, py, dx, dy] of [[L, T, 1, 1], [L + 50, T, -1, 1], [L, T + H, 1, -1], [L + 50, T + H, -1, -1]]) {
+    g.beginPath(); g.moveTo(px, py + dy * av); g.lineTo(px, py); g.lineTo(px + dx * a, py); g.stroke();
   }
 }
 const portraitImages = {};
