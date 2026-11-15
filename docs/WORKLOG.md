@@ -2214,7 +2214,13 @@ briefs, review loops, gates and mutation runs as for any step.
       Escape on `Update failed` untested; two stale doc comments; the lead's text: the
       settings file's comment, the help's Restart now sentence, the changelog's launchers
       (`4705095d`)
-    - [ ] the rework (SWE-2, `sk/updrw`), then Carbon's round 3
+    - [x] the rework (SWE-2, 2026-11-15; merge `6d5a9ab6`)
+    - [x] Carbon's round 3, 2026-11-15 (at `766ccf6c`): 7 of 7 accepted: an idle window
+      never wakes for its next check or retry (the drain frame schedules nothing); four
+      tests that pass on wrong code; the help offered deleting the only copies of the old
+      files after a failed restore (`ef105c80`, the lead)
+    - [ ] the rework (SWE-2, `sk/updrw2`, `.tmp/0_0_2/upd/rework_c3.md`), then Carbon's
+      round 4
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2545,7 +2551,14 @@ briefs, review loops, gates and mutation runs as for any step.
         a label copied the save; three tests that could not fail (CRLF, formations off
         preset 1, a mixed notes tail); the lead's text: the help's Copy and paste section,
         the plan bullet's stale lines, two changelog lines (`4705095d`)
-      - [ ] the rework (SWE-2, `sk/cliprw`), then Carbon's round 2
+      - [x] the rework (SWE-2 and the lead, 2026-11-15; merge `58e2aa12`): all six; a label
+        test's copy assertion narrowed to text that is not the save's own
+      - [x] Carbon's round 2, 2026-11-15 (at `766ccf6c`): 10 of 11 accepted: a preset or
+        formation press stays the target after the selection reaches another team without
+        a list press, and comes back with its team row; five tests that cannot fail; the
+        help named the whole bars where only their buttons pick (`d95ac237`, the lead)
+      - [ ] the rework (SWE-2, `sk/cliprw2`, `.tmp/0_0_2/clip/rework_c2.md`), then Carbon's
+        round 3
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2584,7 +2597,14 @@ briefs, review loops, gates and mutation runs as for any step.
       ran a clean export after an unclean one; the panic hook's call of the hook before it
       untested; `FIRST_RUN`'s doc named removed commands; the lead's text: the help's
       "Team compiler" and its several-exports paragraph split in three (`4705095d`)
-    - [ ] the rework (SWE-2, `sk/logallrw`), then Carbon's round 3
+    - [x] the rework (SWE-2, 2026-11-15; merge `218ecaaf`): the three test and doc findings
+    - [x] Carbon's round 3, 2026-11-15 (at `766ccf6c`): 6 of 7 accepted: the printers'
+      mutant excluded under its old function's name; `upgrade --help` placing the output in
+      the input's folder (it goes beside it); the plan's list of what the log file takes;
+      seven `RunEvents` methods wider than their callers; two docs (`fb177097`, the lead).
+      Rejected: `quick_upgrade.bat` passing the exe's exit code through
+    - [ ] the `--help` text and the methods' visibility (the lead, needs a build), then
+      Carbon's round 4
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the

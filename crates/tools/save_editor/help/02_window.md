@@ -77,16 +77,17 @@ step.
 **Copy and paste**
 
 Ctrl+C copies the selected row, and Ctrl+V pastes it onto another selected row of the same
-kind: a player's row copies his stats, which paste as **Copy/swap stats…** copies them, and a
-team's row copies its Gameplan. In a team's **Tactics** part, a click on the preset bar or
-the formation bar makes Ctrl+C copy the preset or formation shown, and Ctrl+V paste over the
+kind: a player's row copies his stats (the fields the **Player** menu's **Copy/swap stats…**
+moves), and a team's row copies its Gameplan. In a team's **Tactics** part, a click on a
+**Preset** button (1, 2 or 3) or a formation button (**Kick-off**, **In-possession** or
+**Out-of-possession**) makes Ctrl+C copy that preset or formation, and Ctrl+V paste over the
 one shown.
 
 The copy is text on the system clipboard, so it also pastes into another Save editor window,
 or after another save is opened, even a save of another PES version. When the target's
 version cannot hold a value as it was, the status bar says how many were left out or
-changed. Each paste is one undo step, and while you type in a text field, Ctrl+C and Ctrl+V
-copy and paste its text.
+changed. Each paste is one undo step. While you type in a text field, Ctrl+C and Ctrl+V copy
+and paste its text, and Ctrl+C with text selected on screen copies that text.
 
 **Quick actions**
 

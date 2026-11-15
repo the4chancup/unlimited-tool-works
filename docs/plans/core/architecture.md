@@ -120,7 +120,8 @@ has to act on, and the file is where the rest is read.
 
 The file takes:
 
-- every finding line, as stdout prints it without the option;
+- every line stdout prints without the option: the findings and the run's own lines (an
+  export's `Upgrading <name>`, the closing tally, a command's result);
 - what the run writes to stderr (a notice, the run's summary whether or not a terminal draws
   it, the `error:` line);
 - a panic's message and its stack frames, written as the window's log writes them: the file

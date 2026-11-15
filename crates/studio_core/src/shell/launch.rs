@@ -7,8 +7,8 @@
 //! | `UTW --gui <tool-id> <command> [args]` | GUI autorun: the GUI opens on the tool and runs the command |
 //! | `UTW help [chapter] [topic] [--export <dir>]` | prints or exports the help's Markdown |
 //!
-//! Every tool contributes one clap subcommand named after its id; `--gui` and `-v` are the
-//! shell's own flags and `help` its own subcommand, parsed here so no tool's command knows
+//! Every tool contributes one clap subcommand named after its id; `--gui`, `-v` and
+//! `--log-file` are the shell's own flags and `help` its own subcommand, parsed here so no tool's command knows
 //! about them. `--gui help` parses as `help`: the flag means nothing for it.
 
 use std::ffi::OsString;

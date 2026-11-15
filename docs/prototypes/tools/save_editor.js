@@ -3796,13 +3796,17 @@ function welcomePanel() {
           "Opens in the selected version's save folder when it exists")))));
 }
 // The Edit menu: Undo and Redo, each dead with nothing to do, its tooltip
-// the button's own (the last step's label).
+// the button's own (the last step's label); then Copy and Paste, Ctrl+C's and
+// Ctrl+V's on the same target, Copy dead where Ctrl+C copies nothing.
 function editMenu() {
   return menu("Edit", [
     ["Undo\tCtrl+Z", () => { doUndo(); render(); }, !S.undo.length,
       S.undo.length ? "Undo: " + S.undo[S.undo.length - 1].label : "Nothing to undo"],
     ["Redo\tCtrl+Y", () => { doRedo(); render(); }, !S.redo.length,
       S.redo.length ? "Redo: " + S.redo[S.redo.length - 1].label : "Nothing to redo"],
+    "-",
+    ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !S.save || (clipKind() === "player" && groupOn())],
+    ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !S.save],
   ], { frame0: true });
 }
 
