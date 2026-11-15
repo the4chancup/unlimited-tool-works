@@ -3509,7 +3509,7 @@ fn portraits_is_a_remembered_view_setting() {
         "the restart reads it back"
     );
 
-    // Choose file… opens the next save — the view's and the settings
+    // Open… opens the next save — the view's and the settings
     // table's `portraits` both stay false (the open lands inside a
     // `Tool::view` frame, so the frame's own write-back is the check).
     let picked = other_path.clone();
@@ -3519,7 +3519,7 @@ fn portraits_is_a_remembered_view_setting() {
     let open = menu_button(&nodes, "File");
     press_release(&mut window, centre(open), |ui| tool2.view(ui, &ctx));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let choose = menu_item(&nodes, "Choose file");
+    let choose = menu_item(&nodes, "Open\u{2026}");
     press_release(&mut window, centre(choose), |ui| tool2.view(ui, &ctx));
     assert_eq!(
         tool2.view.session.as_ref().unwrap().path(),
@@ -3966,7 +3966,7 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
 }
 
 // Scroll names is remembered in the tool's settings: off,
-// then Choose file… opens the next save — the view's and the settings table's
+// then Open… opens the next save — the view's and the settings table's
 // `scroll_names` both stay false (the open happens inside a `Tool::view`
 // frame, so the frame's own write-back is the check).
 #[test]
@@ -3995,7 +3995,7 @@ fn scroll_names_survives_opening_another_save() {
         "premise: the setting is off"
     );
 
-    // Open the other save through the File menu's Choose file…, its
+    // Open the other save through the File menu's Open…, its
     // picker stubbed — the open lands inside the `tool.view` frame.
     let picked = other_path.clone();
     tool.view.open_dialog = Box::new(move |_| Some(picked.clone()));
@@ -4004,7 +4004,7 @@ fn scroll_names_survives_opening_another_save() {
     let open = menu_button(&nodes, "File");
     press_release(&mut window, centre(open), |ui| tool.view(ui, &ctx));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let choose = menu_item(&nodes, "Choose file");
+    let choose = menu_item(&nodes, "Open\u{2026}");
     press_release(&mut window, centre(choose), |ui| tool.view(ui, &ctx));
     assert_eq!(
         tool.view.session.as_ref().unwrap().path(),

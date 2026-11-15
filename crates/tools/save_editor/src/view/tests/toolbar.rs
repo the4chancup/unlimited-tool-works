@@ -643,17 +643,22 @@ fn the_menus_are_disabled_with_no_save_open() {
             "{menu} is enabled"
         );
     }
-    let nodes = open_menu(&mut window, &mut view, "File", "Choose file");
+    let nodes = open_menu(&mut window, &mut view, "File", "Open\u{2026}");
     assert!(
-        !menu_item(&nodes, "Choose file").is_disabled(),
+        !menu_item(&nodes, "Open\u{2026}").is_disabled(),
         "the picker is enabled"
     );
-    for entry in ["Save Ctrl+S", "Save as\u{2026}"] {
+    for entry in [
+        "Save Ctrl+S",
+        "Save as\u{2026} Ctrl+Shift+S",
+        "Close save Ctrl+W",
+    ] {
         assert!(
             node_labeled(&nodes, Role::Button, entry).is_disabled(),
             "{entry} is disabled"
         );
     }
+    assert!(!menu_item(&nodes, "Exit").is_disabled(), "Exit is enabled");
     let nodes = open_menu(&mut window, &mut view, "Edit", "Undo");
     for entry in ["Undo Ctrl+Z", "Redo Ctrl+Y"] {
         assert!(

@@ -129,10 +129,12 @@ impl StudioTool for Tool {
             self.view.data_dir = ctx.paths().data_dir.clone();
             self.view.exe_dir = ctx.paths().exe_dir.clone();
             self.view.imported = session::rules::imported(self.view.data_dir.as_deref());
-            // State the tool writes itself (an open's last folder), so it is
-            // read once: a per-frame sync would overwrite an open that ran
-            // between frames before the write-back could carry it.
+            // State the tool writes itself (an open's last folder, the
+            // recent saves an open or a save moves), so it is read once: a
+            // per-frame sync would overwrite an open that ran between
+            // frames before the write-back could carry it.
             self.view.last_folder = tool_settings.last_folder.clone();
+            self.view.recents = tool_settings.recent_files.clone();
             self.imports_read = true;
         }
         self.view.aatf_ruleset = tool_settings.aatf_ruleset.clone();
@@ -175,9 +177,10 @@ impl StudioTool for Tool {
         // where Live AATF's list stands, the formation bar's Scroll and
         // Portraits checkboxes, the positions grid's layout toggle, the
         // selector's category, the formation pictures' folder, settings box
-        // and grain box and the picker's last folder are settings: the table
-        // as read with only those keys replaced, so any other key survives
-        // (as `settings_view` writes `aesthetics_from_exports`).
+        // and grain box, the picker's last folder and the recent saves are
+        // settings: the table as read with only those keys replaced, so any
+        // other key survives (as `settings_view` writes
+        // `aesthetics_from_exports`).
         if self.view.aatf_ruleset != tool_settings.aatf_ruleset
             || self.view.live_aatf != tool_settings.live_aatf
             || self.view.live_suggestions != tool_settings.live_suggestions
@@ -190,6 +193,7 @@ impl StudioTool for Tool {
             || self.view.formation_pictures_flat != tool_settings.formation_pictures_flat
             || self.view.formation_pictures_settings != tool_settings.formation_pictures_settings
             || self.view.last_folder != tool_settings.last_folder
+            || self.view.recents != tool_settings.recent_files
         {
             let mut table = table;
             table.insert(
@@ -243,6 +247,11 @@ impl StudioTool for Tool {
                 ),
                 None => table.remove("last_folder"),
             };
+            table.insert(
+                "recent_files".to_owned(),
+                toml::Value::try_from(&self.view.recents)
+                    .expect("a recent save is a path and a version number"),
+            );
             ctx.set_tool_settings(TOOL_ID, table);
         }
     }
@@ -361,6 +370,8 @@ impl StudioTool for Tool {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
 
     #[test]
@@ -474,12 +485,23 @@ mod tests {
         );
     }
 
-    // An open writes `last_folder` into the settings, and the editor started
-    // again from the same settings reads it back into the picker's start.
-    // SE-GUI-26
-    #[test]
-    fn the_last_folder_survives_a_restart_through_the_settings() {
-        let dir = crate::test_support::scratch("lib_last_folder");
+    /// A `Tool` over `test`'s scratch folder, which holds one PES 2021 save
+    /// in `backups/`: the tool, the context (its receivers and the settings
+    /// handle held for the channels) and the egui context with the theme on
+    /// (the welcome panel's title draws in its window-title style).
+    struct OneSave {
+        path: PathBuf,
+        backups: PathBuf,
+        tool: Tool,
+        ctx: ToolContext,
+        egui_ctx: egui::Context,
+        _settings: std::sync::Arc<std::sync::Mutex<studio_core::Settings>>,
+        _events_rx: crossbeam_channel::Receiver<studio_core::PipelineEventEnvelope>,
+        _requests_rx: crossbeam_channel::Receiver<studio_core::ShellRequest>,
+    }
+
+    fn one_save(test: &str) -> OneSave {
+        let dir = crate::test_support::scratch(test);
         let backups = dir.join("backups");
         std::fs::create_dir_all(&backups).unwrap();
         let path = backups.join("EDIT00000000");
@@ -488,27 +510,55 @@ mod tests {
             pes_savefile::fixture_save(pes_version::PesVersion::Pes21),
         )
         .unwrap();
-        let (ctx, _shared, _events_rx, _requests_rx) =
+        let (ctx, _settings, _events_rx, _requests_rx) =
             crate::test_support::shared_tool_context(&dir, studio_core::Settings::default());
         let mut tool = Tool::new();
         // With no save open the welcome panel's discovery would reach the
         // real Documents folder.
         tool.view.discover = Box::new(|_| Vec::new());
+        let egui_ctx = egui::Context::default();
+        studio_core::theme::install(&egui_ctx);
+        OneSave {
+            path,
+            backups,
+            tool,
+            ctx,
+            egui_ctx,
+            _settings,
+            _events_rx,
+            _requests_rx,
+        }
+    }
+
+    /// One `Tool::view` frame on `tool`'s egui context.
+    fn view_frame(tool: &mut Tool, egui_ctx: &egui::Context, ctx: &ToolContext) {
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, ctx));
+        output.drop_without_applying_deltas();
+    }
+
+    // An open writes `last_folder` into the settings, and the editor started
+    // again from the same settings reads it back into the picker's start.
+    // SE-GUI-26
+    #[test]
+    fn the_last_folder_survives_a_restart_through_the_settings() {
+        let OneSave {
+            path,
+            backups,
+            mut tool,
+            ctx,
+            egui_ctx,
+            ..
+        } = one_save("lib_last_folder");
         assert!(
             ctx.tool_settings(TOOL_ID).get("last_folder").is_none(),
             "premise: the setting holds no folder yet"
         );
         let expected = backups.display().to_string();
-        let egui_ctx = egui::Context::default();
-        // The welcome panel's title draws in the theme's window-title style.
-        studio_core::theme::install(&egui_ctx);
         // The first frame reads the setting into the view; the open, as every
         // open, writes it back on its own frame.
-        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
-        output.drop_without_applying_deltas();
+        view_frame(&mut tool, &egui_ctx, &ctx);
         tool.view.open(&path);
-        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
-        output.drop_without_applying_deltas();
+        view_frame(&mut tool, &egui_ctx, &ctx);
         assert_eq!(
             ctx.tool_settings(TOOL_ID)["last_folder"].as_str(),
             Some(expected.as_str()),
@@ -517,11 +567,55 @@ mod tests {
 
         let mut restarted = Tool::new();
         restarted.view.discover = Box::new(|_| Vec::new());
-        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| restarted.view(ui, &ctx));
-        output.drop_without_applying_deltas();
+        view_frame(&mut restarted, &egui_ctx, &ctx);
         assert_eq!(
             restarted.view.last_folder,
             Some(backups),
+            "read back at the restart"
+        );
+    }
+
+    // An open writes `recent_files` into the settings with the save's path
+    // and version, and the editor started again from the same settings lists
+    // it in the File menu's recents.
+    // SE-GUI-90
+    #[test]
+    fn the_recent_saves_survive_a_restart_through_the_settings() {
+        let OneSave {
+            path,
+            mut tool,
+            ctx,
+            egui_ctx,
+            ..
+        } = one_save("lib_recents");
+        assert!(
+            ctx.tool_settings(TOOL_ID).get("recent_files").is_none(),
+            "premise: the setting holds no recents yet"
+        );
+        view_frame(&mut tool, &egui_ctx, &ctx);
+        tool.view.open(&path);
+        view_frame(&mut tool, &egui_ctx, &ctx);
+        assert_eq!(
+            ctx.tool_settings(TOOL_ID)["recent_files"],
+            toml::Value::Array(vec![toml::Value::Table(toml::Table::from_iter([
+                (
+                    "path".to_owned(),
+                    toml::Value::String(path.display().to_string()),
+                ),
+                ("version".to_owned(), toml::Value::Integer(21)),
+            ]))]),
+            "the open wrote the save's path and version"
+        );
+
+        let mut restarted = Tool::new();
+        restarted.view.discover = Box::new(|_| Vec::new());
+        view_frame(&mut restarted, &egui_ctx, &ctx);
+        assert_eq!(
+            restarted.view.recents,
+            [crate::settings::RecentSave {
+                path,
+                version: pes_version::PesVersion::Pes21,
+            }],
             "read back at the restart"
         );
     }

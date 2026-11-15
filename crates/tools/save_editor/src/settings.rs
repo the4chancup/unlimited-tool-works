@@ -1,4 +1,4 @@
-//! The Save editor's section of the settings file: its thirteen keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its fourteen keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
@@ -7,13 +7,26 @@
 //! `positions_layout` (the Playable positions grid's layout toggle),
 //! `team_category` (the team selector's radio buttons), `formation_pictures_folder`,
 //! `formation_pictures_flat` and `formation_pictures_settings` (the formation pictures'
-//! folder, grain box and settings box) and `last_folder` (the folder the file
-//! picker starts in). A key enters with the code that reads
+//! folder, grain box and settings box), `last_folder` (the folder the file
+//! picker starts in) and `recent_files` (the File menu's recent saves, each its
+//! path and version). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
 
 use std::path::PathBuf;
 
+use pes_version::PesVersion;
 use serde::{Deserialize, Serialize};
+
+/// A recent save's entry in `recent_files`: its path and the PES version the
+/// save was opened or written as, stored so the File menu's `[PES 2021]`
+/// label reads no save.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct RecentSave {
+    /// The save's path.
+    pub(crate) path: PathBuf,
+    /// Its version, the file's own, read at the open or the write.
+    pub(crate) version: PesVersion,
+}
 
 /// The Save editor's settings, the keys this version reads.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -75,6 +88,11 @@ pub(crate) struct SaveEditorSettings {
     /// picker starts there while it exists, so a member who keeps his saves in a folder
     /// of his own is taken back to it. Written on every open, as `scroll_names` is.
     pub(crate) last_folder: Option<PathBuf>,
+    /// The last 10 saves opened or saved, newest first: the File menu's and the
+    /// welcome panel's Recent files. Written back when the list moves, as
+    /// `last_folder` is; a path gone from disk stays in the list, skipped when
+    /// shown.
+    pub(crate) recent_files: Vec<RecentSave>,
 }
 
 impl Default for SaveEditorSettings {
@@ -93,6 +111,7 @@ impl Default for SaveEditorSettings {
             formation_pictures_flat: false,
             formation_pictures_settings: false,
             last_folder: None,
+            recent_files: Vec::new(),
         }
     }
 }

@@ -60,9 +60,12 @@ pub(crate) enum Pending {
     /// and asks the shell to close again, so the re-asked `hold_close`
     /// returns `false`.
     Close,
+    /// The File menu's `Close save` (Ctrl+W): the save closes and the view
+    /// draws its start again — the welcome panel.
+    CloseSave,
     /// One of the File menu's opens: the save at the path opens.
     Open(PathBuf),
-    /// The File menu's `Choose file…`: the file dialog follows the answer,
+    /// The File menu's `Open…`: the file dialog follows the answer,
     /// in the folder given when there is one (a cancelled dialog leaves
     /// the open save as it is).
     OpenPicker(Option<PathBuf>),
@@ -914,9 +917,10 @@ pub(super) fn go_on(view: &mut SaveView, pending: Pending) {
         // The session goes so the re-asked `hold_close` lets the window
         // close; `request_close` is `Tool::view`'s to send.
         Pending::Close => {
-            view.session = None;
+            view.close_save();
             view.request_close = true;
         }
+        Pending::CloseSave => view.close_save(),
         Pending::Open(path) => view.open(&path),
         Pending::OpenPicker(start) => {
             if let Some(path) = (view.open_dialog)(start.as_deref()) {

@@ -58,6 +58,7 @@ use crate::session::Session;
 use crate::session::journal;
 use crate::session::rules::{self, Imported};
 use crate::session::selection::{self, TeamCategory, TeamChoice};
+use crate::settings::RecentSave;
 
 pub(crate) use abilities::PositionsLayout;
 
@@ -184,7 +185,7 @@ pub(crate) struct SaveView {
     /// The Discard-on-close answer's ask to close again, drained by
     /// `Tool::view` into `ctx.request_close()` (the shell owns the send).
     pub(crate) request_close: bool,
-    /// The File menu's `Choose file…` picker (`rfd`, stubbed in tests).
+    /// The File menu's `Open…` picker (`rfd`, stubbed in tests).
     open_dialog: file_menu::OpenDialog,
     /// Save as's picker (`rfd`, stubbed in tests).
     save_as_dialog: SaveAsDialog,
@@ -199,13 +200,15 @@ pub(crate) struct SaveView {
     /// tool's first frame, or a save closing) and kept while it stays up,
     /// never a scan a frame; `open` drops it, so the next stay rescans.
     welcome_discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
-    /// The files opened or written by Save as in this run of the program,
-    /// the most recent first: the File menu's opens' middle group. Not a
-    /// setting.
-    recents: Vec<PathBuf>,
+    /// The last 10 saves opened or saved, newest first — `Tool::view` reads
+    /// the `recent_files` setting into the list at start and writes it back
+    /// when the list moves (`pub(crate)` so it and the crate root's tests
+    /// reach it): the File menu's and the welcome panel's Recent files. A
+    /// path gone from disk is skipped when shown and kept in the setting.
+    pub(crate) recents: Vec<RecentSave>,
     /// The folder the last save was opened from: `Tool::view` reads the
     /// `last_folder` setting into it on its first frame and writes it back
-    /// when an open changes it: `Choose file…` and the Open shortcuts' picker
+    /// when an open changes it: `Open…` and the Open shortcuts' picker
     /// start there while the folder exists. `None` in the tests' view-only
     /// frames until a test sets it.
     pub(crate) last_folder: Option<PathBuf>,
@@ -639,11 +642,7 @@ impl SaveView {
     pub(crate) fn open(&mut self, path: &Path) {
         match Session::open(path, self.recorder.clone()) {
             Ok(session) => {
-                self.team = TeamChoice::All;
-                self.filter.clear();
-                self.page = PlayerScreen::Stats;
-                self.last_shown.clear();
-                self.click_kind = None;
+                self.drop_save();
                 self.selected = selection::list(session.file(), &self.team, "", self.team_category)
                     .into_iter()
                     .find_map(|row| match row {
@@ -653,34 +652,10 @@ impl SaveView {
                         selection::ListRow::Team(_) => None,
                     });
                 self.comparator.reset(session.version(), &self.recorder);
-                file_menu::push_recent(&mut self.recents, path);
+                file_menu::push_recent(&mut self.recents, path, session.version());
                 self.last_folder = path.parent().map(Path::to_path_buf);
                 self.session = Some(session);
                 self.generation += 1;
-                // View settings, not the save's: `scroll_names` and
-                // `portraits` are the member's, so they survive the open
-                // (the rest is the save's: back to preset 1 and kick-off).
-                let scroll_names = self.tactics.scroll_names;
-                let portraits = self.tactics.portraits;
-                self.tactics = team_widgets::tactics::TacticsView::default();
-                self.tactics.scroll_names = scroll_names;
-                self.tactics.portraits = portraits;
-                self.prompt = None;
-                self.edit_mode_question = None;
-                self.refusal = None;
-                self.boglo = None;
-                self.stat_num = None;
-                self.copy_swap = None;
-                self.generate = None;
-                self.picture = None;
-                self.pictures_range = None;
-                self.fix_database = false;
-                self.kit_slots = None;
-                self.live.check.reset();
-                self.multi_aatf.reset();
-                self.cards.reset();
-                self.medals.reset();
-                self.welcome_discovered = None;
             }
             Err(error) => {
                 self.refusal = Some(Refusal {
@@ -689,6 +664,64 @@ impl SaveView {
                 });
             }
         }
+    }
+
+    /// The open save's half of the view back to a start's — called by an
+    /// open over it and by `close_save`: the selector, filter, selection
+    /// and player screen, the save's dialogs and popups, a refusal, the
+    /// checks' and badges' worker results and runs in flight (a Live AATF
+    /// reply landing after the drop changes nothing: its channel is
+    /// dropped with them), and the welcome panel's scan, which the panel
+    /// runs again. The member's view settings (`scroll_names`, `portraits`),
+    /// `recents` and `last_folder` are not the save's to drop.
+    fn drop_save(&mut self) {
+        self.team = TeamChoice::All;
+        self.filter.clear();
+        self.page = PlayerScreen::Stats;
+        self.last_shown.clear();
+        self.click_kind = None;
+        self.selected = None;
+        // View settings, not the save's: `scroll_names` and `portraits`
+        // are the member's, so they survive (the rest is the save's:
+        // back to preset 1 and kick-off).
+        let scroll_names = self.tactics.scroll_names;
+        let portraits = self.tactics.portraits;
+        self.tactics = team_widgets::tactics::TacticsView::default();
+        self.tactics.scroll_names = scroll_names;
+        self.tactics.portraits = portraits;
+        self.prompt = None;
+        self.changes_list = None;
+        self.edit_mode_question = None;
+        self.refusal = None;
+        self.boglo = None;
+        self.stat_num = None;
+        self.copy_swap = None;
+        self.generate = None;
+        self.picture = None;
+        self.pictures_range = None;
+        self.fix_database = false;
+        self.kit_slots = None;
+        self.live.check.reset();
+        self.multi_aatf.reset();
+        self.cards.reset();
+        self.medals.reset();
+        self.welcome_discovered = None;
+    }
+
+    /// Close save (the File menu's entry and Ctrl+W; a Discard answering the
+    /// window's close takes the same drop): the session and what the save
+    /// owned — the floating windows of it and the File menu's discovery, so
+    /// the welcome panel rescans — dropped on top of `drop_save`. Nothing
+    /// happens with no save open.
+    pub(crate) fn close_save(&mut self) {
+        if self.session.is_none() {
+            return;
+        }
+        self.session = None;
+        self.panel = None;
+        self.comparator = comparator::Comparator::new();
+        self.discovered = None;
+        self.drop_save();
     }
 
     /// The open save's version, `None` with none open: `Tool::view` reads it
@@ -1037,14 +1070,19 @@ fn toolbar(
     let modal_up = view.prompt.is_some()
         || view.edit_mode_question.is_some()
         || ui.ctx().memory(|memory| memory.top_modal_layer()).is_some();
-    // Ctrl+S saves even while a text field holds the keyboard; the other
-    // shortcuts are held off then (a text field's own undo is egui's). A
-    // button, checkbox or rating cell holding the keyboard after a Space
-    // press does not hold them off: its edit already settled.
-    // Ctrl alone: `consume_ctrl` matches `Modifiers::CTRL` exactly, so
-    // Ctrl+Shift+S (muscle memory for Save as) is not Save over the open
-    // file; Ctrl+Shift+Z keeps its own two-modifier match.
+    // Ctrl+S saves even while a text field holds the keyboard, and
+    // Ctrl+Shift+S opens Save as the same way (its own two-modifier match,
+    // as Ctrl+Shift+Z's is); the other shortcuts are held off then (a text
+    // field's own undo is egui's). A button, checkbox or rating cell
+    // holding the keyboard after a Space press does not hold them off:
+    // its edit already settled. Ctrl alone for Save: `consume_ctrl`
+    // matches `Modifiers::CTRL` exactly, so a Ctrl+Shift+S press is not
+    // Save over the open file.
     let save_key = !modal_up && ui.input_mut(|input| consume_ctrl(input, egui::Key::S));
+    let save_as_key = !modal_up
+        && ui.input_mut(|input| {
+            input.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::S)
+        });
     let typing = ui.ctx().text_edit_focused() || modal_up;
     // Ctrl+Shift+Z's own two-modifier match; `consume_ctrl` covers the
     // Ctrl-only keys.
@@ -1065,12 +1103,16 @@ fn toolbar(
     let bump_key = !typing && ui.input_mut(|input| consume_ctrl(input, egui::Key::B));
     // Ctrl+O and a version's Ctrl+digit open as the File menu's opens do.
     // Not while a text field holds the keyboard: the menu's click ends the
-    // field's edit first, and a key would not.
+    // field's edit first, and a key would not. Ctrl+W, the menu's Close
+    // save, is held off the same way.
     let open_key = if typing {
         None
     } else {
         ui.input_mut(file_menu::consume_shortcut)
     };
+    let close_key = !typing
+        && view.session.is_some()
+        && ui.input_mut(|input| consume_ctrl(input, egui::Key::W));
     // Ctrl+C and Ctrl+V copy and paste what `target` resolves (the
     // selected row, the shown preset, the shown formation). They arrive
     // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
@@ -1156,12 +1198,14 @@ fn toolbar(
     // list and the tactics' slot popover — are the view's own state,
     // closed with it.
     if save_key
+        || save_as_key
         || undo_key
         || redo_key
         || clear_flags_key
         || fpc_key
         || bump_key
         || copy_key
+        || close_key
         || open_key.is_some()
         || pasted.is_some()
         || page_step.is_some()
@@ -1172,7 +1216,10 @@ fn toolbar(
     }
     toolbar_band(ui, band_end, |ui| {
         let write = file_menu::show(ui, view);
-        match write.or(save_key.then_some(file_menu::Write::Save)) {
+        match write
+            .or(save_key.then_some(file_menu::Write::Save))
+            .or(save_as_key.then_some(file_menu::Write::SaveAs))
+        {
             Some(file_menu::Write::Save) => {
                 save(view, running);
             }
@@ -1259,6 +1306,9 @@ fn toolbar(
     }
     if let Some(shortcut) = open_key {
         file_menu::open_shortcut(view, shortcut);
+    }
+    if close_key {
+        file_menu::request(view, prompt::Pending::CloseSave);
     }
     if let Some(forward) = page_step
         && player_list::page_selection(view, forward)
@@ -1447,7 +1497,7 @@ pub(super) fn write_now(
     match session.save_to(target, &running(), edit_mode_closed) {
         Ok(()) => {
             view.refusal = None;
-            file_menu::push_recent(&mut view.recents, target);
+            file_menu::push_recent(&mut view.recents, target, session.version());
             let file = interchange::file_name(target);
             view.notice = Some(Notice {
                 text: if replaced {
