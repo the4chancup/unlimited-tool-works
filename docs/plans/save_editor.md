@@ -987,14 +987,18 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     selector the shown formation, each pasting onto the one shown.
 
   A list row means the selected row, which Up and Down move without a click, so Ctrl+V after
-  Down pastes onto the next row. A paste of another kind does nothing; each paste is one undo
-  step.
+  Down pastes onto the next row, and so does a row reached with no click since the save
+  opened. A preset or formation selector stays the target only while its team's row is
+  selected: once the selection moves to a player, by a click or a key, his row is the target
+  again, so a paste never writes a tactics part that is not on screen. A paste of another
+  kind does nothing; each paste is one undo step.
 
   A copy and a paste each publish a success notice naming what was copied or pasted, since a
   keyboard action that shows nothing leaves a member pressing it twice: `X's stats copied.`,
   `/x/'s Gameplan copied.`, `/x/'s preset 2 copied.`, `/x/'s preset 2 Kick-off formation
-  copied.` (a formation's notice names its preset), and `<the same> pasted onto <the target,
-  named the same way>.`. A paste that left out or capped something, as one from a save of
+  copied.` (a formation's notice names its preset), and `<the same> pasted onto <the
+  target>.`, a row's target by its name alone (`Y`, `/y/`) and a selector's in the copy's
+  words (`/y/'s preset 3`). A paste that left out or capped something, as one from a save of
   another PES version can, says so in the same notice (`X's stats pasted onto Y; 3 values PES
   2017 does not store were left out.`): the import panel lists those before Apply, and a paste
   has no panel. The tail counts the import's notes: when every one is a key the target does
@@ -1007,10 +1011,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   names the copy from the text alone.
 
   The copy is text on the system clipboard, so it pastes into another window of the suite, or
-  into the same window after another save was opened (0.0.2-clip; until it is built the
-  clipboard is the editor's own, emptied when a save opens, with one naming line on the
-  system's). The text is a Team TOML document holding only what was copied, under two comment
-  lines: the first names it for a person ("# Unlimited Tool Works: the stats of SURNAME"), the
+  into the same window after another save was opened. The text is a Team TOML document
+  holding only what was copied, under two comment lines: the first names it for a person
+  ("# Unlimited Tool Works: SURNAME's stats"), the
   second its kind for the paste ("# copied: stats", "gameplan", "preset" or "formation"). A
   player's stats are his `[players.NN]` table's stats keys, a Gameplan the `[tactics]` table,
   a preset `[tactics.preset_1]` and a formation `[tactics.preset_1.formation_1]`, whichever
