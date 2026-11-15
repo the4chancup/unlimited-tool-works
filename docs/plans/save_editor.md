@@ -496,9 +496,26 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     differs from its file among the toolbar's quieter text; the blue also tells it is
     clickable (the changes list).
 
-  `File` is the opens first (the discovered saves by version, the recent saves, the
-  picker), then under a separator `Save` (`Ctrl+S`) and `Save as…`, both dead with no
-  save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
+  `File` holds, from the top:
+  - `Open…` (`Ctrl+O`, the picker), `Save` (`Ctrl+S`) and `Save as…` (`Ctrl+Shift+S`), the
+    two writes dead with no save open;
+  - under a separator, the heading *Open from Documents* over the discovered saves by
+    version (with none found, the line "No PES saves were found in Documents.");
+  - when there are any, under a separator, the heading *Recent files* over the recent saves;
+  - under a separator, `Close save` (`Ctrl+W`), dead with no save open, and `Exit`
+    (`Ctrl+Q`).
+
+  The commands used on every save stand first, and the two headings say where each save
+  comes from, so a discovered save's label is its version alone. They are labels, not
+  buttons, in the weak colour, their text where the entries' text starts. Ctrl+Shift+S
+  works while a text field holds the keyboard, as Ctrl+S does; Ctrl+W, like the other
+  shortcuts, does not. `Close save` asks first when the save has unsaved changes, as an
+  open does (the unsaved changes prompt), then shows the welcome panel, as at a start.
+  `Exit` closes the window as its close button does, every tool asked first (`core/gui.md`
+  "Closing the window"); it is there mostly so that Ctrl+Q, which closes the window from any
+  tool, has a place in a menu.
+
+  `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
   undo or redo, then under a separator `Copy` (`Ctrl+C`) and `Paste` (`Ctrl+V`), which do
   what the two keys do, on the same target ("Ctrl+C and Ctrl+V" below). `Copy` is dead when
   Ctrl+C would copy nothing. `Paste` is dead only with no target: the window cannot read the
@@ -522,12 +539,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the middle of the view, in a titled frame that looks like a dialog but has no backdrop, so
   the sidebar still switches tools (the Ruleset editor's start page is drawn the same way,
   `ruleset_editor.md` "Start page"). The panel draws its entries from the same lists as the
-  menu, so the two never disagree:
-  - *Saves in Documents*: each discovered save, labelled by its version, the newest of each
+  menu, in the menu's order, so the two never disagree:
+  - *Open…*, with `Ctrl+O`: the picker, as wide as the entries under it;
+  - *Open from Documents*: each discovered save, labelled by its version, the newest of each
     version with its shortcut, its path in the tooltip; with none found, the line "No PES
     saves were found in Documents.";
-  - *Recent*: the recent saves, when there are any;
-  - *Choose file…*, with `Ctrl+O`: the picker.
+  - *Recent files*: the recent saves, when there are any.
+
+  Its headings are in the strong colour, not the menu's weak one, since the panel has no
+  commands above them to stand back from; their text starts where the entries' text does.
 
   The **recent saves** are the last 10 saves opened or saved, newest first, kept in the
   tool's settings (`recent_files`) so that a start lists the saves of earlier runs, as the
@@ -3591,12 +3611,14 @@ SE-GUI-90  GIVEN SE-GUI-26's three discovered saves, a PES 21 save in another fo
            WHEN the view is drawn
            THEN the welcome panel in the middle of the view, titled "Save editor", lists the
                 three saves by version, the first PES 21 one with Ctrl+1 beside it and the PES
-                19 one with Ctrl+9, then under Recent the save opened in an earlier run,
-                labelled `[PES 2021] <its folder>\<its file name>`, then Choose file… with
-                Ctrl+O; no modal layer is up; WHEN the PES 19 entry is clicked THEN
-                that save opens and the panel is gone; GIVEN no save discovered and none
-                opened THEN the panel reads "No PES saves were found in Documents." above
-                Choose file…; GIVEN the earlier run's save deleted THEN no Recent heading
+                19 one with Ctrl+9, under Open… with Ctrl+O and the heading Open from
+                Documents, then under the heading Recent files the save opened in an earlier
+                run, labelled `[PES 2021] <its folder>\<its file name>`; each heading's text
+                starts where the entries' text does; no modal layer is up; WHEN the PES 19
+                entry is clicked THEN that save opens and the panel is gone; GIVEN no save
+                discovered and none opened THEN the panel reads "No PES saves were found in
+                Documents." under Open from Documents; GIVEN the earlier run's save deleted
+                THEN no Recent files heading
 SE-GUI-91  GIVEN the PES 2021 save on /gd/ (722), its player 10 selected (LB; 12 and 17 share
                  his ability stats and cards as RBs, 13 his ability stats alone, 19 all
                  three)
@@ -3699,23 +3721,36 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                  PES 19 one the newest, no folder remembered from an earlier open, and one of
                  the three opened earlier in the session
            WHEN the File menu is drawn
-           THEN it lists the three discovered saves, each labelled by its version alone, the
-                first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
-                recent save above the file picker, labelled with its version in brackets,
-                its folder and its file name (`[PES 2021] <folder>\<file name>`), then under a separator Save with Ctrl+S
-                beside it and Save as…, both disabled while no save is open; WHEN the menu is
-                closed and Ctrl+9 is pressed
+           THEN it reads Open… with Ctrl+O, Save with Ctrl+S and Save as… with Ctrl+Shift+S,
+                the two disabled while no save is open; then the weak heading Open from
+                Documents over the three discovered saves, each labelled by its version
+                alone, the first PES 21 one with Ctrl+1 beside it and the PES 19 one with
+                Ctrl+9; then the weak heading Recent files over the recent save, labelled
+                with its version in brackets, its folder and its file name (`[PES 2021]
+                <folder>\<file name>`); then Close save with Ctrl+W, disabled, and Exit with
+                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; WHEN the
+                menu is closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN
-                the menu's Choose file is used THEN the picker starts in the PES 19 save's
+                the menu's Open… is used THEN the picker starts in the PES 19 save's
                 folder, the newest discovered one's, whatever the selector holds, and with
                 no save discovered, in no folder; WHEN a save is then opened from
-                `<test folder>/backups` and Choose file is used again THEN the picker starts
+                `<test folder>/backups` and Open… is used again THEN the picker starts
                 in `<test folder>/backups`, and still does after the editor is started again
                 from the same settings, and WHEN that folder no longer exists THEN in the
                 newest discovered save's again; WHEN Save as… writes a new
-                path THEN the file replaced, if any, is kept once as its .bak
+                path THEN the file replaced, if any, is kept once as its .bak; WHEN Ctrl+Shift+S
+                is pressed with a save open, the Name field holding the keyboard, THEN the
+                Save as… picker opens
+SE-GUI-105 GIVEN the PES 2021 save open with one unsaved edit
+           WHEN Close save is clicked in the File menu
+           THEN the unsaved changes prompt shows; WHEN it discards THEN the welcome panel
+                shows and Undo is disabled; GIVEN the save open with no unsaved edit WHEN
+                Ctrl+W is pressed THEN the welcome panel shows at once, no prompt; WHEN
+                Ctrl+W is pressed while the Name field holds the keyboard THEN the save stays
+                open; WHEN Exit is clicked THEN the window's close is requested, as by its
+                close button
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one

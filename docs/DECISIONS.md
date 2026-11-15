@@ -18120,3 +18120,20 @@ remember differently surprise a member; a name alone repeats across versions and
 The version is stored with the path so a start reads no save to label it.
 Plan: `plans/save_editor.md` "The toolbar", the welcome panel's paragraph and the recent
 saves' after it; SE-GUI-26, SE-GUI-90.
+
+## 2026-11-15 — save_editor, studio_core — the File menu: the picker and the writes first, then where saves come from, then Close save and Exit
+Decision (the maintainer): the Save editor's File menu reads `Open…` (Ctrl+O, the picker, was
+`Choose file…`), `Save`, `Save as…` (now with Ctrl+Shift+S); under a weak heading *Open
+from Documents* the discovered saves; under *Recent files* the recent saves, when there are
+any; then `Close save` (Ctrl+W), which shows the welcome panel again, and `Exit` (Ctrl+Q).
+The welcome panel follows the menu's order, the picker on top, its headings in the strong
+colour, every heading's text where the entries' text starts. Sentence case stays. Ctrl+Q is
+the shell's key, closing the window from any tool as its close button does; `Exit` gives it
+a place in a menu. The Ruleset editor takes the same layout after 0.0.2.
+Why: the commands used on every save come first, and the headings say where each save comes
+from. `Open…` and not `Open (any PES)…`, whose brackets read oddly in a menu; the heading
+below already sets the picker apart from the found saves. The menu headings take the
+shortcuts' weak grey, not a new shade.
+Plan: `plans/save_editor.md` "The toolbar" (the File menu) and the welcome panel's
+paragraph; SE-GUI-26, SE-GUI-90, new SE-GUI-105; `plans/core/gui.md` "Closing the window",
+ST-RUN-05.

@@ -2232,10 +2232,12 @@ briefs, review loops, gates and mutation runs as for any step.
     and in the File menu, each `[PES 2021] backups\EDIT00000000 - VGL26` (P58, the
     maintainer, 2026-11-15; plan and DECISIONS edited) -> verify: SE-GUI-26 and SE-GUI-90 red
     first; a start with the setting lists the earlier run's saves; a deleted one is dropped.
-    Waits for the maintainer's answers on the File menu's new layout (2026-11-15: Open
-    (Any PES)…, Save, Save As… with Ctrl+Shift+S, Open from Documents, Recent files, Close
-    Save with Ctrl+W, Exit with Ctrl+Q), which joins this slice, and for the notices'
-    rework to merge (`menus.rs`). Brief draft: `.tmp/0_0_2/recents/brief.md`. Tier 2
+    With it, the File menu's new layout (the maintainer, 2026-11-15; DECISIONS 2026-11-15
+    "the File menu: the picker and the writes first"): Open…, Save, Save as… with
+    Ctrl+Shift+S, the headings Open from Documents and Recent files, Close save with Ctrl+W,
+    Exit with Ctrl+Q (the shell's key); the welcome panel in the menu's order. Draft and
+    plan edited (SE-GUI-26, 90, 105; ST-RUN-05). After the notices' rework merges
+    (`menus.rs`). Brief: `.tmp/0_0_2/recents/brief.md`, to extend with the menu. Tier 2
   - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
@@ -3089,6 +3091,10 @@ briefs, review loops, gates and mutation runs as for any step.
   (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
   for a player's stats, 143 for a preset. A form without the unset keys needs a writer
   option in `pes_savefile`'s `team_toml`
+- [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "the File menu: the
+  picker and the writes first"): the Ruleset editor's File menu takes the Save editor's
+  layout: its picker, Save, Save as… with Ctrl+Shift+S, Recent files, Close file with
+  Ctrl+W, Exit with Ctrl+Q (`plans/ruleset_editor.md` to edit first)
 - [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "the Ruleset editor's
   findings read as text in its window"): the window's refused-open and refused-save lists show
   each finding as `Line 12, column 39: …` or `tiers[1]: …` in place of `key=value` fields,

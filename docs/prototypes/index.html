@@ -529,6 +529,7 @@
      8 after the label (the icon spacing's 4 on each side of the stretch between them). */
   .menu button { display: flex; align-items: center; }
   .menu button .shortcut { margin-left: auto; padding-left: 8px; color: #6e6e6e; }
+  .menu .menu-heading { padding: 0 2px; min-height: 21px; display: flex; align-items: center; color: #6e6e6e; }
   /* A separator between toolbar groups (egui's ui.separator() in a row: 6 wide, its line in
      the middle). */
   .tsep { flex: none; width: 1px; align-self: stretch; margin: 1px 2.5px; background: var(--stroke); }
@@ -1153,7 +1154,10 @@ function menu(label, items, opts = {}) {
     const r = btn.getBoundingClientRect();
     const [left, top] = inWin(r.left, r.top), below = top + r.height + 1;
     const m = h("div", { class: "menu", style: `left:${left}px; top:${below}px` },
-      items.map(([text, fn, disabled, title]) => {
+      items.map(item => {
+        // { heading }: a weak label over a group of entries, its text where theirs starts.
+        if (item.heading) return h("div", { class: "menu-heading" }, item.heading);
+        const [text, fn, disabled, title] = item;
         if (text === "-") return h("div", { class: "sep", style: "margin:5.5px 0" });
         const [name, keys] = text.split("\t");
         return h("button", { disabled, title, onclick: ev => { ev.stopPropagation(); closeMenus(); fn(); } },
@@ -1557,6 +1561,8 @@ function helpGo(tool, topic, anchor, para) {
 // F1 opens the help on the active tool's chapter, like the ? button.
 document.addEventListener("keydown", e => {
   if (e.key === "F1") { e.preventDefault(); openHelp({ tool: S.activeTool }); }
+  // Ctrl+Q closes the window from any tool, as its close button does.
+  if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key === "q") { e.preventDefault(); requestWindowClose(); return; }
   const view = VIEWS[S.activeTool];
   if (view && view.onKey) view.onKey(e);
 });

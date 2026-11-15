@@ -3760,29 +3760,44 @@ function openDiscovered(d) {
   const key = d.version === "2017" ? "pes17" : d.version === "2021" ? "pes21" : null;
   if (key) requestOpen(key, d.path); else dlgOpenSave(d);
 }
-// The File menu (SE-GUI-26 restated): the discovered saves labelled by
-// version alone (the tooltip holds the path), the first of each version with
-// its shortcut, the session's recent files, then the picker (Ctrl+O), then
-// the writes. sample wording: the menu's labels and the picker's entry.
+// The File menu (SE-GUI-26 restated): the picker (Ctrl+O) and the writes;
+// under a weak heading the discovered saves labelled by version alone (the
+// tooltip holds the path), the first of each version with its shortcut; the
+// recent saves under theirs; then Close save and Exit. sample wording: the
+// menu's labels and headings.
 function fileMenu() {
-  const items = DISCOVERED.map((d, i) => {
+  const items = [
+    ["Open\u2026\tCtrl+O", dlgChooseFile, false,
+      "Opens in the selected version's save folder when it exists"],
+    ["Save\tCtrl+S", () => { saveFile(); render(); }, !S.save],
+    ["Save as\u2026\tCtrl+Shift+S", saveAs, !S.save],
+    "-",
+    { heading: "Open from Documents" },
+  ];
+  DISCOVERED.forEach((d, i) => {
     const first = DISCOVERED.findIndex(o => o.version === d.version) === i;
     const label = "PES " + d.version + (first ? "\tCtrl+" + openKeyOf(d.version) : "");
-    return [label, () => openDiscovered(d), false, d.path];
+    items.push([label, () => openDiscovered(d), false, d.path]);
   });
-  items.push("-");
-  for (const path of S.recents) {
-    const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
-    items.push([recentLabel(path), () =>
-      key ? requestOpen(key, path) : closeWindow(), false, path]);
+  if (!DISCOVERED.length) items.push({ heading: "No PES saves were found in Documents." });
+  if (S.recents.length) {
+    items.push("-", { heading: "Recent files" });
+    for (const path of S.recents) {
+      const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
+      items.push([recentLabel(path), () =>
+        key ? requestOpen(key, path) : closeWindow(), false, path]);
+    }
   }
-  items.push("-");
-  items.push(["Choose file\u2026\tCtrl+O", dlgChooseFile, false,
-    "Opens in the selected version's save folder when it exists"]);
-  items.push("-");
-  items.push(["Save\tCtrl+S", () => { saveFile(); render(); }, !S.save]);
-  items.push(["Save as\u2026", saveAs, !S.save]);
+  items.push("-",
+    ["Close save\tCtrl+W", closeSave, !S.save],
+    ["Exit\tCtrl+Q", requestWindowClose]);
   return menu("File", items, { frame0: true });
+}
+// Close save: the unsaved changes prompt first, as an open asks; then the
+// welcome panel, as at a start.
+function closeSave() {
+  const close = () => { S.save = null; S.saveKey = null; S.path = null; render(); };
+  if (dirty()) drawUnsavedPrompt(close); else close();
 }
 // With no save open, the welcome panel (plans/save_editor.md "Welcome panel"):
 // the File menu's opens in the middle of the view, framed and titled as a
@@ -3801,15 +3816,17 @@ function welcomePanel() {
     const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
     return entry(recentLabel(path), "", () => key ? requestOpen(key, path) : null, path);
   });
+  // A heading's text starts where an entry's does: a button's 4-point padding.
+  const aligned = text => h("div", { style: "padding: 0 4px" }, text);
   return h("div", { class: "start-page", "data-panel": "welcome" },
     h("div", { class: "window" }, h("div", { class: "title" }, "Save editor"),
       h("div", { class: "col" },
-        strong("Saves in Documents"),
-        found.length ? found : weak("No PES saves were found in Documents."),
-        recent.length ? [h("div", { class: "sep" }), strong("Recent"), ...recent] : [],
+        entry("Open\u2026", "Ctrl+O", dlgChooseFile,
+          "Opens in the selected version's save folder when it exists"),
         h("div", { class: "sep" }),
-        row(entry("Choose file\u2026", "Ctrl+O", dlgChooseFile,
-          "Opens in the selected version's save folder when it exists")))));
+        aligned(strong("Open from Documents")),
+        found.length ? found : aligned(weak("No PES saves were found in Documents.")),
+        recent.length ? [h("div", { class: "sep" }), aligned(strong("Recent files")), ...recent] : [])));
 }
 // The Edit menu: Undo and Redo, each dead with nothing to do, its tooltip
 // the button's own (the last step's label); then Copy and Paste, Ctrl+C's and
@@ -3907,6 +3924,10 @@ function onKey(e) {
   }
   if ((e.ctrlKey || e.metaKey) && S.save) {
     if (e.key === "s") { e.preventDefault(); saveFile(); render(); }
+    // Shift makes the key "S". The browser keeps Ctrl+W for its tab, so the
+    // draft's Ctrl+W may close the page: the File menu's entry shows it.
+    else if (e.key === "S") { e.preventDefault(); saveAs(); }
+    else if (e.key === "w") { e.preventDefault(); closeSave(); }
     else if (e.key === "b" && !isTeamSel()) { e.preventDefault(); dlgBumpStats(); }
     else if (e.key === "i" && aesUnlocked() && !groupOn()) { e.preventDefault(); fpcToggle(curPlayer()); render(); }
     else if (e.key === "f" && aesUnlocked()) { e.preventDefault(); clearVisualFlags(); }

@@ -1361,7 +1361,10 @@ state (the run wrote nothing of theirs, so nothing is "done"), and the log's las
 run was cancelled, so a later reader of the log does not take a short run for a finished one.
 
 **Closing the window** asks every tool, not only the one in view, and so does every close the
-shell performs itself (the Compiler's quick-compile close on success included).
+shell performs itself (the Compiler's quick-compile close on success included). Ctrl+Q closes
+the window from any tool, as its close button does, even while a text field holds the
+keyboard: it is the shell's key, not a tool's, so a tool with no File menu closes on it too,
+and a tool's `Exit` entry only shows it.
 
 A tool holding unsaved work (the Save editor's edits) reports it through a `StudioTool` hook
 beside `version_change_blocker`, `fn hold_close(&mut self) -> bool` (default `false`). The
@@ -1911,7 +1914,7 @@ ST-RUN-04   manual  GIVEN the Windows bundle
                     THEN no console window opens beside the GUI; WHEN `UTW compiler
                          check` runs from a terminal THEN its output reaches that terminal
 ST-RUN-05   GIVEN two stub tools each reporting unsaved work, a third tool's view active
-            WHEN the window's close is requested
+            WHEN the window's close is requested (its close button, or Ctrl+Q)
             THEN the window stays and the first stub's view is active with its prompt; WHEN
                  it discards THEN the second stub's view is active with its prompt; WHEN that
                  one discards THEN the window closes; GIVEN either prompt cancelled instead
