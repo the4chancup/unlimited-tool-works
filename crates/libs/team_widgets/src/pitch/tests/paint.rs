@@ -2064,6 +2064,90 @@ fn a_long_name_is_cut_at_the_lists_width() {
     );
 }
 
+/// The arms painted in the selected corners' colour, each a segment's two
+/// ends.
+fn selected_arms(shapes: &[egui::epaint::ClippedShape]) -> Vec<[egui::Pos2; 2]> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke }
+                if stroke.color == Palette::DARK.selected_corners =>
+            {
+                Some(*points)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// `shapes` carry the swap mark on the marker whose badge is centred at
+/// `centre`, and on no other: eight 9 px arms in the selected corners'
+/// colour, each ending on a corner of his portrait box.
+#[track_caller]
+fn assert_swap_mark_on(shapes: &[egui::epaint::ClippedShape], centre: egui::Pos2) {
+    let badge = egui::Rect::from_center_size(centre, egui::vec2(50.0, 14.0));
+    let portrait = egui::Rect::from_min_size(
+        egui::pos2(badge.left(), badge.top() - 50.0),
+        egui::vec2(50.0, 50.0),
+    );
+    let arms = selected_arms(shapes);
+    assert_eq!(arms.len(), 8, "the swap mark's eight corner arms");
+    let box_corners = [
+        portrait.left_top(),
+        portrait.right_top(),
+        portrait.left_bottom(),
+        portrait.right_bottom(),
+    ];
+    for points in &arms {
+        assert!(
+            (points[0].distance(points[1]) - 9.0).abs() <= 0.01,
+            "a 9 px arm"
+        );
+        assert!(
+            box_corners.iter().any(|corner| points.contains(corner)),
+            "{points:?} ends on the marked player's portrait box"
+        );
+    }
+}
+
+/// A lineup row pressed at `row` and held over each of `points` in turn,
+/// over the pitch and the lists: the shapes painted with the pointer at
+/// each. Each point gets a move and then a still frame, the one read:
+/// the pitch is drawn before the lists, so on the frame a drag starts,
+/// the row's payload is set after the pitch has run.
+fn hold_row(
+    window: &mut Headless,
+    row: egui::Pos2,
+    points: &[egui::Pos2],
+    tactics: &mut TeamTactics,
+    view: &mut TacticsView,
+    roster: &[RosterRow<'_>],
+) -> Vec<Vec<egui::epaint::ClippedShape>> {
+    window.pitch_and_lineup(
+        PesVersion::Pes21,
+        tactics,
+        view,
+        roster,
+        pointer_at(row, true),
+    );
+    points
+        .iter()
+        .map(|&point| {
+            window.pitch_and_lineup(
+                PesVersion::Pes21,
+                tactics,
+                view,
+                roster,
+                vec![egui::Event::PointerMoved(point)],
+            );
+            let (_, shapes, changed) =
+                window.pitch_and_lineup_paint(PesVersion::Pes21, tactics, view, roster, vec![]);
+            assert!(!changed, "a held row writes nothing");
+            shapes
+        })
+        .collect()
+}
+
 // The swap mark. A pitch player dropped on another swaps the two slots
 // in the shown formation, so while a dragged starter is held over
 // another, that one carries the selected player's corner brackets drawn
@@ -2133,41 +2217,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
             false,
         );
     });
-    // The target's marker carries the selected corners: eight 9 px
-    // arms, each ending on a corner of its portrait box.
-    let badge = egui::Rect::from_center_size(centres[target], egui::vec2(50.0, 14.0));
-    let portrait = egui::Rect::from_min_size(
-        egui::pos2(badge.left(), badge.top() - 50.0),
-        egui::vec2(50.0, 50.0),
-    );
-    let arms: Vec<[egui::Pos2; 2]> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke }
-                if stroke.color == Palette::DARK.selected_corners =>
-            {
-                Some(*points)
-            }
-            _ => None,
-        })
-        .collect();
-    assert_eq!(arms.len(), 8, "the swap mark's eight corner arms");
-    let box_corners = [
-        portrait.left_top(),
-        portrait.right_top(),
-        portrait.left_bottom(),
-        portrait.right_bottom(),
-    ];
-    for points in &arms {
-        assert!(
-            (points[0].distance(points[1]) - 9.0).abs() <= 0.01,
-            "a 9 px arm"
-        );
-        assert!(
-            box_corners.iter().any(|corner| points.contains(corner)),
-            "{points:?} ends on the target's portrait box"
-        );
-    }
+    assert_swap_mark_on(&shapes, centres[target]);
     // And the dragged marker's badge paints at 35% over him.
     let dragged_badge = egui::Rect::from_center_size(
         held_centre(canvas, players[dragged], from, over, false),
@@ -2351,6 +2401,171 @@ fn under_illegal_formations_a_drag_over_another_marker_marks_no_swap() {
         Some(position_label(players[dragged].position)),
         "the dragged badge reads his own position: {texts:?}"
     );
+}
+
+// A bench row held over the pitch marks the player its release would
+// swap out with the swap mark's brackets: an outfielder, or the keeper,
+// whom a row's drop swaps out too. Over the grass no one is marked. A
+// ruleset that allows illegal formations changes none of it, since a
+// row's drop still swaps the player under it.
+// SE-GUI-59
+#[test]
+fn a_bench_row_held_over_a_marker_marks_the_player_it_swaps_out() {
+    for illegal_formations in [false, true] {
+        let mut window = Headless::sized(600.0, 1100.0);
+        window.illegal_formations = illegal_formations;
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let players = tactics.presets[0].formations[0].players;
+        let (outfielder, keeper) = (5, 0);
+        assert_eq!(players[keeper].position, 0, "premise: slot 0 is the keeper");
+        assert_ne!(players[outfielder].position, 0, "premise: an outfielder");
+        let (nodes, shapes, _) = window.pitch_and_lineup_paint(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            vec![],
+        );
+        assert!(
+            view.popover.is_none() && view.assign.is_none() && selected_arms(&shapes).is_empty(),
+            "premise: no popover, no assign mode, no selected corners before the hold"
+        );
+        let canvas = canvas_rect(&nodes);
+        let centres = centres_of(canvas, &players);
+
+        let held = hold_row(
+            &mut window,
+            row_centre(&nodes, 11),
+            &[
+                marker_point(&nodes, &players, outfielder),
+                grass_point(canvas, &players, egui::Rect::NOTHING),
+                marker_point(&nodes, &players, keeper),
+            ],
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        assert_swap_mark_on(&held[0], centres[outfielder]);
+        assert!(
+            selected_arms(&held[1]).is_empty(),
+            "no one marked over the grass (illegal formations {illegal_formations})"
+        );
+        assert_swap_mark_on(&held[2], centres[keeper]);
+    }
+}
+
+// Where two markers overlap, a bench row held over both marks the one
+// drawn on top, and its release there swaps that one out: the mark and
+// the drop pick the same player.
+// SE-GUI-59
+#[test]
+fn over_two_overlapping_markers_a_bench_row_marks_and_swaps_out_the_top_one() {
+    let mut window = Headless::sized(600.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    // A above (y 20), B below (y 17) on the same x, as in
+    // `the_lower_marker_paints_last_and_takes_the_press`: B's lower index
+    // would put it under A in index order, so only the draw order picks B.
+    let (a, b) = (5usize, 3usize);
+    let formation = &mut tactics.presets[0].formations[0];
+    assert!(
+        formation.players[a].position != 0 && formation.players[b].position != 0,
+        "premise: two outfield slots"
+    );
+    formation.players[a].x = 52;
+    formation.players[a].y = 20;
+    formation.players[b].x = 52;
+    formation.players[b].y = 17;
+    let players = formation.players;
+    let (out, inn) = (tactics.starting_eleven[b], tactics.bench_order[0]);
+    assert_ne!(out, inn, "premise: two different slots");
+    let (nodes, _) =
+        window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    // A point inside both boxes: A's badge centre, 20 px above B's.
+    let over = centres[a];
+    assert!(
+        marker_rect(centres[a], canvas).contains(over)
+            && marker_rect(centres[b], canvas).contains(over),
+        "premise: the hold is inside both boxes"
+    );
+
+    let held = hold_row(
+        &mut window,
+        row_centre(&nodes, 11),
+        &[over],
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert_swap_mark_on(&held[0], centres[b]);
+    let (_, changed) = window.pitch_and_lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(over, false),
+    );
+    assert!(changed, "the release swapped");
+    assert_eq!(
+        tactics.starting_eleven[b], inn,
+        "the marked player is the one swapped out"
+    );
+    assert_eq!(tactics.bench_order[0], out, "and he sits");
+}
+
+// A starter's row held over his own marker marks no one, since its
+// release there changes nothing; held over another starter's marker, it
+// marks him, whom the release exchanges with.
+// SE-GUI-59
+#[test]
+fn a_starter_row_held_over_a_marker_marks_him_unless_he_is_its_own() {
+    let mut window = Headless::sized(600.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let (starter, other) = (2, 5);
+    // A non-identity eleven: a mark comparing the row with the marker's
+    // roster slot rather than his index would look right on the
+    // fixture's [0, 1, ...].
+    tactics.starting_eleven.swap(starter, 9);
+    assert_ne!(
+        usize::from(tactics.starting_eleven[starter]),
+        starter,
+        "premise: slot and index differ"
+    );
+    let players = tactics.presets[0].formations[0].players;
+    let (nodes, shapes, _) =
+        window.pitch_and_lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    assert!(
+        view.popover.is_none() && view.assign.is_none() && selected_arms(&shapes).is_empty(),
+        "premise: no popover, no assign mode, no selected corners before the hold"
+    );
+    let centres = centres_of(canvas_rect(&nodes), &players);
+
+    let held = hold_row(
+        &mut window,
+        row_centre(&nodes, starter),
+        &[
+            marker_point(&nodes, &players, starter),
+            marker_point(&nodes, &players, other),
+        ],
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(
+        selected_arms(&held[0]).is_empty(),
+        "no one marked over his own marker"
+    );
+    assert_swap_mark_on(&held[1], centres[other]);
 }
 
 // A starter's badge carries his medal tier as a 1.5-point outline

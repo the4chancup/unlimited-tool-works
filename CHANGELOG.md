@@ -94,6 +94,9 @@
   Documents, the files opened earlier and Choose file, each with its shortcut.
 - **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open is
   there before a ruleset is open.
+- **Save editor**: while a Starting eleven or Bench row is dragged over a player on the
+  Tactics pitch, that player is marked as a dragged pitch player's target is, so you see
+  who the drop swaps out.
 
 ### New checks
 
