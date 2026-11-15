@@ -663,6 +663,26 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="test-changes-scroll">
+  <h3>The unsaved changes list scrolls quickly again</h3>
+  <p class="from">From: your ask of 2026-11-15; checked by the lead at <code>a6bba169</code> on your PES 2021 save, dark theme, nothing saved</p>
+  <p>The list and the close prompt now draw only the rows on screen. With four teams
+  imported, a test measured a frame of the open list at 1.0 ms in a release build, down from
+  17.5 ms, and one of the close prompt at 1.0 ms, down from 8.7 ms. In the built window, after
+  importing <code>kfg.toml</code> and MJG's Texport, both scroll smoothly and look as they did
+  before. A picture cannot show speed, so please try it the way you found it: import your four
+  teams, then scroll the list and the close prompt.</p>
+  <div class="shots">
+    <figure><a href="img/changes_list_scroll.png"><img src="img/changes_list_scroll.png" alt="The unsaved changes list at its top, then scrolled twice"></a><figcaption>At the top, then scrolled twice</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="scrolls well"><b>Scrolls well</b></label>
+    <label class="opt"><input type="radio" value="still slow, see note"><b>Still slow</b>
+      <div class="note">Say where below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
