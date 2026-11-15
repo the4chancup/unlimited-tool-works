@@ -2320,14 +2320,16 @@ briefs, review loops, gates and mutation runs as for any step.
       tests pin the framed dropdown and Live AATF, the Ruleset editor's row 3 points
       inside its panel, the team view's last row at 739 and no logo on the frame a save
       opens
-    - [ ] one paid round (Carbon)
     - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 14 of 15 concerns accepted: a Ctrl
       shortcut ran with Shift or Alt held too, so Ctrl+Shift+S, Save as elsewhere, saved
       over the open file; an undo step reached back past a save; the Player menu differed
       with a team row selected; recent-file labels used backslashes on Linux; the welcome
       list kept a stale entry; tests and citations; the lead's text: the help's Undo
       paragraph and a changelog clause (`10a7b2d3`)
-    - [ ] the rework (SWE-2, `sk/barrw`, after `sk/cliprw` merges), then Carbon's round 2
+    - [x] its rework (merge `2e23f811`), then Carbon's round 2: 8 of 9 accepted; the
+      rework (merge `27afa199`): the Ruleset editor's Undo keys work on a focused
+      checkbox, no Player menu without a selected team, the welcome panel over the panes
+    - [ ] Carbon's round 3 (`.tmp/0_0_2/bar/carbon_r3.md`)
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
