@@ -170,8 +170,8 @@ fn hovering_team_while_player_is_open_switches_the_menus() {
 
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
 /// by what it acts on: the Comparator and Apply aesthetics patch, a
-/// separator, the roster sheet, Multi-team AATF and the range's formation
-/// pictures, a separator, Fix database.
+/// separator, the roster sheet, the range's formation pictures and
+/// Multi-team AATF, a separator, Fix database.
 #[test]
 fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
     let path = fixture(PesVersion::Pes21, "toolbar_savefile");
@@ -193,8 +193,8 @@ fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
             "Comparator\u{2026}",
             "Apply aesthetics patch\u{2026}",
             "Output rosters to TSV\u{2026}",
-            "Multi-team AATF\u{2026}",
             "Save formation pictures for a range of teams\u{2026}",
+            "Multi-team AATF\u{2026}",
             "Fix database\u{2026}",
         ]
     );
@@ -510,6 +510,31 @@ fn the_menus_are_disabled_with_no_save_open() {
             "{entry} is disabled"
         );
     }
+}
+
+// With a save open but no row selected (the cup's teams all outside the
+// remembered team category), the Player menu is disabled as a whole, as
+// the Team menu is: every entry acts on the selected row's team, so on
+// no row there is nothing to act on.
+// SE-GUI-26
+#[test]
+fn the_player_menu_is_disabled_with_no_row_selected() {
+    let path = fixture(PesVersion::Pes21, "player_menu_no_selection");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = None;
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    for menu in ["Player", "Team"] {
+        assert!(
+            menu_button(&nodes, menu).is_disabled(),
+            "{menu} is disabled with no row selected"
+        );
+    }
+    assert!(
+        !menu_button(&nodes, "Savefile").is_disabled(),
+        "the whole save's menu stays enabled"
+    );
 }
 
 /// Whether a filled or stroked rectangle the size of `node`'s bounds

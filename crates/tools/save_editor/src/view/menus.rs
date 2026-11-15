@@ -155,9 +155,11 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// entry but Copy/swap stats… is disabled (they act on a player, while the
 /// window names both players itself), the same hover naming the reason,
 /// and the FPC item carries the ownership line as its disabled hover
-/// (SE-GUI-22). The menu is disabled with no save open.
+/// (SE-GUI-22). The menu is disabled with no row selected, the save's
+/// opens included: every entry acts on the selected row's team, as the
+/// Team menu's do.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
-    if view.session.is_none() {
+    if view.session.is_none() || selected_team_id(view).is_none() {
         add_enabled_ui(ui, false, |ui| {
             menu_button(ui, "Player", |_| ());
         });
@@ -276,10 +278,10 @@ pub(crate) fn default_rosters_dialog() -> comparator::SaveFileDialog {
 /// read of the open save so never locked — `rosters_dialog` with
 /// `EDIT.tsv` as the default name, the open save refused as the
 /// destination and a write error shown as the refusal —
-/// Multi-team AATF, a read too (`multi_aatf`), and Save formation pictures
-/// for a range of teams, another (`pictures`); then Fix database,
-/// under the aesthetics lock with the ownership line as its disabled hover
-/// (SE-GUI-22). The menu is disabled with no save open.
+/// Save formation pictures for a range of teams, a read too
+/// (`pictures`), and Multi-team AATF, another (`multi_aatf`); then Fix
+/// database, under the aesthetics lock with the ownership line as its
+/// disabled hover (SE-GUI-22). The menu is disabled with no save open.
 pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -330,10 +332,6 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             }
             ui.close();
         }
-        if ui.button("Multi-team AATF\u{2026}").clicked() {
-            view.multi_aatf.open(session.file());
-            ui.close();
-        }
         if ui
             .button("Save formation pictures for a range of teams\u{2026}")
             .clicked()
@@ -344,6 +342,10 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 &view.exe_dir,
                 view.tactics.portraits,
             );
+            ui.close();
+        }
+        if ui.button("Multi-team AATF\u{2026}").clicked() {
+            view.multi_aatf.open(session.file());
             ui.close();
         }
         menu_separator(ui);

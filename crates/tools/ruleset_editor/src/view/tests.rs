@@ -69,6 +69,16 @@ impl Headless {
 
     /// Runs one frame of `contents`; returns what it drew.
     fn frame(&mut self, events: Vec<egui::Event>, contents: impl FnMut(&mut egui::Ui)) -> Frame {
+        self.run(events, true, contents).1
+    }
+
+    /// `frame` keeping the nodes' AccessKit ids (for
+    /// `AccessKitActionRequest` events).
+    fn frame_ids(
+        &mut self,
+        events: Vec<egui::Event>,
+        contents: impl FnMut(&mut egui::Ui),
+    ) -> (Vec<(accesskit::NodeId, accesskit::Node)>, Frame) {
         self.run(events, true, contents)
     }
 
@@ -79,17 +89,18 @@ impl Headless {
         events: Vec<egui::Event>,
         contents: impl FnMut(&mut egui::Ui),
     ) -> Frame {
-        self.run(events, false, contents)
+        self.run(events, false, contents).1
     }
 
     /// Runs one frame of `contents` with `focused` as the window's
-    /// focus; returns what it drew.
+    /// focus; returns the nodes with their AccessKit ids and what it
+    /// drew.
     fn run(
         &mut self,
         events: Vec<egui::Event>,
         focused: bool,
         mut contents: impl FnMut(&mut egui::Ui),
-    ) -> Frame {
+    ) -> (Vec<(accesskit::NodeId, accesskit::Node)>, Frame) {
         let input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, self.screen)),
             events,
@@ -118,12 +129,13 @@ impl Headless {
         // Nothing renders here, so the frame's texture deltas are
         // dropped on purpose.
         output.drop_without_applying_deltas();
-        Frame {
-            nodes: update.nodes.into_iter().map(|(_, node)| node).collect(),
+        let frame = Frame {
+            nodes: update.nodes.iter().map(|(_, node)| node.clone()).collect(),
             platform,
             repaints,
             shapes,
-        }
+        };
+        (update.nodes, frame)
     }
 
     /// One quiet frame of the view.
@@ -272,6 +284,63 @@ fn ctrl_key(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, pr
     window.frame(vec![key(pressed, egui::Modifiers::CTRL)], |ui| {
         show(ui, view, ctx)
     });
+}
+
+/// An AccessKit `Focus` action on `id`: keyboard focus without a click,
+/// as a Tab lands it (the Save editor's `action_focus`).
+fn action_focus(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    id: accesskit::NodeId,
+) {
+    window.frame(
+        vec![egui::Event::AccessKitActionRequest(
+            accesskit::ActionRequest {
+                action: accesskit::Action::Focus,
+                target_tree: accesskit::TreeId::ROOT,
+                target_node: id,
+                data: None,
+            },
+        )],
+        |ui| show(ui, view, ctx),
+    );
+}
+
+/// An AccessKit `Click` action on `id`: a click delivered as the
+/// accessibility event, with no pointer press, so the focused widget
+/// keeps the keyboard (the Save editor's `action_click`).
+fn action_click(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    id: accesskit::NodeId,
+) {
+    window.frame(
+        vec![egui::Event::AccessKitActionRequest(
+            accesskit::ActionRequest {
+                action: accesskit::Action::Click,
+                target_tree: accesskit::TreeId::ROOT,
+                target_node: id,
+                data: None,
+            },
+        )],
+        |ui| show(ui, view, ctx),
+    );
+}
+
+/// The AccessKit id of the node in `pairs` whose bounds are `bounds`
+/// (the nodes' bounds, which `nodes_labeled` finds and sorts by, are
+/// what a pointer click lands on).
+fn node_id(
+    pairs: &[(accesskit::NodeId, accesskit::Node)],
+    bounds: accesskit::Rect,
+) -> accesskit::NodeId {
+    pairs
+        .iter()
+        .find(|(_, node)| node.bounds() == Some(bounds))
+        .map(|(id, _)| *id)
+        .expect("the node's AccessKit id")
 }
 
 /// The topmost node labeled (or valued) `label`: a label can repeat —

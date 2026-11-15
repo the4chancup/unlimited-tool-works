@@ -594,6 +594,19 @@ fn bak_of(path: &Path) -> PathBuf {
     PathBuf::from(format!("{}.bak", path.display()))
 }
 
+/// The Save as picker stubbed to return `target`, recording the path it
+/// is handed (the open file's, as `save_as` starts the picker there).
+fn save_as_stub(view: &mut SaveView, target: &Path) -> Rc<RefCell<Vec<PathBuf>>> {
+    let handed = Rc::new(RefCell::new(Vec::new()));
+    let record = Rc::clone(&handed);
+    let target = target.to_path_buf();
+    view.save_as_dialog = Box::new(move |current| {
+        record.borrow_mut().push(current.to_path_buf());
+        Some(target.clone())
+    });
+    handed
+}
+
 // SE-GUI-26
 #[test]
 fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
@@ -607,8 +620,14 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
 
     let mut tool = crate::Tool::new();
     tool.view = edited_view(&path, &target);
+    let handed = save_as_stub(&mut tool.view, &target);
     let mut window = Headless::new();
     choose(&mut window, &mut tool.view, "File", "Save as\u{2026}");
+    assert_eq!(
+        handed.borrow().as_slice(),
+        [path.as_path()],
+        "the picker is handed the open file's path"
+    );
 
     let session = tool.view.session.as_ref().unwrap();
     let reopened = Session::open(&target, Recorder::default()).expect("the target holds a save");
@@ -657,6 +676,38 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
         view.notice.as_ref().map(|notice| notice.text.as_str()),
         Some("EDIT00000000 saved"),
         "the plain saved notice, nothing replaced"
+    );
+}
+
+// A cancelled Save as writes nothing: the session keeps the open file's
+// path and its dirty mark, and the file on disk stands as it was.
+// SE-GUI-26
+#[test]
+fn a_cancelled_save_as_writes_nothing() {
+    let path = fixture(PesVersion::Pes21, "save_as_cancelled");
+    let original = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    assert!(view.is_dirty(), "premise: unsaved changes");
+    view.save_as_dialog = Box::new(|_| None);
+    let mut window = Headless::new();
+
+    choose(&mut window, &mut view, "File", "Save as\u{2026}");
+
+    assert_eq!(
+        view.save_path(),
+        Some(path.as_path()),
+        "the session's path is the open file's"
+    );
+    assert!(view.is_dirty(), "the edit is still pending");
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        original,
+        "the file is unchanged"
     );
 }
 
@@ -958,6 +1009,70 @@ fn the_welcome_panel_with_nothing_found_reads_so_over_the_picker() {
     assert!(
         !label_value(&nodes, "Recent"),
         "no Recent heading with no recent file"
+    );
+}
+
+// SE-GUI-90's "the middle of the view": the panel's frame centres in
+// the area the panes fill — under the toolbar's band, ending
+// `PANE_BOTTOM_MARGIN` over the pane's bottom — not in the whole
+// central panel, which the band's strip belongs to.
+// SE-GUI-90
+#[test]
+fn the_welcome_panel_centres_in_the_area_under_the_toolbar() {
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    let mut window = Headless::new();
+    idle_frames(&mut window, &mut view, 3);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // The panel's frame: the smallest window-coloured rect the title
+    // sits in (the central panel's fill is the same colour, and the
+    // frame's the smaller one; the frame's own shape nests inside a
+    // `Shape::Vec` with its shadow).
+    let title = label_bounds(&nodes, "Save editor");
+    let title_mid = egui::pos2(
+        ((title.x0 + title.x1) / 2.0) as f32,
+        ((title.y0 + title.y1) / 2.0) as f32,
+    );
+    fn rect_shapes(shape: &egui::Shape, out: &mut Vec<egui::epaint::RectShape>) {
+        match shape {
+            egui::Shape::Rect(rect) => out.push(rect.clone()),
+            egui::Shape::Vec(shapes) => {
+                shapes.iter().for_each(|shape| rect_shapes(shape, out));
+            }
+            _ => {}
+        }
+    }
+    let window_fill = window.ctx.global_style().visuals.window_fill();
+    let mut rects = Vec::new();
+    for clipped in &shapes {
+        rect_shapes(&clipped.shape, &mut rects);
+    }
+    let frame = rects
+        .iter()
+        .filter(|rect| rect.fill == window_fill && rect.rect.contains(title_mid))
+        .min_by(|a, b| a.rect.height().total_cmp(&b.rect.height()))
+        .expect("the welcome panel's frame")
+        .rect;
+
+    // The panes' area: from one item spacing under the band's bottom
+    // line (the File button's bottom plus the band's margin, the line's
+    // stroke and the item spacing the cursor lands past it) to
+    // `PANE_BOTTOM_MARGIN` over the pane's bottom.
+    let button = menu_button(&nodes, "File")
+        .bounds()
+        .expect("the File menu button's bounds");
+    let style = window.ctx.global_style();
+    let stroke = style.visuals.widgets.noninteractive.bg_stroke.width;
+    let top = button.y1
+        + f64::from(BAND_MARGIN.bottom)
+        + f64::from(stroke)
+        + f64::from(style.spacing.item_spacing.y);
+    let bottom = f64::from(window.screen.y) - f64::from(PANE_BOTTOM_MARGIN);
+    let middle = f64::from(frame.center().y);
+    assert!(
+        (middle - (top + bottom) / 2.0).abs() <= 1.0,
+        "the frame centred in the area: middle {middle}, area {top}..{bottom}"
     );
 }
 

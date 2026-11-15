@@ -182,6 +182,38 @@ mod tests {
         })
     }
 
+    // `consume_ctrl` takes a press of its key with Ctrl alone (the
+    // Ctrl|Command press is what a Windows or Linux key event carries,
+    // winit setting `command` off-Mac) and leaves a press with another
+    // modifier held, a release and another key's press.
+    #[test]
+    fn consume_ctrl_takes_the_ctrl_presses_of_its_key_and_leaves_the_rest() {
+        let press = |key: egui::Key, modifiers: egui::Modifiers, pressed: bool| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            modifiers,
+            repeat: false,
+        };
+        let ctrl = egui::Modifiers::CTRL;
+        let kept = [
+            press(egui::Key::S, ctrl | egui::Modifiers::SHIFT, true),
+            press(egui::Key::S, ctrl | egui::Modifiers::ALT, true),
+            press(egui::Key::S, ctrl, false),
+            press(egui::Key::T, ctrl, true),
+        ];
+        let mut input = egui::InputState::default();
+        input.events = [
+            press(egui::Key::S, ctrl, true),
+            press(egui::Key::S, ctrl | egui::Modifiers::COMMAND, true),
+        ]
+        .into_iter()
+        .chain(kept.iter().cloned())
+        .collect();
+        assert!(consume_ctrl(&mut input, egui::Key::S));
+        assert_eq!(input.events, kept);
+    }
+
     #[test]
     fn a_menu_button_in_the_bar_paints_no_frame_at_rest_and_the_framed_scope_does() {
         let ctx = context();
