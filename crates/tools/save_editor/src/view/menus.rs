@@ -150,11 +150,12 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// label the one of the two FPC actions it will do), the Copy/swap stats
 /// window (`copy_stats::window`), and the two Generate items opening
 /// `generate::Generate` (settings.toml and the in-game face: file writes, so
-/// the aesthetics lock does not gate them). The menu is disabled with no
-/// save open; on a team selection every entry but Copy/swap stats… is
-/// disabled (they act on a player, while the window names both players
-/// itself), and the FPC item carries the ownership line as its disabled
-/// hover (SE-GUI-22).
+/// the aesthetics lock does not gate them). One menu for both selections:
+/// with a player row selected every entry is enabled; on a team row every
+/// entry but Copy/swap stats… is disabled (they act on a player, while the
+/// window names both players itself), the same hover naming the reason,
+/// and the FPC item carries the ownership line as its disabled hover
+/// (SE-GUI-22). The menu is disabled with no save open.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -162,35 +163,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         });
         return;
     }
-    let Some((_, _, player_id)) = selected_player(view) else {
-        // A team row selected: every item acts on a player, so all are
-        // disabled with the reason on hover except Copy/swap stats…,
-        // which picks its two players in its own dropdowns.
-        menu_button(ui, "Player", |ui| {
-            for label in [
-                "Set all stats\u{2026}",
-                "Bump all stats\u{2026}",
-                "Hide default body (Enable FPC)",
-            ] {
-                add_enabled(ui, false, egui::Button::new(label))
-                    .on_disabled_hover_text("The Player menu acts on a player: pick a player row");
-            }
-            if ui.button("Copy/swap stats\u{2026}").clicked() {
-                if let Some(session) = view.session.as_mut() {
-                    view.copy_swap = Some(copy_stats::CopySwap::new(session, view.selected));
-                }
-                ui.close();
-            }
-            for label in [
-                "Generate settings.toml\u{2026}",
-                "Generate in-game face\u{2026}",
-            ] {
-                add_enabled(ui, false, egui::Button::new(label))
-                    .on_disabled_hover_text("The Player menu acts on a player: pick a player row");
-            }
-        });
-        return;
-    };
+    let player_id = selected_player(view).map(|(_, _, id)| id);
     let (unlocked, hide_ids) = (!view.aesthetics_locked(), view.hide_ids);
     // As on the Team menu: an out-of-band hide ID disables the entry
     // behind the error's text.
@@ -202,37 +175,55 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         let Some(session) = view.session.as_mut() else {
             return;
         };
-        if ui.button("Set all stats\u{2026}").clicked() {
+        // The items acting on the selected player are disabled on a team
+        // row with the reason on hover; Copy/swap stats… stays enabled —
+        // it picks its two players in its own dropdowns.
+        let player_tip = "The Player menu acts on a player: pick a player row";
+        let player_entry = |ui: &mut egui::Ui, button: egui::Button<'_>| {
+            add_enabled(ui, player_id.is_some(), button).on_disabled_hover_text(player_tip)
+        };
+        if player_entry(ui, egui::Button::new("Set all stats\u{2026}")).clicked()
+            && let Some(player_id) = player_id
+        {
             view.stat_num = Some(StatNum::set_all(session, player_id));
             ui.close();
         }
-        if ui
-            .add(egui::Button::new("Bump all stats\u{2026}").shortcut_text("Ctrl+B"))
-            .clicked()
+        if player_entry(
+            ui,
+            egui::Button::new("Bump all stats\u{2026}").shortcut_text("Ctrl+B"),
+        )
+        .clicked()
+            && let Some(player_id) = player_id
         {
             view.stat_num = Some(StatNum::bump(session, player_id, view.bump));
             ui.close();
         }
         // The label names what the press will do, from the reading
         // `toggle_fpc` branches on; the Hide label while the hide IDs are
-        // out of band, the entry then disabled.
-        let hidden = hide_ids
-            .ok()
-            .and_then(|ids| session.body_hidden(player_id, ids))
+        // out of band, the entry then disabled. On a team row its tip is
+        // the same as the other player items'.
+        let hidden = player_id
+            .zip(hide_ids.ok())
+            .and_then(|(id, ids)| session.body_hidden(id, ids))
             .unwrap_or(false);
         let fpc_label = if hidden {
             "Show default body (Disable FPC)"
         } else {
             "Hide default body (Enable FPC)"
         };
+        let fpc_tip = if player_id.is_none() {
+            player_tip
+        } else {
+            fpc_tip.as_str()
+        };
         if add_enabled(
             ui,
-            fpc_ok,
+            player_id.is_some() && fpc_ok,
             egui::Button::new(fpc_label).shortcut_text("Ctrl+I"),
         )
-        .on_disabled_hover_text(&fpc_tip)
+        .on_disabled_hover_text(fpc_tip)
         .clicked()
-            && let Ok(ids) = hide_ids
+            && let (Some(player_id), Ok(ids)) = (player_id, hide_ids)
         {
             session.toggle_fpc(player_id, ids);
             ui.close();
@@ -243,19 +234,22 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         menu_separator(ui);
-        if ui.button("Generate settings.toml\u{2026}").clicked() {
-            view.generate = Some(generate::Generate::new(
-                player_id,
+        for (label, file) in [
+            (
+                "Generate settings.toml\u{2026}",
                 generate::GenFile::Settings,
-            ));
-            ui.close();
-        }
-        if ui.button("Generate in-game face\u{2026}").clicked() {
-            view.generate = Some(generate::Generate::new(
-                player_id,
+            ),
+            (
+                "Generate in-game face\u{2026}",
                 generate::GenFile::IngameFace,
-            ));
-            ui.close();
+            ),
+        ] {
+            if player_entry(ui, egui::Button::new(label)).clicked()
+                && let Some(player_id) = player_id
+            {
+                view.generate = Some(generate::Generate::new(player_id, file));
+                ui.close();
+            }
         }
     });
 }

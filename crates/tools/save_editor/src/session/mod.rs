@@ -836,13 +836,15 @@ impl Session {
 
     /// Writes the save to `path` (Save as; Save passes the session's own
     /// path), then makes `path` the session's file, where the next Save
-    /// writes, and the current model the baseline. `edit_mode_closed` lets
-    /// the write go ahead while the save's own PES runs (the command line's
-    /// `--edit-mode-closed`, the window's running-game dialog's Save):
-    /// refused only when that PES runs and it is `false` (the game writes
-    /// its save back over ours when the member leaves Edit mode after
-    /// changing anything there); a game of another version does not block
-    /// it.
+    /// writes, and the current model the baseline. The open undo entry is
+    /// sealed: a write is a boundary, so the next edit is its own undo
+    /// step and one Undo never goes back past the save. `edit_mode_closed`
+    /// lets the write go ahead while the save's own PES runs (the command
+    /// line's `--edit-mode-closed`, the window's running-game dialog's
+    /// Save): refused only when that PES runs and it is `false` (the game
+    /// writes its save back over ours when the member leaves Edit mode
+    /// after changing anything there); a game of another version does not
+    /// block it.
     pub(crate) fn save_to(
         &mut self,
         path: &Path,
@@ -854,6 +856,7 @@ impl Session {
         self.path = path.to_path_buf();
         (self.baseline_players, self.baseline_teams) = baselines(&self.file);
         self.origins.clear();
+        self.undo.seal();
         self.dirty = false;
         Ok(())
     }

@@ -8,7 +8,8 @@
 //! (`choice`), the text box every view draws (`text_box`) and its resting
 //! outline (`text_box_border`), the collapsing
 //! header every view draws (`collapsing_header`), a tool's
-//! toolbar row with its group separator and its framed scope (`toolbar`), the measure that
+//! toolbar row with its group separator, its framed scope and the Ctrl-only
+//! key its shortcuts match (`toolbar`), the measure that
 //! places text by its ink (`ink`), the button frame a clickable picture shows while in
 //! use (`in_use_frame`), the slider with its value box (`slider`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), the spacing of stacked fields
@@ -49,7 +50,7 @@ pub use modal::{
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use slider::slider;
 pub use text_box::{text_box, text_box_border};
-pub use toolbar::{toolbar, toolbar_framed, toolbar_separator};
+pub use toolbar::{consume_ctrl, toolbar, toolbar_framed, toolbar_separator};
 pub use wheel::{cycle_choice, number_arrows, set_inverted, step_choice, step_number, wheel_steps};
 
 /// The row spacing of a grid of text rows (the help's Messages table, the Save

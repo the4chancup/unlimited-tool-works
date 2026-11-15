@@ -22,8 +22,8 @@ use std::path::{Path, PathBuf};
 use aatf::Ruleset;
 use studio_core::ToolContext;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, menu_button, modal_buttons, modal_frame, toolbar_framed,
-    toolbar_separator,
+    add_enabled, add_enabled_ui, consume_ctrl, menu_button, modal_buttons, modal_frame,
+    toolbar_framed, toolbar_separator,
 };
 
 pub(crate) use prompt::Pending;
@@ -476,15 +476,18 @@ fn save_as(view: &mut RulesetView, ctx: &ToolContext, settings: &RulesetEditorSe
     }
 }
 
-/// The write the dialogs and Save land on (the method tests drive): on
-/// success the path is remembered and `true`; a save refused by the
-/// load-time validation lists its findings, a failed write names the
-/// file and the error, each as a dialog and `false`, the document
-/// staying dirty.
+/// The write the dialogs and Save land on (the method tests drive): a
+/// gesture in flight seals first, so an edit after the save is its own
+/// undo step. On success the path is remembered and `true`; a save
+/// refused by the load-time validation lists its findings, a failed
+/// write names the file and the error, each as a dialog and `false`,
+/// the document staying dirty.
 pub(crate) fn save_to(view: &mut RulesetView, ctx: &ToolContext, path: &Path) -> bool {
-    let Some(document) = view.document.as_mut() else {
+    if view.document.is_none() {
         return false;
-    };
+    }
+    seal_pending(view);
+    let document = view.document.as_mut().expect("a document is open");
     match document.save(path) {
         Ok(()) => {
             remember_path(ctx, path);
@@ -569,24 +572,25 @@ fn toolbar(
     // shortcuts do nothing then (a text field's own undo is egui's).
     // None of them act behind a modal (the prompt, a dialog, the modal
     // start page): an undo under the prompt would write a state it
-    // never showed.
+    // never showed. Ctrl alone: `consume_ctrl` matches `Modifiers::CTRL`
+    // exactly, so Ctrl+Shift+S is not Save over the open file;
+    // Ctrl+Shift+Z keeps its own two-modifier match.
     let document_open = view.document.is_some();
     let keys_free = !modal_open(view);
-    let save_key =
-        keys_free && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::S));
+    let save_key = keys_free && ui.input_mut(|input| consume_ctrl(input, egui::Key::S));
     let typing = ui.ctx().egui_wants_keyboard_input();
-    // Ctrl+Shift+Z first: `consume_key(Ctrl, Z)` matches it too, so the
-    // more specific shortcut has to be tested before the plainer one.
+    // Ctrl+Shift+Z's own two-modifier match; `consume_ctrl` covers the
+    // Ctrl-only keys.
     let redo_key = keys_free
         && !typing
         && ui.input_mut(|input| {
             input.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::Z)
-                || input.consume_key(egui::Modifiers::CTRL, egui::Key::Y)
+                || consume_ctrl(input, egui::Key::Y)
         });
     let undo_key = keys_free
         && !typing
         && !redo_key
-        && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::Z));
+        && ui.input_mut(|input| consume_ctrl(input, egui::Key::Z));
     let bar = egui::Panel::top("ruleset_toolbar")
         .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(TOOLBAR_MARGIN));
     bar.show(ui, |ui| {
@@ -601,7 +605,11 @@ fn toolbar(
                 if menu_item(ui, true, egui::Button::new("Open…")) {
                     guard(view, ctx, Pending::OpenFile);
                 }
-                if menu_item(ui, document_open, egui::Button::new("Save")) {
+                if menu_item(
+                    ui,
+                    document_open,
+                    egui::Button::new("Save").shortcut_text("Ctrl+S"),
+                ) {
                     save_now(view, ctx, settings);
                 }
                 if menu_item(ui, document_open, egui::Button::new("Save as…")) {
@@ -662,8 +670,7 @@ fn toolbar(
 }
 
 /// The toolbar's **Show preview** toggle, in the bar's framed scope: the
-/// bar's own style would narrow its padding and drop its outline under the
-/// pointer.
+/// bar's own style would drop its outline under the pointer.
 fn preview_toggle(ui: &mut egui::Ui, view: &mut RulesetView) {
     toolbar_framed(ui, |ui| {
         if ui

@@ -49,7 +49,7 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, menu_button, modal, modal_buttons, toolbar_framed, toolbar_separator,
+    add_enabled, consume_ctrl, menu_button, modal, modal_buttons, toolbar_framed, toolbar_separator,
 };
 use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
 
@@ -1015,31 +1015,28 @@ fn toolbar(
     // shortcuts are held off then (a text field's own undo is egui's). A
     // button, checkbox or rating cell holding the keyboard after a Space
     // press does not hold them off: its edit already settled.
-    let save_key =
-        !modal_up && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::S));
+    // Ctrl alone: `consume_ctrl` matches `Modifiers::CTRL` exactly, so
+    // Ctrl+Shift+S (muscle memory for Save as) is not Save over the open
+    // file; Ctrl+Shift+Z keeps its own two-modifier match.
+    let save_key = !modal_up && ui.input_mut(|input| consume_ctrl(input, egui::Key::S));
     let typing = ui.ctx().text_edit_focused() || modal_up;
-    // Ctrl+Shift+Z first: `consume_key(Ctrl, Z)` matches it too, so the more
-    // specific shortcut has to be tested before the plainer one.
+    // Ctrl+Shift+Z's own two-modifier match; `consume_ctrl` covers the
+    // Ctrl-only keys.
     let redo_key = !typing
         && ui.input_mut(|input| {
             input.consume_key(egui::Modifiers::CTRL | egui::Modifiers::SHIFT, egui::Key::Z)
-                || input.consume_key(egui::Modifiers::CTRL, egui::Key::Y)
+                || consume_ctrl(input, egui::Key::Y)
         });
-    let undo_key = !typing
-        && !redo_key
-        && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::Z));
+    let undo_key = !typing && !redo_key && ui.input_mut(|input| consume_ctrl(input, egui::Key::Z));
     // Ctrl+F is Clear visual flags on the selected row's team (a player's
     // or a team row's own): an aesthetics write, so a no-op under the
     // lock, and a no-op while a text field holds the keyboard (`typing`).
-    let clear_flags_key =
-        !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::F));
+    let clear_flags_key = !typing && ui.input_mut(|input| consume_ctrl(input, egui::Key::F));
     // Ctrl+I is the Player menu's FPC entry, the same lock as Ctrl+F;
     // Ctrl+B opens the Bump dialog, a gameplay write the lock does not
     // stop.
-    let fpc_key =
-        !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
-    let bump_key =
-        !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
+    let fpc_key = !typing && ui.input_mut(|input| consume_ctrl(input, egui::Key::I));
+    let bump_key = !typing && ui.input_mut(|input| consume_ctrl(input, egui::Key::B));
     // Ctrl+O and a version's Ctrl+digit open as the File menu's opens do.
     // Not while a text field holds the keyboard: the menu's click ends the
     // field's edit first, and a key would not.

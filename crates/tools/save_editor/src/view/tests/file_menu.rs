@@ -148,8 +148,12 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
     let mut window = Headless::new();
 
     let nodes = open_menu(&mut window, &mut view, "File", PES19_ENTRY);
-    // The scratch folder's name, then the save's folder and file name.
-    let recent = "open_menu_entries\\elsewhere\\EDIT00000000";
+    // The scratch folder's name, then the save's folder and file name,
+    // joined by the platform's separator.
+    let recent = format!(
+        "open_menu_entries{0}elsewhere{0}EDIT00000000",
+        std::path::MAIN_SEPARATOR
+    );
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
         .iter()
         .filter_map(|node| node.label())
@@ -161,7 +165,7 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
             "PES 2019 Ctrl+9",
             "PES 2021 Ctrl+1",
             "PES 2021",
-            recent,
+            recent.as_str(),
             "Choose file\u{2026} Ctrl+O",
             "Save Ctrl+S",
             "Save as\u{2026}",
@@ -281,7 +285,10 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
     let (entries, lines) = case(
         None,
         Some(tree.elsewhere.clone()),
-        "open_menu_sep_discovered\\elsewhere\\EDIT00000000",
+        &format!(
+            "open_menu_sep_discovered{0}elsewhere{0}EDIT00000000",
+            std::path::MAIN_SEPARATOR
+        ),
     );
     assert_eq!(
         entries.len(),
@@ -373,6 +380,7 @@ fn the_picker_starts_in_the_last_opened_folder_then_the_newest_found_saves() {
 // SE-GUI-05, SE-GUI-26: one of the File menu's opens under unsaved changes
 // asks first; Discard opens the entry's save and leaves the open file as
 // it was.
+// SE-GUI-05, SE-GUI-26
 #[test]
 fn an_entry_clicked_with_unsaved_changes_prompts_and_discard_opens_it() {
     let tree = tree("open_menu_dirty");
@@ -472,6 +480,7 @@ fn a_shortcut_with_no_save_found_opens_the_picker() {
 
 // SE-GUI-05, SE-GUI-26: a shortcut under unsaved changes asks first, as
 // the File menu's opens do; Discard opens the version's save.
+// SE-GUI-05, SE-GUI-26
 #[test]
 fn a_shortcut_with_unsaved_changes_prompts_first() {
     let tree = tree("open_shortcut_dirty");
@@ -653,6 +662,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
 
 // SE-GUI-21, SE-GUI-26: Save as with the save's own PES running asks the
 // running-game question first; its Save writes to the Save as target.
+// SE-GUI-21, SE-GUI-26
 #[test]
 fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let path = fixture(PesVersion::Pes21, "save_as_running");
@@ -684,6 +694,82 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
         "the opened file is unchanged"
     );
     assert_eq!(view.save_path(), Some(target.as_path()));
+}
+
+// A save's Ctrl shortcut is Ctrl alone: with Shift held it is not Save.
+#[test]
+fn ctrl_shift_s_writes_nothing_and_keeps_the_edit_pending() {
+    let path = fixture(PesVersion::Pes21, "ctrl_shift_s");
+    let before = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    assert!(view.is_dirty(), "premise: unsaved changes");
+    let mut window = Headless::new();
+
+    // Ctrl+Shift+S is not Save: the file's bytes and the dirty mark
+    // stand as they were.
+    let shift_s = egui::Modifiers::CTRL | egui::Modifiers::SHIFT;
+    window.frame(vec![key(egui::Key::S, shift_s, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        before,
+        "Ctrl+Shift+S wrote nothing"
+    );
+    assert!(view.is_dirty(), "the edit is still pending");
+}
+
+// A save written mid-gesture seals the open undo entry: the next edit is
+// its own step, so one Undo goes back only to the save, never past it.
+#[test]
+fn a_save_in_mid_gesture_seals_the_undo_entry() {
+    let path = fixture(PesVersion::Pes21, "save_mid_gesture");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let (_, _, player_id) = selected_player(&view).expect("a player row is selected");
+    let before = player_entry(&view, player_id).name;
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, name_field(&nodes), &mut view);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Name field holds the keyboard"
+    );
+
+    // A run of typing, then Ctrl+S without leaving the field: the file
+    // now holds the first run.
+    window.frame(
+        vec![
+            key(egui::Key::End, egui::Modifiers::NONE, true),
+            egui::Event::Text("x".to_owned()),
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    let first = player_entry(&view, player_id).name;
+    assert_eq!(first, format!("{before}x"), "premise: the first run landed");
+    press_ctrl(&mut window, &mut view, egui::Key::S);
+    assert!(!view.is_dirty(), "premise: the save wrote the first run");
+
+    // Still typing into the same field: the second run. Then the field
+    // is left and one Undo takes only the second run back — the model
+    // reads the saved state again.
+    window.frame(vec![egui::Event::Text("y".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(view.is_dirty(), "the second run landed");
+    // The toolbar's empty end: dead space no widget covers.
+    click_at(&mut window, egui::pos2(1090.0, 12.0), &mut view);
+    press_ctrl(&mut window, &mut view, egui::Key::Z);
+    assert_eq!(
+        player_entry(&view, player_id).name,
+        first,
+        "only the run after the save is undone"
+    );
+    assert!(!view.is_dirty(), "the editor reads saved");
 }
 
 // SE-GUI-79
@@ -778,6 +864,7 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
 
 // SE-GUI-90: with no save open the middle of the view is the welcome
 // panel, titled "Save editor" — the File menu's opens again, no modal up.
+// SE-GUI-90
 #[test]
 fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     let tree = tree("welcome_panel");
@@ -797,7 +884,10 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         label_value(&nodes, "Saves in Documents") && label_value(&nodes, "Recent"),
         "the panel's two headings"
     );
-    let recent = "welcome_panel\\elsewhere\\EDIT00000000";
+    let recent = format!(
+        "welcome_panel{0}elsewhere{0}EDIT00000000",
+        std::path::MAIN_SEPARATOR
+    );
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
         .iter()
         .filter_map(|node| node.label())
@@ -808,7 +898,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             "PES 2019 Ctrl+9",
             "PES 2021 Ctrl+1",
             "PES 2021",
-            recent,
+            recent.as_str(),
             "Choose file\u{2026} Ctrl+O",
         ],
         "the saves by version, the first of each with its shortcut, then the recent \
@@ -851,6 +941,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
 
 // SE-GUI-90's last clause: nothing discovered and none opened reads the
 // weak line over Choose file….
+// SE-GUI-90
 #[test]
 fn the_welcome_panel_with_nothing_found_reads_so_over_the_picker() {
     let mut view = SaveView::new();
@@ -884,5 +975,53 @@ fn the_welcome_panel_scans_once_not_every_frame() {
         calls.get(),
         PesVersion::ALL.len(),
         "one discovery call per version, once for the panel's whole stay"
+    );
+}
+
+// The panel's list is the File menu's scan's: a save that lands in
+// Documents while the window is open shows in the panel once the File
+// menu has been opened (the menu rescanning is the refresh).
+#[test]
+fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened() {
+    let tree = tree("welcome_rescan");
+    let mut view = SaveView::new();
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    let pes17 = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some("PES 2017 Ctrl+7"))
+    };
+    idle_frames(&mut window, &mut view, 3);
+    assert!(
+        !pes17(&draw(&mut window, &mut view)),
+        "premise: no PES 17 save was found"
+    );
+
+    // A PES 17 save lands under Documents after the panel's first scan.
+    let layout = save_layout(PesVersion::Pes17);
+    let folder = tree
+        .documents
+        .join("KONAMI")
+        .join(layout.game_folder)
+        .join("save");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::write(
+        folder.join(layout.file_name),
+        fixture_save(PesVersion::Pes17),
+    )
+    .unwrap();
+
+    // The File menu opened and closed: its rescan fills the panel's list.
+    open_menu(&mut window, &mut view, "File", "Choose file");
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert!(!menu_shown(&window, &nodes), "the File menu is closed");
+    assert!(
+        pes17(&nodes),
+        "the panel lists the save found by the File menu's rescan"
     );
 }

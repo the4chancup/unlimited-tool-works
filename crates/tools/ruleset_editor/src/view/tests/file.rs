@@ -5,6 +5,7 @@
 //! file (RE-FILE-07), and the event's page and logo are kept outside
 //! the logic (RE-FILE-09).
 
+use super::general::{focus_field, ruleset_name, type_text};
 use super::*;
 
 /// `dir`'s file names, sorted.
@@ -275,7 +276,7 @@ fn save_as_writes_a_copy_and_later_saves_follow_it() {
         &ctx,
     );
     let frame = window.draw(&mut view, &ctx);
-    click_nth(&mut window, &frame.nodes, "Save", 0, &mut view, &ctx);
+    click_nth(&mut window, &frame.nodes, "Save Ctrl+S", 0, &mut view, &ctx);
     let rules =
         aatf::Rules::load(&std::fs::read_to_string(&b).unwrap()).expect("b.4ccrules still loads");
     assert_eq!(
@@ -337,6 +338,63 @@ fn save_leaves_no_sibling_and_reports_a_read_only_file() {
             .any(|label| label.contains("rules.4ccrules") && label.contains("read-only")),
         "the window names the file and the error"
     );
+}
+
+// A save's Ctrl shortcut is Ctrl alone: with Shift held it is not Save.
+#[test]
+fn ctrl_shift_s_writes_nothing_and_keeps_the_edit_pending() {
+    let (ctx, _events, path, mut view) = official_opened("ctrl_shift_s");
+    let before = std::fs::read(&path).unwrap();
+    edit_ruleset(&mut view, |ruleset| ruleset.name = "Renamed".to_string());
+    assert!(view.has_unsaved_changes(), "premise: unsaved changes");
+    let mut window = Headless::new();
+
+    let shift_s = egui::Modifiers::CTRL | egui::Modifiers::SHIFT;
+    window.frame(vec![key(egui::Key::S, shift_s)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        before,
+        "Ctrl+Shift+S wrote nothing"
+    );
+    assert!(view.has_unsaved_changes(), "the edit is still pending");
+}
+
+// A save written mid-gesture seals the open undo entry: the next edit is
+// its own step, so one Undo goes back only to the save, never past it.
+#[test]
+fn a_save_in_mid_gesture_seals_the_undo_entry() {
+    let (ctx, _events, _path, mut view) = official_opened("save_mid_gesture");
+    let mut window = Headless::new();
+    let name = ruleset_name(&view);
+    focus_field(&mut window, &mut view, &ctx, &name);
+
+    // A run of typing, then Ctrl+S without leaving the field: the file
+    // now holds the first run.
+    type_text(&mut window, &mut view, &ctx, "x");
+    let first = format!("{name}x");
+    assert_eq!(ruleset_name(&view), first, "premise: the first run landed");
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::S);
+    assert!(
+        !view.has_unsaved_changes(),
+        "premise: the save wrote the first run"
+    );
+
+    // Still typing into the same field: the second run. Then the field
+    // is left and one Undo takes only the second run back — the document
+    // reads saved.
+    type_text(&mut window, &mut view, &ctx, "y");
+    let away = egui::pos2(5.0, 5.0);
+    window.frame(pointer_at(away, true), |ui| show(ui, &mut view, &ctx));
+    window.frame(pointer_at(away, false), |ui| show(ui, &mut view, &ctx));
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(
+        ruleset_name(&view),
+        first,
+        "only the run after the save is undone"
+    );
+    assert!(!view.has_unsaved_changes(), "the document reads saved");
 }
 
 // A test reaching the default file dialogs panics instead of opening a

@@ -77,7 +77,26 @@ fn two_edits_undo_and_redo_by_key_and_button() {
     assert!(rating(&view).iter().any(|name| name == "attacking_prowess"));
     assert!(!has_at_most(&view, "defensive_prowess"));
 
-    menu_click(&mut window, &mut view, &ctx, "Edit", "Undo");
+    // In the Edit menu Redo reports disabled with nothing to redo, Undo
+    // enabled beside it.
+    let frame = window.draw(&mut view, &ctx);
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        &menu_label("Edit"),
+        &mut view,
+        &ctx,
+    );
+    let frame = window.draw(&mut view, &ctx);
+    assert!(
+        node(&frame.nodes, "Redo Ctrl+Y").is_disabled(),
+        "nothing to redo"
+    );
+    assert!(
+        !node(&frame.nodes, "Undo Ctrl+Z").is_disabled(),
+        "the last edit undoes"
+    );
+    click_prefix(&mut window, &frame.nodes, "Undo", &mut view, &ctx);
     assert!(
         has_at_most(&view, "defensive_prowess"),
         "the second edit undone by the button"
@@ -90,6 +109,18 @@ fn two_edits_undo_and_redo_by_key_and_button() {
     assert!(
         !has_at_most(&view, "defensive_prowess"),
         "the second edit redone by the button"
+    );
+
+    // Ctrl+Shift+Z redoes as Ctrl+Y does.
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert!(has_at_most(&view, "defensive_prowess"), "undone again");
+    let ctrl_shift_z = egui::Modifiers::CTRL | egui::Modifiers::SHIFT;
+    window.frame(vec![key(egui::Key::Z, ctrl_shift_z)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert!(
+        !has_at_most(&view, "defensive_prowess"),
+        "the second edit redone by Ctrl+Shift+Z"
     );
 }
 
@@ -117,21 +148,31 @@ fn rate(view: &RulesetView) -> u8 {
 }
 
 /// The text field holding `from` focused (a click on it).
-fn focus_field(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, from: &str) {
+pub(super) fn focus_field(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    from: &str,
+) {
     let frame = window.draw(view, ctx);
     click(window, text_field(&frame.nodes, from), view, ctx);
 }
 
 /// `text` typed into the focused text field (the field keeps focus
 /// between frames, so several calls are one typing gesture).
-fn type_text(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, text: &str) {
+pub(super) fn type_text(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    text: &str,
+) {
     window.frame(vec![egui::Event::Text(text.to_string())], |ui| {
         show(ui, view, ctx)
     });
 }
 
 /// The document's ruleset's name.
-fn ruleset_name(view: &RulesetView) -> String {
+pub(super) fn ruleset_name(view: &RulesetView) -> String {
     view.document.as_ref().unwrap().ruleset.name.clone()
 }
 
@@ -783,21 +824,29 @@ fn the_toolbars_row_stands_3_points_inside_its_panel() {
         .bounds()
         .expect("the File menu button's bounds");
     let visuals = window.ctx.global_style().visuals.clone();
-    let panel_top = frame
+    // The toolbar's own fill: a rect the band's height from the view's top
+    // — not the window's fill, which shares the panel colour and the
+    // (0, 0) corner.
+    let panel = frame
         .shapes
         .iter()
         .find_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(rect)
                 if rect.fill == visuals.panel_fill
                     && rect.rect.left() == 0.0
-                    && rect.rect.top() == 0.0 =>
+                    && rect.rect.top() == 0.0
+                    && rect.rect.height() < 40.0 =>
             {
-                Some(f64::from(rect.rect.top()))
+                Some(rect.rect)
             }
             _ => None,
         })
         .expect("the toolbar panel's fill");
-    assert_eq!(file.y0, panel_top + 3.0, "the button's top 3 under it");
+    assert_eq!(
+        file.y0,
+        f64::from(panel.top()) + 3.0,
+        "the button's top 3 under it"
+    );
 
     let stroke = visuals.widgets.noninteractive.bg_stroke;
     let line = frame
@@ -819,6 +868,11 @@ fn the_toolbars_row_stands_3_points_inside_its_panel() {
     // The stroke centres on `line`: its top stands `bottom` under the row.
     let line_top = line - 0.5 * f64::from(stroke.width);
     assert_eq!(line_top, file.y1 + 3.0, "the line 3 under the button");
+    assert_eq!(
+        f64::from(panel.bottom()),
+        line_top,
+        "the fill's bottom meets the line"
+    );
 }
 
 /// With a document open the layout runs to the view's edges (the
@@ -846,4 +900,32 @@ fn the_toolbars_band_starts_at_the_views_left_and_top_edges() {
         800.0,
         "the band spans the view's width"
     );
+
+    // The framed toggle at the row's right end: `TOOLBAR_MARGIN.right`
+    // inside the band's edge, and under the pointer a visible outline —
+    // the bar's menu style would paint it flat.
+    let preview = node(&frame.nodes, "Show preview")
+        .bounds()
+        .expect("the Show preview toggle's bounds");
+    assert_eq!(
+        preview.x1,
+        800.0 - 8.0,
+        "the toggle's right edge 8 inside the band's (TOOLBAR_MARGIN.right)"
+    );
+    let at = centre(node(&frame.nodes, "Show preview"));
+    window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    let frame = window.draw(&mut view, &ctx);
+    let outlined = frame.shapes.iter().any(|clipped| match &clipped.shape {
+        egui::Shape::Rect(rect) => {
+            !rect.stroke.is_empty()
+                && (f64::from(rect.rect.left()) - preview.x0).abs() <= 1.0
+                && (f64::from(rect.rect.right()) - preview.x1).abs() <= 1.0
+                && (f64::from(rect.rect.top()) - preview.y0).abs() <= 1.0
+                && (f64::from(rect.rect.bottom()) - preview.y1).abs() <= 1.0
+        }
+        _ => false,
+    });
+    assert!(outlined, "the hovered toggle keeps its outline");
 }
