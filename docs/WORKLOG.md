@@ -2111,6 +2111,10 @@ briefs, review loops, gates and mutation runs as for any step.
     bundles read with `save-editor diff` until then (DECISIONS 2026-11-08); the dialog's
     rulings and `jiff` (DECISIONS 2026-11-15 "Report a problem: the dialog's rulings")
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
+    - [x] built (2026-11-15, SWE-2 and the lead; merge `ced67b83`): ST-REP-01 to 04 pass, a
+      help chapter of its own ("Reporting a problem") and the changelog line
+    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), then
+      card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
