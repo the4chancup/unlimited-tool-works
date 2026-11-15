@@ -2214,7 +2214,8 @@ briefs, review loops, gates and mutation runs as for any step.
       Escape on `Update failed` untested; two stale doc comments; the lead's text: the
       settings file's comment, the help's Restart now sentence, the changelog's launchers
       (`4705095d`)
-    - [ ] the rework (SWE-2, `sk/updrw`), then Carbon's round 3
+    - [x] the rework (SWE-2, 2026-11-15; merge `6d5a9ab6`)
+    - [ ] Carbon's round 3 (running at `766ccf6c`)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2545,7 +2546,9 @@ briefs, review loops, gates and mutation runs as for any step.
         a label copied the save; three tests that could not fail (CRLF, formations off
         preset 1, a mixed notes tail); the lead's text: the help's Copy and paste section,
         the plan bullet's stale lines, two changelog lines (`4705095d`)
-      - [ ] the rework (SWE-2, `sk/cliprw`), then Carbon's round 2
+      - [x] the rework (SWE-2 and the lead, 2026-11-15; merge `58e2aa12`): all six; a label
+        test's copy assertion narrowed to text that is not the save's own
+      - [ ] Carbon's round 2 (running at `766ccf6c`)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2584,7 +2587,8 @@ briefs, review loops, gates and mutation runs as for any step.
       ran a clean export after an unclean one; the panic hook's call of the hook before it
       untested; `FIRST_RUN`'s doc named removed commands; the lead's text: the help's
       "Team compiler" and its several-exports paragraph split in three (`4705095d`)
-    - [ ] the rework (SWE-2, `sk/logallrw`), then Carbon's round 3
+    - [x] the rework (SWE-2, 2026-11-15; merge `218ecaaf`): the three test and doc findings
+    - [ ] Carbon's round 3 (running at `766ccf6c`)
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
