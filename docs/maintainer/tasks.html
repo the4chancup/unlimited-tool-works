@@ -583,6 +583,86 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-own-team-button">
+  <h3>The import window's button for the file's own team</h3>
+  <p class="from">From: your ask of 2026-11-15; checked by the lead at <code>addf0000</code> on your PES 2021 save, dark theme, never saved</p>
+  <p>With /aco/ (703) selected, picking your <code>kfg.toml</code> puts a <b>Select VGL 11
+  (781)</b> button right after "Import into /aco/ (703)": 781 is the team the file was
+  exported from, still named VGL 11 in this save. A click selects 781 and brings its row to
+  the top of the list, and the import line then reads "Import into VGL 11 (781)", with no
+  button. The draft places the button the same way, before its file dropdown. Tests cover
+  the two cases not shown here: a file naming a team the save lacks greys the button out,
+  and a <code>.4ccs</code>, which names no team, shows none.</p>
+  <div class="shots">
+    <figure><a href="img/own_team_button.png"><img src="img/own_team_button.png" alt="The Team file interchange window with kfg.toml picked and a Select VGL 11 (781) button"></a><figcaption>kfg.toml picked</figcaption></figure>
+    <figure><a href="img/own_team_selected.png"><img src="img/own_team_selected.png" alt="Team 781 selected at the top of the list, the window importing into it"></a><figcaption>After the click</figcaption></figure>
+    <figure><a href="img/own_team_button_draft.png"><img src="img/own_team_button_draft.png" alt="The draft's window with a Select /f/ (718) button before its file dropdown"></a><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-pgdn-team-top">
+  <h3>Page Down brings a team's row to the top of the list</h3>
+  <p class="from">From: your ask of 2026-11-15; checked by the lead at <code>addf0000</code> on your PES 2021 save, dark theme, never saved</p>
+  <p>With /3/'s row selected, Page Down selected /a/ (702) and scrolled its row to the top of
+  the list, with its squad under it; a second press did the same for /aco/ (703). Page Up
+  goes back the same way, which the tests check. The arrow keys scroll as before, only as far
+  as the row needs.</p>
+  <div class="shots">
+    <figure><a href="img/pgdn_team_top.png"><img src="img/pgdn_team_top.png" alt="Two captures of the player list, /a/ then /aco/ at the top"></a><figcaption>One press, then two</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-undo-selection">
+  <h3>Undo and Redo keep a moved player selected</h3>
+  <p class="from">From: your ask of 2026-11-15; checked by the lead at <code>addf0000</code> on your PES 2021 save, dark theme, never saved</p>
+  <p>In /aco/, Pizza Thot dragged from slot 04 onto slot 07 stays selected there (top).
+  Ctrl+Z puts him back in slot 04 and keeps him selected (middle), where the selection used to
+  stay on slot 07, now Raven's. Ctrl+Y takes him to slot 07 again, still selected (bottom).
+  The × on the move's row in the unsaved changes list does the same, which the tests
+  check.</p>
+  <div class="shots">
+    <figure><a href="img/undo_keeps_selection.png"><img src="img/undo_keeps_selection.png" alt="Three captures: Pizza Thot selected in slot 07, then in slot 04 after Undo, then in slot 07 after Redo"></a><figcaption>The drop, Undo, Redo</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-kfg-leeway">
+  <h3>/kfg/'s preset 1 draws Kick-off alone</h3>
+  <p class="from">From: your ask of 2026-11-15; checked by the lead at <code>addf0000</code>, dark theme, nothing saved</p>
+  <p>With a leeway of 2, the picture of your <code>kfg.toml</code> drew preset 1's
+  In-possession and Out-of-possession, Kick-off's spots nudged by 3 (top). With 3, it draws
+  Kick-off alone, as for any preset whose formations all match Kick-off (bottom). Presets 2
+  and 3 are unchanged. The new picture comes from importing the file onto team 781 of your
+  PES 2021 save, in memory only, so its players read PLACEHOLDER.</p>
+  <div class="shots">
+    <figure><a href="img/kfg_leeway2.png"><img src="img/kfg_leeway2.png" alt="/kfg/'s preset 1 with three pitches"></a><figcaption>Leeway 2</figcaption></figure>
+    <figure><a href="img/kfg_leeway3.png"><img src="img/kfg_leeway3.png" alt="/kfg/'s preset 1 with Kick-off alone"></a><figcaption>Leeway 3</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>

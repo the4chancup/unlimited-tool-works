@@ -2117,28 +2117,18 @@ briefs, review loops, gates and mutation runs as for any step.
     pitch's turf and the dark theme draw codes as they are. The changes table's heads are
     strong and the paste notice's tails end with a full stop. Look checked in the built
     window, card `look-name-colours`
-  - [ ] 0.0.2-undosel an undo or a redo of a player list move, or the X on its row of the
-    unsaved changes list, keeps the moved player selected, in whichever slot the step puts
-    him (`plans/save_editor.md` "Player list", the
-    paragraph "A drop selects the moved player"; DECISIONS 2026-11-15 "An undone or redone
-    move keeps the moved player selected"): the lead's look found the selection left on the
-    drop's slot, another player after the undo -> verify: a session test dropping slot 3 on
-    slot 6, then undo, the selection on slot 3, then redo, on slot 6, then the move row's
-    X, on slot 3; the built window
-  - [ ] 0.0.2-leeway a formation picture's shape leeway 3, not 2 (`plans/save_editor.md`
-    "Formation pictures", the columns' paragraph; DECISIONS 2026-11-15 "A formation picture's
-    shape leeway is 3"): /kfg/'s VGL 27 preset 1 drew its nudged copies of Kick-off ->
-    verify: SE-GUI-87's moved-spot case at 3 and 4; /kfg/'s picture in the built window
-  - [ ] 0.0.2-idfilter the list's filter matches an ID from its start, a team by its own ID
-    listing its squad (`plans/save_editor.md` "Editing UI", the filter box; DECISIONS
-    2026-11-15 "The list's filter matches an ID from its start") -> verify: SE-GUI-102
-  - [ ] 0.0.2-pgtop a team row PgUp or PgDn selects scrolls to the list's top
-    (`plans/save_editor.md` "Editing UI", the PgUp and PgDn paragraphs; DECISIONS 2026-11-15
-    "PgUp and PgDn bring the team row") -> verify: SE-GUI-103; the built window
-  - [ ] 0.0.2-ownteam the import window's `Select <name> (<id>)` button for the file's own
-    team (`plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-15 "The
-    import window selects the file's own team"; the draft's `interchangePanel`) -> verify:
-    SE-GUI-104; the built window beside the draft
+  - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
+    row's X keep the moved player selected (`view/mod.rs` `following_selection`,
+    `Session::record_of`). Look checked, card `look-undo-selection`
+  - [x] 0.0.2-leeway 2026-11-15 (SWE-2, merge `addf0000`): `SHAPE_TOLERANCE` 3; /kfg/'s
+    preset 1 draws Kick-off alone. Look checked, card `look-kfg-leeway`
+  - [x] 0.0.2-idfilter 2026-11-15 (SWE-2, merge `addf0000`): IDs match from their start, a
+    team's ID listing its squad (SE-GUI-102)
+  - [x] 0.0.2-pgtop 2026-11-15 (SWE-2, merge `addf0000`): a team row the page keys select
+    scrolls to the list's top (SE-GUI-103). Look checked, card `look-pgdn-team-top`
+  - [x] 0.0.2-ownteam 2026-11-15 (SWE-2, merge `addf0000`): the import window's
+    `Select <name> (<id>)` (SE-GUI-104). Look checked beside the draft, card
+    `look-own-team-button`
   - [ ] 0.0.2-changesperf the unsaved changes list and the close prompt scroll slowly once
     four teams are imported (the maintainer, 2026-11-15): `view/prompt.rs` `changes_table`
     lays out every row of an `egui::Grid` each frame -> verify: a test timing a frame of
