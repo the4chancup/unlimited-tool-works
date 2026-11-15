@@ -2215,17 +2215,10 @@ briefs, review loops, gates and mutation runs as for any step.
       inside its panel, the team view's last row at 739 and no logo on the frame a save
       opens
     - [ ] one paid round (Carbon)
-  - [ ] 0.0.2-dragmark (the maintainer, 2026-11-15) a player dragged from the starting eleven
-    or the bench lists onto the Tactics pitch marks the pitch player he would swap with by
-    the same cursor a drag between two pitch players shows on its destination
-    (`plans/save_editor.md` "Tactics editor", SE-GUI-59)
-    - [x] the plan's sentence and the draft (`paintPitch`'s `S.lineupOver`), the
-      maintainer's "looks good as drafted"
-    - [x] the build (Opus sidekick, 2026-11-15, merged): `marker_at`, one hit test for a
-      row's drop and its mark, so the mark falls on whom the release swaps, the keeper and
-      an illegal formation included; SE-GUI-59's new legs headless, with the overlap case
-    - [ ] the built window beside the draft: a row held over a pitch player
-      (`gui.py drag ... OUT.png` captures before the release)
+  - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
+    Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
+    one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
+    included; SE-GUI-59. The built window beside the draft (`.tmp/lead/bw/pair_dragmark.png`)
   - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
     unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
     `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12)
