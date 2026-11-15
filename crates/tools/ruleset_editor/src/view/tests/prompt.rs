@@ -498,6 +498,49 @@ fn a_template_pick_prompts_and_each_answer_does_what_it_says() {
     pick_answers(&mut window, &ctx, &dir, "4cc Spring 26", "4cc Spring 26");
 }
 
+// A template just picked and not edited meets no prompt, so the
+// window's close goes through, and so does the next template pick.
+// With an edit first, both prompt (the tests above).
+// RE-GUI-15
+#[test]
+fn a_template_just_picked_meets_no_prompt() {
+    let (ctx, _events, requests) = crate::test_support::context_requests();
+    let mut window = Headless::new();
+    let mut tool = crate::Tool::new();
+
+    // A template picked on the start page: the window's close goes
+    // through with no prompt and asks no re-close.
+    let frame = settled(&mut window, &mut tool.view, &ctx);
+    click_prefix(
+        &mut window,
+        &frame.nodes,
+        "4cc Spring 26",
+        &mut tool.view,
+        &ctx,
+    );
+    assert!(tool.view.document.is_some(), "the template opened");
+    assert!(!StudioTool::hold_close(&mut tool), "the close is not held");
+    assert!(tool.view.pending_action.is_none(), "no prompt");
+    assert!(requests.try_recv().is_err(), "and no re-close is asked");
+
+    // Another template picked over it (the modal start page) opens at
+    // once, no prompt either.
+    open_start_modal(&mut window, &mut tool.view, &ctx);
+    let frame = window.draw(&mut tool.view, &ctx);
+    click_prefix(
+        &mut window,
+        &frame.nodes,
+        "/vg/ League 27",
+        &mut tool.view,
+        &ctx,
+    );
+    assert!(
+        tool.view.pending_action.is_none(),
+        "no prompt for the next pick"
+    );
+    assert_name(&tool.view, "/vg/ League 27");
+}
+
 // The prompt's title draws in the window-title style (the drafts'
 // `.window .title`): 14 points in the strong colour, not `Heading`'s 15,
 // which a page's heading keeps.

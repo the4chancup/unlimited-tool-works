@@ -443,15 +443,16 @@ struct RowLayout {
 
 /// The team selector: `All teams`, then each cup team of `category` by
 /// name in the save's order. With `category`, the popup ends, under a
-/// separator, in the four radio buttons of `TeamCategory::CHOICES`: they
-/// stand under the teams' own scroll area (the draft's `.combo-foot`), so
-/// they stay in view while the teams scroll, and picking one leaves the
-/// popup open, so the shorter list shows at once (the combo's
-/// `CloseOnClickOutside` keeps it open on a click inside, and an entry's
-/// own `ui.close()` closes it on a pick). `id_salt` is the
-/// combo's: two combos with one salt share their popup state, so the
-/// comparator's filter passes its own (the player list's stays
-/// `save_editor_team`).
+/// separator, in the four radio buttons of `TeamCategory::CHOICES` (the
+/// draft's `.combo-foot`): the teams' scroll area above them is as tall
+/// as any dropdown's list, the footer's height added to the popup's
+/// rather than taken from it, so the radios stay in view while the
+/// teams scroll. Picking one leaves the popup open, so the shorter list
+/// shows at once (the combo's `CloseOnClickOutside` keeps it open on a
+/// click inside, and an entry's own `ui.close()` closes it on a pick).
+/// `id_salt` is the combo's: two combos with one salt share their
+/// popup state, so the comparator's filter passes its own (the player
+/// list's stays `save_editor_team`).
 pub(super) fn team_selector(
     ui: &mut egui::Ui,
     choice: &mut TeamChoice,
@@ -469,7 +470,15 @@ pub(super) fn team_selector(
             .unwrap_or_else(|| id.to_string()),
     });
     let combo = if category.is_some() {
-        combo.close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        // The radios' footer under the teams' scroll area is added to
+        // the popup's height, not taken from the teams': the teams'
+        // area keeps a whole dropdown's `combo_height`, the separator
+        // and the radios under it (the draft's `.combo-foot`).
+        let row = ui.spacing().interact_size.y + ui.spacing().item_spacing.y;
+        let footer = COMBO_SEPARATOR_SPACING + 4.0 * row;
+        combo
+            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+            .height(ui.spacing().combo_height + footer)
     } else {
         combo
     };
@@ -494,14 +503,11 @@ pub(super) fn team_selector(
                 }
             };
             if let Some(category) = category {
-                // The teams scroll in a scroll area of their own, capped
-                // so it and the radios' footer together fill the popup's
-                // `combo_height`: the radios stay in view while the
-                // teams scroll.
-                let row = ui.spacing().interact_size.y + ui.spacing().item_spacing.y;
-                let footer = COMBO_SEPARATOR_SPACING + 4.0 * row;
+                // The teams scroll in an area of their own as tall as
+                // any dropdown's list: the radios stay in view under it
+                // while the teams scroll.
                 egui::ScrollArea::vertical()
-                    .max_height((ui.spacing().combo_height - footer).max(row))
+                    .max_height(ui.spacing().combo_height)
                     .show(ui, &mut items);
                 combo_separator(ui);
                 for button in TeamCategory::CHOICES {

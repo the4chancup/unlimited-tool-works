@@ -145,6 +145,66 @@ fn the_toolbar_stands_over_the_start_page_with_its_document_items_disabled() {
     );
 }
 
+/// The x of each vertical line in the separators' stroke inside the
+/// toolbar's band (the File menu button's span), the toolbar separators.
+fn separator_xs(window: &Headless, frame: &Frame) -> Vec<f32> {
+    let band = node(&frame.nodes, &menu_label("File"))
+        .bounds()
+        .expect("drawn");
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    frame
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].x == points[1].x
+                    && f64::from(points[0].y.min(points[1].y)) >= band.y0 - 1.0
+                    && f64::from(points[0].y.max(points[1].y)) <= band.y1 + 1.0 =>
+            {
+                Some(points[0].x)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+// With no document the toolbar ends at Randomize: the separator that
+// parts it from the document's name is drawn only with a document (the
+// draft's `topBar`), where it stands right of Randomize.
+#[test]
+fn the_separator_after_randomize_comes_with_a_document() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let randomize = node(&frame.nodes, &menu_label("Randomize"))
+        .bounds()
+        .expect("drawn");
+    let after = |xs: Vec<f32>| {
+        xs.into_iter()
+            .filter(|x| f64::from(*x) > randomize.x1)
+            .count()
+    };
+    assert_eq!(
+        after(separator_xs(&window, &frame)),
+        0,
+        "no separator after Randomize on the start page"
+    );
+
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        after(separator_xs(&window, &frame)),
+        1,
+        "one separator after Randomize with a document"
+    );
+}
+
 // RE-GUI-01's first clause: with no document the start page is the
 // dialog's frame and title centred on the view under the toolbar (the
 // draft's `.start-page`), not a real dialog — one would hold the
@@ -302,10 +362,17 @@ fn template_opens_clean(index: usize, test: &str) {
 
     let document = view.document.as_ref().expect("a document opened");
     assert_eq!(document.ruleset.name, template.ruleset.name);
-    assert!(document.path.is_none(), "an unsaved document");
-    assert!(document.is_dirty(), "unsaved is dirty");
+    assert!(document.path.is_none(), "a never-saved document");
+    assert!(
+        !document.is_dirty(),
+        "a template opens with no unsaved changes"
+    );
     assert_eq!(view.section, Section::General);
     let frame = window.draw(&mut view, &ctx);
+    assert!(
+        !drawn(&frame.nodes, &format!("{} •", template.ruleset.name)),
+        "no mark beside the name"
+    );
     assert_clean_rail(&frame.nodes, template.custom_checks.is_some());
 
     let path = dir.join("saved.4ccrules");
@@ -340,10 +407,14 @@ fn blank_opens_as_new_ruleset_and_saves_back_equal() {
 
     let document = view.document.as_ref().expect("a document opened");
     assert_eq!(document.ruleset.name, "New ruleset");
-    assert!(document.path.is_none(), "unsaved");
-    assert!(document.is_dirty(), "unsaved is dirty");
+    assert!(document.path.is_none(), "never saved");
+    assert!(!document.is_dirty(), "Blank opens with no unsaved changes");
     assert_eq!(view.section, Section::General);
     let frame = window.draw(&mut view, &ctx);
+    assert!(
+        !drawn(&frame.nodes, "New ruleset •"),
+        "no mark beside the name"
+    );
     assert_clean_rail(&frame.nodes, false);
 
     let path = dir.join("saved.4ccrules");
