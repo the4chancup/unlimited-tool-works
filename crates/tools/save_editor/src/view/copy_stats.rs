@@ -27,13 +27,25 @@ const BOTTOM_GAP: f32 = 56.0;
 /// Copy and Swap's disabled hover while both rows name one player.
 const SAME_PLAYER_TIP: &str = "The source and the destination are the same player";
 
-/// One grid row's pick: the team and the player on its roster.
+/// One grid row's pick: the team and the roster slot on it. The player
+/// is read off the roster each frame (`Pick::player_id`), so a roster
+/// write under the open window shows and writes the slot's current
+/// player, not the one the pick landed on.
 #[derive(Clone, Copy)]
 struct Pick {
     /// The picked team's id.
     team_id: u32,
-    /// The picked player's id, a filled slot of `team_id`.
-    player_id: u32,
+    /// The picked slot in `team_id`'s roster (0-based).
+    slot: u8,
+}
+
+impl Pick {
+    /// The player `team_id`'s roster `slot` currently holds, `None` for a
+    /// missing team, an empty slot or an id no record carries (the row
+    /// then reads `?`).
+    fn player_id(&self, session: &Session) -> Option<u32> {
+        session.slot_player(self.team_id, self.slot)
+    }
 }
 
 /// The Copy/swap stats window's state (`view.copy_swap` while it is
@@ -60,17 +72,14 @@ impl CopySwap {
     /// disabled until a pick or a list click moves one of them.
     pub(crate) fn new(session: &Session, selected: Option<Selection>) -> CopySwap {
         let pick = match selected {
-            Some(Selection::Player(team_id, slot)) => Pick {
-                team_id,
-                player_id: session.slot_player(team_id, slot).unwrap_or(0),
-            },
+            Some(Selection::Player(team_id, slot)) => Pick { team_id, slot },
             Some(Selection::Team(team_id)) => Pick {
                 team_id,
-                player_id: first_filled(session.file(), team_id).unwrap_or(0),
+                slot: first_filled_slot(session.file(), team_id).unwrap_or(0),
             },
             None => Pick {
                 team_id: 0,
-                player_id: 0,
+                slot: 0,
             },
         };
         CopySwap {
@@ -82,22 +91,40 @@ impl CopySwap {
     }
 }
 
-/// The first filled roster slot's player id on `team_id`, skipping an id
-/// no player record carries (`None` for an empty or missing team).
-pub(crate) fn first_filled(file: &EditFile, team_id: u32) -> Option<u32> {
+/// `team_id`'s first filled roster slot as `(index, player id)`,
+/// skipping an id no player record carries (`None` for an empty or
+/// missing team).
+fn first_filled_at(file: &EditFile, team_id: u32) -> Option<(u8, u32)> {
     file.team(team_id).and_then(|team| {
         team.roster
             .iter()
-            .map(|slot| slot.player_id)
-            .find(|&id| id != 0 && file.player(id).is_some())
+            .enumerate()
+            .find(|(_, slot)| slot.player_id != 0 && file.player(slot.player_id).is_some())
+            .map(|(index, slot)| {
+                (
+                    u8::try_from(index).expect("a roster holds fewer than 256 slots"),
+                    slot.player_id,
+                )
+            })
     })
 }
 
-/// The player combo's `(player_id, label)` options for `team_id`: every
-/// filled roster slot in slot order, each labeled by its place in the
-/// roster (`01` to `23`, not the shirt number), registered position and
-/// display name, as the player list shows them.
-fn roster_options(file: &EditFile, team_id: u32) -> Vec<(u32, String)> {
+/// `first_filled_at`'s slot index.
+fn first_filled_slot(file: &EditFile, team_id: u32) -> Option<u8> {
+    first_filled_at(file, team_id).map(|(slot, _)| slot)
+}
+
+/// The first filled roster slot's player id on `team_id`
+/// (`first_filled_at`'s), `None` for an empty or missing team.
+pub(crate) fn first_filled(file: &EditFile, team_id: u32) -> Option<u32> {
+    first_filled_at(file, team_id).map(|(_, id)| id)
+}
+
+/// The player combo's `(slot, label)` options for `team_id`: every
+/// filled roster slot's index and label in slot order, each labeled by
+/// its place in the roster (`01` to `23`, not the shirt number),
+/// registered position and display name, as the player list shows them.
+fn roster_options(file: &EditFile, team_id: u32) -> Vec<(u8, String)> {
     let mut options = Vec::new();
     let Some(team) = file.team(team_id) else {
         return options;
@@ -117,7 +144,10 @@ fn roster_options(file: &EditFile, team_id: u32) -> Vec<(u32, String)> {
             }
             None => format!("{place} ?"),
         };
-        options.push((slot.player_id, label));
+        options.push((
+            u8::try_from(index).expect("a roster holds fewer than 256 slots"),
+            label,
+        ));
     }
     options
 }
@@ -156,29 +186,29 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
     if team != pick.team_id {
         pick.team_id = team;
         // The new team's first filled slot is the new pick.
-        pick.player_id = first_filled(file, team).unwrap_or(pick.player_id);
+        pick.slot = first_filled_slot(file, team).unwrap_or(pick.slot);
     }
     let options = roster_options(file, pick.team_id);
-    let mut player = pick.player_id;
+    let mut slot = pick.slot;
     let combo = egui::ComboBox::from_id_salt((salt, "player"))
         .selected_text(
             options
                 .iter()
-                .find(|(id, _)| *id == player)
+                .find(|(index, _)| *index == slot)
                 .map(|(_, label)| label.clone())
                 .unwrap_or_else(|| "?".to_owned()),
         )
         .show_ui(ui, |ui| {
-            for (id, label) in &options {
-                combo_item(ui, &mut player, *id, label);
+            for (index, label) in &options {
+                combo_item(ui, &mut slot, *index, label);
             }
         })
         .response;
-    let players = options.iter().map(|(id, _)| *id);
-    if let Some(next) = step_choice(players, &player, wheel_steps(ui, &combo)) {
-        player = next;
+    let slots = options.iter().map(|(index, _)| *index);
+    if let Some(next) = step_choice(slots, &slot, wheel_steps(ui, &combo)) {
+        slot = next;
     }
-    pick.player_id = player;
+    pick.slot = slot;
 }
 
 /// The Copy/swap stats window while `view.copy_swap` holds one (the
@@ -207,13 +237,13 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
         dialog.seen = selected;
         match selected {
             Some(Selection::Player(team_id, slot)) => {
-                if let Some(player_id) = session.slot_player(team_id, slot) {
-                    dialog.destination = Pick { team_id, player_id };
+                if session.slot_player(team_id, slot).is_some() {
+                    dialog.destination = Pick { team_id, slot };
                 }
             }
             Some(Selection::Team(team_id)) => {
-                if let Some(player_id) = first_filled(session.file(), team_id) {
-                    dialog.destination = Pick { team_id, player_id };
+                if let Some(slot) = first_filled_slot(session.file(), team_id) {
+                    dialog.destination = Pick { team_id, slot };
                 }
             }
             None => {}
@@ -262,7 +292,12 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.set_min_height(line_height);
                 ui.weak(dialog.line.as_str());
             });
-            let same = dialog.source.player_id == dialog.destination.player_id;
+            // The picks name roster slots; the players written are the
+            // ones the slots hold this frame, 0 for an unresolved pick
+            // (`copy_stats`/`swap_stats` ignore one).
+            let source = dialog.source.player_id(session).unwrap_or(0);
+            let destination = dialog.destination.player_id(session).unwrap_or(0);
+            let same = source == destination;
             modal_buttons(ui, |ui| {
                 if ui.button("Close").clicked() {
                     close = true;
@@ -271,18 +306,18 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
                     .on_disabled_hover_text(SAME_PLAYER_TIP)
                     .clicked()
                 {
-                    session.swap_stats(dialog.source.player_id, dialog.destination.player_id);
-                    let source = player_name(session.file(), dialog.source.player_id);
-                    let destination = player_name(session.file(), dialog.destination.player_id);
+                    session.swap_stats(source, destination);
+                    let source = player_name(session.file(), source);
+                    let destination = player_name(session.file(), destination);
                     dialog.line = format!("Swapped the stats of {source} and {destination}.");
                 }
                 if add_enabled(ui, !same, egui::Button::new("Copy"))
                     .on_disabled_hover_text(SAME_PLAYER_TIP)
                     .clicked()
                 {
-                    session.copy_stats(dialog.destination.player_id, dialog.source.player_id);
-                    let source = player_name(session.file(), dialog.source.player_id);
-                    let destination = player_name(session.file(), dialog.destination.player_id);
+                    session.copy_stats(destination, source);
+                    let source = player_name(session.file(), source);
+                    let destination = player_name(session.file(), destination);
                     dialog.line = format!("Copied {source}'s stats to {destination}.");
                 }
             });

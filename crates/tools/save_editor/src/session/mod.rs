@@ -292,8 +292,9 @@ impl Session {
 
     /// The player id `team`'s roster `slot` (0-based) holds, `None` for a
     /// team the save lacks, a slot past the roster, an empty slot (id 0)
-    /// or an id no player record carries. The selection's player and
-    /// `apply_tier`'s are both read this way.
+    /// or an id no player record carries. The selection's player, the
+    /// info strip's, `apply_tier`'s and the Copy/swap stats window's are
+    /// all read this way.
     pub(crate) fn slot_player(&self, team_id: u32, slot: u8) -> Option<u32> {
         let player_id = self
             .file

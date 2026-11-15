@@ -1001,7 +1001,8 @@ fn cross_centre(portrait: egui::Rect, view: &TacticsView) -> egui::Pos2 {
 }
 
 /// Live AATF's pitch cross (the draft's `pitchCross`): an X `CROSS_INSET`
-/// in from the portrait's edges about `centre`, its two strokes
+/// in from the marker's box edges about `centre`, the badge's box with the
+/// portraits off (`cross_centre`), its two strokes
 /// `CROSS_WIDTH` wide in `color` over the same strokes in black and
 /// `CROSS_OUTLINE` wider each side, so it stays seen over a red portrait.
 /// A disc at each stroke's end rounds it, as the draft's round caps do.

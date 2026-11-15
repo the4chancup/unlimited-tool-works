@@ -1,7 +1,8 @@
 //! The Player menu's stat operations and the FPC reads and writes, end to
-//! end through the headless window: SE-GUI-24's four operations,
-//! SE-GUI-11's hide/show, the SE-GUI-22 lock's FPC items, and the PES
-//! 15/16 appearance record's round-trip.
+//! end through the headless window: SE-GUI-24's Set all stats and Bump
+//! all stats (its Copy and Swap are `copy_stats`'s), SE-GUI-11's
+//! hide/show, the SE-GUI-22 lock's FPC items, and the PES 15/16
+//! appearance record's round-trip.
 
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
@@ -368,13 +369,19 @@ fn a_long_sentence_widens_the_number_row_to_the_sentence_the_gap_and_the_box() {
 }
 
 /// `entry` with the copy/swap field set taken from `source`: height,
-/// weight, the whole stats, positions and skills, and the eight
-/// gameplay edit flags: Copy player stats' field set.
+/// weight, the stats but the star rating and playing attitude, which
+/// stay `entry`'s, positions and skills, and the eight gameplay edit
+/// flags: Copy player stats' field set.
 pub(super) fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
     let mut entry = entry.clone();
     entry.basic.height = source.basic.height;
     entry.basic.weight = source.basic.weight;
+    // Star and playing attitude sit inside `stats` but the copy keeps
+    // them the target's, as the session's copy does.
+    let (star, playing_attitude) = (entry.stats.star, entry.stats.playing_attitude);
     entry.stats = source.stats.clone();
+    entry.stats.star = star;
+    entry.stats.playing_attitude = playing_attitude;
     entry.positions = source.positions.clone();
     entry.skills = source.skills.clone();
     entry.edit_flags.player = source.edit_flags.player;
@@ -402,6 +409,10 @@ pub(super) fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
         dest.basic.weight = 61;
         dest.motion.penalty_kick = 2;
         dest.motion.goal_celebration_1 = 30;
+        // Star and playing attitude differ from the source's too, so a
+        // copy that moves them shows.
+        dest.stats.star = Some(3);
+        dest.stats.playing_attitude = Some(1);
         // The kept flags all held on the destination, clear on the source:
         // a wrong copy shows.
         dest.edit_flags.motion = true;
@@ -424,6 +435,8 @@ pub(super) fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
         source.stats.speed = 88;
         source.stats.finishing = 77;
         source.stats.form = 6;
+        source.stats.star = Some(7);
+        source.stats.playing_attitude = Some(3);
         source.positions.registered = 3;
         source.positions.playing_style = 5;
         source.positions.stronger_foot = 1;

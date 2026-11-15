@@ -149,6 +149,18 @@ fn the_two_generate_actions_split_the_files_as_the_format_has_them() {
     pick_and_write(&mut window, &mut view, dir.clone());
     player_menu_item(&mut window, &mut view, "Generate in-game face");
     pick_and_write(&mut window, &mut view, dir.clone());
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "ingame_face.toml for {} written into {}",
+                display_name(&player_entry(&view, player_id).name),
+                dir.display()
+            )
+            .as_str()
+        ),
+        "the second action's status-bar notice"
+    );
 
     let settings_text = std::fs::read_to_string(dir.join("settings.toml")).unwrap();
     PlayerSettings::parse(&settings_text).expect("settings.toml parses");
