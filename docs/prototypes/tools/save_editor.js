@@ -9391,6 +9391,20 @@ function ixWarningGroups(lines) {
   }
   return groups;
 }
+// The picked file's own team, a click away while the import targets another:
+// `Select <name> (<id>)` with the save's name for the file's team id, which
+// selects that team's row (the unsaved changes list's jump). Disabled on a
+// save without the id; none for a file naming no team (a .4ccs) or the target.
+function ixOwnTeamButton(d, t) {
+  const id = d && (d.team ?? (d.model && d.model.id) ?? (d.cct && d.cct.team));
+  if (id === undefined || id === null || String(id) === String(t.id)) return null;
+  const own = curSave().teams.find(x => String(x.id) === String(id));
+  return own
+    ? button("Select " + own.name + " (" + own.id + ")", () => { jumpToTeam(own.id); structural(); },
+        { title: "Select the team this file was exported from, so the import goes onto it" })
+    : h("span", { title: "The save has no team " + id },
+        button("Select team " + id, null, { disabled: true }));
+}
 function interchangePanel() {
   const t = selTeam();
   const files = IX_FILES.map(f => [f.key, f.label]);
@@ -9410,6 +9424,7 @@ function interchangePanel() {
           title: version() >= 17 ? "A file PES itself can import" : "The editor cannot write a PES 2015 or 2016 Texport" }))),
     h("div", { class: "sep" }),
     h("div", { class: "row" }, weak("Import into " + t.name + " (" + t.id + ") "),
+      ixOwnTeamButton(S.ix.file && ixFile(S.ix.file), t),
       weak("file "),
       combo([[null, "(pick a file)"]].concat(files), S.ix.file,
         v => { S.ix.file = v; S.ix.applied = null; },

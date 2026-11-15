@@ -200,8 +200,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   that searches across all teams** (name, shirt name, ID): finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
   `display_name()` (see the pes_savefile spec's "Name colour codes"), a team's own name
-  included. A team whose name matches lists all its players under its row: a search for a
+  included. A team whose name or ID matches lists all its players under its row: a search for a
   team shows its squad, not only the players whose own names happen to match.
+
+  A name or shirt name matches when it holds the typed text anywhere. An ID, a team's or a
+  player's, matches when it starts with the number typed: `82` lists teams 820 to 829 with
+  their squads, `820` team 820 with its squad, `8200` its players 01 to 09, `82005` that one
+  player, so a player's slot digits count only from the fourth digit typed. Found anywhere in
+  the number, `820` also listed the players whose IDs merely hold those digits (74820, slot 20
+  of team 748; all of team 782, 78201 to 78223), a row for every team ending in 8.
 
   A double click on a team row sets the selector to that team and clears the filter, so the
   list holds that team alone ("show me this team"). The row's tooltip says so (`Double-click to
@@ -283,6 +290,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   wherever it is scrolled, so a press does the same whatever the window's height. A page of
   rows, as a list box's keys move, crossed into the next team at a place that depended on the
   window's height.
+
+  A team row they select scrolls to the list's top, so its players fill the list under it, as
+  far as the list's end lets it rise. Scrolled only the least that shows it, a PgDn left the
+  new team's row at the bottom with its players out of sight below. The 7-row steps and the
+  arrow keys keep scrolling the least that shows the row, since they walk a team's rows rather
+  than jump to the next team.
 
   A player row shows his slot in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
@@ -1641,11 +1654,15 @@ Win32 original hurt the most):
   has a shape of its own. Then it draws all three, as a fluid preset does, since a team can
   hide formations there and switch Fluid formation on in a match, and the picture is the
   organizers' check (PES 2015, with no switch, draws Kick-off alone). A formation has
-  Kick-off's shape when its stored spots pair one to one with Kick-off's, each within 2 on
+  Kick-off's shape when its stored spots pair one to one with Kick-off's, each within 3 on
   both axes, whoever stands on them and whatever position they are labelled with. We compare
   shapes, not whole formations, because some teams hide a copy of Kick-off with a few players
   traded (45 of the 1,276 hidden formations in a PES 2021 cup save), and drawing it would
-  show three copies of one shape as if the team hid another. The other two are drawn
+  show three copies of one shape as if the team hid another. The leeway of 3 covers copies
+  with a spot or two nudged (/kfg/'s VGL 27 preset 1, its forwards 2 further up and its two
+  CMFs 3 apart sideways), which read as Kick-off's shape on the picture. A real second shape
+  moves more: the nearest in the PES 2020 and 2021 cup saves moves five spots by up to 8.
+  The other two are drawn
   at 60% opacity over the background (darker on the dark theme, paler on the light, receding
   either way), so they read as unused, perhaps left there forgotten by the manager, rather
   than as a fluid set. A team whose every row draws one formation gets one column and no
@@ -2259,6 +2276,16 @@ the editor exposes them as:
   4ccEditor's squad load (gameplay / aesthetics / tactics), and applies cross-version
   conversion with a warning list when the file's version differs.
 
+  A picked file that names the team it was exported from (a Team TOML's `[team] id`, a
+  Texport's or a `.4cct`'s team) puts a button on the `Import into` line when that team is not
+  the target: `Select <name> (<id>)`, the save's name for that ID. Its click selects that
+  team's row, as a row click of the unsaved changes list does (the selector moved to it unless
+  it reads All teams, the filter cleared), so the import goes onto it, and the line then names
+  it. An organizer importing a cup's files so lands each on its own team without finding it
+  in the list. On a save without that ID the button reads `Select team <id>`, disabled, its
+  tooltip `The save has no team <id>`; a file naming no team (a `.4ccs`), or naming the
+  target, draws none.
+
   The sections split the file as the squad load does, so a file that loads with 4ccEditor's
   choices loads the same here (`editor.h` `PlayerImport`, read 2026-10-21):
   - names, shirt names and shirt numbers go with aesthetics (its `PlayerImport` copies them
@@ -2710,6 +2737,12 @@ SE-GUI-02  GIVEN the PES 17 save open on team 701
            WHEN a name, shirt name or id of a player of another team is typed in the filter box
            THEN the list shows the matching players across all teams, matched on the
                 color-code-free display name, and selecting one shows him
+SE-GUI-102 GIVEN the PES 2021 save open on All teams
+           WHEN `820` is typed in the filter box
+           THEN the list holds team 820's row and its whole squad, and no player of another
+                team (not 74820, not 78201); WHEN `8200` is typed THEN team 820's row and its
+                players 01 to 09; WHEN `82005` is typed THEN team 820's row and its player 05
+                alone; WHEN `2001` is typed THEN no row for player 72001 or 82001
 SE-GUI-46  GIVEN the PES 17 save open on team 701, All teams picked in the team selector
            WHEN part of team 718's name that none of its players' names, shirt names or ids
                 holds is typed in the filter box
@@ -3012,6 +3045,13 @@ SE-GUI-53  GIVEN the PES 17 save open on All teams with team 718's player 05 sel
                 several teams match THEN the same; GIVEN team 718 picked and its player 01
                 selected WHEN PgDn is pressed four times THEN 08, 15, 22 and 23 are selected,
                 the last row stopping it, and PgUp twice then selects 16 and 09
+SE-GUI-103 GIVEN the PES 2021 save open on All teams, the list scrolled to its top and the
+                first team's row selected
+           WHEN PgDn is pressed
+           THEN the second team's row stands at the list's top edge; WHEN PgUp is pressed
+                THEN the first team's row stands there again; GIVEN the last team's row
+                selected by PgDn THEN the list is scrolled to its end, the row as high as
+                that lets it
 SE-GUI-54  GIVEN a player selected
            WHEN "abc" is typed into his shirt name, and into his team's short name
            THEN the records hold "ABC"
@@ -3278,8 +3318,8 @@ SE-GUI-87  GIVEN the save open, the picture of a team whose every preset draws K
                 GIVEN the PES 2015 save THEN no row has a Fluid line, and every row draws
                 Kick-off alone; GIVEN a fluid-off preset whose other two hold Kick-off's
                 spots with two players traded, one spot relabelled from DMF to CMF, THEN
-                its row draws Kick-off alone; GIVEN one spot of them moved 2 across and 2
-                down THEN still alone, and moved 3 down THEN all three
+                its row draws Kick-off alone; GIVEN one spot of them moved 3 across and 3
+                down THEN still alone, and moved 4 down THEN all three
 SE-GUI-88  GIVEN the PES 2021 save, a team whose presets hold an advanced instruction that
                 takes a player, with its target set
            WHEN its picture is written with the settings
@@ -3344,6 +3384,13 @@ SE-GUI-16  GIVEN the save open on a team
                 save on team 701 (/3/) and team 714's file with a 200-letter team name THEN
                 the lib's refusal is drawn under the choices Stats, Aesthetics and Gameplan,
                 in the error colour, Apply disabled, until Stats is unticked
+SE-GUI-104 GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team TOML picked in
+                the interchange dialog
+           WHEN `Select /co/ (714)` on the `Import into` line is clicked
+           THEN team 714's row is selected, the line reads `Import into /co/ (714)` with no
+                button, and Apply writes 714, 701 untouched; GIVEN the file's `[team] id`
+                set to one the save lacks THEN the button is disabled, its tooltip naming
+                the ID; GIVEN a `.4ccs` picked THEN no button
 SE-GUI-67  GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team TOML picked in
                 the interchange dialog
            WHEN team 713 (/cm/) is selected before Apply

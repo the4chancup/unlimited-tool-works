@@ -2134,6 +2134,25 @@ briefs, review loops, gates and mutation runs as for any step.
     drop's slot, another player after the undo -> verify: a session test dropping slot 3 on
     slot 6, then undo, the selection on slot 3, then redo, on slot 6, then the move row's
     X, on slot 3; the built window
+  - [ ] 0.0.2-leeway a formation picture's shape leeway 3, not 2 (`plans/save_editor.md`
+    "Formation pictures", the columns' paragraph; DECISIONS 2026-11-15 "A formation picture's
+    shape leeway is 3"): /kfg/'s VGL 27 preset 1 drew its nudged copies of Kick-off ->
+    verify: SE-GUI-87's moved-spot case at 3 and 4; /kfg/'s picture in the built window
+  - [ ] 0.0.2-idfilter the list's filter matches an ID from its start, a team by its own ID
+    listing its squad (`plans/save_editor.md` "Editing UI", the filter box; DECISIONS
+    2026-11-15 "The list's filter matches an ID from its start") -> verify: SE-GUI-102
+  - [ ] 0.0.2-pgtop a team row PgUp or PgDn selects scrolls to the list's top
+    (`plans/save_editor.md` "Editing UI", the PgUp and PgDn paragraphs; DECISIONS 2026-11-15
+    "PgUp and PgDn bring the team row") -> verify: SE-GUI-103; the built window
+  - [ ] 0.0.2-ownteam the import window's `Select <name> (<id>)` button for the file's own
+    team (`plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-15 "The
+    import window selects the file's own team"; the draft's `interchangePanel`) -> verify:
+    SE-GUI-104; the built window beside the draft
+  - [ ] 0.0.2-changesperf the unsaved changes list and the close prompt scroll slowly once
+    four teams are imported (the maintainer, 2026-11-15): `view/prompt.rs` `changes_table`
+    lays out every row of an `egui::Grid` each frame -> verify: a test timing a frame of
+    the list with four teams' import rows against a bound measured first, red before; the
+    built window scrolled with four imports
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

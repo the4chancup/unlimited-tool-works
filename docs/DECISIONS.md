@@ -17894,3 +17894,44 @@ PES 2017 does not store were left out" with none. One ending for every notice re
 voice.
 Plan: `plans/save_editor.md` the copy and paste notices' paragraph, and SE-GUI-56. Worklog:
 0.0.2-clip.
+
+## 2026-11-15 — save_editor — A formation picture's shape leeway is 3, not 2 (maintainer)
+Decision: a hidden formation has Kick-off's shape when its spots pair one to one with
+Kick-off's within 3 on both axes. This replaces the 2 of the 2026-11-14 entry.
+Why: /kfg/'s VGL 27 preset 1 hides Kick-off with its forwards 2 further up and its two CMFs 3
+apart sideways, and the picture drew it as three formations although it reads as one shape.
+3 also hides /skg/'s preset 1 in the PES 2021 cup save (one AMF 2 across and 3 down), which
+the 2026-11-14 entry kept drawn; the maintainer saw both pictures and chose 3. In the PES 2020
+and 2021 cup saves' 1,300 fluid-off presets, the nearest real second shape needs 8.
+Plan: `plans/save_editor.md` "Formation pictures", the columns' paragraph, and SE-GUI-87.
+Worklog: 0.0.2-leeway.
+
+## 2026-11-15 — save_editor — The list's filter matches an ID from its start (maintainer)
+Decision: a typed number matches a team's or a player's ID when the ID starts with it, and a
+team matched by its ID lists its squad, as a team matched by its name does. Names and shirt
+names still match anywhere.
+Why: matched anywhere, `820` listed slot 20 of every team ending in 8 (74820) and all of team
+782 (78201 to 78223), and never matched team 820 itself, only its players' IDs. The
+maintainer asked that a player's slot digits count only once four digits are typed; matching
+from the start does that, and also keeps `2001` from finding slot 01 of every team ending in
+20, which ignoring the slot digits alone would not.
+Plan: `plans/save_editor.md` "Editing UI", the filter box's paragraphs, and SE-GUI-102.
+Worklog: 0.0.2-idfilter.
+
+## 2026-11-15 — save_editor — PgUp and PgDn bring the team row they select to the list's top (maintainer)
+Decision: a team row selected by PgUp or PgDn scrolls to the list's top edge, as far as the
+list's end allows. The 7-row steps and the arrow keys still scroll the least that shows the row.
+Why: scrolled the least, a PgDn left the next team's row at the list's bottom, its players
+out of sight below it, which is what a member pressing it wanted to see.
+Plan: `plans/save_editor.md` "Editing UI", the PgUp and PgDn paragraphs, and SE-GUI-103.
+Worklog: 0.0.2-pgtop.
+
+## 2026-11-15 — save_editor — The import window selects the file's own team in one click (maintainer)
+Decision: a picked file that names the team it was exported from puts `Select <name> (<id>)`
+on the `Import into` line while the target is another team. Its click selects that team's row
+(the selector moved to it unless it reads All teams, the filter cleared). It is disabled on a
+save without that ID, and absent for a file naming no team.
+Why: an organizer importing a cup's files had to find each team in the list by hand before
+every import. The save's name for the ID is shown, since that is the row the click selects.
+Plan: `plans/save_editor.md` "Interchange formats in the UI", the paragraph "A picked file
+that names the team", and SE-GUI-104. Worklog: 0.0.2-ownteam.
