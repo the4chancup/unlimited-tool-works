@@ -2209,7 +2209,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
-      - [ ] SWE-2's round 2 (`review31`, `.tmp/0_0_2/revdebt/swe_notices_r2.md`)
+      - [x] SWE-2's round 2: 1 of 4 accepted, the loop ends (a test's comment; the help's
+        column name), fixed by the lead (`3756809d`)
+      - [ ] Carbon's round (`review32`, `.tmp/carbon_notices.md`)
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
