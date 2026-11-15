@@ -2140,11 +2140,11 @@ The panel over the spec's `diff` report:
   A field no view shows is named in words from the report's name with its stored value (the
   draft's `fieldTerm` and `fieldWords`):
   - its words in sentence case;
-  - Id as ID, Com as COM (the views' "COM playing styles") and Color as Colour;
+  - Id as ID and Com as COM (the views' "COM playing styles");
   - a PES 2015-only field marked so;
   - the face's unnamed bits "Other face data".
 
-  So `NoseHeight` is "Nose height", `Color1Red` "Colour 1 red" and `Pes15JawDepth` "Jaw depth
+  So `NoseHeight` is "Nose height", `Color1Red` "Color 1 red" and `Pes15JawDepth` "Jaw depth
   (PES 2015)". The same words label the unsaved-changes prompt's, the toolbar's changes
   list's and the aesthetics patch preview's rows.
 

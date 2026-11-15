@@ -172,7 +172,7 @@ pane is shown, the lines the last edit changed are highlighted.
   with a label, a **When** row and a **Then** row:
   - *When* is the condition editor: tiers, registered positions, playing styles, height systems
     and brackets as multi-select chips; a height range; captain yes / no / either; "holds any of"
-    (cards); "rated A at" and "rated B at" (positions); "name colour" (swatches of the codes);
+    (cards); "rated A at" and "rated B at" (positions); "name color" (swatches of the codes);
     "fielded only at"; value ranges (a stat, age, weight, form, injury resistance or weak foot,
     each with a from-to pair); stronger foot either / right / left; "any of" (a list of
     sub-conditions, one of which must hold); and an "except when" sub-condition (`not`).

@@ -208,9 +208,9 @@ location per launch:
   "settings_schema": [
     { "group": "appearance", "file": "settings", "table": "appearance", "key": "skin_color",
       "type": "int", "min": 0, "max": 6,
-      "doc": "Skin colour, 0 white to 6 black (the game's swatch order)" },
+      "doc": "Skin color, 0 white to 6 black (the game's swatch order)" },
     { "group": "ingame-face", "file": "ingame_face", "table": "", "key": "iris_color",
-      "type": "int", "min": 0, "max": 10, "doc": "Iris colour, 0 black to 10 violet" },
+      "type": "int", "min": 0, "max": 10, "doc": "Iris color, 0 black to 10 violet" },
     "…one entry per PlayerSettings key of this PES version…"
   ],
   "sets": [
