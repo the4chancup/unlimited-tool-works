@@ -1,6 +1,6 @@
 //! The toolbar's File menu (the draft's `fileMenu`): first the opens, the
 //! saves discovery finds under Documents for every version, one click
-//! each, then the files opened earlier in this run of the program, then
+//! each, then the files opened or saved in this run of the program, then
 //! the file picker, which starts in the folder the last save was opened
 //! from, or the newest discovered save's; then Save and Save as. The opens'
 //! shortcuts (the draft's `OPEN_KEYS`)
@@ -113,7 +113,7 @@ struct Opens {
     /// The discovered saves, each labelled by its version, the first of
     /// each version's with its shortcut.
     saves: Vec<Open>,
-    /// The files opened earlier in this run.
+    /// The files opened or saved in this run.
     recents: Vec<Open>,
     /// The file picker, `Choose file…` with Ctrl+O.
     picker: Open,
@@ -254,41 +254,19 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The welcome panel's body: the heading "Saves in Documents", each save
-/// as a button filling the frame's width (the widest entry's, when wider
-/// than the frame's minimum) with its shortcut at the right
-/// and its path as the tooltip (the weak line with none), then a
-/// separator and "Recent" when any opened earlier, a separator and
-/// `Choose file…` with Ctrl+O. Returns the clicked entry's `Pending`.
+/// as a button filling the frame's width (the widest recent file's
+/// label, when wider than the frame's minimum) with its shortcut at the
+/// right and its path as the tooltip (the weak line with none), then a
+/// separator and "Recent" when any were opened or saved earlier, a
+/// separator and `Choose file…` with Ctrl+O. Returns the clicked
+/// entry's `Pending`.
 fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
-    // The widest entry's row — its label, the draft's 24-point gap and
-    // its shortcut, in the button's padding — is the width every entry
-    // fills, the shortcut ending at the frame's edge.
-    let font = egui::TextStyle::Button.resolve(ui.style());
-    let text_width = |text: &str| {
-        ui.painter()
-            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
-            .size()
-            .x
-    };
-    let row = |open: &Open| {
-        text_width(&open.label)
-            + if open.shortcut.is_empty() {
-                0.0
-            } else {
-                24.0 + text_width(&open.shortcut)
-            }
-    };
-    let content = opens
-        .saves
-        .iter()
-        .chain(&opens.recents)
-        .map(row)
-        .fold(0.0, f32::max)
-        + 2.0 * ui.spacing().button_padding.x;
-    // Justified, each entry also fills what the frame's minimum width
-    // leaves past the widest one.
+    // Justified: every entry fills the frame's width, the widest child's
+    // own — the widest recent file's path tail when one is long (no
+    // discovered save's label, `PES 2015` to `PES 2021` with `Ctrl+digit`,
+    // passes the frame's 334-point floor).
     let entry = |ui: &mut egui::Ui, open: &Open| {
-        ui.add(open.button().min_size(egui::vec2(content, 0.0)))
+        ui.add(open.button())
             .on_hover_text(&open.tip)
             .clicked()
             .then(|| open.pending.clone())
@@ -462,9 +440,9 @@ mod tests {
         );
     }
 
-    // The last opened file stands first: a path already in the list moves
-    // there once, a new one prepends. The list is uncapped — it holds
-    // this run of the program's opens.
+    // The last opened or saved file stands first: a path already in the
+    // list moves there once, a new one prepends. The list is uncapped —
+    // it holds this run of the program's opens and saves.
     #[test]
     fn a_pushed_path_stands_first_once() {
         let mut recents = paths(&["a", "b", "c"]);

@@ -274,6 +274,51 @@ fn a_shortcut_closes_the_unsaved_changes_list() {
     );
 }
 
+// The tactics' slot popover is the other popup the view keeps outside
+// egui's registry: a shortcut closes it too — Ctrl+S with an edit made
+// writes the save and keeps the team row selected, nothing floating over
+// the team view.
+#[test]
+fn a_shortcut_closes_the_slot_popover() {
+    let path = fixture(PesVersion::Pes21, "shortcut_closes_popover");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 624.0);
+    open_team_view(&mut window, &mut view, 701);
+
+    // The popover opened on an outfield marker a click can reach (as the
+    // list's page-keys test opens it).
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    let at = (0..11)
+        .filter(|&index| players[index].position != 0)
+        .find_map(|index| marker_point(canvas, &players, index))
+        .expect("a marker a click can reach");
+    click_at(&mut window, at, &mut view);
+    assert!(
+        view.tactics.popover_area().is_some(),
+        "premise: the slot popover is open"
+    );
+
+    // The edit gives Ctrl+S something to write: it changes no selection.
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        view.tactics.popover_area().is_none(),
+        "the shortcut closed the popover"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "the team row kept the selection"
+    );
+}
+
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
 /// by what it acts on: the Comparator and Apply aesthetics patch, a
 /// separator, the roster sheet, the range's formation pictures and
