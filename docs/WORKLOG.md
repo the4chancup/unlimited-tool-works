@@ -2329,7 +2329,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] its rework (merge `2e23f811`), then Carbon's round 2: 8 of 9 accepted; the
       rework (merge `27afa199`): the Ruleset editor's Undo keys work on a focused
       checkbox, no Player menu without a selected team, the welcome panel over the panes
-    - [ ] Carbon's round 3 (`.tmp/0_0_2/bar/carbon_r3.md`)
+    - [x] Carbon's round 3, 2026-11-15 (at `069eb2ea`): 11 of 14 accepted
+    - [ ] the rework (`.tmp/0_0_2/bar/rework_c3.md`, SWE-2, `sk/barrw3`; the lead's help text
+      in `.tmp/0_0_2/bar/lead_text_r3.md`), then Carbon's round 4
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
