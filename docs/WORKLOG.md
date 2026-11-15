@@ -2190,6 +2190,11 @@ briefs, review loops, gates and mutation runs as for any step.
     window less 8 points a side, growing left of the label (`55f398a9`, merge `29299fe3`,
     SE-GUI-43's width clauses tested) -> verify: the built list and close prompt captured
     beside the draft (a focus-taking check: ask first), then a look card
+  - [ ] 0.0.2-wheelside sliders, toggles and row selectors move right on wheel down and a
+    closed combo to the item below, whatever the setting, now Invert number scrolling
+    (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;
+    DECISIONS 2026-11-15) -> verify: ST-WHEEL-05 and ST-WHEEL-06 as rewritten, red first;
+    the changelog's Important line on the rename. SWE-2 (`.tmp/0_0_2/wheelside/brief.md`)
   - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
     failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
     picking state 522.71875), where it passes in a worktree: the tree's copy sits at a

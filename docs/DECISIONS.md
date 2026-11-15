@@ -18057,3 +18057,18 @@ Why: the maintainer, after the `number` to `shirt_number` rename's brief asked f
 contract 0.x does not have.
 Plan: `plans/core/development_plan.md`, the paragraph starting "So a rename or removal lands
 plain".
+
+## 2026-11-15 — studio_core — Sideways controls move right on wheel down; the setting inverts number boxes only
+Decision (the maintainer; the setting's new name the lead's): a slider's rail, a sliding
+toggle and a row selector take the choice to the right on wheel down, and a closed combo box
+the item below, whatever the common setting says. The setting turns only a number box's step,
+so it is renamed Invert number scrolling (`invert_number_scrolling`); an
+`invert_value_scrolling` line left in `settings.toml` is not read. The value box beside a
+slider is a number box like any other, the setting included.
+Why: members of either scrolling habit expect wheel down to move a sideways control right and a
+list down, so inverting those only ever turned them the wrong way; a number's "more" is the one
+reading that differs between habits. A slider's value box is unlike either its rail or
+every other number box; the maintainer chose every number box alike. This narrows the
+2026-11-02 entry "Invert value scrolling, one common switch".
+Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05, ST-WHEEL-06;
+`plans/team_compiler/settings.md`.

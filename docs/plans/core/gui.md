@@ -431,8 +431,8 @@ What exists of this is in `spec/core/gui.md` "Settings menu".
 The settings menu is assembled from injected sections:
 
 - **Common settings** (defined by `studio_core`): PES version, PES folder path, exports folder path,
-  thread count, memory cap, theme, Invert value scrolling ("The wheel over a value"), the
-  update check and its interval, and the FPC hide boots and gloves IDs (`plans/save_editor.md`
+  thread count, memory cap, theme, Invert number scrolling ("The wheel over a value"), the
+  update check, and the FPC hide boots and gloves IDs (`plans/save_editor.md`
   "Full Player Customization (FPC)": number rows bounded to the stock band, boots 1 to 100 and
   gloves 11 to 100).
 
@@ -960,11 +960,18 @@ controls do, which members know from 4ccEditor: wheel up takes the item above or
 wheel down the item below or one less, clamped at the ends (no wrap), one step per notch, by 1
 in the units the box shows.
 
-The same goes for a slider, over its rail or the value box beside it, and for a sliding
-toggle of two or three choices (the Tactics styles, Few/Medium/Many), where wheel up takes the
-choice to the right and wheel down the one to the left: right is a slider's and a number's
-"more" (Many), and one direction for every toggle beats a direction per meaning that no member
-can see.
+The same goes for the controls that move sideways: a slider's rail, a sliding toggle of two
+or three choices (the Tactics styles, Few/Medium/Many) and a row selector (the Tactics preset
+and formation selectors). On these wheel down takes the choice to the right, a slider one
+more, and wheel up the one to the left. Members expect a control that moves sideways to go
+right on wheel down whichever way their wheel scrolls a page, so these never follow Invert
+number scrolling (below). Right is a slider's and a number's "more" (Many), and one direction
+for every toggle beats a direction per meaning that no member can see.
+
+The value box beside a slider is a number box and steps as every number box does, so with the
+setting off a notch down over it moves the slider left. Either way such a box disagrees with
+its rail or with every other number box, and every number box alike is the rule a member can
+predict.
 
 A toggle wraps round instead of clamping (up from the rightmost takes the leftmost, down from
 the leftmost the rightmost). Clamped, a toggle at an end answers only one direction, so a
@@ -1022,15 +1029,18 @@ before the drag value sees them, and every whole-number drag value of the suite 
 through it, the shared libs' included; the drag's own sensitivity stays egui's. A browser's
 number input steps by one already, so the drafts need nothing (ST-WHEEL-07).
 
-**Invert value scrolling**, a common setting (`invert_value_scrolling`, off by default, a
-checkbox after Theme), turns every step above the other way, in every tool: wheel down takes
-the item above or one more, moves a slider and a toggle to the right, and steps a selector
-forward; wheel up the reverse. Only the direction changes: the notch, the rest rule, the
-clamping and wrapping and the undo steps stay, and a pane scrolls as before.
+**Invert number scrolling**, a common setting (`invert_number_scrolling`, off by default, a
+checkbox after Theme), turns the step over a number box (a drag value) the other way, in
+every tool: wheel down one more, wheel up one less. Only the direction changes: the notch, the
+rest rule, the clamping and the undo steps stay, and a pane scrolls as before.
 
 A member whose wheel or touchpad scrolls the "natural" way (content follows the fingers)
-reads wheel down as "more"; a direction per control would split the suite, so the setting is
-one switch. It is read where the steps are counted (`wheel_steps`), so no control can miss it.
+reads wheel down as "more" on a number; a direction per box would split the suite, so the
+setting is one switch, read by the one function that counts a number box's steps
+(`number_wheel_steps`). The controls that move sideways and a closed combo box count theirs
+without it (`wheel_steps`): members of either habit expect wheel down to move a sideways
+control right and a list to the item below, so the setting would only turn these the wrong
+way.
 
 ### No two widgets overlap
 
@@ -2019,20 +2029,23 @@ ST-WHEEL-04 GIVEN ST-WHEEL-01's scroll area and a text field holding the keyboar
                  next frame it is still 180, and on the one after it is 181
 ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, preset 1, the wheel
                  at rest
-            WHEN one notch up turns over Support range's rail
-            THEN it is one more than it was; WHEN one notch up over its value box THEN one more
-                 again; WHEN one notch up over Attacking style THEN the choice right of the held
-                 one is held, or the leftmost when the held one is the rightmost; WHEN one notch
-                 down over Numbers in attack THEN the choice left of the held one is held, or the
-                 rightmost when the held one is the leftmost; each step, taken more than a
-                 second after the one before, is one undo entry
-ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
+            WHEN one notch down turns over Support range's rail
+            THEN it is one more than it was; WHEN one notch up over its value box THEN one
+                 more again; WHEN one notch down over Attacking style THEN the choice right of
+                 the held one is held, or the leftmost when the held one is the rightmost; WHEN
+                 one notch up over Numbers in attack THEN the choice left of the held one is
+                 held, or the rightmost when the held one is the leftmost; WHEN one notch down
+                 over the preset selector THEN the next preset is held, or preset 1 after
+                 preset 3; each step, taken more than a second after the one before, is one
+                 undo entry; GIVEN Invert number scrolling on THEN every step above is the
+                 same but the value box's, which one notch down makes one more
+ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert number scrolling on
             WHEN the pointer is over the drag value and the wheel turns one notch down
             THEN the value is 181; WHEN one notch up THEN 180; WHEN the pointer is over the
-                 combo and the wheel turns one notch down THEN the first item is selected;
-                 WHEN the setting is off again and one notch down turns over the drag value
-                 THEN it is 179; and a turn over the area's empty space scrolls it the same
-                 way with the setting on or off
+                 combo and the wheel turns one notch down THEN the third item is selected, as
+                 with the setting off; WHEN the setting is off again and one notch down turns
+                 over the drag value THEN it is 179; and a turn over the area's empty space
+                 scrolls it the same way with the setting on or off
 ST-WHEEL-07 GIVEN a drag value at 180 (range 0 to 255) being typed in
             WHEN Up is pressed once
             THEN the value is 181; WHEN Down is pressed twice THEN 179; GIVEN the value at 255
