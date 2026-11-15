@@ -89,6 +89,11 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   (`.tmp/flatpitch/look2/compare_dialog.png`, the built app's `built_3_settings_half.png`,
   and the column beside the draft's in `compare_wide.png` and `app_row2_zoom.png`). Each
   matched its draft; anything you see otherwise goes back as a fix.
+- **Kit slots: the bound team as its ID or as stored.** The save stores each kit slot's
+  bound team as the team's ID times 64. The Save editor's Kit slots dialog shows and takes
+  the ID (718), labelled "Bound team ID" as Team ID and Manager ID are; the draft shows
+  the stored number (45952), labelled "Bound team id". Which should both show? (Found
+  checking the built window beside the drafts, worklog 0.0.2-gaps.)
 
 ## After the release
 

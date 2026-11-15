@@ -2055,7 +2055,24 @@ briefs, review loops, gates and mutation runs as for any step.
       fields 16 tall (`checkbox_row`), its square 7 under a field and 8 under another;
       `TEXT_ROW_SPACING` (19) for the two text grids. The draft's bare grid checkboxes
       centred in their rows (`display: block`), as egui draws them
-    - [ ] the built window beside the drafts (both slices' screens)
+    - [x] the built window beside the drafts (lead, 2026-11-15, release at `e0a54793`,
+      dark; captures in `.tmp/lead/bw/`): the two picture dialogs, Settings, Appearance,
+      Copy/swap stats, Kit slots and the Ruleset editor's General and Tiers grids stand as
+      their drafts (fields 24, checkbox rows 22, Physique 34; tier rows 48 against 49, as
+      ruled at the review)
+    - [ ] fix what that check found past 2 points:
+      - the Player screen: the view's content 1 higher than the draft, each section's first
+        row 0.5 nearer its heading and the Pitch/Left/List selector 1.5 nearer "Playable
+        positions", adding up to 2.5 at the columns' foot (`draft_compare.py player`)
+      - the Ruleset editor's General: each checklist 4 lower under its help line (21
+        against the draft's 17)
+    - [ ] sort the differences the check met outside these slices: Appearance's Physique
+      box narrower (Motion 24 further left), its labels inset 13 against 19, the swatches
+      wider apart; the Ruleset editor's page list rows 21 apart against 24, the Tiers' Label
+      and Id fields too narrow for "Bronze" and "silver", Rating stats' help worded
+      otherwise, Randomize greyed on a template; Kit slots' "Bound team ID" showing the
+      stored binding / 64 against the draft's "Bound team id" showing it raw (which side
+      changes: QUESTIONS)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -2206,6 +2223,10 @@ briefs, review loops, gates and mutation runs as for any step.
       2026-11-14 "on PES 17 to 21 the two numbers are the auto attack and defence levels";
       SE-GUI-71): labelled Auto attack level and Auto defence level on PES 17 to 21, and
       also disabled while Attack/defence levels is off, with its own tooltip
+    - [x] the lead's check in the built window (2026-11-15, dark, the PES 17 save): the two
+      labels; under 4cc Autumn 26 locked with "Used only while Attack/defence levels is on,
+      in Automatic settings" until the flag is ticked, then editable; under /vg/ League 27
+      locked with "Not editable in the game from PES 2017 on" with the flag ticked
     - [ ] the look in the built window, both themes (Pending looks)
   - [x] 0.0.2-num17 2026-11-14 (`b518585a`; lead, Opus sidekick): who reads the two numbers
     in PES 2017, inconclusive. A live memory watch (`.tmp/num17/`) and a static search of the
