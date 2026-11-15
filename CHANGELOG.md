@@ -19,7 +19,7 @@
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
-  in the **File** menu, Undo and Redo in the **Edit** menu, with the same shortcuts.
+  in the **File** menu, Undo and Redo in the **Edit** menu, and their shortcuts are unchanged.
 - **Save editor**: a toggle left of the player's or team's name switches the right side
   between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
   Appearance, until now a collapsed section under the stats, is a screen of its own.
@@ -136,9 +136,9 @@
 - **All tools**: warnings are amber instead of orange and errors a softer red, so the two
   stand apart. The success green and the link blue changed with them, and on the light
   theme links are easier to read.
-- **Save editor**: a save is edited as its own version, whatever the sidebar shows: the
-  portraits and Set PES path follow it, and no warning says it is not the sidebar's version.
-  The file picker starts in the folder of the last save opened.
+- **Save editor**: the portraits and Set PES path follow the open save's PES version, not
+  the sidebar's, and no warning says the two differ. The file picker starts in the folder of
+  the last save opened.
 - **Save editor and Ruleset editor**: the sidebar's PES version box is empty and disabled
   while either is shown.
 - **Save editor**: Up and Down walk the player list again after Page Up or Page Down left a

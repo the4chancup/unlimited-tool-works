@@ -17,11 +17,11 @@ The **File** menu lists, from the top:
 Once a save is open, the window's title bar shows its path, in square brackets after the
 editor's name, and the toolbar shows `• unsaved changes` while edits wait unsaved.
 
-**A save from another PES version**
+**The save's PES version**
 
-A save opens and edits as the PES version it comes from, whatever version the sidebar's
-selector shows: the editor reads the version from the save itself, and takes the players'
-portraits from that version's PES folder.
+The editor reads a save's PES version from the file itself and edits it as that version, so
+the sidebar's version box stays empty here. The players' portraits come from that version's
+PES folder.
 
 **Teams and players**
 
@@ -70,8 +70,9 @@ keeps it as typed.
 
 **Undo and redo**
 
-Every edit is undoable, and the **Edit** menu's **Undo** and **Redo** step through them
-(Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
+Every edit can be undone: the **Edit** menu's **Undo** (Ctrl+Z) and **Redo** (Ctrl+Y or
+Ctrl+Shift+Z) step through your edits. A drag, or a run of typing in one field, is one undo
+step.
 
 **Copy and paste**
 

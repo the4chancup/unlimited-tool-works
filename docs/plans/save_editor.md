@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, which opens where "The toolbar" says (the folder of the last save opened, else the newest discovered save's); see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as…**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -349,9 +349,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   A drop has one slot to go, so the list never shows two lines, and a drag that ends
   without a drop (a release outside the list, Esc) leaves none.
 
-  The dragged row is drawn under the pointer while it is held, the point first pressed kept
-  under it, as a dragged lineup row is (SE-GUI-65), and its slot in the list is drawn as the
-  lineup draws a dragged row's slot. A draggable row shows the pointing hand wherever the
+  While a row is held, it floats with the pointer, the point first pressed staying under the
+  pointer, and its place in the list is left blank, as for a dragged lineup row (SE-GUI-65).
+  It keeps floating while the wheel scrolls the list, and Esc drops it back with no move. A
+  draggable row shows the pointing hand wherever the
   pointer is on it (egui leaves a row that also takes clicks on the arrow, so the row asks for
   it). The lineup rows keep the move cross, which Windows draws for egui's grab hand.
 
@@ -2201,13 +2202,13 @@ The panel over the spec's `diff` report:
 - The picked save is the report's first and the open save its second, so a row reads picked,
   then open: what the member's edits changed against the save he compares with.
 
-  A row stands in three columns, Item, Picked save and Open save, named by a head row above the
-  list, as the unsaved changes list names its own (not one `old → new` text: values of every
+  A row stands in three columns, Item, Picked save and Open save, named by a head row at the
+  top of the list, as the unsaved changes list names its own (not one `old → new` text: values of every
   length then start at one place, and the eye runs down a column). Item is 190 points wide
   and Picked save 200, each cut with an ellipsis where its text is longer, and Open save takes
   the rest, cut the same way where the row is narrower than its text (a long name; a panel
   dragged narrow). A row that cuts a value shows the whole row's text on hover, above the
-  hint of what its click does. The team and player heads are as they were.
+  hint of what its click does.
 - Export writes the report of the toggled scope over the whole save, the text `save-editor diff
   <picked> <open>` prints with `--gameplay` or `--aesthetics` (All: neither); the team filter
   narrows the screen only. Not the rows shown, because the command has no team filter, and an
@@ -3793,8 +3794,8 @@ SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the acti
            WHEN the view is drawn at the 1280-wide window
            THEN the logo stands 28 points high, its right edge 14 points from the window's
                 and its top 8 from the view's, and every other widget stands where it does
-                under the same ruleset without a logo; its tooltip reads DBC7's name, a blank line, "Click
-                here to open the event's page:" and its page, each on its line, and a click
+                under the same ruleset without a logo; its tooltip reads DBC7's name, a blank line, "Click to
+                open the event's page:" and its page, each on its line, and a click
                 opens the page; the toolbar's band, the panel's fill with a line under it,
                 runs from the view's left edge to 14 points left of the logo, and with Live
                 AATF on, Show suggestions shown and unsaved changes the bar's last widget

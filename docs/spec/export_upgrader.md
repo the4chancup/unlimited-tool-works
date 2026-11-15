@@ -704,8 +704,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    the lowest variant instead (71 real `u0???p0` files, `MARISA`'s `k4465` holding `u0875p0` to
    `p4`).
 
-   The `???` matches any three characters: authors wrote the `XXX` placeholder literally or
-   baked the real team ID in (`u0872p1.dds`), and both forms mean the same thing. The token is
+   The `???` matches three ASCII letters or digits: authors wrote the `XXX` placeholder
+   literally or baked the real team ID in (`u0872p1.dds`), and both forms mean the same thing. The token is
    matched as Red's `path_id_change` matches it: `u0`, three ASCII letters or digits, then `p`
    or `g` and a digit, in that letter case, anywhere in a name or path and every occurrence
    (`skin_u0771p3.dds`, `Common/ltd/u0XXXp5/`).
@@ -779,7 +779,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    becomes `team_folder` there too, the rest of the value kept
    (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
    `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that
-   reads the legacy spelling: the compiler has no notion of it.
+   reads the legacy spelling: the compiler refuses it where the upgrader respells it
+   (`kit_token_old`).
 
    **The kit stand-in.** The kit stand-in's old spelling, the game's, becomes the Studio one
    (`spec/model_format.md` "Kit-dependent assets", which the compiler writes back for the exes

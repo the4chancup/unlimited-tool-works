@@ -100,17 +100,15 @@ mechanism from a variant set, and one name for both would suggest a tie between 
 not exist.
 
 **The historical `u0XXXp0` magic is legacy.** It is what the exes matched so far (`u0XXXp0`
-rewritten to `u0XXXp1`, `u0XXXp2`, …), and the Studio compiler does **not** know it: the token is
-just another stem fragment, so a leftover reference fails the ordinary texture-existence checks like
-any other missing texture. There is no dedicated finding for it: a specific error would be partial
-support, complexity for no gain, since every existing export goes through the Export upgrader before
-Studio can use it.
+rewritten to `u0XXXp1`, `u0XXXp2`, …), and the Studio compiler does not compile it: it refuses
+the token wherever the Export upgrader would respell it (`kit_token_old`, "Output naming" below),
+so the member is sent to the upgrade.
 
-The planned Export upgrader is the only Studio component that reads the legacy spelling. It
-rewrites it to `kitN`/`kit1`…`kit9`, and a `u0XXXp0` file or folder (the file a kit without a
-variant loaded) to `kitF`. The legacy pattern is `u0` + **any three characters** + `p` + digit:
-authors wrote the `XXX` placeholder literally *or* baked the real team ID in (`u0872p1.dds`), and
-both forms mean the same thing, so both are detected and both are renamed.
+The Export upgrader is the only Studio component that reads the legacy spelling. It rewrites it to
+`kitN`/`kit1`…`kit9`, and a `u0XXXp0` file or folder (the file a kit without a variant loaded) to
+`kitF`. The legacy pattern is `u0`, three ASCII letters or digits, then `p` and a digit, in that
+letter case: authors wrote the `XXX` placeholder literally *or* baked the real team ID in
+(`u0872p1.dds`), and both forms mean the same thing, so both are detected and both are renamed.
 
 The keeper's legacy `u0XXXg1` … `g9` becomes `gk_kit1` … `gk_kit9` (`g0` as `p0` does,
 `gk_kitN` or `gk_kitF`): a set like any other, its stem's token read with the one kit number
