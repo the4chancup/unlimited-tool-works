@@ -701,9 +701,9 @@ More rules that keep it worth the row:
   - a warning the theme's warning amber (`Teams list is read-only`, a switch whose
     `Fix PES path` action points at a wrong exe, a dropped export whose name the folder
     already holds);
-  - an error the theme's error red (`#F85149`): something asked for failed. No publisher uses it yet;
-    it exists so the first that needs it does not borrow the warning's amber, which
-    would read as "look at this" for "this did not happen".
+  - an error the theme's error red (`#F85149`): something asked for failed (`Could not
+    write <file>: <reason>` from the formation pictures' dialog). A failure never borrows
+    the warning's amber, which would read as "look at this" for "this did not happen".
 
   One plain colour for every notice was how a member missed a "Wrote settings.toml" line at
   the bar's edge; a single green for every notice would paint a warning as a success. What

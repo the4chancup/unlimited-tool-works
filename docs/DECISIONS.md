@@ -18082,3 +18082,16 @@ scroll to the top, the own-team button) was treated as one-file fixes and read b
 reviewer; its page-key test checked the row two frames after the key, so the one-frame lag
 that made a held PgDn flicker passed as intended, until the maintainer saw it.
 Plan: `docs/RUNBOOK.md` "Batch, don't stream".
+
+## 2026-11-15 — save_editor — A click that selects a row the category hides widens it to All
+Decision (the lead): a click outside the list that selects a team's row or a player (a
+violation's row, an unsaved change's row, the import window's own-team button) widens a team
+category that leaves his team out to `All`, and the widened category is remembered as a
+picked one is.
+Why: the selection helpers moved the team selector but not the category, so with VGL ticked
+a click for team 701 emptied the player list or selected a row the list hid (SWE-2's review
+of the list and keys, S-list r1 A-2). Keeping the category and refusing the click would
+leave the member clicking a row that does nothing; widening is what the category pick's
+own rule does when it leaves the picked team out.
+Plan: `plans/save_editor.md` "Editing UI", the team selector's category paragraph;
+SE-GUI-83.

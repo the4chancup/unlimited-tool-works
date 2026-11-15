@@ -226,7 +226,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the VGL teams' rows and players alone, since a category that shortened the dropdown and
   not the list would have the two disagree. Picking one leaves the dropdown open, so the
   shorter list is seen at once. A team picked that the new category leaves out gives way to
-  `All teams`, and a selection it leaves out moves to the list's first player. The category
+  `All teams`, and a selection it leaves out moves to the list's first player. A click
+  elsewhere that selects a team's row or a player (a violation's row, an unsaved change's
+  row, the import window's `Select the team with this file's ID`) widens a category that
+  leaves his team out to `All`, since the list must show the row it selects. The category
   is remembered in the tool's settings (`team_category`: `all`, `4cc`, `vgl` or
   `invitational`; a view setting, as `scroll_names` is) and stands in the player list's
   dropdown only: the Comparator's filter, Multi-team AATF's range and the Copy/swap stats
@@ -2881,7 +2884,9 @@ SE-GUI-08  GIVEN the save open on a team
                 hair) is the one player 02 had, and the other way round; the roster's ids and shirt numbers are as they
                 were, and the AATF check reports no `RosterOrder` error for the team; GIVEN
                 All teams picked THEN the same drag has the same outcome, and WHEN player 02 is
-                dropped on a row of the next team instead THEN nothing moves
+                dropped on a row of the next team instead THEN nothing moves; WHEN the drag is
+                undone, then redone, or put back with the X on its `Player order` row THEN
+                the moved player stays selected, in whichever slot the step puts him
 SE-GUI-09  GIVEN the official ruleset active
            WHEN Make Gold is clicked on a player
            THEN his fields hold the Gold tier's values as `aatf::apply_tier` sets them
@@ -3319,7 +3324,10 @@ SE-GUI-83  GIVEN a cup save open on All teams
                 Invitational is ticked THEN the selector reads All teams; GIVEN the editor
                 restarted THEN the category is still ticked (`team_category` in the tool's
                 settings); and the Comparator's team filter reads `All teams` and lists
-                every cup team whatever the category
+                every cup team whatever the category; GIVEN VGL ticked WHEN the unsaved
+                changes list's row of a change to team 701 is clicked THEN All is ticked and
+                701's row is selected and shown; the same for a player of 701 and for the
+                import window's `Select the team with this file's ID` on a file of 701
 SE-GUI-84  GIVEN a PES 2021 save open at the default window, the lock's setting off, a
                 player's Appearance screen shown
            WHEN it is drawn
