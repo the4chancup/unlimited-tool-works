@@ -2221,8 +2221,11 @@ briefs, review loops, gates and mutation runs as for any step.
     (`plans/save_editor.md` "Tactics editor", SE-GUI-59)
     - [x] the plan's sentence and the draft (`paintPitch`'s `S.lineupOver`), the
       maintainer's "looks good as drafted"
-    - [ ] the build -> verify: SE-GUI-59's new legs as headless tests; the built window
-      beside the draft
+    - [x] the build (Opus sidekick, 2026-11-15, merged): `marker_at`, one hit test for a
+      row's drop and its mark, so the mark falls on whom the release swaps, the keeper and
+      an illegal formation included; SE-GUI-59's new legs headless, with the overlap case
+    - [ ] the built window beside the draft: a row held over a pitch player
+      (`gui.py drag ... OUT.png` captures before the release)
   - [ ] 0.0.2-num Numbers in attack and Numbers in defence disabled on a PES 17 to 21 save
     unless the active ruleset allows illegal formations (the maintainer, 2026-11-12;
     `plans/save_editor.md` "Tactics editor", SE-GUI-71; DECISIONS 2026-11-12)
