@@ -246,7 +246,7 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 width,
             } => {
                 ui.set_width(width);
-                writing(ui, file, ids, written, options, on_screen)
+                writing(ui, file, ids, written, options, on_screen, width)
             }
             Stage::Done {
                 written,
@@ -255,7 +255,7 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 width,
             } => {
                 ui.set_width(width);
-                result(ui, &dialog.folder, written, total, error.as_deref())
+                result(ui, &dialog.folder, written, total, error.as_deref(), width)
             }
         },
     );
@@ -379,6 +379,32 @@ fn file_name_line(ui: &mut egui::Ui, file: &EditFile, first: u32) {
     ui.add(egui::Label::new(egui::RichText::new(line).weak()).extend());
 }
 
+/// `text` as a `Label` wrapping under `width` (`truncate` instead cuts
+/// the line to one row), for the run's states, which pin the dialog to
+/// it. A `Label`'s own wrap asks egui for the ui's available width, and
+/// egui rounds a wrap's width to a whole point, so a `width` of 496.7
+/// would wrap at 497: a row landing in the fraction between reports wider
+/// than the `set_width` and pushes the dialog wider. `width`'s floor is a
+/// whole point already: rows wrap at and under it, and the label reports
+/// no wider.
+fn pinned_label(ui: &mut egui::Ui, text: &str, width: f32, truncate: bool) -> egui::Response {
+    let mut job = std::sync::Arc::unwrap_or_clone(egui::WidgetText::from(text).into_layout_job(
+        ui.style(),
+        egui::FontSelection::Default,
+        ui.text_valign(),
+    ));
+    job.wrap = egui::text::TextWrapping::from_wrap_mode_and_width(
+        if truncate {
+            egui::TextWrapMode::Truncate
+        } else {
+            egui::TextWrapMode::Wrap
+        },
+        width.floor(),
+    );
+    let galley = ui.fonts_mut(|fonts| fonts.layout_job(job));
+    ui.add(egui::Label::new(galley))
+}
+
 /// A frame of the run, `written` pictures written before it: `Writing k of
 /// n: <name> (<id>)` for the team the next frame writes, the bar at the
 /// share written before that one, and Stop. Unless Stop is clicked, the
@@ -391,6 +417,7 @@ fn writing(
     written: usize,
     options: PictureOptions,
     on_screen: bool,
+    width: f32,
 ) -> Asked {
     let shown = if on_screen {
         (written + 1).min(ids.len() - 1)
@@ -405,7 +432,7 @@ fn writing(
         ids.len(),
         display_name(name)
     );
-    ui.add(egui::Label::new(line).truncate());
+    pinned_label(ui, &line, width, true);
     progress_bar(ui, shown as f32 / ids.len() as f32);
     let stop = modal_buttons(ui, |ui| ui.button("Stop").clicked());
     if stop {
@@ -461,6 +488,7 @@ fn result(
     written: usize,
     total: usize,
     error: Option<&str>,
+    width: f32,
 ) -> Asked {
     let line = if written == total {
         format!("{} written, they are here:", counted(written, "picture"))
@@ -469,12 +497,12 @@ fn result(
     } else {
         format!("Stopped after {written} of {total} pictures, they are here:")
     };
-    ui.add(egui::Label::new(line).wrap());
+    pinned_label(ui, &line, width, false);
     if written > 0 {
-        ui.add(egui::Label::new(folder).wrap());
+        pinned_label(ui, folder, width, false);
     }
     if let Some(error) = error {
-        ui.add(egui::Label::new(error).wrap());
+        pinned_label(ui, error, width, false);
     }
     modal_buttons(ui, |ui| {
         let close = ui.button("Close").clicked();
@@ -513,4 +541,51 @@ fn write_next(ui: &egui::Ui, view: &mut SaveView, team_id: u32, options: Picture
         .expect("the open dialog")
         .wrote(written);
     ui.ctx().request_repaint();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `pinned_label`'s labels never report wider than `width`: the sweep
+    /// pads `x`s into a folder path's line to land rows in the sub-pixel
+    /// slot between `width` and the point egui rounds it up to, at the
+    /// run's measured 496.72 and at widths that round the other way.
+    /// Reverting the call to a plain wrapped `Label` fails this test.
+    #[test]
+    fn pinned_label_reports_no_wider_than_its_width() {
+        let ctx = egui::Context::default();
+        studio_core::theme::install(&ctx);
+        for width in [496.71875f32, 496.3, 496.7] {
+            let mut rects = Vec::new();
+            ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(1024.0, 768.0),
+                    )),
+                    ..Default::default()
+                },
+                |ui| {
+                    ui.set_width(width);
+                    for length in 0..72usize {
+                        let text = format!(
+                            "formation {} pictures of every team of the cup, from the first to \
+                             the last",
+                            "x".repeat(length)
+                        );
+                        rects.push((length, pinned_label(ui, &text, width, false).rect));
+                    }
+                },
+            )
+            .drop_without_applying_deltas();
+            for (length, rect) in &rects {
+                assert!(
+                    rect.width() <= width,
+                    "width {width}, length {length}: the label reports {} wide",
+                    rect.width()
+                );
+            }
+        }
+    }
 }
