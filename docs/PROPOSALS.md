@@ -162,24 +162,43 @@ the flag's meaning. Costs: one more confirmation whose wrong answer loses the sa
 when the member leaves Edit mode (the reason the flag exists), a save-only run path from the
 window, and its tests.
 
-## P57: Every checkpoint compares each built screen with its draft
+## P57: The test suite compares each built screen with its draft
 
 From the built-window check of 2026-11-15 (worklog 0.0.2-gaps), which also found screens
-outside the slices being checked more than 2 points from their drafts. Today
-`draft_compare.py SCREEN` measures one screen at a time, in a build the lead has opened at
-that screen by hand, so a screen is compared when its own slice lands. A later change
-elsewhere, such as a shared spacing constant or a widget helper, can move it with nobody
-looking.
+outside the slices being checked more than 2 points from their drafts; the shape below is the
+maintainer's, 2026-11-15. Today `draft_compare.py SCREEN` measures one screen at a time, in a
+release build the lead opens at that screen by hand, with the window taking the keyboard and
+pointer. So a screen is compared when its own slice lands, and a later change elsewhere, such
+as a shared spacing constant or a widget helper, can move it with nobody looking.
 
-Adds: `just checkpoint` builds the release, opens each screen in `draft_compare.py`'s list
-in turn, and compares it, failing when any element sits more than 2 points from its place
-in the draft. Differences of 1 to 2 points are listed for a look, as today. A departure is then caught at the first checkpoint after
-the commit that made it, while its cause is still easy to find.
+Adds: each screen's comparison runs as a Rust test, in process, like the other view tests.
+
+- **The build's side**: the test draws the screen headless at the default window size, with
+  the app's fonts and theme, as the view tests already do, and reads every widget's box from
+  egui's AccessKit tree, the tree `draft_compare.py` now reads from the running window.
+- **The draft's side**: a script records each screen's boxes from the draft, in Chromium,
+  into a fixture file beside the tests, rerun whenever a draft changes (as the Ruleset
+  summary goldens are). Only Chromium can lay out the HTML drafts, so the browser stays, but
+  it runs once per draft change and not in every test run.
+- **The check**: boxes matched by their text, as `draft_compare.py` matches them, failing
+  when one stands more than 2 points from its draft. A difference accepted at a review is
+  recorded in the fixture beside the screen.
+
+A departure then fails the gates of the commit that makes it, with no window and no focus,
+and the built window is still looked at before a release, for what only it shows (the GPU
+path, a monitor's scaling).
+
+Boxes, not pictures: Chromium and egui draw text differently (the drafts already draw each
+text twice at 30% to come near egui's weight), so a pixel comparison would flag every label.
+Pictures of each screen for the maintainer to look at could still be written by the same
+tests, but that needs a renderer in them (`egui_kittest` with `wgpu`), a new dependency.
 
 Costs:
-- a scripted path to each screen (which save to open, which clicks), kept in step with the
-  UI: 13 screens in the list today, all the Save editor's, and one more with each new screen;
-- the app's window takes the keyboard and pointer while the step runs, so nobody can use the
-  machine meanwhile, and the step adds a release build and its own run to each checkpoint;
-- a difference accepted at a review needs its offset recorded beside the screen, or the step
-  fails until it is fixed or ruled.
+- `draft_compare.py`'s matching rules (reading order, a text met more than once, box kinds
+  that differ by design) ported to Rust test support;
+- each screen opened by its test (the save, the selection, the dialog), as view tests do now;
+- the fixtures regenerated after every draft change; each records a hash of the draft it
+  was taken from, and a test fails when the draft no longer matches it, so a stale fixture
+  cannot pass;
+- text colour and weight, which `draft_compare.py` also measures from captures, stay with
+  the script unless the tests gain the renderer.
