@@ -451,12 +451,36 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-undo-x">
+  <h3>The X on each row of the unsaved changes list</h3>
+  <p class="from">From: the pending looks; checked by the lead at <code>4b9f2258</code> on your PES 2017 save, both changes undone and nothing saved</p>
+  <p>On /an/, row 03 dragged onto row 06, then Long Range Drive ticked for the moved player.
+  The list holds the two rows as the draft does: the tick, and the move as one Player order
+  row with the places before and after side by side, each ending in a red X that stays at the
+  list's right edge. The tick's X undid the tick alone and left the list open with the move's
+  row. The move's X put the order back and closed the list with its last row. (The draft's
+  own skill row reads "Skills 6" because of how the draft stores skills; the build names the
+  skill.)</p>
+  <p>Being fixed without a question: the column heads (Item, Old value, New value, Undo)
+  are drawn in a dim grey, where the draft draws them in the bright title colour; the close
+  prompt's table shares them. And, as on the drop line's card, the selection stayed on slot
+  06 after the move's X; it will follow the moved player.</p>
+  <div class="shots">
+    <figure><a href="img/undo_x.png"><img src="img/undo_x.png" alt="The unsaved changes list in the draft and the build, and after each X"></a><figcaption>Draft and build, then each X</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
-  <li>The X on each row of the unsaved changes list, and the list after a drag in the player list (0.0.2-undo a and b).</li>
   <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>
   <li>A formation picture's hidden formations, each faded shape drawn on its own (0.0.2-flatpitch).</li>
 </ul>

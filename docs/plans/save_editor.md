@@ -312,8 +312,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   would break it. A drop several rows away is the spinner pressed that many times, so the
   players in between shift one slot along.
 
-  A drop selects the moved player in his new slot, and an undo or a redo of the move keeps
-  the selection on him, in whichever slot the step puts him. The selection names a slot, so
+  A drop selects the moved player in his new slot, and an undo or a redo of the move, or the
+  X on its row of the unsaved changes list, keeps the selection on him, in whichever slot
+  the step puts him. The selection names a slot, so
   left where it was it would land on another player: after an undo, the panels beside the
   list would show the player who now holds the slot, not the one the member just moved.
 

@@ -2126,12 +2126,14 @@ briefs, review loops, gates and mutation runs as for any step.
     theme read at 4.5"): the lead's look found white and pale codes vanished (card
     `look-name-colours`) -> verify: a test drawing a white-coded name in each theme, its
     colour unchanged in the dark one and at 4.5 on the light panel; the built window
-  - [ ] 0.0.2-undosel an undo or a redo of a player list move keeps the moved player
-    selected, in whichever slot the step puts him (`plans/save_editor.md` "Player list", the
+  - [ ] 0.0.2-undosel an undo or a redo of a player list move, or the X on its row of the
+    unsaved changes list, keeps the moved player selected, in whichever slot the step puts
+    him (`plans/save_editor.md` "Player list", the
     paragraph "A drop selects the moved player"; DECISIONS 2026-11-15 "An undone or redone
     move keeps the moved player selected"): the lead's look found the selection left on the
     drop's slot, another player after the undo -> verify: a session test dropping slot 3 on
-    slot 6, then undo, the selection on slot 3, then redo, on slot 6; the built window
+    slot 6, then undo, the selection on slot 3, then redo, on slot 6, then the move row's
+    X, on slot 3; the built window
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -2322,7 +2324,8 @@ briefs, review loops, gates and mutation runs as for any step.
       undo entry keeps the trade itself so an undo past a save still reads right, the
       list compares a player with the record he came from, and each group of places
       that traded players is one `Player order` row. Two overlapping drags give groups
-      that match neither drag (the cycles). Look: Pending looks
+      that match neither drag (the cycles). Look: checked 2026-11-15 at `4b9f2258`, card
+      `look-undo-x` in `docs/maintainer/tasks.html`
     - [x] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends; its
       fix, a moved player renamed after the move, landed with b)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
@@ -2337,7 +2340,11 @@ briefs, review loops, gates and mutation runs as for any step.
       puts that change back as one sealed undo step, the list open a row shorter; a row
       is put back by reversing its diff and applying it (`PlayerDiff::reversed`,
       `TeamDiff::reversed`, `apply_team`), a `Player order` row through the drag's own
-      trade; the close prompt has no X. Look: Pending looks
+      trade; the close prompt has no X. Look: checked 2026-11-15 at `4b9f2258`, card
+      `look-undo-x`. Open: the table's heads (Item, Old value, New value, Undo) are drawn
+      weak, grey 95 measured, where the draft's `table.grid th` draws them in the strong
+      colour, 220; the close prompt's share them (`view/prompt.rs` `changes_table`); fixed
+      with 0.0.2-namelight's brief
     - [x] b's SWE-2 review 2026-11-13 (S-undo-b r1, 3 of 5 accepted, the loop ends): a
       doc comment and a help sentence fixed
   - [x] 0.0.2-line the player list's drop place as a line between two rows, not an outline
