@@ -2270,8 +2270,15 @@ briefs, review loops, gates and mutation runs as for any step.
       never wakes for its next check or retry (the drain frame schedules nothing); four
       tests that pass on wrong code; the help offered deleting the only copies of the old
       files after a failed restore (`ef105c80`, the lead)
-    - [ ] the rework (SWE-2, `sk/updrw2`, `.tmp/0_0_2/upd/rework_c3.md`), then Carbon's
-      round 4
+    - [x] the rework (SWE-2, merge `eeb4fa6f`), then Carbon's round 4 (6 of 6 accepted: a
+      click on the bar's update entry dismissed an unrelated notice; four tests that passed
+      on wrong code) and its rework (merge `8b40f887`)
+    - [x] Carbon's round 5, 2026-11-15 (at `8b40f887`): 5 of 5 accepted: no test sees the
+      workers stop waking an idle window; four items wider than their users; two stale
+      docs; the help names the offer's window "Details" and puts Cancel on the bar
+    - [ ] the rework (SWE-2, `sk/updrw4`, `.tmp/0_0_2/upd/rework_c5.md`; the lead's help
+      text `.tmp/0_0_2/upd/lead_text_r5.md`), then Carbon's round 6 unless the
+      maintainer stops the loop
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
