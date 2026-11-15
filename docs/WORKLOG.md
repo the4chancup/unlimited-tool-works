@@ -2241,7 +2241,11 @@ briefs, review loops, gates and mutation runs as for any step.
       26, 43 and 44 restated and their tests re-aimed at the menus. The row is one line
       that never wraps and the logo is always drawn (DECISIONS 2026-11-12); a view's title
       is measured from the band's line, and everything under the bar stands 1 point higher
-    - [ ] the look in the built window, both tools, both themes (ask the maintainer)
+    - [x] the look in the built window, both tools, both themes: checked 2026-11-15 at
+      `4b9f2258`, card `look-menu-bar` in `docs/maintainer/tasks.html` (asks whether the
+      three menus stay greyed with no save open, as built, or take the draft's full colour)
+    - [ ] the Ruleset editor's start page draws no separator after Randomize: the draft's
+      `topBar` draws it only before an open ruleset's name (folded into the asks review)
     - [x] its SWE-2 loop, 2026-11-12 (`b1f3c85e`; two rounds, 6 of 11 then 1 of 2): the
       logo's place is read once a frame and handed to the band and the logo both, and
       tests pin the framed dropdown and Live AATF, the Ruleset editor's row 3 points

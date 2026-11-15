@@ -3819,7 +3819,7 @@ function renderToolbar() {
     // With no save open the save's menus are stand-ins: the draft has no
     // entries to show in them (the editor draws them, their entries disabled).
     fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]
-      : ["Player", "Team", "Database"].map(name => menu(name, [], { frame0: true }))), tsep(),
+      : ["Player", "Team", "Savefile"].map(name => menu(name, [], { frame0: true }))), tsep(),
     rulesetPicker(), liveButton(), LIVE.on ? suggestionsToggle() : null,
     // The save's path is in the window title (`titleDetail`): beside the
     // unsaved mark it could wrap the toolbar onto a second row.
