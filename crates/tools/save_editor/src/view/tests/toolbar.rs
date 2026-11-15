@@ -3,6 +3,7 @@
 //! act on (no Panels menu), a shortcut right of its label, and the unsaved
 //! marker in the link blue.
 
+use super::changes_popup::{click_label, three_changes};
 use super::*;
 
 /// The toolbar's row: the File menu button's vertical span.
@@ -169,28 +170,104 @@ fn hovering_team_while_player_is_open_switches_the_menus() {
 }
 
 // A shortcut pressed while a menu is open closes it, as a click on an
-// entry does: Ctrl+B with the Player menu up opens the Bump dialog and
-// leaves no popup floating over it.
+// entry does: every arm of the toolbar's close guard, each from a fresh
+// scene with the Player menu up, the key's own premise set before it.
 #[test]
 fn a_shortcut_pressed_over_an_open_menu_closes_it() {
-    let path = fixture(PesVersion::Pes21, "shortcut_closes_menu");
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::new();
-    open_menu(&mut window, &mut view, "Player", "Bump all stats");
-    assert!(
-        egui::Popup::is_any_open(&window.ctx),
-        "premise: the Player menu is open"
+    /// 70101's height set: one undo step, the save dirty.
+    fn edited(view: &mut SaveView) {
+        let mut entry = player_entry(view, 70101);
+        entry.basic.height = 170;
+        view.session.as_mut().unwrap().edit_player(1, entry);
+    }
+    // The row's events as the window hears them, `build` having set the
+    // key's premise (an edit, discovery stubbed, a player copied).
+    type Case = (
+        &'static str,
+        &'static dyn Fn(&mut Headless, &mut SaveView) -> Vec<egui::Event>,
     );
+    let cases: Vec<Case> = vec![
+        ("Ctrl+S", &|_, _| {
+            vec![key(egui::Key::S, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+Z", &|_, view| {
+            edited(view);
+            vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+Y", &|_, view| {
+            edited(view);
+            assert!(
+                view.session.as_mut().unwrap().undo(),
+                "premise: the edit undid"
+            );
+            vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+F", &|_, _| {
+            vec![key(egui::Key::F, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+I", &|_, _| {
+            vec![key(egui::Key::I, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+B", &|_, _| {
+            vec![key(egui::Key::B, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+C", &|_, _| vec![egui::Event::Copy]),
+        ("Ctrl+9", &|_, view| {
+            view.discover = Box::new(|_| Vec::new());
+            view.open_dialog = Box::new(|_| None);
+            vec![key(egui::Key::Num9, egui::Modifiers::CTRL, true)]
+        }),
+        ("Ctrl+V", &|window, view| {
+            window.frame(vec![egui::Event::Copy], |ui| show(ui, view, &|| Vec::new()));
+            let text = window
+                .commands
+                .iter()
+                .find_map(|command| match command {
+                    egui::OutputCommand::CopyText(text) => Some(text.clone()),
+                    _ => None,
+                })
+                .expect("the copy put a player on the clipboard");
+            vec![egui::Event::Paste(text)]
+        }),
+        ("Page Down", &|_, _| {
+            vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)]
+        }),
+    ];
+    for (name, build) in cases {
+        let path = fixture(PesVersion::Pes21, "shortcut_closes_menu");
+        let mut view = SaveView::new();
+        view.open(&path);
+        let mut window = Headless::new();
+        let events = build(&mut window, &mut view);
+        open_menu(&mut window, &mut view, "Player", "Bump all stats");
+        assert!(
+            egui::Popup::is_any_open(&window.ctx),
+            "premise: the Player menu is open"
+        );
+
+        window.frame(events, |ui| show(ui, &mut view, &|| Vec::new()));
+        draw(&mut window, &mut view);
+        assert!(
+            !egui::Popup::is_any_open(&window.ctx),
+            "{name}: the menu closed on the shortcut's frame"
+        );
+    }
+}
+
+// The `• unsaved changes` list is the view's own popup, which egui's
+// registry never sees: a shortcut closes it too — Ctrl+B with the list
+// up raises the Bump dialog with nothing floating over it.
+#[test]
+fn a_shortcut_closes_the_unsaved_changes_list() {
+    let (mut view, _) = three_changes("shortcut_closes_list");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    assert!(view.changes_list.is_some(), "premise: the list is open");
 
     window.frame(vec![key(egui::Key::B, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    draw(&mut window, &mut view);
-    assert!(
-        !egui::Popup::is_any_open(&window.ctx),
-        "the menu closed on the shortcut's frame"
-    );
+    assert!(view.changes_list.is_none(), "the shortcut closed the list");
     assert!(
         view.stat_num.is_some(),
         "the Bump dialog opened: the shortcut took effect"

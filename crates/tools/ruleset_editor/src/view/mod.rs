@@ -574,12 +574,12 @@ fn toolbar(
     // press does not hold them off: `history_step` seals its edit before
     // stepping.
     // None of them act behind a modal (the prompt, a dialog, the modal
-    // start page): an undo under the prompt would write a state it
-    // never showed. Ctrl alone: `consume_ctrl` matches `Modifiers::CTRL`
-    // exactly, so Ctrl+Shift+S is not Save over the open file;
-    // Ctrl+Shift+Z keeps its own two-modifier match.
+    // start page, the shell's own): an undo under the prompt would
+    // write a state it never showed. Ctrl alone: `consume_ctrl` matches
+    // `Modifiers::CTRL` exactly, so Ctrl+Shift+S is not Save over the
+    // open file; Ctrl+Shift+Z keeps its own two-modifier match.
     let document_open = view.document.is_some();
-    let keys_free = !modal_open(view);
+    let keys_free = !modal_open(view, ui.ctx());
     let save_key = keys_free && ui.input_mut(|input| consume_ctrl(input, egui::Key::S));
     let typing = ui.ctx().text_edit_focused();
     // Ctrl+Shift+Z's own two-modifier match; `consume_ctrl` covers the
@@ -747,9 +747,14 @@ pub(crate) fn modal(
 }
 
 /// Whether a modal is up over the document: the unsaved-changes prompt,
-/// a dialog, or the modal start page (the keyboard shortcuts' gate).
-fn modal_open(view: &RulesetView) -> bool {
-    view.pending_action.is_some() || view.dialog.is_some() || view.start_open
+/// a dialog, or the modal start page (the keyboard shortcuts' gate);
+/// egui's top modal layer covers the shell's own: Settings, Report a
+/// problem, the update dialog, About.
+fn modal_open(view: &RulesetView, ctx: &egui::Context) -> bool {
+    view.pending_action.is_some()
+        || view.dialog.is_some()
+        || view.start_open
+        || ctx.memory(|memory| memory.top_modal_layer()).is_some()
 }
 
 /// Whether the gesture in flight holds an edit: its snapshot differs

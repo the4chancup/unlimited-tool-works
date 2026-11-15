@@ -1100,8 +1100,8 @@ fn the_welcome_panel_scans_once_not_every_frame() {
 }
 
 // The panel's list is the File menu's scan's: a save that lands in
-// Documents while the window is open shows in the panel once the File
-// menu has been opened (the menu rescanning is the refresh).
+// Documents while the window is open shows in the menu reopened and in
+// the panel (each opening of the menu rescans, the last list never kept).
 #[test]
 fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened() {
     let tree = tree("welcome_rescan");
@@ -1119,7 +1119,17 @@ fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened
         "premise: no PES 17 save was found"
     );
 
-    // A PES 17 save lands under Documents after the panel's first scan.
+    // The File menu opened and closed before the save lands: its list
+    // is the stale one a kept discovery would serve again.
+    open_menu(&mut window, &mut view, "File", "Choose file");
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert!(!menu_shown(&window, &nodes), "the File menu is closed");
+
+    // A PES 17 save lands under Documents after the menu's first scan.
     let layout = save_layout(PesVersion::Pes17);
     let folder = tree
         .documents
@@ -1133,8 +1143,10 @@ fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened
     )
     .unwrap();
 
-    // The File menu opened and closed: its rescan fills the panel's list.
-    open_menu(&mut window, &mut view, "File", "Choose file");
+    // Opened again, the menu rescans: the save shows in its list, and
+    // the panel's takes it.
+    let nodes = open_menu(&mut window, &mut view, "File", "Choose file");
+    assert!(pes17(&nodes), "the reopened menu lists the save");
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
