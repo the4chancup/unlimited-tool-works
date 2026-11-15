@@ -354,12 +354,29 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-menu-rows">
+  <h3>Menu and dropdown rows that touch</h3>
+  <p class="from">From: worklog 0.0.2-gap; checked by the lead at <code>4b9f2258</code> on your saves, opened read-only</p>
+  <p>The File menu in the build and in the draft: rows 21 points high with no gap between
+  them, and the same room around each separator (the draft lists one more recent file). A
+  click exactly on the line between PES 2015 and PES 2016 opened the PES 2016 save, so no
+  click lands between two rows. The teams dropdown's rows are 21 apart too.</p>
+  <div class="shots">
+    <figure><a href="img/menu_rows.png"><img src="img/menu_rows.png" alt="The File menu, build and draft, and the window title after a click on a row's edge"></a><figcaption>The build (light), the draft, and the title after the click</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
-  <li>The toolbar's menus and dropdown lists: entries 21 high that touch, a click on the line between two, the separators' room (0.0.2-gap).</li>
   <li>The player list's drop line while a player is dragged, and on the first and last row in view (0.0.2-line).</li>
   <li>The illegal formation warning on a PES 2017 or 2019 save under Spring 26, gone once the named starter is dragged (0.0.2c).</li>
   <li>The X on each row of the unsaved changes list, and the list after a drag in the player list (0.0.2-undo a and b).</li>
