@@ -30,6 +30,8 @@ pub(super) struct ChangesList {
     revision: u64,
     /// The table's rows, `prompt::rows`' own.
     rows: Vec<UnsavedRow>,
+    /// The table's measured geometry, filled on its first frame.
+    layout: prompt::TableLayout,
     /// Where a click on each row's item switches, aligned with `rows`:
     /// `None` when the row names nothing the list can switch to.
     switches: Vec<Option<Switch>>,
@@ -92,7 +94,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             None => open(view, revision),
         };
     }
-    let Some(list) = view.changes_list.as_ref() else {
+    let Some(list) = view.changes_list.as_mut() else {
         return;
     };
     // The draft's `.chpop`: the panel's fill and stroke, under the label
@@ -138,7 +140,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .show(|ui| {
             ui.set_min_width(460.0 - chrome);
             ui.set_max_width(640.0 - chrome);
-            click = table_with_xs(ui, &list.rows, &tips, 460.0 - chrome);
+            click = table_with_xs(ui, &list.rows, &mut list.layout, &tips, 460.0 - chrome);
         });
     if shown.is_some_and(|shown| shown.response.should_close()) {
         view.changes_list = None;
@@ -170,6 +172,7 @@ enum ListClick {
 fn table_with_xs(
     ui: &mut egui::Ui,
     rows: &[UnsavedRow],
+    layout: &mut prompt::TableLayout,
     tips: &[Option<&'static str>],
     min_width: f32,
 ) -> Option<ListClick> {
@@ -199,9 +202,9 @@ fn table_with_xs(
                     .show(ui, |ui| {
                         prompt::changes_table(
                             ui,
-                            "save_editor_changes_list",
                             rows.iter().map(|row| &row.cells),
                             Some(tips),
+                            layout,
                         )
                     });
                 let column = ui.cursor().min.x.max(left + min_width - x_width);
@@ -222,7 +225,10 @@ fn table_with_xs(
                         .hline(table.inner.head.left()..=column + x_width, *y, separator);
                 }
                 let mut click = table.inner.clicked.map(ListClick::Switch);
-                for (index, item) in table.inner.items.iter().enumerate() {
+                // The X's salt runs from the first drawn row's index, so
+                // a row's X keeps its id as it scrolls in and out of view.
+                ui.skip_ahead_auto_ids(table.inner.items.first().map_or(0, |(index, _)| *index));
+                for &(index, item) in &table.inner.items {
                     let rect = egui::Rect::from_min_size(
                         egui::pos2(column, item.top()),
                         egui::vec2(x_width, item.height()),
@@ -320,11 +326,15 @@ fn put_back_row(view: &mut SaveView, index: usize) {
 fn open(view: &mut SaveView, revision: u64) -> Option<ChangesList> {
     let session = view.session.as_ref()?;
     match prompt::rows(session) {
-        Ok(rows) => Some(ChangesList {
-            revision,
-            switches: switches(session.file(), &rows),
-            rows,
-        }),
+        Ok(rows) => {
+            let switches = switches(session.file(), &rows);
+            Some(ChangesList {
+                revision,
+                rows,
+                layout: prompt::TableLayout::default(),
+                switches,
+            })
+        }
         Err(error) => {
             view.refusal = Some(Refusal {
                 title: "Cannot compare the save",

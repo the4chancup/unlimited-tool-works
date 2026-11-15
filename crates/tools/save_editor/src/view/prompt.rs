@@ -75,6 +75,8 @@ pub(crate) struct Prompt {
     pending: Pending,
     /// The table's rows.
     rows: Vec<UnsavedRow>,
+    /// The table's measured geometry, filled on its first frame.
+    layout: TableLayout,
 }
 
 /// One row of the changes table: the item it changes (a player's or a
@@ -100,18 +102,18 @@ pub(super) struct UnsavedRow {
 }
 
 /// What `changes_table` drew: the row whose Item cell was clicked (a
-/// `switch` table's), the header row's and each row's Item cell on its
-/// line (a column beside the table lines its own controls up with them),
-/// and the lines drawn between the rows.
+/// `switch` table's), the header row's and each drawn row's Item cell on
+/// its line (a column beside the table lines its own controls up with
+/// them), and the lines drawn between the rows.
 pub(super) struct TableResponse {
     /// The index of the row whose Item cell was clicked.
     pub(super) clicked: Option<usize>,
-    /// Each row's Item cell, in the rows' order.
-    pub(super) items: Vec<egui::Rect>,
+    /// Each drawn row's index and Item cell, in the rows' order.
+    pub(super) items: Vec<(usize, egui::Rect)>,
     /// The header row's Item cell.
     pub(super) head: egui::Rect,
-    /// The y of the line drawn between each two rows, the header's
-    /// included, centred in the grid's row gap.
+    /// The y of each drawn line between two rows, the header's included,
+    /// centred in the row gap.
     pub(super) lines: Vec<f32>,
 }
 
@@ -144,7 +146,11 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
     }
     match rows(session) {
         Ok(rows) => {
-            view.prompt = Some(Prompt { pending, rows });
+            view.prompt = Some(Prompt {
+                pending,
+                rows,
+                layout: TableLayout::default(),
+            });
         }
         Err(error) => {
             view.refusal = Some(Refusal {
@@ -419,7 +425,7 @@ pub(super) fn roster_for<'a>(
 /// and goes on only once the file is written (the running-game question
 /// first when the save's own PES runs).
 pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
-    let Some(prompt) = view.prompt.as_ref() else {
+    let Some(prompt) = view.prompt.as_mut() else {
         return;
     };
     let mut answer = None;
@@ -434,9 +440,9 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
             changes_table(
                 ui,
-                "unsaved changes",
                 prompt.rows.iter().map(|row| &row.cells),
                 None,
+                &mut prompt.layout,
             );
         });
         modal_buttons(ui, |ui| {
@@ -472,15 +478,127 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     }
 }
 
+/// The changes table's measured geometry: the three columns' widths and
+/// every row's place, filled the first frame it draws and kept beside the
+/// rows, which never change under it. A frame then lays out only the
+/// header and the rows the scroll area shows, so a changes list thousands
+/// of rows long scrolls at the speed of a dozen.
+#[derive(Default)]
+pub(super) struct TableLayout {
+    /// `None` until the first frame measures (`measured`).
+    measured: Option<Measured>,
+}
+
+/// What the first frame's measure found.
+struct Measured {
+    /// Each column's width (its widest cell's).
+    widths: [f32; 3],
+    /// The header row's three cells' sizes.
+    heads: [egui::Vec2; 3],
+    /// Each row's Item cell size, aligned with the rows.
+    items: Vec<egui::Vec2>,
+    /// Each row's two value cells' text sizes (a colour's swatch stands
+    /// beside the text, not in it), aligned with the rows.
+    values: Vec<[egui::Vec2; 2]>,
+    /// Each row's top in content space, the header's first, the
+    /// `TEXT_ROW_SPACING` gap between them counted in.
+    tops: Vec<f32>,
+    /// Each row's height, aligned with `tops`.
+    heights: Vec<f32>,
+}
+
+impl TableLayout {
+    /// The table's `Measured`, measuring it on first use: every cell's
+    /// galley once, the same layout job `Label` runs (`Extend`, the
+    /// ui's own text valign), so the sizes are the drawn cells'. Columns
+    /// and rows take at least the interact size, as an interactive cell
+    /// would.
+    fn measured(&mut self, ui: &egui::Ui, rows: &[&ChangeRow]) -> &Measured {
+        self.measured.get_or_insert_with(|| {
+            let cell_min = ui.spacing().interact_size;
+            let mut widths = [cell_min.x; 3];
+            let mut heads = [egui::Vec2::ZERO; 3];
+            let mut head_height = cell_min.y;
+            for (column, text) in ["Item", "Old value", "New value"].into_iter().enumerate() {
+                let size = galley_size(ui, egui::RichText::new(text));
+                heads[column] = size;
+                widths[column] = widths[column].max(size.x);
+                head_height = head_height.max(size.y);
+            }
+            let mut items = Vec::with_capacity(rows.len());
+            let mut values = Vec::with_capacity(rows.len());
+            let mut heights = Vec::with_capacity(rows.len() + 1);
+            heights.push(head_height);
+            for ChangeRow { item, term } in rows {
+                let item_size = galley_size(ui, format!("{item} · {}", term.label));
+                let [old_swatch, new_swatch] = swatches(term);
+                let old = galley_size(ui, egui::RichText::new(term.old.as_str()).monospace());
+                let new = galley_size(ui, egui::RichText::new(term.new.as_str()).monospace());
+                let old_whole = value_size(old, old_swatch);
+                let new_whole = value_size(new, new_swatch);
+                items.push(item_size);
+                values.push([old, new]);
+                widths[0] = widths[0].max(item_size.x);
+                widths[1] = widths[1].max(old_whole.x);
+                widths[2] = widths[2].max(new_whole.x);
+                heights.push(
+                    item_size
+                        .y
+                        .max(old_whole.y)
+                        .max(new_whole.y)
+                        .max(cell_min.y),
+                );
+            }
+            let mut tops = Vec::with_capacity(heights.len());
+            let mut top = 0.0;
+            for &height in &heights {
+                tops.push(top);
+                top += height + TEXT_ROW_SPACING;
+            }
+            Measured {
+                widths,
+                heads,
+                items,
+                values,
+                tops,
+                heights,
+            }
+        })
+    }
+}
+
+/// The row's two swatch colours, `None`s for a non-colour row.
+fn swatches(term: &Term) -> [Option<egui::Color32>; 2] {
+    match term.swatches {
+        Some([old, new]) => [Some(old), Some(new)],
+        None => [None, None],
+    }
+}
+
+/// The size `text` lays out to as a table cell: one galley, never
+/// wrapped, the way `cell`'s `Label` lays it out (the `Extend` wrap
+/// mode's infinite measure, the ui's text valign).
+fn galley_size(ui: &egui::Ui, text: impl Into<egui::WidgetText>) -> egui::Vec2 {
+    let mut job = std::sync::Arc::unwrap_or_clone(text.into().into_layout_job(
+        ui.style(),
+        egui::FontSelection::Default,
+        ui.text_valign(),
+    ));
+    job.wrap.max_width = f32::INFINITY;
+    ui.ctx().fonts_mut(|fonts| fonts.layout_job(job)).size()
+}
+
 /// The changes table (the draft's `changesTable`), the prompt's, the
-/// toolbar's changes list's and the patch panel's: a grid with the
-/// header row `Item`, `Old value`, `New value` in the strong text
-/// colour, then one row per `ChangeRow`, the Item cell `<item> ·
-/// <label>` and the values in monospace, a team colour's each after its
-/// swatch, no line wrapped. A
+/// toolbar's changes list's and the patch panel's: the header row
+/// `Item`, `Old value`, `New value` in the strong text colour, then one
+/// row per `ChangeRow`, the Item cell `<item> · <label>` and the values
+/// in monospace, a team colour's each after its swatch, no line wrapped.
+/// Only the header and the rows `ui`'s clip shows are laid out (`layout`
+/// measured every cell's size and place once), a row just past either
+/// edge included so none pops in. A
 /// thin line in the separators' stroke parts each row from the next, the
-/// header's included, centred in the grid's row gap across the table's
-/// width, so a tall row's values stay with its item. A
+/// header's included, centred in the row gap across the table's width,
+/// so a tall row's values stay with its item. A
 /// value holding several lines (a `Player order` row's places) makes its
 /// row that many lines high, the Item on the first (the draft's cells sit
 /// on their baseline); every other row is one line. `switch` gives each
@@ -489,114 +607,210 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 /// `tips[i]` is `Some`.
 pub(super) fn changes_table<'a>(
     ui: &mut egui::Ui,
-    id: &str,
     rows: impl IntoIterator<Item = &'a ChangeRow>,
     switch: Option<&[Option<&'static str>]>,
+    layout: &mut TableLayout,
 ) -> TableResponse {
+    let rows: Vec<&ChangeRow> = rows.into_iter().collect();
+    let measured = layout.measured(ui, &rows);
     let separator = ui.visuals().widgets.noninteractive.bg_stroke;
     let column_gap = ui.spacing().item_spacing.x;
-    egui::Grid::new(id)
-        .num_columns(3)
-        .spacing(egui::vec2(column_gap, TEXT_ROW_SPACING))
-        .show(ui, |ui| {
-            let mut head = egui::Rect::NOTHING;
-            let mut right = f32::NEG_INFINITY;
-            let mut lines = Vec::new();
-            for (column, text) in ["Item", "Old value", "New value"].into_iter().enumerate() {
-                let response = ui.add(cell(
-                    egui::RichText::new(text).color(ui.visuals().strong_text_color()),
-                ));
-                if column == 0 {
-                    head = response.rect;
-                }
+    let top_left = ui.cursor().min;
+    // The table's whole extent claimed up front, so the scroll area
+    // sizes the content although only the rows in view are laid out.
+    let right = top_left.x
+        + measured.widths[0]
+        + measured.widths[1]
+        + measured.widths[2]
+        + 2.0 * column_gap;
+    let bottom =
+        top_left.y + measured.tops.last().unwrap_or(&0.0) + measured.heights.last().unwrap_or(&0.0);
+    ui.advance_cursor_after_rect(egui::Rect::from_min_max(
+        top_left,
+        egui::pos2(right, bottom),
+    ));
+    let col_x = [
+        top_left.x,
+        top_left.x + measured.widths[0] + column_gap,
+        top_left.x + measured.widths[0] + measured.widths[1] + 2.0 * column_gap,
+    ];
+    // The rows the clip shows, plus the one sliding into view at either
+    // edge (a row's pitch: the interact height and the row gap).
+    let overscan = ui.spacing().interact_size.y + TEXT_ROW_SPACING;
+    let clip = ui.clip_rect();
+    let mut head = egui::Rect::NOTHING;
+    let mut clicked = None;
+    let mut items = Vec::new();
+    let mut lines = Vec::new();
+    let mut draw_separator = |ui: &egui::Ui, after: usize| {
+        // A line centred in the gap after entry `after`, the last entry's
+        // gap bordering only the row it ends so none is drawn there.
+        if after + 1 < measured.tops.len() {
+            let y = top_left.y
+                + measured.tops[after]
+                + measured.heights[after]
+                + 0.5 * TEXT_ROW_SPACING;
+            if y >= clip.min.y - overscan && y <= clip.max.y + overscan {
+                ui.painter().hline(top_left.x..=right, y, separator);
+                lines.push(y);
             }
-            // A row's right edge sits where its last cell's advance left
-            // the cursor, one column gap back; a row gap below the ended
-            // row centres the line.
-            right = right.max(ui.cursor().min.x - column_gap);
-            ui.end_row();
-            lines.push(ui.cursor().min.y - 0.5 * TEXT_ROW_SPACING);
-            let mut clicked = None;
-            let mut items = Vec::new();
-            for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
-                let item = cell(format!("{item} · {}", term.label));
-                let tip = switch.and_then(|tips| tips.get(index)).copied().flatten();
-                let item = if tip.is_some() {
-                    item.sense(egui::Sense::click())
-                } else {
-                    item
-                };
-                // The grid centres a widget in its row's height, but starts
-                // a child layout at the row's top: the Item added through
-                // one sits on the values' first line.
-                let response = if term.old.contains('\n') || term.new.contains('\n') {
-                    ui.vertical(|ui| ui.add(item)).inner
-                } else {
-                    ui.add(item)
-                };
-                items.push(response.rect);
-                if let Some(tip) = tip
-                    && response.on_hover_text(tip).clicked()
-                {
-                    clicked = Some(index);
-                }
-                let [old_swatch, new_swatch] = match term.swatches {
-                    Some([old, new]) => [Some(old), Some(new)],
-                    None => [None, None],
-                };
-                value_cell(ui, &term.old, old_swatch);
-                value_cell(ui, &term.new, new_swatch);
-                right = right.max(ui.cursor().min.x - column_gap);
-                ui.end_row();
-                lines.push(ui.cursor().min.y - 0.5 * TEXT_ROW_SPACING);
-            }
-            // The last `end_row`'s gap borders only the row it ends.
-            lines.pop();
-            // Painted with the rows done, the table's width being known
-            // only once its widest row has been measured.
-            for y in &lines {
-                ui.painter().hline(head.left()..=right, *y, separator);
-            }
-            TableResponse {
-                clicked,
-                items,
-                head,
-                lines,
-            }
-        })
-        .inner
-}
-
-/// A cell of the changes table: `text` on one line.
-fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
-    egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
-}
-
-/// A value cell of the changes table: `value` in monospace, after its
-/// colour's swatch when it is a colour (the draft's `.chswatch`): a
-/// 12-point square of the colour, its corners the theme's radius, framed
-/// by the 1-point dark edge the appearance palettes' swatches draw, so a
-/// colour near the panel's own still shows its square, and 5 points clear
-/// of the hex.
-fn value_cell(ui: &mut egui::Ui, value: &str, swatch: Option<egui::Color32>) {
-    let text = cell(egui::RichText::new(value).monospace());
-    let Some(colour) = swatch else {
-        ui.add(text);
-        return;
+        }
     };
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 5.0;
-        let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
+    for (column, text) in ["Item", "Old value", "New value"].into_iter().enumerate() {
+        let size = measured.heads[column];
+        let y = top_left.y + (measured.heights[0] - size.y) / 2.0;
+        let rect = egui::Rect::from_min_size(egui::pos2(col_x[column], y), size);
+        let response = put_cell(
+            ui,
+            rect,
+            ("head", column),
+            cell(egui::RichText::new(text).color(ui.visuals().strong_text_color())),
+        );
+        if column == 0 {
+            head = response.rect;
+        }
+    }
+    draw_separator(ui, 0);
+    for (index, row) in rows.iter().enumerate() {
+        let entry = index + 1;
+        let row_top = top_left.y + measured.tops[entry];
+        let row_height = measured.heights[entry];
+        let row_bottom = row_top + row_height;
+        if row_bottom >= clip.min.y - overscan && row_top <= clip.max.y + overscan {
+            let size = measured.items[index];
+            // A multi-line row's Item sits on the values' first line;
+            // every other row's cells are centred in the row's height.
+            let tall = row.term.old.contains('\n') || row.term.new.contains('\n');
+            let y = if tall {
+                row_top
+            } else {
+                row_top + (row_height - size.y) / 2.0
+            };
+            let rect = egui::Rect::from_min_size(egui::pos2(col_x[0], y), size);
+            let tip = switch.and_then(|tips| tips.get(index)).copied().flatten();
+            let mut item = cell(format!("{} · {}", row.item, row.term.label));
+            if tip.is_some() {
+                item = item.sense(egui::Sense::click());
+            }
+            let response = put_cell(ui, rect, ("item", index), item);
+            items.push((index, response.rect));
+            if let Some(tip) = tip
+                && response.on_hover_text(tip).clicked()
+            {
+                clicked = Some(index);
+            }
+            let [old_swatch, new_swatch] = swatches(&row.term);
+            for (column, cell_value) in [
+                (row.term.old.as_str(), old_swatch),
+                (row.term.new.as_str(), new_swatch),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                draw_value(
+                    ui,
+                    col_x[1 + column],
+                    row_top,
+                    row_height,
+                    cell_value,
+                    measured.values[index][column],
+                    ("value", index, column),
+                );
+            }
+        }
+        draw_separator(ui, entry);
+    }
+    TableResponse {
+        clicked,
+        items,
+        head,
+        lines,
+    }
+}
+
+/// `widget` centred in `rect`, under an id `id_salt` gives the cell, so a
+/// widget's id does not change as its row scrolls in and out of view.
+fn put_cell(
+    ui: &mut egui::Ui,
+    rect: egui::Rect,
+    id_salt: impl egui::AsIdSalt,
+    widget: impl egui::Widget,
+) -> egui::Response {
+    ui.scope_builder(
+        egui::UiBuilder::new()
+            .max_rect(rect)
+            .layout(egui::Layout::centered_and_justified(
+                egui::Direction::TopDown,
+            ))
+            .id_salt(id_salt),
+        |ui| ui.add(widget),
+    )
+    .inner
+}
+
+/// A colour value's swatch side and its gap to the hex (the draft's
+/// `.chswatch`).
+const SWATCH: f32 = 12.0;
+const SWATCH_GAP: f32 = 5.0;
+
+/// A value cell's size: the text's, after its swatch when it has one.
+fn value_size(text: egui::Vec2, swatch: Option<egui::Color32>) -> egui::Vec2 {
+    match swatch {
+        Some(_) => egui::vec2(SWATCH + SWATCH_GAP + text.x, text.y.max(SWATCH)),
+        None => text,
+    }
+}
+
+/// A value cell of the changes table drawn inside its column at `x`:
+/// `value` in monospace, after its colour's swatch when it is a colour
+/// (the draft's `.chswatch`): a 12-point square of the colour, its
+/// corners the theme's radius, framed by the 1-point dark edge the
+/// appearance palettes' swatches draw, so a colour near the panel's own
+/// still shows its square, and 5 points clear of the hex. `size` is the
+/// text's galley size as the first frame measured it.
+fn draw_value(
+    ui: &mut egui::Ui,
+    x: f32,
+    row_top: f32,
+    row_height: f32,
+    (value, swatch): (&str, Option<egui::Color32>),
+    size: egui::Vec2,
+    id_salt: impl egui::AsIdSalt,
+) {
+    let whole = value_size(size, swatch);
+    let group =
+        egui::Rect::from_min_size(egui::pos2(x, row_top + (row_height - whole.y) / 2.0), whole);
+    let mut text_left = group.left();
+    if let Some(colour) = swatch {
+        let swatch_rect = egui::Rect::from_center_size(
+            egui::pos2(group.left() + SWATCH / 2.0, group.center().y),
+            egui::vec2(SWATCH, SWATCH),
+        );
         let edge = studio_core::theme::palette(ui.visuals()).swatch_edge;
         ui.painter().rect(
-            rect,
+            swatch_rect,
             ui.visuals().widgets.noninteractive.corner_radius,
             colour,
             egui::Stroke::new(1.0, edge),
             egui::StrokeKind::Inside,
         );
-        ui.add(text);
-    });
+        text_left += SWATCH + SWATCH_GAP;
+    }
+    let text = egui::Rect::from_min_size(
+        egui::pos2(text_left, group.top() + (whole.y - size.y) / 2.0),
+        size,
+    );
+    put_cell(
+        ui,
+        text,
+        id_salt,
+        cell(egui::RichText::new(value).monospace()),
+    );
+}
+
+/// A cell of the changes table: `text` on one line.
+fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
+    egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
 }
 
 /// The pending action once Save or Discard answers it, or at once when

@@ -3,6 +3,8 @@
 //! under it, with none of the prompt's answers, and each closing path
 //! closes it.
 
+use pes_savefile::interchange::team_toml::TeamToml;
+
 use super::prompt::table_rows;
 use super::*;
 use crate::view::team::{channel_to_show, format_hex};
@@ -1146,6 +1148,150 @@ fn a_rows_x_puts_that_change_back_alone() {
     click_x(&mut window, &mut view, "P04 · Height");
     assert!(view.changes_list.is_none(), "the list closes");
     assert!(!view.is_dirty(), "the save is clean");
+}
+
+/// The PES 21 fixture with teams 702, 704, 706 and 708 each imported the
+/// whole Team TOML of another team, one whose every player differs on his
+/// name and every ability stat: thousands of unsaved changes.
+fn four_team_imports(test: &str) -> SaveView {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    // The fixture's teams are identical placeholder records, so the
+    // imported documents are built from a mutated copy instead (the
+    // `import_team` under test is the same either way).
+    let mut source = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    for player in source.players_mut() {
+        for ability in 0..25 {
+            player.stats.set_ability(ability, 1);
+        }
+        player.name = format!("IMPORTED {:02}", player.id % 100);
+        player.basic.height = 140 + (player.id % 60) as u8;
+    }
+    let players: Vec<&PlayerEntry> = source.players().iter().collect();
+    for (source_id, target) in [(701, 702), (703, 704), (705, 706), (707, 708)] {
+        let team = source.team(source_id).expect("the fixture team").clone();
+        let mut document = TeamToml::from_team(PesVersion::Pes21, &team, &players).unwrap();
+        document.team.id = Some(target);
+        view.session
+            .as_mut()
+            .unwrap()
+            .import_team(&document)
+            .unwrap();
+    }
+    view
+}
+
+/// A vertical wheel event of `delta` points at `at`.
+fn wheel(at: egui::Pos2, delta: f64) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(at),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: egui::vec2(0.0, delta as f32),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::NONE,
+        },
+    ]
+}
+
+/// The `Item` header cell's top, which sits at the table's content top
+/// and so falls exactly by the scroll offset.
+fn head_top(nodes: &[&accesskit::Node]) -> f64 {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Item"))
+        .and_then(|node| node.bounds())
+        .expect("the Item header is drawn")
+        .y0
+}
+
+/// Runs frames until `read` returns the same value twice (the scroll has
+/// settled), returning it. Bounded: a scroll that never settles fails.
+fn until_settled(
+    window: &mut Headless,
+    view: &mut SaveView,
+    mut read: impl FnMut(&mut Headless, &mut SaveView) -> f64,
+) -> f64 {
+    let mut last = read(window, view);
+    for _ in 0..120 {
+        window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let now = read(window, view);
+        if (now - last).abs() < 0.5 {
+            return now;
+        }
+        last = now;
+    }
+    panic!("the scroll never settled");
+}
+
+// The four-team case's open list lays out only the rows the 240-point
+// box shows, not the thousands the imports made: a frame's AccessKit
+// tree holds a dozen Item cells where it once held one per row.
+#[test]
+fn the_list_lays_out_only_the_rows_in_view() {
+    let mut view = four_team_imports("changes_list_viewport");
+    let rows = crate::view::prompt::rows(view.session.as_ref().unwrap())
+        .unwrap()
+        .len();
+    assert!(
+        rows > 500,
+        "premise: the case is thousands of rows ({rows})"
+    );
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let items = list_nodes(&pairs)
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Label && node.value().is_some_and(|value| value.contains(" · "))
+        })
+        .count();
+    // A row's pitch is its 18-point height plus the 4-point row gap, so
+    // eleven fit the 240 points; the bound adds the row sliding into
+    // view at each edge.
+    assert!(items <= 14, "{items} Item cells drawn of {rows} rows");
+}
+
+// Scrolled to the end, the last row and its X are laid out like the
+// rest, and the X still puts that row's change back.
+// SE-GUI-74
+#[test]
+fn scrolled_to_the_end_the_last_rows_x_puts_its_change_back() {
+    let mut view = four_team_imports("changes_list_last_x");
+    let item_texts = |view: &SaveView| {
+        crate::view::prompt::rows(view.session.as_ref().unwrap())
+            .unwrap()
+            .iter()
+            .map(|row| format!("{} · {}", row.cells.item, row.cells.term.label))
+            .collect::<Vec<String>>()
+    };
+    let before = item_texts(&view);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    let at = egui::pos2(popup.left() + 60.0, popup.top() + 120.0);
+    window.frame(wheel(at, -1_000_000.0), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let read = |window: &mut Headless, view: &mut SaveView| {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        head_top(&list_nodes(&pairs))
+    };
+    until_settled(&mut window, &mut view, read);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    let last = before.last().expect("the case has rows");
+    // The last row is drawn, and its X on its line.
+    let x = x_of(&nodes, last).clone();
+    click(&mut window, &x, &mut view);
+    let after = item_texts(&view);
+    assert_eq!(
+        after,
+        before[..before.len() - 1],
+        "the last row's change put back"
+    );
 }
 
 // SE-GUI-74
