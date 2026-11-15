@@ -67,7 +67,11 @@ fn a_stack_overflow_leaves_a_dump_and_the_monitors_line() {
     };
     assert!(!status.success(), "the crashed run exited with {status}");
 
-    let dump = minidump::Minidump::read_path(sandbox.root.join("data/utw.dmp")).unwrap();
+    let log = fs::read_to_string(sandbox.root.join("data/utw.log")).unwrap();
+    // Under load the dump has gone missing; the log says whether the monitor
+    // ever answered (a Warn line when `start_monitor` gave up waiting).
+    let dump = minidump::Minidump::read_path(sandbox.root.join("data/utw.dmp"))
+        .unwrap_or_else(|error| panic!("no dump ({error}); the crashed run's log:\n{log}"));
     let threads: minidump::MinidumpThreadList = dump.get_stream().unwrap();
     assert!(!threads.threads.is_empty(), "the dump holds no thread");
     let exception: minidump::MinidumpException = dump.get_stream().unwrap();
@@ -77,7 +81,6 @@ fn a_stack_overflow_leaves_a_dump_and_the_monitors_line() {
     let expected = 11; // SIGSEGV
     assert_eq!(exception.raw.exception_record.exception_code, expected);
 
-    let log = fs::read_to_string(sandbox.root.join("data/utw.log")).unwrap();
     let last = log
         .lines()
         .rev()
