@@ -80,6 +80,8 @@ struct Preview {
     skips: Vec<String>,
     /// The table's rows: one per changed value, a player's together.
     rows: Vec<PatchRow>,
+    /// The table's measured geometry, filled on its first frame.
+    layout: prompt::TableLayout,
     /// The changed players as the patch leaves them: what Apply writes.
     patched: Vec<PlayerEntry>,
 }
@@ -248,6 +250,7 @@ fn preview(file: &EditFile, patch: &AestheticsPatch) -> Result<Preview, PatchErr
         writes: !summary.applied_players.is_empty(),
         skips,
         rows,
+        layout: prompt::TableLayout::default(),
         patched,
     })
 }
@@ -334,16 +337,16 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// summary and `Apply`; a refusal in the error colour in place of the
 /// rest; the skips in the warning colour; the table, or the weak line an
 /// empty one leaves when the patch writes a player of this save.
-fn contents(ui: &mut egui::Ui, patch: &Patch, revision: u64) -> Option<Action> {
+fn contents(ui: &mut egui::Ui, patch: &mut Patch, revision: u64) -> Option<Action> {
     let mut action = None;
     // The preview, or the refusal's text after the path.
-    let shown: Option<(&Path, Result<&Preview, String>)> = match &patch.loaded {
+    let shown: Option<(&Path, Result<&mut Preview, String>)> = match &patch.loaded {
         None => None,
         Some((path, Err(error))) => Some((path, Err(error.clone()))),
-        Some((path, Ok(_))) => patch.preview.as_ref().map(|(_, preview)| {
+        Some((path, Ok(_))) => patch.preview.as_mut().map(|(_, preview)| {
             (
                 path.as_path(),
-                preview.as_ref().map_err(ToString::to_string),
+                preview.as_mut().map_err(|error| error.to_string()),
             )
         }),
     };
@@ -387,7 +390,7 @@ fn contents(ui: &mut egui::Ui, patch: &Patch, revision: u64) -> Option<Action> {
                         "The save already holds every value this patch writes."
                     });
                 }
-            } else if let Some(player) = table(ui, &preview.rows) {
+            } else if let Some(player) = table(ui, preview) {
                 action = Some(Action::Select(player));
             }
         }
@@ -414,8 +417,9 @@ fn summary_line(path: &Path, preview: &Preview) -> String {
 /// short one leaves no empty room under it (the height not shrunk, the
 /// panel grew some 200 points of blank under a five-row patch); the player
 /// whose Item cell was clicked.
-fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
-    let tips: Vec<Option<&'static str>> = rows
+fn table(ui: &mut egui::Ui, preview: &mut Preview) -> Option<SelectedPlayer> {
+    let tips: Vec<Option<&'static str>> = preview
+        .rows
         .iter()
         .map(|row| row.select.map(|_| SWITCH_TOOLTIP))
         .collect();
@@ -425,12 +429,12 @@ fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
         .show(ui, |ui| {
             prompt::changes_table(
                 ui,
-                "save_editor_patch_table",
-                rows.iter().map(|row| &row.cells),
+                preview.rows.iter().map(|row| &row.cells),
                 Some(&tips),
+                &mut preview.layout,
             )
         })
         .inner
         .clicked
-        .and_then(|index| rows[index].select)
+        .and_then(|index| preview.rows[index].select)
 }

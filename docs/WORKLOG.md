@@ -2129,11 +2129,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-ownteam 2026-11-15 (SWE-2, merge `addf0000`): the import window's
     `Select <name> (<id>)` (SE-GUI-104). Look checked beside the draft, card
     `look-own-team-button`
-  - [ ] 0.0.2-changesperf the unsaved changes list and the close prompt scroll slowly once
-    four teams are imported (the maintainer, 2026-11-15): `view/prompt.rs` `changes_table`
-    lays out every row of an `egui::Grid` each frame -> verify: a test timing a frame of
-    the list with four teams' import rows against a bound measured first, red before; the
-    built window scrolled with four imports
+  - [x] 0.0.2-changesperf 2026-11-15 (SWE-2, merge `a6bba169`): the changes table lays out
+    only the rows in view, each cell measured once beside its rows (`prompt::TableLayout`);
+    a release frame of the list with four teams' 2,494 rows 17.45 ms -> 1.01 ms, the close
+    prompt 8.73 -> 0.97. Scrolled in the built window with two imports; card
+    `test-changes-scroll` asks the maintainer to try four
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -3462,6 +3462,8 @@ points there.
   member's machine running PES may also be. Not k5a's (it touches no crash path). Diagnose
   before trusting a dump on a loaded machine: rerun under the gates' load, read the
   monitor's own wait and the log it leaves; do not loosen the test
+  Again 2026-11-15 in changesperf's `gates-changed` (27 s, `FileNotFound`) beside three
+  Carbon runs and a sidekick's build; alone it passed in 0.16 s.
   Seen again 2026-11-14 in the lead's `gates-changed 62e261fa` (`FileNotFound` at
   `crash_dump.rs:70`, beside a SWE-2 census build); alone it passed in 0.27 s.
 

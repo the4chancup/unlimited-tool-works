@@ -124,6 +124,8 @@
   Strip color, White, Black and Beige, where they offered the numbers 0 to 7. An export's
   `settings.toml` names the four in its comment, and the Compiler refuses 4 to 7 there,
   which the game never offers.
+- **Save editor**: the unsaved changes list and the close prompt no longer scroll slowly
+  after several teams are imported.
 
 ### Minor fixes
 
