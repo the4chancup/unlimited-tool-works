@@ -1,13 +1,13 @@
-//! The Save editor's section of the settings file: its twelve keys. `check-aatf` and the window's
+//! The Save editor's section of the settings file: its thirteen keys. `check-aatf` and the window's
 //! AATF checks read `aatf_ruleset` (the toolbar's ruleset dropdown writes it); the window reads
 //! `live_aatf` (the toolbar's Live AATF toggle), `live_suggestions` (its Show suggestions
 //! checkbox), `live_window` (whether Live AATF's list stands in its own window or its dock),
 //! `aesthetics_from_exports` ("Aesthetics from exports", the aesthetics lock's setting),
 //! `scroll_names` and `portraits` (the Tactics formation bar's checkboxes),
 //! `positions_layout` (the Playable positions grid's layout toggle),
-//! `team_category` (the team selector's radio buttons), `formation_pictures_folder` and
-//! `formation_pictures_flat` (the formation pictures' folder and grain box) and `last_folder`
-//! (the folder the file
+//! `team_category` (the team selector's radio buttons), `formation_pictures_folder`,
+//! `formation_pictures_flat` and `formation_pictures_settings` (the formation pictures'
+//! folder, grain box and settings box) and `last_folder` (the folder the file
 //! picker starts in). A key enters with the code that reads
 //! it, so the file never carries a setting nothing honors.
 
@@ -67,6 +67,10 @@ pub(crate) struct SaveEditorSettings {
     /// The formation pictures' "Without the pitch's grain (smaller file)" box, off by
     /// default: on, the pitch is painted in flat bands, which a PNG holds in a smaller file.
     pub(crate) formation_pictures_flat: bool,
+    /// The formation pictures' "With each preset's settings beside its row" box, off by
+    /// default: on, each preset's settings list beside its row and the team's
+    /// Automatic settings on a line under the grid.
+    pub(crate) formation_pictures_settings: bool,
     /// The folder the last save was opened from, by whichever of the opens: the file
     /// picker starts there while it exists, so a member who keeps his saves in a folder
     /// of his own is taken back to it. Written on every open, as `scroll_names` is.
@@ -87,6 +91,7 @@ impl Default for SaveEditorSettings {
             team_category: default_team_category(),
             formation_pictures_folder: "formations".to_owned(),
             formation_pictures_flat: false,
+            formation_pictures_settings: false,
             last_folder: None,
         }
     }
@@ -201,9 +206,10 @@ mod tests {
         assert_eq!(
             (
                 read.formation_pictures_folder.as_str(),
-                read.formation_pictures_flat
+                read.formation_pictures_flat,
+                read.formation_pictures_settings
             ),
-            ("formations", false),
+            ("formations", false, false),
             "a file without the keys reads the defaults"
         );
         let table: toml::Table = toml::from_str(
@@ -216,6 +222,26 @@ mod tests {
             Some("D:\\cup\\pictures")
         );
         assert_eq!(written["formation_pictures_flat"].as_bool(), Some(true));
+    }
+
+    #[test]
+    fn the_settings_box_defaults_off_and_round_trips() {
+        assert_eq!(
+            default_table()
+                .get("formation_pictures_settings")
+                .and_then(toml::Value::as_bool),
+            Some(false),
+            "off by default"
+        );
+        let table: toml::Table = toml::from_str("formation_pictures_settings = true").unwrap();
+        let written = toml::Table::try_from(from_table(&table).unwrap()).unwrap();
+        assert_eq!(
+            written
+                .get("formation_pictures_settings")
+                .and_then(toml::Value::as_bool),
+            Some(true),
+            "read in and written back"
+        );
     }
 
     #[test]

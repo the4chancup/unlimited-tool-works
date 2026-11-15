@@ -148,6 +148,7 @@ impl StudioTool for Tool {
         self.view.positions_layout = positions_layout;
         self.view.formation_pictures_folder = tool_settings.formation_pictures_folder.clone();
         self.view.formation_pictures_flat = tool_settings.formation_pictures_flat;
+        self.view.formation_pictures_settings = tool_settings.formation_pictures_settings;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
         // Everything the editor needs of a PES version is the open save's: its
@@ -173,10 +174,10 @@ impl StudioTool for Tool {
         // The toolbar's ruleset dropdown, its toggle and Show suggestions,
         // where Live AATF's list stands, the formation bar's Scroll and
         // Portraits checkboxes, the positions grid's layout toggle, the
-        // selector's category, the formation pictures' folder and grain box
-        // and the picker's last folder are settings: the table as read with only
-        // those keys replaced, so any other key survives (as `settings_view`
-        // writes `aesthetics_from_exports`).
+        // selector's category, the formation pictures' folder, settings box
+        // and grain box and the picker's last folder are settings: the table
+        // as read with only those keys replaced, so any other key survives
+        // (as `settings_view` writes `aesthetics_from_exports`).
         if self.view.aatf_ruleset != tool_settings.aatf_ruleset
             || self.view.live_aatf != tool_settings.live_aatf
             || self.view.live_suggestions != tool_settings.live_suggestions
@@ -187,6 +188,7 @@ impl StudioTool for Tool {
             || self.view.team_category != team_category
             || self.view.formation_pictures_folder != tool_settings.formation_pictures_folder
             || self.view.formation_pictures_flat != tool_settings.formation_pictures_flat
+            || self.view.formation_pictures_settings != tool_settings.formation_pictures_settings
             || self.view.last_folder != tool_settings.last_folder
         {
             let mut table = table;
@@ -229,6 +231,10 @@ impl StudioTool for Tool {
             table.insert(
                 "formation_pictures_flat".to_owned(),
                 toml::Value::Boolean(self.view.formation_pictures_flat),
+            );
+            table.insert(
+                "formation_pictures_settings".to_owned(),
+                toml::Value::Boolean(self.view.formation_pictures_settings),
             );
             match &self.view.last_folder {
                 Some(folder) => table.insert(

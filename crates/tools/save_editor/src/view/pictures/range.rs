@@ -48,8 +48,6 @@ pub(crate) struct RangeDialog {
     last: u32,
     /// The folder the pictures go to, as typed or picked.
     folder: String,
-    /// The settings box: each preset's settings beside its row.
-    settings: bool,
     /// The Portraits box: this run's alone, never written back to the
     /// formation bar's setting.
     portraits: bool,
@@ -125,22 +123,22 @@ impl RangeDialog {
             last: ids().max()?,
             // An absolute setting replaces `exe_dir` in the join.
             folder: exe_dir.join(folder_setting).display().to_string(),
-            settings: false,
             portraits,
             stage: Stage::Picking,
         })
     }
 
     /// Save pictures: the run over the range's teams, with the boxes as
-    /// they are now (`flat` the grain box), at `width`.
-    fn start(&mut self, file: &EditFile, flat: bool, width: f32) {
+    /// they are now (`flat` the grain box, `settings` the settings box),
+    /// at `width`.
+    fn start(&mut self, file: &EditFile, flat: bool, settings: bool, width: f32) {
         self.stage = Stage::Writing {
             ids: range_ids(file, self.first, self.last),
             written: 0,
             options: PictureOptions {
                 portraits: self.portraits,
                 flat,
-                settings: self.settings,
+                settings,
             },
             on_screen: false,
             width,
@@ -220,6 +218,7 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         session,
         pick_folder_dialog,
         formation_pictures_flat,
+        formation_pictures_settings,
         ..
     } = view;
     let (Some(dialog), Some(session)) = (pictures_range.as_mut(), session.as_ref()) else {
@@ -236,6 +235,7 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 dialog,
                 file,
                 pick_folder_dialog,
+                formation_pictures_settings,
                 formation_pictures_flat,
             ),
             Stage::Writing {
@@ -263,7 +263,12 @@ pub(crate) fn range_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         Asked::Nothing => response.should_close(),
         Asked::Close => true,
         Asked::Save { width } => {
-            dialog.start(file, *formation_pictures_flat, width);
+            dialog.start(
+                file,
+                *formation_pictures_flat,
+                *formation_pictures_settings,
+                width,
+            );
             ui.ctx().request_repaint();
             false
         }
@@ -298,6 +303,7 @@ fn picking(
     dialog: &mut RangeDialog,
     file: &EditFile,
     pick_folder_dialog: &mut PickFolderDialog,
+    settings: &mut bool,
     flat: &mut bool,
 ) -> Asked {
     let grid = dialog_form(ui, "save_editor_pictures_range_grid", |ui| {
@@ -345,9 +351,9 @@ fn picking(
     let at = room.translate(egui::vec2(grid.response.rect.right() - room.right(), 0.0));
     ui.new_child(egui::UiBuilder::new().max_rect(at))
         .add(egui::Label::new(egui::RichText::new(counted(count, "team")).weak()).extend());
-    picture_boxes(ui, &mut dialog.settings, &mut dialog.portraits, flat);
+    picture_boxes(ui, settings, &mut dialog.portraits, flat);
     modal_sentence_gap(ui);
-    file_name_line(ui, file, dialog.first, dialog.settings);
+    file_name_line(ui, file, dialog.first);
     // The button row takes the content's width and never widens it.
     let width = ui.min_rect().width();
     modal_buttons(ui, |ui| {
@@ -363,32 +369,14 @@ fn picking(
     })
 }
 
-/// The line naming the file of the range's first team, `first`, under the
-/// settings box (`settings`). Its cell is as wide as the longer of the
-/// box's two states, as the draft's hidden twin makes it, so the dialog
-/// keeps its width when the box flips.
-fn file_name_line(ui: &mut egui::Ui, file: &EditFile, first: u32, settings: bool) {
+/// The line naming the file of the range's first team, `first`.
+fn file_name_line(ui: &mut egui::Ui, file: &EditFile, first: u32) {
     let name = &file.team(first).expect("the range's first team").name;
-    let line = |settings: bool| {
-        format!(
-            "One picture per team, named after it ({}), overwriting files with the same names.",
-            picture_file_name(first, name, settings)
-        )
-    };
-    let font = egui::TextStyle::Body.resolve(ui.style());
-    let width = [false, true]
-        .map(|settings| {
-            ui.painter()
-                .layout_no_wrap(line(settings), font.clone(), egui::Color32::PLACEHOLDER)
-                .size()
-                .x
-        })
-        .into_iter()
-        .fold(0.0_f32, f32::max);
-    ui.scope(|ui| {
-        ui.set_min_width(width);
-        ui.add(egui::Label::new(egui::RichText::new(line(settings)).weak()).extend());
-    });
+    let line = format!(
+        "One picture per team, named after it ({}), overwriting files with the same names.",
+        picture_file_name(first, name)
+    );
+    ui.add(egui::Label::new(egui::RichText::new(line).weak()).extend());
 }
 
 /// A frame of the run, `written` pictures written before it: `Writing k of
@@ -517,7 +505,7 @@ fn write_next(ui: &egui::Ui, view: &mut SaveView, team_id: u32, options: Picture
         .team(team_id)
         .expect("a team of the range")
         .name;
-    let file_name = picture_file_name(team_id, name, options.settings);
+    let file_name = picture_file_name(team_id, name);
     let written = save_picture(ui.visuals(), view, team_id, options, &folder, &file_name)
         .map_err(|error| format!("Could not write {file_name}: {error}"));
     view.pictures_range

@@ -111,9 +111,10 @@ pub(crate) fn formations_picture(
 
 /// The picture's file name: the team's display name less the characters a
 /// file name cannot hold (`f.png` for /f/), or `team_id` when nothing is
-/// left of it, and ` settings` before the extension for a picture with the
-/// presets' settings.
-pub(crate) fn picture_file_name(team_id: u32, raw_name: &str, settings: bool) -> String {
+/// left of it. A picture with the settings is named as one without: a
+/// member needs one kind of picture, so the new kind replaces the old in
+/// the folder.
+pub(crate) fn picture_file_name(team_id: u32, raw_name: &str) -> String {
     let name: String = display_name(raw_name)
         .chars()
         .filter(|c| !r#"\/:*?"<>|"#.contains(*c))
@@ -124,9 +125,6 @@ pub(crate) fn picture_file_name(team_id: u32, raw_name: &str, settings: bool) ->
     } else {
         name.to_owned()
     };
-    if settings {
-        file.push_str(" settings");
-    }
     file.push_str(".png");
     file
 }
@@ -1248,16 +1246,12 @@ mod tests {
 
     #[test]
     fn a_picture_s_file_name_is_the_name_a_file_can_hold() {
-        for (raw_name, settings, expected) in [
-            ("/f/", false, "f.png"),
-            ("/f/", true, "f settings.png"),
+        for (raw_name, expected) in [
+            ("/f/", "f.png"),
             // No team's name is made of these alone.
-            (r#" /\:*?"<>| "#, false, "718.png"),
+            (r#" /\:*?"<>| "#, "718.png"),
         ] {
-            assert_eq!(
-                picture_file_name(KICK_OFF_ALONE, raw_name, settings),
-                expected
-            );
+            assert_eq!(picture_file_name(KICK_OFF_ALONE, raw_name), expected);
         }
     }
 }

@@ -256,6 +256,10 @@ pub(crate) struct SaveView {
     /// from and written back to the `formation_pictures_flat` setting as
     /// `live_aatf` is.
     pub(crate) formation_pictures_flat: bool,
+    /// The picture dialogs' "With each preset's settings beside its row"
+    /// box, refreshed from and written back to the
+    /// `formation_pictures_settings` setting as `live_aatf` is.
+    pub(crate) formation_pictures_settings: bool,
     /// The program's own folder, where a picture's default folder sits:
     /// `Tool::view` sets it on its first frame; empty in the tests'
     /// view-only frames.
@@ -536,6 +540,7 @@ impl SaveView {
             pictures_range: None,
             formation_pictures_folder: String::new(),
             formation_pictures_flat: false,
+            formation_pictures_settings: false,
             exe_dir: PathBuf::new(),
             pes_exe_check: None,
             pes_folder: None,
