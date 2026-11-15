@@ -2088,6 +2088,24 @@ briefs, review loops, gates and mutation runs as for any step.
       `rs_tiers`), so a slice there is measured, not looked at
     - [x] 2026-11-15 (lead) `draft_compare.py kit_slots` opens the PES 17 sample's team 718,
       whose ten kit slots the draft shows (the build side: `EDIT17`)
+  - [ ] 0.0.2-mdocs (the maintainer, 2026-11-15: "Markdown is a fairly limited format") the
+    maintainer's documents as HTML pages: `docs/maintainer/questions.html` and
+    `proposals.html` replace `QUESTIONS.md` and `PROPOSALS.md`, and a new `tasks.html` lists
+    what waits on the maintainer's hands (a test, a look, a hand-over), so the maintainer
+    items of the worklog's "Pending looks" move there (the Linux bundle's Reset window check,
+    poc.5's in-game check and hand-over, ...). One shared `maintainer.css` and `maintainer.js`:
+    each entry a card with choice buttons (radio cards with a note under each option, as
+    `.tmp/text_choices/choices.html`), a box for an own answer, picks kept in the browser and
+    a "Copy my picks" button whose text the maintainer pastes into the chat; a layout choice
+    shows its screenshots side by side (tracked under `docs/maintainer/img/`, removed with
+    their entry) or the live draft by link. A check script validates the pages' shape (ids,
+    choices or an answer box, images present) -> verify: the pages open from disk, the picks
+    survive a reload and copy as text, the check script red on a broken entry
+    - [ ] questions.html first, every current entry, shown to the maintainer
+    - [ ] proposals.html and tasks.html
+    - [ ] every pointer moved (AGENTS.md's table and rules, RUNBOOK "Looks owed are one
+      list", CONTRIBUTING, `scripts/dev_cycle_map.py`, the plans, the lead's memories), the
+      two Markdown files removed
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
