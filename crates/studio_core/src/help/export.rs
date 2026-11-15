@@ -317,18 +317,20 @@ mod tests {
                 "setting-up",
                 "first-run",
                 "updates",
+                "reporting",
                 "whats-new",
                 "alpha",
                 "beta"
             ]
         );
-        let titles: Vec<&str> = chapters[..4].iter().map(|(_, s)| s.title).collect();
+        let titles: Vec<&str> = chapters[..5].iter().map(|(_, s)| s.title).collect();
         assert_eq!(
             titles,
             [
                 "Setting up",
                 "First run and data location",
                 "Updates",
+                "Reporting a problem",
                 "What's new"
             ]
         );
@@ -375,6 +377,7 @@ mod tests {
             "setting-up  Setting up (install)\n\
              first-run  First run and data location (data-location)\n\
              updates  Updates (updating)\n\
+             reporting  Reporting a problem (report)\n\
              whats-new  What's new (changelog)\n\
              alpha  Alpha (topic-a, messages)\n\
              beta  Beta ()\n"
@@ -412,7 +415,7 @@ mod tests {
         assert_eq!(
             error.to_string(),
             "there is no help chapter `nope` (the chapters are setting-up, first-run, updates, \
-             whats-new, alpha, beta)"
+             reporting, whats-new, alpha, beta)"
         );
         let error = run_help(&tools, Some("alpha"), Some("nope"), None, &mut out).unwrap_err();
         assert_eq!(error.exit_code, 2);
@@ -449,6 +452,7 @@ mod tests {
                 "alpha.md",
                 "beta.md",
                 "first-run.md",
+                "reporting.md",
                 "setting-up.md",
                 "updates.md",
                 "whats-new.md"

@@ -101,6 +101,9 @@
 - **Save editor**: in the Import / export window, a button beside `Import into` selects the
   team the picked file was exported from, so it imports back onto that team without a
   search in the list.
+- **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
+  report of something that went wrong: what you did in each tool, the files it opened and
+  wrote, the log, your settings and your own words. Nothing is sent: you post the file.
 
 ### New checks
 
