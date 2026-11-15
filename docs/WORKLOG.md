@@ -2113,7 +2113,16 @@ briefs, review loops, gates and mutation runs as for any step.
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
     - [x] built (2026-11-15, SWE-2 and the lead; merge `ced67b83`): ST-REP-01 to 04 pass, a
       help chapter of its own ("Reporting a problem") and the changelog line
-    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), then
+    - [ ] the whole chain once, as a member runs it: the tests cover it in pieces (the
+      dialog writing a stub tool's bundle, ST-REP-02; the Save editor's state, ST-REP-04; a
+      recorded `Session`'s bundle replaying to a matching write, `replay.rs`), never through
+      the shell with the real Save editor -> verify: a test with the Save editor registered in
+      the shell opens a fixture save, edits a player, saves, clicks Report a problem and
+      Save…, then reads the zip back (`repro::read_bundle`): replay's one `Matches` on the
+      write, `state/` the edited save, the input and output kept; red with the tool's
+      journal not handed to the dialog (SWE-2, after barrw3)
+    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
+      through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
