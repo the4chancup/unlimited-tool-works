@@ -13,7 +13,7 @@ use pes_savefile::schema::instruction::encode;
 use pes_savefile::schema::playstyle;
 
 use crate::session::import_sections::{Sections, keep_sections};
-use crate::view::interchange::{Import, held, stage};
+use crate::view::interchange::{Import, NoteGroup, held, stage};
 
 use super::*;
 
@@ -1246,6 +1246,37 @@ fn imported_player(import: &Import, id: u32) -> PlayerEntry {
         .clone()
 }
 
+/// The notes a stats copy of `from_team`'s roster `slot` of `from`
+/// stages onto `onto_team` of `onto`: the player's table, Stats alone,
+/// placed on the target's slot as `paste` builds it — built from the
+/// source save, not the clipboard text, so a copy that drops a key
+/// shows here.
+fn staged_notes(
+    from: &EditFile,
+    from_team: u32,
+    onto: &EditFile,
+    onto_team: u32,
+    slot: u8,
+) -> Vec<NoteGroup> {
+    let players: Vec<&PlayerEntry> = from.players().iter().collect();
+    let mut exported = TeamToml::from_team(from.version(), from.team(from_team).unwrap(), &players)
+        .expect("the source team exports");
+    keep_sections(&mut exported, STATS);
+    // `[players.NN]` counts the roster slots from 1.
+    let key = slot + 1;
+    let placed = TeamToml {
+        pes_version: exported.pes_version,
+        players: BTreeMap::from([(
+            key,
+            exported.players.remove(&key).expect("the slot's table"),
+        )]),
+        ..TeamToml::default()
+    };
+    stage(onto, onto.team(onto_team).unwrap(), &placed, STATS)
+        .expect("the document stages onto the target")
+        .notes
+}
+
 // SE-GUI-72
 #[test]
 fn a_players_stats_copied_in_one_window_paste_into_a_save_of_another_version() {
@@ -1576,31 +1607,11 @@ fn a_paste_from_another_version_ends_its_notice_with_the_dropped_count() {
 
     // The notes the paste's staged import carries: the copy's one player
     // table placed on the target's first slot, as `paste` builds it.
-    let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
-    let mut placed = TeamToml {
-        pes_version: document.pes_version,
-        ..TeamToml::default()
-    };
-    placed.players = BTreeMap::from([(
-        1,
-        document
-            .players
-            .into_values()
-            .next()
-            .expect("a stats copy holds one player table"),
-    )]);
-    let expected = stage(
-        file(&view17),
-        file(&view17).team(701).unwrap(),
-        &placed,
-        STATS,
-    )
-    .expect("the document stages onto 701");
-    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
-    assert!(count >= 3, "premise: several keys PES 17 lacks: {count}");
+    let notes = staged_notes(file(&view21), 714, file(&view17), 701, 0);
+    let count: usize = notes.iter().map(|group| group.notes.len()).sum();
+    assert_eq!(count, 3, "premise: the three keys PES 17 lacks");
     assert!(
-        expected
-            .notes
+        notes
             .iter()
             .all(|group| group.code == "import_key_not_in_version"),
         "premise: every note a key the version does not store"
@@ -1753,32 +1764,10 @@ fn a_paste_mixing_dropped_and_changed_notes_uses_the_changed_tail() {
 
     // The notes the paste's staged import carries: the copy's one player
     // table placed on the target's first slot, as `paste` builds it.
-    let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
-    let mut placed = TeamToml {
-        pes_version: document.pes_version,
-        ..TeamToml::default()
-    };
-    placed.players = BTreeMap::from([(
-        1,
-        document
-            .players
-            .into_values()
-            .next()
-            .expect("a stats copy holds one player table"),
-    )]);
-    let expected = stage(
-        file(&view17),
-        file(&view17).team(701).unwrap(),
-        &placed,
-        STATS,
-    )
-    .expect("the document stages onto 701");
-    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
-    let codes: Vec<&str> = expected
-        .notes
-        .iter()
-        .map(|group| group.code.as_str())
-        .collect();
+    let notes = staged_notes(file(&view21), 714, file(&view17), 701, 0);
+    let count: usize = notes.iter().map(|group| group.notes.len()).sum();
+    assert_eq!(count, 4, "premise: the keys PES 17 lacks");
+    let codes: Vec<&str> = notes.iter().map(|group| group.code.as_str()).collect();
     assert!(
         codes.contains(&"import_key_not_in_version")
             && codes.contains(&"import_value_not_encodable"),
@@ -1811,28 +1800,21 @@ fn a_paste_leaving_one_value_out_uses_the_singular_tail() {
     // lacks, so the staged import holds the one `NotInThisVersion` note.
     let text = "# Unlimited Tool Works: SOMEONE's stats\n# copied: stats\n\
                 pes_version = 21\n\n[players.01.stats]\ntight_possession = 1\n";
-    let placed = TeamToml {
-        pes_version: Some(PesVersion::Pes21),
-        players: BTreeMap::from([(
-            1,
-            TeamToml::parse("pes_version = 21\n\n[players.01.stats]\ntight_possession = 1\n")
-                .expect("the document parses")
-                .players
-                .into_values()
-                .next()
-                .expect("one player table"),
-        )]),
-        ..TeamToml::default()
-    };
-    let expected = stage(
-        file(&view17),
-        file(&view17).team(701).unwrap(),
-        &placed,
-        STATS,
-    )
-    .expect("the document stages onto 701");
-    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
-    assert_eq!(count, 1, "premise: the one dropped key is one note");
+    // The file stand-in for the same stage: the PES 20+ keys the
+    // fixture's player always carries (`aggression` and `stronger_hand`)
+    // are cleared, so `tight_possession` is left as the one note.
+    let mut source = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let id = source.team(714).unwrap().roster[0].player_id;
+    let player = source.player_mut(id).unwrap();
+    player.stats.tight_possession = Some(1);
+    player.stats.aggression = None;
+    player.positions.stronger_hand = None;
+    let notes = staged_notes(&source, 714, file(&view17), 701, 0);
+    assert_eq!(
+        notes.iter().map(|group| group.notes.len()).sum::<usize>(),
+        1,
+        "premise: the one dropped key is one note"
+    );
     ctrl_v(&mut window17, &mut view17, text);
     let b_name = display_name(
         &player_entry(
@@ -2141,10 +2123,30 @@ fn the_edit_menu_is_undo_redo_then_copy_paste_under_a_separator() {
     assert_eq!(gap(entries[2], entries[3]), 0.0, "Copy meets Paste");
 }
 
+/// The Edit menu's Copy and Paste hovers for the target now selected,
+/// each read by resting the pointer on the entry in the open menu.
+fn assert_edit_menu_tips(
+    window: &mut Headless,
+    view: &mut SaveView,
+    copy_tip: &str,
+    paste_tip: &str,
+) {
+    let nodes = open_menu(window, view, "Edit", "Copy");
+    assert_eq!(
+        tooltip_containing(window, view, centre(menu_item(&nodes, "Copy")), "Copies "),
+        Some(copy_tip.to_owned()),
+        "Copy's hover names the copy"
+    );
+    assert_eq!(
+        tooltip_containing(window, view, centre(menu_item(&nodes, "Paste")), "Pastes "),
+        Some(paste_tip.to_owned()),
+        "Paste's hover names the kind and the target"
+    );
+}
+
 // Each enabled entry's hover says what it does, in the notices' words:
-// a player row's `Copies <his stats>` and `Pastes the copied stats onto
-// <him>`, a pressed preset's `Copies <team>'s preset 1` and `Pastes the
-// copied preset onto <team>'s preset 1`.
+// Copy names its copy (`Copies …`), Paste the copy's kind and the
+// target (`Pastes the copied … onto …`), for each kind of target.
 // SE-GUI-56
 #[test]
 fn the_edit_menus_hovers_name_the_copy_and_the_target() {
@@ -2152,51 +2154,42 @@ fn the_edit_menus_hovers_name_the_copy_and_the_target() {
     view.team = TeamChoice::Team(701);
     click_player_row(&mut window, &mut view, 701, 0);
     let name = display_name(&player_entry(&view, 70101).name);
-    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
-    assert_eq!(
-        tooltip_containing(
-            &mut window,
-            &mut view,
-            centre(menu_item(&nodes, "Copy")),
-            "Copies "
-        ),
-        Some(format!("Copies {name}'s stats")),
-        "Copy's hover names the copy"
+    assert_edit_menu_tips(
+        &mut window,
+        &mut view,
+        &format!("Copies {name}'s stats"),
+        &format!("Pastes the copied stats onto {name}"),
     );
-    assert_eq!(
-        tooltip_containing(
-            &mut window,
-            &mut view,
-            centre(menu_item(&nodes, "Paste")),
-            "Pastes "
-        ),
-        Some(format!("Pastes the copied stats onto {name}")),
-        "Paste's hover names the kind and the target"
+
+    let (mut window, mut view) = open_window(&stats_fixture("clip_menu_tips_team"));
+    click_team_row(&mut window, &mut view, 701);
+    let name = display_name(&team_entry(&view, 701).name);
+    assert_edit_menu_tips(
+        &mut window,
+        &mut view,
+        &format!("Copies {name}'s Gameplan"),
+        &format!("Pastes the copied Gameplan onto {name}"),
     );
 
     let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips_preset"));
     open_team_view(&mut window, &mut view, 701);
     click_button(&mut window, &mut view, "1");
     let name = display_name(&team_entry(&view, 701).name);
-    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
-    assert_eq!(
-        tooltip_containing(
-            &mut window,
-            &mut view,
-            centre(menu_item(&nodes, "Copy")),
-            "Copies "
-        ),
-        Some(format!("Copies {name}'s preset 1")),
-        "Copy's hover names the preset copy"
+    assert_edit_menu_tips(
+        &mut window,
+        &mut view,
+        &format!("Copies {name}'s preset 1"),
+        &format!("Pastes the copied preset onto {name}'s preset 1"),
     );
-    assert_eq!(
-        tooltip_containing(
-            &mut window,
-            &mut view,
-            centre(menu_item(&nodes, "Paste")),
-            "Pastes "
-        ),
-        Some(format!("Pastes the copied preset onto {name}'s preset 1")),
-        "Paste's hover names the kind and the target"
+
+    let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips_formation"));
+    open_team_view(&mut window, &mut view, 701);
+    click_button(&mut window, &mut view, "Kick-off");
+    let name = display_name(&team_entry(&view, 701).name);
+    assert_edit_menu_tips(
+        &mut window,
+        &mut view,
+        &format!("Copies {name}'s preset 1 Kick-off formation"),
+        &format!("Pastes the copied formation onto {name}'s preset 1 Kick-off formation"),
     );
 }
