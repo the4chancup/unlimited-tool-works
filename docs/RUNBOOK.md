@@ -90,7 +90,9 @@ would have shown. The states captured include each tool's first open, from a fre
 beside the draft's first view: the Ruleset editor once opened on a full page where its draft
 opens a dialog, and only the maintainer saw it. Starting the built window takes the screen, so in an interactive session the
 lead asks once before a batch of captures, and a SWE-2 sidekick, which cannot judge a look,
-never makes this check.
+never makes this check. The question never holds the queue: the next build or sidekick
+starts before it is asked, since a capture needs little CPU and the answer may take hours
+(one waited two, with nothing building).
 
 **Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
 that own disjoint files, the release path's first. The limits are the disk (a worktree that
