@@ -94,8 +94,9 @@ impl StatusBar {
     /// sidebar order (the active tool's run strip already shows its own).
     /// `monitor_of` names the monitor the window stands on, from the frame's
     /// viewport and zoom (`window_size::monitor_under`), asked only when Reset window is
-    /// clicked. Returns the notice action the user clicked, for the shell to apply; clicking
-    /// it also dismisses the notice.
+    /// clicked. Returns the clicked action's effect for the shell to apply: the
+    /// notice's own, which also dismisses the notice, or a left-slot entry's
+    /// (the update entry's Details), which dismisses nothing.
     pub(super) fn show(
         &mut self,
         ui: &mut egui::Ui,
@@ -227,7 +228,9 @@ impl StatusBar {
                 }
             },
         );
-        if effect.is_some() || dismissed {
+        // A left-slot effect (the update entry's Details) is not the
+        // notice's: it changes nothing here, and the notice stays.
+        if dismissed {
             self.dismiss();
         }
         effect
@@ -337,7 +340,7 @@ mod tests {
 
     use crate::shell::StudioApp;
     use crate::shell::test_harness::*;
-    use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
+    use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind, ShellCondition};
 
     /// The `Label` nodes' texts drawn inside the bottom 24 px of the 800x600 screen (a
     /// `RichText` label also leaves a `TextRun` child, so `Label` alone is counted).
@@ -939,6 +942,48 @@ mod tests {
         assert_eq!(app.active, 1, "dismiss applies nothing");
         let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(23.0)).nodes;
         assert!(!has_text(&nodes, "dismiss me"), "dismissed");
+    }
+
+    // A click in the left slot is not the notice's: the update entry's Details
+    // applies its own effect and the standing notice is left alone.
+    // ST-BAR-03
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn a_click_on_the_left_slots_update_entry_keeps_the_notice() {
+        let Shell {
+            mut app, ctx, _dir, ..
+        } = shell();
+        let egui_ctx = test_context();
+        app.status_bar.set_condition(
+            ShellCondition::UpdateAvailable {
+                version: "0.0.2".to_owned(),
+            },
+            true,
+        );
+        ctx.notify(Notice {
+            text: "standing".to_owned(),
+            kind: NoticeKind::Info,
+            action: Some(NoticeAction {
+                label: "Go".to_owned(),
+                effect: ActionEffect::SwitchTool("b".to_owned()),
+            }),
+        });
+
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Details"));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            has_text(&nodes, "standing"),
+            "the left slot's click leaves the notice"
+        );
+
+        click(&egui_ctx, &mut app, entry(&nodes, "Go"));
+        assert_eq!(app.active, 1, "the notice's own action still applies");
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            !has_text(&nodes, "standing"),
+            "the notice's own action still dismisses it"
+        );
     }
 
     // ST-BAR-03

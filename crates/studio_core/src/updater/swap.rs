@@ -13,7 +13,7 @@ use super::install::InstallError;
 
 /// The folder beside the program that keeps the previous version's program
 /// after an update, one version deep.
-pub(super) const OLD_FOLDER: &str = "old";
+const OLD_FOLDER: &str = "old";
 
 /// The bundle's folder of member data (the settings file, the teams list). An
 /// update never reads, writes or removes anything under it, although the
@@ -66,7 +66,7 @@ impl fmt::Display for SwapStep {
 /// the folder, parents before children, `data/` left out.
 pub(super) struct StagedBundle {
     /// The unpacked bundle's own folder.
-    pub(super) root: PathBuf,
+    root: PathBuf,
     /// Its subfolders, so an empty one (`exports/`) reaches the program's folder too.
     folders: Vec<PathBuf>,
     /// Its files, the program aside: the program moves first, through `old/`.
@@ -344,6 +344,31 @@ mod tests {
             Some("old readme"),
             "the older move is undone"
         );
+    }
+
+    // `read_dir`'s own order is the platform's (creation order, or NTFS's
+    // case-folded index, both of which put `a` before `B` here): the lists
+    // the swap works through come out in byte order, `B` before `a` before `z`.
+    #[test]
+    fn list_orders_the_bundles_files_and_folders_by_byte() {
+        let dir = TestDir::new("studio_core_swap_order");
+        let bundle = dir.path().to_path_buf();
+        for name in ["z.txt", "a.txt", "B.txt"] {
+            fs::write(bundle.join(name), "a file").unwrap();
+        }
+        for name in ["z_dir", "a_dir", "B_dir"] {
+            fs::create_dir(bundle.join(name)).unwrap();
+        }
+
+        let staged = StagedBundle::list(bundle).unwrap();
+        let names = |paths: &[PathBuf]| {
+            paths
+                .iter()
+                .map(|path| path.to_str().unwrap().to_owned())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&staged.files), ["B.txt", "a.txt", "z.txt"]);
+        assert_eq!(names(&staged.folders), ["B_dir", "a_dir", "z_dir"]);
     }
 
     #[test]

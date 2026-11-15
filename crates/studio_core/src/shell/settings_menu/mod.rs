@@ -416,7 +416,7 @@ impl SettingsMenu {
                     ui,
                     "Check interval (minutes)",
                     "check_interval_minutes",
-                    "The minutes between two checks for a newer version.",
+                    "The minutes between two of the window's checks for a newer version.",
                 );
                 let mut minutes = common.check_interval_minutes;
                 // The interval is off while the check is, as the draft draws it;
