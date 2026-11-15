@@ -222,6 +222,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // report it wins (a pointer on the edge two rows share hovers both,
     // and the release there goes to the upper one).
     let mut drop_mark = None;
+    // The `Id` the list's scroll area keeps its `State` under:
+    // `.id_salt` below wraps the name in `IdSalt::new` itself, so
+    // `make_persistent_id` of the same `IdSalt` is the area's `Id`,
+    // letting `State::load` read the current offset for `Nearest`.
+    let scroll_salt = "save_editor_player_list";
     // Not shrunk: the frame takes the panel's height whatever few rows a
     // filter leaves. The scope clears the extreme background, which a
     // solid bar's track paints in at full opacity: the draft's `.vbar` has
@@ -230,86 +235,97 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     let output = ui
         .scope(|ui| {
             ui.visuals_mut().extreme_bg_color = egui::Color32::TRANSPARENT;
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, false])
-                .show_rows(ui, layout.row_height, rows.len(), |ui, range| {
-                    if let Some((index, reveal)) = reveal {
-                        // `show_rows` draws only the rows in view, so the
-                        // row's rect comes from its index, the first drawn
-                        // row standing at the cursor; `Nearest` scrolls
-                        // the least that shows it, `Top` to the clip's top
-                        // edge, at once, so a held key's repeats never
-                        // outrun an animation.
-                        let top = ui.cursor().top()
-                            + (index as f32 - range.start as f32) * layout.row_height;
-                        let rect = egui::Rect::from_min_size(
-                            egui::pos2(ui.cursor().left(), top),
-                            egui::vec2(layout.width, layout.row_height),
-                        );
-                        ui.scroll_to_rect_animation(
-                            rect,
-                            match reveal {
-                                Reveal::Nearest => None,
-                                Reveal::Top => Some(egui::Align::TOP),
-                            },
-                            egui::style::ScrollAnimation::none(),
-                        );
-                    }
-                    for row in &rows[range] {
-                        match row {
-                            ListRow::Team(team_id) => {
-                                let double_clicked = team_row(
-                                    ui,
-                                    &mut view.selected,
-                                    &mut view.click_kind,
-                                    session,
-                                    *team_id,
-                                    layout,
-                                    held.as_ref().filter(|(id, _)| *id == *team_id).map(
-                                        |(_, violations)| live_marks::row_mark(violations, None),
-                                    ),
-                                );
-                                if double_clicked {
-                                    shown_team = Some(*team_id);
-                                }
-                            }
-                            ListRow::Player(row) => {
-                                drop_mark = drop_mark.or(player_row(
-                                    ui,
-                                    &mut view.selected,
-                                    &mut view.click_kind,
-                                    session,
-                                    row,
-                                    layout,
-                                    held.as_ref().filter(|(id, _)| *id == row.team_id).map(
-                                        |(_, violations)| {
-                                            live_marks::row_mark(violations, Some(row.slot))
-                                        },
-                                    ),
-                                ));
+            // The reveal's scroll given to the area up front, so its
+            // rows are laid out at it this pass: a `scroll_to_rect`
+            // request lands at the area's end, on the next pass's
+            // offset, and the selected row would draw a frame ahead of
+            // its scroll. `Nearest` reads the current offset from the
+            // area's stored state; `None` only before the first draw,
+            // where the offset is 0 anyway. `Top` clamps to the
+            // scrollable range, so the last team's row stands as high
+            // as the list's end lets it.
+            let scroll_offset = reveal.map(|(index, reveal)| {
+                let row_top = index as f32 * layout.row_height;
+                let row_bottom = row_top + layout.row_height;
+                let viewport = ui.available_rect_before_wrap().height();
+                let offset = egui::scroll_area::State::load(
+                    ui.ctx(),
+                    ui.make_persistent_id(egui::IdSalt::new(scroll_salt)),
+                )
+                .map_or(0.0, |state| state.unclamped_offset().y);
+                let target = match reveal {
+                    Reveal::Top => row_top,
+                    Reveal::Nearest if row_top < offset => row_top,
+                    Reveal::Nearest if row_bottom > offset + viewport => row_bottom - viewport,
+                    Reveal::Nearest => offset,
+                };
+                target.clamp(
+                    0.0,
+                    (rows.len() as f32 * layout.row_height - viewport).max(0.0),
+                )
+            });
+            let mut area = egui::ScrollArea::vertical()
+                .id_salt(scroll_salt)
+                .auto_shrink([false, false]);
+            if let Some(offset) = scroll_offset {
+                area = area.vertical_scroll_offset(offset);
+            }
+            area.show_rows(ui, layout.row_height, rows.len(), |ui, range| {
+                for row in &rows[range] {
+                    match row {
+                        ListRow::Team(team_id) => {
+                            let double_clicked = team_row(
+                                ui,
+                                &mut view.selected,
+                                &mut view.click_kind,
+                                session,
+                                *team_id,
+                                layout,
+                                held.as_ref()
+                                    .filter(|(id, _)| *id == *team_id)
+                                    .map(|(_, violations)| live_marks::row_mark(violations, None)),
+                            );
+                            if double_clicked {
+                                shown_team = Some(*team_id);
                             }
                         }
+                        ListRow::Player(row) => {
+                            drop_mark = drop_mark.or(player_row(
+                                ui,
+                                &mut view.selected,
+                                &mut view.click_kind,
+                                session,
+                                row,
+                                layout,
+                                held.as_ref().filter(|(id, _)| *id == row.team_id).map(
+                                    |(_, violations)| {
+                                        live_marks::row_mark(violations, Some(row.slot))
+                                    },
+                                ),
+                            ));
+                        }
                     }
-                    // Painted once, after the rows: painted with its row,
-                    // the next row's background would cover its lower
-                    // half. The mark's ends stop at the frame border's
-                    // inner side: a row spans the frame's width, and the
-                    // border, stroked inside it, would cover a serif's
-                    // outer point.
-                    if let Some(mark) = drop_mark {
-                        let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
-                        let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
-                        let y = if mark.lower {
-                            mark.rect.max.y
-                        } else {
-                            mark.rect.min.y
-                        };
-                        let (x0, x1) = (mark.rect.min.x + inset, mark.rect.max.x - inset);
-                        ui.painter().hline(x0..=x1, y, stroke);
-                        ui.painter().vline(x0 + 1.0, y - 3.5..=y + 3.5, stroke);
-                        ui.painter().vline(x1 - 1.0, y - 3.5..=y + 3.5, stroke);
-                    }
-                })
+                }
+                // Painted once, after the rows: painted with its row,
+                // the next row's background would cover its lower
+                // half. The mark's ends stop at the frame border's
+                // inner side: a row spans the frame's width, and the
+                // border, stroked inside it, would cover a serif's
+                // outer point.
+                if let Some(mark) = drop_mark {
+                    let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
+                    let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
+                    let y = if mark.lower {
+                        mark.rect.max.y
+                    } else {
+                        mark.rect.min.y
+                    };
+                    let (x0, x1) = (mark.rect.min.x + inset, mark.rect.max.x - inset);
+                    ui.painter().hline(x0..=x1, y, stroke);
+                    ui.painter().vline(x0 + 1.0, y - 3.5..=y + 3.5, stroke);
+                    ui.painter().vline(x1 - 1.0, y - 3.5..=y + 3.5, stroke);
+                }
+            })
         })
         .inner;
     // A double click on a team row shows that team alone: the selector
