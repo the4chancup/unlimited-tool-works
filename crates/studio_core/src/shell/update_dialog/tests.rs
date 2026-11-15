@@ -241,6 +241,26 @@ fn assert_no_check(
     );
 }
 
+/// Waits for the install's worker to end: `Done` is its last send, so the
+/// outcome then waits in the channel for the next frame to drain. A wait on
+/// drawn text (`frame_until_*`) pumps however many frames the drain takes and
+/// cannot name the frame it happened on.
+fn wait_for_install_end(app: &StudioApp) {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        if let Stage::Downloading(install) = &app.update_dialog.stage
+            && install.worker.is_finished()
+        {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the install's worker never ended"
+        );
+        std::thread::yield_now();
+    }
+}
+
 /// Frames until the offer's text is on the bar.
 fn frame_until_offer(egui_ctx: &egui::Context, app: &mut StudioApp) -> FrameOutput {
     frame_until(egui_ctx, app, "the offer on the bar", |_, out| {
@@ -728,8 +748,24 @@ fn no_check_runs_while_an_install_runs_or_after_it_succeeded() {
         "while the download runs",
     );
 
-    // The check that fell due during the download runs once it has failed.
+    // The check that fell due during the download runs on the frame that
+    // drains the install's failure: the drain frees the checks it held, so
+    // one frame after the worker's end must already show it started. A
+    // `frame_until_*` would pump however many frames a late start took, so
+    // the wait is on the worker; the dialog is hidden, the case the drain
+    // must not depend on drawing.
+    shell.app.update_dialog.close();
     drop(go_on);
+    wait_for_install_end(&shell.app);
+    frame(&egui_ctx, &mut shell.app, Vec::new(), true);
+    assert!(
+        matches!(shell.app.update_poll, UpdatePoll::Running(_)),
+        "the due check starts on the frame that drains the failed install"
+    );
+
+    // Details on the standing offer brings the failed dialog back.
+    let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Details"));
     let nodes = frame_until_text(&egui_ctx, &mut shell.app, "Update failed");
     frame_until(
         &egui_ctx,
@@ -916,23 +952,7 @@ fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
     );
 
     drop(go_on);
-    // Done is the worker's last send: once it has ended, the outcome waits
-    // in the channel for the next frame to drain. Wait on the worker, never
-    // on drawn text — `frame_until_text` pumps however many frames it
-    // takes, and a bar set a frame late would pass.
-    let deadline = Instant::now() + Duration::from_secs(120);
-    loop {
-        if let Stage::Downloading(install) = &shell.app.update_dialog.stage
-            && install.worker.is_finished()
-        {
-            break;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "the install's worker never ended"
-        );
-        std::thread::yield_now();
-    }
+    wait_for_install_end(&shell.app);
     // Exactly one frame: the bar must already read the new condition.
     let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
     assert_ready_bar(&nodes, "one frame after the install's worker ended");

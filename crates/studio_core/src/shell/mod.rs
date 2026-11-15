@@ -665,7 +665,8 @@ impl StudioApp {
         self.help_window.open(target, active);
     }
 
-    /// Applies a clicked notice action (the notice is already dismissed). `SwitchTool` goes
+    /// Applies the action the status bar returned: the notice's own (the notice is
+    /// already dismissed) or a left-slot entry's, which dismisses nothing. `SwitchTool` goes
     /// through the shell's own switch; `FixPesPath` points the settings at the running exe's
     /// folder, the main row or the version's own entry once any exists, then saves as any
     /// change; `OpenSettings` opens the settings menu on the active tool's section;
@@ -1651,6 +1652,58 @@ mod tests {
                 "no check starts ({last_check:?})"
             );
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn a_check_due_this_second_starts_on_the_frame() {
+        let dir = TestDir::new("studio_core_update_due_now");
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let Shell { mut app, ctx, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        app.update_fetch = std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
+        let egui_ctx = test_context();
+
+        // The stamp plus the interval must land on the frame's `now`, the due
+        // boundary: an epoch second ticking across the frame would put it past
+        // `now`, where a check starting anyway says nothing of the boundary,
+        // so the frame is tried again until the second holds around it.
+        let deadline = std::time::Instant::now() + GUARD;
+        loop {
+            // A ticked try starts the check for real; it drains on a next
+            // frame, so wait it out before stamping again or it would stand
+            // in for a start the boundary frame owes.
+            while matches!(app.update_poll, UpdatePoll::Running(_)) {
+                frame(&egui_ctx, &mut app, Vec::new(), true);
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "the check's reply never landed"
+                );
+            }
+            let before = crate::updater::now_secs();
+            ctx.settings().lock().unwrap().common.last_update_check =
+                Some(before.saturating_sub(crate::updater::interval_secs(&ctx.common())));
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+            if crate::updater::now_secs() == before {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the epoch second kept ticking across the frame"
+            );
+        }
+        assert!(
+            matches!(app.update_poll, UpdatePoll::Running(_)),
+            "a check whose due second is now starts"
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
