@@ -17884,3 +17884,13 @@ PROGRAM SUCKS selected; the move row's X did the same on PES 2017's /an/). An un
 leave the member where they were.
 Plan: `plans/save_editor.md` "Player list", the drag-and-drop reordering's paragraph "A drop
 selects the moved player". Worklog: 0.0.2-undosel.
+
+## 2026-11-15 — save_editor — Every copy and paste notice ends with a full stop
+Decision: a paste notice whose tail counts what was left out or changed ends with a full
+stop, as the copy's notice and a plain paste's do.
+Why: the plan's examples dropped the stop only on the tailed form, and the build followed
+them; the lead's look across two windows found "QUADS ONLY's stats copied." beside "…4 values
+PES 2017 does not store were left out" with none. One ending for every notice reads as one
+voice.
+Plan: `plans/save_editor.md` the copy and paste notices' paragraph, and SE-GUI-56. Worklog:
+0.0.2-clip.

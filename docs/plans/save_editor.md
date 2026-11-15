@@ -983,11 +983,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   copied.` (a formation's notice names its preset), and `<the same> pasted onto <the target,
   named the same way>.`. A paste that left out or capped something, as one from a save of
   another PES version can, says so in the same notice (`X's stats pasted onto Y; 3 values PES
-  2017 does not store were left out`): the import panel lists those before Apply, and a paste
+  2017 does not store were left out.`): the import panel lists those before Apply, and a paste
   has no panel. The tail counts the import's notes: when every one is a key the target does
-  not store it reads as above (`1 value PES 2017 does not store was left out`), and with a
+  not store it reads as above (`1 value PES 2017 does not store was left out.`), and with a
   capped, cropped or unencodable value among them `; 3 values were left out or changed to
-  fit PES 2017`.
+  fit PES 2017.`, every notice ending with a full stop as the copy's does.
 
   The words that name a copy (`X's stats`, `/x/'s preset 2 Kick-off formation`) are also its
   clipboard text's first line, after `# Unlimited Tool Works: `, so a paste in another window
@@ -3060,9 +3060,9 @@ SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team
                 row, on a preset and on a formation THEN each puts its copy on the clipboard;
                 WHEN a PES 21 player's stats are pasted onto a PES 17 player THEN the notice
                 reads `<A>'s stats pasted onto <B>; <n> values PES 2017 does not store were
-                left out`, n the number of keys PES 17 lacks, and WHEN a Gameplan holding an
+                left out.`, n the number of keys PES 17 lacks, and WHEN a Gameplan holding an
                 instruction PES 17 lacks is pasted THEN its notice ends `1 value was left out
-                or changed to fit PES 2017`
+                or changed to fit PES 2017.`
 SE-GUI-57  GIVEN a player's Height field being typed in
            WHEN Up is pressed once
            THEN the value is one more; a drag over the field moves it as before

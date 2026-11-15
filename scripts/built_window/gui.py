@@ -20,6 +20,8 @@ Usage:
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
   gui.py cancel                       cancel the app's open dialog
   gui.py size W H | maximize          resize (outer size) or maximize the window
+
+With two windows of the copy open, UTW_PID=<pid> picks the one each command acts on.
 """
 import ctypes
 import ctypes.wintypes as wt
@@ -45,6 +47,10 @@ def app_window():
     pids = {p.pid for p in psutil.process_iter(["exe"])
             if os.path.normcase(p.info["exe"] or "").startswith(APP)}
     assert pids, "the portable copy is not running"
+    # Two windows of the copy at once (a check across instances): UTW_PID names the one meant.
+    if os.environ.get("UTW_PID"):
+        pids &= {int(os.environ["UTW_PID"])}
+        assert pids, "UTW_PID is not a running process of the portable copy"
     found = []
     proto = ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
 

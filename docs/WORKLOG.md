@@ -2480,7 +2480,10 @@ briefs, review loops, gates and mutation runs as for any step.
       paste through the import panel's path, the in-memory clipboard and its three session
       helpers gone; six tests for SE-GUI-72, one from PES 2019 to PES 2021. Both of the
       brief's doubts held: a stats document writes what Copy stats writes, a preset and a
-      formation survive the document. Not tried in two real windows (look: Pending looks)
+      formation survive the document. Tried in two real windows 2026-11-15 at `4b9f2258`, card
+      `look-clipboard`. Open: a paste notice with a tail ends without a full stop, unlike
+      every other notice (DECISIONS 2026-11-15 "Every copy and paste notice ends with a full
+      stop"); fixed with 0.0.2-namelight's brief
     - [ ] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
       r1" 2026-11-12 (three parts): 14 of 18 accepted (`.tmp/duck_rulings.md`): a copy
       of a Gameplan, preset or formation no longer builds the players' tables, whose odd
