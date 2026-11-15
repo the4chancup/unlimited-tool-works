@@ -1021,8 +1021,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   a preset `[tactics.preset_1]` and a formation `[tactics.preset_1.formation_1]`, whichever
   preset or formation was shown: the copy keeps no place, and the paste goes onto the one
   shown. Ctrl+V reads the text the window is handed (it hears Ctrl+V only as a paste of the
-  system clipboard's text), and writes what each kind's paste wrote before; text that is not
-  such a document, or is of another kind than the target, changes nothing.
+  system clipboard's text), and writes that copy onto the target as one undo step; text that
+  is not such a document, or is of another kind than the target, changes nothing.
 
   Team TOML, not the records' bytes, because two windows may hold saves of different PES
   versions: the document names its version and its import already converts the values, where
@@ -3089,7 +3089,9 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 game writes its own order, copied and pasted onto itself THEN no undo
                 entry is pushed and the save stays clean;
                 GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
-                the field's own: no record is written and the clipboard keeps A's stats
+                the field's own: no record is written and the clipboard keeps A's stats;
+                GIVEN a label's text selected by a drag WHEN Ctrl+C is pressed THEN the
+                clipboard holds that text alone, not the selected row's copy
 SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team's Gameplan, a
                 preset or a formation) and a second window with another save open, of the
                 same PES version or another
