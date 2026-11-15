@@ -9451,7 +9451,7 @@ function ixOwnTeamButton(d, t) {
   return own
     ? button("Select the team with this file's ID (" + own.id + " " + own.name + ")",
         () => { jumpToTeam(own.id); structural(); },
-        { title: "The import then goes onto that team" })
+        { title: "Selects the file's team in the list, so the import goes onto it" })
     : h("span", { title: "The save has no team " + id },
         button("Select the team with this file's ID (" + id + ")", null, { disabled: true }));
 }
@@ -9474,11 +9474,13 @@ function interchangePanel() {
           title: version() >= 17 ? "A file PES itself can import" : "The editor cannot write a PES 2015 or 2016 Texport" }))),
     h("div", { class: "sep" }),
     h("div", { class: "row" }, weak("Import into " + t.name + " (" + t.id + ") "),
-      ixOwnTeamButton(S.ix.file && ixFile(S.ix.file), t),
       weak("file "),
       combo([[null, "(pick a file)"]].concat(files), S.ix.file,
         v => { S.ix.file = v; S.ix.applied = null; },
-        { title: "Pick the team file to import; its extension decides how it is read" })));
+        { title: "Pick the team file to import; its extension decides how it is read" })),
+    // A row of its own: beside Import into, a long team name pushed the row
+    // past the panel's width.
+    ixOwnTeamButton(S.ix.file && ixFile(S.ix.file), t));
   const d = S.ix.file && ixFile(S.ix.file);
   if (!d) {
     c.append(h("div", { class: "row weak" },

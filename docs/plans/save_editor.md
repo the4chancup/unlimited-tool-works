@@ -2323,9 +2323,10 @@ the editor exposes them as:
   conversion with a warning list when the file's version differs.
 
   A picked file that names the team it was exported from (a Team TOML's `[team] id`, a
-  Texport's or a `.4cct`'s team) puts a button on the `Import into` line when that team is not
-  the target: `Select the team with this file's ID (<id> <name>)`, the save's name for that
-  ID, so the label says why the button is there. Its click selects that team's row, as a row
+  Texport's or a `.4cct`'s team) puts a button under the `Import into` line when that team is
+  not the target: `Select the team with this file's ID (<id> <name>)`, the save's name for that
+  ID, so the label says why the button is there. It has a row of its own because, on the
+  line, a long team name pushed the line past the window's width. Its click selects that team's row, as a row
   click of the unsaved changes list does (the selector moved to it unless it reads All teams,
   the filter cleared), so the import goes onto it, and the line then names it. An organizer
   importing a cup's files so lands each on its own team without finding it in the list. On a
@@ -3468,8 +3469,8 @@ SE-GUI-16  GIVEN the save open on a team
                 in the error colour, Apply disabled, until Stats is unticked
 SE-GUI-104 GIVEN a PES 19 save open on team 701 (/3/) and team 714's (/co/) Team TOML picked in
                 the interchange dialog
-           WHEN `Select the team with this file's ID (714 /co/)` on the `Import into` line is
-                clicked
+           WHEN `Select the team with this file's ID (714 /co/)` under the `Import into` line
+                is clicked
            THEN team 714's row is selected, the line reads `Import into /co/ (714)` with no
                 button, and Apply writes 714, 701 untouched; GIVEN the file's `[team] id`
                 set to one the save lacks THEN the button is disabled, its tooltip naming
