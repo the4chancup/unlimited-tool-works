@@ -43,7 +43,8 @@ use crate::session::journal;
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::comparator;
 use crate::view::{
-    Panel, Refusal, SaveView, refuse_save_being_read, selected_team_id, surrender_focus,
+    Panel, Refusal, Reveal, SaveView, aatf_check, refuse_save_being_read, selected_team_id,
+    surrender_focus,
 };
 
 /// The panel's Pick dialog: the open save's version to the picked path
@@ -378,6 +379,9 @@ enum Action {
     Pick,
     /// `Apply`.
     Apply,
+    /// `Select <name> (<id>)` on the `Import into` line: the team the
+    /// picked file was exported from, by id.
+    SelectTeam(u32),
 }
 
 impl Interchange {
@@ -771,7 +775,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let action = comparator::panel_window(ui, "Team file interchange", "save_editor_interchange")
         .open(&mut open)
         .show(ui.ctx(), |ui| {
-            contents(ui, interchange, target, version, locked, revision)
+            contents(ui, interchange, file, target, version, locked, revision)
         })
         .and_then(|response| response.inner)
         .flatten();
@@ -834,6 +838,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 session.edit_entries(import.players.clone(), vec![import.team.clone()]);
                 interchange.applied = Some(session.revision());
             }
+        }
+        Some(Action::SelectTeam(id)) => {
+            aatf_check::select_team(id, &mut view.selected, &mut view.team, &mut view.filter);
+            view.reveal_selected = Some(Reveal::Top);
         }
         None => {}
     }
@@ -900,6 +908,7 @@ fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
 fn contents(
     ui: &mut egui::Ui,
     interchange: &mut Interchange,
+    file: &EditFile,
     target: Option<&TeamEntry>,
     version: PesVersion,
     locked: bool,
@@ -946,6 +955,35 @@ fn contents(
             display_name(&team.name),
             team.id
         ));
+        // The team the picked file was exported from, while the target
+        // is another: a document names it (`Read::Document`), a squad
+        // file names none.
+        let own_team = match &interchange.picked {
+            Some(Picked {
+                read: Ok(Read::Document(document)),
+                ..
+            }) => document.team.id,
+            _ => None,
+        };
+        if let Some(id) = own_team.filter(|id| *id != team.id) {
+            match file.team(id) {
+                Some(own) => {
+                    if ui
+                        .button(format!("Select {} ({id})", display_name(&own.name)))
+                        .on_hover_text(
+                            "Select the team this file was exported from, so the import goes onto it",
+                        )
+                        .clicked()
+                    {
+                        action = Some(Action::SelectTeam(id));
+                    }
+                }
+                None => {
+                    add_enabled(ui, false, egui::Button::new(format!("Select team {id}")))
+                        .on_disabled_hover_text(format!("The save has no team {id}"));
+                }
+            }
+        }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
             if ui
                 .button("Pick\u{2026}")

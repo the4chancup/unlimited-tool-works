@@ -145,7 +145,7 @@ fn pictured_formations(preset: &TacticsPreset) -> &'static [usize] {
 
 /// How far, in stored units on each axis, a spot may stand from
 /// Kick-off's and still count as Kick-off's in `same_shape`.
-const SHAPE_TOLERANCE: u8 = 2;
+const SHAPE_TOLERANCE: u8 = 3;
 
 /// Whether `formation` has `kick_off`'s shape: its eleven stored spots
 /// pair one to one with Kick-off's, each within `SHAPE_TOLERANCE` on both
@@ -1010,7 +1010,7 @@ mod tests {
             "premise: preset 1 labels one of Kick-off's spots otherwise"
         );
 
-        // One spot moved: 2 across and 2 down keeps the shape, 3 down
+        // One spot moved: 3 across and 3 down keeps the shape, 4 down
         // makes one of its own.
         let amf = in_possession.players[8];
         assert_eq!(
@@ -1018,7 +1018,7 @@ mod tests {
             ("AMF", 37, 30),
             "premise: slot 8 of preset 1's In-possession"
         );
-        for (x, y, expected) in [(39, 28, &[0][..]), (37, 27, &[0, 1, 2][..])] {
+        for (x, y, expected) in [(40, 27, &[0][..]), (37, 26, &[0, 1, 2][..])] {
             let mut moved = first.clone();
             moved.formations[1].players[8].x = x;
             moved.formations[1].players[8].y = y;
@@ -1026,8 +1026,9 @@ mod tests {
         }
 
         // A pairing a greedy pick misses: In-possession's slot 9 stands
-        // within 2 of both Kick-off spots 9 and 10, its slot 10 within 2 of
-        // spot 9 alone.
+        // within 3 of both Kick-off spots 9 and 10, its slot 10 within 3 of
+        // spot 9 alone. The greedy pick takes spot 9 for slot 9 and leaves
+        // slot 10 none; the backtracking one pairs slot 9 with spot 10.
         let mut crowded = file
             .team(KICK_OFF_ALONE)
             .expect("the fixture holds /f/")
@@ -1050,6 +1051,25 @@ mod tests {
         crowded.formations[1] = crowded.formations[0].clone();
         crowded.formations[2] = crowded.formations[0].clone();
         crowded.formations[1].players[10] = corner(94);
+        let spots = &crowded.formations[0].players;
+        let mut free = [true; 11];
+        let greedy_pairs = crowded.formations[1].players.iter().all(|slot| {
+            match spots.iter().enumerate().find(|(index, spot)| {
+                free[*index]
+                    && slot.x.abs_diff(spot.x) <= SHAPE_TOLERANCE
+                    && slot.y.abs_diff(spot.y) <= SHAPE_TOLERANCE
+            }) {
+                Some((index, _)) => {
+                    free[index] = false;
+                    true
+                }
+                None => false,
+            }
+        });
+        assert!(
+            !greedy_pairs,
+            "premise: a greedy pick pairs slot 9 with spot 9 and fails on slot 10"
+        );
         assert_eq!(pictured_formations(&crowded), [0]);
     }
 

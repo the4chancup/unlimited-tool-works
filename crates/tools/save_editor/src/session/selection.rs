@@ -109,13 +109,13 @@ pub(crate) enum ListRow {
 /// The rows the list draws: each listed team's row, then its players' rows
 /// in roster order; `category` leaves out the teams outside its range,
 /// under `TeamChoice::All` and a non-empty `filter` alike. A non-empty
-/// `filter` matches across the kept teams (whatever the choice) on the
-/// display name, the shirt name or the id,
+/// `filter` matches across the kept teams (whatever the choice): a display
+/// name or a shirt name holding the text, or an id starting with it,
 /// case-insensitive. A team whose own name (its display name, matched as
-/// the players' names are) matches is then listed with all its players, so
-/// a search for a team shows its squad; any other team is listed with its
-/// matching players only, and skipped when none match. Empty slots (player
-/// id 0) are never listed.
+/// the players' names are) or id matches is then listed with all its
+/// players, so a search for a team shows its squad; any other team is
+/// listed with its matching players only, and skipped when none match.
+/// Empty slots (player id 0) are never listed.
 pub(crate) fn list(
     file: &EditFile,
     team: &TeamChoice,
@@ -143,9 +143,10 @@ pub(crate) fn list(
             continue;
         }
         let named = filtering
-            && display_name(&team_entry.name)
+            && (display_name(&team_entry.name)
                 .to_lowercase()
-                .contains(&query);
+                .contains(&query)
+                || team_entry.id.to_string().starts_with(&query));
         let player_query = if named { "" } else { query.as_str() };
         let player_rows = team_rows(team_entry, &players, player_query);
         if filtering && !named && player_rows.is_empty() {
@@ -198,12 +199,12 @@ fn team_rows(team: &TeamEntry, players: &HashMap<u32, &PlayerEntry>, query: &str
     rows
 }
 
-/// Whether `player` answers the trimmed, lowercased `query`: a substring of
-/// his display name, shirt name or id as text.
+/// Whether `player` answers the trimmed, lowercased `query`: held anywhere
+/// in his display name or shirt name, or at the start of his id as text.
 fn matches(player: &PlayerEntry, query: &str) -> bool {
     display_name(&player.name).to_lowercase().contains(query)
         || player.shirt_name.to_lowercase().contains(query)
-        || player.id.to_string().contains(query)
+        || player.id.to_string().starts_with(query)
 }
 
 #[cfg(test)]
@@ -447,6 +448,101 @@ mod tests {
                     player_id: 71801,
                 }),
             ]
+        );
+    }
+
+    // An id matches from its start only, a team's id listing its squad as
+    // a name match does, so a player's slot digits count only once four
+    // digits are typed.
+    // SE-GUI-102
+    #[test]
+    fn list_filter_matching_an_id_from_its_start() {
+        let file = open(PesVersion::Pes21);
+        // A slot's two digits: no id starts with them, and no name, shirt
+        // name or team name of the save holds them, so the list is empty.
+        for team in file.teams() {
+            assert!(
+                !display_name(&team.name).to_lowercase().contains("01"),
+                "premise: team {}'s name does not hold 01",
+                team.id
+            );
+        }
+        for player in file.players() {
+            assert!(
+                !display_name(&player.name).to_lowercase().contains("01")
+                    && !player.shirt_name.to_lowercase().contains("01"),
+                "premise: {}'s names do not hold 01",
+                player.id
+            );
+        }
+        assert_eq!(
+            list(&file, &TeamChoice::All, "01", TeamCategory::All),
+            [],
+            "a slot's two digits match nothing"
+        );
+
+        // A team's id typed whole: its row and its whole squad, as a name
+        // match lists it. Every player the save rosters under an id
+        // starting with 718 is 718's own.
+        let squad = rostered(&file, 718);
+        assert_eq!(squad.len(), 23, "premise: 718's squad");
+        for team in file.teams() {
+            for slot in &team.roster {
+                assert!(
+                    slot.player_id == 0
+                        || !slot.player_id.to_string().starts_with("718")
+                        || team.id == 718,
+                    "premise: team {} rosters {}",
+                    team.id,
+                    slot.player_id
+                );
+            }
+        }
+        let expected: Vec<ListRow> = [ListRow::Team(718)]
+            .into_iter()
+            .chain(squad.into_iter().map(ListRow::Player))
+            .collect();
+        assert_eq!(
+            list(&file, &TeamChoice::All, "718", TeamCategory::All),
+            expected
+        );
+
+        // A team's id plus a slot's first digit lists that team's slots
+        // 01 to 09 only: 7010 heads 701's players 70101 to 70109 with its
+        // row, nothing else's.
+        let squad = rostered(&file, 701);
+        for (index, row) in squad[..9].iter().enumerate() {
+            assert!(
+                row.player_id.to_string().starts_with("7010"),
+                "premise: slot {}'s player {} starts with 7010",
+                index + 1,
+                row.player_id
+            );
+        }
+        assert!(
+            !squad[9].player_id.to_string().starts_with("7010"),
+            "premise: slot 10's player {} does not start with 7010",
+            squad[9].player_id
+        );
+        for team in file.teams() {
+            for slot in &team.roster {
+                assert!(
+                    slot.player_id == 0
+                        || !slot.player_id.to_string().starts_with("7010")
+                        || team.id == 701,
+                    "premise: team {} rosters {}",
+                    team.id,
+                    slot.player_id
+                );
+            }
+        }
+        let expected: Vec<ListRow> = [ListRow::Team(701)]
+            .into_iter()
+            .chain(squad[..9].iter().copied().map(ListRow::Player))
+            .collect();
+        assert_eq!(
+            list(&file, &TeamChoice::All, "7010", TeamCategory::All),
+            expected
         );
     }
 

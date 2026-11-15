@@ -29,7 +29,8 @@ use crate::view::abilities::{
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
-    PlayerScreen, SaveView, Selection, edit_player, edit_team, selected_player, selected_team_id,
+    PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team, selected_player,
+    selected_team_id,
 };
 
 /// The General info panel's Name field.
@@ -200,7 +201,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
     match segment {
         Segment::Gameplan => {
             view.selected = Some(Selection::Team(team_id));
-            view.reveal_selected = true;
+            view.reveal_selected = Some(Reveal::Nearest);
         }
         Segment::Stats | Segment::Appearance => {
             view.page = match segment {
@@ -211,7 +212,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Some(slot) = last_shown_slot(view, team_id)
             {
                 view.selected = Some(Selection::Player(team_id, slot));
-                view.reveal_selected = true;
+                view.reveal_selected = Some(Reveal::Nearest);
             }
         }
     }

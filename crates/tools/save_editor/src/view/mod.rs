@@ -92,6 +92,16 @@ enum Panel {
     Interchange,
 }
 
+/// How far the list scrolls to the selected row (`SaveView::reveal_selected`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Reveal {
+    /// The least that shows it.
+    Nearest,
+    /// To the list's top edge, as far as the list's end allows, so a team
+    /// row's players stand under it.
+    Top,
+}
+
 /// The window's state: the open save and what the master-detail shows of it.
 pub(crate) struct SaveView {
     /// The open save, if one was opened.
@@ -130,10 +140,11 @@ pub(crate) struct SaveView {
     /// preset selector or the formation selector); clicks elsewhere
     /// leave it, `None` before the first click of one.
     click_kind: Option<clipboard::ClickKind>,
-    /// A page or arrow key moved the selection, or a team row's double
-    /// click showed that team alone: the list scrolls to the selected row
-    /// on the next draw, then clears this.
-    reveal_selected: bool,
+    /// A page or arrow key moved the selection, a team row's double
+    /// click showed that team alone, or the team file panel's own-team
+    /// button selected a team: the list scrolls to the selected row on
+    /// the next draw, then clears this.
+    reveal_selected: Option<Reveal>,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover, Scroll and Portraits);
@@ -505,7 +516,7 @@ impl SaveView {
             page: PlayerScreen::Stats,
             last_shown: HashMap::new(),
             click_kind: None,
-            reveal_selected: false,
+            reveal_selected: None,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -1185,12 +1196,19 @@ fn toolbar(
         // next player's field does not inherit the focus and merge his
         // edits into that entry. A key that moved nothing leaves it be.
         surrender_focus(ui);
-        view.reveal_selected = true;
+        // A team row the page keys select rises to the list's top, so
+        // its players stand under it; any other row shows the least that
+        // shows it.
+        view.reveal_selected = Some(if matches!(view.selected, Some(Selection::Team(_))) {
+            Reveal::Top
+        } else {
+            Reveal::Nearest
+        });
     }
     if let Some(forward) = arrow_step
         && player_list::step_selection(view, forward, 1)
     {
-        view.reveal_selected = true;
+        view.reveal_selected = Some(Reveal::Nearest);
     }
     if copy_key {
         clipboard::copy(ui.ctx(), view);
