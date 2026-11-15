@@ -70,8 +70,9 @@ keeps it as typed.
 
 **Undo and redo**
 
-Every edit is undoable, and the **Edit** menu's **Undo** and **Redo** step through them
-(Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
+Every edit can be undone: the **Edit** menu's **Undo** (Ctrl+Z) and **Redo** (Ctrl+Y or
+Ctrl+Shift+Z) step through your edits. A drag, or a run of typing in one field, is one undo
+step.
 
 **Copy and paste**
 

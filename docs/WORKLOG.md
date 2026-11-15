@@ -2203,7 +2203,14 @@ briefs, review loops, gates and mutation runs as for any step.
       concerns accepted, all tests that passed on wrong code (a kept file below the
       backup's top level, no mark after a failed update, a version that is not the
       build's, a cancel set before the call), which ends SWE-2's loop
-    - [ ] Carbon's round 2 by the rule
+    - [x] Carbon's round 2, 2026-11-15 (at `2f9b9c44`): 8 of 8 concerns accepted: the bar
+      kept `Update available` on an idle window after a hidden install ended; a failed
+      Restart now was only logged, past the log's closing line, so the next start reported
+      a crash; `skipped_version` untested through the window's check and a tool command;
+      Escape on `Update failed` untested; two stale doc comments; the lead's text: the
+      settings file's comment, the help's Restart now sentence, the changelog's launchers
+      (`4705095d`)
+    - [ ] the rework (SWE-2, `sk/updrw`), then Carbon's round 3
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2501,6 +2508,15 @@ briefs, review loops, gates and mutation runs as for any step.
       `8aa9c94e`). "S-clip r3": 1 of 2 accepted (all four auto flags set apart in the
       Gameplan test; the lead's edit, uncommitted until the Save editor's tests are rerun
       with the drop line's rework), which ends the SWE-2 loop; Carbon is left
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 11 of 13 concerns accepted: a
+        preset or formation press stayed the target after Down moved to a player, so Ctrl+V
+        wrote a hidden preset; a row reached with no click took no paste; a team's own
+        Gameplan pasted back dirtied a save holding 255 in the bench's last nine (DECISIONS
+        2026-11-15 "refills the bench's last nine only when"); Ctrl+C over text selected in
+        a label copied the save; three tests that could not fail (CRLF, formations off
+        preset 1, a mixed notes tail); the lead's text: the help's Copy and paste section,
+        the plan bullet's stale lines, two changelog lines (`4705095d`)
+      - [ ] the rework (SWE-2, `sk/cliprw`), then Carbon's round 2
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2535,7 +2551,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the SWE-2 round over `27f7b59a`, 2026-11-12: 2 of 4 concerns accepted, both
       wording (the help and the plan name the `.upgrading` folder `--all` passes over),
       which ends SWE-2's loop
-    - [ ] Carbon's round 2, eight having been accepted in its first
+    - [x] Carbon's round 2, 2026-11-15 (at `2f9b9c44`): 5 of 7 concerns accepted: no test
+      ran a clean export after an unclean one; the panic hook's call of the hook before it
+      untested; `FIRST_RUN`'s doc named removed commands; the lead's text: the help's
+      "Team compiler" and its several-exports paragraph split in three (`4705095d`)
+    - [ ] the rework (SWE-2, `sk/logallrw`), then Carbon's round 3
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
@@ -3463,7 +3483,13 @@ points there.
   before trusting a dump on a loaded machine: rerun under the gates' load, read the
   monitor's own wait and the log it leaves; do not loosen the test
   Again 2026-11-15 in changesperf's `gates-changed` (27 s, `FileNotFound`) beside three
-  Carbon runs and a sidekick's build; alone it passed in 0.16 s.
+  Carbon runs and a sidekick's build; alone it passed in 0.16 s. Likely cause, from the code
+  (not yet confirmed): `start_monitor` waits `MONITOR_CONNECT_TIMEOUT` (2 s) for the monitor,
+  the same binary started again, to accept; a run 27 s slow can miss that, and the session
+  then runs unwatched with one Warn line (`request_dump` itself has no timeout on Windows,
+  minidumper 0.11). Next: make the test print `data/utw.log` when the dump is missing (the
+  Warn line confirms or rules this out), then, if confirmed, raise the bound, which costs
+  nothing when the monitor is up in time.
   Seen again 2026-11-14 in the lead's `gates-changed 62e261fa` (`FileNotFound` at
   `crash_dump.rs:70`, beside a SWE-2 census build); alone it passed in 0.27 s.
 

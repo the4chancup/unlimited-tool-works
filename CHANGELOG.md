@@ -19,7 +19,7 @@
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
-  in the **File** menu, Undo and Redo in the **Edit** menu, with the same shortcuts.
+  in the **File** menu, Undo and Redo in the **Edit** menu, and their shortcuts are unchanged.
 - **Save editor**: a toggle left of the player's or team's name switches the right side
   between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
   Appearance, until now a collapsed section under the stats, is a screen of its own.
