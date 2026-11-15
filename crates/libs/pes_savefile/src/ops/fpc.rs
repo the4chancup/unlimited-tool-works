@@ -13,7 +13,7 @@ use crate::schema::ingame_face::IngameFaceField;
 #[derive(Debug, thiserror::Error)]
 pub enum FpcError {
     /// The version has no Custom skin colour.
-    #[error("{version:?} has no Custom skin colour; the partial-hide preset cannot apply")]
+    #[error("{version:?} has no Custom skin color; the partial-hide preset cannot apply")]
     CustomSkinUnavailable {
         /// The player's game version.
         version: PesVersion,

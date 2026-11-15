@@ -9,7 +9,7 @@ It is a Team TOML document of team 714 of `2026 4chan Summer Cup Save V3.rar` (t
 `pes_savefile`'s `TeamToml::from_team` (rewritten 2026-10-13, when the model gained PES 15's auto
 flags and every version's man marking; regenerated 2026-10-14 for the `playable` ratings'
 scale and order, stored values unchanged) and then anonymized: the team's name and short name are
-`Sample` and `SMP`, its id, manager, stadium, colours and kit slots are left out, and each player
+`Sample` and `SMP`, its id, manager, stadium, colors and kit slots are left out, and each player
 is renamed `Player NN` (shirt name `PLAYER NN`, NN the roster slot) and carries no appearance,
 edit flags, boots, gloves, base copy or nationality. None of those is read by a ruleset.
 
