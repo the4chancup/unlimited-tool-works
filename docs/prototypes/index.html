@@ -502,6 +502,9 @@
   table.grid tr:has(input[type=checkbox]):not(:has(input:not([type=checkbox], [type=radio]), select, button, textarea)) > :is(td, th) {
     height: 22px; }
   table.grid td > label.cb { display: flex; }
+  /* A bare checkbox in a cell, inline, sits on the text baseline, off its row's middle, where
+     egui centres it; as a block the cell's own middle alignment centres it. */
+  table.grid td > input[type=checkbox] { display: block; }
   table.grid td > .row, table.grid td > span > .row { flex-wrap: nowrap; }
   table.grid th { font-weight: 400; color: var(--strong); }
   details { margin: 2px 0 4px; }
