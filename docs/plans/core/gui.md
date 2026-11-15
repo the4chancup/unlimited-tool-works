@@ -474,8 +474,8 @@ The settings menu is assembled from injected sections:
   the label and Browse).
 
   The menu is 676 points: the common grid's widest row (its label column, the edit and Browse)
-  needed about 674 with the update check's "Check interval (minutes)" label, a row that goes;
-  the width is measured again then and kept unless the maintainer asks. A tool section's
+  needed about 674 with the update check's "Check interval (minutes)" label. That row is gone
+  and the grid needs 653 now, with the width kept unless the maintainer asks. A tool section's
   row sits indented under its header with that tool's own label column, so a section whose
   labels are long widens the menu while it is open, rather than narrowing its path box below
   the path.
