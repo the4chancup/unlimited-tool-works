@@ -827,9 +827,9 @@ Rules:
 
 On Windows, a Shift+click or a middle click on a running program's taskbar button starts
 another instance only when Explorer has a shortcut for the program: in the Start Menu, on the
-desktop, or as a taskbar pin. A portable bundle has none, so both clicks did nothing, while
-the entry with the program's name in the button's menu, which starts the exe itself, worked
-(seen on Windows 10: pinning the button, which makes a shortcut, made both clicks work).
+desktop, or as a taskbar pin. A portable bundle has none, so without the properties below both
+clicks do nothing, while the entry with the program's name in the button's menu, which starts
+the exe itself, works.
 
 The window therefore says how it is started again. When it is created it sets four
 properties on itself (`System.AppUserModel`, through the window's property store):
@@ -840,8 +840,8 @@ properties on itself (`System.AppUserModel`, through the window's property store
   own icon;
 - an application ID, which Windows asks for before it reads the other three:
   `UnlimitedToolWorks.` and the first sixteen hex digits of the SHA-256 of the exe's path in
-  lower case. Each copy of the program is so its own taskbar group, as copies were when
-  Windows made the identity from the path, since nothing needs two copies grouped. The ID
+  lower case. So each copy of the program is its own taskbar group, as it is when Windows
+  makes the identity from the path, since nothing needs two copies grouped. The ID
   comes from the path alone, not from the version: an ID that changed with an update would
   part a pinned button from the window it starts.
 

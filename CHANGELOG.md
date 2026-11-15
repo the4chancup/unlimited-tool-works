@@ -19,12 +19,13 @@
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
-  in the **File** menu, Undo and Redo in the **Edit** menu, with the same shortcuts.
+  in the **File** menu, Undo and Redo in the **Edit** menu, and their shortcuts are unchanged.
 - **Save editor**: a toggle left of the player's or team's name switches the right side
   between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
   Appearance, until now a collapsed section under the stats, is a screen of its own.
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
-  installs it, and a command typed in a terminal mentions a newer version too. The Help
+  installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
+  mentions a newer version too. The Help
   window's new Updates chapter explains each step.
 
 ### Useful
@@ -35,8 +36,8 @@
 - **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats…`, which stays
   open: pick the source once, then select in the list each player to copy onto.
 - **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics
-  preset or a formation) in another Save editor window too, even one holding another PES
-  version's save.
+  preset or a formation) in another Save editor window too, and after another save is
+  opened, even a save of another PES version.
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list has an ×, which puts that one change
@@ -132,9 +133,9 @@
 - **All tools**: warnings are amber instead of orange and errors a softer red, so the two
   stand apart. The success green and the link blue changed with them, and on the light
   theme links are easier to read.
-- **Save editor**: a save is edited as its own version, whatever the sidebar shows: the
-  portraits and Set PES path follow it, and no warning says it is not the sidebar's version.
-  The file picker starts in the folder of the last save opened.
+- **Save editor**: the portraits and Set PES path follow the open save's PES version, not
+  the sidebar's, and no warning says the two differ. The file picker starts in the folder of
+  the last save opened.
 - **Save editor and Ruleset editor**: the sidebar's PES version box is empty and disabled
   while either is shown.
 - **Save editor**: Up and Down walk the player list again after Page Up or Page Down left a
@@ -166,8 +167,7 @@
   hair color comment in `settings.toml` spell "color", as the rest of the program does.
 - **Save editor**: on the light theme, a white or pale color code in a team's or player's
   name is drawn darker, so the name stays readable on the light background.
-- **Save editor**: the column heads of the unsaved changes list are no longer dimmed, and
-  the notice after a paste that left values out ends with a full stop.
+- **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.
 - **Save editor**: the filter box matches an ID from its start, so `820` lists team 820 and

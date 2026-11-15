@@ -17,11 +17,11 @@ The **File** menu lists, from the top:
 Once a save is open, the window's title bar shows its path, in square brackets after the
 editor's name, and the toolbar shows `• unsaved changes` while edits wait unsaved.
 
-**A save from another PES version**
+**The save's PES version**
 
-A save opens and edits as the PES version it comes from, whatever version the sidebar's
-selector shows: the editor reads the version from the save itself, and takes the players'
-portraits from that version's PES folder.
+The editor reads a save's PES version from the file itself and edits it as that version, so
+the sidebar's version box stays empty here. The players' portraits come from that version's
+PES folder.
 
 **Teams and players**
 
@@ -70,8 +70,23 @@ keeps it as typed.
 
 **Undo and redo**
 
-Every edit is undoable, and the **Edit** menu's **Undo** and **Redo** step through them
-(Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
+Every edit can be undone: the **Edit** menu's **Undo** (Ctrl+Z) and **Redo** (Ctrl+Y or
+Ctrl+Shift+Z) step through your edits. A drag, or a run of typing in one field, is one undo
+step.
+
+**Copy and paste**
+
+Ctrl+C copies the selected row, and Ctrl+V pastes it onto another selected row of the same
+kind: a player's row copies his stats, which paste as **Copy/swap stats…** copies them, and a
+team's row copies its Gameplan. In a team's **Tactics** part, a click on the preset bar or
+the formation bar makes Ctrl+C copy the preset or formation shown, and Ctrl+V paste over the
+one shown.
+
+The copy is text on the system clipboard, so it also pastes into another Save editor window,
+or after another save is opened, even a save of another PES version. When the target's
+version cannot hold a value as it was, the status bar says how many were left out or
+changed. Each paste is one undo step, and while you type in a text field, Ctrl+C and Ctrl+V
+copy and paste its text.
 
 **Quick actions**
 

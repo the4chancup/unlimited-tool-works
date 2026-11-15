@@ -208,18 +208,15 @@ fn tools(ctx: &egui::Context) -> Vec<Box<dyn StudioTool>> {
 That is the full registry; the three tools registered today are the first, second and fourth
 (`spec/core/architecture.md` "Tool plugin interface").
 
-**The PES folder's check and setting.** `ctx.pes_exe_check()` returns the verdict that colours
-the sidebar's selector (`ExeCheck`: `Found`, `OtherVersion(version)`, `NoExe`, `NoFolder`;
-`gui.md` "Live exe check"). The sidebar stores the verdict in the context each frame it draws
-it, before the active view, so a tool reads that frame's verdict. A tool never lists the folder
+**The PES folder's check and setting.** `ctx.pes_exe_check_for(version)` says whether the
+folder the settings resolve for `version` (`CommonSettings::pes_folder_for`) holds that
+version's game (`ExeCheck`: `Found`, `OtherVersion(version)`, `NoExe`, `NoFolder`; `gui.md`
+"Live exe check"). It is one listing (`pes_process::check_pes_folder`) kept per version, and
+listed again when that folder changes, when `ctx.set_pes_folder_for` stores a folder for the
+version, and when the window regains focus. The sidebar colours its selector from the same
+verdict, and only under a tool that targets a PES version. A tool never lists the folder
 itself, because a check of its own could disagree with the selector, and a per-frame one would
 list the folder at every repaint.
-
-A tool that works a file of one version asks about that version, not the selected one:
-`ctx.pes_exe_check_for(version)` is the same listing (`pes_process::check_pes_folder`) of the
-folder the settings resolve for `version` (`CommonSettings::pes_folder_for`), kept per version
-and listed again when that folder changes, when `ctx.set_pes_folder_for` stores a folder for
-the version, and when the window regains focus, the sidebar's own rule.
 
 `ctx.set_pes_folder_for(folder, version)` stores a picked folder for `version`
 (`CommonSettings::fix_pes_folder`), and queues `ShellRequest::SettingsChanged`. Its callers

@@ -2203,7 +2203,14 @@ briefs, review loops, gates and mutation runs as for any step.
       concerns accepted, all tests that passed on wrong code (a kept file below the
       backup's top level, no mark after a failed update, a version that is not the
       build's, a cancel set before the call), which ends SWE-2's loop
-    - [ ] Carbon's round 2 by the rule
+    - [x] Carbon's round 2, 2026-11-15 (at `2f9b9c44`): 8 of 8 concerns accepted: the bar
+      kept `Update available` on an idle window after a hidden install ended; a failed
+      Restart now was only logged, past the log's closing line, so the next start reported
+      a crash; `skipped_version` untested through the window's check and a tool command;
+      Escape on `Update failed` untested; two stale doc comments; the lead's text: the
+      settings file's comment, the help's Restart now sentence, the changelog's launchers
+      (`4705095d`)
+    - [ ] the rework (SWE-2, `sk/updrw`), then Carbon's round 3
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2241,6 +2248,12 @@ briefs, review loops, gates and mutation runs as for any step.
       ellipsis as the other two columns are, and three tests that passed on wrong code
       (the cut's width bounded from below, the whole dragged row watched, the float gone
       after the release); its loop ended. One paid round is owed (Carbon)
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 9 of 10 concerns accepted: a
+        Comparator panel dragged narrow cut its values with no ellipsis; a held row slid
+        away from the pointer and vanished while the wheel scrolled the list; Esc's cancel
+        of a drop untested (a test first); two tests that could not fail; the lead's text:
+        the plan's drag and Comparator paragraphs (`10a7b2d3`)
+      - [ ] the rework (SWE-2, `sk/cmprw`), then Carbon's round 2
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2266,6 +2279,13 @@ briefs, review loops, gates and mutation runs as for any step.
       inside its panel, the team view's last row at 739 and no logo on the frame a save
       opens
     - [ ] one paid round (Carbon)
+    - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 14 of 15 concerns accepted: a Ctrl
+      shortcut ran with Shift or Alt held too, so Ctrl+Shift+S, Save as elsewhere, saved
+      over the open file; an undo step reached back past a save; the Player menu differed
+      with a team row selected; recent-file labels used backslashes on Linux; the welcome
+      list kept a stale entry; tests and citations; the lead's text: the help's Undo
+      paragraph and a changelog clause (`10a7b2d3`)
+    - [ ] the rework (SWE-2, `sk/barrw`, after `sk/cliprw` merges), then Carbon's round 2
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
@@ -2310,6 +2330,12 @@ briefs, review loops, gates and mutation runs as for any step.
       standing notice and `SwitchVersion` removed (ST-BAR-07, 08 withdrawn)
     - [x] its SWE-2 loop (2026-11-12; rulings "S-sel r1" and "S-sel r2", five then two
       accepted; fixes `1c765193` and the commit after it). Carbon owed
+    - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 11 of 13 concerns accepted:
+      portraits stayed blank after the PES folder was repaired and picked again; an unused
+      context API (`pes_exe_check`) beside the sidebar's own check; six tests that could not
+      fail; the lead's text: the help's PES version paragraph and Set PES path trigger, the
+      architecture section, a changelog line (`cef04d9c`)
+    - [ ] the rework (SWE-2, `sk/selrw`, after `sk/barrw` merges), then Carbon's round 2
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
       `look-pes-selector` in `docs/maintainer/tasks.html`
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -2456,6 +2482,12 @@ briefs, review loops, gates and mutation runs as for any step.
       none of them the crash, which the look found. "S-inst r2" over the fix: 1 of 3,
       its loop ended; the checkpoint's survivor (`set_relaunch` replaced by nothing) got
       its test (`9d12e100`). Owed: one paid round (Carbon)
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 5 of 7 concerns accepted:
+        `taskbar.rs` missing from the mutation run's Windows-only list, so its mutants
+        counted as missed on the VPS; a test helper that accepted a value of the wrong
+        type; two hidden-window tests where one covers both; the lead's text: the GUI
+        plan's taskbar section, the dependency row and the `Cargo.toml` note (`10a7b2d3`)
+      - [ ] the rework (SWE-2, `sk/instrw`), then Carbon's round 2
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -2501,6 +2533,15 @@ briefs, review loops, gates and mutation runs as for any step.
       `8aa9c94e`). "S-clip r3": 1 of 2 accepted (all four auto flags set apart in the
       Gameplan test; the lead's edit, uncommitted until the Save editor's tests are rerun
       with the drop line's rework), which ends the SWE-2 loop; Carbon is left
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 11 of 13 concerns accepted: a
+        preset or formation press stayed the target after Down moved to a player, so Ctrl+V
+        wrote a hidden preset; a row reached with no click took no paste; a team's own
+        Gameplan pasted back dirtied a save holding 255 in the bench's last nine (DECISIONS
+        2026-11-15 "refills the bench's last nine only when"); Ctrl+C over text selected in
+        a label copied the save; three tests that could not fail (CRLF, formations off
+        preset 1, a mixed notes tail); the lead's text: the help's Copy and paste section,
+        the plan bullet's stale lines, two changelog lines (`4705095d`)
+      - [ ] the rework (SWE-2, `sk/cliprw`), then Carbon's round 2
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
@@ -2535,7 +2576,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the SWE-2 round over `27f7b59a`, 2026-11-12: 2 of 4 concerns accepted, both
       wording (the help and the plan name the `.upgrading` folder `--all` passes over),
       which ends SWE-2's loop
-    - [ ] Carbon's round 2, eight having been accepted in its first
+    - [x] Carbon's round 2, 2026-11-15 (at `2f9b9c44`): 5 of 7 concerns accepted: no test
+      ran a clean export after an unclean one; the panic hook's call of the hook before it
+      untested; `FIRST_RUN`'s doc named removed commands; the lead's text: the help's
+      "Team compiler" and its several-exports paragraph split in three (`4705095d`)
+    - [ ] the rework (SWE-2, `sk/logallrw`), then Carbon's round 3
   - [x] 0.0.2-cli 2026-11-12 (`6fed2e3e`, Opus; tier 1, its review loops owed): with
     `check_for_updates` on, a tool command starts the check on its own thread and, when a
     newer release has answered by the run's end, prints one line last on stderr and in the
@@ -2636,6 +2681,13 @@ briefs, review loops, gates and mutation runs as for any step.
         (`4cded58e`, merge `46fc9622`; DECISIONS 2026-11-11), then SWE-2 r2: 0 accepted (the
         paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`; a doc nit
         fixed), its loop ended; Carbon owed
+        - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 10 of 11 concerns accepted: a
+          player, Boots or Gloves FMDL naming the token in a game-folder path, which the
+          upgrader rewrites to `./` (`/Assets/.../face/real/00000/sourceimages/u0XXXp1.dds`,
+          as Blender's exporter writes it), compiled with no finding; five checks no test
+          could fail; the catalog row's text, the help and two spec passages (`64d1981f`,
+          the rest with the rework)
+        - [ ] the rework (SWE-2, `sk/ktorw`), then Carbon's round 2
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
@@ -3463,7 +3515,13 @@ points there.
   before trusting a dump on a loaded machine: rerun under the gates' load, read the
   monitor's own wait and the log it leaves; do not loosen the test
   Again 2026-11-15 in changesperf's `gates-changed` (27 s, `FileNotFound`) beside three
-  Carbon runs and a sidekick's build; alone it passed in 0.16 s.
+  Carbon runs and a sidekick's build; alone it passed in 0.16 s. Likely cause, from the code
+  (not yet confirmed): `start_monitor` waits `MONITOR_CONNECT_TIMEOUT` (2 s) for the monitor,
+  the same binary started again, to accept; a run 27 s slow can miss that, and the session
+  then runs unwatched with one Warn line (`request_dump` itself has no timeout on Windows,
+  minidumper 0.11). Next: make the test print `data/utw.log` when the dump is missing (the
+  Warn line confirms or rules this out), then, if confirmed, raise the bound, which costs
+  nothing when the monitor is up in time.
   Seen again 2026-11-14 in the lead's `gates-changed 62e261fa` (`FileNotFound` at
   `crash_dump.rs:70`, beside a SWE-2 census build); alone it passed in 0.27 s.
 
