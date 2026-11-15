@@ -17954,8 +17954,8 @@ separator below `Undo` and `Redo`. Each does what its key does, on the same targ
 disabled when Ctrl+C would copy nothing, and `Paste` only when there is no target. `Paste`
 asks egui for the clipboard (`ViewportCommand::RequestPaste`), whose text then arrives as
 Ctrl+V's does. Each one's tooltip says what it will do in the notices' words (`Copies /f/'s
-preset 1`, `Pastes a preset onto /f/'s preset 1`); Paste's names the one kind the target
-takes, since the clipboard is unread until the paste.
+preset 1`, `Pastes the copied preset onto /f/'s preset 1`); Paste's names the one kind the
+target takes, since the clipboard is unread until the paste.
 Why: a member who does not know the keys never finds copy and paste, since no menu named
 them. `Paste` stays enabled with a target because the window cannot see the clipboard before
 it asks, and a copy of another kind already changes nothing under Ctrl+V.

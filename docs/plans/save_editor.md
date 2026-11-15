@@ -496,11 +496,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   clipboard before it asks for it, so `Paste` asks egui (`ViewportCommand::RequestPaste`),
   which hands the clipboard's text over as Ctrl+V does, and a copy of another kind changes
   nothing, as with Ctrl+V. A member who does not know the keys finds both in the menu.
-  Each one's tooltip says what it will do, in the notices' words: `Copies /f/'s preset 1`
-  (the copy's words), and `Pastes <what> onto <target>`, where `<what>` is the one kind the
-  target takes (`stats`, `a Gameplan`, `a preset`, `a formation`), since the window cannot
-  read the clipboard before the paste, and `<target>` is named as the paste's notice names
-  it (`Pastes stats onto Y`, `Pastes a preset onto /f/'s preset 1`).
+  Each one's tooltip says what it will do, in the notices' words: Copy names its copy
+  (`Copies /f/'s preset 1`), and Paste the copy's kind and the target (`Pastes the copied
+  stats onto Y`, `Pastes the copied preset onto /f/'s preset 1`). Paste names the one kind
+  the target takes (stats, Gameplan, preset, formation), not the copy itself, since the
+  window cannot read the clipboard before the paste.
 
   The picker starts in the folder the last save was opened from, by whichever of the opens,
   remembered in the tool's settings (`last_folder`) across starts: a member who keeps his
@@ -3105,9 +3105,9 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 player A's row selected WHEN the Edit menu's Copy is chosen, then player
                 B's row selected and its Paste chosen THEN the clipboard, B's record and
                 both notices are as with Ctrl+C and Ctrl+V, Copy's tooltip reading `Copies
-                A's stats` and Paste's `Pastes stats onto B`, and with preset 1 of team
-                /f/ the target `Copies /f/'s preset 1` and `Pastes a preset onto /f/'s
-                preset 1`; GIVEN a player the export refuses selected THEN the Edit menu's
+                A's stats` and Paste's `Pastes the copied stats onto B`, and with preset 1
+                of team /f/ the target `Copies /f/'s preset 1` and `Pastes the copied preset
+                onto /f/'s preset 1`; GIVEN a player the export refuses selected THEN the Edit menu's
                 Copy is disabled
 SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team's Gameplan, a
                 preset or a formation) and a second window with another save open, of the

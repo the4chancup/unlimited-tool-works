@@ -3810,8 +3810,8 @@ function editMenu() {
     ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !S.save || (clipKind() === "player" && groupOn()),
       S.save ? "Copies " + clipHeld() : undefined],
     ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !S.save,
-      S.save ? "Pastes " + { player: "stats", team: "a Gameplan", preset: "a preset",
-        formation: "a formation" }[clipKind()] + " onto " + clipOnto() : undefined],
+      S.save ? "Pastes the copied " + { player: "stats", team: "Gameplan", preset: "preset",
+        formation: "formation" }[clipKind()] + " onto " + clipOnto() : undefined],
   ], { frame0: true });
 }
 
