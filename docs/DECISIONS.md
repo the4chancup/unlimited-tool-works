@@ -18021,3 +18021,12 @@ member to untick it and lose every other look the file carried (found importing
 `gbfg_vgl27.ted` into a PES 2017 save).
 Plan: `plans/save_editor.md`, the paragraph starting "A shirt number past the target's
 range". Worklog: the after-0.0.2 list.
+
+## 2026-11-15 — releases — A file or setting a release stops reading is announced under Important
+Decision: when a release no longer reads a file or setting an earlier release wrote (a Team
+TOML key renamed, a settings key dropped), its changelog says so under `### Important`, with
+what the member does about it (export again, rename the key by hand).
+Why: before 1.0.0 no shim keeps an old file working (the entry of 2026-11-13 on aliases and
+deprecation shims), so the changelog is the testers' only warning, and the maintainer reads it
+to know when to tell them.
+Plan: `plans/core/distribution.md` "Changelog and version display", the `### Important` item.

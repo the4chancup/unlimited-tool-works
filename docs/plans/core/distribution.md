@@ -432,7 +432,11 @@ a member needs them (Red's changelog does the same, and members read a long list
 as its first heading):
 
 - `### Important`: what changes how a member works or what they must know (a new tool, a
-  control that moved, a list that now shows less);
+  control that moved, a list that now shows less). This includes a file or setting an earlier
+  release wrote that this one no longer reads, with what the member does about it ("Team files
+  written by 0.0.1 are refused: export the team again, or rename `number` to `shirt_number` in
+  the file"). Before 1.0.0 nothing keeps such a file working, so this line is all the notice
+  a member gets;
 - `### Useful`: what else was added or changed;
 - `### New checks`: new warnings and errors (Live AATF, `check-aatf`, the compiler's checks),
   which a cup manager looks for in particular;

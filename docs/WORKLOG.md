@@ -2167,6 +2167,12 @@ briefs, review loops, gates and mutation runs as for any step.
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-shirtno the Team TOML player key `number` is `shirt_number` (the maintainer,
+    2026-11-15: an error naming `players.03.number` read as the player's ID) -> verify: a
+    document holding `number` is refused as an unknown key; the spec's Team TOML block
+    (`spec/pes_savefile/operations.md`) and an `### Important` changelog line ("Team files
+    written by 0.0.1 are refused: export the team again, or rename `number` to
+    `shirt_number`") land with it. SWE-2 (`.tmp/0_0_2/shirtno/brief.md`), after 0.0.2-clip
   - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
     failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
     picking state 522.71875), where it passes in a worktree: the tree's copy sits at a
