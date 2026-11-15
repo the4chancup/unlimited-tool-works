@@ -43,9 +43,6 @@ pub(crate) struct PictureDialog {
     folder: String,
     /// The picture's file name, as filled in or typed.
     file_name: String,
-    /// The settings box: each preset's settings beside its row. Unticked
-    /// each time the dialog opens.
-    settings: bool,
     /// The Portraits box: this picture's alone, never written back to the
     /// formation bar's setting.
     portraits: bool,
@@ -68,8 +65,7 @@ impl PictureDialog {
             team_id: team.id,
             // An absolute setting replaces `exe_dir` in the join.
             folder: exe_dir.join(folder_setting).display().to_string(),
-            file_name: picture_file_name(team.id, &team.name, false),
-            settings: false,
+            file_name: picture_file_name(team.id, &team.name),
             portraits,
             asking_replace: false,
         }
@@ -89,6 +85,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         picture,
         pick_folder_dialog,
         formation_pictures_flat,
+        formation_pictures_settings,
         ..
     } = view;
     let Some(dialog) = picture.as_mut() else {
@@ -110,14 +107,12 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 .labelled_by(label.id);
                 ui.end_row();
             });
-            if picture_boxes(
+            picture_boxes(
                 ui,
-                &mut dialog.settings,
+                formation_pictures_settings,
                 &mut dialog.portraits,
                 formation_pictures_flat,
-            ) {
-                dialog.file_name = settings_file_name(&dialog.file_name, dialog.settings);
-            }
+            );
             modal_buttons(ui, |ui| {
                 if ui.button("Cancel").clicked() {
                     close = true;
@@ -157,7 +152,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let options = PictureOptions {
             portraits: dialog.portraits,
             flat: *formation_pictures_flat,
-            settings: dialog.settings,
+            settings: *formation_pictures_settings,
         };
         let (team_id, folder, file_name) = (
             dialog.team_id,
@@ -187,32 +182,6 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
-/// `file_name` after the settings box flips to `settings`: a trailing
-/// ` settings.png` goes back to `.png`, then, ticked, a trailing `.png`
-/// becomes ` settings.png`, both in any case. A team's two pictures so
-/// get two names, and a name typed without `.png` stays as it is.
-fn settings_file_name(file_name: &str, settings: bool) -> String {
-    let plain = match strip_suffix_any_case(file_name, " settings.png") {
-        Some(stem) => format!("{stem}.png"),
-        None => file_name.to_owned(),
-    };
-    if !settings {
-        return plain;
-    }
-    match strip_suffix_any_case(&plain, ".png") {
-        Some(stem) => format!("{stem} settings.png"),
-        None => plain,
-    }
-}
-
-/// `text` without `suffix` at its end, compared in any ASCII case; `None`
-/// when it does not end so.
-fn strip_suffix_any_case<'a>(text: &'a str, suffix: &str) -> Option<&'a str> {
-    let start = text.len().checked_sub(suffix.len())?;
-    let (stem, end) = (text.get(..start)?, text.get(start..)?);
-    end.eq_ignore_ascii_case(suffix).then_some(stem)
-}
-
 /// The grid row `Folder`, which both picture dialogs hold: `folder`'s box
 /// and Browse…, whose pick replaces it.
 pub(super) fn folder_row(
@@ -237,22 +206,19 @@ pub(super) fn folder_row(
 
 /// The three boxes under both picture dialogs' grids, one under the other
 /// and `CHECKBOX_SPACING` apart: the settings box, Portraits and the grain
-/// box. Whether the settings box flipped this frame.
+/// box.
 pub(super) fn picture_boxes(
     ui: &mut egui::Ui,
     settings: &mut bool,
     portraits: &mut bool,
     flat: &mut bool,
-) -> bool {
+) {
     ui.scope(|ui| {
         ui.spacing_mut().item_spacing.y = CHECKBOX_SPACING;
-        let flipped =
-            checkbox(ui, settings, "With each preset's settings beside its row").changed();
+        checkbox(ui, settings, "With each preset's settings beside its row");
         checkbox(ui, portraits, "Portraits").on_hover_text(PORTRAITS_TIP);
         checkbox(ui, flat, "Without the pitch's grain (smaller file)").on_hover_text(FLAT_TIP);
-        flipped
-    })
-    .inner
+    });
 }
 
 /// Writes team `team_id`'s picture as `file_name` in `folder`
@@ -309,33 +275,4 @@ fn write_picture(
     studio_core::files::replace_file(&folder.join(file_name), |temporary| {
         std::fs::write(temporary, png.get_ref())
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_settings_box_moves_settings_before_the_extension() {
-        for (file_name, settings, expected) in [
-            ("f.png", true, "f settings.png"),
-            ("f settings.png", false, "f.png"),
-            ("f settings.png", true, "f settings.png"),
-            ("f.PNG", true, "f settings.png"),
-            ("f Settings.PNG", false, "f.png"),
-            // A name typed without the extension is the member's own.
-            ("f", true, "f"),
-            ("f settings", false, "f settings"),
-            // A name shorter than the suffix, or one whose suffix would
-            // start inside a character.
-            ("png", true, "png"),
-            ("\u{20ac}\u{20ac}\u{20ac}", true, "\u{20ac}\u{20ac}\u{20ac}"),
-        ] {
-            assert_eq!(
-                settings_file_name(file_name, settings),
-                expected,
-                "{file_name:?}, ticked {settings}"
-            );
-        }
-    }
 }

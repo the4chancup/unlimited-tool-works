@@ -1,5 +1,5 @@
 //! The formation picture dialog's tests (SE-GUI-86): the Team menu's entry
-//! end to end through `Tool::view`, so the program's folder and the two
+//! end to end through `Tool::view`, so the program's folder and the three
 //! remembered settings are the tool context's.
 
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, ShellRequest, StudioTool};
@@ -236,9 +236,9 @@ impl Scene {
         )
     }
 
-    /// Team `id`'s picture's file name, without the settings.
+    /// Team `id`'s picture's file name.
     fn file_name(&self, id: u32) -> String {
-        picture_file_name(id, &team_entry(&self.tool.view, id).name, false)
+        picture_file_name(id, &team_entry(&self.tool.view, id).name)
     }
 
     /// The save's cup teams' ids, in id order.
@@ -532,8 +532,7 @@ fn the_formations_picture_dialog_writes_one_png() {
     }
 
     // The settings box, unticked between the grid and Portraits: ticking
-    // it puts " settings" before the name's extension, unticking takes it
-    // off.
+    // it leaves the file name as it is.
     let nodes = scene.draw();
     let settings = node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX);
     assert!(!ticked(&nodes, SETTINGS_BOX), "the settings box unticked");
@@ -550,7 +549,11 @@ fn the_formations_picture_dialog_writes_one_png() {
     );
     let nodes = scene.click(settings);
     assert!(ticked(&nodes, SETTINGS_BOX));
-    assert_eq!(field(&nodes, "File name"), "f settings.png");
+    assert_eq!(
+        field(&nodes, "File name"),
+        "f.png",
+        "the name as one without"
+    );
     let nodes = scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
     assert!(!ticked(&nodes, SETTINGS_BOX));
     assert_eq!(field(&nodes, "File name"), "f.png");
@@ -616,16 +619,16 @@ fn a_ticked_settings_box_writes_the_settings_picture() {
     let nodes = scene.open_dialog();
     scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
     scene.press("Save");
+    assert_eq!(files_in(&folder), ["f.png"], "named as one without");
     assert_eq!(
-        png_size(&folder.join("f settings.png")),
+        png_size(&folder.join("f.png")),
         (ONE_COLUMN.0 + 12 + 240, ONE_COLUMN.1 + 30),
         "the picture with the settings column and the Automatic settings line"
     );
-    assert!(!folder.join("f.png").exists(), "no picture without them");
 
-    // Not remembered: the next dialog starts unticked, on the plain name.
+    // Remembered: the next dialog starts ticked, on the same name.
     let nodes = scene.open_dialog();
-    assert!(!ticked(&nodes, SETTINGS_BOX));
+    assert!(ticked(&nodes, SETTINGS_BOX));
     assert_eq!(field(&nodes, "File name"), "f.png");
 }
 
@@ -662,6 +665,34 @@ fn the_grain_box_is_remembered_and_its_picture_is_smaller() {
     assert!(ticked(&nodes, FLAT_BOX), "the restart reads it back");
 }
 
+// SE-GUI-86
+// SE-GUI-89
+#[test]
+fn the_settings_box_is_remembered_and_shared_by_the_two_dialogs() {
+    let mut scene = Scene::new("picture_settings_remembered");
+    let nodes = scene.open_dialog();
+    assert!(!ticked(&nodes, SETTINGS_BOX), "premise: unticked");
+    let nodes = scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
+    assert!(ticked(&nodes, SETTINGS_BOX));
+    assert_eq!(
+        scene
+            .table()
+            .get("formation_pictures_settings")
+            .and_then(toml::Value::as_bool),
+        Some(true),
+        "the tick is written"
+    );
+
+    scene.restart();
+    let nodes = scene.open_dialog();
+    assert!(ticked(&nodes, SETTINGS_BOX), "the restart reads it back");
+    assert_eq!(field(&nodes, "File name"), "f.png");
+    scene.press("Cancel");
+    scene.open_range();
+    let nodes = scene.range_nodes();
+    assert!(ticked(&nodes, SETTINGS_BOX), "the range dialog's box too");
+}
+
 #[test]
 fn the_folder_a_picture_was_saved_to_is_the_next_dialog_s() {
     let mut scene = Scene::new("picture_dialog_folder");
@@ -695,12 +726,10 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
     let labels: Vec<String> = ids.iter().map(|id| scene.team_label(*id)).collect();
     let (first_label, last_label) = (labels[0].clone(), labels[ids.len() - 1].clone());
     let first_name = team_entry(&scene.tool.view, first).name;
-    let line = |settings: bool| {
-        format!(
-            "One picture per team, named after it ({}), overwriting files with the same names.",
-            picture_file_name(first, &first_name, settings)
-        )
-    };
+    let line = format!(
+        "One picture per team, named after it ({}), overwriting files with the same names.",
+        picture_file_name(first, &first_name)
+    );
     let folder = scene.ctx.paths().exe_dir.join("formations");
     let count = format!("{} teams", ids.len());
 
@@ -726,7 +755,7 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
             vec![SETTINGS_BOX.to_owned()],
             vec!["Portraits".to_owned()],
             vec![FLAT_BOX.to_owned()],
-            vec![line(false)],
+            vec![line.clone()],
             vec!["Save pictures".to_owned(), "Cancel".to_owned()],
         ]
     );
@@ -734,42 +763,21 @@ fn the_range_dialog_picks_its_teams_folder_and_boxes() {
     assert!(ticked(&nodes, "Portraits"), "Portraits as the bar's");
     assert!(!ticked(&nodes, FLAT_BOX), "the grain drawn by default");
 
-    // The settings box flips the file-name line, and the dialog keeps its
-    // width: the two lines differ, and the longer is wider than the grid,
-    // so a cell sized for the line shown would widen the dialog.
-    let style = scene.window.ctx.style_of(scene.window.ctx.theme());
-    let font = egui::TextStyle::Body.resolve(&style);
-    let [plain, with_settings] = [false, true].map(|settings| {
-        scene.window.ctx.fonts_mut(|fonts| {
-            fonts
-                .layout_no_wrap(line(settings), font.clone(), egui::Color32::WHITE)
-                .size()
-                .x
-        })
-    });
-    assert!(plain < with_settings, "premise: {plain} < {with_settings}");
-    let grid_width = {
-        let row = |text: &str| {
-            nodes
-                .iter()
-                .find(|node| node.value() == Some(text) || node.label() == Some(text))
-                .and_then(accesskit::Node::bounds)
-                .unwrap_or_else(|| panic!("no {text:?}"))
-        };
-        row("Browse\u{2026}").x1 - row("Folder").x0
-    };
-    assert!(
-        f64::from(with_settings) > grid_width,
-        "premise: the longer line, {with_settings}, is wider than the grid's {grid_width}"
-    );
+    // The settings box writes its setting, and the line names the same
+    // file in both states, so the dialog keeps its width when it flips.
     let unticked = scene.dialog_width();
     scene.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
     let nodes = scene.range_nodes();
     assert!(ticked(&nodes, SETTINGS_BOX));
-    assert!(
-        label_value(&nodes, &line(true)),
-        "the line with ` settings`"
+    assert_eq!(
+        scene
+            .table()
+            .get("formation_pictures_settings")
+            .and_then(toml::Value::as_bool),
+        Some(true),
+        "the tick is written"
     );
+    assert!(label_value(&nodes, &line), "the same file named");
     assert_eq!(
         scene.dialog_width(),
         unticked,

@@ -155,6 +155,10 @@ formation_pictures_folder = "formations"
 # Default: false
 formation_pictures_flat = false
 
+# If true, each formation picture lists every preset's settings beside its row.
+# The same as the "With each preset's settings beside its row" box when saving a picture.
+# Default: false
+formation_pictures_settings = false
 
 [compiler]
 
