@@ -59,6 +59,22 @@ pub fn toolbar_separator(ui: &mut egui::Ui) -> egui::Response {
     response
 }
 
+/// Whether `key` was pressed this frame with Ctrl and no other modifier,
+/// taking it out of `input` if so: a toolbar's single-modifier shortcut,
+/// which egui's `consume_key(Ctrl, …)` would also take with Shift or Alt
+/// held (Ctrl+Shift+S would then Save over the open file).
+pub fn consume_ctrl(input: &mut egui::InputState, key: egui::Key) -> bool {
+    let before = input.events.len();
+    input.events.retain(|event| {
+        !matches!(
+            event,
+            egui::Event::Key { key: pressed, pressed: true, modifiers, .. }
+                if *pressed == key && modifiers.matches_exact(egui::Modifiers::CTRL)
+        )
+    });
+    input.events.len() < before
+}
+
 #[cfg(test)]
 mod tests {
     use egui::accesskit::{self, Role};

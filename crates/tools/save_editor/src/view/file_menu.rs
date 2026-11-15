@@ -12,7 +12,7 @@ use std::path::{Component, Path, PathBuf};
 
 use pes_savefile::discovery::SavefileCandidate;
 use pes_version::PesVersion;
-use studio_core::widgets::{add_enabled, menu_button, menu_separator};
+use studio_core::widgets::{add_enabled, consume_ctrl, menu_button, menu_separator};
 
 use crate::view::SaveView;
 use crate::view::prompt::{self, Pending};
@@ -163,15 +163,20 @@ fn opens(view: &SaveView, discovered: &[(PesVersion, SavefileCandidate)]) -> Ope
 }
 
 /// The File menu button. Discovery lists folders on disk, so it runs once
-/// when the menu opens and its list is kept until the menu closes. An
-/// open clicked with unsaved changes asks first (the unsaved-changes
-/// prompt), as the picker does. Returns the write chosen this frame, if
-/// any; Save and Save as are disabled while no save is open.
+/// when the menu opens and its list is kept until the menu closes; while
+/// no save is open the welcome panel's list takes the same scan, so the
+/// two never disagree. An open clicked with unsaved changes asks first
+/// (the unsaved-changes prompt), as the picker does. Returns the write
+/// chosen this frame, if any; Save and Save as are disabled while no save
+/// is open.
 pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
     let save_open = view.session.is_some();
     let menu = menu_button(ui, "File", |ui| {
         if view.discovered.is_none() {
             view.discovered = Some(discover_all(view));
+            if !save_open {
+                view.welcome_discovered = view.discovered.clone();
+            }
         }
         let opens = opens(view, view.discovered.as_ref().expect("filled above"));
         let mut chosen = None;
@@ -362,20 +367,6 @@ pub(super) fn open_shortcut(view: &mut SaveView, shortcut: Shortcut) {
     request(view, pending);
 }
 
-/// Whether `key` was pressed with Ctrl and no other modifier, taking it
-/// out of `input` if so.
-fn consume_ctrl(input: &mut egui::InputState, key: egui::Key) -> bool {
-    let before = input.events.len();
-    input.events.retain(|event| {
-        !matches!(
-            event,
-            egui::Event::Key { key: pressed, pressed: true, modifiers, .. }
-                if *pressed == key && modifiers.matches_exact(egui::Modifiers::CTRL)
-        )
-    });
-    input.events.len() < before
-}
-
 /// The digit that, with Ctrl, opens `version`'s newest discovered save:
 /// 5 to 9 for PES 2015 to PES 2019, then 0 for PES 2020 and 1 for PES 2021.
 fn shortcut_key(version: PesVersion) -> egui::Key {
@@ -439,7 +430,7 @@ fn request(view: &mut SaveView, pending: Pending) {
 }
 
 /// A recent file's entry: the last three parts of its path (two folders
-/// and the file name), joined by `\` as Windows writes a path.
+/// and the file name), joined by the platform's separator.
 fn recent_label(path: &Path) -> String {
     let parts: Vec<String> = path
         .components()
@@ -448,7 +439,7 @@ fn recent_label(path: &Path) -> String {
             _ => None,
         })
         .collect();
-    parts[parts.len().saturating_sub(3)..].join("\\")
+    parts[parts.len().saturating_sub(3)..].join(std::path::MAIN_SEPARATOR_STR)
 }
 
 #[cfg(test)]

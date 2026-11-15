@@ -100,8 +100,9 @@ fn the_generators_entries_are_disabled() {
 
 // RE-GUI-01's toolbar clause: with no document the toolbar stands over
 // the start page — File, Edit and Randomize in the band, what needs a
-// document disabled inside File (Open… working), no name and no Show
-// preview — and the page's title under it.
+// document disabled inside File and Edit (Open… working), no name and
+// no Show preview — and the page's title under it.
+// RE-GUI-01
 #[test]
 fn the_toolbar_stands_over_the_start_page_with_its_document_items_disabled() {
     let (ctx, _events, mut window, mut view) = fresh();
@@ -126,13 +127,23 @@ fn the_toolbar_stands_over_the_start_page_with_its_document_items_disabled() {
         &ctx,
     );
     let frame = window.draw(&mut view, &ctx);
-    for entry in ["New from template…", "Save", "Save as…"] {
+    for entry in ["New from template…", "Save Ctrl+S", "Save as…"] {
         assert!(node(&frame.nodes, entry).is_disabled(), "{entry}");
     }
     assert!(
         !node(&frame.nodes, "Open…").is_disabled(),
         "Open… works with no document"
     );
+    // With File's menu open the pointer entering Edit's opens Edit —
+    // Undo and Redo disabled with no document.
+    let edit = centre(node(&frame.nodes, &menu_label("Edit")));
+    window.frame(vec![egui::Event::PointerMoved(edit)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    let frame = window.draw(&mut view, &ctx);
+    for entry in ["Undo Ctrl+Z", "Redo Ctrl+Y"] {
+        assert!(node(&frame.nodes, entry).is_disabled(), "{entry}");
+    }
     let title = node(&frame.nodes, "Ruleset editor")
         .bounds()
         .expect("drawn");
@@ -209,6 +220,7 @@ fn the_separator_after_randomize_comes_with_a_document() {
 // dialog's frame and title centred on the view under the toolbar (the
 // draft's `.start-page`), not a real dialog — one would hold the
 // sidebar's tool switch too, so nothing of it is a modal.
+// RE-GUI-01
 #[test]
 fn the_first_start_page_is_the_dialogs_frame_not_a_modal() {
     let (ctx, _events, mut window, mut view) = fresh();

@@ -104,6 +104,36 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
     }
 }
 
+/// The row stands `BAND_MARGIN` inside its band (the draft's `.top`
+/// padding): the File menu button 8 in from the left edge and 3 under the
+/// band's top, the band's bottom line's top edge 3 under the button.
+#[test]
+fn the_toolbars_row_stands_inside_the_bands_margin() {
+    let path = fixture(PesVersion::Pes21, "toolbar_band_margin");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let file = menu_button(&nodes, "File")
+        .bounds()
+        .expect("the File menu button's bounds");
+    assert_eq!(file.x0, 8.0, "the File menu 8 in from the left edge");
+    assert_eq!(file.y0, 3.0, "and 3 under the top");
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    // `band_bottom` is the line's bottom edge; its top is the band's.
+    assert_eq!(
+        band_bottom(&window, &nodes, &shapes) - f64::from(stroke.width),
+        file.y1 + 3.0,
+        "the band's bottom 3 under the row"
+    );
+}
+
 /// With the Player menu open, the pointer moving onto Team's button (no
 /// click) opens the Team menu and closes the Player menu.
 #[test]
@@ -207,6 +237,85 @@ fn a_shortcut_is_drawn_right_of_its_label_inside_the_menu() {
         galley_color(shortcut),
         window.ctx.global_style().visuals.weak_text_color(),
         "the weak colour"
+    );
+}
+
+// With a team row selected the Player menu reads the same — every entry,
+// both separators and the Ctrl+B and Ctrl+I texts — the items acting on a
+// player disabled, Copy/swap stats… enabled (it picks its players itself).
+#[test]
+fn the_player_menu_is_one_menu_on_a_player_or_a_team_row() {
+    let path = fixture(PesVersion::Pes21, "player_menu_team");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+
+    let (player_entries, player_lines) =
+        menu_entries(&mut window, &mut view, "Player", "Set all stats");
+    let nodes = draw(&mut window, &mut view);
+    let labels: Vec<&str> = player_entries
+        .iter()
+        .map(|entry| entry.0.as_str())
+        .collect();
+    assert_eq!(
+        labels,
+        [
+            "Set all stats\u{2026}",
+            "Bump all stats\u{2026} Ctrl+B",
+            "Hide default body (Enable FPC) Ctrl+I",
+            "Copy/swap stats\u{2026}",
+            "Generate settings.toml\u{2026}",
+            "Generate in-game face\u{2026}",
+        ],
+        "the menu on a player row"
+    );
+    assert_eq!(
+        player_lines.len(),
+        2,
+        "the separators around Copy/swap stats"
+    );
+    for (label, _, _) in &player_entries {
+        assert!(
+            !node_labeled(&nodes, Role::Button, label).is_disabled(),
+            "{label} is enabled on a player row"
+        );
+    }
+
+    // The menu closed first: a click reaching the list through the open
+    // popup would not hit the team row.
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    open_team_view(&mut window, &mut view, 701);
+    let (team_entries, team_lines) =
+        menu_entries(&mut window, &mut view, "Player", "Set all stats");
+    let nodes = draw(&mut window, &mut view);
+    let team_labels: Vec<&str> = team_entries.iter().map(|entry| entry.0.as_str()).collect();
+    assert_eq!(team_labels, labels, "the same entries on a team row");
+    assert_eq!(team_lines.len(), player_lines.len(), "the same separators");
+    for (index, label) in labels.iter().enumerate().take(labels.len() - 1) {
+        assert_eq!(
+            separated(&team_entries, &team_lines, index, index + 1),
+            separated(&player_entries, &player_lines, index, index + 1),
+            "the separator after {label:?} stands the same"
+        );
+    }
+    for label in [
+        "Set all stats\u{2026}",
+        "Bump all stats\u{2026} Ctrl+B",
+        "Hide default body (Enable FPC) Ctrl+I",
+        "Generate settings.toml\u{2026}",
+        "Generate in-game face\u{2026}",
+    ] {
+        assert!(
+            node_labeled(&nodes, Role::Button, label).is_disabled(),
+            "{label} is disabled on a team row"
+        );
+    }
+    assert!(
+        !node_labeled(&nodes, Role::Button, "Copy/swap stats\u{2026}").is_disabled(),
+        "Copy/swap stats stays enabled"
     );
 }
 
@@ -367,6 +476,7 @@ fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
 // Team and Savefile alike (SE-GUI-22's disabled-in-place rule). File and
 // Edit stay enabled: inside them the opens are enabled, and Save, Save as,
 // Undo and Redo disabled.
+// SE-GUI-26
 #[test]
 fn the_menus_are_disabled_with_no_save_open() {
     let mut view = SaveView::new();
@@ -420,14 +530,32 @@ fn paints_frame(shapes: &[egui::epaint::ClippedShape], node: &accesskit::Node) -
     })
 }
 
+/// Whether a visibly stroked rect is painted inside `bounds` (a widget's
+/// outline: the bar's menu style strips them, the framed scope keeps
+/// them).
+fn paints_stroke(shapes: &[egui::epaint::ClippedShape], bounds: accesskit::Rect) -> bool {
+    shapes.iter().any(|clipped| match &clipped.shape {
+        egui::Shape::Rect(rect) => {
+            !rect.stroke.is_empty()
+                && f64::from(rect.rect.min.x) >= bounds.x0 - 0.5
+                && f64::from(rect.rect.min.y) >= bounds.y0 - 0.5
+                && f64::from(rect.rect.max.x) <= bounds.x1 + 0.5
+                && f64::from(rect.rect.max.y) <= bounds.y1 + 0.5
+        }
+        _ => false,
+    })
+}
+
 /// The bar's menus are unframed as a menu bar draws them; the ruleset
 /// dropdown and the Live AATF toggle keep their frames in the framed
-/// scope, a flat combo or toggle reading as one more menu or as a label.
+/// scope, a flat combo or toggle reading as one more menu or as a label;
+/// and under the pointer the `Show suggestions` box keeps its outline.
 #[test]
 fn the_dropdown_and_the_toggle_paint_frames_where_the_menus_paint_none() {
     let path = fixture(PesVersion::Pes21, "toolbar_frames");
     let mut view = SaveView::new();
     view.open(&path);
+    view.live_aatf = true;
     let mut window = Headless::new();
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
@@ -444,6 +572,20 @@ fn the_dropdown_and_the_toggle_paint_frames_where_the_menus_paint_none() {
     assert!(
         !paints_frame(&shapes, menu_button(&nodes, "File")),
         "the File menu button paints no frame"
+    );
+
+    // Live AATF on: `Show suggestions` is in the framed scope too, so its
+    // unchecked box shows the pointer an outline.
+    let suggestions = node_labeled(&nodes, Role::CheckBox, "Show suggestions");
+    let at = centre(suggestions);
+    window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    // egui styles the box from its state on the frame before.
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        paints_stroke(&shapes, suggestions.bounds().expect("bounds")),
+        "the unchecked box's outline under the pointer"
     );
 }
 
