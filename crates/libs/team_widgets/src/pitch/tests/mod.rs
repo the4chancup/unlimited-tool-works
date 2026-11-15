@@ -304,9 +304,23 @@ impl Headless {
         roster: &[RosterRow<'_>],
         events: Vec<egui::Event>,
     ) -> (Vec<accesskit::Node>, bool) {
+        let (nodes, _, changed) =
+            self.pitch_and_lineup_paint(version, tactics, view, roster, events);
+        (nodes, changed)
+    }
+
+    /// `pitch_and_lineup` keeping the painted shapes too.
+    fn pitch_and_lineup_paint(
+        &mut self,
+        version: PesVersion,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+        roster: &[RosterRow<'_>],
+        events: Vec<egui::Event>,
+    ) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>, bool) {
         let mut changed = false;
         let illegal_formations = self.illegal_formations;
-        let (nodes, _) = self.frame(events, |ui| {
+        let (nodes, shapes) = self.frame(events, |ui| {
             super::formation_selector(ui, tactics, view);
             changed = super::pitch(
                 ui,
@@ -319,7 +333,7 @@ impl Headless {
             );
             changed |= super::lineup(ui, "lineup", version, tactics, view, roster);
         });
-        (nodes, changed)
+        (nodes, shapes, changed)
     }
 
     /// A drag from `from` to `onto` over the pitch and the lists

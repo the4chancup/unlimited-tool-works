@@ -386,7 +386,9 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// showing the position the rule gives him at each step from his stored
 /// one, and the pitch
 /// outside the areas he is rated at is darkened; nothing is written
-/// until the release. The keeper's marker
+/// until the release. While a marker or a lineup row is held over a
+/// marker, the player its release would swap with carries the selected
+/// player's corner brackets, the swap mark. The keeper's marker
 /// (position 0) is neither a drag source nor a marker's swap target; his
 /// spot is fixed. `version` is the open save's (`swap_in`'s instruction
 /// decode, and the pitch its formation screen draws).
@@ -398,8 +400,8 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// on another lands there as on the grass (no swap, no swap mark), an
 /// outfielder may stand on any row from 0 up, and the popover lists
 /// every outfield position and keeps his position when X or Y changes.
-/// Rows dropped on markers, the keeper's slot and the darkening are as
-/// with it off.
+/// Rows dropped on or held over markers, the keeper's slot and the
+/// darkening are as with it off.
 ///
 /// Answers `true` only when `tactics` changed this frame.
 pub fn pitch(
@@ -548,25 +550,20 @@ pub fn pitch(
             ui.ctx().data_mut(|data| data.insert_temp(held_id, held));
             (index, FormationSlot { position, x, y })
         });
-        // A drop hits the topmost marker first (the draft's `hitMarker`
-        // checks back to front); the canvas' own is the grass. egui
-        // reports a release to the closest widget within its 5-point
-        // search radius, not only the one under the pointer, so a marker
-        // is the target only when the release is inside his box.
-        let release = ui.ctx().pointer_interact_pos();
-        let mut dropped = None;
-        for index in order.iter().rev() {
-            let under =
-                release.is_some_and(|pos| marker_rect(centres[*index], canvas).contains(pos));
-            if let Some(payload) = responses[*index]
-                .as_ref()
-                .filter(|_| under)
-                .and_then(|response| response.dnd_release_payload::<LineupDrag>())
-            {
-                dropped = Some((Some(*index), *payload));
-                break;
-            }
-        }
+        // A drop lands on `marker_at`'s marker; the canvas' own is the
+        // grass. egui reports a release to the closest widget within its
+        // 5-point search radius, not only the one under the pointer, so
+        // a marker is the target only when the release is inside his box.
+        let mut dropped = ui
+            .ctx()
+            .pointer_interact_pos()
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order))
+            .and_then(|index| {
+                responses[index]
+                    .as_ref()
+                    .and_then(|response| response.dnd_release_payload::<LineupDrag>())
+                    .map(|payload| (Some(index), *payload))
+            });
         if dropped.is_none() {
             dropped = canvas_response
                 .dnd_release_payload::<LineupDrag>()
@@ -649,17 +646,38 @@ pub fn pitch(
                 .map_or([false; 13], |row| row.rated);
             lit_area::paint_dim(&painter, canvas, &rated, palette);
         }
-        // The starter a release now would swap with — the same pick the
-        // drop makes, so the mark and the release always agree. The
-        // dragged marker sits on him, so it goes half transparent over
-        // him and his corners are painted over both (the draft's
-        // `drawPitch` target mark). Under illegal formations a release
-        // swaps nothing, so there is none.
+        // The starter a release now would swap with carries the swap mark
+        // (the draft's `drawPitch` target mark). A held marker and a held
+        // lineup row each pick him as their drop does, so the mark and
+        // the release always agree. A held marker's pick is
+        // `swap_target`'s. The dragged marker sits on him, so it goes half
+        // transparent over him and his corners are painted over both.
+        // Under illegal formations a marker's release swaps nothing, so
+        // there is none.
         let swap = dragged.filter(|_| !illegal_formations).and_then(|index| {
             ui.ctx()
                 .pointer_interact_pos()
                 .and_then(|pos| swap_target(&players, &centres, canvas, pos, index))
         });
+        // A held lineup row's pick is `marker_at`'s: a row's drop swaps
+        // out whoever it lands on, the keeper too and under every
+        // ruleset. A starter's row over his own marker marks no one,
+        // since its drop changes nothing. No marker is held, so none
+        // goes half transparent.
+        let row_swap = ui
+            .ctx()
+            .pointer_interact_pos()
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order))
+            .filter(|&index| {
+                let payload = responses[index]
+                    .as_ref()
+                    .and_then(|response| response.dnd_hover_payload::<LineupDrag>());
+                match payload.as_deref() {
+                    Some(LineupDrag::Bench(_)) => true,
+                    Some(LineupDrag::Starter(from)) => *from != index,
+                    Some(LineupDrag::Marker(_)) | None => false,
+                }
+            });
         let mut still_for: Option<f32> = None;
         let mut record = |until: Option<f32>| {
             if let Some(until) = until {
@@ -721,7 +739,7 @@ pub fn pitch(
         );
         // The swap mark over everything, as the screen's selection marks
         // a target.
-        if let Some(target) = swap {
+        if let Some(target) = swap.or(row_swap) {
             paint_corners(
                 &painter,
                 portrait_rect(badge_rect(centres[target])),
@@ -915,6 +933,23 @@ fn draw_order(centres: &[egui::Pos2; 11]) -> [usize; 11] {
     let mut order: [usize; 11] = std::array::from_fn(|index| index);
     order.sort_by(|a, b| centres[*a].y.total_cmp(&centres[*b].y).then(a.cmp(b)));
     order
+}
+
+/// The marker drawn on top whose box holds `pos` (the draft's
+/// `hitMarker`): the one a drop at `pos` lands on, and the one a lineup
+/// row held there marks. `order` is `draw_order`'s. `None` over the
+/// grass.
+fn marker_at(
+    pos: egui::Pos2,
+    canvas: egui::Rect,
+    centres: &[egui::Pos2; 11],
+    order: &[usize; 11],
+) -> Option<usize> {
+    order
+        .iter()
+        .rev()
+        .copied()
+        .find(|&index| marker_rect(centres[index], canvas).contains(pos))
 }
 
 /// The starter a release at `pos` would swap with (the draft's
