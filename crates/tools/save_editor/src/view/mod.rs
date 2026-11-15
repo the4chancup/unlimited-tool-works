@@ -1106,15 +1106,11 @@ fn toolbar(
             None => {}
         }
         let (undo, redo) = edit_menu(ui, view);
-        if (undo || undo_key)
-            && let Some(session) = view.session.as_mut()
-        {
-            session.undo();
+        if undo || undo_key {
+            following_selection(view, Session::undo);
         }
-        if (redo || redo_key)
-            && let Some(session) = view.session.as_mut()
-        {
-            session.redo();
+        if redo || redo_key {
+            following_selection(view, Session::redo);
         }
         menus::player_menu(ui, view);
         menus::team_menu(ui, view);
@@ -1402,6 +1398,44 @@ pub(crate) fn edit_team(
     let mut edited = session.file().team(id).expect("the selected team").clone();
     edit(&mut edited);
     session.edit_team(key, edited);
+}
+
+/// `step` run on the open session, `None` with none: the selection
+/// follows the record it named through the step. It names a roster slot,
+/// not a player, so a step that trades the players' records between the
+/// ids (an undo or a redo of a move, a `Player order` row's X) would
+/// leave it on whoever then holds the slot: the record of the selected
+/// slot's player is read before `step`, and the slot in the same team
+/// whose player holds it after (a move never crosses teams, so the
+/// search stays in the one roster). A step that trades nothing finds the
+/// record where it was; a selection that is not a player row, or a slot
+/// holding no player, is left alone.
+fn following_selection<R>(view: &mut SaveView, step: impl FnOnce(&mut Session) -> R) -> Option<R> {
+    let session = view.session.as_mut()?;
+    let followed = match view.selected {
+        Some(Selection::Player(team_id, slot)) => session
+            .slot_player(team_id, slot)
+            .map(|id| (team_id, session.record_of(id))),
+        _ => None,
+    };
+    let result = step(session);
+    if let Some((team_id, record)) = followed
+        && let Some(team) = session.file().team(team_id)
+    {
+        for slot in 0..team.roster.len() {
+            let Ok(slot) = u8::try_from(slot) else {
+                break;
+            };
+            if session
+                .slot_player(team_id, slot)
+                .is_some_and(|id| session.record_of(id) == record)
+            {
+                view.selected = Some(Selection::Player(team_id, slot));
+                break;
+            }
+        }
+    }
+    Some(result)
 }
 
 /// The selected row's team id — a player row's team or a team row's own;
