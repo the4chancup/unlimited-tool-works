@@ -2202,12 +2202,10 @@ briefs, review loops, gates and mutation runs as for any step.
       Kick-off marks it the same way
     - [x] its SWE-2 round, 2026-11-12 ("S-num r1", 1 of 2): the help chapter on the
       tactics says when the two numbers are disabled
-    - [ ] the auto levels (the maintainer, 2026-11-14; DECISIONS 2026-11-14 "on PES 17 to 21
-      the two numbers are the auto attack and defence levels"; SE-GUI-71): labelled Auto
-      attack level and Auto defence level on PES 17 to 21, and also disabled while
-      Attack/defence levels is off, with its own tooltip. The draft (lead, 2026-11-14); the
-      build (Opus sidekick `sk_autolevel`, worktree `4cc-studio-temp/dlgroom` branch
-      `sk/autolevel`, brief `.tmp/brief_autolevel.md` there)
+    - [x] the auto levels (Opus sidekick, 2026-11-15, merged `62e2d0b5`; DECISIONS
+      2026-11-14 "on PES 17 to 21 the two numbers are the auto attack and defence levels";
+      SE-GUI-71): labelled Auto attack level and Auto defence level on PES 17 to 21, and
+      also disabled while Attack/defence levels is off, with its own tooltip
     - [ ] the look in the built window, both themes (Pending looks)
   - [x] 0.0.2-num17 2026-11-14 (`b518585a`; lead, Opus sidekick): who reads the two numbers
     in PES 2017, inconclusive. A live memory watch (`.tmp/num17/`) and a static search of the
