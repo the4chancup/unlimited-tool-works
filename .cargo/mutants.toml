@@ -241,11 +241,11 @@ exclude_re = [
     # below the last row and on the fourth row's middle picked the same row either way
     # (f1g14's diff run, 2026-11-04). `combo_label` holds one `+`; `-` and `/` stay measured.
     "studio_core/src/widgets/combo\\.rs:\\d+:\\d+: replace \\+ with \\* in combo_label",
-    # studio: `run_cli_mode`'s `printer.join().is_err() ||
+    # studio: `run_loaded`'s `printer.join().is_err() ||
     # !matches!(notices.join(), ..)` -> `&&` is not equivalent, but neither printer can fail
     # under a test: the event printer fails on a closed stdout, the notice printer on a closed
     # stderr, and a test cannot hand the binary either portably. Unmeasured on purpose.
-    "studio/src/main\\.rs:\\d+:\\d+: replace \\|\\| with && in run_cli_mode",
+    "studio/src/main\\.rs:\\d+:\\d+: replace \\|\\| with && in run_loaded",
     # studio_core: `Settings::save`'s
     # read-back guard `read_back == desired` -> `true` survives because no known file edits into
     # TOML that parses yet reads back as other values: the one shape found (an inline section

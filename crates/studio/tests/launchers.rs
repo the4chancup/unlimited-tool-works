@@ -1,7 +1,7 @@
-//! The 0.0.1 bundle's two launchers run against the real binary named as the bundle names
+//! The Windows bundle's two launchers run against the real binary named as the bundle names
 //! it, in a sandbox shaped like the extracted bundle: `exports/` and `old_exports/` beside
 //! `UTW.exe`, `data/settings.toml` making the data location portable.
-#![cfg(windows)] // the bats are the Windows bundle's; 0.0.1 is Windows only
+#![cfg(windows)] // the bats are the Windows bundle's; the Linux bundle ships no launchers
 
 use std::fs;
 use std::os::windows::process::CommandExt;
