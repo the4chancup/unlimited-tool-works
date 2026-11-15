@@ -479,6 +479,17 @@ fn a_shortcut_with_no_save_found_opens_the_picker() {
         ],
         "Ctrl+O opened the picker in the same folder"
     );
+
+    // A folder is remembered (`last_folder`, the folder the last save was
+    // opened from): Ctrl+O starts the picker there, ahead of the newest
+    // discovered save's.
+    view.last_folder = Some(tree.documents.clone());
+    press_ctrl(&mut window, &mut view, egui::Key::O);
+    assert_eq!(
+        starts.borrow().last(),
+        Some(&Some(tree.documents.clone())),
+        "Ctrl+O opened the picker in the remembered folder"
+    );
     assert!(view.session.is_none(), "a cancelled picker opens nothing");
 }
 
@@ -611,7 +622,7 @@ fn save_as_stub(view: &mut SaveView, target: &Path) -> Rc<RefCell<Vec<PathBuf>>>
     handed
 }
 
-// SE-GUI-26
+// SE-GUI-26, SE-GUI-79
 #[test]
 fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     let path = fixture(PesVersion::Pes21, "save_as_replace");
@@ -1156,5 +1167,59 @@ fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened
     assert!(
         pes17(&nodes),
         "the panel lists the save found by the File menu's rescan"
+    );
+}
+
+// A recent file's path tail wider than the panel's 334-point floor
+// widens every entry to it — a discovered save's too: the one width the
+// entries share is the widest recent label's.
+// SE-GUI-90
+#[test]
+fn a_wide_recent_path_widens_every_entry_to_its_label() {
+    let tree = tree("welcome_wide_recent");
+    let deep = crate::test_support::scratch("welcome_wide_recent_deep")
+        .join("a_folder_named_long_enough")
+        .join("another_folder_named_long");
+    std::fs::create_dir_all(&deep).unwrap();
+    let path = deep.join("EDIT00000000");
+    std::fs::write(&path, fixture_save(PesVersion::Pes21)).unwrap();
+    let mut view = SaveView::new();
+    discover_counted(&mut view, &tree.documents);
+    view.open(&path);
+    view.session = None;
+    let mut window = Headless::new();
+
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    let rows = entries(&nodes, PES19_ENTRY);
+    assert_eq!(rows.len(), 5, "the saves, the recent file, the picker");
+    let recent = rows[3].label().expect("the recent entry's label");
+    assert!(
+        recent.contains("a_folder_named_long_enough"),
+        "premise: the recent entry is the deep file's: {recent}"
+    );
+    let style = window.ctx.global_style();
+    let font = egui::TextStyle::Button.resolve(&style);
+    let galley = window.ctx.fonts_mut(|fonts| {
+        fonts.layout_no_wrap(recent.to_owned(), font, egui::Color32::PLACEHOLDER)
+    });
+    let expected = f64::from(galley.size().x) + 2.0 * f64::from(style.spacing.button_padding.x);
+    assert!(
+        expected > 334.0,
+        "premise: the label passes the panel's floor ({expected})"
+    );
+    let width = |node: &accesskit::Node| {
+        let bounds = node.bounds().expect("an entry's bounds");
+        bounds.x1 - bounds.x0
+    };
+    assert!(
+        (width(rows[0]) - expected).abs() <= 0.5,
+        "the discovered save's button is the recent label's width: {} vs {expected}",
+        width(rows[0])
+    );
+    assert!(
+        (width(rows[3]) - expected).abs() <= 0.5,
+        "the recent file's button is its label's width: {} vs {expected}",
+        width(rows[3])
     );
 }
