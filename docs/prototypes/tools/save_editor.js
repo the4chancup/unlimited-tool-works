@@ -3297,6 +3297,14 @@ function pushRecent(path) {
   if (i >= 0) S.recents.splice(i, 1);
   S.recents.unshift(path);
 }
+// A recent save's entry: its version in brackets, its folder and its file
+// name. The build stores the version with the path at the open; every save
+// the draft opens is a discovered one, so it looks the version up.
+function recentLabel(path) {
+  const version = DISCOVERED.find(d => d.path === path).version;
+  const [folder, file] = path.split("\\").slice(-2);
+  return "[PES " + version + "] " + folder + "\\" + file;
+}
 // Opening another save with unsaved changes prompts first (SE-GUI-05); the
 // window-close half of the prompt is the shell's (index.html).
 function requestOpen(key, path) {
@@ -3729,7 +3737,7 @@ const WALK = [
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
-  ["SE-GUI-26", "the File menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O, starting in the folder the last save was opened from), then Save and Save as; Save as keeps the replaced file as .bak"],
+  ["SE-GUI-26", "the File menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the recent saves ([PES 2021] folder\\file), then the picker (Ctrl+O, starting in the folder the last save was opened from), then Save and Save as; Save as keeps the replaced file as .bak"],
   ["SE-GUI-13", "Savefile, Comparator: pick the PES 21 sample (refused), then Autumn24Q; the toggles and the team filter narrow the rows, Export writes their report lines, a row click selects the player"],
   ["SE-GUI-15", "the toolbar's ruleset dropdown, left of Live AATF: pick Divegrass Before Christmas 7 (the quick actions and the Cards used badge follow); Import rules file...: the broken samples are refused with their errors, autumn26.4ccrules is refused for a built-in's name, autumn25.4ccrules joins the list under a line and becomes the ruleset; import it again: a confirmation replaces it; its × asks, then removes it and falls back to 4cc Autumn 26; reload the page: the choice and the imports stay"],
   ["SE-GUI-30", "PES 17 sample, team 718, the Divegrass Before Christmas 7 ruleset: switch Live AATF on in the toolbar; the bottom panel lists the team's issues, errors first, under 'N issues · Divegrass Before Christmas 7'. Lower a stat over its maximum (a Stat row) to its target: the list dims, marked checking, then the row is gone and N is one less; Undo brings it back. Under the official ruleset on 718, untick the team-rows control and set each Height row's player to 180: '... passes ... with no issues'. Reload the page: Live AATF is still on"],
@@ -3765,7 +3773,7 @@ function fileMenu() {
   items.push("-");
   for (const path of S.recents) {
     const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
-    items.push([path.split("\\").slice(-3).join("\\"), () =>
+    items.push([recentLabel(path), () =>
       key ? requestOpen(key, path) : closeWindow(), false, path]);
   }
   items.push("-");
@@ -3791,7 +3799,7 @@ function welcomePanel() {
   });
   const recent = S.recents.map(path => {
     const key = Object.entries(SAMPLE_PATH).find(([, p]) => p === path)?.[0];
-    return entry(path.split("\\").slice(-3).join("\\"), "", () => key ? requestOpen(key, path) : null, path);
+    return entry(recentLabel(path), "", () => key ? requestOpen(key, path) : null, path);
   });
   return h("div", { class: "start-page", "data-panel": "welcome" },
     h("div", { class: "window" }, h("div", { class: "title" }, "Save editor"),
