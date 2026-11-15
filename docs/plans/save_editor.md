@@ -1007,8 +1007,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   A list row means the selected row, which Up and Down move without a click, so Ctrl+V after
   Down pastes onto the next row, and so does a row reached with no click since the save
   opened. A preset or formation selector stays the target only while its team's row is
-  selected: once the selection moves to a player, by a click or a key, his row is the target
-  again, so a paste never writes a tactics part that is not on screen. A paste of another
+  selected: once the selection leaves that row, by a click or a key, for a player or another
+  team, the selected row is the target again, and coming back to the team's row does not bring
+  the selector back, so a paste never writes a tactics part that is not on screen. A paste of another
   kind does nothing; each paste is one undo step.
 
   A copy and a paste each publish a success notice naming what was copied or pasted, since a
@@ -3129,7 +3130,9 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 <team>'s preset 2 Kick-off formation`;
                 SE-GUI-72 has the rest of the text), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
-                press not; GIVEN team 705's row, whose bench's last nine hold 255 where the
+                press not; GIVEN preset 2 pressed on team 701's row, then another team's row
+                or a player row selected, then 701's row again THEN Ctrl+C copies 701's
+                Gameplan; GIVEN team 705's row, whose bench's last nine hold 255 where the
                 game writes its own order, copied and pasted onto itself THEN no undo
                 entry is pushed and the save stays clean;
                 GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
@@ -3272,9 +3275,11 @@ SE-GUI-79  GIVEN a save open with an edit made
            WHEN Ctrl+S is pressed
            THEN the status bar's notice reads `<the save's file name> saved (the replaced
                 file is kept once as <file name>.bak)`, in the success colour; WHEN Save
-                as…, Output rosters to TSV, a Team TOML export, a Texport export, each
-                Generate action and the Comparator's Export each write their file THEN
-                each publishes `<file> written` with its detail, and none reads `Wrote`;
+                as… writes a save THEN `<file name> saved`, with the same `.bak` detail
+                when it replaced a file; WHEN Output rosters to TSV, a Team TOML export, a
+                Texport export, each Generate action and the Comparator's Export each write
+                their file THEN each publishes `<file> written` with its detail, and none
+                reads `Wrote`;
                 WHEN a ruleset is imported THEN the notice reads `<label> imported.`
 SE-GUI-80  GIVEN team 718 /f/ selected in the interchange panel
            WHEN Team TOML's export is clicked
