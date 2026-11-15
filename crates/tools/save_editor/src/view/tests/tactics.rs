@@ -1515,8 +1515,8 @@ fn box_at(rects: &[egui::Rect], left: f64, tol: f64) -> egui::Rect {
 // The editor's grid, the draft's `.tacgrid`: at the default pane (1224
 // x 756) the editor is one grid of three columns and three rows, so
 // every panel lines up with its neighbours — the settings panels' boxes
-// at the column's 422 width, the pitch's border 10 points past them, the
-// Player assignments box 10 past the pitch's right and out to the pane's
+// at the column's 422 width, the pitch's border 6 points past them, the
+// Player assignments box 6 past the pitch's border and out to the pane's
 // edge; the preset bar and the formation bar share one line's centre,
 // the formation bar's first button on the pitch's left; row 3's panels
 // top 6 under row 2's bottom, the two lists halves of columns 2-3 less a
@@ -1552,15 +1552,27 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
             "a settings panel 422 wide ({box_:?})"
         );
     }
-    let pitch_left = settings_left + 422.0 + 10.0;
+    // The pitch's border is a point a side outside its canvas, and the
+    // column's track holds canvas and border alike: the visible gap
+    // either side of the border is the 6 points between every pair of
+    // panels in the window.
     let canvas = canvas_of(&nodes);
-    assert!(
-        (canvas.x0 - 1.0 - pitch_left).abs() <= 1.0,
-        "the pitch's box left 10 past the settings column (canvas {canvas:?})"
-    );
-    // The assignments' column starts 10 past the pitch's 320-point track,
-    // which the pitch's border overflows.
-    let assigns_left = pitch_left + 320.0 + 10.0;
+    let pitch_left = canvas.x0 - 1.0;
+    let assigns_left = label_bounds(&nodes, "Player assignments").x0 - 7.0;
+    let mut misfits = Vec::new();
+    let gap = pitch_left - (settings_left + 422.0);
+    if (gap - 6.0).abs() > 0.5 {
+        misfits.push(format!(
+            "the settings frame's right to the pitch's border's left is {gap}, not 6"
+        ));
+    }
+    let gap = assigns_left - (canvas.x1 + 1.0);
+    if (gap - 6.0).abs() > 0.5 {
+        misfits.push(format!(
+            "the pitch's border's right to Player assignments' frame's left is {gap}, not 6"
+        ));
+    }
+    assert!(misfits.is_empty(), "{}", misfits.join("\n"));
     let pane_right = f64::from(PANE_RIGHT);
     let assigns = box_at(&rects, assigns_left, 1.0);
     assert!(
@@ -1706,10 +1718,10 @@ fn the_two_panels_frames_are_level_with_the_pitchs() {
 
     let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
-    let pitch_left = settings_left + 422.0 + 10.0;
-    // The assignments' column starts 10 past the pitch's 320-point track,
-    // which the pitch's border overflows.
-    let assigns_left = pitch_left + 320.0 + 10.0;
+    let pitch_left = settings_left + 422.0 + 6.0;
+    // The assignments' column starts 6 past the pitch's 322-point track,
+    // which holds the canvas and its border.
+    let assigns_left = pitch_left + 322.0 + 6.0;
     let settings = box_at(&rects, settings_left, 1.0);
     let pitch_box = box_at(&rects, pitch_left, 1.0);
     let assigns = box_at(&rects, assigns_left, 1.0);
@@ -1755,7 +1767,7 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     // The lists' boxes share row 3's top — the first box right of the
     // settings column whose top is below the pitch's is theirs (the
     // stack's Advanced instructions is at settings_left).
-    let pitch_left = settings_left + 422.0 + 10.0;
+    let pitch_left = settings_left + 422.0 + 6.0;
     let pitch_box = box_at(&rects, pitch_left, 1.0);
     let row3_top = f64::from(pitch_box.max.y) + 6.0;
     let lists_bottom = rects
@@ -1891,10 +1903,10 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
         .y0;
     let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
-    let pitch_left = settings_left + 422.0 + 10.0;
-    // The assignments' column starts 10 past the pitch's 320-point track,
-    // which the pitch's border overflows.
-    let assigns_left = pitch_left + 320.0 + 10.0;
+    let pitch_left = settings_left + 422.0 + 6.0;
+    // The assignments' column starts 6 past the pitch's 322-point track,
+    // which holds the canvas and its border.
+    let assigns_left = pitch_left + 322.0 + 6.0;
     let column = |left: f64| -> Vec<egui::Rect> {
         rects
             .iter()
@@ -1951,8 +1963,8 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
 // PES 21 save, team 701), x in the client less the 56-point rail the pane
 // starts after: the preset and formation choices padded 5 across and 2
 // apart (the draft's `.sel`s in a `gap: 2px` row), the bars' other items 8
-// apart, and the assignments' column 10 past the pitch's 320-point track,
-// which the pitch's border overflows.
+// apart, and the assignments' column 6 past the pitch's 322-point track,
+// which holds the canvas and its border.
 #[test]
 fn the_tactics_bars_items_stand_where_the_drafts_do() {
     let path = fixture(PesVersion::Pes21, "tactics_bar_items");
@@ -1976,38 +1988,38 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
         (
             "Kick-off",
             button_bounds(&nodes, "Kick-off"),
-            763.0,
+            759.0,
             Some(52.92),
         ),
         (
             "In-possession",
             button_bounds(&nodes, "In-possession"),
-            817.92,
+            813.92,
             Some(88.5),
         ),
         (
             "Out-of-possession",
             button_bounds(&nodes, "Out-of-possession"),
-            908.42,
+            904.42,
             Some(113.77),
         ),
         (
             "the formations' Copy/swap",
             copy_swap_bounds(&nodes)[1],
-            1030.19,
+            1026.19,
             None,
         ),
-        ("Scroll", check_bounds(&nodes, "Scroll"), 1123.55, None),
+        ("Scroll", check_bounds(&nodes, "Scroll"), 1119.55, None),
         (
             "Portraits",
             check_bounds(&nodes, "Portraits"),
-            1181.31,
+            1177.31,
             None,
         ),
         (
             "Player assignments",
             label_bounds(&nodes, "Player assignments"),
-            1100.0,
+            1094.0,
             None,
         ),
     ];
