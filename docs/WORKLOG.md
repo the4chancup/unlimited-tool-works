@@ -2152,6 +2152,18 @@ briefs, review loops, gates and mutation runs as for any step.
     longer path, so the test's long folder line is longer -> verify: reproduced with a
     longer scratch path, then the dialog (or the test, if its premise is wrong) fixed;
     SWE-2
+  - [ ] 0.0.2-mutfast save_editor's mutation runs stop at a mutant's first failing test.
+    Its last diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's
+    build 20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's
+    tests 468 s median against the full suite's 578, since libtest runs every test after
+    the first failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally).
+    -> verify: the same 20 save_editor mutants run with libtest and with cargo-nextest
+    (`test_tool = "nextest"`, fail-fast by default; installed here, check the VPS), wall
+    time per caught and per missed mutant compared, the per-test process cost through
+    `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate whose
+    estimate passes a budget (about an hour a side) runs detached from the checkpoint,
+    which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the
+    baseline from depending on the tree's path
   - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
     egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
     row is filled with mid grey at 48 of 255 instead (DECISIONS 2026-11-15) -> verify: a
