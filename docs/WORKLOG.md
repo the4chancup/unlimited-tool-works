@@ -2205,7 +2205,13 @@ briefs, review loops, gates and mutation runs as for any step.
       help and changelog lines
       - [x] the rework (SWE-2, merge `7017c4bd`); its overlap screen for the own-team
         button passed on the old layout too (egui keeps a row inside the window's rect)
-      - [ ] Carbon's round 2 (`review30`, `.tmp/carbon_list2.md`)
+      - [x] Carbon's round 2, 2026-11-16 (at `7017c4bd`): 13 of 15 accepted ("C-list r2"):
+        the round 1 class (a selection that moves leaves its row off screen) in three more
+        places (an undo, a category tick, another save opened), untested reveals and filter
+        halves, help and changelog lines that say what the window does not
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon2.md`, resuming `listrw1`'s
+        session), after the recent saves merge (`view/mod.rs`, help 02, the changelog);
+        then Carbon's round 3
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
