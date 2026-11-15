@@ -840,7 +840,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             }
         }
         Some(Action::SelectTeam(id)) => {
-            aatf_check::select_team(id, &mut view.selected, &mut view.team, &mut view.filter);
+            aatf_check::select_team(
+                id,
+                &mut view.selected,
+                &mut view.team,
+                &mut view.team_category,
+                &mut view.filter,
+            );
             view.reveal_selected = Some(Reveal::Top);
         }
         None => {}
