@@ -92,8 +92,10 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 - **Kit slots: the bound team as its ID or as stored.** The save stores each kit slot's
   bound team as the team's ID times 64. The Save editor's Kit slots dialog shows and takes
   the ID (718), labelled "Bound team ID" as Team ID and Manager ID are; the draft shows
-  the stored number (45952), labelled "Bound team id". Which should both show? (Found
-  checking the built window beside the drafts, worklog 0.0.2-gaps.)
+  the stored number (45952), labelled "Bound team id". Which should both show? The build
+  departed from the draft in step 8.9d1 (`18132ce8`, 2026-10-22), a choice made while
+  building it, never drafted, planned or logged; the built-window comparison of the
+  dialog opened a PES 21 sample, which stores no kit slots, so it never showed.
 - **The draft's checkboxes in Settings: centred, as the build draws them?** In the draft's
   Settings window a checkbox standing alone in its cell sat 1.5 points above its row's
   middle, where the build centres it. On 2026-11-15 the lead changed the draft to centre

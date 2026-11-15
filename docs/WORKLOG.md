@@ -2066,13 +2066,15 @@ briefs, review loops, gates and mutation runs as for any step.
         positions", adding up to 2.5 at the columns' foot (`draft_compare.py player`)
       - the Ruleset editor's General: each checklist 4 lower under its help line (21
         against the draft's 17)
-    - [ ] sort the differences the check met outside these slices: Appearance's Physique
+    - [ ] trace each difference the check met outside these slices to the commit that made
+      the build depart from its draft, and why it was not drafted first, then ask which
+      look is wanted (QUESTIONS): Appearance's Physique
       box narrower (Motion 24 further left), its labels inset 13 against 19, the swatches
       wider apart; the Ruleset editor's page list rows 21 apart against 24, the Tiers' Label
       and Id fields too narrow for "Bronze" and "silver", Rating stats' help worded
-      otherwise, Randomize greyed on a template; Kit slots' "Bound team ID" showing the
-      stored binding / 64 against the draft's "Bound team id" showing it raw (which side
-      changes: QUESTIONS)
+      otherwise, Randomize greyed on a template (Kit slots' bound team traced: QUESTIONS)
+    - [ ] `draft_compare.py kit_slots` opens a save that stores kit slots (PES 17): on the
+      PES 21 sample both sides show only "does not store kit slots" and always match
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
