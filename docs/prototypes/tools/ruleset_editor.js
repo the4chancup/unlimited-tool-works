@@ -899,7 +899,7 @@ function chips(all, list, set, label = human) {
 function colour(hex8, set) {
   const rgb = /^[0-9a-f]{6}/i.test(hex8 || "") ? "#" + hex8.slice(0, 6) : "#000000";
   return h("span", { class: "row", style: "margin:0; gap:3px" },
-    h("input", { type: "color", value: rgb, title: "Colour (the code's last two digits are the alpha)",
+    h("input", { type: "color", value: rgb, title: "Color (the code's last two digits are the alpha)",
       oninput: e => { set(e.target.value.slice(1) + ((hex8 || "").slice(6, 8) || "ff")); changed(); },
       onchange: structural }),
     text(hex8, set, { mono: true, width: 76, title: "The eight characters after \\x11c in the player's name" }));
@@ -1135,7 +1135,7 @@ function problems(r) {
     if (!opts.noTiers) (k.tiers || []).forEach(t => { if (!tierIds.includes(t)) add(sec, `${where}${path}: no tier "${t}"`); });
     (k.systems || []).forEach(s => { if (!systems.includes(s)) add(sec, `${where}${path}: no height system "${s}"`); });
     (k.brackets || []).forEach(b => { if (!brackets.includes(b)) add(sec, `${where}${path}: no bracket "${b}"`); });
-    (k.name_colors || []).forEach(n => { if (!bytes8(n)) add(sec, `${where}${path}: a name colour code is eight bytes`); });
+    (k.name_colors || []).forEach(n => { if (!bytes8(n)) add(sec, `${where}${path}: a name color code is eight bytes`); });
     if (opts.noTiers && (k.tiers || []).length) add(sec, `${where}${path}: a tier's condition cannot name tiers`);
     if (opts.allowance && (k.brackets || []).length) add(sec, `${where}${path}: a special with a height allowance cannot name brackets, which are computed from it`);
   }, "");
@@ -1148,7 +1148,7 @@ function problems(r) {
       if (!target) add("tiers", `${where}: counts as an unknown tier`);
       else if (target.counts_as) add("tiers", `${where}: counts as a tier that itself counts as another`);
     }
-    if (t.name_color != null && !bytes8(t.name_color)) add("tiers", `${where}: a name colour code is eight bytes`);
+    if (t.name_color != null && !bytes8(t.name_color)) add("tiers", `${where}: a name color code is eight bytes`);
     Object.keys(t.free).forEach(g => { if (g !== "com" && !groups.includes(g)) add("tiers", `${where}: free cards of an unknown group "${g}"`); });
     checkCond(t.when, "tiers", where + " when", { noTiers: true });
   });
@@ -1276,7 +1276,7 @@ function condText(c) {
   if ((c.holds || []).length) p.push("holding " + list(c.holds, cardName));
   if ((c.rated_a_at || []).length) p.push("rated A at " + list(c.rated_a_at, x => x));
   if ((c.rated_b_at || []).length) p.push("rated B at " + list(c.rated_b_at, x => x));
-  if ((c.name_colors || []).length) p.push("named in colour " + list(c.name_colors, x => x));
+  if ((c.name_colors || []).length) p.push("named in color " + list(c.name_colors, x => x));
   if (c.fielded_only_at) p.push("fielded only at " + c.fielded_only_at);
   for (const [k, [lo, hi]] of Object.entries(c.ranges || {})) p.push(`${human(k).toLowerCase()} ${lo} to ${hi}`);
   if (c.strong_foot) p.push(c.strong_foot + "-footed");
@@ -1325,7 +1325,7 @@ function summary(r) {
     const band = t.stat_warning ? `; an ability stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
     const total = !t.total_within_targets ? ""
       : `; ${t.stat_warning ? "those stats" : "the ability stats that may sit below their target"} added up may not exceed their targets' sum`;
-    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
+    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in color ${t.name_color}` : ""}.`);
   });
   if ((r.medal_systems || []).length) {
     const named = r.tiers.filter(t => medalTiers.has(t.id));

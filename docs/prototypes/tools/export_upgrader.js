@@ -163,7 +163,7 @@ function oldExport(key, name, o = {}) {
   for (const [slot, a, b] of o.kits || [["GK", "#202020", "#f0f0f0"], ["K1", "#c02020", "#f0f0f0"], ["K2", "#f0f0f0", "#2040a0"]]) {
     const stem = slot === "GK" ? "g1" : "p" + slot[1];
     x.kits[slot] = cell([`Kit Configs\\XXX\\XXX_DEF_${stem}_realUni.bin`, `Kit Textures\\u0XXX${stem}.dds`,
-      "Team Note.txt: the kit's colours"], `Kits\\${stem}`, { swatch: [a, b] });
+      "Team Note.txt: the kit's colors"], `Kits\\${stem}`, { swatch: [a, b] });
   }
   x.portraits = cell("Portraits\\player_XXXNN.dds", "Portraits\\NN.dds", { count: o.portraits ?? count });
   x.files.Note = cell(`${key} Note.txt`, "colors.txt, notes.txt");
@@ -191,7 +191,7 @@ function sampleExports() {
   const at = oldExport("@", "/@/", { old: "@  Aesthetics Export VGL26", special: "noTeam" });
   const a = oldExport("a", "/a/", { boots: [["0140", "Geta", [8, 9]]], tag: "Midcup", players: 11,
     guess: "the name says \"additions\": Midcup", old: "a additions VGL26" });
-  mark(a.files.Note, "error", "unmigrated_content", "Line 14, \"Kit 2 colours: #GG0000\", does not read as colours");
+  mark(a.files.Note, "error", "unmigrated_content", "Line 14, \"Kit 2 colours: #GG0000\", does not read as colors");
   const an = oldExport("an", "/an/", { boots: [["0240", "Paws", [3]]] });
   for (const [n, c] of Object.entries(an.faces)) c.status = n <= 9 ? "fullOk" : n <= 16 ? "checking" : "unchecked";
   for (const c of everyCell(an)) if (!Object.values(an.faces).includes(c)) c.status = "unchecked";
@@ -426,7 +426,7 @@ function flowOf(x) {
   const textures = node(L, "kt", "Kit Textures\\", "kits", kitCells, anyKit);
   const note = node(L, "note", x.files.Note.src[0], "plain", [x.files.Note], { what: "file", slot: "Note" });
   for (const [k, c] of Object.entries(x.kits)) {
-    const kitBox = node(R, "k" + k, c.dst, "kits", [c], { what: "kit", slot: k }, { sub: k + ": texture, settings, colours" });
+    const kitBox = node(R, "k" + k, c.dst, "kits", [c], { what: "kit", slot: k }, { sub: k + ": texture, settings, colors" });
     edge(configs, kitBox, "kits"); edge(textures, kitBox, "kits"); edge(note, kitBox, "plain", true);
   }
   gapAfter(R);
@@ -635,7 +635,7 @@ function askRun() {
   let ok = false;
   const go = button("Upgrade", () => { closeWindow(); startRun(); }, { disabled: true });
   window_("Upgrade without the save",
-    h("div", {}, h("p", {}, "The save is where the players' looks live: skin colour, build, strip style, the in-game faces. The old exports hold none of it."),
+    h("div", {}, h("p", {}, "The save is where the players' looks live: skin color, build, strip style, the in-game faces. The old exports hold none of it."),
       h("p", {}, "Without the save none is carried, and a compile of the result gives those players the default look. To keep them, cancel and pick the save the teams were made in."),
       h("label", { class: "cb" }, h("input", { type: "checkbox", onchange: e => { ok = e.target.checked; go.disabled = !ok; } }),
         "I understand the players' looks will be lost")),

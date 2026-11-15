@@ -353,7 +353,7 @@ function cellTip(r, cell, what) {
   if (cell.note) lines.push(cell.note);
   for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
   if (what === "kit" && cell.codes.includes("kit_colors_derived"))
-    lines.push("The menu colours shown are the ones derived from the texture");
+    lines.push("The menu colors shown are the ones derived from the texture");
   return lines.join("\n");
 }
 
