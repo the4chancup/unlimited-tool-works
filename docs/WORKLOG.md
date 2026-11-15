@@ -2217,7 +2217,12 @@ briefs, review loops, gates and mutation runs as for any step.
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
       - [x] SWE-2's round 2: 1 of 4 accepted, the loop ends (a test's comment; the help's
         column name), fixed by the lead (`3756809d`)
-      - [ ] Carbon's round (`review32`, `.tmp/carbon_notices.md`)
+      - [x] Carbon's round 1, 2026-11-16 (at `3756809d`): 15 of 18 accepted ("C-notices r1"):
+        with the portraits off a hidden portrait took a click meant for the badge above it and
+        the brackets framed turf (plan, draft, DECISIONS), the light selector's contrast, the
+        Copy/swap window's width, team exports' notice detail, untested clauses, stale help
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices2.md`, resuming the session
+        in `noticesrw`, from `82aeac10`), then Carbon's round 2
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
