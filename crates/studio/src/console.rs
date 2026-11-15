@@ -392,6 +392,7 @@ mod tests {
     use std::borrow::Cow;
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     use crossbeam_channel::unbounded;
     use pes_version::PesVersion;
@@ -948,11 +949,19 @@ mod tests {
         // failing assertion panics through it.
         let hooks = crate::gui_log::PANIC_HOOK_TESTS.lock().unwrap();
         let saved = panic::take_hook();
+        // The hook `log_panics` chains before its own, standing in for the
+        // harness's.
+        let previous_ran = Arc::new(AtomicBool::new(false));
+        panic::set_hook({
+            let previous_ran = Arc::clone(&previous_ran);
+            Box::new(move |_| previous_ran.store(true, Ordering::Relaxed))
+        });
         log_panics(Arc::new(log));
         let result = panic::catch_unwind(|| panic!("probe 9"));
         panic::set_hook(saved);
         drop(hooks);
         assert!(result.is_err());
+        assert!(previous_ran.load(Ordering::Relaxed));
 
         let logged = fs::read_to_string(&path).unwrap();
         let lines: Vec<&str> = logged.lines().collect();

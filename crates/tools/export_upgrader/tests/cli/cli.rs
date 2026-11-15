@@ -626,10 +626,12 @@ fn the_exit_code_is_the_worst_exports_and_only_a_clean_one_counts_as_upgraded() 
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
 
-    // A clean export (0), one with an Error (1) and a missing one (2).
+    // One with an Error (1), the clean export (0) after it — a run that
+    // carried the Error's verdict into the next export's would write nothing
+    // for it — and a missing one (2).
     let run = upgrade_several(
         &sandbox,
-        &["co - Spring", "co Kits", "gone"],
+        &["co Kits", "co - Spring", "gone"],
         &["--savefile", &save],
     );
     let stdout = run.stdout();
@@ -638,6 +640,7 @@ fn the_exit_code_is_the_worst_exports_and_only_a_clean_one_counts_as_upgraded() 
         stdout.contains("- co Kits: Error unmigrated_content"),
         "{stdout}"
     );
+    assert!(sandbox.path("co Full - Spring").is_dir(), "{stdout}");
     assert_eq!(
         output_lines(&run).last(),
         Some(&"Upgraded: 1. Not upgraded: 2."),
