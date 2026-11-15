@@ -7,8 +7,10 @@ use std::collections::BTreeMap;
 
 use pes_savefile::interchange::team_toml::TeamToml;
 use pes_savefile::model::instruction::Instruction;
+use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::model::tactics::{AdvancedInstruction, TeamAutoFlags, TeamTactics, bench_fill};
 use pes_savefile::schema::instruction::encode;
+use pes_savefile::schema::playstyle;
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::interchange::{Import, held, stage};
@@ -145,9 +147,11 @@ fn copy_stats_result(path: &Path, a: u32, b: u32) -> PlayerEntry {
     after
 }
 
-/// The fixture for the selector tests: preset sliders and formation
-/// coordinates made distinct (the fixture's are placeholders), the
-/// first preset's Fluid formation on so the formation selector clicks.
+/// The fixture for the selector tests: preset sliders made distinct
+/// (the fixture's are placeholders), every preset's Fluid formation on
+/// so the formation selector clicks, and a distinct first player's x
+/// per (preset, formation) pair, so a path that reads or writes
+/// another preset or formation shows.
 fn selector_fixture(test: &str) -> PathBuf {
     let path = fixture(PesVersion::Pes21, test);
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
@@ -156,10 +160,15 @@ fn selector_fixture(test: &str) -> PathBuf {
             .sliders
             .support_range = value;
     }
-    for (formation, x) in [(0, 10), (1, 20), (2, 30)] {
-        file.team_mut(701).unwrap().tactics.presets[0].formations[formation].players[0].x = x;
+    for (preset, xs) in [(0, [10, 20, 30]), (1, [40, 50, 60]), (2, [70, 80, 90])] {
+        for (formation, x) in xs.into_iter().enumerate() {
+            file.team_mut(701).unwrap().tactics.presets[preset].formations[formation].players[0]
+                .x = x;
+        }
+        file.team_mut(701).unwrap().tactics.presets[preset]
+            .style
+            .fluid = Some(true);
     }
-    file.team_mut(701).unwrap().tactics.presets[0].style.fluid = Some(true);
     file.save(&path).unwrap();
     path
 }
@@ -489,6 +498,89 @@ fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
     );
 }
 
+// A selector's press names its target only while a team row stays
+// selected: Down moved the selection to a player row, which a preset
+// copy does not paste onto.
+// SE-GUI-56
+#[test]
+fn ctrl_v_of_a_preset_after_an_arrow_key_to_a_player_row_pastes_nothing() {
+    let (mut window, mut view) = open_window(&selector_fixture("clip_selector_arrow"));
+    open_team_view(&mut window, &mut view, 701);
+    click_button(&mut window, &mut view, "2");
+    let copied = copy(&mut window, &mut view);
+    click_button(&mut window, &mut view, "3");
+    assert_eq!(view.tactics.preset, 2, "preset 3 is on screen");
+    assert_ne!(
+        team_entry(&view, 701).tactics.presets[1],
+        team_entry(&view, 701).tactics.presets[2],
+        "premise: presets 2 and 3 differ"
+    );
+    view.notice = None;
+
+    send(
+        &mut window,
+        &mut view,
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "Down reached the player row under the team's"
+    );
+    ctrl_v(&mut window, &mut view, &copied);
+
+    assert_no_edit(&view, "a preset onto a player row");
+    assert!(
+        view.notice.is_none(),
+        "the refused paste publishes no notice"
+    );
+}
+
+// No press recorded since the save opened: the selected row is the
+// target still, so Down walks to the next player and the paste of
+// another window's stats copy lands on him as a click would have it.
+// SE-GUI-72
+#[test]
+fn ctrl_v_after_down_with_no_click_pastes_onto_the_row_it_reached() {
+    let (mut window_a, mut view_a) = open_window(&stats_fixture("clip_no_click_a"));
+    view_a.team = TeamChoice::Team(701);
+    click_player_row(&mut window_a, &mut view_a, 701, 0);
+    let copied = copy(&mut window_a, &mut view_a);
+
+    let path = stats_fixture("clip_no_click_b");
+    let (mut window, mut view) = open_window(&path);
+    send(
+        &mut window,
+        &mut view,
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+    );
+    let Some(Selection::Player(team_id, slot)) = view.selected else {
+        panic!("Down reached a player row: {:?}", view.selected);
+    };
+    let (a, b) = (
+        file(&view).team(701).unwrap().roster[0].player_id,
+        file(&view).team(team_id).unwrap().roster[usize::from(slot)].player_id,
+    );
+    assert_ne!(a, b, "premise: the reached player is not the copied one");
+    let expected = copy_stats_result(&path, a, b);
+    let (a_name, b_name) = (
+        display_name(&player_entry(&view, a).name),
+        display_name(&player_entry(&view, b).name),
+    );
+    ctrl_v(&mut window, &mut view, &copied);
+
+    assert_eq!(
+        player_entry(&view, b),
+        expected,
+        "the row Down reached took the stats"
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(format!("{a_name}'s stats pasted onto {b_name}.").as_str()),
+        "the notice names the reached player"
+    );
+}
+
 // SE-GUI-56
 #[test]
 fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
@@ -543,14 +635,71 @@ fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
     );
 }
 
+// Ctrl+C is a label's own while one of its texts is selected, as a text
+// field's is: a drag across the Height label selects its text, and the
+// copy that lands on the system clipboard is the selection's, not the
+// save's target's.
+// SE-GUI-56
+#[test]
+fn ctrl_c_over_a_labels_selected_text_copies_the_text() {
+    let path = stats_fixture("clip_label_selection");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+    click_player_row(&mut window, &mut view, 701, 0);
+    let nodes = draw(&mut window, &mut view);
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Height"))
+        .expect("the Height label");
+    let bounds = label.bounds().expect("a drawn label's bounds");
+    let mid = centre(label).y;
+    drag(
+        &mut window,
+        egui::pos2(bounds.x0 as f32 + 2.0, mid),
+        egui::pos2(bounds.x1 as f32 - 2.0, mid),
+        &mut view,
+    );
+    assert!(
+        window
+            .ctx
+            .plugin_or_default::<egui::text_selection::LabelSelectionState>()
+            .lock()
+            .has_selection(),
+        "premise: the drag selected the label's text"
+    );
+    view.notice = None;
+
+    let copied = ctrl_c(&mut window, &mut view);
+    assert!(
+        !copied
+            .as_ref()
+            .is_some_and(|text| text.contains("# copied:")),
+        "the label's own copy, not the save's: {copied:?}"
+    );
+    assert!(
+        view.notice.is_none(),
+        "no save copy ran, so no copied notice"
+    );
+}
+
+// Team 705's record holds 255 in the bench's last nine, so a paste that
+// refilled them as the game does would be a write an undo entry and the
+// dirty flag show.
 // SE-GUI-56
 #[test]
 fn ctrl_v_of_a_teams_own_gameplan_pushes_no_undo_entry() {
     let (mut window, mut view) =
         open_window(&fixture(PesVersion::Pes17, "clip_gameplan_same_team"));
-    click_team_row(&mut window, &mut view, 701);
+    assert!(
+        team_entry(&view, 705).tactics.bench_order[12..]
+            .iter()
+            .all(|slot| *slot == 255),
+        "premise: team 705's last nine bench entries hold 255"
+    );
+    view.team = TeamChoice::Team(705);
+    click_team_row(&mut window, &mut view, 705);
     let copied = copy(&mut window, &mut view);
-    click_team_row(&mut window, &mut view, 701);
+    click_team_row(&mut window, &mut view, 705);
     ctrl_v(&mut window, &mut view, &copied);
 
     assert_no_edit(&view, "the team's own Gameplan");
@@ -822,7 +971,8 @@ fn a_preset_and_a_formation_survive_the_document() {
 // written and read back onto a team whose own tactics differ: the record
 // comes back entire but for the bench's last nine entries. The document
 // carries the bench's first twelve, and the import writes the other nine
-// as the game fills them, which is not always what the save stored (255
+// as the game fills them when its eleven or twelve changed the record's,
+// as the seed's do — a fill that is not always what the save stored (255
 // on some teams).
 #[test]
 fn a_gameplan_survives_the_document() {
@@ -1121,51 +1271,58 @@ fn a_preset_copied_in_one_window_pastes_over_the_preset_shown_in_another() {
     assert_eq!(team_entry(&view_b, 701), before, "one undo restores it");
 }
 
-// In-possession copied onto Out-of-possession, so a copy or a paste that
-// read or wrote another formation shows.
+// Preset 2's In-possession copied onto preset 3's Out-of-possession, so
+// a copy or a paste that read or wrote another preset or formation shows.
 // SE-GUI-72
 #[test]
 fn a_formation_copied_in_one_window_pastes_over_the_formation_shown_in_another() {
     let (mut window_a, mut view_a) = open_window(&selector_fixture("clip_cross_formation_a"));
     let (mut window_b, mut view_b) = open_window(&selector_fixture("clip_cross_formation_b"));
     open_team_view(&mut window_a, &mut view_a, 701);
+    click_button(&mut window_a, &mut view_a, "2");
     click_button(&mut window_a, &mut view_a, "In-possession");
     let copied = copy(&mut window_a, &mut view_a);
     let name = display_name(&team_entry(&view_a, 701).name);
     assert_eq!(
         head(&copied),
         [
-            format!("# Unlimited Tool Works: {name}'s preset 1 In-possession formation").as_str(),
+            format!("# Unlimited Tool Works: {name}'s preset 2 In-possession formation").as_str(),
             "# copied: formation"
         ]
     );
-    let formations = team_entry(&view_a, 701).tactics.presets[0]
-        .formations
-        .clone();
+    let formation = team_entry(&view_a, 701).tactics.presets[1].formations[1].clone();
     assert_ne!(
-        formations[0], formations[1],
-        "premise: Kick-off and In-possession differ"
+        team_entry(&view_a, 701).tactics.presets[2].formations[2],
+        formation,
+        "premise: preset 2's In-possession and preset 3's Out-of-possession differ"
     );
 
     open_team_view(&mut window_b, &mut view_b, 701);
+    click_button(&mut window_b, &mut view_b, "3");
     click_button(&mut window_b, &mut view_b, "Out-of-possession");
     assert_eq!(
         view_b.tactics.formation, 2,
         "out-of-possession is on screen"
     );
     let before = team_entry(&view_b, 701);
-    assert_ne!(
-        before.tactics.presets[0].formations[2], formations[1],
-        "premise: the formations differ"
-    );
     ctrl_v(&mut window_b, &mut view_b, &copied);
 
     let mut expected = before.clone();
-    expected.tactics.presets[0].formations[2] = formations[1].clone();
+    expected.tactics.presets[2].formations[2] = formation;
     assert_eq!(
         team_entry(&view_b, 701),
         expected,
-        "out-of-possession took the copied formation, and nothing else changed"
+        "preset 3's out-of-possession took the copied formation, and nothing else changed"
+    );
+    assert_eq!(
+        view_b.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "{name}'s preset 2 In-possession formation pasted onto {name}'s preset 3 Out-of-possession formation."
+            )
+            .as_str()
+        ),
+        "the paste's notice"
     );
     ctrl_z(&mut window_b, &mut view_b);
     assert_eq!(team_entry(&view_b, 701), before, "one undo restores it");
@@ -1197,6 +1354,43 @@ fn a_copy_pastes_after_another_save_opens_in_the_same_window() {
         player_entry(&view, b),
         expected,
         "the other save's player holds what the import writes"
+    );
+}
+
+// A clipboard hands the text back with Windows' line endings: the CRLF
+// copy pastes as the LF one did.
+// SE-GUI-72
+#[test]
+fn a_copy_pasted_with_crlf_line_ends_writes_the_same() {
+    let path = stats_fixture("clip_crlf");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+    let (a, b) = (70101, 70102);
+    let expected = copy_stats_result(&path, a, b);
+
+    click_player_row(&mut window, &mut view, 701, 0);
+    let copied = copy(&mut window, &mut view);
+    click_player_row(&mut window, &mut view, 701, 1);
+    ctrl_v(&mut window, &mut view, &copied);
+    let lf_notice = view
+        .notice
+        .as_ref()
+        .map(|notice| notice.text.clone())
+        .expect("the LF paste's notice");
+    ctrl_z(&mut window, &mut view);
+
+    click_player_row(&mut window, &mut view, 701, 1);
+    ctrl_v(&mut window, &mut view, &copied.replace('\n', "\r\n"));
+
+    assert_eq!(
+        player_entry(&view, b),
+        expected,
+        "the CRLF copy writes what the LF one did"
+    );
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(lf_notice.as_str()),
+        "the notice is the LF paste's, byte for byte"
     );
 }
 
@@ -1352,6 +1546,95 @@ fn a_paste_leaving_a_value_changed_says_so_in_its_notice() {
             "the notice ends with the changed-or-dropped count"
         );
     }
+}
+
+// The tail's other shape with one of each: the notes mix a key PES 17
+// lacks with a value it cannot encode — a PES 21 stats copy carrying a
+// playing style PES 17 has no slot for (Roaming Flank is a PES 19+
+// style) beside the keys PES 20 and later alone store.
+// SE-GUI-72
+#[test]
+fn a_paste_mixing_dropped_and_changed_notes_uses_the_changed_tail() {
+    let path21 = {
+        let path = pes21_stats_fixture("clip_tail_mixed_codes_21");
+        let mut file = EditFile::from_bytes(&std::fs::read(&path).unwrap()).unwrap();
+        let id = file.team(714).unwrap().roster[0].player_id;
+        file.player_mut(id).unwrap().positions.playing_style =
+            playstyle::encode(PesVersion::Pes21, PlayStyle::RoamingFlank)
+                .expect("PES 21 stores Roaming Flank");
+        file.save(&path).unwrap();
+        path
+    };
+    let (mut window21, mut view21) = open_window(&path21);
+    let (mut window17, mut view17) =
+        open_window(&fixture(PesVersion::Pes17, "clip_tail_mixed_codes_17"));
+    view21.team = TeamChoice::Team(714);
+    click_player_row(&mut window21, &mut view21, 714, 0);
+    let copied = copy(&mut window21, &mut view21);
+    let (a_name, b_name) = (
+        display_name(
+            &player_entry(
+                &view21,
+                file(&view21).team(714).unwrap().roster[0].player_id,
+            )
+            .name,
+        ),
+        display_name(
+            &player_entry(
+                &view17,
+                file(&view17).team(701).unwrap().roster[0].player_id,
+            )
+            .name,
+        ),
+    );
+
+    // The notes the paste's staged import carries: the copy's one player
+    // table placed on the target's first slot, as `paste` builds it.
+    let document = TeamToml::parse(&copied).expect("the copy is a Team TOML document");
+    let mut placed = TeamToml {
+        pes_version: document.pes_version,
+        ..TeamToml::default()
+    };
+    placed.players = BTreeMap::from([(
+        1,
+        document
+            .players
+            .into_values()
+            .next()
+            .expect("a stats copy holds one player table"),
+    )]);
+    let expected = stage(
+        file(&view17),
+        file(&view17).team(701).unwrap(),
+        &placed,
+        STATS,
+    )
+    .expect("the document stages onto 701");
+    let count: usize = expected.notes.iter().map(|group| group.notes.len()).sum();
+    let codes: Vec<&str> = expected
+        .notes
+        .iter()
+        .map(|group| group.code.as_str())
+        .collect();
+    assert!(
+        codes.contains(&"import_key_not_in_version")
+            && codes.contains(&"import_value_not_encodable"),
+        "premise: the notes mix a dropped key with another kind: {codes:?}"
+    );
+
+    click_player_row(&mut window17, &mut view17, 701, 0);
+    ctrl_v(&mut window17, &mut view17, &copied);
+
+    assert_eq!(
+        view17.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some(
+            format!(
+                "{a_name}'s stats pasted onto {b_name}; {count} values were left out or changed to fit PES 2017."
+            )
+            .as_str()
+        ),
+        "the notice ends with the changed-or-dropped count"
+    );
 }
 
 // The same tail, one note: the singular.

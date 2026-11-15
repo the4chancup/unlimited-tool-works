@@ -1,8 +1,7 @@
-//! Ctrl+C and Ctrl+V, the draft's `clipCopy`/`clipPaste`, acting on what
-//! was clicked last of three kinds: the player list (a list row means the
-//! selected row, which Up and Down move without a click), the Tactics
-//! preset selector (the shown preset) or the formation selector (the
-//! shown formation).
+//! Ctrl+C and Ctrl+V, the draft's `clipCopy`/`clipPaste`, acting on the
+//! selected row (which Up and Down move without a click) or, while a
+//! team row stays selected, on what the last press on a Tactics
+//! selector named: the shown preset or the shown formation.
 //!
 //! The copy is text on the system clipboard, so it pastes into another
 //! Save editor window, or into the same window after another save was
@@ -109,9 +108,9 @@ impl Kind {
     }
 }
 
-/// What Ctrl+C reads and Ctrl+V writes, resolved now: `List` reads the
-/// selected row (the arrows move it without a click), the selector
-/// kinds the selected row's team.
+/// What Ctrl+C reads and Ctrl+V writes, resolved now: the selected
+/// row's stats or Gameplan, or the shown preset or formation on the
+/// selected team.
 enum Target {
     /// The selected player's team id and roster slot (counting from 0).
     Player(u32, u8),
@@ -145,18 +144,27 @@ impl Target {
     }
 }
 
-/// The kind `view`'s last click names now; `None` with no save open, no
-/// click recorded, or `List` with nothing selected.
+/// The target the open save's Ctrl+C reads and Ctrl+V writes: the
+/// selected row, which the arrows and page keys move without a press.
+/// A press on a selector names the shown preset or formation instead,
+/// but only while a team row stays selected (its screen is the Tactics
+/// view the selectors sit on): the selection moving to a player row,
+/// however it got there, takes the target to that row. `None` with
+/// nothing selected.
 fn target(view: &SaveView) -> Option<Target> {
-    match view.click_kind? {
-        ClickKind::List => match view.selected? {
+    match view.click_kind {
+        Some(ClickKind::Preset) if matches!(view.selected, Some(Selection::Team(_))) => {
+            selected_team_id(view).map(Target::Preset)
+        }
+        Some(ClickKind::Formation) if matches!(view.selected, Some(Selection::Team(_))) => {
+            selected_team_id(view).map(Target::Formation)
+        }
+        _ => match view.selected? {
             Selection::Player(..) => {
                 selected_player(view).map(|(team_id, slot, _)| Target::Player(team_id, slot))
             }
             Selection::Team(team_id) => Some(Target::Team(team_id)),
         },
-        ClickKind::Preset => selected_team_id(view).map(Target::Preset),
-        ClickKind::Formation => selected_team_id(view).map(Target::Formation),
     }
 }
 
@@ -205,7 +213,7 @@ fn onto(file: &EditFile, target: &Target, shown: (usize, usize)) -> Option<Strin
     }
 }
 
-/// Ctrl+C: what `click_kind` names, as its clipboard text on the system
+/// Ctrl+C: the copy `target` resolves, as its text on the system
 /// clipboard, with the success notice naming the copy.
 pub(super) fn copy(ctx: &egui::Context, view: &mut SaveView) {
     let Some(target) = target(view) else {
@@ -291,7 +299,7 @@ fn copied(file: &EditFile, target: &Target, shown: (usize, usize)) -> Option<(St
 }
 
 /// Ctrl+V with `text` the system clipboard's: a copy of the target's kind
-/// written onto the target the last click names now, as one sealed undo
+/// written onto the target `target` resolves now, as one sealed undo
 /// entry, with the success notice naming the copy and where it landed.
 /// Any other text changes nothing.
 pub(super) fn paste(view: &mut SaveView, text: &str) {

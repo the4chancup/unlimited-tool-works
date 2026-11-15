@@ -592,6 +592,11 @@ pub(super) fn apply_tactics(
     notes: &mut Vec<ImportNote>,
 ) -> Result<(), TeamTomlError> {
     let tactics = &mut next.tactics;
+    // The eleven and the twelve before this import: the bench's other
+    // nine are the game's own fill only when one of them changed —
+    // a record's own nine need not be the fill (255 on some teams), so
+    // an import that leaves both alone keeps them as the record holds.
+    let before = (tactics.starting_eleven, tactics.bench_order);
     if let Some(starting) = section.starting_eleven
         && gated(
             notes,
@@ -613,7 +618,10 @@ pub(super) fn apply_tactics(
         tactics.bench_order[..12].copy_from_slice(&bench);
         // `tactics.starting_eleven` is the section's eleven when it
         // carried one (applied above), the record's else.
-        tactics.bench_order[12..].copy_from_slice(&bench_fill(&tactics.starting_eleven, &bench));
+        if tactics.starting_eleven != before.0 || tactics.bench_order[..12] != before.1[..12] {
+            tactics.bench_order[12..]
+                .copy_from_slice(&bench_fill(&tactics.starting_eleven, &bench));
+        }
     }
     if let Some(join) = section.players_to_join_attack
         && gated(

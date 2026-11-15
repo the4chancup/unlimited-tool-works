@@ -675,14 +675,17 @@ fn a_drag_across_a_positions_label_selects_no_text() {
         egui::pos2(ss.x1 as f32 - 1.0, mid),
         &mut view,
     );
+    // Ctrl+C with no text selected copies the selected player, a text
+    // opening `# Unlimited Tool Works:`; a selection would have copied
+    // its own text.
     window.frame(vec![egui::Event::Copy], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
     assert!(
-        !window
-            .commands
-            .iter()
-            .any(|command| matches!(command, egui::OutputCommand::CopyText(_))),
+        !window.commands.iter().any(|command| matches!(
+            command,
+            egui::OutputCommand::CopyText(text) if !text.starts_with("# Unlimited Tool Works: ")
+        )),
         "the drag selected no text: {:?}",
         window.commands
     );

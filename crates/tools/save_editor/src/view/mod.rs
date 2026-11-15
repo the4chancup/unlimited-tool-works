@@ -629,6 +629,7 @@ impl SaveView {
                 self.filter.clear();
                 self.page = PlayerScreen::Stats;
                 self.last_shown.clear();
+                self.click_kind = None;
                 self.selected = selection::list(session.file(), &self.team, "", self.team_category)
                     .into_iter()
                     .find_map(|row| match row {
@@ -1047,14 +1048,21 @@ fn toolbar(
     } else {
         ui.input_mut(file_menu::consume_shortcut)
     };
-    // Ctrl+C and Ctrl+V copy and paste what the last click named (the
+    // Ctrl+C and Ctrl+V copy and paste what `target` resolves (the
     // selected row, the shown preset, the shown formation). They arrive
     // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
     // while a dialog is up or a text edit holds the keyboard — a field
     // keeps its own copy and paste; a focused button does not hold them.
-    // A paste carries the system clipboard's text, which is the copy;
+    // Ctrl+C is a label's own too while one of its texts is selected:
+    // the selection's copy is the text, not the save's target. A paste
+    // carries the system clipboard's text, which is the copy;
     // `Event::PasteImage` means the clipboard holds an image, no copy.
     let copy_key = !typing
+        && !ui
+            .ctx()
+            .plugin_or_default::<egui::text_selection::LabelSelectionState>()
+            .lock()
+            .has_selection()
         && ui.input(|input| {
             input
                 .events

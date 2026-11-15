@@ -655,8 +655,9 @@ mod tests {
                     .apply(version, &mut target, &mut players)
                     .expect("same-version apply");
                 assert!(notes.is_empty(), "{version:?} team {}: {notes:?}", team.id);
-                // `apply` writes the bench's other nine as the game
-                // does, whatever the record held there, so the
+                // `apply` refills the bench's other nine as the game
+                // does (the blank slate's eleven and twelve differ from
+                // the document's, so the fill runs), so the
                 // field-for-field check expects them computed, not carried.
                 let mut expected = team.clone();
                 let bench: [u8; 12] = expected.tactics.bench_order[..12]
@@ -1457,6 +1458,31 @@ mod tests {
                 "{document} target eleven {target_eleven:?}"
             );
         }
+    }
+
+    /// A team's own document imported back onto it writes nothing, the
+    /// bench's last nine included: the eleven and the twelve it carries
+    /// are the record's own, so no fill runs and the nine keep what the
+    /// record held (255 on the found team, not the game's order).
+    #[test]
+    fn a_teams_own_document_imported_onto_itself_changes_nothing() {
+        let (file, _) = open(PesVersion::Pes17);
+        let team = file
+            .teams()
+            .iter()
+            .find(|team| {
+                team.tactics.bench_order[12..]
+                    .iter()
+                    .all(|slot| *slot == 255)
+            })
+            .expect("a fixture team whose bench's last nine hold 255");
+        let mut target = team.clone();
+        let notes = TeamToml::from_team(PesVersion::Pes17, team, &[])
+            .expect("from_team")
+            .apply(PesVersion::Pes17, &mut target, &mut [])
+            .expect("applies");
+        assert!(notes.is_empty(), "{notes:?}");
+        assert_eq!(&target, team, "team {}", team.id);
     }
 
     /// `bench_order` holds the twelve of the bench: an array of another
