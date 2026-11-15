@@ -928,6 +928,11 @@ fn the_bar_reads_update_ready_after_the_install_and_details_opens_it_again() {
 fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
     let (mut shell, _bundle, go_on) = update_shell("dialog_bar_hidden", running_assets(None));
     let egui_ctx = test_context();
+    let requested = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let delays = std::sync::Arc::clone(&requested);
+    egui_ctx.set_repaint_observer(move |info| {
+        delays.lock().unwrap().push(info.delay);
+    });
     update_now(&egui_ctx, &mut shell.app);
     let held = download_line("0.0");
     frame_until_text(&egui_ctx, &mut shell.app, &held);
@@ -951,8 +956,17 @@ fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
         "the second held close hid the dialog"
     );
 
+    // The frames' own requests must not stand in for the worker's: the
+    // recorder reads only what is asked from here on.
+    requested.lock().unwrap().clear();
     drop(go_on);
     wait_for_install_end(&shell.app);
+    // Each send on the reports channel asked for an immediate repaint, the
+    // outcome's included: an idle window wakes for the frame that drains it.
+    assert!(
+        requested.lock().unwrap().iter().any(Duration::is_zero),
+        "the install's worker ended without waking the window"
+    );
     // Exactly one frame: the bar must already read the new condition.
     let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
     assert_ready_bar(&nodes, "one frame after the install's worker ended");

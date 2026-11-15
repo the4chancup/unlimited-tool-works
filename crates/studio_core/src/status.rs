@@ -11,7 +11,7 @@ use crate::help::HelpTarget;
 
 /// A persistent environment state the shell computes itself (left slot). Shown while it holds.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ShellCondition {
+pub(crate) enum ShellCondition {
     /// The settings file could not be written; the session keeps working in memory.
     SettingsSaveFailed {
         /// The save's own error text.
@@ -41,8 +41,8 @@ impl ShellCondition {
         }
     }
 
-    /// The bar's one-line text, and the line the CLI prints for the condition.
-    pub fn text(&self) -> String {
+    /// The bar's one-line text for the condition.
+    pub(crate) fn text(&self) -> String {
         match self {
             ShellCondition::SettingsSaveFailed { .. } => "Settings could not be saved".to_owned(),
             ShellCondition::UpdateAvailable { version } => {
