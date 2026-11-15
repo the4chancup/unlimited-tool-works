@@ -476,13 +476,53 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-faded-cells">
+  <h3>A formation picture's faded formations</h3>
+  <p class="from">From: the pending looks; checked by the lead at <code>4b9f2258</code> in pictures the built app saved for every team of your PES 2021 save</p>
+  <p>A preset with Fluid formation off draws its other two formations at 60%, so they read as
+  unused. The build fades each shape on its own (the turf, each player, each badge, each
+  name), not the cell as one layer. Where two faded players overlap, the one behind shows
+  through the one in front, and the turf shows through both. The draft draws no picture to
+  compare with.</p>
+  <div class="shots">
+    <figure><a href="img/faded_cells.png"><img src="img/faded_cells.png" alt="A preset's two faded formations, and a zoom on two overlapping faded players"></a><figcaption>/n/'s preset 2, and a zoom</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine as it is</b></label>
+    <label class="opt"><input type="radio" value="fade each cell as one layer"><b>Fade the cell as one layer</b>
+      <div class="note">An overlapped player is hidden behind the one in front, as in the Kick-off cell.</div></label>
+    <label class="opt"><input type="radio" value="something else, see note"><b>Something else</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-kickoff-copy">
+  <h3>A hidden formation with Kick-off's shape, drawn beside one of its own</h3>
+  <p class="from">From: the pending looks; checked by the lead in a picture from <code>349ca307</code>'s painter, the same as <code>4b9f2258</code>'s</p>
+  <p>A preset with Fluid formation off draws Kick-off alone, unless one of the other two has
+  a shape of its own; then it draws all three. So when only one hidden formation has its own
+  shape, the other is drawn too, even when it has Kick-off's shape: /nepgen/'s preset 2
+  shows 2-4-1-3 twice. That is the plan's rule as written: it keeps the row's columns whole.</p>
+  <div class="shots">
+    <figure><a href="img/kickoff_copy.png"><img src="img/kickoff_copy.png" alt="A preset showing Kick-off's shape twice beside a hidden formation of its own"></a><figcaption>/nepgen/'s preset 2</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine as it is</b></label>
+    <label class="opt"><input type="radio" value="leave the copy's cell empty"><b>Leave the copy's cell empty</b>
+      <div class="note">Only the formation with a shape of its own is drawn beside Kick-off.</div></label>
+    <label class="opt"><input type="radio" value="something else, see note"><b>Something else</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
   <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>
-  <li>A formation picture's hidden formations, each faded shape drawn on its own (0.0.2-flatpitch).</li>
 </ul>
 
 <div class="picks">
