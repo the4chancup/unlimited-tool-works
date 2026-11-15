@@ -49,7 +49,8 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, consume_ctrl, menu_button, modal, modal_buttons, toolbar_framed, toolbar_separator,
+    add_enabled, consume_ctrl, menu_button, menu_separator, modal, modal_buttons, toolbar_framed,
+    toolbar_separator,
 };
 use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
 
@@ -136,9 +137,11 @@ pub(crate) struct SaveView {
     /// selects from the team's row, the team's first filled slot when
     /// none was shown.
     last_shown: HashMap<u32, u8>,
-    /// What the last click named for Ctrl+C and Ctrl+V (the list, the
-    /// preset selector or the formation selector); clicks elsewhere
-    /// leave it, `None` before the first click of one.
+    /// The Tactics selector the last press named for Ctrl+C and Ctrl+V
+    /// (the preset's or the formation's, its team's id with it); `None`
+    /// means the selected row. `show` clears a `Some` whose team is no
+    /// longer the selected row at the frame's end, so the target lives
+    /// only while its team's row stays selected.
     click_kind: Option<clipboard::ClickKind>,
     /// A page or arrow key moved the selection, a team row's double
     /// click showed that team alone, or the team file panel's own-team
@@ -918,6 +921,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         }
     }
     view.focused = focused;
+    // A selector's press names the copy target only while its own
+    // team's row stays selected: whatever else the selection reached —
+    // another team's row, a player row — ends it, and coming back to
+    // the row does not bring it back.
+    if let Some(kind) = view.click_kind
+        && view.selected != Some(Selection::Team(kind.team_id()))
+    {
+        view.click_kind = None;
+    }
 }
 
 /// How the frame left the edit's gesture, the two settled cases told
@@ -1153,12 +1165,21 @@ fn toolbar(
             Some(file_menu::Write::SaveAs) => save_as(view, running),
             None => {}
         }
-        let (undo, redo) = edit_menu(ui, view);
-        if undo || undo_key {
+        let edit = edit_menu(ui, view);
+        if undo_key || edit == Some(EditAction::Undo) {
             following_selection(view, Session::undo);
         }
-        if redo || redo_key {
+        if redo_key || edit == Some(EditAction::Redo) {
             following_selection(view, Session::redo);
+        }
+        if edit == Some(EditAction::Copy) {
+            clipboard::copy(ui.ctx(), view);
+        }
+        if edit == Some(EditAction::Paste) {
+            // The window hands over the clipboard's text as the
+            // `Event::Paste` Ctrl+V produces, which `pasted` takes.
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::RequestPaste);
         }
         menus::player_menu(ui, view);
         menus::team_menu(ui, view);
@@ -1292,31 +1313,74 @@ fn toolbar_band(ui: &mut egui::Ui, end: Option<f32>, row: impl FnOnce(&mut egui:
     ui.advance_cursor_after_rect(under);
 }
 
-/// The Edit menu: Undo and Redo with their shortcuts' text, each disabled
-/// with nothing to undo or redo (both with no save open); the menu button
-/// itself is always enabled. Returns whether Undo, then Redo, was clicked
-/// this frame: the toolbar steps the history, for a click as for a key.
-fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> (bool, bool) {
+/// The entry the Edit menu's frame clicked, `None` with none (one entry
+/// is clicked per frame): the toolbar runs it as it does the keys'.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EditAction {
+    /// Undo (Ctrl+Z).
+    Undo,
+    /// Redo (Ctrl+Y).
+    Redo,
+    /// What Ctrl+C does on the target (`clipboard::copy`).
+    Copy,
+    /// Asks egui for the system clipboard's text (`RequestPaste`), which
+    /// the next frame hands over as Ctrl+V's `Event::Paste`.
+    Paste,
+}
+
+/// The Edit menu: Undo and Redo with their shortcuts' text, each
+/// disabled with nothing to undo or redo, then under a separator Copy
+/// and Paste, which do what Ctrl+C and Ctrl+V do on the same target:
+/// Copy dead when Ctrl+C would copy nothing, Paste dead only with no
+/// target (the window cannot read the clipboard before it asks for it),
+/// both dead with no save open, each enabled entry's hover naming the
+/// copy or the target in the notices' words. The menu button itself is
+/// always enabled. Returns the entry clicked this frame, `None` with
+/// none: the toolbar runs it, for a click as for a key.
+fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> Option<EditAction> {
     let (can_undo, can_redo) = view
         .session
         .as_ref()
         .map(|session| (session.can_undo(), session.can_redo()))
         .unwrap_or((false, false));
-    let entry = |ui: &mut egui::Ui, enabled: bool, label: &str, shortcut: &str| {
-        let button = egui::Button::new(label).shortcut_text(shortcut);
-        let clicked = add_enabled(ui, enabled, button).clicked();
-        if clicked {
-            ui.close();
-        }
-        clicked
-    };
+    let entry =
+        |ui: &mut egui::Ui, enabled: bool, label: &str, shortcut: &str, tip: Option<&str>| {
+            let button = egui::Button::new(label).shortcut_text(shortcut);
+            let response = add_enabled(ui, enabled, button);
+            let response = match (enabled, tip) {
+                (true, Some(tip)) => response.on_hover_text(tip),
+                _ => response,
+            };
+            let clicked = response.clicked();
+            if clicked {
+                ui.close();
+            }
+            clicked
+        };
     menu_button(ui, "Edit", |ui| {
-        let undo = entry(ui, can_undo, "Undo", "Ctrl+Z");
-        let redo = entry(ui, can_redo, "Redo", "Ctrl+Y");
-        (undo, redo)
+        // Inside the menu's draw: the copy's answer builds an export, so
+        // it is asked only while the menu is open.
+        let tips = clipboard::tooltips(view);
+        let (copy_tip, paste_tip) = tips.as_ref().map_or((None, None), |(copy, paste)| {
+            (Some(copy.as_str()), Some(paste.as_str()))
+        });
+        let undo = entry(ui, can_undo, "Undo", "Ctrl+Z", None).then_some(EditAction::Undo);
+        let redo = entry(ui, can_redo, "Redo", "Ctrl+Y", None).then_some(EditAction::Redo);
+        menu_separator(ui);
+        let copy = entry(ui, clipboard::can_copy(view), "Copy", "Ctrl+C", copy_tip)
+            .then_some(EditAction::Copy);
+        let paste = entry(
+            ui,
+            clipboard::has_target(view),
+            "Paste",
+            "Ctrl+V",
+            paste_tip,
+        )
+        .then_some(EditAction::Paste);
+        undo.or(redo).or(copy).or(paste)
     })
     .inner
-    .unwrap_or((false, false))
+    .flatten()
 }
 
 /// The window's Save (the File menu's, Ctrl+S's and the prompt's): `save_to`

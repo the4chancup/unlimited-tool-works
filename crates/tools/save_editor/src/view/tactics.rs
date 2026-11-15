@@ -323,7 +323,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         };
         let mut preset_ui = bar(ui, top_left.x, settings_right);
         if pressed(ui, &tactics::preset_selector(&mut preset_ui, tactics)) {
-            *click_kind = Some(ClickKind::Preset);
+            *click_kind = Some(ClickKind::Preset(team_id));
         }
         changed[0] = tactics::fluid_formation(&mut preset_ui, &mut edited, tactics);
         copy_swap_preset_menu(&mut preset_ui, session, team_id, tactics.preset);
@@ -332,7 +332,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             ui,
             &pitch::formation_selector(&mut formbar_ui, &edited, tactics),
         ) {
-            *click_kind = Some(ClickKind::Formation);
+            *click_kind = Some(ClickKind::Formation(team_id));
         }
         copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll").on_hover_text(

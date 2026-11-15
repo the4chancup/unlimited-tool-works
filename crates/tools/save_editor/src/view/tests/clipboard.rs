@@ -68,6 +68,37 @@ fn click_button(window: &mut Headless, view: &mut SaveView, label: &str) {
     click(window, node_labeled(&nodes, Role::Button, label), view);
 }
 
+/// `name` picked in the list's team selector: the combo clicked, its
+/// popup's `name` item picked through the AccessKit action — a popup
+/// item's bounds sit outside the window, where a pointer click lands on
+/// nothing.
+fn pick_team(window: &mut Headless, view: &mut SaveView, name: &str) {
+    // The popup can still be open on the first frame (its close lands a
+    // frame after the item's action): click the combo only until the
+    // item is drawn — clicking while it is open closes it. Bounded, so
+    // a missing item fails rather than hangs.
+    for _ in 0..10 {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        if let Some((item, _)) = pairs
+            .iter()
+            .find(|(_, node)| node.role() == Role::Button && node.label() == Some(name))
+        {
+            action_click(window, view, *item);
+            return;
+        }
+        let combo = pairs
+            .iter()
+            .map(|(_, node)| node)
+            .find(|node| {
+                node.role() == Role::ComboBox
+                    && node.bounds().is_some_and(|bounds| bounds.x1 < 300.0)
+            })
+            .expect("the list's team selector");
+        click(window, combo, view);
+    }
+    panic!("the team selector never showed {name:?}");
+}
+
 /// One frame carrying `events` (a key or a clipboard event).
 fn send(window: &mut Headless, view: &mut SaveView, events: Vec<egui::Event>) {
     window.frame(events, |ui| show(ui, view, &|| Vec::new()));
@@ -92,6 +123,15 @@ fn ctrl_v(window: &mut Headless, view: &mut SaveView, text: &str) {
 /// Ctrl+C where the last click names a copy: its clipboard text.
 fn copy(window: &mut Headless, view: &mut SaveView) -> String {
     ctrl_c(window, view).expect("Ctrl+C put a text on the system clipboard")
+}
+
+/// The status bar's notice, its text and kind (`None` with none): a
+/// copy's and a paste's notice is a success one, which the text alone
+/// does not say.
+fn notice(view: &SaveView) -> Option<(&str, NoticeKind)> {
+    view.notice
+        .as_ref()
+        .map(|notice| (notice.text.as_str(), notice.kind))
 }
 
 /// The clipboard text's first two lines: the naming line and the kind.
@@ -229,8 +269,11 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
         display_name(&player_entry(&view, b).name),
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{a_name}'s stats copied.").as_str()),
+        notice(&view),
+        Some((
+            format!("{a_name}'s stats copied.").as_str(),
+            NoticeKind::Success
+        )),
         "the copy's notice"
     );
     click_player_row(&mut window, &mut view, 701, 1);
@@ -242,8 +285,11 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
         "B's record is what Copy stats from A writes"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{a_name}'s stats pasted onto {b_name}.").as_str()),
+        notice(&view),
+        Some((
+            format!("{a_name}'s stats pasted onto {b_name}.").as_str(),
+            NoticeKind::Success
+        )),
         "the paste's notice"
     );
     // One Ctrl+Z restores B.
@@ -303,8 +349,11 @@ fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
         display_name(&team_entry(&view, 702).name),
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{from_name}'s Gameplan copied.").as_str()),
+        notice(&view),
+        Some((
+            format!("{from_name}'s Gameplan copied.").as_str(),
+            NoticeKind::Success
+        )),
         "the copy's notice"
     );
     click_team_row(&mut window, &mut view, 702);
@@ -313,8 +362,11 @@ fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
 
     assert_gameplan_import(&mut window, &mut view, &expected, &before);
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{from_name}'s Gameplan pasted onto {onto_name}.").as_str()),
+        notice(&view),
+        Some((
+            format!("{from_name}'s Gameplan pasted onto {onto_name}.").as_str(),
+            NoticeKind::Success
+        )),
         "the paste's notice"
     );
 }
@@ -335,8 +387,11 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
     let copied = copy(&mut window, &mut view);
     let name = display_name(&team_entry(&view, 701).name);
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{name}'s preset 1 copied.").as_str()),
+        notice(&view),
+        Some((
+            format!("{name}'s preset 1 copied.").as_str(),
+            NoticeKind::Success
+        )),
         "the copy's notice"
     );
     click_button(&mut window, &mut view, "2");
@@ -349,8 +404,11 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
         "the shown preset took the copied one"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{name}'s preset 1 pasted onto {name}'s preset 2.").as_str()),
+        notice(&view),
+        Some((
+            format!("{name}'s preset 1 pasted onto {name}'s preset 2.").as_str(),
+            NoticeKind::Success
+        )),
         "the paste's notice"
     );
     ctrl_z(&mut window, &mut view);
@@ -377,8 +435,11 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
     let copied = copy(&mut window, &mut view);
     let name = display_name(&team_entry(&view, 701).name);
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{name}'s preset 1 Kick-off formation copied.").as_str()),
+        notice(&view),
+        Some((
+            format!("{name}'s preset 1 Kick-off formation copied.").as_str(),
+            NoticeKind::Success
+        )),
         "the copy's notice"
     );
     click_button(&mut window, &mut view, "In-possession");
@@ -391,13 +452,14 @@ fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_o
         "the shown formation took the copied one"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        notice(&view),
+        Some((
             format!(
                 "{name}'s preset 1 Kick-off formation pasted onto {name}'s preset 1 In-possession formation."
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the paste's notice"
     );
 }
@@ -462,7 +524,7 @@ fn a_paste_of_another_kind_than_the_target_does_nothing() {
         );
         assert_no_edit(&view, case);
         assert!(
-            view.notice.is_none(),
+            notice(&view).is_none(),
             "{case}: the refused paste publishes no notice"
         );
     }
@@ -500,22 +562,98 @@ fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
 
 // A selector's press names its target only while a team row stays
 // selected: Down moved the selection to a player row, which a preset
-// copy does not paste onto.
+// or a formation copy does not paste onto.
 // SE-GUI-56
 #[test]
-fn ctrl_v_of_a_preset_after_an_arrow_key_to_a_player_row_pastes_nothing() {
-    let (mut window, mut view) = open_window(&selector_fixture("clip_selector_arrow"));
+fn ctrl_v_of_a_selector_copy_after_an_arrow_key_to_a_player_row_pastes_nothing() {
+    // The copied choice, then the one shown: a paste that wrote would
+    // land on the shown one, which the fixture made differ.
+    for (copied_button, shown_button, what) in [
+        ("2", "3", "a preset"),
+        ("In-possession", "Out-of-possession", "a formation"),
+    ] {
+        let (mut window, mut view) = open_window(&selector_fixture("clip_selector_arrow"));
+        open_team_view(&mut window, &mut view, 701);
+        click_button(&mut window, &mut view, copied_button);
+        let copied = copy(&mut window, &mut view);
+        click_button(&mut window, &mut view, shown_button);
+        let presets = &team_entry(&view, 701).tactics.presets;
+        let shown_differs = match copied_button {
+            "2" => presets[1] != presets[2],
+            _ => presets[0].formations[1] != presets[0].formations[2],
+        };
+        assert!(
+            shown_differs,
+            "premise: the copied {what} differs from the one shown"
+        );
+        let before = team_entry(&view, 701);
+        view.notice = None;
+
+        send(
+            &mut window,
+            &mut view,
+            vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        );
+        assert_eq!(
+            view.selected,
+            Some(Selection::Player(701, 0)),
+            "{what}: Down reached the player row under the team's"
+        );
+        ctrl_v(&mut window, &mut view, &copied);
+
+        assert_eq!(
+            team_entry(&view, 701),
+            before,
+            "{what}: the team is untouched"
+        );
+        assert_no_edit(&view, &format!("{what} onto a player row"));
+        assert!(
+            notice(&view).is_none(),
+            "{what}: the refused paste publishes no notice"
+        );
+    }
+}
+
+// A selector's target ends when the selection leaves its team's row:
+// the team selector's pick of 702 selects its row without a list press,
+// and Ctrl+C then copies 702's Gameplan, not the shown preset.
+// SE-GUI-56
+#[test]
+fn a_selector_target_ends_when_the_team_selector_picks_another_team() {
+    let (mut window, mut view) = open_window(&selector_fixture("clip_target_combo"));
     open_team_view(&mut window, &mut view, 701);
     click_button(&mut window, &mut view, "2");
-    let copied = copy(&mut window, &mut view);
-    click_button(&mut window, &mut view, "3");
-    assert_eq!(view.tactics.preset, 2, "preset 3 is on screen");
-    assert_ne!(
-        team_entry(&view, 701).tactics.presets[1],
-        team_entry(&view, 701).tactics.presets[2],
-        "premise: presets 2 and 3 differ"
+    assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
+    let name = display_name(&team_entry(&view, 702).name);
+
+    pick_team(&mut window, &mut view, &name);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(702)),
+        "the pick selected 702's team row"
     );
-    view.notice = None;
+
+    let copied = copy(&mut window, &mut view);
+    assert_eq!(
+        head(&copied),
+        [
+            format!("# Unlimited Tool Works: {name}'s Gameplan").as_str(),
+            "# copied: gameplan"
+        ],
+        "702's Gameplan is the copy, not 701's shown preset"
+    );
+}
+
+// And it does not come back when a key returns to its team's row: Down
+// ended it at the player row, so the row Up reaches is the Gameplan's
+// target again.
+// SE-GUI-56
+#[test]
+fn a_selector_target_ended_by_a_player_row_stays_ended_back_on_the_team_row() {
+    let (mut window, mut view) = open_window(&selector_fixture("clip_target_return"));
+    open_team_view(&mut window, &mut view, 701);
+    click_button(&mut window, &mut view, "2");
+    assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
 
     send(
         &mut window,
@@ -527,12 +665,26 @@ fn ctrl_v_of_a_preset_after_an_arrow_key_to_a_player_row_pastes_nothing() {
         Some(Selection::Player(701, 0)),
         "Down reached the player row under the team's"
     );
-    ctrl_v(&mut window, &mut view, &copied);
+    send(
+        &mut window,
+        &mut view,
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Up returned to 701's team row"
+    );
 
-    assert_no_edit(&view, "a preset onto a player row");
-    assert!(
-        view.notice.is_none(),
-        "the refused paste publishes no notice"
+    let copied = copy(&mut window, &mut view);
+    let name = display_name(&team_entry(&view, 701).name);
+    assert_eq!(
+        head(&copied),
+        [
+            format!("# Unlimited Tool Works: {name}'s Gameplan").as_str(),
+            "# copied: gameplan"
+        ],
+        "701's Gameplan is the copy, not the preset pressed before"
     );
 }
 
@@ -575,8 +727,11 @@ fn ctrl_v_after_down_with_no_click_pastes_onto_the_row_it_reached() {
         "the row Down reached took the stats"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(format!("{a_name}'s stats pasted onto {b_name}.").as_str()),
+        notice(&view),
+        Some((
+            format!("{a_name}'s stats pasted onto {b_name}.").as_str(),
+            NoticeKind::Success
+        )),
         "the notice names the reached player"
     );
 }
@@ -669,15 +824,22 @@ fn ctrl_c_over_a_labels_selected_text_copies_the_text() {
     );
     view.notice = None;
 
-    let copied = ctrl_c(&mut window, &mut view);
-    assert!(
-        !copied
-            .as_ref()
-            .is_some_and(|text| text.contains("# copied:")),
-        "the label's own copy, not the save's: {copied:?}"
+    send(&mut window, &mut view, vec![egui::Event::Copy]);
+    let copied: Vec<&str> = window
+        .commands
+        .iter()
+        .filter_map(|command| match command {
+            egui::OutputCommand::CopyText(text) => Some(text.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        copied,
+        ["Height"],
+        "the label's selected text alone is copied, not the save's target"
     );
     assert!(
-        view.notice.is_none(),
+        notice(&view).is_none(),
         "no save copy ran, so no copied notice"
     );
 }
@@ -717,9 +879,9 @@ fn a_press_on_the_locked_formation_selector_sets_the_clipboard_kind() {
         [0].as_slice(),
         "premise: the shown preset fields Kick-off alone"
     );
-    // A player row first, so the kind is List: only the press on the
-    // locked selector can set Formation. The team row's click after it
-    // brings the selector back without changing the kind.
+    // A player row first, so no selector is named: only the press on
+    // the locked one can set Formation. The team row's click after it
+    // brings the selector back without naming it.
     click_player_row(&mut window, &mut view, 701, 0);
     click_team_row(&mut window, &mut view, 701);
     let nodes = draw(&mut window, &mut view);
@@ -1315,13 +1477,14 @@ fn a_formation_copied_in_one_window_pastes_over_the_formation_shown_in_another()
         "preset 3's out-of-possession took the copied formation, and nothing else changed"
     );
     assert_eq!(
-        view_b.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        notice(&view_b),
+        Some((
             format!(
                 "{name}'s preset 2 In-possession formation pasted onto {name}'s preset 3 Out-of-possession formation."
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the paste's notice"
     );
     ctrl_z(&mut window_b, &mut view_b);
@@ -1372,10 +1535,8 @@ fn a_copy_pasted_with_crlf_line_ends_writes_the_same() {
     let copied = copy(&mut window, &mut view);
     click_player_row(&mut window, &mut view, 701, 1);
     ctrl_v(&mut window, &mut view, &copied);
-    let lf_notice = view
-        .notice
-        .as_ref()
-        .map(|notice| notice.text.clone())
+    let lf_notice = notice(&view)
+        .map(|(text, _)| text.to_owned())
         .expect("the LF paste's notice");
     ctrl_z(&mut window, &mut view);
 
@@ -1388,8 +1549,8 @@ fn a_copy_pasted_with_crlf_line_ends_writes_the_same() {
         "the CRLF copy writes what the LF one did"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(lf_notice.as_str()),
+        notice(&view),
+        Some((lf_notice.as_str(), NoticeKind::Success)),
         "the notice is the LF paste's, byte for byte"
     );
 }
@@ -1449,13 +1610,14 @@ fn a_paste_from_another_version_ends_its_notice_with_the_dropped_count() {
     ctrl_v(&mut window17, &mut view17, &copied);
 
     assert_eq!(
-        view17.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        notice(&view17),
+        Some((
             format!(
                 "{a_name}'s stats pasted onto {b_name}; {count} values PES 2017 does not store were left out."
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the notice ends with the dropped count"
     );
 }
@@ -1535,14 +1697,15 @@ fn a_paste_leaving_a_value_changed_says_so_in_its_notice() {
         );
         ctrl_v(&mut window17, &mut view17, &copied);
         assert_eq!(
-            view17.notice.as_ref().map(|notice| notice.text.as_str()),
-            Some(
+            notice(&view17),
+            Some((
                 format!(
                     "{name}'s Gameplan pasted onto {name}; {count} value{} {was_were} left out or changed to fit PES 2017.",
                     if count == 1 { "" } else { "s" }
                 )
-                .as_str()
-            ),
+                .as_str(),
+                NoticeKind::Success
+            )),
             "the notice ends with the changed-or-dropped count"
         );
     }
@@ -1626,13 +1789,14 @@ fn a_paste_mixing_dropped_and_changed_notes_uses_the_changed_tail() {
     ctrl_v(&mut window17, &mut view17, &copied);
 
     assert_eq!(
-        view17.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        notice(&view17),
+        Some((
             format!(
                 "{a_name}'s stats pasted onto {b_name}; {count} values were left out or changed to fit PES 2017."
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the notice ends with the changed-or-dropped count"
     );
 }
@@ -1678,13 +1842,14 @@ fn a_paste_leaving_one_value_out_uses_the_singular_tail() {
         .name,
     );
     assert_eq!(
-        view17.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        notice(&view17),
+        Some((
             format!(
                 "SOMEONE's stats pasted onto {b_name}; 1 value PES 2017 does not store was left out."
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the notice ends with the singular tail"
     );
 }
@@ -1734,7 +1899,10 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
             "{case}: the team is untouched"
         );
         assert_no_edit(&view, case);
-        assert!(view.notice.is_none(), "{case}: no paste ran, so no notice");
+        assert!(
+            notice(&view).is_none(),
+            "{case}: no paste ran, so no notice"
+        );
     }
 
     // A preset onto the shown formation.
@@ -1745,7 +1913,7 @@ fn clipboard_text_that_is_no_copy_of_the_targets_kind_changes_nothing() {
     assert_eq!(team_entry(&view, 701), before, "a preset onto a formation");
     assert_no_edit(&view, "a preset onto a formation");
     assert!(
-        view.notice.is_none(),
+        notice(&view).is_none(),
         "a wrong-kind paste publishes no notice"
     );
 }
@@ -1774,6 +1942,18 @@ fn a_player_the_export_refuses_does_not_stop_his_teams_tactics_copies() {
         "premise: the team's export with its players is refused"
     );
 
+    // The refused player himself: a stats copy needs the players, so
+    // his row gives Ctrl+C nothing and no notice.
+    click_player_row(&mut window, &mut view, 701, 0);
+    assert!(
+        ctrl_c(&mut window, &mut view).is_none(),
+        "a stats copy the export refuses puts nothing on the clipboard"
+    );
+    assert!(
+        notice(&view).is_none(),
+        "the refused copy publishes no notice"
+    );
+
     open_team_view(&mut window, &mut view, 701);
     let gameplan = ctrl_c(&mut window, &mut view);
     click_button(&mut window, &mut view, "1");
@@ -1799,4 +1979,224 @@ fn a_player_the_export_refuses_does_not_stop_his_teams_tactics_copies() {
         let copied = copied.expect("checked above");
         assert_eq!(head(&copied)[1], format!("# copied: {kind}"));
     }
+}
+
+// The Edit menu's Copy does what Ctrl+C does on the same target: the
+// frame's CopyText and the notice are the key's.
+// SE-GUI-56
+#[test]
+fn the_edit_menus_copy_copies_what_ctrl_c_copies() {
+    let path = stats_fixture("clip_menu_copy");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+
+    click_player_row(&mut window, &mut view, 701, 0);
+    let key_copy = copy(&mut window, &mut view);
+    let (key_text, key_kind) = notice(&view)
+        .map(|(text, kind)| (text.to_owned(), kind))
+        .expect("the key's notice");
+    view.notice = None;
+
+    choose(&mut window, &mut view, "Edit", "Copy");
+    let menu_copy = window
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            egui::OutputCommand::CopyText(text) => Some(text.clone()),
+            _ => None,
+        })
+        .expect("the menu's Copy wrote the system clipboard");
+    assert_eq!(menu_copy, key_copy, "the menu copies what Ctrl+C copies");
+    assert_eq!(
+        notice(&view),
+        Some((key_text.as_str(), key_kind)),
+        "the menu copy's notice is the key's"
+    );
+}
+
+// The Edit menu's Paste asks egui for the system clipboard's text: no
+// record changes on the click, and the text the window then hands over
+// pastes as Ctrl+V's does.
+// SE-GUI-56
+#[test]
+fn the_edit_menus_paste_asks_for_the_clipboard_text_then_pastes_it() {
+    let path = stats_fixture("clip_menu_paste");
+    let (mut window, mut view) = open_window(&path);
+    view.team = TeamChoice::Team(701);
+    let (a, b) = (70101, 70102);
+    let b_before = player_entry(&view, b);
+    let expected = copy_stats_result(&path, a, b);
+    let (a_name, b_name) = (
+        display_name(&player_entry(&view, a).name),
+        display_name(&player_entry(&view, b).name),
+    );
+
+    click_player_row(&mut window, &mut view, 701, 0);
+    let copied = copy(&mut window, &mut view);
+    view.notice = None;
+
+    click_player_row(&mut window, &mut view, 701, 1);
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Paste");
+    let at = centre(menu_item(&nodes, "Paste"));
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (commands, _, _) = window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new());
+        ui.ctx()
+            .viewport_for(egui::ViewportId::ROOT, |viewport| viewport.commands.clone())
+    });
+    assert!(
+        commands.contains(&egui::ViewportCommand::RequestPaste),
+        "Paste asks the window for the clipboard's text: {commands:?}"
+    );
+    assert_eq!(
+        player_entry(&view, b),
+        b_before,
+        "asking changes no record yet"
+    );
+
+    // The window's answer is the clipboard's text, as Ctrl+V hears it.
+    ctrl_v(&mut window, &mut view, &copied);
+    assert_eq!(
+        player_entry(&view, b),
+        expected,
+        "B holds what Copy stats from A writes"
+    );
+    assert_eq!(
+        notice(&view),
+        Some((
+            format!("{a_name}'s stats pasted onto {b_name}.").as_str(),
+            NoticeKind::Success
+        )),
+        "the paste's notice"
+    );
+}
+
+// Copy is dead on a target whose copy is not built — a player the
+// export refuses — and both entries are dead with no save open, the
+// row still being a target Paste offers.
+// SE-GUI-56
+#[test]
+fn the_edit_menus_copy_is_dead_when_ctrl_c_copies_nothing() {
+    let (mut window, mut view) = open_window(&unknown_style_fixture("clip_menu_refused"));
+    click_player_row(&mut window, &mut view, 701, 0);
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
+    assert!(
+        menu_item(&nodes, "Copy").is_disabled(),
+        "a stats copy the export refuses is not offered"
+    );
+    assert!(
+        !menu_item(&nodes, "Paste").is_disabled(),
+        "the row is a target: Paste stays enabled"
+    );
+
+    let mut view = SaveView::new();
+    // The welcome panel's discovery is stubbed to find nothing.
+    view.discover = Box::new(|_| Vec::new());
+    let mut window = Headless::new();
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
+    assert!(
+        menu_item(&nodes, "Copy").is_disabled(),
+        "no save open: nothing copies"
+    );
+    assert!(
+        menu_item(&nodes, "Paste").is_disabled(),
+        "no save open: no target"
+    );
+}
+
+// The entries, in order: Undo, Redo, a separator, Copy, Paste — each
+// with its shortcut text.
+// SE-GUI-56
+#[test]
+fn the_edit_menu_is_undo_redo_then_copy_paste_under_a_separator() {
+    let (mut window, mut view) = open_window(&stats_fixture("clip_menu_entries"));
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
+    let labels = ["Undo Ctrl+Z", "Redo Ctrl+Y", "Copy Ctrl+C", "Paste Ctrl+V"];
+    let mut entries: Vec<&accesskit::Node> = labels
+        .iter()
+        .map(|label| node_labeled(&nodes, Role::Button, label))
+        .collect();
+    entries.sort_by(|a, b| {
+        let top = |node: &&accesskit::Node| node.bounds().expect("a drawn entry's bounds").y0;
+        top(a).partial_cmp(&top(b)).expect("ordered bounds")
+    });
+    assert_eq!(
+        entries
+            .iter()
+            .filter_map(|node| node.label())
+            .collect::<Vec<_>>(),
+        labels,
+        "the menu's entries in order"
+    );
+    let gap = |from: &accesskit::Node, onto: &accesskit::Node| {
+        onto.bounds().expect("bounds").y0 - from.bounds().expect("bounds").y1
+    };
+    assert_eq!(gap(entries[0], entries[1]), 0.0, "Undo meets Redo");
+    assert!(
+        gap(entries[1], entries[2]) > 0.0,
+        "the separator stands between Redo and Copy"
+    );
+    assert_eq!(gap(entries[2], entries[3]), 0.0, "Copy meets Paste");
+}
+
+// Each enabled entry's hover says what it does, in the notices' words:
+// a player row's `Copies <his stats>` and `Pastes the copied stats onto
+// <him>`, a pressed preset's `Copies <team>'s preset 1` and `Pastes the
+// copied preset onto <team>'s preset 1`.
+// SE-GUI-56
+#[test]
+fn the_edit_menus_hovers_name_the_copy_and_the_target() {
+    let (mut window, mut view) = open_window(&stats_fixture("clip_menu_tips_row"));
+    view.team = TeamChoice::Team(701);
+    click_player_row(&mut window, &mut view, 701, 0);
+    let name = display_name(&player_entry(&view, 70101).name);
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            centre(menu_item(&nodes, "Copy")),
+            "Copies "
+        ),
+        Some(format!("Copies {name}'s stats")),
+        "Copy's hover names the copy"
+    );
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            centre(menu_item(&nodes, "Paste")),
+            "Pastes "
+        ),
+        Some(format!("Pastes the copied stats onto {name}")),
+        "Paste's hover names the kind and the target"
+    );
+
+    let (mut window, mut view) = open_window(&selector_fixture("clip_menu_tips_preset"));
+    open_team_view(&mut window, &mut view, 701);
+    click_button(&mut window, &mut view, "1");
+    let name = display_name(&team_entry(&view, 701).name);
+    let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            centre(menu_item(&nodes, "Copy")),
+            "Copies "
+        ),
+        Some(format!("Copies {name}'s preset 1")),
+        "Copy's hover names the preset copy"
+    );
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            centre(menu_item(&nodes, "Paste")),
+            "Pastes "
+        ),
+        Some(format!("Pastes the copied preset onto {name}'s preset 1")),
+        "Paste's hover names the kind and the target"
+    );
 }

@@ -38,6 +38,8 @@
 - **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics
   preset or a formation) in another Save editor window too, and after another save is
   opened, even a save of another PES version.
+- **Save editor**: the Edit menu has Copy and Paste, under Undo and Redo, which do what Ctrl+C
+  and Ctrl+V do.
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list has an ×, which puts that one change

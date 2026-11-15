@@ -722,7 +722,7 @@ fn team_row(
         *selected = Some(Selection::Team(team_id));
     }
     if pressed(ui, &response) {
-        *click_kind = Some(ClickKind::List);
+        *click_kind = None;
     }
     response.double_clicked()
 }
@@ -906,7 +906,7 @@ fn player_row(
         *selected = Some(Selection::Player(row.team_id, row.slot));
     }
     if pressed(ui, &response) {
-        *click_kind = Some(ClickKind::List);
+        *click_kind = None;
     }
     let mut drop_mark = None;
     if layout.draggable {
