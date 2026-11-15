@@ -184,7 +184,7 @@ fn asset_url(name: &str) -> String {
 }
 
 /// A download's body: its first half, then, once `gate` lets go (a send,
-/// or its sender dropped), the rest. A gate held ten seconds fails the
+/// or its sender dropped), the rest. A gate held 120 seconds fails the
 /// read, so a test that never lets go fails instead of hanging.
 struct HeldBody {
     /// The first half.
