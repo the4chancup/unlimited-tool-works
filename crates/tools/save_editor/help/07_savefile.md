@@ -5,10 +5,10 @@ The **Savefile** menu works on the whole save:
 - **Apply aesthetics patch…** opens a panel for a patch the Compiler wrote.
 - **Output rosters to TSV…** writes the roster sheet, the file members paste
   into a spreadsheet to check a cup's teams.
-- **Multi-team AATF…** checks a range of teams under the AATF ruleset picked on
-  the toolbar, for an organizer checking a cup's teams.
 - **Save formation pictures for a range of teams…** writes a picture of the
   formations for each team of a range.
+- **Multi-team AATF…** checks a range of teams under the AATF ruleset picked on
+  the toolbar, for an organizer checking a cup's teams.
 - **Fix database…** is a maintenance repair behind a confirmation.
 
 **Applying an aesthetics patch**

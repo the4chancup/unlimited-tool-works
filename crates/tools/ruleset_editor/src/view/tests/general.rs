@@ -46,6 +46,27 @@ fn two_edits_undo_and_redo_by_key_and_button() {
     assert!(has_at_most(&view, "attacking_prowess"));
     assert!(!rating(&view).iter().any(|name| name == "tight_possession"));
 
+    // On the unedited document the Edit menu's entries are disabled.
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        &menu_label("Edit"),
+        &mut view,
+        &ctx,
+    );
+    let frame = window.draw(&mut view, &ctx);
+    assert!(
+        node(&frame.nodes, "Undo Ctrl+Z").is_disabled(),
+        "nothing to undo"
+    );
+    assert!(
+        node(&frame.nodes, "Redo Ctrl+Y").is_disabled(),
+        "nothing to redo"
+    );
+    window.frame(vec![key(egui::Key::Escape, egui::Modifiers::NONE)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+
     // Edit 1: uncheck "Attacking Prowess" in the at-most list (the
     // second same-named checkbox, the rating list's being above it).
     let prowess = nodes_labeled(&frame.nodes, "Attacking Prowess");
@@ -345,6 +366,85 @@ fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
     assert_eq!(page(&view), None, "the page edit undone");
     assert_eq!(ruleset_name(&view), "New rulesetx", "the name kept");
+}
+
+// A checkbox reached with Tab and toggled with Space keeps the
+// keyboard, and it is no text field, so the undo keys still act: the
+// Space's edit undoes (the Save editor's rating cell is the precedent).
+// RE-GUI-14
+#[test]
+fn ctrl_z_while_a_checkbox_holds_the_keyboard_undoes_its_edit() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    // "Tight Possession" in the rating list (the first of that name),
+    // focused as a Tab lands it: the AccessKit Focus leaves the
+    // keyboard on it as Tab would.
+    let (pairs, frame) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &ctx));
+    let bounds = nodes_labeled(&frame.nodes, "Tight Possession")[0]
+        .bounds()
+        .expect("the checkbox's bounds");
+    action_focus(&mut window, &mut view, &ctx, node_id(&pairs, bounds));
+    let space = |pressed: bool| egui::Event::Key {
+        key: egui::Key::Space,
+        physical_key: None,
+        pressed,
+        modifiers: egui::Modifiers::NONE,
+        repeat: false,
+    };
+    window.frame(vec![space(true), space(false)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert!(
+        rating(&view).iter().any(|name| name == "tight_possession"),
+        "premise: the Space press checked it"
+    );
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the checkbox holds the keyboard"
+    );
+    assert!(
+        !window.ctx.text_edit_focused(),
+        "premise: it is no text field"
+    );
+
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert!(
+        !rating(&view).iter().any(|name| name == "tight_possession"),
+        "the checkbox's edit undone"
+    );
+}
+
+// The Edit menu's Undo is enabled while a text field's edit is still
+// unsealed, the first undo's step: the menu opens through an AccessKit
+// click rather than the pointer's, since a press would end the field's
+// gesture and seal it before the menu's first draw.
+// RE-GUI-14
+#[test]
+fn the_edit_menus_undo_covers_the_gesture_in_flight() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    focus_field(&mut window, &mut view, &ctx, "New ruleset");
+    type_text(&mut window, &mut view, &ctx, "x");
+    assert_eq!(
+        ruleset_name(&view),
+        "New rulesetx",
+        "premise: the typing landed"
+    );
+    assert!(
+        window.ctx.text_edit_focused(),
+        "premise: the field still holds the keyboard, its edit unsealed"
+    );
+
+    let (pairs, frame) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &ctx));
+    let bounds = node(&frame.nodes, &menu_label("Edit"))
+        .bounds()
+        .expect("the Edit menu button's bounds");
+    action_click(&mut window, &mut view, &ctx, node_id(&pairs, bounds));
+    let frame = window.draw(&mut view, &ctx);
+    assert!(
+        !node(&frame.nodes, "Undo Ctrl+Z").is_disabled(),
+        "Undo is enabled on the frame the menu first draws"
+    );
+    click_prefix(&mut window, &frame.nodes, "Undo", &mut view, &ctx);
+    assert_eq!(ruleset_name(&view), "New ruleset", "the typing undone");
 }
 
 #[test]

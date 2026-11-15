@@ -36,13 +36,17 @@ is why the tool's name ends in "(WIP)", work in progress:
 - *Heights*, *Cards*, *Specials* and *Suggestions* can't be edited here yet: Summary
   shows what's in them, and saving leaves them unchanged.
 
-The File menu's *New from template…* brings the start page back over the open
-ruleset. Undo and redo (Edit menu, Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z) step through
-the edits. A file whose checking code was changed by hand, or is an older official
-version, shows a banner under the toolbar: code changed by hand is kept as it is when
-saving, and an older official version offers *Update logic*.
+**Starting over.** The **File** menu's *New from template…* brings the start page back over
+the open ruleset, and its *Open…* opens another rules file.
 
-**Saving.** *Save* writes the rules file (*Save as…* lets you choose where), but
-never an invalid one: it lists what blocks the write instead. With unsaved changes,
-closing the window, opening another file or picking a template asks whether to save
-them first.
+**Undo and redo.** The **Edit** menu's *Undo* (Ctrl+Z) and *Redo* (Ctrl+Y or Ctrl+Shift+Z)
+step through the edits.
+
+**Checking code changed by hand.** A file whose checking code was changed by hand, or is an
+older official version, shows a banner under the toolbar. Code changed by hand is kept as it
+is when saving, and an older official version offers *Update logic*.
+
+**Saving.** The **File** menu's *Save* (Ctrl+S), or *Save* on the bottom bar, writes the
+rules file, and *Save as…* lets you choose where. An invalid ruleset is never written: the
+editor lists what blocks the write instead. With unsaved changes, closing the window, opening
+another file or picking a template asks whether to save them first.

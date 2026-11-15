@@ -568,8 +568,10 @@ fn toolbar(
     ctx: &ToolContext,
     settings: &RulesetEditorSettings,
 ) {
-    // Ctrl+S saves even while a widget holds the keyboard; the other
-    // shortcuts do nothing then (a text field's own undo is egui's).
+    // Ctrl+S saves even while a text field holds the keyboard; the
+    // other shortcuts are held off then (a text field's own undo is
+    // egui's). A button or checkbox holding the keyboard after a Space
+    // press does not hold them off: its edit already settled.
     // None of them act behind a modal (the prompt, a dialog, the modal
     // start page): an undo under the prompt would write a state it
     // never showed. Ctrl alone: `consume_ctrl` matches `Modifiers::CTRL`
@@ -578,7 +580,7 @@ fn toolbar(
     let document_open = view.document.is_some();
     let keys_free = !modal_open(view);
     let save_key = keys_free && ui.input_mut(|input| consume_ctrl(input, egui::Key::S));
-    let typing = ui.ctx().egui_wants_keyboard_input();
+    let typing = ui.ctx().text_edit_focused();
     // Ctrl+Shift+Z's own two-modifier match; `consume_ctrl` covers the
     // Ctrl-only keys.
     let redo_key = keys_free
@@ -616,11 +618,14 @@ fn toolbar(
                     save_as(view, ctx, settings);
                 }
             });
+            // Undo stays enabled while the gesture in flight can still
+            // be stepped over: `history_step` seals it, then undoes it.
             let (can_undo, can_redo) = view
                 .document
                 .as_ref()
                 .map(|document| (document.can_undo(), document.can_redo()))
                 .unwrap_or_default();
+            let can_undo = can_undo || pending_differs(view);
             menu_button(ui, "Edit", |ui| {
                 if menu_item(
                     ui,
@@ -736,17 +741,30 @@ fn modal_open(view: &RulesetView) -> bool {
     view.pending_action.is_some() || view.dialog.is_some() || view.start_open
 }
 
+/// Whether the gesture in flight holds an edit: its snapshot differs
+/// from the document's (`seal_pending`'s test, and the Edit menu's, so
+/// Undo is enabled while the unsealed edit can still be stepped over).
+fn pending_differs(view: &RulesetView) -> bool {
+    let Some(document) = view.document.as_ref() else {
+        return false;
+    };
+    view.pending
+        .as_ref()
+        .is_some_and(|before| *before != document.snapshot())
+}
+
 /// `view`'s pending gesture recorded when its snapshot differs from the
 /// document's (the `seal_gesture` test, shared with `history_step`:
 /// undo seals a gesture in flight rather than lose its start).
 fn seal_pending(view: &mut RulesetView) {
-    if let Some(before) = view.pending.take()
-        && let Some(document) = view.document.as_mut()
-        && document.snapshot() != before
-    {
-        document.record(before);
-        remember_changed(view);
+    if !pending_differs(view) {
+        view.pending = None;
+        return;
     }
+    let before = view.pending.take().expect("a differing gesture is pending");
+    let document = view.document.as_mut().expect("a document is open");
+    document.record(before);
+    remember_changed(view);
 }
 
 /// Undo or redo, by button or key: the gesture in flight seals first
