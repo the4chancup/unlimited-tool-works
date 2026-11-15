@@ -2779,7 +2779,8 @@ briefs, review loops, gates and mutation runs as for any step.
       positions for its words; it lands after the players' rows and before the script's
       own team rows. A team viewed from a Team TOML with no tactics would hold all-zero
       formations and warn: nothing reaches that today, the Team creator's check will
-      (to settle in its phase). Look: Pending looks
+      (to settle in its phase). Look: checked 2026-11-15 at `4b9f2258`, card
+      `look-illegal-formation` in `docs/maintainer/tasks.html`
     - [x] b's SWE-2 review 2026-11-13 (S-warn r1, 1 of 2 accepted, the loop ends): the
       pitch's own range let a member make what the check warns about, which is 0.0.2-range
   - [x] 0.0.2-range with illegal formations off, the pitch holds an outfielder in the game's

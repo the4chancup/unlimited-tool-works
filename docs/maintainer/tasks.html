@@ -432,12 +432,30 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-illegal-formation">
+  <h3>The illegal formation warning</h3>
+  <p class="from">From: the pending looks; checked by the lead at <code>4b9f2258</code> on your PES 2017 save, the drag undone and nothing saved</p>
+  <p>Under 4cc Spring 26, /an/ (team 705) gets one warning in Live AATF: "Preset 1,
+  Kick-off: illegal formation. LONGBOI (DMF) holds a position the game does not give at his
+  spot". Its label is drawn in the warning colour, as the draft draws its other warnings (the
+  draft has no illegal formation of its own to show). Once LONGBOI is dragged a little lower
+  on the pitch, the warning is gone and the count drops from 167 to 166.</p>
+  <div class="shots">
+    <figure><a href="img/illegal_formation.png"><img src="img/illegal_formation.png" alt="Live AATF with the illegal formation warning, then without it after the drag"></a><figcaption>Before and after the drag</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
-  <li>The illegal formation warning on a PES 2017 or 2019 save under Spring 26, gone once the named starter is dragged (0.0.2c).</li>
   <li>The X on each row of the unsaved changes list, and the list after a drag in the player list (0.0.2-undo a and b).</li>
   <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>
   <li>A formation picture's hidden formations, each faded shape drawn on its own (0.0.2-flatpitch).</li>
