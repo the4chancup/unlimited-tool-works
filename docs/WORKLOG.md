@@ -1902,6 +1902,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
+    - [ ] "colour" left in member texts, against DECISIONS 2026-11-13's "color is always
+      spelt color" (found 2026-11-15): the violations list's `Name colour` row and its two
+      sentences (`team_widgets::violations`), the Ruleset editor's summary lines "name in
+      colour" and "named in colour" (`summary.rs`) and the tier name colour picker's tooltip,
+      the AATF load error "a name colour code is not eight bytes", the settings comment "0
+      custom (the colour above)" (`settings_toml/keys.rs`), the AATF sample's README; with
+      the tests, templates and spec block pinning them. The drafts' same texts change first
+      (the lead's: the summary goldens are made from the draft's `summary()`). Red's
+      `Team Colours:` heading in a note is the old file's own text and stays
     - [x] 2026-11-15 (lead) the two texts the maintainer picked (DECISIONS 2026-11-15 "the
       taping advice and the skills comment"): `fpc_taping_shows_pieces`'s advice in the
       Save editor and the Compiler, and the Team TOML's `skills` comment; the third, the
@@ -2066,13 +2075,16 @@ briefs, review loops, gates and mutation runs as for any step.
         positions", adding up to 2.5 at the columns' foot (`draft_compare.py player`)
       - the Ruleset editor's General: each checklist 4 lower under its help line (21
         against the draft's 17)
-    - [ ] trace each difference the check met outside these slices to the commit that made
-      the build depart from its draft, and why it was not drafted first, then ask which
-      look is wanted (QUESTIONS): Appearance's Physique
-      box narrower (Motion 24 further left), its labels inset 13 against 19, the swatches
-      wider apart; the Ruleset editor's page list rows 21 apart against 24, the Tiers' Label
-      and Id fields too narrow for "Bronze" and "silver", Rating stats' help worded
-      otherwise, Randomize greyed on a template (Kit slots' bound team traced: QUESTIONS)
+    - [x] 2026-11-15 (lead) each difference the check met outside these slices traced to its
+      cause, and the looks asked in QUESTIONS ("The 0.0.2 Save editor report"): the Ruleset
+      editor's page list, the Appearance screen's Physique and Colors boxes, Randomize, and
+      the texts wave 4 reworded that the drafts never took. Three of them were never
+      measured because `draft_compare.py` lists no screen of theirs
+    - [ ] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
+      100 and 80 as the draft does, so "Bronze" and "silver" are cut: a red test on the
+      fields' width in a Tiers frame, then the cause
+    - [ ] `draft_compare.py` lists the Appearance screen and the Ruleset editor's General
+      and Tiers pages, so a slice there is measured, not looked at
     - [ ] `draft_compare.py kit_slots` opens a save that stores kit slots (PES 17): on the
       PES 21 sample both sides show only "does not store kit slots" and always match
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists

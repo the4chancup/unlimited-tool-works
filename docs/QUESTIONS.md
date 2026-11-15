@@ -101,6 +101,41 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   middle, where the build centres it. On 2026-11-15 the lead changed the draft to centre
   it (`040d85de`, `index.html`'s `table.grid td > input[type=checkbox]`), without asking.
   Keep the change, or restore the draft and move the build's checkboxes up?
+- **The Ruleset editor's page list: rows 24 apart, as drafted?** The draft has given each
+  row of the page list 3 points of padding above and below since its first version
+  (2026-10-14), so its rows stand 24 apart. The build has used egui's default padding since
+  the editor was built (`935ee544`, 2026-10-23), and its rows stand 21 apart. A fix on
+  2026-11-14 (`0a8a70ae`) made the rows fill the list's width as drawn, but not its height;
+  nothing measured the two, since `draft_compare.py` lists only Save editor screens. Should
+  the build take the draft's 24, or the draft the build's 21?
+- **The Appearance screen's Physique and Colors boxes: the draft's look or the build's?**
+  Built on 2026-11-14 (`b222d710`, `9eee1d69`) and checked by eye, since `draft_compare.py`
+  has no Appearance screen. Three differences, in `.tmp/lead/bw/pair_app.png` (the build
+  above):
+  - the build's Physique box is narrower, so Motion stands 24 points further left;
+  - its labels stand 13 points in from the box's edge, where the draft's stand 19 (every
+    other box has them at 13 on both sides);
+  - the skin and iris swatches under Colors stand about 8 apart, where the draft's stand 2.
+
+  For each, should the build take the draft's, or the draft the build's?
+- **Randomize while its generator is not built yet.** The Ruleset editor's toolbar greys
+  Randomize ▾ whole in the build, since `935ee544` (2026-10-23), because the generator comes
+  in a later step (20.7). The draft opens it on Sensible, Weird and Crazy, each disabled
+  with the tooltip "The generator is not faked in this draft". Both stand in for a menu that
+  will work: which should show until then?
+- **Texts reworded in the build that the drafts never took: may the drafts take them?** The
+  rereading's fourth wave (`f32b3ab5`, 2026-11-13) reworded the windows' texts, and
+  `17a1148c` brought the drafts in step from the four sidekick reports' lists of drafts to
+  follow. One list left out the Ruleset editor's texts, and the lead did not check the
+  lists against the commit, so two texts in the drafts still read as before: the help line
+  under Rating stats on the Ruleset editor's General page, and the tooltip on the shirt
+  name's byte limit in the Save editor's info strip.
+
+  A fourth is a behaviour, not a wording: the draft's File menu says Choose file… "Opens in
+  the selected version's save folder when it exists", which the build stopped doing on
+  2026-11-12 (`58892900`, after a member's report; the plan's Choose file scenario has the
+  picker start in the folder of the save opened last). The draft's own Choose file dialog
+  already says the new rule. Should the drafts take the build's three texts?
 
 ## After the release
 
