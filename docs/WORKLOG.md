@@ -2113,7 +2113,16 @@ briefs, review loops, gates and mutation runs as for any step.
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
     - [x] built (2026-11-15, SWE-2 and the lead; merge `ced67b83`): ST-REP-01 to 04 pass, a
       help chapter of its own ("Reporting a problem") and the changelog line
-    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), then
+    - [ ] the whole chain once, as a member runs it: the tests cover it in pieces (the
+      dialog writing a stub tool's bundle, ST-REP-02; the Save editor's state, ST-REP-04; a
+      recorded `Session`'s bundle replaying to a matching write, `replay.rs`), never through
+      the shell with the real Save editor -> verify: a test with the Save editor registered in
+      the shell opens a fixture save, edits a player, saves, clicks Report a problem and
+      Save…, then reads the zip back (`repro::read_bundle`): replay's one `Matches` on the
+      write, `state/` the edited save, the input and output kept; red with the tool's
+      journal not handed to the dialog (SWE-2, after barrw3)
+    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
+      through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
@@ -3066,6 +3075,16 @@ briefs, review loops, gates and mutation runs as for any step.
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
   against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
+- [ ] after 0.0.2 (the maintainer, 2026-11-15), if `0.0.2-mutfast`'s trial finds that
+  cargo-nextest's process per test slows the suite too much: a test runner of our own that
+  keeps the standard runner's single process and stops at the first failure, as nextest does.
+  Checked 2026-11-15: `libtest-mimic` 0.8.2 runs tests on threads in one process (its
+  `--test-threads`) but has no fail-fast flag; a shared "one has failed" flag its test
+  closures read would add one. Its cost is the harness itself: with `harness = false`
+  nothing collects `#[test]` functions, so every test (954 in save_editor alone) is
+  registered through a collecting macro or by hand. cargo-mutants passes its own arguments
+  through to the runner (`additional_cargo_test_args`, `-- --`). → measure on the trial's 20
+  save_editor mutants; a new crate or dependency waits for the maintainer's yes
 
 ### Phase 10 — Music tools
 
