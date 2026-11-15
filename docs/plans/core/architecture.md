@@ -591,6 +591,25 @@ Compiler and the Export upgrader, then the rest as they are built.
   A journal is never cleared while the window is open: a second open adds to the first's
   record. A file that fails to open is recorded with its bytes like one that succeeds, since
   the file that failed is the one a member reports.
+- **The dialog** lists each tool that recorded anything: its name, its step count, the first
+  file it opened with its size (", and 2 more" when it opened others), and the last file it
+  wrote with the time of the write. A tool that recorded nothing is left out.
+
+  - Save… opens the system's save dialog on `utw-report-<yyyy>-<mm>-<dd>-<hhmm>.zip`, in
+    local time, so reports sort by when they were made. Once the
+    bundle is written, the dialog says where and offers only Close. A failed write shows its
+    error in the dialog, which keeps Save….
+  - The words typed stay while the window is open, so a reopened dialog still holds them.
+  - Local time comes from `jiff`. std has no time zones, and the `time` crate, already built
+    for the crash dumps, reads the local offset only while the process runs a single
+    thread, which a window never does: on Linux every time would be UTC.
+  - "The game installs found" is `installs.txt`: one line per PES version, with its folder
+    from the settings and whether its exe was found there.
+  - Each tool gives its current state through `StudioTool::repro_state`, as named files.
+    The Save editor's is the open save encoded as it would be saved now, under a fresh salt,
+    named as its file; a tool with nothing open gives none.
+  - The tick box for whole exports comes with the first tool that opens exports, the
+    Compiler.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte.
 

@@ -1824,6 +1824,40 @@ ST-HELP-05  GIVEN Studio's window at 1037 × 648 points
                  centered in the window; GIVEN the window at 1280 × 800 THEN 1000 × 600
 ```
 
+**Report a problem** (`architecture.md` "Repro bundles")
+
+```
+ST-REP-01   GIVEN a stub tool that recorded three steps, kept one input and one output
+            WHEN the sidebar's "Report a problem" is clicked, in the opened sidebar and in
+                 the rail
+            THEN a modal titled "Report a problem" opens with the draft's lines, a text
+                 box, and one "The file holds" line for the tool naming its 3 steps, the
+                 input's file name and size, and the output's name with the write's local
+                 time; Save… and Cancel; GIVEN no tool has recorded anything THEN the list
+                 holds the fixed lines only
+ST-REP-02   GIVEN ST-REP-01's dialog with words typed
+            WHEN Save… is clicked and the save dialog (a test's picker) answers a path
+            THEN the zip at the path holds `journal.toml` with the three steps, the input
+                 under `inputs/`, the output under `outputs/`, the stub's `repro_state`
+                 under `state/`, `utw.log`,
+                 `settings.toml`, `installs.txt` and `words.txt` with the words, the home
+                 folder written `~`; the dialog says where it was saved and offers only
+                 Close; WHEN it is closed and opened again THEN the words are still there
+ST-REP-03   GIVEN the dialog open
+            WHEN the save dialog is cancelled THEN nothing is written and the dialog is as
+                 it was; WHEN it answers a path that cannot be written THEN the dialog shows
+                 the error, keeps Save…, and leaves no file at the path
+ST-REP-04   GIVEN the real Save editor with a save opened and one player's field edited
+            WHEN its `repro_state` is taken
+            THEN it is one file named as the save, which opens as a save holding the edited
+                 field; GIVEN no save open THEN it is empty
+ST-REP-05   manual  GIVEN the release build on Windows, a save opened, edited and saved
+            WHEN "Report a problem", then Save…, is clicked
+            THEN the system's save dialog offers `utw-report-<date>-<hhmm>.zip` in local
+                 time, and the zip it writes opens in Explorer with ST-REP-02's files and
+                 the save under `state/`
+```
+
 **Log panel widget**
 
 ```

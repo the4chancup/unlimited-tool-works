@@ -2117,9 +2117,9 @@ briefs, review loops, gates and mutation runs as for any step.
     problem" button and dialog: the repro bundles issue's slice (4) (`plans/core/architecture.md`
     "Repro bundles"; the draft's `drawReport`), writing the Save editor's bundle from the journal
     slice (2) built; replay's comparison of the tool's state waits with slices (3b) and (3c),
-    bundles read with `save-editor diff` until then (DECISIONS 2026-11-08). Brief after
-    reading the plan section and the journal's code -> verify: the plan section's scenarios,
-    the built window beside the draft
+    bundles read with `save-editor diff` until then (DECISIONS 2026-11-08); the dialog's
+    rulings and `jiff` (DECISIONS 2026-11-15 "Report a problem: the dialog's rulings")
+    -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

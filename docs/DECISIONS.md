@@ -17846,3 +17846,18 @@ replacement is the point: after a change of mind, the old pictures do not stay b
 new ones. The suffix existed to keep both kinds side by side.
 Plan: `plans/save_editor.md` "Formation pictures", SE-GUI-86, SE-GUI-89. Worklog:
 0.0.2-picsettings.
+
+## 2026-11-15 — core — Report a problem: the dialog's rulings, and `jiff` for local time
+Decision: the dialog lists each tool that recorded anything (name, step count, first file
+opened with its size, last file written with the write's local time). Save… offers
+`utw-report-<date>-<hhmm>.zip` in local time, and a failed write shows its error in the
+dialog. The typed words stay while the window is open. The installs found go in
+`installs.txt`, and each tool gives its current state through `StudioTool::repro_state`. The
+whole-exports tick box waits for the first tool that opens exports. `jiff` is a new
+dependency, for local time.
+Why: the plan named the dialog's contents but not these points, and the draft's lines show a
+write's time and a dated file name. std has no time zones, and the `time` crate already in
+the build reads the local offset only while one thread runs, so on Linux it would give UTC;
+reading the system's time zone by hand on two systems is the code `jiff` replaces.
+Plan: `plans/core/architecture.md` "Repro bundles", the dialog's bullet; `plans/core/gui.md`
+ST-REP-01 to 05. Worklog: 0.0.2-report.
