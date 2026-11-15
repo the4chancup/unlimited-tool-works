@@ -2120,6 +2120,12 @@ briefs, review loops, gates and mutation runs as for any step.
     bundles read with `save-editor diff` until then (DECISIONS 2026-11-08); the dialog's
     rulings and `jiff` (DECISIONS 2026-11-15 "Report a problem: the dialog's rulings")
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
+  - [ ] 0.0.2-namelight in the light theme a name's colour codes read at 4.5 on the panel,
+    hue kept, as the light theme's own text colours do (`plans/save_editor.md` "Player
+    list", the colour codes paragraph; DECISIONS 2026-11-15 "Name colour codes in the light
+    theme read at 4.5"): the lead's look found white and pale codes vanished (card
+    `look-name-colours`) -> verify: a test drawing a white-coded name in each theme, its
+    colour unchanged in the dark one and at 4.5 on the light panel; the built window
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

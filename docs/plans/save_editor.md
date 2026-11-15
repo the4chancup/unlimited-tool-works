@@ -341,7 +341,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the name edit field keeps the raw string so codes survive a roundtrip untouched. A code's
   first six bytes are the RGB hex; its alpha is not drawn, and a code whose six are not hex
   leaves the text the normal color (the game does not check them: `spec/pes_savefile/codec.md`
-  "Name colour codes, as measured").
+  "Name colour codes, as measured"). In the light theme a code's colour that reads under 4.5
+  on the panel is darkened until it reads at 4.5, its hue kept, the light theme's rule for a
+  text colour (`core/gui.md` "Dark/light theme"), since drawn as they are, white and pale
+  codes vanish on the light panel. The dark theme draws every code as it is, the in-game
+  look.
 - **The quick actions** under the list, in two columns: on the left the medal tiers' Make
   buttons (the tiers whose ids are `gold`, `silver` and `bronze`, in the ruleset's order: Make
   Gold, Make Silver, Make Bronze under the official one), on the right the other tiers' (Make

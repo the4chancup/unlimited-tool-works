@@ -17861,3 +17861,14 @@ the build reads the local offset only while one thread runs, so on Linux it woul
 reading the system's time zone by hand on two systems is the code `jiff` replaces.
 Plan: `plans/core/architecture.md` "Repro bundles", the dialog's bullet; `plans/core/gui.md`
 ST-REP-01 to 05. Worklog: 0.0.2-report.
+
+## 2026-11-15 — save_editor — Name colour codes in the light theme read at 4.5
+Decision: in the light theme, a name's colour code that reads under 4.5 on the panel is
+darkened until it reads at 4.5, its hue kept. The dark theme draws every code as it is.
+Why: the lead's look at the light theme found the white and pale parts of names gone from
+the panel (/f/'s "PEP MAN" for PEPSI MAN). The light theme already holds its own text colours
+to 4.5 because "light being second-class means fewer looks reviewed, not text left
+unreadable"; name codes are text too. The dark theme's look was approved as it is, so it
+keeps the in-game colours.
+Plan: `plans/save_editor.md` "Player list", the colour codes paragraph. Worklog:
+0.0.2-namelight.
