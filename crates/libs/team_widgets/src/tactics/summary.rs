@@ -45,7 +45,7 @@ pub fn preset_settings(
 ) -> Vec<SettingsLine> {
     let stored = &tactics.presets[preset];
     let setting = |field: &PresetField| SettingsLine::Setting {
-        label: preset_label(*field).to_owned(),
+        label: preset_label(version, *field).to_owned(),
         value: preset_value(*field, stored_value(stored, *field)),
     };
     let mut lines = vec![SettingsLine::Heading("Formation settings")];
@@ -148,9 +148,15 @@ mod tests {
         }
     }
 
+    /// The two numbers' labels up to PES 2016.
+    const NUMBERS_LABELS: [&str; 2] = ["Numbers in attack", "Numbers in defence"];
+    /// The two numbers' labels from PES 2017 on.
+    const AUTO_LEVEL_LABELS: [&str; 2] = ["Auto attack level", "Auto defence level"];
+
     /// The Formation settings' lines of the fixture's preset 1 as the test
-    /// below edits it: the offensive half, a gap, the defensive half.
-    fn formation_settings() -> Vec<SettingsLine> {
+    /// below edits it: the offensive half, a gap, the defensive half, the
+    /// two numbers under `numbers` (attack, defence).
+    fn formation_settings(numbers: [&str; 2]) -> Vec<SettingsLine> {
         vec![
             SettingsLine::Heading("Formation settings"),
             setting("Attacking style", "Counter Attack"),
@@ -158,14 +164,14 @@ mod tests {
             setting("Attacking zone", "Centre"),
             setting("Positioning", "Maintain"),
             setting("Support range", "4"),
-            setting("Numbers in attack", "Medium"),
+            setting(numbers[0], "Medium"),
             SettingsLine::Gap,
             setting("Defensive style", "Frontline Pressure"),
             setting("Containment area", "Middle"),
             setting("Pressure", "Conservative"),
             setting("Defensive line", "5"),
             setting("Compactness", "5"),
-            setting("Numbers in defence", "Many"),
+            setting(numbers[1], "Many"),
         ]
     }
 
@@ -227,7 +233,7 @@ mod tests {
             "premise: 0xAB decodes to nothing"
         );
         let rows = named_roster();
-        let mut expected = formation_settings();
+        let mut expected = formation_settings(AUTO_LEVEL_LABELS);
         expected.extend([
             SettingsLine::Gap,
             SettingsLine::Heading("Advanced instructions"),
@@ -254,8 +260,29 @@ mod tests {
         let rows = named_roster();
         assert_eq!(
             preset_settings(version, &tactics, 0, &roster_rows(&rows)),
-            formation_settings()
+            formation_settings(NUMBERS_LABELS)
         );
+    }
+
+    // The two numbers are named as the version's toggles name them: Auto
+    // attack level and Auto defence level from PES 2017 on.
+    #[test]
+    fn the_numbers_are_named_by_the_version() {
+        let rows = named_roster();
+        let label = |line: &SettingsLine| match line {
+            SettingsLine::Setting { label, .. } => label.clone(),
+            other => panic!("{other:?} is no setting"),
+        };
+        for (version, labels) in [
+            (PesVersion::Pes16, NUMBERS_LABELS),
+            (PesVersion::Pes17, AUTO_LEVEL_LABELS),
+        ] {
+            let tactics = fixture_tactics(version);
+            let lines = preset_settings(version, &tactics, 0, &roster_rows(&rows));
+            // The last line of each half, as `formation_settings` lays
+            // them out.
+            assert_eq!([label(&lines[6]), label(&lines[13])], labels, "{version:?}");
+        }
     }
 
     #[test]

@@ -740,10 +740,25 @@ fn centre_below(nodes: &[accesskit::Node], label: &str, role: Role) -> egui::Pos
     centre(node)
 }
 
+/// `version`'s fixture save under `test`'s scratch folder, team 701's
+/// Attack/defence levels on: from PES 2017 on Auto attack level answers
+/// the wheel only then.
+fn levels_on_fixture(version: PesVersion, test: &str) -> PathBuf {
+    let path = fixture(version, test);
+    let mut file = EditFile::load(&path).unwrap();
+    file.team_mut(701)
+        .unwrap()
+        .tactics
+        .auto
+        .attack_defence_levels = Some(true);
+    file.save(&path).unwrap();
+    path
+}
+
 // ST-WHEEL-05
 #[test]
 fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
-    let path = fixture(PesVersion::Pes17, "tactics_wheel");
+    let path = levels_on_fixture(PesVersion::Pes17, "tactics_wheel");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
@@ -767,7 +782,7 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     let rail = centre_below(&nodes, "Support range", Role::Slider);
     let value_box = centre_below(&nodes, "Support range", Role::SpinButton);
     let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
-    let numbers_in_attack = centre_below(&nodes, "Numbers in attack", Role::Button);
+    let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
 
     // Each notch more than a second after the one before, so each is its
     // own undo entry: the run of steps a second of idle ends.
@@ -811,7 +826,7 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     expect.style.attacking_style = true;
     assert_eq!(
         undone[0], expect,
-        "the first Ctrl+Z restores Numbers in attack"
+        "the first Ctrl+Z restores Auto attack level"
     );
     expect.style.attacking_style = false;
     assert_eq!(undone[1], expect, "the second restores Attacking style");
@@ -830,7 +845,7 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
 // ST-WHEEL-05
 #[test]
 fn wheel_notches_wrap_round_at_the_toggles_ends() {
-    let path = fixture(PesVersion::Pes17, "tactics_wheel_wrap");
+    let path = levels_on_fixture(PesVersion::Pes17, "tactics_wheel_wrap");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
@@ -848,7 +863,7 @@ fn wheel_notches_wrap_round_at_the_toggles_ends() {
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
-    let numbers_in_attack = centre_below(&nodes, "Numbers in attack", Role::Button);
+    let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
 
     notch(&mut window, &mut view, attacking_style, true);
     assert!(

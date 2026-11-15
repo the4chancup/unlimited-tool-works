@@ -168,9 +168,16 @@ The defensive style's choices are shortened so the row fits; point at one to
 read its full name.
 
 From PES 2017 on, the game's own Game Plan no longer shows numbers in attack and
-numbers in defence, so on a PES 2017 to 2021 save their choices are disabled, the stored one on a grey
-rectangle, unless the cup allows illegal formations (see **When the cup allows
-illegal formations** above).
+numbers in defence, and the game is said to use them only while the team's automatic
+attack and defence levels are on. On a PES 2017 to 2021 save they are therefore named
+**Auto attack level** and **Auto defence level**, and their choices are disabled, the
+stored one on a grey rectangle, unless both of these hold:
+
+- the cup allows illegal formations (see **When the cup allows illegal formations**
+  above);
+- **Attack/defence levels** is ticked under **Automatic settings**.
+
+Point at a disabled choice to read why.
 
 **Advanced instructions**
 

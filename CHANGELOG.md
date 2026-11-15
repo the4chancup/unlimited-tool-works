@@ -62,8 +62,10 @@
 - **Save editor**: the Comparator shows each difference in three columns: Item, Picked save
   and Open save.
 - **Save editor**: on a PES 2017 to 2021 save, Numbers in attack and Numbers in defence are
-  disabled unless the ruleset allows illegal formations, since the game no longer lets them
-  be set.
+  named Auto attack level and Auto defence level, since the game is said to use them only
+  with the automatic attack and defence levels. They can be changed only when the ruleset
+  allows illegal formations and the team's Attack/defence levels, in Automatic settings,
+  is on.
 - **Command line**: `--log-file <FILE>` keeps everything a run prints in a file, a crash's
   message included, and leaves Info messages out of the console.
 - **Ruleset editor**: the Event logo can be a JPEG XL file (`.jxl`).

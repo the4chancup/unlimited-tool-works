@@ -569,10 +569,11 @@ fn id_right_of(
 }
 
 // The Formation settings' half width: the right label column's x less
-// the left's and the 16-point gap, from the twelve labels' bounds on
-// `nodes`.
+// the left's and the 16-point gap, from the labels' bounds on `nodes`
+// (all but the last two, the numbers', which PES 2015 and 2016 name
+// otherwise).
 fn settings_half(nodes: &[accesskit::Node]) -> f64 {
-    let (min, max) = FORMATION_LABELS
+    let (min, max) = FORMATION_LABELS[..10]
         .iter()
         .map(|label| label_bounds(nodes, label).x0)
         .fold((f64::MAX, f64::MIN), |(min, max), x| {
@@ -671,13 +672,15 @@ enum Control {
 fn each_settings_control_writes_its_own_field() {
     let mut window = Headless::sized(1400.0, 1100.0);
     // The numbers stay editable on PES 21 only under a ruleset allowing
-    // illegal formations, which the flag stands in for.
+    // illegal formations, which the flag stands in for, and while
+    // Attack/defence levels is on.
     window.illegal_formations = true;
     let version = PesVersion::Pes21;
     let rows = fixture_rows(version);
     let roster = roster_rows(&rows);
     // One fixture parse for every case (each wants the fresh record).
-    let base = fixture_tactics(version);
+    let mut base = fixture_tactics(version);
+    base.auto.attack_defence_levels = Some(true);
     /// One case: what it is about, how to interact, the fixture write
     /// before it and the expected write after.
     struct Case {
@@ -711,14 +714,14 @@ fn each_settings_control_writes_its_own_field() {
             expect: |t| t.presets[0].sliders.compactness = 10,
         },
         Case {
-            name: "Numbers in attack",
-            control: Control::Choice("Numbers in attack", "Many"),
+            name: "Auto attack level",
+            control: Control::Choice("Auto attack level", "Many"),
             setup: |t| t.presets[0].sliders.numbers_in_attack = 1,
             expect: |t| t.presets[0].sliders.numbers_in_attack = 3,
         },
         Case {
-            name: "Numbers in defence",
-            control: Control::Choice("Numbers in defence", "Many"),
+            name: "Auto defence level",
+            control: Control::Choice("Auto defence level", "Many"),
             setup: |t| t.presets[0].sliders.numbers_in_defence = 1,
             expect: |t| t.presets[0].sliders.numbers_in_defence = 3,
         },
@@ -912,8 +915,8 @@ const FORMATION_LABELS: [&str; 12] = [
     "Defensive line",
     "Support range",
     "Compactness",
-    "Numbers in attack",
-    "Numbers in defence",
+    "Auto attack level",
+    "Auto defence level",
 ];
 
 /// The bounds of the Label node showing `label` (a cell's label).
@@ -979,7 +982,7 @@ fn the_settings_are_six_even_rows_of_pairs() {
         ("Attacking zone", "Pressure"),
         ("Positioning", "Defensive line"),
         ("Support range", "Compactness"),
-        ("Numbers in attack", "Numbers in defence"),
+        ("Auto attack level", "Auto defence level"),
     ];
     let mut xs = std::collections::BTreeSet::new();
     let mut ys = Vec::new();
@@ -1220,10 +1223,12 @@ fn the_two_choice_toggle_spans_its_half() {
 fn the_numbers_are_three_choice_toggles() {
     let mut window = Headless::sized(422.0, 900.0);
     // The numbers stay editable on PES 21 only under a ruleset allowing
-    // illegal formations, which the flag stands in for.
+    // illegal formations, which the flag stands in for, and while
+    // Attack/defence levels is on.
     window.illegal_formations = true;
     let version = PesVersion::Pes21;
     let mut tactics = fixture_tactics(version);
+    tactics.auto.attack_defence_levels = Some(true);
     tactics.presets[0].sliders.numbers_in_attack = 2;
     let mut view = TacticsView::default();
     let rows = fixture_rows(version);
@@ -1232,7 +1237,7 @@ fn the_numbers_are_three_choice_toggles() {
     // Stored 2 shows Medium chosen, the three equal across the half.
     let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
     let half = settings_half(&nodes);
-    let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+    let choices = controls_below(&nodes, "Auto attack level", Role::Button, half);
     assert_eq!(choices.len(), 3, "the three choices");
     let labels: Vec<Option<&str>> = choices.iter().map(|node| node.label()).collect();
     assert_eq!(
@@ -1285,7 +1290,7 @@ fn the_numbers_are_three_choice_toggles() {
         let mut expect = tactics.clone();
         expect.presets[0].sliders.numbers_in_attack = stored;
         let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
-        let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+        let choices = controls_below(&nodes, "Auto attack level", Role::Button, half);
         let (_, changed) = click(
             &mut window,
             choices[choice],
@@ -1301,7 +1306,7 @@ fn the_numbers_are_three_choice_toggles() {
     // A stored value outside 1-3 selects none and is not rewritten.
     tactics.presets[0].sliders.numbers_in_attack = 7;
     let (nodes, changed) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
-    let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+    let choices = controls_below(&nodes, "Auto attack level", Role::Button, half);
     for node in &choices {
         assert_ne!(
             node.toggled(),
@@ -1316,119 +1321,150 @@ fn the_numbers_are_three_choice_toggles() {
     );
 }
 
-// From PES 2017 on the game's own game plan no longer shows the two
-// numbers, so under a stock-game ruleset their three choices draw
-// disabled, the stored one still marked on the quiet grey a locked
-// choice carries rather than the selection's blue (which would read as
-// a control still live), a click or a wheel step changing nothing and
-// the hover naming why (the draft's `.rate.tri.off`). A ruleset
-// allowing illegal formations keeps them live, and PES 2016's game plan
-// still shows them.
-#[test]
-fn the_numbers_are_locked_from_pes17_on_a_stock_game() {
-    let mut window = Headless::sized(422.0, 900.0);
-    window
-        .ctx
-        .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+/// One locked leg of the numbers test below: on `version`, under the
+/// window's ruleset flag, `tactics`' two toggles (stored attack 2,
+/// defence 1) have their three choices disabled, the stored one still
+/// marked on the quiet grey a locked choice carries rather than the
+/// selection's blue (which would read as a control still live). A click
+/// on Many and a wheel step over it change nothing, and the hover is
+/// `tip`.
+fn numbers_locked(window: &mut Headless, version: PesVersion, mut tactics: TeamTactics, tip: &str) {
     let visuals = window.ctx.global_style().visuals.clone();
     let (grey, blue) = (
         visuals.disable(visuals.widgets.inactive.weak_bg_fill),
         visuals.selection.bg_fill,
     );
-    for version in [PesVersion::Pes17, PesVersion::Pes21] {
-        let mut tactics = fixture_tactics(version);
-        tactics.presets[0].sliders.numbers_in_attack = 2;
-        tactics.presets[0].sliders.numbers_in_defence = 1;
-        let before = tactics.clone();
-        let mut view = TacticsView::default();
-        let rows = fixture_rows(version);
-        let roster = roster_rows(&rows);
-        let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
-        let half = settings_half(&nodes);
+    let case = format!(
+        "{version:?} (illegal formations {}, levels {:?})",
+        window.illegal_formations, tactics.auto.attack_defence_levels
+    );
+    tactics.presets[0].sliders.numbers_in_attack = 2;
+    tactics.presets[0].sliders.numbers_in_defence = 1;
+    let before = tactics.clone();
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+    let half = settings_half(&nodes);
 
-        // Each toggle's three choices are disabled, the stored one
-        // picked and marked on the grey square.
-        for (label, stored, picked) in [
-            ("Numbers in attack", 2, "Medium"),
-            ("Numbers in defence", 1, "Few"),
-        ] {
-            let choices = controls_below(&nodes, label, Role::Button, half);
-            assert_eq!(choices.len(), 3, "{version:?} {label}: the three choices");
-            for choice in &choices {
-                assert!(
-                    choice.is_disabled(),
-                    "{version:?} {label}: the choice is locked"
-                );
-            }
-            assert_eq!(
-                choices[stored - 1].label(),
-                Some(picked),
-                "premise: the stored {stored} is {picked}"
-            );
-            assert_eq!(
-                choices[stored - 1].toggled(),
-                Some(accesskit::Toggled::True),
-                "{version:?} {label}: the stored choice still marked"
-            );
-            let rect = |node: &accesskit::Node| {
-                let b = node.bounds().expect("choice bounds");
-                egui::Rect::from_min_max(
-                    egui::pos2(b.x0 as f32, b.y0 as f32),
-                    egui::pos2(b.x1 as f32, b.y1 as f32),
-                )
-            };
-            // What a member sees over the stored choice is the grey
-            // rectangle, painted last over whatever the disabled button
-            // drew (a faded selection blue among it).
-            assert_eq!(
-                last_rect_fill(&shapes, rect(choices[stored - 1]).center()),
-                Some(grey),
-                "{version:?} {label}: the stored choice on the quiet grey"
-            );
-            for choice in &choices {
-                assert!(
-                    !shapes.iter().any(|clipped| matches!(&clipped.shape,
-                        egui::Shape::Rect(shape)
-                            if is_selection(shape.fill, blue) && shape.rect.intersects(rect(choice)))),
-                    "{version:?} {label}: no selection blue on a choice"
-                );
-            }
+    // Each toggle's three choices are disabled, the stored one picked and
+    // marked on the grey square.
+    for (label, stored, picked) in [
+        ("Auto attack level", 2, "Medium"),
+        ("Auto defence level", 1, "Few"),
+    ] {
+        let choices = controls_below(&nodes, label, Role::Button, half);
+        assert_eq!(choices.len(), 3, "{case} {label}: the three choices");
+        for choice in &choices {
+            assert!(choice.is_disabled(), "{case} {label}: the choice is locked");
         }
-
-        // A click on Many of Numbers in attack changes nothing.
-        let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
-        let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
-        let many = centre(choices[2]);
-        let (_, changed) = click(
-            &mut window,
-            choices[2],
-            version,
-            &mut tactics,
-            &mut view,
-            &roster,
-        );
-        assert!(!changed, "{version:?}: a click on Many writes nothing");
-        assert_eq!(tactics, before, "{version:?}: the record untouched");
-
-        // Nor does a wheel step over it.
-        let changed = window.notch_tactics(many, true, version, &mut tactics, &mut view, &roster);
-        assert!(!changed, "{version:?}: a wheel step writes nothing");
-        assert_eq!(tactics, before, "{version:?}: the record untouched");
-
-        // The hover names why.
         assert_eq!(
-            window.tactics_tooltip(many, "PES 2017", version, &mut tactics, &mut view, &roster,),
-            Some("Not editable in the game from PES 2017 on".to_owned()),
-            "{version:?}: the locked toggle's hover"
+            choices[stored - 1].label(),
+            Some(picked),
+            "premise: the stored {stored} is {picked}"
         );
+        assert_eq!(
+            choices[stored - 1].toggled(),
+            Some(accesskit::Toggled::True),
+            "{case} {label}: the stored choice still marked"
+        );
+        let rect = |node: &accesskit::Node| {
+            let b = node.bounds().expect("choice bounds");
+            egui::Rect::from_min_max(
+                egui::pos2(b.x0 as f32, b.y0 as f32),
+                egui::pos2(b.x1 as f32, b.y1 as f32),
+            )
+        };
+        // What a member sees over the stored choice is the grey
+        // rectangle, painted last over whatever the disabled button drew
+        // (a faded selection blue among it).
+        assert_eq!(
+            last_rect_fill(&shapes, rect(choices[stored - 1]).center()),
+            Some(grey),
+            "{case} {label}: the stored choice on the quiet grey"
+        );
+        for choice in &choices {
+            assert!(
+                !shapes.iter().any(|clipped| matches!(&clipped.shape,
+                    egui::Shape::Rect(shape)
+                        if is_selection(shape.fill, blue) && shape.rect.intersects(rect(choice)))),
+                "{case} {label}: no selection blue on a choice"
+            );
+        }
     }
 
-    // Under a ruleset allowing illegal formations (PES 17) and under the
-    // stock ruleset on a version whose game plan still shows them (PES
-    // 16), the toggle is live: a click on Many stores 3.
-    for (version, illegal_formations) in [(PesVersion::Pes17, true), (PesVersion::Pes16, false)] {
+    // A click on Many of Auto attack level changes nothing.
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let choices = controls_below(&nodes, "Auto attack level", Role::Button, half);
+    let many = centre(choices[2]);
+    let (_, changed) = click(
+        window,
+        choices[2],
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(!changed, "{case}: a click on Many writes nothing");
+    assert_eq!(tactics, before, "{case}: the record untouched");
+
+    // Nor does a wheel step over it.
+    let changed = window.notch_tactics(many, true, version, &mut tactics, &mut view, &roster);
+    assert!(!changed, "{case}: a wheel step writes nothing");
+    assert_eq!(tactics, before, "{case}: the record untouched");
+
+    // The hover names why.
+    assert_eq!(
+        window.tactics_tooltip(many, tip, version, &mut tactics, &mut view, &roster),
+        Some(tip.to_owned()),
+        "{case}: the locked toggle's hover"
+    );
+}
+
+// From PES 2017 on the game's own game plan no longer shows the two
+// numbers, named there Auto attack level and Auto defence level (the
+// draft's `.rate.tri.off`): under a stock-game ruleset their toggles are
+// locked whatever Attack/defence levels holds; under a ruleset allowing
+// illegal formations they stay locked, with their own hover, while
+// Attack/defence levels is off. With both allowing them they are live,
+// and PES 2016's game plan still shows them as Numbers in attack and
+// Numbers in defence.
+#[test]
+fn the_numbers_are_locked_from_pes17_unless_the_ruleset_and_the_levels_allow_them() {
+    const STOCK: &str = "Not editable in the game from PES 2017 on";
+    const LEVELS_OFF: &str = "Used only while Attack/defence levels is on, in Automatic settings";
+    let mut window = Headless::sized(422.0, 900.0);
+    window
+        .ctx
+        .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+    for (version, illegal_formations, levels, tip) in [
+        (PesVersion::Pes17, false, false, STOCK),
+        (PesVersion::Pes17, false, true, STOCK),
+        (PesVersion::Pes21, false, false, STOCK),
+        (PesVersion::Pes21, false, true, STOCK),
+        (PesVersion::Pes17, true, false, LEVELS_OFF),
+        (PesVersion::Pes21, true, false, LEVELS_OFF),
+    ] {
         window.illegal_formations = illegal_formations;
         let mut tactics = fixture_tactics(version);
+        tactics.auto.attack_defence_levels = Some(levels);
+        numbers_locked(&mut window, version, tactics, tip);
+    }
+
+    // Live: a click on Many stores 3.
+    for (version, illegal_formations, levels, label) in [
+        (PesVersion::Pes17, true, Some(true), "Auto attack level"),
+        (PesVersion::Pes21, true, Some(true), "Auto attack level"),
+        (PesVersion::Pes16, false, None, "Numbers in attack"),
+    ] {
+        window.illegal_formations = illegal_formations;
+        let mut tactics = fixture_tactics(version);
+        assert_eq!(
+            tactics.auto.attack_defence_levels.is_some(),
+            levels.is_some(),
+            "premise: {version:?} stores Attack/defence levels or not"
+        );
+        tactics.auto.attack_defence_levels = levels;
         tactics.presets[0].sliders.numbers_in_attack = 1;
         let mut expect = tactics.clone();
         expect.presets[0].sliders.numbers_in_attack = 3;
@@ -1437,12 +1473,10 @@ fn the_numbers_are_locked_from_pes17_on_a_stock_game() {
         let roster = roster_rows(&rows);
         let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
         let half = settings_half(&nodes);
-        let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+        let choices = controls_below(&nodes, label, Role::Button, half);
+        assert_eq!(choices.len(), 3, "{version:?} {label}: the three choices");
         for choice in &choices {
-            assert!(
-                !choice.is_disabled(),
-                "{version:?} (flag {illegal_formations}): the choices are live"
-            );
+            assert!(!choice.is_disabled(), "{version:?}: the choices are live");
         }
         let (_, changed) = click(
             &mut window,
@@ -1452,14 +1486,8 @@ fn the_numbers_are_locked_from_pes17_on_a_stock_game() {
             &mut view,
             &roster,
         );
-        assert!(
-            changed,
-            "{version:?} (flag {illegal_formations}): the click changed the record"
-        );
-        assert_eq!(
-            tactics, expect,
-            "{version:?} (flag {illegal_formations}): Many stored, nothing else"
-        );
+        assert!(changed, "{version:?}: the click changed the record");
+        assert_eq!(tactics, expect, "{version:?}: Many stored, nothing else");
     }
 }
 
@@ -1604,18 +1632,16 @@ fn the_preset_fields_terms() {
             "on".to_owned()
         )
     );
-    // The two numbers word as their three-choice toggles do.
+    // The two numbers word as their three-choice toggles do, under the
+    // version's names.
+    let numbers_in_attack = TacticsField::Preset {
+        preset: 0,
+        field: PresetField::NumbersInAttack,
+    };
     assert_eq!(
-        term(
-            TacticsField::Preset {
-                preset: 0,
-                field: PresetField::NumbersInAttack,
-            },
-            1,
-            3
-        ),
+        term(numbers_in_attack, 1, 3),
         (
-            "Preset 1 · Numbers in attack".to_owned(),
+            "Preset 1 · Auto attack level".to_owned(),
             "Few".to_owned(),
             "Many".to_owned()
         )
@@ -1630,10 +1656,24 @@ fn the_preset_fields_terms() {
             0
         ),
         (
-            "Preset 1 · Numbers in defence".to_owned(),
+            "Preset 1 · Auto defence level".to_owned(),
             "Medium".to_owned(),
             "0".to_owned()
         )
+    );
+    assert_eq!(
+        tactics_term(
+            PesVersion::Pes16,
+            numbers_in_attack,
+            1,
+            3,
+            &tactics,
+            &tactics,
+            (&roster, &roster),
+        )
+        .0,
+        "Preset 1 · Numbers in attack",
+        "PES 2016's name"
     );
 }
 
@@ -2000,11 +2040,11 @@ fn every_table_entry_keys_its_own_label() {
         (preset(PresetField::Compactness), "Preset 1 · Compactness"),
         (
             preset(PresetField::NumbersInAttack),
-            "Preset 1 · Numbers in attack",
+            "Preset 1 · Auto attack level",
         ),
         (
             preset(PresetField::NumbersInDefence),
-            "Preset 1 · Numbers in defence",
+            "Preset 1 · Auto defence level",
         ),
         (
             preset(PresetField::AttackingStyle),
@@ -2887,17 +2927,19 @@ fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
 fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
     let mut window = Headless::sized(422.0, 900.0);
     // The numbers stay editable on PES 21 only under a ruleset allowing
-    // illegal formations, which the flag stands in for.
+    // illegal formations, which the flag stands in for, and while
+    // Attack/defence levels is on.
     window.illegal_formations = true;
     let version = PesVersion::Pes21;
     let mut tactics = fixture_tactics(version);
+    tactics.auto.attack_defence_levels = Some(true);
     tactics.presets[0].sliders.numbers_in_attack = 1;
     let mut view = TacticsView::default();
     let rows = fixture_rows(version);
     let roster = roster_rows(&rows);
     let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
     let half = settings_half(&nodes);
-    let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+    let choices = controls_below(&nodes, "Auto attack level", Role::Button, half);
     let labels: Vec<Option<&str>> = choices.iter().map(|node| node.label()).collect();
     assert_eq!(
         labels,
