@@ -2634,8 +2634,9 @@ briefs, review loops, gates and mutation runs as for any step.
         formation press stays the target after the selection reaches another team without
         a list press, and comes back with its team row; five tests that cannot fail; the
         help named the whole bars where only their buttons pick (`d95ac237`, the lead)
-      - [ ] the rework (SWE-2, `sk/cliprw2`, `.tmp/0_0_2/clip/rework_c2.md`), then Carbon's
-        round 3
+      - [x] the rework (SWE-2 and the lead, 2026-11-15; merge `3598dc7e`): a selector's
+        target ends with its team row; the Edit menu's Copy and Paste
+      - [ ] Carbon's round 3
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
