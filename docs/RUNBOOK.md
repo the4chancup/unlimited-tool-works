@@ -656,9 +656,11 @@ only the crate's own: a change to `fmdl`'s reader that every game `body.skl` tri
 `cargo test -p fmdl` and was caught only by `model_convert`'s tests at the lead's gate run.
 `fmdl`'s and `pes_model`'s consumers include `python_bindings`, whose test is `just bindings`,
 outside `just gates`: fixtures once added to both crates left the smoke test's fixture counts
-stale, and only CI's `bindings` job saw it. A brief that adds tests says to insert them with
-the editor tool inside the file's existing `#[cfg(test)]` module, never to append them with
-shell redirection, which lands them after the module's closing brace. The lead
+stale, and only CI's `bindings` job saw it. A brief whose tests cite a scenario ID lists
+`just acceptance` too, which takes seconds: a citation the scanner refused (one above a
+`#[cfg]` line, not the `#[test]`) once cost a second `gates-changed` run. A brief that adds
+tests says to insert them with the editor tool inside the file's existing `#[cfg(test)]`
+module, never to append them with shell redirection, which lands them after the module's closing brace. The lead
 reads the whole diff before it lands, not the report about it; the report is a claim, the diff is
 the evidence. Two failed sidekick attempts on one brief means the brief is suspect before the
 sidekick is. **A brief for a change a member sees or does names the draft that already does
