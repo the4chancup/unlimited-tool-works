@@ -26,8 +26,8 @@ use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, slider, step_choice,
-    step_number, wheel_steps,
+    FIELD_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, number_wheel_steps,
+    slider, step_choice, step_number, wheel_steps,
 };
 
 use crate::session::Session;
@@ -1009,7 +1009,7 @@ fn id_box(
                 .min_size(egui::vec2(FIELD_W, height)),
         )
     });
-    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     if response.changed() {
@@ -1058,7 +1058,7 @@ fn motion_grid(
                                 .clamp_existing_to_range(false),
                         )
                     });
-                    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+                    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
                         response.mark_changed();
                     }
                     if response.changed() {

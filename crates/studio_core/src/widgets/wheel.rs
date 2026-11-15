@@ -1,9 +1,11 @@
 //! The mouse wheel over a closed combo box or a drag value steps its value,
 //! as the system's own controls do: `wheel_steps` reads the wheel for one
-//! control, and `step_choice`, `cycle_choice` and `step_number` turn its
-//! steps into the combo's next item, a toggle's next choice or the number's
-//! next value. `number_arrows` gives a whole-number drag value the
-//! one-per-press arrow-key step egui's quarter-point key step cannot.
+//! control, `number_wheel_steps` the same for a number box under the
+//! `Invert number scrolling` switch, and `step_choice`, `cycle_choice` and
+//! `step_number` turn the steps into the combo's next item, a toggle's
+//! next choice or the number's next value. `number_arrows` gives a
+//! whole-number drag value the one-per-press arrow-key step egui's
+//! quarter-point key step cannot.
 
 use std::ops::RangeInclusive;
 
@@ -32,10 +34,11 @@ const REST: f64 = 0.5;
 /// the keyboard learns of the loss only on the next frame, where a step
 /// would join its commit.
 /// The caller applies the steps through the control's own change path
-/// (`step_choice`, `cycle_choice`, `step_number`).
-/// While the `Invert value scrolling` switch is on (`set_inverted`) the
-/// steps come back the other way, so a "natural" wheel's down still reads
-/// as more; a pane's own scrolling never changes.
+/// (`step_choice`, `cycle_choice`). The `Invert number scrolling` switch
+/// never reaches them: members of either scrolling habit expect wheel
+/// down to move a sideways control right and a list to the item below.
+/// `number_wheel_steps` counts a number box's steps, where the switch
+/// does apply. One call a frame per control: it consumes the gesture.
 pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
     let ctx = ui.ctx();
     // The context's data is shared by every window it draws, and each
@@ -51,6 +54,24 @@ pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
         // turn steps on the next.
         ctx.request_repaint();
     }
+    steps
+}
+
+/// `wheel_steps` for a number box (a drag value, or a slider's value
+/// box): the steps it counts, turned the other way while the `Invert
+/// number scrolling` switch is on (`set_inverted`). A member whose wheel
+/// or touchpad scrolls the "natural" way reads wheel down as "more" on a
+/// number; a direction per box would split the suite, so the switch is
+/// one flag every number box's wheel step reads and nothing else does.
+pub fn number_wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
+    number_direction(ui.ctx(), wheel_steps(ui, response))
+}
+
+/// `steps` the other way while `set_inverted`'s switch is on: the one
+/// negation every number box's wheel step goes through, so a slider can
+/// apply it to steps it counted once (`wheel_steps` consumes the
+/// gesture, never two calls for one control in a frame).
+pub(super) fn number_direction(ctx: &egui::Context, steps: i32) -> i32 {
     if ctx
         .data(|data| data.get_temp::<bool>(inverted_key()))
         .unwrap_or_default()
@@ -61,16 +82,18 @@ pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
     }
 }
 
-/// The `Invert value scrolling` switch, set from the common setting once per
-/// change as the theme is: while `inverted` is on, `wheel_steps` answers its
-/// steps the other way for a member whose wheel or touchpad scrolls the
-/// "natural" way (wheel down read as "more"). A context never given the call
-/// reads it off.
+/// The `Invert number scrolling` switch, set from the common setting once
+/// per change as the theme is: while `inverted` is on,
+/// `number_wheel_steps` and a slider's value box answer their steps the
+/// other way for a member whose wheel or touchpad scrolls the "natural"
+/// way (wheel down read as "more"). A context never given the call reads
+/// it off.
 pub fn set_inverted(ctx: &egui::Context, inverted: bool) {
     ctx.data_mut(|data| data.insert_temp(inverted_key(), inverted));
 }
 
-/// The context-data key `set_inverted` writes and `wheel_steps` reads.
+/// The context-data key `set_inverted` writes and `number_direction`
+/// reads.
 fn inverted_key() -> egui::Id {
     egui::Id::unique("studio_core wheel inverted")
 }
@@ -219,9 +242,10 @@ pub fn step_choice<T: PartialEq>(
 }
 
 /// The value `steps` places from `current` among `values`, a sliding
-/// toggle's choices in the order it draws them: a positive step takes
-/// an item above, a negative one an item below, wrapping round to the
-/// other end past the first and the last. `None` when that is `current`
+/// toggle's or a row selector's choices in the order it draws them:
+/// a positive step takes the choice to the left, a negative one the
+/// choice to the right, wrapping round to the other end past the first
+/// and the last. `None` when that is `current`
 /// itself, or `current` is not among them. A toggle wraps where a combo
 /// box clamps (`step_choice`): clamped, a toggle at an end answers one
 /// direction only, so a two-choice one ignores every notch the other
@@ -390,7 +414,7 @@ mod tests {
                                 egui::DragValue::new(value).range(0..=255),
                             )
                         });
-                        if step_number(&mut value, wheel_steps(ui, &drag), 0..=255) {
+                        if step_number(&mut value, number_wheel_steps(ui, &drag), 0..=255) {
                             drag.mark_changed();
                         }
                         let combo = egui::ComboBox::from_id_salt("items")
@@ -649,7 +673,7 @@ mod tests {
 
     // ST-WHEEL-06
     #[test]
-    fn the_invert_switch_turns_every_step_the_other_way() {
+    fn the_invert_switch_turns_only_the_number_boxs_steps() {
         let mut window = Window::new();
         set_inverted(&window.ctx, true);
         window.notch(window.drag_rect.center(), false);
@@ -657,7 +681,10 @@ mod tests {
         window.notch(window.drag_rect.center(), true);
         assert_eq!(window.value, 180, "a notch up takes one less");
         window.notch(window.combo_rect.center(), false);
-        assert_eq!(window.selected, 0, "a notch down takes the item above");
+        assert_eq!(
+            window.selected, 2,
+            "a notch down takes the item below, as with the switch off"
+        );
         set_inverted(&window.ctx, false);
         window.notch(window.drag_rect.center(), false);
         assert_eq!(window.value, 179, "the switch off, a notch down steps down");

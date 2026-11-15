@@ -3704,8 +3704,8 @@ fn the_formation_selector_is_locked_on_pes_15() {
 }
 
 // The wheel over any of the formation selector's choices steps the
-// shown formation, up to the right (Kick-off, In-possession,
-// Out-of-possession) and down to the left, wrapping round past either
+// shown formation, down to the right (Kick-off, In-possession,
+// Out-of-possession) and up to the left, wrapping round past either
 // end; locked on Kick-off while the preset fields it alone it does not
 // step. The selector writes `view.formation`, never the record.
 // SE-GUI-58
@@ -3752,32 +3752,32 @@ fn the_wheel_steps_the_formation_selector_wrapping_round() {
     let at = |label: &str| centre(entry(&nodes, Role::Button, label));
 
     for (hover, up, formation, what) in [
-        ("Kick-off", true, 1, "a notch up takes In-possession"),
+        ("Kick-off", false, 1, "a notch down takes In-possession"),
         (
             "In-possession",
-            true,
+            false,
             2,
-            "a notch up takes Out-of-possession",
+            "a notch down takes Out-of-possession",
         ),
         (
             "Out-of-possession",
-            true,
+            false,
             0,
-            "a notch up on Out-of-possession wraps to Kick-off",
+            "a notch down on Out-of-possession wraps to Kick-off",
         ),
         (
             "Kick-off",
-            false,
+            true,
             2,
-            "a notch down on Kick-off wraps to Out-of-possession",
+            "a notch up on Kick-off wraps to Out-of-possession",
         ),
         (
             "Out-of-possession",
-            false,
+            true,
             1,
-            "a notch down takes In-possession",
+            "a notch up takes In-possession",
         ),
-        ("In-possession", false, 0, "a notch down takes Kick-off"),
+        ("In-possession", true, 0, "a notch up takes Kick-off"),
     ] {
         notch(&mut window, at(hover), up, &mut tactics, &mut view);
         assert_eq!(view.formation, formation, "{what}");

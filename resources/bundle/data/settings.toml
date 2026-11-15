@@ -44,9 +44,9 @@ memory_cap_percent = 80.0
 # Default: "dark"
 theme = "dark"
 
-# If true, the mouse wheel over a number turns it the other way: wheel down adds one.
+# If true, the mouse wheel over a number box turns it the other way: wheel down adds one.
 # Default: false
-invert_value_scrolling = false
+invert_number_scrolling = false
 
 # If true, UTW.exe checks for a newer version: the window when it starts and every
 # 5 minutes while it stays open, a command such as quick_compile.bat on every run.

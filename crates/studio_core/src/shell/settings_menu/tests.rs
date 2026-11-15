@@ -503,7 +503,7 @@ fn the_hide_id_rows_write_the_common_settings() {
     assert_eq!(ctx.common().fpc_hide_boots_id, 60, "the boots write stands");
 }
 
-// The update check's row, after Invert value scrolling: the checkbox writes
+// The update check's row, after Invert number scrolling: the checkbox writes
 // `check_for_updates`.
 #[test]
 fn the_update_check_row_writes_the_common_setting() {
@@ -525,7 +525,7 @@ fn the_update_check_row_writes_the_common_setting() {
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
-    let invert = text_node(&nodes, "Invert value scrolling")
+    let invert = text_node(&nodes, "Invert number scrolling")
         .bounds()
         .expect("the row above is drawn");
     let check = text_node(&nodes, "Check for updates")
@@ -533,7 +533,7 @@ fn the_update_check_row_writes_the_common_setting() {
         .expect("the check row is drawn");
     assert!(
         check.y0 > invert.y0,
-        "the row stands after Invert value scrolling"
+        "the row stands after Invert number scrolling"
     );
 
     click(
@@ -641,11 +641,11 @@ fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
-// The `Invert value scrolling` row, drawn after Theme: its label's tooltip
+// The `Invert number scrolling` row, drawn after Theme: its label's tooltip
 // leads with the settings key, a click writes the common setting, and the
-// shell turns the wheel by it from the next frame on.
+// shell turns the wheel over number boxes by it from the next frame on.
 #[test]
-fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
+fn the_invert_number_scrolling_row_writes_the_setting_and_turns_the_wheel() {
     let dir = TestDir::new("studio_core_settings_invert_wheel");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
@@ -655,7 +655,7 @@ fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
         Some(dir.path().to_path_buf()),
         vec![calls_a],
     );
-    assert!(!ctx.common().invert_value_scrolling, "the premise: off");
+    assert!(!ctx.common().invert_number_scrolling, "the premise: off");
     assert_eq!(ctx.common().thread_count, 0, "the premise: automatic");
     let egui_ctx = test_context();
     egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
@@ -666,7 +666,7 @@ fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
     let theme = text_node(&nodes, "Theme")
         .bounds()
         .expect("Theme has bounds");
-    let invert = text_node(&nodes, "Invert value scrolling")
+    let invert = text_node(&nodes, "Invert number scrolling")
         .bounds()
         .expect("the row is drawn");
     assert!(invert.y0 > theme.y0, "the row stands under Theme's");
@@ -684,16 +684,17 @@ fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
     frame(
         &egui_ctx,
         &mut app,
-        hover(text_node(&nodes, "Invert value scrolling")),
+        hover(text_node(&nodes, "Invert number scrolling")),
         true,
     );
     let nodes = idle(&egui_ctx, &mut app, 8).nodes;
     assert!(
         has_text(
             &nodes,
-            "invert_value_scrolling: Reverses the mouse wheel over a value: wheel \
-             down then moves a slider right, raises a number and picks the list \
-             item above, and wheel up does the opposite. Scrolling a pane is not \
+            "invert_number_scrolling: Reverses the mouse wheel over a number \
+             box: wheel down then raises the number, and wheel up lowers it. \
+             Sliders and toggles always move right on wheel down, and a \
+             dropdown always takes the item below. Scrolling a pane is not \
              affected."
         ),
         "the tooltip is the settings key, then the row's tip"
@@ -704,10 +705,10 @@ fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
     click(
         &egui_ctx,
         &mut app,
-        widget_on_row(&nodes, "Invert value scrolling", Role::CheckBox),
+        widget_on_row(&nodes, "Invert number scrolling", Role::CheckBox),
     );
     assert!(
-        ctx.common().invert_value_scrolling,
+        ctx.common().invert_number_scrolling,
         "the click wrote the setting"
     );
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
@@ -934,10 +935,10 @@ fn the_common_fields_stand_24_apart_and_the_checkboxes_squares_8() {
         ),
         ("Theme", field("Theme", Role::ComboBox)),
         (
-            "Invert value scrolling",
+            "Invert number scrolling",
             square(widget_on_row(
                 &nodes,
-                "Invert value scrolling",
+                "Invert number scrolling",
                 Role::CheckBox,
             )),
         ),
@@ -948,7 +949,7 @@ fn the_common_fields_stand_24_apart_and_the_checkboxes_squares_8() {
     ];
     let squares = [
         "A folder per version",
-        "Invert value scrolling",
+        "Invert number scrolling",
         "Check for updates",
     ];
     for pair in rows.windows(2) {

@@ -2759,8 +2759,9 @@ fn a_slider_fills_the_rail_to_the_handle_and_paints_the_handle_blue() {
     }
 }
 
-// The wheel over a slider's rail or over its value box steps the value
-// by one a notch, up adding one, and stops at the range's ends.
+// The wheel over a slider's rail steps the value by one a notch as the
+// rail reads, down adding one; over its value box it steps as every
+// number box does, up adding one. Both stop at the range's ends.
 #[test]
 fn the_wheel_steps_a_slider_over_its_rail_and_its_value_box() {
     let mut window = Headless::sized(422.0, 900.0);
@@ -2780,8 +2781,8 @@ fn the_wheel_steps_a_slider_over_its_rail_and_its_value_box() {
         half,
     ));
     for (at, up, stored, what) in [
-        (rail, true, 6, "a notch up over the rail"),
-        (rail, false, 5, "a notch down over the rail"),
+        (rail, false, 6, "a notch down over the rail"),
+        (rail, true, 5, "a notch up over the rail"),
         (value_box, true, 6, "a notch up over the value box"),
         (value_box, false, 5, "a notch down over the value box"),
     ] {
@@ -2792,11 +2793,12 @@ fn the_wheel_steps_a_slider_over_its_rail_and_its_value_box() {
         assert_eq!(tactics, expect, "{what} stores {stored}, nothing else");
     }
 
-    // At the top a notch up, at the bottom a notch down, changes nothing.
-    for (stored, up, end) in [(10, true, "top"), (1, false, "bottom")] {
+    // At the top a notch down over the rail, a notch up over the box, at
+    // the bottom the other way round, changes nothing.
+    for (stored, rail_up, box_up, end) in [(10, false, true, "top"), (1, true, false, "bottom")] {
         tactics.presets[0].sliders.support_range = stored;
         let expect = tactics.clone();
-        for (at, place) in [(rail, "rail"), (value_box, "value box")] {
+        for (at, up, place) in [(rail, rail_up, "rail"), (value_box, box_up, "value box")] {
             let changed = window.notch_tactics(at, up, version, &mut tactics, &mut view, &roster);
             assert!(
                 !changed,
@@ -2850,11 +2852,11 @@ fn the_wheel_steps_a_slider_whose_value_box_holds_the_keyboard() {
     assert_eq!(tactics, expect, "the notch stored 6 once, nothing else");
 }
 
-// The wheel over either choice of a style pair moves the choice: up to the
-// right one, down to the left one, wrapping round to the other end past
+// The wheel over either choice of a style pair moves the choice: down to
+// the right one, up to the left one, wrapping round to the other end past
 // the last.
 #[test]
-fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
+fn the_wheel_moves_a_style_pair_down_to_the_right_and_up_to_the_left() {
     let mut window = Headless::sized(422.0, 900.0);
     let version = PesVersion::Pes21;
     let mut tactics = fixture_tactics(version);
@@ -2874,41 +2876,47 @@ fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
     let (left, right) = (centre(choices[0]), centre(choices[1]));
     // From Counter Attack (stored false).
     for (at, up, stored, changes, what) in [
-        (right, true, true, true, "up over the right choice takes it"),
-        (
-            left,
-            true,
-            false,
-            true,
-            "up with the right one held wraps to the left",
-        ),
-        (
-            left,
-            false,
-            true,
-            true,
-            "down with the left one held wraps to the right",
-        ),
         (
             right,
             false,
+            true,
+            true,
+            "down over the right choice takes it",
+        ),
+        (
+            left,
+            false,
             false,
             true,
-            "down over the right choice takes the left",
+            "down with the right one held wraps to the left",
         ),
         (
             left,
             true,
             true,
             true,
-            "up over the left choice takes the right",
+            "up with the left one held wraps to the right",
         ),
         (
             right,
-            false,
+            true,
             false,
             true,
-            "down over the right choice takes the left",
+            "up over the right choice takes the left",
+        ),
+        (
+            left,
+            false,
+            true,
+            true,
+            "down over the left choice takes the right",
+        ),
+        (
+            right,
+            true,
+            false,
+            true,
+            "up over the right choice takes the left",
         ),
     ] {
         let mut expect = tactics.clone();
@@ -2919,12 +2927,12 @@ fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
     }
 }
 
-// The wheel over a numbers toggle moves the choice: up to the right (Few,
-// Medium, Many), down to the left, wrapping round to the other end past
-// the last. A stored value outside 1-3 stays unwritten, as it does under
-// no click.
+// The wheel over a numbers toggle moves the choice: down to the right
+// (Few, Medium, Many), up to the left, wrapping round to the other end
+// past the last. A stored value outside 1-3 stays unwritten, as it does
+// under no click.
 #[test]
-fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
+fn the_wheel_moves_a_numbers_toggle_down_to_many_and_up_to_few() {
     let mut window = Headless::sized(422.0, 900.0);
     // The numbers stay editable on PES 21 only under a ruleset allowing
     // illegal formations, which the flag stands in for, and while
@@ -2949,12 +2957,12 @@ fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
     let (few, medium, many) = (centre(choices[0]), centre(choices[1]), centre(choices[2]));
     // From Few (stored 1).
     for (at, up, stored, changes, what) in [
-        (medium, true, 2, true, "up from Few takes Medium"),
-        (medium, true, 3, true, "up from Medium takes Many"),
-        (many, true, 1, true, "up with Many held wraps to Few"),
-        (few, false, 3, true, "down with Few held wraps to Many"),
-        (few, false, 2, true, "down from Many takes Medium"),
-        (few, false, 1, true, "down from Medium takes Few"),
+        (medium, false, 2, true, "down from Few takes Medium"),
+        (medium, false, 3, true, "down from Medium takes Many"),
+        (many, false, 1, true, "down with Many held wraps to Few"),
+        (few, true, 3, true, "up with Few held wraps to Many"),
+        (few, true, 2, true, "up from Many takes Medium"),
+        (few, true, 1, true, "up from Medium takes Few"),
     ] {
         let mut expect = tactics.clone();
         expect.presets[0].sliders.numbers_in_attack = stored;
@@ -2973,7 +2981,7 @@ fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
 }
 
 // The wheel over any of the preset selector's choices steps the shown
-// preset, up to the right (1, 2, 3) and down to the left, wrapping
+// preset, down to the right (1, 2, 3) and up to the left, wrapping
 // round past either end; over the "Preset" word it does nothing. The
 // selector writes `view.preset`, never the record.
 // SE-GUI-58
@@ -2991,12 +2999,12 @@ fn the_wheel_steps_the_preset_selector_wrapping_round() {
     let at = |label: &str| centre(entry(&nodes, Role::Button, label));
 
     for (hover, up, preset, what) in [
-        ("1", true, 1, "a notch up takes 2"),
-        ("2", true, 2, "a notch up takes 3"),
-        ("3", true, 0, "a notch up on 3 wraps to 1"),
-        ("1", false, 2, "a notch down on 1 wraps to 3"),
-        ("3", false, 1, "a notch down takes 2"),
-        ("2", false, 0, "a notch down takes 1"),
+        ("1", false, 1, "a notch down takes 2"),
+        ("2", false, 2, "a notch down takes 3"),
+        ("3", false, 0, "a notch down on 3 wraps to 1"),
+        ("1", true, 2, "a notch up on 1 wraps to 3"),
+        ("3", true, 1, "a notch up takes 2"),
+        ("2", true, 0, "a notch up takes 1"),
     ] {
         let changed =
             window.notch_tactics(at(hover), up, version, &mut tactics, &mut view, &roster);

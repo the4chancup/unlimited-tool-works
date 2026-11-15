@@ -15,7 +15,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     add_enabled, add_enabled_ui, menu_button, menu_separator, modal, modal_buttons,
-    modal_fit_contents, number_arrows, radio_value, step_number, wheel_steps,
+    modal_fit_contents, number_arrows, number_wheel_steps, radio_value, step_number,
 };
 
 use studio_core::{Notice, NoticeKind};
@@ -665,7 +665,11 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     let start = number_arrows(ui, &mut boglo.start, 0..=u32::MAX, |ui, value| {
                         ui.add_sized(field_size(ui, NUMBER_BOX), egui::DragValue::new(value))
                     });
-                    step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
+                    step_number(
+                        &mut boglo.start,
+                        number_wheel_steps(ui, &start),
+                        0..=u32::MAX,
+                    );
                     ui.add_space(columns.range_gap);
                     ui.label("\u{2013}");
                     ui.add_space(columns.range_gap);
@@ -686,7 +690,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         });
                     step_number(
                         &mut boglo.boots_id,
-                        wheel_steps(ui, &boots_id),
+                        number_wheel_steps(ui, &boots_id),
                         0..=u32::MAX,
                     );
                 });
@@ -722,7 +726,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         });
                     step_number(
                         &mut boglo.gloves_id,
-                        wheel_steps(ui, &gloves_id),
+                        number_wheel_steps(ui, &gloves_id),
                         0..=u32::MAX,
                     );
                 });
@@ -901,7 +905,7 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 },
             )
             .inner;
-        step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
+        step_number(&mut stat_num.value, number_wheel_steps(ui, &field), range);
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
                 close = true;

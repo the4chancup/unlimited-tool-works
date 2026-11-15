@@ -27,7 +27,9 @@ use pes_savefile::interchange::team_toml::labels::{
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
-use studio_core::widgets::{FIELD_SPACING, add_enabled, number_arrows, step_number, wheel_steps};
+use studio_core::widgets::{
+    FIELD_SPACING, add_enabled, number_arrows, number_wheel_steps, step_number,
+};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
@@ -1261,7 +1263,7 @@ fn number_field<T: egui::emath::Numeric>(
                 .clamp_existing_to_range(false),
         )
     });
-    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     if response.changed() {

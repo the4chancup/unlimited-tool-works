@@ -340,10 +340,10 @@ pub fn formation_selector(
                 "The game uses formations 2 and 3 only while the preset's fluid formation is on",
             )
             .on_disabled_hover_text("Formations 2 and 3 are used only while Fluid formation is on");
-        // Wheel up moves right, and `cycle_choice` steps up to an
-        // earlier item, so it takes the steps negated over the choices
+        // Wheel down moves right, and `cycle_choice` steps down to a
+        // later item, so it takes the steps as counted over the choices
         // in drawn order.
-        if let Some(next) = cycle_choice(0..3, &view.formation, -wheel_steps(ui, &bar.inner)) {
+        if let Some(next) = cycle_choice(0..3, &view.formation, wheel_steps(ui, &bar.inner)) {
             view.formation = next;
         }
         bar.inner

@@ -420,7 +420,7 @@ const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
 /// The preset selector (the draft's `presetSel`, in the tab's `tacbar`
 /// beside the menus that act on the shown preset): "Preset" then 1, 2
 /// and 3. The wheel over a choice steps it as the style toggles' does,
-/// up to the right and down to the left, wrapping round past either
+/// down to the right and up to the left, wrapping round past either
 /// end; over "Preset" itself it does nothing. Writes `view.preset`,
 /// never the record. Answers the three choices' union `Response`, so
 /// the host can see a click on one of them.
@@ -433,10 +433,10 @@ pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) -> egui::Respo
             .map(|preset| ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string()))
             .reduce(|left, right| left | right)
             .expect("the selector has three choices");
-        // Wheel up moves right, and `cycle_choice` steps up to an earlier
-        // item, so it takes the steps negated over the choices in drawn
+        // Wheel down moves right, and `cycle_choice` steps down to a later
+        // item, so it takes the steps as counted over the choices in drawn
         // order.
-        if let Some(next) = cycle_choice(0..3, &view.preset, -wheel_steps(ui, &control)) {
+        if let Some(next) = cycle_choice(0..3, &view.preset, wheel_steps(ui, &control)) {
             view.preset = next;
         }
         control
@@ -650,8 +650,8 @@ pub(crate) fn text_width(ui: &egui::Ui, text: &str) -> f32 {
 /// defensive style's shortened, `style_short`, its hover the full
 /// name). Both choices are drawn every frame — an early return over
 /// the two would skip the second on the frame the first is clicked.
-/// The wheel over either choice moves the choice, up to the right one
-/// and down to the left one, wrapping round to the other end past the
+/// The wheel over either choice moves the choice, down to the right one
+/// and up to the left one, wrapping round to the other end past the
 /// last.
 fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggle) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
@@ -675,9 +675,9 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
         })
         .reduce(|left, right| left | right)
         .expect("a pair has two choices");
-    // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
-    // so it takes the steps negated over the choices in drawn order.
-    if let Some(next) = cycle_choice([false, true], &value, -wheel_steps(ui, &control)) {
+    // Wheel down moves right, and `cycle_choice` steps down to a later item,
+    // so it takes the steps as counted over the choices in drawn order.
+    if let Some(next) = cycle_choice([false, true], &value, wheel_steps(ui, &control)) {
         value = next;
     }
     if value != (toggle.get)(style) {
@@ -687,8 +687,8 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 
 /// One numbers row's control (the draft's `.rate.tri`: `TRI_CHOICES`
 /// thirds of the half less the gaps, the picked one filled). The wheel
-/// over any choice moves the choice, up to the right (Few, Medium, Many)
-/// and down to the left, wrapping round to the other end past the last.
+/// over any choice moves the choice, down to the right (Few, Medium, Many)
+/// and up to the left, wrapping round to the other end past the last.
 /// A stored value outside 1-3 (a hand-edited save) selects none and
 /// writes nothing until a choice is clicked; the wheel leaves it too.
 /// Locked, when `lock` holds a hover (`numbers_lock`, the draft's
@@ -732,9 +732,9 @@ fn number_choices(
         control.on_disabled_hover_text(tip);
         return;
     }
-    // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
-    // so it takes the steps negated over the choices in drawn order.
-    if let Some(next) = cycle_choice(1u8..=3, &value, -wheel_steps(ui, &control)) {
+    // Wheel down moves right, and `cycle_choice` steps down to a later item,
+    // so it takes the steps as counted over the choices in drawn order.
+    if let Some(next) = cycle_choice(1u8..=3, &value, wheel_steps(ui, &control)) {
         value = next;
     }
     if value != (spec.get)(sliders) {

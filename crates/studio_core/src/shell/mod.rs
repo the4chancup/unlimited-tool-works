@@ -174,7 +174,7 @@ pub struct StudioApp {
     /// The common `theme` setting last applied to the context; `None` until the first
     /// frame, which applies it.
     applied_theme: Option<Theme>,
-    /// The common `invert_value_scrolling` setting last applied to the context's
+    /// The common `invert_number_scrolling` setting last applied to the context's
     /// wheel flag, as `applied_theme` is for the theme.
     applied_inverted: Option<bool>,
     /// What the first frame does to the window: `Some(Opening::Fit)` from `new` (the fit of
@@ -700,11 +700,11 @@ impl eframe::App for StudioApp {
             egui_ctx.options_mut(|options| options.zoom_with_keyboard = false);
             self.applied_theme = Some(common.theme);
         }
-        // Invert value scrolling goes where `wheel_steps` reads it, the context's
-        // data, applied once per change as the theme is.
-        if self.applied_inverted != Some(common.invert_value_scrolling) {
-            crate::widgets::set_inverted(egui_ctx, common.invert_value_scrolling);
-            self.applied_inverted = Some(common.invert_value_scrolling);
+        // Invert number scrolling goes where `number_direction` reads it, the
+        // context's data, applied once per change as the theme is.
+        if self.applied_inverted != Some(common.invert_number_scrolling) {
+            crate::widgets::set_inverted(egui_ctx, common.invert_number_scrolling);
+            self.applied_inverted = Some(common.invert_number_scrolling);
         }
         // The window is created at `DEFAULT_SIZE` or at the remembered place
         // `opening` found; the first frame finishes the job.

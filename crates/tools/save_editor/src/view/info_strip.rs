@@ -16,8 +16,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled_ui, combo_item, number_arrows, radio, step_choice, step_number,
-    text_box, wheel_steps,
+    FIELD_SPACING, add_enabled_ui, combo_item, number_arrows, number_wheel_steps, radio,
+    step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::{append_name, name_background};
@@ -443,7 +443,7 @@ pub(super) fn general(
                     egui::DragValue::new(value).range(range.clone()),
                 )
             });
-            if step_number(&mut shirt_number, wheel_steps(ui, &response), range) {
+            if step_number(&mut shirt_number, number_wheel_steps(ui, &response), range) {
                 response.mark_changed();
             }
             if response.changed() {
@@ -641,7 +641,7 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
             egui::DragValue::new(value).range(range.clone()),
         )
     });
-    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     if response.changed() {
@@ -722,7 +722,7 @@ fn small_box(
     });
     if step_number(
         &mut shown,
-        wheel_steps(ui, &response),
+        number_wheel_steps(ui, &response),
         small.min..=small.max,
     ) {
         response.mark_changed();
