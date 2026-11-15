@@ -653,7 +653,10 @@ Rules of `apply`:
 - `pes_version` absent means "the target's version" (no conversion).
 - A `bench_order` writes its twelve and refills the record's other nine as the game writes them
   (the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
-  being the file's `starting_eleven` when it has one, the record's else).
+  being the file's `starting_eleven` when it has one, the record's else). It refills them only
+  when the import changes the eleven or the twelve: an import that changes neither leaves the
+  nine as the save holds them, which some saves fill with 255, so importing a team's own
+  export onto it changes nothing and leaves the save unedited.
 - The `appearance` table's keys alone, each as its stored value, go through `settings_toml`'s
   shared writer. A key the table lacks keeps its value ("absent = untouched", where
   `settings.toml` and the patch write every field), and the run's measured-unused bits keep the

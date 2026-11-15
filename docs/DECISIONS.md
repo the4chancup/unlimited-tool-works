@@ -17935,3 +17935,15 @@ Why: an organizer importing a cup's files had to find each team in the list by h
 every import. The save's name for the ID is shown, since that is the row the click selects.
 Plan: `plans/save_editor.md` "Interchange formats in the UI", the paragraph "A picked file
 that names the team", and SE-GUI-104. Worklog: 0.0.2-ownteam.
+
+## 2026-11-15 — pes_savefile — A Team TOML import refills the bench's last nine only when it changes the eleven or the twelve
+Decision: an import whose `starting_eleven` and `bench_order` leave the record's eleven and
+twelve as they were also leaves the bench's other nine as the save holds them, 255 included.
+Any other import refills them as the game writes them, as before.
+Why: refilling them on every import made a team's own Gameplan, pasted back onto it, an edit:
+an undo step and an unsaved save, on the teams whose save holds 255 there, where SE-GUI-56
+asks for none. The nine stand for no player of a cup team, and the game wrote the 255 itself,
+so keeping it is safe; refilling only when the eleven or the twelve change keeps one rule for
+the Import window and the paste.
+Plan: `spec/pes_savefile/operations.md`, the line starting "A `bench_order` writes its
+twelve". Worklog: 0.0.2-clip's review rounds.

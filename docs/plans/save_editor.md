@@ -979,7 +979,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   keeps the keyboard after Space, and holding the shortcuts off there too left Undo dead until
   Escape, the Space's edit already settled.
 - **Ctrl+C and Ctrl+V** copy and paste what was clicked last of three kinds, while no text
-  field holds the keyboard (a text field keeps its own copy and paste):
+  field holds the keyboard (a text field keeps its own copy and paste) and, for Ctrl+C, no
+  text drawn on screen is selected (the selection's copy is its text):
   - a player row copies his stats and pastes onto the selected player what Copy stats
     writes, with its rules;
   - a team row copies the team's Gameplan and pastes onto the selected team what a
@@ -3084,7 +3085,8 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 <team>'s preset 2 Kick-off formation`;
                 SE-GUI-72 has the rest of the text), the last control pressed
                 choosing it, the locked formation selector included, a pointer moved with no
-                press not; GIVEN team 701's row copied and pasted onto itself THEN no undo
+                press not; GIVEN team 705's row, whose bench's last nine hold 255 where the
+                game writes its own order, copied and pasted onto itself THEN no undo
                 entry is pushed and the save stays clean;
                 GIVEN the list's filter box holding the keyboard THEN Ctrl+V and Ctrl+C are
                 the field's own: no record is written and the clipboard keeps A's stats
