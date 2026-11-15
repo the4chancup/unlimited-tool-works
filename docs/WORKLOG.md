@@ -2121,6 +2121,18 @@ briefs, review loops, gates and mutation runs as for any step.
       Save…, then reads the zip back (`repro::read_bundle`): replay's one `Matches` on the
       write, `state/` the edited save, the input and output kept; red with the tool's
       journal not handed to the dialog (SWE-2, after barrw3)
+    - [ ] a blind drill (the maintainer, 2026-11-15): on a throwaway branch the lead plants a
+      behaviour bug that shows no error, the kind found in game (an edit that skips the
+      edited-player flag PES 2019 needs for a name to show, as the aesthetics patch once
+      did), records a bundle through the dialog, and hands a fresh agent, not told the
+      bug, only the bundle and a member's words ("I renamed him, the game shows the old
+      name"): SWE-2 first, and an Opus agent only if SWE-2 does not find it (the
+      maintainer, 2026-11-15). Measured: whether the journal (what the member did) and `save-editor diff`
+      of the kept input against the written save lead it to the cause, and what replay
+      adds: on the planted build it reproduces the write (`Matches`), and on the fixed
+      build it reports `Differs` naming the field, so it confirms a fix on the member's own
+      data but cannot flag a bug the replaying build shares. What the agent missed becomes
+      the bundle's next addition (after the chain test)
     - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
