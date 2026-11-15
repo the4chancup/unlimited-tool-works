@@ -33,17 +33,26 @@ use crate::view::interchange::{NoteGroup, stage};
 use crate::view::multi_aatf;
 use crate::view::{SaveView, Selection, selected_player, selected_team_id};
 
-/// The last clicked of the surfaces Ctrl+C and Ctrl+V read (the draft's
-/// `clickKind`): a row of the player list, the Tactics preset selector
-/// or the formation selector. Clicks elsewhere leave it.
+/// The Tactics selector the last press named for Ctrl+C and Ctrl+V
+/// (the draft's `clickKind`), its team's id with it; `None` means the
+/// selected row. `SaveView::show` clears a `Some` whose team is no
+/// longer the selected row at the frame's end, so a selector's target
+/// lives only while its team's row stays selected.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum ClickKind {
-    /// A player or team row of the list.
-    List,
     /// The Tactics view's preset selector.
-    Preset,
+    Preset(u32),
     /// The Tactics view's formation selector.
-    Formation,
+    Formation(u32),
+}
+
+impl ClickKind {
+    /// The team the selector was pressed on.
+    pub(super) fn team_id(self) -> u32 {
+        match self {
+            ClickKind::Preset(team_id) | ClickKind::Formation(team_id) => team_id,
+        }
+    }
 }
 
 /// Whether a primary press happened over `response`'s rect this frame:
@@ -145,27 +154,29 @@ impl Target {
 }
 
 /// The target the open save's Ctrl+C reads and Ctrl+V writes: the
-/// selected row, which the arrows and page keys move without a press.
-/// A press on a selector names the shown preset or formation instead,
-/// but only while a team row stays selected (its screen is the Tactics
-/// view the selectors sit on): the selection moving to a player row,
-/// however it got there, takes the target to that row. `None` with
-/// nothing selected.
+/// selected row, which the arrows and page keys move without a press;
+/// or, while `click_kind` holds the selector a press named, the shown
+/// preset or formation on the selected team — the selector's team is
+/// then the selected row, `show` having cleared it the frame the
+/// selection left. `None` with nothing selected.
 fn target(view: &SaveView) -> Option<Target> {
     match view.click_kind {
-        Some(ClickKind::Preset) if matches!(view.selected, Some(Selection::Team(_))) => {
-            selected_team_id(view).map(Target::Preset)
-        }
-        Some(ClickKind::Formation) if matches!(view.selected, Some(Selection::Team(_))) => {
-            selected_team_id(view).map(Target::Formation)
-        }
-        _ => match view.selected? {
+        Some(ClickKind::Preset(_)) => selected_team_id(view).map(Target::Preset),
+        Some(ClickKind::Formation(_)) => selected_team_id(view).map(Target::Formation),
+        None => match view.selected? {
             Selection::Player(..) => {
                 selected_player(view).map(|(team_id, slot, _)| Target::Player(team_id, slot))
             }
             Selection::Team(team_id) => Some(Target::Team(team_id)),
         },
     }
+}
+
+/// The Tactics view's shown preset and formation, each clamped to the
+/// three a team holds: what a preset or formation target copies or
+/// writes.
+fn shown(view: &SaveView) -> (usize, usize) {
+    (view.tactics.preset.min(2), view.tactics.formation.min(2))
 }
 
 /// `target`'s display name: the player's for a player row, the team's
@@ -222,7 +233,7 @@ pub(super) fn copy(ctx: &egui::Context, view: &mut SaveView) {
     let Some(session) = view.session.as_ref() else {
         return;
     };
-    let shown = (view.tactics.preset.min(2), view.tactics.formation.min(2));
+    let shown = shown(view);
     let Some((named, document)) = copied(session.file(), &target, shown) else {
         return;
     };
@@ -298,6 +309,53 @@ fn copied(file: &EditFile, target: &Target, shown: (usize, usize)) -> Option<(St
     Some((named, document))
 }
 
+/// Whether Ctrl+C on the target now copies something: the target
+/// resolves and `copied` builds its document (the export refuses a
+/// stats copy whose team holds a record it cannot write). The Edit
+/// menu's Copy is enabled on this answer alone, so the menu's state
+/// and the key cannot disagree.
+pub(super) fn can_copy(view: &SaveView) -> bool {
+    let Some(target) = target(view) else {
+        return false;
+    };
+    let Some(session) = view.session.as_ref() else {
+        return false;
+    };
+    let shown = shown(view);
+    copied(session.file(), &target, shown).is_some()
+}
+
+/// Whether the Edit menu's Paste is enabled: a target resolves. What
+/// the clipboard holds is unknown until the window is asked for it, so
+/// the target is all the entry's state can read.
+pub(super) fn has_target(view: &SaveView) -> bool {
+    target(view).is_some()
+}
+
+/// The Edit menu's hover texts for the target `target` resolves now:
+/// Copy's `Copies <the copy's words>` and Paste's `Pastes the copied
+/// <kind> onto <the target>`, the kind the one the target takes (the
+/// clipboard's own is unknown until asked for). `None` with no target,
+/// or one naming nothing the save holds.
+pub(super) fn tooltips(view: &SaveView) -> Option<(String, String)> {
+    let target = target(view)?;
+    let session = view.session.as_ref()?;
+    let file = session.file();
+    let shown = shown(view);
+    let copy = format!("Copies {}", words(file, &target, shown)?);
+    let what = match target.kind() {
+        Kind::Stats => "stats",
+        Kind::Gameplan => "Gameplan",
+        Kind::Preset => "preset",
+        Kind::Formation => "formation",
+    };
+    let paste = format!(
+        "Pastes the copied {what} onto {}",
+        onto(file, &target, shown)?
+    );
+    Some((copy, paste))
+}
+
 /// Ctrl+V with `text` the system clipboard's: a copy of the target's kind
 /// written onto the target `target` resolves now, as one sealed undo
 /// entry, with the success notice naming the copy and where it landed.
@@ -318,7 +376,7 @@ pub(super) fn paste(view: &mut SaveView, text: &str) {
         );
         return;
     }
-    let shown = (view.tactics.preset.min(2), view.tactics.formation.min(2));
+    let shown = shown(view);
     let Some(session) = view.session.as_mut() else {
         return;
     };

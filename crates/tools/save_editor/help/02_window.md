@@ -86,7 +86,7 @@ kind: a player's row copies his stats (the fields the **Player** menu's **Copy/s
 moves), and a team's row copies its Gameplan. In a team's **Tactics** part, a click on a
 **Preset** button (1, 2 or 3) or a formation button (**Kick-off**, **In-possession** or
 **Out-of-possession**) makes Ctrl+C copy that preset or formation, and Ctrl+V paste over the
-one shown.
+one shown. The **Edit** menu's **Copy** and **Paste** do the same as the two keys.
 
 The copy is text on the system clipboard, so it also pastes into another Save editor window,
 or after another save is opened, even a save of another PES version. When the target's

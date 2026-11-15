@@ -1417,7 +1417,9 @@ mod tests {
     /// file's import reproduces the game's own 23 to 31. The eleven is
     /// the document's, or the record's when the document has none; the
     /// third case's target eleven differs, so only a fill from the
-    /// document's own gives 23 to 31.
+    /// document's own gives 23 to 31. The fourth's target already holds
+    /// the document's twelve (255 in the nine), so the changed eleven
+    /// alone is what starts the refill.
     #[test]
     fn an_imported_bench_fills_the_nine_as_the_game_does() {
         let (file, _) = open(PesVersion::Pes17);
@@ -1427,29 +1429,49 @@ mod tests {
             18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31,
         ];
         // The third case's premise: a fill from the target's eleven
-        // would differ, so the case separates the two.
+        // would differ, so the case separates the two. The fourth's
+        // target holds the document's twelve already (255 in the nine),
+        // so a refill gated on the twelve alone never runs — the
+        // document's eleven must be what starts it, and the target's
+        // own (a reserve swapped for a starter) would fill differently.
+        let swapped_eleven = [23, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10];
+        let mut held_bench = [255; 21];
+        held_bench[..12].copy_from_slice(&bench12);
         assert_ne!(
             bench_fill(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], &bench12),
             expected[12..],
             "the two elevens give different fills"
         );
-        for (document, target_eleven) in [
+        assert_ne!(
+            bench_fill(&swapped_eleven, &bench12),
+            expected[12..],
+            "a reserve swapped for a starter gives another fill"
+        );
+        for (document, target_eleven, target_bench) in [
             (
                 "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
                 real_eleven,
+                [255; 21],
             ),
             (
                 "[tactics]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
                 real_eleven,
+                [255; 21],
             ),
             (
                 "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
                 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                [255; 21],
+            ),
+            (
+                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                swapped_eleven,
+                held_bench,
             ),
         ] {
             let mut target = file.team(701).expect("team 701").clone();
             target.tactics.starting_eleven = target_eleven;
-            target.tactics.bench_order = [255; 21];
+            target.tactics.bench_order = target_bench;
             let doc = TeamToml::parse(document).expect("parses");
             doc.apply(PesVersion::Pes17, &mut target, &mut [])
                 .expect("applies");
