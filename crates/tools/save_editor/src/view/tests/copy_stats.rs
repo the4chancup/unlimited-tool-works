@@ -145,6 +145,31 @@ fn the_window_opens_on_the_selected_player_and_the_list_under_it_takes_clicks() 
     assert!(view.copy_swap.is_some(), "the window stays open");
 }
 
+// The window's grid spaces its rows by the gap between their boxes, as the
+// draft's does: the Destination row's two dropdowns stand 6 under the
+// Source row's, 24 apart top to top.
+#[test]
+fn the_destination_dropdowns_stand_24_under_the_source_ones() {
+    let path = fixture(PesVersion::Pes21, "copy_window_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = open_window(&mut window, &mut view);
+    let top = |node: &accesskit::Node| node.bounds().expect("a dropdown's bounds").y0;
+    let source = row_combos(&nodes, "Source").map(top);
+    let destination = row_combos(&nodes, "Destination").map(top);
+    for (column, (upper, lower)) in ["team", "player"]
+        .iter()
+        .zip(source.iter().zip(destination))
+    {
+        assert!(
+            (lower - upper - 24.0).abs() <= 0.5,
+            "the Destination {column} dropdown stands {} under the Source one, not 24",
+            lower - upper
+        );
+    }
+}
+
 // Copy with the Source's player dropdown on B: A holds B's field set
 // (height, an ability, the registered position and a playable position;
 // A's name and appearance stay), the window is still open and reads

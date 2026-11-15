@@ -158,6 +158,60 @@ fn the_event_page_and_logo_labels_say_they_are_optional() {
     assert!(!drawn(&frame.nodes, "Name (optional)"));
 }
 
+/// General's form spaces its rows by the gaps between their boxes, as the
+/// draft's does: the Name, Event page and Event logo rows' 18-point boxes 6
+/// apart, 24 top to top, and a checklist's rows of checkboxes 8 between their
+/// 14-point squares, 22 top to top.
+#[test]
+fn the_general_fields_stand_24_apart_and_the_checklist_rows_22() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let nodes = &frame.nodes;
+    // The first `role` node right of `label`, on its row.
+    let top_right_of = |label: &str, role: Role| {
+        let row = node(nodes, label).bounds().expect("a drawn label");
+        nodes
+            .iter()
+            .filter(|node| node.role() == role)
+            .filter_map(accesskit::Node::bounds)
+            .filter(|b| b.x0 >= row.x1 && b.y0 < row.y1 && b.y1 > row.y0)
+            .min_by(|a, b| a.x0.total_cmp(&b.x0))
+            .unwrap_or_else(|| panic!("a {role:?} right of {label:?}"))
+            .y0
+    };
+    // The rating checklist's (the first) checkbox `label`'s top.
+    let rating_box = |label: &str| {
+        nodes_labeled(nodes, label)[0]
+            .bounds()
+            .expect("a drawn checkbox")
+            .y0
+    };
+    let name = top_right_of("Name", Role::TextInput);
+    let page = top_right_of("Event page (optional)", Role::TextInput);
+    let logo = top_right_of("Event logo (optional)", Role::Button);
+    for (upper, lower, expected, what) in [
+        (name, page, 24.0, "the Event page box under the Name box"),
+        (
+            page,
+            logo,
+            24.0,
+            "the Event logo button under the Event page box",
+        ),
+        (
+            rating_box("Attacking Prowess"),
+            rating_box("Finishing"),
+            22.0,
+            "the rating checklist's second row under its first",
+        ),
+    ] {
+        assert!(
+            (lower - upper - expected).abs() <= 0.5,
+            "{what}: {} apart, expected {expected}",
+            lower - upper
+        );
+    }
+}
+
 /// The note under the Event logo says where the Save editor shows it.
 #[test]
 fn general_notes_where_the_save_editor_shows_the_logo() {

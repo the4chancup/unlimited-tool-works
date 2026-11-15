@@ -26,7 +26,7 @@ use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, slider, step_choice,
+    FIELD_SPACING, add_enabled, add_enabled_ui, combo_item, number_arrows, slider, step_choice,
     step_number, wheel_steps,
 };
 
@@ -113,6 +113,9 @@ const PHYSIQUE_RAIL_W: f32 = 82.0;
 const FLAG_CELL_H: f32 = 22.0;
 /// Between an edit-flags row's cells (the draft's `td` padding-right).
 const FLAG_CELL_GAP: f32 = 12.0;
+/// Between the Colors rows: their 14-point swatches, on 18-point rows, stand
+/// 21 apart as the draft's do, 7 points between them.
+const SWATCH_ROW_SPACING: f32 = 3.0;
 
 /// The Appearance screen's content for the selected player.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -312,10 +315,8 @@ fn fpc_colors_row(
 /// The second row: Physique at its own width, and beside it a column
 /// taking the rest — Motion over Edit flags, `GROUP_GAP` between them —
 /// the two sides ending at one bottom (the draft's `.aprow` stretch: the
-/// Edit flags frame repainted down to Physique's bottom). Physique is the
-/// taller side on every version, since every row of the three grids is
-/// drawn whether or not the version stores it, and grids never wrap; a
-/// test pins the bottoms level, so a column that grows past it fails there.
+/// shorter side's frame repainted down to the taller side's bottom, Edit
+/// flags for the column).
 fn physique_motion_flags_row(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -336,43 +337,47 @@ fn physique_motion_flags_row(
             });
             physique.allocate_space(ui);
             let physique_outer = physique.content_ui.min_rect().height() + margin;
-            ui.scope_builder(
-                egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
-                |ui| {
-                    ui.set_min_width(ui.available_width());
-                    ui.spacing_mut().item_spacing.y = GROUP_GAP;
-                    let mut motion = group_frame.begin(ui);
-                    frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
+            let row_height = ui
+                .scope_builder(
+                    egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
+                    |ui| {
                         ui.set_min_width(ui.available_width());
-                        motion_grid(ui, session, player_id, version, &player.motion, draw);
-                    });
-                    let motion_outer = motion.content_ui.min_rect().height() + margin;
-                    motion.end(ui);
-                    let mut flags = group_frame.begin(ui);
-                    frame_content(&mut flags.content_ui, "Edit flags", |ui| {
-                        ui.set_min_width(ui.available_width());
-                        edit_flags_grid(
-                            ui,
-                            session,
-                            player_id,
-                            &player.edit_flags,
-                            player.appearance.base_copy_id,
-                        );
-                    });
-                    flags.allocate_space(ui);
-                    let column_height = ui.min_rect().height();
-                    let row_height = physique_outer.max(column_height);
-                    if column_height < row_height {
-                        stretch(&mut flags, row_height - motion_outer - GROUP_GAP - margin);
-                        let column = ui.min_rect();
-                        ui.advance_cursor_after_rect(egui::Rect::from_min_max(
-                            column.min,
-                            egui::pos2(column.max.x, column.min.y + row_height),
-                        ));
-                    }
-                    flags.paint(ui);
-                },
-            );
+                        ui.spacing_mut().item_spacing.y = GROUP_GAP;
+                        let mut motion = group_frame.begin(ui);
+                        frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
+                            ui.set_min_width(ui.available_width());
+                            motion_grid(ui, session, player_id, version, &player.motion, draw);
+                        });
+                        let motion_outer = motion.content_ui.min_rect().height() + margin;
+                        motion.end(ui);
+                        let mut flags = group_frame.begin(ui);
+                        frame_content(&mut flags.content_ui, "Edit flags", |ui| {
+                            ui.set_min_width(ui.available_width());
+                            edit_flags_grid(
+                                ui,
+                                session,
+                                player_id,
+                                &player.edit_flags,
+                                player.appearance.base_copy_id,
+                            );
+                        });
+                        flags.allocate_space(ui);
+                        let column_height = ui.min_rect().height();
+                        let row_height = physique_outer.max(column_height);
+                        if column_height < row_height {
+                            stretch(&mut flags, row_height - motion_outer - GROUP_GAP - margin);
+                            let column = ui.min_rect();
+                            ui.advance_cursor_after_rect(egui::Rect::from_min_max(
+                                column.min,
+                                egui::pos2(column.max.x, column.min.y + row_height),
+                            ));
+                        }
+                        flags.paint(ui);
+                        row_height
+                    },
+                )
+                .inner;
+            stretch(&mut physique, row_height - margin);
             physique.paint(ui);
         },
     );
@@ -497,7 +502,7 @@ fn fpc_group(
 fn presentation(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &PlayerStats) {
     egui::Grid::new("appearance presentation")
         .num_columns(3)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             for (small, note) in fields::PRESENTATION_STATS
                 .iter()
@@ -579,7 +584,9 @@ fn edit_flags_grid(
             }
             ui.end_row();
         });
-    ui.add_space(FORM_ROW_SPACING);
+    // Copy from ID's box stands as if centred on a `FLAG_CELL_H` row of its own
+    // under the flags, as the draft's grid row draws it.
+    ui.add_space((FLAG_CELL_H - ui.spacing().interact_size.y) / 2.0 - ui.spacing().item_spacing.y);
     ui.horizontal(|ui| {
         number(
             ui,
@@ -1028,7 +1035,7 @@ fn motion_grid(
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
     let per_row = 2;
     egui::Grid::new("appearance motion")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             let mut pair = 0usize;
             for field in &MOTIONS[..7] {
@@ -1167,7 +1174,7 @@ fn colour_rows(
 ) {
     egui::Grid::new("appearance colours")
         .num_columns(2)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, SWATCH_ROW_SPACING))
         .show(ui, |ui| {
             for key in [SettingKey::SkinColor, SettingKey::IrisColor] {
                 let field = key

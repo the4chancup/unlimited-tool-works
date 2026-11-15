@@ -8,8 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{
-    add_enabled, checkbox, collapsing_header, combo_item, number_arrows, step_choice, step_number,
-    text_box, wheel_steps,
+    FIELD_SPACING, add_enabled, checkbox, collapsing_header, combo_item, number_arrows,
+    step_choice, step_number, text_box, wheel_steps,
 };
 
 use super::Section;
@@ -73,6 +73,7 @@ fn tiers_table(
     let mut remove = None;
     egui::Grid::new("tiers-table")
         .num_columns(COLUMNS)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             for head in [
                 "",
@@ -500,6 +501,7 @@ fn expander(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
 fn stat_targets(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
     egui::Grid::new(("stat-targets", index))
         .num_columns(5)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             for (column, name) in ABILITY_STATS.iter().enumerate() {
                 let stat = Stat::try_from((*name).to_string()).expect("an ability stat");
@@ -560,49 +562,51 @@ fn medal_systems(ui: &mut egui::Ui, ruleset: &mut Ruleset, medal_tiers: &BTreeSe
     let tiers = tier_ids(ruleset);
     let has_systems = !ruleset.medal_systems.is_empty();
     let mut remove = None;
-    egui::Grid::new("medal-systems").show(ui, |ui| {
-        ui.label("");
-        for (index, (id, label)) in tiers.iter().enumerate() {
-            let mut counted = medal_tiers.contains(id);
-            let tip = if has_systems {
-                "The medal systems count this tier"
-            } else {
-                "Add a medal system first"
-            };
-            let cell = ui.horizontal(|ui| {
-                add_enabled(ui, has_systems, |ui: &mut egui::Ui| {
-                    checkbox(ui, &mut counted, label)
-                })
-                .changed()
-            });
-            cell.response.on_hover_text(tip);
-            let toggled = cell.inner;
-            if toggled {
-                set_counted(ruleset, index, counted);
-            }
-        }
-        ui.end_row();
-        for row in 0..ruleset.medal_systems.len() {
-            ui.horizontal(|ui| {
-                widgets::text(ui, &mut ruleset.medal_systems[row].label, 90.0);
-                if ui
-                    .add(egui::Button::new("✕").frame_when_inactive(false))
-                    .on_hover_text("Remove")
-                    .clicked()
-                {
-                    remove = Some(row);
-                }
-            });
-            for (id, _) in &tiers {
-                if medal_tiers.contains(id) {
-                    map_number(ui, &mut ruleset.medal_systems[row].counts, id, 32, true);
+    egui::Grid::new("medal-systems")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
+        .show(ui, |ui| {
+            ui.label("");
+            for (index, (id, label)) in tiers.iter().enumerate() {
+                let mut counted = medal_tiers.contains(id);
+                let tip = if has_systems {
+                    "The medal systems count this tier"
                 } else {
-                    widgets::dash(ui);
+                    "Add a medal system first"
+                };
+                let cell = ui.horizontal(|ui| {
+                    add_enabled(ui, has_systems, |ui: &mut egui::Ui| {
+                        checkbox(ui, &mut counted, label)
+                    })
+                    .changed()
+                });
+                cell.response.on_hover_text(tip);
+                let toggled = cell.inner;
+                if toggled {
+                    set_counted(ruleset, index, counted);
                 }
             }
             ui.end_row();
-        }
-    });
+            for row in 0..ruleset.medal_systems.len() {
+                ui.horizontal(|ui| {
+                    widgets::text(ui, &mut ruleset.medal_systems[row].label, 90.0);
+                    if ui
+                        .add(egui::Button::new("✕").frame_when_inactive(false))
+                        .on_hover_text("Remove")
+                        .clicked()
+                    {
+                        remove = Some(row);
+                    }
+                });
+                for (id, _) in &tiers {
+                    if medal_tiers.contains(id) {
+                        map_number(ui, &mut ruleset.medal_systems[row].counts, id, 32, true);
+                    } else {
+                        widgets::dash(ui);
+                    }
+                }
+                ui.end_row();
+            }
+        });
     if let Some(row) = remove {
         ruleset.medal_systems.remove(row);
     }

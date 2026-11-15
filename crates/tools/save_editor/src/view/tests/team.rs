@@ -221,6 +221,44 @@ fn the_team_fields_edit_and_save_and_the_colour_is_the_nearest_the_save_holds() 
     assert_eq!((color.red, color.green, color.blue), (63, 32, 0));
 }
 
+// The kit slots' grid spaces its rows by the gap between their boxes, as
+// the draft's does: each slot's two number boxes stand 6 under the slot
+// above's, 24 apart top to top.
+#[test]
+fn the_kit_slot_rows_stand_24_apart() {
+    let path = fixture(PesVersion::Pes17, "team_kit_slot_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
+        &mut view,
+    );
+    // The modal re-centres once its content's size is known.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let tops = |slot: &str| -> Vec<f64> {
+        let boxes = right_of_label(&nodes, slot, Role::SpinButton);
+        assert_eq!(boxes.len(), 2, "{slot}: Number and Bound team ID");
+        boxes
+            .iter()
+            .map(|node| node.bounds().expect("a box's bounds").y0)
+            .collect()
+    };
+    for (upper, lower) in [("Slot 1", "Slot 2"), ("Slot 2", "Slot 3")] {
+        for (above, below) in tops(upper).into_iter().zip(tops(lower)) {
+            assert!(
+                (below - above - 24.0).abs() <= 0.5,
+                "{lower}'s boxes stand {} under {upper}'s, not 24",
+                below - above
+            );
+        }
+    }
+}
+
 #[test]
 fn the_bound_team_id_shows_binding_over_64_and_an_edit_keeps_the_low_bits() {
     let path = fixture(PesVersion::Pes17, "team_kit_slots");

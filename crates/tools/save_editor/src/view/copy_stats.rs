@@ -11,7 +11,9 @@
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{add_enabled, combo_item, modal_buttons, step_choice, wheel_steps};
+use studio_core::widgets::{
+    FIELD_SPACING, add_enabled, combo_item, modal_buttons, step_choice, wheel_steps,
+};
 
 use crate::session::Session;
 use crate::session::cup::cup_teams;
@@ -230,6 +232,7 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
         .show(ui.ctx(), |ui| {
             egui::Grid::new("save_editor_copy_stats_grid")
                 .num_columns(3)
+                .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
                 .show(ui, |ui| {
                     ui.label("");
                     ui.weak("Team");

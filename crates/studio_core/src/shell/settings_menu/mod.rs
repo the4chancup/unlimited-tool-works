@@ -22,9 +22,9 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, checkbox_without_text,
-    combo_item, number_arrows, path_row, path_row_commit, row_label, step_choice, step_number,
-    wheel_steps,
+    CHECKBOX_ROW_HEIGHT, FIELD_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox,
+    checkbox_row, checkbox_without_text, combo_item, number_arrows, path_row, path_row_commit,
+    row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -143,7 +143,8 @@ impl SettingsMenu {
         let mut changed = false;
         egui::Grid::new("settings-common")
             .num_columns(2)
-            .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+            .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
+            .min_row_height(CHECKBOX_ROW_HEIGHT)
             .show(ui, |ui| {
                 version_row(ui, tools, &common, ctx, sidebar);
                 let commit = path_row_commit(
@@ -174,8 +175,10 @@ impl SettingsMenu {
                 let overrides = !common.pes_folders.is_empty();
                 self.per_version |= overrides;
                 ui.label("");
-                add_enabled(ui, !overrides, |ui: &mut egui::Ui| {
-                    checkbox(ui, &mut self.per_version, "A folder per version")
+                checkbox_row(ui, |ui| {
+                    add_enabled(ui, !overrides, |ui: &mut egui::Ui| {
+                        checkbox(ui, &mut self.per_version, "A folder per version")
+                    })
                 })
                 .on_hover_text(
                     "Gives each PES version a folder of its own, for installs \
@@ -384,7 +387,7 @@ impl SettingsMenu {
                      not affected.",
                 );
                 let mut on = common.invert_value_scrolling;
-                if checkbox_without_text(ui, &mut on)
+                if checkbox_row(ui, |ui| checkbox_without_text(ui, &mut on))
                     .labelled_by(invert.id)
                     .changed()
                 {
@@ -400,7 +403,7 @@ impl SettingsMenu {
                     "Whether the program checks for a newer version.",
                 );
                 let mut on = common.check_for_updates;
-                if checkbox_without_text(ui, &mut on)
+                if checkbox_row(ui, |ui| checkbox_without_text(ui, &mut on))
                     .labelled_by(updates.id)
                     .changed()
                 {

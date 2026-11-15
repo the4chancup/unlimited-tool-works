@@ -20,8 +20,8 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows,
-    step_number, text_box, wheel_steps,
+    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows, step_number,
+    text_box, wheel_steps,
 };
 
 use crate::session::Session;
@@ -440,7 +440,7 @@ fn kit_slots(
         .expect("the kit slots are drawn only where they are stored")
         / 64;
     egui::Grid::new("team kit slots")
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             for (index, kit) in slots.iter().enumerate() {
                 ui.weak(format!("Slot {}", index + 1));

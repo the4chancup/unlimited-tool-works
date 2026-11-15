@@ -402,6 +402,73 @@ fn the_edit_flags_stand_three_a_row_over_copy_from_id() {
     );
 }
 
+// The Appearance screen's grids stand as the draft's do: Presentation's and
+// Motion's 18-point fields 6 apart, their rows 24 apart top to top; the
+// Colors rows' 14-point swatches 21 apart; and Copy from ID's box 20 under the
+// second row of edit flags' squares, centred on a 22-point row of its own as
+// the flags' squares are on theirs.
+#[test]
+fn the_appearance_grids_stand_as_the_drafts() {
+    let path = fixture(PesVersion::Pes21, "appearance_grid_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let top_right_of = |label: &str, role: Role| {
+        right_of_label(&nodes, label, role)
+            .first()
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("a {role:?} right of {label}"))
+            .y0
+    };
+    let strip = node_labeled(&nodes, Role::CheckBox, "Strip")
+        .bounds()
+        .expect("Strip's bounds");
+    // A checkbox's 14-point square is centred on its widget.
+    let strip_square = (strip.y0 + strip.y1) / 2.0 - 7.0;
+    let gaps = [
+        (
+            top_right_of("Star", Role::SpinButton),
+            top_right_of("Playing attitude", Role::SpinButton),
+            24.0,
+            "Playing attitude's box under Star's",
+        ),
+        (
+            top_right_of("Hunching (dribbling)", Role::SpinButton),
+            top_right_of("Arm movement (dribbling)", Role::SpinButton),
+            24.0,
+            "the second motion row's box under the first's",
+        ),
+        (
+            top_right_of("Arm movement (dribbling)", Role::SpinButton),
+            top_right_of("Corner kick", Role::SpinButton),
+            24.0,
+            "the third motion row's box under the second's",
+        ),
+        (
+            top_right_of("Skin", Role::ColorWell),
+            top_right_of("Iris", Role::ColorWell),
+            21.0,
+            "the Iris swatches under the Skin swatches",
+        ),
+        (
+            strip_square,
+            top_right_of("Copy from ID", Role::SpinButton),
+            20.0,
+            "Copy from ID's box under the Strip square",
+        ),
+    ];
+    let wrong: Vec<String> = gaps
+        .iter()
+        .filter(|(upper, lower, expected, _)| (lower - upper - expected).abs() > 0.5)
+        .map(|(upper, lower, expected, what)| {
+            format!("{what}: {} apart, expected {expected}", lower - upper)
+        })
+        .collect();
+    assert!(wrong.is_empty(), "{wrong:#?}");
+}
+
 // SE-GUI-84
 #[test]
 fn the_physique_and_motion_flag_column_end_at_one_bottom() {

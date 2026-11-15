@@ -25,7 +25,7 @@ mod teams_list;
 mod test_support;
 mod view;
 
-use studio_core::widgets::{FORM_ROW_SPACING, checkbox_without_text};
+use studio_core::widgets::{FIELD_SPACING, checkbox_without_text};
 use studio_core::{CliError, HelpSection, HelpTopic, RunningPes, StudioTool, ToolContext};
 
 use crate::messages::TOOL_ID;
@@ -254,7 +254,7 @@ impl StudioTool for Tool {
         let mut committed_aesthetics = false;
         egui::Grid::new("save_editor_settings")
             .num_columns(2)
-            .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+            .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
             .show(ui, |ui| {
                 // The common grid's row shape: the label cell's tooltip
                 // leads with the key, the widget's is the sentence alone.
