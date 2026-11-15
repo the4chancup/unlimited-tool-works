@@ -18030,3 +18030,18 @@ Why: before 1.0.0 no shim keeps an old file working (the entry of 2026-11-13 on 
 deprecation shims), so the changelog is the testers' only warning, and the maintainer reads it
 to know when to tell them.
 Plan: `plans/core/distribution.md` "Changelog and version display", the `### Important` item.
+
+## 2026-11-15 — save_editor — The close prompt's table gets the X column; the toolbar's list widens to its widest row
+Decision: the close prompt's table ends each row in the toolbar list's X under the `Undo`
+head, reversing the entries of 2026-11-12 and 2026-11-14 that kept it off the prompt. The
+prompt stays open a row shorter; its last row's X lets the pending close or open go on, as
+for a save with no changes. The prompt's items still take no click. The toolbar's list is as
+wide as its widest row, from 460 points up to the window's width less 8 points at each side,
+growing to the left of the label once its right edge reaches the window's; it no longer
+stops at 640 points.
+Why: the maintainer's ask. With the X in the prompt, a member drops a change they did not
+mean and saves the rest without a Cancel and a second close; an empty prompt after the last
+X would ask a question whose two answers do the same. At 640 points a renamed player's row
+scrolled sideways inside the list while the window had room to show it whole.
+Plan: `plans/save_editor.md` "Editing UI", the X's bullet and the toolbar label's;
+SE-GUI-43, SE-GUI-74. Worklog: 0.0.2-promptx, 0.0.2-popwidth.

@@ -159,7 +159,7 @@ input[type=range]:focus { outline: none; }
    suggestion marks: the weak grey hid it among the toolbar's quieter text. */
 .chfield .unsaved { cursor: pointer; color: var(--link); }
 .chpop { position: absolute; top: 100%; left: 0; margin-top: 3px; z-index: 30;
-  width: max-content; min-width: 460px; max-width: 640px;
+  width: max-content; min-width: 460px;
   background: var(--panel); border: 1px solid var(--stroke); border-radius: 2px;
   padding: 8px; box-shadow: 0 4px 16px #000a; }
 /* The formation pictures run's progress (egui: a ProgressBar). */
@@ -3536,22 +3536,24 @@ function unsavedChanges() {
 }
 // The table of unsaved changes, the close prompt's and the toolbar label's
 // popup's alike: one row per changed field, a checkbox read as on or off,
-// scrolling past 240 points. `undoable` (the popup's) ends each row in an X
-// that undoes that change alone (SE-GUI-74), in the link blue of the label
-// that opened the list. The X's column stays at the list's right edge while
+// scrolling past 240 points. Each row ends in an X that undoes that change
+// alone (SE-GUI-74), in the prompt as in the popup; `popup` makes the items
+// switch to what they name, which the prompt, covering the view, does not. The X's column stays at the list's right edge while
 // a wide row scrolls sideways under it, so it never leaves the view (egui:
 // the X's drawn right of the sideways scroll area, inside the one that
 // scrolls up and down, each on its row's line): the old value written back as
 // one edit, so Undo brings the change back, and the list stays open a row
-// shorter, closing with its last row. The prompt's table has none: it asks
-// one question about all the changes. sample wording: the X's tooltip and
-// the edit's name.
-function undoChange(item, revert) {
+// shorter, closing with its last row. In the prompt the last row's X lets
+// the pending close or open go on, nothing being left to save or lose
+// (`after`, the prompt's redraw). sample wording: the X's tooltip and the
+// edit's name.
+function undoChange(item, revert, after) {
   edit("Revert " + item, revert);
   S.changesPop = dirty();
+  if (after) after();
   render();
 }
-function changesTable(undoable) {
+function changesTable(popup, after) {
   const show = v => v === undefined || v === null ? "" : typeof v === "boolean" ? (v ? "on" : "off")
     : typeof v === "object" ? JSON.stringify(v) : String(v);
   // A colour's value draws its swatch before the hex (the app's rows carry the
@@ -3561,18 +3563,21 @@ function changesTable(undoable) {
       ? h("span", { class: "chswatch", style: "background:" + s }) : null, s); };
   const changes = h("table", { class: "grid", id: "unsaved-changes" },
     h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value"),
-      undoable ? h("th", { class: "undo" }, "Undo") : null),
+      h("th", { class: "undo" }, "Undo")),
     unsavedChanges().map(([item, o, n, revert, to]) => h("tr", {},
-      undoable ? h("td", { class: "sel", title: to.title, onclick: () => { to.go(); render(); } }, item)
+      popup ? h("td", { class: "sel", title: to.title, onclick: () => { to.go(); render(); } }, item)
         : h("td", {}, item),
       cell(o), cell(n),
-      undoable ? h("td", { class: "undo" }, button("×", () => undoChange(item, revert),
-        { frame0: true, title: "Undoes this change alone" })) : null)));
+      h("td", { class: "undo" }, button("×", () => undoChange(item, revert, after),
+        { frame0: true, title: "Undoes this change alone" })))));
   return h("div", { style: "max-height:240px; overflow:auto" }, changes);
 }
 function drawUnsavedPrompt(then) {
+  // An X redraws the prompt a row shorter; after the last one, nothing is
+  // left to ask about, so the close or open goes on.
+  const after = () => { closeWindow(); if (dirty()) drawUnsavedPrompt(then); else then(); };
   window_("Unsaved changes", h("div", {},
-    changesTable()),
+    changesTable(false, after)),
     [button("Save", () => { closeWindow(); saveFile(then); render(); }),
      button("Discard", () => { closeWindow(); then(); render(); }),
      button("Cancel", closeWindow)], "unsaved-changes");
@@ -3853,10 +3858,13 @@ function changesPopup() {
   const pop = h("div", { class: "chpop", id: "changes-popup" }, changesTable(true));
   // Measured once drawn: the label sits late in the toolbar, so a wide
   // table under it can pass the window's edge (egui's Area is constrained
-  // to the screen; here the popup slides left by the overhang).
+  // to the screen; here the popup slides left by the overhang). It is as
+  // wide as its widest row up to the window less 8 points at each side, so
+  // past the room right of the label it grows to the left.
   requestAnimationFrame(() => {
     const win = document.getElementById("win");
     if (!pop.isConnected || !win) return;
+    pop.style.maxWidth = win.getBoundingClientRect().width / winScale() - 16 + "px";
     const over = pop.getBoundingClientRect().right - (win.getBoundingClientRect().right - 8 * winScale());
     if (over > 0) pop.style.left = -over / winScale() + "px";
   });

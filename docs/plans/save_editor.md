@@ -1081,8 +1081,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   stands under the first team that rosters any of its players, which is its own team: the
   cup's teams share no player, and no other team is shown ("Only the cup's teams are
   shown" above).
-- **An X on each row of the toolbar's list** undoes that change alone (0.0.2-undo; the
-  draft's `changesTable`). It ends the row, in the theme's error red, centred under the
+- **An X on each row of the toolbar's list and of the close prompt's table** undoes that
+  change alone (0.0.2-undo; the draft's `changesTable`). It ends the row, in the theme's error red, centred under the
   head `Undo`, which the header row adds after `New value`: the head tells it apart from an
   error mark. Its column stays at the list's right edge while a wide row scrolls sideways
   under it, so it never leaves the view: the X's and their head are drawn right of the
@@ -1093,23 +1093,34 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   shorter. It is no step taken out of the undo stack: later
   steps may build on an earlier one, while a row is a field's difference from the file and
   already holds the value to write. On a `Player order` row the X puts the whole group back on
-  their slots in the file, each player keeping the edits made on him. The close prompt's
-  table has no X: it asks one question about all the changes.
+  their slots in the file, each player keeping the edits made on him.
+
+  In the close prompt the X lets a member drop the one change they did not mean and save
+  the rest, which before took a Cancel, a trip through the toolbar's list and a second close
+  (0.0.2-promptx). The prompt stays open a row shorter, its answers unchanged. Its last row's
+  X leaves nothing to save or lose, so the prompt goes on as it would for a save with no
+  changes: the window closes, or the other save opens. Keeping it open over an empty table
+  would ask a question with no stake, where Save and Discard do the same.
 - The toolbar's `• unsaved changes` is a clickable label (Sense::click, the pointing-hand
   cursor, tooltip "Lists the changes since the save was opened or last saved"). A click opens
   a popup under it holding the close prompt's table (the same rows, computed when the popup
   opens, the table scrolling past 240 points) and none of the prompt's answers. The popup is
-  460 to 640 points wide, its whole box. A click on a row's item switches to what the row
+  as wide as its widest row, each row on one line as in the prompt, from 460 points up to
+  the window's width less 8 points at each side, its whole box; only a row wider than that
+  scrolls sideways (0.0.2-popwidth; until it is built the popup stops at 640 points and a
+  long renamed player's row scrolls inside it). A click on a row's item switches to what the row
   names: its player, or its team for a team's own row or a `Player order` row (tooltip
   `Click to switch to this player` or `Click to switch to this team`). The list stays open,
-  so a member can go through the changes one by one. The prompt's items take no click: it
-  asks one question about all the changes.
+  so a member can go through the changes one by one. The prompt's items take no click: the
+  prompt covers the view a switch would show.
 
   The popup closes on a click outside it, Esc, a second click on the label, or any edit, undo
   or redo (its rows would otherwise go stale under it); the Edit menu's Undo is a click outside,
   so the label reopens the list one row shorter. A popup, not a window: the list is a glance
   at what Save would write, read and dismissed, where the panels hold results a member works
-  against. Its left edge is the label's, slid left when it would pass the window's edge.
+  against. Its left edge is the label's, slid left when it would pass the window's right
+  edge, so a list wider than the room right of the label grows to the left, as far as 8
+  points inside the window's left edge.
 
   In the table, the prompt's and the popup's alike, a colour's old and new values each draw a
   12-point swatch before the hex, so the rows carry the colour typed rather than as text.
@@ -2817,12 +2828,17 @@ SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a tea
                 row, and one Undo sets the Height back to the edited value; the same for the
                 Support range row; GIVEN the X of the `Player order` row clicked THEN every
                 player of that group is back on his place in the file, an edit made on one of
-                them after the move still his; the close prompt's table has no X; GIVEN the
+                them after the move still his; GIVEN the
                 last row's X clicked THEN the list closes and the save is clean; GIVEN a
                 row wider than the list, the list scrolled sideways to its end THEN every
                 X stands where it stood, at the list's right edge; every X is drawn in the
-                error red, centred under the header row's `Undo`, which the close prompt's
-                table does not have
+                error red, centred under the header row's `Undo`, in the list and the close
+                prompt alike; GIVEN the close prompt open over the same three rows WHEN the
+                Height row's X is clicked THEN the prompt stays open over the other two,
+                its items take no click, and Cancel then Undo sets the Height back to the
+                edited value; GIVEN the prompt's last row's X clicked THEN the prompt goes
+                on as for a clean save: the window closes, or the other save opens, and
+                the file is unchanged
 SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
            edited
            WHEN the toolbar's `• unsaved changes` is clicked
@@ -2837,8 +2853,12 @@ SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 
                 row's item clicked THEN the team view shows team 701; GIVEN the pointer over the label THEN it is the pointing
                 hand, the tooltip `Lists the changes since the save was opened or last
                 saved`; GIVEN team 701's 23 players' heights edited THEN the popup's rows stop
-                at 240 points and scroll; GIVEN a 52-letter name THEN the popup holds at 640
-                points wide and its table scrolls sideways
+                at 240 points and scroll; GIVEN a 52-letter name whose row is wider than
+                the room right of the label THEN the popup is as wide as that row, its right
+                edge 8 points inside the window's and its left edge left of the label, and
+                nothing scrolls sideways; GIVEN the window narrower than that row THEN the
+                popup spans the window less 8 points at each side and its table scrolls
+                sideways
 SE-GUI-06  GIVEN a PES 17 save
            WHEN the player view is drawn, its Appearance section open
            THEN the stronger hand control (General info) and the star and playing attitude

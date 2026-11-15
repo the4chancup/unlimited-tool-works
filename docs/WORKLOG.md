@@ -2173,6 +2173,14 @@ briefs, review loops, gates and mutation runs as for any step.
     (`spec/pes_savefile/operations.md`) and an `### Important` changelog line ("Team files
     written by 0.0.1 are refused: export the team again, or rename `number` to
     `shirt_number`") land with it. SWE-2 (`.tmp/0_0_2/shirtno/brief.md`), after 0.0.2-clip
+  - [ ] 0.0.2-promptx the close prompt's table gets the toolbar list's X column; its last
+    row's X lets the close or open go on (the maintainer, 2026-11-15) -> verify: SE-GUI-74's
+    prompt clauses as tests; help "Unsaved changes" and the changelog's × line name the prompt.
+    One brief with 0.0.2-popwidth (`.tmp/0_0_2/promptx/brief.md`)
+  - [ ] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
+    window less 8 points a side, growing left of the label (the maintainer, 2026-11-15: a
+    long row was cut at 640) -> verify: SE-GUI-43's two width clauses as tests, then the
+    built window captured beside the draft before a look card
   - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
     failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
     picking state 522.71875), where it passes in a worktree: the tree's copy sits at a
