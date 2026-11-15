@@ -212,6 +212,10 @@ mod tests {
         .collect();
         assert!(consume_ctrl(&mut input, egui::Key::S));
         assert_eq!(input.events, kept);
+        assert!(
+            !consume_ctrl(&mut input, egui::Key::S),
+            "what is left is not its key with Ctrl alone"
+        );
     }
 
     #[test]

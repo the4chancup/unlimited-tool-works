@@ -1127,6 +1127,23 @@ fn toolbar(
             }
         })
     };
+    // A shortcut consumed over an open menu closes it, as an entry
+    // click does: else it floats over the view or dialog the shortcut
+    // raised.
+    if save_key
+        || undo_key
+        || redo_key
+        || clear_flags_key
+        || fpc_key
+        || bump_key
+        || copy_key
+        || open_key.is_some()
+        || pasted.is_some()
+        || page_step.is_some()
+        || arrow_step.is_some()
+    {
+        egui::Popup::close_all(ui.ctx());
+    }
     toolbar_band(ui, band_end, |ui| {
         let write = file_menu::show(ui, view);
         match write.or(save_key.then_some(file_menu::Write::Save)) {

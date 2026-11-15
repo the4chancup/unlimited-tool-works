@@ -443,12 +443,16 @@ fn save_as_suggests_no_punctuation_from_the_name() {
 }
 
 /// File's "Save as…" clicked with the dialog stubbed to cancel; the
-/// file name the dialog was offered.
-fn save_as_suggestion(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext) -> String {
+/// folder and file name the dialog was offered.
+fn save_as_suggestion(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+) -> (PathBuf, String) {
     let offered = std::rc::Rc::new(std::cell::RefCell::new(None));
     let seen = offered.clone();
-    view.save_as_dialog = Box::new(move |_, suggested| {
-        *seen.borrow_mut() = Some(suggested.to_string());
+    view.save_as_dialog = Box::new(move |start, suggested| {
+        *seen.borrow_mut() = Some((start.to_path_buf(), suggested.to_string()));
         None
     });
     menu_click(window, view, ctx, "File", "Save as…");
@@ -456,7 +460,8 @@ fn save_as_suggestion(window: &mut Headless, view: &mut RulesetView, ctx: &ToolC
 }
 
 // Save as on a document opened from a file suggests that file's own
-// name, not one made from the ruleset's name.
+// name, not one made from the ruleset's name, and the dialog starts in
+// the remembered folder.
 #[test]
 fn save_as_suggests_the_opened_files_name() {
     let (_dir, path) = scratch_file("save_as_opened", "second.4ccrules");
@@ -467,11 +472,12 @@ fn save_as_suggests_the_opened_files_name() {
         "second.4ccrules",
         "premise: the ruleset's name suggests another file name"
     );
+    let last = crate::test_support::scratch("save_as_opened_start");
+    seed_settings(&ctx, &last, Vec::new());
     let mut window = Headless::new();
-    assert_eq!(
-        save_as_suggestion(&mut window, &mut view, &ctx),
-        "second.4ccrules"
-    );
+    let (start, suggested) = save_as_suggestion(&mut window, &mut view, &ctx);
+    assert_eq!(start, last, "the dialog starts in the remembered folder");
+    assert_eq!(suggested, "second.4ccrules");
 }
 
 // Save as on a document never saved suggests the ruleset's name slugged.
@@ -483,7 +489,7 @@ fn save_as_on_a_never_saved_document_suggests_its_name() {
         ruleset.name = "/vg/ League 27".to_string()
     });
     assert_eq!(
-        save_as_suggestion(&mut window, &mut view, &ctx),
+        save_as_suggestion(&mut window, &mut view, &ctx).1,
         "vg_league_27.4ccrules"
     );
 }

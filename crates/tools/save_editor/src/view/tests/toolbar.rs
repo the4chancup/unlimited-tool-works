@@ -168,6 +168,35 @@ fn hovering_team_while_player_is_open_switches_the_menus() {
     );
 }
 
+// A shortcut pressed while a menu is open closes it, as a click on an
+// entry does: Ctrl+B with the Player menu up opens the Bump dialog and
+// leaves no popup floating over it.
+#[test]
+fn a_shortcut_pressed_over_an_open_menu_closes_it() {
+    let path = fixture(PesVersion::Pes21, "shortcut_closes_menu");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_menu(&mut window, &mut view, "Player", "Bump all stats");
+    assert!(
+        egui::Popup::is_any_open(&window.ctx),
+        "premise: the Player menu is open"
+    );
+
+    window.frame(vec![key(egui::Key::B, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    draw(&mut window, &mut view);
+    assert!(
+        !egui::Popup::is_any_open(&window.ctx),
+        "the menu closed on the shortcut's frame"
+    );
+    assert!(
+        view.stat_num.is_some(),
+        "the Bump dialog opened: the shortcut took effect"
+    );
+}
+
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
 /// by what it acts on: the Comparator and Apply aesthetics patch, a
 /// separator, the roster sheet, the range's formation pictures and
@@ -516,7 +545,6 @@ fn the_menus_are_disabled_with_no_save_open() {
 // remembered team category), the Player menu is disabled as a whole, as
 // the Team menu is: every entry acts on the selected row's team, so on
 // no row there is nothing to act on.
-// SE-GUI-26
 #[test]
 fn the_player_menu_is_disabled_with_no_row_selected() {
     let path = fixture(PesVersion::Pes21, "player_menu_no_selection");
