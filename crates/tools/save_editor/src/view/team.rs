@@ -20,8 +20,8 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows, step_number,
-    text_box, wheel_steps,
+    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows,
+    number_wheel_steps, step_number, text_box,
 };
 
 use crate::session::Session;
@@ -534,7 +534,7 @@ fn number<T: egui::emath::Numeric>(
                 .clamp_existing_to_range(false),
         )
     });
-    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     if response.changed() {

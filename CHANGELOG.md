@@ -33,6 +33,11 @@
   window's new Updates chapter explains each step. The window checks each time it starts and
   every 5 minutes while it stays open, so the setting for the time between checks is gone: a
   `check_interval_minutes` line left in `settings.toml` does nothing.
+- **All tools**: wheel down now moves a slider or a toggle to the right, and a dropdown to
+  the item below, with the scrolling setting on or off. That setting, renamed Invert number
+  scrolling, now turns number boxes only, the box beside a slider included: if you had
+  Invert value scrolling ticked, tick the new one in Settings (an `invert_value_scrolling`
+  line left in `settings.toml` does nothing).
 
 ### Useful
 

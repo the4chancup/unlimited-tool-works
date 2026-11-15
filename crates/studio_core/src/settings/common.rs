@@ -43,9 +43,10 @@ pub struct CommonSettings {
     pub memory_cap_percent: f32,
     /// GUI color theme.
     pub theme: Theme,
-    /// The wheel's steps over a value turned the other way: wheel down takes
-    /// one more, wheel up one less. Scrolling a pane is unchanged.
-    pub invert_value_scrolling: bool,
+    /// The wheel's steps over a number box turned the other way: wheel down
+    /// takes one more, wheel up one less. Sliders, toggles, dropdowns and a
+    /// pane's own scrolling never follow it.
+    pub invert_number_scrolling: bool,
     /// Whether the window and tool commands look for new releases.
     pub check_for_updates: bool,
     /// A release the user chose to skip; the updater stays quiet about it.
@@ -77,7 +78,7 @@ impl Default for CommonSettings {
             thread_count: 0,
             memory_cap_percent: 80.0,
             theme: Theme::Dark,
-            invert_value_scrolling: false,
+            invert_number_scrolling: false,
             check_for_updates: true,
             skipped_version: None,
             last_tool: None,
@@ -642,7 +643,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
                 thread_count: 0,
                 memory_cap_percent: 80.0,
                 theme: Theme::Dark,
-                invert_value_scrolling: false,
+                invert_number_scrolling: false,
                 check_for_updates: true,
                 skipped_version: None,
                 last_tool: None,
@@ -657,16 +658,16 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // A file written before the key existed loads with the switch off (the
     // struct's `serde(default)`); one written `true` loads on.
     #[test]
-    fn invert_value_scrolling_loads_off_without_the_key_and_on_as_written() {
+    fn invert_number_scrolling_loads_off_without_the_key_and_on_as_written() {
         let settings = crate::settings::Settings::parse("[common]\npes_version = 21\n")
             .expect("parses")
             .common;
-        assert!(!settings.invert_value_scrolling);
+        assert!(!settings.invert_number_scrolling);
         let settings =
-            crate::settings::Settings::parse("[common]\ninvert_value_scrolling = true\n")
+            crate::settings::Settings::parse("[common]\ninvert_number_scrolling = true\n")
                 .expect("parses")
                 .common;
-        assert!(settings.invert_value_scrolling);
+        assert!(settings.invert_number_scrolling);
     }
 
     // A settings file whose `[common]` lacks both keys loads the

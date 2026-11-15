@@ -767,7 +767,7 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     let before = preset(&view);
     assert_eq!(
         before.sliders.support_range, 5,
-        "premise: Support range has room for two notches up"
+        "premise: Support range has room for two more"
     );
     assert!(
         !before.style.attacking_style,
@@ -783,14 +783,15 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     let value_box = centre_below(&nodes, "Support range", Role::SpinButton);
     let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
     let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
+    let preset_two = centre(node_labeled(&nodes, Role::Button, "2"));
 
     // Each notch more than a second after the one before, so each is its
     // own undo entry: the run of steps a second of idle ends.
-    notch(&mut window, &mut view, rail, true);
+    notch(&mut window, &mut view, rail, false);
     assert_eq!(
         preset(&view).sliders.support_range,
         6,
-        "a notch up over the rail adds one"
+        "a notch down over the rail adds one"
     );
     idle_frames(&mut window, &mut view, 61);
     notch(&mut window, &mut view, value_box, true);
@@ -800,20 +801,27 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
         "a notch up over the value box adds one more"
     );
     idle_frames(&mut window, &mut view, 61);
-    notch(&mut window, &mut view, attacking_style, true);
+    notch(&mut window, &mut view, attacking_style, false);
     assert!(
         preset(&view).style.attacking_style,
-        "a notch up takes Possession, the right choice"
+        "a notch down takes Possession, the right choice"
     );
     idle_frames(&mut window, &mut view, 61);
-    notch(&mut window, &mut view, numbers_in_attack, false);
+    notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         2,
-        "a notch down takes Medium, the choice left of Many"
+        "a notch up takes Medium, the choice left of Many"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, preset_two, false);
+    assert_eq!(
+        view.tactics.preset, 1,
+        "a notch down holds the next preset: no edit of its own"
     );
 
-    // One Ctrl+Z per notch, the last first.
+    // One Ctrl+Z per edit, the last first; the preset pick is the view's,
+    // never an undo entry.
     let mut undone = Vec::new();
     for _ in 0..4 {
         window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
@@ -838,7 +846,74 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     assert_eq!(undone[3], before, "the fourth takes back the rail's notch");
     assert!(
         !view.session.as_ref().unwrap().can_undo(),
-        "the four notches were the only edits"
+        "the four edit notches were the only edits"
+    );
+
+    // Invert number scrolling on: every step is the same but the value
+    // box's, which a notch down now makes one more. Back on preset 1
+    // first: the selector moved the view to preset 2.
+    studio_core::widgets::set_inverted(&window.ctx, true);
+    notch(&mut window, &mut view, preset_two, true);
+    assert_eq!(view.tactics.preset, 0, "back on preset 1");
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, rail, false);
+    assert_eq!(
+        preset(&view).sliders.support_range,
+        6,
+        "inverted, the rail's notch down still adds one"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, value_box, false);
+    assert_eq!(
+        preset(&view).sliders.support_range,
+        7,
+        "inverted, a notch down over the value box adds one more"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, attacking_style, false);
+    assert!(
+        preset(&view).style.attacking_style,
+        "inverted, a notch down still takes the right choice"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, numbers_in_attack, true);
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        2,
+        "inverted, a notch up still takes the left choice"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    notch(&mut window, &mut view, preset_two, false);
+    assert_eq!(
+        view.tactics.preset, 1,
+        "inverted, a notch down still holds the next preset"
+    );
+
+    let mut undone = Vec::new();
+    for _ in 0..4 {
+        window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        undone.push(preset(&view));
+    }
+    let mut expect = before.clone();
+    expect.sliders.support_range = 7;
+    expect.style.attacking_style = true;
+    assert_eq!(
+        undone[0], expect,
+        "the first Ctrl+Z restores Auto attack level"
+    );
+    expect.style.attacking_style = false;
+    assert_eq!(undone[1], expect, "the second restores Attacking style");
+    expect.sliders.support_range = 6;
+    assert_eq!(
+        undone[2], expect,
+        "the third takes back the value box's notch"
+    );
+    assert_eq!(undone[3], before, "the fourth takes back the rail's notch");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the four edit notches were the only edits"
     );
 }
 
@@ -860,37 +935,46 @@ fn wheel_notches_wrap_round_at_the_toggles_ends() {
         3,
         "premise: Many, the rightmost choice, is held"
     );
+    assert_eq!(view.tactics.preset, 0, "premise: preset 1 is held");
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
     let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
+    let preset_two = centre(node_labeled(&nodes, Role::Button, "2"));
 
-    notch(&mut window, &mut view, attacking_style, true);
+    notch(&mut window, &mut view, attacking_style, false);
     assert!(
         preset(&view).style.attacking_style,
-        "a notch up takes Possession, the right choice"
+        "a notch down takes Possession, the right choice"
     );
-    notch(&mut window, &mut view, attacking_style, true);
+    notch(&mut window, &mut view, attacking_style, false);
     assert!(
         !preset(&view).style.attacking_style,
-        "a second notch up wraps round to Counter Attack"
+        "a second notch down wraps round to Counter Attack"
     );
-    notch(&mut window, &mut view, numbers_in_attack, false);
+    notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         2,
-        "a notch down takes Medium, the choice left of Many"
+        "a notch up takes Medium, the choice left of Many"
     );
-    notch(&mut window, &mut view, numbers_in_attack, false);
+    notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         1,
-        "a second notch down takes Few, the leftmost"
+        "a second notch up takes Few, the leftmost"
     );
-    notch(&mut window, &mut view, numbers_in_attack, false);
+    notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         3,
-        "a third notch down wraps round to Many"
+        "a third notch up wraps round to Many"
     );
+    for held in [1, 2, 0] {
+        notch(&mut window, &mut view, preset_two, false);
+        assert_eq!(
+            view.tactics.preset, held,
+            "a notch down holds the next preset, preset 1 after preset 3"
+        );
+    }
 }

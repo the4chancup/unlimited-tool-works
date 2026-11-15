@@ -12,7 +12,9 @@ use egui::{
     Sense, Shape, Stroke, StrokeKind, TextEdit, TextStyle, Ui, WidgetInfo, pos2, vec2,
 };
 use studio_core::theme;
-use studio_core::widgets::{number_arrows, step_number, text_box, text_box_border, wheel_steps};
+use studio_core::widgets::{
+    number_arrows, number_wheel_steps, step_number, text_box, text_box_border,
+};
 
 /// The most recent colors the session keeps: newest first, no duplicates.
 const MAX_RECENTS: usize = 8;
@@ -599,7 +601,7 @@ fn popup_body(
             let response = number_arrows(ui, &mut channel, 0..=u8::MAX, |ui, value| {
                 ui.add(DragValue::new(value).speed(0.5).prefix(*prefix))
             });
-            let wheeled = step_number(&mut channel, wheel_steps(ui, &response), 0..=u8::MAX);
+            let wheeled = step_number(&mut channel, number_wheel_steps(ui, &response), 0..=u8::MAX);
             channels[index] = channel;
             channel_changed |= response.changed() || wheeled;
             channel_wheeled |= wheeled;

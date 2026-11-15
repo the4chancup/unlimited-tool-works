@@ -51,7 +51,10 @@ pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use slider::slider;
 pub use text_box::{text_box, text_box_border};
 pub use toolbar::{consume_ctrl, toolbar, toolbar_framed, toolbar_separator};
-pub use wheel::{cycle_choice, number_arrows, set_inverted, step_choice, step_number, wheel_steps};
+pub use wheel::{
+    cycle_choice, number_arrows, number_wheel_steps, set_inverted, step_choice, step_number,
+    wheel_steps,
+};
 
 /// The row spacing of a grid of text rows (the help's Messages table, the Save
 /// editor's changes table): the drafts' 2 points above and below each row's text.

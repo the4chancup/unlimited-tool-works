@@ -7,7 +7,7 @@
 //! failed `apply_tier` leaves the player as he was and shows the error in
 //! the refusal dialog.
 
-use studio_core::widgets::{add_enabled_ui, number_arrows, step_number, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, number_arrows, number_wheel_steps, step_number};
 
 use crate::session::Session;
 use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
@@ -168,7 +168,7 @@ fn set_stats_cell(
                 })
             })
             .inner;
-            step_number(stat_value, wheel_steps(ui, &field), 40..=99);
+            step_number(stat_value, number_wheel_steps(ui, &field), 40..=99);
             if !enabled {
                 field.on_disabled_hover_text(TEAM_TIP);
             }

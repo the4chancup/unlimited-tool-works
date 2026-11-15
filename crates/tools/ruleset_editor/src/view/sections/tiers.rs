@@ -9,7 +9,7 @@ use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{
     FIELD_SPACING, add_enabled, checkbox, collapsing_header, combo_item, number_arrows,
-    step_choice, step_number, text_box, wheel_steps,
+    number_wheel_steps, step_choice, step_number, text_box, wheel_steps,
 };
 
 use super::Section;
@@ -656,7 +656,7 @@ fn map_number(
                 .clamp_existing_to_range(false),
         )
     });
-    if step_number(&mut value, wheel_steps(ui, &response), 0..=max) {
+    if step_number(&mut value, number_wheel_steps(ui, &response), 0..=max) {
         response.mark_changed();
     }
     if response.changed() {

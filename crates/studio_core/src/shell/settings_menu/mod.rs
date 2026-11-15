@@ -23,8 +23,8 @@ use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
     CHECKBOX_ROW_HEIGHT, FIELD_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox,
-    checkbox_row, checkbox_without_text, combo_item, number_arrows, path_row, path_row_commit,
-    row_label, step_choice, step_number, wheel_steps,
+    checkbox_row, checkbox_without_text, combo_item, number_arrows, number_wheel_steps, path_row,
+    path_row_commit, row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -258,7 +258,11 @@ impl SettingsMenu {
                     )
                 })
                 .labelled_by(threads.id);
-                if step_number(&mut thread_count, wheel_steps(ui, &response), 0..=max) {
+                if step_number(
+                    &mut thread_count,
+                    number_wheel_steps(ui, &response),
+                    0..=max,
+                ) {
                     response.mark_changed();
                 }
                 if response.changed() {
@@ -289,7 +293,11 @@ impl SettingsMenu {
                     })
                     .inner
                     .labelled_by(memory.id);
-                if step_number(&mut memory_cap, wheel_steps(ui, &response), 0.1..=100.0) {
+                if step_number(
+                    &mut memory_cap,
+                    number_wheel_steps(ui, &response),
+                    0.1..=100.0,
+                ) {
                     response.mark_changed();
                 }
                 if response.changed() {
@@ -316,7 +324,7 @@ impl SettingsMenu {
                         )
                     })
                     .labelled_by(hide_boots.id);
-                let steps = wheel_steps(ui, &response);
+                let steps = number_wheel_steps(ui, &response);
                 if step_number(&mut hide_boots_id, steps, fpc::HideIds::BOOTS) {
                     response.mark_changed();
                 }
@@ -348,7 +356,7 @@ impl SettingsMenu {
                     },
                 )
                 .labelled_by(hide_gloves.id);
-                let steps = wheel_steps(ui, &response);
+                let steps = number_wheel_steps(ui, &response);
                 if step_number(&mut hide_gloves_id, steps, fpc::HideIds::GLOVES) {
                     response.mark_changed();
                 }
@@ -380,19 +388,20 @@ impl SettingsMenu {
 
                 let invert = row_label(
                     ui,
-                    "Invert value scrolling",
-                    "invert_value_scrolling",
-                    "Reverses the mouse wheel over a value: wheel down then moves \
-                     a slider right, raises a number and picks the list item \
-                     above, and wheel up does the opposite. Scrolling a pane is \
-                     not affected.",
+                    "Invert number scrolling",
+                    "invert_number_scrolling",
+                    "Reverses the mouse wheel over a number box: wheel down then \
+                     raises the number, and wheel up lowers it. Sliders and \
+                     toggles always move right on wheel down, and a dropdown \
+                     always takes the item below. Scrolling a pane is not \
+                     affected.",
                 );
-                let mut on = common.invert_value_scrolling;
+                let mut on = common.invert_number_scrolling;
                 if checkbox_row(ui, |ui| checkbox_without_text(ui, &mut on))
                     .labelled_by(invert.id)
                     .changed()
                 {
-                    common.invert_value_scrolling = on;
+                    common.invert_number_scrolling = on;
                     changed = true;
                 }
                 ui.end_row();

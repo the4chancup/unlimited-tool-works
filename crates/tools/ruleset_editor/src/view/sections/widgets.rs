@@ -2,7 +2,7 @@
 //! weak "—" helpers): a number with a range, a text field of a given
 //! width and the dash a cell draws where the row has no value.
 
-use studio_core::widgets::{number_arrows, step_number, text_box, wheel_steps};
+use studio_core::widgets::{number_arrows, number_wheel_steps, step_number, text_box};
 
 /// A `DragValue` over `value` whose edits stay inside `range`, the
 /// stored value drawn as it is (the draft's `drag`); every section's
@@ -22,7 +22,7 @@ pub(crate) fn number(
                 .clamp_existing_to_range(false),
         )
     });
-    if step_number(value, wheel_steps(ui, &response), range) {
+    if step_number(value, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     response

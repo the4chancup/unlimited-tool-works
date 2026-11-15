@@ -6,15 +6,19 @@ use std::ops::RangeInclusive;
 
 use egui::emath::Numeric;
 
-use super::wheel::{step_number, wheel_steps};
+use super::wheel::{number_direction, step_number, wheel_steps};
 
 /// A slider on `value` inside `range`, its rail `rail_width` long and its
 /// value box at the rail's right. The rail's fill and the handle take the
 /// selection blue: egui fills the handle with the widget state's
 /// `bg_fill`, the rail's grey, and has no field for the handle's fill
 /// alone, so it is painted over. A stored value outside `range` draws as
-/// stored; only an edit is clamped. The wheel over the rail or the value
-/// box steps the value by one a notch, up adding one, within `range`.
+/// stored; only an edit is clamped. The wheel over the rail steps the
+/// value by one a notch as the rail reads, wheel down one more and wheel
+/// up one less, whatever `Invert number scrolling` holds; over the value
+/// box it steps as every number box does, the switch included — the box
+/// disagrees with its rail or with every other box either way, and every
+/// box alike is the rule a member can predict.
 /// `wheel_id` names the slider for the wheel's delayed step, and must stay
 /// put from frame to frame: egui answers with the value box's id while the
 /// box has or just lost the keyboard, so the response's own id changes.
@@ -43,11 +47,11 @@ pub fn slider<N: Numeric>(
     // in from each end for the default rectangle handle. `interact` keeps
     // the widget state's stroke (inactive, hovered or active), `expansion`
     // the state's own.
+    let rail = egui::Rect::from_min_size(
+        response.rect.min,
+        egui::vec2(rail_width, response.rect.height()),
+    );
     if ui.is_rect_visible(response.rect) {
-        let rail = egui::Rect::from_min_size(
-            response.rect.min,
-            egui::vec2(rail_width, response.rect.height()),
-        );
         let radius = rail.height() / 2.5;
         let (low, high) = (range.start().to_f64(), range.end().to_f64());
         let place = ((value.to_f64() - low) / (high - low)).clamp(0.0, 1.0) as f32;
@@ -67,7 +71,20 @@ pub fn slider<N: Numeric>(
     }
     let mut wheel_response = response.clone();
     wheel_response.id = wheel_id;
-    if step_number(value, wheel_steps(ui, &wheel_response), range) {
+    let steps = wheel_steps(ui, &wheel_response);
+    // `wheel_steps` counts once: the rail moves as a sideways control,
+    // wheel down one more; the rest of the row is the value box's, a
+    // number box whose steps the invert switch turns.
+    let steps = if ui
+        .ctx()
+        .pointer_hover_pos()
+        .is_some_and(|pos| rail.contains(pos))
+    {
+        -steps
+    } else {
+        number_direction(ui.ctx(), steps)
+    };
+    if step_number(value, steps, range) {
         response.mark_changed();
     }
     response

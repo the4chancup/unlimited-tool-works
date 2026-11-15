@@ -4,7 +4,8 @@
 
 use pes_savefile::model::tactics::TeamTactics;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, combo_item, number_arrows, step_choice, step_number, wheel_steps,
+    add_enabled, add_enabled_ui, combo_item, number_arrows, number_wheel_steps, step_choice,
+    step_number, wheel_steps,
 };
 
 use super::{drop_rule, outfield_range, overalls_of, position_label};
@@ -313,7 +314,7 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, min: u8, max: u8, enabled: bool) {
         if number.changed() {
             *value = (*value).clamp(min, max);
         }
-        step_number(value, wheel_steps(ui, &number), min..=max);
+        step_number(value, number_wheel_steps(ui, &number), min..=max);
         let right = egui::CornerRadius {
             nw: 0,
             sw: 0,
