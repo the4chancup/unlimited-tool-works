@@ -2660,7 +2660,9 @@ briefs, review loops, gates and mutation runs as for any step.
       - [x] Carbon's round 3, 2026-11-15 (at `3598dc7e`): 6 of 9 accepted: three tests that
         pass on wrong code; a hover gate egui already applies; the help's Copy and paste
         section, SE-GUI-56 and the changelog's Edit menu line (the lead's)
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/clip/rework_c3.md`), then Carbon's round 4
+      - [x] the rework (SWE-2, 2026-11-15; `9307edd8`, merge `0434295b`): the Edit menu's
+        hovers tested for every target, the notices' counts exact from the source save
+      - [ ] Carbon's round 4 (at `0434295b`)
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
