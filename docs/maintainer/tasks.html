@@ -683,6 +683,25 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="test-held-pgdn">
+  <h3>Holding Page Down no longer flickers the selected row</h3>
+  <p class="from">From: the page keys' fix of 2026-11-15; checked by the lead at <code>9d536eb4</code> on your PES 2021 save, dark theme, nothing saved</p>
+  <p>Held down, Page Down drew each newly selected team's row for one frame where it had
+  been, then at the top of the list, so the row flickered as it moved. The list now scrolls
+  on the same frame that draws the selection. In the built window, two presses still bring
+  /aco/ (703) to the top. A picture cannot show a flicker, so please hold Page Down, then
+  Page Up, under All teams.</p>
+  <div class="shots">
+    <figure><a href="img/pgdn_held.png"><img src="img/pgdn_held.png" alt="The player list with /aco/'s row selected at its top"></a><figcaption>After two presses</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="steady"><b>Steady</b></label>
+    <label class="opt"><input type="radio" value="still flickers, see note"><b>Still flickers</b>
+      <div class="note">Say where below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>

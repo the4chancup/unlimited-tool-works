@@ -2179,12 +2179,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-shirtno the Team TOML player key `number` is `shirt_number` (`fb42b800`, merge
     `5e4cb83a`): an error naming `players.03.number` read as the player's ID; a 0.0.1 file
     holding `number` is refused as any unknown key, and the changelog's Important line says so
-  - [ ] 0.0.2-pgframe a held PgDn flickered the selected row, the list's scroll landing a frame
+  - [x] 0.0.2-pgframe a held PgDn flickered the selected row, the list's scroll landing a frame
     after the selection (`35902abc`, merge `f4c1d2db`): the list gives its scroll area the
-    reveal's offset before layout (a rerun of the pass cannot help: egui lays the area out
-    from its stored offset first); SE-GUI-103's same-frame clauses tested on the key's own
-    frame -> verify: the built list captured beside the draft (a focus-taking check: ask
-    first, with 0.0.2-popwidth's), then a look card
+    reveal's offset before layout (egui lays the area out from its stored offset first);
+    SE-GUI-103's same-frame clauses tested on the key's own frame. Built list checked at
+    `9d536eb4` (the draft has no page keys), card `test-held-pgdn`
   - [x] 0.0.2-promptx the close prompt's table gets the toolbar list's X column, its last
     row's X letting the close or open go on (`55f398a9`, merge `29299fe3`)
   - [x] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
@@ -2196,7 +2195,8 @@ briefs, review loops, gates and mutation runs as for any step.
     closed 0.0.2 items against `.tmp/duck_rulings.md`). One review per surface, each SWE-2's
     loop then one Carbon round (tier 2), or the three loops (tier 1), in this order:
     - [ ] list and keys (tier 2): `d700b3e5` (leeway, idfilter, pgtop, ownteam), `35902abc`
-      (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill)
+      (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill). SWE-2
+      round 1 in two halves (`.tmp/0_0_2/revdebt/swe_list_{a,b}.md`, worktree `review29`)
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
@@ -2207,8 +2207,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] interchange and export settings (tier 1): `fb42b800` (shirtno), `7b2e9ea2`,
       `3667be9b`, `b222d710` (presentation)
     - [ ] the Export upgrader (tier 1): `8ac5658c` (nomodels), `6fed2e3e` (cli)
-    - [ ] checked against the early poc rounds before queuing: poc1, poc2, poc4, poc5, poc7,
-      poc9 (`975e68a7`), poc10 (`6268280c`), poc11
+    - [ ] the Export upgrader's poc fixes (tier 1): `2b028e34`'s `.dds` beside a `.ftex`
+      (poc4; its pairing by name was read in S-poc6c r1), `975e68a7` (poc9), `6268280c`
+      (poc10, the teams list), `14241e1d` (poc11: its SWE-2 and Carbon loops; Astra's round is
+      `.tmp/0_0_2/poc11/rulings_poc11.md`). poc1, poc2, poc5 and poc7 were reviewed (S-poc12,
+      A-poc12, S-poc57u, A-poc57u, S-poc7, A-poc7mc)
   - [ ] 0.0.2-wheelside sliders, toggles and row selectors move right on wheel down and a
     closed combo to the item below, whatever the setting, now Invert number scrolling
     (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;
