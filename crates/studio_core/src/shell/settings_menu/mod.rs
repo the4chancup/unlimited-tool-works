@@ -5,8 +5,8 @@
 //! one `CollapsingHeader` per registered tool that has a settings form, its body the
 //! tool's `settings_view`. A section is drawn when the tool's `has_settings_view()` is true
 //! and the build does not mark it CLI-only: such a tool's window is not built, so its keys are
-//! edited in the settings file. `last_tool`, `last_run_version`, `last_update_check`
-//! and `skipped_version`, the state the shell writes itself, have no row.
+//! edited in the settings file. `last_tool`, `last_run_version` and
+//! `skipped_version`, the state the shell writes itself, have no row.
 //!
 //! There is no Save or Apply: a widget's change writes the setting under the settings
 //! lock and asks the shell to save at the end of the frame. A text row commits when its
@@ -29,9 +29,10 @@ use crate::widgets::{
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
 
-/// The modal's width: what the common grid's widest row (the label column,
-/// the path edit and Browse) fits; the draft's `.settings-body` was 660, under
-/// what the label column needs since the update check's rows.
+/// The modal's width, wider than the 653 the common grid's widest row (the
+/// label column, the path edit and Browse) needs: it fitted the update
+/// check's interval row, since removed, and stayed when the row went (the
+/// draft's `.settings-body` was 660).
 const WIDTH: f32 = 676.0;
 
 /// The menu's state across frames: whether it is open, the tool the next drawn frame
@@ -408,35 +409,6 @@ impl SettingsMenu {
                     .changed()
                 {
                     common.check_for_updates = on;
-                    changed = true;
-                }
-                ui.end_row();
-
-                let interval = row_label(
-                    ui,
-                    "Check interval (minutes)",
-                    "check_interval_minutes",
-                    "The minutes between two of the window's checks for a newer version.",
-                );
-                let mut minutes = common.check_interval_minutes;
-                // The interval is off while the check is, as the draft draws it;
-                // typed minutes clamp to at least 1 (the drag clamps entry only,
-                // as the rows above).
-                let mut response = number_arrows(ui, &mut minutes, 1..=u32::MAX, |ui, value| {
-                    add_enabled(
-                        ui,
-                        common.check_for_updates,
-                        egui::DragValue::new(value)
-                            .range(1..=u32::MAX)
-                            .clamp_existing_to_range(false),
-                    )
-                })
-                .labelled_by(interval.id);
-                if step_number(&mut minutes, wheel_steps(ui, &response), 1..=u32::MAX) {
-                    response.mark_changed();
-                }
-                if response.changed() {
-                    common.check_interval_minutes = minutes;
                     changed = true;
                 }
                 ui.end_row();

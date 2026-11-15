@@ -1,14 +1,13 @@
 //! The update check: whether a newer release is out, and what the offer keeps
-//! of it. The shell starts a check when the settings say one is due
-//! (`start_check`, on a thread of its own so no frame waits on the network),
-//! reads the newest release by semver out of the fetched body
-//! (`newest_release`), offers it when it is newer than the built version and
-//! not the skipped one (`offers`), and stamps `last_update_check` when a check
-//! completes. The `Release` the offer keeps (notes, page URL and assets)
-//! feeds the Details dialog and the download. "Update now" is `install`: it
-//! downloads the release's archive, checks it, unpacks it and swaps it in
-//! (`install` and `swap`). Native only: the browser build has no binary to
-//! swap and no settings file.
+//! of it. The window checks when it starts and again every `CHECK_PERIOD`
+//! while it stays open, each on a thread of its own so no frame waits on the
+//! network (`start_check`), reads the newest release by semver out of the
+//! fetched body (`newest_release`), and offers it when it is newer than the
+//! built version and not the skipped one (`offers`). The `Release` the offer
+//! keeps (notes, page URL and assets) feeds the Details dialog and the
+//! download. "Update now" is `install`: it downloads the release's archive,
+//! checks it, unpacks it and swaps it in (`install` and `swap`). Native only:
+//! the browser build has no binary to swap and no settings file.
 
 mod install;
 mod swap;
@@ -22,14 +21,13 @@ pub(crate) use swap::SwapStep;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use crossbeam_channel::{Receiver, bounded};
 use semver::Version;
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::settings::CommonSettings;
 use crate::shell::version_label_of;
 
 /// The releases list the check reads: `per_page=30`, so a run of tags that are
@@ -163,38 +161,9 @@ pub(crate) fn offers(release: &Release, own: &Version, skipped: Option<&str>) ->
             != Some(&release.version)
 }
 
-/// The interval in seconds, `check_interval_minutes` minutes, written once:
-/// the next-check instant and the failure backoff share it. A value under 1
-/// (a settings file edited by hand) reads as 1, so checks never run back to
-/// back.
-pub(crate) fn interval_secs(common: &CommonSettings) -> u64 {
-    u64::from(common.check_interval_minutes.max(1)) * 60
-}
-
-/// The epoch second the next check may start at, or `None` while
-/// `check_for_updates` is off. Otherwise the later of `retry_at` (a failed
-/// check's backoff) and the last completed check plus the interval, `retry_at`
-/// alone when none ran — and a check is due when the caller's `now` reaches
-/// it. A clock set behind the last check keeps the next check in the future,
-/// the stamp plus the interval being past `now`: the stamp cannot count it
-/// past.
-pub(crate) fn next_check_at(common: &CommonSettings, retry_at: u64) -> Option<u64> {
-    common.check_for_updates.then(|| {
-        retry_at.max(match common.last_update_check {
-            Some(last) => last.saturating_add(interval_secs(common)),
-            None => retry_at,
-        })
-    })
-}
-
-/// Seconds since the Unix epoch, the unit `last_update_check` stores. A clock
-/// set before the epoch reads 0: a check that always reads due beats one that
-/// can never run.
-pub(crate) fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |elapsed| elapsed.as_secs())
-}
+/// The time between two of the open window's checks: the next check may
+/// start this long after the last one ended, a failed one included.
+pub(crate) const CHECK_PERIOD: Duration = Duration::from_secs(5 * 60);
 
 /// A check's reply: the newest release (`None` when the list holds no
 /// `v<semver>` tag), or the check's failure.
@@ -497,64 +466,6 @@ mod tests {
             releases_url(Some("http://127.0.0.1:8000/releases.json")),
             "http://127.0.0.1:8000/releases.json",
             "set"
-        );
-    }
-
-    #[test]
-    fn the_interval_in_seconds_is_the_settings_minutes() {
-        let mut common = CommonSettings::default();
-        assert_eq!(interval_secs(&common), 7200);
-        common.check_interval_minutes = 1;
-        assert_eq!(interval_secs(&common), 60);
-        common.check_interval_minutes = 0;
-        assert_eq!(
-            interval_secs(&common),
-            60,
-            "a hand-edited 0 reads as 1 minute"
-        );
-    }
-
-    // ST-UPD-01
-    #[test]
-    fn the_next_check_uses_the_later_of_the_interval_and_the_backoff() {
-        let now = 2_000_000_000;
-        let mut common = CommonSettings::default();
-        assert_eq!(
-            interval_secs(&common),
-            7200,
-            "the interval the constants below assume"
-        );
-        common.check_for_updates = false;
-        assert_eq!(next_check_at(&common, 0), None, "checks off");
-        common.check_for_updates = true;
-        assert_eq!(
-            next_check_at(&common, 0),
-            Some(0),
-            "never checked: the backoff alone, due at once"
-        );
-        common.last_update_check = Some(now - 119 * 60);
-        assert_eq!(
-            next_check_at(&common, 0),
-            Some(now + 60),
-            "a stamp 119 minutes old"
-        );
-        common.last_update_check = Some(now - 7200);
-        assert_eq!(
-            next_check_at(&common, 0),
-            Some(now),
-            "a stamp 120 minutes old"
-        );
-        common.last_update_check = Some(now - 3600);
-        assert_eq!(
-            next_check_at(&common, now + 5000),
-            Some(now + 5000),
-            "the backoff wins when later"
-        );
-        common.last_update_check = Some(now + 100);
-        assert_eq!(
-            next_check_at(&common, 0),
-            Some(now + 7300),
-            "a clock set behind keeps the next check in the future"
         );
     }
 }

@@ -503,11 +503,10 @@ fn the_hide_id_rows_write_the_common_settings() {
     assert_eq!(ctx.common().fpc_hide_boots_id, 60, "the boots write stands");
 }
 
-// The update check's two rows, after Invert value scrolling: the checkbox
-// writes `check_for_updates`, and the interval row (disabled while the check
-// is off) writes whole `check_interval_minutes` of at least 1.
+// The update check's row, after Invert value scrolling: the checkbox writes
+// `check_for_updates`.
 #[test]
-fn the_update_check_rows_write_the_common_settings() {
+fn the_update_check_row_writes_the_common_setting() {
     let dir = TestDir::new("studio_core_settings_update_rows");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
@@ -518,14 +517,10 @@ fn the_update_check_rows_write_the_common_settings() {
         vec![calls_a],
     );
     let egui_ctx = test_context();
-    {
-        let common = ctx.common();
-        assert!(
-            !common.check_for_updates,
-            "the premise the test flips: the check starts off"
-        );
-        assert_eq!(common.check_interval_minutes, 120, "the default interval");
-    }
+    assert!(
+        !ctx.common().check_for_updates,
+        "the premise the test flips: the check starts off"
+    );
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
@@ -536,20 +531,11 @@ fn the_update_check_rows_write_the_common_settings() {
     let check = text_node(&nodes, "Check for updates")
         .bounds()
         .expect("the check row is drawn");
-    let interval_label = text_node(&nodes, "Check interval (minutes)")
-        .bounds()
-        .expect("the interval row is drawn");
     assert!(
-        check.y0 > invert.y0 && interval_label.y0 > check.y0,
-        "the two rows stand after Invert value scrolling, check then interval"
-    );
-    let interval = widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton);
-    assert!(
-        interval.is_disabled(),
-        "the interval is off while the check is"
+        check.y0 > invert.y0,
+        "the row stands after Invert value scrolling"
     );
 
-    // The checkbox writes the setting and frees the interval row.
     click(
         &egui_ctx,
         &mut app,
@@ -558,48 +544,6 @@ fn the_update_check_rows_write_the_common_settings() {
     assert!(
         ctx.common().check_for_updates,
         "the click wrote the setting"
-    );
-    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    let interval = widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton);
-    assert!(!interval.is_disabled(), "the interval is on with the check");
-
-    // A typed value writes whole hours; a typed 0 clamps to the minimum 1.
-    click(&egui_ctx, &mut app, interval);
-    frame(
-        &egui_ctx,
-        &mut app,
-        vec![egui::Event::Text("12".to_owned())],
-        true,
-    );
-    frame(&egui_ctx, &mut app, vec![key(egui::Key::Enter, true)], true);
-    assert_eq!(ctx.common().check_interval_minutes, 12);
-
-    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(
-        &egui_ctx,
-        &mut app,
-        widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton),
-    );
-    frame(
-        &egui_ctx,
-        &mut app,
-        vec![
-            egui::Event::Key {
-                key: egui::Key::A,
-                physical_key: None,
-                pressed: true,
-                repeat: false,
-                modifiers: egui::Modifiers::COMMAND,
-            },
-            egui::Event::Text("0".to_owned()),
-        ],
-        true,
-    );
-    frame(&egui_ctx, &mut app, vec![key(egui::Key::Enter, true)], true);
-    assert_eq!(
-        ctx.common().check_interval_minutes,
-        1,
-        "a typed 0 clamps to the minimum"
     );
 }
 
@@ -1000,10 +944,6 @@ fn the_common_fields_stand_24_apart_and_the_checkboxes_squares_8() {
         (
             "Check for updates",
             square(widget_on_row(&nodes, "Check for updates", Role::CheckBox)),
-        ),
-        (
-            "Check interval (minutes)",
-            field("Check interval (minutes)", Role::SpinButton),
         ),
     ];
     let squares = [
