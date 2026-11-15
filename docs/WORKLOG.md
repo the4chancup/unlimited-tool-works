@@ -1792,6 +1792,15 @@ briefs, review loops, gates and mutation runs as for any step.
       (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
       `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
       first (RUNBOOK.md design sweep)
+    - [ ] (e) for 0.1.0 (the maintainer, 2026-11-15, after C-clip r3-1: "That would never
+      happen in real life, please be mindful of overengineering"): every test module read for
+      tests of inputs no member makes, and the production branches that exist only for them:
+      two inputs landing in one frame, a key in the one frame between a state change and the
+      dialog it raises, bytes no game or tool writes, crafted files (AGENTS.md "Inputs are
+      trusted"). Each removal ruled by the lead, with the reach it lacks; a test that pins a
+      real input stays however unlikely it looks. A module (d) splits gets this read in the
+      same brief, so the pass reads each module once -> verify: the per-module list of tests
+      and branches removed, each with its ruling, and the suite green after each module
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
