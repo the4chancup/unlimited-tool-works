@@ -2148,8 +2148,8 @@ briefs, review loops, gates and mutation runs as for any step.
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
   - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
     egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
-    row is filled once with it blended over the panel's colour -> verify: a test of the
-    row's colour in both themes (`#202020`, grey 253), then
+    row is filled with mid grey at 48 of 255 instead (DECISIONS 2026-11-15) -> verify: a
+    test of the row's colour over the list in both themes (`#202020`, grey 231), then
     the built list captured beside the draft (brief `.tmp/0_0_2/teamfill/brief.md`, SWE-2,
     after barrw2)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists

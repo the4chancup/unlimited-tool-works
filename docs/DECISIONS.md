@@ -17961,3 +17961,14 @@ them. `Paste` stays enabled with a target because the window cannot see the clip
 it asks, and a copy of another kind already changes nothing under Ctrl+V.
 Plan: `plans/save_editor.md` "The toolbar", the paragraph starting "`File` is the opens
 first"; SE-GUI-56. Worklog: 0.0.2-clip.
+
+## 2026-11-15 — save_editor — A team row's fill is mid grey blended over the list, the same in both themes
+Decision: the player list's team row is filled with mid grey (127) at 48 of 255, a palette
+value equal in both themes, over the list's own colour: `#202020` on the dark list, the
+draft's, and grey 231 on the light one's white.
+Why: the row took egui's faint colour, which adds a little light to what is under it. On the
+dark list (`#0a0a0a`) it came out `#0f0f0f`, nearly the list's own, where the draft shows
+`#202020`; on the light list's white it adds nothing. Mid grey lightens the dark list and
+darkens the light one, by about the same contrast (1.2), in one fill.
+Plan: `plans/save_editor.md`, the paragraph starting "A **team row** heads each team's
+players". Worklog: 0.0.2-teamfill.
