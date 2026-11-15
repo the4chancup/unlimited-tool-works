@@ -2125,23 +2125,25 @@ fn frontline_press_fits_its_choice_at_the_settings_width() {
 }
 
 // The draft's `.rate.tri` toggles write their field, one undo entry:
-// a click on Numbers in attack's "Many" stores 3.
+// a click on Auto attack level's "Many" stores 3.
 #[test]
 fn a_numbers_choice_click_is_one_undo_entry() {
     let path = fixture(PesVersion::Pes21, "tactics_tri_undo");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_attack = 1;
+    let tactics = &mut file.team_mut(701).unwrap().tactics;
+    tactics.presets[0].sliders.numbers_in_attack = 1;
+    // On PES 21 the toggle is live only while Attack/defence levels is on
+    // (and under the default ruleset, which allows illegal formations).
+    tactics.auto.attack_defence_levels = Some(true);
     file.save(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(1600.0, 1400.0);
     open_team_view(&mut window, &mut view, 701);
 
-    // "Numbers in attack"'s "Many" is the choice under its label.
+    // "Auto attack level"'s "Many" is the choice under its label.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let many = choice_below(&nodes, "Numbers in attack", "Many");
+    let many = choice_below(&nodes, "Auto attack level", "Many");
     click(&mut window, many, &mut view);
     assert_eq!(
         team_entry(&view, 701).tactics.presets[0]
@@ -2173,8 +2175,8 @@ fn numbers_locked(
     };
     let (_, nodes, _) = frame(window, view, Vec::new());
     for (label, index, picked) in [
-        ("Numbers in attack", 1usize, "Medium"),
-        ("Numbers in defence", 0usize, "Few"),
+        ("Auto attack level", 1usize, "Medium"),
+        ("Auto defence level", 0usize, "Few"),
     ] {
         let choices = widgets_below(&nodes, label, Role::Button);
         assert_eq!(choices.len(), 3, "{label}: the three choices");
@@ -2193,7 +2195,7 @@ fn numbers_locked(
         );
     }
     let before = team_entry(view, team_id).tactics;
-    let many = centre(choice_below(&nodes, "Numbers in attack", "Many"));
+    let many = centre(choice_below(&nodes, "Auto attack level", "Many"));
     frame(window, view, pointer_at(many, true));
     frame(window, view, pointer_at(many, false));
     assert_eq!(
@@ -2222,35 +2224,61 @@ fn numbers_locked(
     );
 }
 
+/// `version`'s fixture save under `test`'s scratch folder, team 701's
+/// preset 1 storing Medium in attack and Few in defence and its
+/// Attack/defence levels flag set to `levels` (`None` on a version that
+/// stores none).
+fn numbers_save(version: PesVersion, test: &str, levels: Option<bool>) -> PathBuf {
+    let path = fixture(version, test);
+    let mut file = EditFile::from_bytes(&fixture_save(version)).unwrap();
+    let tactics = &mut file.team_mut(701).unwrap().tactics;
+    assert_eq!(
+        tactics.auto.attack_defence_levels.is_some(),
+        levels.is_some(),
+        "premise: {version:?} stores Attack/defence levels or not"
+    );
+    tactics.presets[0].sliders.numbers_in_attack = 2;
+    tactics.presets[0].sliders.numbers_in_defence = 1;
+    tactics.auto.attack_defence_levels = levels;
+    file.save(&path).unwrap();
+    path
+}
+
+/// The hover over Auto attack level's Many holding `needle`.
+fn auto_attack_tooltip(window: &mut Headless, view: &mut SaveView, needle: &str) -> Option<String> {
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let many = centre(choice_below(&nodes, "Auto attack level", "Many"));
+    tooltip_containing(window, view, many, needle)
+}
+
 // SE-GUI-71
 #[test]
-fn the_numbers_are_disabled_from_pes17_on_a_stock_game() {
+fn the_numbers_are_disabled_from_pes17_unless_the_ruleset_and_the_levels_allow_them() {
+    const STOCK: &str = "Not editable in the game from PES 2017 on";
+    const LEVELS_OFF: &str = "Used only while Attack/defence levels is on, in Automatic settings";
     let mut window = Headless::sized(1600.0, 1400.0);
+    let draw = |ui: &mut egui::Ui, view: &mut SaveView| show(ui, view, &|| Vec::new());
 
     // The PES 17 save under /vg/ League 27, which does not allow illegal
-    // formations.
-    let path = fixture(PesVersion::Pes17, "tactics_numbers_17");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_attack = 2;
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_defence = 1;
-    file.save(&path).unwrap();
+    // formations, with Attack/defence levels off: the two numbers go by
+    // their PES 2017 names, locked.
+    let path = numbers_save(PesVersion::Pes17, "tactics_numbers_17", Some(false));
     let mut view = SaveView::new();
     view.open(&path);
     view.aatf_ruleset = "vgl27".to_owned();
     open_team_view(&mut window, &mut view, 701);
-    numbers_locked(&mut window, &mut view, 701, |ui, view| {
-        show(ui, view, &|| Vec::new())
-    });
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let many = centre(choice_below(&nodes, "Numbers in attack", "Many"));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| draw(ui, &mut view));
+    for old in ["Numbers in attack", "Numbers in defence"] {
+        assert!(
+            !nodes.iter().any(|node| node.value() == Some(old)),
+            "PES 17 shows no {old:?}"
+        );
+    }
+    numbers_locked(&mut window, &mut view, 701, draw);
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, many, "Not editable"),
-        Some("Not editable in the game from PES 2017 on".to_owned()),
-        "the locked toggle's hover"
+        auto_attack_tooltip(&mut window, &mut view, STOCK),
+        Some(STOCK.to_owned()),
+        "the stock game's hover"
     );
 
     // The same with no ruleset active: the window resolves one on its
@@ -2260,13 +2288,45 @@ fn the_numbers_are_disabled_from_pes17_on_a_stock_game() {
         crate::view::tactics::show(ui, view)
     });
 
-    // Under DBC7, which allows illegal formations, a click on Many of
-    // Numbers in attack stores 3.
+    // Under DBC7, which allows illegal formations, they stay locked while
+    // Attack/defence levels is off.
     view.aatf_ruleset = "dbc7".to_owned();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    numbers_locked(&mut window, &mut view, 701, draw);
+    assert_eq!(
+        auto_attack_tooltip(&mut window, &mut view, LEVELS_OFF),
+        Some(LEVELS_OFF.to_owned()),
+        "the hover while Attack/defence levels is off"
+    );
+
+    // Attack/defence levels switched on through its checkbox.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| draw(ui, &mut view));
     click(
         &mut window,
-        choice_below(&nodes, "Numbers in attack", "Many"),
+        node_labeled(&nodes, Role::CheckBox, "Attack/defence levels"),
+        &mut view,
+    );
+    assert_eq!(
+        team_entry(&view, 701).tactics.auto.attack_defence_levels,
+        Some(true),
+        "premise: the checkbox switched Attack/defence levels on"
+    );
+
+    // /vg/ League 27 still locks them with the flag on.
+    view.aatf_ruleset = "vgl27".to_owned();
+    numbers_locked(&mut window, &mut view, 701, draw);
+    assert_eq!(
+        auto_attack_tooltip(&mut window, &mut view, STOCK),
+        Some(STOCK.to_owned()),
+        "the stock game's hover, whatever the flag"
+    );
+
+    // Under DBC7 with the flag on a click on Many of Auto attack level
+    // stores 3, and the unsaved changes list names it so.
+    view.aatf_ruleset = "dbc7".to_owned();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| draw(ui, &mut view));
+    click(
+        &mut window,
+        choice_below(&nodes, "Auto attack level", "Many"),
         &mut view,
     );
     assert_eq!(
@@ -2276,39 +2336,30 @@ fn the_numbers_are_disabled_from_pes17_on_a_stock_game() {
         3,
         "Many stored under DBC7"
     );
+    let rows = crate::view::prompt::rows(view.session.as_ref().unwrap()).unwrap();
+    assert!(
+        rows.iter()
+            .any(|row| row.cells.term.label == "Preset 1 · Auto attack level"),
+        "the unsaved changes list names Auto attack level"
+    );
 
     // The same lock on a PES 21 save under /vg/ League 27.
-    let path = fixture(PesVersion::Pes21, "tactics_numbers_21");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_attack = 2;
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_defence = 1;
-    file.save(&path).unwrap();
+    let path = numbers_save(PesVersion::Pes21, "tactics_numbers_21", Some(true));
     let mut view = SaveView::new();
     view.open(&path);
     view.aatf_ruleset = "vgl27".to_owned();
     open_team_view(&mut window, &mut view, 701);
-    numbers_locked(&mut window, &mut view, 701, |ui, view| {
-        show(ui, view, &|| Vec::new())
-    });
+    numbers_locked(&mut window, &mut view, 701, draw);
 
     // On a PES 16 save under /vg/ League 27, whose game plan still shows
-    // the two numbers, the choices are enabled and a click on Many of
-    // Numbers in attack stores 3.
-    let path = fixture(PesVersion::Pes16, "tactics_numbers_16");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes16)).unwrap();
-    file.team_mut(701).unwrap().tactics.presets[0]
-        .sliders
-        .numbers_in_attack = 1;
-    file.save(&path).unwrap();
+    // the two numbers, they keep their names, the choices are enabled and
+    // a click on Many of Numbers in attack stores 3.
+    let path = numbers_save(PesVersion::Pes16, "tactics_numbers_16", None);
     let mut view = SaveView::new();
     view.open(&path);
     view.aatf_ruleset = "vgl27".to_owned();
     open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| draw(ui, &mut view));
     let attack = widgets_below(&nodes, "Numbers in attack", Role::Button);
     let defence = widgets_below(&nodes, "Numbers in defence", Role::Button);
     for choice in attack.iter().chain(defence.iter()) {

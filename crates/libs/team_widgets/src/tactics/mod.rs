@@ -193,6 +193,9 @@ impl Medal {
 struct SliderSpec {
     /// The cell's label.
     label: &'static str,
+    /// The cell's label from PES 2017 on, where it differs: there the two
+    /// numbers are the team's automatic attack and defence levels.
+    pes17_label: Option<&'static str>,
     /// The preset field the slider writes (`tactics_term`'s key into the
     /// table, so a row's label is never a second copy).
     field: PresetField,
@@ -204,10 +207,21 @@ struct SliderSpec {
     set: fn(&mut TacticSliders, u8),
 }
 
+impl SliderSpec {
+    /// The cell's label on `version`'s save.
+    fn label_for(&self, version: PesVersion) -> &'static str {
+        match self.pes17_label {
+            Some(label) if version >= PesVersion::Pes17 => label,
+            _ => self.label,
+        }
+    }
+}
+
 /// The five sliders, in the draft's order.
 const SLIDERS: [SliderSpec; 5] = [
     SliderSpec {
         label: "Support range",
+        pes17_label: None,
         field: PresetField::SupportRange,
         max: 10,
         get: |sliders| sliders.support_range,
@@ -215,6 +229,7 @@ const SLIDERS: [SliderSpec; 5] = [
     },
     SliderSpec {
         label: "Defensive line",
+        pes17_label: None,
         field: PresetField::DefensiveLine,
         max: 10,
         get: |sliders| sliders.defensive_line,
@@ -222,6 +237,7 @@ const SLIDERS: [SliderSpec; 5] = [
     },
     SliderSpec {
         label: "Compactness",
+        pes17_label: None,
         field: PresetField::Compactness,
         max: 10,
         get: |sliders| sliders.compactness,
@@ -229,6 +245,7 @@ const SLIDERS: [SliderSpec; 5] = [
     },
     SliderSpec {
         label: "Numbers in attack",
+        pes17_label: Some("Auto attack level"),
         field: PresetField::NumbersInAttack,
         max: 3,
         get: |sliders| sliders.numbers_in_attack,
@@ -236,6 +253,7 @@ const SLIDERS: [SliderSpec; 5] = [
     },
     SliderSpec {
         label: "Numbers in defence",
+        pes17_label: Some("Auto defence level"),
         field: PresetField::NumbersInDefence,
         max: 3,
         get: |sliders| sliders.numbers_in_defence,
@@ -360,9 +378,15 @@ const NUMBERS: [PresetField; 2] = [PresetField::NumbersInAttack, PresetField::Nu
 /// for the stored 1, 2 and 3.
 const TRI_CHOICES: [&str; 3] = ["Few", "Medium", "Many"];
 
-/// The locked numbers toggle's hover: the versions whose own game plan
-/// no longer offers the two numbers.
+/// The numbers toggles' hover while the active ruleset forbids illegal
+/// formations, on the versions whose own game plan no longer offers the
+/// two numbers.
 const NUMBERS_LOCKED_TIP: &str = "Not editable in the game from PES 2017 on";
+/// The numbers toggles' hover on those versions while the team's
+/// Attack/defence levels flag is off, since the game reads the two
+/// numbers only while it is on.
+const NUMBERS_LEVELS_OFF_TIP: &str =
+    "Used only while Attack/defence levels is on, in Automatic settings";
 
 /// The two halves' gap in the settings rows (the draft's `.tacrows`
 /// `column-gap: 16px`).
@@ -473,14 +497,11 @@ pub fn fluid_formation(ui: &mut egui::Ui, tactics: &mut TeamTactics, view: &Tact
 /// pair at the right, the draft's `TAC_OFFENSIVE` / `TAC_DEFENSIVE`
 /// order — each cell its label over its control in a box 24 points
 /// tall. The frame fills the cell the host gives the panel (the
-/// pitch's height). From PES 2017 on the game's own game plan no longer
-/// shows the two numbers, so on the stock game their toggles are
-/// locked, the stored choice still marked: a member cannot set a value
-/// the game never offers, while a cup whose ruleset allows illegal
-/// formations already edits past the game's menus and keeps them.
-/// `illegal_formations` is the active ruleset's flag, as
-/// `advanced_instructions` takes it. Edits the preset on screen;
-/// answers `true` only when `tactics` changed this frame.
+/// pitch's height). The two numbers' toggles may be locked, the stored
+/// choice still marked (`numbers_lock`). `illegal_formations` is the
+/// active ruleset's flag, as `advanced_instructions` takes it. Edits the
+/// preset on screen; answers `true` only when `tactics` changed this
+/// frame.
 pub fn formation_settings(
     ui: &mut egui::Ui,
     version: PesVersion,
@@ -488,10 +509,10 @@ pub fn formation_settings(
     view: &TacticsView,
     illegal_formations: bool,
 ) -> bool {
+    // The lock is the version's, the ruleset's and the team's, not the
+    // preset's: every preset's two toggles lock alike.
+    let numbers_lock = numbers_lock(version, tactics, illegal_formations);
     let preset = &mut tactics.presets[view.preset.min(2)];
-    // The lock is the version's and the ruleset's, not the preset's:
-    // every preset's two toggles lock alike.
-    let numbers_locked = version >= PesVersion::Pes17 && !illegal_formations;
     // The answer is the deep compare, not the responses' `changed()`: a
     // control re-picked at its own value reports nothing.
     let before = preset.clone();
@@ -526,27 +547,54 @@ pub fn formation_settings(
                 // The cell's content at its top (`align-items: start`),
                 // the control 2 under the label (`.tset`).
                 cell_ui.spacing_mut().item_spacing.y = CELL_GAP;
-                setting_cell(&mut cell_ui, preset, field, numbers_locked);
+                setting_cell(&mut cell_ui, version, preset, field, numbers_lock);
             }
         }
     });
     *preset != before
 }
 
+/// Why the two numbers' toggles are locked on `version`'s save, as
+/// their hover says it, or `None` while they are editable. From PES
+/// 2017 on the game's own game plan no longer shows the two numbers, so
+/// they are locked unless the active ruleset allows illegal formations
+/// (`illegal_formations`): a member cannot set a value the game never
+/// offers, while a cup that edits past the game's menus keeps them.
+/// The game is said to read them only while the team's Attack/defence
+/// levels flag is on, so they are also locked while it is off.
+fn numbers_lock(
+    version: PesVersion,
+    tactics: &TeamTactics,
+    illegal_formations: bool,
+) -> Option<&'static str> {
+    if version < PesVersion::Pes17 {
+        return None;
+    }
+    if !illegal_formations {
+        return Some(NUMBERS_LOCKED_TIP);
+    }
+    if tactics.auto.attack_defence_levels != Some(true) {
+        return Some(NUMBERS_LEVELS_OFF_TIP);
+    }
+    None
+}
+
 /// One setting's cell of the rows (the draft's `setting` for a key): a
 /// slider, a numbers toggle or a style pair — never the fluid switch,
-/// which lives on the preset bar.
+/// which lives on the preset bar. `numbers_lock` is `numbers_lock`'s
+/// answer.
 fn setting_cell(
     ui: &mut egui::Ui,
+    version: PesVersion,
     preset: &mut TacticsPreset,
     field: &PresetField,
-    numbers_locked: bool,
+    numbers_lock: Option<&'static str>,
 ) {
     if let Some(spec) = SLIDERS.iter().find(|spec| spec.field == *field) {
-        ui.label(spec.label);
+        ui.label(spec.label_for(version));
         control_box(ui, |ui| {
             if NUMBERS.contains(field) {
-                number_choices(ui, &mut preset.sliders, spec, !numbers_locked);
+                number_choices(ui, &mut preset.sliders, spec, numbers_lock);
             } else {
                 slider(ui, &mut preset.sliders, spec);
             }
@@ -643,21 +691,21 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 /// and down to the left, wrapping round to the other end past the last.
 /// A stored value outside 1-3 (a hand-edited save) selects none and
 /// writes nothing until a choice is clicked; the wheel leaves it too.
-/// Locked (the stock game of a version whose game plan drops the two
-/// numbers, the draft's `.rate.tri.off`): the choices draw disabled, a
-/// click or a wheel step changing nothing, their hover
-/// `NUMBERS_LOCKED_TIP`; the stored choice is drawn as a disabled button
-/// (`lock_selection`).
+/// Locked, when `lock` holds a hover (`numbers_lock`, the draft's
+/// `.rate.tri.off`): the choices draw disabled with that hover, a click
+/// or a wheel step changing nothing, and the stored choice is drawn as a
+/// disabled button (`lock_selection`).
 fn number_choices(
     ui: &mut egui::Ui,
     sliders: &mut TacticSliders,
     spec: &SliderSpec,
-    editable: bool,
+    lock: Option<&'static str>,
 ) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - 2.0 * CHOICE_GAP) / 3.0;
     let mut value = (spec.get)(sliders);
+    let editable = lock.is_none();
     // The three choices as one control, so the wheel over any moves it.
     let control = add_enabled_ui(ui, editable, |ui| {
         if !editable {
@@ -680,8 +728,8 @@ fn number_choices(
             .expect("a numbers toggle has three choices")
     })
     .inner;
-    if !editable {
-        control.on_disabled_hover_text(NUMBERS_LOCKED_TIP);
+    if let Some(tip) = lock {
+        control.on_disabled_hover_text(tip);
         return;
     }
     // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
@@ -1037,7 +1085,7 @@ pub fn tactics_term(
     match field {
         TacticsField::TeamId => ("Team ID".to_owned(), old.to_string(), new.to_string()),
         TacticsField::Preset { preset, field: pf } => (
-            format!("Preset {} · {}", preset + 1, preset_label(pf)),
+            format!("Preset {} · {}", preset + 1, preset_label(version, pf)),
             preset_value(pf, old),
             preset_value(pf, new),
         ),
@@ -1185,17 +1233,17 @@ fn instruction_text(version: PesVersion, stored: u8) -> String {
         )
 }
 
-/// A preset field's label on the tab (`SLIDERS`, `STYLE_TOGGLES` or the
-/// fluid switch): `tactics_term` reads the tab's own tables, never a
-/// second copy.
-fn preset_label(field: PresetField) -> &'static str {
+/// A preset field's label on `version`'s tab (`SLIDERS`, `STYLE_TOGGLES`
+/// or the fluid switch): `tactics_term` reads the tab's own tables, never
+/// a second copy.
+fn preset_label(version: PesVersion, field: PresetField) -> &'static str {
     if field == PresetField::FluidFormation {
         return FLUID_LABEL;
     }
     SLIDERS
         .iter()
         .find(|spec| spec.field == field)
-        .map(|spec| spec.label)
+        .map(|spec| spec.label_for(version))
         .or_else(|| {
             STYLE_TOGGLES
                 .iter()

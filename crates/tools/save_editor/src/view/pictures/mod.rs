@@ -1145,13 +1145,13 @@ mod tests {
             (3.0, "Attacking zone", "Wide"),
             (4.0, "Positioning", "Maintain"),
             (5.0, "Support range", "4"),
-            (6.0, "Numbers in attack", "Medium"),
+            (6.0, "Auto attack level", "Medium"),
             (7.5, "Defensive style", "Frontline Pressure"),
             (8.5, "Containment area", "Middle"),
             (9.5, "Pressure", "Conservative"),
             (10.5, "Defensive line", "5"),
             (11.5, "Compactness", "5"),
-            (12.5, "Numbers in defence", "Medium"),
+            (12.5, "Auto defence level", "Medium"),
         ] {
             expected.extend(setting(at, label, value));
         }
