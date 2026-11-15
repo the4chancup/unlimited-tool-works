@@ -97,6 +97,9 @@
 - **Save editor**: while a Starting eleven or Bench row is dragged over a player on the
   Tactics pitch, that player is marked as a dragged pitch player's target is, so you see
   who the drop swaps out.
+- **Save editor**: in the Import / export window, a button beside `Import into` selects the
+  team the picked file was exported from, so it imports back onto that team without a
+  search in the list.
 
 ### New checks
 
@@ -165,6 +168,10 @@
   the notice after a paste that left values out ends with a full stop.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.
+- **Save editor**: the filter box matches an ID from its start, so `820` lists team 820 and
+  its squad, no longer every player whose ID holds 820 somewhere.
+- **Save editor**: Page Up and Page Down bring the team row they select to the top of the
+  list, with its players under it.
 
 ## [0.0.1] - 2026-11-03
 
