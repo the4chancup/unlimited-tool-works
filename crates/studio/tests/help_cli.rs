@@ -101,7 +101,13 @@ fn the_export_writes_one_markdown_file_per_chapter() {
         assert_eq!(file.lines().last(), Some(last_row), "{id}");
     }
     // The core chapters end with their last topic, having no catalog.
-    for id in ["setting-up", "first-run", "updates", "reporting", "whats-new"] {
+    for id in [
+        "setting-up",
+        "first-run",
+        "updates",
+        "reporting",
+        "whats-new",
+    ] {
         let printed = studio(&["help", id]);
         assert_eq!(printed.status.code(), Some(0), "{id}: {}", stderr(&printed));
         assert_eq!(
