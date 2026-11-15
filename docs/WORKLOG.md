@@ -2138,6 +2138,14 @@ briefs, review loops, gates and mutation runs as for any step.
     a release frame of the list with four teams' 2,494 rows 17.45 ms -> 1.01 ms, the close
     prompt 8.73 -> 0.97. Scrolled in the built window with two imports; card
     `test-changes-scroll` asks the maintainer to try four
+    - [ ] no row pops in during a fast scroll -> verify: a test in `tests/changes_popup.rs`
+      wheeling the four-team list fast and asserting, on every frame until it settles, that
+      the drawn rows cover the list's box top to bottom; red with the drawn range one row
+      short (SWE-2, after updrw2)
+  - [ ] 0.0.2-taskbuild the tasks page names the build its cards run on -> verify: the next
+    release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
+    the page's intro naming that path and the commit it was built from; refreshed whenever
+    a card is added from a later commit (RUNBOOK "Looks owed have one home each")
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
