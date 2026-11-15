@@ -31,8 +31,10 @@ pub struct TeamTactics {
 
 /// The nine bench entries past the twelve, as the game writes them: the
 /// roster slots from 0 that neither `starting_eleven` nor the twelve
-/// name, ascending. A Team TOML import reproduces this fill, so an
-/// imported bench's other nine are these, whatever the target held.
+/// name, ascending. A Team TOML import fills the nine with these when
+/// the eleven or the twelve it applied changed the record's; an import
+/// that changed neither keeps the record's own nine, which need not be
+/// this fill.
 pub fn bench_fill(starting_eleven: &[u8; 11], bench: &[u8; 12]) -> [u8; 9] {
     let mut named = [false; 256];
     for slot in starting_eleven.iter().chain(bench) {
