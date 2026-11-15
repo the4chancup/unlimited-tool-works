@@ -15,6 +15,16 @@ the maintainer marked low importance fill the time while those sidekicks run, an
 take their place. We do not pick by what is convenient to brief: a low-importance ask and
 three review loops once ran before the release's largest open step was started.
 
+**A process that fails or wastes time is looked at, not only run again.** When part of how
+the work runs fails (a gate, a build, a sidekick or review run, a script) or takes
+noticeably longer than its work needs, the lead steps back before going on and asks why,
+and whether a change to the process would stop it happening again or make it cheaper. The
+run's own logs answer first, a measurement where they do not. A change worth making becomes
+a worklog step at once, even when the run in hand is left to finish, and the turn's report
+names it. We do not just rerun and move on: save_editor's mutation run held a checkpoint for
+about 12.5 hours before anyone asked why, and the answer was that each caught mutant still
+ran most of the test suite.
+
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
