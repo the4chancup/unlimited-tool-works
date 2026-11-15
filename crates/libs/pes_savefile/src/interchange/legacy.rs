@@ -399,7 +399,7 @@ fn read_player(
         shirt_name: Some(single_byte_string(
             &record[SHIRT_NAME..SHIRT_NAME + SHIRT_NAME_LEN],
         )),
-        number,
+        shirt_number: number,
         ..PlayerSection::default()
     };
     for &(offset, key) in U8_SCALARS.iter().chain(EDIT_FLAGS) {
@@ -1099,7 +1099,7 @@ mod tests {
         // The numbers block is roster order: slot 1 keeps its own entry.
         let numbers = &PARITY16[HEADER + 23 * RECORD..];
         let first = u16::from_le_bytes([numbers[0], numbers[1]]);
-        assert_eq!(doc.players[&1].number, Some(first));
+        assert_eq!(doc.players[&1].shirt_number, Some(first));
     }
 
     /// More records than the target roster holds is `MoreRecordsThanRoster`.

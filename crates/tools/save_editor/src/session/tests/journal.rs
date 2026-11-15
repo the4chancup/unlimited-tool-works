@@ -422,7 +422,7 @@ fn an_import_writes_only_the_players_the_roster_names() {
         empty + 1,
         PlayerSection {
             name: Some("NOBODY".to_owned()),
-            number: Some(9),
+            shirt_number: Some(9),
             ..Default::default()
         },
     );

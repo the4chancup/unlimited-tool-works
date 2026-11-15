@@ -1324,7 +1324,7 @@ fn an_unencodable_playing_style_notes_its_own_label() {
 }
 
 /// `from_team` carries every rostered slot's shirt number into
-/// `players[NN].number`.
+/// `players[NN].shirt_number`.
 #[test]
 fn from_team_carries_every_rostered_slots_shirt_number() {
     for version in FIXTURES {
@@ -1342,7 +1342,9 @@ fn from_team_carries_every_rostered_slots_shirt_number() {
                 }
                 let key = u8::try_from(i + 1).expect("a slot index");
                 assert_eq!(
-                    doc.players.get(&key).and_then(|section| section.number),
+                    doc.players
+                        .get(&key)
+                        .and_then(|section| section.shirt_number),
                     Some(slot.number),
                     "{version:?} team {} slot {key}",
                     team.id
@@ -1704,7 +1706,8 @@ fn a_width_valid_stored_label_without_a_label_round_trips_as_an_integer() {
 /// clamped. PES 18's field is 8 bits; PES 19's is 16.
 #[test]
 fn a_number_past_the_target_fields_width_is_refused() {
-    let doc = TeamToml::parse("pes_version = 19\n\n[players.01]\nnumber = 999\n").expect("parses");
+    let doc =
+        TeamToml::parse("pes_version = 19\n\n[players.01]\nshirt_number = 999\n").expect("parses");
 
     let (file18, _) = open(PesVersion::Pes18);
     let team18 = file18
@@ -1724,12 +1727,13 @@ fn a_number_past_the_target_fields_width_is_refused() {
                 ref key,
                 value: 999,
                 ref range,
-            } if key == "players.01.number" && range == "0 to 255"
+            } if key == "players.01.shirt_number" && range == "0 to 255"
         ),
         "{err:?}"
     );
     assert_eq!(&target, team18, "nothing was written");
-    let edge = TeamToml::parse("pes_version = 19\n\n[players.01]\nnumber = 255\n").expect("parses");
+    let edge =
+        TeamToml::parse("pes_version = 19\n\n[players.01]\nshirt_number = 255\n").expect("parses");
     edge.apply(PesVersion::Pes18, &mut target, &mut players18)
         .expect("255 is the 8-bit field's last value");
     assert_eq!(target.roster[0].number, 255);

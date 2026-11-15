@@ -1617,7 +1617,7 @@ mod tests {
         for (key, section) in &doc.players {
             let index = usize::from(*key - 1);
             assert_eq!(
-                section.number,
+                section.shirt_number,
                 Some(texport.team().roster[index].number),
                 "slot {key}"
             );

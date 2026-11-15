@@ -448,7 +448,7 @@ defence = [{ instruction = "off", player = 0 }, { instruction = "off", player = 
 [players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18)
 name = "YOUR SKILL: A FAILURE"
 shirt_name = "SCORE"
-number = 1                      # shirt number
+shirt_number = 1
 nationality = 231
 age = 25
 height = 180                    # cm
