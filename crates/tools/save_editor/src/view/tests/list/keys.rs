@@ -17,9 +17,14 @@ fn listed_selections(view: &SaveView) -> Vec<Selection> {
     .collect()
 }
 
-/// A PageDown (`forward`) or PageUp press as one frame of the view.
-fn page_key_press(window: &mut Headless, view: &mut SaveView, forward: bool) {
-    window.frame(
+/// A PageDown (`forward`) or PageUp press as one frame of the view: the
+/// frame's nodes and shapes.
+fn page_key_press(
+    window: &mut Headless,
+    view: &mut SaveView,
+    forward: bool,
+) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+    let (_, nodes, shapes) = window.frame(
         vec![key(
             if forward {
                 egui::Key::PageDown
@@ -31,15 +36,16 @@ fn page_key_press(window: &mut Headless, view: &mut SaveView, forward: bool) {
         )],
         |ui| show(ui, view, &|| Vec::new()),
     );
+    (nodes, shapes)
 }
 
-/// The list's scroll area's clip rect's top edge, read off the selected
-/// row's fill: it is the painted shape containing `bounds`' centre.
-fn clip_top(
+/// The list's scroll area's clip rect, read off the selected row's
+/// fill: it is the painted shape containing `bounds`' centre.
+fn list_clip(
     window: &Headless,
     shapes: &[egui::epaint::ClippedShape],
     bounds: accesskit::Rect,
-) -> f32 {
+) -> egui::Rect {
     let selection = window
         .ctx
         .style_of(window.ctx.theme())
@@ -54,11 +60,33 @@ fn clip_top(
         .iter()
         .find_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape) if shape.fill == selection && shape.rect.contains(centre) => {
-                Some(clipped.clip_rect.top())
+                Some(clipped.clip_rect)
             }
             _ => None,
         })
         .expect("the selected row's fill")
+}
+
+/// A window drawing one pass a frame: a scroll landing on a later pass
+/// could borrow another view's `request_discard`, and the tests using it
+/// read what the key's own frame draws.
+fn one_pass_window() -> Headless {
+    let window = Headless::new();
+    window
+        .ctx
+        .options_mut(|options| options.max_passes = std::num::NonZeroUsize::MIN);
+    window
+}
+
+/// Whether `node` is one of the list's rows: a player row
+/// (`player_row`), or a team row, whose label is `{id} {name}`.
+fn list_row(node: &accesskit::Node) -> bool {
+    player_row(node)
+        || (node.role() == Role::Button
+            && node
+                .label()
+                .and_then(|label| label.split_whitespace().next())
+                .is_some_and(|word| word.parse::<u32>().is_ok()))
 }
 
 // SE-GUI-53
@@ -305,9 +333,9 @@ fn the_list_scrolls_to_keep_a_paged_selection_in_view() {
     );
 }
 
-// A team row the page keys select stands at the list's top edge, so its
-// players fill the list under it: the scroll reaches its place two frames
-// after the key, one for the move, one for egui to land it.
+// A team row the page keys select stands at the list's top edge on the
+// press's own frame, so its players fill the list under it: the scroll
+// lands with the selection it follows.
 // SE-GUI-103
 #[test]
 fn a_team_row_the_page_keys_select_scrolls_to_the_lists_top() {
@@ -326,49 +354,202 @@ fn a_team_row_the_page_keys_select_scrolls_to_the_lists_top() {
         unreachable!("teams holds team rows")
     };
     view.selected = Some(first);
-    let mut window = Headless::new();
+    let mut window = one_pass_window();
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     // The list stands at its top, the first team's row at the clip's edge.
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = team_row(&nodes, &view, first_id).bounds().expect("bounds");
-    let top = clip_top(&window, &shapes, bounds);
+    let clip = list_clip(&window, &shapes, bounds);
     assert!(
-        (bounds.y0 - f64::from(top)).abs() <= 1.0,
-        "premise: the list is at its top ({bounds:?} vs {top})"
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "premise: the list is at its top ({bounds:?} vs {clip:?})"
     );
 
-    page_key_press(&mut window, &mut view, true);
+    let (nodes, shapes) = page_key_press(&mut window, &mut view, true);
     assert_eq!(
         view.selected,
         Some(second),
         "premise: PgDn selected the second team's row"
     );
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = team_row(&nodes, &view, second_id)
         .bounds()
         .expect("the second team's row is drawn");
-    let top = clip_top(&window, &shapes, bounds);
+    let clip = list_clip(&window, &shapes, bounds);
     assert!(
-        (bounds.y0 - f64::from(top)).abs() <= 1.0,
-        "the second team's row at the list's top ({bounds:?} vs {top})"
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "the second team's row at the list's top on the press's frame ({bounds:?} vs {clip:?})"
     );
 
-    page_key_press(&mut window, &mut view, false);
+    let (nodes, shapes) = page_key_press(&mut window, &mut view, false);
     assert_eq!(
         view.selected,
         Some(first),
         "premise: PgUp selected the first team's row again"
     );
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = team_row(&nodes, &view, first_id)
         .bounds()
         .expect("the first team's row is drawn");
-    let top = clip_top(&window, &shapes, bounds);
+    let clip = list_clip(&window, &shapes, bounds);
     assert!(
-        (bounds.y0 - f64::from(top)).abs() <= 1.0,
-        "the first team's row back at the list's top ({bounds:?} vs {top})"
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "the first team's row back at the list's top on the press's frame ({bounds:?} vs {clip:?})"
+    );
+}
+
+// PgDn held over the team rows: every press's own frame draws its
+// selected row at the list's top edge; a scroll landing a frame late
+// would flicker the rows between their old and new places. The last
+// team's row stands as high as the list's end lets it.
+// SE-GUI-103
+#[test]
+fn a_held_pgdn_draws_each_selected_team_row_at_the_lists_top() {
+    let path = fixture(PesVersion::Pes21, "page_keys_held");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let drawn = listed_selections(&view);
+    let teams: Vec<Selection> = drawn
+        .iter()
+        .copied()
+        .filter(|row| matches!(row, Selection::Team(_)))
+        .collect();
+    assert!(
+        teams.len() > 11,
+        "premise: eleven team rows or more listed ({})",
+        teams.len()
+    );
+    view.selected = Some(teams[0]);
+    let mut window = one_pass_window();
+    draw(&mut window, &mut view);
+
+    for (press, team) in teams.iter().enumerate().skip(1).take(10) {
+        let (nodes, shapes) = page_key_press(&mut window, &mut view, true);
+        assert_eq!(
+            view.selected,
+            Some(*team),
+            "press {press}: the next team's row selected"
+        );
+        let Selection::Team(team_id) = team else {
+            unreachable!("teams holds team rows")
+        };
+        let bounds = team_row(&nodes, &view, *team_id)
+            .bounds()
+            .expect("the selected team's row is drawn");
+        let clip = list_clip(&window, &shapes, bounds);
+        assert!(
+            (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+            "press {press}: the selected team's row at the list's top ({bounds:?} vs {clip:?})"
+        );
+    }
+
+    // The last team's row: the list scrolls to its end, the row as high
+    // as that leaves it. The end shows as the last listed row's bottom
+    // edge at the clip's.
+    let Selection::Team(last_id) = teams.last().copied().expect("a last team") else {
+        unreachable!("teams holds team rows")
+    };
+    view.selected = Some(teams[teams.len() - 2]);
+    let (nodes, shapes) = page_key_press(&mut window, &mut view, true);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(last_id)),
+        "premise: PgDn selected the last team's row"
+    );
+    let bounds = team_row(&nodes, &view, last_id)
+        .bounds()
+        .expect("the last team's row is drawn");
+    let clip = list_clip(&window, &shapes, bounds);
+    let bottom = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .filter_map(accesskit::Node::bounds)
+        .filter(|bounds| {
+            bounds.x0 < f64::from(clip.right())
+                && bounds.y0 >= f64::from(clip.top()) - 1.0
+                && bounds.y1 <= f64::from(clip.bottom()) + 1.0
+        })
+        .map(|bounds| bounds.y1)
+        .fold(f64::MIN, f64::max);
+    assert!(
+        (bottom - f64::from(clip.bottom())).abs() <= 1.0,
+        "the list scrolled to its end ({bottom} vs {:?})",
+        clip.bottom()
+    );
+    assert!(
+        bounds.y0 >= f64::from(clip.top()) - 1.0 && bounds.y1 <= f64::from(clip.bottom()) + 1.0,
+        "the last team's row fully in view ({bounds:?} vs {clip:?})"
+    );
+}
+
+// Down on the last row the list shows whole selects the next, whose row
+// the press's own frame draws whole at the list's bottom edge.
+// SE-GUI-103
+#[test]
+fn down_on_the_last_shown_row_draws_the_next_whole_at_the_lists_bottom_edge() {
+    let path = fixture(PesVersion::Pes21, "down_last_shown");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let drawn = listed_selections(&view);
+    let mut window = one_pass_window();
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let clip = list_clip(
+        &window,
+        &shapes,
+        nodes
+            .iter()
+            .filter(|node| player_row(node))
+            .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+            .and_then(accesskit::Node::bounds)
+            .expect("the selected row's node"),
+    );
+    // The list's drawn rows in screen order, their places the rows'
+    // indices in `drawn`, the list standing at its top: the last wholly
+    // inside the clip is the last the list shows whole.
+    let mut rows: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .filter_map(accesskit::Node::bounds)
+        .filter(|bounds| bounds.x0 < f64::from(clip.right()))
+        .collect();
+    rows.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
+    let last = rows
+        .iter()
+        .rposition(|bounds| bounds.y1 <= f64::from(clip.bottom()) + 1.0)
+        .expect("a row the list shows whole");
+    view.selected = Some(drawn[last]);
+
+    let (_, nodes, shapes) = window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(drawn[last + 1]),
+        "premise: Down selected the next row"
+    );
+    let bounds = nodes
+        .iter()
+        .filter(|node| {
+            list_row(node)
+                && node
+                    .bounds()
+                    .is_some_and(|b| b.x0 < f64::from(clip.right()))
+        })
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row's node");
+    // The press frame's own clip: the list's height follows the quick
+    // actions' panel, which the selection's change can resize.
+    let press_clip = list_clip(&window, &shapes, bounds);
+    assert!(
+        bounds.y0 >= f64::from(press_clip.top()) - 1.0,
+        "the next row shown whole ({bounds:?} vs {press_clip:?})"
+    );
+    assert!(
+        (bounds.y1 - f64::from(press_clip.bottom())).abs() <= 1.0,
+        "the next row at the list's bottom edge ({bounds:?} vs {press_clip:?})"
     );
 }
 
