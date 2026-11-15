@@ -2146,6 +2146,11 @@ briefs, review loops, gates and mutation runs as for any step.
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
+    egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
+    panel fill goes under it -> verify: a test of the two fills' order in both themes, then
+    the built list captured beside the draft (brief `.tmp/0_0_2/teamfill/brief.md`, SWE-2,
+    after barrw2)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
