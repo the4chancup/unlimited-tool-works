@@ -305,6 +305,12 @@ impl Session {
         Some(player_id)
     }
 
+    /// The id whose record of the file as opened or last saved `id` holds
+    /// (its own id when it holds its own).
+    pub(crate) fn record_of(&self, id: u32) -> u32 {
+        origin(&self.origins, id)
+    }
+
     /// Replaces the player `edited.id` names with `edited` and pushes the
     /// change under `key` (the widget's `egui::Id` value, the undo stack's
     /// merge key); `edited` equal to the stored entry pushes nothing.

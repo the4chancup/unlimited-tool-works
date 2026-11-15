@@ -10,7 +10,7 @@ use team_widgets::violations::{SWITCH_TOOLTIP, SelectedPlayer};
 
 use crate::session::PutBack;
 use crate::view::prompt::{self, UnsavedRow};
-use crate::view::{Refusal, SaveView, aatf_check, comparator};
+use crate::view::{Refusal, SaveView, aatf_check, comparator, following_selection};
 
 /// The label's tooltip.
 const TOOLTIP: &str = "Lists the changes since the save was opened or last saved";
@@ -288,10 +288,18 @@ fn switch_to(view: &mut SaveView, index: usize) {
 /// put back (stale under it, which an open list never is) shows as a
 /// refusal.
 fn put_back_row(view: &mut SaveView, index: usize) {
-    let (Some(session), Some(list)) = (view.session.as_mut(), view.changes_list.as_ref()) else {
+    // The list comes out of the view for the call: `put_back` runs inside
+    // `following_selection`, which borrows the view mutably.
+    let Some(list) = view.changes_list.take() else {
         return;
     };
-    if let Err(error) = session.put_back(&list.rows[index].put_back) {
+    let Some(result) =
+        following_selection(view, |session| session.put_back(&list.rows[index].put_back))
+    else {
+        view.changes_list = Some(list);
+        return;
+    };
+    if let Err(error) = result {
         view.refusal = Some(Refusal {
             title: "Cannot undo this change",
             message: format!("{error:#}"),
@@ -299,6 +307,7 @@ fn put_back_row(view: &mut SaveView, index: usize) {
         view.changes_list = None;
         return;
     }
+    let session = view.session.as_ref().expect("the put-back ran on it");
     let (dirty, revision) = (session.is_dirty(), session.revision());
     view.changes_list = if dirty { open(view, revision) } else { None };
 }
