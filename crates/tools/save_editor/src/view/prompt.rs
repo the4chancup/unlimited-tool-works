@@ -24,7 +24,7 @@ use team_widgets::tactics::RosterRow;
 use crate::session::selection::{self, TeamCategory, TeamChoice};
 use crate::session::{MovedPlace, PutBack, Session};
 use crate::view::terms::{self, Term};
-use crate::view::{Refusal, SaveView, info_strip, save, write_now};
+use crate::view::{Refusal, SaveView, following_selection, info_strip, save, write_now};
 
 /// A confirmation modal: `title`, `text`, then `accept` and Cancel. The
 /// answer, `None` while it waits; closing it is Cancel.
@@ -72,7 +72,7 @@ pub(crate) enum Pending {
 /// rows, computed once when the prompt opens, never per frame.
 pub(crate) struct Prompt {
     /// What the prompt does once answered.
-    pending: Pending,
+    pub(super) pending: Pending,
     /// The table's rows.
     rows: Vec<UnsavedRow>,
     /// The table's measured geometry, filled on its first frame.
@@ -423,12 +423,15 @@ pub(super) fn roster_for<'a>(
 /// answers. Cancel — the button, Esc or a click on the backdrop — closes
 /// it and changes nothing; Discard goes on at once; Save writes first
 /// and goes on only once the file is written (the running-game question
-/// first when the save's own PES runs).
+/// first when the save's own PES runs). A row's X puts that change back
+/// alone, the prompt open a row shorter — or, the last row's, runs the
+/// pending action as a clean save's prompt would.
 pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
     let Some(prompt) = view.prompt.as_mut() else {
         return;
     };
     let mut answer = None;
+    let mut click = None;
     let id = egui::Id::unique("save_editor_unsaved");
     let response = modal(ui.ctx(), id, "Unsaved changes", |ui| {
         // The modal is as wide as its widest row, at most nine tenths of
@@ -437,14 +440,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // sideways inside the table, no line of a cell wrapped.
         let chrome = modal_frame(ui.style()).total_margin().sum().x;
         ui.set_max_width((ui.ctx().content_rect().width() * 0.9 - chrome).max(0.0));
-        egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
-            changes_table(
-                ui,
-                prompt.rows.iter().map(|row| &row.cells),
-                None,
-                &mut prompt.layout,
-            );
-        });
+        click = table_with_xs(ui, &prompt.rows, &mut prompt.layout, None, 0.0);
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
                 answer = Some(Answer::Cancel);
@@ -475,6 +471,9 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             }
         }
         None => {}
+    }
+    if let Some(TableClick::PutBack(index)) = click {
+        put_back_row(view, index);
     }
 }
 
@@ -813,6 +812,101 @@ fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
     egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
 }
 
+/// The tooltip of a row's X.
+const X_TOOLTIP: &str = "Undoes this change alone";
+
+/// A click inside `table_with_xs`.
+pub(super) enum TableClick {
+    /// A row's X: puts that change back alone.
+    PutBack(usize),
+    /// A row's item: switches to what the row names (the toolbar's
+    /// list's; the prompt's items take no click).
+    Switch(usize),
+}
+
+/// The changes table with an X ending each row under an `Undo` head
+/// (the draft's `changesTable`), the toolbar's changes list's and the
+/// close prompt's alike, scrolling up and down past 240 points; the
+/// click inside it this frame. The X's and their head stand in a column
+/// right of the sideways scroll area, inside the one that scrolls up
+/// and down, each on its row's first line: a wide row scrolls sideways
+/// under the column, so neither the head nor an X leaves the view. A
+/// table narrower than `min_width` (the list's floor; the prompt has
+/// none) keeps the column at its right edge, and each separator line is
+/// carried on under the column, so it runs the whole row. `tips` is
+/// `changes_table`'s `switch`: the rows' item tooltips.
+pub(super) fn table_with_xs(
+    ui: &mut egui::Ui,
+    rows: &[UnsavedRow],
+    layout: &mut TableLayout,
+    tips: Option<&[Option<&'static str>]>,
+    min_width: f32,
+) -> Option<TableClick> {
+    let error = ui.visuals().error_fg_color;
+    let separator = ui.visuals().widgets.noninteractive.bg_stroke;
+    // The head, drawn as the table's other heads are (the strong text
+    // colour); its width sets the column's.
+    let galley =
+        egui::WidgetText::from(egui::RichText::new("Undo").color(ui.visuals().strong_text_color()))
+            .into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::TextStyle::Body,
+            );
+    let x_width = ui.spacing().interact_size.y.max(galley.size().x);
+    egui::ScrollArea::vertical()
+        .max_height(240.0)
+        .show(ui, |ui| {
+            ui.horizontal_top(|ui| {
+                let left = ui.cursor().min.x;
+                let spacing = ui.spacing().item_spacing.x;
+                let table_width = (ui.available_width() - x_width - spacing).max(0.0);
+                let table = egui::ScrollArea::horizontal()
+                    .id_salt("save_editor_changes_list_sideways")
+                    .max_width(table_width)
+                    .show(ui, |ui| {
+                        changes_table(ui, rows.iter().map(|row| &row.cells), tips, layout)
+                    });
+                let column = ui.cursor().min.x.max(left + min_width - x_width);
+                // The head centred in the column, on the header row's
+                // line (its galley centred in a rect of its own size).
+                ui.put(
+                    egui::Rect::from_center_size(
+                        egui::pos2(column + 0.5 * x_width, table.inner.head.center().y),
+                        galley.size(),
+                    ),
+                    egui::Label::new(egui::WidgetText::Galley(galley.clone())),
+                );
+                // Each separator line carried on under the column: drawn
+                // from the row's left edge so the stretch under the table
+                // (which the sideways scroll clips) meets the table's own.
+                for y in &table.inner.lines {
+                    ui.painter()
+                        .hline(table.inner.head.left()..=column + x_width, *y, separator);
+                }
+                let mut click = table.inner.clicked.map(TableClick::Switch);
+                // The X's salt runs from the first drawn row's index, so
+                // a row's X keeps its id as it scrolls in and out of view.
+                ui.skip_ahead_auto_ids(table.inner.items.first().map_or(0, |(index, _)| *index));
+                for &(index, item) in &table.inner.items {
+                    let rect = egui::Rect::from_min_size(
+                        egui::pos2(column, item.top()),
+                        egui::vec2(x_width, item.height()),
+                    );
+                    let x =
+                        egui::Button::new(egui::RichText::new("\u{d7}").color(error)).frame(false);
+                    if ui.put(rect, x).on_hover_text(X_TOOLTIP).clicked() {
+                        click = Some(TableClick::PutBack(index));
+                    }
+                }
+                click
+            })
+            .inner
+        })
+        .inner
+}
+
 /// The pending action once Save or Discard answers it, or at once when
 /// nothing is unsaved.
 pub(super) fn go_on(view: &mut SaveView, pending: Pending) {
@@ -828,6 +922,62 @@ pub(super) fn go_on(view: &mut SaveView, pending: Pending) {
             if let Some(path) = (view.open_dialog)(start.as_deref()) {
                 view.open(&path);
             }
+        }
+    }
+}
+
+/// `row`'s put-back as one undo step inside `following_selection` — the
+/// X's write, the toolbar's list's and the close prompt's alike:
+/// `true` when it ran. Its error (the row stale under it) shows as the
+/// refusal a put-back gets; `false` also with the session gone, which
+/// no drawn table reaches.
+pub(super) fn put_back(view: &mut SaveView, row: &PutBack) -> bool {
+    match following_selection(view, |session| session.put_back(row)) {
+        Some(Ok(())) => true,
+        Some(Err(error)) => {
+            view.refusal = Some(Refusal {
+                title: "Cannot undo this change",
+                message: format!("{error:#}"),
+            });
+            false
+        }
+        None => false,
+    }
+}
+
+/// The X of the prompt's row `index` clicked: its change put back, then
+/// the prompt open over the rows computed again, their layout measured
+/// anew — or, nothing left to save or lose, `pending` run as a clean
+/// save's prompt would answer, the prompt closed. A put-back error
+/// keeps the question up, as a refused write does.
+fn put_back_row(view: &mut SaveView, index: usize) {
+    // The prompt comes out of the view for the call: `put_back` runs
+    // inside `following_selection`, which borrows the view mutably.
+    let Some(prompt) = view.prompt.take() else {
+        return;
+    };
+    if !put_back(view, &prompt.rows[index].put_back) {
+        view.prompt = Some(prompt);
+        return;
+    }
+    let session = view.session.as_ref().expect("the put-back ran on it");
+    if !session.is_dirty() {
+        go_on(view, prompt.pending);
+        return;
+    }
+    match rows(session) {
+        Ok(rows) => {
+            view.prompt = Some(Prompt {
+                pending: prompt.pending,
+                rows,
+                layout: TableLayout::default(),
+            });
+        }
+        Err(error) => {
+            view.refusal = Some(Refusal {
+                title: "Cannot compare the save",
+                message: format!("{error:#}"),
+            });
         }
     }
 }

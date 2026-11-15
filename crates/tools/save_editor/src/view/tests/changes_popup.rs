@@ -13,7 +13,7 @@ use crate::view::team::{channel_to_show, format_hex};
 const LABEL: &str = "\u{2022} unsaved changes";
 
 /// The text of a row's X.
-const X: &str = "\u{d7}";
+pub(super) const X: &str = "\u{d7}";
 
 /// The nodes under the label's: egui hangs the popup's area there, so
 /// these are the list's own cells (none while it is closed).
@@ -480,7 +480,7 @@ fn a_team_wide_edits_list_stops_at_240_points_and_scrolls() {
 }
 
 /// A PES 21 save open with player 70101 renamed to 52 letters, a change
-/// whose row is wider than the popup's 640-point cap.
+/// whose row is wider than the room right of the label.
 fn long_name_change(test: &str) -> SaveView {
     let path = fixture(PesVersion::Pes21, test);
     let mut view = SaveView::new();
@@ -507,14 +507,14 @@ fn the_list_is_460_points_wide_with_its_margins() {
     );
 }
 
-// The 640's other end: a row wider than the cap scrolls inside the box
-// instead of growing it — the outer box stops at 640 (the draft's
-// `.chpop` `max-width`, margins and stroke counted in).
-// SE-GUI-43
+// SE-GUI-43: a window narrower than the long row holds the box at 8
+// points inside it at each side, and the row scrolls sideways inside.
 #[test]
-fn rows_wider_than_the_cap_hold_the_popup_at_640() {
-    let mut view = long_name_change("changes_list_cap_width");
-    let mut window = Headless::new();
+fn a_window_narrower_than_the_row_spans_it_and_scrolls() {
+    let mut view = long_name_change("changes_list_narrow_window");
+    // 720 leaves the label clickable (it ends near 719) and stays
+    // narrower than the long row.
+    let mut window = Headless::sized(720.0, DEFAULT_PANE.y);
     click_label(&mut window, &mut view);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     // The table is wider than the box: it scrolls sideways.
@@ -527,15 +527,21 @@ fn rows_wider_than_the_cap_hold_the_popup_at_640() {
     );
     let (_, popup) = label_and_popup(&mut window, &mut view);
     assert!(
-        (popup.width() - 640.0).abs() <= 0.5,
-        "the outer box caps at 640: {popup:?}"
+        (popup.left() - 8.0).abs() <= 0.5,
+        "8 points inside the window's left edge: {popup:?}"
+    );
+    assert!(
+        (popup.right() - (720.0 - 8.0)).abs() <= 0.5,
+        "8 points inside the window's right edge: {popup:?}"
     );
 }
 
 // SE-GUI-43: the list opens 3 points under the label at its left edge
-// where the window has room; at the default pane, where the label sits
-// too far right for a list at its 640-point cap, it slides left to 8
-// points inside the window's edge (the draft's `changesPopup`).
+// where the window has room; a row wider than the room right of the
+// label makes the list as wide as that row, slid left so its right
+// edge is 8 points inside the window's and its left edge is left of
+// the label, and nothing scrolls sideways (the draft's
+// `changesPopup`).
 #[test]
 fn the_list_opens_under_the_label_at_its_left_edge() {
     let (mut view, _) = three_changes("changes_list_place");
@@ -559,9 +565,21 @@ fn the_list_opens_under_the_label_at_its_left_edge() {
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
     let (label, popup) = label_and_popup(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        label.x0 + 640.0 > f64::from(DEFAULT_PANE.x - 8.0),
-        "premise: the list would pass 8 points inside the window's edge: label {label:?}"
+        !list_nodes(&pairs).iter().any(|node| {
+            node.role() == Role::ScrollBar
+                && node.bounds().is_some_and(|b| b.x1 - b.x0 > b.y1 - b.y0)
+        }),
+        "as wide as its table, nothing scrolls sideways"
+    );
+    assert!(
+        popup.width() > 640.0,
+        "the row past the old 640-point cap: {popup:?}"
+    );
+    assert!(
+        f64::from(popup.left()) < label.x0,
+        "its left edge left of the label: popup {popup:?}, label {label:?}"
     );
     assert!(
         (popup.right() - (DEFAULT_PANE.x - 8.0)).abs() <= 0.5,
@@ -989,7 +1007,7 @@ fn three_kinds(test: &str) -> (SaveView, [(String, String, String); 3], u8) {
 }
 
 /// The open list's X on the row whose Item cell reads `item`, on its line.
-fn x_of<'a>(nodes: &[&'a accesskit::Node], item: &str) -> &'a accesskit::Node {
+pub(super) fn x_of<'a>(nodes: &[&'a accesskit::Node], item: &str) -> &'a accesskit::Node {
     let row = nodes
         .iter()
         .find(|node| node.role() == Role::Label && node.value() == Some(item))
@@ -1112,22 +1130,19 @@ fn a_rows_x_puts_that_change_back_alone() {
         "his Height row, now on 04, and the Support range"
     );
 
-    // The close prompt's table has no X.
+    // The close prompt's table ends each row in an X too.
     crate::view::prompt::open(&mut view, crate::view::prompt::Pending::Close);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let dialog = super::prompt::dialog_nodes(&pairs, "Unsaved changes");
     assert_eq!(
         table_rows(&dialog),
-        [height_row, support_row],
+        [height_row.clone(), support_row.clone()],
         "premise: the prompt's rows"
     );
-    assert!(
-        !dialog
-            .iter()
-            .any(|node| node.role() == Role::Button && node.label() == Some(X)),
-        "no X in the close prompt"
-    );
+    for item in ["P04 · Height", "/3/ · Preset 1 · Support range"] {
+        x_of(&dialog, item);
+    }
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
@@ -1301,7 +1316,8 @@ fn every_x_stays_at_the_lists_right_edge_while_a_wide_row_scrolls() {
     let mut edited = player_entry(&view, 70101);
     edited.basic.height = 170;
     view.session.as_mut().unwrap().edit_player(2, edited);
-    let mut window = Headless::new();
+    // A window narrower than the long row: it scrolls sideways.
+    let mut window = Headless::sized(720.0, DEFAULT_PANE.y);
     click_label(&mut window, &mut view);
     let long = "W".repeat(52);
     let items = [format!("{long} · Name"), format!("{long} · Height")];
@@ -1486,7 +1502,8 @@ fn every_x_is_red_under_the_undo_head() {
     let mut edited = player_entry(&view, 70101);
     edited.basic.height = 170;
     view.session.as_mut().unwrap().edit_player(2, edited);
-    let mut window = Headless::new();
+    // A window narrower than the long row: it scrolls sideways.
+    let mut window = Headless::sized(720.0, DEFAULT_PANE.y);
     click_label(&mut window, &mut view);
     let long = "W".repeat(52);
     let items = [format!("{long} · Name"), format!("{long} · Height")];
@@ -1531,18 +1548,20 @@ fn every_x_is_red_under_the_undo_head() {
         );
     }
 
-    // The close prompt's table has no head: it asks one question about
-    // all the changes.
+    // The close prompt's table draws the same head and X's.
     crate::view::prompt::open(&mut view, crate::view::prompt::Pending::Close);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let dialog = super::prompt::dialog_nodes(&pairs, "Unsaved changes");
     assert!(
-        !dialog
+        dialog
             .iter()
             .any(|node| node.role() == Role::Label && node.value() == Some("Undo")),
-        "no Undo head in the close prompt"
+        "the Undo head in the close prompt"
     );
+    for item in [format!("{long} · Name"), format!("{long} · Height")] {
+        x_of(&dialog, &item);
+    }
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
@@ -1667,7 +1686,7 @@ fn a_line_parts_each_row_from_the_next() {
         );
     }
 
-    // The close prompt's table draws them too, spanning its own width.
+    // The close prompt's table draws them too, under its own X column.
     crate::view::prompt::open(&mut view, crate::view::prompt::Pending::Close);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -1676,13 +1695,16 @@ fn a_line_parts_each_row_from_the_next() {
     let cells = row_cells(&dialog);
     let lines = merge(segments(&shapes, rect));
     assert_eq!(lines.len(), 3, "the prompt's lines: {lines:?}");
-    let table_right = dialog
+    let column_right = dialog
         .iter()
-        .filter(|node| node.role() == Role::Label)
+        .filter(|node| node.role() == Role::Button && node.label() == Some(X))
         .filter_map(|node| node.bounds())
-        .filter(|bounds| bounds.y0 >= cells[0].y0 - 1.0)
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max);
+    assert!(
+        column_right > cells[0].x1,
+        "premise: the prompt's X column is drawn"
+    );
     for (index, (y, x0, x1)) in lines.iter().enumerate() {
         let centre = (cells[index].y1 + cells[index + 1].y0) / 2.0;
         assert!(
@@ -1695,8 +1717,8 @@ fn a_line_parts_each_row_from_the_next() {
             cells[0].x0
         );
         assert!(
-            (x1 - table_right).abs() <= 0.5,
-            "line {index} spans the table's width: {x1} vs {table_right}"
+            (x1 - column_right).abs() <= 0.5,
+            "line {index} runs the whole row under the X column: {x1} vs {column_right}"
         );
     }
     window.frame(

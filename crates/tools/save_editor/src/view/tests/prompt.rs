@@ -6,7 +6,7 @@
 
 use studio_core::{ShellRequest, StudioTool, ToolContext};
 
-use super::changes_popup::assert_swatch_before;
+use super::changes_popup::{X, assert_swatch_before, three_changes, x_of};
 use super::*;
 use crate::view::prompt::{self, Pending};
 use crate::view::team::{channel_to_show, format_hex};
@@ -103,6 +103,15 @@ pub(super) fn dialog_nodes<'a>(
         nodes.push(node);
     }
     nodes
+}
+
+/// A click on the X of the prompt's row `item` (the X on its Item
+/// cell's line, as the toolbar's list's `x_of` finds it).
+fn click_prompt_x(window: &mut Headless, view: &mut SaveView, item: &str) {
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let x = x_of(&dialog_nodes(&pairs, "Unsaved changes"), item).clone();
+    click(window, &x, view);
 }
 
 /// The prompt's rows as `(item, old, new)` (`table_rows`).
@@ -516,11 +525,113 @@ fn the_prompts_item_cells_take_no_click() {
     prompt::open(&mut view, Pending::Close);
     let mut window = Headless::new();
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_item_cell_takes_no_click(
-        &mut window,
-        &mut view,
-        &dialog_nodes(&pairs, "Unsaved changes"),
+    let dialog = dialog_nodes(&pairs, "Unsaved changes");
+    assert!(
+        dialog
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some(X)),
+        "premise: the X column is drawn"
+    );
+    assert_item_cell_takes_no_click(&mut window, &mut view, &dialog, "PLACEHOLDER · Height");
+}
+
+// Every row of the prompt's table ends with an X under an `Undo` head,
+// as the toolbar's list's do: clicked, it puts that row's change back
+// alone and the prompt stays open a row shorter, its pending action
+// kept. The put-back is one undo step: a Cancel, then an Undo, sets
+// the edit back.
+// SE-GUI-74
+#[test]
+fn the_prompts_x_puts_the_row_back_and_keeps_the_prompt() {
+    let (mut view, _) = three_changes("prompt_x_row");
+    prompt::open(&mut view, Pending::Close);
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dialog = dialog_nodes(&pairs, "Unsaved changes");
+    let head = dialog
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Undo"))
+        .and_then(|node| node.bounds())
+        .expect("the Undo head is drawn");
+    for item in [
         "PLACEHOLDER · Height",
+        "PLACEHOLDER · Speed",
+        "/3/ · Col. 1",
+    ] {
+        let x = x_of(&dialog, item).bounds().expect("an X's bounds");
+        assert!(
+            ((x.x0 + x.x1) / 2.0 - (head.x0 + head.x1) / 2.0).abs() <= 0.5,
+            "{item}'s X centred under the head: {x:?}, {head:?}"
+        );
+    }
+
+    click_prompt_x(&mut window, &mut view, "PLACEHOLDER · Height");
+    assert_eq!(
+        player_entry(&view, 70101).basic.height,
+        180,
+        "the file's Height"
+    );
+    let prompt = view.prompt.as_ref().expect("the prompt stays open");
+    assert!(
+        matches!(prompt.pending, Pending::Close),
+        "its pending action kept"
+    );
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let rows = prompt_rows(&pairs, "Unsaved changes");
+    let [speed, colour] = rows.as_slice() else {
+        panic!("a row shorter: {rows:?}")
+    };
+    assert_eq!(speed.0, "PLACEHOLDER · Speed");
+    assert_eq!(colour.0, "/3/ · Col. 1");
+
+    click_label(&mut window, &mut view, "Cancel");
+    assert!(view.prompt.is_none(), "Cancel closes it");
+    choose(&mut window, &mut view, "Edit", "Undo");
+    assert_eq!(
+        player_entry(&view, 70101).basic.height,
+        170,
+        "one Undo sets the edited Height back"
+    );
+}
+
+// The last row's X leaves nothing to save or lose, so the prompt goes
+// on as for a clean save: the window's close runs, or the other save
+// opens, and nothing writes.
+// SE-GUI-74
+#[test]
+fn the_last_rows_x_lets_the_close_or_open_go_on() {
+    let path = fixture(PesVersion::Pes21, "prompt_x_last_close");
+    let original = std::fs::read(&path).unwrap();
+    let mut view = dirty_view(&path);
+    prompt::open(&mut view, Pending::Close);
+    let mut window = Headless::new();
+    click_prompt_x(&mut window, &mut view, "PLACEHOLDER · Height");
+    assert!(view.prompt.is_none(), "the prompt is gone");
+    assert!(view.session.is_none(), "the session dropped");
+    assert!(view.request_close, "the close is asked");
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        original,
+        "the file unchanged"
+    );
+
+    let first = fixture(PesVersion::Pes21, "prompt_x_last_open_first");
+    let original = std::fs::read(&first).unwrap();
+    let other = fixture(PesVersion::Pes21, "prompt_x_last_open_second");
+    let mut view = dirty_view(&first);
+    prompt::open(&mut view, Pending::Open(other.clone()));
+    click_prompt_x(&mut window, &mut view, "PLACEHOLDER · Height");
+    assert!(view.prompt.is_none(), "the prompt is gone");
+    assert_eq!(
+        view.session.as_ref().unwrap().path(),
+        other.as_path(),
+        "the other save is open"
+    );
+    assert_eq!(
+        std::fs::read(&first).unwrap(),
+        original,
+        "the first file unchanged"
     );
 }
 
