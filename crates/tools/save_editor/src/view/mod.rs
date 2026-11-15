@@ -103,6 +103,17 @@ enum Reveal {
     Top,
 }
 
+/// The `Reveal` a selection's row asks for, as the page keys and the
+/// row-click helpers set it: a team row rises to the list's top, so its
+/// players stand under it; any other row shows the least that shows it.
+fn reveal_for(selected: Option<Selection>) -> Reveal {
+    if matches!(selected, Some(Selection::Team(_))) {
+        Reveal::Top
+    } else {
+        Reveal::Nearest
+    }
+}
+
 /// The window's state: the open save and what the master-detail shows of it.
 pub(crate) struct SaveView {
     /// The open save, if one was opened.
@@ -1257,14 +1268,7 @@ fn toolbar(
         // next player's field does not inherit the focus and merge his
         // edits into that entry. A key that moved nothing leaves it be.
         surrender_focus(ui);
-        // A team row the page keys select rises to the list's top, so
-        // its players stand under it; any other row shows the least that
-        // shows it.
-        view.reveal_selected = Some(if matches!(view.selected, Some(Selection::Team(_))) {
-            Reveal::Top
-        } else {
-            Reveal::Nearest
-        });
+        view.reveal_selected = Some(reveal_for(view.selected));
     }
     if let Some(forward) = arrow_step
         && player_list::step_selection(view, forward, 1)
@@ -1544,9 +1548,7 @@ fn following_selection<R>(view: &mut SaveView, step: impl FnOnce(&mut Session) -
         && let Some(team) = session.file().team(team_id)
     {
         for slot in 0..team.roster.len() {
-            let Ok(slot) = u8::try_from(slot) else {
-                break;
-            };
+            let slot = u8::try_from(slot).expect("a roster is at most 40 slots");
             if session
                 .slot_player(team_id, slot)
                 .is_some_and(|id| session.record_of(id) == record)

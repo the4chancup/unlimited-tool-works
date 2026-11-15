@@ -269,6 +269,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_category,
         filter,
         selected,
+        reveal_selected,
         tactics,
         patch_dialog,
         focused,
@@ -328,7 +329,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             let Some(entry) = session.file().team(player.team_id) else {
                 return;
             };
-            aatf_check::select_player(
+            *reveal_selected = Some(aatf_check::select_player(
                 player,
                 selected,
                 team,
@@ -336,7 +337,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 filter,
                 &entry.tactics,
                 tactics,
-            );
+            ));
         }
         None => {}
     }

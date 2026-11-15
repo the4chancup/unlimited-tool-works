@@ -470,6 +470,41 @@ fn comparator(version: PesVersion) -> Screens {
     ]
 }
 
+/// The team file panel, a Team TOML of team 714 picked on team 701, 714
+/// renamed to twenty letters so its own-team button is as wide as one
+/// gets.
+fn interchange(version: PesVersion) -> Screens {
+    const OWN: u32 = 714;
+    let (mut view, mut window) = opened(version, "interchange");
+    let mut team = team_entry(&view, OWN);
+    team.name = "ABCDEFGHIJKLMNOPQRST".to_owned();
+    view.session.as_mut().unwrap().edit_team(1, team);
+    let toml = view.session.as_ref().unwrap().export_team(OWN).unwrap();
+    let picked = scratch_dir(&view).join("own.toml");
+    std::fs::write(&picked, toml).unwrap();
+    let nodes = open_menu(&mut window, &mut view, "Team", "Import / export team file");
+    click(
+        &mut window,
+        menu_item(&nodes, "Import / export team file"),
+        &mut view,
+    );
+    view.interchange_dialog = Box::new(move |_| Some(picked.clone()));
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
+        &mut view,
+    );
+    let drawn = settled_over(&mut window, &mut view, "the interchange panel");
+    assert!(
+        drawn
+            .iter()
+            .any(|drawn| { text(&drawn.node).starts_with("Select the team with this file's ID") }),
+        "premise: the own-team button drew"
+    );
+    vec![("Team file interchange", drawn)]
+}
+
 /// The unsaved prompt over an edited player, the Edit mode question over
 /// it, and the refusal of a file that is no save.
 fn prompts(version: PesVersion) -> Screens {
@@ -659,6 +694,11 @@ fn no_two_widgets_overlap_on_the_multi_team_aatf_dialog() {
 #[test]
 fn no_two_widgets_overlap_on_the_comparator() {
     assert_no_overlap(&on_both(comparator));
+}
+
+#[test]
+fn no_two_widgets_overlap_on_the_interchange_panel() {
+    assert_no_overlap(&on_both(interchange));
 }
 
 #[test]

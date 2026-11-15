@@ -43,8 +43,7 @@ use crate::session::journal;
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::comparator;
 use crate::view::{
-    Panel, Refusal, Reveal, SaveView, aatf_check, refuse_save_being_read, selected_team_id,
-    surrender_focus,
+    Panel, Refusal, SaveView, aatf_check, refuse_save_being_read, selected_team_id, surrender_focus,
 };
 
 /// The panel's Pick dialog: the open save's version to the picked path
@@ -379,8 +378,8 @@ enum Action {
     Pick,
     /// `Apply`.
     Apply,
-    /// `Select <name> (<id>)` on the `Import into` line: the team the
-    /// picked file was exported from, by id.
+    /// `Select the team with this file's ID` under the `Import into`
+    /// line: the team the picked file was exported from, by id.
     SelectTeam(u32),
 }
 
@@ -840,14 +839,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             }
         }
         Some(Action::SelectTeam(id)) => {
-            aatf_check::select_team(
+            view.reveal_selected = Some(aatf_check::select_team(
                 id,
                 &mut view.selected,
                 &mut view.team,
                 &mut view.team_category,
                 &mut view.filter,
-            );
-            view.reveal_selected = Some(Reveal::Top);
+            ));
         }
         None => {}
     }
@@ -961,40 +959,6 @@ fn contents(
             display_name(&team.name),
             team.id
         ));
-        // The team the picked file was exported from, while the target
-        // is another: a document names it (`Read::Document`), a squad
-        // file names none.
-        let own_team = match &interchange.picked {
-            Some(Picked {
-                read: Ok(Read::Document(document)),
-                ..
-            }) => document.team.id,
-            _ => None,
-        };
-        if let Some(id) = own_team.filter(|id| *id != team.id) {
-            match file.team(id) {
-                Some(own) => {
-                    if ui
-                        .button(format!(
-                            "Select the team with this file's ID ({id} {})",
-                            display_name(&own.name)
-                        ))
-                        .on_hover_text("The import then goes onto that team")
-                        .clicked()
-                    {
-                        action = Some(Action::SelectTeam(id));
-                    }
-                }
-                None => {
-                    add_enabled(
-                        ui,
-                        false,
-                        egui::Button::new(format!("Select the team with this file's ID ({id})")),
-                    )
-                    .on_disabled_hover_text(format!("The save has no team {id}"));
-                }
-            }
-        }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
             if ui
                 .button("Pick\u{2026}")
@@ -1018,6 +982,43 @@ fn contents(
             }
         });
     });
+    // The team the picked file was exported from, while the target is
+    // another: a document names it (`Read::Document`), a squad file
+    // names none. On a row of its own under `Import into`: on the line,
+    // a long team name pushed the row past the window's width.
+    let own_team = match &interchange.picked {
+        Some(Picked {
+            read: Ok(Read::Document(document)),
+            ..
+        }) => document.team.id,
+        _ => None,
+    };
+    if let Some(id) = own_team.filter(|id| *id != team.id) {
+        match file.team(id) {
+            Some(own) => {
+                if ui
+                    .button(format!(
+                        "Select the team with this file's ID ({id} {})",
+                        display_name(&own.name)
+                    ))
+                    .on_hover_text(
+                        "Selects the file's team in the list, so the import goes onto it",
+                    )
+                    .clicked()
+                {
+                    action = Some(Action::SelectTeam(id));
+                }
+            }
+            None => {
+                add_enabled(
+                    ui,
+                    false,
+                    egui::Button::new(format!("Select the team with this file's ID ({id})")),
+                )
+                .on_disabled_hover_text(format!("The save has no team {id}"));
+            }
+        }
+    }
     let Some(picked) = &interchange.picked else {
         ui.weak("Team TOML, .4ccs, .4cct and Texport files are accepted.");
         return action;

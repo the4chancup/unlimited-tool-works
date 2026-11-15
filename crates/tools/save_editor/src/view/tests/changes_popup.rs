@@ -351,18 +351,96 @@ fn a_rows_click_widens_a_category_leaving_the_team_out() {
         "701's row is listed"
     );
 
-    // A 701 player's stat row the same, with his `Selection::Player`.
+    // A 701 player's stat row the same, with his `Selection::Player`:
+    // VGL ticked again first, so the click widens it back to `All`.
+    view.team_category = TeamCategory::Vgl;
     let height = item(&mut window, &mut view, "PLACEHOLDER · Height");
     click(&mut window, &height, &mut view);
     assert_eq!(
         view.team_category,
         TeamCategory::All,
-        "the category widened to All"
+        "the category widened again"
     );
     assert_eq!(
         view.selected,
         Some(Selection::Player(701, 0)),
         "70101's row selected"
+    );
+
+    // A category that already holds the team stays: 701 is a 4cc team.
+    view.team_category = TeamCategory::FourCc;
+    let speed = item(&mut window, &mut view, "PLACEHOLDER · Speed");
+    click(&mut window, &speed, &mut view);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::FourCc,
+        "the category stays"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "70101's row selected"
+    );
+}
+
+// A row's click scrolls the list to the row it selects: a change to a
+// player of the save's last team, clicked with the list at its top,
+// leaves his row drawn inside the list's clip.
+// SE-GUI-83
+#[test]
+fn a_rows_click_scrolls_the_list_to_its_row() {
+    let path = fixture(PesVersion::Pes21, "changes_list_reveal");
+    let mut view = SaveView::new();
+    view.open(&path);
+    // The save's last team's first rostered player, changed so the list
+    // holds a row for him.
+    let (last_id, slot, player_id) = {
+        let file = view.session.as_ref().unwrap().file();
+        let last_id = file
+            .teams()
+            .iter()
+            .map(|team| team.id)
+            .max()
+            .expect("a last team");
+        let (slot, roster_slot) = file
+            .team(last_id)
+            .unwrap()
+            .roster
+            .iter()
+            .enumerate()
+            .find(|(_, slot)| slot.player_id != 0)
+            .expect("a rostered player");
+        (
+            last_id,
+            u8::try_from(slot).expect("a roster is at most 40 slots"),
+            roster_slot.player_id,
+        )
+    };
+    let mut edited = player_entry(&view, player_id);
+    edited.basic.height = if edited.basic.height == 170 { 171 } else { 170 };
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+
+    let name = display_name(&player_entry(&view, player_id).name);
+    let row_item = item(&mut window, &mut view, &format!("{name} · Height"));
+    click(&mut window, &row_item, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(last_id, slot)),
+        "the click selected his row"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row is drawn");
+    let clip = list_clip(&window, &shapes, bounds);
+    assert!(
+        bounds.y0 >= f64::from(clip.top()) - 0.5 && bounds.y1 <= f64::from(clip.bottom()) + 0.5,
+        "his row inside the list: {bounds:?} vs {clip:?}"
     );
 }
 

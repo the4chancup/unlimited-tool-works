@@ -20,8 +20,8 @@ use team_widgets::violations::{ListUse, SelectedPlayer, TeamViolations, Wording,
 
 use crate::session::rules::{self, TeamCheck};
 use crate::session::selection::{TeamCategory, TeamChoice};
-use crate::view::Selection;
 use crate::view::worker::{Pending, WorkerResult};
+use crate::view::{Reveal, Selection, reveal_for};
 
 /// What a check ran for: a change of the open save, of the ids or of the
 /// ruleset recomputes it.
@@ -97,17 +97,18 @@ pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Opt
 }
 
 /// A row's click for a team itself (the unsaved changes list's team and
-/// `Player order` rows): the team's own row selected, the selector moved
-/// to it unless it reads ALL and a category that leaves it out widened to
-/// `All` (the list must show the row it selects), the filter cleared as
-/// `select_player` clears it.
+/// `Player order` rows, the team file panel's own-team button): the
+/// team's own row selected, the selector moved to it unless it reads All
+/// teams and a category that leaves it out widened to `All` (the list
+/// must show the row it selects), the filter cleared as `select_player`
+/// clears it. Returns the `Reveal` the row asks the list for.
 pub(super) fn select_team(
     team_id: u32,
     selected: &mut Option<Selection>,
     team: &mut TeamChoice,
     category: &mut TeamCategory,
     filter: &mut String,
-) {
+) -> Reveal {
     *selected = Some(Selection::Team(team_id));
     if *team != TeamChoice::All {
         *team = TeamChoice::Team(team_id);
@@ -116,17 +117,19 @@ pub(super) fn select_team(
         *category = TeamCategory::All;
     }
     filter.clear();
+    reveal_for(*selected)
 }
 
 /// A violation row's click: the player selected, the selector moved to
-/// his team unless it reads ALL and a category that leaves it out widened
-/// to `All` (the list must show the row it selects).
+/// his team unless it reads All teams and a category that leaves it out
+/// widened to `All` (the list must show the row it selects).
 /// A `FieldedNotA` row selects his team's row instead (the pitch his
 /// cross is on is the team view's), the named preset shown on the first
 /// of its fielded formations whose slot for his starting-eleven index
 /// holds the violation's position — the kick-off one when none does (the save
 /// changed since the check). `team_tactics` is his team's record,
-/// `tactics_view` the view's.
+/// `tactics_view` the view's. Returns the `Reveal` the selected row asks
+/// the list for.
 pub(super) fn select_player(
     player: SelectedPlayer,
     selected: &mut Option<Selection>,
@@ -135,7 +138,7 @@ pub(super) fn select_player(
     filter: &mut String,
     team_tactics: &TeamTactics,
     tactics_view: &mut TacticsView,
-) {
+) -> Reveal {
     *selected = match player.fielded {
         Some(fielded) => {
             tactics_view.preset = usize::from(fielded.preset).saturating_sub(1).min(2);
@@ -168,6 +171,7 @@ pub(super) fn select_player(
     // As `open` clears it: the row the click selects would be hidden by a
     // filter matching nothing.
     filter.clear();
+    reveal_for(*selected)
 }
 
 /// The issue count the callers draw: the Error and Warning violations of

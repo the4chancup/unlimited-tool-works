@@ -195,12 +195,6 @@ why = "the dribbling motion is a 2-bit field (PES 20 and 21 only): every stored 
 [[exclude]]
 path = "crates/tools/save_editor/src/view/mod.rs"
 kind = "bool"
-description = "in new: reveal_selected: false becomes true | removed: false"
-why = "the first list draw follows open(), which selects the first player row with the list unscrolled: revealing it scrolls nothing"
-
-[[exclude]]
-path = "crates/tools/save_editor/src/view/mod.rs"
-kind = "bool"
 description = "in new: version_warning: false becomes true | removed: false"
 why = "read only with a save open, and open() sets it true when it sets the session"
 

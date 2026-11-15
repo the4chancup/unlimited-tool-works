@@ -782,6 +782,45 @@ fn list_frame(window: &Headless, shapes: &[egui::epaint::ClippedShape]) -> egui:
         .expect("the player list's frame rect")
 }
 
+/// Whether `node` is one of the list's rows: a player row
+/// (`player_row`), or a team row, whose label is `{id} {name}`.
+fn list_row(node: &accesskit::Node) -> bool {
+    player_row(node)
+        || (node.role() == Role::Button
+            && node
+                .label()
+                .and_then(|label| label.split_whitespace().next())
+                .is_some_and(|word| word.parse::<u32>().is_ok()))
+}
+
+/// The list's scroll area's clip rect, read off the selected row's
+/// fill: it is the painted shape containing `bounds`' centre.
+fn list_clip(
+    window: &Headless,
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> egui::Rect {
+    let selection = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .selection
+        .bg_fill;
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.fill == selection && shape.rect.contains(centre) => {
+                Some(clipped.clip_rect)
+            }
+            _ => None,
+        })
+        .expect("the selected row's fill")
+}
+
 /// Asserts the closed `combo`'s width is `labels`' widest galley at the
 /// Button text size plus the closed combo's chrome (the button padding
 /// twice, the icon's gap and the icon) — the width the view's combos

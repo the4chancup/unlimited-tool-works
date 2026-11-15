@@ -39,34 +39,6 @@ fn page_key_press(
     (nodes, shapes)
 }
 
-/// The list's scroll area's clip rect, read off the selected row's
-/// fill: it is the painted shape containing `bounds`' centre.
-fn list_clip(
-    window: &Headless,
-    shapes: &[egui::epaint::ClippedShape],
-    bounds: accesskit::Rect,
-) -> egui::Rect {
-    let selection = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .selection
-        .bg_fill;
-    let centre = egui::pos2(
-        ((bounds.x0 + bounds.x1) / 2.0) as f32,
-        ((bounds.y0 + bounds.y1) / 2.0) as f32,
-    );
-    shapes
-        .iter()
-        .find_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(shape) if shape.fill == selection && shape.rect.contains(centre) => {
-                Some(clipped.clip_rect)
-            }
-            _ => None,
-        })
-        .expect("the selected row's fill")
-}
-
 /// A window drawing one pass a frame: a scroll landing on a later pass
 /// could borrow another view's `request_discard`, and the tests using it
 /// read what the key's own frame draws.
@@ -76,17 +48,6 @@ fn one_pass_window() -> Headless {
         .ctx
         .options_mut(|options| options.max_passes = std::num::NonZeroUsize::MIN);
     window
-}
-
-/// Whether `node` is one of the list's rows: a player row
-/// (`player_row`), or a team row, whose label is `{id} {name}`.
-fn list_row(node: &accesskit::Node) -> bool {
-    player_row(node)
-        || (node.role() == Role::Button
-            && node
-                .label()
-                .and_then(|label| label.split_whitespace().next())
-                .is_some_and(|word| word.parse::<u32>().is_ok()))
 }
 
 // SE-GUI-53
@@ -550,6 +511,133 @@ fn down_on_the_last_shown_row_draws_the_next_whole_at_the_lists_bottom_edge() {
     assert!(
         (bounds.y1 - f64::from(press_clip.bottom())).abs() <= 1.0,
         "the next row at the list's bottom edge ({bounds:?} vs {press_clip:?})"
+    );
+}
+
+// `Nearest` from a scrolled list: Down on a row the list shows whole
+// keeps the offset, and Up from the top shown row brings the row above
+// it to the clip's top.
+#[test]
+fn the_arrowed_selection_scrolls_only_as_far_as_it_needs() {
+    let path = fixture(PesVersion::Pes21, "arrow_nearest_offset");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = one_pass_window();
+    let drawn = listed_selections(&view);
+
+    // Wheel the list down until its first row is out of the clip.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let at = centre(
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+    );
+    for _ in 0..64 {
+        notch(&mut window, &mut view, at, false);
+        let nodes = draw(&mut window, &mut view);
+        if !nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some("701 /3/"))
+        {
+            break;
+        }
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some("701 /3/")),
+        "premise: the list scrolled off its top"
+    );
+    // The list's rows drawn, top to bottom, and a click on `bounds`'
+    // centre.
+    let rows_in_view = |nodes: &[accesskit::Node]| -> Vec<accesskit::Rect> {
+        let mut rows: Vec<accesskit::Rect> = nodes
+            .iter()
+            .filter(|node| list_row(node))
+            .filter_map(accesskit::Node::bounds)
+            .collect();
+        rows.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
+        rows
+    };
+    let click_row = |window: &mut Headless, view: &mut SaveView, bounds: accesskit::Rect| {
+        press_release(
+            window,
+            egui::pos2(
+                ((bounds.x0 + bounds.x1) / 2.0) as f32,
+                ((bounds.y0 + bounds.y1) / 2.0) as f32,
+            ),
+            |ui| show(ui, view, &|| Vec::new()),
+        );
+    };
+    let frame = list_frame(&window, &shapes);
+    let rows = rows_in_view(&nodes);
+    let top_before = rows.first().copied().expect("a top row");
+
+    // Down on the row nearest the clip's middle keeps the offset: the
+    // next row was in view already, so the list moves nothing.
+    let middle = rows
+        .iter()
+        .copied()
+        .min_by(|a, b| {
+            let mid = |bounds: accesskit::Rect| {
+                ((bounds.y0 + bounds.y1) / 2.0 - f64::from(frame.center().y)).abs()
+            };
+            mid(*a).partial_cmp(&mid(*b)).expect("ordered")
+        })
+        .expect("a middle row");
+    click_row(&mut window, &mut view, middle);
+    let before = view.selected.expect("the click selected the middle row");
+    let index = drawn
+        .iter()
+        .position(|row| *row == before)
+        .expect("the clicked row is listed");
+    let (_, nodes, _) = window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(view.selected, Some(drawn[index + 1]), "Down moved one row");
+    let top_after = rows_in_view(&nodes).first().copied().expect("a top row");
+    assert!(
+        (top_after.y0 - top_before.y0).abs() <= 0.5 && (top_after.y1 - top_before.y1).abs() <= 0.5,
+        "the offset kept ({top_after:?} vs {top_before:?})"
+    );
+
+    // Up from the row shown highest brings the row above it to the
+    // clip's top.
+    let top_shown = rows_in_view(&nodes)
+        .into_iter()
+        .find(|bounds| bounds.y0 >= f64::from(frame.min.y) - 1.0)
+        .expect("a row shown whole");
+    click_row(&mut window, &mut view, top_shown);
+    let top = view.selected.expect("the click selected the top row");
+    let top_index = drawn
+        .iter()
+        .position(|row| *row == top)
+        .expect("the clicked row is listed");
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let clip = list_clip(&window, &shapes, top_shown);
+    let (_, nodes, _) = window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(drawn[top_index - 1]),
+        "Up moved to the row above"
+    );
+    let previous = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row is drawn");
+    assert!(
+        (previous.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "the row above at the clip's top ({previous:?} vs {clip:?})"
     );
 }
 

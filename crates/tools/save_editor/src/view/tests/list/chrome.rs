@@ -119,6 +119,90 @@ fn the_team_selector_names_a_coded_team_by_its_display_name() {
     );
 }
 
+// An id typed in the filter box matches from its start only: a team's
+// id lists its row with its whole squad, the id plus slot digits the
+// slots they name alone, and a slot's own digits no row.
+// SE-GUI-102
+#[test]
+fn the_filter_box_matches_an_id_from_its_start() {
+    let path = fixture(PesVersion::Pes21, "filter_id_start");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (filter, _) = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::TextInput
+                && node.placeholder() == Some("Team or player: name, shirt name or ID")
+        })
+        .expect("the filter box");
+    // The list's rows drawn, in screen order.
+    let drawn_rows = |nodes: &[accesskit::Node]| -> Vec<String> {
+        let mut rows: Vec<&accesskit::Node> = nodes
+            .iter()
+            .filter(|node| list_row(node) && node.bounds().is_some_and(|bounds| bounds.x0 < 300.0))
+            .collect();
+        rows.sort_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().map(|r| r.y0).unwrap_or(0.0);
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        });
+        rows.iter()
+            .filter_map(|node| node.label().map(str::to_owned))
+            .collect()
+    };
+    // `query` focused and typed in the filter box, then the drawn rows.
+    let type_query = |window: &mut Headless, view: &mut SaveView, query: &str| -> Vec<String> {
+        action_focus(window, view, *filter);
+        type_text(window, view, query);
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        drawn_rows(&nodes)
+    };
+    let (team_row, squad) = {
+        let file = view.session.as_ref().unwrap().file();
+        let team = file.team(820).expect("team 820");
+        (
+            format!("820 {}", display_name(&team.name)),
+            team.roster
+                .iter()
+                .filter(|slot| slot.player_id != 0)
+                .count(),
+        )
+    };
+    assert!(squad > 9, "premise: 820's squad fills the first nine slots");
+
+    // `820`: the team's row and its whole squad, no other team's.
+    let rows = type_query(&mut window, &mut view, "820");
+    assert_eq!(
+        rows.len(),
+        squad + 1,
+        "the team's row and its whole squad alone"
+    );
+    assert_eq!(rows[0], team_row, "820's row first");
+
+    // `8200`: the team's row and its players 01 to 09 alone.
+    let rows = type_query(&mut window, &mut view, "8200");
+    assert_eq!(rows[0], team_row, "820's row first");
+    assert_eq!(
+        rows[1..]
+            .iter()
+            .map(|label| label.split_whitespace().next().unwrap().to_owned())
+            .collect::<Vec<_>>(),
+        ["01", "02", "03", "04", "05", "06", "07", "08", "09"],
+        "players 01 to 09 alone"
+    );
+
+    // `82005`: the team's row and its player 05 alone.
+    let rows = type_query(&mut window, &mut view, "82005");
+    assert_eq!(rows.len(), 2, "820's row and player 05 alone");
+    assert_eq!(rows[0], team_row, "820's row first");
+    assert!(rows[1].starts_with("05 "), "player 05's row");
+
+    // `2001`: a slot's own digits start no id, so the list is empty.
+    let rows = type_query(&mut window, &mut view, "2001");
+    assert!(rows.is_empty(), "no row for 72001 or 82001");
+}
+
 // The four category radio buttons under the selector's teams shorten the
 // dropdown and the list to one competition's teams: `All teams`, then the
 // category's teams alone, in the popup as in the list; a team the
