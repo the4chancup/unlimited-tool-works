@@ -2083,8 +2083,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
       100 and 80 as the draft does, so "Bronze" and "silver" are cut: a red test on the
       fields' width in a Tiers frame, then the cause
-    - [ ] `draft_compare.py` lists the Appearance screen and the Ruleset editor's General
-      and Tiers pages, so a slice there is measured, not looked at
+    - [x] 2026-11-15 (lead) `draft_compare.py` lists the Appearance screen (the draft's link
+      takes `page=appearance`) and the Ruleset editor's General and Tiers pages (`rs_general`,
+      `rs_tiers`), so a slice there is measured, not looked at
     - [ ] `draft_compare.py kit_slots` opens a save that stores kit slots (PES 17): on the
       PES 21 sample both sides show only "does not store kit slots" and always match
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists

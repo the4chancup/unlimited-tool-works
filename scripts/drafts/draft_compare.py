@@ -77,7 +77,7 @@ OUT = ROOT / ".tmp" / "draft_compare"
 SAVE = "save=pes21&pes=2021"
 # The screens measured so far: each one's draft link. The built window shows the same screen
 # with the PES 21 sandbox save open (`EDIT17` for `aatf`, whose draft rows are recorded for the
-# PES 2017 sample only).
+# PES 2017 sample only); the Ruleset editor's with the 4cc Autumn 26 template, the draft's own.
 SCREENS = {
     "firstrun": "#save_editor?settings=none&pes=2021",
     "empty": "#save_editor?pes=2021",
@@ -92,6 +92,9 @@ SCREENS = {
     "kit_slots": f"#save_editor/team?{SAVE}&selteam=701&dialog=kit-slots",
     "pictures_range": f"#save_editor/player?{SAVE}&player=701.1&dialog=pictures-range",
     "picture_save": f"#save_editor/player?{SAVE}&player=701.1&dialog=picture-save",
+    "appearance": f"#save_editor/player?{SAVE}&player=701.1&page=appearance",
+    "rs_general": "#ruleset_editor/general",
+    "rs_tiers": "#ruleset_editor/tiers",
 }
 # Scripts run before a screen's page loads: Live AATF is a tool setting the draft keeps in
 # localStorage, not a link key.

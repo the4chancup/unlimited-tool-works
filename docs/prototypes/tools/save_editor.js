@@ -9635,6 +9635,7 @@ function linkKeys() {
   if (S.sel && S.sel.slot !== undefined) k.player = S.sel.team + "." + S.sel.slot;
   else if (S.sel) k.selteam = String(S.sel.team);
   if (S.squad) k.page = "squad";
+  else if (S.page === "appearance" && S.sel && S.sel.slot !== undefined) k.page = "appearance";
   if (S.panel) k.panel = S.panel;
   const w = document.querySelector("#overlay .window");
   // Only a name of this view's own windows: the host's named windows (About)
@@ -9718,7 +9719,8 @@ function linkOpen(scr, keys) {
       S.squad = true;
       S.squadAll = S.teamSel === "all";
       if (S.squadAll) S.teamSel = String(selTeam().id);
-    } else linkWarn("page=" + keys.page);
+    } else if (keys.page === "appearance") S.page = "appearance";
+    else linkWarn("page=" + keys.page);
   }
   if (keys.panel !== undefined) {
     if (["aatf", "comparator", "patch", "interchange"].includes(keys.panel)) S.panel = keys.panel;
