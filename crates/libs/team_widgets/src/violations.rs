@@ -8,7 +8,7 @@ use pes_savefile::interchange::team_toml::labels::{POSITIONS, card_name, stat_na
 use pes_savefile::model::{FormationBreak, FormationLine};
 use pes_version::PesVersion;
 
-use crate::names::append_name;
+use crate::names::{append_name, name_background};
 use crate::pitch::FORMATIONS;
 
 /// The failing glyph (`✖`, U+2716): the suite's symbols font holds it.
@@ -553,7 +553,12 @@ fn team_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, editing: bool) {
         format!("{} ", team.team_id)
     };
     job.append(&words, 0.0, egui::TextFormat::simple(font.clone(), strong));
-    append_name(&mut job, team.team_name, &font);
+    append_name(
+        &mut job,
+        team.team_name,
+        &font,
+        name_background(ui.visuals()),
+    );
     head_label(ui, job);
 }
 
@@ -580,7 +585,7 @@ pub fn player_head_job(
         egui::TextFormat::simple(font.clone(), strong),
     );
     job.append(" - ", 0.0, weak);
-    append_name(&mut job, name, font);
+    append_name(&mut job, name, font, name_background(visuals));
     fill_plain(&mut job, strong);
     job
 }

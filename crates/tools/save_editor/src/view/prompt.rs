@@ -473,10 +473,11 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 }
 
 /// The changes table (the draft's `changesTable`), the prompt's, the
-/// toolbar's changes list's and the patch panel's: a grid with the weak
-/// header row `Item`, `Old value`, `New value`, then one row per
-/// `ChangeRow`, the Item cell `<item> · <label>` and the values in
-/// monospace, a team colour's each after its swatch, no line wrapped. A
+/// toolbar's changes list's and the patch panel's: a grid with the
+/// header row `Item`, `Old value`, `New value` in the strong text
+/// colour, then one row per `ChangeRow`, the Item cell `<item> ·
+/// <label>` and the values in monospace, a team colour's each after its
+/// swatch, no line wrapped. A
 /// thin line in the separators' stroke parts each row from the next, the
 /// header's included, centred in the grid's row gap across the table's
 /// width, so a tall row's values stay with its item. A
@@ -502,7 +503,9 @@ pub(super) fn changes_table<'a>(
             let mut right = f32::NEG_INFINITY;
             let mut lines = Vec::new();
             for (column, text) in ["Item", "Old value", "New value"].into_iter().enumerate() {
-                let response = ui.add(cell(egui::RichText::new(text).weak()));
+                let response = ui.add(cell(
+                    egui::RichText::new(text).color(ui.visuals().strong_text_color()),
+                ));
                 if column == 0 {
                     head = response.rect;
                 }

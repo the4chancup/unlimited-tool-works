@@ -277,6 +277,78 @@ pub fn notice_color(kind: NoticeKind, visuals: &egui::Visuals) -> egui::Color32 
     }
 }
 
+/// `colour` itself when it reads at a contrast of 4.5 or more against
+/// `background`. Otherwise `colour` darkened until it does: each
+/// channel's linear-light value scaled by one factor toward black,
+/// which keeps the hue, and the factor is the largest that passes.
+/// Meant for a light `background`, where a colour drawn as it is can
+/// vanish (a white name code on the light theme's panel).
+pub fn darkened_to_read(colour: egui::Color32, background: egui::Color32) -> egui::Color32 {
+    if contrast(colour, background) >= 4.5 {
+        return colour;
+    }
+    // Scaling every channel's linear value by `factor` scales the
+    // luminance by it. The colour ends darker than a light background,
+    // so the luminance reading at 4.5 against it solves the ratio.
+    let target = (luminance(background) + 0.05) / 4.5 - 0.05;
+    let mut factor = (target / luminance(colour)).clamp(0.0, 1.0);
+    // The round to a channel's step can leave the produced colour a hair
+    // under 4.5: ease the factor down until what is drawn passes.
+    for _ in 0..16 {
+        let darkened = scaled(colour, factor);
+        if contrast(darkened, background) >= 4.5 {
+            return darkened;
+        }
+        factor *= 0.99;
+    }
+    scaled(colour, factor)
+}
+
+/// The WCAG contrast ratio of two opaque colours: the lighter one's
+/// relative luminance plus 0.05 over the darker one's plus 0.05.
+pub fn contrast(a: egui::Color32, b: egui::Color32) -> f64 {
+    let (a, b) = (luminance(a), luminance(b));
+    (a.max(b) + 0.05) / (a.min(b) + 0.05)
+}
+
+/// `colour`'s WCAG relative luminance: the channels in linear light,
+/// weighted.
+fn luminance(colour: egui::Color32) -> f64 {
+    0.2126 * srgb_to_linear(colour.r())
+        + 0.7152 * srgb_to_linear(colour.g())
+        + 0.0722 * srgb_to_linear(colour.b())
+}
+
+/// A channel's sRGB byte in linear light, 0.0 to 1.0.
+fn srgb_to_linear(channel: u8) -> f64 {
+    let srgb = f64::from(channel) / 255.0;
+    if srgb <= 0.04045 {
+        srgb / 12.92
+    } else {
+        ((srgb + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+/// A channel's linear value back to its sRGB byte, the nearest step.
+fn linear_to_srgb(linear: f64) -> u8 {
+    let srgb = if linear <= 0.003_130_8 {
+        linear * 12.92
+    } else {
+        1.055 * linear.powf(1.0 / 2.4) - 0.055
+    };
+    (srgb * 255.0).round().clamp(0.0, 255.0) as u8
+}
+
+/// `colour` scaled toward black in linear light by `factor`: each
+/// channel's linear value times `factor`, back to sRGB.
+fn scaled(colour: egui::Color32, factor: f64) -> egui::Color32 {
+    egui::Color32::from_rgb(
+        linear_to_srgb(srgb_to_linear(colour.r()) * factor),
+        linear_to_srgb(srgb_to_linear(colour.g()) * factor),
+        linear_to_srgb(srgb_to_linear(colour.b()) * factor),
+    )
+}
+
 /// The one corner radius everything drawn with corners rounds by, the
 /// drafts' `border-radius: 2px`: `install` pins it on every radius egui
 /// draws (the window's, the menu's and each widget state's), and the
@@ -838,24 +910,6 @@ mod tests {
         );
     }
 
-    /// The WCAG contrast ratio of two opaque colours: the lighter one's
-    /// relative luminance plus 0.05 over the darker one's plus 0.05.
-    fn contrast(a: egui::Color32, b: egui::Color32) -> f64 {
-        let luminance = |colour: egui::Color32| {
-            let linear = |channel: u8| {
-                let srgb = f64::from(channel) / 255.0;
-                if srgb <= 0.04045 {
-                    srgb / 12.92
-                } else {
-                    ((srgb + 0.055) / 1.055).powf(2.4)
-                }
-            };
-            0.2126 * linear(colour.r()) + 0.7152 * linear(colour.g()) + 0.0722 * linear(colour.b())
-        };
-        let (a, b) = (luminance(a), luminance(b));
-        (a.max(b) + 0.05) / (a.min(b) + 0.05)
-    }
-
     /// Each widget state's fills by name. The open state's `bg_fill` is left
     /// out: the open combo box and menu button draw as buttons, which fill
     /// with `weak_bg_fill`, so it keeps egui's light grey.
@@ -1042,6 +1096,51 @@ mod tests {
             assert!(
                 on_panel >= 4.5,
                 "the {name} success green reads at {on_panel:.3} on its panel"
+            );
+        }
+    }
+
+    // `darkened_to_read` is the light theme's rule for a text colour as a
+    // function: white on the light panel comes back a grey reading at 4.5
+    // to 4.6, a colour already at 4.5 comes back unchanged, and the rule
+    // gives the lineup lists' hand-made light values (the pitch's
+    // position colours darkened until they read on the panel).
+    #[test]
+    fn darkened_to_read_darkens_until_the_colour_reads_at_4_5() {
+        let panel = egui::Visuals::light().panel_fill;
+        assert_eq!(
+            panel,
+            egui::Color32::from_gray(248),
+            "premise: the light panel"
+        );
+        let white = darkened_to_read(egui::Color32::WHITE, panel);
+        assert_eq!([white.r(), white.g()], [white.g(), white.b()], "a grey");
+        let on_panel = contrast(white, panel);
+        assert!(
+            (4.5..4.6).contains(&on_panel),
+            "white darkened to {white:?}, reading at {on_panel:.3} on the light panel"
+        );
+        let error = egui::Color32::from_rgb(0xD1, 0x24, 0x2F);
+        assert!(
+            contrast(error, panel) >= 4.5,
+            "premise: the light theme's error colour already reads at 4.5"
+        );
+        assert_eq!(
+            darkened_to_read(error, panel),
+            error,
+            "a colour already at 4.5 comes back unchanged"
+        );
+        let (dark, light) = (&Palette::DARK, &Palette::LIGHT);
+        for (name, pitch, lineup) in [
+            ("keeper", dark.keeper, light.lineup_keeper),
+            ("defender", dark.defender, light.lineup_defender),
+            ("midfielder", dark.midfielder, light.lineup_midfielder),
+            ("forward", dark.forward, light.lineup_forward),
+        ] {
+            assert_eq!(
+                darkened_to_read(pitch, panel),
+                lineup,
+                "the rule gives the hand-made light {name}"
             );
         }
     }

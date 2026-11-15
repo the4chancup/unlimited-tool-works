@@ -159,6 +159,10 @@
   name is spelt.
 - **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
   hair color comment in `settings.toml` spell "color", as the rest of the program does.
+- **Save editor**: on the light theme, a white or pale color code in a team's or player's
+  name is drawn darker, so the name stays readable on the light background.
+- **Save editor**: the column heads of the unsaved changes list are no longer dimmed, and
+  the notice after a paste that left values out ends with a full stop.
 
 ## [0.0.1] - 2026-11-03
 

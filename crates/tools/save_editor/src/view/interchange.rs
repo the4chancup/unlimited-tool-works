@@ -34,7 +34,7 @@ use pes_savefile::schema::texport::texport_writes;
 use pes_version::PesVersion;
 use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_header};
 use studio_core::{Notice, NoticeKind, Recorder};
-use team_widgets::names::append_name;
+use team_widgets::names::{append_name, name_background};
 
 use crate::messages::{TOOL_ID, import_note, when_and_effect};
 use crate::session::Session;
@@ -1123,7 +1123,7 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing], max_height: f32) {
                             .weak(),
                     );
                     let mut name = egui::text::LayoutJob::default();
-                    append_name(&mut name, &row.name, &font);
+                    append_name(&mut name, &row.name, &font, name_background(ui.visuals()));
                     ui.label(name);
                 });
             }
@@ -1203,7 +1203,7 @@ fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
             match &note.name {
                 Some(name) => {
                     let mut job = egui::text::LayoutJob::default();
-                    append_name(&mut job, name, &font);
+                    append_name(&mut job, name, &font, name_background(ui.visuals()));
                     ui.label(job);
                 }
                 None => {

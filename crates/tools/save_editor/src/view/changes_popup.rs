@@ -175,14 +175,16 @@ fn table_with_xs(
 ) -> Option<ListClick> {
     let error = ui.visuals().error_fg_color;
     let separator = ui.visuals().widgets.noninteractive.bg_stroke;
-    // The head, drawn as the table's other heads are (weak); its width
-    // sets the column's.
-    let galley = egui::WidgetText::from(egui::RichText::new("Undo").weak()).into_galley(
-        ui,
-        Some(egui::TextWrapMode::Extend),
-        f32::INFINITY,
-        egui::TextStyle::Body,
-    );
+    // The head, drawn as the table's other heads are (the strong text
+    // colour); its width sets the column's.
+    let galley =
+        egui::WidgetText::from(egui::RichText::new("Undo").color(ui.visuals().strong_text_color()))
+            .into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::TextStyle::Body,
+            );
     let x_width = ui.spacing().interact_size.y.max(galley.size().x);
     egui::ScrollArea::vertical()
         .max_height(240.0)

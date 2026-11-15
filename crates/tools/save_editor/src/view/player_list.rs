@@ -13,7 +13,7 @@ use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     combo_item, combo_separator, ink_span, radio_value, step_choice, text_box, wheel_steps,
 };
-use team_widgets::names::{append_name, plain_format};
+use team_widgets::names::{append_name, name_background, plain_format};
 
 use crate::session::Session;
 use crate::session::cup::cup_teams;
@@ -662,7 +662,7 @@ fn team_row(
         }
         x += ui.spacing().item_spacing.x;
         let mut job = egui::text::LayoutJob::default();
-        append_name(&mut job, &team.name, &font);
+        append_name(&mut job, &team.name, &font, name_background(ui.visuals()));
         // The end's room (the gap, the dot, the mark and what sits
         // between them) comes off the truncation width, so a long name
         // never runs under either.
@@ -770,7 +770,7 @@ fn player_row(
         place,
         position,
         mut name,
-    } = row_text(player, row, &font);
+    } = row_text(player, row, &font, name_background(ui.visuals()));
     // The unsaved dot paints at the row's right end, never inside the
     // text: a row the name overflows keeps it. The label and the hover
     // keep its text.
@@ -952,15 +952,20 @@ struct RowText {
 }
 
 /// The row's place, position and name for `row`'s player, the name's
-/// runs at `font`.
-fn row_text(player: Option<&PlayerEntry>, row: &Row, font: &egui::FontId) -> RowText {
+/// runs at `font`; `on` is `append_name`'s.
+fn row_text(
+    player: Option<&PlayerEntry>,
+    row: &Row,
+    font: &egui::FontId,
+    on: Option<egui::Color32>,
+) -> RowText {
     let position = player
         .and_then(|player| POSITIONS.get(usize::from(player.positions.registered)))
         .copied()
         .unwrap_or("?");
     let mut name = egui::text::LayoutJob::default();
     match player {
-        Some(player) => append_name(&mut name, &player.name, font),
+        Some(player) => append_name(&mut name, &player.name, font, on),
         None => name.append("?", 0.0, plain_format(font.clone())),
     }
     RowText {

@@ -1161,9 +1161,10 @@ fn a_narrow_lists_xs_end_at_the_boxs_inner_right_edge() {
     }
 }
 
-// The head tells the X's apart from an error mark: a weak `Undo` on the
-// header row's line, every X in the error red centred under it, where it
-// still stands when a wide row has scrolled the table sideways under it.
+// The head tells the X's apart from an error mark: `Undo` in the strong
+// text colour on the header row's line, as the table's other heads draw,
+// every X in the error red centred under it, where it still stands when
+// a wide row has scrolled the table sideways under it.
 // SE-GUI-74
 #[test]
 fn every_x_is_red_under_the_undo_head() {
@@ -1172,8 +1173,8 @@ fn every_x_is_red_under_the_undo_head() {
     click_label(&mut window, &mut view);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let nodes = list_nodes(&pairs);
-    // Weak as the table's other heads are, on their line, right of `New
-    // value`.
+    // Strong as the table's other heads are, on their line, right of
+    // `New value`.
     let head = nodes
         .iter()
         .find(|node| node.role() == Role::Label && node.value() == Some("Undo"))
@@ -1193,10 +1194,24 @@ fn every_x_is_red_under_the_undo_head() {
         "the head right of `New value`: {head:?} vs {new_value:?}"
     );
     let visuals = window.ctx.global_style().visuals.clone();
+    assert!(visuals.dark_mode, "premise: the dark theme");
+    let strong = visuals.strong_text_color();
+    for value in ["Item", "Old value", "New value"] {
+        let cell = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(value))
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("the {value} head"));
+        assert_eq!(
+            painted_text_color(&shapes, value, cell),
+            strong,
+            "the {value} head in the strong text colour"
+        );
+    }
     assert_eq!(
         painted_text_color(&shapes, "Undo", head),
-        visuals.weak_text_color(),
-        "the head weak"
+        strong,
+        "the Undo head in the strong text colour"
     );
     let head_centre = (head.x0 + head.x1) / 2.0;
     for item in [
