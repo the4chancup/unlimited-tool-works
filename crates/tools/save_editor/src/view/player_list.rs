@@ -3,13 +3,15 @@
 //! shows the name drawn in the colors its savefile codes set; a team row the
 //! team's id, its colours 1-2 as swatches and its name.
 
+use egui::AtomExt as _;
+use egui::Widget as _;
+use egui::class::HasClasses as _;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    COMBO_SEPARATOR_SPACING, combo_item, combo_separator, ink_span, radio_value, step_choice,
-    text_box, wheel_steps,
+    combo_item, combo_separator, ink_span, radio_value, step_choice, text_box, wheel_steps,
 };
 use team_widgets::names::{append_name, plain_format};
 
@@ -448,7 +450,7 @@ struct RowLayout {
 /// as any dropdown's list, the footer's height added to the popup's
 /// rather than taken from it, so the radios stay in view while the
 /// teams scroll. Picking one leaves the popup open, so the shorter list
-/// shows at once (the combo's `CloseOnClickOutside` keeps it open on a
+/// shows at once (the popup's `CloseOnClickOutside` keeps it open on a
 /// click inside, and an entry's own `ui.close()` closes it on a pick).
 /// `id_salt` is the combo's: two combos with one salt share their
 /// popup state, so the comparator's filter passes its own (the player
@@ -462,67 +464,96 @@ pub(super) fn team_selector(
 ) {
     let mut chosen = *choice;
     let shown = category.as_deref().copied().unwrap_or(TeamCategory::All);
-    let combo = egui::ComboBox::from_id_salt(id_salt).selected_text(match chosen {
+    let text = match chosen {
         TeamChoice::All => "All teams".to_owned(),
         TeamChoice::Team(id) => file
             .team(id)
             .map(|team| display_name(&team.name))
             .unwrap_or_else(|| id.to_string()),
-    });
-    let combo = if category.is_some() {
-        // The radios' footer under the teams' scroll area is added to
-        // the popup's height, not taken from the teams': the teams'
-        // area keeps a whole dropdown's `combo_height`, the separator
-        // and the radios under it (the draft's `.combo-foot`).
-        let row = ui.spacing().interact_size.y + ui.spacing().item_spacing.y;
-        let footer = COMBO_SEPARATOR_SPACING + 4.0 * row;
-        combo
-            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
-            .height(ui.spacing().combo_height + footer)
-    } else {
-        combo
     };
-    let combo = combo
-        .show_ui(ui, |ui| {
-            let mut items = |ui: &mut egui::Ui| {
-                if combo_item(ui, &mut chosen, TeamChoice::All, "All teams").clicked() {
-                    ui.close();
-                }
-                for team in cup_teams(file) {
-                    if shown.contains(team.id)
-                        && combo_item(
-                            ui,
-                            &mut chosen,
-                            TeamChoice::Team(team.id),
-                            display_name(&team.name),
-                        )
-                        .clicked()
-                    {
+    // A `ComboBox`'s popup is egui's own scroll area, which reports no
+    // taller than the `Area` around it, and an `Area` measures inside
+    // `spacing.default_area_size` (600 x 400): the list and the radios
+    // could not grow past 400 points. `Popup::menu` gives the same
+    // popup with the contents laid out plainly, so the teams' area
+    // takes `combo_height` and the footer adds under it. The button is
+    // the one `ComboBox` draws: the selected text and a down triangle
+    // at the right edge.
+    let popup_id = ui.make_persistent_id(id_salt).with("popup");
+    let icon = egui::Atom::paint(egui::Vec2::splat(ui.spacing().icon_width), |ui, args| {
+        ui.painter().add(egui::Shape::rotated_triangle(
+            egui::Rect::from_center_size(
+                args.rect.center(),
+                egui::vec2(args.rect.width() * 0.7, args.rect.height() * 0.45),
+            ),
+            0.0,
+            args.fallback_text_color,
+        ));
+    });
+    let open = egui::Popup::is_id_open(ui.ctx(), popup_id);
+    let response = egui::Button::new((
+        text.as_str(),
+        icon.atom_grow(true).atom_align(egui::Align2::RIGHT_CENTER),
+    ))
+    .min_size(egui::vec2(ui.spacing().combo_width, 0.0))
+    .with_class_if(egui::ComboBox::CLASS_OPEN, open)
+    .ui(ui);
+    response.widget_info(|| {
+        let mut info = egui::WidgetInfo::new(egui::Role::ComboBox);
+        info.enabled = ui.is_enabled();
+        info.current_text_value = Some(text.clone());
+        info
+    });
+    let popup = egui::Popup::menu(&response)
+        .id(popup_id)
+        .width(response.rect.width())
+        .close_behavior(if category.is_some() {
+            egui::PopupCloseBehavior::CloseOnClickOutside
+        } else {
+            egui::PopupCloseBehavior::CloseOnClick
+        })
+        .show(|ui| {
+            ui.set_min_width(ui.available_width());
+            egui::ScrollArea::vertical()
+                .max_height(ui.spacing().combo_height)
+                .show(ui, |ui| {
+                    // `ComboBox` keeps the labels from wrapping, the
+                    // narrow popup notwithstanding.
+                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                    if combo_item(ui, &mut chosen, TeamChoice::All, "All teams").clicked() {
                         ui.close();
                     }
-                }
-            };
+                    for team in cup_teams(file) {
+                        if shown.contains(team.id)
+                            && combo_item(
+                                ui,
+                                &mut chosen,
+                                TeamChoice::Team(team.id),
+                                display_name(&team.name),
+                            )
+                            .clicked()
+                        {
+                            ui.close();
+                        }
+                    }
+                });
             if let Some(category) = category {
-                // The teams scroll in an area of their own as tall as
-                // any dropdown's list: the radios stay in view under it
-                // while the teams scroll.
-                egui::ScrollArea::vertical()
-                    .max_height(ui.spacing().combo_height)
-                    .show(ui, &mut items);
                 combo_separator(ui);
                 for button in TeamCategory::CHOICES {
                     radio_value(ui, category, button, button.label());
                 }
-            } else {
-                items(ui);
             }
-        })
-        .response;
+        });
+    if popup.is_some() {
+        ui.ctx().accesskit_node_builder(popup_id, |node| {
+            node.set_role(egui::Role::ListBox);
+        });
+    }
     let teams = cup_teams(file)
         .filter(|team| shown.contains(team.id))
         .map(|team| TeamChoice::Team(team.id));
     let choices = std::iter::once(TeamChoice::All).chain(teams);
-    if let Some(next) = step_choice(choices, &chosen, wheel_steps(ui, &combo)) {
+    if let Some(next) = step_choice(choices, &chosen, wheel_steps(ui, &response)) {
         chosen = next;
     }
     *choice = chosen;
