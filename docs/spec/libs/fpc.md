@@ -56,7 +56,7 @@ hide IDs' error type), holding data and pure rules only:
   preset's one version-dependent fact lives with the rest of the FPC knowledge.
 - `interference.rs`: the settings that break or bend FPC, as findings with severity:
   - inners ≠ None and undershorts ≠ Off/Off break hiding (error on an FPC player);
-  - wrist/ankle taping ≠ None selectively shows pieces (info: deliberate in custom setups);
+  - wrist/ankle taping ≠ None selectively shows pieces (info: some custom setups want it);
   - the Gloves checkbox with gloves ID 0 causes winter gloves in winter conditions (warning);
   - skin color Custom on a non-FPC player hides the body but not the jersey (warning).
 

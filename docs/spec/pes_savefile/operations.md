@@ -496,7 +496,7 @@ stronger_foot = "right"         # "right" | "left"
 stronger_hand = "right"         # PES 20 and later; "right" | "left"
 
 [players.01.skills]
-skills = ["scissors_feint", "heading"]      # the player's skills
+skills = ["scissors_feint", "heading"]      # the player's skills: lowercase names, _ between words
 com_styles = ["trickster"]                  # "trickster" "mazing_run" "speeding_bullet" "incisive_run" "long_ball_expert" "early_cross" "long_ranger"
 
 [players.01.edit_flags]         # the parts the game marked as edited, true or false

@@ -148,6 +148,10 @@
   stats and instructions tables each carry a short note.
 - **Export upgrader**: a kit `config.toml`'s comments sit at one column whatever the
   value's width.
+- **Save editor**: the note about wrist or ankle taping under a hidden body says to take
+  the taping off unless it is meant to show.
+- **Save editor**: in a Team TOML export, the comment beside `skills` says how a skill's
+  name is spelt.
 
 ## [0.0.1] - 2026-11-03
 

@@ -246,7 +246,7 @@ fn emit_player(
             .skills
             .map(|flags| flag_list(flags, &labels::SKILLS)),
         "[]",
-        "the player's skills",
+        "the player's skills: lowercase names, _ between words",
     );
     emit(
         out,

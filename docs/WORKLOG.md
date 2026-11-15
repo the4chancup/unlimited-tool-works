@@ -1902,17 +1902,10 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
-    - [ ] set aside by the rulings, decided by the maintainer 2026-11-15 (DECISIONS
-      2026-11-15 "the taping advice and the skills comment"; the third, the Ruleset
-      editor's findings, after 0.0.2), to build:
-      - `fpc_taping_shows_pieces`: "Some custom setups do this on purpose. If yours does
-        not, take the taping off." in the Save editor, the Compiler's catalog row
-        (`messages/catalog.rs`, its condition losing "(deliberate in custom setups)", its
-        advice the same sentence after "It is written as authored.") and
-        `spec/libs/fpc.md`'s line
-      - the Team TOML's `skills` comment: `the player's skills: lowercase names, _ between
-        words` (the writer, `team_toml/player/mod.rs`, and the spec block in
-        `spec/pes_savefile/operations.md`, which a test reads)
+    - [x] 2026-11-15 (lead) the two texts the maintainer picked (DECISIONS 2026-11-15 "the
+      taping advice and the skills comment"): `fpc_taping_shows_pieces`'s advice in the
+      Save editor and the Compiler, and the Team TOML's `skills` comment; the third, the
+      Ruleset editor's findings, waits until after 0.0.2
     - [x] 2026-11-14 (`f90a92a0`) the Team TOML, patch and kit config spec blocks show what
       their writers write, each guarded by a test that reads the block; the Team TOML gains
       its first line, the instructions' note and the stats table's stored-values note; the

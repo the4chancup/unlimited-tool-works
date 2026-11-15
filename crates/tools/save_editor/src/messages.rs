@@ -346,7 +346,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::FpcTapingShowsPieces,
         r#"The player wears wrist or ankle taping under a hidden body, so the taped pieces still show."#,
-        r#"This is deliberate in custom setups, so there is nothing to do."#,
+        r#"Some custom setups do this on purpose. If yours does not, take the taping off."#,
     ),
     (
         Code::FpcGlovesCheckboxWinterGloves,

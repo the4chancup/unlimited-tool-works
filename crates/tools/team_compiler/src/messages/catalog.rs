@@ -271,8 +271,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "fpc_taping_shows_pieces",
         CatalogSeverity::Info,
-        r#"A player whose folder carries `fpc_on` wears wrist or ankle taping, which shows pieces of the hidden body (deliberate in custom setups)."#,
-        r#"It is written as authored. Nothing to do."#,
+        r#"A player whose folder carries `fpc_on` wears wrist or ankle taping, which shows pieces of the hidden body."#,
+        r#"It is written as authored. Some custom setups do this on purpose. If yours does not, take the taping off."#,
     ),
     (
         "fpc_gloves_checkbox_winter_gloves",

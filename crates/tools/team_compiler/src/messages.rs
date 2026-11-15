@@ -166,7 +166,7 @@ pub(crate) enum Code {
     /// hidden body break the hiding (the lib's Error, a Warning here).
     FpcUndershortsBreakHiding,
     /// `libs/fpc`'s rule on a player whose folder carries `fpc_on`: wrist or ankle taping
-    /// selectively shows body pieces, deliberate in custom setups.
+    /// selectively shows body pieces, which some custom setups want.
     FpcTapingShowsPieces,
     /// `libs/fpc`'s rule on any player: the gloves checkbox on with gloves ID 0 gives winter
     /// gloves in winter conditions (a `Midcup` player whose gloves keep the installed row is
