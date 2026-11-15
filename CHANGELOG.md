@@ -23,6 +23,10 @@
 - **Save editor**: a toggle left of the player's or team's name switches the right side
   between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
   Appearance, until now a collapsed section under the stats, is a screen of its own.
+- **Save editor**: in a team file, a player's shirt number is now `shirt_number`, since
+  `number` read as his ID. A team file exported by 0.0.1 is refused: export the team again, or
+  rename each `number` under a `[players.NN]` heading to `shirt_number` (a kit slot's `number`
+  stays as it is).
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
   installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
   mentions a newer version too. The Help
