@@ -3,12 +3,10 @@ you, so you do not need to download a new release by hand.
 
 **Checking for a new version**
 
-The program reads the list of releases on its GitHub page when it starts, unless
-it checked less than 120 minutes ago, and again every 120 minutes while it stays
-open. You can turn this off with `Check for updates` in the
-settings, or change how often it happens with `Check interval (minutes)`. When
-a check fails, because you are offline for instance, nothing is shown and the
-program tries again later.
+The program reads the list of releases on its GitHub page when it starts, and
+again every 5 minutes while it stays open. You can turn this off with
+`Check for updates` in the settings. When a check fails, because you are
+offline for instance, nothing is shown and the program tries again later.
 
 The launchers (the `.bat` files that come with the program on Windows, such
 as `quick_compile.bat`), and a tool's command typed in a terminal, look for a new

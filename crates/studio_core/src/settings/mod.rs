@@ -544,7 +544,6 @@ mod tests {
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
                         check_for_updates = true\n\
-                        check_interval_minutes = 120\n\
                         \n\
                         [compiler]\n\
                         # its own note\n\
@@ -569,7 +568,6 @@ mod tests {
         let path = dir.join("settings_missing_key.toml");
         let original = "[common]\n\
                         check_for_updates = true\n\
-                        check_interval_minutes = 120\n\
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
@@ -822,8 +820,7 @@ mod tests {
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
-                        check_for_updates = true\n\
-                        check_interval_minutes = 120\n";
+                        check_for_updates = true\n";
         fs::write(&path, original).unwrap();
 
         let mut settings = Settings::load(&path).unwrap();
@@ -852,7 +849,6 @@ mod tests {
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
-                        check_interval_minutes = 120\n\
                         last_tool = \"compiler\"\n\
                         \n\
                         [compiler]\n\
@@ -873,7 +869,6 @@ mod tests {
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
-                        check_interval_minutes = 120\n\
                         last_tool = \"compiler\"\n\
                         \n\
                         [compiler]\n\
@@ -1157,21 +1152,19 @@ mod tests {
 
         let mut session_a = Settings::load(&path).unwrap();
         let mut session_b = Settings::load(&path).unwrap();
-        session_b.common.thread_count = 2;
+        session_b.common.check_for_updates = false;
         session_b.save(&path).unwrap();
 
         session_a.common.theme = Theme::Light;
         session_a.save(&path).unwrap();
-        assert_eq!(
-            Settings::load(&path).unwrap().common.thread_count,
-            2,
+        assert!(
+            !Settings::load(&path).unwrap().common.check_for_updates,
             "A's save kept B's value"
         );
-        session_a.common.check_interval_minutes = 60;
+        session_a.common.thread_count = 60;
         session_a.save(&path).unwrap();
-        assert_eq!(
-            Settings::load(&path).unwrap().common.thread_count,
-            2,
+        assert!(
+            !Settings::load(&path).unwrap().common.check_for_updates,
             "A's second save still keeps B's value"
         );
 
@@ -1181,7 +1174,7 @@ mod tests {
         session_a.save(&path).unwrap();
         session_b.common.last_tool = Some("export-upgrader".to_owned());
         session_b.save(&path).unwrap();
-        session_a.common.check_interval_minutes = 30;
+        session_a.common.thread_count = 30;
         session_a.save(&path).unwrap();
         assert_eq!(
             Settings::load(&path).unwrap().common.last_tool,

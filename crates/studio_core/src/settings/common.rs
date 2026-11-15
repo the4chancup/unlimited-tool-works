@@ -48,10 +48,6 @@ pub struct CommonSettings {
     pub invert_value_scrolling: bool,
     /// Whether the window and tool commands look for new releases.
     pub check_for_updates: bool,
-    /// Minutes between the window's release checks.
-    pub check_interval_minutes: u32,
-    /// When the last release check ran, in seconds since the Unix epoch.
-    pub last_update_check: Option<u64>,
     /// A release the user chose to skip; the updater stays quiet about it.
     pub skipped_version: Option<String>,
     /// The tool active when the GUI last closed; `studio` with no arguments reopens it.
@@ -83,8 +79,6 @@ impl Default for CommonSettings {
             theme: Theme::Dark,
             invert_value_scrolling: false,
             check_for_updates: true,
-            check_interval_minutes: 120,
-            last_update_check: None,
             skipped_version: None,
             last_tool: None,
             last_run_version: None,
@@ -625,11 +619,11 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // The defaults the spec pins: `spec/team_compiler/settings.md`'s "Common
     // settings (studio_core)" table (version 19, the `20**` folder, `exports/`,
     // 0 auto threads, 80.0, the update check) and `spec/core/distribution.md`'s
-    // "Update state" table (`check_for_updates` true, `check_interval_minutes` 120,
-    // `last_update_check` and `skipped_version` empty). `theme` is the dark
-    // preset, the default the GUI phase plans, `last_tool` and `last_run_version`
-    // empty on a first run, `window_main` empty until the first close. The hide
-    // IDs are the FPC convention's 55 and 11 (`fpc::HideIds::CONVENTION`).
+    // "Update state" table (`check_for_updates` true, `skipped_version` empty).
+    // `theme` is the dark preset, the default the GUI phase plans, `last_tool`
+    // and `last_run_version` empty on a first run, `window_main` empty until
+    // the first close. The hide IDs are the FPC convention's 55 and 11
+    // (`fpc::HideIds::CONVENTION`).
     #[test]
     fn the_defaults_match_the_settings_tables() {
         // `pes_folder_path` is the shipped pattern on Windows and empty
@@ -650,8 +644,6 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
                 theme: Theme::Dark,
                 invert_value_scrolling: false,
                 check_for_updates: true,
-                check_interval_minutes: 120,
-                last_update_check: None,
                 skipped_version: None,
                 last_tool: None,
                 last_run_version: None,

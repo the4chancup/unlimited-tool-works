@@ -199,12 +199,11 @@ fn installed(before: &BTreeMap<String, Option<String>>) -> BTreeMap<String, Opti
     expected
 }
 
-/// Sets `last_update_check` back past the interval, so a check falls due.
-fn make_check_due(shell: &Shell) {
-    let mut settings = shell.settings.lock().unwrap();
-    let interval = crate::updater::interval_secs(&settings.common);
-    settings.common.last_update_check =
-        Some(crate::updater::now_secs().saturating_sub(interval + 60));
+/// Brings the next check's instant to now, so the next frame starts one.
+fn make_check_due(app: &mut StudioApp) {
+    app.update_poll = UpdatePoll::Idle {
+        next_at: Instant::now(),
+    };
 }
 
 /// Makes `app`'s update check answer the releases fixture and count its
@@ -740,7 +739,7 @@ fn no_check_runs_while_an_install_runs_or_after_it_succeeded() {
         "the check that raised the offer"
     );
 
-    make_check_due(&shell);
+    make_check_due(&mut shell.app);
     assert_no_check(
         &egui_ctx,
         &mut shell.app,
@@ -780,7 +779,7 @@ fn no_check_runs_while_an_install_runs_or_after_it_succeeded() {
     shell.app.update_open_url = Arc::from(serve(running_assets(None), None));
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Retry"));
     frame_until_text(&egui_ctx, &mut shell.app, READY_SENTENCE);
-    make_check_due(&shell);
+    make_check_due(&mut shell.app);
     assert_no_check(&egui_ctx, &mut shell.app, &fetches, "after Update ready");
 }
 
@@ -795,11 +794,22 @@ fn a_window_closed_during_the_download_waits_for_the_worker() {
     update_now(&egui_ctx, &mut shell.app);
     frame_until_text(&egui_ctx, &mut shell.app, &download_line("0.0"));
 
-    // The second half goes on only after a while, so a close that does not
-    // wait for the worker returns while the worker still holds its temp
-    // folder, which the snapshot then shows.
+    // The second half goes on only once the close's cancel reaches the
+    // worker: a close that does not wait for it returns while the worker
+    // still holds its temp folder, which the snapshot then shows.
+    let Stage::Downloading(install) = &shell.app.update_dialog.stage else {
+        panic!("the premise: the download runs");
+    };
+    let cancel = Arc::clone(&install.cancel);
     let releaser = std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_millis(300));
+        let deadline = Instant::now() + Duration::from_secs(120);
+        while !cancel.load(Ordering::Relaxed) {
+            assert!(
+                Instant::now() < deadline,
+                "the close never cancelled the install"
+            );
+            std::thread::yield_now();
+        }
         drop(go_on);
     });
     shell.app.on_exit();
@@ -919,7 +929,7 @@ fn the_bar_reads_update_ready_after_the_install_and_details_opens_it_again() {
     assert_ready_bar(&nodes, "after Escape");
 
     let fetches = count_fetches(&mut shell.app);
-    make_check_due(&shell);
+    make_check_due(&mut shell.app);
     assert_no_check(&egui_ctx, &mut shell.app, &fetches, "after Later");
 }
 
