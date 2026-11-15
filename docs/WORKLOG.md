@@ -2248,6 +2248,12 @@ briefs, review loops, gates and mutation runs as for any step.
       ellipsis as the other two columns are, and three tests that passed on wrong code
       (the cut's width bounded from below, the whole dragged row watched, the float gone
       after the release); its loop ended. One paid round is owed (Carbon)
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 9 of 10 concerns accepted: a
+        Comparator panel dragged narrow cut its values with no ellipsis; a held row slid
+        away from the pointer and vanished while the wheel scrolled the list; Esc's cancel
+        of a drop untested (a test first); two tests that could not fail; the lead's text:
+        the plan's drag and Comparator paragraphs (`10a7b2d3`)
+      - [ ] the rework (SWE-2, `sk/cmprw`), then Carbon's round 2
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2273,6 +2279,13 @@ briefs, review loops, gates and mutation runs as for any step.
       inside its panel, the team view's last row at 739 and no logo on the frame a save
       opens
     - [ ] one paid round (Carbon)
+    - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 14 of 15 concerns accepted: a Ctrl
+      shortcut ran with Shift or Alt held too, so Ctrl+Shift+S, Save as elsewhere, saved
+      over the open file; an undo step reached back past a save; the Player menu differed
+      with a team row selected; recent-file labels used backslashes on Linux; the welcome
+      list kept a stale entry; tests and citations; the lead's text: the help's Undo
+      paragraph and a changelog clause (`10a7b2d3`)
+    - [ ] the rework (SWE-2, `sk/barrw`, after `sk/cliprw` merges), then Carbon's round 2
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
@@ -2317,6 +2330,12 @@ briefs, review loops, gates and mutation runs as for any step.
       standing notice and `SwitchVersion` removed (ST-BAR-07, 08 withdrawn)
     - [x] its SWE-2 loop (2026-11-12; rulings "S-sel r1" and "S-sel r2", five then two
       accepted; fixes `1c765193` and the commit after it). Carbon owed
+    - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 11 of 13 concerns accepted:
+      portraits stayed blank after the PES folder was repaired and picked again; an unused
+      context API (`pes_exe_check`) beside the sidebar's own check; six tests that could not
+      fail; the lead's text: the help's PES version paragraph and Set PES path trigger, the
+      architecture section, a changelog line (`cef04d9c`)
+    - [ ] the rework (SWE-2, `sk/selrw`, after `sk/barrw` merges), then Carbon's round 2
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
       `look-pes-selector` in `docs/maintainer/tasks.html`
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -2463,6 +2482,12 @@ briefs, review loops, gates and mutation runs as for any step.
       none of them the crash, which the look found. "S-inst r2" over the fix: 1 of 3,
       its loop ended; the checkpoint's survivor (`set_relaunch` replaced by nothing) got
       its test (`9d12e100`). Owed: one paid round (Carbon)
+      - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 5 of 7 concerns accepted:
+        `taskbar.rs` missing from the mutation run's Windows-only list, so its mutants
+        counted as missed on the VPS; a test helper that accepted a value of the wrong
+        type; two hidden-window tests where one covers both; the lead's text: the GUI
+        plan's taskbar section, the dependency row and the `Cargo.toml` note (`10a7b2d3`)
+      - [ ] the rework (SWE-2, `sk/instrw`), then Carbon's round 2
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -2656,6 +2681,13 @@ briefs, review loops, gates and mutation runs as for any step.
         (`4cded58e`, merge `46fc9622`; DECISIONS 2026-11-11), then SWE-2 r2: 0 accepted (the
         paths it raised are in none of the 15,199 FMDLs under `C:/Data/4cc`; a doc nit
         fixed), its loop ended; Carbon owed
+        - [x] Carbon's round 1, 2026-11-15 (at `2f9b9c44`): 10 of 11 concerns accepted: a
+          player, Boots or Gloves FMDL naming the token in a game-folder path, which the
+          upgrader rewrites to `./` (`/Assets/.../face/real/00000/sourceimages/u0XXXp1.dds`,
+          as Blender's exporter writes it), compiled with no finding; five checks no test
+          could fail; the catalog row's text, the help and two spec passages (`64d1981f`,
+          the rest with the rework)
+        - [ ] the rework (SWE-2, `sk/ktorw`), then Carbon's round 2
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
