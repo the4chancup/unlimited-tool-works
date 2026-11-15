@@ -462,8 +462,8 @@ pub fn pitch(
             egui::WidgetInfo::labeled(egui::Role::Unknown, ui.is_enabled(), "pitch")
         });
         // Rounded as every framed panel is (the draft's `border-radius:
-        // 2px`); the turf takes the radius inside the 1-point border, so
-        // no square turf corner shows past the curve.
+        // 2px`); the turf takes the border's whole round, so no corner
+        // of turf shows past the curve.
         let radius = ui.visuals().widgets.noninteractive.corner_radius;
         ui.painter().rect_stroke(
             area,
@@ -476,7 +476,7 @@ pub fn pitch(
         paint_pitch(
             &painter,
             canvas,
-            radius - 1,
+            radius,
             palette,
             pitch_look(version),
             false,

@@ -470,10 +470,10 @@ fn the_painted_lines_are_each_screens_markings() {
 }
 
 // The draft's `.pitch` has `border-radius: 2px`, the browser clipping
-// the canvas to the border's inner edge: the border is stroked at the
+// the turf to the border's own curve: the border is stroked at the
 // widgets' 2-point radius around the canvas and its 1-point side, and
-// the turf fills the canvas at the inner radius, 1, so no square turf
-// corner shows past the curve.
+// the turf fills the canvas at that same round, so no corner of turf
+// shows past the curve.
 #[test]
 fn the_pitchs_border_and_turf_round_their_corners() {
     let mut window = Headless::sized(600.0, 450.0);
@@ -509,9 +509,8 @@ fn the_pitchs_border_and_turf_round_their_corners() {
         .expect("the turf, a textured rect");
     assert_eq!(turf.rect, canvas, "the turf fills the canvas");
     assert_eq!(
-        turf.corner_radius,
-        radius - 1,
-        "the turf's radius, the border's inner one"
+        turf.corner_radius, border.corner_radius,
+        "the turf takes the border's whole round"
     );
 }
 
