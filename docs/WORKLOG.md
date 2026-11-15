@@ -2218,6 +2218,12 @@ briefs, review loops, gates and mutation runs as for any step.
     DECISIONS 2026-11-15). Landed (SWE-2, `bdb78173`, merge `4bc6bd55`): ST-WHEEL-05 and 06
     red first; a preset's wheel step writes no undo entry, which ST-WHEEL-05 now says
     - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
+  - [ ] 0.0.2-recents the Save editor keeps its last 10 saves opened or saved between runs
+    (`recent_files`, each with its version) and lists them under Recent on the welcome panel
+    and in the File menu, each `[PES 2021] backups\EDIT00000000 - VGL26` (P58, the
+    maintainer, 2026-11-15; plan and DECISIONS edited) -> verify: SE-GUI-26 and SE-GUI-90 red
+    first; a start with the setting lists the earlier run's saves; a deleted one is dropped.
+    After 0.0.2-bar's round 6 rework merges (`file_menu.rs`). Tier 2
   - [ ] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)

@@ -18106,3 +18106,17 @@ that a later tool cancelled, while the help promised returning members their fil
 (Carbon's bar round 6, C-bar r6-1). Remembering recent saves across runs would make such a
 list useful: that is a proposal, not this fix.
 Plan: `plans/save_editor.md` "The toolbar", the welcome panel's paragraph; SE-GUI-90.
+
+## 2026-11-15 — save_editor — The Save editor remembers its recent saves between runs
+Decision (the maintainer, accepting P58): the last 10 saves opened or saved are kept in the
+tool's settings (`recent_files`, each with its version) and listed under *Recent* on the
+welcome panel and in the File menu, newest first; each reads
+`[PES 2021] backups\EDIT00000000 - VGL26`, its version in brackets, then its folder and file
+name, its path in the tooltip. This reverses the same day's "The welcome panel lists no
+recent files", which dropped the section only because a list of this run's files could
+never show there.
+Why: the Ruleset editor already keeps its recent files between runs, and two editors that
+remember differently surprise a member; a name alone repeats across versions and backups.
+The version is stored with the path so a start reads no save to label it.
+Plan: `plans/save_editor.md` "The toolbar", the welcome panel's paragraph and the recent
+saves' after it; SE-GUI-26, SE-GUI-90.

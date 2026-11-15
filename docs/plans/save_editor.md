@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened or saved earlier in the session, above the ordinary file picker, which opens where "The toolbar" says (the folder of the last save opened, else the newest discovered save's); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the saves opened or saved earlier (remembered between runs), above the ordinary file picker, which opens where "The toolbar" says (the folder of the last save opened, else the newest discovered save's); see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as…**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -496,8 +496,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     differs from its file among the toolbar's quieter text; the blue also tells it is
     clickable (the changes list).
 
-  `File` is the opens first (the discovered saves by version, the session's recent files,
-  the picker), then under a separator `Save` (`Ctrl+S`) and `Save as…`, both dead with no
+  `File` is the opens first (the discovered saves by version, the recent saves, the
+  picker), then under a separator `Save` (`Ctrl+S`) and `Save as…`, both dead with no
   save open; `Edit` is `Undo` (`Ctrl+Z`) and `Redo` (`Ctrl+Y`), each dead with nothing to
   undo or redo, then under a separator `Copy` (`Ctrl+C`) and `Paste` (`Ctrl+V`), which do
   what the two keys do, on the same target ("Ctrl+C and Ctrl+V" below). `Copy` is dead when
@@ -526,11 +526,17 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   - *Saves in Documents*: each discovered save, labelled by its version, the newest of each
     version with its shortcut, its path in the tooltip; with none found, the line "No PES
     saves were found in Documents.";
+  - *Recent*: the recent saves, when there are any;
   - *Choose file…*, with `Ctrl+O`: the picker.
 
-  Unlike the File menu, it lists no recent files. They are this run's, and the panel shows
-  only until the first save opens (no action closes a save), so a *Recent* list there would
-  never be seen.
+  The **recent saves** are the last 10 saves opened or saved, newest first, kept in the
+  tool's settings (`recent_files`) so that a start lists the saves of earlier runs, as the
+  Ruleset editor's start page does. Each entry reads its version in brackets, then its folder
+  and its file name (`[PES 2021] backups\EDIT00000000 - VGL26`), its full path in the
+  tooltip: a save's name alone repeats across versions and backups, and its whole path does
+  not fit. The version is stored with the path when the save is opened or saved, so a start
+  reads no save to label it. A save opened or saved again moves to the front, and one that
+  no longer exists is dropped when the list is shown.
 
   With one menu open, the pointer entering another menu's button opens that one instead, as a
   menu bar does (`MenuBar` switches on hover).
@@ -3579,14 +3585,17 @@ SE-GUI-25  GIVEN the team view's Tactics on preset 1
                 with In-possession
            THEN preset 2 equals preset 1 before the swap, the two formations are exchanged, each
                 as one undoable edit
-SE-GUI-90  GIVEN SE-GUI-26's three discovered saves and no save open
+SE-GUI-90  GIVEN SE-GUI-26's three discovered saves, a PES 21 save in another folder opened in
+                 an earlier run (the `recent_files` setting), and no save open
            WHEN the view is drawn
            THEN the welcome panel in the middle of the view, titled "Save editor", lists the
                 three saves by version, the first PES 21 one with Ctrl+1 beside it and the PES
-                19 one with Ctrl+9, then Choose file… with Ctrl+O, and no Recent heading; no modal layer is up; WHEN the PES 19 entry is clicked THEN
+                19 one with Ctrl+9, then under Recent the save opened in an earlier run,
+                labelled `[PES 2021] <its folder>\<its file name>`, then Choose file… with
+                Ctrl+O; no modal layer is up; WHEN the PES 19 entry is clicked THEN
                 that save opens and the panel is gone; GIVEN no save discovered and none
                 opened THEN the panel reads "No PES saves were found in Documents." above
-                Choose file…
+                Choose file…; GIVEN the earlier run's save deleted THEN no Recent heading
 SE-GUI-91  GIVEN the PES 2021 save on /gd/ (722), its player 10 selected (LB; 12 and 17 share
                  his ability stats and cards as RBs, 13 his ability stats alone, 19 all
                  three)
@@ -3691,7 +3700,8 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
            WHEN the File menu is drawn
            THEN it lists the three discovered saves, each labelled by its version alone, the
                 first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
-                recent file above the file picker, then under a separator Save with Ctrl+S
+                recent save above the file picker, labelled with its version in brackets,
+                its folder and its file name (`[PES 2021] <folder>\<file name>`), then under a separator Save with Ctrl+S
                 beside it and Save as…, both disabled while no save is open; WHEN the menu is
                 closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
