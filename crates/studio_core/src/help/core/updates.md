@@ -22,10 +22,10 @@ When a newer version is out, the status bar shows `Update available` and the
 version's number in blue. Nothing opens by itself: click the text, or the
 `Details` button beside it, when you want to know more.
 
-**Details**
+**Update available**
 
-The Details window names the new version and the one you have, and shows the release
-notes, which say what the new version brings. It has four buttons:
+The `Update available` window names the new version and the one you have, and shows the
+release notes, which say what the new version brings. It has four buttons:
 
 - `Update now` downloads the new version and installs it, as described below;
 - `Open release page` opens the version's page in your browser, where you can
@@ -37,8 +37,8 @@ notes, which say what the new version brings. It has four buttons:
 **What Update now does**
 
 1. It downloads the new version for your system, showing how many MB are done
-   on a bar with a `Cancel` button. Cancel stops the download and brings the
-   offer back, with nothing changed.
+   above a progress bar. `Cancel`, under the bar, stops the download and brings
+   the offer back, with nothing changed.
 2. It checks the download against the checksums published with the release, so
    a damaged download is never installed.
 3. It unpacks the new version into the program's folder. The program you are

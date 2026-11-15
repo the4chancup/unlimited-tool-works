@@ -49,13 +49,13 @@ const FETCH_TIMEOUT: Duration = Duration::from_secs(30);
 /// A release's downloadable file: its name, the URL it downloads from and its
 /// size in bytes.
 #[derive(Debug)]
-pub(crate) struct ReleaseAsset {
+struct ReleaseAsset {
     /// The asset's file name, which the download picks the platform's archive by.
-    pub(crate) name: String,
+    name: String,
     /// The URL the file downloads from.
-    pub(crate) download_url: String,
+    download_url: String,
     /// The file's size in bytes.
-    pub(crate) size: u64,
+    size: u64,
 }
 
 /// A release from the repository's releases list: its version parsed out of
@@ -71,7 +71,7 @@ pub struct Release {
     /// The release's page on GitHub, the "Open release page" target.
     pub(crate) page_url: String,
     /// Its downloadable files.
-    pub(crate) assets: Vec<ReleaseAsset>,
+    assets: Vec<ReleaseAsset>,
 }
 
 /// The releases list's entries as GitHub returns them: every field but the

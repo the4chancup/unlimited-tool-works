@@ -1516,6 +1516,11 @@ mod tests {
             Ok(crate::updater::RELEASES_FIXTURE.to_owned())
         });
         let egui_ctx = test_context();
+        let requested = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let delays = std::sync::Arc::clone(&requested);
+        egui_ctx.set_repaint_observer(move |info| {
+            delays.lock().unwrap().push(info.delay);
+        });
 
         // The stamp must be the check's real finish time: the bounds come from
         // the epoch read directly here, never `updater::now_secs` (a mutant
@@ -1525,7 +1530,24 @@ mod tests {
             .unwrap()
             .as_secs();
         frame(&egui_ctx, &mut app, Vec::new(), true);
+        // The frame's own requests must not stand in for the worker's: the
+        // recorder reads only what is asked from here on.
+        requested.lock().unwrap().clear();
         gate_tx.send(()).unwrap();
+        // The send is followed by the worker's request for an immediate
+        // repaint, the wake an idle window needs to drain the reply: the wait
+        // is on that request, so no frame the test pumps can stand in for it.
+        let deadline = std::time::Instant::now() + GUARD;
+        loop {
+            if requested.lock().unwrap().iter().any(Duration::is_zero) {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the check's worker sent its reply without waking the window"
+            );
+            std::thread::yield_now();
+        }
         // The worker answers as soon as the gate opens, but the test cannot
         // join it: draw frames until its reply lands, giving up only past the
         // deadline so a reply that never comes fails instead of hanging.

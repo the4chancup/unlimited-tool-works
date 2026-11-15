@@ -34,8 +34,8 @@ pub(super) struct StatusBar {
 
 impl StatusBar {
     /// Raises `condition` while `holds`, drops it when it stops. A held condition is shown
-    /// once even if raised twice. Only the settings save raises one for now, and the browser
-    /// build has no settings file.
+    /// once even if raised twice. Its raisers are the settings save and the update check
+    /// and install, neither of which runs in the browser build.
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn set_condition(&mut self, condition: ShellCondition, holds: bool) {
         if holds {
