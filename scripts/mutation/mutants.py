@@ -104,6 +104,11 @@ EXTRA_KINDS = ("bool", "literal", "normalize", "order")
 # the Linux and other-platform arms, which a rerun here leaves missed, as they are.
 # studio's log redaction matches the home folder in any letter case and with
 # either slash on Windows alone, and its test is `#[cfg(windows)]`.
+# studio_core's update temp-folder removal is caught only by
+# the_succeeded_mark_stays_beside_a_backup_that_cannot_be_removed, which is
+# `#[cfg(windows)]`: on Linux every test's backup deletes whole, so
+# remove_temp's mark write and remove_temp_folder's not-found arm have no
+# other catcher.
 WINDOWS_ONLY_TESTS = [
     re.compile(
         r"crates/tools/team_compiler/src/output/deploy\.rs:\d+:\d+: .* in "
@@ -114,6 +119,11 @@ WINDOWS_ONLY_TESTS = [
         r"(replace (processes|image_path|probe) -> |.* in (processes|image_path|probe)$)"
     ),
     re.compile(r"crates/tools/export_upgrader/src/upgrade\.rs:\d+:\d+: .* in retry_while_locked$"),
+    re.compile(
+        r"crates/studio_core/src/updater/install\.rs:\d+:\d+: "
+        r"(replace (remove_temp|remove_temp_folder) -> "
+        r"|.* in (remove_temp|remove_temp_folder)$)"
+    ),
     re.compile(
         r"crates/studio/src/gui_log\.rs:\d+:\d+: "
         r"(replace redact_any_spelling -> |.* in redact_(any_spelling|home)$)"
