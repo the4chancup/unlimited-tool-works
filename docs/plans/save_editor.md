@@ -1315,9 +1315,10 @@ Win32 original hurt the most):
   with it. Under a ruleset that allows illegal formations the dropdown lists every outfield
   position and an X or Y change keeps his position ("Illegal formations" below).
 
-  The editor is **one grid** of three columns (the settings, 422 points; the pitch, 320; the
-  assignments, the rest) and three rows, so every panel lines up with its neighbours rather
-  than wrapping on its own:
+  The editor is **one grid** of three columns (the settings, 422 points; the pitch, 322 with
+  its border; the assignments, the rest) and three rows, every panel 6 points from the next
+  as across the window, so every panel lines up with its neighbours rather than wrapping on
+  its own:
   1. The **preset bar** (Preset 1/2/3, Fluid formation, then its Copy/swap menu) level with
      the **formation bar** (Kick-off / In-possession / Out-of-possession and theirs), which
      spans the pitch's column and the next: the formations and their menu need more than the

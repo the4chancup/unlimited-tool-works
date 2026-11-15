@@ -557,8 +557,11 @@ table.grid.stats-grid td { padding: 3px 6px; }
    widest toggle choice allows ("Frontline Press.", 97 points with its
    padding, given 99: at 97 a 2x display's rounding still elided it): two
    such choices a half. */
-.tacgrid { display: grid; grid-template-columns: 422px 320px minmax(0, 1fr);
-  column-gap: 10px; row-gap: 6px; }
+/* The pitch's track is its canvas and the 1 px border a side (322), so the gaps either side
+   of it are the 6 px between every pair of panels: a 320 track let the border overflow it,
+   leaving 10 on its left and 8 on its right. */
+.tacgrid { display: grid; grid-template-columns: 422px 322px minmax(0, 1fr);
+  column-gap: 6px; row-gap: 6px; }
 .tacgrid .group { margin: 0; min-width: 0; }
 .tacgrid .tacbar { margin: 0; white-space: nowrap; }
 /* The formations and their Copy/swap need more than the pitch's width. */

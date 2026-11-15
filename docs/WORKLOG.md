@@ -2215,8 +2215,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-wheelside sliders, toggles and row selectors move right on wheel down and a
     closed combo to the item below, whatever the setting, now Invert number scrolling
     (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;
-    DECISIONS 2026-11-15) -> verify: ST-WHEEL-05 and ST-WHEEL-06 as rewritten, red first;
-    the changelog's Important line on the rename. SWE-2 (`.tmp/0_0_2/wheelside/brief.md`)
+    DECISIONS 2026-11-15). Landed (SWE-2, `bdb78173`, merge `4bc6bd55`): ST-WHEEL-05 and 06
+    red first; a preset's wheel step writes no undo entry, which ST-WHEEL-05 now says
+    - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
+  - [ ] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
+    `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
+    pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
+    -> verify: a test measures both gaps from the drawn frames, red first; the built window
   - [x] 0.0.2-picwidth (`be3913bf`, merge `5dfad4e2`) the pictures dialog kept its width only
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
