@@ -462,7 +462,8 @@ RE-GUI-13  GIVEN VTL11 open
            THEN it shows the file's custom-checks code read-only, with the line saying it runs
                 after the ruleset and is kept as it is
 RE-GUI-14  GIVEN two edits made in order
-           WHEN Undo is invoked (button or Ctrl+Z), then Redo (button or Ctrl+Y)
+           WHEN Undo is invoked (the Edit menu's Undo or Ctrl+Z), then Redo (its Redo or
+                Ctrl+Y)
            THEN the second edit is undone and the first kept, then the second is redone
 RE-GUI-15  GIVEN a document with unsaved changes
            WHEN the window is closed, another document opened or a template picked

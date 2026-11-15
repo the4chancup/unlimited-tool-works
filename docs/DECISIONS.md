@@ -18095,3 +18095,14 @@ leave the member clicking a row that does nothing; widening is what the category
 own rule does when it leaves the picked team out.
 Plan: `plans/save_editor.md` "Editing UI", the team selector's category paragraph;
 SE-GUI-83.
+
+## 2026-11-15 — save_editor — The welcome panel lists no recent files
+Decision (the lead): the Save editor's welcome panel lists the discovered saves and Choose
+file… only; its *Recent* section goes, and the help and the changelog stop naming it. The
+File menu keeps its recent files.
+Why: the recent list is this run's, and the welcome panel shows only until the first save
+opens, since no action closes a save; the section could be seen only after a discarded close
+that a later tool cancelled, while the help promised returning members their files there
+(Carbon's bar round 6, C-bar r6-1). Remembering recent saves across runs would make such a
+list useful: that is a proposal, not this fix.
+Plan: `plans/save_editor.md` "The toolbar", the welcome panel's paragraph; SE-GUI-90.
