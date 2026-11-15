@@ -2094,25 +2094,16 @@ briefs, review loops, gates and mutation runs as for any step.
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
     - [ ] a Linux bundle built from main for the Reset window card (`just remote just
       release`, once the VPS's mutation run is done), named on the card
-  - [ ] 0.0.2-tplclean (the maintainer, 2026-11-15) a template or Blank opens in the Ruleset
-    editor with no unsaved changes: no mark beside its name, no prompt on close or on another
-    template until it is edited (`plans/ruleset_editor.md` the undo paragraph's last
-    sentences, RE-GUI-02, RE-GUI-15); the build departed from the draft, whose title shows no
-    mark after a template opens -> verify: RE-GUI-02 and 15 headless
-  - [ ] 0.0.2-teamscroll (the maintainer, 2026-11-15) every dropdown's list scrolls past 300
-    points, not egui's 200 (`plans/core/gui.md` "Dark/light theme"; the draft's
-    `.combo-pop > div`, 2026-11-15): `theme.rs` sets `combo_height`, beside the spacing it
-    pins; and the Save editor's teams dropdown scrolls its teams in the whole 300, the radios
-    under them (`plans/save_editor.md` "Team selector", the radios paragraph), where the build
-    fitted teams and radios into one 200, leaving the teams about 97 -> verify: the theme
-    test, a headless test of the teams' scroll area, then the built window beside the draft
-  - [ ] 0.0.2-picsettings (the maintainer, 2026-11-15) the formation pictures' "With each
-    preset's settings beside its row" box remembered in the tool's settings
-    (`formation_pictures_settings`, beside `formation_pictures_flat`), shared by both dialogs;
-    and a picture with the settings named `<name>.png` as one without, no ` settings` suffix
-    (the maintainer, 2026-11-15; `plans/save_editor.md` "Formation pictures", the dialog's
-    checkbox list) -> verify: a headless test that a tick survives the dialog's close and a
-    restart, in each dialog; the name unchanged by the box in both
+  - [x] 0.0.2-tplclean 2026-11-15 (merge `c20e6b29`): a template or Blank opens in the Ruleset
+    editor with no unsaved changes (RE-GUI-02, 15)
+  - [x] 0.0.2-teamscroll 2026-11-15 (merge `c20e6b29`): every dropdown's list 300 points tall
+    (`theme.rs` `combo_height`); the teams dropdown keeps the whole 300 with the radios under
+    it, in a popup the selector opens itself (an egui ComboBox's popup stops at 400)
+    - [x] the built window beside the draft: checked 2026-11-15 at `c20e6b29`, card
+      `look-team-dropdown` in `docs/maintainer/tasks.html`
+  - [x] 0.0.2-picsettings 2026-11-15 (merge `b13767aa`): the picture dialogs' settings box is
+    the `formation_pictures_settings` setting, shared by both; a picture with the settings
+    keeps its plain name
   - [ ] 0.0.2-report (the maintainer, 2026-11-15, who expected it in 0.0.2) the "Report a
     problem" button and dialog: the repro bundles issue's slice (4) (`plans/core/architecture.md`
     "Repro bundles"; the draft's `drawReport`), writing the Save editor's bundle from the journal
@@ -2277,8 +2268,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the look in the built window, both tools, both themes: checked 2026-11-15 at
       `4b9f2258`, card `look-menu-bar` in `docs/maintainer/tasks.html` (asks whether the
       three menus stay greyed with no save open, as built, or take the draft's full colour)
-    - [ ] the Ruleset editor's start page draws no separator after Randomize: the draft's
-      `topBar` draws it only before an open ruleset's name (folded into the asks review)
+    - [x] the Ruleset editor's start page draws no separator after Randomize (merge
+      `c20e6b29`)
     - [x] its SWE-2 loop, 2026-11-12 (`b1f3c85e`; two rounds, 6 of 11 then 1 of 2): the
       logo's place is read once a frame and handed to the band and the logo both, and
       tests pin the framed dropdown and Live AATF, the Ruleset editor's row 3 points
