@@ -2795,6 +2795,12 @@ briefs, review loops, gates and mutation runs as for any step.
   tool's shared form (`studio_core` `events.rs` `message_line`). `ruleset_editor`
   `messages.rs` `finding_text`, pinned by `view/tests/start.rs`. Examples and the options
   weighed: `.tmp/text_choices/rules_lines.html`
+- [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "Each screen is measured
+  against its draft in the tests (P57)"): each built screen compared with its draft by a
+  headless test (`plans/core/gui.md` "Prototypes before implementation", the "Measured against
+  the draft" bullet): the recording script (from `draft_compare.py`'s draft side) and its
+  fixtures with the draft's hash; `draft_compare.py`'s matching rules ported to Rust test
+  support; one test per screen of its list
 - [ ] after 0.0.2 (the maintainer, 2026-11-15): docstrings: every doc comment of the codebase reread under the Shakespeare rule's
   docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
   reference text). The maintainer decides whether SWE-2 or Opus runs it. The trial,

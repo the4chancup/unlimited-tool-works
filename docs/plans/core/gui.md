@@ -1124,6 +1124,19 @@ added to the table first (a new dependency, asked for first):
   key) is written in the plan with an acceptance scenario, not left to the draft alone: a
   comparison of the built window with the draft sees pixels, so a behaviour only the draft
   shows is lost without anyone noticing.
+- **Measured against the draft:** each built screen is compared with its draft by a test in
+  the suite, headless like the other view tests. The test draws the screen at the default
+  window size with the app's fonts and theme, and reads each widget's box from egui's
+  AccessKit tree. The draft's boxes come from a fixture a script records from the draft in
+  Chromium, holding a hash of the draft it was taken from, so a test fails when the draft has
+  changed since. Boxes are matched by their text, and one more than 2 points from its draft's
+  fails; a difference accepted at a review is recorded in the fixture. Boxes, not pictures,
+  because Chromium and egui draw text differently, so a pixel comparison would flag every
+  label. In the tests, not by driving the built window, because that took the keyboard and
+  pointer and a release build, and so was done one screen at a time as its slice landed: a
+  later shared change (a spacing constant, a widget helper) moved screens nobody measured
+  again. The built window is still looked at before a release, for what only it shows (the
+  GPU path, a monitor's scaling).
 - **Fonts:** in a draft:
 
   - text is drawn only in the app's own font files, loaded by `@font-face` from

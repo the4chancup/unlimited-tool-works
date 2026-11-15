@@ -37,6 +37,9 @@ P49 (a Fielded position row's tooltip says where its click goes) and P50 (Undo a
 other shortcuts work while a button holds the keyboard) were accepted for 0.0.1 on
 2026-11-02 (`DECISIONS.md` "A Fielded position row says where its click goes (P49)" and
 "Only a text field holds the shortcuts off (P50)").
+P57 (each built screen compared with its draft in the test suite, headless) was accepted for
+after 0.0.2 on 2026-11-15 (`DECISIONS.md` "Each screen is measured against its draft in the
+tests (P57)").
 
 ## P40: The Music export editor reorders its players
 
@@ -161,44 +164,3 @@ a dialog) offers "Edit mode is closed, write the save", which runs the save step
 the flag's meaning. Costs: one more confirmation whose wrong answer loses the save's changes
 when the member leaves Edit mode (the reason the flag exists), a save-only run path from the
 window, and its tests.
-
-## P57: The test suite compares each built screen with its draft
-
-From the built-window check of 2026-11-15 (worklog 0.0.2-gaps), which also found screens
-outside the slices being checked more than 2 points from their drafts; the shape below is the
-maintainer's, 2026-11-15. Today `draft_compare.py SCREEN` measures one screen at a time, in a
-release build the lead opens at that screen by hand, with the window taking the keyboard and
-pointer. So a screen is compared when its own slice lands, and a later change elsewhere, such
-as a shared spacing constant or a widget helper, can move it with nobody looking.
-
-Adds: each screen's comparison runs as a Rust test, in process, like the other view tests.
-
-- **The build's side**: the test draws the screen headless at the default window size, with
-  the app's fonts and theme, as the view tests already do, and reads every widget's box from
-  egui's AccessKit tree, the tree `draft_compare.py` now reads from the running window.
-- **The draft's side**: a script records each screen's boxes from the draft, in Chromium,
-  into a fixture file beside the tests, rerun whenever a draft changes (as the Ruleset
-  summary goldens are). Only Chromium can lay out the HTML drafts, so the browser stays, but
-  it runs once per draft change and not in every test run.
-- **The check**: boxes matched by their text, as `draft_compare.py` matches them, failing
-  when one stands more than 2 points from its draft. A difference accepted at a review is
-  recorded in the fixture beside the screen.
-
-A departure then fails the gates of the commit that makes it, with no window and no focus,
-and the built window is still looked at before a release, for what only it shows (the GPU
-path, a monitor's scaling).
-
-Boxes, not pictures: Chromium and egui draw text differently (the drafts already draw each
-text twice at 30% to come near egui's weight), so a pixel comparison would flag every label.
-Pictures of each screen for the maintainer to look at could still be written by the same
-tests, but that needs a renderer in them (`egui_kittest` with `wgpu`), a new dependency.
-
-Costs:
-- `draft_compare.py`'s matching rules (reading order, a text met more than once, box kinds
-  that differ by design) ported to Rust test support;
-- each screen opened by its test (the save, the selection, the dialog), as view tests do now;
-- the fixtures regenerated after every draft change; each records a hash of the draft it
-  was taken from, and a test fails when the draft no longer matches it, so a stale fixture
-  cannot pass;
-- text colour and weight, which `draft_compare.py` also measures from captures, stay with
-  the script unless the tests gain the renderer.

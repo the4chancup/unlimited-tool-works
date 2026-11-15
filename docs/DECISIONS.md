@@ -17744,3 +17744,17 @@ a simulator they would take far longer. Building each screen twice costs more, a
 comes back with every new screen, since most tools' windows are still to be built. The
 in-process tests outweigh it.
 Plan: `spec/core/README.md` "GUI framework choice: egui", the bullet "Tests run in process".
+
+## 2026-11-15 — core — Each screen is measured against its draft in the tests (P57)
+Decision: after 0.0.2, each built screen is compared with its draft by a headless test in the
+suite: the screen drawn at the default window size with the app's fonts and theme, each
+widget's box read from egui's AccessKit tree, against a fixture of the draft's boxes that a
+script records in Chromium, holding the draft's hash. A box more than 2 points from its
+draft's fails; a difference accepted at a review is recorded in the fixture.
+Why: the maintainer, on P57: driving the built window is rudimentary. It took the keyboard
+and pointer and a release build, so a screen was measured once, as its slice landed, and a
+later shared change moved screens nobody measured again (the 2026-11-15 check found three).
+Boxes and not pictures, because Chromium and egui draw text differently, so a pixel
+comparison would flag every label.
+Plan: `plans/core/gui.md` "Prototypes before implementation", the "Measured against the
+draft" bullet. Worklog: the after-0.0.2 item.
