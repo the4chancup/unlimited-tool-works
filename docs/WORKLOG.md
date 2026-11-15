@@ -2195,12 +2195,10 @@ briefs, review loops, gates and mutation runs as for any step.
     (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;
     DECISIONS 2026-11-15) -> verify: ST-WHEEL-05 and ST-WHEEL-06 as rewritten, red first;
     the changelog's Important line on the rename. SWE-2 (`.tmp/0_0_2/wheelside/brief.md`)
-  - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
-    failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
-    picking state 522.71875), where it passes in a worktree: the tree's copy sits at a
-    longer path, so the test's long folder line is longer -> verify: reproduced with a
-    longer scratch path, then the dialog (or the test, if its premise is wrong) fixed;
-    SWE-2
+  - [x] 0.0.2-picwidth (`be3913bf`, merge `5dfad4e2`) the pictures dialog kept its width only
+    for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
+    the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
+    a unit test sweeping line lengths at three fractional widths
   - [ ] 0.0.2-mutfast save_editor's mutation runs stop at a mutant's first failing test.
     Its last diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's
     build 20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's
