@@ -946,8 +946,8 @@ mod tests {
 
     // A click in the left slot is not the notice's: the update entry's Details
     // applies its own effect and the standing notice is left alone.
-    // ST-BAR-03
     #[cfg(not(target_arch = "wasm32"))]
+    // ST-BAR-03
     #[test]
     fn a_click_on_the_left_slots_update_entry_keeps_the_notice() {
         let Shell {
