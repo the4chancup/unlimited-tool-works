@@ -452,83 +452,86 @@ impl StudioApp {
     /// shows nothing, and waits one interval — held in `retry_at`, never in
     /// the settings — before retrying. While a check is Idle the frame asks
     /// egui for the repaint at the moment one falls due, so an idle window
-    /// wakes for it. Nothing runs while an install runs or after one
+    /// wakes for it; the frame that drains a finished check's reply schedules
+    /// the same way. Nothing runs while an install runs or after one
     /// succeeded: a check could replace the release under the update dialog.
     #[cfg(not(target_arch = "wasm32"))]
     fn poll_update(&mut self, egui_ctx: &egui::Context) {
         if self.update_dialog.holds_checks() {
             return;
         }
-        match std::mem::replace(&mut self.update_poll, UpdatePoll::Idle { retry_at: 0 }) {
-            UpdatePoll::Idle { retry_at } => {
-                let common = self.ctx.common();
-                let now = updater::now_secs();
-                match updater::next_check_at(&common, retry_at) {
-                    // Due now: the check runs on its own thread, drained on a
-                    // later frame.
-                    Some(at) if at <= now => {
-                        let rx =
-                            updater::start_check(Arc::clone(&self.update_fetch), Some(egui_ctx));
-                        self.update_poll = UpdatePoll::Running(rx);
-                    }
-                    // Later: wake for the moment it falls due, so an idle
-                    // window comes back for it.
-                    Some(at) => {
-                        egui_ctx.request_repaint_after(Duration::from_secs(at - now));
-                        self.update_poll = UpdatePoll::Idle { retry_at };
-                    }
-                    // Checks off: nothing to start, nothing to wake for.
-                    None => self.update_poll = UpdatePoll::Idle { retry_at },
-                }
-            }
-            UpdatePoll::Running(rx) => match rx.try_recv() {
-                Ok(Ok(newest)) => {
-                    // A completed check is stamped, whatever it found; a failed
-                    // one is not, so the next start can check again.
-                    self.ctx.settings().lock().unwrap().common.last_update_check =
-                        Some(updater::now_secs());
-                    self.save_settings();
-                    let own = semver::Version::parse(self.version).expect(
-                        "the program's version is a semver triple: the build's own, which \
-                         the workspace cannot build without, or a test's",
-                    );
-                    let skipped = self.ctx.common().skipped_version;
-                    if let Some(release) =
-                        newest.filter(|release| updater::offers(release, &own, skipped.as_deref()))
-                        && !matches!(
-                            &self.update_release,
-                            Some(standing) if standing.version == release.version
-                        )
-                    {
-                        // A newer release replaces the offer it outranks.
-                        if let Some(old) = self.update_release.take() {
-                            self.status_bar.set_condition(
-                                ShellCondition::UpdateAvailable {
-                                    version: old.version.to_string(),
-                                },
-                                false,
-                            );
-                        }
+        // A finished check's reply is drained before the Idle scheduling
+        // below, so the frame that ends it already wakes for the next one.
+        let reply = match &self.update_poll {
+            UpdatePoll::Running(rx) => Some(rx.try_recv()),
+            UpdatePoll::Idle { .. } => None,
+        };
+        match reply {
+            Some(Ok(Ok(newest))) => {
+                // A completed check is stamped, whatever it found; a failed
+                // one is not, so the next start can check again.
+                self.ctx.settings().lock().unwrap().common.last_update_check =
+                    Some(updater::now_secs());
+                self.save_settings();
+                let own = semver::Version::parse(self.version).expect(
+                    "the program's version is a semver triple: the build's own, which \
+                     the workspace cannot build without, or a test's",
+                );
+                let skipped = self.ctx.common().skipped_version;
+                if let Some(release) =
+                    newest.filter(|release| updater::offers(release, &own, skipped.as_deref()))
+                    && !matches!(
+                        &self.update_release,
+                        Some(standing) if standing.version == release.version
+                    )
+                {
+                    // A newer release replaces the offer it outranks.
+                    if let Some(old) = self.update_release.take() {
                         self.status_bar.set_condition(
                             ShellCondition::UpdateAvailable {
-                                version: release.version.to_string(),
+                                version: old.version.to_string(),
                             },
-                            true,
+                            false,
                         );
-                        self.update_release = Some(Arc::new(release));
                     }
-                    self.update_poll = UpdatePoll::Idle { retry_at: 0 };
+                    self.status_bar.set_condition(
+                        ShellCondition::UpdateAvailable {
+                            version: release.version.to_string(),
+                        },
+                        true,
+                    );
+                    self.update_release = Some(Arc::new(release));
                 }
-                Ok(Err(error)) => {
-                    warn!("the update check failed: {error}");
-                    self.back_off();
-                }
-                Err(TryRecvError::Empty) => self.update_poll = UpdatePoll::Running(rx),
-                Err(TryRecvError::Disconnected) => {
-                    warn!("the update check's worker ended without a reply");
-                    self.back_off();
-                }
-            },
+                self.update_poll = UpdatePoll::Idle { retry_at: 0 };
+            }
+            Some(Ok(Err(error))) => {
+                warn!("the update check failed: {error}");
+                self.back_off();
+            }
+            Some(Err(TryRecvError::Disconnected)) => {
+                warn!("the update check's worker ended without a reply");
+                self.back_off();
+            }
+            // A check still in flight, or none running: nothing to drain.
+            Some(Err(TryRecvError::Empty)) | None => {}
+        }
+        let UpdatePoll::Idle { retry_at } = self.update_poll else {
+            return;
+        };
+        let common = self.ctx.common();
+        let now = updater::now_secs();
+        match updater::next_check_at(&common, retry_at) {
+            // Due now: the check runs on its own thread, drained on a
+            // later frame.
+            Some(at) if at <= now => {
+                let rx = updater::start_check(Arc::clone(&self.update_fetch), Some(egui_ctx));
+                self.update_poll = UpdatePoll::Running(rx);
+            }
+            // Later: wake for the moment it falls due, so an idle window
+            // comes back for it.
+            Some(at) => egui_ctx.request_repaint_after(Duration::from_secs(at - now)),
+            // Checks off: nothing to start, nothing to wake for.
+            None => {}
         }
     }
 
@@ -806,12 +809,13 @@ impl eframe::App for StudioApp {
             self.version_recorded = true;
             self.record_version();
         }
-        self.poll_update(egui_ctx);
         // The install's outcome is drained before any panel draws, so the
         // frame that drains `Done` already draws `Update ready` on the bar.
         // Drained in the dialog's own draw (which follows the bar's), an
         // install ending while the dialog is hidden would leave `Update
         // available` standing until a repaint an idle window never gets.
+        // Before `poll_update`: a failed or cancelled install frees the
+        // checks it held, so the frame that ends one sees them free already.
         #[cfg(not(target_arch = "wasm32"))]
         if let Some(release) = self.update_release.as_ref()
             && self.update_dialog.poll_install()
@@ -826,6 +830,7 @@ impl eframe::App for StudioApp {
             self.status_bar
                 .set_condition(ShellCondition::UpdateReady { version }, true);
         }
+        self.poll_update(egui_ctx);
         self.apply_requests(egui_ctx);
         // The window's close asks the tools in sidebar order until one holds it. The holder
         // cancels the close and becomes the active view, its prompt answering through
@@ -1017,7 +1022,7 @@ mod tests {
     use std::fs;
     use std::time::Duration;
 
-    use crossbeam_channel::{TryRecvError, unbounded};
+    use crossbeam_channel::{TryRecvError, bounded, unbounded};
     use eframe::App;
     use pes_version::PesVersion;
 
@@ -1700,8 +1705,6 @@ mod tests {
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = test_settings(dir.path());
         settings.common.check_for_updates = true;
-        let fetches = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        let count = std::sync::Arc::clone(&fetches);
         let Shell { mut app, ctx, .. } = shell_with(
             settings,
             vec![a],
@@ -1709,10 +1712,8 @@ mod tests {
             Some(dir.path().to_path_buf()),
             vec![calls_a],
         );
-        app.update_fetch = std::sync::Arc::new(move || {
-            count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
-        });
+        app.version = "0.0.1";
+        app.update_fetch = std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
         let egui_ctx = test_context();
 
         // Wait on the stamp, not the fetch's count: the reply is drained (and
@@ -1729,23 +1730,39 @@ mod tests {
                 "the first check never ran"
             );
         }
+        let offered = app
+            .update_release
+            .clone()
+            .expect("the first check offered v0.0.2 over the 0.0.1 build");
         // The interval's end moves into the past: the next frames must run a
         // second check.
-        ctx.settings().lock().unwrap().common.last_update_check = Some(
-            crate::updater::now_secs()
-                .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60),
-        );
+        let rewound = crate::updater::now_secs()
+            .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60);
+        ctx.settings().lock().unwrap().common.last_update_check = Some(rewound);
         let deadline = std::time::Instant::now() + GUARD;
         loop {
             frame(&egui_ctx, &mut app, Vec::new(), true);
-            if fetches.load(std::sync::atomic::Ordering::SeqCst) >= 2 {
+            if ctx
+                .common()
+                .last_update_check
+                .is_some_and(|stamp| stamp > rewound)
+            {
                 break;
             }
             assert!(
                 std::time::Instant::now() < deadline,
-                "the second check never ran"
+                "the second check never drained"
             );
         }
+        // The second check's list names the release the offer already stands
+        // on: the standing one is kept, not replaced.
+        assert!(
+            std::sync::Arc::ptr_eq(
+                &offered,
+                app.update_release.as_ref().expect("the offer still stands"),
+            ),
+            "a second offer of the same release keeps the standing one"
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -1855,6 +1872,76 @@ mod tests {
                     "checks off: no due moment to wake for, got {delay} s"
                 );
             }
+        }
+    }
+
+    // The drain frame must ask for the next check's wake-up itself: the
+    // frame's merged `repaint_delay` cannot tell its request from a new
+    // widget's immediate one (a found release draws the offer for the first
+    // time, and egui asks for a repaint to style it), so the observer reads
+    // each request's own delay.
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn the_frame_that_drains_a_check_schedules_the_next_one() {
+        for succeeds in [true, false] {
+            let dir = TestDir::new("studio_core_update_drain_wake");
+            let (a, calls_a) = stub("a", "A", None);
+            let mut settings = test_settings(dir.path());
+            settings.common.check_for_updates = true;
+            settings.common.last_update_check = Some(crate::updater::now_secs());
+            let Shell { mut app, .. } = shell_with(
+                settings,
+                vec![a],
+                &[],
+                Some(dir.path().to_path_buf()),
+                vec![calls_a],
+            );
+            app.version = "0.0.1";
+            // The sidebar's poll asks for its own repaint to a nearer
+            // deadline; spending the once-per-life auto-switch leaves the
+            // check's the only requester.
+            app.sidebar.auto_switch_used = true;
+            let egui_ctx = test_context();
+            let requested = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let delays = std::sync::Arc::clone(&requested);
+            egui_ctx.set_repaint_observer(move |info| {
+                delays.lock().unwrap().push(info.delay);
+            });
+
+            // A reply already on the channel, with no worker behind it: the
+            // frame that drains it gets no `request_repaint` of the worker's
+            // own, so what the frame asks for is all an idle window gets.
+            let (tx, rx) = bounded(1);
+            let reply: crate::updater::CheckReply = if succeeds {
+                Ok(crate::updater::newest_release(crate::updater::RELEASES_FIXTURE).unwrap())
+            } else {
+                Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
+                    503,
+                )))
+            };
+            tx.send(reply).expect("the test holds the receiver");
+            app.update_poll = UpdatePoll::Running(rx);
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+
+            if succeeds {
+                assert!(
+                    app.update_release.is_some(),
+                    "the completed check offered v0.0.2"
+                );
+            } else {
+                assert!(
+                    matches!(app.update_poll, UpdatePoll::Idle { retry_at } if retry_at > 0),
+                    "the failed check is in backoff"
+                );
+            }
+            let delays = requested.lock().unwrap();
+            assert!(
+                delays
+                    .iter()
+                    .any(|delay| (7190.0..=7200.0).contains(&delay.as_secs_f64())),
+                "the drain frame wakes for the next check ({succeeds}), asked for {delays:?}"
+            );
         }
     }
 

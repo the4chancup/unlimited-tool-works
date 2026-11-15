@@ -330,7 +330,7 @@ pub(crate) const RELEASES_FIXTURE: &str = r#"[
     {
         "tag_name": "v0.0.2",
         "prerelease": true,
-        "body": "Fixes and polish.\n",
+        "body": "Fixes and **polish**.\n",
         "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.2",
         "assets": [
             {
@@ -370,7 +370,7 @@ mod tests {
             .expect("the fixture parses")
             .expect("a release is found");
         assert_eq!(release.version, Version::new(0, 0, 2));
-        assert_eq!(release.notes, "Fixes and polish.\n");
+        assert_eq!(release.notes, "Fixes and **polish**.\n");
         assert_eq!(
             release.page_url,
             "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.2"

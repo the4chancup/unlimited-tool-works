@@ -331,7 +331,11 @@ fn the_offer_text_and_details_each_open_the_dialog() {
     let nodes = idle(&egui_ctx, &mut shell.app, 10).nodes;
     text_node(&nodes, "Update available");
     assert!(has_text(&nodes, SENTENCE), "the version sentence is drawn");
-    assert!(has_text(&nodes, "Fixes and polish."), "the notes are drawn");
+    assert!(has_text(&nodes, "polish"), "the notes are drawn");
+    assert!(
+        !has_text(&nodes, "**"),
+        "the notes are drawn without their Markdown markers"
+    );
     entry(&nodes, "Update now");
     entry(&nodes, "Open release page");
     entry(&nodes, "Skip this version");
@@ -624,8 +628,9 @@ const LONG_NOTES: &str = "The Compiler and Export upgrader: the launchers show w
 #[test]
 fn the_offer_back_after_a_cancel_is_laid_out_as_it_first_was() {
     let (mut shell, _bundle, go_on) = update_shell("dialog_cancel_layout", running_assets(None));
-    shell.app.update_fetch =
-        Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.replace("Fixes and polish.", LONG_NOTES)));
+    shell.app.update_fetch = Arc::new(|| {
+        Ok(crate::updater::RELEASES_FIXTURE.replace("Fixes and **polish**.", LONG_NOTES))
+    });
     let egui_ctx = test_context();
     // The dialog's left and right ends: its first and last buttons' bounds.
     let ends = |nodes: &[accesskit::Node]| {

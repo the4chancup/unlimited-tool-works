@@ -112,7 +112,12 @@ fn an_older_program_in_old_is_replaced_by_the_running_one() {
         files.push((format!("old/{}", exe_file_name()), "older program"));
         let dir = folder_with(&format!("older_{label}"), &files);
         let bundle = dir.path();
-        let (release, open_url) = bundle_release(kind, None);
+        let archive = pack(kind, &new_files());
+        // The tar case's SHA256SUMS.txt writes the digest in uppercase,
+        // which sha256sum -c accepts as it does lowercase.
+        let hash = (kind == ArchiveKind::TarGz)
+            .then(|| to_hex(&Sha256::digest(&archive)).to_ascii_uppercase());
+        let (release, open_url) = archive_release(kind, archive, hash);
         install_now(kind, &release, bundle, &open_url)
             .unwrap_or_else(|error| panic!("{label}: {error}"));
         assert_eq!(
