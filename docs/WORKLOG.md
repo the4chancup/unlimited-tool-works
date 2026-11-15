@@ -2227,11 +2227,13 @@ briefs, review loops, gates and mutation runs as for any step.
     maintainer, 2026-11-15; plan and DECISIONS edited) -> verify: SE-GUI-26 and SE-GUI-90 red
     first; a start with the setting lists the earlier run's saves; a deleted one is dropped.
     After 0.0.2-bar's round 6 rework merges (`file_menu.rs`). Tier 2
-  - [ ] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
+  - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
     -> verify: a test measures both gaps from the drawn frames, red first (10 and 8 before);
-    landed (SWE-2, merge `cb074624`); left: the built window beside the draft
+    landed (SWE-2, merge `cb074624`); the pitch's turf corners rounded with it (0.0.2-pitchround,
+    merge `b700d3fa`). Built window measured at `b700d3fa` (both gaps 6), card
+    `look-tactics-gaps`
   - [x] 0.0.2-picwidth (`be3913bf`, merge `5dfad4e2`) the pictures dialog kept its width only
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
@@ -2430,7 +2432,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] Carbon's round 5, 2026-11-15 (at `fa472c3b`): 6 of 7 accepted: three tests that
       pass on wrong code, a dead width branch, stale comments, SE-GUI-79's Save as notice
       (the lead's plan edit)
-    - [ ] the rework (SWE-2, `.tmp/0_0_2/bar/rework_c5.md`), then Carbon's round 6
+    - [x] the rework (SWE-2, merge `9d536eb4`)
+    - [x] Carbon's round 6, 2026-11-15 (at `81c539d7`): 9 of 10 accepted: the welcome panel's
+      Recent never seen (dropped, then restored by 0.0.2-recents), untested clauses, a
+      surviving mutant, stale citations and comments
+    - [ ] the rework (SWE-2, `.tmp/brief.md` in `barrw6`, its branch `sk/barrw6` gating)
+    - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
+      loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
+      gap Carbon never did), at Codex brother's reset, 2026-11-16 03:19; it carries A-bar r3-4
+      (the cancelled Save as test)
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
