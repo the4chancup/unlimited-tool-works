@@ -758,8 +758,9 @@ fn modal_open(view: &RulesetView, ctx: &egui::Context) -> bool {
 }
 
 /// Whether the gesture in flight holds an edit: its snapshot differs
-/// from the document's (`seal_pending`'s test, and the Edit menu's, so
-/// Undo is enabled while the unsealed edit can still be stepped over).
+/// from the document's (`seal_pending`'s check, and the Edit menu's, so
+/// Undo is enabled and Redo disabled while the unsealed edit can still
+/// be stepped over).
 fn pending_differs(view: &RulesetView) -> bool {
     let Some(document) = view.document.as_ref() else {
         return false;
@@ -770,8 +771,9 @@ fn pending_differs(view: &RulesetView) -> bool {
 }
 
 /// `view`'s pending gesture recorded when its snapshot differs from the
-/// document's (the `seal_gesture` test, shared with `history_step`:
-/// undo seals a gesture in flight rather than lose its start).
+/// document's (the `seal_gesture` check, shared with `history_step` and
+/// `save_to`: an undo, a redo or a write seals a gesture in flight
+/// rather than lose its start).
 fn seal_pending(view: &mut RulesetView) {
     if !pending_differs(view) {
         view.pending = None;

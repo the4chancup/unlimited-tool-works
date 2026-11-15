@@ -150,15 +150,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// label the one of the two FPC actions it will do), the Copy/swap stats
 /// window (`copy_stats::window`), and the two Generate items opening
 /// `generate::Generate` (settings.toml and the in-game face: file writes, so
-/// the aesthetics lock does not gate them). One menu for both selections:
-/// with a player row selected every entry is enabled but the FPC's,
-/// disabled under the aesthetics lock (the ownership line on hover) or a
-/// hide ID outside its band (the error's text); on a team row every entry
-/// but Copy/swap stats… is disabled with the pick-a-player hover (they
-/// act on a player, while the window names both players itself)
-/// (SE-GUI-22). The menu is disabled with no row selected, the save's
-/// opens included: every entry acts on the selected row's team, as the
-/// Team menu's do.
+/// the aesthetics lock does not gate them). One menu serves both
+/// selections (SE-GUI-22): on a player row every entry is enabled,
+/// except the FPC entry while the aesthetics lock is on (the ownership
+/// line on hover) or the hide ID is out of band (the error's text). On
+/// a team row every entry but Copy/swap stats… is disabled with the
+/// pick-a-player hover, since the window picks both players itself.
+/// With no save open or no row selected the whole menu is disabled, as
+/// the Team menu is.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() || selected_team_id(view).is_none() {
         add_enabled_ui(ui, false, |ui| {

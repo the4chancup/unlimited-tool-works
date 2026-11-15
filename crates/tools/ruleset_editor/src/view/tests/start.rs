@@ -216,6 +216,103 @@ fn the_separator_after_randomize_comes_with_a_document() {
     );
 }
 
+// The toolbar's widgets stand left to right as the editor's plan reads
+// them — File, Edit, Randomize, then with a document the separator,
+// its name and Show preview — and each menu's entries top to bottom in
+// the same order: File's New from template…, Open…, Save, Save as…;
+// Edit's Undo, Redo.
+#[test]
+fn the_toolbar_and_its_menus_read_in_the_plans_order() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let bounds = |label: &str| {
+        node(&frame.nodes, label)
+            .bounds()
+            .unwrap_or_else(|| panic!("{label:?} is drawn"))
+    };
+    let file = bounds(&menu_label("File"));
+    let edit = bounds(&menu_label("Edit"));
+    let randomize = bounds(&menu_label("Randomize"));
+    let preview = bounds("Show preview");
+    // The document's name in the band (the General form's Name field
+    // holds the same words): the node labeled it inside the File
+    // button's row.
+    let name = nodes_labeled(&frame.nodes, "New ruleset")
+        .into_iter()
+        .filter_map(|node| node.bounds())
+        .find(|bounds| bounds.y0 < file.y1 && bounds.y1 > file.y0)
+        .expect("the document's name in the toolbar's band");
+    let separators = separator_xs(&window, &frame);
+    assert_eq!(separators.len(), 1, "the document's one separator");
+    let widgets = [
+        ("File", file.x0, file.x1),
+        ("Edit", edit.x0, edit.x1),
+        ("Randomize", randomize.x0, randomize.x1),
+        (
+            "the separator",
+            f64::from(separators[0]),
+            f64::from(separators[0]),
+        ),
+        ("the name", name.x0, name.x1),
+        ("Show preview", preview.x0, preview.x1),
+    ];
+    for pair in widgets.windows(2) {
+        assert!(
+            pair[0].2 <= pair[1].1,
+            "{} left of {}: {widgets:?}",
+            pair[0].0,
+            pair[1].0
+        );
+    }
+
+    // File's four entries top to bottom, then Edit's two (a menu's
+    // items are its column's only buttons with these labels: the
+    // bottom bar's Save reads "Save", without the shortcut).
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        &menu_label("File"),
+        &mut view,
+        &ctx,
+    );
+    let frame = window.draw(&mut view, &ctx);
+    let top = |label: &str| {
+        node(&frame.nodes, label)
+            .bounds()
+            .unwrap_or_else(|| panic!("{label:?} is drawn"))
+            .y0
+    };
+    let file_entries = [
+        top("New from template…"),
+        top("Open…"),
+        top("Save Ctrl+S"),
+        top("Save as…"),
+    ];
+    for pair in file_entries.windows(2) {
+        assert!(
+            pair[0] < pair[1],
+            "File's entries top to bottom: {file_entries:?}"
+        );
+    }
+
+    // With File's menu open the pointer entering Edit's opens Edit.
+    let edit = centre(node(&frame.nodes, &menu_label("Edit")));
+    window.frame(vec![egui::Event::PointerMoved(edit)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    let frame = window.draw(&mut view, &ctx);
+    let top = |label: &str| {
+        node(&frame.nodes, label)
+            .bounds()
+            .unwrap_or_else(|| panic!("{label:?} is drawn"))
+            .y0
+    };
+    assert!(
+        top("Undo Ctrl+Z") < top("Redo Ctrl+Y"),
+        "Edit's Undo above its Redo"
+    );
+}
+
 // RE-GUI-01's first clause: with no document the start page is the
 // dialog's frame and title centred on the view under the toolbar (the
 // draft's `.start-page`), not a real dialog — one would hold the

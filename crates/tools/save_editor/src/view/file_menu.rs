@@ -6,7 +6,7 @@
 //! shortcuts (the draft's `OPEN_KEYS`)
 //! open a version's newest save, or the picker, with the menu closed.
 //! The welcome panel (the draft's `welcomePanel`), the view with no save
-//! open, draws the same opens in the middle of the view.
+//! open, draws the same saves and the picker in the middle of the view.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -79,8 +79,8 @@ pub(super) enum Write {
 }
 
 /// One of the File menu's opens: a discovered save, a recent file, or the
-/// picker. The menu and the welcome panel draw the one list `opens`
-/// builds, so the two can never disagree.
+/// picker. The menu draws the whole list `opens` builds, and the welcome
+/// panel the same saves and picker, so the two can never disagree.
 struct Open {
     /// The entry's label (the version's name, the recent's path tail,
     /// "Choose file…").
@@ -212,9 +212,6 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         if add_enabled(ui, save_open, egui::Button::new("Save as\u{2026}")).clicked() {
             write = Some(Write::SaveAs);
         }
-        if chosen.is_some() || write.is_some() {
-            ui.close();
-        }
         (chosen, write)
     });
     let Some((chosen, write)) = menu.inner else {
@@ -228,11 +225,11 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
 }
 
 /// The welcome panel (the draft's `welcomePanel`), drawn in place of the
-/// panes with no save open: the File menu's opens in the dialog's frame
-/// and title in the middle of the view, but a page, not a modal — nothing
-/// under it is blocked, the sidebar's tool switch included. Discovery
-/// runs once when the panel appears and the list is kept while it stays
-/// up, never a scan a frame.
+/// panes with no save open: the File menu's saves and picker in the
+/// dialog's frame and title in the middle of the view, but a page, not
+/// a modal — nothing under it is blocked, the sidebar's tool switch
+/// included. Discovery runs once when the panel appears and the list is
+/// kept while it stays up, never a scan a frame.
 pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.welcome_discovered.is_none() {
         view.welcome_discovered = Some(discover_all(view));
@@ -254,17 +251,14 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The welcome panel's body: the heading "Saves in Documents", each save
-/// as a button filling the frame's width (the widest recent file's
-/// label, when wider than the frame's minimum) with its shortcut at the
-/// right and its path as the tooltip (the weak line with none), then a
-/// separator and "Recent" when any were opened or saved earlier, a
+/// as a button filling the frame's width with its shortcut at the right
+/// and its path as the tooltip (the weak line with none), then a
 /// separator and `Choose file…` with Ctrl+O. Returns the clicked
 /// entry's `Pending`.
 fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
-    // Justified: every entry fills the frame's width, the widest child's
-    // own — the widest recent file's path tail when one is long (no
-    // discovered save's label, `PES 2015` to `PES 2021` with `Ctrl+digit`,
-    // passes the frame's 334-point floor).
+    // Justified: every entry fills the frame's width — no discovered
+    // save's label, `PES 2015` to `PES 2021` with `Ctrl+digit`, passes
+    // the frame's 334-point floor, so the floor rules the rows.
     let entry = |ui: &mut egui::Ui, open: &Open| {
         ui.add(open.button())
             .on_hover_text(&open.tip)
@@ -282,25 +276,12 @@ fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
             if opens.saves.is_empty() {
                 ui.weak("No PES saves were found in Documents.");
             }
-            if !opens.recents.is_empty() {
-                ui.separator();
-                ui.strong("Recent");
-                for open in &opens.recents {
-                    chosen = entry(ui, open).or(chosen);
-                }
-            }
             chosen
         })
         .inner;
     ui.separator();
     // The picker's entry is the draft's compact button, not a full row.
-    if ui
-        .add(opens.picker.button())
-        .on_hover_text(&opens.picker.tip)
-        .clicked()
-    {
-        chosen = Some(opens.picker.pending.clone());
-    }
+    chosen = entry(ui, &opens.picker).or(chosen);
     chosen
 }
 

@@ -371,7 +371,6 @@ fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
 // A checkbox reached with Tab and toggled with Space keeps the
 // keyboard, and it is no text field, so the undo keys still act: the
 // Space's edit undoes (the Save editor's rating cell is the precedent).
-// RE-GUI-14
 #[test]
 fn ctrl_z_while_a_checkbox_holds_the_keyboard_undoes_its_edit() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
@@ -417,7 +416,6 @@ fn ctrl_z_while_a_checkbox_holds_the_keyboard_undoes_its_edit() {
 // unsealed, the first undo's step: the menu opens through an AccessKit
 // click rather than the pointer's, since a press would end the field's
 // gesture and seal it before the menu's first draw.
-// RE-GUI-14
 #[test]
 fn the_edit_menus_undo_covers_the_gesture_in_flight() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
@@ -452,7 +450,6 @@ fn the_edit_menus_undo_covers_the_gesture_in_flight() {
 // differs, where Undo stays enabled to step over it. The menu opens
 // through the AccessKit click, which moves no keyboard focus: a pointer
 // press would seal the gesture before the menu's first draw.
-// RE-GUI-14
 #[test]
 fn the_edit_menus_redo_is_disabled_over_the_gesture_in_flight() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
@@ -526,7 +523,6 @@ fn edited_and_undone(window: &mut Headless, view: &mut RulesetView, ctx: &ToolCo
 // A shortcut pressed while a menu is open closes it, as a click on an
 // entry does: every arm of the toolbar's close guard, each from a fresh
 // scene with the Edit menu up, the key's own premise set before it.
-// RE-GUI-14
 #[test]
 fn a_shortcut_pressed_over_an_open_menu_closes_it() {
     type Case = (

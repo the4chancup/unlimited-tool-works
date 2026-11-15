@@ -675,9 +675,15 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     );
     assert_eq!(tool.view.recents.first(), Some(&target), "the recents' top");
     assert_eq!(
-        tool.view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)"),
-        "the notice names the kept .bak"
+        tool.view
+            .notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some((
+            "EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)",
+            NoticeKind::Success
+        )),
+        "the notice names the kept .bak, in the success colour"
     );
 
     // A fresh path: written, and no `.bak` beside it.
@@ -688,15 +694,16 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     assert!(fresh.is_file(), "the save is written");
     assert!(!bak_of(&fresh).exists(), "no .bak for a fresh path");
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("EDIT00000000 saved"),
-        "the plain saved notice, nothing replaced"
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some(("EDIT00000000 saved", NoticeKind::Success)),
+        "the plain saved notice, nothing replaced, in the success colour"
     );
 }
 
 // A cancelled Save as writes nothing: the session keeps the open file's
 // path and its dirty mark, and the file on disk stands as it was.
-// SE-GUI-26
 #[test]
 fn a_cancelled_save_as_writes_nothing() {
     let path = fixture(PesVersion::Pes21, "save_as_cancelled");
@@ -853,9 +860,14 @@ fn ctrl_s_names_the_saved_file_and_a_refused_write_publishes_no_notice() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)"),
-        "the file stood at the target, so the notice names the kept .bak"
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some((
+            "EDIT00000000 saved (the replaced file is kept once as EDIT00000000.bak)",
+            NoticeKind::Success
+        )),
+        "the file stood at the target, so the notice names the kept .bak, in the success colour"
     );
 
     // A target whose folder does not exist: the write fails, the refusal
@@ -929,7 +941,9 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
 }
 
 // SE-GUI-90: with no save open the middle of the view is the welcome
-// panel, titled "Save editor" — the File menu's opens again, no modal up.
+// panel, titled "Save editor" — the File menu's saves and picker again,
+// no modal up. A file opened this run is one of the File menu's
+// recents, which the panel does not list.
 // SE-GUI-90
 #[test]
 fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
@@ -938,6 +952,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     view.open(&tree.pes21_old);
     view.session = None;
     discover_counted(&mut view, &tree.documents);
+    let starts = picker_starts(&mut view);
     let mut window = Headless::new();
 
     idle_frames(&mut window, &mut view, 3);
@@ -947,14 +962,22 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         "the panel's title in the middle of the view"
     );
     assert!(
-        label_value(&nodes, "Saves in Documents") && label_value(&nodes, "Recent"),
-        "the panel's two headings"
+        label_value(&nodes, "Saves in Documents"),
+        "the saves' heading"
     );
-    // The recent entry is one of the discovered saves, its label the
-    // path's last three parts: the account folder, `save`, the file.
+    // A file was opened this run, so the File menu's recents hold one:
+    // the panel draws no Recent heading and no entry for it (the tail of
+    // the opened save's path, as the File menu's entry reads).
     let recent = format!(
         "292733975847239680{0}save{0}EDIT00000000",
         std::path::MAIN_SEPARATOR
+    );
+    assert!(!label_value(&nodes, "Recent"), "no Recent heading");
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| { node.role() == Role::Button && node.label() == Some(recent.as_str()) }),
+        "no entry for the recent file"
     );
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
         .iter()
@@ -966,11 +989,10 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             "PES 2019 Ctrl+9",
             "PES 2021 Ctrl+1",
             "PES 2021",
-            recent.as_str(),
             "Choose file\u{2026} Ctrl+O",
         ],
-        "the saves by version, the first of each with its shortcut, then the recent \
-         file, then the picker — the File menu's opens"
+        "the saves by version, the first of each with its shortcut, then the \
+         picker — the File menu's opens without the recents"
     );
     assert!(
         window
@@ -987,7 +1009,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         bounds.x1 - bounds.x0
     };
     let rows = entries(&nodes, PES19_ENTRY);
-    for row in &rows[..4] {
+    for row in &rows[..3] {
         assert!(
             (width(row) - 334.0).abs() <= 0.5,
             "{:?} is {:.1} wide",
@@ -995,8 +1017,35 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             width(row)
         );
     }
-    assert!(width(rows[4]) < 300.0, "Choose file… stays compact");
+    assert!(width(rows[3]) < 300.0, "Choose file… stays compact");
 
+    // Each save's entry carries its path as the tooltip, as the File
+    // menu's entries do.
+    for (row, path) in rows[..3]
+        .iter()
+        .zip([&tree.pes19, &tree.pes21_new, &tree.pes21_old])
+    {
+        let tip = path.display().to_string();
+        assert_eq!(
+            tooltip_containing(&mut window, &mut view, centre(row), &tip),
+            Some(tip),
+            "{:?}'s tooltip is its path",
+            row.label()
+        );
+    }
+
+    // The panel's Choose file… does the menu's: the picker in the
+    // folder the last save was opened from while it exists.
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, menu_item(&nodes, "Choose file"), &mut view);
+    assert_eq!(
+        *starts.borrow(),
+        [tree.pes21_old.parent().map(Path::to_path_buf)],
+        "the picker started in the last opened save's folder"
+    );
+    assert!(view.session.is_none(), "a cancelled picker opens nothing");
+
+    let nodes = draw(&mut window, &mut view);
     click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
     let session = view.session.as_ref().expect("the PES 19 entry opened");
     assert_eq!(session.path(), tree.pes19.as_path());
@@ -1167,59 +1216,5 @@ fn a_save_added_after_the_window_opened_shows_in_the_panel_after_the_menu_opened
     assert!(
         pes17(&nodes),
         "the panel lists the save found by the File menu's rescan"
-    );
-}
-
-// A recent file's path tail wider than the panel's 334-point floor
-// widens every entry to it — a discovered save's too: the one width the
-// entries share is the widest recent label's.
-// SE-GUI-90
-#[test]
-fn a_wide_recent_path_widens_every_entry_to_its_label() {
-    let tree = tree("welcome_wide_recent");
-    let deep = crate::test_support::scratch("welcome_wide_recent_deep")
-        .join("a_folder_named_long_enough")
-        .join("another_folder_named_long");
-    std::fs::create_dir_all(&deep).unwrap();
-    let path = deep.join("EDIT00000000");
-    std::fs::write(&path, fixture_save(PesVersion::Pes21)).unwrap();
-    let mut view = SaveView::new();
-    discover_counted(&mut view, &tree.documents);
-    view.open(&path);
-    view.session = None;
-    let mut window = Headless::new();
-
-    idle_frames(&mut window, &mut view, 3);
-    let nodes = draw(&mut window, &mut view);
-    let rows = entries(&nodes, PES19_ENTRY);
-    assert_eq!(rows.len(), 5, "the saves, the recent file, the picker");
-    let recent = rows[3].label().expect("the recent entry's label");
-    assert!(
-        recent.contains("a_folder_named_long_enough"),
-        "premise: the recent entry is the deep file's: {recent}"
-    );
-    let style = window.ctx.global_style();
-    let font = egui::TextStyle::Button.resolve(&style);
-    let galley = window.ctx.fonts_mut(|fonts| {
-        fonts.layout_no_wrap(recent.to_owned(), font, egui::Color32::PLACEHOLDER)
-    });
-    let expected = f64::from(galley.size().x) + 2.0 * f64::from(style.spacing.button_padding.x);
-    assert!(
-        expected > 334.0,
-        "premise: the label passes the panel's floor ({expected})"
-    );
-    let width = |node: &accesskit::Node| {
-        let bounds = node.bounds().expect("an entry's bounds");
-        bounds.x1 - bounds.x0
-    };
-    assert!(
-        (width(rows[0]) - expected).abs() <= 0.5,
-        "the discovered save's button is the recent label's width: {} vs {expected}",
-        width(rows[0])
-    );
-    assert!(
-        (width(rows[3]) - expected).abs() <= 0.5,
-        "the recent file's button is its label's width: {} vs {expected}",
-        width(rows[3])
     );
 }

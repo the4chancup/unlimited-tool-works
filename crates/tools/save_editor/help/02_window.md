@@ -12,7 +12,7 @@ The **File** menu lists, from the top:
 - under a line, **Save** (Ctrl+S) and **Save as…**, which write the open save (see **Saving**
   below) and stay greyed out until a save is open.
 
-With no save open, the middle of the window offers the same saves, recent files and
+With no save open, the middle of the window offers the same saves and
 **Choose file…**.
 
 Ctrl+5 to Ctrl+9 open the newest save found for PES 2015 to PES 2019, Ctrl+0 PES 2020's and
