@@ -299,7 +299,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   far as the list's end lets it rise. Scrolled only the least that shows it, a PgDn left the
   new team's row at the bottom with its players out of sight below. The 7-row steps and the
   arrow keys keep scrolling the least that shows the row, since they walk a team's rows rather
-  than jump to the next team.
+  than jump to the next team. Either scroll lands on the frame the key moves the selection
+  (0.0.2-pgframe): scrolled a frame later, a held PgDn drew each new team's row at its old
+  place for one frame before it rose, so the highlight flickered up and down.
 
   A player row shows his slot in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
@@ -3092,10 +3094,13 @@ SE-GUI-53  GIVEN the PES 17 save open on All teams with team 718's player 05 sel
 SE-GUI-103 GIVEN the PES 2021 save open on All teams, the list scrolled to its top and the
                 first team's row selected
            WHEN PgDn is pressed
-           THEN the second team's row stands at the list's top edge; WHEN PgUp is pressed
-                THEN the first team's row stands there again; GIVEN the last team's row
-                selected by PgDn THEN the list is scrolled to its end, the row as high as
-                that lets it
+           THEN the second team's row stands at the list's top edge, on the frame that
+                draws it selected; WHEN PgUp is pressed THEN the first team's row stands
+                there again; GIVEN the last team's row selected by PgDn THEN the list is
+                scrolled to its end, the row as high as that lets it; GIVEN PgDn held over
+                many teams THEN every frame draws the selected row at the list's top edge;
+                GIVEN Down pressed on a list's last shown row THEN the frame that draws
+                the next row selected shows it whole at the list's bottom edge
 SE-GUI-54  GIVEN a player selected
            WHEN "abc" is typed into his shirt name, and into his team's short name
            THEN the records hold "ABC"

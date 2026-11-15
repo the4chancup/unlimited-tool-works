@@ -667,7 +667,12 @@ sidekick is. **A brief for a change a member sees or does names the draft that a
 it** (the file and function or class under `docs/prototypes/`, in its reading list), and one
 the lead cannot point there is not sent: the lead drafts it first, renders or drives it, and
 the plan, DECISIONS and the draft land together. A plan sentence alone is not a draft: one
-item was once briefed from one and built before the draft knew the behaviour. **A brief is
+item was once briefed from one and built before the draft knew the behaviour. The rule holds
+for each change in a brief, not for the brief as a whole: every deliverable a member sees or
+does carries its own `Draft:` line naming the function, or `No draft:` with the reason (no
+visible change), and the lead checks each against the draft's diff before sending. A brief
+of four small asks once named the draft of one, and the page keys' scroll to the top was
+built undrafted beside it. **A brief is
 sized for one review.** Past about 500 lines of new code, a diff is read but not resteered: a
 wrong shape in the first module is already copied into the third by the time the lead sees it
 (`model_convert` took a 666-line rework commit after a single review of its first four

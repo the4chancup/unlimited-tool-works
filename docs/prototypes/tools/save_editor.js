@@ -3913,7 +3913,9 @@ function onKey(e) {
   // one per press, PgUp from a player to his own team's row first; with at
   // most one (a team picked), PAGE_ROWS rows at a time. The first and last
   // rows stop them, as the first and last team rows do; from any field, not
-  // under a dialog.
+  // under a dialog. A team row they select rises to the list's top, so its
+  // players stand under it, as far as the list's end lets it rise
+  // (SE-GUI-103); any other row scrolls the least that shows it.
   if ((e.key === "PageUp" || e.key === "PageDown") && S.save && !e.ctrlKey && !e.metaKey
       && !e.altKey && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
     const rows = [...document.querySelectorAll(".plist .rows .prow")];
@@ -3930,7 +3932,7 @@ function onKey(e) {
       } else {
         to = Math.min(rows.length - 1, Math.max(0, at + (down ? PAGE_ROWS : -PAGE_ROWS)));
       }
-      selectRow(rows[to]);
+      selectRow(rows[to], isTeam(rows[to]));
     }
   }
   // Up and Down walk the list's rows as shown, team rows included, while no
@@ -3945,15 +3947,18 @@ function onKey(e) {
     if (next) { e.preventDefault(); selectRow(next); }
   }
 }
-// Selects the list row `row` (a key's move), scrolled into view.
-function selectRow(row) {
+// Selects the list row `row` (a key's move), scrolled into view: to the
+// list's top when `top`, else the least that shows it. The scroll lands
+// before the browser paints the selection, so the highlight never stands
+// a frame at the row's old place.
+function selectRow(row, top) {
   const team = Number(row.dataset.team);
   S.sel = row.dataset.slot === undefined ? { team } : { team, slot: Number(row.dataset.slot) };
   render(); updateLink();
   // After render's own frame puts the list's scroll back: the row comes into view.
   requestAnimationFrame(() => {
     const on = document.querySelector(".plist .rows .prow.on");
-    if (on) on.scrollIntoView({ block: "nearest" });
+    if (on) on.scrollIntoView({ block: top ? "start" : "nearest" });
   });
 }
 // Ctrl+C and Ctrl+V act on what was clicked last of three kinds: a list row

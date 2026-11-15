@@ -2173,6 +2173,11 @@ briefs, review loops, gates and mutation runs as for any step.
     (`spec/pes_savefile/operations.md`) and an `### Important` changelog line ("Team files
     written by 0.0.1 are refused: export the team again, or rename `number` to
     `shirt_number`") land with it. SWE-2 (`.tmp/0_0_2/shirtno/brief.md`), after 0.0.2-clip
+  - [ ] 0.0.2-pgframe a held PgDn flickers the selected row: the list's scroll lands a frame
+    after the selection (the maintainer, 2026-11-15) -> verify: SE-GUI-103's same-frame
+    clauses as tests asserting on the key's own frame, red first; the fix discards the pass
+    that asked for the scroll. SWE-2 (`.tmp/0_0_2/pgframe/brief.md`). The draft's
+    scroll to the top, missed when 0.0.2-pgtop was briefed, landed with this item
   - [ ] 0.0.2-promptx the close prompt's table gets the toolbar list's X column; its last
     row's X lets the close or open go on (the maintainer, 2026-11-15) -> verify: SE-GUI-74's
     prompt clauses as tests; help "Unsaved changes" and the changelog's × line name the prompt.
