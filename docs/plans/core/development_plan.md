@@ -29,6 +29,14 @@ person of every change that reaches them, so everything can still change. No rel
 a compatibility contract before 1.0.0, and the maintenance-mode procedure that would hold them
 to one is written for 1.0.0 (Phase 16).
 
+So a rename or removal lands plain: no alias, shim or special refusal reads the old form, and
+no test names it. An old file gets whatever the format already does with any key it does not
+know (a Team TOML refuses it, `settings.toml` keeps it unread), and the tests that pin that for
+every unknown key cover the old one too. A test of the old name pins a contract the version
+does not have: it is code to remove at 1.0.0, and the next rename copies it. The member's
+notice is the changelog's `### Important` line instead (`core/distribution.md` "Changelog and
+version display").
+
 What a tester would notice still gets its `CHANGELOG.md` line, which is what the personal
 notice is written from. The help chapters beyond the per-view topics, the update check and the
 teams-list merge, which a wide audience needs and a tester told in person does not, ship in

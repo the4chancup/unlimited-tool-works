@@ -18045,3 +18045,15 @@ X would ask a question whose two answers do the same. At 640 points a renamed pl
 scrolled sideways inside the list while the window had room to show it whole.
 Plan: `plans/save_editor.md` "Editing UI", the X's bullet and the toolbar label's;
 SE-GUI-43, SE-GUI-74. Worklog: 0.0.2-promptx, 0.0.2-popwidth.
+
+## 2026-11-15 — core — Before 1.0.0 no test names a renamed or removed key, flag or file
+Decision: a rename or removal before 1.0.0 gets no test of the old form. An old file meets
+whatever the format does with any unknown key, and the tests pinning that generic behaviour
+cover it. This extends "no alias or deprecation shim before 1.0.0" (2026-11-13) from code to
+tests.
+Why: the maintainer, after the `number` to `shirt_number` rename's brief asked for a test that
+`number` is refused: the format's unknown-key tests (`players.01.ingame_face`,
+`players.01.stripped`) already pin the refusal, so the test only remembered an old key, a
+contract 0.x does not have.
+Plan: `plans/core/development_plan.md`, the paragraph starting "So a rename or removal lands
+plain".
