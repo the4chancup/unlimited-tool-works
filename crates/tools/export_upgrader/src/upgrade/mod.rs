@@ -50,9 +50,8 @@ use crate::texture_pairs;
 
 /// The run id of a command's first run. Each export `upgrade` runs is a run
 /// of its own, numbered on from this one, so the export ids `INPUT` and
-/// `OUTPUT` always name the current export's input and output; every other
-/// command has this one run.
-pub(crate) const FIRST_RUN: RunId = RunId(1);
+/// `OUTPUT` always name the current export's input and output.
+const FIRST_RUN: RunId = RunId(1);
 
 /// The input path made absolute, so its name and parent are the export's own:
 /// `upgrade .` run inside an export resolves to the export folder itself, and
