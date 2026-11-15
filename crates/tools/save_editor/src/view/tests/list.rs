@@ -205,6 +205,57 @@ fn a_players_name_paints_in_the_colors_his_codes_set() {
     assert_eq!(painted, expected, "the row's painted runs");
 }
 
+// The light theme's rule for a text colour applied to a name's codes:
+// a row's "PEPSI MAN" draws `SI` reading at 4.5 or more on the light
+// panel, and at the code's own white in the dark theme.
+// SE-GUI-01
+#[test]
+fn a_rows_coded_name_reads_on_the_light_panel() {
+    let path = fixture(PesVersion::Pes21, "name_codes_light");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70101).unwrap().name =
+        "\u{11}cc9002bffPEP\u{11}cffffffffSI \u{11}c004b93ffMAN".to_owned();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::new();
+    for theme in [egui::Theme::Light, egui::Theme::Dark] {
+        window.ctx.set_theme(theme);
+        let visuals = window.ctx.style_of(theme).visuals.clone();
+        assert_eq!(
+            visuals.dark_mode,
+            theme == egui::Theme::Dark,
+            "premise: the {theme:?} visuals"
+        );
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let bounds = row(&nodes, "01 CB PEPSI MAN").bounds().expect("the row");
+        let shape = text_in_rect(&shapes, "PEPSI MAN", bounds);
+        let si = shape
+            .galley
+            .job
+            .sections
+            .iter()
+            .find(|section| {
+                shape.galley.job.text[section.byte_range.start.0..section.byte_range.end.0]
+                    == *"SI "
+            })
+            .map(|section| section.format.color)
+            .expect("the SI run");
+        match theme {
+            egui::Theme::Light => assert!(
+                studio_core::theme::contrast(si, visuals.panel_fill) >= 4.5,
+                "SI paints {si:?}, under 4.5 on the light panel"
+            ),
+            egui::Theme::Dark => assert_eq!(
+                si,
+                egui::Color32::WHITE,
+                "the dark theme draws the code's white"
+            ),
+        }
+    }
+}
+
 // SE-GUI-02
 #[test]
 fn the_filter_finds_a_player_of_another_team_and_selecting_shows_him() {

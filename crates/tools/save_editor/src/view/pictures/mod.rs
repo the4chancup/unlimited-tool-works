@@ -23,7 +23,7 @@ use pes_savefile::model::TeamEntry;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::tactics::{Formation, FormationSlot, TacticsPreset};
 use pes_version::PesVersion;
-use team_widgets::names::append_name;
+use team_widgets::names::{append_name, name_background};
 use team_widgets::pitch::{self, FORMATIONS, PITCH};
 use team_widgets::tactics::{SettingsLine, TacticsView, automatic_pairs, preset_settings};
 
@@ -346,6 +346,7 @@ fn paint_title(painter: &egui::Painter, width: f32, team: &TeamEntry, version: P
         &mut job,
         &team.name,
         &egui::FontId::proportional(TITLE_SIZE),
+        name_background(visuals),
     );
     for section in &mut job.sections {
         if section.format.color == egui::Color32::PLACEHOLDER {

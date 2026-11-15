@@ -815,6 +815,48 @@ fn a_markers_name_keeps_its_colour_codes_colours() {
     );
 }
 
+// On the light theme the name keeps its code's colour all the same: it
+// sits on the turf both themes draw alike, not on the panel a pale code
+// would vanish against.
+#[test]
+fn a_markers_name_keeps_its_white_code_on_the_light_theme() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.ctx.set_theme(egui::Theme::Light);
+    assert!(
+        !window.ctx.style_of(egui::Theme::Light).visuals.dark_mode,
+        "premise: the light theme"
+    );
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let mut rows = fixture_rows(PesVersion::Pes21);
+    rows[usize::from(tactics.starting_eleven[4])].1 = "\u{11}cffffffffWHITE\u{11}d NAME".to_owned();
+    let roster = roster_rows(&rows);
+
+    let (_, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let galley = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.job.text == "WHITE NAME" => {
+                Some(shape.galley.job.clone())
+            }
+            _ => None,
+        })
+        .next()
+        .expect("the marker's name galley");
+    assert!(
+        galley
+            .sections
+            .iter()
+            .all(|section| section.format.color == egui::Color32::WHITE),
+        "every run white: {:?}",
+        galley
+            .sections
+            .iter()
+            .map(|section| section.format.color)
+            .collect::<Vec<_>>()
+    );
+}
+
 // The formation screen's selection marks, reused for the editor's
 // states: the open popover's marker gets the selected corners, no other
 // does. Every marker gets the candidates' while an assignment mode is

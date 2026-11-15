@@ -413,8 +413,8 @@ fn import(
 
 /// The paste notice's ending: the full stop alone, or the notes' count
 /// when the import left any: `; 3 values PES 2017 does not store were
-/// left out` when every note is a key `version` lacks (`1 value … was
-/// left out`), `; 3 values were left out or changed to fit PES 2017`
+/// left out.` when every note is a key `version` lacks (`1 value … was
+/// left out.`), `; 3 values were left out or changed to fit PES 2017.`
 /// with another kind among them, `version` the open save's.
 fn notes_tail(notes: &[NoteGroup], version: PesVersion) -> String {
     let count: usize = notes.iter().map(|group| group.notes.len()).sum();
@@ -428,8 +428,8 @@ fn notes_tail(notes: &[NoteGroup], version: PesVersion) -> String {
         .iter()
         .all(|group| group.code == Code::ImportKeyNotInVersion.as_str());
     if dropped {
-        format!("; {values} PES {year} does not store {was_were} left out")
+        format!("; {values} PES {year} does not store {was_were} left out.")
     } else {
-        format!("; {values} {was_were} left out or changed to fit PES {year}")
+        format!("; {values} {was_were} left out or changed to fit PES {year}.")
     }
 }

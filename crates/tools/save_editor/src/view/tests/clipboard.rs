@@ -1258,7 +1258,7 @@ fn a_paste_from_another_version_ends_its_notice_with_the_dropped_count() {
         view17.notice.as_ref().map(|notice| notice.text.as_str()),
         Some(
             format!(
-                "{a_name}'s stats pasted onto {b_name}; {count} values PES 2017 does not store were left out"
+                "{a_name}'s stats pasted onto {b_name}; {count} values PES 2017 does not store were left out."
             )
             .as_str()
         ),
@@ -1344,7 +1344,7 @@ fn a_paste_leaving_a_value_changed_says_so_in_its_notice() {
             view17.notice.as_ref().map(|notice| notice.text.as_str()),
             Some(
                 format!(
-                    "{name}'s Gameplan pasted onto {name}; {count} value{} {was_were} left out or changed to fit PES 2017",
+                    "{name}'s Gameplan pasted onto {name}; {count} value{} {was_were} left out or changed to fit PES 2017.",
                     if count == 1 { "" } else { "s" }
                 )
                 .as_str()
@@ -1398,7 +1398,7 @@ fn a_paste_leaving_one_value_out_uses_the_singular_tail() {
         view17.notice.as_ref().map(|notice| notice.text.as_str()),
         Some(
             format!(
-                "SOMEONE's stats pasted onto {b_name}; 1 value PES 2017 does not store was left out"
+                "SOMEONE's stats pasted onto {b_name}; 1 value PES 2017 does not store was left out."
             )
             .as_str()
         ),
