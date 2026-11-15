@@ -2179,11 +2179,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] 0.0.2-shirtno the Team TOML player key `number` is `shirt_number` (`fb42b800`, merge
     `5e4cb83a`): an error naming `players.03.number` read as the player's ID; a 0.0.1 file
     holding `number` is refused as any unknown key, and the changelog's Important line says so
-  - [ ] 0.0.2-pgframe a held PgDn flickers the selected row: the list's scroll lands a frame
-    after the selection (the maintainer, 2026-11-15) -> verify: SE-GUI-103's same-frame
-    clauses as tests asserting on the key's own frame, red first; the fix discards the pass
-    that asked for the scroll. SWE-2 (`.tmp/0_0_2/pgframe/brief.md`). The draft's
-    scroll to the top, missed when 0.0.2-pgtop was briefed, landed with this item
+  - [ ] 0.0.2-pgframe a held PgDn flickered the selected row, the list's scroll landing a frame
+    after the selection (`35902abc`, merge `f4c1d2db`): the list gives its scroll area the
+    reveal's offset before layout (a rerun of the pass cannot help: egui lays the area out
+    from its stored offset first); SE-GUI-103's same-frame clauses tested on the key's own
+    frame -> verify: the built list captured beside the draft (a focus-taking check: ask
+    first, with 0.0.2-popwidth's), then a look card
   - [x] 0.0.2-promptx the close prompt's table gets the toolbar list's X column, its last
     row's X letting the close or open go on (`55f398a9`, merge `29299fe3`)
   - [ ] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
