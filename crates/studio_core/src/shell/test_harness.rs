@@ -78,6 +78,9 @@ pub(super) struct Calls {
     /// tests being about a selector in use, so they keep their meaning; a test
     /// clears it for a tool the selector is not shown for.
     pub(super) targets: Mutex<bool>,
+    /// What `repro_state` reports: the `(name, bytes)` files the dialog puts
+    /// under `state/`, empty until a test fills them.
+    pub(super) repro_state: Mutex<Vec<(String, Vec<u8>)>>,
 }
 
 impl Calls {
@@ -260,6 +263,9 @@ impl StudioTool for StubTool {
     }
     fn title_detail(&self) -> Option<String> {
         self.calls.title_detail.lock().unwrap().clone()
+    }
+    fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
+        self.calls.repro_state.lock().unwrap().clone()
     }
 }
 

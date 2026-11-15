@@ -22,6 +22,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::{Context, anyhow};
 use pes_savefile::EditFile;
+#[cfg(not(target_arch = "wasm32"))]
+use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchError, PatchSummary};
 use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
 use pes_savefile::model::{PlayerEntry, TeamEntry};
@@ -977,6 +979,33 @@ impl Session {
             op_table(&Op::Wrote { output }),
         );
         Ok(())
+    }
+
+    /// The session's state for a repro bundle's `state/` section: the open
+    /// save encoded as it would be written now — every modeled field
+    /// written back and the file re-encrypted under a fresh salt, as `save`
+    /// does — named as the save's file. `None` when the encode fails: a
+    /// failed one drops the bundle's state, never the member's save.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn repro_state(&self) -> Option<(String, Vec<u8>)> {
+        let name = self
+            .path
+            .file_name()
+            .unwrap_or_else(|| self.path.as_os_str())
+            .to_string_lossy()
+            .into_owned();
+        // `save` seeds the salt with the payload, which the session cannot
+        // see; the serial is the save's own bytes and seeds it the same way.
+        match self.file.to_bytes(&fresh_salt(self.file.serial())) {
+            Ok(bytes) => Some((name, bytes)),
+            Err(error) => {
+                log::debug!(
+                    "{}: the save cannot be encoded for the repro bundle ({error})",
+                    self.path.display()
+                );
+                None
+            }
+        }
     }
 }
 

@@ -7,8 +7,8 @@ use pes_version::PesVersion;
 
 use super::{
     ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, HELP_LABEL, ICON_SIZE,
-    LABEL_END_PADDING, LABEL_GAP, RAIL_WIDTH, SETTINGS_LABEL, overlay_frame, overlay_id,
-    selector_color, version_label,
+    LABEL_END_PADDING, LABEL_GAP, RAIL_WIDTH, REPORT_LABEL, SETTINGS_LABEL, overlay_frame,
+    overlay_id, selector_color, version_label,
 };
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
@@ -191,7 +191,7 @@ fn the_gui_opens_on_the_tool_last_tool_names_and_lists_all_tools() {
     let inner = overlay_inner_width(
         &egui_ctx,
         cell,
-        &["A", "B", "C", HELP_LABEL, SETTINGS_LABEL],
+        &["A", "B", "C", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL],
     );
     for label in ["A", "B", "C"] {
         let width = entry(&nodes, label).bounds().unwrap().width();
@@ -240,8 +240,12 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
 
     // At 1.11, past the delay: open, every entry the overlay's inner width.
     let opened = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.11)).nodes;
-    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", HELP_LABEL, SETTINGS_LABEL]);
-    for label in ["A", "B", HELP_LABEL, SETTINGS_LABEL] {
+    let inner = overlay_inner_width(
+        &egui_ctx,
+        cell,
+        &["A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL],
+    );
+    for label in ["A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
         let width = entry(&opened, label).bounds().unwrap().width();
         assert!(
             (width - inner).abs() < 0.5,
@@ -260,7 +264,7 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
 
     // Nothing moved when it opened: the logo's, each entry's, the help's and the
     // gear's top-left is the same open and closed (the widths differ).
-    for label in ["4cc", "A", "B", HELP_LABEL, SETTINGS_LABEL] {
+    for label in ["4cc", "A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
         let before = entry(&closed, label).bounds().unwrap();
         let after = entry(&opened, label).bounds().unwrap();
         assert!(
@@ -715,7 +719,13 @@ fn the_overlay_is_as_wide_as_the_longest_label_on_one_line() {
     let inner = overlay_inner_width(
         &egui_ctx,
         cell,
-        &["A", "Player aesthetics editor", HELP_LABEL, SETTINGS_LABEL],
+        &[
+            "A",
+            "Player aesthetics editor",
+            REPORT_LABEL,
+            HELP_LABEL,
+            SETTINGS_LABEL,
+        ],
     );
     assert!(
         (width - inner).abs() < 0.5,
@@ -785,7 +795,14 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
         1,
         "the rail paints its logo's ring (the frame's shapes are collected)"
     );
-    for label in ["A", "B", "Music player", HELP_LABEL, SETTINGS_LABEL] {
+    for label in [
+        "A",
+        "B",
+        "Music player",
+        REPORT_LABEL,
+        HELP_LABEL,
+        SETTINGS_LABEL,
+    ] {
         assert_eq!(
             painted_text_count(&rail, label),
             0,
@@ -794,7 +811,14 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
     }
 
     let open = open_sidebar(&egui_ctx, &mut app, entry(&rail.nodes, "A"), 1.0);
-    for label in ["A", "B", "Music player", HELP_LABEL, SETTINGS_LABEL] {
+    for label in [
+        "A",
+        "B",
+        "Music player",
+        REPORT_LABEL,
+        HELP_LABEL,
+        SETTINGS_LABEL,
+    ] {
         assert_eq!(
             painted_text_count(&open, label),
             1,
@@ -865,7 +889,7 @@ fn the_accent_bar_marks_only_the_active_row() {
         accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color).is_some(),
         "the active row carries the accent bar"
     );
-    for label in ["B", HELP_LABEL, SETTINGS_LABEL] {
+    for label in ["B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
         assert!(
             accent_bar_at(&out, entry(&out.nodes, label).bounds().unwrap(), color).is_none(),
             "the {label} row carries no accent bar"
@@ -921,7 +945,11 @@ fn the_overlay_holds_while_the_pointer_is_anywhere_on_it() {
         .x;
     let style = egui_ctx.global_style();
     let margins = overlay_frame(&style).total_margin().sum().x;
-    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", HELP_LABEL, SETTINGS_LABEL]);
+    let inner = overlay_inner_width(
+        &egui_ctx,
+        cell,
+        &["A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL],
+    );
     let right = f64::from(outer_left) + inner + f64::from(margins);
 
     // On the margin band, right of the drawn content but inside the outer
@@ -1312,7 +1340,8 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
         vec![calls_a, calls_b],
     );
     let icons = |nodes: &[accesskit::Node]| {
-        ["A", "B", HELP_LABEL, SETTINGS_LABEL].map(|label| entry(nodes, label).bounds().unwrap())
+        ["A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL]
+            .map(|label| entry(nodes, label).bounds().unwrap())
     };
     let middle = egui::pos2(400.0, 300.0);
     let visuals = egui_ctx.global_style().visuals.clone();
@@ -2887,35 +2916,42 @@ fn the_rails_entries_are_3_points_apart() {
     );
 }
 
-// The draft separates the help and the gear from the entries with the line it
-// draws under the selector: the same stroke over the same span, on row 680.
+// The draft separates the tail's rows (report, help, gear) from the entries
+// with the line it draws under the selector: the same stroke over the same
+// span, on row 680 before the report row joined the tail.
 #[test]
-fn a_line_above_the_help_matches_the_line_under_the_selector() {
+fn a_line_above_the_tail_matches_the_line_under_the_selector() {
     let out = rail_at_draft_window();
     let lines = rail_lines(&out);
     assert_eq!(lines.len(), 2, "two lines on the rail: {lines:?}");
-    let (under_selector, above_help) = (lines[0], lines[1]);
+    let (under_selector, above_tail) = (lines[0], lines[1]);
     assert_at_draft(
-        f64::from(above_help.0[0].y),
-        680.5,
-        "the line above the help",
+        f64::from(above_tail.0[0].y),
+        646.5,
+        "the line above the tail",
     );
     assert_eq!(
-        (above_help.0[0].x, above_help.0[1].x, above_help.1),
+        (above_tail.0[0].x, above_tail.0[1].x, above_tail.1),
         (
             under_selector.0[0].x,
             under_selector.0[1].x,
             under_selector.1
         ),
-        "the line above the help has the span and stroke of the one under the selector"
+        "the line above the tail has the span and stroke of the one under the selector"
     );
 }
 
-// The help and the gear rows sit at the rail's foot as the draft's tail: the gear
-// 6 above the rail's bottom at 756 (`.rail` padding 6), the help one gap above it.
+// The tail's rows sit at the rail's foot as the draft's: the gear 6 above the
+// rail's bottom at 756 (`.rail` padding 6), the help one gap above it and the
+// report one more above it.
 #[test]
-fn the_help_and_the_gear_sit_at_the_drafts_rows() {
+fn the_tail_rows_sit_at_the_drafts_rows() {
     let out = rail_at_draft_window();
+    assert_at_draft(
+        rail_bounds(&out.nodes, REPORT_LABEL).y0,
+        654.0,
+        "the report's top",
+    );
     assert_at_draft(
         rail_bounds(&out.nodes, HELP_LABEL).y0,
         688.0,
@@ -2976,10 +3012,11 @@ fn the_opened_sidebars_labels_and_width_match_the_draft() {
     );
 
     let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 780.0));
-    let labels = REGISTRY
-        .iter()
-        .map(|entry| entry.label)
-        .chain([HELP_LABEL, SETTINGS_LABEL]);
+    let labels =
+        REGISTRY
+            .iter()
+            .map(|entry| entry.label)
+            .chain([REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL]);
     for label in labels {
         let shape = text_shape_in(&open, label, screen)
             .unwrap_or_else(|| panic!("the opened sidebar paints {label:?}"));

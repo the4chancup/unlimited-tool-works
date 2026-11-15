@@ -138,6 +138,18 @@ pub(crate) fn chapters<'a>(
             },
         ),
         (
+            "reporting",
+            HelpSection {
+                title: "Reporting a problem",
+                topics: vec![HelpTopic {
+                    slug: "report",
+                    title: "Report a problem",
+                    body: include_str!("core/report.md"),
+                }],
+                messages: Vec::new(),
+            },
+        ),
+        (
             WHATS_NEW_ID,
             HelpSection {
                 title: "What's new",

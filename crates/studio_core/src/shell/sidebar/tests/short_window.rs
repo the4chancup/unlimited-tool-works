@@ -78,12 +78,16 @@ fn idle_at_height(
 
 /// The scroll room's top and bottom: from the head separator's bottom to the
 /// tail separator's top — each separator a `SEPARATOR_SPACING` row flanked by the
-/// layout's 3-point item spacing (egui's own), which the entries never share with it.
+/// layout's 3-point item spacing (egui's own), which the entries never share
+/// with it. The report row is the tail's top.
 fn scroll_band(nodes: &[accesskit::Node]) -> (f64, f64) {
     let head_end = combo(nodes).bounds().expect("the selector is drawn").y1;
-    let help_top = entry(nodes, HELP_LABEL).bounds().unwrap().y0;
+    let report_top = entry(nodes, REPORT_LABEL).bounds().unwrap().y0;
     let separator = f64::from(SEPARATOR_SPACING);
-    (head_end + 3.0 + separator + 3.0, help_top - 3.0 - separator)
+    (
+        head_end + 3.0 + separator + 3.0,
+        report_top - 3.0 - separator,
+    )
 }
 
 /// The `i` icon glyph painted inside `bounds` (an entry row's): its text
@@ -170,6 +174,7 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
     let rail_bottom = rail_bottom(&out);
     let head = [bounds(entry(&out.nodes, "4cc")), bounds(combo(&out.nodes))];
     let tail = [
+        bounds(entry(&out.nodes, REPORT_LABEL)),
         bounds(entry(&out.nodes, HELP_LABEL)),
         bounds(entry(&out.nodes, SETTINGS_LABEL)),
     ];
@@ -241,9 +246,15 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
         first.y1 <= band_top + 0.5,
         "the first tool entry is not in view: {first:?} vs band top {band_top}"
     );
-    for (name, before) in ["4cc", "the selector", HELP_LABEL, SETTINGS_LABEL]
-        .into_iter()
-        .zip(head.into_iter().chain(tail))
+    for (name, before) in [
+        "4cc",
+        "the selector",
+        REPORT_LABEL,
+        HELP_LABEL,
+        SETTINGS_LABEL,
+    ]
+    .into_iter()
+    .zip(head.into_iter().chain(tail))
     {
         let after = if name == "the selector" {
             bounds(combo(&out.nodes))
@@ -284,9 +295,15 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
             "{label} moved on open: y {before:.1} in the rail, {after:.1} in the sidebar"
         );
     }
-    for (name, before) in ["4cc", "the selector", HELP_LABEL, SETTINGS_LABEL]
-        .into_iter()
-        .zip(head.into_iter().chain(tail))
+    for (name, before) in [
+        "4cc",
+        "the selector",
+        REPORT_LABEL,
+        HELP_LABEL,
+        SETTINGS_LABEL,
+    ]
+    .into_iter()
+    .zip(head.into_iter().chain(tail))
     {
         let after = if name == "the selector" {
             bounds(combo(&opened.nodes))
@@ -365,6 +382,7 @@ fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the
         bounds(combo(&rail.nodes)),
     ];
     let tail = [
+        bounds(entry(&rail.nodes, REPORT_LABEL)),
         bounds(entry(&rail.nodes, HELP_LABEL)),
         bounds(entry(&rail.nodes, SETTINGS_LABEL)),
     ];
@@ -409,7 +427,7 @@ fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the
         );
     }
     let window = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 381.0));
-    for (name, before) in ["4cc", HELP_LABEL, SETTINGS_LABEL]
+    for (name, before) in ["4cc", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL]
         .into_iter()
         .zip([head[0]].into_iter().chain(tail))
     {
@@ -419,7 +437,7 @@ fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the
             "{name} moved on open: {before:?} -> {after:?}"
         );
     }
-    for name in [HELP_LABEL, SETTINGS_LABEL] {
+    for name in [REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
         assert!(
             text_shape_in(&opened, name, window).is_some(),
             "{name} is painted inside the window"
@@ -430,6 +448,7 @@ fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the
         bounds(combo(&opened.nodes)),
     ];
     let opened_tail = [
+        bounds(entry(&opened.nodes, REPORT_LABEL)),
         bounds(entry(&opened.nodes, HELP_LABEL)),
         bounds(entry(&opened.nodes, SETTINGS_LABEL)),
     ];
@@ -469,9 +488,15 @@ fn in_a_short_window_the_opened_sidebars_entries_scroll_between_the_head_and_the
         "the last entry is in view: icon at {:?} clipped to {clip:?}",
         icon.pos
     );
-    for (name, before) in ["4cc", "the selector", HELP_LABEL, SETTINGS_LABEL]
-        .into_iter()
-        .zip(opened_head.into_iter().chain(opened_tail))
+    for (name, before) in [
+        "4cc",
+        "the selector",
+        REPORT_LABEL,
+        HELP_LABEL,
+        SETTINGS_LABEL,
+    ]
+    .into_iter()
+    .zip(opened_head.into_iter().chain(opened_tail))
     {
         let after = if name == "the selector" {
             bounds(combo(&out.nodes))

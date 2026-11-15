@@ -3,9 +3,10 @@
 //! it: the logo doubling as the About click target, the
 //! PES version selector with its live exe check, its blocker and the once-per-life
 //! auto-switch to a running PES, the tool list with the planned tools grayed, and
-//! the help `?` with the settings gear pinned at the bottom. There is no collapse
-//! button and no expanded state to persist: the widgets are drawn once per frame,
-//! in the rail while the overlay is closed, in the overlay while it is open.
+//! the report `⚠`, the help `?` and the settings gear pinned at the bottom. There is
+//! no collapse button and no expanded state to persist: the widgets are drawn once
+//! per frame, in the rail while the overlay is closed, in the overlay while it is
+//! open.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -70,6 +71,12 @@ const PES_POLL_SECONDS: f64 = 5.0;
 /// or a registered tool whose window is not built yet. Either way its window is what
 /// is coming; how to run a tool from the command line is the help's to say.
 const PLANNED_TOOLTIP: &str = "Coming soon™";
+/// The repro bundle dialog's name: the `⚠` entry's label in the opened
+/// sidebar, its accessible name, open or not, and the dialog's title, so
+/// the entry names the window it opens. Native only: the bundle it writes
+/// lives on disk.
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) const REPORT_LABEL: &str = "Report a problem";
 /// The help's name: the `?` entry's label in the opened sidebar, its accessible name,
 /// open or not, and the help window's title, so the entry names the window it opens.
 /// "(WIP)" until the help is complete.
@@ -107,6 +114,10 @@ pub(super) enum SidebarClick {
     /// Open the help window at the target (the `?` targets the active tool's chapter,
     /// the About popup's Help link `setting-up`).
     OpenHelp(HelpTarget),
+    /// Open the "Report a problem" dialog (the `⚠` entry). Native only: the
+    /// bundle it writes lives on disk.
+    #[cfg(not(target_arch = "wasm32"))]
+    OpenReport,
 }
 
 /// The sidebar's state across frames: whether the overlay is open, when the
@@ -394,13 +405,22 @@ impl Sidebar {
 
                 let mut clicked = None;
                 // The entries scroll in the room the tail leaves: the tail is
-                // the separator above the help and settings rows, pinned to the
-                // foot — two rows, the item spacing between them and beside the
-                // separator, and the separator. In a window tall enough for
-                // every entry the area shrinks to its contents and nothing
-                // moves; in a shorter one the wheel scrolls. The rail has no
-                // room for a scroll bar, so none is drawn or reserved.
-                let tail = SEPARATOR_SPACING + 2.0 * (ENTRY_HEIGHT + ui.spacing().item_spacing.y);
+                // the separator above the report, help and settings rows,
+                // pinned to the foot — the rows, the item spacing between
+                // them and beside the separator, and the separator. In a
+                // window tall enough for every entry the area shrinks to its
+                // contents and nothing moves; in a shorter one the wheel
+                // scrolls. The rail has no room for a scroll bar, so none is
+                // drawn or reserved.
+                // The browser build keeps the two older rows: it has no
+                // bundle to write.
+                let tail_rows = if cfg!(not(target_arch = "wasm32")) {
+                    3.0
+                } else {
+                    2.0
+                };
+                let tail =
+                    SEPARATOR_SPACING + tail_rows * (ENTRY_HEIGHT + ui.spacing().item_spacing.y);
                 egui::ScrollArea::vertical()
                     // Under the contents' scope id: the rail and the overlay
                     // share the scroll offset, so the opened sidebar shows the
@@ -471,9 +491,10 @@ impl Sidebar {
                         }
                     });
 
-                // The bottom rows, pinned to the sidebar's foot: the help `?` above
-                // the settings gear (the first bottom-up child is the lowest), under
-                // a line like the one under the selector.
+                // The bottom rows, pinned to the sidebar's foot: the settings
+                // gear lowest, the help `?` above it and the report `⚠` on top
+                // (the first bottom-up child is the lowest), under a line like
+                // the one under the selector.
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                     let gear = entry_row(
                         ui,
@@ -516,6 +537,27 @@ impl Sidebar {
                             topic: None,
                             anchor: None,
                         }));
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let report = entry_row(
+                            ui,
+                            row_width,
+                            cell,
+                            egui::RichText::new(crate::icons::WARNING).size(ICON_SIZE),
+                            (!rail).then_some(REPORT_LABEL),
+                            false,
+                            true,
+                        );
+                        report.widget_info(|| {
+                            egui::WidgetInfo::labeled(egui::Role::Button, true, REPORT_LABEL)
+                        });
+                        if report.has_focus() {
+                            self.focus_label = Some(REPORT_LABEL);
+                        }
+                        if report.clicked() {
+                            clicked = Some(SidebarClick::OpenReport);
+                        }
                     }
                     ui.add(egui::Separator::default().spacing(SEPARATOR_SPACING));
                 });
@@ -815,7 +857,7 @@ pub(super) fn drawn_order<'a>(
 
 /// The widest body-text galley among the labels the open sidebar shows, since the overlay
 /// is as wide as the longest label needs on one line: the registered tools', the planned
-/// entries' as `contents` draws them, the help's and the gear's. Measured each frame with
+/// entries' as `contents` draws them, and the tail rows'. Measured each frame with
 /// the fonts; no constant.
 fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     let font = egui::TextStyle::Body.resolve(ui.style());
@@ -836,6 +878,8 @@ fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     for entry in drawn_planned(args) {
         measure(entry.label);
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    measure(REPORT_LABEL);
     measure(HELP_LABEL);
     measure(SETTINGS_LABEL);
     widest

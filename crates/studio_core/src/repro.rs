@@ -9,7 +9,7 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 /// Reading a bundle back, for `utw <tool-id> replay`.
 #[cfg(not(target_arch = "wasm32"))]
@@ -83,6 +83,9 @@ struct KeptFile {
     path: PathBuf,
     /// The file's bytes.
     bytes: Arc<[u8]>,
+    /// When the file was kept: the "wrote at" time the per-tool summary
+    /// reads on outputs.
+    written: SystemTime,
 }
 
 /// A tool's repro journal: the model steps it records and the files it
@@ -145,6 +148,7 @@ impl Recorder {
             tool,
             path: path.to_path_buf(),
             bytes,
+            written: SystemTime::now(),
         });
         journal.inputs.len() - 1
     }
@@ -163,6 +167,7 @@ impl Recorder {
         {
             Some(index) => {
                 journal.outputs[index].bytes = bytes;
+                journal.outputs[index].written = SystemTime::now();
                 index
             }
             None => {
@@ -170,6 +175,7 @@ impl Recorder {
                     tool,
                     path: path.to_path_buf(),
                     bytes,
+                    written: SystemTime::now(),
                 });
                 journal.outputs.len() - 1
             }
@@ -204,6 +210,79 @@ impl Recorder {
         let journal = self.journal.lock().unwrap().clone();
         bundle::write(&journal, out, words, files, state, home)
     }
+
+    /// Every tool that recorded anything, as `ToolSummary`s — what the
+    /// "Report a problem" dialog lists under "The file holds:", one line per
+    /// tool, in the sidebar's order. A tool that recorded nothing has no
+    /// entry.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn tool_summaries(&self) -> Vec<ToolSummary> {
+        let journal = self.journal.lock().unwrap();
+        let mut summaries: Vec<ToolSummary> = Vec::new();
+        for step in &journal.steps {
+            let index = slot(&mut summaries, step.tool);
+            summaries[index].steps += 1;
+        }
+        for kept in &journal.inputs {
+            let index = slot(&mut summaries, kept.tool);
+            let summary = &mut summaries[index];
+            if summary.first_input.is_none() {
+                summary.first_input = Some((kept.path.clone(), kept.bytes.len()));
+            }
+            summary.inputs += 1;
+        }
+        for kept in &journal.outputs {
+            let index = slot(&mut summaries, kept.tool);
+            let summary = &mut summaries[index];
+            // `outputs` is ordered by first write, not last: a path written
+            // again keeps its slot, so the last write is the newest `written`.
+            if summary
+                .last_output
+                .as_ref()
+                .is_none_or(|(_, written)| kept.written >= *written)
+            {
+                summary.last_output = Some((kept.path.clone(), kept.written));
+            }
+        }
+        summaries
+    }
+}
+
+/// `tool`'s entry in `summaries`, created on first sight.
+#[cfg(not(target_arch = "wasm32"))]
+fn slot(summaries: &mut Vec<ToolSummary>, tool: &'static str) -> usize {
+    match summaries.iter().position(|summary| summary.tool == tool) {
+        Some(index) => index,
+        None => {
+            summaries.push(ToolSummary {
+                tool,
+                steps: 0,
+                inputs: 0,
+                first_input: None,
+                last_output: None,
+            });
+            summaries.len() - 1
+        }
+    }
+}
+
+/// One tool's recorded activity, read back for the "Report a problem"
+/// dialog's "The file holds:" line: its step count, the first file it
+/// opened with its size and how many more it opened, and the last file
+/// it wrote with the write's time.
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub(crate) struct ToolSummary {
+    /// The recording tool's id.
+    pub(crate) tool: &'static str,
+    /// How many steps it recorded.
+    pub(crate) steps: usize,
+    /// How many files it kept as read (the bundle's `inputs/`).
+    pub(crate) inputs: usize,
+    /// Its first kept input: the file's path and byte length.
+    pub(crate) first_input: Option<(PathBuf, usize)>,
+    /// Its last kept output: the file's path and when the write was kept.
+    pub(crate) last_output: Option<(PathBuf, SystemTime)>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -767,6 +846,68 @@ pub(crate) mod tests {
             dir.file_name().unwrap().to_string_lossy()
         ));
         assert!(!tmp.exists(), "the temp sibling is removed");
+    }
+
+    // A tool's summary reads back its steps, its first input with its size
+    // and the count of them, and the output it wrote last (the newest
+    // `written`, not the last path first kept); a tool that recorded
+    // nothing has none.
+    #[test]
+    fn a_tools_summary_reads_back_its_record() {
+        let recorder = Recorder::default();
+        recorder.step("save-editor", "opened a/EDIT00000000");
+        recorder.step("save-editor", "player 1: Height 1 → 2");
+        recorder.keep_input(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"SAVE"[..]),
+        );
+        recorder.keep_input(
+            "save-editor",
+            Path::new("b/EDIT00000000"),
+            Arc::from(&b"OTHER"[..]),
+        );
+        recorder.keep_output(
+            "save-editor",
+            Path::new("out/EDIT00000000"),
+            Arc::from(&b"OLD"[..]),
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        recorder.keep_output(
+            "save-editor",
+            Path::new("out2/EDIT00000000"),
+            Arc::from(&b"OTHER"[..]),
+        );
+        recorder.keep_output(
+            "save-editor",
+            Path::new("out/EDIT00000000"),
+            Arc::from(&b"NEW"[..]),
+        );
+
+        let summaries = recorder.tool_summaries();
+        let [summary] = summaries.as_slice() else {
+            panic!("one tool recorded: {summaries:?}")
+        };
+        assert_eq!(summary.tool, "save-editor");
+        assert_eq!(summary.steps, 2);
+        assert_eq!(summary.inputs, 2);
+        assert_eq!(
+            summary
+                .first_input
+                .as_ref()
+                .map(|(path, size)| (path.as_path(), *size)),
+            Some((Path::new("a/EDIT00000000"), 4)),
+            "the first input, with its size"
+        );
+        // A path written again keeps its slot but refreshes its time: the
+        // last write is `out`, the newest `written`, not `out2`, the last
+        // path first kept.
+        let (path, written) = summary.last_output.as_ref().expect("it wrote");
+        assert_eq!(path, Path::new("out/EDIT00000000"), "the last write's path");
+        assert!(
+            written.elapsed().is_ok(),
+            "the write's time is in the past: {written:?}"
+        );
     }
 
     // An attachment whose bytes are not UTF-8 lands byte-equal: a binary

@@ -683,6 +683,18 @@ impl SaveView {
         self.session.as_ref().map(Session::version)
     }
 
+    /// The open save's state files for `Tool::repro_state` (the repro
+    /// bundle's `state/`): the save encoded as it would be written now,
+    /// named as its file; none with no save open.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
+        self.session
+            .as_ref()
+            .and_then(Session::repro_state)
+            .into_iter()
+            .collect()
+    }
+
     /// The PES folder the portraits read, `None` for "no folder" (the
     /// Set PES path tests' premise).
     #[cfg(test)]
