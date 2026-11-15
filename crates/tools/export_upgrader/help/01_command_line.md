@@ -27,9 +27,9 @@ gets a `settings.toml` whose only setting is `name = true`.
 
 `--legacy-ids` is VGL27's legacy mode, for the organizer: every boots or
 gloves folder is copied into each player wearing it, and a root
-`legacy_ids.toml` records the ID each folder's name carried. The Team
-compiler then packs those models under the old IDs, the ones the managers'
-own Red builds use. A folder with a file that would replace a different one
+`legacy_ids.toml` records the ID each folder's name carried. The Compiler
+then packs those models under the old IDs, the ones the managers' own builds
+with the old tools use. A folder with a file that would replace a different one
 in a player's folder stays shared, and is packed under its old ID all the
 same.
 
@@ -101,15 +101,18 @@ that cannot be removed aborts the run.
 
 With several exports, the options given apply to all of them, and each export
 is upgraded as if it were run alone, so one that is refused or stops does not
-stop the others. The run prints a line `Upgrading <name>` before each export's
-findings, with an empty line between exports. When an export is refused or
-stops, the reason is the last line of its part of the report, starting with
-`error:`. The run ends with the count of exports upgraded and not upgraded
-(`Upgraded: 48. Not upgraded: 2.`), and an export counts as upgraded when its
-migration is clean. A run with `--all` prints these lines even when the folder
-holds one export. The whole run is refused before any export is read when an
-argument is bad, the savefile does not read as a save, or the `--all` folder
-is missing, is not a folder or holds no export.
+stop the others.
+
+The run prints a line `Upgrading <name>` before each export's findings, with an
+empty line between exports. When an export is refused or stops, the reason is
+the last line of its part of the report, starting with `error:`. The run ends
+with the count of exports upgraded and not upgraded (`Upgraded: 48. Not
+upgraded: 2.`), and an export counts as upgraded when its migration is clean. A
+run with `--all` prints these lines even when the folder holds one export.
+
+The whole run is refused before any export is read when an argument is bad, the
+savefile does not read as a save, or the `--all` folder is missing, is not a
+folder or holds no export.
 
 **Exit codes**
 

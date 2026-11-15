@@ -24,7 +24,8 @@
   between three screens: Stats, Appearance, and Gameplan for the team's fields and tactics.
   Appearance, until now a collapsed section under the stats, is a screen of its own.
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
-  installs it, and a command typed in a terminal mentions a newer version too. The Help
+  installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
+  mentions a newer version too. The Help
   window's new Updates chapter explains each step.
 
 ### Useful
@@ -35,8 +36,8 @@
 - **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats…`, which stays
   open: pick the source once, then select in the list each player to copy onto.
 - **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics
-  preset or a formation) in another Save editor window too, even one holding another PES
-  version's save.
+  preset or a formation) in another Save editor window too, and after another save is
+  opened, even a save of another PES version.
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list has an ×, which puts that one change
@@ -166,8 +167,7 @@
   hair color comment in `settings.toml` spell "color", as the rest of the program does.
 - **Save editor**: on the light theme, a white or pale color code in a team's or player's
   name is drawn darker, so the name stays readable on the light background.
-- **Save editor**: the column heads of the unsaved changes list are no longer dimmed, and
-  the notice after a paste that left values out ends with a full stop.
+- **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.
 - **Save editor**: the filter box matches an ID from its start, so `820` lists team 820 and

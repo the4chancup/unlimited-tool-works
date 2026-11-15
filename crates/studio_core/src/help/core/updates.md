@@ -71,9 +71,8 @@ because no other update starts until you do.
 Once the new version is in place, `Update ready` offers two buttons:
 
 - `Restart now` closes the program and starts the new version. If a tool first
-  asks about unsaved work, as it does whenever the program closes, the program
-  closes or stays open as you answer, and it does not start again by itself: the
-  new version runs the next time you start it;
+  asks about unsaved work, the program does not start again by itself, whatever
+  you answer: the new version runs the next time you start it;
 - `Later` closes the window. The status bar then reads `Update ready`, which
   opens this window again, and the new version runs the next time you start
   the program.

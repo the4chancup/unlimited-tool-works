@@ -73,6 +73,20 @@ keeps it as typed.
 Every edit is undoable, and the **Edit** menu's **Undo** and **Redo** step through them
 (Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z); a drag or a run of typing on one field is one undo step.
 
+**Copy and paste**
+
+Ctrl+C copies the selected row, and Ctrl+V pastes it onto another selected row of the same
+kind: a player's row copies his stats, which paste as **Copy/swap stats…** copies them, and a
+team's row copies its Gameplan. In a team's **Tactics** part, a click on the preset bar or
+the formation bar makes Ctrl+C copy the preset or formation shown, and Ctrl+V paste over the
+one shown.
+
+The copy is text on the system clipboard, so it also pastes into another Save editor window,
+or after another save is opened, even a save of another PES version. When the target's
+version cannot hold a value as it was, the status bar says how many were left out or
+changed. Each paste is one undo step, and while you type in a text field, Ctrl+C and Ctrl+V
+copy and paste its text.
+
 **Quick actions**
 
 Under the list, one **Make \<tier\>** button per tier of the AATF rules in use gives the

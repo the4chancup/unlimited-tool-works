@@ -544,8 +544,22 @@ fn a_checksum_that_does_not_match_fails_and_retry_installs() {
     let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
     text_node(&nodes, &reason);
 
-    // Close leaves the offer standing: Details opens on it again, and its
-    // Update now fails the same way.
+    // Escape stands for Close: the offer's screen comes back under Details,
+    // and its Update now fails the same way.
+    frame(
+        &egui_ctx,
+        &mut shell.app,
+        vec![key(egui::Key::Escape, true)],
+        true,
+    );
+    let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
+    assert!(!has_text(&nodes, &reason), "Escape closed the dialog");
+    let nodes = open_details(&egui_ctx, &mut shell.app);
+    assert!(has_text(&nodes, SENTENCE), "the offer screen returns");
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Update now"));
+    let nodes = frame_until_text(&egui_ctx, &mut shell.app, &reason);
+
+    // Close leaves the offer standing the same way.
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Close"));
     let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
     assert!(!has_text(&nodes, &reason), "Close closed the dialog");
@@ -897,8 +911,26 @@ fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
     );
 
     drop(go_on);
-    let nodes = frame_until_text(&egui_ctx, &mut shell.app, READY_TEXT);
-    assert_ready_bar(&nodes, "with the dialog hidden");
+    // Done is the worker's last send: once it has ended, the outcome waits
+    // in the channel for the next frame to drain. Wait on the worker, never
+    // on drawn text — `frame_until_text` pumps however many frames it
+    // takes, and a bar set a frame late would pass.
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        if let Stage::Downloading(install) = &shell.app.update_dialog.stage
+            && install.worker.is_finished()
+        {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the install's worker never ended"
+        );
+        std::thread::yield_now();
+    }
+    // Exactly one frame: the bar must already read the new condition.
+    let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
+    assert_ready_bar(&nodes, "one frame after the install's worker ended");
     assert!(!has_text(&nodes, READY_SENTENCE), "the dialog stays hidden");
 }
 

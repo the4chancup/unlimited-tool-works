@@ -543,11 +543,17 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     drop(crash_handler);
     drop(instance);
     if let Some(program) = restart {
-        // The child is not waited for: it outlives the process that starts it.
-        if let Err(error) = std::process::Command::new(&program).spawn().map(drop) {
-            log::warn!(
-                "the new program {} could not be started: {error}",
-                program.display()
+        // The child is not waited for: it outlives the process that starts
+        // it. A failed start is said in a dialog, not the log: a line here
+        // would land after the log's closing line, and the next start would
+        // read the session as a crash.
+        if let Err(error) = std::process::Command::new(&program).spawn() {
+            show_dialog(
+                MessageLevel::Error,
+                &format!(
+                    "The new version is installed but could not be started ({error}). \
+                     Start the program again to use it."
+                ),
             );
         }
     }
@@ -945,6 +951,34 @@ mod tests {
             String::from_utf8(stderr).unwrap(),
             format!("{notice}\n"),
             "the notice on stderr too"
+        );
+
+        // The same run with the newer release skipped: only the refusal's
+        // line, no notice.
+        let (mut settings, paths) = startup_in(&tools, dir.path().to_path_buf())
+            .unwrap_or_else(|(_, text)| panic!("{text}"));
+        settings.common.skipped_version = Some("999.0.0".to_owned());
+        let skipped_path = dir.path().join("skipped_log.txt");
+        let skipped_log = Arc::new(RunLog::open(&skipped_path).unwrap());
+        let mut stderr = Vec::new();
+        let code = run_loaded(
+            &tools,
+            &tool,
+            &matches,
+            Some(skipped_log),
+            &mut stderr,
+            (settings, paths),
+            Some(arrived(reply_of(NEWER_RELEASE))),
+        );
+        assert_eq!(code.unwrap(), 2);
+        let written = fs::read_to_string(&skipped_path).unwrap();
+        let [error] = written.lines().collect::<Vec<_>>()[..] else {
+            panic!("the refusal's line alone, no notice: {written}")
+        };
+        assert!(error.starts_with("error: "), "{written}");
+        assert!(
+            stderr.is_empty(),
+            "the skipped release prints nothing on stderr"
         );
     }
 

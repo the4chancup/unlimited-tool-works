@@ -208,8 +208,9 @@ pub struct StudioApp {
     /// test's fake can wait on a channel it captured.
     #[cfg(not(target_arch = "wasm32"))]
     update_fetch: Arc<updater::Fetch>,
-    /// Where the startup update check stands: the first frame asks the due rule, a
-    /// later one drains the reply, then it is done.
+    /// Where the update check stands: `poll_update` starts one whenever the
+    /// due rule says so — the first frame, and again once the interval has
+    /// passed — and drains a finished check's reply on a later frame.
     #[cfg(not(target_arch = "wasm32"))]
     update_poll: UpdatePoll,
     /// The release the status bar's offer is about, while the offer stands: the
@@ -569,29 +570,18 @@ impl StudioApp {
 
     /// The update dialog, drawn while `update_release` stands (the release it
     /// was opened for gone, it closes itself); its Update now installs into
-    /// the program's folder, and an install that succeeds, the dialog shown or
-    /// hidden, turns the bar's offer into `Update ready`. Its answers: Skip
-    /// this version stores the version as `skipped_version`, drops the offer
-    /// and the release and saves as every settings change does; Restart now
-    /// arms the restart and asks the window to close as its close button does
-    /// (`run_gui` hands the new program back); the others only close it.
+    /// the program's folder, `logic` draining the install's outcome. Its
+    /// answers: Skip this version stores the version as `skipped_version`,
+    /// drops the offer and the release and saves as every settings change
+    /// does; Restart now arms the restart and asks the window to close as its
+    /// close button does (`run_gui` hands the new program back); the others
+    /// only close it.
     #[cfg(not(target_arch = "wasm32"))]
     fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
         let Some(release) = self.update_release.as_ref() else {
             self.update_dialog.close();
             return;
         };
-        if self.update_dialog.poll_install() {
-            let version = release.version.to_string();
-            self.status_bar.set_condition(
-                ShellCondition::UpdateAvailable {
-                    version: version.clone(),
-                },
-                false,
-            );
-            self.status_bar
-                .set_condition(ShellCondition::UpdateReady { version }, true);
-        }
         let answer = self.update_dialog.show(
             egui_ctx,
             release,
@@ -817,6 +807,25 @@ impl eframe::App for StudioApp {
             self.record_version();
         }
         self.poll_update(egui_ctx);
+        // The install's outcome is drained before any panel draws, so the
+        // frame that drains `Done` already draws `Update ready` on the bar.
+        // Drained in the dialog's own draw (which follows the bar's), an
+        // install ending while the dialog is hidden would leave `Update
+        // available` standing until a repaint an idle window never gets.
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(release) = self.update_release.as_ref()
+            && self.update_dialog.poll_install()
+        {
+            let version = release.version.to_string();
+            self.status_bar.set_condition(
+                ShellCondition::UpdateAvailable {
+                    version: version.clone(),
+                },
+                false,
+            );
+            self.status_bar
+                .set_condition(ShellCondition::UpdateReady { version }, true);
+        }
         self.apply_requests(egui_ctx);
         // The window's close asks the tools in sidebar order until one holds it. The holder
         // cancels the close and becomes the active view, its prompt answering through
@@ -1556,41 +1565,50 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_due_check_finding_no_newer_release_offers_nothing() {
-        let dir = TestDir::new("studio_core_update_not_newer");
-        let data = dir.path().join("data");
-        fs::create_dir_all(&data).unwrap();
-        let (a, calls_a) = stub("a", "A", None);
-        let mut settings = test_settings(dir.path());
-        settings.common.check_for_updates = true;
-        let Shell { mut app, ctx, .. } =
-            shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
-        // The list's newest is the version the window is told it runs, which
-        // is not the build's: an offer here means the build's was read.
-        app.version = "0.0.2";
-        app.update_fetch = std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
-        let egui_ctx = test_context();
+        for (version, skipped, why) in [
+            (
+                "0.0.2",
+                None,
+                "a release no newer than the build is not offered",
+            ),
+            ("0.0.1", Some("0.0.2"), "the skipped release is not offered"),
+        ] {
+            let dir = TestDir::new("studio_core_update_not_newer");
+            let data = dir.path().join("data");
+            fs::create_dir_all(&data).unwrap();
+            let (a, calls_a) = stub("a", "A", None);
+            let mut settings = test_settings(dir.path());
+            settings.common.check_for_updates = true;
+            settings.common.skipped_version = skipped.map(str::to_owned);
+            let Shell { mut app, ctx, .. } =
+                shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
+            // The 0.0.2 case's list newest is the version the window is told
+            // it runs, which is not the build's: an offer there means the
+            // build's was read. The 0.0.1 case's is newer but skipped.
+            app.version = version;
+            app.update_fetch =
+                std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
+            let egui_ctx = test_context();
 
-        // Wait on the stamp, which a drained check writes however it ended:
-        // before it, "no offer" holds of a check still in flight.
-        let deadline = std::time::Instant::now() + GUARD;
-        let nodes = loop {
-            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
-            if ctx.common().last_update_check.is_some() {
-                break out.nodes;
-            }
+            // Wait on the stamp, which a drained check writes however it ended:
+            // before it, "no offer" holds of a check still in flight.
+            let deadline = std::time::Instant::now() + GUARD;
+            let nodes = loop {
+                let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+                if ctx.common().last_update_check.is_some() {
+                    break out.nodes;
+                }
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "the update check's reply never landed"
+                );
+            };
+            assert!(!has_text(&nodes, "Update available"), "{why}");
             assert!(
-                std::time::Instant::now() < deadline,
-                "the update check's reply never landed"
+                app.update_release.is_none(),
+                "no release is kept for the dialog ({why})"
             );
-        };
-        assert!(
-            !has_text(&nodes, "Update available"),
-            "a release no newer than the build is not offered"
-        );
-        assert!(
-            app.update_release.is_none(),
-            "no release is kept for the dialog"
-        );
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
