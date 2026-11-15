@@ -9409,7 +9409,7 @@ function ixWarningGroups(lines) {
   return groups;
 }
 // The picked file's own team, a click away while the import targets another:
-// `Select <name> (<id>)` with the save's name for the file's team id, which
+// `Select the team with this file's ID (<id> <name>)`, the save's name for it, which
 // selects that team's row (the unsaved changes list's jump). Disabled on a
 // save without the id; none for a file naming no team (a .4ccs) or the target.
 function ixOwnTeamButton(d, t) {
@@ -9417,10 +9417,11 @@ function ixOwnTeamButton(d, t) {
   if (id === undefined || id === null || String(id) === String(t.id)) return null;
   const own = curSave().teams.find(x => String(x.id) === String(id));
   return own
-    ? button("Select " + own.name + " (" + own.id + ")", () => { jumpToTeam(own.id); structural(); },
-        { title: "Select the team this file was exported from, so the import goes onto it" })
+    ? button("Select the team with this file's ID (" + own.id + " " + own.name + ")",
+        () => { jumpToTeam(own.id); structural(); },
+        { title: "The import then goes onto that team" })
     : h("span", { title: "The save has no team " + id },
-        button("Select team " + id, null, { disabled: true }));
+        button("Select the team with this file's ID (" + id + ")", null, { disabled: true }));
 }
 function interchangePanel() {
   const t = selTeam();

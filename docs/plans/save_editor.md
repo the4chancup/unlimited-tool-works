@@ -2297,13 +2297,14 @@ the editor exposes them as:
 
   A picked file that names the team it was exported from (a Team TOML's `[team] id`, a
   Texport's or a `.4cct`'s team) puts a button on the `Import into` line when that team is not
-  the target: `Select <name> (<id>)`, the save's name for that ID. Its click selects that
-  team's row, as a row click of the unsaved changes list does (the selector moved to it unless
-  it reads All teams, the filter cleared), so the import goes onto it, and the line then names
-  it. An organizer importing a cup's files so lands each on its own team without finding it
-  in the list. On a save without that ID the button reads `Select team <id>`, disabled, its
-  tooltip `The save has no team <id>`; a file naming no team (a `.4ccs`), or naming the
-  target, draws none.
+  the target: `Select the team with this file's ID (<id> <name>)`, the save's name for that
+  ID, so the label says why the button is there. Its click selects that team's row, as a row
+  click of the unsaved changes list does (the selector moved to it unless it reads All teams,
+  the filter cleared), so the import goes onto it, and the line then names it. An organizer
+  importing a cup's files so lands each on its own team without finding it in the list. On a
+  save without that ID the button reads `Select the team with this file's ID (<id>)`,
+  disabled, its tooltip `The save has no team <id>`; a file naming no team (a `.4ccs`), or
+  naming the target, draws none.
 
   The sections split the file as the squad load does, so a file that loads with 4ccEditor's
   choices loads the same here (`editor.h` `PlayerImport`, read 2026-10-21):
@@ -2321,8 +2322,12 @@ the editor exposes them as:
   stadium, with their edit flags, go with gameplay; the two team colours, the kit slots and
   the strip flag go with aesthetics, the team's look.
 
-  A refusal that comes from a chosen section's keys (a team name too long, with gameplay; a
-  shirt number past the field's range, with aesthetics) is drawn under the section choices
+  A shirt number past the target's range (420 on PES 2017, whose field ends at 255) is not a
+  refusal: the import writes the range's end and lists the change among its notes, since one
+  out-of-range number is no reason to keep the rest of the aesthetics section out.
+
+  A refusal that comes from a chosen section's keys (a team name too long, with gameplay) is
+  drawn under the section choices
   with Apply disabled, the choices still drawn, since unticking that section is how the member
   imports the rest. Only a `.4ccs` with more records than the target's roster is refused
   whatever the choices, drawn alone. An import that would change nothing (the team's own file,

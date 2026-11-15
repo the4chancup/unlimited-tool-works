@@ -3012,6 +3012,13 @@ briefs, review loops, gates and mutation runs as for any step.
   fixtures with the draft's hash; `draft_compare.py`'s matching rules ported to Rust test
   support; one test per screen of its list. Then, if still worth it: `egui_kittest`
   (dev-dependency) for the colour and weight checks
+- [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "a shirt number past
+  the target's range is clamped"): a team file import writes a shirt number past the target's
+  range as the range's end, listed among its notes, in place of refusing the file
+  (`plans/save_editor.md`, the paragraph starting "A shirt number past the target's range")
+  -> verify: `C:/Data/4cc/Lab/VGL27 Qualies/ted/gbfg_vgl27.ted` into a PES 2017 save
+  imports, player 03's number 255 and the note naming it (it refuses today with
+  `players.03.number: 420 is out of range (0 to 255)`)
 - [ ] after 0.0.2 (the maintainer, 2026-11-15): docstrings: every doc comment of the codebase reread under the Shakespeare rule's
   docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
   reference text). The maintainer decides whether SWE-2 or Opus runs it. The trial,

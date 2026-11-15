@@ -18011,3 +18011,13 @@ Why: simplicity while the program is pre-release. Removing a retired key, or ref
 code to write, test and keep.
 Plan: `plans/core/distribution.md` "Self-update", the paragraph starting "The settings file
 needs no transfer". Worklog: 0.0.2-upd.
+
+## 2026-11-15 — save_editor — A shirt number past the target's range is clamped on import, not refused
+Decision: a team file whose shirt number is past the target version's range (420 into PES
+2017, whose field ends at 255) imports with the number written as the range's end, and the
+change is listed among the import's notes. Other out-of-range values keep their refusal.
+Why: one out-of-range shirt number kept the file's whole aesthetics section out, leaving the
+member to untick it and lose every other look the file carried (found importing
+`gbfg_vgl27.ted` into a PES 2017 save).
+Plan: `plans/save_editor.md`, the paragraph starting "A shirt number past the target's
+range". Worklog: the after-0.0.2 list.
