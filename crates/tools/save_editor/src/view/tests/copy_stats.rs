@@ -528,10 +528,12 @@ fn a_team_row_click_under_the_window_gives_its_first_player() {
     );
 }
 
-// A roster write under the open window — `edit_team` trading two slots'
-// players, the numbers staying at their slots as a move leaves them —
-// re-reads each pick's player off the roster: the Destination dropdown
-// names the player the slot now holds and Copy writes him.
+// A roster write under the open window re-reads each pick's player off
+// the roster: the Destination dropdown names the player the slot now
+// holds and Copy writes him. The test writes the roster itself
+// (`edit_team` trading two slots' player ids), a state the window
+// defends against rather than one a member's edit makes: a move trades
+// the players' records and leaves the roster's ids where they are.
 #[test]
 fn a_roster_write_under_the_window_moves_the_pick_with_the_slot() {
     let path = fixture(PesVersion::Pes21, "copy_window_roster_write");

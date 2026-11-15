@@ -28,7 +28,7 @@ Appearance section).
 **Copy and Swap stats**
 
 The window has two rows, Source and Destination, each picked by team, then by
-roster slot; both start on the selected player, or on the team's first player
+player; both start on the selected player, or on the team's first player
 when a team row is selected. It stays open over the editor, and selecting a
 player row in the list makes that player the Destination (a team row, its first
 player), so one player's stats go onto several others with a click on each and
