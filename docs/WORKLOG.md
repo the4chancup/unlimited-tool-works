@@ -2198,10 +2198,16 @@ briefs, review loops, gates and mutation runs as for any step.
       (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill). SWE-2
       round 1 in two halves (`.tmp/0_0_2/revdebt/swe_list_{a,b}.md`): 2 of 4 accepted, the
       loop ends; the fix (a click selecting a row the category hides widens it to All,
-      merge `a5911d60`) and two plan clauses (SE-GUI-08, 83). Carbon's round
-      (`.tmp/0_0_2/revdebt/carbon_list.md`) at `a5911d60`
+      merge `a5911d60`) and two plan clauses (SE-GUI-08, 83). Carbon's round 1, 2026-11-15
+      (at `a5911d60`): 9 of 11 accepted ("C-list r1"): a selection made elsewhere leaves its
+      row off screen, the own-team button overflows its line (now a row of its own under
+      it: plan and draft edited), untested clauses, a scenario cited on a unit test, stale
+      help and changelog lines
+      - [ ] the rework (SWE-2, `.tmp/rework_carbon1.md` in `listrw1`), then Carbon's round 2
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
+      - [ ] the rework of SWE-2's round 1 (12 accepted; SWE-2, `.tmp/rework_notices.md` in
+        `noticesrw`), then SWE-2's round 2
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -2226,7 +2232,10 @@ briefs, review loops, gates and mutation runs as for any step.
     and in the File menu, each `[PES 2021] backups\EDIT00000000 - VGL26` (P58, the
     maintainer, 2026-11-15; plan and DECISIONS edited) -> verify: SE-GUI-26 and SE-GUI-90 red
     first; a start with the setting lists the earlier run's saves; a deleted one is dropped.
-    After 0.0.2-bar's round 6 rework merges (`file_menu.rs`). Tier 2
+    Waits for the maintainer's answers on the File menu's new layout (2026-11-15: Open
+    (Any PES)…, Save, Save As… with Ctrl+Shift+S, Open from Documents, Recent files, Close
+    Save with Ctrl+W, Exit with Ctrl+Q), which joins this slice, and for the notices'
+    rework to merge (`menus.rs`). Brief draft: `.tmp/0_0_2/recents/brief.md`. Tier 2
   - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
@@ -2436,7 +2445,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] Carbon's round 6, 2026-11-15 (at `81c539d7`): 9 of 10 accepted: the welcome panel's
       Recent never seen (dropped, then restored by 0.0.2-recents), untested clauses, a
       surviving mutant, stale citations and comments
-    - [ ] the rework (SWE-2, `.tmp/brief.md` in `barrw6`, its branch `sk/barrw6` gating)
+    - [x] the rework (SWE-2, merge `5b5546d8`)
     - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
       gap Carbon never did), at Codex brother's reset, 2026-11-16 03:19; it carries A-bar r3-4
