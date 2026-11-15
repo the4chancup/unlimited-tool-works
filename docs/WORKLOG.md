@@ -2086,8 +2086,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] 2026-11-15 (lead) `draft_compare.py` lists the Appearance screen (the draft's link
       takes `page=appearance`) and the Ruleset editor's General and Tiers pages (`rs_general`,
       `rs_tiers`), so a slice there is measured, not looked at
-    - [ ] `draft_compare.py kit_slots` opens a save that stores kit slots (PES 17): on the
-      PES 21 sample both sides show only "does not store kit slots" and always match
+    - [x] 2026-11-15 (lead) `draft_compare.py kit_slots` opens the PES 17 sample's team 718,
+      whose ten kit slots the draft shows (the build side: `EDIT17`)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a

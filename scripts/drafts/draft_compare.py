@@ -77,7 +77,7 @@ OUT = ROOT / ".tmp" / "draft_compare"
 SAVE = "save=pes21&pes=2021"
 # The screens measured so far: each one's draft link. The built window shows the same screen
 # with the PES 21 sandbox save open (`EDIT17` for `aatf`, whose draft rows are recorded for the
-# PES 2017 sample only); the Ruleset editor's with the 4cc Autumn 26 template, the draft's own.
+# PES 2017 sample only, and for `kit_slots`, since PES 21 stores no kit slots); the Ruleset editor's with the 4cc Autumn 26 template, the draft's own.
 SCREENS = {
     "firstrun": "#save_editor?settings=none&pes=2021",
     "empty": "#save_editor?pes=2021",
@@ -89,7 +89,7 @@ SCREENS = {
     "comparator": "#save_editor/player?pes=2021&player=701.1&panel=comparator",
     "aatf": "#save_editor/player?pes=2021&player=718.1",
     "set_stats": f"#save_editor/player?{SAVE}&player=701.1&dialog=set-stats",
-    "kit_slots": f"#save_editor/team?{SAVE}&selteam=701&dialog=kit-slots",
+    "kit_slots": "#save_editor/team?pes=2017&selteam=718&dialog=kit-slots",
     "pictures_range": f"#save_editor/player?{SAVE}&player=701.1&dialog=pictures-range",
     "picture_save": f"#save_editor/player?{SAVE}&player=701.1&dialog=picture-save",
     "appearance": f"#save_editor/player?{SAVE}&player=701.1&page=appearance",
