@@ -2283,9 +2283,10 @@ briefs, review loops, gates and mutation runs as for any step.
       lacks, and a test racing its worker on a 300 ms sleep ("A-upd r5x")
     - [ ] every start checks; the open window rechecks every 5 minutes; `last_update_check`
       and `check_interval_minutes` go (DECISIONS 2026-11-15) -> verify: ST-UPD-01 as
-      rewritten; first confirm no test or script that starts the real program reaches
-      GitHub; the bundled `settings.toml`, the help's Updates chapter and the spec's
-      settings tables follow; with A-upd r5x-2's race (SWE-2, after cliprw2)
+      rewritten, with the bundled `settings.toml`, the help's Updates chapter and A-upd
+      r5x-2's race (SWE-2, `.tmp/0_0_2/upd/redesign.md`); then the spec's settings tables.
+      No test or script that starts the real program reaches GitHub: the built-window
+      launcher was the only one, and now checks a closed local port (`1ae7e171`)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
@@ -2364,7 +2365,8 @@ briefs, review loops, gates and mutation runs as for any step.
       checkbox, no Player menu without a selected team, the welcome panel over the panes
     - [x] Carbon's round 3, 2026-11-15 (at `069eb2ea`): 11 of 14 accepted
     - [x] the rework (SWE-2 and the lead's help text, merge `b44c8e1e`)
-    - [ ] Carbon's round 4 (`.tmp/0_0_2/bar/carbon_r4.md`)
+    - [x] Carbon's round 4, 2026-11-15 (at `b44c8e1e`): 5 of 6 accepted
+    - [ ] the rework (SWE-2, `.tmp/0_0_2/bar/rework_c4.md`), then Carbon's round 5
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
