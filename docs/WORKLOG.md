@@ -2406,7 +2406,8 @@ briefs, review loops, gates and mutation runs as for any step.
     corner radius, 2 points, everywhere: one constant in `theme.rs` sets all seven of
     egui's radii in both themes and the suite's own painting reads the style
     (ST-CORNER-01); the captain's mark keeps the game's radii, radio buttons stay circles.
-    The update download's bar is painted in no test. Look: Pending looks
+    The update download's bar is painted in no test. Look: the corners checked 2026-11-15 at
+    `4b9f2258`, card `look-corners`; the bar waits for the first real update (no hook fakes one)
   - [x] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at

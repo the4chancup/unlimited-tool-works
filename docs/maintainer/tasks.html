@@ -517,12 +517,31 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="Your note (optional)"></textarea>
 </section>
 
+<section class="entry" id="look-corners">
+  <h3>The 2-point corners</h3>
+  <p class="from">From: the pending looks; checked by the lead at <code>4b9f2258</code></p>
+  <p>Corners zoomed six times: a dialog, the unsaved changes list, a tooltip, a text box and
+  a hovered button in the build, then the draft's list and button. Each is rounded by 2
+  points, as in the draft.</p>
+  <p>Not shown: the update download's bar. It is drawn only while an update downloads, and
+  no release newer than the one installed exists yet, so it waits for the first real
+  update.</p>
+  <div class="shots">
+    <figure><a href="img/corners.png"><img src="img/corners.png" alt="Corners of five built surfaces and two draft ones, zoomed"></a><figcaption>Five built corners, then two of the draft's</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
 <ul>
   <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
-  <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>
 </ul>
 
 <div class="picks">
