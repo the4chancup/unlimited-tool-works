@@ -2274,7 +2274,8 @@ briefs, review loops, gates and mutation runs as for any step.
       labels; under 4cc Autumn 26 locked with "Used only while Attack/defence levels is on,
       in Automatic settings" until the flag is ticked, then editable; under /vg/ League 27
       locked with "Not editable in the game from PES 2017 on" with the flag ticked
-    - [ ] the look in the built window, both themes (Pending looks)
+    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
+      `look-auto-levels` in `docs/maintainer/tasks.html`
   - [x] 0.0.2-num17 2026-11-14 (`b518585a`; lead, Opus sidekick): who reads the two numbers
     in PES 2017, inconclusive. A live memory watch (`.tmp/num17/`) and a static search of the
     dump in Ghidra (`4cc-studio-temp/pes17_re`, report `out/report_re.md`) found only copiers,
