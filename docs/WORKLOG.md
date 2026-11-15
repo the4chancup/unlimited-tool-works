@@ -2099,11 +2099,13 @@ briefs, review loops, gates and mutation runs as for any step.
     template until it is edited (`plans/ruleset_editor.md` the undo paragraph's last
     sentences, RE-GUI-02, RE-GUI-15); the build departed from the draft, whose title shows no
     mark after a template opens -> verify: RE-GUI-02 and 15 headless
-  - [ ] 0.0.2-teamscroll (the maintainer, 2026-11-15) the Save editor's teams dropdown scrolls
-    its teams in 200 points, the radios under them (`plans/save_editor.md` "Team selector",
-    the radios paragraph): the build fitted teams and radios into 200 together, so its teams
-    had about 97, half of the draft's `.combo-pop > div` -> verify: a headless test of the
-    scroll area's height, then the built window beside the draft
+  - [ ] 0.0.2-teamscroll (the maintainer, 2026-11-15) every dropdown's list scrolls past 300
+    points, not egui's 200 (`plans/core/gui.md` "Dark/light theme"; the draft's
+    `.combo-pop > div`, 2026-11-15): `theme.rs` sets `combo_height`, beside the spacing it
+    pins; and the Save editor's teams dropdown scrolls its teams in the whole 300, the radios
+    under them (`plans/save_editor.md` "Team selector", the radios paragraph), where the build
+    fitted teams and radios into one 200, leaving the teams about 97 -> verify: the theme
+    test, a headless test of the teams' scroll area, then the built window beside the draft
   - [ ] 0.0.2-report (the maintainer, 2026-11-15, who expected it in 0.0.2) the "Report a
     problem" button and dialog: the repro bundles issue's slice (4) (`plans/core/architecture.md`
     "Repro bundles"; the draft's `drawReport`), writing the Save editor's bundle from the journal

@@ -17810,3 +17810,20 @@ Why: the maintainer expected the button in 0.0.2, and a member's report (the PES
 whose teams became placeholders) waits on it. The journal it writes from is built; replay
 waits until a member's bundle needs it (2026-11-08), so the button needs nothing else first.
 Plan: `plans/core/architecture.md` "Repro bundles". Worklog: 0.0.2-report.
+
+## 2026-11-15 — core — Every dropdown's list scrolls past 300 points
+Decision: a dropdown's open list scrolls once it passes 300 points, in every tool, where egui's
+`combo_height` default is 200; `theme.rs` sets it beside the spacing it pins, and the drafts'
+`.combo-pop > div` caps at 300 alike. The Save editor's teams dropdown scrolls its teams in the
+whole 300, its category radios under them. This replaces the same day's teams-only entry
+("The teams dropdown scrolls its teams in a full list's height"), whose 200 the maintainer
+raised.
+Why: the maintainer found the teams dropdown cramped even at the draft's 200, and asked for one
+cap for every dropdown rather than the teams' alone. 200 was egui's default, which the drafts
+copied on 2026-10-28; nobody chose it. 300 and not 400 (the maintainer asked for 400 unless it
+had a cost): a list that fits neither below nor above its dropdown is opened beside it or over
+it by egui. 300 fits on one side of any dropdown in the default 1280 × 780 window, while 400
+fails near the window's middle, and in the smallest window (600 high) for a third of the
+dropdowns.
+Plan: `plans/core/gui.md` "Dark/light theme"; `plans/save_editor.md` "Team selector". Worklog:
+0.0.2-teamscroll.
