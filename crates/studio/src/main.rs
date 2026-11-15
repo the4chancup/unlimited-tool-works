@@ -507,14 +507,21 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     );
     let mut restart = None;
     let code = guard_gui(
-        || match run_gui(StudioApp::new(
-            tools,
-            &PLANNED,
-            &CLI_ONLY,
-            ctx,
-            requests_rx,
-            user_config_dir(),
-        )) {
+        || match run_gui(
+            StudioApp::new(
+                tools,
+                &PLANNED,
+                &CLI_ONLY,
+                ctx,
+                requests_rx,
+                user_config_dir(),
+            )
+            .with_log_file(
+                installed_log
+                    .as_ref()
+                    .map(|installed| installed.path.clone()),
+            ),
+        ) {
             Ok(program) => {
                 restart = program;
                 ExitCode::SUCCESS

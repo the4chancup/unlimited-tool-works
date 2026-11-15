@@ -26,6 +26,7 @@ vtree.workspace = true
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 directories.workspace = true
 flate2.workspace = true
+jiff.workspace = true
 rfd.workspace = true
 rustls.workspace = true
 semver.workspace = true

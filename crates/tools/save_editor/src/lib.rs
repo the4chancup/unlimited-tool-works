@@ -347,6 +347,13 @@ impl StudioTool for Tool {
         self.view.save_path().map(|path| path.display().to_string())
     }
 
+    /// The open save as the repro bundle's state file: the save encoded as it
+    /// would be saved now, named as its file; none with no save open.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
+        self.view.repro_state()
+    }
+
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {
         cli::run(matches, ctx, self.running)
     }

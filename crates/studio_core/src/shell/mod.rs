@@ -9,6 +9,8 @@ mod about;
 mod first_run;
 mod help_window;
 mod launch;
+#[cfg(not(target_arch = "wasm32"))]
+mod report;
 mod settings_menu;
 mod sidebar;
 mod status_bar;
@@ -234,6 +236,15 @@ pub struct StudioApp {
     /// hands it back once the window and this app are gone.
     #[cfg(not(target_arch = "wasm32"))]
     update_restart: Arc<Mutex<Option<PathBuf>>>,
+    /// The "Report a problem" dialog the sidebar's `⚠` entry opens.
+    #[cfg(not(target_arch = "wasm32"))]
+    report: report::Report,
+    /// The window's log's path (`utw.log` — one per window slot): `studio`'s
+    /// `gui_log` knows it and `studio_core` does not, so `with_log_file`
+    /// hands it in; `None` when the run has no log. The repro bundle's
+    /// `utw.log` entry reads it.
+    #[cfg(not(target_arch = "wasm32"))]
+    log_file: Option<PathBuf>,
 }
 
 /// Where the update check stands (native only; the browser build checks
@@ -322,7 +333,20 @@ impl StudioApp {
             update_dialog: update_dialog::UpdateDialog::default(),
             #[cfg(not(target_arch = "wasm32"))]
             update_restart: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            report: report::Report::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            log_file: None,
         }
+    }
+
+    /// The log's path, for the repro bundle's `utw.log` entry: `run_gui_mode`
+    /// calls this once with `installed_log`'s path. Not on `AppPaths`, which
+    /// every caller of `ToolContext::new` would have to fill.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_log_file(mut self, log_file: Option<PathBuf>) -> StudioApp {
+        self.log_file = log_file;
+        self
     }
 
     /// The native window's options for this start, and what the first frame then does:
@@ -631,12 +655,15 @@ impl StudioApp {
     }
 
     /// Opens the help window at `target`. A shell modal (the settings menu, the About
-    /// popup, the update dialog) closes first so it cannot cover the non-modal window.
+    /// popup, the update and report dialogs) closes first so it cannot cover the
+    /// non-modal window.
     fn open_help(&mut self, target: &HelpTarget) {
         self.settings_menu.close();
         self.sidebar.about_open = false;
         #[cfg(not(target_arch = "wasm32"))]
         self.update_dialog.close();
+        #[cfg(not(target_arch = "wasm32"))]
+        self.report.close();
         let active = self
             .tools
             .get(self.active)
@@ -807,11 +834,13 @@ impl eframe::App for StudioApp {
             egui_ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.set_active(index);
             // The holder's prompt decides; no shell modal (the settings menu, the About
-            // popup, the update dialog) may cover it.
+            // popup, the update and report dialogs) may cover it.
             self.settings_menu.close();
             self.sidebar.about_open = false;
             #[cfg(not(target_arch = "wasm32"))]
             self.update_dialog.close();
+            #[cfg(not(target_arch = "wasm32"))]
+            self.report.close();
             // A held close drops Restart now for good: the member answers the tool's
             // prompt, and a later close is an ordinary one.
             #[cfg(not(target_arch = "wasm32"))]
@@ -881,6 +910,8 @@ impl eframe::App for StudioApp {
                 self.settings_menu.open(self.active, &self.ctx);
             }
             Some(SidebarClick::OpenHelp(target)) => self.open_help(&target),
+            #[cfg(not(target_arch = "wasm32"))]
+            Some(SidebarClick::OpenReport) => self.report.open(),
             None => {}
         }
         egui::CentralPanel::default().show(ui, |ui| {
@@ -918,6 +949,9 @@ impl eframe::App for StudioApp {
                 &mut self.sidebar,
             );
             self.show_update_dialog(ui.ctx());
+            #[cfg(not(target_arch = "wasm32"))]
+            self.report
+                .show(ui.ctx(), &self.tools, &self.ctx, self.log_file.as_deref());
             self.help_window.show(ui.ctx());
         }
     }

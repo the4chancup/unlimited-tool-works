@@ -1047,3 +1047,30 @@ fn a_batch_edit_is_one_sealed_entry_of_the_changed_players() {
     assert_eq!(session.file().player(70101).unwrap().basic.height, before);
     assert!(!session.can_undo(), "each push was its own entry");
 }
+
+// ST-REP-04
+#[test]
+fn the_repro_state_is_the_open_save_as_it_would_be_written_now() {
+    let mut session = open(PesVersion::Pes21, "repro_state");
+    let mut player = session.file().player(70101).unwrap().clone();
+    player.stats.speed = 77;
+    session.edit_player(0, player);
+
+    let files = session.repro_state();
+    let [(name, bytes)] = files.as_slice() else {
+        panic!("one state file, named as the save's file: {files:?}")
+    };
+    assert_eq!(name.as_str(), "EDIT00000000");
+    let written = EditFile::from_bytes(bytes).expect("the state reads as a save");
+    assert_eq!(
+        written.player(70101).unwrap().stats.speed,
+        77,
+        "the edited field is in it"
+    );
+}
+
+// ST-REP-04's "no save open" clause: the tool reports no state files.
+#[test]
+fn the_repro_state_is_empty_with_no_save_open() {
+    assert!(studio_core::StudioTool::repro_state(&crate::Tool::new()).is_empty());
+}
