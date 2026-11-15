@@ -3797,7 +3797,9 @@ function welcomePanel() {
 }
 // The Edit menu: Undo and Redo, each dead with nothing to do, its tooltip
 // the button's own (the last step's label); then Copy and Paste, Ctrl+C's and
-// Ctrl+V's on the same target, Copy dead where Ctrl+C copies nothing.
+// Ctrl+V's on the same target, Copy dead where Ctrl+C copies nothing. Their
+// tooltips name the action: the copy by its notice's words, the paste by the
+// one kind the target takes and the target. sample wording: the two tooltips.
 function editMenu() {
   return menu("Edit", [
     ["Undo\tCtrl+Z", () => { doUndo(); render(); }, !S.undo.length,
@@ -3805,8 +3807,11 @@ function editMenu() {
     ["Redo\tCtrl+Y", () => { doRedo(); render(); }, !S.redo.length,
       S.redo.length ? "Redo: " + S.redo[S.redo.length - 1].label : "Nothing to redo"],
     "-",
-    ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !S.save || (clipKind() === "player" && groupOn())],
-    ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !S.save],
+    ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !S.save || (clipKind() === "player" && groupOn()),
+      S.save ? "Copies " + clipHeld() : undefined],
+    ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !S.save,
+      S.save ? "Pastes the copied " + { player: "stats", team: "Gameplan", preset: "preset",
+        formation: "formation" }[clipKind()] + " onto " + clipOnto() : undefined],
   ], { frame0: true });
 }
 
@@ -3956,17 +3961,29 @@ function clipKind() {
   if (S.clickKind !== "list") return S.clickKind;
   return isTeamSel() ? "team" : "player";
 }
+// What a copy of the target holds, as the notices and the Edit menu's Copy
+// name it ("VAPE DUCK's stats", "/a/'s preset 2").
+function clipHeld() {
+  const kind = clipKind(), t = selTeam();
+  return kind === "player" ? displayName(curPlayer().name) + "'s stats"
+    : kind === "team" ? t.name + "'s Gameplan"
+    : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
+    : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
+}
+// The target a paste lands on, as the paste notice and the Edit menu's Paste
+// name it: a row by its name alone, a selector in the copy's words.
+function clipOnto() {
+  const kind = clipKind();
+  return kind === "player" ? (groupOn() ? S.group.length + " players" : displayName(curPlayer().name))
+    : kind === "team" ? selTeam().name : clipHeld();
+}
 function clipCopy() {
   const kind = clipKind(), t = selTeam();
   if (kind === "player" && groupOn()) return;
   const data = kind === "player" ? statFields(curPlayer())
     : kind === "team" ? clone(t.tactics)
     : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
-  // What the copy holds, as the notices name it ("VAPE DUCK's stats", "/a/'s preset 2").
-  const held = kind === "player" ? displayName(curPlayer().name) + "'s stats"
-    : kind === "team" ? t.name + "'s Gameplan"
-    : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
-    : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
+  const held = clipHeld();
   S.clip = { kind, data, save: S.save, held };
   // sample wording: the copy and paste notices.
   publishNotice(held[0].toUpperCase() + held.slice(1) + " copied.", null, "success");
@@ -3992,11 +4009,7 @@ function clipPaste() {
   // The paste names what it wrote and where. From a save of another PES version the
   // same line would end with what the target does not store or caps ("; 3 values PES
   // 2017 does not store were left out"); the draft's clipboard holds one save's copies.
-  const onto = kind === "player" ? (groupOn() ? S.group.length + " players" : displayName(curPlayer().name))
-    : kind === "team" ? t.name
-    : kind === "preset" ? t.name + "'s preset " + (S.tac.preset + 1)
-    : t.name + "'s preset " + (S.tac.preset + 1) + " " + FORMATIONS[S.tac.formation] + " formation";
-  publishNotice(S.clip.held[0].toUpperCase() + S.clip.held.slice(1) + " pasted onto " + onto + ".", null, "success");
+  publishNotice(S.clip.held[0].toUpperCase() + S.clip.held.slice(1) + " pasted onto " + clipOnto() + ".", null, "success");
   render();
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
