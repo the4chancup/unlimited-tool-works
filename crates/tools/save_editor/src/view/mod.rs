@@ -1307,7 +1307,7 @@ fn toolbar_band(ui: &mut egui::Ui, end: Option<f32>, row: impl FnOnce(&mut egui:
         .rect;
     // Under the fill, as a top panel draws its separator line.
     let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
-    let line_y = filled.bottom() + 0.5 * stroke.width;
+    let line_y = filled.bottom() + stroke.width / 2.0;
     ui.painter().hline(filled.x_range(), line_y, stroke);
     let under = egui::Rect::from_min_max(
         inside.min,
