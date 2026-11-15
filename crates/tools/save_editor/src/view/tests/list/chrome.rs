@@ -243,9 +243,9 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
         expected(names(781, 850)),
         "`All teams` and the VGL teams alone"
     );
-    // The radios stand under the teams' first rows, in view while the
-    // teams scroll: the first radio tops out before the seventh item's
-    // place, not below all seventy.
+    // The radios stand under the teams' scroll area, in view while the
+    // teams scroll: the first radio tops out right under the area's
+    // own bottom, not below all seventy items.
     let mut item_tops: Vec<f64> = nodes
         .iter()
         .filter(|node| {
@@ -257,14 +257,20 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
         .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
         .collect();
     item_tops.sort_by(|a, b| a.partial_cmp(b).expect("ordered tops"));
-    let radio_top = nodes
+    let radio_top = radio(&nodes, "All").bounds().expect("the All radio").y0;
+    // The scroll bar's track spans the teams' area: the first radio
+    // tops out right under its end, not below all seventy items (an
+    // unlabeled radio elsewhere in the view is not the popup's).
+    let area_bottom = nodes
         .iter()
-        .filter(|node| node.role() == Role::RadioButton)
-        .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
-        .fold(f64::MAX, f64::min);
+        .filter(|node| node.role() == Role::ScrollBar)
+        .filter_map(accesskit::Node::bounds)
+        .filter(|bounds| bounds.y1 <= radio_top)
+        .map(|bounds| bounds.y1)
+        .fold(0.0, f64::max);
     assert!(
-        item_tops.first().is_some_and(|top| radio_top > *top) && radio_top < item_tops[6],
-        "the radios in view under the teams ({radio_top} vs {item_tops:?})"
+        radio_top >= area_bottom && radio_top - area_bottom <= item_tops[1] - item_tops[0],
+        "the radios stand right under the teams' scroll area ({radio_top} vs its bottom {area_bottom})"
     );
 
     // The list holds the VGL teams' rows and players alone, and the
@@ -329,6 +335,83 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
         Some(Selection::Player(851, 0)),
         "the selection is the list's first player row"
     );
+}
+
+// The teams' scroll area is as tall as any dropdown's list (the theme's
+// `combo_height`, the draft's `.combo-pop > div`), the separator and the four category
+// radios standing under it inside the popup, their height added to the
+// list's, not taken from it.
+// SE-GUI-83
+#[test]
+fn the_dropdowns_teams_scroll_in_a_full_lists_height() {
+    let path = fixture(PesVersion::Pes21, "selector_full_height");
+    let file = EditFile::load(&path).unwrap();
+    let teams = crate::session::cup::cup_teams(&file).count();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let list = f64::from(window.ctx.global_style().spacing.combo_height);
+
+    // Premise: the save holds more teams than the list's height of rows
+    // the area may take, or an area sized to its content passes either
+    // way.
+    let entry = row(&nodes, "All teams")
+        .bounds()
+        .expect("the entry's bounds");
+    let pitch = entry.y1 - entry.y0;
+    assert!(
+        teams as f64 * pitch > list,
+        "premise: {teams} teams at {pitch} points overflow the {list}"
+    );
+
+    // The area's rect, measured on its scroll bar's track: the bar's
+    // bounds span it on the scroll axis. The bar ending above the radios
+    // is the popup's own (the list's bar spans the whole list, and a
+    // popup-sized outer bar would reach past the radios' tops).
+    let first_radio = radio(&nodes, "All").bounds().expect("the All radio");
+    let bar = nodes
+        .iter()
+        .filter(|node| node.role() == Role::ScrollBar)
+        .filter_map(accesskit::Node::bounds)
+        .find(|bounds| bounds.y1 <= first_radio.y0)
+        .expect("the teams' scroll bar above the radios");
+    assert!(
+        (bar.y1 - bar.y0 - list).abs() <= 0.5,
+        "the teams' scroll area is {list} points tall: {bar:?}"
+    );
+
+    // The four radios stand under it, each whole inside the popup.
+    let popup = window
+        .ctx
+        .memory(|memory| {
+            memory
+                .areas()
+                .visible_layer_ids()
+                .iter()
+                .filter_map(|layer| memory.area_rect(layer.id))
+                .filter(|rect| {
+                    rect.contains(egui::pos2(first_radio.x0 as f32, first_radio.y0 as f32))
+                })
+                .min_by(|a, b| a.area().total_cmp(&b.area()))
+        })
+        .expect("the popup's area");
+    for label in ["All", "4cc", "VGL", "Invitational"] {
+        let bounds = radio(&nodes, label).bounds().expect("bounds");
+        assert!(
+            bounds.y0 >= bar.y1,
+            "{label} stands under the teams' area ({bounds:?} vs {bar:?})"
+        );
+        assert!(
+            popup.contains_rect(egui::Rect::from_min_max(
+                egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+                egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+            )),
+            "{label} sits inside the popup ({bounds:?} vs {popup:?})"
+        );
+    }
 }
 
 // The wheel over the closed selector steps `All teams` and the

@@ -27,8 +27,9 @@ pub(crate) struct Document {
     /// The CUSTOM CHECKS section as read, written back byte for byte but its
     /// trailing whitespace (the file's layout); `None`: no checks.
     pub(crate) custom_checks: Option<String>,
-    /// The document as opened or last saved (`None`: never saved); the
-    /// difference from it is what the unsaved marker shows.
+    /// The baseline the unsaved marker compares against: the document
+    /// as opened, as last saved, or as the template's own contents
+    /// (`None`: no baseline, always dirty until the first save).
     saved: Option<Snapshot>,
     /// The undo stacks.
     history: History,
@@ -122,17 +123,20 @@ pub(crate) enum SaveError {
 }
 
 impl Document {
-    /// A document for a template or Blank: no path, the current logic, no
-    /// custom checks, unsaved.
+    /// A document for a template or Blank: no path, the current logic,
+    /// no custom checks, never saved but clean — the template's own
+    /// contents are the baseline, so only an edit marks it unsaved.
     pub(crate) fn new(ruleset: Ruleset) -> Document {
-        Document {
+        let mut document = Document {
             path: None,
             ruleset,
             logic: Logic::Current,
             custom_checks: None,
             saved: None,
             history: History::default(),
-        }
+        };
+        document.saved = Some(document.snapshot());
+        document
     }
 
     /// Reads and validates `path` (`Rules::load`: steps 1 to 3); a file that
@@ -179,9 +183,9 @@ impl Document {
         }
     }
 
-    /// Whether the document differs from the file as read or last saved:
-    /// the saved snapshot's ruleset and logic. A document never saved is
-    /// always dirty.
+    /// Whether the document differs from its baseline — the file as
+    /// read or last saved, the template as picked — in ruleset or
+    /// logic. With no baseline it is always dirty.
     pub(crate) fn is_dirty(&self) -> bool {
         self.saved.as_ref() != Some(&self.snapshot())
     }
@@ -588,15 +592,18 @@ mod tests {
     }
 
     /// A new document (a template or Blank): no path, the current logic,
-    /// no custom checks, unsaved.
+    /// no custom checks, never saved but clean (the template's own
+    /// contents are the baseline), and an edit dirties it.
     #[test]
-    fn a_new_document_is_unsaved_with_nothing_to_undo() {
-        let doc = Document::new(blank());
+    fn a_new_document_is_never_saved_but_clean() {
+        let mut doc = Document::new(blank());
         assert_eq!(doc.path, None);
         assert!(matches!(doc.logic, Logic::Current));
         assert_eq!(doc.custom_checks, None);
-        assert!(doc.is_dirty(), "never saved is dirty");
+        assert!(!doc.is_dirty(), "a template opens clean");
         assert!(!doc.can_undo() && !doc.can_redo());
+        doc.ruleset.name = "Edited".to_string();
+        assert!(doc.is_dirty(), "an edit dirties it");
     }
 
     /// An opened document is clean, an edit dirties it, a save cleans it.

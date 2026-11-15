@@ -319,6 +319,12 @@ pub fn install(ctx: &egui::Context) {
         ctx.style_mut_of(theme, |style| {
             style.spacing.button_padding = egui::vec2(4.0, 1.0);
             style.spacing.interact_size = egui::vec2(40.0, 18.0);
+            // An open dropdown's list scrolls past 300 points (the drafts'
+            // `.combo-pop > div`), where egui's 200 cramped a save's 220
+            // teams. Not taller: 300 is the tallest list that still opens
+            // below or above any dropdown of the default 1280 x 780 window,
+            // where egui would otherwise open it beside or over the box.
+            style.spacing.combo_height = 300.0;
             // The drafts' text sizes (the stylesheet's `.small`, body, `.mono`,
             // `h2` and `.window .title`), where egui defaults to 9, 13, 13, 13
             // and 18: at those every approved width and row moves.
@@ -726,6 +732,7 @@ mod tests {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
             assert_eq!(style.spacing.interact_size, egui::vec2(40.0, 18.0));
+            assert_eq!(style.spacing.combo_height, 300.0);
             let widgets = &style.visuals.widgets;
             assert_eq!(
                 widgets.inactive.weak_bg_fill,

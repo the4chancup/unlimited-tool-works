@@ -633,8 +633,11 @@ fn toolbar(
             add_enabled_ui(ui, false, |ui| {
                 menu_button(ui, "Randomize", |_| ());
             });
-            toolbar_separator(ui);
+            // The separator parts Randomize from the document's name, so
+            // the start page, with no name, draws none (the draft's
+            // `topBar`).
             if let Some(document) = view.document.as_ref() {
+                toolbar_separator(ui);
                 let marker = if view.has_unsaved_changes() {
                     " •"
                 } else {
