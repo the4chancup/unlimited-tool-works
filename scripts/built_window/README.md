@@ -30,6 +30,10 @@ picture. `close` sends `WM_CLOSE`, as the window's close button does; the app is
 A check that opens a save opens a copy, or opens it read-only and never saves: the user's saves
 are backed up and restored by hash around any check that could write one.
 
+A window narrower than the default 1280 points scales the whole UI down with it, so `size`
+cannot make room tighter for a widget: everything shrinks together. To test a widget against
+the window's edge, make its content longer (a long name, more rows), not the window smaller.
+
 ## Requirements
 
 Windows, Python with `psutil` and `Pillow`, and a release build (`target/release/utw.exe`).

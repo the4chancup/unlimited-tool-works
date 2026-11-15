@@ -795,8 +795,12 @@ concerns on a test that does not prove the scenario it cites. It sees only cited
 the spec states with no scenario of its own, or a test that passes because another rule gives
 the same result on its fixture, is still the reviewers' and the mutation run's to find.
 **Batch, don't stream:**
-renames, doc edits, one-file fixes with no new behavior are never reviewed on their own; their
-diffs ride along with the next (b) review, or with converge. Never more than one *scheduled*
+renames, doc edits and fixes that change no behavior are never reviewed on their own; their
+diffs ride along with the next (b) review, or with converge. A change to behavior gets its
+tier's review whatever its size: one line can change what every member sees or does (a
+scroll landing a frame late made a held key flicker, and a batch of "small fixes" holding it
+was never reviewed, so its test pinned the lag). The size of a diff is never the reason to
+skip a review, and a batch is reviewed at the tier of its highest item. Never more than one *scheduled*
 critique per step; the reactive one (d) is an escalation and is exempt from the ceiling. Hand the
 reviewer *pointers* (plan sections, file paths, a diff written to `.tmp/lead/review.diff`, the
 acceptance IDs), never your own summary, which carries the assumptions it is there to catch. It

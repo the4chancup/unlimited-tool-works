@@ -2187,10 +2187,28 @@ briefs, review loops, gates and mutation runs as for any step.
     first, with 0.0.2-popwidth's), then a look card
   - [x] 0.0.2-promptx the close prompt's table gets the toolbar list's X column, its last
     row's X letting the close or open go on (`55f398a9`, merge `29299fe3`)
-  - [ ] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
+  - [x] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
     window less 8 points a side, growing left of the label (`55f398a9`, merge `29299fe3`,
-    SE-GUI-43's width clauses tested) -> verify: the built list and close prompt captured
-    beside the draft (a focus-taking check: ask first), then a look card
+    SE-GUI-43's width clauses tested): tried by the maintainer in the built window,
+    2026-11-15, a long renamed player's row growing the list left past its label
+  - [ ] 0.0.2-revdebt the reviews owed by behavior changes no reviewer read (DECISIONS
+    2026-11-15 "A change to behavior is reviewed at its tier, however small"; audit of the
+    closed 0.0.2 items against `.tmp/duck_rulings.md`). One review per surface, each SWE-2's
+    loop then one Carbon round (tier 2), or the three loops (tier 1), in this order:
+    - [ ] list and keys (tier 2): `d700b3e5` (leeway, idfilter, pgtop, ownteam), `35902abc`
+      (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill)
+    - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
+      clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
+    - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
+      (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
+      `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
+    - [ ] the changes list and the close prompt (tier 2): `a6bba169` (changesperf),
+      `55f398a9` (promptx)
+    - [ ] interchange and export settings (tier 1): `fb42b800` (shirtno), `7b2e9ea2`,
+      `3667be9b`, `b222d710` (presentation)
+    - [ ] the Export upgrader (tier 1): `8ac5658c` (nomodels), `6fed2e3e` (cli)
+    - [ ] checked against the early poc rounds before queuing: poc1, poc2, poc4, poc5, poc7,
+      poc9 (`975e68a7`), poc10 (`6268280c`), poc11
   - [ ] 0.0.2-wheelside sliders, toggles and row selectors move right on wheel down and a
     closed combo to the item below, whatever the setting, now Invert number scrolling
     (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;

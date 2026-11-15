@@ -18072,3 +18072,13 @@ every other number box; the maintainer chose every number box alike. This narrow
 2026-11-02 entry "Invert value scrolling, one common switch".
 Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05, ST-WHEEL-06;
 `plans/team_compiler/settings.md`.
+
+## 2026-11-15 — workflow — A change to behavior is reviewed at its tier, however small
+Decision (the maintainer): only renames, doc edits and fixes that change no behavior skip
+their own review; any change to behavior, one line included, gets its tier's review, and a
+batch is reviewed at the tier of its highest item.
+Why: the 0.0.2 "smallfix" batch (`d700b3e5`: leeway, IDs from the start, the page keys'
+scroll to the top, the own-team button) was treated as one-file fixes and read by no
+reviewer; its page-key test checked the row two frames after the key, so the one-frame lag
+that made a held PgDn flicker passed as intended, until the maintainer saw it.
+Plan: `docs/RUNBOOK.md` "Batch, don't stream".
