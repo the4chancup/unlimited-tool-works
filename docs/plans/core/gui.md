@@ -436,9 +436,9 @@ The settings menu is assembled from injected sections:
   "Full Player Customization (FPC)": number rows bounded to the stock band, boots 1 to 100 and
   gloves 11 to 100).
 
-  The update check's two rows are drawn from 0.0.1, whose updater reads them
-  (`core/distribution.md` "Self-update", step 1). The state the shell writes itself
-  (`last_tool`, `last_update_check`, `skipped_version`) has no row. The PES version row is the
+  The update check's row, `check_for_updates`, is drawn from 0.0.1, whose updater reads it
+  (`core/distribution.md` "Self-update", step 1); the check's period is fixed, not a row. The
+  state the shell writes itself (`last_tool`, `skipped_version`) has no row. The PES version row is the
   sidebar selector's twin: the same blocker, and a pick spends the running-PES auto-switch as
   the selector's does.
 - **One collapsible section per registered tool that has settings**, provided by that tool's
@@ -474,7 +474,8 @@ The settings menu is assembled from injected sections:
   the label and Browse).
 
   The menu is 676 points: the common grid's widest row (its label column, the edit and Browse)
-  needs about 674 since the update check's "Check interval (minutes)" label. A tool section's
+  needed about 674 with the update check's "Check interval (minutes)" label, a row that goes;
+  the width is measured again then and kept unless the maintainer asks. A tool section's
   row sits indented under its header with that tool's own label column, so a section whose
   labels are long widens the menu while it is open, rather than narrowing its path box below
   the path.
@@ -1703,19 +1704,19 @@ ST-BAR-04   GIVEN four notices published in turn, one of each kind (Success, Inf
                  and a condition's text keep the body weight
 ST-BAR-07   withdrawn: no tool keeps a standing notice (0.0.2-sel)
 ST-BAR-08   withdrawn: no notice action switches the PES version (0.0.2-sel)
-ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the interval, and a
-                 fake releases list holding `v0.0.1`, `v0.0.2` (a pre-release) and `nightly`
+ST-UPD-01   GIVEN `check_for_updates` on and a fake releases list holding `v0.0.1`, `v0.0.2`
+                 (a pre-release) and `nightly`
             WHEN the shell starts
             THEN one background check runs, the first frame not waiting on it, and the status
                  bar shows `Update available: v0.0.2` in the link blue with a Details button;
-                 `last_update_check` is stored; GIVEN the check off, or the last check inside
-                 the interval THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
+                 GIVEN a shell closed right after its check THEN a shell started again at once
+                 checks again; GIVEN the check off THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
                  offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN a list holding
                  `v0.0.1-rc.1` and `v0.0.1-rc.2` THEN its newest is `v0.0.1-rc.2`, and with
                  `v0.0.1` beside them `v0.0.1` (a pre-release ranks under its release); GIVEN
-                 the fetch failing THEN no offer, one log line, and no other request until an
-                 interval has passed; GIVEN the window left open past the interval since the
-                 last completed check THEN a second check runs
+                 the fetch failing THEN no offer, one log line, and no other request for 5
+                 minutes; GIVEN the window left open 5 minutes after its last check THEN a
+                 second check runs
 ST-UPD-02   GIVEN the offer shown
             WHEN its text is clicked, or Details
             THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1

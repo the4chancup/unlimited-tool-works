@@ -17972,3 +17972,20 @@ dark list (`#0a0a0a`) it came out `#0f0f0f`, nearly the list's own, where the dr
 darkens the light one, by about the same contrast (1.2), in one fill.
 Plan: `plans/save_editor.md`, the paragraph starting "A **team row** heads each team's
 players". Worklog: 0.0.2-teamfill.
+
+## 2026-11-15 — studio_core — Every start checks for a newer version; the open window rechecks every 5 minutes; the interval setting goes
+Decision: with `check_for_updates` on, the window checks when it starts and every 5 minutes
+while it stays open, and a command-line run checks as it starts, as it already did. Nothing
+holds a check off across starts: `last_update_check` and `check_interval_minutes` are removed,
+and the 5 minutes are fixed.
+Why: Red spaced its checks out because a check slowed the compile's start; here every check
+runs on its own thread and nothing waits for it. The interval across starts also broke the
+command line's notice ("Start the program and click Update available"): a window closed after
+its check and reopened within 120 minutes had no offer to click (found by Astra, rerunning
+Carbon's fifth review of Update now). Five minutes lets a member see a release soon after it
+is out; a window open all day spends 12 of the 60 requests an hour GitHub allows one address
+without a token, and a check that fails shows nothing and tries again later. A setting for
+the period is one nobody would change.
+Plan: `plans/core/distribution.md` "Self-update" step 1 and "The command line's notice";
+`plans/core/gui.md` the settings menu's rows and ST-UPD-01; the draft's Settings rows and
+help topic. Worklog: 0.0.2-upd.

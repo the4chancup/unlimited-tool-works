@@ -1244,7 +1244,7 @@ const S = { activeTool: "compiler", sidebarOpen: false, pesVersion: "2019",
 // (team_compiler/settings.rs, save_editor/settings.rs; the Export upgrader's
 // table is empty). pes_version and pes_folder_path alias the sidebar's values
 // through the getters: one value, the selector and the menu edit the same
-// thing. last_update_check, skipped_version and last_tool are state the shell
+// thing. skipped_version and last_tool are state the shell
 // writes, not settings a member edits: the menu does not show them.
 S.settings = {
   common: {
@@ -1263,8 +1263,6 @@ S.settings = {
     theme: "Dark",
     invert_value_scrolling: false,
     check_for_updates: true,
-    check_interval_minutes: 120,
-    last_update_check: null,
     skipped_version: null,
     last_tool: null,
   },
@@ -1911,7 +1909,7 @@ const HELP = [
   { id: "updates", title: "Updates", topics: [
     { slug: "checking", title: "Checking for updates", body: [
       "The shell looks for a new release at startup and every",
-      "`check_interval_minutes` minutes while it stays open (120 by default);",
+      "5 minutes while it stays open;",
       "`check_for_updates` turns the check off. A newer version shows as `Update",
       "available` in the status bar; its `Details` shows the release's notes, a link",
       "to its page, where it downloads, and `Skip this version`, which hides it until",
@@ -2545,8 +2543,6 @@ function commonSettingsRows() {
     sRow("Check for updates", "check_for_updates", "Whether the program checks for a newer version.",
       h("input", { type: "checkbox", checked: c.check_for_updates,
         onchange: e => { c.check_for_updates = e.target.checked; settingChanged(); } })),
-    sRow("Check interval (minutes)", "check_interval_minutes", "The minutes between two checks for a newer version.",
-      num("check_interval_minutes", { disabled: !c.check_for_updates })),
   ];
 }
 

@@ -2277,8 +2277,15 @@ briefs, review loops, gates and mutation runs as for any step.
       workers stop waking an idle window; four items wider than their users; two stale
       docs; the help names the offer's window "Details" and puts Cancel on the bar
     - [x] the rework (SWE-2 and the lead's help text, merge `88b24e95`)
-    - [ ] Carbon's round 6 (`.tmp/0_0_2/upd/carbon_r6.md`), unless the maintainer stops the
-      loop; Astra reruns round 5's brief beside it, a comparison the maintainer asked for
+    - [x] Carbon's round 6, 2026-11-15 (at `88b24e95`): no concerns, which ends Carbon's
+      loop. Astra rerunning round 5's brief (the maintainer's comparison) found two
+      Carbon had not: the command line's notice pointing at an offer a reopened window
+      lacks, and a test racing its worker on a 300 ms sleep ("A-upd r5x")
+    - [ ] every start checks; the open window rechecks every 5 minutes; `last_update_check`
+      and `check_interval_minutes` go (DECISIONS 2026-11-15) -> verify: ST-UPD-01 as
+      rewritten; first confirm no test or script that starts the real program reaches
+      GitHub; the bundled `settings.toml`, the help's Updates chapter and the spec's
+      settings tables follow; with A-upd r5x-2's race (SWE-2, after cliprw2)
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
       for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of

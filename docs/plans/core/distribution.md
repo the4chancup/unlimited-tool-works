@@ -244,18 +244,27 @@ distribution's library, and the two platforms would run two TLS stacks. The exce
 looked at again when a pure-Rust provider has a stable release and runs on every x86-64
 processor.
 
-1. **Check** (at startup, and again while the window stays open, on a plain background
-   thread): if `check_for_updates` is on and `last_update_check` is older than
-   `check_interval_minutes` (120 by default, at least 1), read the repository's list of
-   GitHub releases and take the highest `v<version>` tag by semver, pre-releases included.
-   Then compare it with the built-in `CARGO_PKG_VERSION`.
+1. **Check** (on a plain background thread): if `check_for_updates` is on, the window checks
+   when it starts and every 5 minutes while it stays open, and a command-line run checks once
+   as it starts (below). A check reads the repository's list of GitHub releases and takes the
+   highest `v<version>` tag by semver, pre-releases included, then compares it with the
+   built-in `CARGO_PKG_VERSION`.
+
+   No interval holds a check off across starts. Red spaced its checks out because a check
+   slowed the compile's start; here every check runs beside the work and nothing waits for
+   it. An interval across starts also broke the command line's notice: a window closed after
+   its check and opened again within the interval had no offer to click, though the notice
+   had just said to click it. Five minutes while the window is open shows a new release soon
+   after it is out, and costs a window open all day 12 of the 60 requests an hour GitHub
+   allows one address without a token. The period is fixed, not a setting: nobody would
+   change it.
 
    Pre-releases are included: `releases/latest` skips a release marked Pre-release, which a
    0.0.x may be. A tag that is not `v` and a semver is passed over. The release's
    `body` (its notes) comes in the same response.
 
-   A completed check stores `last_update_check`. A failed one (offline, rate-limited, a body
-   that does not parse) shows nothing and writes one line to the log.
+   A check stores nothing. A failed one (offline, rate-limited, a body that does not parse)
+   shows nothing and writes one line to the log; the window's next check is 5 minutes later.
 2. **Offer**: a newer version that isn't `skipped_version` becomes the status bar's
    `update_available` condition, `Update available: v<version>` in the link blue, its text and
    its **Details** button both opening the dialog. Nothing opens by itself.
@@ -284,8 +293,7 @@ processor.
      (`architecture.md` "A run's log file").
    - No reply yet, a failed check and a release that is not newer print nothing. A failed
      check writes one debug log line.
-   - The check stores nothing. The command line writes no settings, so `last_update_check`
-     stays the window's, and every command checks, whatever the interval.
+   - The check stores nothing: the command line writes no settings.
    - `UTW help` and a command line refused before its tool runs check nothing. The exit code
      is the tool's, whatever the check did.
 3. **Download + verify**:
