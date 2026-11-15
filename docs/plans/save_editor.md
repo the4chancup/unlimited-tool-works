@@ -212,7 +212,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the team already shown, keeps the selection (that team's row heads the list, a click away).
 
   The open dropdown ends, under a separator, with four radio buttons in a column that stay
-  while the teams scroll: `All`, `4cc` (IDs 701 to 780, the Backup rows included), `VGL` (781
+  while the teams scroll, in an area as tall as any dropdown's list (200 points, the radios
+  added under it, not taken from it): `All`, `4cc` (IDs 701 to 780, the Backup rows included), `VGL` (781
   to 850) and `Invitational` (851 to 920), the teams list's own sections. The category
   shortens the dropdown's teams and the player list alike: `All teams` under `VGL` lists
   the VGL teams' rows and players alone, since a category that shortened the dropdown and

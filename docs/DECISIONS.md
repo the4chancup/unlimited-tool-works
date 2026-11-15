@@ -17781,3 +17781,32 @@ bloat over time (the maintainer). "tasks" is the maintainer's name for the third
 a folder named for the maintainer it cannot be taken for the worklog's steps.
 Plan: `AGENTS.md` "Working documents"; `RUNBOOK.md` "Looks owed have one home each".
 Worklog: 0.0.2-mdocs.
+
+## 2026-11-15 — ruleset_editor — A template opens with no unsaved changes
+Decision: a template or Blank picked in the Ruleset editor opens with itself as the baseline:
+no mark beside its name, and closing the window or picking another template prompts only once
+it is edited. It is still never saved, so its first save is a Save as. A random ruleset (not
+built yet) opens with unsaved changes.
+Why: the maintainer: opening a template should not count as a change, nor ask on a close
+with nothing done. What a template holds comes back by picking it again, so closing it
+unedited loses nothing; a random draw closed unsaved cannot be had again. The draft already
+showed no mark after a template opened; the build had made "never saved" mean "unsaved".
+Plan: `plans/ruleset_editor.md` the undo paragraph, "Randomize", RE-GUI-02, RE-GUI-15.
+Worklog: 0.0.2-tplclean.
+
+## 2026-11-15 — save_editor — The teams dropdown scrolls its teams in a full list's height
+Decision: the Save editor's teams dropdown scrolls its teams in an area as tall as any
+dropdown's list (200 points), with the four category radios added under it.
+Why: the maintainer asked for the teams' scroll area twice as tall. The build had fitted the
+teams and the radios into 200 points together, which left the teams about 97; the draft's
+teams scroll in 200 with the radios under them, so twice the build's is the draft's.
+Plan: `plans/save_editor.md` "Team selector", the radios paragraph. Worklog: 0.0.2-teamscroll.
+
+## 2026-11-15 — core — The Report a problem button ships in 0.0.2
+Decision: the repro bundles' slice (4), the "Report a problem" button and dialog writing the
+Save editor's bundle, is a step of 0.0.2. Replay's comparison of the tool's state, which the
+slice also named, waits with replay's own slices (3b) and (3c).
+Why: the maintainer expected the button in 0.0.2, and a member's report (the PES 2021 save
+whose teams became placeholders) waits on it. The journal it writes from is built; replay
+waits until a member's bundle needs it (2026-11-08), so the button needs nothing else first.
+Plan: `plans/core/architecture.md` "Repro bundles". Worklog: 0.0.2-report.

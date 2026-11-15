@@ -226,7 +226,9 @@ and leave the new logic in place.
 
 A run of steps to one value (wheel notches, a stepper's clicks) merges into one snapshot, ended
 as the Save editor ends one (`plans/save_editor.md`, the undo bullet). Closing with unsaved
-changes prompts.
+changes prompts. A template or Blank opens with no unsaved changes: what it holds is the
+template's, which picking it again brings back, so closing it unedited loses nothing and asks
+nothing. It is still never saved, so its first save is a Save as.
 
 ## Randomize
 
@@ -272,7 +274,8 @@ ruleset in every Studio release (`rand`'s `StdRng` does not promise that). A pre
 seed from the clock; on `wasm32`, where `SystemTime` is unavailable, from eframe's input time.
 
 A random ruleset opens as a new, unsaved document (the current one prompting for unsaved changes,
-as New does). It has no custom checks.
+as New does). It has no custom checks. Unlike a template, it opens with unsaved changes: a draw
+closed unsaved cannot be had again.
 
 ## Opening and saving
 
@@ -395,7 +398,8 @@ RE-GUI-01  GIVEN the tool opened with no document
                 no longer listed
 RE-GUI-02  GIVEN the start page
            WHEN a template is picked (each of the seven, and Blank)
-           THEN an unsaved document of the template's name (Blank's is "New ruleset") opens on
+           THEN a document of the template's name (Blank's is "New ruleset"), never saved and with
+                no unsaved changes (no mark beside its name), opens on
                 General, the rail lists General, Tiers, Heights, Cards, Universal rules,
                 Specials, Suggestions, Custom checks (VTL11 and VTL10 alone: the others' files
                 carry only the empty stub) and Summary in that order, no rail entry carries a
@@ -464,6 +468,8 @@ RE-GUI-15  GIVEN a document with unsaved changes
            WHEN the window is closed, another document opened or a template picked
            THEN a prompt offers to save, discard or cancel; cancel keeps the document as it
                 was; save writes it first (Save as for one never saved); discard goes on;
+                GIVEN a template just picked and not edited WHEN the window is closed or another
+                template picked THEN no prompt shows;
                 WHEN Ctrl+Z, Ctrl+Y and Ctrl+S are pressed while the prompt, the start page
                 or an open's refusal dialog is up THEN the document, its undo entry and the
                 file are as they were; GIVEN Gold's id typed over as "royal", not committed,

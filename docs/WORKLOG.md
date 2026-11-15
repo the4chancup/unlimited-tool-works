@@ -2100,6 +2100,23 @@ briefs, review loops, gates and mutation runs as for any step.
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
     - [ ] a Linux bundle built from main for the Reset window card (`just remote just
       release`, once the VPS's mutation run is done), named on the card
+  - [ ] 0.0.2-tplclean (the maintainer, 2026-11-15) a template or Blank opens in the Ruleset
+    editor with no unsaved changes: no mark beside its name, no prompt on close or on another
+    template until it is edited (`plans/ruleset_editor.md` the undo paragraph's last
+    sentences, RE-GUI-02, RE-GUI-15); the build departed from the draft, whose title shows no
+    mark after a template opens -> verify: RE-GUI-02 and 15 headless
+  - [ ] 0.0.2-teamscroll (the maintainer, 2026-11-15) the Save editor's teams dropdown scrolls
+    its teams in 200 points, the radios under them (`plans/save_editor.md` "Team selector",
+    the radios paragraph): the build fitted teams and radios into 200 together, so its teams
+    had about 97, half of the draft's `.combo-pop > div` -> verify: a headless test of the
+    scroll area's height, then the built window beside the draft
+  - [ ] 0.0.2-report (the maintainer, 2026-11-15, who expected it in 0.0.2) the "Report a
+    problem" button and dialog: the repro bundles issue's slice (4) (`plans/core/architecture.md`
+    "Repro bundles"; the draft's `drawReport`), writing the Save editor's bundle from the journal
+    slice (2) built; replay's comparison of the tool's state waits with slices (3b) and (3c),
+    bundles read with `save-editor diff` until then (DECISIONS 2026-11-08). Brief after
+    reading the plan section and the journal's code -> verify: the plan section's scenarios,
+    the built window beside the draft
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
