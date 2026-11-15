@@ -808,6 +808,38 @@ fn the_own_team_click_keeps_a_category_holding_the_team() {
     );
 }
 
+// The own-team click leaves the selector on All teams, clears the
+// filter and scrolls the list so the selected row stands at its top.
+// SE-GUI-104
+#[test]
+fn the_own_team_click_keeps_all_teams_and_clears_the_filter() {
+    let (mut view, mut window, _) = co_picked("interchange_own_team_all");
+    view.team = TeamChoice::All;
+    view.filter = "zzz".to_owned();
+    let button = own_team_button(&mut window, &mut view);
+    click(&mut window, &button, &mut view);
+    assert_eq!(
+        view.team,
+        TeamChoice::All,
+        "the selector stays on All teams"
+    );
+    assert!(view.filter.is_empty(), "the filter cleared");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(CO)),
+        "the click selected 714's row"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, CO)
+        .bounds()
+        .expect("714's row is drawn");
+    let clip = list_clip(&window, &shapes, bounds);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "714's row at the list's top ({bounds:?} vs {clip:?})"
+    );
+}
+
 // SE-GUI-104
 #[test]
 fn the_own_team_button_is_disabled_on_a_team_the_save_lacks() {

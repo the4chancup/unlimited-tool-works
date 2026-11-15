@@ -104,6 +104,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_category,
         filter,
         selected,
+        reveal_selected,
         rules,
         focused,
         tactics,
@@ -220,7 +221,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             .team(player.team_id)
             .map(|entry| &entry.tactics)
             .expect("a listed row's team is in the open file");
-        aatf_check::select_player(
+        *reveal_selected = Some(aatf_check::select_player(
             player,
             selected,
             team,
@@ -228,7 +229,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             filter,
             team_tactics,
             tactics,
-        );
+        ));
     }
 }
 

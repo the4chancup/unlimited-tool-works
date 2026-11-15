@@ -454,7 +454,6 @@ mod tests {
     // An id matches from its start only, a team's id listing its squad as
     // a name match does, so a player's slot digits count only once four
     // digits are typed.
-    // SE-GUI-102
     #[test]
     fn list_filter_matching_an_id_from_its_start() {
         let file = open(PesVersion::Pes21);

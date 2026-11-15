@@ -184,7 +184,7 @@ fn switch_to(view: &mut SaveView, index: usize) {
             let Some(entry) = session.file().team(player.team_id) else {
                 return;
             };
-            aatf_check::select_player(
+            view.reveal_selected = Some(aatf_check::select_player(
                 player,
                 &mut view.selected,
                 &mut view.team,
@@ -192,15 +192,17 @@ fn switch_to(view: &mut SaveView, index: usize) {
                 &mut view.filter,
                 &entry.tactics,
                 &mut view.tactics,
-            );
+            ));
         }
-        Switch::Team(team_id) => aatf_check::select_team(
-            team_id,
-            &mut view.selected,
-            &mut view.team,
-            &mut view.team_category,
-            &mut view.filter,
-        ),
+        Switch::Team(team_id) => {
+            view.reveal_selected = Some(aatf_check::select_team(
+                team_id,
+                &mut view.selected,
+                &mut view.team,
+                &mut view.team_category,
+                &mut view.filter,
+            ));
+        }
     }
 }
 

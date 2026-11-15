@@ -108,12 +108,12 @@
   Documents (the newest of each version with its shortcut) and Choose file… (Ctrl+O).
 - **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open… is
   there before a ruleset is open.
-- **Save editor**: while a Starting eleven or Bench row is dragged over a player on the
-  Tactics pitch, that player is marked as a dragged pitch player's target is, so you see
-  who the drop swaps out.
-- **Save editor**: in the Import / export window, a button beside `Import into` selects the
-  team the picked file was exported from, so it imports back onto that team without a
-  search in the list.
+- **Save editor**: while a row of the starting eleven or the bench is dragged over a
+  player on the Tactics pitch, that player is marked as a pitch drag marks its target, so
+  you see who the drop swaps out.
+- **Save editor**: in `Team file interchange` (the Team menu's `Import / export team
+  file…`), a button under `Import into` selects the team the picked file was exported
+  from, so it imports back onto that team without finding it in the list.
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
   report of something that went wrong: what you did in each tool, the files it opened and
   wrote, the log, your settings and your own words. Nothing is sent: you post the file.
