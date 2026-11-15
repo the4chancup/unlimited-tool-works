@@ -531,9 +531,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   - the `Savefile` menu holds the whole save's work: the Comparator and Apply aesthetics patch
     first (each reads another file against the save, a second save or the Compiler's
     patch), a separator, Output rosters to TSV, Save formation pictures for a range of teams
-    (after 0.0.1) and Multi-team AATF, a separator, Fix database;
+    and Multi-team AATF, a separator, Fix database;
   - the `Team` menu ends with the team's files, Import / export team file (the interchange
-    panel) and Save a picture of the formations (after 0.0.1).
+    panel) and Save a picture of the formations.
 
   There is no Panels menu: that the Comparator, the patch and the interchange open as floating
   panels says nothing a member looks for them by.
