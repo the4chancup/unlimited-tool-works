@@ -23,7 +23,7 @@ is in `AGENTS.md` ("Working documents").
 4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon) and the maintainer's looks ("Pending looks").
+   (Carbon) and the maintainer's looks (`maintainer/tasks.html`).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -222,9 +222,9 @@ timeouts (`MemoryBudget::acquire` waits a mutant makes endless, caught); `team_c
 guards (tests Windows-only; the run was Linux) and the timeouts (two endless loops, one
 64-fold texture) were caught when rerun on Windows, `settings_view` is the placeholder
 label. Carried forward: the Fox cube map check (4.y-ingame2 (d), waiting on a hand-made FMDL; its
-`QUESTIONS.md` entry), the phase's open issues under "Issues" (the pre-Fox
+`maintainer/questions.html` entry), the phase's open issues under "Issues" (the pre-Fox
 ones deferred until the cup next plays a pre-Fox version), the in-game questions in
-`docs/QUESTIONS.md`.
+`docs/maintainer/questions.html`.
 
 The phase's in-game checks (TC-REF-04's at 4.19d; 4.y-ingame; 4.y-ingame2):
 
@@ -432,7 +432,7 @@ caught, 1 missed (the placeholder `settings_view`), 3 timeouts (caught). Carried
 gloves half of the in-game check (issue "FoxDen's PES 2021 gloves trampoline"), the pre-Fox
 patch and the Red inventory's pre-Fox gaps (deferred until the cup next plays a pre-Fox
 version), the placeholder views (issue of 2026-10-16), the phase's other open issues under
-"Issues", the in-game questions in `docs/QUESTIONS.md`.
+"Issues", the in-game questions in `docs/maintainer/questions.html`.
 
 The phase's manual checks:
 
@@ -503,7 +503,7 @@ pinned in `.cargo/extra_mutants.toml`, since the CPK sorts its entries and the t
 rows). Carried forward: the placeholder views (8.3), the face transformation for a face made for
 the other engine (issue "a face diff is engine-specific", after the DBC editors), the gloves
 half of the in-game checks (issue "FoxDen's PES 2021 gloves trampoline"), the `save_editor`
-tests a running PES game fails (issue), the in-game questions in `docs/QUESTIONS.md`.
+tests a running PES game fails (issue), the in-game questions in `docs/maintainer/questions.html`.
 
 The phase's manual checks:
 
@@ -543,7 +543,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   whole-crate runs left missed, deferred because no headless test exists for a label; each
   tool's view brings its own tests (EU-GUI, SE-GUI) and the placeholders go, so the next
   whole-crate run of each crate measures them
-- [x] 8.4 the usability pass before the tools' drafts. Done 2026-10-20: `PROPOSALS.md` P1-P22
+- [x] 8.4 the usability pass before the tools' drafts. Done 2026-10-20: `maintainer/proposals.html` P1-P22
 - [x] 8.5 the Save editor's draft, `docs/prototypes/save_editor.html`, in five slices (8.5a-e).
   Done 2026-10-20 (SWE-2): every SE-GUI scenario but the manual ones walked in a headless-Edge
   harness on real save data
@@ -921,10 +921,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] 8.17 the Export upgrader's draft, `tools/export_upgrader.js` (`plans/export_upgrader.md`;
     `core/gui.md` "Prototypes before implementation"; side-lead track A, after 8.16): every
     screen the plan describes, with sample data; the lead's usability review first, ideas to
-    `PROPOSALS.md`; then the maintainer's remarks
+    `maintainer/proposals.html`; then the maintainer's remarks
     Drawn 2026-10-25 (side-lead A, SWE-2): every screen on real CLI runs' samples
     (`.tmp/8_17/runs.py`); DECISIONS "The view's arguments and report, where the plan was
-    silent"; the usability review's ideas `PROPOSALS.md` P32-P36. Waits for the maintainer's
+    silent"; the usability review's ideas `maintainer/proposals.html` P32-P36. Waits for the maintainer's
     remarks
     - [x] 8.17c a second draft, replacing the first (the maintainer, 2026-11-13: two looks by
       the number of old exports, a grid as the Team compiler's from five on with three
@@ -1379,7 +1379,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] y7b the code: `team_widgets`' `substitution_choices` offers Very early from PES 2017
     - [ ] y7c later (the maintainer: "we'll check in detail in the future"): a look at PES
       2018, 2019 and 2020's Game Plan, Automatic settings, Substitution; the plan's "taken
-      rather than looked at" goes with it (`QUESTIONS.md` "After the release"). Look: Pending
+      rather than looked at" goes with it (`maintainer/questions.html` "After the release"). Look: Pending
       looks
 - [x] 0.0.1z the maintainer's look at the built app (2026-10-27): the app's sliders kept, the
   drafts made to match (z1, z4); z2 the code (the slider's fill, Reset window, ST-BAR-05,
@@ -1853,7 +1853,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] 2026-11-14 the wrist tape's colours are the game's four (0 strip color, 1 white, 2
       black, 3 beige; PES 2019's Edit mode): the keys' comments and range, the Save editor's
       two dropdowns, the changes list; an export's 4 to 7 is refused, a Team TOML's kept as
-      stored, an old export's upgraded to a warning. The other games' lists: QUESTIONS.md
+      stored, an old export's upgraded to a warning. The other games' lists: maintainer/questions.html
     - [x] wave 4's rulings, applied in `f32b3ab5` on the branch with their DECISIONS entry
       (the maintainer, 2026-11-13, on the twelve choices of
       `.tmp/shakespeare_choices.html`; every other proposal of the four lists is the lead's
@@ -2089,23 +2089,17 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] 2026-11-15 (lead) `draft_compare.py kit_slots` opens the PES 17 sample's team 718,
       whose ten kit slots the draft shows (the build side: `EDIT17`)
   - [ ] 0.0.2-mdocs (the maintainer, 2026-11-15: "Markdown is a fairly limited format") the
-    maintainer's documents as HTML pages: `docs/maintainer/questions.html` and
-    `proposals.html` replace `QUESTIONS.md` and `PROPOSALS.md`, and a new `tasks.html` lists
-    what waits on the maintainer's hands (a test, a look, a hand-over), so the maintainer
-    items of the worklog's "Pending looks" move there (the Linux bundle's Reset window check,
-    poc.5's in-game check and hand-over, ...). One shared `maintainer.css` and `maintainer.js`:
-    each entry a card with choice buttons (radio cards with a note under each option, as
-    `.tmp/text_choices/choices.html`), a box for an own answer, picks kept in the browser and
-    a "Copy my picks" button whose text the maintainer pastes into the chat; a layout choice
-    shows its screenshots side by side (tracked under `docs/maintainer/img/`, removed with
-    their entry) or the live draft by link. A check script validates the pages' shape (ids,
-    choices or an answer box, images present) -> verify: the pages open from disk, the picks
-    survive a reload and copy as text, the check script red on a broken entry
-    - [ ] questions.html first, every current entry, shown to the maintainer
-    - [ ] proposals.html and tasks.html
-    - [ ] every pointer moved (AGENTS.md's table and rules, RUNBOOK "Looks owed are one
-      list", CONTRIBUTING, `scripts/dev_cycle_map.py`, the plans, the lead's memories), the
-      two Markdown files removed
+    maintainer's documents as HTML pages in `docs/maintainer/`: `questions.html` and
+    `proposals.html` replace the two Markdown files, `tasks.html` holds what waits on the
+    maintainer's hands; shared `maintainer.css` and `maintainer.js` (picks kept in the browser,
+    "Copy my answers" for the chat); captures in `img/`, ignored by git (the maintainer,
+    2026-11-15); `just doc-pointers` reads the pages
+    - [x] 2026-11-15 the three pages: every entry of the two files, and the maintainer's lines
+      of "Pending looks" as cards; every pointer moved, the two files removed
+    - [ ] the lead checks each look of `tasks.html`'s "Coming once the lead has checked them"
+      beside its draft (`scripts/built_window/`), each then a card with its capture pair
+    - [ ] a Linux bundle built from main for the Reset window card (`just remote just
+      release`, once the VPS's mutation run is done), named on the card
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
@@ -2177,7 +2171,7 @@ briefs, review loops, gates and mutation runs as for any step.
       build's, a cancel set before the call), which ends SWE-2's loop
     - [ ] Carbon's round 2 by the rule
     - the settings menu's rollback button is not a step: nobody asked for it, and it waits
-      for a ruling as `PROPOSALS.md` P51
+      for a ruling as `maintainer/proposals.html` P51
     - [x] ST-UPD-04 by hand, on Windows and on Linux. Windows 2026-11-12: the bundle of
       `0.0.2-rc.1` updated itself to `0.0.2-rc.2` and reopened on `Updated to v0.0.2-rc.2
       pre-alpha`, the settings, a file inside `exports/` and a root log file as they were
@@ -2446,7 +2440,7 @@ briefs, review loops, gates and mutation runs as for any step.
       byte could stop it; eight on the tests (a wrong-kind test green without the kind
       check, the source preset's index unproven, the Gameplan's expected value built by
       the code under test, lost premises, helpers copied); SE-GUI-56 and 72 reworded.
-      Rejected: a note after a cross-version paste (`PROPOSALS.md` P54). Rework 1
+      Rejected: a note after a cross-version paste (`maintainer/proposals.html` P54). Rework 1
       2026-11-12 (`55b61937`, Opus, its session resumed; merge `af03939f`; the lead's
       rerun: 823 and 54 tests, clippy, fmt): all ten done; a Gameplan's whole record
       through the document comes back but for the bench's last nine places, which the
@@ -2461,7 +2455,7 @@ briefs, review loops, gates and mutation runs as for any step.
     and draft `43770f93`): the name of an ability stat the save's version does not store is
     dimmed with its `-`, in the colour of a version-gated card's name (SE-GUI-70). Not
     looked at in the built window (look: Pending looks). The same rule for the editor's
-    other gated fields is `PROPOSALS.md` P53, unruled
+    other gated fields is `maintainer/proposals.html` P53, unruled
     - [x] review round (tier 3), SWE-2 "S-statlbl r1", 2026-11-12: 1 of 3 concerns
       accepted (the dimmed name had no `PES NN+` tooltip, where its `-` and a gated
       card's name have one)
@@ -3061,26 +3055,25 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
 
 ## Pending looks
 
-Checks only the game or the built window can make, one line each: what to look at, the PES
-version, the step or decision it belongs to, and who can make it (`harness`: the lead's in-game
-or window-capture harness; `maintainer`). Ordered by the cost of a wrong result, game-facing
-writes first. A look leaves this list when its finding or `manual:` line lands in its step.
+Checks only the game or the built window can make, which the lead's in-game or window-capture
+harness makes, one line each: what to look at, the PES version, the step or decision it
+belongs to. Ordered by the cost of a wrong result, game-facing writes first. A look leaves this
+list when its finding or `manual:` line lands in its step. Those only the maintainer can make
+are cards in `docs/maintainer/tasks.html` (since 2026-11-15; a step line's "Pending looks" for
+one of them means that page).
 
 - The aesthetics patch on an unstripped save, the compiled look in Edit mode (boots and gloves,
   a base-copied player, one with clear flags), the FoxDen gloves issue, SE-GUI-34 in patch
   form; PES 2019, then 2021 and 2017; 8.36d; harness
 - The Friendlies compiled with `--legacy-ids` (`4cc_90_test.cpk` and the patched save), boots
   and gloves under their old IDs in Edit mode; PES 2019; 0.0.2-poc13's poc.2; harness
-- The 0.0.2-poc.5 bundle from a fresh extract (it replaced poc.4): its launchers' upgrade
-  and compile, the teams in Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11).
-  The Linux bundle 0.0.2-poc.6 beside it has never been started; no PES; maintainer
 - A team's home stadium id (the u16 at +6) edited by the Save editor shows as that stadium in
   game; PES 2015 and 2016; 0.0.2-st15 (DECISIONS 2026-11-11); harness
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
   loads and draws; PES 2017; 0.0.2b (DECISIONS 2026-11-11 "texture_not_div4 holds only a
   pre-Fox texture the compile block-compresses"); harness
 - Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
-  0.0.1y's y7c (`QUESTIONS.md` "After the release"); harness
+  0.0.1y's y7c (`maintainer/questions.html` "After the release"); harness
 - The Ability stats column on a PES 17 save in the built window: Tight Possession's and
   Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the
@@ -3089,8 +3082,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   2021; 8.9k's k5d; harness
 - Whether a team-file import writes the DLC team bin's name into the save, as on PES 2017; PES
   2015, 2016, 2018 to 2021; 8.9k's k5g; harness
-- The drag rule's mapping of kicking power/swerve and body control/physical contact, and the B
-  bonus in the overall; PES 2017; 0.0.1y's y4; maintainer (a save where those stats differ)
 - The seasonal logos on an uncompressed 4096 main kit, looked at in the pre-match menu (its
   two demonstration players, when they wear the default kit models) or in a match: Edit
   mode never places them, no competition type being chosen there. With it, whether the
@@ -3104,7 +3095,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   0.0.1l; harness
 - The built window at 1280 × 800 on the FHD monitor, the Tactics tab in three columns; any PES;
   8.15; harness
-- A lineup row dragged from its name in the built window; any PES; 0.0.1f's f1e; maintainer
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
 - The Save editor's eight help chapters and the two core ones read in the built window; any
   PES; 8.29e's e1; harness
@@ -3114,87 +3104,6 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   real save under 4cc Autumn 26 raises one); any PES; 8.9m's m4; harness
 - ov7b's Import and × dialogs, ov10's pitch drag and ov12's popover steppers in the built
   window; any PES; 0.0.1ov; harness
-- The players' name colour codes in the light theme; any PES; 0.0.1ov's ov11b; maintainer
-- The toolbar as a menu bar in the built window, the Save editor (no save open, a save open,
-  an event logo drawn) and the Ruleset editor, both themes; no PES; 0.0.2-bar; maintainer
-  (the lead's window harness misplaces its pointer on the 4K primary at 200%)
-- The two numbers' toggles disabled on a PES 17 or 21 save under a ruleset without illegal
-  formations, and Kick-off with Fluid formation off, each drawn as a disabled button (its
-  box and dimmed label; no test pins the label's colour), both themes; no PES; 0.0.2-num;
-  maintainer
-- The PES selector disabled and empty under the Save editor and the Ruleset editor, as
-  before under the Compiler and the Export upgrader, no icon moving between them, in
-  the rail and the opened sidebar; a PES 2017 save open with the selector on another
-  version: its portraits and Set PES path's tooltip; Choose file starting in the last
-  opened folder; both themes; no PES; 0.0.2-sel; maintainer
-- A bench row dragged onto another bench row swapping the two in the Tactics lists; no
-  PES; DECISIONS 2026-11-12; maintainer
-- Reset window on the 1280 x 800 Linux virtual machine: after one click that leaves the
-  window as it was the button is gone, and a resize brings it back; the pointer is a hand
-  over it; no PES; `da241022`; maintainer (needs a Linux bundle built from main)
-- Ctrl+C in one Save editor window and Ctrl+V in a second, through the real system
-  clipboard: a player's stats, a team's Gameplan, a preset and a formation, the second
-  window on a save of another PES version; and the copied text pasted into a text editor
-  (two comment lines, then the Team TOML); no PES; 0.0.2-clip; maintainer
-- The toolbar's menus and the dropdown lists in the built window: entries 21 high that
-  touch, a click on the line between two acting on one, the separators' room (12 in a
-  menu, 7 in the ruleset picker's list, which was 12); no PES; 0.0.2-gap; maintainer
-- The player list's drop line in the built window: a player dragged down and up a team's
-  list, the line with its serifs under or over the row, none left after a release or Esc;
-  and on the first and last row in view, where the list's clip cuts the line's outer half;
-  no PES; 0.0.2-line; maintainer
-- The illegal formation warning in the built window: a PES 2017 or PES 2019 save under a
-  ruleset without the flag (Spring 26), a team whose formation a tool made (the VGL27
-  save's /b/, /co/, /d/, /tg/, /toy/, /x/): the warning's words in Live AATF, and gone
-  after the named starter is dragged on the Tactics pitch; no PES; 0.0.2c; maintainer
-- The X on each row of the unsaved changes list, in the built window: its blue against
-  the label that opened the list, each on its row's first line, the column staying at
-  the list's right edge while a wide row scrolls under it (the draft's renders:
-  `.tmp/0_0_2/undo/x_list.png`, `x_wide_scrolled.png`); no PES; 0.0.2-undo b; maintainer
-- The unsaved changes after a drag in the player list, in the built window: one
-  `Player order` row, its places one per line and the row as high as them, the team's
-  name on its first line; no PES; 0.0.2-undo a; maintainer
-- The sidebar in a window dragged too short for its entries: the wheel over the rail
-  scrolls the tool entries, the logo, the selector, Help and Settings stay put, the
-  opened sidebar shows the same entries, and the entries fade at the cut edge (egui's
-  own; say if it should go); no PES; 0.0.2-side; maintainer
-- The Playable positions toggle in the built window: Pitch, Left and List at the default
-  window, no scroll bar in any, the pick kept after a restart, the unchosen letters darker;
-  both themes; no PES; 0.0.2-poslayout; maintainer
-- The corners in the built window, all 2 points: a toolbar menu, a dropdown list, a
-  dialog, a tooltip, the unsaved changes list, a text field, a hovered button; and the
-  update download's bar, a rectangle and no longer a pill (no test paints it); no PES;
-  0.0.2-rad; maintainer
-- The formation picture dialog: the Team menu's entry, the dialog beside the draft's
-  `dlgPictureSave` (without slice 2's settings box), Save writing the picture and its notice,
-  Open folder opening Explorer on the folder; checked by the lead at `b0c2f105`
-  (`.tmp/flatpitch/look1b/built_menu.png`, `built_dialog_zoom.png`, `built_saved.png` beside
-  `draft_dialog_zoom.png`); no PES; 0.0.2-flatpitch; maintainer
-- The formation picture's settings: the dialog's box ticked beside the draft's, and the
-  settings picture of /3/ the built app wrote, its columns beside the draft's; checked by
-  the lead at `0b71f879` (`.tmp/flatpitch/look2/compare_dialog.png`,
-  `built_3_settings_half.png`, `compare_wide.png`, `compare_narrow.png`, `app_row2_zoom.png`);
-  no PES; 0.0.2-flatpitch; maintainer
-- The range dialog for formation pictures after the maintainer's two changes: the count
-  ("210 teams") at the Teams row's right end, under Browse's right edge, and both results'
-  folder on a line under "they are here:" (stopped after 73 of 210, then all 210 written),
-  beside the draft's `dlgPicturesRange`; checked by the lead at `513b72bf` on the
-  maintainer's PES 2021 save, read only (`.tmp/flatpitch/look3c/compare.png`); no PES;
-  0.0.2-flatpitch; maintainer
-- The formation picture's hidden formations (`.tmp/flatpitch/813 nepgen.png`, preset 2): each
-  shape of a faded cell (the turf, each player, each label) is drawn at 60% on its own, not
-  the cell as one layer, so the turf shows through the players; and a fluid-off row with one
-  formation of a shape of its own draws the other hidden one too, even when it has
-  Kick-off's shape (2-4-1-3 twice); no PES;
-  0.0.2-flatpitch; maintainer
-- The Save editor's welcome panel with no save open, and the Ruleset editor's toolbar over
-  its start page: checked by the lead at `852b5f91` (`.tmp/welcome/look/built2_first.png`
-  beside `draft_welcome.png`, `built2_ruleset.png` beside `draft_ruleset.png`); no PES;
-  0.0.2-welcome, 0.0.2-startdlg; maintainer
-- The unsaved changes list: the red X's under `Undo`, the lines between rows, an item's click
-  going to its player with the list left open, the close prompt's lines; checked by the lead
-  at `852b5f91` (`.tmp/chpop/look/list_zoom.png`, `hover_zoom.png`, `switched_top.png`,
-  `prompt.png` beside `.tmp/chpop/draft_popup_zoom.png`); no PES; 0.0.2-chpop; maintainer
 
 ---
 
@@ -3202,7 +3111,7 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
 
 Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolved issues are
 pruned when their phase closes; they stay in git history. A question only the maintainer
-can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
+can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
 - open 2026-11-14 (the lead, 0.0.2-dlgroom's sweep): two built dialogs differ from their
@@ -3258,7 +3167,7 @@ points there.
   earlier save, which fits a serial (the writer's Windows account) one character longer,
   not read out: another account or the game wrote it last, or the earlier save sent is
   not the one that was open. Waits for the member to reproduce on 0.0.2 with its report button.
-  One thing found on the way is in `docs/QUESTIONS.md` (the manager id a team file brings
+  One thing found on the way is in `docs/maintainer/questions.html` (the manager id a team file brings
   onto another team).
 - resolved 2026-11-12 (the lead, writing the referee export page): the Export upgrader's
   spec and `referees.rs` said a conflicting referee folder is "left as it was", copied at
@@ -3726,7 +3635,7 @@ points there.
   these referees are pre-Fox material.
 - open (converge census, 2026-10-09; diagnosed as the plan's rules, no change) — the census's
   other refusals of the cup's referee exports: `common_file_disallowed` on `Common/refkit/`
-  (a maintainer question, `docs/QUESTIONS.md`); `file_type_disallowed` on files two levels
+  (a maintainer question, `docs/maintainer/questions.html`); `file_type_disallowed` on files two levels
   down (`Face/kit/`, `Face/face/`, a `Common_shared/` subfolder, a `.model` in a player's
   `common/`), which the plan's reserved-subfolder rule names and the Export upgrader flattens;
   `texture_not_pow2` on a 192x512 mipped texture (a maintainer question); ANF's

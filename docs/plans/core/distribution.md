@@ -407,7 +407,7 @@ closes the program and copies the program file from `old/` over the one in the b
 folder.
 
 A settings menu button that does the swap and relaunches is a proposal, not planned work
-(`PROPOSALS.md` P51), and is not built while it is unruled.
+(`maintainer/proposals.html` P51), and is not built while it is unruled.
 
 ### Changelog and version display
 

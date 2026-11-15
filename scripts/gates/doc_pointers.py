@@ -38,8 +38,19 @@ phase, whose sections stay in the plans until it closes although its code is bei
 
 A relative Markdown link to a `.md` file (`[core plan](core/README.md)`) must name a file that
 exists beside the linking one; its `#anchor` is not checked.
+
+The maintainer's pages (`docs/maintainer/*.html`: questions, proposals, tasks) are read too,
+with their tags removed, so `<code>plans/x.md</code> "Section"` is a pointer like any other.
+A pointer may also name one of these pages (`` `maintainer/questions.html` "After the release" ``),
+whose places are its group and entry headings: a question that leaves its page once answered
+then fails every pointer still citing it.
+Each relative `href` or `src` on them must name a file, except a capture under `img/`, which
+git ignores and so only the machine that took it has. And each entry (`<section
+class="entry" id="…">`) has a heading and an id no other entry on its page uses, since the page
+keeps the maintainer's answers by that id.
 """
 
+import html
 import re
 import sys
 from dataclasses import dataclass
@@ -48,7 +59,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 TITLE = r'"[^"\n]{1,120}"'
-PATH = r"(?<![\w/.])`?(?P<path>[\w./-]+\.md)`?[,;]?"
+PATH = r"(?<![\w/.])`?(?P<path>[\w./-]+\.(?:md|html))`?[,;]?"
 TITLES = rf"{TITLE}(?:,? (?:and |or )?{TITLE})*"
 POINTER = re.compile(rf"{PATH} (?P<titles>{TITLES})")
 # A pointer the line end cuts: its path alone, its titles so far followed by the `,`, `and` or
@@ -66,6 +77,12 @@ LIST_MARKER = re.compile(r"^\s*(?:[-*]|\d+\.)\s+")
 BOLD = re.compile(r"\*\*(?P<title>[^*]+?)\*\*")
 LINK = re.compile(r"\]\((?P<target>[^)\s#:]+\.md)(?:#[^)]*)?\)")
 SKIPPED = {"docs/DECISIONS.md", "docs/LOG.md"}
+PAGES = "docs/maintainer"
+TAG = re.compile(r"<[^>\n]*>")
+# A relative target only: a scheme's `:` (`https:`) or a bare `#anchor` never matches.
+REF = re.compile(r'\b(?:href|src)="(?P<target>[^"#?:]+)(?:[#?][^"]*)?"')
+HEADING_TAG = re.compile(r"<h[23][^>]*>(.*?)</h[23]>", re.S)
+ENTRY = re.compile(r'<section class="entry" id="(?P<id>[^"]*)">(?P<body>.*?)</section>', re.S)
 # The plans code may still point at: each holds sections already built whose phase is still
 # open, and they move to the spec when it closes.
 OPEN_PHASE_PLANS = {
@@ -177,7 +194,8 @@ def problems(root: Path, found: list[Pointer]) -> list[str]:
                 out.append(f"{where}: `{pointer.path}` names no file")
             continue
         if target not in cache:
-            cache[target] = anchors(target.read_text(encoding="utf-8"))
+            content = target.read_text(encoding="utf-8")
+            cache[target] = page_anchors(content) if target.suffix == ".html" else anchors(content)
         shown = target.relative_to(root).as_posix()
         if not names_anchor(cache[target], pointer.title):
             out.append(f'{where}: {shown} has no "{pointer.title}"')
@@ -199,6 +217,35 @@ def broken_links(root: Path, source: str, text: str) -> list[str]:
     return out
 
 
+def page_text(page: str) -> str:
+    """A maintainer page as the pointer search reads it: tags removed, comments kept as text,
+    entities decoded, every line where it was."""
+    return html.unescape(TAG.sub("", page.replace("<!--", "").replace("-->", "")))
+
+
+def page_anchors(page: str) -> set[str]:
+    """A maintainer page's places: its group and entry headings."""
+    return {clean(page_text(heading)) for heading in HEADING_TAG.findall(page)}
+
+
+def page_problems(root: Path, source: str, page: str) -> list[str]:
+    out = []
+    for number, line in enumerate(page.splitlines(), start=1):
+        for match in REF.finditer(line):
+            target = match["target"]
+            if not target.startswith("img/") and not ((root / source).parent / target).resolve().is_file():
+                out.append(f"{source}:{number}: `{target}` names no file")
+    seen = set()
+    for entry in ENTRY.finditer(page):
+        where = f"{source}:{page.count(chr(10), 0, entry.start()) + 1}"
+        if entry["id"] in seen or not entry["id"]:
+            out.append(f'{where}: entry id "{entry["id"]}" is empty or used twice')
+        seen.add(entry["id"])
+        if "<h3>" not in entry["body"]:
+            out.append(f'{where}: entry "{entry["id"]}" has no <h3> heading')
+    return out
+
+
 def sources(root: Path) -> list[Path]:
     files = [root / "AGENTS.md"]
     files += sorted((root / "docs").rglob("*.md"))
@@ -214,6 +261,10 @@ def main() -> int:
         source, text = file.relative_to(ROOT).as_posix(), file.read_text(encoding="utf-8")
         found += pointers(source, text)
         links += broken_links(ROOT, source, text)
+    for file in sorted((ROOT / PAGES).glob("*.html")):
+        source, text = file.relative_to(ROOT).as_posix(), file.read_text(encoding="utf-8")
+        found += pointers(source, page_text(text))
+        links += page_problems(ROOT, source, text)
     broken = problems(ROOT, found) + links
     for line in broken:
         print(line)

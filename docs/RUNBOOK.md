@@ -59,20 +59,21 @@ the rulings file. An open step keeps what is left to do and what its doer needs.
 wait for the phase's close to collapse: with Phase 8 open for weeks the file reached 853 KB,
 and "where we are" could only be searched.
 
-**Looks owed are one list.** Every check that only the game or the built window can make,
-and that is still owed, is a line of the worklog's "Pending looks" section, ordered by what a
-wrong result would cost, each saying whether the in-game harness can make it (`scripts/ingame/`,
-with OBS when the maintainer has not set it off-limits) or the maintainer must. A step or a
-decision that says "not checked in game" adds its line there in the same edit. The lead
+**Looks owed have one home each.** Every check that only the game or the built window can
+make, and that is still owed, is written down once. Those the in-game harness can make
+(`scripts/ingame/`, with OBS when the maintainer has not set it off-limits) are lines of the
+worklog's "Pending looks" section, ordered by what a wrong result would cost; those only the
+maintainer can make are cards in `docs/maintainer/tasks.html`. A step or a decision that says
+"not checked in game" adds its line or card in the same edit. The lead
 sends what the harness can do to a SWE-2 in-game run whenever the list holds a
 game-facing write, and hands the maintainer the rest as one batch per game session.
 
-**No look reaches the maintainer unchecked.** A built-window look goes on that list, into a
+**No look reaches the maintainer unchecked.** A built-window look goes on the tasks page, into a
 checklist or into a report only after the lead or an Opus sidekick has made it first: the
 release build captured at each state the look names (`scripts/built_window/`), the draft
 rendered at the same state, the two read side by side, and every difference fixed or written
-down as one the maintainer is asked about. The look's line names its capture pair
-(`.tmp/<step>/look/`), so a line without one is not ready to hand over. The maintainer's look
+down as one the maintainer is asked about. The look's card shows its capture pair,
+copied into `docs/maintainer/img/`, so a look without one is not ready to hand over. The maintainer's look
 is a second pair of eyes on what was already checked, never the first: a checklist once went
 out with the Appearance screen's Physique group laid out unlike its draft, which one capture
 would have shown. The states captured include each tool's first open, from a fresh start,

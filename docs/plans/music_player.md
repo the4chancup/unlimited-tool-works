@@ -554,7 +554,7 @@ What the soundboard must do, distilled from Rigdio's behavior:
   holding it, and nothing could stop it short of a restart (a streamer's report,
   2026-10-26).
 - What a button shows and does once its song has played to its end (a horn with `end stop`,
-  a victory anthem) waits on `docs/QUESTIONS.md` "A button after its song ends".
+  a victory anthem) waits on `docs/maintainer/questions.html` "A button after its song ends".
 - **⟲** next to a button stops its sound at once, without a fade, and puts the entry it
   played last back to its start: `start` and `speed` apply again on its next play, its
   synced position is dropped and its `pause ... every n` count restarts; the VA's ⟲ also
@@ -597,7 +597,7 @@ What the soundboard must do, distilled from Rigdio's behavior:
   starts once: a button whose selection is an entry another Chaoshorn button already
   started stays raised and holds nothing (in Rigdio those buttons shared one sound; started
   N times in phase it would be louder by about 20·log10 N dB). A second Chaoshorn press is
-  ignored until Kill. Whether its presses score goals waits on `docs/QUESTIONS.md`
+  ignored until Kill. Whether its presses score goals waits on `docs/maintainer/questions.html`
   "Chaoshorn and the score".
 
   **Kill Chaoshorn** stops every button's sound and rewinds its last entry as ⟲ does; it
@@ -650,7 +650,7 @@ in-process; the 1-second sleep-for-mpv-metadata hack and its global thread flags
 disappear.
 
 The title is written for goalhorns, anthems and victory anthems, not for a warcry (its
-follow-up is written). Whether chants are written waits on `docs/QUESTIONS.md` "title.log
+follow-up is written). Whether chants are written waits on `docs/maintainer/questions.html` "title.log
 and chants".
 
 One title at a time: a song's start replaces the last one, and the file is cleared when the

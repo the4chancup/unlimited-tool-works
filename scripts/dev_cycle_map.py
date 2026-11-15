@@ -34,9 +34,9 @@ NODES = [
      "The maintainer looks at a UI draft rendered from docs/prototypes/ before anything a "
      "member sees is briefed."),
     ("answers", "Answers and rulings", "maintainer", 1, 1,
-     "Answers to QUESTIONS.md (in-game behavior, cup practice, preferences) and vetoes or "
-     "approvals of PROPOSALS.md; an answer is open to discussion when the lead sees a reason "
-     "against it."),
+     "Answers on the questions page (in-game behavior, cup practice, preferences) and vetoes "
+     "or approvals on the proposals page; an answer is open to discussion when the lead sees "
+     "a reason against it."),
     ("ingame_ok", "In-game look", "maintainer", 5, 0,
      "The maintainer confirms what only the game can show; Edit mode suffices for most looks. "
      "The proof becomes a 'manual: checked' line in the worklog."),
@@ -53,9 +53,10 @@ NODES = [
     ("acceptance", "Acceptance section", "docs", 1, 0,
      "Stable-ID GIVEN/WHEN/THEN scenarios for what a tool phase delivers, written just in time "
      "for that phase, never for the whole project up front."),
-    ("questions", "QUESTIONS / PROPOSALS", "docs", 1, 1,
-     "QUESTIONS.md: what only the maintainer can answer. PROPOSALS.md: usability ideas nobody "
-     "asked for, unbuilt until ruled."),
+    ("questions", "Maintainer pages", "docs", 1, 1,
+     "docs/maintainer/: the questions only the maintainer can answer, the proposals (usability "
+     "ideas nobody asked for, unbuilt until ruled) and the tasks waiting on the maintainer, "
+     "each a card with choice buttons."),
     ("worklog", "WORKLOG.md", "docs", 2, 0,
      "Where we are: the release's blocking path, the open steps with their verify criteria, "
      "the looks still owed in the game or the built window, and open issues. A step "
@@ -69,7 +70,7 @@ NODES = [
      "place."),
     ("plan_write", "Plan and decide", "lead", 0, 0,
      "The lead writes plans and applies its clear recommendations (plan edit, then a decision "
-     "entry); only a truly open choice goes to QUESTIONS.md."),
+     "entry); only a truly open choice goes to the questions page."),
     ("draft", "UI draft", "lead", 1, 0,
      "Anything a member sees is drafted first under docs/prototypes/, rendered and critiqued; "
      "a brief names the draft function it builds."),

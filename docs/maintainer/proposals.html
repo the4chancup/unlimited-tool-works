@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlimited Tool Works: proposals for the maintainer</title>
+<link rel="stylesheet" href="maintainer.css">
+<!--
+For the lead: ideas nobody asked for that would make the suite easier to use (a button, a
+shortcut, a default, a message that saves a member a step). Any agent adds one when it thinks
+of it while working (AGENTS.md "When the plan has gaps"). A proposal is not built while it is
+unruled: plan text that already describes one says so and points here, and the phase that would
+build it lists the entry in its turn report. A vetoed entry leaves with a one-line DECISIONS.md
+entry, so it is not proposed again; an accepted one leaves into its plan section and a
+DECISIONS.md entry, and its line joins "Ruled earlier" below. Newest last.
+
+An entry: <section class="entry" id="pNN"> with an <h3> "PNN: title", a <p class="from">, then
+<p><b>Adds:</b> what it adds and for whom</p> and <p><b>Costs:</b> code, surface, what a member
+must learn</p>, then the ruling options and a <textarea class="own">. Captures go in img/ (ignored
+by git). `just doc-pointers` checks the page.
+-->
+</head>
+<body data-page="proposals">
+<nav class="pages">
+  <a href="questions.html">Questions</a>
+  <a class="here" href="proposals.html">Proposals</a>
+  <a href="tasks.html">Tasks</a>
+  <span class="count" id="count"></span>
+</nav>
+
+<h1>Proposals waiting for your ruling</h1>
+<p class="intro">Ideas nobody asked for, each with what it adds and what it costs. None is
+built until you accept it. Pick a ruling on each card, or write your own in the box under it;
+your picks stay in this browser. When you're done, press <b>Copy my answers</b> at the bottom
+and paste the text into the chat. Ruled proposals then leave this page, each ruling recorded
+in <code>DECISIONS.md</code>.</p>
+<ul id="toc"></ul>
+
+<h2>Waiting</h2>
+
+<section class="entry" id="p40">
+  <h3>P40: The Music export editor reorders its players</h3>
+  <p class="from">From: the RigDJ audit (10.0h, 2026-10-27); <code>plans/music_export_editor.md</code> "What the editor does"</p>
+  <p>The editor lists and writes the players in the file's order, which is the order of
+  Rigdio's buttons. 27 of the 50 RigDJ-written exports on your machine have their players out
+  of sorted order, so managers reorder them by hand in a text editor; RigDJ re-sorted them on
+  every load.</p>
+  <p><b>Adds:</b> up and down buttons (or a drag) on a player in the slot list, so a manager
+  sets the button order the streamer sees without leaving the editor.</p>
+  <p><b>Costs:</b> two buttons beside Rename and Delete, and the drag the song rows already
+  plan, reused for the slot list. Nothing new in the format.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p41">
+  <h3>P41: The Kit config editor shows what a collar, shorts model or pattern looks like</h3>
+  <p class="from">From: the Kit Manager audit (12.0a, 2026-10-27); <code>plans/kit_config_editor.md</code> "Preview panel"</p>
+  <p>Kit Manager's preview was a catalogue: one prerendered picture per collar (1–106), shorts
+  model (0–17), shirt pattern (0–13), sleeve type and shirt model, shown as the field changed.
+  The planned preview draws the kit's colors, positions and real textures, so it drops the one
+  thing Kit Manager's showed: what collar 37 looks like before you pick it.</p>
+  <p><b>Adds:</b> a thumbnail beside the Collar, Winter collar, Shorts model and Shirt pattern
+  fields, or a gallery to pick from, for the kit maker who knows the look and not the
+  number.</p>
+  <p><b>Costs:</b> the pictures themselves, which Kit Manager's bitmaps cannot supply (PES
+  2016's models, 51 MB, not ours to ship): renders of each version's stock collars and shorts,
+  made once per version (up to 131 collars on PES 2021), plus a gallery widget.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept, thumbnails"><b>Accept, as thumbnails beside the fields</b></label>
+    <label class="opt"><input type="radio" value="accept, gallery"><b>Accept, as a gallery to pick from</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b>
+      <div class="note">Thumbnails or gallery: say which in the box below.</div></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p42">
+  <h3>P42: The color picker's hex field takes Kit Manager's spellings too</h3>
+  <p class="from">From: the Kit Manager audit (12.0a, 2026-10-27)</p>
+  <p>Kit makers paste colors from the tools they used with Kit Manager, which accepted
+  <code>0xRRGGBB</code> and bare <code>RRGGBB</code> (and nothing else, not even
+  <code>#RRGGBB</code>). The shared color picker's hex field is specified only as the TOML's
+  <code>#RRGGBB</code>.</p>
+  <p><b>Adds:</b> the hex field accepts <code>#RRGGBB</code>, <code>0xRRGGBB</code> and
+  <code>RRGGBB</code> alike in every tool that uses it, so a value pasted from an old habit is
+  taken instead of refused.</p>
+  <p><b>Costs:</b> one parse with three prefixes in <code>color_tools</code>. The field still
+  shows <code>#RRGGBB</code>.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p51">
+  <h3>P51: A button that goes back to the version an update replaced</h3>
+  <p class="from">From: the first plan (2026-09-13, <code>plans/core/distribution.md</code> "Rollback"), written after Red, which keeps the whole old folder when it updates. You never asked for it, and on 2026-11-12 didn't remember doing so.</p>
+  <p><b>Built already:</b> Update now leaves the program it replaced in the bundle's
+  <code>old/</code> folder, one version deep. A member can go back by hand: close the program,
+  and copy the program file from <code>old/</code> over the one in the bundle's folder.</p>
+  <p><b>Adds:</b> a "Roll back to previous version" button in the settings menu, which swaps
+  the two programs and restarts, for a member whose new version is broken. No member can reach
+  it in 0.0.2: 0.0.1 cannot update itself, so the first <code>old/</code> folder appears when
+  0.0.2 updates to its successor, and the button that matters then is the successor's.</p>
+  <p><b>Costs:</b> the plan's three lines leave most of it open, each a thing to build and for
+  a member to learn:</p>
+  <ul>
+    <li>a confirmation, since the program restarts;</li>
+    <li>what the button reads after a rollback, when <code>old/</code> holds the newer program:
+    naming the version needs a version file written beside the program in <code>old/</code>;</li>
+    <li>the state after the swap when a tool's close prompt cancels the restart: a reminder
+    like <code>Update ready</code>, and no update offered meanwhile;</li>
+    <li>only the program file goes back: the launchers and the readme stay the newer version's,
+    and a launcher passing an option the older program lacks fails.</li>
+  </ul>
+  <p>A cheaper cover for the same case: one sentence in the help's Updates chapter giving the
+  steps by hand above.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept the button"><b>Accept the button</b></label>
+    <label class="opt"><input type="radio" value="veto, the help sentence instead"><b>Veto the button; add the help sentence instead</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto both</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p52">
+  <h3>P52: The window checks for updates at every start</h3>
+  <p class="from">From: reading the check's schedule for the command line's notice (0.0.2-cli, 2026-11-12)</p>
+  <p>The window checks for an update when the last check is older than the interval (120
+  minutes by default), at startup and while it stays open, and the offer it finds lasts for
+  that session only. So a member who sees <code>Update available</code>, closes the program
+  and opens it again within the interval finds no offer until the interval has passed: the
+  plan's "the next check offers it again" is then up to two hours away. The command line's
+  notice makes this more likely, since it sends the member to the window.</p>
+  <p><b>Adds:</b> the window checks once at every start, when Check for updates is on, and the
+  interval governs only the checks that follow while it stays open. An offer seen once is
+  there again at the next start.</p>
+  <p><b>Costs:</b> one request to GitHub per start instead of at most one per interval (GitHub
+  allows 60 an hour per address without a login). The last check's time stops deciding the
+  first check, and the plan's step 1 and its tests change with it.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p53">
+  <h3>P53: Every version-gated field's label is dimmed with its control</h3>
+  <p class="from">From: your ask of 2026-11-03 to dim the name of an ability stat the save's version lacks (0.0.2-statlbl, which did it for the Ability stats column alone)</p>
+  <p>The Save editor has other fields a version lacks, each drawn disabled in place with its
+  <code>PES NN+</code> tooltip while its label keeps the normal text colour:</p>
+  <ul>
+    <li>Stronger hand in General info, before PES 2020;</li>
+    <li>in the Cutscenes group, the star before PES 2019 and playing attitude before PES 2020;</li>
+    <li>on a PES 2016 save's team view, the colours, the Manager ID and the kit slots.</li>
+  </ul>
+  <p><b>Adds:</b> one rule for the whole editor, "a field the save's version lacks has its
+  label dimmed with its control", so a member reads every such row the same way.</p>
+  <p><b>Costs:</b> the label at each of those places is drawn through the disabled-widget
+  helper, each with its line in a test. And the Appearance section also dims, when the
+  aesthetics switch locks it, so a member who reads a dimmed label as locked by that switch
+  has one more thing dimmed there.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p55">
+  <h3>P55: The Compiler's help as two topics</h3>
+  <p class="from">From: the text rereading of 2026-11-13 (worklog 0.0.2-text)</p>
+  <p>The Compiler's help is one topic, "Running from a terminal", of about 1,200 lines. Two
+  thirds of it is what goes in an export and what each file becomes, which a member using the
+  window needs as much as one using a terminal, and would not look for under that title. The
+  part a member opens the page for (the exports folder, <code>--export</code>,
+  <code>--no-deploy</code>, the modes, the exit codes) starts after 750 lines of per-file
+  rules.</p>
+  <p><b>Adds:</b> two topics, each findable by its title:</p>
+  <ul>
+    <li>"What goes in an export", from "What <code>compile</code> builds" through "Kit config
+    values the game ignores or cannot hold";</li>
+    <li>"Running from a terminal": the commands, which exports a run reads, install errors,
+    <code>upgrade-dpfl</code>, the modes, <code>multicpk_mode</code>, exit codes, the
+    aesthetics patch.</li>
+  </ul>
+  <p><b>Costs:</b> the text moves between two files, and the tool's topic list and the help
+  tests gain an entry. A link or search hit a member saved to the old topic's second half lands
+  on the new one.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="p56">
+  <h3>P56: The window can say the game's Edit mode is closed</h3>
+  <p class="from">From: the text rereading of 2026-11-13</p>
+  <p>While the PES the save belongs to is running, a compile skips writing the save unless it
+  is run with <code>--edit-mode-closed</code>. The window's Compile button cannot add that
+  option, so from the window the only way to get the save written is to close the game, and
+  the message for a skipped save now says so.</p>
+  <p><b>Adds:</b> when a compile from the window skips the save for that reason, the message
+  (or a dialog) offers "Edit mode is closed, write the save", which writes the save alone, as
+  the option would.</p>
+  <p><b>Costs:</b> one more confirmation, whose wrong answer loses the save's changes when the
+  member leaves Edit mode (the reason the option exists), plus a save-only run from the window
+  and its tests.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
+<h2>Ruled earlier</h2>
+<details>
+  <summary>Each ruling's <code>DECISIONS.md</code> entry</summary>
+  <ul>
+    <li>The Export upgrader's "Move to exports and compile" button: asked as a question before this list existed, and approved.</li>
+    <li>P16 to P38, 2026-10-26: "Usability proposals P17-P24 and P32-P38 accepted", "A folder per PES version", "Red's settings are not imported on first run", "Live AATF stays off by default".</li>
+    <li>P39, a window closed maximized reopens maximized: accepted 2026-10-27.</li>
+    <li>P43, stats named as each PES version names them: accepted 2026-10-29, "Stats are named as the save's PES version names them".</li>
+    <li>P44, the help's text column capped at a reading width: accepted 2026-10-29, "The help's text wraps at 720 points".</li>
+    <li>P45, a ruleset's event logo and page at the Save editor's top right: accepted for 0.0.1 on 2026-10-30, "A ruleset carries its event's logo and page".</li>
+    <li>P46, a check flagging an illegal formation under a cup that forbids them: accepted for 0.0.2 on 2026-10-31, "The illegal formation check is the stock game's refusal, in the host".</li>
+    <li>P47, a height finding names its players and the nearest quota system: accepted 2026-10-31.</li>
+    <li>P48, Multi-team AATF counts the teams under each medal and height system: accepted 2026-11-01.</li>
+    <li>P49, a Fielded position row's tooltip says where its click goes, and P50, the shortcuts work while a button holds the keyboard: accepted for 0.0.1 on 2026-11-02.</li>
+    <li>P57, each built screen compared with its draft in the test suite: accepted for after 0.0.2 on 2026-11-15.</li>
+  </ul>
+</details>
+
+<div class="picks">
+  <button id="copy">Copy my answers</button>
+  <button id="clear">Clear my answers</button>
+  <textarea id="out" readonly placeholder="Your answers appear here, ready to paste into the chat"></textarea>
+</div>
+<script src="maintainer.js"></script>
+</body>
+</html>

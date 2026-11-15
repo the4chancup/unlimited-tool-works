@@ -1070,7 +1070,7 @@ building anything.
 
 Before a draft is refined with the maintainer, the lead reviews it for usability (a step a
 member repeats, a choice the view could make for them, a dead end after a run), each idea a
-`PROPOSALS.md` entry ruled beside the page: a flow problem shows on a page, not in a spec, and
+`maintainer/proposals.html` entry ruled beside the page: a flow problem shows on a page, not in a spec, and
 moved after implementation it costs a view and its GUI scenarios instead of a page edit.
 
 The draft then becomes the view's specification, so it uses only the CSS and HTML elements the

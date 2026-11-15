@@ -10,7 +10,7 @@ the codebase works, and what to do when the plan runs out. Before writing or cha
 
 ## Working documents
 
-Ten documents, ten jobs. Do not let content leak between them; two homes means they drift.
+One job per document. Do not let content leak between them; two homes means they drift.
 
 | Document | Holds |
 |---|---|
@@ -22,8 +22,7 @@ Ten documents, ten jobs. Do not let content leak between them; two homes means t
 | `docs/WORKLOG.md` | *Where we are*: current status, phase/step checklist, current-state gotchas, open issues (the lead's and the sidekick's) |
 | `docs/LOG.md` | *What happened* up to 2026-11-11, frozen: since then the dated log is `git log` |
 | `docs/DECISIONS.md` | Choices made where the plan was silent (append-only) |
-| `docs/QUESTIONS.md` | The questions only the maintainer can answer (in-game behavior, cup practice, a preference), grouped by what an answer unblocks; an entry leaves when answered and the answer lands in the plan and `DECISIONS.md` |
-| `docs/PROPOSALS.md` | Usability ideas nobody asked for (a button, a default, a shortcut), which the maintainer vetoes or accepts; an unruled one is not built |
+| `docs/maintainer/*.html` | The maintainer's pages, cards with choice buttons: `questions` (what only the maintainer can answer: in-game behavior, cup practice, a preference; an answer lands in the plan and `DECISIONS.md`), `proposals` (usability ideas nobody asked for, vetoed or accepted; an unruled one is not built), `tasks` (tests and looks for the maintainer, each look checked by the lead first) |
 
 **Before a step:** read the worklog's current status, then the plan section the step points at,
 from the document, not from memory. **After a step:** run the step's checkpoint gates
@@ -171,12 +170,12 @@ a clear recommended choice for one of the cases above, it applies that choice an
 decision (plan edit, then decision entry), and the turn report names it so the maintainer can
 reverse it. It stops to ask only when the choice is truly ambiguous (no option is clearly
 better on the evidence) or needs information only the maintainer has (in-game behavior, cup
-practice, a preference); such a question is written to `docs/QUESTIONS.md` (never with a
-"Recommended:" line: a question the lead can recommend an answer to is one it applies), with
+practice, a preference); such a question is written to `docs/maintainer/questions.html` (never
+with a recommended option: a question the lead can recommend an answer to is one it applies), with
 the worklog issue or step that waits on it pointing there, and the work goes on with whatever
 does not depend on it. The rule covers choices inside the work asked for. **Something nobody
 asked for** (a usability idea: a button, a shortcut, a default, a handoff between tools) is
-not applied, however clear the recommendation: it is written to `docs/PROPOSALS.md`, with what
+not applied, however clear the recommendation: it is written to `docs/maintainer/proposals.html`, with what
 it adds and what it costs, and waits for the maintainer's ruling there. An answer is open to discussion, an earlier one included: when the lead sees a
 reason against it (a case it breaks, a cost it carries, a simpler rule), it says so with the
 evidence before landing it, and the maintainer decides; an answer it agrees with needs no
@@ -200,7 +199,7 @@ an outcome fails this test, say so and simplify before reporting. (The code half
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
 
 No look reaches the maintainer unchecked: the built window is captured beside its draft and
-compared first (`RUNBOOK.md` "Looks owed are one list").
+compared first (`RUNBOOK.md` "Looks owed have one home each").
 
 End every turn that changed something with a short report: what changed, which gates ran and their
 result, what was not verified, second-opinion concerns and how each was answered, worklog steps

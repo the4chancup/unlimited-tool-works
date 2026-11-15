@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlimited Tool Works: tasks for the maintainer</title>
+<link rel="stylesheet" href="maintainer.css">
+<!--
+For the lead: what waits on the maintainer's hands, one card each: a look at a built window
+or a draft, a test on another machine or in the game, a file only they have. A look reaches
+"Ready for you" only once the lead (or an Opus sidekick) has checked it beside its draft first
+(RUNBOOK.md "Looks owed have one home each"); until then it waits in the list at the bottom. The
+lead's own in-game and window checks stay in WORKLOG.md "Pending looks". A card leaves when its
+result lands in its step.
+
+A card: <section class="entry" id="a-stable-slug"> with an <h3>, a <p class="from"> naming its
+step, what to do as numbered steps, the captures side by side in <div class="shots"> (img/,
+ignored by git), the result options and a <textarea class="own">. `just doc-pointers` checks
+the page.
+-->
+</head>
+<body data-page="tasks">
+<nav class="pages">
+  <a href="questions.html">Questions</a>
+  <a href="proposals.html">Proposals</a>
+  <a class="here" href="tasks.html">Tasks</a>
+  <span class="count" id="count"></span>
+</nav>
+
+<h1>Tasks waiting for you</h1>
+<p class="intro">Each card is something only you can do: a test on another machine or in the
+game, a look at a window the lead has already compared with its draft, or a file only you have.
+Mark how it went, or write it in the box under it; your marks stay in this browser. When
+you're done, press <b>Copy my answers</b> at the bottom and paste the text into the chat.</p>
+<ul id="toc"></ul>
+
+<h2>Tests on another machine or in the game</h2>
+
+<section class="entry" id="linux-reset-window">
+  <h3>Reset window on the Linux virtual machine</h3>
+  <p class="from">From: <code>da241022</code> (Reset window goes away after a click the window did not follow)</p>
+  <p><b>Not ready yet:</b> it needs a Linux bundle built from today's main, which the lead
+  builds on the VPS and then names here. Like the earlier Linux bundles, it needs glibc 2.39
+  or newer.</p>
+  <p>On the 1280 × 800 Linux virtual machine, with the bundle unpacked and started:</p>
+  <ol>
+    <li>Click Reset window in a state where the window cannot change (already at its reset
+    size): the button goes away.</li>
+    <li>Resize the window: the button comes back.</li>
+    <li>Hover the button: the pointer is a hand.</li>
+  </ol>
+  <div class="options">
+    <label class="opt"><input type="radio" value="works"><b>All three as described</b></label>
+    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
+      <div class="note">Say which step below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What you saw (optional)"></textarea>
+</section>
+
+<section class="entry" id="poc5-in-game">
+  <h3>The 0.0.2-poc.5 bundle in the game</h3>
+  <p class="from">From: worklog 0.0.2-poc; yours since 2026-11-11</p>
+  <p>From a fresh extract of the poc.5 archive, on PES 2019: run the upgrade launcher, then the
+  compile launcher, and look at the teams in Edit mode. You handed poc.5 to the organizer; the
+  worklog has no result of this check.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="done, fine"><b>Done, it all worked</b></label>
+    <label class="opt"><input type="radio" value="done, problems"><b>Done, with problems</b>
+      <div class="note">Say what below.</div></label>
+    <label class="opt"><input type="radio" value="no longer needed"><b>No longer needed</b></label>
+  </div>
+  <textarea class="own" placeholder="What you saw (optional)"></textarea>
+</section>
+
+<section class="entry" id="poc6-linux-start">
+  <h3>The Linux bundle 0.0.2-poc.6, started once</h3>
+  <p class="from">From: worklog 0.0.2-poc</p>
+  <p>poc.6 was built on the VPS beside poc.5 and, as far as the worklog knows, never started. Your
+  update test with the Linux rc.1 and rc.2 bundles may have covered the same ground.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="started, fine"><b>Started, and it worked</b></label>
+    <label class="opt"><input type="radio" value="problems"><b>Started, with problems</b>
+      <div class="note">Say what below.</div></label>
+    <label class="opt"><input type="radio" value="covered by the rc update test"><b>No longer needed: the rc update test covered it</b></label>
+  </div>
+  <textarea class="own" placeholder="What you saw (optional)"></textarea>
+</section>
+
+<section class="entry" id="drag-rule-save">
+  <h3>A save for the drag rule's stat pairs</h3>
+  <p class="from">From: worklog 0.0.1y's y4</p>
+  <p>The drag rule maps kicking power to swerve and body control to physical contact, and adds
+  a B bonus in the overall. Checking it on PES 2017 needs a save where those stats differ
+  within each pair.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="here is one, see note"><b>I have one</b>
+      <div class="note">Write its path below.</div></label>
+    <label class="opt"><input type="radio" value="none"><b>I don't have one</b></label>
+  </div>
+  <textarea class="own" placeholder="The save's path (optional)"></textarea>
+</section>
+
+<h2>Looks the lead has checked first</h2>
+<p class="group-intro">Each matched its draft when the lead compared them; anything you see
+otherwise goes back as a fix.</p>
+
+<section class="entry" id="look-similar-players">
+  <h3>Select all similar players: the draft</h3>
+  <p class="from">From: worklog 0.0.2-similar; <code>plans/save_editor.md</code> "Select all similar players", "Several players selected"</p>
+  <p>Open the draft's Save editor on the PES 2021 sample, pick /gd/'s player 10, then press the
+  button under the quick actions.</p>
+  <div class="shots">
+    <figure><a href="img/similar_none.png"><img src="img/similar_none.png" alt="The draft, no position"></a><figcaption>Before the press</figcaption></figure>
+    <figure><a href="img/similar_four.png"><img src="img/similar_four.png" alt="Four similar players selected"></a><figcaption>Four selected</figcaption></figure>
+    <figure><a href="img/similar_five.png"><img src="img/similar_five.png" alt="Five similar players selected"></a><figcaption>Five selected</figcaption></figure>
+  </div>
+  <p class="links"><a href="../prototypes/index.html#save_editor?pes=2021">Open the draft</a></p>
+  <p>The calls to weigh:</p>
+  <ul>
+    <li>only the registered position, the cards and the ability stats are compared;</li>
+    <li>a card only some of the selected players hold shows the mixed mark, and is locked;</li>
+    <li>while several players are selected, Live AATF's marks and the Cards used badge are left out.</li>
+  </ul>
+  <div class="options">
+    <label class="opt"><input type="radio" value="agree with all three"><b>Agree with all three</b></label>
+    <label class="opt"><input type="radio" value="change some, see note"><b>Change some</b>
+      <div class="note">Say which below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-welcome">
+  <h3>The Save editor's welcome panel, and the Ruleset editor's start page</h3>
+  <p class="from">From: worklog 0.0.2-welcome and 0.0.2-startdlg; checked by the lead at <code>852b5f91</code></p>
+  <p>The Save editor with no save open, and the Ruleset editor's toolbar over its start page.</p>
+  <div class="shots">
+    <figure><a href="img/welcome_build.png"><img src="img/welcome_build.png" alt="Welcome panel, build"></a><figcaption>Welcome panel: the build</figcaption></figure>
+    <figure><a href="img/welcome_draft.png"><img src="img/welcome_draft.png" alt="Welcome panel, draft"></a><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><a href="img/ruleset_start_build.png"><img src="img/ruleset_start_build.png" alt="Ruleset editor start page, build"></a><figcaption>Ruleset editor's start page: the build</figcaption></figure>
+    <figure><a href="img/ruleset_start_draft.png"><img src="img/ruleset_start_draft.png" alt="Ruleset editor start page, draft"></a><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-changes-list">
+  <h3>The unsaved changes list</h3>
+  <p class="from">From: worklog 0.0.2-chpop; checked by the lead at <code>852b5f91</code></p>
+  <p>The list that opens from the label under Undo: the red X's, the lines between rows, a
+  row's click going to its player with the list left open, and the close prompt's lines.</p>
+  <div class="shots">
+    <figure><a href="img/changes_list_build.png"><img src="img/changes_list_build.png" alt="Changes list, build"></a><figcaption>The build</figcaption></figure>
+    <figure><a href="img/changes_list_draft.png"><img src="img/changes_list_draft.png" alt="Changes list, draft"></a><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><a href="img/changes_switched.png"><img src="img/changes_switched.png" alt="After a row's click"></a><figcaption>The build after a row's click: its player opened, the list still open</figcaption></figure>
+    <figure><a href="img/changes_prompt.png"><img src="img/changes_prompt.png" alt="Close prompt"></a><figcaption>The build's close prompt</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-picture-dialog">
+  <h3>Save a picture of the formations: the dialog</h3>
+  <p class="from">From: worklog 0.0.2-flatpitch; checked by the lead at <code>b0c2f105</code></p>
+  <p>The Team menu's <code>Save a picture of the formations…</code>: the dialog, Save writing
+  the picture, and its notice's Open folder opening Explorer on the folder.</p>
+  <div class="shots">
+    <figure><a href="img/picture_dialog_build.png"><img src="img/picture_dialog_build.png" alt="Dialog, build"></a><figcaption>The build</figcaption></figure>
+    <figure><a href="img/picture_dialog_draft.png"><img src="img/picture_dialog_draft.png" alt="Dialog, draft"></a><figcaption>The draft</figcaption></figure>
+    <figure><a href="img/picture_saved.png"><img src="img/picture_saved.png" alt="After Save"></a><figcaption>The build after Save, with its notice</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-picture-settings">
+  <h3>Save a picture of the formations: each preset's settings</h3>
+  <p class="from">From: worklog 0.0.2-flatpitch; checked by the lead at <code>0b71f879</code></p>
+  <p>The dialog's "With each preset's settings beside its row" box, and the picture it writes:
+  each preset's settings in a column beside its row. The teams differ between the two
+  pictures; the layout is what to compare.</p>
+  <div class="shots">
+    <figure><a href="img/picture_settings_dialog.png"><img src="img/picture_settings_dialog.png" alt="Dialog with the box ticked"></a><figcaption>The dialog: the build above, the draft below</figcaption></figure>
+    <figure><a href="img/picture_settings_wide.png"><img src="img/picture_settings_wide.png" alt="Settings columns"></a><figcaption>The settings column: the build left, the draft right; under them the foot line, the build's first</figcaption></figure>
+    <figure><a href="img/picture_settings_row.png"><img src="img/picture_settings_row.png" alt="A row of the build's picture"></a><figcaption>A row of the build's picture, zoomed</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<section class="entry" id="look-picture-range">
+  <h3>Formation pictures for a range of teams</h3>
+  <p class="from">From: worklog 0.0.2-flatpitch; checked by the lead at <code>513b72bf</code> on your PES 2021 save, opened read-only</p>
+  <p>The range dialog after your two changes: the count ("210 teams") at the Teams row's right
+  end, under Browse's right edge, and both results' folder on its own line under "they are
+  here:" (stopped after 73 of 210, then all 210 written).</p>
+  <div class="shots">
+    <figure><a href="img/picture_range.png"><img src="img/picture_range.png" alt="Range dialog, build and draft"></a><figcaption>The build left, the draft right: the dialog, a stopped run, a finished one</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
+    <label class="opt"><input type="radio" value="fix, see note"><b>Something to fix</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your note (optional)"></textarea>
+</section>
+
+<h2>Coming once the lead has checked them</h2>
+<p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
+who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
+<ul>
+  <li>The toolbar as a menu bar: the Save editor (no save open, a save open, an event logo drawn) and the Ruleset editor, both themes (0.0.2-bar).</li>
+  <li>The two numbers' toggles disabled under a ruleset without illegal formations, and Kick-off with Fluid formation off, each drawn as a disabled button, both themes (0.0.2-num).</li>
+  <li>The PES selector disabled and empty under the Save editor and the Ruleset editor; a PES 2017 save open with the selector on another version; Choose file starting in the last opened folder; both themes (0.0.2-sel).</li>
+  <li>A bench row dragged onto another bench row, swapping the two in the Tactics lists.</li>
+  <li>A lineup row dragged from its name (0.0.1f's f1e).</li>
+  <li>The players' name colour codes in the light theme (0.0.1ov's ov11b).</li>
+  <li>Ctrl+C in one Save editor window and Ctrl+V in a second, through the system clipboard, and the copied text pasted into a text editor (0.0.2-clip).</li>
+  <li>The toolbar's menus and dropdown lists: entries 21 high that touch, a click on the line between two, the separators' room (0.0.2-gap).</li>
+  <li>The player list's drop line while a player is dragged, and on the first and last row in view (0.0.2-line).</li>
+  <li>The illegal formation warning on a PES 2017 or 2019 save under Spring 26, gone once the named starter is dragged (0.0.2c).</li>
+  <li>The X on each row of the unsaved changes list, and the list after a drag in the player list (0.0.2-undo a and b).</li>
+  <li>The sidebar in a window too short for its entries (0.0.2-side).</li>
+  <li>The Playable positions toggle: Pitch, Left and List, the pick kept after a restart, both themes (0.0.2-poslayout).</li>
+  <li>The 2-point corners, and the update download's bar (0.0.2-rad).</li>
+  <li>A formation picture's hidden formations, each faded shape drawn on its own (0.0.2-flatpitch).</li>
+</ul>
+
+<div class="picks">
+  <button id="copy">Copy my answers</button>
+  <button id="clear">Clear my answers</button>
+  <textarea id="out" readonly placeholder="Your answers appear here, ready to paste into the chat"></textarea>
+</div>
+<script src="maintainer.js"></script>
+</body>
+</html>

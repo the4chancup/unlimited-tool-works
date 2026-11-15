@@ -396,12 +396,12 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
   implementation"): the shell in the host page, `docs/prototypes/index.html`, first, then one
   script per tool as its view comes up (`tools/team_compiler.js`, `tools/save_editor.js`,
   `tools/export_upgrader.js`). Each is reviewed for usability by the lead first (ideas to
-  `PROPOSALS.md`), then refined with the maintainer and kept as the view's specification. Each
+  `maintainer/proposals.html`), then refined with the maintainer and kept as the view's specification. Each
   tool plan says where its draft sits in that tool's build order
 - Before the first tool's draft, one usability pass over what members already touch, built in
   Phases 1-6 (the export format and folder conventions, the message catalogs' texts and what
   each asks of the member, defaults, the handoffs from upgrade to compile to install), its
-  ideas `PROPOSALS.md` entries ruled before the drafts are drawn around them
+  ideas `maintainer/proposals.html` entries ruled before the drafts are drawn around them
 - Complete the `studio_core` app shell (sidebar, tool registry rendering, settings menu with per-tool
   collapsible sections, status bar with its three slots and static empty state, window title
   from activities and the held notice, help window with chapter tree, generated Messages topics,

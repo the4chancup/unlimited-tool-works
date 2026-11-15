@@ -17762,3 +17762,22 @@ the draft: a browser started on every test run and a large tree in every test bu
 recording needed once per draft change, and WebKitGTK's layout on Linux.
 Plan: `plans/core/gui.md` "Prototypes before implementation", the "Measured against the
 draft" bullet. Worklog: the after-0.0.2 item.
+
+## 2026-11-15 — core — The maintainer's documents are HTML pages with choice buttons
+Decision: the questions and proposals for the maintainer, and the tests and looks waiting on
+them, are three pages in `docs/maintainer/` (`questions.html`, `proposals.html`, `tasks.html`)
+in place of `QUESTIONS.md`, `PROPOSALS.md` and the maintainer's lines of the worklog's
+"Pending looks", which keeps the lead's harness checks. Each entry is a card: where it came
+from, the question, its options as radio cards with what each costs, a box for an own answer.
+Picks stay in the browser, and "Copy my answers" gives a text the maintainer pastes into the
+chat, since a page opened from disk cannot write to the repository. A layout choice shows its
+captures side by side from `docs/maintainer/img/`, which git ignores, so screenshots never
+grow the repository and live only on the machine that took them. `just doc-pointers` reads
+the pages: their pointers, their links, each entry's heading and unique id (the key its
+answer is kept under), and a pointer into a page names one of its headings.
+Why: the maintainer: Markdown is limited, and the choice pages made for earlier rulings were
+more interactive and readable; the screenshots ignored by git so the repository does not
+bloat over time (the maintainer). "tasks" is the maintainer's name for the third page; inside
+a folder named for the maintainer it cannot be taken for the worklog's steps.
+Plan: `AGENTS.md` "Working documents"; `RUNBOOK.md` "Looks owed have one home each".
+Worklog: 0.0.2-mdocs.

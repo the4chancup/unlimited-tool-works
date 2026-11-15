@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from doc_pointers import anchors, broken_links, names_anchor, pointers, problems
+from doc_pointers import anchors, broken_links, names_anchor, page_problems, page_text, pointers, problems
 
 PLAN = """# The Compiler
 
@@ -152,6 +152,56 @@ class Problems(unittest.TestCase):
         self.assertEqual(
             broken_links(self.root, source, "see [plan](../plans/core/missing.md)"),
             ["docs/spec/core/README.md:1: link to `../plans/core/missing.md` names no file"],
+        )
+
+
+class Pages(unittest.TestCase):
+    SOURCE = "docs/maintainer/questions.html"
+
+    def setUp(self) -> None:
+        self.dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.dir.name)
+        (self.root / "docs" / "maintainer").mkdir(parents=True)
+        (self.root / "docs" / "maintainer" / "maintainer.css").write_text("", encoding="utf-8")
+
+    def tearDown(self) -> None:
+        self.dir.cleanup()
+
+    def test_a_pointer_in_tags_is_read_on_its_line(self) -> None:
+        page = '<!--\nsee <code>AGENTS.md</code> "Conduct"\n-->\n<p>From: <code>plans/x.md</code> &quot;Gaps &amp; more&quot;</p>'
+        found = pointers(self.SOURCE, page_text(page))
+        self.assertEqual([(p.line, p.path, p.title) for p in found], [(2, "AGENTS.md", "Conduct"), (4, "plans/x.md", "Gaps & more")])
+
+    def test_a_relative_target_must_exist_but_a_capture_or_a_url_need_not(self) -> None:
+        page = (
+            '<link href="maintainer.css"><img src="img/pair.png"><a href="#q1">'
+            '<a href="https://example.org/a">\n<a href="../prototypes/index.html#save_editor?a=1">'
+        )
+        self.assertEqual(
+            page_problems(self.root, self.SOURCE, page),
+            ["docs/maintainer/questions.html:2: `../prototypes/index.html` names no file"],
+        )
+
+    def test_a_pointer_names_a_page_by_its_headings(self) -> None:
+        page = '<h2>After the release</h2>\n<section class="entry" id="t">\n<h3>title.log and <code>chants</code></h3>\n</section>\n'
+        (self.root / self.SOURCE).write_text(page, encoding="utf-8")
+        plan = 'waits on `docs/maintainer/questions.html` "title.log and chants", "After the release"'
+        self.assertEqual(problems(self.root, pointers("docs/plans/music_player.md", plan)), [])
+        self.assertEqual(
+            problems(self.root, pointers("docs/WORKLOG.md", '`maintainer/questions.html` "Chaoshorn"')),
+            ['docs/WORKLOG.md:1: docs/maintainer/questions.html has no "Chaoshorn"'],
+        )
+
+    def test_an_entry_needs_a_heading_and_its_own_id(self) -> None:
+        good = '<section class="entry" id="a">\n<h3>A</h3>\n</section>\n'
+        self.assertEqual(page_problems(self.root, self.SOURCE, good), [])
+        page = good + good + '<section class="entry" id="b">\n<p>no heading</p>\n</section>\n'
+        self.assertEqual(
+            page_problems(self.root, self.SOURCE, page),
+            [
+                'docs/maintainer/questions.html:4: entry id "a" is empty or used twice',
+                'docs/maintainer/questions.html:7: entry "b" has no <h3> heading',
+            ],
         )
 
 

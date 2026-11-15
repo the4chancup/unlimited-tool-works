@@ -503,7 +503,7 @@ Verification covers:
 - **The reading script and the no-file draw.** How the script reads the file (above: the
   hook offers no text reader yet) is the hook author's side of the contract and does not change
   the file. What it does with no file is the staff's and the hook author's call, and decides
-  whom the fallback fill serves (`QUESTIONS.md`).
+  whom the fallback fill serves (`maintainer/questions.html`).
 - **PES 2020.** The referee module's 2020 branch has not been run on a 2020 exe; a run that
   logs the module installing and a forced match settles it.
 - **Do PES 15 and 16 share one pattern table?** The measurements come from one of
