@@ -189,17 +189,20 @@ While only a PES of another version is running, saving asks nothing.
 
 **Unsaved changes**
 
-Closing the window or opening another save with unsaved edits asks first, over a table of
-each changed field with its value in the file and in the editor. Save writes the edits,
-Discard loses them, and Cancel keeps everything as it was.
+Closing the window or opening another save with unsaved edits asks first, over a table
+of each changed field with its value in the file and in the editor. Save writes the
+edits, Discard loses them, and Cancel keeps everything as it was.
+
+Each row ends with an ×, which puts that one change back as the file has it and keeps
+your other edits, so you can drop a change you did not mean and save the rest. The × is
+an undo step like any edit, so Undo brings the change back. Once no row is left there is
+nothing to save, and the window closes or the other save opens.
 
 A player you dragged to another slot in the list shows as one `Player order` row of his
 team, which lists the slots he and the players he shifted held in the file beside the
 slots they hold now, one slot per line. Each of those players lists only what you
-edited on him, since the drag itself is that one row.
+edited on him, since the drag itself is that one row. On that row the × puts every
+player of the row back in his slot in the file, and each keeps what you edited on him.
 
-Clicking `• unsaved changes` on the toolbar shows the same list. Each row there ends with an
-×, which puts that one change back as the file has it and keeps your other edits; the list
-stays open, a row shorter, and closes when no row is left. The × is an undo step like any
-edit, so Undo brings the change back. On a `Player order` row, the × puts every player of the
-row back in his slot in the file, and each keeps what you edited on him.
+Clicking `• unsaved changes` on the toolbar shows the same list, ×'s included. It stays
+open a row shorter after each ×, and closes when no row is left.

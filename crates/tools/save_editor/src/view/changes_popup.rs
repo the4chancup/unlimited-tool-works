@@ -9,14 +9,11 @@ use pes_savefile::EditFile;
 use team_widgets::violations::{SWITCH_TOOLTIP, SelectedPlayer};
 
 use crate::session::PutBack;
-use crate::view::prompt::{self, UnsavedRow};
-use crate::view::{Refusal, SaveView, aatf_check, comparator, following_selection};
+use crate::view::prompt::{self, TableClick, UnsavedRow};
+use crate::view::{Refusal, SaveView, aatf_check, comparator};
 
 /// The label's tooltip.
 const TOOLTIP: &str = "Lists the changes since the save was opened or last saved";
-
-/// The tooltip of a row's X.
-const X_TOOLTIP: &str = "Undoes this change alone";
 
 /// The item's tooltip when a click switches to the row's team.
 const TEAM_SWITCH_TOOLTIP: &str = "Click to switch to this team";
@@ -120,8 +117,9 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
         .corner_radius(ui.visuals().menu_corner_radius)
         .inner_margin(8);
-    // The draft's 460 to 640 points measure the whole box: the content gets
-    // what the frame's margins and stroke leave of them.
+    // The `460` floor and the window cap below measure the whole box,
+    // as the draft's `.chpop` sizes it: the content gets what the
+    // frame's margins and stroke leave of each.
     let chrome = frame.total_margin().sum().x;
     // Each row's item click target's hover text: the cells that offer a
     // switch.
@@ -139,111 +137,27 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
         .show(|ui| {
             ui.set_min_width(460.0 - chrome);
-            ui.set_max_width(640.0 - chrome);
-            click = table_with_xs(ui, &list.rows, &mut list.layout, &tips, 460.0 - chrome);
+            // The box grows with its widest row up to the window less 8
+            // points at each side (the draft's `.chpop` cap, which its
+            // `changesPopup` sets from the window), never under the
+            // floor; a row past it scrolls sideways inside the box.
+            ui.set_max_width((ui.ctx().content_rect().width() - 16.0 - chrome).max(460.0 - chrome));
+            click = prompt::table_with_xs(
+                ui,
+                &list.rows,
+                &mut list.layout,
+                Some(&tips),
+                460.0 - chrome,
+            );
         });
     if shown.is_some_and(|shown| shown.response.should_close()) {
         view.changes_list = None;
     }
     match click {
-        Some(ListClick::PutBack(index)) => put_back_row(view, index),
-        Some(ListClick::Switch(index)) => switch_to(view, index),
+        Some(TableClick::PutBack(index)) => put_back_row(view, index),
+        Some(TableClick::Switch(index)) => switch_to(view, index),
         None => {}
     }
-}
-
-/// A click inside the list's table.
-enum ListClick {
-    /// A row's X: puts that change back alone.
-    PutBack(usize),
-    /// A row's item: switches to what the row names.
-    Switch(usize),
-}
-
-/// The list's table with an X ending each row under an `Undo` head (the
-/// draft's `changesTable` with `undoable`), scrolling up and down past
-/// 240 points; the click inside it this frame. The X's and their head
-/// stand in a column right of the sideways scroll area, inside the one
-/// that scrolls up and down, each on its row's first line: a wide row
-/// scrolls sideways under the column, so neither the head nor an X
-/// leaves the view. A list narrower than `min_width` (the popup's floor)
-/// keeps the column at its right edge, and each separator line is
-/// carried on under the column, so it runs the whole row.
-fn table_with_xs(
-    ui: &mut egui::Ui,
-    rows: &[UnsavedRow],
-    layout: &mut prompt::TableLayout,
-    tips: &[Option<&'static str>],
-    min_width: f32,
-) -> Option<ListClick> {
-    let error = ui.visuals().error_fg_color;
-    let separator = ui.visuals().widgets.noninteractive.bg_stroke;
-    // The head, drawn as the table's other heads are (the strong text
-    // colour); its width sets the column's.
-    let galley =
-        egui::WidgetText::from(egui::RichText::new("Undo").color(ui.visuals().strong_text_color()))
-            .into_galley(
-                ui,
-                Some(egui::TextWrapMode::Extend),
-                f32::INFINITY,
-                egui::TextStyle::Body,
-            );
-    let x_width = ui.spacing().interact_size.y.max(galley.size().x);
-    egui::ScrollArea::vertical()
-        .max_height(240.0)
-        .show(ui, |ui| {
-            ui.horizontal_top(|ui| {
-                let left = ui.cursor().min.x;
-                let spacing = ui.spacing().item_spacing.x;
-                let table_width = (ui.available_width() - x_width - spacing).max(0.0);
-                let table = egui::ScrollArea::horizontal()
-                    .id_salt("save_editor_changes_list_sideways")
-                    .max_width(table_width)
-                    .show(ui, |ui| {
-                        prompt::changes_table(
-                            ui,
-                            rows.iter().map(|row| &row.cells),
-                            Some(tips),
-                            layout,
-                        )
-                    });
-                let column = ui.cursor().min.x.max(left + min_width - x_width);
-                // The head centred in the column, on the header row's
-                // line (its galley centred in a rect of its own size).
-                ui.put(
-                    egui::Rect::from_center_size(
-                        egui::pos2(column + 0.5 * x_width, table.inner.head.center().y),
-                        galley.size(),
-                    ),
-                    egui::Label::new(egui::WidgetText::Galley(galley.clone())),
-                );
-                // Each separator line carried on under the column: drawn
-                // from the row's left edge so the stretch under the table
-                // (which the sideways scroll clips) meets the table's own.
-                for y in &table.inner.lines {
-                    ui.painter()
-                        .hline(table.inner.head.left()..=column + x_width, *y, separator);
-                }
-                let mut click = table.inner.clicked.map(ListClick::Switch);
-                // The X's salt runs from the first drawn row's index, so
-                // a row's X keeps its id as it scrolls in and out of view.
-                ui.skip_ahead_auto_ids(table.inner.items.first().map_or(0, |(index, _)| *index));
-                for &(index, item) in &table.inner.items {
-                    let rect = egui::Rect::from_min_size(
-                        egui::pos2(column, item.top()),
-                        egui::vec2(x_width, item.height()),
-                    );
-                    let x =
-                        egui::Button::new(egui::RichText::new("\u{d7}").color(error)).frame(false);
-                    if ui.put(rect, x).on_hover_text(X_TOOLTIP).clicked() {
-                        click = Some(ListClick::PutBack(index));
-                    }
-                }
-                click
-            })
-            .inner
-        })
-        .inner
 }
 
 /// The item of the list's row `index` clicked: a switch to what the row
@@ -288,29 +202,17 @@ fn switch_to(view: &mut SaveView, index: usize) {
     }
 }
 
-/// The X of the list's row `index` clicked: its change put back as one
-/// undo step, then the list's rows computed again so it stays open a row
-/// shorter, or closed once the save reads clean. A row the session cannot
-/// put back (stale under it, which an open list never is) shows as a
-/// refusal.
+/// The X of the list's row `index` clicked: its change put back
+/// (`prompt::put_back`, the prompt's own X's step), then the list's rows
+/// computed again so it stays open a row shorter, or closed once the
+/// save reads clean.
 fn put_back_row(view: &mut SaveView, index: usize) {
-    // The list comes out of the view for the call: `put_back` runs inside
-    // `following_selection`, which borrows the view mutably.
+    // The list comes out of the view for the call: `put_back` runs
+    // inside `following_selection`, which borrows the view mutably.
     let Some(list) = view.changes_list.take() else {
         return;
     };
-    let Some(result) =
-        following_selection(view, |session| session.put_back(&list.rows[index].put_back))
-    else {
-        view.changes_list = Some(list);
-        return;
-    };
-    if let Err(error) = result {
-        view.refusal = Some(Refusal {
-            title: "Cannot undo this change",
-            message: format!("{error:#}"),
-        });
-        view.changes_list = None;
+    if !prompt::put_back(view, &list.rows[index].put_back) {
         return;
     }
     let session = view.session.as_ref().expect("the put-back ran on it");

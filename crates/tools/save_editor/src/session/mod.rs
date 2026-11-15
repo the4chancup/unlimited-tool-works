@@ -95,7 +95,8 @@ pub(crate) struct MovedPlace {
 }
 
 /// What one row of the unsaved changes names, to put back alone
-/// (`Session::put_back`): the X at the end of the row in the toolbar's list.
+/// (`Session::put_back`): the X at the end of the row, in the toolbar's list and the
+/// close prompt alike.
 #[derive(Debug)]
 pub(crate) enum PutBack {
     /// One field of the player `id`, as `unsaved_changes` compared it.

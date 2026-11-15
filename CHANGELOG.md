@@ -42,9 +42,9 @@
   and Ctrl+V do.
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
-- **Save editor**: each row of the unsaved changes list has an ×, which puts that one change
-  back, and a click on the row's item goes to its player or team. A player dragged in the
-  player list shows there as one `Player order` row.
+- **Save editor**: each row of the unsaved changes list and of the close prompt has an ×,
+  which puts that one change back, and a click on the row's item goes to its player or
+  team. A player dragged in the player list shows there as one `Player order` row.
 - **Save editor**: a player dragged in the player list moves with the pointer, and a line
   shows where he will land.
 - **Save editor**: the Team menu's `Save a picture of the formations…` saves a PNG of the
@@ -176,6 +176,8 @@
 - **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.
+- **Save editor**: the unsaved changes list grows as wide as its longest row, up to the
+  window's width, instead of stopping at 640 points.
 - **Save editor**: the filter box matches an ID from its start, so `820` lists team 820 and
   its squad, no longer every player whose ID holds 820 somewhere.
 - **Save editor**: Page Up and Page Down bring the team row they select to the top of the
