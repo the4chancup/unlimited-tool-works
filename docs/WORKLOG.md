@@ -2196,7 +2196,10 @@ briefs, review loops, gates and mutation runs as for any step.
     loop then one Carbon round (tier 2), or the three loops (tier 1), in this order:
     - [ ] list and keys (tier 2): `d700b3e5` (leeway, idfilter, pgtop, ownteam), `35902abc`
       (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill). SWE-2
-      round 1 in two halves (`.tmp/0_0_2/revdebt/swe_list_{a,b}.md`, worktree `review29`)
+      round 1 in two halves (`.tmp/0_0_2/revdebt/swe_list_{a,b}.md`): 2 of 4 accepted, the
+      loop ends; the fix (a click selecting a row the category hides widens it to All,
+      merge `a5911d60`) and two plan clauses (SE-GUI-08, 83). Carbon's round
+      (`.tmp/0_0_2/revdebt/carbon_list.md`) at `a5911d60`
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
@@ -2227,7 +2230,8 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
-    -> verify: a test measures both gaps from the drawn frames, red first; the built window
+    -> verify: a test measures both gaps from the drawn frames, red first (10 and 8 before);
+    landed (SWE-2, merge `cb074624`); left: the built window beside the draft
   - [x] 0.0.2-picwidth (`be3913bf`, merge `5dfad4e2`) the pictures dialog kept its width only
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
