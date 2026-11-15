@@ -20,7 +20,7 @@ use crate::session::cup::cup_teams;
 use crate::session::selection::{self, ListRow, Row, TeamCategory, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
-use crate::view::{SaveView, Selection, live_marks, quick_actions};
+use crate::view::{Reveal, SaveView, Selection, live_marks, quick_actions};
 
 /// A swatch square's side (the draft's 10px).
 const SWATCH: f32 = 10.0;
@@ -203,12 +203,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category);
     // A page or arrow key moved the selection: its row's index, scrolled
     // to below.
-    let reveal = std::mem::take(&mut view.reveal_selected)
-        .then(|| {
-            rows.iter()
-                .position(|row| Some(row_selection(*row)) == view.selected)
-        })
-        .flatten();
+    let reveal = std::mem::take(&mut view.reveal_selected).and_then(|reveal| {
+        rows.iter()
+            .position(|row| Some(row_selection(*row)) == view.selected)
+            .map(|index| (index, reveal))
+    });
     ui.spacing_mut().scroll = scroll;
     // The rows touch, as the draft's do: `show_rows` adds the item
     // spacing's 3 points under each row, which made them 21 apart.
@@ -234,12 +233,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
                 .show_rows(ui, layout.row_height, rows.len(), |ui, range| {
-                    if let Some(index) = reveal {
+                    if let Some((index, reveal)) = reveal {
                         // `show_rows` draws only the rows in view, so the
                         // row's rect comes from its index, the first drawn
-                        // row standing at the cursor; egui scrolls the
-                        // least that shows it, at once, so a held key's
-                        // repeats never outrun an animation.
+                        // row standing at the cursor; `Nearest` scrolls
+                        // the least that shows it, `Top` to the clip's top
+                        // edge, at once, so a held key's repeats never
+                        // outrun an animation.
                         let top = ui.cursor().top()
                             + (index as f32 - range.start as f32) * layout.row_height;
                         let rect = egui::Rect::from_min_size(
@@ -248,7 +248,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                         );
                         ui.scroll_to_rect_animation(
                             rect,
-                            None,
+                            match reveal {
+                                Reveal::Nearest => None,
+                                Reveal::Top => Some(egui::Align::TOP),
+                            },
                             egui::style::ScrollAnimation::none(),
                         );
                     }
@@ -315,7 +318,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         view.team = TeamChoice::Team(id);
         view.filter.clear();
         view.selected = Some(Selection::Team(id));
-        view.reveal_selected = true;
+        view.reveal_selected = Some(Reveal::Nearest);
     }
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.

@@ -33,6 +33,34 @@ fn page_key_press(window: &mut Headless, view: &mut SaveView, forward: bool) {
     );
 }
 
+/// The list's scroll area's clip rect's top edge, read off the selected
+/// row's fill: it is the painted shape containing `bounds`' centre.
+fn clip_top(
+    window: &Headless,
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> f32 {
+    let selection = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .selection
+        .bg_fill;
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.fill == selection && shape.rect.contains(centre) => {
+                Some(clipped.clip_rect.top())
+            }
+            _ => None,
+        })
+        .expect("the selected row's fill")
+}
+
 // SE-GUI-53
 #[test]
 fn page_down_and_up_step_seven_rows_from_a_number_field() {
@@ -274,6 +302,73 @@ fn the_list_scrolls_to_keep_a_paged_selection_in_view() {
     assert!(
         bounds.y0 >= f64::from(frame.min.y) - 0.5 && bounds.y1 <= f64::from(frame.max.y) + 0.5,
         "the selected row inside the list: {bounds:?} vs {frame:?}"
+    );
+}
+
+// A team row the page keys select stands at the list's top edge, so its
+// players fill the list under it: the scroll reaches its place two frames
+// after the key, one for the move, one for egui to land it.
+// SE-GUI-103
+#[test]
+fn a_team_row_the_page_keys_select_scrolls_to_the_lists_top() {
+    let path = fixture(PesVersion::Pes21, "page_keys_top");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let drawn = listed_selections(&view);
+    let teams: Vec<Selection> = drawn
+        .iter()
+        .copied()
+        .filter(|row| matches!(row, Selection::Team(_)))
+        .collect();
+    let (first, second) = (teams[0], teams[1]);
+    let (Selection::Team(first_id), Selection::Team(second_id)) = (first, second) else {
+        unreachable!("teams holds team rows")
+    };
+    view.selected = Some(first);
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The list stands at its top, the first team's row at the clip's edge.
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, first_id).bounds().expect("bounds");
+    let top = clip_top(&window, &shapes, bounds);
+    assert!(
+        (bounds.y0 - f64::from(top)).abs() <= 1.0,
+        "premise: the list is at its top ({bounds:?} vs {top})"
+    );
+
+    page_key_press(&mut window, &mut view, true);
+    assert_eq!(
+        view.selected,
+        Some(second),
+        "premise: PgDn selected the second team's row"
+    );
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, second_id)
+        .bounds()
+        .expect("the second team's row is drawn");
+    let top = clip_top(&window, &shapes, bounds);
+    assert!(
+        (bounds.y0 - f64::from(top)).abs() <= 1.0,
+        "the second team's row at the list's top ({bounds:?} vs {top})"
+    );
+
+    page_key_press(&mut window, &mut view, false);
+    assert_eq!(
+        view.selected,
+        Some(first),
+        "premise: PgUp selected the first team's row again"
+    );
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, first_id)
+        .bounds()
+        .expect("the first team's row is drawn");
+    let top = clip_top(&window, &shapes, bounds);
+    assert!(
+        (bounds.y0 - f64::from(top)).abs() <= 1.0,
+        "the first team's row back at the list's top ({bounds:?} vs {top})"
     );
 }
 

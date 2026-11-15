@@ -229,8 +229,9 @@ fn the_toggle_moves_the_detail_between_the_three_screens() {
         Some(Selection::Team(718)),
         "Gameplan selected the team's row"
     );
-    assert!(
+    assert_eq!(
         view.reveal_selected,
+        Some(Reveal::Nearest),
         "the list scrolls to show the selected row"
     );
     let nodes = draw(&mut window, &mut view);
