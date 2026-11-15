@@ -2296,7 +2296,8 @@ briefs, review loops, gates and mutation runs as for any step.
       standing notice and `SwitchVersion` removed (ST-BAR-07, 08 withdrawn)
     - [x] its SWE-2 loop (2026-11-12; rulings "S-sel r1" and "S-sel r2", five then two
       accepted; fixes `1c765193` and the commit after it). Carbon owed
-    - [ ] the look in the built window, both themes (Pending looks)
+    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
+      `look-pes-selector` in `docs/maintainer/tasks.html`
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03). It
     holds once a move is one row (the maintainer, 2026-11-12; DECISIONS 2026-11-12;
