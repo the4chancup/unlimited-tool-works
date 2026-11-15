@@ -1349,11 +1349,10 @@ fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> Option<EditAction> {
     let entry =
         |ui: &mut egui::Ui, enabled: bool, label: &str, shortcut: &str, tip: Option<&str>| {
             let button = egui::Button::new(label).shortcut_text(shortcut);
-            let response = add_enabled(ui, enabled, button);
-            let response = match (enabled, tip) {
-                (true, Some(tip)) => response.on_hover_text(tip),
-                _ => response,
-            };
+            let mut response = add_enabled(ui, enabled, button);
+            if let Some(tip) = tip {
+                response = response.on_hover_text(tip);
+            }
             let clicked = response.clicked();
             if clicked {
                 ui.close();
