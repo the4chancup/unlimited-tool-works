@@ -2146,6 +2146,12 @@ briefs, review loops, gates and mutation runs as for any step.
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-picwidth `view::tests::pictures::the_dialog_keeps_its_width_through_the_run`
+    failed in the checkpoint's mutation baseline at `766ccf6c` (the result 523.0 wide, the
+    picking state 522.71875), where it passes in a worktree: the tree's copy sits at a
+    longer path, so the test's long folder line is longer -> verify: reproduced with a
+    longer scratch path, then the dialog (or the test, if its premise is wrong) fixed;
+    SWE-2
   - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
     egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
     row is filled with mid grey at 48 of 255 instead (DECISIONS 2026-11-15) -> verify: a
