@@ -700,6 +700,94 @@ fn another_team_selected_after_the_pick_is_the_one_imported_into() {
     assert_eq!(rostered(&view, THREE), three, "its players untouched");
 }
 
+// SE-GUI-104
+#[test]
+fn the_files_own_team_is_selected_in_one_click() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_team", THREE);
+    let co = export(&view, CO);
+    // A /co/ player's name changed after the export, so the file's
+    // import writes him back: an import that would change nothing has
+    // no Apply to click.
+    let mut edited = rostered(&view, CO)[0].clone();
+    assert_ne!(edited.name, "EDITED", "premise: a new name");
+    edited.name = "EDITED".to_owned();
+    view.session.as_mut().unwrap().edit_players(vec![edited]);
+    let expected = lib_import(&view, &kept(&co, ALL), CO);
+    let (three_team, three) = (team_entry(&view, THREE), rostered(&view, THREE));
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    assert!(
+        panel_lines(&mut window, &mut view).contains(&"Import into /3/ (701) ".to_owned()),
+        "premise: /3/ is the target at the pick"
+    );
+
+    let button = panel_node(&mut window, &mut view, Role::Button, "Select /co/ (714)")
+        .expect("the own-team button");
+    click(&mut window, &button, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(CO)),
+        "the click selected 714's row"
+    );
+    assert_eq!(view.team, TeamChoice::Team(CO), "the selector moved to it");
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.contains(&"Import into /co/ (714) ".to_owned()),
+        "the new target named: {lines:#?}"
+    );
+    assert!(
+        panel_node(&mut window, &mut view, Role::Button, "Select /co/ (714)").is_none(),
+        "the button goes once the file's team is the target"
+    );
+
+    apply(&mut window, &mut view);
+    assert_imported(&view, CO, &expected);
+    assert_eq!(team_entry(&view, THREE), three_team, "/3/ untouched");
+    assert_eq!(rostered(&view, THREE), three, "its players untouched");
+}
+
+// SE-GUI-104
+#[test]
+fn the_own_team_button_is_disabled_on_a_team_the_save_lacks() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_team_missing", THREE);
+    let mut document = TeamToml::parse(&export(&view, CO)).expect("the export parses");
+    document.team.id = Some(99999);
+    assert!(
+        view.session
+            .as_ref()
+            .expect("an open save")
+            .file()
+            .team(99999)
+            .is_none(),
+        "premise: the save has no team 99999"
+    );
+    let text = document.to_toml().expect("the document writes");
+    picked(&mut window, &mut view, "co_missing.toml", text.as_bytes());
+
+    let button = panel_node(&mut window, &mut view, Role::Button, "Select team 99999")
+        .expect("the own-team button");
+    assert!(button.is_disabled(), "disabled on a missing team");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&button), "no team 99999"),
+        Some("The save has no team 99999".to_owned()),
+        "the disabled tooltip names the id"
+    );
+}
+
+// SE-GUI-104
+#[test]
+fn a_squad_file_draws_no_own_team_button() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_team_squad", THREE);
+    picked(&mut window, &mut view, SQUAD_19, &lib_fixture(SQUAD_19));
+    assert!(
+        panel_nodes(&mut window, &mut view).iter().all(|node| {
+            !node
+                .label()
+                .is_some_and(|label| label.starts_with("Select "))
+        }),
+        "no own-team button on a .4ccs"
+    );
+}
+
 // SE-GUI-67
 #[test]
 fn another_save_opened_after_the_pick_keeps_the_file_and_stages_against_it() {
