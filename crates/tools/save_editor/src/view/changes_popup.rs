@@ -188,6 +188,7 @@ fn switch_to(view: &mut SaveView, index: usize) {
                 player,
                 &mut view.selected,
                 &mut view.team,
+                &mut view.team_category,
                 &mut view.filter,
                 &entry.tactics,
                 &mut view.tactics,
@@ -197,6 +198,7 @@ fn switch_to(view: &mut SaveView, index: usize) {
             team_id,
             &mut view.selected,
             &mut view.team,
+            &mut view.team_category,
             &mut view.filter,
         ),
     }

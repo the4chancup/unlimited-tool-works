@@ -19,7 +19,7 @@ use team_widgets::tactics::TacticsView;
 use team_widgets::violations::{ListUse, SelectedPlayer, TeamViolations, Wording, violations_list};
 
 use crate::session::rules::{self, TeamCheck};
-use crate::session::selection::TeamChoice;
+use crate::session::selection::{TeamCategory, TeamChoice};
 use crate::view::Selection;
 use crate::view::worker::{Pending, WorkerResult};
 
@@ -97,24 +97,30 @@ pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Opt
 }
 
 /// A row's click for a team itself (the unsaved changes list's team and
-/// `Player order` rows): the team's own row selected and the selector
-/// moved to it unless it reads ALL (the list must show the row it
-/// selects), the filter cleared as `select_player` clears it.
+/// `Player order` rows): the team's own row selected, the selector moved
+/// to it unless it reads ALL and a category that leaves it out widened to
+/// `All` (the list must show the row it selects), the filter cleared as
+/// `select_player` clears it.
 pub(super) fn select_team(
     team_id: u32,
     selected: &mut Option<Selection>,
     team: &mut TeamChoice,
+    category: &mut TeamCategory,
     filter: &mut String,
 ) {
     *selected = Some(Selection::Team(team_id));
     if *team != TeamChoice::All {
         *team = TeamChoice::Team(team_id);
     }
+    if !category.contains(team_id) {
+        *category = TeamCategory::All;
+    }
     filter.clear();
 }
 
-/// A violation row's click: the player selected and the selector moved to
-/// his team unless it reads ALL (the list must show the row it selects).
+/// A violation row's click: the player selected, the selector moved to
+/// his team unless it reads ALL and a category that leaves it out widened
+/// to `All` (the list must show the row it selects).
 /// A `FieldedNotA` row selects his team's row instead (the pitch his
 /// cross is on is the team view's), the named preset shown on the first
 /// of its fielded formations whose slot for his starting-eleven index
@@ -125,6 +131,7 @@ pub(super) fn select_player(
     player: SelectedPlayer,
     selected: &mut Option<Selection>,
     team: &mut TeamChoice,
+    category: &mut TeamCategory,
     filter: &mut String,
     team_tactics: &TeamTactics,
     tactics_view: &mut TacticsView,
@@ -154,6 +161,9 @@ pub(super) fn select_player(
     };
     if *team != TeamChoice::All {
         *team = TeamChoice::Team(player.team_id);
+    }
+    if !category.contains(player.team_id) {
+        *category = TeamCategory::All;
     }
     // As `open` clears it: the row the click selects would be hidden by a
     // filter matching nothing.

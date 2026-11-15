@@ -700,33 +700,44 @@ fn another_team_selected_after_the_pick_is_the_one_imported_into() {
     assert_eq!(rostered(&view, THREE), three, "its players untouched");
 }
 
-// SE-GUI-104
-#[test]
-fn the_files_own_team_is_selected_in_one_click() {
-    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_team", THREE);
+/// The PES 19 fixture open on /3/ with `/co/`'s Team TOML picked in the
+/// panel: a /co/ player's name changed after the export, so the file's
+/// import writes him back (an import that would change nothing has no
+/// Apply to click). Returns the view, the window and the document's text.
+fn co_picked(test: &str) -> (SaveView, Headless, String) {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, test, THREE);
     let co = export(&view, CO);
-    // A /co/ player's name changed after the export, so the file's
-    // import writes him back: an import that would change nothing has
-    // no Apply to click.
     let mut edited = rostered(&view, CO)[0].clone();
     assert_ne!(edited.name, "EDITED", "premise: a new name");
     edited.name = "EDITED".to_owned();
     view.session.as_mut().unwrap().edit_players(vec![edited]);
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    (view, window, co)
+}
+
+/// The panel's own-team button for a Team TOML of `/co/` (714).
+fn own_team_button(window: &mut Headless, view: &mut SaveView) -> accesskit::Node {
+    panel_node(
+        window,
+        view,
+        Role::Button,
+        "Select the team with this file's ID (714 /co/)",
+    )
+    .expect("the own-team button")
+}
+
+// SE-GUI-104
+#[test]
+fn the_files_own_team_is_selected_in_one_click() {
+    let (mut view, mut window, co) = co_picked("interchange_own_team");
     let expected = lib_import(&view, &kept(&co, ALL), CO);
     let (three_team, three) = (team_entry(&view, THREE), rostered(&view, THREE));
-    picked(&mut window, &mut view, "co.toml", co.as_bytes());
     assert!(
         panel_lines(&mut window, &mut view).contains(&"Import into /3/ (701) ".to_owned()),
         "premise: /3/ is the target at the pick"
     );
 
-    let button = panel_node(
-        &mut window,
-        &mut view,
-        Role::Button,
-        "Select the team with this file's ID (714 /co/)",
-    )
-    .expect("the own-team button");
+    let button = own_team_button(&mut window, &mut view);
     click(&mut window, &button, &mut view);
     assert_eq!(
         view.selected,
@@ -754,6 +765,47 @@ fn the_files_own_team_is_selected_in_one_click() {
     assert_imported(&view, CO, &expected);
     assert_eq!(team_entry(&view, THREE), three_team, "/3/ untouched");
     assert_eq!(rostered(&view, THREE), three, "its players untouched");
+}
+
+// The own-team click under a category that leaves 714 out widens it to
+// `All`, so the list still shows the row the click selected.
+// SE-GUI-83
+#[test]
+fn the_own_team_click_widens_a_category_leaving_the_team_out() {
+    let (mut view, mut window, _) = co_picked("interchange_own_team_vgl");
+    view.team_category = TeamCategory::Vgl;
+    let button = own_team_button(&mut window, &mut view);
+    click(&mut window, &button, &mut view);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::All,
+        "the category widened to All"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(CO)),
+        "the click selected 714's row"
+    );
+}
+
+// A category that holds the clicked team stays: 714 is a 4cc team.
+// SE-GUI-83
+#[test]
+fn the_own_team_click_keeps_a_category_holding_the_team() {
+    let (mut view, mut window, _) = co_picked("interchange_own_team_4cc");
+    view.team_category = TeamCategory::FourCc;
+    let button = own_team_button(&mut window, &mut view);
+    click(&mut window, &button, &mut view);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::FourCc,
+        "the category stays"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(CO)),
+        "the click selected 714's row"
+    );
 }
 
 // SE-GUI-104

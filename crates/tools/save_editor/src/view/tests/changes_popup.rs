@@ -52,6 +52,17 @@ pub(super) fn click_label(window: &mut Headless, view: &mut SaveView) {
     window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
 }
 
+/// The list's item cell labeled `value` (the click target a row's item is
+/// drawn as).
+fn item(window: &mut Headless, view: &mut SaveView, value: &str) -> accesskit::Node {
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    list_nodes(&pairs)
+        .into_iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some(value))
+        .unwrap_or_else(|| panic!("no item {value:?}"))
+        .clone()
+}
+
 /// One frame of the open list: the label's bounds and the popup's outer
 /// box, the frame's painted rect (the draft's `.chpop`: the menu's corner
 /// radius, the panel's fill, the noninteractive stroke, painted inside the
@@ -263,14 +274,6 @@ fn a_rows_item_switches_to_its_player_or_team() {
     let (mut view, _) = three_changes("changes_list_switch");
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
-    let item = |window: &mut Headless, view: &mut SaveView, value: &str| {
-        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-        list_nodes(&pairs)
-            .into_iter()
-            .find(|node| node.role() == Role::Label && node.value() == Some(value))
-            .unwrap_or_else(|| panic!("no item {value:?}"))
-            .clone()
-    };
     let height = item(&mut window, &mut view, "PLACEHOLDER · Height");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&height), "this player").as_deref(),
@@ -315,6 +318,52 @@ fn a_rows_item_switches_to_its_player_or_team() {
         "the team's own row selected"
     );
     assert!(view.changes_list.is_some(), "the list stays open");
+}
+
+// A row's click under a category that leaves the team out widens it to
+// `All`, so the list still shows the row the click selected.
+// SE-GUI-83
+#[test]
+fn a_rows_click_widens_a_category_leaving_the_team_out() {
+    let (mut view, _) = three_changes("changes_list_category");
+    view.team_category = TeamCategory::Vgl;
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+
+    // The team change's row: `All` ticked and 701's own row selected,
+    // listed by `selection::list` for the view.
+    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    click(&mut window, &colour, &mut view);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::All,
+        "the category widened to All"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "the team's own row selected"
+    );
+    let file = view.session.as_ref().unwrap().file();
+    assert!(
+        selection::list(file, &view.team, &view.filter, view.team_category)
+            .contains(&selection::ListRow::Team(701)),
+        "701's row is listed"
+    );
+
+    // A 701 player's stat row the same, with his `Selection::Player`.
+    let height = item(&mut window, &mut view, "PLACEHOLDER · Height");
+    click(&mut window, &height, &mut view);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::All,
+        "the category widened to All"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "70101's row selected"
+    );
 }
 
 // SE-GUI-43

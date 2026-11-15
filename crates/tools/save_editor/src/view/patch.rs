@@ -266,6 +266,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         patch,
         session,
         team,
+        team_category,
         filter,
         selected,
         tactics,
@@ -327,7 +328,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             let Some(entry) = session.file().team(player.team_id) else {
                 return;
             };
-            aatf_check::select_player(player, selected, team, filter, &entry.tactics, tactics);
+            aatf_check::select_player(
+                player,
+                selected,
+                team,
+                team_category,
+                filter,
+                &entry.tactics,
+                tactics,
+            );
         }
         None => {}
     }
