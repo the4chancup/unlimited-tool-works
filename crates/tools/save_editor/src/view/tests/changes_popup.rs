@@ -42,7 +42,7 @@ fn list_rows(window: &mut Headless, view: &mut SaveView) -> Vec<(String, String,
 }
 
 /// A click on the label, then a frame for the popup's first sizing pass.
-fn click_label(window: &mut Headless, view: &mut SaveView) {
+pub(super) fn click_label(window: &mut Headless, view: &mut SaveView) {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     let label = nodes
         .iter()
@@ -148,7 +148,7 @@ pub(super) fn assert_swatch_before(
 /// The PES 21 fixture with player 70101's Height and Speed edited and
 /// team 701's colour 1 set to the stored channels 10, 20, 30; the old
 /// colour's shown channels.
-fn three_changes(test: &str) -> (SaveView, [u8; 3]) {
+pub(super) fn three_changes(test: &str) -> (SaveView, [u8; 3]) {
     let path = fixture(PesVersion::Pes21, test);
     let mut view = SaveView::new();
     view.open(&path);

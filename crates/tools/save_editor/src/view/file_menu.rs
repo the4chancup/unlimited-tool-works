@@ -450,6 +450,18 @@ mod tests {
         names.iter().map(PathBuf::from).collect()
     }
 
+    // Every version's Open shortcut is the digit the File menu's entries
+    // show: 5 to 9 for PES 2015 to PES 2019, then 0 and 1.
+    #[test]
+    fn each_versions_shortcut_reads_its_digit() {
+        assert_eq!(
+            PesVersion::ALL.map(shortcut_text),
+            [
+                "Ctrl+5", "Ctrl+6", "Ctrl+7", "Ctrl+8", "Ctrl+9", "Ctrl+0", "Ctrl+1",
+            ]
+        );
+    }
+
     // The last opened file stands first: a path already in the list moves
     // there once, a new one prepends. The list is uncapped — it holds
     // this run of the program's opens.

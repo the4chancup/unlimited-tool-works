@@ -506,43 +506,144 @@ fn the_edit_menus_redo_is_disabled_over_the_gesture_in_flight() {
     );
 }
 
+/// The "Attacking Prowess" at-most box unchecked (the second of that
+/// name): one recorded edit.
+fn edited(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext) {
+    click_drawn_nth(window, view, ctx, "Attacking Prowess", 1);
+    assert!(
+        !has_at_most(view, "attacking_prowess"),
+        "premise: the click edited the ruleset"
+    );
+}
+
+/// `edited`, then the edit undone: a step waits for Redo.
+fn edited_and_undone(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext) {
+    edited(window, view, ctx);
+    ctrl_key(window, view, ctx, egui::Key::Z);
+    assert!(has_at_most(view, "attacking_prowess"), "premise: undone");
+}
+
 // A shortcut pressed while a menu is open closes it, as a click on an
-// entry does: Ctrl+Z with the Edit menu up undoes the edit and leaves
-// no popup behind.
+// entry does: every arm of the toolbar's close guard, each from a fresh
+// scene with the Edit menu up, the key's own premise set before it.
 // RE-GUI-14
 #[test]
 fn a_shortcut_pressed_over_an_open_menu_closes_it() {
-    let (ctx, _events, mut window, mut view) = fresh_blank();
-    click_drawn_nth(&mut window, &mut view, &ctx, "Attacking Prowess", 1);
-    assert!(
-        !has_at_most(&view, "attacking_prowess"),
-        "premise: the click edited the ruleset"
+    type Case = (
+        &'static str,
+        egui::Key,
+        &'static dyn Fn(&mut Headless, &mut RulesetView, &ToolContext),
     );
+    let cases: Vec<Case> = vec![
+        ("Ctrl+S", egui::Key::S, &|_, _, _| {}),
+        ("Ctrl+Z", egui::Key::Z, &edited),
+        ("Ctrl+Y", egui::Key::Y, &edited_and_undone),
+    ];
+    for (name, pressed, prepare) in cases {
+        let (ctx, _events, _path, mut view) = official_opened("shortcut_closes_menu");
+        let mut window = Headless::new();
+        prepare(&mut window, &mut view, &ctx);
+        let frame = window.draw(&mut view, &ctx);
+        click_labeled(
+            &mut window,
+            &frame.nodes,
+            &menu_label("Edit"),
+            &mut view,
+            &ctx,
+        );
+        window.draw(&mut view, &ctx);
+        assert!(
+            egui::Popup::is_any_open(&window.ctx),
+            "premise: the Edit menu is open"
+        );
 
-    let frame = window.draw(&mut view, &ctx);
-    click_labeled(
+        window.frame(vec![key(pressed, egui::Modifiers::CTRL)], |ui| {
+            show(ui, &mut view, &ctx)
+        });
+        window.draw(&mut view, &ctx);
+        assert!(
+            !egui::Popup::is_any_open(&window.ctx),
+            "{name}: the menu closed on the shortcut's frame"
+        );
+    }
+}
+
+/// One frame of `view` under an `egui::Modal`, as the shell's Settings,
+/// Report a problem, the update dialog or About stands over the tool's
+/// view: egui marks the layer modal at the frame's end, so the frame
+/// before a gated key must draw it already.
+fn frame_under_modal(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    events: Vec<egui::Event>,
+) {
+    window.frame(events, |ui| {
+        show(ui, view, ctx);
+        egui::Modal::new(egui::Id::unique("shell_modal")).show(ui.ctx(), |ui| {
+            ui.label("modal");
+        });
+    });
+}
+
+// The shell's own modals are egui's top modal layer over the tool's
+// view, and the same rule holds: no shortcut acts behind one — an undo
+// under Settings would step the document unseen.
+#[test]
+fn no_shortcut_acts_behind_a_shell_modal() {
+    let (ctx, _events, path, mut view) = official_opened("shell_modal_shortcuts");
+    let mut window = Headless::new();
+    // Two edits — "Attacking Prowess" unchecked, "Tight Possession"
+    // checked — the second undone: a step to undo and one to redo, the
+    // file not yet written with them.
+    edited(&mut window, &mut view, &ctx);
+    click_drawn_nth(&mut window, &mut view, &ctx, "Tight Possession", 0);
+    assert!(
+        rating(&view).iter().any(|name| name == "tight_possession"),
+        "premise: a second edit"
+    );
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert!(
+        !rating(&view).iter().any(|name| name == "tight_possession"),
+        "premise: a step to redo"
+    );
+    let before = std::fs::read(&path).unwrap();
+
+    frame_under_modal(&mut window, &mut view, &ctx, Vec::new());
+    assert!(
+        window
+            .ctx
+            .memory(|memory| memory.top_modal_layer())
+            .is_some(),
+        "premise: egui's top modal layer is registered"
+    );
+    frame_under_modal(
         &mut window,
-        &frame.nodes,
-        &menu_label("Edit"),
         &mut view,
         &ctx,
-    );
-    window.draw(&mut view, &ctx);
-    assert!(
-        egui::Popup::is_any_open(&window.ctx),
-        "premise: the Edit menu is open"
-    );
-
-    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    window.draw(&mut view, &ctx);
-    assert!(
-        !egui::Popup::is_any_open(&window.ctx),
-        "the menu closed on the shortcut's frame"
+        vec![key(egui::Key::Z, egui::Modifiers::CTRL)],
     );
     assert!(
-        has_at_most(&view, "attacking_prowess"),
-        "the undo took effect"
+        !has_at_most(&view, "attacking_prowess"),
+        "no undo behind the modal"
     );
+    frame_under_modal(
+        &mut window,
+        &mut view,
+        &ctx,
+        vec![key(egui::Key::Y, egui::Modifiers::CTRL)],
+    );
+    assert!(
+        !rating(&view).iter().any(|name| name == "tight_possession"),
+        "no redo behind the modal"
+    );
+    frame_under_modal(
+        &mut window,
+        &mut view,
+        &ctx,
+        vec![key(egui::Key::S, egui::Modifiers::CTRL)],
+    );
+    assert_file_unchanged(&path, &before);
 }
 
 #[test]
