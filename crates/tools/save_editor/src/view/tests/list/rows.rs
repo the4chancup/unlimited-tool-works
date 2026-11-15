@@ -80,7 +80,7 @@ fn a_click_where_two_team_rows_meet_in_the_dropdown_picks_one() {
 // The team row's own paint, the draft's `trow`: the id in the weak
 // colour at the row's left padding, the colours 1-2 as swatches 3 apart,
 // the name in the strong colour after a further item spacing, each
-// centred on the row — over the faint fill that sets it apart from a
+// centred on the row — over the team row's fill that sets it apart from a
 // player row, the selection's or the hover's fill over that.
 // SE-GUI-37
 #[test]
@@ -116,6 +116,7 @@ fn the_team_row_paints_its_parts_over_its_fills() {
         let style = window.ctx.style_of(window.ctx.theme());
         (style.spacing.clone(), style.visuals.clone())
     };
+    let team_row_fill = studio_core::theme::palette(&visuals).team_row_fill;
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let row = team_row(&nodes, &view, 701)
         .bounds()
@@ -201,12 +202,12 @@ fn the_team_row_paints_its_parts_over_its_fills() {
         "the name in the strong colour"
     );
 
-    // Unselected under no pointer the row paints the faint fill that sets
-    // it apart from a player row; hovered the hover's, selected the
+    // Unselected under no pointer the row paints the team row's fill that
+    // sets it apart from a player row; hovered the hover's, selected the
     // selection's.
     assert!(
-        covers_row(&shapes, row, visuals.faint_bg_color),
-        "the faint fill under the unselected row"
+        covers_row(&shapes, row, team_row_fill),
+        "the team row's fill under the unselected row"
     );
     let (_, _, shapes) = window.frame(
         vec![egui::Event::PointerMoved(egui::pos2(
@@ -220,12 +221,12 @@ fn the_team_row_paints_its_parts_over_its_fills() {
         "the hover fill under the hovered row"
     );
     assert!(
-        !covers_row(&shapes, row, visuals.faint_bg_color),
-        "no faint fill under the hovered row"
+        !covers_row(&shapes, row, team_row_fill),
+        "no team row fill under the hovered row"
     );
     // Selected with the pointer gone (a frame before: the frame that
     // receives `PointerGone` still reports the row hovered), so the
-    // selection alone holds the faint fill back.
+    // selection alone holds the team row fill back.
     window.frame(vec![egui::Event::PointerGone], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -239,12 +240,12 @@ fn the_team_row_paints_its_parts_over_its_fills() {
         "the selection fill under the selected row"
     );
     assert!(
-        !covers_row(&shapes, row, visuals.faint_bg_color),
-        "no faint fill under the selected row"
+        !covers_row(&shapes, row, team_row_fill),
+        "no team row fill under the selected row"
     );
 
     // Unselected, the pointer still gone, focused by the keyboard: no
-    // faint fill either.
+    // team row fill either.
     view.selected = None;
     let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let label = format!("701 {}", display_name(&team_entry(&view, 701).name));
@@ -255,8 +256,8 @@ fn the_team_row_paints_its_parts_over_its_fills() {
     action_focus(&mut window, &mut view, *row_id);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        !covers_row(&shapes, row, visuals.faint_bg_color),
-        "no faint fill under the focused row"
+        !covers_row(&shapes, row, team_row_fill),
+        "no team row fill under the focused row"
     );
 }
 
