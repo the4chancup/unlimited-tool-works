@@ -18001,3 +18001,13 @@ the comment still told a member editing it by hand what they did. Removing every
 silently drop a mistyped key; naming the two retired keys does neither.
 Plan: `plans/core/distribution.md` "Self-update" step 1, the paragraph starting "A settings
 file written by 0.0.1". Worklog: 0.0.2-upd.
+
+## 2026-11-15 — studio_core — While the version is 0.x, a settings key the program no longer reads gets no handling
+Decision: a key the program stops reading stays in the settings file as written, neither
+removed nor refused. This reverses the entry above, which removed the two retired update-check
+keys on save: `check_interval_minutes` and `last_update_check` now stay in an older file,
+unread.
+Why: simplicity while the program is pre-release. Removing a retired key, or refusing it, is
+code to write, test and keep.
+Plan: `plans/core/distribution.md` "Self-update", the paragraph starting "The settings file
+needs no transfer". Worklog: 0.0.2-upd.
