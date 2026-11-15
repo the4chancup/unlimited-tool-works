@@ -492,6 +492,146 @@ fn a_team_row_selection_opens_the_window_on_the_teams_first_filled() {
     );
 }
 
+// A team row clicked under the open window gives that team's first
+// filled player as the Destination, as the window's opening on a team
+// row does.
+#[test]
+fn a_team_row_click_under_the_window_gives_its_first_player() {
+    let path = fixture(PesVersion::Pes21, "copy_window_team_click");
+    // The marked players' names single A out: a Destination that stayed
+    // on him reads "01 … DEST", not the clicked team's first player's.
+    mark_copy_players(&path, PesVersion::Pes21);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let (first_slot, first_id) = rostered(&view, 702)
+        .first()
+        .copied()
+        .expect("702 has a filled slot");
+    let first = player_entry(&view, first_id);
+
+    open_window(&mut window, &mut view);
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, team_row(&nodes, &view, 702), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(702)),
+        "the click selected 702's row"
+    );
+    assert!(view.copy_swap.is_some(), "the window stays open");
+
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        destination_label(&nodes),
+        slot_label(&first, first_slot),
+        "the Destination is the clicked team's first filled slot"
+    );
+}
+
+// A roster write under the open window — `edit_team` trading two slots'
+// players, the numbers staying at their slots as a move leaves them —
+// re-reads each pick's player off the roster: the Destination dropdown
+// names the player the slot now holds and Copy writes him.
+#[test]
+fn a_roster_write_under_the_window_moves_the_pick_with_the_slot() {
+    let path = fixture(PesVersion::Pes21, "copy_window_roster_write");
+    mark_copy_players(&path, PesVersion::Pes21);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let a_before = player_entry(&view, 70101);
+    let b_before = player_entry(&view, 70102);
+
+    // The window open on Source 701's 01 and Destination 701's 02.
+    let nodes = open_window(&mut window, &mut view);
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Destination")[1],
+        &slot_label(&b_before, 1),
+    );
+
+    // 01 and 02 trade roster places: slot 02 now holds another player.
+    let session = view.session.as_mut().unwrap();
+    let mut team = session.file().team(701).unwrap().clone();
+    (team.roster[0].player_id, team.roster[1].player_id) =
+        (team.roster[1].player_id, team.roster[0].player_id);
+    session.edit_team(1, team);
+    assert_eq!(
+        team_entry(&view, 701).roster[1].player_id,
+        70101,
+        "premise: slot 02 holds another player"
+    );
+
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        destination_label(&nodes),
+        slot_label(&a_before, 1),
+        "the Destination dropdown names the player 02 now holds"
+    );
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Copy"),
+        &mut view,
+    );
+    assert_eq!(
+        player_entry(&view, 70101),
+        with_stats_of(&a_before, &b_before),
+        "Copy wrote the player 02 now holds"
+    );
+}
+
+// Ctrl+C then Ctrl+V on the player list's rows under the open window
+// copy and paste as they do without it: A's stats land on B's row.
+#[test]
+fn ctrl_c_and_ctrl_v_work_under_the_open_window() {
+    let path = fixture(PesVersion::Pes21, "copy_window_clipboard");
+    mark_copy_players(&path, PesVersion::Pes21);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let a_before = player_entry(&view, 70101);
+    let b_before = player_entry(&view, 70102);
+    let expected = with_stats_of(&b_before, &a_before);
+    assert_ne!(expected, b_before, "premise: the paste changes B");
+
+    let nodes = open_window(&mut window, &mut view);
+    click(
+        &mut window,
+        row(&nodes, &slot_label(&a_before, 0)),
+        &mut view,
+    );
+    window.frame(vec![egui::Event::Copy], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let copied = window
+        .commands
+        .iter()
+        .find_map(|command| match command {
+            egui::OutputCommand::CopyText(text) => Some(text.clone()),
+            _ => None,
+        })
+        .expect("Ctrl+C put a text on the system clipboard");
+
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        row(&nodes, &slot_label(&b_before, 1)),
+        &mut view,
+    );
+    window.frame(vec![egui::Event::Paste(copied)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+
+    assert_eq!(
+        player_entry(&view, 70102),
+        expected,
+        "B's record is what Copy stats from A writes"
+    );
+    assert!(view.copy_swap.is_some(), "the window stays open");
+}
+
 // The window first stands centred horizontally, its bottom edge 56
 // points above the content rect's bottom; dragged by its title bar it
 // stands where it was dropped.
@@ -636,6 +776,14 @@ fn copy_stats_writes_the_field_set_and_nothing_else() {
     let source_before = player_entry(&view, 70102);
     // Premises: the fields a copy must and must not carry all differ.
     assert_ne!(dest_before.stats, source_before.stats);
+    assert_ne!(
+        (dest_before.stats.star, dest_before.stats.playing_attitude),
+        (
+            source_before.stats.star,
+            source_before.stats.playing_attitude
+        ),
+        "premise: the kept star and attitude differ"
+    );
     assert_ne!(dest_before.positions, source_before.positions);
     assert_ne!(dest_before.name, source_before.name);
     assert_ne!(dest_before.motion, source_before.motion);

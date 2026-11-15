@@ -315,7 +315,7 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 Some(Ok(path)) => {
                     view.notice = Some(Notice {
                         text: format!(
-                            "{} written (one row per player of every team)",
+                            "{} written (one row per player of every cup team)",
                             interchange::file_name(&path)
                         ),
                         kind: NoticeKind::Success,

@@ -1668,6 +1668,7 @@ fn scroll_names_off_holds_wide_names_still_at_the_badges_left() {
 // end, Live AATF's cross standing on the badge, centred, its lower ends
 // touching it. (Both frames run at the same clock, so a scrolling
 // name's offset is 0 on each and the positions compare equal.)
+// SE-GUI-81
 #[test]
 fn portraits_off_leaves_a_marker_his_badge_and_name_alone() {
     let mut window = Headless::sized(600.0, 450.0);
@@ -1805,6 +1806,45 @@ fn portraits_off_leaves_a_marker_his_badge_and_name_alone() {
         ),
         "the mark on the badge's top edge at its left end"
     );
+
+    // The white mark inside it, a pixel in from its left and top, and
+    // the "C" at its centre.
+    let white_box = |shapes: &[egui::epaint::ClippedShape]| {
+        let boxes: Vec<egui::Rect> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == Palette::DARK.captain_fill
+                        && shape.rect.size() == egui::vec2(12.0, 11.0) =>
+                {
+                    Some(shape.rect)
+                }
+                _ => None,
+            })
+            .collect();
+        let [white] = boxes.as_slice() else {
+            panic!("the captain's white mark alone")
+        };
+        *white
+    };
+    let mark_off = white_box(&shapes_off);
+    assert_eq!(
+        mark_off,
+        egui::Rect::from_min_max(
+            egui::pos2(badge2.left() + 1.0, badge2.top() - 12.0),
+            egui::pos2(badge2.left() + 13.0, badge2.top() - 1.0),
+        ),
+        "the white mark inside the outer box"
+    );
+    let c = shapes_off
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.job.text == "C" => Some(shape),
+            _ => None,
+        })
+        .next()
+        .expect("the captain's C paints");
+    near(c.visual_bounding_rect().center(), mark_off.center(), 1.0);
 
     // Live AATF's cross keeps its size, centred over the badge with its
     // lower ends touching the badge's top.

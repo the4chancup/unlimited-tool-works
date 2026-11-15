@@ -357,7 +357,7 @@ fn output_rosters_to_tsv_says_what_it_wrote() {
     assert!(target.is_file(), "the sheet is written");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("EDIT.tsv written (one row per player of every team)")
+        Some("EDIT.tsv written (one row per player of every cup team)")
     );
     assert!(view.refusal.is_none(), "no refusal");
 }

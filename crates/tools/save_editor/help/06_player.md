@@ -8,7 +8,7 @@ The **Player** menu works on the selected player:
   amount used in this window.
 - **Hide default body (Enable FPC)** or **Show default body (Disable FPC)**
   (Ctrl+I): the entry's label names what the press will do, following the
-  Appearance section's FPC reading: it shows the default body of a player
+  Appearance section's FPC reading. It shows the default body of a player
   who reads "The default body is currently hidden" and hides any other's,
   the same write as the section's Show default body and Hide default body.
 - **Copy/swap stats…** opens a window that copies one player's stats onto another,
@@ -28,11 +28,13 @@ Appearance section).
 **Copy and Swap stats**
 
 The window has two rows, Source and Destination, each picked by team, then by
-roster slot; both start on the selected player. It stays open over the editor,
-and selecting a row in the player list makes that player the Destination, so
-one player's stats go onto several others with a click on each and **Copy**.
-**Swap** trades the two players' stats instead. A line in the window says what
-the last Copy or Swap did.
+roster slot; both start on the selected player, or on the team's first player
+when a team row is selected. It stays open over the editor, and selecting a
+player row in the list makes that player the Destination (a team row, its first
+player), so one player's stats go onto several others with a click on each and
+**Copy**. **Swap** trades the two
+players' stats instead. A line in the window says what the last Copy or Swap
+did.
 
 Height, weight, every
 ability, form, injury, weak foot, positions, playing style, skills and COM

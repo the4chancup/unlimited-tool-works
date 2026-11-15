@@ -116,14 +116,14 @@ pub struct Palette {
     /// Live AATF's pitch cross over a Warning's portrait: the dark theme's
     /// warning amber in both themes, because it sits on the turf and the
     /// badges, which do not follow the theme. The light theme's warning colour,
-    /// darkened for the light panel, would read at 1.5 to 1.7 on the turf's
-    /// bands, where this one reads at 2.9 to 3.3.
+    /// darkened for the light panel, would read at 1.5 to 1.7 on PES 2021's
+    /// turf bands, where this one reads at 2.9 to 3.3.
     pub pitch_warn: egui::Color32,
     /// Live AATF's pitch cross over an Error's portrait: the dark theme's
     /// error red in both themes, because it sits on the turf and the badges,
     /// which do not follow the theme. The light theme's error colour,
-    /// darkened for the light panel, would read at 1.4 to 1.6 on the turf's
-    /// bands, where this one reads at 2.2 to 2.5.
+    /// darkened for the light panel, would read at 1.4 to 1.6 on PES 2021's
+    /// turf bands, where this one reads at 2.2 to 2.5.
     pub pitch_error: egui::Color32,
     /// The captain mark's box over his portrait.
     pub captain_fill: egui::Color32,

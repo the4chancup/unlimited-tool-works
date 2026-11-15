@@ -1238,6 +1238,27 @@ mod tests {
             egui::FontFamily::Name("label".into()),
             "the version's text is not the label family"
         );
+
+        // A held condition's text keeps the body weight too.
+        app.status_bar.set_condition(
+            ShellCondition::SettingsSaveFailed {
+                error: "read-only".to_owned(),
+            },
+            true,
+        );
+        let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+        let section = bar_text_shape(&out, "Settings could not be saved")
+            .expect("the condition's text is painted")
+            .galley
+            .job
+            .sections
+            .first()
+            .expect("a text section");
+        assert_ne!(
+            section.format.font_id.family,
+            egui::FontFamily::Name("label".into()),
+            "the condition's text is not the label family"
+        );
     }
 
     // ST-SET-03

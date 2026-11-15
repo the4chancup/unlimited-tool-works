@@ -1521,6 +1521,7 @@ fn box_at(rects: &[egui::Rect], left: f64, tol: f64) -> egui::Rect {
 // the formation bar's first button on the pitch's left; row 3's panels
 // top 6 under row 2's bottom, the two lists halves of columns 2-3 less a
 // 6-point gap.
+// SE-GUI-81
 #[test]
 fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     let path = fixture(PesVersion::Pes21, "tactics_grid");
@@ -3448,6 +3449,7 @@ fn scroll_names_is_a_remembered_view_setting() {
 // change and pushes no undo entry, it writes `portraits` to the tool's
 // settings, a fresh Tool on the same settings reads it back, and an
 // open of another save keeps it.
+// SE-GUI-81
 #[test]
 fn portraits_is_a_remembered_view_setting() {
     use studio_core::StudioTool;
