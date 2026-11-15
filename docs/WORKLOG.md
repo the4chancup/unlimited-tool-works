@@ -2383,8 +2383,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the rework (SWE-2 and the lead's help text, merge `b44c8e1e`)
     - [x] Carbon's round 4, 2026-11-15 (at `b44c8e1e`): 5 of 6 accepted
     - [x] the rework (SWE-2, merge `fa472c3b`)
-    - [x] Carbon's round 5, 2026-11-15 (at `fa472c3b`): 7 of 7 accepted: five tests that pass
-      on wrong code, a dead width branch, three stale comments, SE-GUI-79's Save as notice
+    - [x] Carbon's round 5, 2026-11-15 (at `fa472c3b`): 6 of 7 accepted: three tests that
+      pass on wrong code, a dead width branch, stale comments, SE-GUI-79's Save as notice
       (the lead's plan edit)
     - [ ] the rework (SWE-2, `.tmp/0_0_2/bar/rework_c5.md`), then Carbon's round 6
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
@@ -2650,10 +2650,9 @@ briefs, review loops, gates and mutation runs as for any step.
         help named the whole bars where only their buttons pick (`d95ac237`, the lead)
       - [x] the rework (SWE-2 and the lead, 2026-11-15; merge `3598dc7e`): a selector's
         target ends with its team row; the Edit menu's Copy and Paste
-      - [x] Carbon's round 3, 2026-11-15 (at `3598dc7e`): 7 of 9 accepted: a navigation key
-        and Ctrl+V in one frame paste a preset from a player row; three tests that pass on
-        wrong code; a hover gate egui already applies; the help's Copy and paste section,
-        SE-GUI-56 and the changelog's Edit menu line (the lead's)
+      - [x] Carbon's round 3, 2026-11-15 (at `3598dc7e`): 6 of 9 accepted: three tests that
+        pass on wrong code; a hover gate egui already applies; the help's Copy and paste
+        section, SE-GUI-56 and the changelog's Edit menu line (the lead's)
       - [ ] the rework (SWE-2, `.tmp/0_0_2/clip/rework_c3.md`), then Carbon's round 4
   - [x] 0.0.2-statlbl 2026-11-12 (`e4bf0a92`, SWE-2 and the lead; merge `13fa465c`; plan
     and draft `43770f93`): the name of an ability stat the save's version does not store is
