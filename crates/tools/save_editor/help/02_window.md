@@ -5,14 +5,19 @@ The Save editor's window opens a save (`EDIT00000000`, or a copy of it) and edit
 The **File** menu lists, from the top:
 
 - the saves found in your Documents folder for every PES version, each named by its version,
-  so your game's save opens in one click (hover an entry to see its full path). From anywhere
-  in the editor, Ctrl+5 to Ctrl+9 open the save of PES 2015 to PES 2019, Ctrl+0 PES 2020's and
-  Ctrl+1 PES 2021's, or the file picker when no save of that version was found;
-- the files you opened since the program started, the most recent first;
+  so your game's save opens in one click (hover an entry to see its full path);
+- the files you opened or saved since the program started, the most recent first;
 - **Choose file…** (Ctrl+O), which picks any file and starts in the folder the last save
   was opened from when it exists, or in the newest found save's folder;
 - under a line, **Save** (Ctrl+S) and **Save as…**, which write the open save (see **Saving**
   below) and stay greyed out until a save is open.
+
+With no save open, the middle of the window offers the same saves, recent files and
+**Choose file…**.
+
+Ctrl+5 to Ctrl+9 open the newest save found for PES 2015 to PES 2019, Ctrl+0 PES 2020's and
+Ctrl+1 PES 2021's, or the file picker when none was found. They do nothing while you type in
+a field or a dialog is open.
 
 Once a save is open, the window's title bar shows its path, in square brackets after the
 editor's name, and the toolbar shows `• unsaved changes` while edits wait unsaved.

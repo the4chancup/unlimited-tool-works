@@ -447,6 +447,104 @@ fn the_edit_menus_undo_covers_the_gesture_in_flight() {
     assert_eq!(ruleset_name(&view), "New ruleset", "the typing undone");
 }
 
+// After an undo, a gesture still in flight is a new edit waiting to seal,
+// and sealing it empties the redo history: Redo is disabled while it
+// differs, where Undo stays enabled to step over it. The menu opens
+// through the AccessKit click, which moves no keyboard focus: a pointer
+// press would seal the gesture before the menu's first draw.
+// RE-GUI-14
+#[test]
+fn the_edit_menus_redo_is_disabled_over_the_gesture_in_flight() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    // One edit, undone: Redo has a step it could offer.
+    click_drawn_nth(&mut window, &mut view, &ctx, "Attacking Prowess", 1);
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert!(
+        view.document.as_ref().unwrap().can_redo(),
+        "premise: the undo left a step to redo"
+    );
+
+    // "Tight Possession" focused as a Tab lands it, then toggled with
+    // Space: a differing edit still in flight.
+    let (pairs, frame) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &ctx));
+    let bounds = nodes_labeled(&frame.nodes, "Tight Possession")[0]
+        .bounds()
+        .expect("the checkbox's bounds");
+    action_focus(&mut window, &mut view, &ctx, node_id(&pairs, bounds));
+    let space = |pressed: bool| egui::Event::Key {
+        key: egui::Key::Space,
+        physical_key: None,
+        pressed,
+        modifiers: egui::Modifiers::NONE,
+        repeat: false,
+    };
+    window.frame(vec![space(true), space(false)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert!(
+        rating(&view).iter().any(|name| name == "tight_possession"),
+        "premise: the Space press checked it"
+    );
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the checkbox still holds the keyboard, its edit unsealed"
+    );
+
+    let (pairs, frame) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &ctx));
+    let bounds = node(&frame.nodes, &menu_label("Edit"))
+        .bounds()
+        .expect("the Edit menu button's bounds");
+    action_click(&mut window, &mut view, &ctx, node_id(&pairs, bounds));
+    let frame = window.draw(&mut view, &ctx);
+    assert!(
+        node(&frame.nodes, "Redo Ctrl+Y").is_disabled(),
+        "Redo is disabled while the gesture in flight differs"
+    );
+    assert!(
+        !node(&frame.nodes, "Undo Ctrl+Z").is_disabled(),
+        "Undo is enabled"
+    );
+}
+
+// A shortcut pressed while a menu is open closes it, as a click on an
+// entry does: Ctrl+Z with the Edit menu up undoes the edit and leaves
+// no popup behind.
+// RE-GUI-14
+#[test]
+fn a_shortcut_pressed_over_an_open_menu_closes_it() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    click_drawn_nth(&mut window, &mut view, &ctx, "Attacking Prowess", 1);
+    assert!(
+        !has_at_most(&view, "attacking_prowess"),
+        "premise: the click edited the ruleset"
+    );
+
+    let frame = window.draw(&mut view, &ctx);
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        &menu_label("Edit"),
+        &mut view,
+        &ctx,
+    );
+    window.draw(&mut view, &ctx);
+    assert!(
+        egui::Popup::is_any_open(&window.ctx),
+        "premise: the Edit menu is open"
+    );
+
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    window.draw(&mut view, &ctx);
+    assert!(
+        !egui::Popup::is_any_open(&window.ctx),
+        "the menu closed on the shortcut's frame"
+    );
+    assert!(
+        has_at_most(&view, "attacking_prowess"),
+        "the undo took effect"
+    );
+}
+
 #[test]
 fn the_checklists_draw_held_stats_checked_and_a_toggle_keeps_the_rest() {
     let (ctx, _events, mut window, mut view) = fresh_blank();

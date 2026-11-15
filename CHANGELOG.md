@@ -94,7 +94,7 @@
 - **Save editor**: with no save open, the middle of the window lists the saves found in
   Documents (the newest of each version with its shortcut), the files opened earlier, and
   Choose file… (Ctrl+O).
-- **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open is
+- **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open… is
   there before a ruleset is open.
 - **Save editor**: while a Starting eleven or Bench row is dragged over a player on the
   Tactics pitch, that player is marked as a dragged pitch player's target is, so you see

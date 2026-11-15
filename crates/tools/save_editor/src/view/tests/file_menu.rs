@@ -143,15 +143,15 @@ fn menu_shown(window: &Headless, nodes: &[accesskit::Node]) -> bool {
 fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save() {
     let tree = tree("open_menu_entries");
     let mut view = SaveView::new();
-    view.open(&tree.elsewhere);
+    view.open(&tree.pes21_old);
     let calls = discover_counted(&mut view, &tree.documents);
     let mut window = Headless::new();
 
     let nodes = open_menu(&mut window, &mut view, "File", PES19_ENTRY);
-    // The scratch folder's name, then the save's folder and file name,
-    // joined by the platform's separator.
+    // The recent entry is one of the discovered saves, its label the
+    // path's last three parts: the account folder, `save`, the file.
     let recent = format!(
-        "open_menu_entries{0}elsewhere{0}EDIT00000000",
+        "292733975847239680{0}save{0}EDIT00000000",
         std::path::MAIN_SEPARATOR
     );
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
@@ -202,7 +202,7 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
         tree.pes19.display().to_string(),
         tree.pes21_new.display().to_string(),
         tree.pes21_old.display().to_string(),
-        tree.elsewhere.display().to_string(),
+        tree.pes21_old.display().to_string(),
         "Pick a save file, starting in the folder of the save opened last (or else of the newest save found)".to_owned(),
     ];
     for (place, tip) in tips.iter().enumerate() {
@@ -226,6 +226,10 @@ fn the_file_menu_lists_the_discovered_saves_the_recent_file_the_picker_then_save
 
     // A discovered entry opens its save.
     click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
+    assert!(
+        !egui::Popup::is_any_open(&window.ctx),
+        "the click closed the menu"
+    );
     let session = view.session.as_ref().expect("a save is open");
     assert_eq!(session.path(), tree.pes19.as_path());
     assert_eq!(session.version(), PesVersion::Pes19);
@@ -920,7 +924,7 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
 fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     let tree = tree("welcome_panel");
     let mut view = SaveView::new();
-    view.open(&tree.elsewhere);
+    view.open(&tree.pes21_old);
     view.session = None;
     discover_counted(&mut view, &tree.documents);
     let mut window = Headless::new();
@@ -935,8 +939,10 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         label_value(&nodes, "Saves in Documents") && label_value(&nodes, "Recent"),
         "the panel's two headings"
     );
+    // The recent entry is one of the discovered saves, its label the
+    // path's last three parts: the account folder, `save`, the file.
     let recent = format!(
-        "welcome_panel{0}elsewhere{0}EDIT00000000",
+        "292733975847239680{0}save{0}EDIT00000000",
         std::path::MAIN_SEPARATOR
     );
     let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)

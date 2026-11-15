@@ -79,6 +79,10 @@ fn the_file_menus_save_writes_the_save_and_clears_the_mark() {
     );
 
     choose(&mut window, &mut view, "File", "Save Ctrl+S");
+    assert!(
+        !egui::Popup::is_any_open(&window.ctx),
+        "the click closed the menu"
+    );
     let nodes = draw(&mut window, &mut view);
     row(&nodes, "01 CB PLACEHOLDER");
     let reopened = Session::open(&path, Recorder::default()).unwrap();
@@ -188,6 +192,10 @@ fn the_edit_menus_undo_and_redo_step_the_edits_and_wait_for_one() {
     );
 
     choose(&mut window, &mut view, "Edit", "Undo");
+    assert!(
+        !egui::Popup::is_any_open(&window.ctx),
+        "the click closed the menu"
+    );
     assert_eq!(
         basics(&view),
         (170, 80),
