@@ -615,7 +615,7 @@ table.grid.stats-grid td { padding: 3px 6px; }
 .tacgrid select { width: 100%; }
 /* The pitch, the player list's box and the lineup lists round their corners as every
    framed panel does (.group). */
-.pitch { background: #2d571d; border: 1px solid var(--stroke); border-radius: 2px; display: block;
+.pitch { border: 1px solid var(--stroke); border-radius: 2px; display: block;
   touch-action: none; }
 /* Set PES path, over the pitch's bottom right (placed by placeSetFolder), outlined in the
    text's grey inside its own edge, so the outline adds no size: a plain button's fill alone
@@ -6745,10 +6745,18 @@ function pitchTick() {
   requestAnimationFrame(pitchTick);
 }
 requestAnimationFrame(pitchTick);
+// The turf is clipped to the border's own 2 px curve: the 1 px the CSS clip leaves inside the
+// border showed each corner's pixel green outside the frame's round.
 function drawPitch(t) {
   const cv = document.getElementById("pitch");
   if (!cv) return;
-  paintPitch(cv.getContext("2d"), t, tacFormation(t), true);
+  const g = cv.getContext("2d");
+  g.save();
+  g.beginPath();
+  g.roundRect(0, 0, PITCH.w, PITCH.h, 2);
+  g.clip();
+  paintPitch(g, t, tacFormation(t), true);
+  g.restore();
 }
 // The pitch painter, shared by the view's canvas and the formations picture
 // (`formationsPicture`): `f0` is the formation painted; `live` draws the
