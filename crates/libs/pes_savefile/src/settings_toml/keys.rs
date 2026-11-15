@@ -1236,7 +1236,7 @@ impl SettingKey {
                 table: KeyTable::Hair,
                 name: "color_preset",
                 kind: Kind::Mapped(&[0, 5, 6, 7, 1, 3, 2, 8, 4]),
-                comment: "0 custom (the colour above), 1 to 8 the editor's presets",
+                comment: "0 custom (the color above), 1 to 8 the editor's presets",
                 default: Some(0),
             },
             SettingKey::HairAccessory => KeySpec {

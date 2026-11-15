@@ -286,7 +286,7 @@ impl fmt::Display for LoadRule {
             LoadRule::LogoTooLarge { bytes } => {
                 write!(f, "{bytes} bytes, over the 64 KB a logo may hold")
             }
-            LoadRule::ColorCodeLength => f.write_str("a name colour code is not eight bytes"),
+            LoadRule::ColorCodeLength => f.write_str("a name color code is not eight bytes"),
             LoadRule::BracketsNotAscending => {
                 f.write_str("bracket heights not above the brackets before it")
             }

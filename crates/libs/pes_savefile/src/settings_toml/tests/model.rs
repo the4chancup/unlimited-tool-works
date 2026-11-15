@@ -1429,7 +1429,7 @@ fn the_key_specs_match_the_plan_table() {
         "0 to 63",
         "0 to 63",
         "0 to 63",
-        "0 custom (the colour above), 1 to 8 the editor's presets",
+        "0 custom (the color above), 1 to 8 the editor's presets",
         "true, false (PES 15: the game sets it with the variation)",
         "0 white, 1 dark grey, 2 red, 3 blue, 4 yellow, 5 green, 6 magenta, 7 cyan",
         "1 normal, 2 dry, 3 mohican, 4 afro, 5 dreadlocks, 6 braided, 7 special, 0 in some saves; PES 16 to 21",

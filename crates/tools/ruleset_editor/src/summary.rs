@@ -478,7 +478,7 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
         format!(", {}", free.join(", "))
     };
     let name_color = match tier.name_color.as_deref().filter(|color| !color.is_empty()) {
-        Some(color) => format!("; name in colour {color}"),
+        Some(color) => format!("; name in color {color}"),
         None => String::new(),
     };
     format!(
@@ -578,7 +578,7 @@ fn cond_text(ruleset: &Ruleset, condition: &Condition) -> String {
     );
     parts.extend(
         listed(&condition.name_colors, |color| color.clone(), "or")
-            .map(|text| format!("named in colour {text}")),
+            .map(|text| format!("named in color {text}")),
     );
     if let Some(position) = condition.fielded_only_at {
         parts.push(format!("fielded only at {}", position.label()));

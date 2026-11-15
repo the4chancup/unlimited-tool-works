@@ -515,7 +515,7 @@ pub fn rule_name(kind: &aatf::ViolationKind) -> &'static str {
         K::InjuryResistance { .. } => "Injury Resistance",
         K::WeakFootUsage { .. } => "Weak Foot Usage",
         K::WeakFootAccuracy { .. } => "Weak Foot Accuracy",
-        K::NameColor { .. } => "Name colour",
+        K::NameColor { .. } => "Name color",
         K::Cards { .. } | K::MinCards { .. } => "Cards",
         K::SkillCardCap { .. } => "Skill cards",
         K::ComStyleCap { .. } => "COM styles",
@@ -1046,13 +1046,13 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
         ),
         K::NameColor { color, expected } => match expected.as_deref() {
             Some(expected) => format!(
-                "name colour {}, where his tier wants {}",
+                "name color {}, where his tier wants {}",
                 color.as_deref().unwrap_or("none"),
                 expected
             ),
             // A colour another tier reserved on a player outside it.
             None => format!(
-                "name colour {}, which belongs to another tier",
+                "name color {}, which belongs to another tier",
                 color.as_deref().unwrap_or("none")
             ),
         },
@@ -1885,7 +1885,7 @@ mod tests {
                     expected: Some("cc9900ff".to_string())
                 }
             )),
-            "name colour none, where his tier wants cc9900ff"
+            "name color none, where his tier wants cc9900ff"
         );
         assert_eq!(
             sent(&player(Error, K::Cards { paid: 10, limit: 8 })),
@@ -1938,7 +1938,7 @@ mod tests {
                     color: Some("cc9900ff".to_string()),
                     expected: None,
                 },
-                "name colour cc9900ff, which belongs to another tier",
+                "name color cc9900ff, which belongs to another tier",
             ),
         ] {
             assert_eq!(sent(&player(Error, kind.clone())), expected, "{kind:?}");
@@ -2429,8 +2429,8 @@ mod tests {
                     color: None,
                     expected: Some("cc9900ff".to_string()),
                 },
-                "Name colour",
-                "name colour none, where his tier wants cc9900ff",
+                "Name color",
+                "name color none, where his tier wants cc9900ff",
             ),
             (
                 a26,
@@ -2439,8 +2439,8 @@ mod tests {
                     color: Some("cc9900ff".to_string()),
                     expected: None,
                 },
-                "Name colour",
-                "name colour cc9900ff, which belongs to another tier",
+                "Name color",
+                "name color cc9900ff, which belongs to another tier",
             ),
             (
                 a26,
