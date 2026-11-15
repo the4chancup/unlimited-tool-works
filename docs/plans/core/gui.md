@@ -1137,6 +1137,15 @@ added to the table first (a new dependency, asked for first):
   later shared change (a spacing constant, a widget helper) moved screens nobody measured
   again. The built window is still looked at before a release, for what only it shows (the
   GPU path, a monitor's scaling).
+
+  The boxes come first and need no new dependency. Rendered pixels in the tests (`egui_kittest`
+  with `wgpu`, a dev-dependency, so nothing in the exe) come second, if the text colour and
+  weight checks `draft_compare.py` makes from captures are still worth moving into the suite
+  then: they cost longer test builds and a GPU, or a software adapter, wherever the tests
+  run. The draft is recorded by a script, not opened by the tests through a webview (Tauri):
+  the recording runs once per draft change, while a webview would start a browser on every
+  test run, add a large tree to every test build, need a window on the main thread, and lay
+  the draft out in WebKitGTK on Linux, not the Chromium it was approved in.
 - **Fonts:** in a draft:
 
   - text is drawn only in the app's own font files, loaded by `@font-face` from

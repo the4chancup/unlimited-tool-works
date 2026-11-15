@@ -2800,7 +2800,8 @@ briefs, review loops, gates and mutation runs as for any step.
   headless test (`plans/core/gui.md` "Prototypes before implementation", the "Measured against
   the draft" bullet): the recording script (from `draft_compare.py`'s draft side) and its
   fixtures with the draft's hash; `draft_compare.py`'s matching rules ported to Rust test
-  support; one test per screen of its list
+  support; one test per screen of its list. Then, if still worth it: `egui_kittest`
+  (dev-dependency) for the colour and weight checks
 - [ ] after 0.0.2 (the maintainer, 2026-11-15): docstrings: every doc comment of the codebase reread under the Shakespeare rule's
   docstring part (`~/.claude/rules/shakespeare.md`: readings 1 and 2, reading 3 as
   reference text). The maintainer decides whether SWE-2 or Opus runs it. The trial,

@@ -17755,6 +17755,10 @@ Why: the maintainer, on P57: driving the built window is rudimentary. It took th
 and pointer and a release build, so a screen was measured once, as its slice landed, and a
 later shared change moved screens nobody measured again (the 2026-11-15 check found three).
 Boxes and not pictures, because Chromium and egui draw text differently, so a pixel
-comparison would flag every label.
+comparison would flag every label. Boxes first, with no new dependency; `egui_kittest`'s
+rendered pixels (for the colour and weight checks) only as a second step, if still worth it
+(the maintainer, on the lead's recommendation). Not Tauri as a test-only dependency opening
+the draft: a browser started on every test run and a large tree in every test build, for a
+recording needed once per draft change, and WebKitGTK's layout on Linux.
 Plan: `plans/core/gui.md` "Prototypes before implementation", the "Measured against the
 draft" bullet. Worklog: the after-0.0.2 item.
