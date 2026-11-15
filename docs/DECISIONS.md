@@ -17740,6 +17740,7 @@ Decision: the suite stays on egui. A move to a web frontend (Tauri) is not reope
 trial build of one is planned.
 Why: the maintainer, weighing it again: the tests settle it. The suite's thousands of headless
 UI tests run in process, in Rust, and a full run is already slow; driven through a browser or
-a simulator they would take far longer. Building each screen twice costs, but each change is
-compared with its draft once, so the cost falls away as the UI settles.
+a simulator they would take far longer. Building each screen twice costs more, and the cost
+comes back with every new screen, since most tools' windows are still to be built. The
+in-process tests outweigh it.
 Plan: `spec/core/README.md` "GUI framework choice: egui", the bullet "Tests run in process".

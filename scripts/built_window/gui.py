@@ -12,7 +12,8 @@ Usage:
   gui.py wshot OUT.png                the whole window, its title bar included
   gui.py click X,Y [X,Y ...]          left clicks
   gui.py move X,Y                     pointer to a point (hover)
-  gui.py drag X1,Y1 X2,Y2             press, move in 20 steps, release
+  gui.py drag X1,Y1 X2,Y2 [OUT.png]   press, move in 20 steps, release; with OUT.png, a
+                                      capture while still held (what shows before a drop)
   gui.py wheel X,Y NOTCHES            wheel at a point (negative scrolls down)
   gui.py keys ctrl+z | esc | ...      one chord sent to the foreground app
   gui.py burst X,Y OUT_PREFIX N MS    pointer to X,Y then N captures MS apart
@@ -304,6 +305,9 @@ elif cmd == "drag":
         move(f"{x1 + (x2 - x1) * step / 20},{y1 + (y2 - y1) * step / 20}")
         time.sleep(0.03)
     time.sleep(0.2)
+    if len(args) > 2:
+        time.sleep(0.3)
+        shot(args[2])
     user32.mouse_event(4, 0, 0, 0, None)
     time.sleep(0.6)
     print(f"dragged {args[0]} -> {args[1]}")

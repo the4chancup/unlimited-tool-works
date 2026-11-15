@@ -130,8 +130,8 @@ Key reasons:
 - **Tests run in process**: every screen is tested headless, in Rust, through egui's AccessKit
   tree, thousands of tests in a full run, which is already slow. Driven through a browser or a
   simulator, as a web frontend's would be, they would take far longer. Building each screen
-  twice, as an HTML draft and in egui, costs more, but each change is compared with its draft
-  once, so that cost falls away as the UI settles.
+  twice, as an HTML draft and in egui, costs more, and the cost comes back with every new
+  screen, since most tools' windows are still to be built. The in-process tests outweigh it.
 - **Resource goal**: avoid a separate webview process alongside PES. Measure actual idle and
   processing memory on the intended machines; egui/wgpu does not guarantee a particular RAM budget.
 - **Cross-platform consistency**: identical GPU rendering on all platforms. No webview rendering
