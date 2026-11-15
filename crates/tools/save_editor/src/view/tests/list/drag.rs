@@ -608,13 +608,13 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         last.max.y,
         "over his team's last row under All teams",
     );
+    let team_row_fill = studio_core::theme::palette(&visuals).team_row_fill;
     let fills: Vec<usize> = shapes
         .iter()
         .enumerate()
         .filter_map(|(index, clipped)| match &clipped.shape {
             egui::Shape::Rect(shape)
-                if shape.fill == visuals.faint_bg_color
-                    && shape.rect.contains(next_team.center()) =>
+                if shape.fill == team_row_fill && shape.rect.contains(next_team.center()) =>
             {
                 Some(index)
             }

@@ -625,10 +625,13 @@ fn team_row(
     let mark_response = if ui.is_rect_visible(rect) {
         let visuals = paint_row_frame(ui, rect, &response, is_selected);
         if !(is_selected || response.hovered() || response.has_focus()) {
-            // The faint fill sets the row apart from a player row (the
-            // draft's `.trow` backdrop).
-            ui.painter()
-                .rect_filled(rect, egui::CornerRadius::ZERO, ui.visuals().faint_bg_color);
+            // The team row's own fill sets it apart from a player row
+            // (the draft's `.trow` backdrop).
+            ui.painter().rect_filled(
+                rect,
+                egui::CornerRadius::ZERO,
+                studio_core::theme::palette(ui.visuals()).team_row_fill,
+            );
         }
         let padding = ui.spacing().button_padding.x;
         let centre = rect.center().y;

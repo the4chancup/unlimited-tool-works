@@ -178,6 +178,8 @@
   its squad, no longer every player whose ID holds 820 somewhere.
 - **Save editor**: Page Up and Page Down bring the team row they select to the top of the
   list, with its players under it.
+- **Save editor**: the player list's team rows stand out more from its player rows, on both
+  themes.
 
 ## [0.0.1] - 2026-11-03
 

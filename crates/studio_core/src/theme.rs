@@ -45,6 +45,13 @@ pub struct Palette {
     /// resting text, so a disabled widget's text reads dimmer than the fade
     /// alone leaves it.
     pub disabled_text: egui::Color32,
+    /// The fill that sets a list's team row apart from its player rows
+    /// (the draft's `.trow` backdrop): a mid grey, so it lightens the
+    /// dark list and darkens the light one by about the same contrast
+    /// (1.2). 48 of 255 makes the dark list's `#0a0a0a` the draft's
+    /// `#202020` (`.trow`'s `--faint`), and the light list's white
+    /// grey 231.
+    pub team_row_fill: egui::Color32,
     /// The positions grid's chosen C rating's fill, and a held side toggle's
     /// (the draft's `.sel.on.rc` `#5a5a5a`): the quiet grey a chosen rating or
     /// side gets where the accent would pull the eye. Its light value has the
@@ -156,6 +163,7 @@ impl Palette {
         // over the dark panel's 27; 134 lands at the drafts' measured
         // `#555555` to `#5a5a5a`.
         disabled_text: egui::Color32::from_gray(134),
+        team_row_fill: egui::Color32::from_rgba_unmultiplied_const(127, 127, 127, 48),
         rating_c_fill: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
@@ -200,6 +208,7 @@ impl Palette {
         // The light resting text unchanged: the drafts are dark only, so the
         // light theme keeps egui's fade.
         disabled_text: egui::Color32::from_gray(60),
+        team_row_fill: egui::Color32::from_rgba_unmultiplied_const(127, 127, 127, 48),
         rating_c_fill: egui::Color32::from_gray(0x9f),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
@@ -695,6 +704,7 @@ mod tests {
             readout,
             count_grey,
             disabled_text,
+            team_row_fill,
             rating_c_fill,
             rating_a_fill,
             rating_a_text,
@@ -732,6 +742,7 @@ mod tests {
             ("readout", *readout),
             ("count_grey", *count_grey),
             ("disabled_text", *disabled_text),
+            ("team_row_fill", *team_row_fill),
             ("rating_c_fill", *rating_c_fill),
             ("rating_a_fill", *rating_a_fill),
             ("rating_a_text", *rating_a_text),
@@ -789,6 +800,24 @@ mod tests {
                 assert_ne!(dark, light, "{name} has a light value of its own");
             } else {
                 assert_eq!(dark, light, "{name} is the same in both themes");
+            }
+        }
+    }
+
+    // A team row's fill blended over its theme's list colour lands on the
+    // draft's team row grey: `#202020` over the dark list's `#0a0a0a`,
+    // grey 231 over the light one's white.
+    #[test]
+    fn the_team_row_fill_composites_to_the_drafts_grey_on_each_list() {
+        for (visuals, expected) in [(egui::Visuals::dark(), 32), (egui::Visuals::light(), 231)] {
+            let shown = visuals
+                .extreme_bg_color
+                .blend(palette(&visuals).team_row_fill);
+            for channel in [shown.r(), shown.g(), shown.b()] {
+                assert!(
+                    channel.abs_diff(expected) <= 1,
+                    "{shown:?} lands within a channel step of grey {expected}"
+                );
             }
         }
     }
