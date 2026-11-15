@@ -48,11 +48,12 @@ theme = "dark"
 # Default: false
 invert_value_scrolling = false
 
-# If true, UTW.exe checks for a newer version every check_interval_minutes minutes.
+# If true, UTW.exe checks for a newer version: the window every
+# check_interval_minutes, a command such as quick_compile.bat on every run.
 # Default: true
 check_for_updates = true
 
-# The minutes between two checks for a newer version.
+# The minutes between two checks while the window is open.
 # Default: 120
 check_interval_minutes = 120
 
