@@ -163,6 +163,8 @@
   name is drawn darker, so the name stays readable on the light background.
 - **Save editor**: the column heads of the unsaved changes list are no longer dimmed, and
   the notice after a paste that left values out ends with a full stop.
+- **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
+  selected, instead of whoever took his place in the list.
 
 ## [0.0.1] - 2026-11-03
 
