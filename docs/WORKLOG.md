@@ -2164,12 +2164,10 @@ briefs, review loops, gates and mutation runs as for any step.
     estimate passes a budget (about an hour a side) runs detached from the checkpoint,
     which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the
     baseline from depending on the tree's path
-  - [ ] 0.0.2-teamfill the player list's team rows take the draft's `--faint` (`#202020`):
-    egui's faint colour is additive, so over the list's `#0a0a0a` it showed `#0f0f0f`; the
-    row is filled with mid grey at 48 of 255 instead (DECISIONS 2026-11-15) -> verify: a
-    test of the row's colour over the list in both themes (`#202020`, grey 231), then
-    the built list captured beside the draft (brief `.tmp/0_0_2/teamfill/brief.md`, SWE-2,
-    after barrw2)
+  - [x] 0.0.2-teamfill (2026-11-15, merge `457f30c8`) the player list's team rows take the
+    draft's `#202020`: the palette's `team_row_fill`, mid grey at 48 of 255, one value for both
+    themes (grey 231 on the light list); the built list beside the draft, both themes, sampled
+    at `#202020` and grey 231 (`.tmp/0_0_2/teamfill/pair.png`)
   - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
