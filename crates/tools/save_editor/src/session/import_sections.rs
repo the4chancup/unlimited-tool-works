@@ -104,7 +104,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
     let PlayerSection {
         name,
         shirt_name,
-        number,
+        shirt_number,
         nationality,
         age,
         height,
@@ -159,7 +159,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
     PlayerSection {
         name: kept(aesthetics, name),
         shirt_name: kept(aesthetics, shirt_name),
-        number: kept(aesthetics, number),
+        shirt_number: kept(aesthetics, shirt_number),
         nationality: kept(aesthetics, nationality),
         age: kept(aesthetics, age),
         height: kept(stats, height),
@@ -331,7 +331,7 @@ mod tests {
         vec![
             key("name", &player.name),
             key("shirt_name", &player.shirt_name),
-            key("number", &player.number),
+            key("shirt_number", &player.shirt_number),
             key("nationality", &player.nationality),
             key("age", &player.age),
             key("boots_id", &player.boots_id),

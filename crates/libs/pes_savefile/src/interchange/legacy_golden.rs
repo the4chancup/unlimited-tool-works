@@ -268,7 +268,7 @@ fn read_squad_decodes_the_struct_dump() {
         let rec = raw(s.index);
         assert_eq!(p.name.as_deref(), Some(s.name));
         assert_eq!(p.shirt_name.as_deref(), Some(s.shirt));
-        assert_eq!(p.number, Some(s.index as u16 + 1));
+        assert_eq!(p.shirt_number, Some(s.index as u16 + 1));
         assert_eq!(p.nationality, Some(231));
         assert_eq!(p.stats.attacking_prowess, Some(s.atk));
         assert_eq!(p.stats.goalkeeping, Some(s.gk));
@@ -453,9 +453,9 @@ fn read_squad_decodes_every_record_and_every_mapped_field() {
             "[{i}] shirt"
         );
         assert_eq!(
-            p.number,
+            p.shirt_number,
             Some(u16::from_le_bytes([numbers[2 * i], numbers[2 * i + 1]])),
-            "[{i}] number"
+            "[{i}] shirt_number"
         );
         for &(at, key) in U8_KEYS {
             let expected = (!ABSENT_ON_19.contains(&key)).then_some(u32::from(rec[at]));

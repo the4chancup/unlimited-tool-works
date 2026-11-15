@@ -1,7 +1,7 @@
 //! The `[players.NN]` scalar-key table: one `PlayerKey` per scalar key of the
 //! TOML block in `spec/pes_savefile/operations.md` "Team TOML", in the block's order,
 //! driving parse, emit and apply for every scalar field. The non-scalar keys
-//! (`name`, `shirt_name`, `number`, `positions.playable`,
+//! (`name`, `shirt_name`, `shirt_number`, `positions.playable`,
 //! `positions.playing_style`, `skills.skills`, `skills.com_styles`,
 //! `appearance`) are handled individually in `player`.
 

@@ -228,7 +228,7 @@ players = [
 [players.01]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 01"
 shirt_name = "PLAYER 01"
-number = 1                      # shirt number, the roster's
+shirt_number = 1
 # nationality = 0
 age = 20
 height = 189                    # cm, the record's own field
@@ -440,7 +440,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.02]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 02"
 shirt_name = "PLAYER 02"
-number = 2                      # shirt number, the roster's
+shirt_number = 2
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -652,7 +652,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.03]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 03"
 shirt_name = "PLAYER 03"
-number = 69                     # shirt number, the roster's
+shirt_number = 69
 # nationality = 0
 age = 20
 height = 185                    # cm, the record's own field
@@ -864,7 +864,7 @@ com_styles = ["trickster", "mazing_run"] # "trickster" "mazing_run" "speeding_bu
 [players.04]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 04"
 shirt_name = "PLAYER 04"
-number = 4                      # shirt number, the roster's
+shirt_number = 4
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field
@@ -1076,7 +1076,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.05]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 05"
 shirt_name = "PLAYER 05"
-number = 76                     # shirt number, the roster's
+shirt_number = 76
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field
@@ -1288,7 +1288,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.06]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 06"
 shirt_name = "PLAYER 06"
-number = 6                      # shirt number, the roster's
+shirt_number = 6
 # nationality = 0
 age = 20
 height = 194                    # cm, the record's own field
@@ -1500,7 +1500,7 @@ com_styles = ["speeding_bullet"] # "trickster" "mazing_run" "speeding_bullet" "i
 [players.07]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 07"
 shirt_name = "PLAYER 07"
-number = 17                     # shirt number, the roster's
+shirt_number = 17
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field
@@ -1712,7 +1712,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.08]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 08"
 shirt_name = "PLAYER 08"
-number = 8                      # shirt number, the roster's
+shirt_number = 8
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -1924,7 +1924,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 [players.09]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 09"
 shirt_name = "PLAYER 09"
-number = 9                      # shirt number, the roster's
+shirt_number = 9
 # nationality = 0
 age = 20
 height = 194                    # cm, the record's own field
@@ -2136,7 +2136,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.10]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 10"
 shirt_name = "PLAYER 10"
-number = 10                     # shirt number, the roster's
+shirt_number = 10
 # nationality = 0
 age = 20
 height = 185                    # cm, the record's own field
@@ -2348,7 +2348,7 @@ com_styles = ["speeding_bullet"] # "trickster" "mazing_run" "speeding_bullet" "i
 [players.11]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 11"
 shirt_name = "PLAYER 11"
-number = 11                     # shirt number, the roster's
+shirt_number = 11
 # nationality = 0
 age = 20
 height = 185                    # cm, the record's own field
@@ -2560,7 +2560,7 @@ com_styles = ["speeding_bullet", "long_ranger"] # "trickster" "mazing_run" "spee
 [players.12]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 12"
 shirt_name = "PLAYER 12"
-number = 12                     # shirt number, the roster's
+shirt_number = 12
 # nationality = 0
 age = 20
 height = 189                    # cm, the record's own field
@@ -2772,7 +2772,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.13]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 13"
 shirt_name = "PLAYER 13"
-number = 67                     # shirt number, the roster's
+shirt_number = 67
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -2984,7 +2984,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 [players.14]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 14"
 shirt_name = "PLAYER 14"
-number = 14                     # shirt number, the roster's
+shirt_number = 14
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -3196,7 +3196,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.15]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 15"
 shirt_name = "PLAYER 15"
-number = 15                     # shirt number, the roster's
+shirt_number = 15
 # nationality = 0
 age = 20
 height = 194                    # cm, the record's own field
@@ -3408,7 +3408,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.16]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 16"
 shirt_name = "PLAYER 16"
-number = 16                     # shirt number, the roster's
+shirt_number = 16
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field
@@ -3620,7 +3620,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.17]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 17"
 shirt_name = "PLAYER 17"
-number = 7                      # shirt number, the roster's
+shirt_number = 7
 # nationality = 0
 age = 20
 height = 185                    # cm, the record's own field
@@ -3832,7 +3832,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 [players.18]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 18"
 shirt_name = "PLAYER 18"
-number = 18                     # shirt number, the roster's
+shirt_number = 18
 # nationality = 0
 age = 20
 height = 194                    # cm, the record's own field
@@ -4044,7 +4044,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.19]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 19"
 shirt_name = "PLAYER 19"
-number = 19                     # shirt number, the roster's
+shirt_number = 19
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -4256,7 +4256,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.20]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 20"
 shirt_name = "PLAYER 20"
-number = 20                     # shirt number, the roster's
+shirt_number = 20
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field
@@ -4468,7 +4468,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.21]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 21"
 shirt_name = "PLAYER 21"
-number = 21                     # shirt number, the roster's
+shirt_number = 21
 # nationality = 0
 age = 20
 height = 194                    # cm, the record's own field
@@ -4680,7 +4680,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 [players.22]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 22"
 shirt_name = "PLAYER 22"
-number = 22                     # shirt number, the roster's
+shirt_number = 22
 # nationality = 0
 age = 20
 height = 180                    # cm, the record's own field
@@ -4892,7 +4892,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 [players.23]                    # roster slot 01 .. 40 (32 on PES 15-18)
 name = "Player 23"
 shirt_name = "PLAYER 23"
-number = 40                     # shirt number, the roster's
+shirt_number = 40
 # nationality = 0
 age = 20
 height = 175                    # cm, the record's own field

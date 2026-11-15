@@ -218,8 +218,8 @@ pub struct PlayerSection {
     pub name: Option<String>,
     /// Shirt name; absent leaves the target's own untouched, as any key.
     pub shirt_name: Option<String>,
-    /// Squad number (from the roster record).
-    pub number: Option<u16>,
+    /// Shirt number (from the roster record).
+    pub shirt_number: Option<u16>,
     /// Nationality id.
     pub nationality: Option<u16>,
     /// Age.

@@ -314,7 +314,7 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
     for (key, section) in &doc.players {
         let index = usize::from(*key - 1);
         assert_eq!(
-            section.number,
+            section.shirt_number,
             Some(t.team().roster[index].number),
             "the roster's shirt number at slot {key}"
         );
@@ -531,7 +531,7 @@ fn pes16_texport_reads_players_in_the_rosters_order() {
     for (key, section) in &doc.players {
         let index = usize::from(*key - 1);
         assert_eq!(
-            section.number,
+            section.shirt_number,
             Some(t.team().roster[index].number),
             "slot {key}"
         );

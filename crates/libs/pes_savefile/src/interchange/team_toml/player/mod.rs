@@ -1,6 +1,6 @@
 //! `team.toml`'s player half: `[players.NN]` and its `stats`, `positions`,
 //! `skills`, `edit_flags` and `appearance` subtables. The scalar keys run
-//! through `player_keys`' table; the non-scalar keys (names, number,
+//! through `player_keys`' table; the non-scalar keys (names, `shirt_number`,
 //! `playable`, `playing_style`, the skill arrays and `appearance`) are
 //! handled here.
 
@@ -81,7 +81,7 @@ fn player_from(
     let mut section = PlayerSection {
         name: Some(player.name.clone()),
         shirt_name: Some(player.shirt_name.clone()),
-        number: Some(number),
+        shirt_number: Some(number),
         positions: PositionsSection {
             playable: Some(player.positions.playable),
             playing_style: Some(playstyle::decode(version, player.positions.playing_style)?),
@@ -185,10 +185,10 @@ fn emit_player(
     );
     emit(
         out,
-        "number",
-        section.number.map(|v| v.to_string()),
+        "shirt_number",
+        section.shirt_number.map(|v| v.to_string()),
         "1",
-        "shirt number",
+        "",
     );
     for key in PlayerKey::ALL {
         if key.table().is_empty() {
@@ -395,7 +395,7 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
     let mut section = PlayerSection {
         name: opt(table, path, "name", text)?,
         shirt_name: opt(table, path, "shirt_name", text)?,
-        number: opt(table, path, "number", u16_val)?,
+        shirt_number: opt(table, path, "shirt_number", u16_val)?,
         ..PlayerSection::default()
     };
     for key in PlayerKey::ALL {
@@ -479,7 +479,7 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
         &[
             "name",
             "shirt_name",
-            "number",
+            "shirt_number",
             "nationality",
             "age",
             "height",
@@ -705,7 +705,7 @@ fn apply_player(
     let Some(player) = target.players.iter_mut().find(|p| p.id == player_id) else {
         return Err(TeamTomlError::PlayerMissing { id: player_id });
     };
-    if let Some(number) = section.number {
+    if let Some(number) = section.shirt_number {
         // The roster's number field is 8 bits on the ≤ 18 schemas; a wider
         // value would fail `write_roster` after `apply` said Ok, so it is
         // refused here instead of clamped.
@@ -717,7 +717,7 @@ fn apply_player(
             .map_or(u32::from(u16::MAX), |a| (1 << a.bit_width) - 1);
         if u32::from(number) > max {
             return Err(TeamTomlError::OutOfRange {
-                key: format!("{path}.number"),
+                key: format!("{path}.shirt_number"),
                 value: i64::from(number),
                 range: format!("0 to {max}"),
             });
@@ -987,7 +987,7 @@ pub(super) fn some_keys(section: &PlayerSection) -> usize {
     let named = [
         section.name.is_some(),
         section.shirt_name.is_some(),
-        section.number.is_some(),
+        section.shirt_number.is_some(),
         section.positions.playable.is_some(),
         section.positions.playing_style.is_some(),
         section.skills.skills.is_some(),
