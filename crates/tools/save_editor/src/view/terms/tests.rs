@@ -186,7 +186,7 @@ fn the_small_stats_and_abilities_rows() {
     // Star and playing attitude (PES 19/20+) show as stored.
     assert_term(
         &row_term(PesVersion::Pes21, &field(PlayerField::Star, 0, 7)),
-        "Star",
+        "Star rating",
         "0",
         "7",
     );

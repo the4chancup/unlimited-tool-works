@@ -42,6 +42,104 @@ fn group_frame(
     )
 }
 
+/// The leftmost node drawn inside `frame` under its title `title` (the
+/// title's own label left out): the group's content's first left, a
+/// label's or a control's alike.
+fn first_content(
+    nodes: &[accesskit::Node],
+    frame: egui::Rect,
+    title: accesskit::Rect,
+) -> (&accesskit::Node, f64) {
+    nodes
+        .iter()
+        .filter_map(|node| node.bounds().map(|bounds| (node, bounds)))
+        .filter(|(_, bounds)| {
+            *bounds != title
+                && bounds.y0 >= title.y1 - 0.5
+                && bounds.x0 >= f64::from(frame.min.x)
+                && bounds.x1 <= f64::from(frame.max.x)
+                && bounds.y1 <= f64::from(frame.max.y)
+        })
+        .map(|(node, bounds)| (node, bounds.x0))
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .expect("a node under the title")
+}
+
+// Every group's content, its first column's labels and controls alike,
+// stands 6 points in from its title, as the draft draws it: the title
+// reads as the heading of what is under it.
+#[test]
+fn every_groups_content_stands_six_in_from_its_title() {
+    let path = fixture(PesVersion::Pes21, "group_content_inset");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let wrong: Vec<String> = [
+        "Full Player Customization",
+        "Colors",
+        "Strip style",
+        "Physique",
+        "Motion",
+        "Edit flags",
+        "Presentation",
+    ]
+    .iter()
+    .filter_map(|title| {
+        let frame = group_frame(&window, &nodes, &shapes, title);
+        let title_bounds = label_bounds(&nodes, title);
+        let (node, left) = first_content(&nodes, frame, title_bounds);
+        let inset = left - title_bounds.x0;
+        ((inset - 6.0).abs() > 0.5).then(|| {
+            format!(
+                "{title}: {:?} {:?} stands {inset} in",
+                node.role(),
+                node.label().or(node.value())
+            )
+        })
+    })
+    .collect();
+    assert!(wrong.is_empty(), "{wrong:#?}");
+}
+
+// The Physique group is as wide as the draft draws it, 495 points: its
+// four columns padded 6 a side, as the draft's grid cells are, so the
+// labels stand 12 past the slider boxes before them.
+#[test]
+fn the_physique_group_is_the_drafts_width() {
+    let path = fixture(PesVersion::Pes21, "physique_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let physique = group_frame(&window, &nodes, &shapes, "Physique");
+    assert!(
+        (physique.width() - 495.0).abs() <= 0.5,
+        "the Physique group {} wide, the draft's 495",
+        physique.width()
+    );
+}
+
+// The Colors group's squares stand 2 points apart, as the draft's do.
+#[test]
+fn the_colors_squares_stand_two_apart() {
+    let path = fixture(PesVersion::Pes21, "swatch_gap");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let wells = right_of_label(&nodes, "Skin", Role::ColorWell);
+    let [first, second] = [0, 1].map(|at| wells[at].bounds().expect("a square's bounds"));
+    let gap = second.x0 - first.x1;
+    assert!(
+        (gap - 2.0).abs() <= 0.25,
+        "two squares {gap} apart, the draft's 2"
+    );
+}
+
 // SE-GUI-84
 #[test]
 fn the_groups_stand_in_the_drafts_order() {
@@ -87,7 +185,7 @@ fn the_groups_stand_in_the_drafts_order() {
     // own row.
     for (label, note) in [
         (
-            "Star",
+            "Star rating",
             "How likely the player is to show up as the team's featured player in the pre-match screen.",
         ),
         ("Playing attitude", "Only affects cutscenes."),
@@ -109,7 +207,7 @@ fn the_groups_stand_in_the_drafts_order() {
         );
     }
     assert!(
-        label_bounds(&nodes, "Playing attitude").y0 > label_bounds(&nodes, "Star").y1,
+        label_bounds(&nodes, "Playing attitude").y0 > label_bounds(&nodes, "Star rating").y1,
         "the attitude row stands below the star row"
     );
 }
@@ -133,7 +231,7 @@ fn the_group_titles_leave_title_gap_under_them() {
         ("Strip style", "Boots ID", 10.5),
         ("Physique", "Neck length", 15.5),
         ("Motion", "Hunching (dribbling)", 7.5),
-        ("Presentation", "Star", 7.5),
+        ("Presentation", "Star rating", 7.5),
     ] {
         let measured = label_bounds(&nodes, first).y0 - label_bounds(&nodes, title).y1;
         assert!(
@@ -429,7 +527,7 @@ fn the_appearance_grids_stand_as_the_drafts() {
     let strip_square = (strip.y0 + strip.y1) / 2.0 - 7.0;
     let gaps = [
         (
-            top_right_of("Star", Role::SpinButton),
+            top_right_of("Star rating", Role::SpinButton),
             top_right_of("Playing attitude", Role::SpinButton),
             24.0,
             "Playing attitude's box under Star's",

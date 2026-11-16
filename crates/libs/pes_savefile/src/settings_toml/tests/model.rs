@@ -241,7 +241,7 @@ fn apply_copies_the_settings_and_leaves_the_rest() {
     assert_eq!(q.name, p.name);
     assert_eq!(q.shirt_name, p.shirt_name);
     assert_eq!(q.id, q_before.id);
-    // `star` is a settings key, so the apply copies p's; `playing_attitude`
+    // `star_rating` is a settings key, so the apply copies p's; `playing_attitude`
     // stays q's, PES 19 storing none.
     assert_eq!(
         q.stats,
@@ -472,7 +472,7 @@ fn a_setting_the_version_lacks_is_skipped_not_refused() {
 
 /// The presentation keys read like the version-gated dribbling motion: the
 /// player's stored value where the version holds it, `None` and no error
-/// where it does not (`star` is PES 19+, `playing_attitude` PES 20+).
+/// where it does not (`star_rating` is PES 19+, `playing_attitude` PES 20+).
 #[test]
 fn from_player_reads_the_presentation_keys_where_the_version_holds_them() {
     let (file, _) = open(PesVersion::Pes21);
@@ -506,14 +506,41 @@ fn from_player_reads_the_presentation_keys_where_the_version_holds_them() {
     assert_eq!(s18.appearance.presentation.playing_attitude, None);
 }
 
-/// A set `star` writes on PES 21, and is skipped as the dribbling motion is
-/// on a version without the field: `apply` writes nothing and reports
-/// nothing, `apply_appearance` (Team TOML's write) refuses it
+/// The star rating's key is `star_rating`: a player's star written to a
+/// settings.toml reads back from that key, and the key alone parses.
+#[test]
+fn the_star_rating_round_trips_through_its_key() {
+    let (file, _) = open(PesVersion::Pes21);
+    let player = file
+        .players()
+        .iter()
+        .find(|player| player.stats.star.is_some_and(|star| star != 0))
+        .expect("a fixture player with a non-zero star");
+    let star = player.stats.star.expect("PES 21 stores it");
+    let text = PlayerSettings::from_player(player)
+        .expect("from_player")
+        .to_toml()
+        .expect("to_toml");
+    assert!(
+        text.lines()
+            .any(|line| line.starts_with(&format!("star_rating = {star} "))),
+        "the presentation table spells the key star_rating:\n{text}"
+    );
+    let read = PlayerSettings::parse(&text).expect("the written file parses");
+    assert_eq!(read.appearance.presentation.star, Some(star));
+    let alone = PlayerSettings::parse("[appearance.presentation]\nstar_rating = 5\n")
+        .expect("the key parses");
+    assert_eq!(alone.appearance.presentation.star, Some(5));
+}
+
+/// A set `star_rating` writes on PES 21, and is skipped as the dribbling
+/// motion is on a version without the field: `apply` writes nothing and
+/// reports nothing, `apply_appearance` (Team TOML's write) refuses it
 /// `NotInThisVersion` and changes nothing.
 #[test]
 fn the_presentation_keys_write_and_skip_and_refuse_as_the_gated_motion() {
-    let settings =
-        PlayerSettings::parse("[appearance.presentation]\nstar = 7\n").expect("the key parses");
+    let settings = PlayerSettings::parse("[appearance.presentation]\nstar_rating = 7\n")
+        .expect("the key parses");
 
     let mut player = find_player(
         &payload(PesVersion::Pes21),
@@ -542,7 +569,7 @@ fn the_presentation_keys_write_and_skip_and_refuse_as_the_gated_motion() {
     appearance.presentation.star = Some(7);
     let err = apply_appearance(&appearance, &mut player).expect_err("refused");
     match &err {
-        SettingsError::NotInThisVersion { key } => assert_eq!(key, "star"),
+        SettingsError::NotInThisVersion { key } => assert_eq!(key, "star_rating"),
         other => panic!("{other:?}"),
     }
     assert_eq!(player, before, "a refused write changes nothing");

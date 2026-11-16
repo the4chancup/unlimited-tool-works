@@ -116,6 +116,8 @@ const FLAG_CELL_GAP: f32 = 12.0;
 /// Between the Colors rows: their 14-point swatches, on 18-point rows, stand
 /// 21 apart as the draft's do, 7 points between them.
 const SWATCH_ROW_SPACING: f32 = 3.0;
+/// Between two squares of a Colors row (the draft's `.palette` `gap`).
+const SWATCH_GAP: f32 = 2.0;
 
 /// The Appearance screen's content for the selected player.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -210,12 +212,13 @@ fn groups(
 
 /// One titled group (the draft's `.group`): egui's group frame, the title
 /// in the strong colour and `TITLE_GAP` above the first thing drawn under
-/// it, as the Stats screen's panels leave under theirs.
+/// it, as the Stats screen's panels leave under theirs, the content
+/// through the Stats screen's `inset`.
 fn group(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::group(ui.style()).show(ui, |ui| {
         ui.strong(title);
         ui.add_space(abilities::TITLE_GAP - ui.spacing().item_spacing.y);
-        add(ui);
+        abilities::inset(ui, add);
     });
 }
 
@@ -242,14 +245,14 @@ fn frame_margin(frame: &egui::Frame) -> f32 {
 /// A group frame's inside for the rows: a top-down scope from the frame's
 /// left (a right-to-left row's frame would inherit the row's layout),
 /// `title` in the strong colour and `TITLE_GAP` under it, as the Stats
-/// screen's panels leave under theirs.
+/// screen's panels leave under theirs, the content through their `inset`.
 fn frame_content(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
     ui.scope_builder(
         egui::UiBuilder::new().layout(egui::Layout::top_down(egui::Align::Min)),
         |ui| {
             ui.strong(title);
             ui.add_space(abilities::TITLE_GAP - ui.spacing().item_spacing.y);
-            add(ui);
+            abilities::inset(ui, add);
         },
     );
 }
@@ -284,8 +287,9 @@ fn fpc_colors_row(
             ui.spacing_mut().item_spacing.x = SIDE_GAP;
             let fpc_width = ui.available_width() - SIDE_GAP - measured.unwrap_or(0.0);
             let mut fpc = group_frame.begin(ui);
+            fpc.content_ui
+                .set_min_width(fpc_width - group_frame.total_margin().sum().x);
             frame_content(&mut fpc.content_ui, "Full Player Customization", |ui| {
-                ui.set_min_width(fpc_width - group_frame.total_margin().sum().x);
                 fpc_group(ui, session, player_id, player, hide_ids);
             });
             fpc.allocate_space(ui);
@@ -608,41 +612,53 @@ fn edit_flags_grid(
 /// `.stats-grid` pairs and 82-point sliders). The arrow keys step the
 /// value box by one, as the suite's other number boxes do. Each field
 /// is on its key's `Signed` scale (±7: `shown - limit` stores `shown +
-/// limit`).
+/// limit`). The cells are padded `CELL_PADDING` a side, as the draft's
+/// `.stats-grid` cells are: twice that between two cells and once after
+/// the last box (the group's inset is the one before the first label).
 fn physique_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     appearance: &PlayerAppearance,
 ) {
-    egui::Grid::new("appearance physique")
-        .num_columns(4)
-        .min_row_height(PHYSIQUE_ROW_H)
-        .spacing(egui::vec2(ui.spacing().item_spacing.x, 0.0))
+    let padding = abilities::CELL_PADDING;
+    egui::Frame::NONE
+        .inner_margin(egui::Margin {
+            right: padding,
+            ..egui::Margin::ZERO
+        })
         .show(ui, |ui| {
-            for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
-                let Kind::Signed { limit } = key.spec().kind else {
-                    unreachable!("the physique keys are Signed");
-                };
-                let limit = i32::from(limit);
-                let stored = get(appearance);
-                let mut shown = i32::from(stored) - limit;
-                ui.label(*label);
-                let wheel_id = ui.scope_id().with(*label);
-                let response = number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
-                    slider(ui, value, -limit..=limit, PHYSIQUE_RAIL_W, wheel_id)
+            egui::Grid::new("appearance physique")
+                .num_columns(4)
+                .min_row_height(PHYSIQUE_ROW_H)
+                .spacing(egui::vec2(2.0 * f32::from(padding), 0.0))
+                .show(ui, |ui| {
+                    for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
+                        let Kind::Signed { limit } = key.spec().kind else {
+                            unreachable!("the physique keys are Signed");
+                        };
+                        let limit = i32::from(limit);
+                        let stored = get(appearance);
+                        let mut shown = i32::from(stored) - limit;
+                        ui.label(*label);
+                        let wheel_id = ui.scope_id().with(*label);
+                        let response =
+                            number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
+                                slider(ui, value, -limit..=limit, PHYSIQUE_RAIL_W, wheel_id)
+                            });
+                        if response.changed() {
+                            edit_player(session, player_id, response.id.value(), |player| {
+                                set(
+                                    &mut player.appearance,
+                                    u8::try_from(shown + limit).expect(
+                                        "the control keeps the value inside the key's range",
+                                    ),
+                                );
+                            });
+                        }
+                        maybe_end_row(ui, index + 1, 2);
+                    }
                 });
-                if response.changed() {
-                    edit_player(session, player_id, response.id.value(), |player| {
-                        set(
-                            &mut player.appearance,
-                            u8::try_from(shown + limit)
-                                .expect("the control keeps the value inside the key's range"),
-                        );
-                    });
-                }
-                maybe_end_row(ui, index + 1, 2);
-            }
         });
 }
 
@@ -761,12 +777,15 @@ fn strip_grid(
     let left = rows[0].min.x;
     // The lines under rows two, three (the three columns) and four (the
     // first two), at the touched rows' shared bottom, ending mid-gap where
-    // a column line stands.
+    // a column line stands. They start under the group's title, the
+    // group's inset before the first labels, as the draft's first column's
+    // cells take the inset as their own padding.
+    let lines_left = left - f32::from(abilities::CELL_PADDING);
     for (under, columns) in [(1usize, 3usize), (2, 3), (3, 2)] {
         let y = rows[under].max.y;
         painter.line_segment(
             [
-                egui::pos2(left, y),
+                egui::pos2(lines_left, y),
                 egui::pos2(left + columns as f32 * STRIP_PITCH - CELL_GAP / 2.0, y),
             ],
             stroke,
@@ -1274,6 +1293,8 @@ fn palette_row(
     // index has one).
     let names = combo_options(palette.key);
     ui.push_id(("appearance palette", palette.label), |ui| {
+        let item_gap = ui.spacing().item_spacing.x;
+        ui.spacing_mut().item_spacing.x = SWATCH_GAP;
         for (index, rgb) in palette.colors[..=usize::from(palette.top)]
             .iter()
             .enumerate()
@@ -1292,6 +1313,7 @@ fn palette_row(
             }
         }
         if stored > palette.top {
+            ui.add_space(item_gap - SWATCH_GAP);
             ui.weak(stored.to_string());
         }
     });

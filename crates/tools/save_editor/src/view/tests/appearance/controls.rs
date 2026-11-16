@@ -273,9 +273,9 @@ fn a_stored_star_draws_in_the_presentation_box() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     open_appearance(&mut window, &mut view);
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
-        node.role() == Role::Label && node.value() == Some("Star")
+        node.role() == Role::Label && node.value() == Some("Star rating")
     });
-    let star = right_of_label(&nodes, "Star", Role::SpinButton)
+    let star = right_of_label(&nodes, "Star rating", Role::SpinButton)
         .first()
         .copied()
         .expect("the Star control");

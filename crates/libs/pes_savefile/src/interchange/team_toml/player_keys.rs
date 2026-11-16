@@ -15,7 +15,6 @@ use crate::model::player::PlayerEntry;
 use crate::schema::fields::PlayerField;
 #[cfg(test)]
 use crate::schema::schema_for;
-use crate::settings_toml::SettingKey;
 
 use super::items::label_position;
 
@@ -126,10 +125,6 @@ pub(crate) enum PlayerKey {
     Form,
     /// `stats.injury_resistance`
     InjuryResistance,
-    /// `stats.star`
-    Star,
-    /// `stats.playing_attitude`
-    PlayingAttitude,
     /// `positions.registered`
     Registered,
     /// `positions.stronger_foot`
@@ -168,15 +163,6 @@ pub(crate) enum PlayerKey {
 
 const POSITIONS_COMMENT: &str = "\"GK\" \"CB\" \"LB\" \"RB\" \"DMF\" \"CMF\" \"LMF\" \"RMF\" \"AMF\" \"LWF\" \"RWF\" \"SS\" \"CF\"";
 
-/// The keys `[players.NN.appearance.presentation]` replaced, `(old-place
-/// key, new key)`: every file written before the table existed carries them
-/// under `stats`, which an import still reads into the new place (a field
-/// given in both is refused), while an export writes the new place alone.
-pub(crate) const MOVED_TO_PRESENTATION: &[(PlayerKey, SettingKey)] = &[
-    (PlayerKey::Star, SettingKey::Star),
-    (PlayerKey::PlayingAttitude, SettingKey::PlayingAttitude),
-];
-
 const fn spec(
     path: &'static str,
     kind: Kind,
@@ -204,7 +190,7 @@ const fn flag(path: &'static str, field: PlayerField) -> KeySpec {
 impl PlayerKey {
     /// Every scalar key, in the TOML block's order (top level, stats,
     /// positions scalars, edit flags).
-    pub(crate) const ALL: [PlayerKey; 55] = [
+    pub(crate) const ALL: [PlayerKey; 53] = [
         PlayerKey::Nationality,
         PlayerKey::Age,
         PlayerKey::Height,
@@ -241,8 +227,6 @@ impl PlayerKey {
         PlayerKey::WeakFootAccuracy,
         PlayerKey::Form,
         PlayerKey::InjuryResistance,
-        PlayerKey::Star,
-        PlayerKey::PlayingAttitude,
         PlayerKey::Registered,
         PlayerKey::StrongerFoot,
         PlayerKey::StrongerHand,
@@ -333,18 +317,6 @@ impl PlayerKey {
                 Kind::Stored,
                 F::InjuryResistance,
                 "0 to 2",
-            ),
-            PlayerKey::Star => spec(
-                "stats.star",
-                Kind::Stored,
-                F::Star,
-                "PES 19 and later; 0 to 7",
-            ),
-            PlayerKey::PlayingAttitude => spec(
-                "stats.playing_attitude",
-                Kind::Stored,
-                F::PlayingAttitude,
-                "PES 20 and later",
             ),
             PlayerKey::Registered => spec(
                 "positions.registered",
@@ -463,8 +435,6 @@ impl PlayerKey {
             PlayerKey::WeakFootAccuracy => s.stats.weak_foot_accuracy.map(u32::from),
             PlayerKey::Form => s.stats.form.map(u32::from),
             PlayerKey::InjuryResistance => s.stats.injury_resistance.map(u32::from),
-            PlayerKey::Star => s.stats.star.map(u32::from),
-            PlayerKey::PlayingAttitude => s.stats.playing_attitude.map(u32::from),
             PlayerKey::Registered => s.positions.registered.map(u32::from),
             PlayerKey::StrongerFoot => s.positions.stronger_foot.map(u32::from),
             PlayerKey::StrongerHand => s.positions.stronger_hand.map(u32::from),
@@ -543,8 +513,6 @@ impl PlayerKey {
             PlayerKey::WeakFootAccuracy => s.stats.weak_foot_accuracy = Some(byte(value)),
             PlayerKey::Form => s.stats.form = Some(byte(value)),
             PlayerKey::InjuryResistance => s.stats.injury_resistance = Some(byte(value)),
-            PlayerKey::Star => s.stats.star = Some(byte(value)),
-            PlayerKey::PlayingAttitude => s.stats.playing_attitude = Some(byte(value)),
             PlayerKey::Registered => s.positions.registered = Some(byte(value)),
             PlayerKey::StrongerFoot => s.positions.stronger_foot = Some(byte(value)),
             PlayerKey::StrongerHand => s.positions.stronger_hand = Some(byte(value)),
@@ -753,11 +721,11 @@ mod tests {
             .expect("the last position");
         assert_eq!(section.positions.registered, Some(12));
 
-        PlayerKey::Star
+        PlayerKey::Form
             .set_section(&mut section, 7)
             .expect("a 3-bit field's maximum");
-        assert_eq!(section.stats.star, Some(7));
-        let err = PlayerKey::Star
+        assert_eq!(section.stats.form, Some(7));
+        let err = PlayerKey::Form
             .set_section(&mut section, 8)
             .expect_err("past the width");
         assert!(
@@ -767,7 +735,7 @@ mod tests {
             ),
             "{err:?}"
         );
-        assert_eq!(section.stats.star, Some(7), "the refused write left it");
+        assert_eq!(section.stats.form, Some(7), "the refused write left it");
     }
 
     /// An ability past its stored range is refused with that range, the one

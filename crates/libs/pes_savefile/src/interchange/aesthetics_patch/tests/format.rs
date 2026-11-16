@@ -84,7 +84,7 @@ goal_celebration_1 = 0
 goal_celebration_2 = 0
 
 [teams.players.05.appearance.presentation]
-star = 0
+star_rating = 0
 playing_attitude = 0
 
 [teams.players.05.appearance.face]
@@ -282,9 +282,9 @@ fn the_presentation_table_carries_the_keys_the_patched_version_holds() {
     };
     assert_eq!(
         table_of(PesVersion::Pes21),
-        "star = 0\nplaying_attitude = 0\n"
+        "star_rating = 0\nplaying_attitude = 0\n"
     );
-    assert_eq!(table_of(PesVersion::Pes19), "star = 0\n");
+    assert_eq!(table_of(PesVersion::Pes19), "star_rating = 0\n");
 }
 
 /// A hand-built patch can hold a stored value no key's range expresses;

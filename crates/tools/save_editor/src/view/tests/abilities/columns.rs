@@ -349,8 +349,9 @@ fn assert_three_columns_at_1280(version: PesVersion) {
 
 // The room the three fixed columns leave is split into four equal gaps:
 // after the player list, counted from its frame, between the columns, and
-// after Ability stats to the window's edge; 30.4 points each at the
-// 1280 x 780 window, and still equal on a wider one. The title's row
+// after Ability stats to the window's edge; 28.9 points each at the
+// 1280 x 780 window (the cards' column 336 wide with its 6-point inset,
+// as the draft measures), and still equal on a wider one. The title's row
 // starts at the pane's left edge, the toggle first.
 // The gaps read the columns' widths the previous frame measured (egui
 // memory), so three settle frames run before the read.
@@ -388,8 +389,8 @@ fn the_player_view_splits_its_room_into_four_equal_gaps() {
         if screen_w == DEFAULT_PANE.x {
             for gap in gaps {
                 assert!(
-                    (gap - 30.4).abs() <= 0.5,
-                    "each gap 30.4 at the 1280 x 780 window: {gaps:?}, the frame's right {frame_right}, the columns {widths:?}"
+                    (gap - 28.9).abs() <= 0.5,
+                    "each gap 28.9 at the 1280 x 780 window: {gaps:?}, the frame's right {frame_right}, the columns {widths:?}"
                 );
             }
         }
@@ -444,49 +445,61 @@ fn the_player_views_pane_ends_8_from_the_windows_edge() {
     );
 }
 
-// General info's and Other stats' fields and labels stand 6 in from
-// their titles, as the ability stats stand in from theirs: the column
-// 350 wide, the fields 344.
+// Every panel's content, its first column's labels and controls alike,
+// stands 6 in from the panel's title, as the draft draws it: General
+// info's fields, the positions' layout toggle, the cards' first column and
+// the ability stats' labels. The title then reads as the heading of what
+// is under it.
 #[test]
-fn general_info_and_other_stats_stand_six_in_from_their_titles() {
-    let path = fixture(PesVersion::Pes21, "general_inset");
+fn every_panels_content_stands_six_in_from_its_title() {
+    let path = fixture(PesVersion::Pes21, "panel_content_inset");
     let mut view = SaveView::new();
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));
-    let mut window = Headless::new();
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     }
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let general = label_bounds(&nodes, "General info").x0;
-    let name = nodes
-        .iter()
-        .filter(|node| node.role() == Role::Label)
-        .find(|node| {
-            node.value()
-                .is_some_and(|value| value.starts_with("Name ("))
-        })
-        .and_then(accesskit::Node::bounds)
-        .expect("the Name label");
-    for (what, left) in [
-        ("Name's label", name.x0),
-        ("Height's label", label_bounds(&nodes, "Height").x0),
-        (
-            "Stronger foot's label",
-            label_bounds(&nodes, "Stronger foot").x0,
-        ),
-    ] {
-        assert!(
-            (left - general - 6.0).abs() <= 0.5,
-            "{what} 6 in from General info's title ({left} vs {general})"
-        );
+    let columns: [&[&str]; 3] = [
+        &["General info", "Other stats", "Playable positions"],
+        &["Skills", "Tricks", "COM playing styles"],
+        &["Ability stats"],
+    ];
+    let lefts = columns.map(|panels| label_bounds(&nodes, panels[0]).x0);
+    let mut wrong = Vec::new();
+    for (column, panels) in columns.iter().enumerate() {
+        let right = lefts.get(column + 1).copied().unwrap_or(f64::MAX);
+        for (at, panel) in panels.iter().enumerate() {
+            let title = label_bounds(&nodes, panel);
+            let bottom = panels
+                .get(at + 1)
+                .map_or(f64::MAX, |next| label_bounds(&nodes, next).y0);
+            let (node, left) = nodes
+                .iter()
+                .filter_map(|node| node.bounds().map(|bounds| (node, bounds)))
+                .filter(|(_, bounds)| {
+                    *bounds != title
+                        && bounds.y0 >= title.y1 - 0.5
+                        && bounds.y1 <= bottom
+                        && bounds.x0 >= title.x0 - 6.0
+                        && bounds.x0 < right
+                        && bounds.x1 > bounds.x0
+                })
+                .map(|(node, bounds)| (node, bounds.x0))
+                .min_by(|a, b| a.1.total_cmp(&b.1))
+                .unwrap_or_else(|| panic!("a node under {panel:?}"));
+            let inset = left - title.x0;
+            if (inset - 6.0).abs() > 0.5 {
+                wrong.push(format!(
+                    "{panel}: {:?} {:?} stands {inset} in",
+                    node.role(),
+                    node.label().or(node.value())
+                ));
+            }
+        }
     }
-    let other = label_bounds(&nodes, "Other stats").x0;
-    let injury = label_bounds(&nodes, "Injury Resistance").x0;
-    assert!(
-        (injury - other - 6.0).abs() <= 0.5,
-        "Injury Resistance 6 in from Other stats' title ({injury} vs {other})"
-    );
+    assert!(wrong.is_empty(), "{wrong:#?}");
 }
 
 // The Ability stats column is the draft's 169.4 points: each row a label

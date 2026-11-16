@@ -24,15 +24,15 @@ pub(crate) type AppearanceField = (
     fn(&mut PlayerAppearance, u8),
 );
 
-/// The Presentation group's two stored fields: star 0-7 (PES 19+) and
+/// The Presentation group's two stored fields: star rating 0-7 (PES 19+) and
 /// playing attitude 0-3 (PES 20+), stored as shown. They affect no play,
 /// so they are aesthetics and lock with the rest of the screen —
 /// `abilities`' `SmallStat` because the pair shares the Profile fields'
 /// shape.
 pub(crate) const PRESENTATION_STATS: [SmallStat; 2] = [
     SmallStat {
-        label: "Star",
-        shown: "Star",
+        label: "Star rating",
+        shown: "Star rating",
         field: PlayerField::Star,
         min: 0,
         max: 7,
