@@ -219,9 +219,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category);
-    // The reveal a moved selection asked for, or a kept one a pick
-    // relisted the rows over (`reveal_selected`): its row's index,
-    // scrolled to below.
+    // The selected row's index and the reveal `reveal_selected` asks for,
+    // when one is set and the row is listed: scrolled to below.
     let reveal = std::mem::take(&mut view.reveal_selected).and_then(|reveal| {
         rows.iter()
             .position(|row| Some(row_selection(*row)) == view.selected)

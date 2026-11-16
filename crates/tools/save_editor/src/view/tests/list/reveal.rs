@@ -207,53 +207,152 @@ fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
 
 // A pick that names the already-selected team scrolls the list to its
 // row though the pick moved nothing: `82` typed, the dropdown on All
-// teams, 821's row clicked and wheeled out of the clip, 821 picked —
-// the selection and the listed rows stand as they were, and its row
-// stands at the clip's top on the next frame.
+// teams, the filter's second-to-last team's row selected off the clip,
+// its name picked — the selection and the listed rows stand as they
+// were, and its row stands at the clip's top on the next frame.
 #[test]
 fn a_pick_of_the_selected_team_under_a_filter_scrolls_the_list_to_its_row() {
     let path = fixture(PesVersion::Pes21, "team_pick_selected_filter_reveal");
     let mut view = SaveView::new();
     view.open(&path);
     view.filter = "82".to_owned();
-    let name = display_name(&team_entry(&view, 821).name);
-    assert!(
-        view.session
-            .as_ref()
-            .unwrap()
-            .file()
-            .teams()
+    // The filter's second-to-last team, as the team-pick test's: the
+    // last team's rows stand under its row, so `Top` stands it at the
+    // clip's top while `Nearest` stops it at the bottom.
+    let (pick, name) = {
+        let file = view.session.as_ref().unwrap().file();
+        let teams: Vec<u32> = selection::list(file, &view.team, &view.filter, view.team_category)
             .iter()
-            .filter(|team| display_name(&team.name) == name)
-            .count()
-            == 1,
-        "premise: 821's name {name:?} is the only one in the selector"
-    );
+            .filter_map(|row| match row {
+                selection::ListRow::Team(id) => Some(*id),
+                _ => None,
+            })
+            .collect();
+        assert!(
+            teams.len() > 3,
+            "premise: the filter lists several teams: {teams:?}"
+        );
+        let pick = teams[teams.len() - 2];
+        assert_eq!(
+            selection::list(file, &view.team, &view.filter, view.team_category),
+            selection::list(
+                file,
+                &TeamChoice::Team(pick),
+                &view.filter,
+                view.team_category
+            ),
+            "premise: the pick relists no row under the filter"
+        );
+        let name = display_name(&file.team(pick).unwrap().name);
+        assert!(
+            file.teams()
+                .iter()
+                .filter(|team| display_name(&team.name) == name)
+                .count()
+                == 1,
+            "premise: {name:?} is the only one in the selector"
+        );
+        (pick, name)
+    };
+    // Its row selected off the clip: a pick's reveal, not the click's.
+    view.selected = Some(Selection::Team(pick));
     let mut window = Headless::new();
-
-    // Its row, drawn under the filter, clicked selected, then wheeled
-    // out of the clip.
     let nodes = draw(&mut window, &mut view);
-    click(&mut window, team_row(&nodes, &view, 821), &mut view);
-    assert_eq!(
-        view.selected,
-        Some(Selection::Team(821)),
-        "premise: the click selected 821's row"
+    let label = format!("{pick} {name}");
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| list_row(node) && node.label() == Some(label.as_str())),
+        "premise: {label:?} is not drawn before the pick"
     );
-    wheel_row_out_of_clip(&mut window, &mut view, |node| {
-        node.toggled() == Some(accesskit::Toggled::True)
-    });
 
     pick_in_selector(&mut window, &mut view, &name);
     assert_eq!(
         view.selected,
-        Some(Selection::Team(821)),
-        "the pick keeps the selection on 821's row"
+        Some(Selection::Team(pick)),
+        "the pick keeps the selection on its row"
     );
     let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
     assert!(
         (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
-        "821's row at the clip's top, `Top` ({bounds:?} vs {clip:?})"
+        "its row at the clip's top, `Top` ({bounds:?} vs {clip:?})"
+    );
+}
+
+// A team row double-clicked shows that team alone, its row scrolled to
+// the list's top: a pane shorter than a team's 24 rows, All teams
+// scrolled to its end, the nearest drawn team row double-clicked — the
+// kept offset would clamp at the narrowed list's end, and its row
+// stands at the clip's top on the next frame.
+#[test]
+fn a_double_click_on_a_team_row_scrolls_the_list_to_its_row() {
+    let path = fixture(PesVersion::Pes21, "team_row_double_click_reveal");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
+    scroll_player_list_to_bottom(&mut window, &mut view);
+
+    // The list's end draws player rows alone; wheel up until a team row
+    // is drawn and stays, each wheel's delta drained before the look so
+    // the row stands still for the clicks.
+    let label = 'find: {
+        for _ in 0..64 {
+            let nodes = draw(&mut window, &mut view);
+            if let Some(node) = nodes
+                .iter()
+                .find(|node| list_row(node) && !player_row(node))
+            {
+                break 'find node.label().expect("a team row's label").to_owned();
+            }
+            let at = centre(
+                nodes
+                    .iter()
+                    .find(|node| player_row(node))
+                    .expect("a player row"),
+            );
+            window.frame(
+                vec![
+                    egui::Event::PointerMoved(at),
+                    egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: egui::vec2(0.0, 300.0),
+                        phase: egui::TouchPhase::Move,
+                        source: egui::MouseWheelSource::Wheel,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+                |ui| show(ui, &mut view, &|| Vec::new()),
+            );
+            for _ in 0..64 {
+                if !window.ctx.input(|input| input.is_scrolling()) {
+                    break;
+                }
+                draw(&mut window, &mut view);
+            }
+        }
+        panic!("no team row drawn")
+    };
+    let id: u32 = label
+        .split_whitespace()
+        .next()
+        .and_then(|word| word.parse().ok())
+        .expect("a team row's label starts with its id");
+
+    let nodes = draw(&mut window, &mut view);
+    let row = team_row(&nodes, &view, id);
+    click(&mut window, row, &mut view);
+    click(&mut window, row, &mut view);
+    assert_eq!(view.team, TeamChoice::Team(id), "the list holds {id} alone");
+    assert_eq!(view.filter, "", "the double click cleared the filter");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(id)),
+        "{id}'s row selected"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "{id}'s row at the clip's top ({bounds:?} vs {clip:?})"
     );
 }
 
