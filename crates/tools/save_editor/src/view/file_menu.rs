@@ -262,24 +262,37 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         {
             write = Some(Write::SaveAs);
         }
-        menu_separator(ui);
-        group_heading(ui, egui::RichText::new("Open from Documents").weak());
-        if opens.saves.is_empty() {
-            group_heading(
-                ui,
-                egui::RichText::new("No PES saves were found in Documents.").weak(),
-            );
-        }
-        for open in &opens.saves {
-            entry(ui, open);
-        }
-        if !opens.recents.is_empty() {
-            menu_separator(ui);
-            group_heading(ui, egui::RichText::new("Recent files").weak());
-            for open in &opens.recents {
-                entry(ui, open);
-            }
-        }
+        let top_separator = menu_separator(ui);
+        // The saves' and recents' part scrolls past the window's bottom:
+        // its room is the window's bottom less the bottom rows' and the
+        // popup frame's bottom margin, and the solid bar's strip stands
+        // in the menu's width when it scrolls, so no entry wraps under it.
+        let below = top_separator.rect.height()
+            + 2.0 * ui.spacing().interact_size.y
+            + egui::Frame::popup(ui.style()).total_margin().bottom;
+        let max_height = (ui.ctx().content_rect().bottom() - ui.cursor().top() - below).max(0.0);
+        ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+        egui::ScrollArea::vertical()
+            .max_height(max_height)
+            .show(ui, |ui| {
+                group_heading(ui, egui::RichText::new("Open from Documents").weak());
+                if opens.saves.is_empty() {
+                    group_heading(
+                        ui,
+                        egui::RichText::new("No PES saves were found in Documents.").weak(),
+                    );
+                }
+                for open in &opens.saves {
+                    entry(ui, open);
+                }
+                if !opens.recents.is_empty() {
+                    menu_separator(ui);
+                    group_heading(ui, egui::RichText::new("Recent files").weak());
+                    for open in &opens.recents {
+                        entry(ui, open);
+                    }
+                }
+            });
         menu_separator(ui);
         if add_enabled(
             ui,

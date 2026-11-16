@@ -520,6 +520,115 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
     heading_between(&nodes, "Recent files", lines[1], entries[6].1);
 }
 
+// SE-GUI-26's scroll clause: thirteen discovered saves and ten recents
+// in the minimum window — the menu's middle scrolls, Close save and Exit
+// stay on screen, and the wheel reaches the oldest recent.
+// SE-GUI-26
+#[test]
+fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
+    let tree = tree("menu_scroll");
+    let layout = save_layout(PesVersion::Pes21);
+    for index in 0..10 {
+        let account = format!("9999999999999999{index:02}");
+        let folder = tree
+            .documents
+            .join("KONAMI")
+            .join(layout.game_folder)
+            .join(account)
+            .join("save");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(
+            folder.join(layout.file_name),
+            fixture_save(PesVersion::Pes21),
+        )
+        .unwrap();
+    }
+    let mut view = SaveView::new();
+    // Ten recents (the kept limit), opened oldest first.
+    let dir = crate::test_support::scratch("menu_scroll_recents");
+    for index in 0..10 {
+        let folder = dir.join(format!("r{index} VGL26 winter backups"));
+        std::fs::create_dir_all(&folder).unwrap();
+        let path = folder.join("EDIT00000000 - VGL26 winter");
+        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
+        view.open(&path);
+    }
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::sized(960.0, 600.0);
+    let inside = |node: &accesskit::Node| {
+        node.bounds()
+            .is_some_and(|b| b.x0 >= 0.0 && b.y0 >= 0.0 && b.x1 <= 960.0 && b.y1 <= 600.0)
+    };
+
+    let nodes = open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    for entry in ["Close save", "Exit"] {
+        let node = menu_item(&nodes, entry);
+        assert!(inside(node), "{entry} lies inside the window");
+    }
+
+    // The wheel over the middle scrolls it down until the oldest recent
+    // stands inside the window (bounded, so a menu that never scrolls
+    // fails rather than hangs).
+    let oldest = "[PES 2019] r0 VGL26 winter backups";
+    let mut nodes = nodes;
+    for _ in 0..24 {
+        let entry = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label().is_some_and(|label| label.starts_with(oldest))
+            })
+            .expect("the oldest recent's entry");
+        if inside(entry) && inside(menu_item(&nodes, "Exit")) {
+            break;
+        }
+        let at = centre(menu_item(&nodes, PES19_ENTRY));
+        let (_, frame_nodes, _) = window.frame(
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -300.0),
+                    phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        nodes = frame_nodes;
+    }
+    let oldest_entry = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| label.starts_with(oldest))
+        })
+        .expect("the oldest recent's entry");
+    assert!(
+        inside(oldest_entry),
+        "the oldest recent scrolled into the window: {:?}",
+        oldest_entry.bounds()
+    );
+    assert!(
+        inside(menu_item(&nodes, "Exit")),
+        "Exit still lies inside the window"
+    );
+
+    // A short menu draws no scroll bar (two found saves and one recent).
+    let mut view = SaveView::new();
+    view.open(&tree.elsewhere);
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        !nodes.iter().any(|node| node.role() == Role::ScrollBar),
+        "no scroll bar while the menu fits"
+    );
+}
+
 // SE-GUI-26
 #[test]
 fn a_recent_entry_clicked_in_the_menu_opens_it_and_moves_it_to_the_front() {
@@ -547,6 +656,24 @@ fn a_recent_entry_clicked_in_the_menu_opens_it_and_moves_it_to_the_front() {
         view.recents.first().map(|recent| recent.path.as_path()),
         Some(tree.elsewhere.as_path()),
         "the reopened save moved to the recents' front"
+    );
+
+    // Reopened, the menu draws it first under Recent files.
+    let nodes = open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    let labels: Vec<&str> = entries(&nodes, "Open\u{2026}")
+        .iter()
+        .filter_map(|node| node.label())
+        .collect();
+    let newer = format!("[PES 2021] other{0}EDIT00000000", std::path::MAIN_SEPARATOR);
+    assert_eq!(
+        &labels[labels.len() - 4..],
+        [
+            older.as_str(),
+            newer.as_str(),
+            "Close save Ctrl+W",
+            "Exit Ctrl+Q"
+        ],
+        "the clicked recent first under Recent files"
     );
 }
 
@@ -1616,6 +1743,40 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
         clip(&nodes).is_some(),
         "premise: the panel's scroll bar is drawn"
     );
+    // The bar stands between the toolbar band's line and the panes'
+    // bottom, over the status bar's margin.
+    let (bar_top, bar_bottom) = clip(&nodes).expect("the scroll bar's span");
+    let band_bottom = {
+        let button = menu_button(&nodes, "File")
+            .bounds()
+            .expect("the File menu button's bounds");
+        let stroke = window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke
+            .width;
+        button.y1 + f64::from(BAND_MARGIN.bottom) + f64::from(stroke)
+    };
+    assert!(
+        bar_top >= band_bottom,
+        "the scroll bar starts below the toolbar band: {bar_top} vs {band_bottom}"
+    );
+    // Plus half the frame's margins: a `max_height` off by the chrome or
+    // the title pushes the bar's bottom past the panes' bottom.
+    let panes_bottom = f64::from(window.screen.y) - f64::from(PANE_BOTTOM_MARGIN);
+    let chrome = f64::from(
+        studio_core::widgets::modal_frame(&window.ctx.global_style())
+            .total_margin()
+            .sum()
+            .y,
+    );
+    assert!(
+        bar_bottom + chrome / 2.0 <= panes_bottom,
+        "the scroll bar ends over the panes' bottom: {bar_bottom} + {chrome}/2 vs {panes_bottom}"
+    );
     assert!(
         !inside(&nodes),
         "premise: the last entry starts below the clip"
@@ -1855,6 +2016,11 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
     edited.basic.height = 170;
     view.session.as_mut().unwrap().edit_player(1, edited);
     assert!(view.is_dirty(), "premise: unsaved changes");
+    // A floating panel open and the Comparator seeded: they go with the
+    // save too.
+    view.panel = Some(Panel::Comparator);
+    view.comparator.filter_team = TeamChoice::Team(701);
+    view.comparator.exported = Some(PathBuf::from("out.tsv"));
     discover_counted(&mut view, &tree.documents);
     let mut window = Headless::new();
 
@@ -1879,6 +2045,15 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
     idle_frames(&mut window, &mut view, 2);
     let nodes = draw(&mut window, &mut view);
     assert!(view.session.is_none(), "Discard closed the save");
+    assert!(view.panel.is_none(), "the floating panel went with it");
+    assert_eq!(
+        (
+            view.comparator.filter_team,
+            view.comparator.exported.is_none()
+        ),
+        (TeamChoice::All, true),
+        "the Comparator reset"
+    );
     assert!(
         !view.request_close,
         "Close save closed the save, not the window"
