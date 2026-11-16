@@ -21,12 +21,12 @@ excepted, below), 0.0.2-pes19
 1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
    title row's line in its rework.
 2. Code: 0.0.2-gaps' leftovers are merged (`30cca13d`), their built-window check owed;
-   0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild; Carbon's
-   round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2): `sk/instrw` and
-   `sk/ktorw` merged, `sk/cmprw` running, `sk/selrw` after the answers' rework merges.
-   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round,
-   but for Report a problem, a Tier 1 surface (DECISIONS 2026-11-16): its SWE-2 loop (round 1
-   ruled, rework `sk/reprw`), then Carbon's and Astra's loops, each followed by a SWE-2 loop.
+   0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild. Carbon's
+   round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2) are all merged.
+   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, all ended, no
+   Carbon round; but Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), runs
+   Carbon's and Astra's loops, each followed by a SWE-2 loop: Carbon's round 2 accepted 5,
+   its rework is `sk/reprw2` (unmerged), then Carbon's round 3.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
@@ -1676,8 +1676,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
       - [x] SWE-2's loop over parts A to C ("S-scr", "S-scrc"); part C's last fixes (a team
-        row's name codes, the range run's settings box) are `sk/scrcrw`
-      - [ ] one Carbon round after `sk/scrcrw` merges
+        row's name codes, the range run's settings box) merged (`08b518ba`)
+      - [ ] one Carbon round, after 0.0.2
     - [ ] the changes list and the close prompt (tier 2): `a6bba169` (changesperf),
       `55f398a9` (promptx)
     - [ ] interchange and export settings (tier 1): `fb42b800` (shirtno), `7b2e9ea2`,
