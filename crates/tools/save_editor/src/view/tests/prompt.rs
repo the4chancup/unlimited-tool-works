@@ -277,6 +277,31 @@ fn opening_the_prompt_closes_the_changes_list_over_it() {
     let nodes = draw(&mut window, &mut view);
     assert!(prompt_drawn(&nodes), "the prompt is drawn");
     assert!(view.changes_list.is_none(), "the list is closed");
+
+    // On a team row the prompt closes the Tactics slot popover the same
+    // way — opened here on an outfield marker of the pitch.
+    let (mut view, _) = three_changes("prompt_closes_popover");
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    let at = (0..11)
+        .filter(|&index| players[index].position != 0)
+        .find_map(|index| marker_point(canvas, &players, index))
+        .expect("a marker a click can reach");
+    click_at(&mut window, at, &mut view);
+    assert!(
+        view.tactics.popover_area().is_some(),
+        "premise: the slot popover is open"
+    );
+
+    prompt::open(&mut view, Pending::Close);
+    draw(&mut window, &mut view);
+    assert!(
+        view.tactics.popover_area().is_none(),
+        "the prompt closed the popover"
+    );
 }
 
 // SE-GUI-05: the prompt is its heading, the table and the three answers —

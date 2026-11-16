@@ -719,12 +719,8 @@ impl SaveView {
     /// Close save (the File menu's entry and Ctrl+W; a Discard answering the
     /// window's close takes the same drop): the session, its floating panel
     /// and the Comparator dropped on top of `drop_save`, which drops the
-    /// welcome panel's look too so the panel rescans. Nothing happens with
-    /// no save open.
+    /// welcome panel's look too so the panel rescans.
     pub(crate) fn close_save(&mut self) {
-        if self.session.is_none() {
-            return;
-        }
         self.session = None;
         self.panel = None;
         self.comparator = comparator::Comparator::new();

@@ -627,11 +627,49 @@ mod tests {
 
         let mut restarted = Tool::new();
         restarted.view.discover = Box::new(|_| Vec::new());
+        let starts = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let record = std::rc::Rc::clone(&starts);
+        restarted.view.open_dialog = Box::new(move |start| {
+            record
+                .borrow_mut()
+                .push(start.map(std::path::Path::to_path_buf));
+            None
+        });
         view_frame(&mut restarted, &egui_ctx, &ctx);
         assert_eq!(
             restarted.view.last_folder,
-            Some(backups),
+            Some(backups.clone()),
             "read back at the restart"
+        );
+
+        // And the welcome panel's Open… starts the picker in the
+        // remembered folder (the restart clause drawn).
+        view_frame(&mut restarted, &egui_ctx, &ctx);
+        let nodes = view_nodes(&mut restarted, &egui_ctx, &ctx, Vec::new());
+        let open = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == egui::accesskit::Role::Button
+                    && node
+                        .label()
+                        .is_some_and(|label| label.starts_with("Open\u{2026}"))
+            })
+            .filter_map(egui::accesskit::Node::bounds)
+            .next()
+            .expect("the Open… entry");
+        view_click(
+            &mut restarted,
+            &egui_ctx,
+            &ctx,
+            egui::pos2(
+                ((open.x0 + open.x1) / 2.0) as f32,
+                ((open.y0 + open.y1) / 2.0) as f32,
+            ),
+        );
+        assert_eq!(
+            starts.borrow().as_slice(),
+            [Some(backups)],
+            "Open… starts the picker in the last opened folder"
         );
     }
 
@@ -686,14 +724,6 @@ mod tests {
 
         let mut restarted = Tool::new();
         restarted.view.discover = Box::new(|_| Vec::new());
-        let starts = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
-        let record = std::rc::Rc::clone(&starts);
-        restarted.view.open_dialog = Box::new(move |start| {
-            record
-                .borrow_mut()
-                .push(start.map(std::path::Path::to_path_buf));
-            None
-        });
         view_frame(&mut restarted, &egui_ctx, &ctx);
         assert_eq!(
             restarted.view.recents,
@@ -711,7 +741,7 @@ mod tests {
         );
 
         // And the welcome panel draws them in the same order under Recent
-        // files; its Open… starts the picker in the last opened folder.
+        // files.
         view_frame(&mut restarted, &egui_ctx, &ctx);
         let nodes = view_nodes(&mut restarted, &egui_ctx, &ctx, Vec::new());
         let heading = nodes
@@ -742,32 +772,6 @@ mod tests {
                 format!("[PES 2021] backups{sep}EDIT00000000"),
             ],
             "both recents under the heading, newest first"
-        );
-
-        let open = nodes
-            .iter()
-            .filter(|node| {
-                node.role() == egui::accesskit::Role::Button
-                    && node
-                        .label()
-                        .is_some_and(|label| label.starts_with("Open\u{2026}"))
-            })
-            .filter_map(egui::accesskit::Node::bounds)
-            .next()
-            .expect("the Open… entry");
-        view_click(
-            &mut restarted,
-            &egui_ctx,
-            &ctx,
-            egui::pos2(
-                ((open.x0 + open.x1) / 2.0) as f32,
-                ((open.y0 + open.y1) / 2.0) as f32,
-            ),
-        );
-        assert_eq!(
-            starts.borrow().as_slice(),
-            [Some(other_dir)],
-            "Open… starts the picker in the last opened folder"
         );
     }
 
