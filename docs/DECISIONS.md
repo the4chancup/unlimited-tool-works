@@ -18370,3 +18370,13 @@ Why: 10 s, not 2 s, because on a machine loaded with builds (or a game) the moni
 start of the whole binary, took longer: that session then ran with no crash dump (the crashed
 run's log in the gates showed it). The longer bound costs only when the monitor is that slow.
 Plan: no plan edit needed: no plan or spec section states the bound.
+
+## 2026-11-16 — gui — Two pixels from a draft are accepted only where moving closer costs code
+Decision: the drafts' tolerance stays one pixel. A second pixel is accepted only for an element
+that cannot be moved closer without extra code (text and borders a browser and egui round
+apart). An element the app places by a margin, a gap or a size of its own is moved to within one
+pixel, whatever its offset.
+Why: read as "two pixels pass", the rule let a title row's line stand 2 points lower than the
+draft's on every screen, though the app places that line itself; together with other gaps, that small offset
+can push a screen into a scroll. Moving an element the app places costs nothing.
+Plan: plans/core/gui.md "Prototypes before implementation", the Overlay and Draft measure bullets.

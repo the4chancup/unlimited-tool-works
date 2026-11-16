@@ -1314,10 +1314,13 @@ the string: a draft renames a panel only with its plan section.
   PrintWindow script into `assets/captures/<tool>_<screen>.png`, refreshed when a view's slice
   lands, each dated in its corner so a stale one shows. A shifted panel or a different gap
   shows at once, to the maintainer as to the lead, where two separate captures compared by eye
-  miss it. A difference of one pixel between the draft and the app is accepted, two where
-  matching closer would complicate the implementation (a browser and egui round text and
-  borders apart, and chasing the last pixel costs code a maintainer then owns); a larger one
-  is a mismatch, fixed or ruled. A layout test pinning a draft measure may allow the same.
+  miss it. A difference of one pixel between the draft and the app is accepted. Two are
+  accepted only for an element that cannot be moved closer without extra code: a browser and
+  egui round text and borders apart, and chasing the last pixel there costs code a maintainer
+  then owns. An element the app places itself, by a margin, a gap or a size it sets, is moved
+  to within one pixel, however small the offset: two pixels are never accepted on their own.
+  Anything larger is a mismatch, fixed or ruled. A layout test pinning a draft measure may
+  allow the same.
 - **Draft measure.** `scripts/drafts/draft_compare.py SCREEN` measures a screen open in the built
   window against its draft (`--modal` one dialog, `--menu` one open toolbar menu).
 
@@ -1326,7 +1329,8 @@ the string: a draft renames a panel only with its plan section.
   and each pair's largest offset is sorted into the tolerance's bands:
 
   - over 2 px (a mismatch);
-  - 1 to 2 px (accepted only where matching closer costs code, so each is looked at);
+  - 1 to 2 px (each looked at: accepted only where the element cannot be moved closer
+    without extra code, never for one a margin, gap or size of the app's own places);
   - within 1 px.
 
   A pair whose boxes differ by design (a text's ink against the widget holding it, a

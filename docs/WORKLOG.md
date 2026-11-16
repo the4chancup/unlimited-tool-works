@@ -1757,7 +1757,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       points less room, the Gameplan's 8-point gaps, Kit slots at 51. Looked at (lead,
       2026-11-16, the release build of `5e086fbe`): the indent, Motion's place, the 8-point
       gaps, Automatic settings level with the lists and the boxes' one width match the draft.
-      Four differences go to a fix (SWE-2, the brief `.tmp/brief_answers_look.md`):
+      Five differences go to a fix (SWE-2, the brief `.tmp/brief_answers_look.md`):
       - Kit slots: the "Slot n" and Number label columns 51 wide, as the boxes (egui's grid
         takes `interact_size.x` as its least column width): Bound team ID 19 right of the
         draft's
@@ -1768,6 +1768,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         after the squares: the group 241 wide, the draft's 230
       - Appearance, Motion, Presentation and Copy from ID: number boxes 40 wide, the draft's
         52: Motion's second column and Presentation's notes 12 left of the draft's
+      - every player and team screen: the line under the title's row (Stats | Appearance |
+        Gameplan) 2 lower than the draft's (59, the draft's 57), and everything under it with
+        it: the sidekick's rework, after its first report
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
