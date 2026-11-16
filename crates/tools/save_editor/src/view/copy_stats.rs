@@ -69,29 +69,25 @@ pub(crate) struct CopySwap {
     /// measured at: worked out once per revision over every cup team —
     /// measuring 4,600 players' labels each frame is too slow, and only
     /// a change may bring a wider name.
-    widths: Option<(u64, (f32, f32))>,
+    pub(crate) widths: Option<(u64, (f32, f32))>,
 }
 
 impl CopySwap {
     /// The window as it opens: both rows on the selected player — on a
     /// team row, the team's first filled slot — so Copy and Swap start
     /// disabled until a pick or a list click moves one of them.
-    pub(crate) fn new(session: &Session, selected: Option<Selection>) -> CopySwap {
+    pub(crate) fn new(session: &Session, selected: Selection) -> CopySwap {
         let pick = match selected {
-            Some(Selection::Player(team_id, slot)) => Pick { team_id, slot },
-            Some(Selection::Team(team_id)) => Pick {
+            Selection::Player(team_id, slot) => Pick { team_id, slot },
+            Selection::Team(team_id) => Pick {
                 team_id,
                 slot: first_filled_slot(session.file(), team_id).unwrap_or(0),
-            },
-            None => Pick {
-                team_id: 0,
-                slot: 0,
             },
         };
         CopySwap {
             source: pick,
             destination: pick,
-            seen: selected,
+            seen: Some(selected),
             line: String::new(),
             widths: None,
         }

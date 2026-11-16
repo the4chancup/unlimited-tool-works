@@ -1675,29 +1675,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] Carbon's round 5, 2026-11-16 (at `93dcdc06`): 5 of 5 accepted ("C-list r5"): a
         team pick under a typed filter moved the selection off screen, two kept-scroll
         tests, a copied wheel sequence, a doc
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon5.md`), in `listrw1` once
-        the recents' rework B has merged from it; then Carbon's round 6
-    - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
-      clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
-      - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
-      - [x] SWE-2's round 2: 1 of 4 accepted, the loop ends (a test's comment; the help's
-        column name), fixed by the lead (`3756809d`)
-      - [x] Carbon's round 1, 2026-11-16 (at `3756809d`): 15 of 18 accepted ("C-notices r1"):
-        with the portraits off a hidden portrait took a click meant for the badge above it and
-        the brackets framed turf (plan, draft, DECISIONS), the light selector's contrast, the
-        Copy/swap window's width, team exports' notice detail, untested clauses, stale help
-      - [x] the rework (SWE-2, a fresh session in `noticesrw`; merge `b78e9dd8`)
-      - [x] Carbon's round 2, 2026-11-16 (at `b78e9dd8`): 7 of 8 accepted ("C-notices r2"):
-        the light theme's hovered version selector under 4.5, Copy/swap stats resizing on a
-        team change, untested portraits-off drags and drops, the Team TOML notice's draft
-        wording, and plan lines behind the code (fixed by the lead)
-      - [x] the rework (SWE-2, merge `8c672c7e`)
-      - [x] Carbon's round 3, 2026-11-16 (at `8c672c7e`): 6 of 7 accepted, none changing a
-        member's outcome ("C-notices r3"), so the loop ends with this rework: two tests that
-        pass on wrong code, SE-GUI-81 and the fonts' readme (lead, `015a035e`), "Appearance
-        section" in the lock's tooltip, a dead `None` arm
-      - [ ] the rework (SWE-2, `sk/noticesrw3`, `.tmp/0_0_2/revdebt/rework_notices_r3.md`):
-        running
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon5.md`, `sk/listrw5`):
+        running; then Carbon's round 6
+    - [x] notices and files (tier 2): `bba7eee1`, `7ac5df69`, `30b1109c`. SWE-2's loop (12 then 1
+      accepted) and Carbon's three rounds (15, 7 and 6 accepted, "C-notices r1" to "r3"), each
+      reworked; the loop ended with round 3's rework (merge `93f945ee`)
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -1743,8 +1725,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] the rework's part A (SWE-2, merge `9ee8e180`): `studio_core`'s settings edit
         keeps the comment above a key whose item changes kind; a held close closes popups
         (ST-RUN-05 widened)
-      - [ ] part B, the rest (SWE-2, `sk/recrw_b`, `rework_recents_b.md`): running; then
-        Carbon's round 2
+      - [x] part B, the rest (SWE-2, merge `1db0dbe5`): the welcome panel's entries never
+        wrap, the prompt closes the changes list and the Tactics popover
+      - [x] Carbon's round 2, 2026-11-16 (at `1db0dbe5`): 9 accepted, two in part
+        ("C-recents r2"): the File menu cut off in a short window (now scrolls: plan, draft,
+        DECISIONS), a key the settings save inserts lands after the last section, five tests
+        that pass on wrong code, a stale plan line and mutants exclusion (lead, `0ac94593`)
+      - [ ] the rework: A2, the settings save (SWE-2, `sk/recrw_a2`): running; B2, the Save
+        editor (`.tmp/0_0_2/revdebt/rework_recents_b2.md`), once list rework 5 merges; then
+        Carbon's round 3
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):

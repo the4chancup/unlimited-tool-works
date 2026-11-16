@@ -18353,3 +18353,12 @@ Why: 0.0.2's readme names PES 2019 as supported so that VGL 27's managers can us
 editor, and so far only an unchanged import and a name edit have been seen in game there.
 Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL): preview 0.0.2"; worklog
 0.0.2-pes19.
+
+## 2026-11-16 — save_editor — the File menu's saves and recents scroll when the menu outgrows the window
+Decision: when the File menu would run past the window's bottom, the part from Open from
+Documents down to the last recent save scrolls; Open…, Save, Save as…, Close save and Exit stay
+on screen.
+Why: with several saves found and ten recent ones, a 960 × 600 window cut off the menu's lower
+entries, where the welcome panel already scrolls. The middle scrolls, not the whole menu, because
+the commands used on every save would otherwise scroll out of reach.
+Plan: plans/save_editor.md, the File menu's paragraph and SE-GUI-26.

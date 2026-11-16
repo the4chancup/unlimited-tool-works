@@ -834,10 +834,10 @@ fn the_window_holds_its_width_while_the_picks_and_the_line_change() {
         "a wide result line moves neither the window nor Copy"
     );
 
-    // A row's team changed to one whose widest player label differs from
-    // 701's: each Player combo is as wide as the widest label of every
-    // cup team, so still nothing moves.
-    let other_team = {
+    // A row's team changed to one wider-named than 701's and differently
+    // widest: each combo is as wide as the widest of every cup team, so
+    // still nothing moves.
+    let (other_team, team_widest, chrome) = {
         let file = view.session.as_ref().unwrap().file();
         let labels_of = |team: u32| {
             rostered(&view, team)
@@ -856,38 +856,49 @@ fn the_window_holds_its_width_while_the_picks_and_the_line_change() {
         window
             .frame(Vec::new(), |ui| {
                 let font = egui::TextStyle::Button.resolve(ui.style());
+                let text_w = |text: &str| {
+                    ui.painter()
+                        .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
+                        .size()
+                        .x
+                };
                 let widest_of = |team: u32| {
                     labels_of(team)
                         .iter()
-                        .map(|label| {
-                            ui.painter()
-                                .layout_no_wrap(
-                                    label.clone(),
-                                    font.clone(),
-                                    egui::Color32::PLACEHOLDER,
-                                )
-                                .size()
-                                .x
-                        })
+                        .map(|label| text_w(label))
                         .fold(0.0_f32, f32::max)
                 };
-                let own = widest_of(701);
-                teams
-                    .iter()
-                    .copied()
-                    .find(|&id| (widest_of(id) - own).abs() > 0.5)
+                let name_w = |team: u32| text_w(&display_name(&file.team(team).unwrap().name));
+                let spacing = ui.spacing();
+                (
+                    teams.iter().copied().find(|&id| {
+                        (widest_of(id) - widest_of(701)).abs() > 0.5
+                            && name_w(id) > name_w(701) + 0.5
+                    }),
+                    teams.iter().copied().map(name_w).fold(0.0_f32, f32::max),
+                    2.0 * spacing.button_padding.x + spacing.icon_spacing + spacing.icon_width,
+                )
             })
             .0
-            .expect("a team whose widest player label differs from 701's")
     };
-    let player_widths = |nodes: &[accesskit::Node]| {
+    let other_team = other_team.expect("a team wider-named than 701 and differently widest");
+    let other_name = display_name(&team_entry(&view, other_team).name);
+    let combo_widths = |nodes: &[accesskit::Node]| {
         ["Source", "Destination"].map(|row| {
-            let bounds = row_combos(nodes, row)[1].bounds().expect("bounds");
-            bounds.x1 - bounds.x0
+            row_combos(nodes, row).map(|combo| {
+                let bounds = combo.bounds().expect("bounds");
+                bounds.x1 - bounds.x0
+            })
         })
     };
-    let widths_before = player_widths(&nodes);
-    let other_name = display_name(&team_entry(&view, other_team).name);
+    let widths_before = combo_widths(&nodes);
+    for (row, widths) in ["Source", "Destination"].iter().zip(widths_before) {
+        assert!(
+            (widths[0] - f64::from(team_widest + chrome)).abs() <= 0.5,
+            "the {row} Team combo is the widest name's plus chrome: {widths:?} vs {}",
+            team_widest + chrome
+        );
+    }
     let nodes = draw(&mut window, &mut view);
     pick_option(
         &mut window,
@@ -902,9 +913,65 @@ fn the_window_holds_its_width_while_the_picks_and_the_line_change() {
         "a team change moves neither the window nor Copy"
     );
     assert_eq!(
-        player_widths(&nodes),
+        combo_widths(&nodes),
         widths_before,
-        "the two Player combos keep their width"
+        "the four combos keep their width"
+    );
+
+    // An idle frame keeps the measured pair: a seeded pair at this
+    // revision is used as it is, not re-measured — a pair wider than
+    // every option shows the floor each combo's `.width` gives it.
+    let revision = view.session.as_ref().unwrap().revision();
+    view.copy_swap.as_mut().expect("the window").widths = Some((revision, (400.0, 500.0)));
+    let nodes = draw(&mut window, &mut view);
+    let expected = [
+        f64::from(400.0 + chrome),
+        f64::from(500.0 + chrome),
+        f64::from(400.0 + chrome),
+        f64::from(500.0 + chrome),
+    ];
+    assert_eq!(
+        combo_widths(&nodes).concat(),
+        expected,
+        "the seeded pair is used as is"
+    );
+    assert_eq!(
+        view.copy_swap.as_ref().unwrap().widths,
+        Some((revision, (400.0, 500.0))),
+        "and kept, not re-measured"
+    );
+
+    // A rename wider than every label on offer re-measures on the new
+    // revision: the Player combos widen to fit him.
+    let mut entry = player_entry(&view, 70101);
+    entry.name = "A PLAYER NAME WIDER THAN EVERY LABEL THE LIST OFFERS".to_owned();
+    let new_label = slot_label(&entry, 0);
+    view.session.as_mut().unwrap().edit_players(vec![entry]);
+    let new_widest = window
+        .frame(Vec::new(), |ui| {
+            ui.painter()
+                .layout_no_wrap(
+                    new_label.clone(),
+                    egui::TextStyle::Button.resolve(ui.style()),
+                    egui::Color32::PLACEHOLDER,
+                )
+                .size()
+                .x
+        })
+        .0;
+    assert!(
+        f64::from(new_widest) > widths_before[0][1],
+        "premise: the rename is wider than the list's widest was"
+    );
+    let nodes = draw(&mut window, &mut view);
+    let players_now = combo_widths(&nodes).map(|widths| widths[1]);
+    assert_eq!(
+        players_now,
+        [
+            f64::from(new_widest + chrome),
+            f64::from(new_widest + chrome)
+        ],
+        "the re-measure widened both Player combos to fit him"
     );
 }
 
