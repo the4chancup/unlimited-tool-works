@@ -453,6 +453,27 @@ fn the_strip_grid_stands_three_columns_by_five_rows_with_its_lines() {
         }),
         "the line at the third column's left on rows four and five"
     );
+    let row1 = centre("Boots ID");
+    let row2 = centre("Gloves ID");
+    let row3 = centre("Wrist taping");
+    for (field_before, next_label) in [("Boots ID", "Sleeves"), ("Sleeves", "Inners")] {
+        let field_right = control_right_of(&nodes, field_before)
+            .bounds()
+            .expect("bounds")
+            .x1 as f32;
+        let label_left = label_bounds(&nodes, next_label).x0 as f32;
+        assert!(
+            lines.iter().any(|&[a, b]| {
+                a.x == b.x
+                    && a.x > field_right
+                    && a.x < label_left
+                    && a.y.min(b.y) <= row1.y
+                    && a.y.max(b.y) >= row2.y
+                    && a.y.max(b.y) < row3.y
+            }),
+            "the line before {next_label:?}'s column on rows one and two only"
+        );
+    }
 }
 
 // SE-GUI-84

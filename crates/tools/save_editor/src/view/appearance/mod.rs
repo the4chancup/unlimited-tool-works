@@ -1,5 +1,5 @@
 //! The Appearance screen (the draft's `appearanceTab` and `paletteRow`):
-//! six titled groups in `Frame::group` frames, laid out to show whole in
+//! seven titled groups in `Frame::group` frames, laid out to show whole in
 //! the default window — Full Player Customization with Colors at its
 //! right, Strip style, Physique with Motion over Edit flags at its right,
 //! and Presentation last (star and playing attitude, aesthetics like the
@@ -1063,7 +1063,7 @@ fn motion_grid(
                 maybe_end_row(ui, pair, per_row);
             }
             // The dribbling motion sits between the kicks and the celebrations
-            // (the draft's second row's last cell); a version without it draws
+            // (the draft's fourth row's last cell); a version without it draws
             // it disabled at 0 with the `PES NN+` tooltip.
             ui.label(DRIBBLING_MOTION_LABEL);
             match motion.dribbling {

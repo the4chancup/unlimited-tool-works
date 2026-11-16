@@ -36,7 +36,7 @@ mod wheel;
 
 pub use choice::{checkbox, checkbox_row, checkbox_without_text, radio, radio_value};
 pub use collapsing_header::collapsing_header;
-pub use combo::{COMBO_SEPARATOR_SPACING, combo_item, combo_label, combo_separator};
+pub use combo::{combo_item, combo_label, combo_separator};
 pub use dock::BottomDock;
 pub use enabled::{add_enabled, add_enabled_ui};
 pub use in_use_frame::in_use_frame;

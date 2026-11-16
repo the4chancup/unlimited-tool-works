@@ -646,6 +646,22 @@ fn malformed_player_keys_are_errors() {
         err,
         TeamTomlError::UnknownKey { ref key } if key == "players.01.ingame_face"
     ));
+    // 0.0.1's team file is refused, not read: its shirt number, star rating
+    // and playing attitude now sit under other keys.
+    for (text, path) in [
+        ("[players.01]\nnumber = 9\n", "players.01.number"),
+        ("[players.01.stats]\nstar = 3\n", "players.01.stats.star"),
+        (
+            "[players.01.stats]\nplaying_attitude = 1\n",
+            "players.01.stats.playing_attitude",
+        ),
+    ] {
+        let err = TeamToml::parse(text).expect_err(path);
+        assert!(
+            matches!(&err, TeamTomlError::UnknownKey { key } if key == path),
+            "{path}: {err:?}"
+        );
+    }
     // `[appearance.unknown]` left it too, once every bit of the run was a
     // key or measured unused.
     let err = TeamToml::parse("[players.01.appearance.unknown]\nface = \"00\"\n")

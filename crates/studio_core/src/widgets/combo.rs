@@ -34,7 +34,7 @@ pub fn combo_label(
 }
 
 /// The height `combo_separator` takes in a combo's open list.
-pub const COMBO_SEPARATOR_SPACING: f32 = 7.0;
+const COMBO_SEPARATOR_SPACING: f32 = 7.0;
 
 /// The line between two groups of rows in a combo's open list, in the
 /// middle of the `COMBO_SEPARATOR_SPACING` points it stands in (the

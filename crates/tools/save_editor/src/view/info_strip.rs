@@ -165,7 +165,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let on = match view.selected {
         Some(Selection::Team(_)) => Segment::Gameplan,
-        _ => match view.page {
+        Some(Selection::Player(..)) | None => match view.page {
             PlayerScreen::Stats => Segment::Stats,
             PlayerScreen::Appearance => Segment::Appearance,
         },

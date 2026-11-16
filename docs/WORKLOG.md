@@ -3031,7 +3031,7 @@ one of them means that page).
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
 - The Save editor's eight help chapters and the two core ones read in the built window; any
   PES; 8.29e's e1; harness
-- The Appearance screen in the built window at 1280 × 800: the six groups whole with no
+- The Appearance screen in the built window at 1280 × 800: the seven groups whole with no
   scroll bar, lock off and on, the strip grid's lines; any PES; 0.0.2-applayout; harness
 - The Live AATF pitch's warning cross (`#D29922` from 0.0.2-noticeerr), drawn for a Warning-severity position mark (no
   real save under 4cc Autumn 26 raises one); any PES; 8.9m's m4; harness
