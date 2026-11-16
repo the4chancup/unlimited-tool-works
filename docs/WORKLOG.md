@@ -2263,14 +2263,15 @@ briefs, review loops, gates and mutation runs as for any step.
       panel's gap above each heading, about 4 to 5 points tighter than the draft's
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
       landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
-      ends the SWE-2 loop: its rework (SWE-2, `sk/recents2`, `recents/.tmp/rework_recents2.md`,
-      with Choose file's tooltip from 0.0.2-answers) running, then one Carbon round
+      ends the SWE-2 loop: its rework landed (SWE-2, merge `2923f863`, with Choose file's
+      tooltip from 0.0.2-answers); next, one Carbon round
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [ ] code, in two slices -> verify: each a test red first. SWE-2 (`sk/answers`,
       `answers/.tmp/brief_answers.md`, running): the lit area, the manager id, the rail,
-      Substitution, the Gameplan's gaps. Opus, next: the Physique box, the indent, `Star
-      rating` and its key, the Kit slots' widths:
+      Substitution, the Gameplan's gaps. Opus (`sk/layout`, `layout/.tmp/brief_layout.md`,
+      running): the Physique box, the indent, `Star rating` and its key, the Kit slots'
+      widths:
       - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
         ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
       - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
@@ -2290,8 +2291,8 @@ briefs, review loops, gates and mutation runs as for any step.
         the lineup lists' bottom (2 points shorter)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
         `substitution_choices`, help 08, the two comments)
-      - Choose file's tooltip reads "starting in the folder of the last opened save"
-        (`view/file_menu.rs` `OPEN_TIP` and its test): in the recents round 2 rework
+      - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
+        landed with the recents round 2 rework (merge `2923f863`)
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
@@ -2517,7 +2518,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the rework (SWE-2, merge `5b5546d8`)
     - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
-      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test)
+      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Running at
+      `2923f863` (`.tmp/0_0_2/bar/astra_r7.md`)
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
