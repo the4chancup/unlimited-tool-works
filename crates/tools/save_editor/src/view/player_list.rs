@@ -148,14 +148,18 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     .or(view.selected);
         }
     }
-    // A pick that changed the listed teams scrolls to the row still
-    // selected: the rows over it change with the teams — a kept one
-    // stands under every team's rows again at All teams — so it would
-    // sit off screen.
-    if (view.team != team_before || view.team_category != category_before)
-        && view.selected.is_some()
-    {
-        view.reveal_selected = Some(reveal_for(view.selected));
+    // A pick that relisted the rows scrolls to the row still selected:
+    // the rows over it change with the teams — a kept one stands under
+    // every team's rows again at All teams — so it would sit off screen.
+    // A pick leaving the listed rows as they were moves nothing.
+    if view.team != team_before || view.team_category != category_before {
+        let listed_before =
+            selection::list(session.file(), &team_before, &view.filter, category_before);
+        let listed_after =
+            selection::list(session.file(), &view.team, &view.filter, view.team_category);
+        if listed_before != listed_after && view.selected.is_some() {
+            view.reveal_selected = Some(reveal_for(view.selected));
+        }
     }
     ui.add(text_box(
         egui::TextEdit::singleline(&mut view.filter)
@@ -210,8 +214,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category);
-    // A selection moved outside the list (`reveal_selected`): its row's
-    // index, scrolled to below.
+    // The reveal a moved selection asked for, or a kept one a pick
+    // relisted the rows over (`reveal_selected`): its row's index,
+    // scrolled to below.
     let reveal = std::mem::take(&mut view.reveal_selected).and_then(|reveal| {
         rows.iter()
             .position(|row| Some(row_selection(*row)) == view.selected)

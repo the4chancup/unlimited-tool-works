@@ -38,14 +38,17 @@ fn picking_all_teams_scrolls_the_list_to_the_kept_row() {
         Some(Selection::Team(820)),
         "the pick keeps the selection"
     );
-    assert_selected_row_in_clip(&mut window, &mut view);
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "820's row at the clip's top, `Top` ({bounds:?} vs {clip:?})"
+    );
 }
 
 // A category tick that keeps the selection scrolls the list to its row:
 // `VGL` ticked with 781's first player selected (the list's first row),
 // then `All` — the 4cc teams' rows stand before his again, and his row
 // is inside the clip on the next frame.
-// SE-GUI-83
 #[test]
 fn a_category_tick_scrolls_the_list_to_the_kept_selection() {
     let path = fixture(PesVersion::Pes21, "category_kept_reveal");
@@ -73,7 +76,94 @@ fn a_category_tick_scrolls_the_list_to_the_kept_selection() {
         Some(Selection::Player(781, 0)),
         "the tick keeps the selection"
     );
-    assert_selected_row_in_clip(&mut window, &mut view);
+    // The 4cc teams' rows over him outnumber the rows the clip shows, so
+    // `Top` would stand his row at the clip's top edge while `Nearest`
+    // leaves it at the bottom edge.
+    let index = selection::list(
+        view.session.as_ref().unwrap().file(),
+        &view.team,
+        &view.filter,
+        view.team_category,
+    )
+    .iter()
+    .position(|row| {
+        matches!(row, selection::ListRow::Player(player) if player.team_id == 781 && player.slot == 0)
+    })
+    .expect("78101's row is listed");
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    let shown = (f64::from(clip.height()) / (bounds.y1 - bounds.y0)) as usize;
+    assert!(index > shown, "premise: {index} rows over his row");
+    assert!(
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
+}
+
+// A category tick that leaves the listed rows as they were moves
+// nothing: 781 picked, its first player scrolled out of the clip, `VGL`
+// ticked — 781 is a VGL team, so the list holds the same rows — and the
+// top row stays where it was.
+#[test]
+fn a_category_tick_that_relists_nothing_keeps_the_scroll() {
+    let path = fixture(PesVersion::Pes21, "category_same_rows");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
+    pick_in_selector(&mut window, &mut view, "/@/");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(781)),
+        "premise: 781's row selected"
+    );
+    assert!(
+        TeamCategory::Vgl.contains(781),
+        "premise: 781 is a VGL team"
+    );
+    view.selected = Some(Selection::Player(781, 0));
+
+    // Wheel down until his row is out of the clip (bounded), then let the
+    // spread-out delta drain.
+    let nodes = draw(&mut window, &mut view);
+    let at = centre(
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+    );
+    let mut off_clip = false;
+    for _ in 0..64 {
+        let nodes = draw(&mut window, &mut view);
+        if !nodes
+            .iter()
+            .filter(|node| list_row(node))
+            .any(|node| node.toggled() == Some(accesskit::Toggled::True))
+        {
+            off_clip = true;
+            break;
+        }
+        notch(&mut window, &mut view, at, false);
+    }
+    assert!(off_clip, "the list scrolled his row out of the clip");
+    for _ in 0..64 {
+        if !window.ctx.input(|input| input.is_scrolling()) {
+            break;
+        }
+        draw(&mut window, &mut view);
+    }
+    let nodes = draw(&mut window, &mut view);
+    let top_before = top_list_row(&nodes);
+
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
+    assert_eq!(view.team_category, TeamCategory::Vgl, "premise: VGL ticked");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(781, 0)),
+        "premise: the selection kept"
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(top_list_row(&nodes), top_before, "the tick moved no row");
 }
 
 // An undo or a redo of a roster move puts the moved player back on the
@@ -92,8 +182,10 @@ fn an_undo_or_redo_scrolls_the_list_to_the_moved_player() {
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(701);
-    // What a drag of player 01 to the last filled slot ends in:
-    // `move_player`'s edit and the selection on the dropped record's slot.
+    // What a drag of player 01 to a filled slot off the clip with rows
+    // still below it ends in: `move_player`'s edit and the selection on
+    // the dropped record's slot. (On the last row `Top` and `Nearest`
+    // clamp to the same end; three rows under his, they part.)
     let last = team_entry(&view, 701)
         .roster
         .iter()
@@ -101,10 +193,11 @@ fn an_undo_or_redo_scrolls_the_list_to_the_moved_player() {
         .expect("a rostered slot");
     let last = u8::try_from(last).expect("a roster is at most 40 slots");
     assert!(last > 10, "premise: a list longer than the pane shows");
-    view.session.as_mut().unwrap().move_player(701, 0, last);
-    view.selected = Some(Selection::Player(701, last));
+    let target = last - 3;
+    view.session.as_mut().unwrap().move_player(701, 0, target);
+    view.selected = Some(Selection::Player(701, target));
     // A pane shorter than the team's 24-row list, the list scrolled to
-    // its end, where the moved player's row stands.
+    // its end.
     let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
     scroll_player_list_to_bottom(&mut window, &mut view);
 
@@ -123,10 +216,14 @@ fn an_undo_or_redo_scrolls_the_list_to_the_moved_player() {
     });
     assert_eq!(
         view.selected,
-        Some(Selection::Player(701, last)),
-        "premise: the redo moved it back to the last slot"
+        Some(Selection::Player(701, target)),
+        "premise: the redo moved it back to his slot"
     );
-    assert_selected_row_in_clip(&mut window, &mut view);
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
 }
 
 // A category tick that leaves the selected player's team out moves the
@@ -152,11 +249,7 @@ fn a_category_tick_scrolls_the_list_to_the_moved_selection() {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, selector_combo(&nodes), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let vgl = nodes
-        .iter()
-        .find(|node| node.role() == Role::RadioButton && node.label() == Some("VGL"))
-        .expect("the VGL radio button");
-    click(&mut window, vgl, &mut view);
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
     assert_eq!(
         view.selected,
         Some(Selection::Player(781, 0)),
@@ -178,14 +271,7 @@ fn a_team_pick_scrolls_the_list_to_its_row() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
     scroll_player_list_to_bottom(&mut window, &mut view);
 
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(&mut window, selector_combo(&nodes), &mut view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (item, _) = pairs
-        .iter()
-        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("/a/"))
-        .expect("team 702's entry");
-    action_click(&mut window, &mut view, *item);
+    pick_in_selector(&mut window, &mut view, "/a/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(702)),

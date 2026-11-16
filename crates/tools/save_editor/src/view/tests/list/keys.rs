@@ -135,7 +135,7 @@ fn page_down_and_up_step_seven_rows_from_a_number_field() {
 // is `Nearest`: landing on a player the list already shows whole leaves
 // the top row where it was; landing on one below the clip puts his row
 // at the clip's bottom edge.
-// SE-GUI-53
+// SE-GUI-103
 #[test]
 fn a_one_teams_page_step_scrolls_only_as_far_as_it_needs() {
     let path = fixture(PesVersion::Pes17, "page_keys_one_team_nearest");
@@ -152,8 +152,9 @@ fn a_one_teams_page_step_scrolls_only_as_far_as_it_needs() {
 
     // The rows drawn with the list at its top, top to bottom: the last
     // of them inside the clip is where a first `Nearest` step can land.
-    // A first, settling frame comes before them: the window's status bar
-    // takes its height once drawn, and the pane is deeper until it does.
+    // A first, settling frame comes before them: the quick actions' panel
+    // under the list claims only part of its height on the first frame,
+    // and the clip runs deeper until the second.
     draw(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let selected = nodes
@@ -177,7 +178,7 @@ fn a_one_teams_page_step_scrolls_only_as_far_as_it_needs() {
         last > 7 && last + 7 < drawn.len(),
         "premise: a seven-row step lands inside the clip and the next below it ({last})"
     );
-    let top_before = rows[0];
+    let top_before = top_list_row(&nodes);
     view.selected = Some(drawn[last - 7]);
 
     // PgDn to a player the list shows whole: the top row keeps its place.
@@ -187,16 +188,10 @@ fn a_one_teams_page_step_scrolls_only_as_far_as_it_needs() {
         Some(drawn[last]),
         "premise: PgDn stepped seven rows"
     );
-    let mut after: Vec<accesskit::Rect> = nodes
-        .iter()
-        .filter(|node| list_row(node))
-        .filter_map(accesskit::Node::bounds)
-        .collect();
-    after.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
-    assert!(
-        (after[0].y0 - top_before.y0).abs() <= 0.5 && (after[0].y1 - top_before.y1).abs() <= 0.5,
-        "the top row kept its place ({:?} vs {top_before:?})",
-        after[0]
+    assert_eq!(
+        top_list_row(&nodes),
+        top_before,
+        "the top row kept its place"
     );
 
     // PgDn to a player below the clip: his row stands at its bottom edge.

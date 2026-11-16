@@ -377,12 +377,7 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     // team is out of the new category, so the selector reads `All
     // teams` and the selection is Invitational's first player.
     click(&mut window, radio(&nodes, "VGL"), &mut view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (item, _) = pairs
-        .iter()
-        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("/@/"))
-        .expect("781's entry in the VGL popup");
-    action_click(&mut window, &mut view, *item);
+    pick_in_selector(&mut window, &mut view, "/@/");
     assert_eq!(view.team, TeamChoice::Team(781), "premise: 781 picked");
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, selector_combo(&nodes), &mut view);
