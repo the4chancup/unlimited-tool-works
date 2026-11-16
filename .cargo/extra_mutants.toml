@@ -195,12 +195,6 @@ why = "the dribbling motion is a 2-bit field (PES 20 and 21 only): every stored 
 [[exclude]]
 path = "crates/tools/save_editor/src/view/mod.rs"
 kind = "bool"
-description = "in new: version_warning: false becomes true | removed: false"
-why = "read only with a save open, and open() sets it true when it sets the session"
-
-[[exclude]]
-path = "crates/tools/save_editor/src/view/mod.rs"
-kind = "bool"
 description = "in save_to: write_now arg 4: false becomes true | removed: false"
 why = "the own-game check it skips ran just before (save_to returns when running() lists the save's version), so both calls see the same games"
 

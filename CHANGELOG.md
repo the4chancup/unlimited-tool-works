@@ -44,8 +44,9 @@
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
   Invitational teams.
-- **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats…`, which stays
-  open: pick the source once, then select in the list each player to copy onto.
+- **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats`
+  (`Copy/swap stats…` in the Player menu), which stays open: pick the source once, then
+  click each player in the list to copy onto.
 - **Save editor**: Ctrl+V pastes what Ctrl+C copied (a player's stats, a Gameplan, a tactics
   preset or a formation) in another Save editor window too, and after another save is
   opened, even a save of another PES version.
@@ -64,11 +65,12 @@
 - **Save editor**: the Savefile menu's `Save formation pictures for a range of teams…` saves
   that picture for every cup team between two you pick, into one folder. Stop ends the run
   and keeps the pictures already saved.
-- **Save editor**: the Tactics formation bar has a Portraits checkbox, which hides the
-  portraits so the formation's shape is easier to see. `Scroll names` beside it is now
-  `Scroll`.
+- **Save editor**: the Tactics formation bar has a Portraits checkbox: unticking it hides
+  the portraits so the formation's shape is easier to see. `Scroll names` beside it is
+  now `Scroll`.
 - **Save editor**: the Player menu's FPC entry says what Ctrl+I will do: `Hide default body
-  (Enable FPC)` or `Show default body (Disable FPC)`.
+  (Enable FPC)` or `Show default body (Disable FPC)`, and the Team menu's two FPC entries
+  use the same names.
 - **Save editor**: a team's Stadium ID can be edited on every version and its Manager ID from
   PES 2017 on, and Team TOML files carry them.
 - **Save editor**: exporting a Team TOML suggests the team's name for the file (`f.toml` for

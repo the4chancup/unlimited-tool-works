@@ -62,7 +62,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
             canvas.contains(*point)
                 && (*x + 1 != slot.x || *y + 1 != slot.y)
                 && centres.iter().enumerate().all(|(other, centre)| {
-                    other == index || !marker_rect(*centre, canvas).contains(*point)
+                    other == index || !marker_rect(*centre, canvas, true).contains(*point)
                 })
         })
         .map(|(x, y, point)| (x + 1, y + 1, point))
@@ -108,7 +108,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
                 && (*x != slot.x || *y != slot.y)
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(*point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(*point))
         })
         .expect("an off-grid point free of markers");
 
@@ -171,7 +171,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
                 && (*x != slot.x || *y != slot.y)
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(*point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(*point))
         })
         .expect("an off-grid point free of markers");
 
@@ -247,7 +247,7 @@ fn a_marker_released_on_the_grass_takes_the_rules_position() {
     assert!(
         canvas.contains(onto)
             && centres.iter().enumerate().all(|(other, centre)| {
-                other == 2 || !marker_rect(*centre, canvas).contains(onto)
+                other == 2 || !marker_rect(*centre, canvas, true).contains(onto)
             }),
         "premise: the release lands on free grass"
     );
@@ -288,10 +288,9 @@ fn a_marker_released_on_the_grass_takes_the_rules_position() {
         },
     ) + press_offset(canvas, players[2], from);
     assert!(
-        centres
-            .iter()
-            .enumerate()
-            .all(|(other, centre)| { other == 2 || !marker_rect(*centre, canvas).contains(onto) }),
+        centres.iter().enumerate().all(|(other, centre)| {
+            other == 2 || !marker_rect(*centre, canvas, true).contains(onto)
+        }),
         "premise: the release lands on free grass"
     );
 
@@ -346,10 +345,9 @@ fn a_marker_released_on_the_grass_without_overalls_keeps_his_position() {
         },
     ) + press_offset(canvas, players[2], from);
     assert!(
-        centres
-            .iter()
-            .enumerate()
-            .all(|(other, centre)| { other == 2 || !marker_rect(*centre, canvas).contains(onto) }),
+        centres.iter().enumerate().all(|(other, centre)| {
+            other == 2 || !marker_rect(*centre, canvas, true).contains(onto)
+        }),
         "premise: the release lands on free grass"
     );
 
@@ -444,7 +442,14 @@ fn under_illegal_formations_a_marker_dropped_on_another_lands_at_the_snapped_spo
     let at = marker_point(&nodes, &players, from);
     let over = marker_point(&nodes, &players, onto);
     assert_eq!(
-        swap_target(&players, &centres_of(canvas, &players), canvas, over, from),
+        swap_target(
+            &players,
+            &centres_of(canvas, &players),
+            canvas,
+            over,
+            from,
+            true
+        ),
         Some(onto),
         "premise: with the flag off the release would swap the two"
     );
@@ -575,7 +580,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
         .find(|&index| {
             let from = marker_point(&nodes, &players, index);
             players[index].position != 0
-                && !marker_rect(centres[index], canvas).contains(over)
+                && !marker_rect(centres[index], canvas, true).contains(over)
                 && snap(
                     over - press_offset(canvas, players[index], from),
                     canvas.min,
@@ -585,7 +590,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
         .expect("an outfield starter off the keeper's marker");
     assert!(
         (0..11).all(|other| {
-            other == keeper || !marker_rect(centres[other], canvas).contains(over)
+            other == keeper || !marker_rect(centres[other], canvas, true).contains(over)
         }),
         "premise: the hold is on the keeper's marker alone"
     );
@@ -669,7 +674,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
             mapped_y(point) < f32::from(*MOVABLE_Y.start())
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(point))
         })
         .expect("a grass point clear of every marker, below y 4");
     assert!(
@@ -778,7 +783,7 @@ fn an_outfielder_held_past_the_pitches_other_sides_stands_on_the_ranges_edge() {
                     && past(mapped(point, offset))
                     && centres
                         .iter()
-                        .all(|centre| !marker_rect(*centre, canvas).contains(point))
+                        .all(|centre| !marker_rect(*centre, canvas, true).contains(point))
             })
             .unwrap_or_else(|| panic!("{side}: a grass point the mapping reads past the edge"));
         let held = match side {
@@ -881,7 +886,7 @@ fn under_illegal_formations_an_outfielder_dragged_below_the_pitch_lands_on_y_0()
             mapped_y(point) <= 0.0
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(point))
         })
         .expect("a grass point clear of every marker, at or below y 0");
     assert!(
@@ -966,7 +971,7 @@ fn under_illegal_formations_a_release_on_the_grids_other_edges_stores_them() {
             canvas.contains(point)
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(point))
         };
         let (x, y) = match (x, y) {
             (Some(x), None) => (0..=GRID_Y).find(|&y| free(x, y)).map(|y| (x, y)),
@@ -1036,7 +1041,7 @@ fn edge_press(
     let centres = centres_of(canvas, players);
     let order = draw_order(&centres);
     (0..11).find_map(|index| {
-        let rect = marker_rect(centres[index], canvas);
+        let rect = marker_rect(centres[index], canvas, true);
         let press = egui::pos2(rect.left() + inset, rect.center().y);
         let release = press - egui::vec2(reach, 0.0);
         let after = draw_position(canvas, players, index);
@@ -1044,10 +1049,10 @@ fn edge_press(
             && canvas.contains(release)
             && order[after + 1..]
                 .iter()
-                .all(|&other| !marker_rect(centres[other], canvas).contains(press))
+                .all(|&other| !marker_rect(centres[other], canvas, true).contains(press))
             && centres
                 .iter()
-                .all(|centre| !marker_rect(*centre, canvas).contains(release)))
+                .all(|centre| !marker_rect(*centre, canvas, true).contains(release)))
         .then_some((index, press, release))
     })
 }
@@ -1117,13 +1122,13 @@ fn a_release_within_the_click_distance_over_a_neighbour_is_a_click() {
     let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
     let centres = centres_of(canvas, &players);
-    let own = marker_rect(centres[index], canvas);
-    let other = marker_rect(centres[neighbour], canvas);
+    let own = marker_rect(centres[index], canvas, true);
+    let other = marker_rect(centres[neighbour], canvas, true);
     let press = egui::pos2(own.left() + 1.0, other.top() - 1.0);
     let release = egui::pos2(own.left() - 1.0, other.top() + 1.0);
     let under = |point: egui::Pos2| -> Vec<usize> {
         (0..11)
-            .filter(|&m| marker_rect(centres[m], canvas).contains(point))
+            .filter(|&m| marker_rect(centres[m], canvas, true).contains(point))
             .collect()
     };
     assert_eq!(
@@ -1255,7 +1260,7 @@ fn a_marker_released_off_the_pitch_beside_an_edge_marker_stays() {
     );
     let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
-    let edge_box = marker_rect(centres_of(canvas, &players)[edge], canvas);
+    let edge_box = marker_rect(centres_of(canvas, &players)[edge], canvas, true);
     assert!(
         (edge_box.right() - canvas.right()).abs() < 0.01,
         "premise: his box meets the canvas' right edge"
@@ -1328,7 +1333,7 @@ fn a_row_released_on_the_grass_beside_a_marker_does_nothing() {
     // 3 points out from the middle of one of a marker's sides.
     let (index, onto) = (0..11)
         .flat_map(|index| {
-            let rect = marker_rect(centres[index], canvas);
+            let rect = marker_rect(centres[index], canvas, true);
             [
                 egui::pos2(rect.left() - 3.0, rect.center().y),
                 egui::pos2(rect.right() + 3.0, rect.center().y),
@@ -1341,15 +1346,15 @@ fn a_row_released_on_the_grass_beside_a_marker_does_nothing() {
             canvas.contains(*point)
                 && centres
                     .iter()
-                    .all(|centre| !marker_rect(*centre, canvas).contains(*point))
+                    .all(|centre| !marker_rect(*centre, canvas, true).contains(*point))
         })
         .expect("a marker with grass 3 points beside his box");
     assert!(
-        (0..11).all(|other| !marker_rect(centres[other], canvas).contains(onto)),
+        (0..11).all(|other| !marker_rect(centres[other], canvas, true).contains(onto)),
         "premise: the release is in no marker's box"
     );
     assert!(
-        marker_rect(centres[index], canvas).distance_to_pos(onto) < 5.0,
+        marker_rect(centres[index], canvas, true).distance_to_pos(onto) < 5.0,
         "premise: within egui's search radius of his box"
     );
 
@@ -1367,7 +1372,7 @@ fn a_row_released_on_the_grass_beside_a_marker_does_nothing() {
     // A starter whose own box is farther from the release than `index`'s:
     // a release resolved to the nearest marker lands on `index` and
     // exchanges the two, not on his own marker, where it changes nothing.
-    let distance = |row: usize| marker_rect(centres[row], canvas).distance_to_pos(onto);
+    let distance = |row: usize| marker_rect(centres[row], canvas, true).distance_to_pos(onto);
     let starter = (0..11)
         .find(|&row| distance(row) > distance(index))
         .expect("another eleven row farther from the release");
@@ -1414,7 +1419,7 @@ fn a_marker_released_on_his_own_marker_moves() {
             let onto = from + egui::vec2(4.0 * SPOT_XS, 0.0);
             (slot.x <= 100
                 && order.iter().all(|&other| {
-                    other == index || !marker_rect(centres[other], canvas).contains(onto)
+                    other == index || !marker_rect(centres[other], canvas, true).contains(onto)
                 }))
             .then_some((index, from, onto))
         })
@@ -1422,7 +1427,7 @@ fn a_marker_released_on_his_own_marker_moves() {
         .expect("some outfield slot can move 4 units right");
     let slot = formation.players[index];
     assert!(
-        marker_rect(centres[index], canvas).contains(onto),
+        marker_rect(centres[index], canvas, true).contains(onto),
         "premise: the release is still on his own marker"
     );
 
@@ -1474,8 +1479,8 @@ fn a_press_on_the_keeper_over_another_marker_moves_neither() {
     let centres = centres_of(canvas, &players);
     let point = canvas.min + egui::vec2(160.0, 330.0);
     assert!(
-        marker_rect(centres[keeper], canvas).contains(point)
-            && marker_rect(centres[under], canvas).contains(point),
+        marker_rect(centres[keeper], canvas, true).contains(point)
+            && marker_rect(centres[under], canvas, true).contains(point),
         "premise: the point is inside both boxes"
     );
     assert!(
@@ -1760,7 +1765,7 @@ fn a_release_on_a_marker_under_the_dragged_ones_spot_swaps() {
         .iter()
         .rev()
         .copied()
-        .filter(|&m| m != index && marker_rect(centres[m], canvas).contains(onto))
+        .filter(|&m| m != index && marker_rect(centres[m], canvas, true).contains(onto))
         .collect();
     assert_eq!(
         covering.first(),
@@ -1860,7 +1865,9 @@ fn under_no_other_marker(
     centres_of(canvas, players)
         .iter()
         .enumerate()
-        .all(|(other, centre)| other == index || !marker_rect(*centre, canvas).contains(point))
+        .all(|(other, centre)| {
+            other == index || !marker_rect(*centre, canvas, true).contains(point)
+        })
 }
 
 /// The texts painted on `badge`: the text shapes whose galley's centre

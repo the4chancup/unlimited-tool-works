@@ -163,9 +163,27 @@ fn player_name(file: &EditFile, player_id: u32) -> String {
 /// in the second (the cup teams by display name) and the player combo in
 /// the third (the picked team's filled roster slots). A changed team
 /// takes its first filled slot; both combos keep the wheel stepping.
+/// Each combo is as wide as its widest option plus the combo's chrome, so
+/// a pick never resizes the window's grid.
 fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick: &mut Pick) {
     ui.label(label);
     let file = session.file();
+    let font = egui::TextStyle::Button.resolve(ui.style());
+    let text_width = |ui: &egui::Ui, text: &str| {
+        ui.painter()
+            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
+            .size()
+            .x
+    };
+    // The closed combo's chrome around its text: the button's padding on
+    // both sides, the gap and the arrow.
+    let chrome = {
+        let spacing = ui.spacing();
+        2.0 * spacing.button_padding.x + spacing.icon_spacing + spacing.icon_width
+    };
+    let team_width = cup_teams(file)
+        .map(|entry| text_width(ui, &display_name(&entry.name)))
+        .fold(0.0_f32, f32::max);
     let mut team = pick.team_id;
     let combo = egui::ComboBox::from_id_salt((salt, "team"))
         .selected_text(
@@ -173,6 +191,7 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
                 .map(|entry| display_name(&entry.name))
                 .unwrap_or_else(|| team.to_string()),
         )
+        .width(team_width + chrome)
         .show_ui(ui, |ui| {
             for entry in cup_teams(file) {
                 combo_item(ui, &mut team, entry.id, display_name(&entry.name));
@@ -189,6 +208,10 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
         pick.slot = first_filled_slot(file, team).unwrap_or(pick.slot);
     }
     let options = roster_options(file, pick.team_id);
+    let player_width = options
+        .iter()
+        .map(|(_, label)| text_width(ui, label))
+        .fold(0.0_f32, f32::max);
     let mut slot = pick.slot;
     let combo = egui::ComboBox::from_id_salt((salt, "player"))
         .selected_text(
@@ -198,6 +221,7 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
                 .map(|(_, label)| label.clone())
                 .unwrap_or_else(|| "?".to_owned()),
         )
+        .width(player_width + chrome)
         .show_ui(ui, |ui| {
             for (index, label) in &options {
                 combo_item(ui, &mut slot, *index, label);
@@ -260,7 +284,7 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
         .resizable(false)
         .open(&mut open)
         .show(ui.ctx(), |ui| {
-            egui::Grid::new("save_editor_copy_stats_grid")
+            let grid = egui::Grid::new("save_editor_copy_stats_grid")
                 .num_columns(3)
                 .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
                 .show(ui, |ui| {
@@ -286,11 +310,16 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
                     ui.end_row();
                 });
             // The last action's result: a line's room is always reserved
-            // so the window does not jump when it first lands.
+            // so the window does not jump when it first lands, and the
+            // line is cut at the grid's edge so a long one does not widen
+            // the window either.
             let line_height = ui.text_style_height(&egui::TextStyle::Body);
             ui.scope(|ui| {
                 ui.set_min_height(line_height);
-                ui.weak(dialog.line.as_str());
+                ui.set_max_width(grid.response.rect.width());
+                ui.add(
+                    egui::Label::new(egui::RichText::new(dialog.line.as_str()).weak()).truncate(),
+                );
             });
             // The picks name roster slots; the players written are the
             // ones the slots hold this frame, 0 for an unresolved pick

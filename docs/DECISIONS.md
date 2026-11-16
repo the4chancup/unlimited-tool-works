@@ -18148,3 +18148,141 @@ player standing above (a DMF behind an AMF in one lane), and brackets around it 
 empty turf. Moving the badges up to close the gap instead would change the shape the
 manager reads as the checkbox is ticked.
 Plan: `plans/save_editor.md` "Tactics editor", the Portraits paragraph.
+
+## 2026-11-16 — music_player — Chaoshorn's presses score their goals, as in Rigdio
+Decision: each goalhorn button the Chaoshorn starts is an ordinary press: it scores a goal
+for its player (the Standard Goalhorn for `goal`), and its horn is chosen as for that goal.
+Why: scoring keeps the Chaoshorn on the one press path, while leaving the score alone would
+need a horn chosen for a goal that is not counted, a selection of its own; the button is
+pressed only in a draw, in place of either team's victory anthem, on special occasions, so
+the score it moves matters little either way. Undo stays one level deep.
+Plan: plans/music_player.md "Playback semantics", the Chaoshorn bullet.
+
+## 2026-11-16 — music_player — a button is released when its song plays to its end
+Decision: a goalhorn with `end stop` or a victory anthem that plays to its end releases its
+button, so the next press scores and plays.
+Why: Rigdio left the button pressed, so a press after the song's end only released it,
+with no goal and no sound; streamers do not rely on that extra press.
+Plan: plans/music_player.md "Playback semantics", the bullet before ⟲.
+
+## 2026-11-16 — music_player — title.log shows horns and anthems, never a chant
+Decision: `title.log` gets the titles of goalhorns, anthems and victory anthems, as in
+Rigdio, and never a chant's.
+Why: streamers know the overlay as Rigdio's, and none has asked for a chant's title.
+Plan: plans/music_player.md "title.log".
+
+## 2026-11-16 — refs_arranger — every Fox viewer has FoxDen; with no lists file it keeps the uniform draw, and the fallback fill is even
+Decision: every viewer of a Fox cup has FoxDen installed, and its reading script, finding no
+`ref_lists.txt`, keeps the module's uniform draw (five distinct slots of 35). So the
+fallback fill of slots N+1..35 repeats the referees in storage-box order, each holding as
+many slots as any other or one more, instead of weighting them by the PES 17–21 rate table;
+the 18–21 chances show that draw's expected count, labelled "without the lists".
+Why: the weighted fill was made for the game's own draw, with its dead and hot slots, and
+with FoxDen on every viewer's game nobody gets that draw; under a uniform draw only an even
+spread gives the referees equal chances. Turning forcing off with no file would hand viewers
+the game's own draw back. The cups' Fox matches run in Exhibition mode, but the draw it
+picks no longer matters for the same reason.
+Plan: plans/refs_arranger.md "Background", "Who gets the file", "Slot appearance rates",
+the lists mode's "Fallback fill", the 18–21 chances, Acceptance, Open questions;
+plans/core/development_plan.md and plans/team_compiler/blue_port.md ("even fallback fill").
+
+## 2026-11-16 — refs_arranger — PES 15/16 stays approximate: the 2016 table serves 2015, and "probability" stays
+Decision: the 15/16 pattern table, measured on PES 2016, is assumed to hold on PES 2015,
+and the `chances` CLI keeps labelling its 15/16 figures "probability", though they are the
+sample's shares.
+Why: support for 15/16 is second-class for now, so an approximation is enough; a PES 2015
+log, and the exe's actual chances by disassembly, come only if the cups return to those
+versions.
+Plan: plans/refs_arranger.md "PES 15/16: pattern table", "CLI", Open questions.
+
+## 2026-11-16 — save_editor, team_widgets — a held player rated A or B nowhere lights nothing, so the whole pitch darkens
+Decision: while a starter rated A or B at no position (a blank team's placeholder, all C) is
+held on the Tactics pitch, no area is lit and the whole pitch is darkened; only a marker with
+no ratings at all (an empty slot, a host that reads none) darkens nothing.
+Why: PES 2019's Edit Position screen lights nothing for such a player; lighting his
+registered position would show a rating the game does not give him.
+Plan: plans/save_editor.md "Tactics editor", the lit area's paragraphs.
+
+## 2026-11-16 — save_editor — Numbers in attack and defence arriving by paste or import stay as they come
+Decision: on a PES 17 to 21 save under a ruleset without illegal formations, a preset pasted
+or copied, a Gameplan pasted from another team and an imported Team TOML still write the two
+numbers, and the AATF check says nothing about them.
+Why: the toggles' lock stops the route a member takes on purpose, and that is enough.
+Plan: plans/save_editor.md "Tactics editor", the numbers' bullet.
+
+## 2026-11-16 — pes_savefile, save_editor — a Team TOML import gives the target its own manager id
+Decision: an import writes a `manager_id` equal to the file's team id as the target team's
+own id, as it does for a base copy id equal to the file's own player id; any other value is
+written as it is.
+Why: a file exported from team 876 and imported onto 886 left both naming coach 876, where
+every other team of the save names its own; whether the game minds two teams sharing a coach
+is not known, and an in-game look on PES 2021 (the prematch screen) is queued to say.
+Plan: plans/pes_savefile/operations.md "Team TOML", "The manager id follows the team".
+
+## 2026-11-16 — save_editor — the Kit slots dialog shows the bound team's id, in boxes of one width
+Decision: each kit slot's `Bound team ID` shows and takes the team's id (718), as the build
+does, not the stored number (the id times 64), and the draft follows; every box of the
+dialog is one width, wide enough for six digits.
+Why: the id is the number a member reads everywhere else (Team ID, Manager ID); one width
+keeps the rows aligned whether a value has three digits or six.
+Plan: plans/save_editor.md "Editing UI", the Kit slots bullet.
+
+## 2026-11-16 — ruleset_editor — the rail's rows stand 24 apart, and Randomize is greyed whole until its generator
+Decision: the build gives the section rail's rows the draft's 3 points of padding (24 apart,
+not egui's 21), and the draft greys the whole Randomize menu until step 20.7 builds the
+generator, as the build does.
+Why: the draft's spacing was there from its first version, and the build's was egui's
+default rather than a choice; a menu that opens on three disabled choices only shows what
+cannot be done yet.
+Plan: plans/ruleset_editor.md, the rail's paragraph and "Randomize".
+
+## 2026-11-16 — save_editor, ruleset_editor — the drafts take three texts the build reworded; Choose file's tooltip says "the last opened save"
+Decision: the drafts take the build's help line under Rating stats, the Name count's tooltip
+and Choose file's tooltip, which also changes in the build to "Pick a save file, starting in
+the folder of the last opened save (or else of the newest save found)".
+Why: the rereading's fourth wave reworded them and the drafts were left behind; the
+tooltip's "the save opened last" read awkwardly.
+Plan: no plan edit needed: the plans do not quote the three texts.
+
+## 2026-11-16 — save_editor, team_widgets — Substitution offers the same four choices on every version
+Decision: the Tactics editor's Substitution combo offers Off, Very late, Flexible and Very
+early on every version, PES 15 and 16 included, their stored values read as PES 21's.
+Why: each game's screen lists the same four (looked at on PES 15, 16, 18, 19 and 20, after
+17 and 21); the build left Very early out on 15 and 16.
+Plan: plans/save_editor.md "Tactics editor", the Substitution paragraph.
+
+## 2026-11-16 — save_editor — the Appearance page's Physique box takes the draft's width
+Decision: the build's Physique box is as wide as the draft's, so Motion stands 24 points
+further right than the build first drew it.
+Why: the build's narrower box was not a choice anyone made, and the draft's spacing leaves
+the sliders and Motion's labels room.
+Plan: plans/save_editor.md "Editing UI", the Appearance page's Physique bullet.
+
+## 2026-11-16 — music_player — in Full mode the match's kickoff fades out a playing anthem
+Decision: in Full mode, the feed's first `ClockStarted` of a match fades out an anthem still
+playing, with the anthem's fade; Co-pilot and Assist leave it to the streamer. Anthems still
+start only by hand.
+Why: streamers stop the anthems at the match's first kickoff, or a few seconds after it, so
+Full mode, meant for a match nobody touches, does it for them. The goalhorn's fade after a
+goal never meets an anthem, which has stopped by then, so the plan's old "the existing
+kickoff fade-out may stop an anthem" named a fade that could not.
+Plan: plans/music_player.md "Autopilot", "Anthems start manually"; the scenario tests'
+bullet.
+
+## 2026-11-16 — gui — a checkbox alone in a grid cell is centred in its row, in the draft as in the build
+Decision: a checkbox standing alone in a form grid's cell (Settings' Invert number scrolling
+and Check for updates) is centred in its row, as egui draws it; the draft keeps the centring
+it took on 2026-11-15 (`040d85de`).
+Why: the draft's 1.5 points above the middle came from a browser's text baseline, not a
+choice, and centring it costs the build nothing.
+Plan: plans/core/gui.md, the "Form grids" row.
+
+## 2026-11-16 — save_editor — the Appearance page keeps the draft's swatch gap and Physique's label inset
+Decision: under Colors the skin and iris squares stand 2 points apart, and Physique's labels
+6 points in from its title (19 from the box's edge), both as the draft draws them; the
+build follows.
+Why: the build's 8-point gap and 13-point inset were not choices anyone made. The inset
+sets the labels under the title as their heading; whether every other box on the Stats and
+Appearance screens takes it too is drafted and waits on the maintainer's look
+(`tasks.html` "Every box's content 6 points in from its title").
+Plan: plans/save_editor.md "Editing UI", the Appearance page's Colors and Physique bullets.

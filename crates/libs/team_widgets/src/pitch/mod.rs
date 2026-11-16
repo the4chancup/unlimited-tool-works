@@ -557,7 +557,7 @@ pub fn pitch(
         let mut dropped = ui
             .ctx()
             .pointer_interact_pos()
-            .and_then(|pos| marker_at(pos, canvas, &centres, &order))
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order, view.portraits))
             .and_then(|index| {
                 responses[index]
                     .as_ref()
@@ -602,7 +602,7 @@ pub fn pitch(
                     let onto = if illegal_formations {
                         None
                     } else {
-                        swap_target(&players, &centres, canvas, pos, from)
+                        swap_target(&players, &centres, canvas, pos, from, view.portraits)
                     };
                     match onto {
                         Some(onto) => formation.players.swap(from, onto),
@@ -657,7 +657,7 @@ pub fn pitch(
         let swap = dragged.filter(|_| !illegal_formations).and_then(|index| {
             ui.ctx()
                 .pointer_interact_pos()
-                .and_then(|pos| swap_target(&players, &centres, canvas, pos, index))
+                .and_then(|pos| swap_target(&players, &centres, canvas, pos, index, view.portraits))
         });
         // A held lineup row's pick is `marker_at`'s: a row's drop swaps
         // out whoever it lands on, the keeper too and under every
@@ -667,7 +667,7 @@ pub fn pitch(
         let row_swap = ui
             .ctx()
             .pointer_interact_pos()
-            .and_then(|pos| marker_at(pos, canvas, &centres, &order))
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order, view.portraits))
             .filter(|&index| {
                 let payload = responses[index]
                     .as_ref()
@@ -742,7 +742,8 @@ pub fn pitch(
         if let Some(target) = swap.or(row_swap) {
             paint_corners(
                 &painter,
-                portrait_rect(badge_rect(centres[target])),
+                badge_rect(centres[target]),
+                view.portraits,
                 palette.selected_corners,
             );
         }
@@ -917,11 +918,18 @@ fn clamp_centre(centre: egui::Pos2, canvas: egui::Rect) -> egui::Pos2 {
 
 /// The marker's whole box from the badge centre — the badge's width, the
 /// portrait's top to the name's bottom — the centre clamped so the box
-/// stays inside the canvas (the draft's `markerRect`).
-fn marker_rect(centre: egui::Pos2, canvas: egui::Rect) -> egui::Rect {
+/// stays inside the canvas (the draft's `markerRect`). With the
+/// portraits off the box starts at the badge's top: a portrait not drawn
+/// would take a click or a drop meant for the badge above it.
+fn marker_rect(centre: egui::Pos2, canvas: egui::Rect, portraits: bool) -> egui::Rect {
     let centre = clamp_centre(centre, canvas);
+    let above = if portraits {
+        ABOVE_CENTRE
+    } else {
+        BADGE_H / 2.0
+    };
     egui::Rect::from_min_max(
-        centre - egui::vec2(BADGE_W / 2.0, ABOVE_CENTRE),
+        centre - egui::vec2(BADGE_W / 2.0, above),
         centre + egui::vec2(BADGE_W / 2.0, BELOW_CENTRE),
     )
 }
@@ -944,12 +952,13 @@ fn marker_at(
     canvas: egui::Rect,
     centres: &[egui::Pos2; 11],
     order: &[usize; 11],
+    portraits: bool,
 ) -> Option<usize> {
     order
         .iter()
         .rev()
         .copied()
-        .find(|&index| marker_rect(centres[index], canvas).contains(pos))
+        .find(|&index| marker_rect(centres[index], canvas, portraits).contains(pos))
 }
 
 /// The starter a release at `pos` would swap with (the draft's
@@ -964,11 +973,14 @@ fn swap_target(
     canvas: egui::Rect,
     pos: egui::Pos2,
     skip: usize,
+    portraits: bool,
 ) -> Option<usize> {
     draw_order(centres)
         .into_iter()
         .rev()
-        .find(|&index| index != skip && marker_rect(centres[index], canvas).contains(pos))
+        .find(|&index| {
+            index != skip && marker_rect(centres[index], canvas, portraits).contains(pos)
+        })
         .filter(|&index| players[index].position != 0)
 }
 
@@ -1001,8 +1013,9 @@ fn cross_centre(portrait: egui::Rect, view: &TacticsView) -> egui::Pos2 {
 }
 
 /// Live AATF's pitch cross (the draft's `pitchCross`): an X `CROSS_INSET`
-/// in from the marker's box edges about `centre`, the badge's box with the
-/// portraits off (`cross_centre`), its two strokes
+/// in from the marker's box edges about `centre` — `cross_centre`'s:
+/// the portrait's own centre, or the point standing it on the badge with
+/// the portraits off — its two strokes
 /// `CROSS_WIDTH` wide in `color` over the same strokes in black and
 /// `CROSS_OUTLINE` wider each side, so it stays seen over a red portrait.
 /// A disc at each stroke's end rounds it, as the draft's round caps do.
@@ -1071,19 +1084,32 @@ fn paint_marks_cross(
     portrait
 }
 
-/// The screen's corner brackets around `rect` (the draft's `corners`):
-/// a 9 px arm inward from each corner.
-fn paint_corners(painter: &egui::Painter, rect: egui::Rect, color: egui::Color32) {
+/// The screen's corner brackets about `badge` (the draft's `corners`):
+/// a 9 px arm inward from each corner of the frame — the portrait's box
+/// while the portraits are on, the badge itself with them off, the
+/// upright arms cut to 5 to fit its height.
+fn paint_corners(
+    painter: &egui::Painter,
+    badge: egui::Rect,
+    portraits: bool,
+    color: egui::Color32,
+) {
     let stroke = egui::Stroke::new(2.0, color);
-    let arm = 9.0;
-    let corner = |pos: egui::Pos2, dx: f32, dy: f32| {
-        painter.line_segment([pos + egui::vec2(0.0, dy * arm), pos], stroke);
-        painter.line_segment([pos, pos + egui::vec2(dx * arm, 0.0)], stroke);
+    let frame = if portraits {
+        portrait_rect(badge)
+    } else {
+        badge
     };
-    corner(rect.left_top(), 1.0, 1.0);
-    corner(rect.right_top(), -1.0, 1.0);
-    corner(rect.left_bottom(), 1.0, -1.0);
-    corner(rect.right_bottom(), -1.0, -1.0);
+    let upright = if portraits { 9.0 } else { 5.0 };
+    let across = 9.0;
+    let corner = |pos: egui::Pos2, dx: f32, dy: f32| {
+        painter.line_segment([pos + egui::vec2(0.0, dy * upright), pos], stroke);
+        painter.line_segment([pos, pos + egui::vec2(dx * across, 0.0)], stroke);
+    };
+    corner(frame.left_top(), 1.0, 1.0);
+    corner(frame.right_top(), -1.0, 1.0);
+    corner(frame.left_bottom(), 1.0, -1.0);
+    corner(frame.right_bottom(), -1.0, -1.0);
 }
 
 /// The formation's name in the canvas' bottom-left corner, as the game's
@@ -1324,7 +1350,7 @@ fn marker(
     // widget, so click-only would send a press on him to the marker
     // underneath.
     let response = ui.interact(
-        marker_rect(spot.centre, canvas),
+        marker_rect(spot.centre, canvas, view.portraits),
         ui.scope_id().with(("pitch marker", spot.index)),
         egui::Sense::click_and_drag(),
     );
@@ -1351,7 +1377,7 @@ fn marker(
                     preset: view.preset,
                     formation: view.formation,
                     slot: spot.index,
-                    at: marker_rect(spot.centre, canvas).left_bottom() - canvas.min,
+                    at: marker_rect(spot.centre, canvas, view.portraits).left_bottom() - canvas.min,
                 });
             }
         }
@@ -1536,7 +1562,7 @@ fn paint_marker(
         None
     };
     if let Some(color) = corners {
-        paint_corners(painter, portrait, color);
+        paint_corners(painter, badge, view.portraits, color);
     }
     (wide && view.scroll_names).then(|| name_still_for(size.x, seconds))
 }

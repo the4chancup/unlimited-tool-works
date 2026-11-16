@@ -113,8 +113,9 @@ Red did.
 
 Pre-Fox keeps Red's route, the template prop's texture replaced. In game on PES 17
 (2026-10-09), a `.mtl` beside a nocloth `.model` is read, and the collar model then stops
-drawing, so a collar cannot carry a texture of its own there. And a collar drawn with the kit's
-own material has no alpha test, so it could not show a logo with transparency anyway.
+drawing, so a collar cannot carry a texture of its own there. Apart from that test, the kit's
+own material has no alpha test, so a collar drawn with it could not show a logo with
+transparency anyway.
 
 Either way nothing outside the refs CPK is ever written and no consent, backup or rollback is
 needed:

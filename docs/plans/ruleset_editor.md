@@ -65,7 +65,9 @@ registered position rated A, no B ratings, a GK A never a second A, a captain, a
 goalkeeper, at most 10 skill cards.
 
 A left rail lists the sections. Each is a form, and a section with a validation error shows a
-mark in the rail.
+mark in the rail. The rail's rows stand 24 points apart (3 points of padding above and below
+each), as the draft has drawn them since its first version; egui's default padding would set
+them 21 apart.
 
 A bottom bar beside Save holds the problem count and the first problem, or "No problems found"
 when the data breaks no rule. It claims no more, since the custom checks and the sample team
@@ -233,7 +235,9 @@ nothing. It is still never saved, so its first save is a Save as.
 ## Randomize
 
 **Randomize ▾** (toolbar, and *Random* on the start page) generates a whole new ruleset in one
-of three presets, for an organizer who wants a starting point or a cup with a twist:
+of three presets, for an organizer who wants a starting point or a cup with a twist. Until the
+generator is built (step 20.7) the whole menu is greyed, in the build and in the draft alike,
+rather than opening on three disabled choices:
 
 | | Sensible | Weird | Crazy |
 |---|---|---|---|

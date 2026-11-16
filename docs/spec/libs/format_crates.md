@@ -275,10 +275,12 @@ prove PES accepts:
   normal, tangent, color, bone weights, bone indices, uv maps (a uv map identical to an earlier
   one shares its offset), faces in buffer 2;
 - strings de-duplicated;
-- a bounding box per bone and per mesh group that has meshes (a group's computed when the source
-  had none, which is why the legacy writer failed on Konami files: over its meshes and its child
-  groups' boxes, as the add-on computes it; a group without meshes or box gets no assignment
-  record, Konami's own layout);
+- a bounding box per bone and per mesh group that has meshes. A group whose source had no box
+  gets one computed over its meshes and its child groups' boxes, as the add-on computes it,
+  and a group without meshes or box gets no assignment record, Konami's own layout. Konami
+  files hold such groups, and Red's writer stopped on them: it writes every group's box, and
+  one it never read is `None` (`FmdlFile.py` `addMeshGroup` and `addBoundingBox`, Red's
+  `main`);
 - one level-of-detail record;
 - the fixed blocks 18 and 20 as the add-on writes them;
 - the extension headers re-emitted after the last string.

@@ -22,7 +22,7 @@ overrides the draw from per-match lists.
 
 The [Refs arranger](../refs_arranger.md) edits `players.txt` inside the refs export, either
 against those tables or, when the hook decides who appears, as one slot per referee plus a
-weighted fallback fill. On Fox it also edits the hook's `ref_lists.txt` beside it. Then it
+even fallback fill. On Fox it also edits the hook's `ref_lists.txt` beside it. Then it
 switches the user to this tool for the compile.
 
 The arranger never compiles, and this tool's referee behavior is unaffected by it: a saved

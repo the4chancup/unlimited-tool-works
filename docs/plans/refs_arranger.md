@@ -47,8 +47,10 @@ differs by engine generation:
   instead. Under that draw every live slot has the same chance, so the hot slots are likely
   sampling noise (the 125-match spread sits within about two standard deviations of 12%).
 
-  A fixed weighted list is the intended workflow; the measured rates remain estimates until
-  the cup's game mode and the other versions' assigners are known (Open questions).
+  The cups' matches on PES 2018 to 2021 run in Exhibition mode, but on Fox the game's draw no
+  longer decides anything: FoxDen forces every viewer's referees ("Who gets the file"). The
+  measured rates still drive the PES 17 editor, where they remain estimates (Open
+  questions).
 - **PES 15/16**: the game picks a whole **pattern**, a fixed triple of slot numbers
   (upper linesman, main referee, lower linesman), from a small set with very uneven
   probabilities. The dominant pattern (slots 17-8-5) covers almost a quarter of all
@@ -103,32 +105,32 @@ What this changes: with the hook, **which referee appears is decided in Lua, not
 35 slots the game happens to draw**. Each referee needs only one slot. The weighting-by-
 repetition problem disappears on Fox and, with it, the "recompile the refs CPK before every
 matchday" loop: rotation is a text file the script reads. The measured rates below remain the
-tool's engine for PES 15–17, and the *fallback fill* for Fox viewers who get the game's own
-draw.
+tool's engine for PES 15–17; on Fox they shape nothing, since every viewer has FoxDen and
+the game's own draw reaches nobody ("Who gets the file").
 
 **Who gets the file.** The referee module starts with forcing off and the remap table at
 identity, then, as its boot default, forces five distinct ids drawn uniformly from 1..35 at
-install and again after every match. So a Fox viewer sees one of three draws:
+install and again after every match. Every viewer of a Fox cup has FoxDen installed, so a
+Fox viewer sees one of two draws:
 
-- the game's own (no FoxDen);
-- the module's uniform one (FoxDen, no lists file);
-- the lists (FoxDen and the file).
+- the module's uniform one (no lists file);
+- the lists (the file).
 
 The lists file goes to the **streamers**, with one list per match of the matchday in schedule
-order, so the broadcast shows the referees the staff chose. The fallback-filled `players.txt`
-shapes the game's own draw; the same CPK serves all three.
+order, so the broadcast shows the referees the staff chose. The other viewers get the uniform
+draw, five distinct slots out of 35 with every slot equally likely, so the fallback-filled
+`players.txt` spreads the referees evenly over the slots; the same CPK serves both draws.
 
-What the reading script does when it finds no file (keep the module's uniform draw, or turn
-forcing off for the game's own) is open (Open questions): it decides whether the fallback fill
-also shapes what a FoxDen viewer without the file sees. Force state persists across script
-reloads within a game session, so the script re-establishes that no-file state whenever it
-finds no file; otherwise a file loaded and then removed keeps forcing its last list until the
-game restarts.
+The reading script, when it finds no file, keeps the module's uniform draw rather than
+turning forcing off: forcing off would hand the viewers the game's own draw, with its dead
+slots. Force state persists across script reloads within a game session, so the script
+re-establishes the uniform draw whenever it finds no file; otherwise a file loaded and then
+removed keeps forcing its last list until the game restarts.
 
 ## Slot appearance rates (reference data)
 
 These tables are empirical measurements, embedded as per-version constants. They drive
-the PES 15–17 editors and the Fox fallback fill. They can be refined as more matches
+the PES 15–17 editors. They can be refined as more matches
 are logged; the sample sizes are given so future measurements can be merged sensibly.
 
 ### PES 17–21: flat per-slot rates
@@ -163,7 +165,7 @@ filler to them is wasted weight.
 ### PES 15/16: pattern table
 
 The game draws one of these (upper, main, lower) slot triples per match. Measured
-over 64 matches:
+over 64 matches on PES 2016:
 
 | Upper | Main | Lower | Matches | Rate |
 |-------|------|-------|---------|------|
@@ -260,8 +262,8 @@ The compiler's Reader keeps its disabled-marker test to itself today; it moves i
     Label this as an expected count, not a probability of appearing at least once; joint
     slot observations would be needed for the latter.
   - **PES 18–21**: appearances across the lists (how many lists, and in which positions),
-    plus the fallback expected count from the filled `players.txt` in a secondary style,
-    labelled "the game's own draw".
+    plus the expected count of the draw without the file (slots held × 5 / 35) in a
+    secondary style, labelled "without the lists".
 - One referee is designated the **Filler** (a dedicated drop target): on PES 15–17 it is
   auto-assigned to every slot not explicitly assigned, so all 35 slots are always covered
   and the written `players.txt` is always complete. On PES 18–21 there is no Filler: the
@@ -301,18 +303,17 @@ version-dependent behavior in the suite:
     position, then repaired for the five-distinct rule). That is what a person does with the
     spreadsheet by hand and gets wrong at list twelve. Undo covers it.
   - **Fallback fill.** Slots N+1..35 of `players.txt` are filled by **repeating the
-    referees**, weighted by the PES 17–21 rate table so that each referee's expected
-    appearances are as equal as the dead and hot slots allow: the previous engine, applied
-    to the leftover slots only.
+    referees** in storage-box order, so each holds as many slots as any other, or one
+    more. FoxDen's draw without the file takes five distinct slots, every slot equally
+    likely, so an even spread gives the referees chances as equal as 35 slots allow; the
+    rate table's dead and hot slots do not apply, since that draw is not the game's.
 
-    This is what a viewer without FoxDen sees (and a FoxDen viewer without the file, if the
-    reading script turns forcing off; see "Who gets the file"), so it is the ordinary
-    viewer's experience rather than an edge case. With a file loaded the fill is invisible,
-    since force never lets the drawn slot through.
+    This is what every viewer without the file sees ("Who gets the file"), so it is the
+    ordinary viewer's experience rather than an edge case. With a file loaded the fill is
+    invisible, since force never lets the drawn slot through.
 
     The fill is automatic and shown read-only under the lists; no Filler referee exists in
-    this mode. Two referees whose expected counts tie are taken in storage-box order, so
-    identical input gives identical output.
+    this mode. Identical input gives identical output.
 - **PES 17 mode**: all 35 slots as editable rows (slot number, measured rate,
   drop target with the assigned name). Dead slots (~0%) render grayed (filler by
   default) but stay assignable. The slot list *is* the mapping; no preview needed.
@@ -444,7 +445,10 @@ maintained by cup staff as folders.
 `UTW refs-arranger chances ./exports/refs_export` prints the per-referee appearance estimates
 (and per-slot assignments), derived from the export's current files, using the active PES
 version's table. They are labeled as probability for PES 15/16 or expected count for PES
-17–21 (on 18–21 additionally the per-list, per-position counts from `ref_lists.txt`).
+17–21 (on 18–21 additionally the per-list, per-position counts from `ref_lists.txt`). The
+15/16 figures keep "probability" although they are the sample's shares ("Storage box"):
+those versions' support is second-class for now, and the label changes only if the exe's
+actual chances are read.
 
 `UTW refs-arranger randomize ./exports/refs_export --lists 12` writes `ref_lists.txt`
 with *n* randomized lists over the export's referees (same algorithm as the button; refuses
@@ -487,8 +491,8 @@ Verification covers:
 - the randomizer's invariants (five distinct per list, per-position counts differing by at
   most one across the set, an N < 5 roster refused with a notice);
 - the fallback fill (every referee in slots 1..N exactly once and in that order, slots
-  N+1..35 repeating referees with expected counts within the table's resolution of each
-  other, identical output for identical input);
+  N+1..35 repeating them in that order, so two referees' slot counts differ by at most one,
+  identical output for identical input);
 - observed atomic replacement of an existing file: interrupted temporary writes leave the old
   target intact, watcher reads see either the complete old or complete new file but never a
   partial one, and replacement is exercised explicitly on Windows.
@@ -500,21 +504,16 @@ Verification covers:
   presumably). Settled in game by `ref_mod.set` with five distinct, recognizable models in one
   Exhibition match, then a second with the ids rotated, which shows the roles follow the
   position, not the id; until then the lists editor labels positions by number.
-- **The reading script and the no-file draw.** How the script reads the file (above: the
-  hook offers no text reader yet) is the hook author's side of the contract and does not change
-  the file. What it does with no file is the staff's and the hook author's call, and decides
-  whom the fallback fill serves (`maintainer/questions.html`).
 - **PES 2020.** The referee module's 2020 branch has not been run on a 2020 exe; a run that
   logs the module installing and a forced match settles it.
-- **Do PES 15 and 16 share one pattern table?** The measurements come from one of
-  the two; assumed shared until measured on the other.
+- **Do PES 15 and 16 share one pattern table?** It was measured on PES 2016 and is
+  assumed to hold on 2015: support for 15/16 is second-class for now, and the
+  approximation is enough. A PES 2015 log, and the exe's actual chances, come if the
+  cups return to those versions.
 - **17–21 measurement reconciliation:** slot 24 is marked uncertain, and the supplied counts
   total 372 instead of 375. Confirm the missing observations and which game version(s) the
-  125-match sample covers before presenting the table as verified across PES 17–21; on
-  18–21 it now only shapes the fallback fill, so the stakes are lower than they were. The
-  cup's game mode decides which draw applies (Exhibition's uniform shuffle over the live
-  slots, or a competition mode's league pools; see Background), and with it whether the
-  table's spread is noise.
+  125-match sample covers before presenting the table as verified for PES 17; on 18–21 it
+  no longer shapes anything (Background).
 - **Do 17 slots have role identity** (main vs linesman)? The flat measurements
   don't distinguish roles; if role placement turns out to matter to managers,
   the table needs re-measuring with roles logged. (On 18–21 roles are the list positions.)

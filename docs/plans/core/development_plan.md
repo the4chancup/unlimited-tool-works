@@ -580,7 +580,7 @@ and Phase 8 (the shell).
 - Slot-list editor with drag-and-drop from the referee storage box; read-only pattern preview with
   hover cross-linking (15/16 mode)
 - Lists mode for PES 18–21 (the Fox referee hook decides who appears): one home slot per referee,
-  ordered five-position lists built by hand or randomized, the weighted fallback fill of the
+  ordered five-position lists built by hand or randomized, the even fallback fill of the
   leftover slots, `ref_lists.txt` writer
 - players.txt writing (overwrite confirmation) + Compiler handoff (`ToolContext` tool switch);
   `chances` and `randomize` CLI

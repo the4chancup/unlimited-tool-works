@@ -2,6 +2,7 @@
 //! and close cases, the fields' writes, the role chips and join.
 
 use egui::accesskit::{self, Role};
+use pes_savefile::EditFile;
 use pes_savefile::model::instruction::Instruction;
 use pes_savefile::model::tactics::SetPieceTakers;
 use pes_savefile::schema::fields::InstructionSide;
@@ -11,7 +12,7 @@ use pes_version::PesVersion;
 use super::*;
 use crate::test_support::{
     Headless, SettingsContext, button_labels, centre, chip_under, chips_below, combo_row, entry,
-    entry_id, fixture_rows, fixture_tactics, pointer_at, roster_rows,
+    entry_id, fixture_rows, fixture_tactics, pointer_at, roster_rows, team_rows,
 };
 
 // The draft's role palette: arm a chip and the note asks for its pitch
@@ -151,10 +152,10 @@ fn each_assignment_chip_writes_its_own_field() {
                 .iter()
                 .position(|&i| i == index)
                 .expect("every marker is in the order");
-            let at = marker_rect(centres[index], canvas).center();
+            let at = marker_rect(centres[index], canvas, true).center();
             order[after + 1..]
                 .iter()
-                .all(|&other| !marker_rect(centres[other], canvas).contains(at))
+                .all(|&other| !marker_rect(centres[other], canvas, true).contains(at))
         })
         .collect();
     assert!(
@@ -771,7 +772,8 @@ fn the_popover_stays_where_it_opened_while_the_marker_moves() {
     let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
     let players = tactics.presets[0].formations[0].players;
-    let marker_bottom_left = marker_rect(centres_of(canvas, &players)[index], canvas).left_bottom();
+    let marker_bottom_left =
+        marker_rect(centres_of(canvas, &players)[index], canvas, true).left_bottom();
     window.click_pitch(
         marker_point(&nodes, &players, index),
         PesVersion::Pes21,
@@ -1125,6 +1127,72 @@ fn a_secondary_press_on_the_grass_closes_the_popover() {
     assert_eq!(
         view.popover, None,
         "a secondary press on the grass closed it"
+    );
+}
+
+// With the portraits off a marker's box for clicks and drops starts at
+// his badge's top: a click on the AMF's badge — 41 canvas points above
+// the DMF's in the same lane, inside where the DMF's undrawn portrait
+// would hang — opens his popover, not the DMF's below. PES 18's team
+// 711, preset 3's Kick-off: the AMF at (53, 26) in slot 8 over the DMF
+// at (52, 20) in slot 5.
+// SE-GUI-81
+#[test]
+fn with_the_portraits_off_a_click_on_the_upper_starters_badge_selects_him() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let version = PesVersion::Pes18;
+    let file = EditFile::from_bytes(&pes_savefile::fixture_save(version)).expect("fixture save");
+    let mut tactics = file
+        .team(711)
+        .expect("team 711 is in the fixture")
+        .tactics
+        .clone();
+    let rows = team_rows(&file, 711);
+    let roster = roster_rows(&rows);
+    let (upper, lower) = (8usize, 5usize);
+    let mut view = TacticsView {
+        preset: 2,
+        portraits: false,
+        ..TacticsView::default()
+    };
+    let players = tactics.presets[2].formations[0].players;
+    assert_eq!(
+        (
+            position_label(players[upper].position),
+            players[upper].x,
+            players[upper].y
+        ),
+        ("AMF", 53, 26),
+        "premise: the AMF's spot"
+    );
+    assert_eq!(
+        (
+            position_label(players[lower].position),
+            players[lower].x,
+            players[lower].y
+        ),
+        ("DMF", 52, 20),
+        "premise: the DMF's under him"
+    );
+
+    let (nodes, _) = window.pitch(version, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let badge = centres[upper];
+    // The badge centre sits inside the box the DMF's marker has with the
+    // portraits on: his 57-point reach covers it 41 above his centre.
+    assert!(
+        (badge.x - centres[lower].x).abs() <= BADGE_W / 2.0
+            && badge.y >= centres[lower].y - ABOVE_CENTRE
+            && badge.y <= centres[lower].y + BELOW_CENTRE,
+        "premise: the point sits inside the DMF's portraits-on box"
+    );
+
+    window.click_pitch(badge, version, &mut tactics, &mut view, &roster);
+    assert_eq!(
+        view.popover.map(|open| open.slot),
+        Some(upper),
+        "the click selects the AMF, not the DMF below"
     );
 }
 

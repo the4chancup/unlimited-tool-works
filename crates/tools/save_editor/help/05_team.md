@@ -35,16 +35,17 @@ row's, and writes every filled roster slot in one undoable step:
 - **Hide default body (Enable FPC)** writes long sleeves, a tucked shirt and
   short socks on every player of the team, and a boots or gloves ID of 0 takes
   the hide ID from Settings (55 and 11 unless changed, while a model's own ID
-  is kept, as in the Appearance section).
+  is kept, as on the Appearance screen).
 - **Show default body (Disable FPC)** writes short sleeves, an untucked shirt
-  and standard socks on them all, and on PES 2015 to 2017 both FPC items also
-  turn a Custom skin into Light.
+  and standard socks on them all, and sets a player's hide IDs back to 0.
 - **Import / export team file…** opens a panel beside the views.
 - **Save a picture of the formations…** saves a picture of the team's formations
   (below).
 
+On PES 2015 to 2017 both FPC items also turn a Custom skin into Light.
+
 The boots and gloves item, Clear visual flags and the FPC items stay disabled
-while the aesthetics lock is on (see the Appearance section), because they write
+while the aesthetics lock is on (see the Appearance screen), because they write
 what the team's export owns and a hand edit would be overwritten the next time
 the team is recompiled or patched. Ctrl+F does nothing while the lock is on.
 
@@ -127,9 +128,7 @@ sharing them. Its dialog asks for:
 
 **With each preset's settings beside its row** lists each preset's Formation
 settings in a column beside its row, with its Advanced instructions on PES 2017
-to 2021. A line under the formations holds the team's Automatic settings. The
-box also adds ` settings` to the file name (`f settings.png`), so a team's two
-pictures don't replace each other.
+to 2021. A line under the formations holds the team's Automatic settings.
 
 **Portraits** draws the players' portraits, starting as the formation bar's box
 reads, and **Without the pitch's grain (smaller file)** paints the pitch plain.
