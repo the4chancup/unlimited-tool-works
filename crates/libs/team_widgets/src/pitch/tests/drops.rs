@@ -2384,6 +2384,43 @@ fn a_held_starter_lights_his_rated_areas_and_darkens_the_rest() {
     );
 }
 
+// PARTY HARD rated A or B nowhere (a blank team's placeholder, whose
+// list is all C), held: he lights nothing, so the darkening fills cover
+// the whole canvas, as PES 2019's Edit Position screen shows him. The
+// same starter with no ratings at all (an empty roster slot's row, or a
+// host that reads none) darkens nothing.
+#[test]
+fn a_held_starter_rated_nowhere_darkens_the_whole_pitch() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let mut roster = roster_rows(&rows);
+    party_hard(&mut tactics, &mut roster);
+    roster[usize::from(tactics.starting_eleven[8])].rated = Some([false; 13]);
+    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let darkened: f32 = dims.iter().map(|dim| dim.area()).sum();
+    assert!(
+        (darkened - canvas.area()).abs() <= 1.0,
+        "rated nowhere: the fills cover the whole canvas ({darkened} vs {})",
+        canvas.area()
+    );
+
+    // Released, then the same starter with no ratings at all: held
+    // again, he darkens nothing.
+    let held = spot_centre(canvas, 30, 26);
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(held, false),
+    );
+    roster[usize::from(tactics.starting_eleven[8])].rated = None;
+    let (_, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    assert_eq!(dims, [], "no ratings at all: nothing darkened");
+}
+
 // The lit area again, for a rated position whose whole row sits inside
 // the pitch's edges: PARTY HARD rated A at AMF alone — AMF's row (y 26
 // to 34, x 21 to 83) reaches no edge, so the lit rectangle sits half a
@@ -2400,8 +2437,9 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
     let mut roster = roster_rows(&rows);
     party_hard(&mut tactics, &mut roster);
     let row = &mut roster[usize::from(tactics.starting_eleven[8])];
-    row.rated = [false; 13];
-    row.rated[usize::from(position_byte("AMF"))] = true;
+    let mut rated = [false; 13];
+    rated[usize::from(position_byte("AMF"))] = true;
+    row.rated = Some(rated);
     let area = AREAS_A[usize::from(position_byte("AMF"))];
     assert!(
         area.x_min > 5 && area.x_max < 99 && area.y_max < 47,

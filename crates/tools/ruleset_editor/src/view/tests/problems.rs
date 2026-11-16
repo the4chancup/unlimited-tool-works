@@ -167,6 +167,39 @@ fn a_rail_entry_fills_the_rails_row() {
     );
 }
 
+// The rail's rows stand 24 points apart (the draft's `.rail .sel`
+// `padding: 3px 6px` — three points above and below each row), where
+// egui's own item spacing would put them 21.
+#[test]
+fn the_rails_rows_stand_24_points_apart() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let mut rows: Vec<&accesskit::Node> = frame
+        .nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|text| {
+                    Section::RAIL
+                        .iter()
+                        .any(|section| text.starts_with(section.label()))
+                })
+        })
+        .collect();
+    sort_top_down(&mut rows);
+    assert!(rows.len() >= 2, "premise: the rail has several rows");
+    for pair in rows.windows(2) {
+        let (a, b) = (
+            pair[0].bounds().expect("row bounds"),
+            pair[1].bounds().expect("row bounds"),
+        );
+        assert!(
+            (b.y0 - a.y0 - 24.0).abs() <= 0.5,
+            "consecutive rail rows 24 apart ({a:?} then {b:?})"
+        );
+    }
+}
+
 // A problem's "⚠" stands at the entry's right end (the draft's
 // space-between row), its own text shape in the error colour.
 #[test]

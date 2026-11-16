@@ -706,7 +706,7 @@ fn roster_rows<'a>(rows: &'a [(String, String, Option<u8>)]) -> Vec<RosterRow<'a
             portrait: None,
             medal: None,
             overalls: None,
-            rated: [false; 13],
+            rated: None,
             fielded: &[],
         })
         .collect()

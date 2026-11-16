@@ -385,7 +385,9 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// at a time with the point first pressed under the pointer, his badge
 /// showing the position the rule gives him at each step from his stored
 /// one, and the pitch
-/// outside the areas he is rated at is darkened; nothing is written
+/// outside the areas he is rated at is darkened — all of it when he is
+/// rated nowhere, none of it for a roster row holding no ratings (an
+/// empty slot, or a host that reads none); nothing is written
 /// until the release. While a marker or a lineup row is held over a
 /// marker, the player its release would swap with carries the selected
 /// player's corner brackets, the swap mark. The keeper's marker
@@ -639,11 +641,14 @@ pub fn pitch(
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
         // While an outfield starter is held, the pitch outside the areas
-        // he is rated at is darkened, under every marker.
-        if let Some(index) = dragged {
-            let rated = roster
+        // he is rated at is darkened, under every marker. A row with no
+        // ratings at all (an empty slot, or a host that reads none)
+        // darkens nothing.
+        if let Some(index) = dragged
+            && let Some(rated) = roster
                 .get(usize::from(tactics.starting_eleven[index]))
-                .map_or([false; 13], |row| row.rated);
+                .and_then(|row| row.rated)
+        {
             lit_area::paint_dim(&painter, canvas, &rated, palette);
         }
         // The starter a release now would swap with carries the swap mark

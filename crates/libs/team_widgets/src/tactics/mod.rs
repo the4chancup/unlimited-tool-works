@@ -121,9 +121,11 @@ pub struct RosterRow<'a> {
     pub overalls: Option<[u8; 13]>,
     /// The positions he is rated A or B at, indexed by the position byte
     /// (GK 0 to CF 12): while his pitch marker is held, the pitch lights
-    /// their areas and darkens the rest. All `false` for an empty slot or
-    /// a host that reads none.
-    pub rated: [bool; 13],
+    /// their areas and darkens the rest. `None` for an empty slot or a
+    /// host that reads no ratings — a held marker darkens nothing then;
+    /// all `false`, a player rated nowhere, darkens the whole pitch, as
+    /// the game's Edit Position screen shows him.
+    pub rated: Option<[bool; 13]>,
     /// The slot's `FieldedNotA` marks (the pitch paints a `✖` left of
     /// the starter's badge on the formation a mark names); empty for a
     /// slot with none or a host that reads none.
@@ -828,11 +830,7 @@ pub fn player_assignments(
 /// Attack/defence levels — its frame grown to the lists' bottom the
 /// host bounds the cell to, the rows centred in it. Answers `true`
 /// only when `tactics` changed this frame.
-pub fn automatic_settings(
-    ui: &mut egui::Ui,
-    version: PesVersion,
-    tactics: &mut TeamTactics,
-) -> bool {
+pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool {
     let auto = &mut tactics.auto;
     let before = auto.clone();
     panel(ui, "Automatic settings", |ui| {
@@ -848,7 +846,7 @@ pub fn automatic_settings(
         ui.spacing_mut().item_spacing.y = 0.0;
         auto_row(
             ui,
-            |ui| substitution_cell(ui, version, &mut auto.substitution),
+            |ui| substitution_cell(ui, &mut auto.substitution),
             |ui| {
                 auto_flag(
                     ui,
@@ -921,48 +919,39 @@ fn auto_row(
 }
 
 /// The Substitution combo's offered choices (the draft's list): Off,
-/// Very late and Flexible, plus Very early from PES 2017 on (measured
-/// on 2017 and 2021, the versions between taken to match).
+/// Very late, Flexible and Very early, the four the game's screen
+/// lists on every version, PES 2015 and 2016 included — every
+/// version's stored values are read as PES 21's.
 /// `substitution_text` words a stored value from it, so the combo, the
 /// unsaved-changes row and the picture cannot drift.
-fn substitution_choices(version: PesVersion) -> Vec<(u8, &'static str)> {
-    [(0, "Off"), (1, "Very late"), (2, "Flexible")]
-        .into_iter()
-        .chain(
-            matches!(
-                version,
-                PesVersion::Pes17
-                    | PesVersion::Pes18
-                    | PesVersion::Pes19
-                    | PesVersion::Pes20
-                    | PesVersion::Pes21
-            )
-            .then_some((3, "Very early")),
-        )
-        .collect()
+fn substitution_choices() -> Vec<(u8, &'static str)> {
+    vec![
+        (0, "Off"),
+        (1, "Very late"),
+        (2, "Flexible"),
+        (3, "Very early"),
+    ]
 }
 
 /// A stored Substitution byte as the combo names it: its choice's label,
-/// or its number when `version` offers no choice for it.
-fn substitution_text(version: PesVersion, stored: u8) -> String {
-    substitution_choices(version)
+/// or its number when it is none of the four.
+fn substitution_text(stored: u8) -> String {
+    substitution_choices()
         .into_iter()
         .find(|(value, _)| *value == stored)
         .map_or_else(|| stored.to_string(), |(_, label)| label.to_owned())
 }
 
 /// The Substitution cell (the draft's `subs` row): the label, then the
-/// version's combo filling the rest of the cell — Off, Very late and
-/// Flexible, plus Very early from PES 2017 on (measured on 2017 and
-/// 2021, the versions between taken to match); a stored value outside
-/// the offered ones appended as its number, so the combo never
+/// combo of the game's four choices filling the rest of the cell; a
+/// stored value outside them appended as its number, so the combo never
 /// misreports the save. A version that stores none keeps the disabled
 /// cell and the `PES NN+` tooltip.
-fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut Option<u8>) {
+fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>) {
     ui.label(SUBSTITUTION_LABEL);
     match substitution {
         Some(stored) => {
-            let mut choices: Vec<(u8, String)> = substitution_choices(version)
+            let mut choices: Vec<(u8, String)> = substitution_choices()
                 .into_iter()
                 .map(|(value, label)| (value, label.to_owned()))
                 .collect();
@@ -974,7 +963,7 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
             let mut pick = *stored;
             let combo = egui::ComboBox::from_id_salt("automatic substitution")
                 .width(ui.available_width())
-                .selected_text(substitution_text(version, *stored))
+                .selected_text(substitution_text(*stored))
                 .truncate()
                 .show_ui(ui, |ui| {
                     for (value, label) in &choices {
@@ -1185,8 +1174,8 @@ pub fn tactics_term(
         ),
         TacticsField::AutoSubstitution => (
             SUBSTITUTION_LABEL.to_owned(),
-            substitution_text(version, byte(old)),
-            substitution_text(version, byte(new)),
+            substitution_text(byte(old)),
+            substitution_text(byte(new)),
         ),
         TacticsField::AutoOffsideTrap => (
             OFFSIDE_TRAP_LABEL.to_owned(),
