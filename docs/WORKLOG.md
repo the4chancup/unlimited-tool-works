@@ -2209,9 +2209,8 @@ briefs, review loops, gates and mutation runs as for any step.
         the round 1 class (a selection that moves leaves its row off screen) in three more
         places (an undo, a category tick, another save opened), untested reveals and filter
         halves, help and changelog lines that say what the window does not
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon2.md`, resuming `listrw1`'s
-        session), after the recent saves merge (`view/mod.rs`, help 02, the changelog);
-        then Carbon's round 3
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon2.md`, a fresh session in
+        `listrw1` from `9f2b8bb0`): running; then Carbon's round 3
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
@@ -2221,8 +2220,9 @@ briefs, review loops, gates and mutation runs as for any step.
         with the portraits off a hidden portrait took a click meant for the badge above it and
         the brackets framed turf (plan, draft, DECISIONS), the light selector's contrast, the
         Copy/swap window's width, team exports' notice detail, untested clauses, stale help
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices2.md`, resuming the session
-        in `noticesrw`, from `82aeac10`), then Carbon's round 2
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices2.md`, a fresh session in
+        `noticesrw` from `82aeac10`; the resumed one never took a step): running; then
+        Carbon's round 2
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -2242,7 +2242,7 @@ briefs, review loops, gates and mutation runs as for any step.
     DECISIONS 2026-11-15). Landed (SWE-2, `bdb78173`, merge `4bc6bd55`): ST-WHEEL-05 and 06
     red first; a preset's wheel step writes no undo entry, which ST-WHEEL-05 now says
     - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
-  - [ ] 0.0.2-recents the Save editor keeps its last 10 saves opened or saved between runs
+  - [x] 0.0.2-recents the Save editor keeps its last 10 saves opened or saved between runs
     (`recent_files`, each with its version) and lists them under Recent on the welcome panel
     and in the File menu, each `[PES 2021] backups\EDIT00000000 - VGL26` (P58, the
     maintainer, 2026-11-15; plan and DECISIONS edited) -> verify: SE-GUI-26 and SE-GUI-90 red
@@ -2251,8 +2251,12 @@ briefs, review loops, gates and mutation runs as for any step.
     "the File menu: the picker and the writes first"): Open…, Save, Save as… with
     Ctrl+Shift+S, the headings Open from Documents and Recent files, Close save with Ctrl+W,
     Exit with Ctrl+Q (the shell's key); the welcome panel in the menu's order. Draft and
-    plan edited (SE-GUI-26, 90, 105; ST-RUN-05). Running (SWE-2, `.tmp/brief.md` in
-    `recents`, from `a07139bd`). Tier 2
+    plan edited (SE-GUI-26, 90, 105; ST-RUN-05). Landed (SWE-2, `10a66ec0`, merge
+    `9f2b8bb0`), with two lead fixes: whether each recent save exists is asked once per look
+    of the menu or panel, not every frame (`80acbb1e`), and the bundled settings file names
+    `recent_files` (`b9686f0b`)
+    - [ ] the built window beside the draft (`.tmp/lead/shot_filemenu.py` renders the draft)
+    - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
   - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
