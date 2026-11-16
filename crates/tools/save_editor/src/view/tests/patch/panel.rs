@@ -74,6 +74,36 @@ fn a_rows_click_selects_its_player() {
     );
 }
 
+// A row's Item click scrolls the list to the player it selects, `Nearest`:
+// under All teams with his row below the clip, his row lands at its
+// bottom edge on the next frame.
+#[test]
+fn an_items_click_scrolls_the_list_to_its_player() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_row_reveal");
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
+    previewed(&mut window, &mut view, &text);
+    // All teams keeps the selector and the whole list: with the list at
+    // its top, 71403's row is below the clip.
+    assert_eq!(view.team, TeamChoice::All, "premise: All teams picked");
+    let item = panel_cell(&mut window, &mut view, CO_ROWS[0][0]).expect("the corner kick's item");
+    click(&mut window, &item, &mut view);
+    let slot = roster_slot(&view, CO, CO_SLOT_3);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(CO, slot)),
+        "premise: the click selected 71403"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
+}
+
 /// A preview row's Item cell (71403's corner kick) says on hover what its
 /// click does.
 #[test]

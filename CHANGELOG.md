@@ -115,7 +115,7 @@
   you see who the drop swaps out.
 - **Save editor**: in `Team file interchange` (the Team menu's `Import / export team
   file…`), a button under `Import into` selects the team the picked file was exported
-  from, so it imports back onto that team without finding it in the list.
+  from, so the file imports back onto that team with no search through the list.
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
   report of something that went wrong: what you did in each tool, the files it opened and
   wrote, the log, your settings and your own words. Nothing is sent: you post the file.
@@ -144,8 +144,8 @@
   replaces the previous `.bak`.
 - **Settings**: with two windows open, a setting changed in one is no longer undone when the
   other changes one of its own.
-- **Save editor**: in the Tactics tab's bench list, a player dragged onto another swaps
-  places with him, as in the starting eleven, instead of shifting the players between.
+- **Save editor**: on the Gameplan screen, a player dragged onto another in the bench list
+  swaps places with him, as in the starting eleven, instead of shifting the players between.
 - **Save editor**: a starter moved on the Tactics pitch stays inside the area the game's
   Formation screen allows, so an edit can no longer make a formation Live AATF warns about.
 - **Save editor**: the Wrist tape left and right dropdowns list the game's four colors,

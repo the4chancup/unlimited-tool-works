@@ -481,8 +481,29 @@ mod tests {
         );
 
         // A team's id typed whole: its row and its whole squad, as a name
-        // match lists it. Every player the save rosters under an id
-        // starting with 718 is 718's own.
+        // match lists it — a rostered player whose own id does not start
+        // with it listed too, as a save's transfers leave them. 718's
+        // first slot is given one for the check: a player only the team's
+        // own id lists (his own does not start with it, and the queries
+        // below catch none of him).
+        let mut file = file;
+        let moved = file
+            .players()
+            .iter()
+            .find(|player| {
+                !player.id.to_string().starts_with("718")
+                    && !player.id.to_string().starts_with("7010")
+                    && !matches(player, "718")
+            })
+            .expect("a player only the team's id lists")
+            .id;
+        file.team_mut(718).unwrap().roster[0].player_id = moved;
+        assert!(
+            !matches(file.player(moved).unwrap(), "718"),
+            "premise: only the team's own id lists {moved}"
+        );
+        // Every player the save rosters under an id starting with 718 is
+        // 718's own.
         let squad = rostered(&file, 718);
         assert_eq!(squad.len(), 23, "premise: 718's squad");
         for team in file.teams() {

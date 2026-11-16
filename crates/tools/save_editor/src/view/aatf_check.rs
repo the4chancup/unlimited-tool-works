@@ -85,7 +85,7 @@ pub(super) fn update_check(
 /// The team the dock checks: the selected row's (a player
 /// row's team or a team row's own — the team the view is editing, another
 /// team's too when the filter lists its rows), else the selector's;
-/// `None` with no row selected under ALL.
+/// `None` with no row selected under All teams.
 pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Option<u32> {
     match selected {
         Some(Selection::Team(id)) | Some(Selection::Player(id, _)) => Some(id),
@@ -101,7 +101,7 @@ pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Opt
 /// team's own row selected, the selector moved to it unless it reads All
 /// teams and a category that leaves it out widened to `All` (the list
 /// must show the row it selects), the filter cleared as `select_player`
-/// clears it. Returns the `Reveal` the row asks the list for.
+/// clears it. Returns `Reveal::Top`, a team row's reveal.
 pub(super) fn select_team(
     team_id: u32,
     selected: &mut Option<Selection>,
@@ -117,10 +117,12 @@ pub(super) fn select_team(
         *category = TeamCategory::All;
     }
     filter.clear();
-    reveal_for(*selected)
+    Reveal::Top
 }
 
-/// A violation row's click: the player selected, the selector moved to
+/// A click on a row naming a player — a violation's (the Live AATF
+/// dock's or Multi-team AATF's), the Comparator's, the patch table's or
+/// the unsaved changes list's: the player selected, the selector moved to
 /// his team unless it reads All teams and a category that leaves it out
 /// widened to `All` (the list must show the row it selects).
 /// A `FieldedNotA` row selects his team's row instead (the pitch his

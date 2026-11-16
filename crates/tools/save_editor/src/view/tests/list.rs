@@ -684,4 +684,5 @@ fn scrolling_to_the_end_of_all_selects_the_last_player() {
 mod chrome;
 mod drag;
 mod keys;
+mod reveal;
 mod rows;

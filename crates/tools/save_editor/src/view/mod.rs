@@ -103,9 +103,9 @@ enum Reveal {
     Top,
 }
 
-/// The `Reveal` a selection's row asks for, as the page keys and the
-/// row-click helpers set it: a team row rises to the list's top, so its
-/// players stand under it; any other row shows the least that shows it.
+/// The `Reveal` a selection moved outside the list asks its row for: a
+/// team row rises to the list's top, so its players stand under it; any
+/// other row shows the least that shows it.
 fn reveal_for(selected: Option<Selection>) -> Reveal {
     if matches!(selected, Some(Selection::Team(_))) {
         Reveal::Top
@@ -154,10 +154,11 @@ pub(crate) struct SaveView {
     /// longer the selected row at the frame's end, so the target lives
     /// only while its team's row stays selected.
     click_kind: Option<clipboard::ClickKind>,
-    /// A page or arrow key moved the selection, a team row's double
-    /// click showed that team alone, or the team file panel's own-team
-    /// button selected a team: the list scrolls to the selected row on
-    /// the next draw, then clears this.
+    /// A selection moved outside the list's own row clicks — a key's
+    /// step, a row's double click, the selector's or a category's pick,
+    /// a switch from a panel or the changes list, an undo's or a
+    /// put-back's follow: the list scrolls to the selected row on the
+    /// next draw, then clears this.
     reveal_selected: Option<Reveal>,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
@@ -347,9 +348,10 @@ pub(crate) struct SaveView {
     /// `download/` CPKs off the UI thread (`select_portraits` points it at
     /// the PES folder each frame).
     portraits: portraits::Portraits,
-    /// Which open this is: part of the pushed widget id, so egui widget
-    /// state (a text field's undo history, a control's in-progress edit)
-    /// never crosses into the next save's same player id.
+    /// Which open this is: part of the pushed widget id and of the
+    /// list's scroll area id, so egui widget and scroll state (a text
+    /// field's undo history, a control's in-progress edit, the scrolled
+    /// offset) never crosses into the next save's same player id.
     generation: u64,
     /// "Aesthetics from exports", which makes the save's aesthetics
     /// read-only, refreshed from the setting each `Tool::view` frame as
@@ -385,9 +387,11 @@ pub(crate) struct SaveView {
     kit_slots: Option<u32>,
     /// The hide IDs the common settings give (`fpc_hide_boots_id` and
     /// `fpc_hide_gloves_id`), refreshed from `ctx.common()` each `Tool::view`
-    /// frame: every FPC path (Hide/Show default body, Ctrl+I, the classifier's
-    /// reading, the Team menu's Set/Remove) reads them, and an out-of-band
-    /// pair disables those paths behind the error's text.
+    /// frame: every FPC path (the Appearance section's Hide/Show default
+    /// body, Ctrl+I, the classifier's reading, the Team menu's Hide
+    /// default body (Enable FPC) and Show default body (Disable FPC))
+    /// reads them, and an out-of-band pair disables those paths behind
+    /// the error's text.
     pub(crate) hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
     /// Where the Appearance section's Randomize draws a motion value in
     /// `1..=top` from: a field so the tests pin the draws; `new` seeds a
@@ -1575,8 +1579,9 @@ pub(crate) fn edit_team(
 }
 
 /// `step` run on the open session, `None` with none: the selection
-/// follows the record it named through the step. It names a roster slot,
-/// not a player, so a step that trades the players' records between the
+/// follows the record it named through the step, the list scrolling to
+/// the slot it lands on. The selection names a roster slot, not a
+/// player, so a step that trades the players' records between the
 /// ids (an undo or a redo of a move, a `Player order` row's X) would
 /// leave it on whoever then holds the slot: the record of the selected
 /// slot's player is read before `step`, and the slot in the same team
@@ -1602,7 +1607,11 @@ fn following_selection<R>(view: &mut SaveView, step: impl FnOnce(&mut Session) -
                 .slot_player(team_id, slot)
                 .is_some_and(|id| session.record_of(id) == record)
             {
-                view.selected = Some(Selection::Player(team_id, slot));
+                let landed = Some(Selection::Player(team_id, slot));
+                if view.selected != landed {
+                    view.selected = landed;
+                    view.reveal_selected = Some(Reveal::Nearest);
+                }
                 break;
             }
         }

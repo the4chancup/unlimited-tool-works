@@ -44,6 +44,32 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
     assert_eq!(view.team, TeamChoice::Team(734), "the selector moved");
 }
 
+// A row's click scrolls the list to the player it selects, `Nearest`:
+// under All teams with his row below the clip, his row lands at its
+// bottom edge on the next frame.
+#[test]
+fn a_rows_click_scrolls_the_list_to_its_player() {
+    let (mut view, mut window, _) = compared_73401("comparator_click_reveal");
+    // All teams, so the selector stays and the list holds every team:
+    // with another row selected and the list at its top, 73401's row is
+    // below the clip.
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let pairs = scroll_to(&mut window, &mut view, "Height 185 \u{2192} 183");
+    let (_, row) = comparator_button(&pairs, "Height 185 \u{2192} 183");
+    click(&mut window, row, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "premise: the click selected 73401"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
+}
+
 /// A diff row of a player the open save rosters (73401's height) says on
 /// hover what its click does.
 #[test]
