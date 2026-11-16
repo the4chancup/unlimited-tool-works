@@ -1058,8 +1058,13 @@ fn the_repro_state_is_the_open_save_as_it_would_be_written_now() {
     tool.view.open(&path);
     let session = tool.view.session.as_mut().expect("the save opened");
     let mut player = session.file().player(70101).unwrap().clone();
-    player.stats.speed = 77;
+    assert_ne!(
+        player.stats.speed, 80,
+        "premise: the fixture lacks the value"
+    );
+    player.stats.speed = 80;
     session.edit_player(0, player);
+    assert!(session.is_dirty(), "premise: the edit changed the save");
 
     let files = studio_core::StudioTool::repro_state(&tool);
     let [(name, bytes)] = files.as_slice() else {
@@ -1069,8 +1074,31 @@ fn the_repro_state_is_the_open_save_as_it_would_be_written_now() {
     let written = EditFile::from_bytes(bytes).expect("the state reads as a save");
     assert_eq!(
         written.player(70101).unwrap().stats.speed,
-        77,
+        80,
         "the edited field is in it"
+    );
+}
+
+// Closing a save is a step: a journal that ends on edits and a close says
+// why the bundle's `state/` is empty.
+#[test]
+fn closing_the_save_records_a_step() {
+    let dir = crate::test_support::scratch("close_step");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+    let mut tool = crate::Tool::new();
+    tool.view.open(&path);
+    let session = tool.view.session.as_mut().expect("the save opened");
+    let mut player = session.file().player(70101).unwrap().clone();
+    player.stats.speed = 80;
+    session.edit_player(0, player);
+
+    tool.view.close_save();
+    let lines = crate::test_support::journal_lines(&tool.view.recorder, &dir);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some(format!("closed {}", path.display()).as_str()),
+        "the close is the last step: {lines:?}"
     );
 }
 

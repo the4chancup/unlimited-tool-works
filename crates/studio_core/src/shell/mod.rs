@@ -922,7 +922,7 @@ impl eframe::App for StudioApp {
             }
             Some(SidebarClick::OpenHelp(target)) => self.open_help(&target),
             #[cfg(not(target_arch = "wasm32"))]
-            Some(SidebarClick::OpenReport) => self.report.open(),
+            Some(SidebarClick::OpenReport) => self.report.open(&self.tools, self.ctx.recorder()),
             None => {}
         }
         egui::CentralPanel::default().show(ui, |ui| {
@@ -1419,40 +1419,52 @@ mod tests {
 
     // ST-RUN-05
     #[test]
-    fn a_held_close_closes_the_about_popup_over_the_prompt() {
-        let dir = TestDir::new("studio_core_close_about");
-        let egui_ctx = test_context();
-        let (a, calls_a) = stub("a", "A", None);
-        let (b, calls_b) = stub("b", "B", None);
-        let Shell { mut app, calls, .. } = shell_with(
-            test_settings(dir.path()),
-            vec![a, b],
-            &[],
-            Some(dir.path().to_path_buf()),
-            vec![calls_a, calls_b],
-        );
-        *calls[0].unsaved.lock().unwrap() = true;
-        app.set_active(1);
+    fn a_held_close_closes_the_about_popup_and_the_report_dialog_over_the_prompt() {
+        // Each modal is seen by its own button: the About popup's Copy, the
+        // report dialog's Save….
+        for (button, report) in [("Copy", false), ("Save…", true)] {
+            let dir = TestDir::new("studio_core_close_modal");
+            let egui_ctx = test_context();
+            let Shell { mut app, calls, .. } = close_shell(dir.path());
+            *calls[0].unsaved.lock().unwrap() = true;
+            app.set_active(1);
 
-        // The About popup open over B's view when the close is asked.
-        app.sidebar.about_open = true;
-        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
-        assert!(has_label(&nodes, "Copy"), "the About popup is open");
+            // The modal open over B's view when the close is asked.
+            if report {
+                let nodes = idle(&egui_ctx, &mut app, 2).nodes;
+                click(&egui_ctx, &mut app, entry(&nodes, sidebar::REPORT_LABEL));
+            } else {
+                app.sidebar.about_open = true;
+            }
+            let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+            assert!(has_label(&nodes, button), "the {button} modal is open");
 
-        let out = frame_closing(&egui_ctx, &mut app);
-        assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
-        assert_eq!(app.active, 0);
-        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
-        assert!(
-            !has_label(&nodes, "Copy"),
-            "the About popup is gone once the close is held"
-        );
-        click(&egui_ctx, &mut app, entry(&nodes, "Discard"));
-        let out = frame(&egui_ctx, &mut app, Vec::new(), true);
-        assert!(
-            out.commands.contains(&egui::ViewportCommand::Close),
-            "the prompt is uncovered and answers"
-        );
+            let out = frame_closing(&egui_ctx, &mut app);
+            assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
+            assert_eq!(app.active, 0);
+            let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+            assert!(
+                !has_label(&nodes, button),
+                "the {button} modal is gone once the close is held"
+            );
+            // A pointer left on the rail (the report's entry) keeps the
+            // sidebar's overlay open over the prompt: it leaves first, as a
+            // member's would.
+            let middle = calls[0].view_rect().unwrap().center();
+            frame(
+                &egui_ctx,
+                &mut app,
+                vec![egui::Event::PointerMoved(middle)],
+                true,
+            );
+            let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+            click(&egui_ctx, &mut app, entry(&nodes, "Discard"));
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            assert!(
+                out.commands.contains(&egui::ViewportCommand::Close),
+                "the prompt is uncovered and answers"
+            );
+        }
     }
 
     // ST-RUN-05

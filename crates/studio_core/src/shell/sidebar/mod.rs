@@ -37,7 +37,8 @@ const RAIL_PADDING: i8 = 6;
 const ICON_SIZE: f32 = 24.0;
 /// One entry row: the 24-point icon and its padding. With egui's item spacing of 3
 /// between them, fourteen rows take 459 points of the 756-point rail at the default
-/// window, leaving the logo, the version dropdown, the help and the gear their room.
+/// window, leaving the logo, the version dropdown, the Report entry, the help and the gear
+/// their room.
 const ENTRY_HEIGHT: f32 = 30.0;
 /// The height a rail line takes: its 1-point stroke with the draft's `.sidebar .sep`
 /// margin 4 above and below it.

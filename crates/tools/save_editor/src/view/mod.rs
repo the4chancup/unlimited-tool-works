@@ -735,11 +735,13 @@ impl SaveView {
     }
 
     /// Closes the open save (File > Close save, Ctrl+W, and Discard on
-    /// the window's close prompt): clears the session, any open floating
-    /// panel and the Comparator, then resets the save's view state
-    /// (`drop_save`).
+    /// the window's close prompt): records the close in the journal, clears
+    /// the session, any open floating panel and the Comparator, then resets
+    /// the save's view state (`drop_save`).
     pub(crate) fn close_save(&mut self) {
-        self.session = None;
+        if let Some(session) = self.session.take() {
+            journal::closed(session.path(), session.recorder());
+        }
         self.panel = None;
         self.comparator = comparator::Comparator::new();
         self.drop_save();

@@ -363,8 +363,9 @@ Top to bottom:
    sidebar, so nothing moves when it opens. 24 rather than larger because the rail is 56
    points wide and every entry is in it. At 24 the fourteen entries take 459 points of the
    756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the logo,
-   the version dropdown, the help and the gear their room. At 32 they would take 571 (38-point
-   rows) with 12-point side margins, and a rail that overflows loses entries from sight.
+   the version dropdown, the Report entry, the help and the gear their room. At 32 they would
+   take 571 (38-point rows) with 12-point side margins, and a rail that overflows loses
+   entries from sight.
 
    In a window too short for every entry, the tool entries scroll, by the wheel, between
    the sidebar's head (the logo, the version dropdown and the separator under them) and
@@ -419,10 +420,11 @@ Top to bottom:
    the expanded width, because the expanded sidebar is needed only to read a label or pick a
    version, and reserving ~104 more points cost every tool that width all the time (at the
    default window a tab's area grows from 904 to about 1008 points).
-5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points: open the
-   help window and the settings menu. F1 opens the help too. Their labels read "Help (WIP)"
-   and "Settings (WIP)" (the visible and the accessible name) until the maintainer calls the
-   help and the settings menu complete, and the two windows' titles carry the same suffix.
+5. **Report `⚠`, help `?` and settings gear** pinned at the bottom in this order, at the tool
+   icons' 24 points: open the report dialog, the help window and the settings menu. F1 opens
+   the help too. The help's and the gear's labels read "Help (WIP)" and "Settings (WIP)" (the
+   visible and the accessible name) until the maintainer calls the help and the settings menu
+   complete, and the two windows' titles carry the same suffix.
 
 ### Settings menu
 
@@ -1634,15 +1636,15 @@ ST-SIDE-09  GIVEN stub tool A, which targets the PES version, and stub tool B, w
                  the Settings menu's PES version row still shows and changes it
 ST-SIDE-10  GIVEN a build registering fourteen stub tools, drawn in a window 420 points high
             WHEN the rail is drawn
-            THEN no tool entry in view meets the tail (its separator, Help and Settings),
-                 the last tool entry is not in view, Settings ends inside the sidebar, and
-                 the logo and the version selector stand where they do in a window 780
-                 points high; WHEN the wheel is turned over the tool entries until they
-                 move no further THEN the last tool entry is in view above the tail's
-                 separator, the first is not in view, and the logo, the selector, Help and
-                 Settings have not moved; WHEN the sidebar is then opened by a hover THEN
-                 every tool entry stands at the height it has in the rail, and head and
-                 tail where they were; no scroll bar is drawn in either; GIVEN the same
+            THEN no tool entry in view meets the tail (its separator, Report, Help and
+                 Settings), the last tool entry is not in view, Settings ends inside the
+                 sidebar, and the logo and the version selector stand where they do in a
+                 window 780 points high; WHEN the wheel is turned over the tool entries
+                 until they move no further THEN the last tool entry is in view above the
+                 tail's separator, the first is not in view, and the logo, the selector,
+                 Report, Help and Settings have not moved; WHEN the sidebar is then opened
+                 by a hover THEN every tool entry stands at the height it has in the rail,
+                 and head and tail where they were; no scroll bar is drawn in either; GIVEN the same
                  build in the window 780 points high THEN every entry is in view and a
                  wheel turn moves none
 ST-SET-01   GIVEN two registered tools with settings sections and the second active

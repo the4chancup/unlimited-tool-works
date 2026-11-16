@@ -196,9 +196,9 @@ fn in_a_short_window_the_entries_scroll_between_the_head_and_the_tail() {
         "the last tool entry is not in view: {last:?} vs band {band_top:.1}..{band_bottom:.1}"
     );
     assert!(
-        tail[1].y1 <= f64::from(rail_bottom),
+        tail[2].y1 <= f64::from(rail_bottom),
         "Settings ends inside the sidebar: {:?} vs rail bottom {rail_bottom}",
-        tail[1]
+        tail[2]
     );
 
     // The wheel over the tool entries until they move no further: between
