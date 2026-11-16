@@ -731,7 +731,7 @@ impl SettingKey {
             }
             SettingKey::Star => KeySpec {
                 table: KeyTable::Presentation,
-                name: "star",
+                name: "star_rating",
                 kind: Kind::Number { min: 0, max: 7 },
                 comment: "0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen",
                 default: Some(0),

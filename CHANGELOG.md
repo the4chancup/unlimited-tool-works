@@ -27,6 +27,11 @@
   `number` read as his ID. A team file exported by 0.0.1 is refused: export the team again, or
   rename each `number` under a `[players.NN]` heading to `shirt_number` (a kit slot's `number`
   stays as it is).
+- **Save editor**: a team file exported by 0.0.1 from a PES 2019, 2020 or 2021 save is
+  refused, because it holds the star rating (and from PES 2020 the playing attitude) beside
+  the stats, where a team file no longer has them. Export the team again, or delete the
+  `star` and `playing_attitude` lines under each `[players.NN.stats]` heading, which leaves
+  those two values as they are in the save.
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
   installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
   mentions a newer version too. The Help
@@ -89,14 +94,14 @@
 - **Save editor**: the Appearance screen fits the window without scrolling, its settings in
   titled groups. Full Player Customization comes first, with the skin and iris colors beside
   it, then the strip style in a grid of three columns, then Physique, its values on sliders,
-  beside Motion and the edit flags. Star and Playing attitude close the screen in a
+  beside Motion and the edit flags. Star rating and Playing attitude close the screen in a
   Presentation group and, like the rest of the look, are locked while the team's export owns
   it. The strip's colors are dropdowns, and the Player gloves checkbox is an Outfielder gloves
   dropdown, Off or Worn in winter.
-- **Save editor**: Star and Playing attitude count as part of a player's look: his team's
-  export carries them, Copy/swap stats leaves them as they were, and the Comparator lists
-  them, and every motion, under Aesthetics. A Team TOML keeps them under
-  `appearance.presentation`, and one written before still opens.
+- **Save editor**: Star rating and Playing attitude count as part of a player's look: his
+  team's export carries them, Copy/swap stats leaves them as they were, and the Comparator
+  lists them, and every motion, under Aesthetics. A team file keeps them under
+  `appearance.presentation`, as `star_rating` and `playing_attitude`.
 - **Save editor**: a Pitch | Left | List toggle under the Playable positions heading shows the
   13 positions as they stand on the pitch, as the same rows from one left edge, or one
   position a row, and the choice is remembered. The letters of the ratings not chosen are

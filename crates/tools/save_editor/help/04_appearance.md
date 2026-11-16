@@ -78,8 +78,8 @@ all.
 
 **Presentation**
 
-The **Presentation** group, last on the screen, holds **Star**, which sets how
-likely the player is to show up as the team's featured player in the pre-match
-screen, and **Playing attitude**, which only affects cutscenes. Neither changes
-how he plays, but both belong to his team's export with the rest of his look,
-so the lock covers them too.
+The **Presentation** group, last on the screen, holds **Star rating**, which
+sets how likely the player is to show up as the team's featured player in the
+pre-match screen, and **Playing attitude**, which only affects cutscenes.
+Neither changes how he plays, but both belong to his team's export with the
+rest of his look, so the lock covers them too.

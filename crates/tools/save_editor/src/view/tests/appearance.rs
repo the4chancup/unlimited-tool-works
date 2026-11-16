@@ -73,7 +73,7 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
         ("Chest", Role::SpinButton),
         ("Corner kick", Role::SpinButton),
         ("Goal celebration 1", Role::SpinButton),
-        ("Star", Role::SpinButton),
+        ("Star rating", Role::SpinButton),
         ("Playing attitude", Role::SpinButton),
         ("Boots ID", Role::SpinButton),
         ("Copy from ID", Role::SpinButton),
@@ -274,7 +274,9 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
         let nodes = scroll_into_view(&mut window, &mut view, |node| {
             node.role() == Role::Label && node.value() == Some("Playing attitude")
         });
-        let star = control_right_of(&nodes, "Star").bounds().expect("bounds");
+        let star = control_right_of(&nodes, "Star rating")
+            .bounds()
+            .expect("bounds");
         let attitude = control_right_of(&nodes, "Playing attitude")
             .bounds()
             .expect("bounds");
@@ -285,7 +287,7 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
     let (_view21, _window21, nodes21, (star21, attitude21)) =
         bounds_of(PesVersion::Pes21, "gated_presentation_21");
 
-    for (control, tooltip) in [("Star", "PES 19+"), ("Playing attitude", "PES 20+")] {
+    for (control, tooltip) in [("Star rating", "PES 19+"), ("Playing attitude", "PES 20+")] {
         // Each hover needs its own dash inside the clip: scrolling for one
         // can push the other out.
         let nodes = scroll_into_view(&mut window17, &mut view17, |node| {
@@ -298,7 +300,7 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
             "{control}'s tooltip"
         );
     }
-    for label in ["Star", "Playing attitude"] {
+    for label in ["Star rating", "Playing attitude"] {
         assert!(
             !control_right_of(&nodes21, label).is_disabled(),
             "{label} is enabled on PES 21"
@@ -334,7 +336,7 @@ fn the_presentation_group_locks_with_the_groups_below_the_ownership_line() {
         ownership_y < label_bounds(&nodes, "Full Player Customization").y0,
         "the ownership line stands above Full Player Customization's title"
     );
-    for label in ["Star", "Playing attitude"] {
+    for label in ["Star rating", "Playing attitude"] {
         let control = right_of_label(&nodes, label, Role::SpinButton)
             .into_iter()
             .next()
@@ -360,9 +362,9 @@ fn the_presentation_group_locks_with_the_groups_below_the_ownership_line() {
     };
     assert_eq!(star_of(&view), Some(0), "premise: star 0");
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
-        node.role() == Role::Label && node.value() == Some("Star")
+        node.role() == Role::Label && node.value() == Some("Star rating")
     });
-    let star = right_of_label(&nodes, "Star", Role::SpinButton)
+    let star = right_of_label(&nodes, "Star rating", Role::SpinButton)
         .first()
         .copied()
         .expect("the Star control");

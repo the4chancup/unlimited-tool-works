@@ -123,11 +123,10 @@ const PANEL_GAP: f32 = 14.0;
 /// Appearance screen's groups leave the same under their titles.
 pub(super) const TITLE_GAP: f32 = 6.0;
 /// The padding of the ability stats' cells, either side of a label and
-/// of a box (the draft's `stats-grid` `td`), and how far General info's
-/// and Other stats' labels and fields stand in from their titles (the
-/// draft's `.pcols .gen` `padding-left`), so a panel's title heads its
-/// body.
-const CELL_PADDING: i8 = 6;
+/// of a box (the draft's `stats-grid` `td`), and how far every panel's and
+/// group's content stands in from its title (`inset`), so a title heads
+/// its body.
+pub(super) const CELL_PADDING: i8 = 6;
 
 /// The first column's width (the draft's `.pcol.first` 350px): General
 /// info's fields and their inset.
@@ -239,16 +238,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                         ui.set_min_width(first_column_width());
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
                         panel(ui, spacing, "General info", None, 0.0, |ui| {
-                            inset(ui, |ui| {
-                                ui.spacing_mut().item_spacing.y = FIELD_SPACING;
-                                info_strip::general(ui, session, team_id, slot, player_id, marks);
-                            });
+                            ui.spacing_mut().item_spacing.y = FIELD_SPACING;
+                            info_strip::general(ui, session, team_id, slot, player_id, marks);
                         });
                         panel(ui, spacing, "Other stats", None, 0.0, |ui| {
-                            inset(ui, |ui| {
-                                ui.spacing_mut().item_spacing.y = FIELD_SPACING;
-                                info_strip::other_stats(ui, session, player_id, &stats, marks);
-                            });
+                            ui.spacing_mut().item_spacing.y = FIELD_SPACING;
+                            info_strip::other_stats(ui, session, player_id, &stats, marks);
                         });
                         panel(
                             ui,
@@ -341,10 +336,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                     |ui| {
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
                         panel(ui, spacing, "Ability stats", None, 0.0, |ui| {
-                            // The cells' padding before each label and
-                            // after each box, so the column is the draft's.
+                            // The cells' padding after each box (the
+                            // panel's inset is the one before each label),
+                            // so the column is the draft's.
                             egui::Frame::NONE
-                                .inner_margin(egui::Margin::symmetric(CELL_PADDING, 0))
+                                .inner_margin(egui::Margin {
+                                    right: CELL_PADDING,
+                                    ..egui::Margin::ZERO
+                                })
                                 .show(ui, |ui| {
                                     ability_stats(ui, session, player_id, &stats, marks);
                                 });
@@ -393,7 +392,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
 /// `interact_size` height and sit it lower. One item of the column's
 /// vertical — the column's `PANEL_GAP` sits between panels, `spacing`
 /// (the pane's own) restored inside. `mark` is Live AATF's held check's
-/// with the panel's field: its mark stands before the header.
+/// with the panel's field: its mark stands before the header. `add`
+/// draws through `inset`, `CELL_PADDING` in from the title.
 fn panel(
     ui: &mut egui::Ui,
     spacing: egui::Vec2,
@@ -414,18 +414,23 @@ fn panel(
             },
         );
         ui.add_space(TITLE_GAP - spacing.y - first_inset);
-        add(ui);
+        inset(ui, add);
     });
 }
 
-/// `add`'s content `CELL_PADDING` in from the panel's title.
-fn inset(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
+/// `add`'s content `CELL_PADDING` in from the title above it, labels and
+/// controls alike (the draft's 6-point indent under every title): every
+/// panel of the Stats screen and every group of the Appearance screen
+/// draws its content through it, so each title reads as the heading of
+/// what is under it.
+pub(super) fn inset<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     egui::Frame::NONE
         .inner_margin(egui::Margin {
             left: CELL_PADDING,
             ..egui::Margin::ZERO
         })
-        .show(ui, add);
+        .show(ui, add)
+        .inner
 }
 
 /// How deep into a `cards::card_columns` row its painted square sits
@@ -693,10 +698,15 @@ fn playable_positions(
     layout_toggle(ui, layout);
     let mut playable = positions.playable;
     // The rows centre in the column: the nominal 350, or the fields'
-    // flush edge and their inset where egui's text runs past it.
+    // flush edge and their inset where egui's text runs past it. `ui` is
+    // the panel's inset content, so the column starts `CELL_PADDING` left
+    // of it and a row's lead space is that much shorter: the grid stays
+    // centred under the whole panel, as the draft's does.
+    let padding = f32::from(CELL_PADDING);
     let column_width = (info_strip::GENERAL_WIDTH.max(info_strip::general_content_width(ui))
-        + f32::from(CELL_PADDING))
-    .min(ui.available_width());
+        + padding)
+        .min(ui.available_width() + padding);
+    let lead = |width: f32| ((column_width - width) / 2.0 - padding).max(0.0);
     match *layout {
         PositionsLayout::Pitch | PositionsLayout::Left => {
             ui.spacing_mut().item_spacing.y = POS_ROW_GAP;
@@ -716,7 +726,7 @@ fn playable_positions(
                     ui.spacing_mut().item_spacing.x = POS_CELL_GAP;
                     // `add_space` advances the cursor outright, no item
                     // spacing.
-                    ui.add_space(((column_width - width) / 2.0).max(0.0));
+                    ui.add_space(lead(width));
                     for name in row {
                         grid_cell(ui, session, player_id, positions, &mut playable, name);
                     }
@@ -728,7 +738,7 @@ fn playable_positions(
             // are; the column of them centred in the panel.
             ui.spacing_mut().item_spacing.y = LIST_ROW_GAP;
             ui.spacing_mut().interact_size.y = RATING_SIDE;
-            let pad = ((column_width - LIST_CELL_WIDTH) / 2.0).max(0.0);
+            let pad = lead(LIST_CELL_WIDTH);
             for name in POSITION_LIST {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
@@ -1104,14 +1114,16 @@ fn skills_panel(
         .into_iter()
         .filter(|index| !aside.is_some_and(|aside| aside.contains(index)))
         .collect();
-    cards::card_columns(
-        ui,
-        session.file().version(),
-        &mut skills.skills,
-        &labels::SKILLS,
-        &shown,
-        PlayerField::Skill,
-    )
+    inset(ui, |ui| {
+        cards::card_columns(
+            ui,
+            session.file().version(),
+            &mut skills.skills,
+            &labels::SKILLS,
+            &shown,
+            PlayerField::Skill,
+        )
+    })
 }
 
 /// `names`' whole index range, a `card_columns` `shown` when no panel

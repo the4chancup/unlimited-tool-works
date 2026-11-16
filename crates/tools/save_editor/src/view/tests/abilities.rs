@@ -946,7 +946,13 @@ fn the_shifted_fields_show_one_above_stored_and_store_one_below() {
             (7, 2, 3, 1, Some(0), Some(0)),
         ),
         (false, "Accuracy", "2", "4", (7, 2, 3, 3, Some(0), Some(0))),
-        (true, "Star", "0", "7", (7, 2, 3, 3, Some(7), Some(0))),
+        (
+            true,
+            "Star rating",
+            "0",
+            "7",
+            (7, 2, 3, 3, Some(7), Some(0)),
+        ),
         (
             true,
             "Playing attitude",

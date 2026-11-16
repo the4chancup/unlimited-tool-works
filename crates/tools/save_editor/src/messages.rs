@@ -628,17 +628,17 @@ mod tests {
 
     #[test]
     fn each_import_note_is_a_warning_with_its_fields() {
-        let path = || "players.03.stats.star".to_owned();
+        let path = || "players.03.stats.tight_possession".to_owned();
         assert_eq!(
             line(&import_note(&ImportNote::NotInThisVersion { path: path() })),
-            "Warning import_key_not_in_version (path=players.03.stats.star)"
+            "Warning import_key_not_in_version (path=players.03.stats.tight_possession)"
         );
         assert_eq!(
             line(&import_note(&ImportNote::NotEncodable {
                 path: path(),
                 label: "anchoring".to_owned()
             })),
-            "Warning import_value_not_encodable (path=players.03.stats.star, label=anchoring)"
+            "Warning import_value_not_encodable (path=players.03.stats.tight_possession, label=anchoring)"
         );
         assert_eq!(
             line(&import_note(&ImportNote::Capped {
@@ -646,7 +646,7 @@ mod tests {
                 from: 19,
                 to: 0
             })),
-            "Warning import_value_capped (path=players.03.stats.star, from=19, to=0)"
+            "Warning import_value_capped (path=players.03.stats.tight_possession, from=19, to=0)"
         );
         assert_eq!(
             line(&import_note(&ImportNote::EmptySlot { slot: 7 })),
