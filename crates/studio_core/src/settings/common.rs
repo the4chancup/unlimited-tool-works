@@ -43,9 +43,10 @@ pub struct CommonSettings {
     pub memory_cap_percent: f32,
     /// GUI color theme.
     pub theme: Theme,
-    /// The wheel's steps over a number box turned the other way: wheel down
-    /// takes one more, wheel up one less. Sliders, toggles, dropdowns and a
-    /// pane's own scrolling never follow it.
+    /// The wheel's steps over a number box turned the other way, the box
+    /// beside a slider included: wheel down takes one more, wheel up one
+    /// less. A slider's rail, toggles, dropdowns and a pane's own scrolling
+    /// never follow it.
     pub invert_number_scrolling: bool,
     /// Whether the window and tool commands look for new releases.
     pub check_for_updates: bool,

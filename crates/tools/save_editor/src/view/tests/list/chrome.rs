@@ -511,6 +511,40 @@ fn the_closed_selectors_wheel_steps_the_categorys_teams() {
     );
 }
 
+// The selector's list open and the pointer on its button: a wheel notch
+// leaves the chosen team — an open list takes the wheel (ST-WHEEL-03),
+// it never steps the closed combo's pick.
+#[test]
+fn the_open_selectors_list_takes_the_wheel() {
+    let path = fixture(PesVersion::Pes21, "team_selector_open_wheel");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let selector = selector_combo(&nodes);
+    let at = centre(selector);
+    click(&mut window, selector, &mut view);
+    assert!(
+        egui::Popup::is_any_open(&window.ctx),
+        "premise: the selector's list is open"
+    );
+    window.frame(
+        vec![
+            egui::Event::PointerMoved(at),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, -1.0),
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(view.team, TeamChoice::All, "the open list took the wheel");
+}
+
 /// The hint's text shape painted inside `bounds` (a team row's), when
 /// one draws.
 fn hint_in_row(
