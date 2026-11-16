@@ -1667,8 +1667,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] Carbon's round 3, 2026-11-16 (at `07b27911`): 6 of 9 accepted ("C-list r3"):
         a selector or category pick that keeps the selection reveals nothing, three tests
         that pass on the wrong reveal or reach no branch, the own-team lines, two docs
-      - [ ] the rework (SWE-2, `sk/listrw3`, `listrw1/.tmp/rework_carbon3.md`): running;
-        then Carbon's round 4
+      - [x] the rework (SWE-2, merge `ae997ffc`)
+      - [x] Carbon's round 4, 2026-11-16 (at `ae997ffc`): 7 of 8 accepted ("C-list r4"): a
+        category tick that relists nothing snapped a scrolled list back, tests that cannot
+        tell the two reveals apart, two citations, copied helpers, four comments
+      - [x] the rework (SWE-2, merge `93dcdc06`); SE-GUI-103 gained one team's PgDn step
+      - [ ] Carbon's round 5 (at `93dcdc06`, `review34/.tmp/carbon_list5.md`): running
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
