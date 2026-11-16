@@ -3775,8 +3775,10 @@ function openDiscovered(d) {
 // The File menu (SE-GUI-26 restated): the picker (Ctrl+O) and the writes;
 // under a weak heading the discovered saves labelled by version alone (the
 // tooltip holds the path), the first of each version with its shortcut; the
-// recent saves under theirs; then Close save and Exit. sample wording: the
-// menu's labels and headings.
+// recent saves under theirs; then Close save and Exit. Past the window's
+// bottom, the part from Open from Documents to the last recent scrolls (the
+// draft's few samples never reach it). sample wording: the menu's labels and
+// headings.
 function fileMenu() {
   const items = [
     ["Open\u2026\tCtrl+O", dlgChooseFile, false,
