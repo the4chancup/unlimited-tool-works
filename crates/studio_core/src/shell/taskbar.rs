@@ -189,7 +189,9 @@ mod tests {
             .expect("a window to hold the values")
         }
 
-        /// The string `window`'s property store holds under `key`.
+        /// The string `window`'s property store holds under `key`. Its variant
+        /// type is not checked: the window's store hands back every value as a
+        /// `VT_LPWSTR`, whatever type was written.
         pub(super) fn held(window: HWND, key: PROPERTYKEY) -> String {
             // SAFETY: `window` is this thread's live window.
             let store: IPropertyStore = unsafe { SHGetPropertyStoreForWindow(window) }
@@ -208,54 +210,22 @@ mod tests {
         }
     }
 
-    /// The four values read back off a real window's property store, which
-    /// also runs `set_relaunch_values` to its end on a live window: a value
-    /// freed twice there ends the process, and so this test's.
+    /// `set_relaunch` gives a window the four relaunch values of the program
+    /// that runs, here the test's own, read back off its real property store:
+    /// the handle is taken from the window it is handed. The write also runs
+    /// to its end on a live window, where a value freed twice ends the
+    /// process, and so this test's.
     #[cfg(windows)]
     // ST-WIN-05
     #[test]
-    fn a_window_holds_the_relaunch_values_it_was_given() {
-        use windows::Win32::Storage::EnhancedStorage::{
-            PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
-            PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
-        };
-
-        let exe = Path::new(r"C:\Tools\UTW\UTW.exe");
-        let window = window::hidden();
-
-        set_relaunch_values(window, exe).expect("the values are set");
-
-        assert_eq!(
-            window::held(window, PKEY_AppUserModel_ID),
-            "UnlimitedToolWorks.be6639c454fb3ede"
-        );
-        assert_eq!(
-            window::held(window, PKEY_AppUserModel_RelaunchCommand),
-            r#""C:\Tools\UTW\UTW.exe""#
-        );
-        assert_eq!(
-            window::held(window, PKEY_AppUserModel_RelaunchDisplayNameResource),
-            crate::shell::APP_NAME
-        );
-        assert_eq!(
-            window::held(window, PKEY_AppUserModel_RelaunchIconResource),
-            r"C:\Tools\UTW\UTW.exe,0"
-        );
-        window::destroy(window);
-    }
-
-    /// `set_relaunch` gives a window the values of the program that runs,
-    /// here the test's own: the handle is taken from the window it is handed.
-    #[cfg(windows)]
-    // ST-WIN-05
-    #[test]
-    fn a_window_is_given_the_running_programs_values() {
+    fn a_window_is_given_the_running_programs_relaunch_values() {
         use raw_window_handle::{
             HandleError, HasWindowHandle, RawWindowHandle, Win32WindowHandle, WindowHandle,
         };
         use windows::Win32::Foundation::HWND;
         use windows::Win32::Storage::EnhancedStorage::{
             PKEY_AppUserModel_ID, PKEY_AppUserModel_RelaunchCommand,
+            PKEY_AppUserModel_RelaunchDisplayNameResource, PKEY_AppUserModel_RelaunchIconResource,
         };
 
         struct Lent(HWND);
@@ -277,6 +247,14 @@ mod tests {
         assert_eq!(
             window::held(window, PKEY_AppUserModel_RelaunchCommand),
             relaunch_command(&exe)
+        );
+        assert_eq!(
+            window::held(window, PKEY_AppUserModel_RelaunchDisplayNameResource),
+            crate::shell::APP_NAME
+        );
+        assert_eq!(
+            window::held(window, PKEY_AppUserModel_RelaunchIconResource),
+            icon_resource(&exe)
         );
         window::destroy(window);
     }
