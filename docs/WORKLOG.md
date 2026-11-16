@@ -1719,11 +1719,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         caps that cap nothing, two docstrings, the plan's 1366 × 768 window height (lead,
         `5dadddeb`)
       - [x] the rework C (SWE-2, merge `82a86c32`)
-      - [ ] the built window at 1280 × 691 with thirteen saves found and ten recent: the
-        File menu opens at its full height with no pointer move after the click. Headless,
-        the popup takes its height a frame behind its content and grows about 54 points a
-        frame for four frames; if the real window waits for input between those frames, the
-        menu opens short
+      - [x] the built window at 1280 × 691 with thirteen saves found and ten recent,
+        2026-11-16: the File menu stands at its full height 1.5 s after the click with no
+        pointer move (headless, the popup grows over four frames; the real window runs them
+        unasked), its middle scrolls, and no entry wraps under the bar
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
