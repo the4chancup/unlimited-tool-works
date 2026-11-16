@@ -238,6 +238,64 @@ fn drawn_tier_ids(nodes: &[accesskit::Node], ids: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// RE-GUI-04's drag with the press landing at `press(handle)`: Bronze's
+/// handle dragged onto Silver's row puts bronze before silver in the
+/// ruleset, the drawn table and the saved file.
+fn a_bronze_drag_onto_silver_reorders(test: &str, press: impl Fn(&accesskit::Node) -> egui::Pos2) {
+    let (ctx, _events, path, mut view) = official_opened(test);
+    let mut window = Headless::new();
+    view.section = Section::Tiers;
+
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        tier_ids(&view),
+        ["gold", "silver", "bronze", "goalkeeper", "regular"]
+    );
+    let handles: Vec<&accesskit::Node> = nodes_labeled(&frame.nodes, "⠇")
+        .into_iter()
+        .filter(|node| node.role() == Role::Label)
+        .collect();
+    assert_eq!(handles.len(), 5, "one handle per tier");
+
+    // Bronze's handle (the third row's) dragged onto Silver's row.
+    let from = press(handles[2]);
+    let onto = centre(handles[1]);
+    window.frame(pointer_at(from, true), |ui| show(ui, &mut view, &ctx));
+    window.frame(vec![egui::Event::PointerMoved(onto)], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    window.frame(pointer_at(onto, false), |ui| show(ui, &mut view, &ctx));
+
+    assert_eq!(
+        tier_ids(&view),
+        ["gold", "bronze", "silver", "goalkeeper", "regular"],
+        "bronze takes silver's place"
+    );
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        drawn_tier_ids(
+            &frame.nodes,
+            &["gold", "silver", "bronze", "goalkeeper", "regular"]
+        ),
+        ["gold", "bronze", "silver", "goalkeeper", "regular"],
+        "the table lists bronze before silver"
+    );
+
+    assert!(save_to(&mut view, &ctx, &path), "the save writes");
+    let rules =
+        aatf::Rules::load(&std::fs::read_to_string(&path).unwrap()).expect("the saved file loads");
+    assert_eq!(
+        rules
+            .ruleset()
+            .tiers
+            .iter()
+            .map(|tier| tier.id.as_str())
+            .collect::<Vec<_>>(),
+        ["gold", "bronze", "silver", "goalkeeper", "regular"],
+        "the saved file's tiers"
+    );
+}
+
 // ST-WHEEL-01 in the editor: a wheel notch over a tier's rate steps it
 // by one, as one undoable edit.
 #[test]
@@ -462,58 +520,22 @@ fn a_rate_edit_shows_in_the_preview_and_marks_the_document_unsaved() {
 // RE-GUI-04
 #[test]
 fn a_handle_drag_reorders_the_tiers() {
-    let (ctx, _events, path, mut view) = official_opened("gui_04_drag");
-    let mut window = Headless::new();
-    view.section = Section::Tiers;
+    a_bronze_drag_onto_silver_reorders("gui_04_drag", centre);
+}
 
-    let frame = settled(&mut window, &mut view, &ctx);
-    assert_eq!(
-        tier_ids(&view),
-        ["gold", "silver", "bronze", "goalkeeper", "regular"]
-    );
-    let handles: Vec<&accesskit::Node> = nodes_labeled(&frame.nodes, "⠇")
-        .into_iter()
-        .filter(|node| node.role() == Role::Label)
-        .collect();
-    assert_eq!(handles.len(), 5, "one handle per tier");
-
-    // Bronze's handle (the third row's) dragged onto Silver's row.
-    let from = centre(handles[2]);
-    let onto = centre(handles[1]);
-    window.frame(pointer_at(from, true), |ui| show(ui, &mut view, &ctx));
-    window.frame(vec![egui::Event::PointerMoved(onto)], |ui| {
-        show(ui, &mut view, &ctx)
+// RE-GUI-04: a press two points left of the glyph, outside the label's
+// bounds but within egui's interaction radius of it, still starts the
+// drag: the drag source covers the glyph, so the hit test hands it
+// the press, never the label.
+#[test]
+fn a_handle_drag_from_beside_its_glyph_reorders_the_tiers() {
+    a_bronze_drag_onto_silver_reorders("gui_04_beside", |handle| {
+        let bounds = handle.bounds().expect("a drawn handle");
+        egui::pos2(
+            bounds.x0 as f32 - 2.0,
+            ((bounds.y0 + bounds.y1) / 2.0) as f32,
+        )
     });
-    window.frame(pointer_at(onto, false), |ui| show(ui, &mut view, &ctx));
-
-    assert_eq!(
-        tier_ids(&view),
-        ["gold", "bronze", "silver", "goalkeeper", "regular"],
-        "bronze takes silver's place"
-    );
-    let frame = settled(&mut window, &mut view, &ctx);
-    assert_eq!(
-        drawn_tier_ids(
-            &frame.nodes,
-            &["gold", "silver", "bronze", "goalkeeper", "regular"]
-        ),
-        ["gold", "bronze", "silver", "goalkeeper", "regular"],
-        "the table lists bronze before silver"
-    );
-
-    assert!(save_to(&mut view, &ctx, &path), "the save writes");
-    let rules =
-        aatf::Rules::load(&std::fs::read_to_string(&path).unwrap()).expect("the saved file loads");
-    assert_eq!(
-        rules
-            .ruleset()
-            .tiers
-            .iter()
-            .map(|tier| tier.id.as_str())
-            .collect::<Vec<_>>(),
-        ["gold", "bronze", "silver", "goalkeeper", "regular"],
-        "the saved file's tiers"
-    );
 }
 
 // RE-GUI-05

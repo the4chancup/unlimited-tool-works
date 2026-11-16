@@ -26,7 +26,10 @@ import release  # noqa: E402  (the release's own helpers, so a candidate checks 
 VERSION = release.workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
 TARGET = release.target_dir()
 EXE = TARGET / "release/utw.exe"
-DEST = ROOT.parent / "4cc-studio-temp" / (sys.argv[2] if len(sys.argv) > 2 else f"candidate-{VERSION}")
+# Beside the main tree, not beside ROOT: run from a worktree under `4cc-studio-temp`,
+# ROOT.parent is `4cc-studio-temp` itself and the candidate would land one level too deep.
+DEST = release.main_tree(ROOT).parent / "4cc-studio-temp" / \
+    (sys.argv[2] if len(sys.argv) > 2 else f"candidate-{VERSION}")
 TOP = DEST / f"{release.PACKAGE}-{VERSION}"
 
 commit = sys.argv[1]
