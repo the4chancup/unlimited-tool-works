@@ -34,60 +34,6 @@ in this browser. When you're done, press <b>Copy my answers</b> at the bottom an
 text into the chat. The answered ones then leave this page, and each answer goes into the plan.</p>
 <ul id="toc"></ul>
 
-<h2>The 0.0.2 Save editor report</h2>
-
-<section class="entry" id="settings-checkbox-centred">
-  <h3>Settings: a checkbox alone in its row, centred or 1.5 points higher?</h3>
-  <p class="from">From: the built window beside its draft, 2026-11-15</p>
-  <p>In the Settings window, a checkbox with no label of its own beside it (Invert number
-  scrolling, Check for updates) used to stand 1.5 points above its row's middle in the draft.
-  The build centres it. On 2026-11-15 the lead changed the draft to centre it too
-  (<code>040d85de</code>), without asking you.</p>
-  <div class="shots">
-    <figure><a href="img/settings_checkbox.png"><img src="img/settings_checkbox.png" alt="The Check for updates row, four times larger: the draft before the change above, the draft now below"></a>
-      <figcaption>The Check for updates row, four times larger. Grey: the row's top and bottom; red: its middle</figcaption></figure>
-  </div>
-  <p class="links"><a href="../prototypes/index.html#save_editor?win=settings">Open the draft's Settings</a></p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="keep the draft centred"><b>Centred in both, as now</b></label>
-    <label class="opt"><input type="radio" value="restore the draft, raise the build's"><b>1.5 points higher in both: the draft goes back, and the build's checkboxes move up</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="appearance-boxes">
-  <h3>The Appearance page: two spacings, the draft's or the build's?</h3>
-  <p class="from">From: the built window beside its draft, 2026-11-15. The third difference,
-  the Physique box's width, you answered: the build takes the draft's.</p>
-  <div class="shots">
-    <figure><a href="img/appearance_pair.png"><img src="img/appearance_pair.png" alt="Player Appearance page, build above, draft below"></a>
-      <figcaption>The whole page: the build above, the draft below</figcaption></figure>
-  </div>
-  <p class="links"><a href="../prototypes/index.html#save_editor/player?save=pes21&amp;pes=2021&amp;player=701.1&amp;page=appearance">Open the draft</a></p>
-  <div class="options" data-q="label inset">
-    <p class="q">1. In the Physique box, how far in should the slider labels stand? The build
-    puts them 13 points in from the box's edge, level with the heading, as every other box
-    does in both. The draft puts them 19 points in, under the heading.</p>
-    <div class="shots">
-      <figure><a href="img/appearance_inset.png"><img src="img/appearance_inset.png" alt="The Physique box's left edge, three times larger: build above, draft below"></a>
-        <figcaption>The Physique box's left edge, three times larger</figcaption></figure>
-    </div>
-    <label class="opt"><input type="radio" value="the draft's 19"><b>19, as the draft</b></label>
-    <label class="opt"><input type="radio" value="the build's 13"><b>13, as the build and every other box</b></label>
-  </div>
-  <div class="options" data-q="swatch gap">
-    <p class="q">2. In the Colors box at the top right, how far apart should the skin and iris
-    colour squares stand? 8 points in the build, 2 in the draft.</p>
-    <div class="shots">
-      <figure><a href="img/appearance_swatches.png"><img src="img/appearance_swatches.png" alt="The Colors box's squares, three times larger: build above, draft below"></a>
-        <figcaption>The Colors box's squares, three times larger</figcaption></figure>
-    </div>
-    <label class="opt"><input type="radio" value="the draft's 2"><b>2, as the draft</b></label>
-    <label class="opt"><input type="radio" value="the build's 8"><b>8, as the build</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
 <h2>After the release</h2>
 
 <section class="entry" id="wrist-tape-colours">
@@ -100,24 +46,6 @@ text into the chat. The answered ones then leave this page, and each answer goes
     <label class="opt"><input type="radio" value="the same four everywhere"><b>The same four, in the same order</b></label>
     <label class="opt"><input type="radio" value="different, see note"><b>Different in at least one game</b>
       <div class="note">Write each game's list below.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<h2>Sentences the plans and the spec leave open</h2>
-<p class="group-intro">From the readability pass of 2026-11-12: passages a reader could take two
-ways, which neither the code nor another document settles. Each waits only for its tool's phase.</p>
-
-<section class="entry" id="anthem-kickoff-fade">
-  <h3>A manually started anthem and the kickoff fade</h3>
-  <p class="from">From: <code>plans/music_player.md</code> "Autopilot", "Anthems start manually"</p>
-  <p>The plan says "The existing kickoff fade-out may still stop a manually started anthem",
-  but the only kickoff fade it defines is the goalhorn's, on the first clock start after a
-  goal.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="the goalhorn's fade stops an anthem too"><b>The goalhorn's fade stops an anthem too</b></label>
-    <label class="opt"><input type="radio" value="another fade, see note"><b>Another fade is meant</b>
-      <div class="note">Say which below.</div></label>
   </div>
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>

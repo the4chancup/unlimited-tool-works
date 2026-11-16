@@ -1377,10 +1377,9 @@ briefs, review loops, gates and mutation runs as for any step.
     taken from PES 2017 and 2021 having it, the games between them)
     - [x] y7a the draft and `plans/save_editor.md` "Tactics editor"
     - [x] y7b the code: `team_widgets`' `substitution_choices` offers Very early from PES 2017
-    - [ ] y7c later (the maintainer: "we'll check in detail in the future"): a look at PES
-      2018, 2019 and 2020's Game Plan, Automatic settings, Substitution; the plan's "taken
-      rather than looked at" goes with it (`maintainer/questions.html` "After the release"). Look: Pending
-      looks
+    - [x] y7c 2026-11-16 the maintainer looked at PES 15, 16, 18, 19 and 20: the same four
+      choices on each (DECISIONS 2026-11-16 "Substitution offers the same four choices on
+      every version"; the build's Very early on 15 and 16 is in 0.0.2-answers)
 - [x] 0.0.1z the maintainer's look at the built app (2026-10-27): the app's sliders kept, the
   drafts made to match (z1, z4); z2 the code (the slider's fill, Reset window, ST-BAR-05,
   06, SE-GUI-40; z2c Reset window under zoom), z3 the active-tool bar's left corners. Done
@@ -2270,7 +2269,11 @@ briefs, review loops, gates and mutation runs as for any step.
         id, any other as it is (`pes_savefile` "Team TOML")
       - the Kit slots dialog's boxes one width, six digits wide (`view/team.rs` `kit_slots`)
       - the Ruleset editor's rail rows 24 apart (3 points of padding)
-      - the Appearance page's Physique box as wide as the draft's (Motion 24 points right)
+      - the Appearance page's Physique box as wide as the draft's (Motion 24 points right),
+        its labels 6 points in from its title, and the Colors squares 2 points apart
+      - every box's content on the Stats and Appearance screens 6 points in from its title,
+        once the maintainer's look at the draft agrees (`tasks.html` `look-box-indent`;
+        drafted 2026-11-16 in `tools/save_editor.js`)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
         `substitution_choices`, help 08, the two comments)
       - Choose file's tooltip reads "starting in the folder of the last opened save"
@@ -3433,8 +3436,6 @@ one of them means that page).
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
   loads and draws; PES 2017; 0.0.2b (DECISIONS 2026-11-11 "texture_not_div4 holds only a
   pre-Fox texture the compile block-compresses"); harness
-- Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
-  0.0.1y's y7c (`maintainer/questions.html` "After the release"); harness
 - The Ability stats column on a PES 17 save in the built window: Tight Possession's and
   Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the

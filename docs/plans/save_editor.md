@@ -902,7 +902,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
       setting is on: first, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
-      two swatch rows' first squares in line) at its right.
+      two swatch rows' first squares in line, the squares 2 points apart) at its right.
     - **Strip style**: fifteen settings in three columns by five rows, every label one
       width and every field one width (the two ID boxes as wide as the dropdowns), thin
       lines in the frame's colour parting what belongs together:
@@ -928,8 +928,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
       gloves show.
     - **Physique** at the left, its 14 sliders two a row, 82 points long (the suite's are
       110; at 110 Motion beside them wrapped two labels) on rows 34 points tall, which fill
-      the group to the height of the two at its right, the group as wide as the draft draws
-      it (a first build drew it 24 points narrower, Motion moving left with it); **Motion**
+      the group to the height of the two at its right. Its labels stand 6 points in from its
+      title, as the stats grids' do, and the group is as wide as the draft draws it (a first
+      build drew it 24 points narrower, Motion moving left with it); **Motion**
       at its right (hunching, arm movement, kick motions, gc1/gc2, two a row, Randomize
       under them; dribbling
       motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,

@@ -18257,3 +18257,32 @@ further right than the build first drew it.
 Why: the build's narrower box was not a choice anyone made, and the draft's spacing leaves
 the sliders and Motion's labels room.
 Plan: plans/save_editor.md "Editing UI", the Appearance page's Physique bullet.
+
+## 2026-11-16 — music_player — in Full mode the match's kickoff fades out a playing anthem
+Decision: in Full mode, the feed's first `ClockStarted` of a match fades out an anthem still
+playing, with the anthem's fade; Co-pilot and Assist leave it to the streamer. Anthems still
+start only by hand.
+Why: streamers stop the anthems at the match's first kickoff, or a few seconds after it, so
+Full mode, meant for a match nobody touches, does it for them. The goalhorn's fade after a
+goal never meets an anthem, which has stopped by then, so the plan's old "the existing
+kickoff fade-out may stop an anthem" named a fade that could not.
+Plan: plans/music_player.md "Autopilot", "Anthems start manually"; the scenario tests'
+bullet.
+
+## 2026-11-16 — gui — a checkbox alone in a grid cell is centred in its row, in the draft as in the build
+Decision: a checkbox standing alone in a form grid's cell (Settings' Invert number scrolling
+and Check for updates) is centred in its row, as egui draws it; the draft keeps the centring
+it took on 2026-11-15 (`040d85de`).
+Why: the draft's 1.5 points above the middle came from a browser's text baseline, not a
+choice, and centring it costs the build nothing.
+Plan: plans/core/gui.md, the "Form grids" row.
+
+## 2026-11-16 — save_editor — the Appearance page keeps the draft's swatch gap and Physique's label inset
+Decision: under Colors the skin and iris squares stand 2 points apart, and Physique's labels
+6 points in from its title (19 from the box's edge), both as the draft draws them; the
+build follows.
+Why: the build's 8-point gap and 13-point inset were not choices anyone made. The inset
+sets the labels under the title as their heading; whether every other box on the Stats and
+Appearance screens takes it too is drafted and waits on the maintainer's look
+(`tasks.html` "Every box's content 6 points in from its title").
+Plan: plans/save_editor.md "Editing UI", the Appearance page's Colors and Physique bullets.

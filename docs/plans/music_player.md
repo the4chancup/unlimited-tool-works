@@ -847,8 +847,11 @@ and lane contract live in the Match tracker plan).
   The default is 15 %, as the SEN:P-AI 1.3.0 rebuild ships it, because Full mode is for an
   unattended match, where nobody presses Random. 0 keeps chants manual.
 - **Anthems start manually**: pre-match anthem autoplay is not planned, and there is no autoplay
-  setting or feed trigger. The existing kickoff fade-out may still stop a manually started anthem;
-  stopping playback does not imply automatic starting.
+  setting or feed trigger. In Full mode, the match's first `ClockStarted` (its kickoff) fades
+  out an anthem still playing, with the anthem's fade (`fade.anthem`), since streamers stop it
+  at the kickoff or a few seconds after it; Co-pilot and Assist leave the anthem to the
+  streamer. Stopping playback does not imply automatic starting. The goalhorn's fade, on the
+  first clock start after a goal, never meets an anthem: by then the anthems have stopped.
 - **Victory anthems stay manual** (deliberate omission): auto-firing a VA needs a
   reliable end-of-match signal, and the SEN:P-AI 1.3.0 rebuild found the same independently
   (anthems and the victory anthem have no cue in memory, so it leaves them to the
@@ -1215,7 +1218,8 @@ Parsing/validation CLI lives with the [Music export editor](music_export_editor.
   3-character name contained in a slot left unmatched and a 4-character one matched, feed
   loss) asserting scoring, selection, the no-double-counting rule, the announcement-delay
   window (manual press cancels the pending horn; early kickoff drops it), the horn fade at
-  the post-goal clock restart, and highlight behavior in Co-pilot/Assist modes. Pure logic,
+  the post-goal clock restart, the anthem fade at the match's kickoff (Full mode only), and
+  highlight behavior in Co-pilot/Assist modes. Pure logic,
   no game or audio needed.
 - **Manual streamer testing** during a real or simulated stream before release.
 
