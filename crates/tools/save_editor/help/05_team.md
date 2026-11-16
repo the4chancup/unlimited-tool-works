@@ -126,12 +126,16 @@ sharing them. Its dialog asks for:
   elsewhere, then the last one used; **Browse…** picks another;
 - the **File name**, the team's name (`f.png` for /f/).
 
-**With each preset's settings beside its row** lists each preset's Formation
-settings in a column beside its row, with its Advanced instructions on PES 2017
-to 2021. A line under the formations holds the team's Automatic settings.
+Three checkboxes under them shape the picture:
 
-**Portraits** draws the players' portraits; it starts matched to **Portraits**
-on the formation bar, and changing it here does not change the bar. **Without
-the pitch's grain (smaller file)** paints the pitch plain.
-If the file is already in the folder, Save asks before replacing it. The notice
-that says the picture was written has an **Open folder** button.
+- **With each preset's settings beside its row** lists each preset's Formation
+  settings in a column beside its row, with its Advanced instructions on PES
+  2017 to 2021, and adds a line under the formations with the team's Automatic
+  settings.
+- **Portraits** draws the players' portraits. It starts matched to
+  **Portraits** on the formation bar, and changing it here does not change the
+  bar.
+- **Without the pitch's grain (smaller file)** paints the pitch plain.
+
+If the file is already in the folder, **Save** asks before replacing it. The
+notice that says the picture was written has an **Open folder** button.

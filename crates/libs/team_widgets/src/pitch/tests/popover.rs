@@ -1278,7 +1278,8 @@ fn with_the_portraits_off_a_drag_and_a_row_drop_hit_the_upper_badge() {
         "and his the AMF's"
     );
 
-    // A bench row released on the AMF's badge swaps him in.
+    // A bench row held over the AMF's badge marks it with the badge's
+    // brackets, and released there swaps him in.
     let mut tactics = file.team(711).unwrap().tactics.clone();
     let bench = tactics.bench_order[0];
     let out = tactics.starting_eleven[amf];
@@ -1288,8 +1289,28 @@ fn with_the_portraits_off_a_drag_and_a_row_drop_hit_the_upper_badge() {
         canvas_rect(&nodes),
         &tactics.presets[2].formations[0].players,
     )[amf];
-    let changed =
-        window.drag_pitch_and_lineup(from, onto, version, &mut tactics, &mut view, &roster);
+    window.pitch_and_lineup(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (_, shapes, _) = window.pitch_and_lineup_paint(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(onto)],
+    );
+    assert_badge_brackets(&shapes, onto);
+    let (_, changed) = window.pitch_and_lineup(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(onto, false),
+    );
     assert!(changed, "the row's release wrote the swap");
     assert_eq!(
         tactics.starting_eleven[amf], bench,
