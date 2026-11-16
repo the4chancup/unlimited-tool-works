@@ -27,8 +27,8 @@ const WIDTH: f32 = 540.0;
 const MEGABYTE: f64 = 1_048_576.0;
 /// The bytes in one KB, the "opened" clause's unit under 0.1 MB.
 const KILOBYTE: f64 = 1024.0;
-/// The text box's height in rows, the draft's textarea 84 points.
-const WORDS_ROWS: usize = 4;
+/// The text box's height, the draft's `textarea` 84 points.
+const WORDS_HEIGHT: f32 = 84.0;
 
 /// The dialog's state: open or not, the member's words (kept for the window's
 /// life, so a reopened dialog holds them), the lines under "The file holds:"
@@ -133,38 +133,49 @@ impl Report {
             crate::shell::sidebar::REPORT_LABEL,
             |ui| {
                 ui.set_width(WIDTH);
-                ui.label("Saves what UTW did since it opened, so the problem can be reproduced.");
-                ui.label(
-                    "The file is not sent automatically, please post it wherever you usually \
-                     report problems.",
-                );
-                modal_sentence_gap(ui);
-                ui.label("What happened?");
-                ui.add(text_box(
-                    egui::TextEdit::multiline(&mut self.words)
-                        .hint_text(
-                            "What you did, what you expected and what you got; also anything \
-                             done outside UTW, in the game or another tool",
-                        )
-                        .desired_width(f32::INFINITY)
-                        .desired_rows(WORDS_ROWS),
-                ));
-                modal_sentence_gap(ui);
-                ui.label("The file holds:");
-                for line in &self.lines {
-                    // The draft's `<li>`: the bullet at the first line's top,
-                    // a wrapped line hanging under the text.
-                    ui.horizontal_top(|ui| {
-                        ui.label("•");
-                        ui.add(egui::Label::new(line.as_str()).wrap());
-                    });
-                }
-                modal_sentence_gap(ui);
-                ui.label("Your user folder is written as ~ in the file's paths.");
-                if let Some(saved_to) = &self.saved_to {
+                ui.scope(|ui| {
+                    // The draft's text rows stand 15 apart, one under the
+                    // other, so egui's 3-point widget gap is dropped for
+                    // them; the sentence gaps stay `modal_sentence_gap`'s.
+                    ui.spacing_mut().item_spacing.y = 0.0;
+                    ui.label(
+                        "Saves what UTW did since it opened, so the problem can be reproduced.",
+                    );
+                    ui.label(
+                        "The file is not sent automatically, please post it wherever you usually \
+                         report problems.",
+                    );
                     modal_sentence_gap(ui);
-                    ui.label(saved_to.as_str());
-                }
+                    ui.label("What happened?");
+                    ui.add(text_box(
+                        egui::TextEdit::multiline(&mut self.words)
+                            .hint_text(
+                                "What you did, what you expected and what you got; also anything \
+                                 done outside UTW, in the game or another tool",
+                            )
+                            .desired_width(f32::INFINITY)
+                            .min_size(egui::vec2(0.0, WORDS_HEIGHT)),
+                    ));
+                    modal_sentence_gap(ui);
+                    ui.label("The file holds:");
+                    // The draft's `ul` keeps its first line 4 under the
+                    // heading.
+                    ui.add_space(4.0);
+                    for line in &self.lines {
+                        // The draft's `<li>`: the bullet at the first line's top,
+                        // a wrapped line hanging under the text.
+                        ui.horizontal_top(|ui| {
+                            ui.label("•");
+                            ui.add(egui::Label::new(line.as_str()).wrap());
+                        });
+                    }
+                    modal_sentence_gap(ui);
+                    ui.label("Your user folder is written as ~ in the file's paths.");
+                    if let Some(saved_to) = &self.saved_to {
+                        modal_sentence_gap(ui);
+                        ui.label(saved_to.as_str());
+                    }
+                });
                 // Reading order Save…, Cancel; `modal_buttons` adds them from
                 // the right, so the last one comes first.
                 let (save, close) = if self.saved_to.is_some() {

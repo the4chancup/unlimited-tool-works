@@ -614,6 +614,60 @@ fn a_long_line_wraps_inside_the_dialog() {
     );
 }
 
+// The draft's own row pitch: 15 between the tops of stacked text rows,
+// "The file holds:" 19 above its first line (the `ul`'s 4-point margin
+// over the 15), and the 84-point box right under its label.
+#[test]
+fn the_rows_and_the_box_stand_as_the_draft_spaces_them() {
+    let dir = TestDir::new("studio_core_report_rows");
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell();
+    let egui_ctx = test_context();
+    record(&ctx, "a", dir.path());
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+    let intro = line_bounds(&nodes, "Saves what UTW did");
+    let second = line_bounds(&nodes, "The file is not sent");
+    assert!(
+        (second.y0 - intro.y0 - 15.0).abs() < 0.5,
+        "the intro's second line stands 15 under the first: {intro:?} against {second:?}"
+    );
+
+    let heading = line_bounds(&nodes, "The file holds:");
+    let rows = [
+        line_bounds(&nodes, "A: 3 steps"),
+        line_bounds(&nodes, "the files as they were opened"),
+        line_bounds(&nodes, "utw.log, the version"),
+    ];
+    assert!(
+        (rows[0].y0 - heading.y0 - 19.0).abs() < 0.5,
+        "the first line stands 19 under the list's heading: {heading:?} against {:?}",
+        rows[0]
+    );
+    for pair in rows.windows(2) {
+        assert!(
+            (pair[1].y0 - pair[0].y0 - 15.0).abs() < 0.5,
+            "a list row stands 15 under the previous one: {:?} against {:?}",
+            pair[0],
+            pair[1]
+        );
+    }
+
+    let what = line_bounds(&nodes, "What happened?");
+    let body = words_box(&nodes).bounds().expect("the box is drawn");
+    assert!(
+        (body.height() - 84.0).abs() < 0.5,
+        "the box is the draft's 84 points high: {body:?}"
+    );
+    assert!(
+        (body.y0 - what.y1).abs() < 0.5,
+        "the box stands right under its label: {what:?} against {body:?}"
+    );
+}
+
 /// The bounds of the text node whose value starts with `start`.
 fn line_bounds(nodes: &[accesskit::Node], start: &str) -> accesskit::Rect {
     nodes
