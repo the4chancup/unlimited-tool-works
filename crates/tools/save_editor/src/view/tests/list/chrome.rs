@@ -2,18 +2,6 @@ use studio_core::StudioTool as _;
 
 use super::*;
 
-/// The team selector's combo: the list panel's leftmost.
-fn selector_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
-    nodes
-        .iter()
-        .filter(|node| node.role() == Role::ComboBox)
-        .min_by(|a, b| {
-            let x = |node: &&accesskit::Node| node.bounds().map(|r| r.x0).unwrap_or(f64::MAX);
-            x(a).partial_cmp(&x(b)).expect("ordered bounds")
-        })
-        .expect("the team selector")
-}
-
 /// The category radio button labeled `label` in the open popup.
 fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
     nodes
@@ -139,10 +127,7 @@ fn the_filter_box_matches_an_id_from_its_start() {
         .expect("the filter box");
     // The list's rows drawn, in screen order.
     let drawn_rows = |nodes: &[accesskit::Node]| -> Vec<String> {
-        let mut rows: Vec<&accesskit::Node> = nodes
-            .iter()
-            .filter(|node| list_row(node) && node.bounds().is_some_and(|bounds| bounds.x0 < 300.0))
-            .collect();
+        let mut rows: Vec<&accesskit::Node> = nodes.iter().filter(|node| list_row(node)).collect();
         rows.sort_by(|a, b| {
             let y = |node: &&accesskit::Node| node.bounds().map(|r| r.y0).unwrap_or(0.0);
             y(a).partial_cmp(&y(b)).expect("ordered bounds")

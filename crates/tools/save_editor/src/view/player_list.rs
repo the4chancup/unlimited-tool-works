@@ -20,7 +20,7 @@ use crate::session::cup::cup_teams;
 use crate::session::selection::{self, ListRow, Row, TeamCategory, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
-use crate::view::{Reveal, SaveView, Selection, live_marks, quick_actions};
+use crate::view::{Reveal, SaveView, Selection, live_marks, quick_actions, reveal_for};
 
 /// A swatch square's side (the draft's 10px).
 const SWATCH: f32 = 10.0;
@@ -121,6 +121,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         && let TeamChoice::Team(id) = view.team
     {
         view.selected = Some(Selection::Team(id));
+        view.reveal_selected = Some(reveal_for(view.selected));
     }
     // A category pick: a team the new category leaves out gives way to
     // All teams, and a selection it leaves out moves to the list's first
@@ -146,6 +147,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                         ListRow::Team(_) => None,
                     })
                     .or(view.selected);
+            view.reveal_selected = Some(reveal_for(view.selected));
         }
     }
     ui.add(text_box(
@@ -201,8 +203,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category);
-    // A page or arrow key moved the selection: its row's index, scrolled
-    // to below.
+    // A selection moved outside the list (`reveal_selected`): its row's
+    // index, scrolled to below.
     let reveal = std::mem::take(&mut view.reveal_selected).and_then(|reveal| {
         rows.iter()
             .position(|row| Some(row_selection(*row)) == view.selected)
@@ -222,11 +224,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // report it wins (a pointer on the edge two rows share hovers both,
     // and the release there goes to the upper one).
     let mut drop_mark = None;
-    // The `Id` the list's scroll area keeps its `State` under:
-    // `.id_salt` below wraps the name in `IdSalt::new` itself, so
+    // The `Id` the list's scroll area keeps its `State` under, keyed by
+    // the open save (`generation`) so another save opened starts the
+    // list at its top rather than at the last save's offset:
+    // `.id_salt` below wraps the value in `IdSalt::new` itself, so
     // `make_persistent_id` of the same `IdSalt` is the area's `Id`,
     // letting `State::load` read the current offset for `Nearest`.
-    let scroll_salt = "save_editor_player_list";
+    let scroll_salt = ("save_editor_player_list", view.generation);
     // Not shrunk: the frame takes the panel's height whatever few rows a
     // filter leaves. The scope clears the extreme background, which a
     // solid bar's track paints in at full opacity: the draft's `.vbar` has
@@ -264,6 +268,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     (rows.len() as f32 * layout.row_height - viewport).max(0.0),
                 )
             });
+            if scroll_offset.is_some() {
+                // The reveal's offset can stand past the stored
+                // `max_offset` of a list that grew this frame (a widened
+                // category or a cleared filter): with rubber-banding on,
+                // egui's spring reads it as an overscroll and pulls the
+                // list back. `vertical_scroll_offset` lands this frame,
+                // so the spring is off for it.
+                ui.spacing_mut().scroll.kinetic.rubber_band = false;
+            }
             let mut area = egui::ScrollArea::vertical()
                 .id_salt(scroll_salt)
                 .auto_shrink([false, false]);

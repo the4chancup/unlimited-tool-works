@@ -786,6 +786,7 @@ fn the_own_team_click_widens_a_category_leaving_the_team_out() {
         Some(Selection::Team(CO)),
         "the click selected 714's row"
     );
+    assert_selected_row_in_clip(&mut window, &mut view);
 }
 
 // A category that holds the clicked team stays: 714 is a 4cc team.
@@ -805,6 +806,67 @@ fn the_own_team_click_keeps_a_category_holding_the_team() {
         view.selected,
         Some(Selection::Team(CO)),
         "the click selected 714's row"
+    );
+}
+
+// With both names at twenty letters, the own-team button stands on a
+// row of its own under `Import into`, not on its line, which the two
+// names and the picked file's name would push past the window's width.
+#[test]
+fn the_own_team_button_stands_under_the_import_into_row() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_row", THREE);
+    for (id, key) in [(THREE, 1_u64), (CO, 2)] {
+        edit_team(view.session.as_mut().unwrap(), id, key, |team| {
+            team.name = "ABCDEFGHIJKLMNOPQRST".to_owned();
+        });
+    }
+    let co = export(&view, CO);
+    picked(&mut window, &mut view, "own.toml", co.as_bytes());
+
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let panel = nodes_in_window(&pairs, TITLE);
+    let import_into = panel
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Label
+                && node
+                    .value()
+                    .is_some_and(|value| value.starts_with("Import into "))
+        })
+        .and_then(|(_, node)| node.bounds())
+        .expect("the Import into row");
+    // The row's bottom: the lowest edge of whatever shares its line.
+    let row_bottom = panel
+        .iter()
+        .filter_map(|(_, node)| node.bounds())
+        .filter(|bounds| (bounds.y0 - import_into.y0).abs() < 4.0)
+        .map(|bounds| bounds.y1)
+        .fold(f64::MIN, f64::max);
+    let button = panel
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Button
+                && node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Select the team with this file's ID"))
+        })
+        .and_then(|(_, node)| node.bounds())
+        .expect("the own-team button");
+    assert!(
+        button.y0 >= row_bottom,
+        "the button on a row of its own under Import into ({button:?} vs row bottom {row_bottom})"
+    );
+    let window_bounds = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Window
+                && node.label().is_some_and(|label| label.starts_with(TITLE))
+        })
+        .and_then(|(_, node)| node.bounds())
+        .expect("the panel's window");
+    assert!(
+        (window_bounds.x1 - window_bounds.x0 - 620.0).abs() <= 1.0,
+        "the window stays 620 points wide: {window_bounds:?}"
     );
 }
 

@@ -783,14 +783,19 @@ fn list_frame(window: &Headless, shapes: &[egui::epaint::ClippedShape]) -> egui:
 }
 
 /// Whether `node` is one of the list's rows: a player row
-/// (`player_row`), or a team row, whose label is `{id} {name}`.
+/// (`player_row`), or a team row, whose label is `{id} {name}`. The
+/// bounds keep the detail pane's numeric buttons out: the Tactics
+/// screen's Preset toggles are Buttons labeled `1`, `2` and `3` right of
+/// the list, which a bare digit label would otherwise match.
 fn list_row(node: &accesskit::Node) -> bool {
-    player_row(node)
-        || (node.role() == Role::Button
-            && node
-                .label()
-                .and_then(|label| label.split_whitespace().next())
-                .is_some_and(|word| word.parse::<u32>().is_ok()))
+    node.bounds().is_some_and(|bounds| bounds.x0 < 300.0)
+        && (player_row(node)
+            || (node.role() == Role::Button
+                && node.label().is_some_and(|label| {
+                    let mut words = label.split_whitespace();
+                    words.next().is_some_and(|word| word.parse::<u32>().is_ok())
+                        && words.next().is_some()
+                })))
 }
 
 /// The list's scroll area's clip rect, read off the selected row's
@@ -851,6 +856,18 @@ fn assert_combo_width(window: &Headless, combo: &accesskit::Node, labels: &[Stri
     );
 }
 
+/// The team selector's combo: the list panel's leftmost.
+fn selector_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
+    nodes
+        .iter()
+        .filter(|node| node.role() == Role::ComboBox)
+        .min_by(|a, b| {
+            let x = |node: &&accesskit::Node| node.bounds().map(|r| r.x0).unwrap_or(f64::MAX);
+            x(a).partial_cmp(&x(b)).expect("ordered bounds")
+        })
+        .expect("the team selector")
+}
+
 /// The player list's scroll bar: the leftmost `ScrollBar` node (the
 /// detail pane scrolls too).
 fn list_scroll_bar(nodes: &[accesskit::Node]) -> accesskit::Rect {
@@ -860,6 +877,76 @@ fn list_scroll_bar(nodes: &[accesskit::Node]) -> accesskit::Rect {
         .filter_map(accesskit::Node::bounds)
         .min_by(|a, b| a.x0.total_cmp(&b.x0))
         .expect("the list's scroll bar")
+}
+
+/// Wheels the player list to its end (bounded: a list that never stops
+/// scrolling fails rather than hangs), the pointer over a drawn row so
+/// the wheel goes to the list. The end is held once two frames draw the
+/// same top row, but the return also waits on egui's wheel action to be
+/// over: the wheel's spread-out delta would otherwise still apply on the
+/// caller's next input frame and race a reveal back down.
+fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
+    let mut top = None;
+    for _ in 0..900 {
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let top_row = nodes
+            .iter()
+            .filter(|node| list_row(node))
+            .filter_map(accesskit::Node::bounds)
+            .map(|bounds| bounds.y0)
+            .fold(f64::MAX, f64::min);
+        if top == Some(top_row) && !window.ctx.input(|input| input.is_scrolling()) {
+            return;
+        }
+        if top == Some(top_row) {
+            // Settled or held at the end while the wheel's delta drains:
+            // another wheel would only re-arm it.
+            continue;
+        }
+        top = Some(top_row);
+        let at = nodes
+            .iter()
+            .find(|node| list_row(node))
+            .map(centre)
+            .expect("a list row to wheel over");
+        window.frame(
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -600.0),
+                    phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+            |ui| show(ui, view, &|| Vec::new()),
+        );
+    }
+    panic!("the list never reached its end")
+}
+
+/// Draws a frame and asserts the selected row is drawn inside the list's
+/// clip: its bounds and the clip, for a caller's own placement check
+/// (a team row at the clip's top, a player row's `Nearest` bottom).
+#[track_caller]
+fn assert_selected_row_in_clip(
+    window: &mut Headless,
+    view: &mut SaveView,
+) -> (accesskit::Rect, egui::Rect) {
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let bounds = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row is drawn");
+    let clip = list_clip(window, &shapes, bounds);
+    assert!(
+        bounds.y0 >= f64::from(clip.top()) - 0.5 && bounds.y1 <= f64::from(clip.bottom()) + 0.5,
+        "the selected row inside the list's clip: {bounds:?} vs {clip:?}"
+    );
+    (bounds, clip)
 }
 
 /// Whether `node` sits on `anchor`'s row (same top within 4 points) and

@@ -425,9 +425,7 @@ fn a_held_pgdn_draws_each_selected_team_row_at_the_lists_top() {
         .filter(|node| list_row(node))
         .filter_map(accesskit::Node::bounds)
         .filter(|bounds| {
-            bounds.x0 < f64::from(clip.right())
-                && bounds.y0 >= f64::from(clip.top()) - 1.0
-                && bounds.y1 <= f64::from(clip.bottom()) + 1.0
+            bounds.y0 >= f64::from(clip.top()) - 1.0 && bounds.y1 <= f64::from(clip.bottom()) + 1.0
         })
         .map(|bounds| bounds.y1)
         .fold(f64::MIN, f64::max);
@@ -472,7 +470,6 @@ fn down_on_the_last_shown_row_draws_the_next_whole_at_the_lists_bottom_edge() {
         .iter()
         .filter(|node| list_row(node))
         .filter_map(accesskit::Node::bounds)
-        .filter(|bounds| bounds.x0 < f64::from(clip.right()))
         .collect();
     rows.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
     let last = rows
@@ -492,12 +489,7 @@ fn down_on_the_last_shown_row_draws_the_next_whole_at_the_lists_bottom_edge() {
     );
     let bounds = nodes
         .iter()
-        .filter(|node| {
-            list_row(node)
-                && node
-                    .bounds()
-                    .is_some_and(|b| b.x0 < f64::from(clip.right()))
-        })
+        .filter(|node| list_row(node))
         .find(|node| node.toggled() == Some(accesskit::Toggled::True))
         .and_then(accesskit::Node::bounds)
         .expect("the selected row's node");

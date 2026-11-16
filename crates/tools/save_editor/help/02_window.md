@@ -51,17 +51,20 @@ team: they stay in the save exactly as they are, and the editor never lists, che
 changes them.
 
 The list holds a row per team and, under each team, a row per player: the team's row shows
-its id, its two colors and its name, and a player's row his shirt number, position and name
-as the game draws it, colors included. A `●` on a row marks
+its id, its two colors and its name, and a player's row his place in the roster, position
+and name as the game draws it, colors included. A `●` on a row marks
 a player or the team itself with unsaved changes.
 
-The filter box above the list finds a team, or a player of any listed team, by part of a
-name or shirt name, or by the start of an id, so you can find someone without knowing their
-team first. A team whose name or id matches is listed with its whole squad. Double-click a
-team's row to show that team alone: the team selector picks it and the filter box empties.
+The filter box above the list finds a team or a player by part of a name or shirt name,
+or by the start of an id, so you can find someone without knowing their team first. It
+searches every team the ticked category lists, whichever team the dropdown shows. A team
+whose name or id matches is listed with its whole squad. Double-click a team's row to
+show that team alone: the dropdown picks it and the filter box empties.
+
 While no field has the keyboard and no menu or dialog is open, Up and Down move through
-the list's rows, team rows included, and Page Up and Page Down move to the previous or
-next team's row (seven rows at a time when only one team is listed).
+the list's rows, team rows included. Page Up and Page Down work from a field too: they
+move to the previous or next team's row, or seven rows at a time when only one team is
+listed.
 
 **Reordering a team**
 

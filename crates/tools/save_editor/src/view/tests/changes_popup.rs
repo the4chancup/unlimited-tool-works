@@ -350,6 +350,7 @@ fn a_rows_click_widens_a_category_leaving_the_team_out() {
             .contains(&selection::ListRow::Team(701)),
         "701's row is listed"
     );
+    assert_selected_row_in_clip(&mut window, &mut view);
 
     // A 701 player's stat row the same, with his `Selection::Player`:
     // VGL ticked again first, so the click widens it back to `All`.
@@ -366,6 +367,7 @@ fn a_rows_click_widens_a_category_leaving_the_team_out() {
         Some(Selection::Player(701, 0)),
         "70101's row selected"
     );
+    assert_selected_row_in_clip(&mut window, &mut view);
 
     // A category that already holds the team stays: 701 is a 4cc team.
     view.team_category = TeamCategory::FourCc;
@@ -381,17 +383,20 @@ fn a_rows_click_widens_a_category_leaving_the_team_out() {
         Some(Selection::Player(701, 0)),
         "70101's row selected"
     );
+    assert_selected_row_in_clip(&mut window, &mut view);
 }
 
-// A row's click scrolls the list to the row it selects: a change to a
-// player of the save's last team, clicked with the list at its top,
-// leaves his row drawn inside the list's clip.
+// A row's click scrolls the list to the row it selects, `Nearest`: a
+// change to a player of the save's last team — outside `VGL`, so the
+// click widens the category to `All` — clicked with the list at its
+// top, lands his row at the clip's bottom edge.
 // SE-GUI-83
 #[test]
 fn a_rows_click_scrolls_the_list_to_its_row() {
     let path = fixture(PesVersion::Pes21, "changes_list_reveal");
     let mut view = SaveView::new();
     view.open(&path);
+    view.team_category = TeamCategory::Vgl;
     // The save's last team's first rostered player, changed so the list
     // holds a row for him.
     let (last_id, slot, player_id) = {
@@ -416,6 +421,10 @@ fn a_rows_click_scrolls_the_list_to_its_row() {
             roster_slot.player_id,
         )
     };
+    assert!(
+        !TeamCategory::Vgl.contains(last_id),
+        "premise: the last team {last_id} is outside VGL"
+    );
     let mut edited = player_entry(&view, player_id);
     edited.basic.height = if edited.basic.height == 170 { 171 } else { 170 };
     view.session.as_mut().unwrap().edit_player(1, edited);
@@ -430,17 +439,39 @@ fn a_rows_click_scrolls_the_list_to_its_row() {
         Some(Selection::Player(last_id, slot)),
         "the click selected his row"
     );
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = nodes
-        .iter()
-        .filter(|node| player_row(node))
-        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
-        .and_then(accesskit::Node::bounds)
-        .expect("the selected row is drawn");
-    let clip = list_clip(&window, &shapes, bounds);
+    assert_eq!(
+        view.team_category,
+        TeamCategory::All,
+        "the category widened to All"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
     assert!(
-        bounds.y0 >= f64::from(clip.top()) - 0.5 && bounds.y1 <= f64::from(clip.bottom()) + 0.5,
-        "his row inside the list: {bounds:?} vs {clip:?}"
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
+}
+
+// A team change's item clicked with the list scrolled to its end: the
+// click selects the team's own row, which rises to the list's top (`Top`)
+// on the next frame.
+#[test]
+fn a_team_rows_click_scrolls_the_list_to_its_row() {
+    let (mut view, _) = three_changes("changes_list_team_reveal");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    scroll_player_list_to_bottom(&mut window, &mut view);
+
+    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    click(&mut window, &colour, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "premise: the team's own row selected"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "701's row at the list's top, `Top` ({bounds:?} vs {clip:?})"
     );
 }
 

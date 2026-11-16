@@ -1456,6 +1456,77 @@ fn a_rows_click_selects_the_player() {
     );
 }
 
+/// A violation row's click scrolls the list to the player it selects,
+/// `Nearest`: under All teams with his row below the clip, his row lands
+/// at its bottom edge on the next frame.
+// SE-GUI-30
+#[test]
+fn a_rows_click_scrolls_the_list_to_the_player() {
+    let (mut view, mut window) = open_734_with("live_aatf_click_reveal", &[73401, 73404], 183);
+    view.live_aatf = true;
+    // All teams, so the selector stays and the list holds every team: at
+    // its top, 73404's row is below the clip.
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(734, 0));
+    live_checked(&mut window, &mut view, &[734]);
+    let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
+    click(
+        &mut window,
+        height_row_below(&nodes, "Player 73404 - 45 - Yuki-kun ^~^"),
+        &mut view,
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 3)),
+        "premise: the click selected 73404"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y1 - f64::from(clip.bottom())).abs() <= 1.0,
+        "his row at the clip's bottom edge, `Nearest` ({bounds:?} vs {clip:?})"
+    );
+}
+
+/// A `FieldedNotA` row's click scrolls the list to his team's row, `Top`:
+/// under All teams with the row below the clip, it stands at its top
+/// edge on the next frame.
+// SE-GUI-30
+#[test]
+fn a_fielded_rows_click_scrolls_the_list_to_the_teams_row() {
+    let (mut view, mut window) = open_734_with("live_aatf_fielded_reveal", &[], 183);
+    view.live_aatf = true;
+    view.team = TeamChoice::All;
+    // A starter of preset 1's kick-off formation moved onto a position
+    // he is not rated A at (the `live_marks` test's move).
+    let index = 4;
+    let mut team = team_entry(&view, 734);
+    let slot = team.tactics.starting_eleven[index];
+    let position = unrated_position_byte(&view, team.roster[usize::from(slot)].player_id);
+    let kick_off = team.tactics.presets[0].formations[0].players[index].position;
+    assert_ne!(kick_off, position, "premise: the move changes his spot");
+    team.tactics.presets[0].formations[0].players[index].position = position;
+    let header = player_header(&view, 734, slot);
+    view.session
+        .as_mut()
+        .expect("the save opened")
+        .edit_team(1, team);
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+
+    view.selected = Some(Selection::Player(734, 0));
+    let row = fielded_row_below(&nodes, &header);
+    click(&mut window, row, &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(734)),
+        "premise: his team's row selected"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "734's row at the clip's top edge, `Top` ({bounds:?} vs {clip:?})"
+    );
+}
+
 /// A `FieldedNotA` row's click selects his team's row instead of him,
 /// the named preset shown on the first of its formations that carries
 /// the cross: preset 1's
