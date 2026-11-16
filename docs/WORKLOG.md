@@ -1679,8 +1679,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] Carbon's round 6, 2026-11-16 (at `f89a7b13`): 5 of 7 accepted ("C-list r6"):
         a team picked in the dropdown under a filter, its row already selected, stayed off
         screen; three tests that pass on wrong code; a doc (lead)
-      - [ ] the rework (SWE-2, a fresh session, `sk/listrw6` in `noticesrw`): running;
-        then Carbon's round 7
+      - [x] the rework (SWE-2, a fresh session, merge `006ba5b9`)
+      - [ ] Carbon's round 7 (at `006ba5b9`): running
     - [x] notices and files (tier 2): `bba7eee1`, `7ac5df69`, `30b1109c`. SWE-2's loop (12 then 1
       accepted) and Carbon's three rounds (15, 7 and 6 accepted, "C-notices r1" to "r3"), each
       reworked; the loop ended with round 3's rework (merge `93f945ee`)
