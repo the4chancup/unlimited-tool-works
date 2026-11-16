@@ -18297,3 +18297,15 @@ Why: the maintainer, after looking at the draft: the indent sets the titles off 
 Appearance screen, and the two screens should agree.
 Plan: plans/save_editor.md "The player view" (the Appearance groups' paragraph, Physique,
 Presentation) and "Tactics editor" (the one grid's gaps).
+
+## 2026-11-16 — pes_savefile, save_editor — the presentation table's star key is `star_rating`
+Decision: in `[appearance.presentation]`, the export's `settings.toml` and the Team TOML's
+`[players.NN.appearance.presentation]` alike, the star key is `star_rating`, matching the
+Save editor's `Star rating` label. An import still reads a 0.0.1 file's `stats.star` into
+the new place, as it read it before.
+Why: the maintainer, 2026-11-16: "Star rating" is the name managers know, and the table is
+new in 0.0.2, so no released file carries `star` there; renamed after the release, it would
+need a migration.
+Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
+`[players.NN.appearance]`"; plans/aesthetics_export/settings_toml.md, the presentation
+table and the FPC star paragraph.

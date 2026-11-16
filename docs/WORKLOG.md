@@ -2266,7 +2266,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] code, in two slices -> verify: each a test red first. SWE-2 (`sk/answers`,
       `answers/.tmp/brief_answers.md`, running): the lit area, the manager id, the rail,
       Substitution, the Gameplan's gaps. Opus, next: the Physique box, the indent, `Star
-      rating`, the Kit slots' widths:
+      rating` and its key, the Kit slots' widths:
       - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
         ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
       - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
@@ -2278,7 +2278,10 @@ briefs, review loops, gates and mutation runs as for any step.
       - every box's content on the Stats and Appearance screens 6 points in from its title,
         as the draft draws it (`tools/save_editor.js`; the maintainer agreed 2026-11-16)
       - the Presentation group's Star labelled `Star rating` (`appearance/fields.rs`, help
-        04, the tests that name it)
+        04, the tests that name it), and its key in `[appearance.presentation]` renamed
+        `star_rating` in `settings.toml` and the Team TOML alike (`settings_toml/keys.rs`,
+        the tests and the `aatf` sample that spell it, the `[Unreleased]` line naming the
+        table); a 0.0.1 file's `stats.star` still read into it
       - the Gameplan screen's panels 8 points apart, Automatic settings ending level with
         the lineup lists' bottom (2 points shorter)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
