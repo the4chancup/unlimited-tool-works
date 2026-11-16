@@ -415,7 +415,9 @@ pub(super) fn roster_for<'a>(
                 portrait: None,
                 medal: None,
                 overalls: None,
-                rated: [false; 13],
+                // The prompt words rows, never draws the pitch: it reads
+                // no ratings.
+                rated: None,
                 fielded: &[],
             }
         })

@@ -27,17 +27,16 @@ pub(super) fn lit_rects(canvas: egui::Rect, rated: &[bool; 13]) -> Vec<egui::Rec
 /// when its centre lies in no lit rectangle. Lit rectangles may overlap
 /// (a band's area holds the smaller ones inside it), since a cell is
 /// filled once, or not at all, whatever covers it. A starter rated
-/// nowhere (an empty roster slot, or a host that reads no ratings)
-/// darkens nothing, rather than the whole pitch.
+/// nowhere lights nothing, so the whole canvas is one darkened cell, as
+/// the game draws a blank team's placeholder; a held marker with no
+/// ratings at all (an empty roster slot, or a host that reads none)
+/// darkens nothing — the caller paints no dim then.
 pub(super) fn paint_dim(
     painter: &egui::Painter,
     canvas: egui::Rect,
     rated: &[bool; 13],
     palette: &Palette,
 ) {
-    if !rated.contains(&true) {
-        return;
-    }
     let lit = lit_rects(canvas, rated);
     let mut xs = vec![canvas.left(), canvas.right()];
     let mut ys = vec![canvas.top(), canvas.bottom()];

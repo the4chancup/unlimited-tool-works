@@ -111,18 +111,14 @@ fn instruction_lines(
 
 /// The team's Automatic settings as (label, value) pairs, in the panel's
 /// order: Substitution, Preset change, Offside trap, Attack/defence
-/// levels, each only when `version`'s save stores it. Substitution reads as
+/// levels, each only when the team's record stores it. Substitution reads as
 /// its combo's choice (its number when the stored value is none of them),
 /// a flag "On" or "Off".
-pub fn automatic_pairs(version: PesVersion, tactics: &TeamTactics) -> Vec<(&'static str, String)> {
+pub fn automatic_pairs(tactics: &TeamTactics) -> Vec<(&'static str, String)> {
     let auto = &tactics.auto;
     let on_off = |flag: bool| if flag { "On" } else { "Off" }.to_owned();
     [
-        (
-            SUBSTITUTION_LABEL,
-            auto.substitution
-                .map(|stored| substitution_text(version, stored)),
-        ),
+        (SUBSTITUTION_LABEL, auto.substitution.map(substitution_text)),
         (PRESET_CHANGE_LABEL, auto.preset_change.map(on_off)),
         (OFFSIDE_TRAP_LABEL, auto.offside_trap.map(on_off)),
         (ATTACK_DEFENCE_LABEL, auto.attack_defence_levels.map(on_off)),
@@ -291,7 +287,7 @@ mod tests {
         tactics.auto.substitution = Some(3);
         tactics.auto.offside_trap = Some(true);
         assert_eq!(
-            automatic_pairs(PesVersion::Pes21, &tactics),
+            automatic_pairs(&tactics),
             [
                 ("Substitution", "Very early".to_owned()),
                 ("Preset change", "Off".to_owned()),
@@ -299,8 +295,9 @@ mod tests {
                 ("Attack/defence levels", "Off".to_owned()),
             ]
         );
-        // PES 2016 stores no Attack/defence levels and offers no Very
-        // early: a stored 3 reads as its number.
+        // PES 2016 stores no Attack/defence levels; the combo's four
+        // choices are every version's, so a stored 3 is Very early there
+        // too.
         let mut tactics = fixture_tactics(PesVersion::Pes16);
         assert_eq!(
             tactics.auto.attack_defence_levels, None,
@@ -309,9 +306,9 @@ mod tests {
         tactics.auto.substitution = Some(3);
         tactics.auto.preset_change = Some(true);
         assert_eq!(
-            automatic_pairs(PesVersion::Pes16, &tactics),
+            automatic_pairs(&tactics),
             [
-                ("Substitution", "3".to_owned()),
+                ("Substitution", "Very early".to_owned()),
                 ("Preset change", "On".to_owned()),
                 ("Offside trap", "Off".to_owned()),
             ]

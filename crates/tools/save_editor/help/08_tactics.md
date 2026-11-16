@@ -201,7 +201,7 @@ no target clears the pick.
 **Automatic settings** holds:
 
 - the automatic substitution setting, a choice of the game's own names (Off,
-  Very late or Flexible; Very early too on PES 2017 and PES 2021);
+  Very late, Flexible or Very early, the same four on every version);
 - the offside trap;
 - the preset change;
 - the attack/defence levels (PES 2017 and later).

@@ -2479,20 +2479,21 @@ fn popup_items<'a>(
     items
 }
 
-// The Substitution combo names the game's choices — Off, Very late and
-// Flexible on every storing version (the field is PES 15+, so PES
-// 2016's cell is not gated), Very early from PES 2017 on — in the
-// stored order.
+// The Substitution combo names the game's choices — Off, Very late,
+// Flexible and Very early, the four the game's screen lists on every
+// storing version, PES 2015 included (the field is PES 15+, so no
+// cell is gated) — in the stored order.
 #[test]
 fn the_substitution_combo_names_the_games_choices() {
     let mut window = Headless::sized(800.0, 1200.0);
-    for (version, very_early) in [
-        (PesVersion::Pes16, false),
-        (PesVersion::Pes17, true),
-        (PesVersion::Pes18, true),
-        (PesVersion::Pes19, true),
-        (PesVersion::Pes20, true),
-        (PesVersion::Pes21, true),
+    for version in [
+        PesVersion::Pes15,
+        PesVersion::Pes16,
+        PesVersion::Pes17,
+        PesVersion::Pes18,
+        PesVersion::Pes19,
+        PesVersion::Pes20,
+        PesVersion::Pes21,
     ] {
         let mut tactics = fixture_tactics(version);
         // A stored 0: the offered set is the version's own, no number
@@ -2515,15 +2516,20 @@ fn the_substitution_combo_names_the_games_choices() {
         // The popup's first frame is a sizing pass; its items join the
         // tree on the next.
         let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
-        let mut expected = vec![Some("Off"), Some("Very late"), Some("Flexible")];
-        if very_early {
-            expected.push(Some("Very early"));
-        }
         let items: Vec<Option<&str>> = popup_items(&before, &nodes)
             .iter()
             .map(|node| node.label())
             .collect();
-        assert_eq!(items, expected, "{version:?}'s choices");
+        assert_eq!(
+            items,
+            [
+                Some("Off"),
+                Some("Very late"),
+                Some("Flexible"),
+                Some("Very early")
+            ],
+            "{version:?}'s choices"
+        );
         // Close the popup for the next version's frame (a click on the
         // combo toggles it).
         let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);

@@ -319,7 +319,7 @@ fn paint(
             paint_automatic(
                 painter,
                 grid.y + grid_height + FOOT_HEIGHT / 2.0 + FOOT_NUDGE,
-                &automatic_pairs(version, &team.team.tactics),
+                &automatic_pairs(&team.team.tactics),
             );
         }
     });
