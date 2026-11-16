@@ -49,6 +49,8 @@ the compiler-owned edit flags and base-copy ID. That is:
 
 - physique, strip style, wrist-tape and spectacle colours, skin and iris colour;
 - the motion block;
+- the star rating (PES 19+) and playing attitude (PES 20+), under `[appearance.presentation]`,
+  which the save stores among the player's stats;
 - every setting of the ingame-face run (face sliders and feature types, eyebrow and facial-hair
   colours, in-game hair);
 - stock boots/gloves IDs (below).

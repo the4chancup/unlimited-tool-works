@@ -145,7 +145,7 @@ pub const FOOT: [&str; 2] = ["right", "left"];
 /// Ability-stat names: the `PlayerStats` fields that are 0-99 abilities, in
 /// `PlayerStats`'s field order, the version-dependent ones (tight possession,
 /// aggression) included. Weak foot, form, injury resistance, star and playing
-/// attitude are stats but not abilities. `team.toml` spells them as
+/// attitude are record stats but not abilities. `team.toml` spells them as
 /// `stats.<name>`; other crates share the table for their own closed sets.
 pub const ABILITY_STATS: [&str; 25] = [
     "attacking_prowess",

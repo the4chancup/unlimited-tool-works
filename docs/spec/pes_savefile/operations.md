@@ -814,7 +814,7 @@ base_copy_id = 101334
 
 [teams.players.03.appearance]
 skin_color = 2
-# … every key the version holds: the physique, strip, motion, face, hair and iris tables
+# … every key the version holds: the physique, strip, motion, presentation, face, hair and iris tables
 ```
 
 An entry's keys appear only where they have something to write: `name` and
