@@ -1735,9 +1735,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         ("C-recents r2"): the File menu cut off in a short window (now scrolls: plan, draft,
         DECISIONS), a key the settings save inserts lands after the last section, five tests
         that pass on wrong code, a stale plan line and mutants exclusion (lead, `0ac94593`)
-      - [ ] the rework: A2, the settings save (SWE-2, `sk/recrw_a2`): running; B2, the Save
-        editor (`.tmp/0_0_2/revdebt/rework_recents_b2.md`), once list rework 5 merges; then
-        Carbon's round 3
+      - [x] the rework: A2, the settings save (SWE-2, merge `dbcc5358`); B2, the Save editor
+        (SWE-2, merge `3ae96fe5`)
+      - [ ] Carbon's round 3 (at `3ae96fe5`): running
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
