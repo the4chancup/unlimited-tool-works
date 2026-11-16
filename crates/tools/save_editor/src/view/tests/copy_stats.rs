@@ -833,6 +833,79 @@ fn the_window_holds_its_width_while_the_picks_and_the_line_change() {
         before,
         "a wide result line moves neither the window nor Copy"
     );
+
+    // A row's team changed to one whose widest player label differs from
+    // 701's: each Player combo is as wide as the widest label of every
+    // cup team, so still nothing moves.
+    let other_team = {
+        let file = view.session.as_ref().unwrap().file();
+        let labels_of = |team: u32| {
+            rostered(&view, team)
+                .iter()
+                .map(|&(slot, id)| {
+                    file.player(id).map_or_else(
+                        || format!("{:02} ?", slot + 1),
+                        |player| slot_label(player, slot),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        let teams: Vec<u32> = crate::session::cup::cup_teams(file)
+            .map(|team| team.id)
+            .collect();
+        window
+            .frame(Vec::new(), |ui| {
+                let font = egui::TextStyle::Button.resolve(ui.style());
+                let widest_of = |team: u32| {
+                    labels_of(team)
+                        .iter()
+                        .map(|label| {
+                            ui.painter()
+                                .layout_no_wrap(
+                                    label.clone(),
+                                    font.clone(),
+                                    egui::Color32::PLACEHOLDER,
+                                )
+                                .size()
+                                .x
+                        })
+                        .fold(0.0_f32, f32::max)
+                };
+                let own = widest_of(701);
+                teams
+                    .iter()
+                    .copied()
+                    .find(|&id| (widest_of(id) - own).abs() > 0.5)
+            })
+            .0
+            .expect("a team whose widest player label differs from 701's")
+    };
+    let player_widths = |nodes: &[accesskit::Node]| {
+        ["Source", "Destination"].map(|row| {
+            let bounds = row_combos(nodes, row)[1].bounds().expect("bounds");
+            bounds.x1 - bounds.x0
+        })
+    };
+    let widths_before = player_widths(&nodes);
+    let other_name = display_name(&team_entry(&view, other_team).name);
+    let nodes = draw(&mut window, &mut view);
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Destination")[0],
+        &other_name,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        rect_and_copy(&nodes),
+        before,
+        "a team change moves neither the window nor Copy"
+    );
+    assert_eq!(
+        player_widths(&nodes),
+        widths_before,
+        "the two Player combos keep their width"
+    );
 }
 
 // The window's team dropdown names a team by its display name — the

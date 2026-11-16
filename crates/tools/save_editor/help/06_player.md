@@ -21,9 +21,9 @@ edit flag. Copy and Swap stats move the gameplay edit flags with the stats.
 **Hide and Show default body**
 
 A player hidden by his model's own boots ID reads "The default body is currently
-shown", so for him the entry hides him again; to show his default body, use the
-screen's Show default body instead. The entry stays disabled while the aesthetics lock is on (see the
-Appearance screen).
+shown", so for him the entry hides him again; to show his default body, use
+**Show default body** on the Appearance screen instead. The entry stays
+disabled while the aesthetics lock is on.
 
 **Copy and Swap stats**
 

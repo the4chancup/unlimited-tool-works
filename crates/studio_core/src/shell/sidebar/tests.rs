@@ -1136,17 +1136,21 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
 }
 
 // The light theme's amber and red are tuned for the panel's grey 248,
-// where the combo's own resting fill is grey 207: `selector_color`
-// darkens each against the button's fill so it still reads at 4.5.
+// where the combo button's fills are grey 207 at rest and 192 hovered:
+// `selector_color` darkens each against the darker of the two so it
+// still reads at 4.5 in either state.
 #[test]
 fn the_light_themes_selector_colours_read_on_the_buttons_fill() {
     let egui_ctx = test_context();
     let style = egui_ctx.style_of(egui::Theme::Light);
-    let resting = style.visuals.widgets.inactive.bg_fill;
+    let (resting, hovered) = (
+        style.visuals.widgets.inactive.bg_fill,
+        style.visuals.widgets.hovered.bg_fill,
+    );
     assert_eq!(
-        resting,
-        egui::Color32::from_gray(207),
-        "premise: the light theme's resting widget fill"
+        (resting, hovered),
+        (egui::Color32::from_gray(207), egui::Color32::from_gray(192)),
+        "premise: the light theme's resting and hovered widget fills"
     );
     for check in [
         ExeCheck::OtherVersion(PesVersion::Pes19),
@@ -1154,11 +1158,13 @@ fn the_light_themes_selector_colours_read_on_the_buttons_fill() {
         ExeCheck::NoFolder,
     ] {
         let colour = selector_color(check, &style.visuals).expect("a verdict colour");
-        let on_fill = crate::theme::contrast(colour, resting);
-        assert!(
-            on_fill >= 4.5,
-            "{check:?} reads at {on_fill:.3} on the resting fill"
-        );
+        for (state, fill) in [("resting", resting), ("hovered", hovered)] {
+            let on_fill = crate::theme::contrast(colour, fill);
+            assert!(
+                on_fill >= 4.5,
+                "{check:?} reads at {on_fill:.3} on the {state} fill"
+            );
+        }
     }
     // The dark theme's verdicts keep their colour as it is.
     let dark = egui_ctx.style_of(egui::Theme::Dark);

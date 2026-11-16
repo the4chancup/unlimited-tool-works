@@ -130,7 +130,8 @@ sharing them. Its dialog asks for:
 settings in a column beside its row, with its Advanced instructions on PES 2017
 to 2021. A line under the formations holds the team's Automatic settings.
 
-**Portraits** draws the players' portraits, starting as the formation bar's box
-reads, and **Without the pitch's grain (smaller file)** paints the pitch plain.
+**Portraits** draws the players' portraits; it starts matched to **Portraits**
+on the formation bar, and changing it here does not change the bar. **Without
+the pitch's grain (smaller file)** paints the pitch plain.
 If the file is already in the folder, Save asks before replacing it. The notice
 that says the picture was written has an **Open folder** button.

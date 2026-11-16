@@ -2507,7 +2507,6 @@ fn the_docks_copy_button_stands_left_of_the_pop_out_icon() {
 /// then the team's groups as Multi-team AATF's copy words them — and the
 /// notice says what was copied.
 // SE-GUI-63
-// SE-GUI-79
 #[test]
 fn the_docks_copy_writes_the_list_as_text_and_says_so() {
     let (mut view, mut window) = open_734_with("live_aatf_copy_text", &[73401, 73404], 183);
@@ -2711,7 +2710,6 @@ fn copying_before_a_result_copies_the_checking_line() {
 /// With no team open the dock reads `No team is open.` and the click
 /// copies that line, the notice naming no team.
 // SE-GUI-63
-// SE-GUI-79
 #[test]
 fn copying_with_no_team_open_copies_the_panels_line() {
     let (mut view, mut window) = open_734_with("live_aatf_copy_no_team", &[73401], 183);
