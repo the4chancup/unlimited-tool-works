@@ -1754,7 +1754,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
     - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
-      points less room, the Gameplan's 8-point gaps, Kit slots at 51 (lead, next)
+      points less room, the Gameplan's 8-point gaps, Kit slots at 51. Looked at (lead,
+      2026-11-16, the release build of `5e086fbe`): the indent, Motion's place, the 8-point
+      gaps, Automatic settings level with the lists and the boxes' one width match the draft.
+      Four differences go to a fix (SWE-2, the brief `.tmp/brief_answers_look.md`):
+      - Kit slots: the "Slot n" and Number label columns 51 wide, as the boxes (egui's grid
+        takes `interact_size.x` as its least column width): Bound team ID 19 right of the
+        draft's
+      - Gameplan, the default window: the panels' bottom lines cut off, a 4-point scroll; the
+        detail pane keeps an 8-point bottom margin the draft's has not, and the Name and Preset
+        rows stand 3 and 4 higher than the draft's
+      - Appearance, Colors: the label column 40 wide (the same grid floor) and no 4 points
+        after the squares: the group 241 wide, the draft's 230
+      - Appearance, Motion, Presentation and Copy from ID: number boxes 40 wide, the draft's
+        52: Motion's second column and Presentation's notes 12 left of the draft's
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
