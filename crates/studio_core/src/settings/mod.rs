@@ -374,16 +374,26 @@ fn deepest_in(table: &EditTable) -> Option<isize> {
         .max()
 }
 
-/// `item`'s tables given `position`, where their headers render (a no-op for a value).
+/// Gives every table `item` holds the `position` that orders where its header renders:
+/// `item`'s own and each table nested under it, at any depth (a no-op for a value), so
+/// a section inserted whole keeps its `[[key]]` tables beside its own header.
 fn place_tables(item: &mut EditItem, position: isize) {
     match item {
-        EditItem::Table(table) => table.set_position(position),
+        EditItem::Table(table) => place_in(table, position),
         EditItem::ArrayOfTables(tables) => {
             for table in tables.iter_mut() {
-                table.set_position(position);
+                place_in(table, position);
             }
         }
         _ => {}
+    }
+}
+
+/// Sets `position` on `table` and every table nested under it.
+fn place_in(table: &mut EditTable, position: isize) {
+    table.set_position(position);
+    for (_, item) in table.iter_mut() {
+        place_tables(item, position);
     }
 }
 
@@ -391,7 +401,9 @@ fn place_tables(item: &mut EditItem, position: isize) {
 /// (first) table's decor for a `[key]`/`[[key]]` header. A slot whose item changed kind
 /// moves it over: left on the key it would land inside the header's brackets
 /// (`[[# comment\nkey]]`), which is not TOML a save may write. `header` is the decor the
-/// replaced item's own header carried, when it was a table kind.
+/// replaced item's own header carried, when it was a table kind. The new item's tables
+/// take this table's position too, so a header renders where the file has its section,
+/// not where `written` put it.
 fn keep_leading_decor(document: &mut EditTable, key: &str, header: Option<toml_edit::Decor>) {
     let position = header_position(document);
     let Some((mut leaf, slot)) = document.iter_mut().find(|(leaf, _)| leaf.get() == key) else {
@@ -1036,6 +1048,128 @@ mod tests {
             text.trim_end().ends_with("[export-upgrader]"),
             "the new section renders last: {text}"
         );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A section the file lacks is inserted whole: its own tables take the new position
+    // with it, at any depth, or `written`'s ordering splits it across the file: a
+    // `[[save-editor.recent_files]]` above the `[save-editor]` header it belongs to.
+    // The file needs headers sorting after `save-editor` (`written` is alphabetical)
+    // for the split to show.
+    #[test]
+    fn an_inserted_section_renders_as_one_block() {
+        let dir = test_dir("studio_core_settings_insert_block");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\n\
+             pes_version = 17\n\
+             \n\
+             [export-upgrader]\n\
+             \n\
+             [ruleset-editor]\n\
+             last_folder = \"\"\n\
+             \n\
+             [compiler]\n\
+             multicpk_mode = false\n\
+             \n\
+             [team-compiler]\n\
+             \n\
+             [z-section]\n\
+             x = 1\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings.set_tool(
+            "save-editor",
+            table(
+                "aatf_ruleset = 'dbc7'\n\
+                   recent_files = [{ path = 'a', name = 'A' }, { path = 'b', name = 'B' }]",
+            ),
+        );
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        let (section, last_existing) = (
+            text.find("[save-editor]").unwrap(),
+            text.find("[z-section]").unwrap(),
+        );
+        let headers: Vec<_> = text.match_indices("[[save-editor.recent_files]]").collect();
+        assert_eq!(headers.len(), 2, "{text}");
+        assert!(
+            headers.iter().all(|(index, _)| section < *index),
+            "[save-editor] before both of its tables' headers: {text}"
+        );
+        assert!(
+            last_existing < section,
+            "the inserted section and its tables render last: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The new section's position is one past the file's deepest table, not its last
+    // top-level one: `[compiler]` inserted into a file whose last section ends in
+    // `[[save-editor.recent_files]]` tables and a `[save-editor.sub]` table renders
+    // after all of them.
+    #[test]
+    fn an_inserted_section_renders_after_the_files_deepest_table() {
+        let dir = test_dir("studio_core_settings_deepest");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\n\
+             pes_version = 17\n\
+             \n\
+             [save-editor]\n\
+             aatf_ruleset = \"dbc7\"\n\
+             \n\
+             [save-editor.sub]\n\
+             x = 1\n\
+             \n\
+             [[save-editor.recent_files]]\n\
+             name = \"A\"\n\
+             path = 'a'\n\
+             \n\
+             [[save-editor.recent_files]]\n\
+             name = \"B\"\n\
+             path = 'b'\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings.set_tool("compiler", table("multicpk_mode = false"));
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        let last_header = text.lines().rfind(|line| line.starts_with('[')).unwrap();
+        assert_eq!(last_header, "[compiler]", "{text}");
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A root `key = {}` line ahead of the sections, turned into `[key]` on save, lands
+    // after them all: one past the file's last position, not the same position the
+    // last section already holds (the equal position would sort it before that one,
+    // the key being earlier in the file).
+    #[test]
+    fn an_inline_root_section_becomes_a_header_after_the_last_one() {
+        let dir = test_dir("studio_core_settings_root_inline");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(&path, "x = { a = 1 }\n\n[z-one]\nk = 1\n\n[z-two]\nk = 2\n").unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        settings.set_tool("x", table("a = 2"));
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        let last_header = text.lines().rfind(|line| line.starts_with('[')).unwrap();
+        assert_eq!(last_header, "[x]", "{text}");
         assert_eq!(Settings::load(&path).unwrap(), settings);
         fs::remove_dir_all(&dir).unwrap();
     }
