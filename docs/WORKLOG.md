@@ -20,10 +20,10 @@ excepted, below), 0.0.2-pes19
 (`maintainer/tasks.html`). What is left before the cut:
 1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
    title row's line in its rework.
-2. Code: 0.0.2-gaps' leftovers (the Ruleset editor's General checklists, the Tiers fields cut
-   at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild;
-   Carbon's round-1 reworks never launched (`sk/cmprw`, `sk/selrw`, `sk/instrw`, `sk/ktorw`:
-   accepted concerns, fixed in 0.0.2 with no round 2).
+2. Code: 0.0.2-gaps' leftovers are merged (`30cca13d`), their built-window check owed;
+   0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild; Carbon's
+   round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2): `sk/instrw` and
+   `sk/ktorw` merged, `sk/cmprw` running, `sk/selrw` after the answers' rework merges.
    Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round,
    but for Report a problem, a Tier 1 surface (DECISIONS 2026-11-16): its SWE-2 loop (round 1
    ruled, rework `sk/reprw`), then Carbon's and Astra's loops, each followed by a SWE-2 loop.
@@ -1539,16 +1539,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - the Player screen: the view's content 1 higher than the draft, each section's first
         row 0.5 nearer its heading and the Pitch/Left/List selector 1.5 nearer "Playable
         positions", adding up to 2.5 at the columns' foot (`draft_compare.py player`)
-      - the Ruleset editor's General: each checklist 4 lower under its help line (21
-        against the draft's 17)
+      - [x] the Ruleset editor's General: each checklist 4 lower under its help line (21
+        against the draft's 17): fixed (SWE-2, 2026-11-16, merge `30cca13d`), the heading,
+        help and grid stacked flush as the draft's
+      - the Ruleset editor's Tiers help line over its table, and Medal systems' heading, help
+        and grid, stand 3 to 4 lower than their drafts for the same cause (`item_spacing`
+        between the stacked lines, which the draft has none of): built-window check first
     - [x] 2026-11-15 (lead) each difference the check met outside these slices traced to its
       cause, and the looks asked in QUESTIONS ("The 0.0.2 Save editor report"): the Ruleset
       editor's page list, the Appearance screen's Physique and Colors boxes, Randomize, and
       the texts wave 4 reworded that the drafts never took. Three of them were never
       measured because `draft_compare.py` lists no screen of theirs
-    - [ ] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
-      100 and 80 as the draft does, so "Bronze" and "silver" are cut: a red test on the
-      fields' width in a Tiers frame, then the cause
+    - [x] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
+      100 and 80 as the draft does, so "Bronze" and "silver" are cut (SWE-2, 2026-11-16,
+      merge `30cca13d`): a `TextEdit` in a grid cell is capped at the column's drawn width,
+      so the fields, and the hex box with them, are `add_sized`
     - [x] 2026-11-15 (lead) `draft_compare.py` lists the Appearance screen (the draft's link
       takes `page=appearance`) and the Ruleset editor's General and Tiers pages (`rs_general`,
       `rs_tiers`), so a slice there is measured, not looked at
