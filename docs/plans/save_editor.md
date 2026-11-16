@@ -643,7 +643,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   measured).
 - **The player view** (the Stats screen): three columns side by side. The room the
   fixed columns leave is split into four equal gaps: after the player list, between the
-  columns, and after Ability stats (30.4 points each at the 1280 × 780 window). The first
+  columns, and after Ability stats (28.9 points each at the 1280 × 780 window). The first
   counts from the list's frame, 22 points before the pane (the list's 10-point bar strip and
   the 12 between), and the last runs to the window's edge, past the pane's own 12-point right
   margin. The eye reads the gap from the list's last ink and to the window's edge, and a view
