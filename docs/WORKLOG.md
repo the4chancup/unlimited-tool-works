@@ -26,7 +26,8 @@ excepted, below), 0.0.2-pes19
    Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, all ended, no
    Carbon round; but Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), runs
    Carbon's and Astra's loops, each followed by a SWE-2 loop: Carbon's round 2 accepted 5,
-   its rework is `sk/reprw2` (unmerged), then Carbon's round 3.
+   and its rework, read by SWE-2 until a round accepted fewer than five, is merged
+   (`1a1da35d`); Carbon's round 3 is running on it.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
