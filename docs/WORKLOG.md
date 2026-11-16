@@ -1647,43 +1647,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-11-15 "A change to behavior is reviewed at its tier, however small"; audit of the
     closed 0.0.2 items against `.tmp/duck_rulings.md`). One review per surface, each SWE-2's
     loop then one Carbon round (tier 2), or the three loops (tier 1), in this order:
-    - [ ] list and keys (tier 2): `d700b3e5` (leeway, idfilter, pgtop, ownteam), `35902abc`
-      (pgframe), `e0ebd784` (undosel), `96aef711` (dragmark), `457f30c8` (teamfill). SWE-2
-      round 1 in two halves (`.tmp/0_0_2/revdebt/swe_list_{a,b}.md`): 2 of 4 accepted, the
-      loop ends; the fix (a click selecting a row the category hides widens it to All,
-      merge `a5911d60`) and two plan clauses (SE-GUI-08, 83). Carbon's round 1, 2026-11-15
-      (at `a5911d60`): 9 of 11 accepted ("C-list r1"): a selection made elsewhere leaves its
-      row off screen, the own-team button overflows its line (now a row of its own under
-      it: plan and draft edited), untested clauses, a scenario cited on a unit test, stale
-      help and changelog lines
-      - [x] the rework (SWE-2, merge `7017c4bd`); its overlap screen for the own-team
-        button passed on the old layout too (egui keeps a row inside the window's rect)
-      - [x] Carbon's round 2, 2026-11-16 (at `7017c4bd`): 13 of 15 accepted ("C-list r2"):
-        the round 1 class (a selection that moves leaves its row off screen) in three more
-        places (an undo, a category tick, another save opened), untested reveals and filter
-        halves, help and changelog lines that say what the window does not
-      - [x] the rework (SWE-2, merge `07b27911`); with it, egui's rubber-band spring off on
-        a reveal's frame, which pulled back a list that grew that frame
-      - [x] Carbon's round 3, 2026-11-16 (at `07b27911`): 6 of 9 accepted ("C-list r3"):
-        a selector or category pick that keeps the selection reveals nothing, three tests
-        that pass on the wrong reveal or reach no branch, the own-team lines, two docs
-      - [x] the rework (SWE-2, merge `ae997ffc`)
-      - [x] Carbon's round 4, 2026-11-16 (at `ae997ffc`): 7 of 8 accepted ("C-list r4"): a
-        category tick that relists nothing snapped a scrolled list back, tests that cannot
-        tell the two reveals apart, two citations, copied helpers, four comments
-      - [x] the rework (SWE-2, merge `93dcdc06`); SE-GUI-103 gained one team's PgDn step
-      - [x] Carbon's round 5, 2026-11-16 (at `93dcdc06`): 5 of 5 accepted ("C-list r5"): a
-        team pick under a typed filter moved the selection off screen, two kept-scroll
-        tests, a copied wheel sequence, a doc
-      - [x] the rework (SWE-2, merge `f89a7b13`)
-      - [x] Carbon's round 6, 2026-11-16 (at `f89a7b13`): 5 of 7 accepted ("C-list r6"):
-        a team picked in the dropdown under a filter, its row already selected, stayed off
-        screen; three tests that pass on wrong code; a doc (lead)
-      - [x] the rework (SWE-2, a fresh session, merge `006ba5b9`)
-      - [x] Carbon's round 7, 2026-11-16 (at `006ba5b9`): 4 of 5 accepted, none of reach (a)
-        ("C-list r7"), so the loop ends with this rework: two reveal tests that pass on
-        wrong code, two docs (lead)
-      - [ ] the rework (SWE-2, `sk/listrw7` in `noticesrw`): running
+    - [x] list and keys (tier 2): `d700b3e5`, `35902abc`, `e0ebd784`, `96aef711`, `457f30c8`.
+      SWE-2's loop (2 of 4 accepted) and Carbon's seven rounds (9, 13, 6, 7, 5, 5 and 4
+      accepted, "C-list r1" to "r7"), each reworked: a selection moved, kept or picked
+      under a filter keeps its row on screen; the loop ended with round 7's rework (merge
+      `4fff9ae9`)
     - [x] notices and files (tier 2): `bba7eee1`, `7ac5df69`, `30b1109c`. SWE-2's loop (12 then 1
       accepted) and Carbon's three rounds (15, 7 and 6 accepted, "C-notices r1" to "r3"), each
       reworked; the loop ended with round 3's rework (merge `93f945ee`)
