@@ -386,6 +386,8 @@ mod tests {
         assert_eq!(tool.help().topics.len(), 8);
         // The settings menu lists the tool's section.
         assert!(tool.has_settings_view());
+        // The editor follows the open save's version, not the selector's.
+        assert!(!tool.targets_pes_version());
     }
 
     // The Set PES path button's ask reaches the common settings on the
@@ -441,26 +443,21 @@ mod tests {
         use pes_version::PesVersion;
 
         let dir = crate::test_support::scratch("lib_exe_check");
-        // The selector's PES 2019 has a folder of its own holding its exe; the
-        // save's PES 2021 resolves the context's `pes`, which is missing. So
+        // The selector's PES 2021 has a folder of its own holding its exe; the
+        // save's PES 2017 resolves the context's `pes`, which is missing. So
         // only an ask for the save's version reads `NoFolder`.
-        let selected = dir.join("pes19");
+        let selected = dir.join("pes21");
         std::fs::create_dir_all(&selected).unwrap();
-        std::fs::write(selected.join("PES2019.exe"), b"").unwrap();
+        std::fs::write(selected.join("PES2021.exe"), b"").unwrap();
         let mut settings = studio_core::Settings::default();
-        settings.common.pes_version = PesVersion::Pes19;
+        settings.common.pes_version = PesVersion::Pes21;
         settings
             .common
             .pes_folders
-            .insert(PesVersion::Pes19, selected.display().to_string());
+            .insert(PesVersion::Pes21, selected.display().to_string());
         let (ctx, _events_rx, _requests_rx) = crate::test_support::tool_context(&dir, settings);
         assert_eq!(
-            ctx.pes_exe_check(),
-            None,
-            "premise: the sidebar has not run a check"
-        );
-        assert_eq!(
-            ctx.pes_exe_check_for(PesVersion::Pes19),
+            ctx.pes_exe_check_for(PesVersion::Pes21),
             studio_core::ExeCheck::Found,
             "premise: an ask for the selector's version would read Found"
         );
@@ -469,7 +466,7 @@ mod tests {
         let path = dir.join("EDIT00000000");
         std::fs::write(
             &path,
-            pes_savefile::fixture_save(pes_version::PesVersion::Pes21),
+            pes_savefile::fixture_save(pes_version::PesVersion::Pes17),
         )
         .unwrap();
         tool.view.open(&path);
