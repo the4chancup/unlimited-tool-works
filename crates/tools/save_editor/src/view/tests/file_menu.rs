@@ -18,7 +18,7 @@ use crate::test_support::{journal_lines, steps_with, zip_entry};
 
 /// The SE-GUI-26 tree under a test's scratch folder: a `Documents` folder
 /// holding two PES 21 saves and one PES 19 save in the game's own layout,
-/// and one more save elsewhere under the scratch folder.
+/// and two more saves outside it.
 struct Tree {
     /// The scratch folder's `Documents`.
     documents: PathBuf,
@@ -157,34 +157,6 @@ fn heading_between(nodes: &[accesskit::Node], heading: &str, above: f64, below: 
     );
 }
 
-/// The y of each separator line in `stroke` spanning `entry`'s x range at
-/// or under `top`, as `menu_entries` finds them (`ui.separator` in the
-/// panel is the same `noninteractive` stroke the menu's custom one draws).
-fn separator_lines(
-    shapes: &[egui::epaint::ClippedShape],
-    entry: accesskit::Rect,
-    stroke: egui::Stroke,
-    top: f64,
-) -> Vec<f64> {
-    let mut lines: Vec<f64> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke: s }
-                if *s == stroke
-                    && points[0].y == points[1].y
-                    && f64::from(points[0].y) >= top
-                    && f64::from(points[0].x.min(points[1].x)) <= entry.x0 + 8.0
-                    && f64::from(points[0].x.max(points[1].x)) >= entry.x1 - 8.0 =>
-            {
-                Some(f64::from(points[0].y))
-            }
-            _ => None,
-        })
-        .collect();
-    lines.sort_by(|a, b| a.partial_cmp(b).expect("ordered lines"));
-    lines
-}
-
 // SE-GUI-26
 #[test]
 fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
@@ -282,7 +254,7 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
     // its place in the menu (the two PES 21 entries read alike); `Open…`'s
     // says where the picker opens.
     let tips = [
-        (0usize, "Pick a save file, starting in the folder of the save opened last (or else of the newest save found)".to_owned()),
+        (0usize, "Pick a save file, starting in the folder of the last opened save (or else of the newest save found)".to_owned()),
         (3, tree.pes19.display().to_string()),
         (4, tree.pes21_new.display().to_string()),
         (5, tree.pes21_old.display().to_string()),
@@ -407,6 +379,14 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         label_value(&nodes, "No PES saves were found in Documents."),
         "the no-saves line"
     );
+    // The heading under the separator above its group, over the
+    // no-saves line.
+    heading_between(
+        &nodes,
+        "Open from Documents",
+        lines[0],
+        label_bounds(&nodes, "No PES saves were found in Documents.").y0,
+    );
 
     // Discovered only.
     let tree = tree("open_menu_sep_discovered");
@@ -437,6 +417,9 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         !label_value(&nodes, "No PES saves were found in Documents."),
         "no no-saves line with saves found"
     );
+    // The heading under the separator above its group, over the first
+    // save.
+    heading_between(&nodes, "Open from Documents", lines[0], entries[3].1);
 
     // Recents only: the saves' group's separator and the Recent files
     // heading's sit between Save as… and the recent.
@@ -470,6 +453,15 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         label_value(&nodes, "No PES saves were found in Documents."),
         "the no-saves line"
     );
+    // Each heading under the separator above its group, the no-saves
+    // line the Documents group's row.
+    heading_between(
+        &nodes,
+        "Open from Documents",
+        lines[0],
+        label_bounds(&nodes, "No PES saves were found in Documents.").y0,
+    );
+    heading_between(&nodes, "Recent files", lines[1], entries[3].1);
 
     // Both.
     let MenuCase {
@@ -500,6 +492,10 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         !label_value(&nodes, "No PES saves were found in Documents."),
         "no no-saves line with saves found"
     );
+    // Each heading under the separator above its group, over the group's
+    // first entry.
+    heading_between(&nodes, "Open from Documents", lines[0], entries[3].1);
+    heading_between(&nodes, "Recent files", lines[1], entries[6].1);
 }
 
 // SE-GUI-26
@@ -1256,6 +1252,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     let rows = entries(&nodes, "Open\u{2026}");
     let first = rows[0].bounds().expect("an entry's bounds");
     let lines = separator_lines(&shapes, first, sep, first.y0);
+    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
     heading_between(
         &nodes,
         "Open from Documents",

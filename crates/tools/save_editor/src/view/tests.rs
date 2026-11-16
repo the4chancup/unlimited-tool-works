@@ -1239,15 +1239,29 @@ fn menu_entries(
         .widgets
         .noninteractive
         .bg_stroke;
+    let lines = separator_lines(&shapes, first, stroke, first.y0);
+    (entries, lines)
+}
+
+/// The y of each separator line in `stroke` spanning `entry`'s x range at
+/// or under `top`, top first: a menu's and the welcome panel's alike
+/// (`ui.separator` in the panel is the same `noninteractive` stroke the
+/// menu's custom one draws).
+fn separator_lines(
+    shapes: &[egui::epaint::ClippedShape],
+    entry: accesskit::Rect,
+    stroke: egui::Stroke,
+    top: f64,
+) -> Vec<f64> {
     let mut lines: Vec<f64> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::LineSegment { points, stroke: s }
                 if *s == stroke
                     && points[0].y == points[1].y
-                    && f64::from(points[0].y) >= first.y0
-                    && f64::from(points[0].x.min(points[1].x)) <= first.x0 + 8.0
-                    && f64::from(points[0].x.max(points[1].x)) >= first.x1 - 8.0 =>
+                    && f64::from(points[0].y) >= top
+                    && f64::from(points[0].x.min(points[1].x)) <= entry.x0 + 8.0
+                    && f64::from(points[0].x.max(points[1].x)) >= entry.x1 - 8.0 =>
             {
                 Some(f64::from(points[0].y))
             }
@@ -1255,7 +1269,7 @@ fn menu_entries(
         })
         .collect();
     lines.sort_by(|a, b| a.partial_cmp(b).expect("ordered lines"));
-    (entries, lines)
+    lines
 }
 
 /// Whether a separator line stands between entries `above` and `below`.
