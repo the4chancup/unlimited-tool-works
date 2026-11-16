@@ -2221,8 +2221,12 @@ briefs, review loops, gates and mutation runs as for any step.
         the brackets framed turf (plan, draft, DECISIONS), the light selector's contrast, the
         Copy/swap window's width, team exports' notice detail, untested clauses, stale help
       - [x] the rework (SWE-2, a fresh session in `noticesrw`; merge `b78e9dd8`)
-      - [ ] Carbon's round 2 (`review32/.tmp/carbon_notices2.md`, at `b78e9dd8`): refused
-        twice on 2026-11-16 by the model provider's outage; retried once it is back
+      - [x] Carbon's round 2, 2026-11-16 (at `b78e9dd8`): 7 of 8 accepted ("C-notices r2"):
+        the light theme's hovered version selector under 4.5, Copy/swap stats resizing on a
+        team change, untested portraits-off drags and drops, the Team TOML notice's draft
+        wording, and plan lines behind the code (fixed by the lead)
+      - [ ] the rework (SWE-2, after `sk/answers` merges, which edits the pitch's tests),
+        then Carbon's round 3
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)

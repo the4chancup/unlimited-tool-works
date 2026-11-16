@@ -2602,8 +2602,8 @@ What this editor adds on top of the lib:
 
   The button is never greyed out: before a list is held it copies the line the panel shows
   (`Checking <team>…`, or `No team is open.`), and after a failed check its message as the
-  list words it. A notice `Copied the Live AATF list of <id> <name>.` says the copy was done
-  (`Copied the Live AATF list.` with no team open).
+  list words it. A notice `Live AATF list of <id> <name> copied.` says the copy was done
+  (`Live AATF list copied.` with no team open).
 
   **Its own window**: the pop-out icon at the header's right end (the icon font's arrow out of
   a square, U+E5DE, Phosphor's arrow-square-out; tooltip
@@ -3117,7 +3117,8 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 plain text, its first line the ruleset, the range and the counts, then the
                 team's id and name after a `>`, its `Team-wide issues` line first, then each
                 player's line (or `All clean`), indented two spaces, and each row's severity,
-                rule and sentence four; WHEN the first
+                rule and sentence four, and the notice reads `Results of N teams copied.`;
+                WHEN the first
                 end is moved past the last THEN the last end follows it, and the last end's
                 list starts at the first end's team; WHEN an end changes THEN the list is
                 checked again only once the ends have rested 500 ms, dimmed and marked
@@ -3271,7 +3272,7 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 cards used` first), their rule name in the normal text colour; GIVEN no
                 check returned yet THEN the button is not greyed out and the copied text is
                 `Checking /lit/…`, and with All teams picked and nothing selected `No team is
-                open.`, the notice `Copied the Live AATF list.`; GIVEN a ruleset whose check fails on team 743 THEN the
+                open.`, the notice `Live AATF list copied.`; GIVEN a ruleset whose check fails on team 743 THEN the
                 list holds the failure line and no `All clean`
 SE-GUI-64  GIVEN the save open on a team, no drag held
            WHEN the pointer is over a player row's name
@@ -3355,8 +3356,12 @@ SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
                 its hover; WHEN Portraits is unticked THEN the pitch draws no portrait,
                 each badge and name stands where it stood, the captain's mark stands on
                 his badge's top edge at its left end and a Live AATF cross stands on its
-                badge, and no undo entry or unsaved mark follows; GIVEN the editor
-                restarted THEN Portraits is still unticked
+                badge, and no undo entry or unsaved mark follows; WHEN a starter is
+                selected THEN the corner brackets frame his badge, their upright arms its
+                height; GIVEN two starters stacked so the lower one's portrait would
+                cover the upper one's badge WHEN that badge is clicked THEN the upper
+                starter is selected;
+                GIVEN the editor restarted THEN Portraits is still unticked
 SE-GUI-82  GIVEN the save open on team 718's player 05
            WHEN the detail is drawn
            THEN its title row starts at the pane's left with a three-way toggle, Stats on,
@@ -3912,7 +3917,7 @@ SE-GUI-40  GIVEN the PES 21 save open on a player whose registered position is n
                 outlined) as one undoable edit, his ratings unchanged; WHEN Undo is invoked
                 THEN the earlier position is back
 SE-GUI-31  GIVEN the common settings' FPC hide IDs set to 60 (boots) and 12 (gloves), "Edit
-                aesthetics anyway" switched on, and the player's Appearance section open
+                aesthetics anyway" switched on, and the player's Appearance screen open
            WHEN Hide default body is used on a player whose boots and gloves IDs are 0
            THEN his record holds boots 60 and gloves 12 and Appearance reads "The default body is currently hidden";
                 WHEN Show default body is used THEN both are 0 again; GIVEN a player whose boots ID is
