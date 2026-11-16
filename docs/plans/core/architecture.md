@@ -48,8 +48,8 @@ These planned crates extend the spec's workspace tree:
 ```
 
 **`studio_core`** also contains:
-- The app shell: sidebar (logo, PES version selector, tool list, an icon rail opening on hover, help and settings
-  buttons) and the status bar (see `gui.md` "Status bar" under GUI Design)
+- The app shell: sidebar (logo, PES version selector, tool list, an icon rail opening on hover, report, help and
+  settings buttons) and the status bar (see `gui.md` "Status bar" under GUI Design)
 - The help framework: the help window, its search, and the core chapters (see `gui.md` "Help window")
 - Common widgets: the progress grid, the log panel, the run strip
 
@@ -60,7 +60,7 @@ crates/studio_core/src/
 ├── help/
 │   ├── search.rs     #   substring search over every topic's paragraphs and catalog rows
 │   ├── export.rs     #   `UTW help` printing and `--export` to Markdown files
-│   └── core/         #   the core chapters' Markdown (setting up, data location, updates, reporting) + CHANGELOG.md
+│   └── core/         #   the core chapters' Markdown (setting up, data location, updates, reporting) + the repository's CHANGELOG.md (What's new)
 ├── shell/
 │   ├── title.rs      #   window title from activities / held notice / idle; ViewportCommand::Title on change
 │   ├── sidebar.rs    #   logo, version selector (live exe check, running-PES auto-switch), tool list

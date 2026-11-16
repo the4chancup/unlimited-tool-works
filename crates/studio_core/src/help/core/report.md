@@ -1,8 +1,8 @@
-When UTW does something wrong, **Report a problem** saves a file to post with
-your report, so whoever looks into it can repeat what you did. It sits in the
-sidebar just above **Help (WIP)** (the `⚠` when the sidebar is folded) and
-opens a dialog. Nothing is sent: you post the file yourself, wherever you
-usually report problems.
+When UTW does something wrong, **Report a problem** (the `⚠` while the
+sidebar is folded) saves a file to post with your report, so whoever looks
+into it can repeat what you did. It sits in the sidebar just above
+**Help (WIP)** and opens a dialog. Nothing is sent: you post the file
+yourself, wherever you usually report problems.
 
 For now only the Save editor records what you do in it; the other tools join
 as they are built. The file holds:

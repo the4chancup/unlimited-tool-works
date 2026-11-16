@@ -363,8 +363,9 @@ Top to bottom:
    sidebar, so nothing moves when it opens. 24 rather than larger because the rail is 56
    points wide and every entry is in it. At 24 the fourteen entries take 459 points of the
    756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the logo,
-   the version dropdown, the help and the gear their room. At 32 they would take 571 (38-point
-   rows) with 12-point side margins, and a rail that overflows loses entries from sight.
+   the version dropdown, the Report entry, the help and the gear their room. At 32 they would
+   take 571 (38-point rows) with 12-point side margins, and a rail that overflows loses
+   entries from sight.
 
    In a window too short for every entry, the tool entries scroll, by the wheel, between
    the sidebar's head (the logo, the version dropdown and the separator under them) and
