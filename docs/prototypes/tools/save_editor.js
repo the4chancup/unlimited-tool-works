@@ -570,10 +570,10 @@ table.grid.stats-grid td { padding: 3px 6px; }
    padding, given 99: at 97 a 2x display's rounding still elided it): two
    such choices a half. */
 /* The pitch's track is its canvas and the 1 px border a side (322), so the gaps either side
-   of it are the 6 px between every pair of panels: a 320 track let the border overflow it,
-   leaving 10 on its left and 8 on its right. */
+   of it are the 8 px between every pair of panels, as on the Appearance screen: a 320 track
+   let the border overflow it, leaving uneven gaps. */
 .tacgrid { display: grid; grid-template-columns: 422px 322px minmax(0, 1fr);
-  column-gap: 6px; row-gap: 6px; }
+  column-gap: 8px; row-gap: 8px; }
 .tacgrid .group { margin: 0; min-width: 0; }
 .tacgrid .tacbar { margin: 0; white-space: nowrap; }
 /* The formations and their Copy/swap need more than the pitch's width. */
@@ -602,11 +602,11 @@ table.grid.stats-grid td { padding: 3px 6px; }
   grid-auto-rows: 24px; column-gap: 16px; align-items: center; align-content: center; }
 .tacauto .row { flex-wrap: nowrap; }
 .tacauto .row select { flex: 1; width: auto; min-width: 0; }
-.tacstack { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tacstack { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .tacgrid .rolechip { text-align: left; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; }
 .rolechip:disabled { color: #5a5a5a; background: none; }
-#tac-lists { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#tac-lists { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 /* Twelve 18-point rows, padded top and bottom: the starting eleven whole
    with a row to spare, which the bench uses for its twelfth player. The
    lists fill the last row, so their bottom is the settings column's. */
@@ -3780,7 +3780,7 @@ function openDiscovered(d) {
 function fileMenu() {
   const items = [
     ["Open\u2026\tCtrl+O", dlgChooseFile, false,
-      "Opens in the selected version's save folder when it exists"],
+      "Pick a save file, starting in the folder of the last opened save (or else of the newest save found)"],
     ["Save\tCtrl+S", () => { saveFile(); render(); }, !S.save],
     ["Save as\u2026\tCtrl+Shift+S", saveAs, !S.save],
     "-",
@@ -3834,7 +3834,7 @@ function welcomePanel() {
     h("div", { class: "window" }, h("div", { class: "title" }, "Save editor"),
       h("div", { class: "col" },
         entry("Open\u2026", "Ctrl+O", dlgChooseFile,
-          "Opens in the selected version's save folder when it exists"),
+          "Pick a save file, starting in the folder of the last opened save (or else of the newest save found)"),
         h("div", { class: "sep" }),
         aligned(strong("Open from Documents")),
         found.length ? found : aligned(weak("No PES saves were found in Documents.")),
@@ -5054,8 +5054,8 @@ const textCount = (kind, raw) => {
   const v = version();
   const c = kind === "name"
     ? { n: utf8Len(raw), max: NAME_MAX(v), portable: PORTABLE_NAME,
-        tip: "Up to " + NAME_MAX(v) + " bytes. A plain letter takes one byte, an accented"
-          + " letter two or more, and a colour code ten" }
+        tip: "Up to " + NAME_MAX(v) + " bytes: one for a plain letter, two or more for an"
+          + " accented letter, and ten for a color code (typed as \\x11c and eight hex digits)." }
     : { n: [...raw].length, max: v === 16 ? 16 : PORTABLE_SHIRT, portable: PORTABLE_SHIRT,
         tip: "PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)" };
   c.over = c.n > c.portable;
@@ -5978,7 +5978,7 @@ function appearanceTab(p) {
   const cutscenes = named(h("div", { class: "group", id: "cutscenes" },
     h("div", { class: "row", style: "margin:0" }, strong("Presentation")),
     h("table", { class: "grid" },
-      h("tr", {}, lbl("Star"), fld(starIn, 19),
+      h("tr", {}, lbl("Star rating"), fld(starIn, 19),
         h("td", {}, weak("How likely the player is to show up as the team's featured player in the pre-match screen."))),
       h("tr", {}, lbl("Playing attitude"), fld(attIn, 20),
         h("td", {}, weak("Only affects cutscenes."))))), "cutscenes");
@@ -7847,7 +7847,7 @@ const FIELD_TERMS = {
   Form: T_num("Form", 1), InjuryResistance: T_num("Injury Resistance", 1),
   WeakFootUsage: T_num("Weak Foot Usage", 1),
   WeakFootAccuracy: T_num("Weak Foot Accuracy", 1),
-  Star: T_num("Star", 0), PlayingAttitude: T_num("Playing attitude", 0),
+  Star: T_num("Star rating", 0), PlayingAttitude: T_num("Playing attitude", 0),
   HunchingDribbling: T_num("Hunching (dribbling)", 1),
   HunchingRunning: T_num("Hunching (running)", 1),
   ArmMovementDribbling: T_num("Arm movement (dribbling)", 1),

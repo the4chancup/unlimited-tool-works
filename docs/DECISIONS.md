@@ -18286,3 +18286,14 @@ sets the labels under the title as their heading; whether every other box on the
 Appearance screens takes it too is drafted and waits on the maintainer's look
 (`tasks.html` "Every box's content 6 points in from its title").
 Plan: plans/save_editor.md "Editing UI", the Appearance page's Colors and Physique bullets.
+
+## 2026-11-16 — save_editor — every box's content 6 points in from its title; Star rating; Gameplan's panels 8 apart
+Decision: on the Stats and Appearance screens a group's content, labels and controls alike,
+stands 6 points in from the group's title, as the draft draws it. The Presentation group's
+Star is labelled `Star rating`. The Gameplan screen's panels stand 8 points apart, as the
+Appearance screen's do, and Automatic settings ends level with the lineup lists' bottom.
+Why: the maintainer, after looking at the draft: the indent sets the titles off as headings;
+"Star rating" is the name managers know; 6 points between panels was too tight on the
+Appearance screen, and the two screens should agree.
+Plan: plans/save_editor.md "The player view" (the Appearance groups' paragraph, Physique,
+Presentation) and "Tactics editor" (the one grid's gaps).

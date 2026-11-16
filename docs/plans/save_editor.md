@@ -850,7 +850,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     for.
 - **Contents 1:1 with 4ccEditor's tabs**, which are the parity contract, but for stronger
   hand. 4ccEditor draws it on its Appearance tab; the player view draws it in General info,
-  beside the gameplay values it is one of. Star and playing attitude, which affect no play,
+  beside the gameplay values it is one of. Star rating and playing attitude, which affect no play,
   stand on the Appearance screen, in its Presentation group.
   - **The numbers** are the game's, in 4ccEditor's ranges: abilities 40 to 99, form 1 to 8,
     injury resistance 1 to 3, weak foot usage and accuracy 1 to 4 (these four stored one
@@ -898,7 +898,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     box cost over 100 ms, three times that under CPU load. Until the new badge lands the same
     player's kept one stays drawn, and another player's or ruleset's draws nothing.
   - **Appearance** (the draft's `appearanceTab`), top to bottom, each group framed and
-    titled, 4 points under a title as on the Stats screen and 4 between groups:
+    titled, 4 points under a title as on the Stats screen and 4 between groups. On both
+    screens a group's content, its first column's labels and controls alike, stands 6 points
+    in from the group's title, so the titles read as headings over it:
     - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
       setting is on: first, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
@@ -929,14 +931,15 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     - **Physique** at the left, its 14 sliders two a row, 82 points long (the suite's are
       110; at 110 Motion beside them wrapped two labels) on rows 34 points tall, which fill
       the group to the height of the two at its right. Its labels stand 6 points in from its
-      title, as the stats grids' do, and the group is as wide as the draft draws it (a first
+      title, as every group's content does, and the group is as wide as the draft draws it (a first
       build drew it 24 points narrower, Motion moving left with it); **Motion**
       at its right (hunching, arm movement, kick motions, gc1/gc2, two a row, Randomize
       under them; dribbling
       motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,
       hair, physique over strip, motion, base copy), `Copy from ID` on a row under them.
-    - **Presentation**, the pane's width, last: star (19+) and playing attitude (20+), one
-      under the other, each with its note at its right: "How likely the player is to show up
+    - **Presentation**, the pane's width, last: `Star rating` (19+, the name managers know it
+      by) and `Playing attitude` (20+), one under the other, each with its note at its right:
+      "How likely the player is to show up
       as the team's featured player in the pre-match screen." and "Only affects cutscenes."
       A note beside its box needs no room of its own, which a note on the title's row took.
       Both are aesthetics, keys of the export (`plans/aesthetics_export/settings_toml.md`),
@@ -1359,9 +1362,9 @@ Win32 original hurt the most):
   position and an X or Y change keeps his position ("Illegal formations" below).
 
   The editor is **one grid** of three columns (the settings, 422 points; the pitch, 322 with
-  its border; the assignments, the rest) and three rows, every panel 6 points from the next
-  as across the window, so every panel lines up with its neighbours rather than wrapping on
-  its own:
+  its border; the assignments, the rest) and three rows, so every panel lines up with its
+  neighbours rather than wrapping on its own. The panels stand 8 points apart, as on the
+  Appearance screen, where 6 was too tight:
   1. The **preset bar** (Preset 1/2/3, Fluid formation, then its Copy/swap menu) level with
      the **formation bar** (Kick-off / In-possession / Out-of-possession and theirs), which
      spans the pitch's column and the next: the formations and their menu need more than the

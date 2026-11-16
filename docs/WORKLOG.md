@@ -2257,8 +2257,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the built window beside the draft, 2026-11-16: it matches, but for the welcome
       panel's gap above each heading, about 4 to 5 points tighter than the draft's
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
-      (SWE-2, `recents/.tmp/rework_recents1.md`) running; then SWE-2's round 2 and one
-      Carbon round
+      landed (SWE-2, merge `6680c856`); SWE-2's round 2 running, then one Carbon round
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [ ] code (SWE-2, one slice, after the recents rework merges, since it touches
@@ -2272,15 +2271,19 @@ briefs, review loops, gates and mutation runs as for any step.
       - the Appearance page's Physique box as wide as the draft's (Motion 24 points right),
         its labels 6 points in from its title, and the Colors squares 2 points apart
       - every box's content on the Stats and Appearance screens 6 points in from its title,
-        once the maintainer's look at the draft agrees (`tasks.html` `look-box-indent`;
-        drafted 2026-11-16 in `tools/save_editor.js`)
+        as the draft draws it (`tools/save_editor.js`; the maintainer agreed 2026-11-16)
+      - the Presentation group's Star labelled `Star rating` (`appearance/fields.rs`, help
+        04, the tests that name it)
+      - the Gameplan screen's panels 8 points apart, Automatic settings ending level with
+        the lineup lists' bottom (2 points shorter)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
         `substitution_choices`, help 08, the two comments)
       - Choose file's tooltip reads "starting in the folder of the last opened save"
         (`view/file_menu.rs` `OPEN_TIP` and its test)
     - [ ] the drafts (the lead): Kit slots shows `Bound team ID` as the id, boxes one width;
-      Randomize greyed whole; the three texts of DECISIONS 2026-11-16 "the drafts take
-      three texts"; each captured and critiqued
+      Randomize greyed whole; each captured and critiqued. Done: the three texts of
+      DECISIONS 2026-11-16 "the drafts take three texts", `Star rating`, the Gameplan
+      screen's 8-point gaps
     - [ ] in-game (a sidekick, PES 2021): two teams naming one coach record, both in one
       match's prematch screen -> verify: the screen shows each team's coach, or the fault
       the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph
@@ -2502,8 +2505,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the rework (SWE-2, merge `5b5546d8`)
     - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
-      gap Carbon never did), at Codex brother's reset, 2026-11-16 03:19; it carries A-bar r3-4
-      (the cancelled Save as test)
+      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test)
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation

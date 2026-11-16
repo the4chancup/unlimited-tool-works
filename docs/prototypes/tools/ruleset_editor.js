@@ -1542,7 +1542,7 @@ const VIEWS = {
       h("tr", {}, h("td", {}, "Event logo (optional)"), h("td", {}, eventLogoField()))), "general-fields"));
     d.append(h("div", { class: "weak" }, "The Save editor shows the logo on its top right while this ruleset is picked; a click on it opens the event page."));
     d.append(h("div", { class: "sep" }), strong("Rating stats"),
-      h("div", { class: "weak" }, "A player's rating is the highest of these; it picks his tier. What a stat may sit at is the target, the warning band and the stat total, not the rating."),
+      h("div", { class: "weak" }, "A player's rating is the highest of these stats, and it picks his tier. The values a stat may take come from its target, the warning band and the stat total, not from the rating."),
       named(statGrid(STATS, R.stats.rating, v => R.stats.rating = v), "rating-stats"));
     d.append(h("div", { class: "sep" }), strong("May sit below the target"),
       h("div", { class: "weak" }, "Every other stat must equal its target exactly."),
