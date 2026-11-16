@@ -928,8 +928,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
       gloves show.
     - **Physique** at the left, its 14 sliders two a row, 82 points long (the suite's are
       110; at 110 Motion beside them wrapped two labels) on rows 34 points tall, which fill
-      the group to the height of the two at its right; **Motion** at its right (hunching,
-      arm movement, kick motions, gc1/gc2, two a row, Randomize under them; dribbling
+      the group to the height of the two at its right, the group as wide as the draft draws
+      it (a first build drew it 24 points narrower, Motion moving left with it); **Motion**
+      at its right (hunching, arm movement, kick motions, gc1/gc2, two a row, Randomize
+      under them; dribbling
       motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,
       hair, physique over strip, motion, base copy), `Copy from ID` on a row under them.
     - **Presentation**, the pane's width, last: star (19+) and playing attitude (20+), one
@@ -1721,9 +1723,10 @@ Win32 original hurt the most):
   (`<file> written to <folder>`),
   with an Open folder action.
 
-  **The picture.** The theme's panel colour under the team's name in its colour codes'
-  colours, its id and the save's version (a folder of pictures from several saves would
-  otherwise not say which game each came from). Then one row per preset, labelled "Preset n",
+  **The picture.** The whole picture stands on the theme's panel colour. At its top are the
+  team's name in its colour codes' colours, its id and the save's version (a folder of
+  pictures from several saves would otherwise not say which game each came from). Then one
+  row per preset, labelled "Preset n",
   with "Fluid On" or "Fluid Off" under it in the text colour (PES 2016 on), with or without the
   settings. Each cell is the pitch as the view paints it at its own 320 x 384, the formation's
   name in its corner, with none of the view's states (no drag, corners or join fill, a wider
@@ -1773,9 +1776,9 @@ Win32 original hurt the most):
     passes it, so the range is never reversed.
 
   The row ends in the count ("4 teams"), right-aligned where the folder row's Browse ends.
-  Under it stand the folder row with Browse, the same checkbox, and the file-name line, which
-  follows it. Its labels and fields sit on one grid. An existing file is replaced, the
-  file-name line saying so.
+  Under it stand the folder row with Browse, the one-team dialog's three boxes, and after them
+  the file-name line, which names the first team's file whatever the boxes say. Its labels
+  and fields sit on one grid. An existing file is replaced, the file-name line saying so.
 
   The dialog then turns into the run's progress ("Writing 2 of 4: /f/ (718)", a ProgressBar,
   Stop, which keeps the pictures written so far) and then its result ("4 pictures written,
@@ -2268,8 +2271,8 @@ The panel over the spec's `diff` report:
     "Slot 04's number");
   - a man-marking byte, the marked opponent's formation slot, as `Opponent's starter 5`
     (numbered from 1; 255 reads `None`) on the row of the own starter who marks
-    (`Preset 1 · Man marking · <his name>`): the bare byte read as one of the team's own
-    players.
+    (`Preset 1 · Man marking · <his name>`). Shown bare, the byte would read as one of the
+    team's own players.
 
   A slot's number row the prompt lists under its player reads `Shirt number` instead, as the
   strip labels it, since the item already names him.

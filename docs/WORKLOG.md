@@ -2270,6 +2270,7 @@ briefs, review loops, gates and mutation runs as for any step.
         id, any other as it is (`pes_savefile` "Team TOML")
       - the Kit slots dialog's boxes one width, six digits wide (`view/team.rs` `kit_slots`)
       - the Ruleset editor's rail rows 24 apart (3 points of padding)
+      - the Appearance page's Physique box as wide as the draft's (Motion 24 points right)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
         `substitution_choices`, help 08, the two comments)
       - Choose file's tooltip reads "starting in the folder of the last opened save"

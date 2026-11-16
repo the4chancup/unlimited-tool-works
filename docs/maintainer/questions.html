@@ -51,28 +51,34 @@ text into the chat. The answered ones then leave this page, and each answer goes
 </section>
 
 <section class="entry" id="appearance-boxes">
-  <h3>The Appearance page's Physique and Colors boxes: the draft's look or the build's?</h3>
-  <p class="from">From: the built window beside its draft, 2026-11-15 (built 2026-11-14 and checked then by eye only)</p>
+  <h3>The Appearance page: two spacings, the draft's or the build's?</h3>
+  <p class="from">From: the built window beside its draft, 2026-11-15. The third difference,
+  the Physique box's width, you answered: the build takes the draft's.</p>
   <div class="shots">
     <figure><a href="img/appearance_pair.png"><img src="img/appearance_pair.png" alt="Player Appearance page, build above, draft below"></a>
-      <figcaption>The build above, the draft below</figcaption></figure>
+      <figcaption>The whole page: the build above, the draft below</figcaption></figure>
   </div>
   <p class="links"><a href="../prototypes/index.html#save_editor/player?save=pes21&amp;pes=2021&amp;player=701.1&amp;page=appearance">Open the draft</a></p>
-  <p>Three differences; for each, pick which side the other follows.</p>
-  <div class="options" data-q="Physique width">
-    <p class="q">1. The build's Physique box is narrower, so Motion stands 24 points further left.</p>
-    <label class="opt"><input type="radio" value="the draft's"><b>The build takes the draft's width</b></label>
-    <label class="opt"><input type="radio" value="the build's"><b>The draft takes the build's width</b></label>
-  </div>
   <div class="options" data-q="label inset">
-    <p class="q">2. The build's labels stand 13 points in from the box's edge, the draft's 19. Every other box has them at 13, in both.</p>
-    <label class="opt"><input type="radio" value="the draft's 19"><b>The build takes the draft's 19</b></label>
-    <label class="opt"><input type="radio" value="the build's 13"><b>The draft takes the build's 13</b></label>
+    <p class="q">1. In the Physique box, how far in should the slider labels stand? The build
+    puts them 13 points in from the box's edge, level with the heading, as every other box
+    does in both. The draft puts them 19 points in, under the heading.</p>
+    <div class="shots">
+      <figure><a href="img/appearance_inset.png"><img src="img/appearance_inset.png" alt="The Physique box's left edge, three times larger: build above, draft below"></a>
+        <figcaption>The Physique box's left edge, three times larger</figcaption></figure>
+    </div>
+    <label class="opt"><input type="radio" value="the draft's 19"><b>19, as the draft</b></label>
+    <label class="opt"><input type="radio" value="the build's 13"><b>13, as the build and every other box</b></label>
   </div>
   <div class="options" data-q="swatch gap">
-    <p class="q">3. Under Colors, the skin and iris swatches stand about 8 points apart in the build, 2 in the draft.</p>
-    <label class="opt"><input type="radio" value="the draft's 2"><b>The build takes the draft's 2</b></label>
-    <label class="opt"><input type="radio" value="the build's 8"><b>The draft takes the build's 8</b></label>
+    <p class="q">2. In the Colors box at the top right, how far apart should the skin and iris
+    colour squares stand? 8 points in the build, 2 in the draft.</p>
+    <div class="shots">
+      <figure><a href="img/appearance_swatches.png"><img src="img/appearance_swatches.png" alt="The Colors box's squares, three times larger: build above, draft below"></a>
+        <figcaption>The Colors box's squares, three times larger</figcaption></figure>
+    </div>
+    <label class="opt"><input type="radio" value="the draft's 2"><b>2, as the draft</b></label>
+    <label class="opt"><input type="radio" value="the build's 8"><b>8, as the build</b></label>
   </div>
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
@@ -107,89 +113,6 @@ ways, which neither the code nor another document settles. Each waits only for i
     <label class="opt"><input type="radio" value="the goalhorn's fade stops an anthem too"><b>The goalhorn's fade stops an anthem too</b></label>
     <label class="opt"><input type="radio" value="another fade, see note"><b>Another fade is meant</b>
       <div class="note">Say which below.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="formation-picture-panel">
-  <h3>A formation picture's panel colour</h3>
-  <p class="from">From: <code>plans/save_editor.md</code> "Tactics editor", formation pictures, "The picture."</p>
-  <p>"The theme's panel colour under the team's name in its colour codes' colours, its id and
-  the save's version."</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="the whole picture's background"><b>The whole picture's background</b></label>
-    <label class="opt"><input type="radio" value="the heading's only"><b>Only the heading's</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="range-file-name-line">
-  <h3>The file-name line for a range of teams</h3>
-  <p class="from">From: <code>plans/save_editor.md</code> "Tactics editor", formation pictures</p>
-  <p>"the same checkbox, and the file-name line, which follows it"</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="comes after the checkbox"><b>The line comes after the checkbox</b></label>
-    <label class="opt"><input type="radio" value="changes with the checkbox"><b>The line changes with the checkbox's state</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="comparator-man-marking">
-  <h3>The Comparator's man-marking row</h3>
-  <p class="from">From: <code>plans/save_editor.md</code> "Comparator (gameplay + aesthetics)"</p>
-  <p>"on the row of the own starter who marks (<code>Preset 1 · Man marking · &lt;his
-  name&gt;</code>): the bare byte read as one of the team's own players."</p>
-  <p class="ask">Does the last clause say what the row shows, or what the bare byte must not be read as?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="what the row shows"><b>What the row shows</b></label>
-    <label class="opt"><input type="radio" value="what the byte must not be read as"><b>What the bare byte must not be read as</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="upgrader-report-click">
-  <h3>A click on an entry of the Export upgrader's report</h3>
-  <p class="from">From: <code>plans/export_upgrader.md</code> "GUI"</p>
-  <p>A click "opens the system file browser at that entry (the folder, the file selected where
-  the platform can; ...)".</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="folder opens itself, file opens its folder selected"><b>A folder entry opens that folder; a file entry opens its folder with the file selected</b></label>
-    <label class="opt"><input type="radio" value="every entry opens its containing folder, selected"><b>Every entry opens its containing folder, with the entry selected</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="legacy-fmdl-writer">
-  <h3>Why the legacy FMDL writer failed on Konami files</h3>
-  <p class="from">From: <code>spec/libs/format_crates.md</code> "fmdl::model", the bounding-box item</p>
-  <p>A group's bounding box is "computed when the source had none, which is why the legacy
-  writer failed on Konami files".</p>
-  <p class="ask">What did the legacy writer do with a group that had no box?</p>
-  <textarea class="own" placeholder="Your answer"></textarea>
-</section>
-
-<section class="entry" id="texport-files">
-  <h3>The Texport experiment's files</h3>
-  <p class="from">From: <code>spec/pes_savefile/operations.md</code> "Texport (read + write)"</p>
-  <p>"Four files were built from one game-made Texport of 772", and the last bullet says "and
-  so did a file from the writer that copies the save's records".</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="the fourth of the four"><b>The writer's file was the fourth of the four</b></label>
-    <label class="opt"><input type="radio" value="a fifth"><b>It was a fifth file</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="collar-alpha-pes17">
-  <h3>The collar's alpha test on PES 2017</h3>
-  <p class="from">From: <code>spec/team_compiler/blue_port.md</code> "What does not carry over"</p>
-  <p>The in-game test of 2026-10-09 found that a <code>.mtl</code> beside a nocloth
-  <code>.model</code> is read, and the collar model then stops drawing. The section goes on:
-  "And a collar drawn with the kit's own material has no alpha test".</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="the same test showed it"><b>The same test showed it</b></label>
-    <label class="opt"><input type="radio" value="from elsewhere, see note"><b>It comes from elsewhere</b>
-      <div class="note">Say where below.</div></label>
   </div>
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>

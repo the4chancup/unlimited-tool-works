@@ -18250,3 +18250,10 @@ early on every version, PES 15 and 16 included, their stored values read as PES 
 Why: each game's screen lists the same four (looked at on PES 15, 16, 18, 19 and 20, after
 17 and 21); the build left Very early out on 15 and 16.
 Plan: plans/save_editor.md "Tactics editor", the Substitution paragraph.
+
+## 2026-11-16 — save_editor — the Appearance page's Physique box takes the draft's width
+Decision: the build's Physique box is as wide as the draft's, so Motion stands 24 points
+further right than the build first drew it.
+Why: the build's narrower box was not a choice anyone made, and the draft's spacing leaves
+the sliders and Motion's labels room.
+Plan: plans/save_editor.md "Editing UI", the Appearance page's Physique bullet.

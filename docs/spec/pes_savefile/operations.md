@@ -1092,12 +1092,14 @@ imports and lists its players in Edit, but the kick-off screen's "Starting Lineu
 (a tester's report, 2026-11-11), or players with blank names and stats.
 
 The field the game needs is the manager id. Four files were built from one game-made Texport of
-772 (PES 2017, in game, 2026-11-11):
+772 and tried in game (PES 2017, 2026-11-11):
 
 - the zero-encoded one showed blank names and stats;
 - so did that one with every player's id copy restored;
 - that one with only the team record's +4 restored worked like the game's own file;
-- and so did a file from the writer that copies the save's records.
+- the game's own file, re-salted, worked as a control.
+
+A fifth file, written afterwards by the fixed writer that copies the save's records, worked too.
 
 The team record's u32 at +4 is the team's **manager id** (on PES 17 equal to the team id on 218
 of 220 teams; on 19 the game's own coach ids), a field of the codec from PES 17 on. Among the
