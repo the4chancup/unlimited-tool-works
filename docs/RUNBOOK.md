@@ -784,7 +784,8 @@ next loop in the order runs meanwhile.
 **How deep a surface is reviewed follows what a defect in it would cost.** *Tier 1*, a
 surface that writes what the game or a member's save reads (a CPK's content, a converted
 model or texture, the savefile codec and its patch, an interchange file, the Export
-upgrader's output, the updater's swap): the three loops above. *Tier 2*, other shipped code
+upgrader's output, the updater's swap, the "Report a problem" bundle, which the maintainer
+debugs from, so a wrong one misleads the fix): the three loops above. *Tier 2*, other shipped code
 (a check and its messages, a view, the command line's surface): SWE-2's
 loop, then one round of one paid reviewer, which runs again only by the round rule.
 *Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a

@@ -18404,3 +18404,25 @@ whose worklog kept the slices in.
 Why: a slice per tool is real layout work on files the cut's other fixes also change, and the
 release is due within the day.
 Plan: plans/core/gui.md "A window larger than the default" (unchanged; only its release moves).
+
+## 2026-11-16 — team_compiler — kit_token_old follows the upgrader into a player FMDL's game folders
+Decision: in a player, Boots or Gloves FMDL, `kit_token_old` checks a texture path into the game's
+folders too, except the game's kit texture folder (`/Assets/pes16/model/character/uniform/texture/`
+and below) and the folders below the game's common folder other than `team_folder`. A `Common/`
+model still checks only its own folder's paths and the team's Common.
+Why: the rule is "refused where the Export upgrader respells it", and the upgrader rewrites every
+other game-folder directory of such a model to `./`, respelling the token. The 2026-11-11 entry's
+premise that it leaves every game-folder path as written held for `Common/` models only, so an
+un-upgraded Blender model naming `/Assets/pes16/model/character/face/real/00000/sourceimages/u0XXXp1.dds`
+compiled with no finding and a texture the game lacks.
+Plan: `spec/team_compiler/messages.md` the `kit_token_old` row; `spec/team_compiler/pipeline.md`
+"Kit-dependent assets"; TC-MOD-107.
+
+## 2026-11-16 — review — Report a problem is reviewed at Tier 1
+Decision: the "Report a problem" bundle and the code that writes it are a Tier 1 surface: SWE-2's
+loop, then Carbon's and Astra's, each followed by a SWE-2 loop. Its rounds run in 0.0.2, beside
+the cut's other work, although 0.0.2 otherwise defers the Carbon rounds.
+Why: the bundle is the instrument a bug is debugged from. A wrong or silently incomplete one
+sends the fix down the wrong path, which costs more than a view's defect; Tier 2's single paid
+round is not enough for that.
+Plan: `RUNBOOK.md` "Review rounds" (Tier 1's list); `WORKLOG.md` current status.

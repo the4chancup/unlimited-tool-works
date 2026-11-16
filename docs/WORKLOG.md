@@ -22,7 +22,9 @@ the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices mov
    at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild;
    Carbon's round-1 reworks never launched (`sk/cmprw`, `sk/selrw`, `sk/instrw`, `sk/ktorw`:
    accepted concerns, fixed in 0.0.2 with no round 2).
-   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round.
+   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round,
+   but for Report a problem, a Tier 1 surface (DECISIONS 2026-11-16): its SWE-2 loop (round 1
+   ruled, rework `sk/reprw`), then Carbon's and Astra's loops, each followed by a SWE-2 loop.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
