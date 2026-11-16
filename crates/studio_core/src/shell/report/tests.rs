@@ -86,11 +86,9 @@ fn assert_dialog_open(nodes: &[accesskit::Node]) {
         ),
         "the log's line"
     );
-    assert!(
-        has_text(
-            nodes,
-            "Your user folder is written as ~ in the file's paths."
-        ),
+    assert_eq!(
+        text_line(nodes, "Your user folder"),
+        "Your user folder is written as ~ in the file's paths.",
         "the privacy line"
     );
     assert!(
@@ -414,6 +412,25 @@ fn a_cancelled_or_failed_save_writes_nothing_and_keeps_save() {
     assert!(
         has_text(&out.nodes, "cannot write the bundle"),
         "the write's error shows"
+    );
+
+    // Closed with the error standing and opened again: the dialog is fresh.
+    click(&egui_ctx, &mut app, entry(&out.nodes, "Cancel"));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert!(has_label(&nodes, "Save…"), "premise: the dialog is open");
+    assert!(
+        !has_text(&nodes, "cannot write the bundle"),
+        "the reopened dialog shows no earlier error"
+    );
+
+    // The failed write again, so the retry below has an error to clear.
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+    assert!(
+        has_text(&out.nodes, "cannot write the bundle"),
+        "premise: the error stands again"
     );
 
     // A retry that writes clears the error.

@@ -1425,15 +1425,7 @@ mod tests {
         for (button, report) in [("Copy", false), ("Save…", true)] {
             let dir = TestDir::new("studio_core_close_modal");
             let egui_ctx = test_context();
-            let (a, calls_a) = stub("a", "A", None);
-            let (b, calls_b) = stub("b", "B", None);
-            let Shell { mut app, calls, .. } = shell_with(
-                test_settings(dir.path()),
-                vec![a, b],
-                &[],
-                Some(dir.path().to_path_buf()),
-                vec![calls_a, calls_b],
-            );
+            let Shell { mut app, calls, .. } = close_shell(dir.path());
             *calls[0].unsaved.lock().unwrap() = true;
             app.set_active(1);
 

@@ -215,7 +215,7 @@ impl Report {
 /// settings and `installs.txt` at the zip's root, and every tool's
 /// `repro_state` under its id in `state`. The settings are the ones the
 /// session runs under, not the file on disk, which a failed settings save
-/// leaves behind them.
+/// leaves out of date.
 fn write_report(
     out: &Path,
     tools: &[Box<dyn StudioTool>],
