@@ -1167,7 +1167,23 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
                 .is_some_and(|label| label.starts_with("[PES 2021] elsewhere"))),
         "the gone save is skipped"
     );
+    // Whether a recent save is still on disk is asked once per stay of the
+    // panel, as discovery is, never a frame: deleted while the panel is
+    // up, the save stays listed; the File menu's next look drops it, and
+    // with every recent save gone, the heading.
     std::fs::remove_file(&tree.pes19).unwrap();
+    idle_frames(&mut window, &mut view, 2);
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        label_value(&nodes, "Recent files"),
+        "the panel's look is kept while it stays up"
+    );
+    open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    idle_frames(&mut window, &mut view, 2);
     let nodes = draw(&mut window, &mut view);
     assert!(
         !label_value(&nodes, "Recent files"),

@@ -45,7 +45,6 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
@@ -192,14 +191,14 @@ pub(crate) struct SaveView {
     /// The File menu's discovery (`discover_savefiles`, stubbed in tests;
     /// `pub(crate)` so the crate root's tests reach it too).
     pub(crate) discover: file_menu::Discover,
-    /// What discovery found when the File menu opened, each save with its
-    /// version, in `PesVersion::ALL`'s order; `None` while the menu is
+    /// What the File menu's look found when it opened: the discovered
+    /// saves and the recent saves still on disk; `None` while the menu is
     /// closed, so the next opening looks again.
-    discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
-    /// The welcome panel's own discovery, run once when it appears (the
+    discovered: Option<file_menu::Found>,
+    /// The welcome panel's own look, taken once when it appears (the
     /// tool's first frame, or a save closing) and kept while it stays up,
-    /// never a scan a frame; `open` drops it, so the next stay rescans.
-    welcome_discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
+    /// never a scan a frame; `open` drops it, so the next stay looks again.
+    welcome_discovered: Option<file_menu::Found>,
     /// The last 10 saves opened or saved, newest first — `Tool::view` reads
     /// the `recent_files` setting into the list at start and writes it back
     /// when the list moves (`pub(crate)` so it and the crate root's tests

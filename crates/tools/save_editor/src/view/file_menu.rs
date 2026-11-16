@@ -133,13 +133,40 @@ struct Opens {
     recents: Vec<Open>,
 }
 
-/// The opens `discovered` and `view`'s recents make. Discovery lists a
-/// version's saves newest first, and the newest is the one its shortcut
-/// opens.
-fn opens(view: &SaveView, discovered: &[(PesVersion, SavefileCandidate)]) -> Opens {
+/// What one look at the disk found for the File menu or the welcome
+/// panel, taken when the menu opens or the panel appears and kept while
+/// it stays up, never a frame: a recent save on a network share that has
+/// gone can take seconds to answer whether it exists.
+#[derive(Clone)]
+pub(super) struct Found {
+    /// The discovered saves, each with its version, in `PesVersion::ALL`'s
+    /// order.
+    saves: Vec<(PesVersion, SavefileCandidate)>,
+    /// `view`'s recent saves still on disk; one that is gone is skipped but
+    /// stays in the setting.
+    recents: Vec<RecentSave>,
+}
+
+/// The look `Found` keeps: discovery under Documents, and which recent
+/// saves are still on disk.
+fn look(view: &SaveView) -> Found {
+    Found {
+        saves: discover_all(view),
+        recents: view
+            .recents
+            .iter()
+            .filter(|recent| recent.path.exists())
+            .cloned()
+            .collect(),
+    }
+}
+
+/// The opens `found` makes. Discovery lists a version's saves newest
+/// first, and the newest is the one its shortcut opens.
+fn opens(view: &SaveView, found: &Found) -> Opens {
     let mut saves = Vec::new();
     let mut previous = None;
-    for (version, candidate) in discovered {
+    for (version, candidate) in &found.saves {
         let shortcut = if previous != Some(*version) {
             shortcut_text(*version)
         } else {
@@ -153,10 +180,9 @@ fn opens(view: &SaveView, discovered: &[(PesVersion, SavefileCandidate)]) -> Ope
             pending: Pending::Open(candidate.path.clone()),
         });
     }
-    let recents = view
+    let recents = found
         .recents
         .iter()
-        .filter(|recent| recent.path.exists())
         .map(|recent| Open {
             label: recent_label(recent),
             shortcut: String::new(),
@@ -168,7 +194,7 @@ fn opens(view: &SaveView, discovered: &[(PesVersion, SavefileCandidate)]) -> Ope
         label: "Open\u{2026}".to_owned(),
         shortcut: "Ctrl+O".to_owned(),
         tip: OPEN_TIP.to_owned(),
-        pending: picker_request(view.last_folder.as_deref(), discovered),
+        pending: picker_request(view.last_folder.as_deref(), &found.saves),
     };
     Opens {
         picker,
@@ -199,7 +225,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
     let save_open = view.session.is_some();
     let menu = menu_button(ui, "File", |ui| {
         if view.discovered.is_none() {
-            view.discovered = Some(discover_all(view));
+            view.discovered = Some(look(view));
             if !save_open {
                 view.welcome_discovered = view.discovered.clone();
             }
@@ -285,7 +311,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
 /// kept while it stays up, never a scan a frame.
 pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.welcome_discovered.is_none() {
-        view.welcome_discovered = Some(discover_all(view));
+        view.welcome_discovered = Some(look(view));
     }
     let opens = opens(
         view,
