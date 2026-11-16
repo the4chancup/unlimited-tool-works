@@ -1672,7 +1672,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         category tick that relists nothing snapped a scrolled list back, tests that cannot
         tell the two reveals apart, two citations, copied helpers, four comments
       - [x] the rework (SWE-2, merge `93dcdc06`); SE-GUI-103 gained one team's PgDn step
-      - [ ] Carbon's round 5 (at `93dcdc06`, `review34/.tmp/carbon_list5.md`): running
+      - [x] Carbon's round 5, 2026-11-16 (at `93dcdc06`): 5 of 5 accepted ("C-list r5"): a
+        team pick under a typed filter moved the selection off screen, two kept-scroll
+        tests, a copied wheel sequence, a doc
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon5.md`), in `listrw1` once
+        the recents' rework B has merged from it; then Carbon's round 6
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
