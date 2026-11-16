@@ -1726,8 +1726,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
       landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
       ends the SWE-2 loop: its rework landed (SWE-2, merge `2923f863`, with Choose file's
-      tooltip from 0.0.2-answers); Carbon's round 1 running (at `d43550fe`, `review35`,
-      `.tmp/carbon_recents1.md`)
+      tooltip from 0.0.2-answers)
+      - [x] Carbon's round 1, 2026-11-16 (at `d43550fe`): 12 accepted, one in part
+        ("C-recents r1"): opening a save rewrote `settings.toml` without its comments, Ctrl+Q
+        left an open menu over the prompt, a long recent entry wrapped once the panel
+        scrolled; five test gaps, two citations, the changelog, help 02 and stale docs
+      - [ ] the rework in two parts (SWE-2): A, `studio_core`'s settings edit and the shell's
+        popups (`sk/recrw_a`, `.tmp/0_0_2/revdebt/rework_recents_a.md`); B, the rest
+        (`sk/recrw_b`, `rework_recents_b.md`): running; then Carbon's round 2
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
