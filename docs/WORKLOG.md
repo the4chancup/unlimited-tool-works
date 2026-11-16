@@ -18,9 +18,10 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
-   title row's line in its rework.
-2. Code: 0.0.2-gaps' leftovers are merged (`30cca13d`), their built-window check owed;
+1. In flight: two differences the answers slice's recheck found (SWE-2): Kit slots' labels a
+   space from their boxes, and the Stats screen's sections 12 under the title row's line
+   (`sk/statsline`, which also settles 0.0.2-gaps' Player screen item).
+2. Code: 0.0.2-gaps' built window is checked, its Ruleset editor items moved to Phase 20;
    0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild. Carbon's
    round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2) are all merged.
    Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, all ended, no
@@ -28,9 +29,10 @@ excepted, below), 0.0.2-pes19
    whole review: Carbon's loop ended at round 3 (6 accepted, none a defect a real input
    reaches), its fixes and SWE-2's loops over them are merged (`b3e8f007`), and Astra's
    round 1 accepted nothing.
-3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
-   0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
-   its drill and its built window; a Linux bundle for the Reset window card.
+3. The lead's looks: 0.0.2-report's whole chain, its drill and its built window; a Linux
+   bundle for the Reset window card (at the cut). The grown labels and the Compiler's
+   sidebar and title were looked at on 2026-11-16, and `tasks.html` holds no look waiting
+   for the lead.
 4. In game: the answers' two teams naming one coach record (PES 2021).
 5. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
    the changelog, the release build.
@@ -1545,7 +1547,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         help and grid stacked flush as the draft's
       - the Ruleset editor's Tiers help line over its table, and Medal systems' heading, help
         and grid, stand 3 to 4 lower than their drafts for the same cause (`item_spacing`
-        between the stacked lines, which the draft has none of): built-window check first
+        between the stacked lines, which the draft has none of): moved to Phase 20 (the
+        Ruleset editor waits for 0.1.0), whose built window is off its draft page-wide
+        (lead, 2026-11-17, `.tmp/lead/ans2/cmp_rs_*.txt`): General's page title in the weak
+        colour and 4 higher, its form 4 left of the draft's indent and 12.5 higher, the
+        checklists 12 and 17 higher; Tiers' table columns 2 to 106 right of the draft's,
+        its headers wrapped otherwise, its rows 19 to 32 higher
+    - [x] the built window (lead, 2026-11-17, the release build of `a9ec4919`): the two
+      picture dialogs within 1.3 (the forms' row labels, accepted); the range dialog's team
+      pickers read `701 /3/` where the draft's read `/3/`, asked in `questions.html`
+      ("The team pickers in Save formation pictures for a range of teams"): the build took
+      Multi-team AATF's pickers (`b213ee6a`), as the plan's "as Multi-team AATF picks its
+      range" says, while the draft's are older; `draft_compare.py` pairs by text, so it
+      listed the two labels as unmatched and flagged nothing. The Player screen: see the
+      answers slice's recheck (the Stats screen's sections)
     - [x] 2026-11-15 (lead) each difference the check met outside these slices traced to its
       cause, and the looks asked in QUESTIONS ("The 0.0.2 Save editor report"): the Ruleset
       editor's page list, the Appearance screen's Physique and Colors boxes, Randomize, and
@@ -1777,20 +1792,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       points less room, the Gameplan's 8-point gaps, Kit slots at 51. Looked at (lead,
       2026-11-16, the release build of `5e086fbe`): the indent, Motion's place, the 8-point
       gaps, Automatic settings level with the lists and the boxes' one width match the draft.
-      Five differences go to a fix (SWE-2, the brief `.tmp/brief_answers_look.md`):
-      - Kit slots: the "Slot n" and Number label columns 51 wide, as the boxes (egui's grid
-        takes `interact_size.x` as its least column width): Bound team ID 19 right of the
-        draft's
-      - Gameplan, the default window: the panels' bottom lines cut off, a 4-point scroll; the
-        detail pane keeps an 8-point bottom margin the draft's has not, and the Name and Preset
-        rows stand 3 and 4 higher than the draft's
-      - Appearance, Colors: the label column 40 wide (the same grid floor) and no 4 points
-        after the squares: the group 241 wide, the draft's 230
-      - Appearance, Motion, Presentation and Copy from ID: number boxes 40 wide, the draft's
-        52: Motion's second column and Presentation's notes 12 left of the draft's
-      - every player and team screen: the line under the title's row (Stats | Appearance |
-        Gameplan) 2 lower than the draft's (59, the draft's 57), and everything under it with
-        it: the sidekick's rework, after its first report
+      - [x] five differences fixed (SWE-2, merge `a34bfa97`): Kit slots' label columns no
+        longer 51 wide, the Gameplan unscrolled at the default window, Colors 230 wide, the
+        Motion, Presentation and Copy from ID boxes 52, the title row's line at 56.5 (the
+        draft's 57). Rechecked (lead, 2026-11-17, the release build of `a9ec4919`, captures
+        in `.tmp/lead/ans2/`): each within 1 point of the draft
+      - [ ] two more differences the recheck met, each to a fix:
+        - Kit slots: each label and its box in two grid columns, 8 apart, where the draft
+          has them in one cell a space apart (3): every box 5 right of the draft's. Fixed
+          (SWE-2, `4017c877`): one cell each, `SPACE_GAP` apart; the built window's look
+          owed
+        - the Stats screen: its sections 9 under the title row's line, the draft's 12, so
+          the screen stands 4 to 5.5 higher than the draft once the line moved up (SWE-2,
+          worktree `sk/statsline`, the brief `.tmp/0_0_2/statsline/brief.md`; it takes in
+          0.0.2-gaps' Player screen item)
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
@@ -2996,6 +3011,9 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
   toolbar's entries, the CLI's `random` (RE-RND, RE-CLI-04) → verify: 1,000 seeds per preset,
   and the share of seeds that needed a redraw measured and reported
 - [ ] 20.8 the help chapter, and the Ruleset editor active on the shell's sidebar
+- [ ] 20.8a the built window beside the drafts, page by page (`draft_compare.py rs_general`,
+  `rs_tiers`, and a screen for each page they do not list): every row within 1 point.
+  General and Tiers were off page-wide on 2026-11-17 (the numbers in 0.0.2-gaps' Tiers item)
 - [ ] 20.9 converge (RUNBOOK.md "Closing a phase"), RE-GUI-16 checked by hand
 
 ---
@@ -3066,7 +3084,22 @@ points there.
     so its labels stand 12 points further right of the title and its Save editor section
     20 lower; its rows also stand 3 to 4 points lower against the title than the build's.
   - The range picture dialog's team selectors: the build writes each team's ID before its
-    name (`701 /3/`), the draft only the name (`/a/`).
+    name (`701 /3/`), the draft only the name (`/a/`): asked in `questions.html` ("The team
+    pickers in Save formation pictures for a range of teams").
+- open 2026-11-17 (the lead, the answers recheck): with a 200% primary monitor and a 100%
+  one beside it, two things go wrong on the 100% one (Windows 10, the release build of
+  `a9ec4919`).
+  - A window remembered there (`window_main` with scale 1.0) reopens at the primary's 200%,
+    twice its size, straddling both monitors, and records scale 2.0 on close: the window is
+    created at the primary's scale, and Windows moves it to 100% only when most of it lies
+    on the 100% monitor. Seen with the place at (-1608, 453) on a 100% monitor at
+    (-1920, 323); a place far enough left, (-1900, 330), came back at 100%.
+  - Once the window is at 100% there, UI Automation (AccessKit) reports every widget's
+    rectangle at twice its screen position and size (`uia_dump.ps1`: `v0.0.1 pre-alpha` at
+    -3768,2240 160x26 for -1884,1120 80x13): a screen reader would point at the wrong
+    places. Likely egui's AccessKit adapter keeping the creation scale: check upstream
+    before a fix. `.tmp/lead/looks/compare_halved.py` halves the rectangles for
+    `draft_compare.py` meanwhile.
 - resolved 2026-11-14 (SWE-2, `513ef0af`): the copies of "write a temporary file beside it,
   then rename it onto the name" are one function, `studio_core::files::replace_file`, called
   by five sites (the repro bundle, the ruleset editor's `write_text`, the rules import, the
