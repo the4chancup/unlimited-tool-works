@@ -473,9 +473,12 @@ gets a second background command beside it, `python ~/.claude/skills/duck/devin_
 for 20 minutes neither the session's `last_activity_at` in Devin's `sessions.db` moved nor the
 run's process tree burned CPU (a build or test burns it without any step). The watcher never
 stops the run: what to do is the lead's call, after reading `git diff`, since a stalled run can
-leave a half-done edit or a perturbation in the tree. A
-session that stalled after its one allowed resume is not resumed again; the lead finishes the
-brief's remaining items itself or briefs a fresh session.
+leave a half-done edit or a perturbation in the tree. Resumes are not counted: a run stopped
+midway (a stall, an interruption, a server error) carries about the context an uninterrupted
+run would, so the stop costs nothing. The limit is the CLI's own autocompactor, which fires near
+the session's limit and drops context the task still needed: before a resume the lead reads the
+session's context size, and when the work left would carry it there, the lead finishes the brief's
+remaining items itself or briefs a fresh session.
 
 **A Devin CLI run is started detached**: `python
 ~/.claude/tools/run_detached.py <brief>.run.log "git add -A && python
