@@ -68,13 +68,10 @@ crates/studio_core/src/
 │   ├── help_window.rs    # chapter tree + rendered topic (egui_commonmark) + search box; opens on the active tool
 │   ├── status_bar.rs #   conditions / background activity / latest notice; empty state = the version
 │   └── about.rs      #   About popup from the logo: detailed version block with Copy, links
-├── widgets/
-│   ├── grid.rs       #   progress grid (rows × cells, FolderStatus colors, fades)
-│   ├── log_panel.rs  #   capped log, auto-scroll, filters, cross-linking
-│   └── run_strip.rs
-├── repro.rs          # the repro journal's Recorder and the bundle writer ("Repro bundles")
-├── theme.rs          # the shared Visuals preset, fonts, the icon font's registration
-└── updater.rs        # release check, download/verify, binary swap (desktop only)
+└── widgets/
+    ├── grid.rs       #   progress grid (rows × cells, FolderStatus colors, fades)
+    ├── log_panel.rs  #   capped log, auto-scroll, filters, cross-linking
+    └── run_strip.rs
 ```
 
 The running-PES probe (`pes_process.rs`, `spec/core/architecture.md` "Crate structure") is

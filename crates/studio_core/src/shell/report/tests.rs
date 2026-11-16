@@ -157,8 +157,8 @@ fn the_entry_opens_the_dialog_from_the_rail_and_the_opened_sidebar() {
     );
 }
 
-// ST-REP-01's "more than one file" clause: a second input appends ", and 2
-// more" to the first's name; the clause names the first input alone.
+// The opened clause names the first input alone and counts the rest: the
+// three kept inputs read ", and 2 more".
 #[test]
 fn the_opened_clause_names_the_first_input_and_counts_the_rest() {
     let dir = TestDir::new("studio_core_report_more_inputs");
@@ -196,6 +196,7 @@ fn the_opened_clause_names_the_first_input_and_counts_the_rest() {
 
 // ST-REP-01's "no tool has recorded anything" clause: the list holds the
 // fixed lines only.
+// ST-REP-01
 #[test]
 fn the_list_holds_the_fixed_lines_only_when_nothing_was_recorded() {
     let Shell {
@@ -209,6 +210,14 @@ fn the_list_holds_the_fixed_lines_only_when_nothing_was_recorded() {
     click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
     let out = frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_dialog_open(&out.nodes);
+    assert_eq!(
+        out.nodes
+            .iter()
+            .filter(|node| node.role() == Role::Label && node.value() == Some("•"))
+            .count(),
+        2,
+        "the draft's two fixed lines only"
+    );
     assert!(
         !out.nodes
             .iter()

@@ -185,8 +185,8 @@
 - **Save editor**: after opening another save, medal outlines and Cards used badges no longer
   show the previous save's for a moment.
 - **Save editor**: an ability stat the save's version lacks is dimmed like its `-`.
-- **Sidebar**: in a short window, the tool entries scroll, and Help and Settings stay pinned
-  below them.
+- **Sidebar**: in a short window, the tool entries scroll, and Report a problem, Help and
+  Settings stay pinned below them.
 - **Status bar**: on a small screen, the Reset window button no longer stays after a click
   that changed nothing.
 - **Windows**: a Shift+click or a middle click on the program's taskbar button opens another

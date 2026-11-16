@@ -805,6 +805,64 @@ pub(crate) mod tests {
         );
     }
 
+    // `keep_input` and `keep_output` return the kept file's index in its
+    // list, a second write to one output's path the replaced slot's — a
+    // caller storing the index would read the wrong file were it off.
+    #[test]
+    fn a_rewrite_returns_the_replaced_slots_index() {
+        let dir = scratch("kept_index");
+        let recorder = Recorder::default();
+        assert_eq!(
+            recorder.keep_input(
+                "save-editor",
+                Path::new("a/EDIT00000000"),
+                Arc::from(&b"IN_A"[..])
+            ),
+            0
+        );
+        assert_eq!(
+            recorder.keep_input(
+                "save-editor",
+                Path::new("b/EDIT00000000"),
+                Arc::from(&b"IN_B"[..])
+            ),
+            1
+        );
+        assert_eq!(
+            recorder.keep_output(
+                "save-editor",
+                Path::new("out/a.png"),
+                Arc::from(&b"OUT_A"[..])
+            ),
+            0
+        );
+        assert_eq!(
+            recorder.keep_output(
+                "save-editor",
+                Path::new("out/b.png"),
+                Arc::from(&b"FIRST"[..])
+            ),
+            1
+        );
+        assert_eq!(
+            recorder.keep_output(
+                "save-editor",
+                Path::new("out/b.png"),
+                Arc::from(&b"SECOND"[..])
+            ),
+            1,
+            "the second write to one path returns the replaced slot"
+        );
+        let out = dir.join("repro.zip");
+        recorder.write_bundle(&out, "", &[], &[], None).unwrap();
+
+        assert_eq!(
+            zip_bytes(&out, "outputs/1-b.png"),
+            b"SECOND",
+            "the replaced slot holds the second write's bytes"
+        );
+    }
+
     // The journal's file bytes have no business in a debug line: the
     // impl is the `Recorder(..)` placeholder whatever the recorder holds.
     #[test]
