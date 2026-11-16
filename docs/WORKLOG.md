@@ -1708,7 +1708,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         that pass on wrong code, a stale plan line and mutants exclusion (lead, `0ac94593`)
       - [x] the rework: A2, the settings save (SWE-2, merge `dbcc5358`); B2, the Save editor
         (SWE-2, merge `3ae96fe5`)
-      - [ ] Carbon's round 3 (at `3ae96fe5`): running
+      - [x] Carbon's round 3, 2026-11-16 (at `3ae96fe5`): 8 accepted, one in part
+        ("C-recents r3"): the scrolled File menu wraps its widest entry, an inserted
+        `[save-editor]` writes its recent files above its header, four tests that pass on
+        wrong code, SE-GUI-26 at a size that never overflows (lead, `b2f3ecc9`)
+      - [ ] the rework: A3, the settings save (SWE-2, `sk/recrw_a3`); B3, the Save editor
+        (SWE-2, `sk/recrw_b3`): running; then Carbon's round 4
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
