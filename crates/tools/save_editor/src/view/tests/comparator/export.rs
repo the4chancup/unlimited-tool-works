@@ -147,6 +147,7 @@ fn export_carries_the_unsaved_edits() {
 }
 
 // SE-GUI-13
+// SE-GUI-79
 #[test]
 fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
     let (mut view, mut window, _) = compared_73401("comparator_export_wrote");

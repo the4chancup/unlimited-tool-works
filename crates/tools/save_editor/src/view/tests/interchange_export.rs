@@ -201,6 +201,7 @@ fn the_export_buttons_say_what_each_file_is() {
 }
 
 // SE-GUI-16
+// SE-GUI-79
 #[test]
 fn the_team_toml_written_is_the_command_lines_export() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_toml", CO);
@@ -242,7 +243,10 @@ fn the_team_toml_written_is_the_command_lines_export() {
         view.notice
             .as_ref()
             .map(|notice| (notice.text.as_str(), notice.kind)),
-        Some(("panel.toml written", NoticeKind::Success))
+        Some((
+            "panel.toml written (the CLI's export-toml text for team 714)",
+            NoticeKind::Success
+        ))
     );
     assert!(view.refusal.is_none(), "no refusal");
 
@@ -274,7 +278,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str, fil
     let texport = Texport::from_bytes(&bytes, None).expect("the file reads as a Texport");
     assert_eq!(texport.version(), version, "the save's version");
     assert_eq!(texport.team().id, CO, "the team's");
-    let wrote = format!("{suggested_name} written");
+    let wrote = format!("{suggested_name} written (team {CO} as a {version} Texport)");
     assert_eq!(
         view.notice
             .as_ref()
@@ -312,6 +316,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str, fil
 }
 
 // SE-GUI-17
+// SE-GUI-79
 #[test]
 fn a_pes_17_texport_reads_back_to_the_same_team() {
     // No extension, so the dialog has no filter to add `.ted` with.
@@ -324,6 +329,7 @@ fn a_pes_17_texport_reads_back_to_the_same_team() {
 }
 
 // SE-GUI-17
+// SE-GUI-79
 #[test]
 fn a_pes_18_texport_reads_back_to_the_same_team() {
     // Team 714 of the PES 18 fixture is `DIY` by its short name.
@@ -336,6 +342,7 @@ fn a_pes_18_texport_reads_back_to_the_same_team() {
 }
 
 // SE-GUI-17
+// SE-GUI-79
 #[test]
 fn a_pes_19_texport_reads_back_to_the_same_team() {
     texport_round_trip(
@@ -347,6 +354,7 @@ fn a_pes_19_texport_reads_back_to_the_same_team() {
 }
 
 // SE-GUI-17
+// SE-GUI-79
 #[test]
 fn a_pes_20_texport_reads_back_to_the_same_team() {
     texport_round_trip(
@@ -358,6 +366,7 @@ fn a_pes_20_texport_reads_back_to_the_same_team() {
 }
 
 // SE-GUI-17
+// SE-GUI-79
 #[test]
 fn a_pes_21_texport_reads_back_to_the_same_team() {
     texport_round_trip(
@@ -599,10 +608,35 @@ fn the_team_toml_suggests_the_teams_name_less_its_slashes_then_short_then_id() {
         "\u{304d}\u{3089}\u{3089}.toml"
     );
 
+    // A colour code goes with the slashes, and spaces inside them.
+    let mut team = team_entry(&view, 718);
+    team.name = "\u{11}cff0000ff/f/".to_owned();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(suggested_toml(&mut window, &mut view), "f.toml");
+    let mut team = team_entry(&view, 718);
+    team.name = "/ f /".to_owned();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(suggested_toml(&mut window, &mut view), "f.toml");
+
     // A character a file name cannot hold gives way to the short name.
     let mut team = team_entry(&view, 718);
     team.name = "/wh?/".to_owned();
     team.short_name = "WHQ".to_owned();
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(Vec::new(), vec![team]);
+    assert_eq!(suggested_toml(&mut window, &mut view), "WHQ.toml");
+
+    // Slashes around spaces alone leave nothing either.
+    let mut team = team_entry(&view, 718);
+    team.name = "/ /".to_owned();
     view.session
         .as_mut()
         .expect("an open save")

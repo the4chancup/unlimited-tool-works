@@ -1022,6 +1022,48 @@ fn a_failed_write_ends_the_run_and_names_the_error() {
     );
 }
 
+// A folder that is a file: the one-team dialog's write fails, the notice
+// is the suite's one Error kind, the dialog stays open on the folder it
+// was given, the setting keeps nothing, and the write is a `could not
+// write` step.
+#[test]
+fn a_folder_that_is_a_file_fails_the_write_and_keeps_the_dialog_open() {
+    let mut scene = Scene::new("picture_dialog_write_fails");
+    let folder = scene.dir.join("a file");
+    std::fs::write(&folder, b"not a folder").unwrap();
+    let error = std::fs::create_dir_all(&folder).expect_err("premise: no folder can be made there");
+
+    scene.open_dialog();
+    scene.browse(&folder);
+    let nodes = scene.press("Save");
+
+    assert_eq!(
+        scene.notices(),
+        [Notice {
+            text: format!("Could not write f.png: {error}"),
+            kind: NoticeKind::Error,
+            action: None,
+        }],
+        "the failed write's Error notice"
+    );
+    assert!(dialog_open(&nodes), "the dialog stays open");
+    assert!(
+        !scene.table().contains_key("formation_pictures_folder"),
+        "no folder kept"
+    );
+    crate::test_support::assert_write_refused(
+        scene
+            .tool
+            .view
+            .session
+            .as_ref()
+            .expect("the save")
+            .recorder(),
+        &scene.dir,
+        &folder.join("f.png"),
+    );
+}
+
 /// The dialog keeps the picking state's width through the run and its
 /// result, though the result's folder, a long one, would be wider.
 #[test]

@@ -152,6 +152,15 @@ impl Export {
         suggested.extension().map(|_| self.extension())
     }
 
+    /// The notice's detail after `<file> written` (the draft's notices):
+    /// what the file is, for the member wondering what he holds.
+    fn detail(self, team_id: u32, version: PesVersion) -> String {
+        match self {
+            Export::TeamToml => format!(" (the CLI's export-toml text for team {team_id})"),
+            Export::Texport => format!(" (team {team_id} as a {version} Texport)"),
+        }
+    }
+
     /// The suggested file name for `team` of a `version` save at `save`:
     /// a Team TOML's `<name>.toml`, the team's display name less its
     /// slashes (`/f/` gives `f.toml`; a name in another script stays),
@@ -791,7 +800,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 match write_export(session, team.id, export, &path) {
                     Ok(()) => {
                         *notice = Some(Notice {
-                            text: format!("{} written", file_name(&path)),
+                            text: format!(
+                                "{} written{}",
+                                file_name(&path),
+                                export.detail(team.id, version)
+                            ),
                             kind: NoticeKind::Success,
                             action: None,
                         });

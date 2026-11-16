@@ -118,26 +118,26 @@ fn snap_inverts_the_mapping_and_clamps_to_the_spot_range() {
 fn the_marker_box_centres_on_the_badge_and_stays_inside() {
     let origin = egui::pos2(40.0, 80.0);
     let canvas = egui::Rect::from_min_size(origin, PITCH);
-    let rect = marker_rect(badge_centre(origin, outfield(52, 24)), canvas);
+    let rect = marker_rect(badge_centre(origin, outfield(52, 24)), canvas, true);
     near(rect.min, origin + egui::vec2(134.8, 143.8), 0.05);
     near(rect.max, origin + egui::vec2(184.8, 220.8), 0.05);
     assert_eq!(
-        marker_rect(origin + egui::vec2(-30.0, 200.0), canvas).left(),
+        marker_rect(origin + egui::vec2(-30.0, 200.0), canvas, true).left(),
         canvas.left(),
         "a centre past the left edge clamps to it"
     );
     assert_eq!(
-        marker_rect(origin + egui::vec2(350.0, 200.0), canvas).right(),
+        marker_rect(origin + egui::vec2(350.0, 200.0), canvas, true).right(),
         canvas.right(),
         "a centre past the right edge clamps to it"
     );
     assert_eq!(
-        marker_rect(origin + egui::vec2(160.0, -30.0), canvas).top(),
+        marker_rect(origin + egui::vec2(160.0, -30.0), canvas, true).top(),
         canvas.top(),
         "a centre past the top clamps to it"
     );
     assert_eq!(
-        marker_rect(origin + egui::vec2(160.0, 410.0), canvas).bottom(),
+        marker_rect(origin + egui::vec2(160.0, 410.0), canvas, true).bottom(),
         canvas.bottom(),
         "a centre past the bottom clamps to it"
     );
@@ -1016,6 +1016,75 @@ fn the_corners_and_the_join_fill_mark_the_states() {
     assert_eq!(corners(&shapes, Palette::DARK.selected_corners).len(), 0);
 }
 
+// The selected marker's corner brackets frame his portrait's box with
+// the portraits on and his badge with them off — the upright arms cut
+// to 5 to fit its 14 points, the across arms still 9 — never a box of
+// turf over him.
+// SE-GUI-81
+#[test]
+fn the_selected_corners_frame_the_portrait_or_the_badge() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let players = tactics.presets[0].formations[0].players;
+    let index = 3;
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    window.click_pitch(
+        marker_point(&nodes, &players, index),
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert_eq!(
+        view.popover.map(|open| open.slot),
+        Some(index),
+        "premise: his popover is open"
+    );
+
+    for portraits in [true, false] {
+        view.portraits = portraits;
+        let (nodes, shapes) =
+            window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+        let canvas = canvas_rect(&nodes);
+        let badge = egui::Rect::from_center_size(
+            centres_of(canvas, &players)[index],
+            egui::vec2(BADGE_W, BADGE_H),
+        );
+        let frame = if portraits {
+            portrait_rect(badge)
+        } else {
+            badge
+        };
+        let box_corners = [
+            frame.left_top(),
+            frame.right_top(),
+            frame.left_bottom(),
+            frame.right_bottom(),
+        ];
+        let arms = selected_arms(&shapes);
+        assert_eq!(
+            arms.len(),
+            8,
+            "the four corner arms (portraits {portraits})"
+        );
+        for points in arms {
+            assert!(
+                box_corners.iter().any(|corner| points.contains(corner)),
+                "{points:?} ends on a frame corner (portraits {portraits})"
+            );
+            let upright = (points[0].x - points[1].x).abs() <= 0.01;
+            let arm = if portraits || !upright { 9.0 } else { 5.0 };
+            assert!(
+                (points[0].distance(points[1]) - arm).abs() <= 0.01,
+                "a {arm} px arm: {points:?} (portraits {portraits})"
+            );
+        }
+    }
+}
+
 // With three players joining the attack, a click on a fourth writes
 // nothing, so under the armed join mode only the three members, whom a
 // click removes, get the candidates' corners.
@@ -1106,7 +1175,7 @@ fn the_lower_marker_paints_last_and_takes_the_press() {
     );
     // A point inside both boxes: A's badge centre, 20 px above B's.
     assert!(
-        marker_rect(centres[b], canvas).contains(centres[a]),
+        marker_rect(centres[b], canvas, true).contains(centres[a]),
         "premise: the press is inside both boxes"
     );
     window.click_pitch(
@@ -1311,7 +1380,7 @@ fn a_pressed_keeper_paints_at_his_spot() {
         centres
             .iter()
             .enumerate()
-            .all(|(i, _)| i == keeper || !marker_rect(centres[i], canvas).contains(point)),
+            .all(|(i, _)| i == keeper || !marker_rect(centres[i], canvas, true).contains(point)),
         "premise: no other marker covers the press"
     );
     // A grass point off every marker, whose clamped centre is off every
@@ -1322,7 +1391,7 @@ fn a_pressed_keeper_paints_at_his_spot() {
         .find(|point| {
             centres
                 .iter()
-                .all(|centre| !marker_rect(*centre, canvas).contains(*point))
+                .all(|centre| !marker_rect(*centre, canvas, true).contains(*point))
                 && centres
                     .iter()
                     .all(|centre| off(*centre, clamp_centre(*point, canvas)))
@@ -1978,7 +2047,7 @@ fn the_rows_and_the_popover_header_draw_the_names_colours() {
         .map(centre)
         .collect();
     assert_eq!(labeled.len(), 1, "one marker is labeled with the name");
-    let marker3 = marker_rect(centre3, canvas).center();
+    let marker3 = marker_rect(centre3, canvas, true).center();
     assert!(
         labeled[0].distance(marker3) <= 0.5,
         "the label is marker 3's ({:?}, marker 3 at {marker3:?})",
@@ -2271,11 +2340,11 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     // rects cannot be told apart.
     let over = marker_point(&nodes, &players, target) + egui::vec2(2.0 * SPOT_XS, 0.0);
     assert!(
-        !marker_rect(centres[dragged], canvas).contains(over),
+        !marker_rect(centres[dragged], canvas, true).contains(over),
         "premise: the hold is off the dragged marker's own spot"
     );
     assert_eq!(
-        swap_target(&players, &centres, canvas, over, dragged),
+        swap_target(&players, &centres, canvas, over, dragged, true),
         Some(target),
         "premise: the hold is on the target's marker, under no later one"
     );
@@ -2429,7 +2498,7 @@ fn under_illegal_formations_a_drag_over_another_marker_marks_no_swap() {
     // holds it, so the two badges' rects differ.
     let over = marker_point(&nodes, &players, target) + egui::vec2(2.0 * SPOT_XS, 0.0);
     assert_eq!(
-        swap_target(&players, &centres, canvas, over, dragged),
+        swap_target(&players, &centres, canvas, over, dragged, true),
         Some(target),
         "premise: with the flag off the hold would mark the target"
     );
@@ -2572,8 +2641,8 @@ fn over_two_overlapping_markers_a_bench_row_marks_and_swaps_out_the_top_one() {
     // A point inside both boxes: A's badge centre, 20 px above B's.
     let over = centres[a];
     assert!(
-        marker_rect(centres[a], canvas).contains(over)
-            && marker_rect(centres[b], canvas).contains(over),
+        marker_rect(centres[a], canvas, true).contains(over)
+            && marker_rect(centres[b], canvas, true).contains(over),
         "premise: the hold is inside both boxes"
     );
 
@@ -3621,7 +3690,7 @@ fn the_formation_selector_is_locked_on_kick_off_while_fluid_formation_is_off() {
     let boxes = button_boxes(&nodes);
     let shown = |formation: usize| {
         let slot = tactics.presets[0].formations[formation].players[5];
-        let marker = marker_rect(badge_centre(canvas.min, slot), canvas);
+        let marker = marker_rect(badge_centre(canvas.min, slot), canvas, true);
         boxes.iter().any(|b| (b.min - marker.min).length() <= 0.5)
     };
     assert!(shown(0), "Kick-off's slot 5 is on the pitch");

@@ -157,6 +157,7 @@ fn a_reopened_multi_team_aatf_keeps_its_range() {
 /// to clipboard says how many teams it copied.
 // SE-GUI-41
 // SE-GUI-51
+// SE-GUI-79
 #[test]
 fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
     let (mut view, mut window) = open_legal_714("multi_aatf_clean", Headless::new());
@@ -181,8 +182,10 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
 
     let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some("Results of 5 teams copied.")
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some(("Results of 5 teams copied.", NoticeKind::Success))
     );
     let copied_lines: Vec<&str> = text.lines().collect();
     assert_eq!(

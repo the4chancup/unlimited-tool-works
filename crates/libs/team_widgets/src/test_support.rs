@@ -198,7 +198,12 @@ pub(crate) fn fixture_tactics(version: PesVersion) -> TeamTactics {
 /// empty slot, as the hosts build it.
 pub(crate) fn fixture_rows(version: PesVersion) -> Vec<(String, String, Option<u8>)> {
     let file = EditFile::from_bytes(&pes_savefile::fixture_save(version)).expect("fixture save");
-    let team = file.team(701).expect("team 701 is in the fixture");
+    team_rows(&file, 701)
+}
+
+/// `fixture_rows` for `file`'s team `team_id`.
+pub(crate) fn team_rows(file: &EditFile, team_id: u32) -> Vec<(String, String, Option<u8>)> {
+    let team = file.team(team_id).expect("the team is in the save");
     team.roster
         .iter()
         .map(|slot| {

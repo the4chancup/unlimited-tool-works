@@ -74,5 +74,5 @@ written. When the run ends, **Open folder** opens their folder.
 It repairs the cup's teams and their players alone, and leaves the game's own
 teams as they are.
 
-It stays disabled while the aesthetics lock is on (see the Appearance section),
+It stays disabled while the aesthetics lock is on (see the Appearance screen),
 since it clears what the teams' exports own.

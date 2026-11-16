@@ -580,8 +580,9 @@ fn widgets_light() -> egui::style::Widgets {
 /// icon codepoints come from it, and is its own `icons` family too. The
 /// `label` family is `"Roboto Flex Semibold"`
 /// (`resources/fonts/RobotoFlex-Semibold.ttf`), then the proportional chain:
-/// the Tactics pitch's formation name, the one text the suite draws in a
-/// heavier weight, to match the game's stroke. Every build that has
+/// the Tactics pitch's formation name and the status bar's notices, the two
+/// texts the suite draws in a heavier weight (the name to match the game's
+/// stroke, a notice so it is easier to see). Every build that has
 /// `studio_core` has egui's default fonts, through its `eframe` dependency's
 /// `default_fonts`, and egui's two monochrome emoji fonts,
 /// `"NotoEmoji-Regular"` and `"emoji-icon-font"`, through the workspace's
