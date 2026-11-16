@@ -18,7 +18,11 @@ run (mutfast first). Most open steps below wait only for the maintainer's look
 1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
    title row's line in its rework.
 2. Code: 0.0.2-gaps' leftovers (the Ruleset editor's General checklists, the Tiers fields cut
-   at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild.
+   at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild;
+   Carbon's round-1 reworks never launched (`sk/cmprw`, `sk/selrw`, `sk/instrw`, `sk/ktorw`:
+   accepted concerns, fixed in 0.0.2 with no round 2); 0.0.2-nostretch's slices, one per tool
+   (in 0.0.2, the maintainer 2026-11-16).
+   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
