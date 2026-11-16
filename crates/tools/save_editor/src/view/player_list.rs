@@ -121,7 +121,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         && let TeamChoice::Team(id) = view.team
     {
         view.selected = Some(Selection::Team(id));
-        view.reveal_selected = Some(reveal_for(view.selected));
     }
     // A category pick: a team the new category leaves out gives way to
     // All teams, and a selection it leaves out moves to the list's first
@@ -147,8 +146,16 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                         ListRow::Team(_) => None,
                     })
                     .or(view.selected);
-            view.reveal_selected = Some(reveal_for(view.selected));
         }
+    }
+    // A pick that changed the listed teams scrolls to the row still
+    // selected: the rows over it change with the teams — a kept one
+    // stands under every team's rows again at All teams — so it would
+    // sit off screen.
+    if (view.team != team_before || view.team_category != category_before)
+        && view.selected.is_some()
+    {
+        view.reveal_selected = Some(reveal_for(view.selected));
     }
     ui.add(text_box(
         egui::TextEdit::singleline(&mut view.filter)

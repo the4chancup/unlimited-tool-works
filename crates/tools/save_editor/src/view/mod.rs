@@ -104,8 +104,10 @@ enum Reveal {
 }
 
 /// The `Reveal` a selection moved outside the list asks its row for: a
-/// team row rises to the list's top, so its players stand under it; any
-/// other row shows the least that shows it.
+/// jump to a team's row rises it to the list's top, so its players
+/// stand under it; a player row shows the least that shows it. A move
+/// stepped a row at a time — the arrow keys' walk — asks `Nearest`
+/// itself, so a team row stepped onto shows the least too.
 fn reveal_for(selected: Option<Selection>) -> Reveal {
     if matches!(selected, Some(Selection::Team(_))) {
         Reveal::Top
@@ -154,11 +156,8 @@ pub(crate) struct SaveView {
     /// longer the selected row at the frame's end, so the target lives
     /// only while its team's row stays selected.
     click_kind: Option<clipboard::ClickKind>,
-    /// A selection moved outside the list's own row clicks — a key's
-    /// step, a row's double click, the selector's or a category's pick,
-    /// a switch from a panel or the changes list, an undo's or a
-    /// put-back's follow: the list scrolls to the selected row on the
-    /// next draw, then clears this.
+    /// A selection moved outside the list's own row clicks: the list
+    /// scrolls to the selected row on the next draw, then clears this.
     reveal_selected: Option<Reveal>,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the

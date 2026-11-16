@@ -1,4 +1,80 @@
+use super::chrome::{pick_in_selector, radio};
 use super::*;
+
+// A pick of All teams keeps the selection, the list scrolled to the
+// kept row: team 820 picked, then All teams — every team's rows stand
+// before 820's again, and its row is inside the clip on the next frame.
+#[test]
+fn picking_all_teams_scrolls_the_list_to_the_kept_row() {
+    let path = fixture(PesVersion::Pes21, "all_teams_pick_reveal");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let name = display_name(&team_entry(&view, 820).name);
+    assert!(
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .teams()
+            .iter()
+            .filter(|team| display_name(&team.name) == name)
+            .count()
+            == 1,
+        "premise: 820's name {name:?} is the only one in the selector"
+    );
+    let mut window = Headless::new();
+
+    pick_in_selector(&mut window, &mut view, &name);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(820)),
+        "premise: 820's row selected"
+    );
+
+    pick_in_selector(&mut window, &mut view, "All teams");
+    assert_eq!(view.team, TeamChoice::All, "premise: All teams picked");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(820)),
+        "the pick keeps the selection"
+    );
+    assert_selected_row_in_clip(&mut window, &mut view);
+}
+
+// A category tick that keeps the selection scrolls the list to its row:
+// `VGL` ticked with 781's first player selected (the list's first row),
+// then `All` — the 4cc teams' rows stand before his again, and his row
+// is inside the clip on the next frame.
+// SE-GUI-83
+#[test]
+fn a_category_tick_scrolls_the_list_to_the_kept_selection() {
+    let path = fixture(PesVersion::Pes21, "category_kept_reveal");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+
+    // `VGL` ticked: the selection moves to the list's first player.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(781, 0)),
+        "premise: the selection moved to the first VGL player"
+    );
+
+    // `All` ticked: the selection stays on him, and every team's rows
+    // stand before his again.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, radio(&nodes, "All"), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(781, 0)),
+        "the tick keeps the selection"
+    );
+    assert_selected_row_in_clip(&mut window, &mut view);
+}
 
 // An undo or a redo of a roster move puts the moved player back on the
 // slot the step gives him, the selection on him and the list scrolled to
