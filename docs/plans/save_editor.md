@@ -737,6 +737,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
      The letters not chosen are drawn in the normal text colour, darker than a button's, so
      the chosen one stands out; lighter than a disabled letter's, so they do not read as off.
+     That is the dark preset's contrast: in the light one the normal text is lighter than a
+     button's, as with the unheld segments of the foot and hand toggles.
 
      A click on a position's label makes it the registered position, the same undoable edit
      as General info's combo, where the eye already is when choosing among the ratings.
