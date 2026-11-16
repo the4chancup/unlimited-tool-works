@@ -1365,7 +1365,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] 2026-11-13 (`7baef557` on the branch) the Export upgrader's help page on what each `unmigrated_content` cause means, and
       the stale `upgrade-models` sentence about `u0731p2.dds` beside `u0XXXp2.dds`
       (`brief_eu_reasons.md`, SWE-2, running on the branch since 2026-11-13)
-    - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
+    - [x] labels that grew, looked at in the built window 2026-11-16 at `1df4a139` (each read
+      whole, none cut; `.tmp/lead/looks0002/`) (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
     - [x] 2026-11-15 (SWE-2, merged `63bb0696`) the member texts left spell "color" (violations, the
@@ -1435,8 +1436,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     history, the built window's sidebar and title
     Code half merged 2026-11-14 (`31f44cda`, SWE-2, one comment fixed by the lead; workspace
     gates green but for the two overlap tests below, green alone). Docs half 2026-11-14 (SWE-2,
-    84 files; the lead rejoined five links the swap had split). Open: the sidebar and title in
-    the built window, on the looks pass's next release build
+    84 files; the lead rejoined five links the swap had split). The sidebar and title in
+    the built window checked 2026-11-16 at `1df4a139`: "The Compiler" grayed on the sidebar
+    and as the help's chapter, as the draft names it
   - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
@@ -1558,8 +1560,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       of "Pending looks" as cards; every pointer moved, the two files removed
     - [ ] the lead checks each look of `tasks.html`'s "Coming once the lead has checked them"
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
-    - [ ] a Linux bundle built from main for the Reset window card (`just remote just
-      release`, once the VPS's mutation run is done), named on the card
+    - [ ] a Linux bundle built from main for the Reset window card: 0.0.2's own Linux bundle,
+      built at the cut on the VPS, named on the card
   - [x] 0.0.2-tplclean 2026-11-15 (merge `c20e6b29`): a template or Blank opens in the Ruleset
     editor with no unsaved changes (RE-GUI-02, 15)
   - [x] 0.0.2-teamscroll 2026-11-15 (merge `c20e6b29`): every dropdown's list 300 points tall
@@ -1579,7 +1581,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
     - [x] built (2026-11-15, SWE-2 and the lead; merge `ced67b83`): ST-REP-01 to 04 pass, a
       help chapter of its own ("Reporting a problem") and the changelog line
-    - [ ] the whole chain once, as a member runs it: the tests cover it in pieces (the
+    - [ ] (after 0.0.2: no headless shell other crates can drive exists yet; for 0.0.2 the
+      chain is run by hand in the built window below) the whole chain once, as a member runs
+      it: the tests cover it in pieces (the
       dialog writing a stub tool's bundle, ST-REP-02; the Save editor's state, ST-REP-04; a
       recorded `Session`'s bundle replaying to a matching write, `replay.rs`), never through
       the shell with the real Save editor -> verify: a test with the Save editor registered in
