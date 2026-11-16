@@ -261,9 +261,15 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     let out_nodes = frame(&egui_ctx, &mut app, Vec::new(), true);
 
     // The dialog says where and offers only Close.
-    assert!(
-        has_text(&out_nodes.nodes, "Saved to ~"),
-        "the saved line writes the home as ~"
+    let expected = format!(
+        "Saved to ~{}{}",
+        std::path::MAIN_SEPARATOR,
+        out.file_name().unwrap().to_string_lossy()
+    );
+    assert_eq!(
+        text_line(&out_nodes.nodes, "Saved to"),
+        expected,
+        "the saved line writes the home as ~ and names the file"
     );
     assert!(
         has_label(&out_nodes.nodes, "Close"),
@@ -313,6 +319,41 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     assert_eq!(words_box(&nodes).value(), Some(words.as_str()));
+}
+
+// A run with no log installed (a first run has no data location, so none
+// was chosen): the zip holds no `utw.log` then, and the journal's
+// `missing` names it — the dialog lists `utw.log` among the contents.
+#[test]
+fn a_bundle_without_a_log_names_utw_log_under_missing() {
+    let dir = TestDir::new("studio_core_report_no_log");
+    let out = dir.path().join("utw-report.zip");
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let out_path = out.clone();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+
+    let journal =
+        crate::repro::tests::journal_doc(&crate::repro::tests::zip_text(&out, "journal.toml"));
+    let missing = journal
+        .get("missing")
+        .and_then(toml::Value::as_array)
+        .map(|list| {
+            list.iter()
+                .map(|name| name.as_str().unwrap())
+                .collect::<Vec<_>>()
+        });
+    assert_eq!(
+        missing.as_deref(),
+        Some(&["utw.log"][..]),
+        "the log the dialog lists is named under `missing`: {journal}"
+    );
 }
 
 // ST-REP-03

@@ -118,7 +118,7 @@ fn reveal_for(selected: Option<Selection>) -> Reveal {
 /// The window's state: the open save and what the master-detail shows of it.
 pub(crate) struct SaveView {
     /// The open save, if one was opened.
-    session: Option<Session>,
+    pub(crate) session: Option<Session>,
     /// The repro journal `Session::open` and the session's changes record
     /// into: `Tool::view` refreshes it from `ctx.recorder()` each frame, a
     /// default one in the tests' view-only frames.

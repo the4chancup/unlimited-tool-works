@@ -1051,12 +1051,17 @@ fn a_batch_edit_is_one_sealed_entry_of_the_changed_players() {
 // ST-REP-04
 #[test]
 fn the_repro_state_is_the_open_save_as_it_would_be_written_now() {
-    let mut session = open(PesVersion::Pes21, "repro_state");
+    let dir = crate::test_support::scratch("repro_state");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+    let mut tool = crate::Tool::new();
+    tool.view.open(&path);
+    let session = tool.view.session.as_mut().expect("the save opened");
     let mut player = session.file().player(70101).unwrap().clone();
     player.stats.speed = 77;
     session.edit_player(0, player);
 
-    let files = session.repro_state();
+    let files = studio_core::StudioTool::repro_state(&tool);
     let [(name, bytes)] = files.as_slice() else {
         panic!("one state file, named as the save's file: {files:?}")
     };

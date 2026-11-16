@@ -194,17 +194,16 @@ impl Report {
         let Some(out) = (self.save_dialog)(&bundle_name(&jiff::Zoned::now().datetime())) else {
             return;
         };
-        let mut files: Vec<(&str, &Path)> = Vec::new();
-        if let Some(path) = log_file {
-            files.push(("utw.log", path));
-        }
+        // `utw.log` is named even when the run has no log, so the
+        // journal's `missing` says why the bundle lacks it.
+        let mut files: Vec<(&str, Option<&Path>)> = vec![("utw.log", log_file)];
         let settings = ctx
             .paths()
             .data_dir
             .as_ref()
             .map(|dir| dir.join(SETTINGS_FILE_NAME));
         if let Some(path) = &settings {
-            files.push(("settings.toml", path));
+            files.push(("settings.toml", Some(path)));
         }
         let mut state: Vec<(String, Vec<u8>)> = Vec::new();
         for tool in tools {
