@@ -374,6 +374,8 @@ mod tests {
             // Capitals: the upgrader leaves it as it is.
             "U0714P1",
             "u0714P1",
+            "U0714p1",
+            "u0714G1",
             // A `g` with no digit.
             "u0XXXg_back",
             // Two characters, not three.

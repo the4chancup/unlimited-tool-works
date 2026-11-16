@@ -54,7 +54,7 @@ pub struct ContentFinding {
 pub enum IssueScope {
     /// The export itself.
     Export,
-    /// One folder (player, shared or kit).
+    /// One folder (player, shared or kit) or one below `Common/`.
     Folder(ScopePath),
     /// One file.
     File(ScopePath),

@@ -114,13 +114,14 @@ pub(super) struct ModelRead {
     /// pre-Fox model or a material set.
     pub(super) old_kit_names: Vec<String>,
     /// The texture paths an FMDL's table names into a folder of the export
-    /// (`names_export_directory`) holding a legacy kit token, which `kit_token_old` refuses
-    /// (`aesthetics_export::legacy_kit_tokens`): directory and file name as written, one per
-    /// distinct texture (folded) in table order. Every such entry is checked, a mesh-unused
-    /// one's included, but one naming a texture the game supplies (`paths::game_supplied`),
-    /// whose path the Export upgrader keeps as written. Always empty for a pre-Fox model or a
-    /// material set.
-    pub(super) legacy_kit_paths: Vec<String>,
+    /// (`names_export_directory`, under either of its two folder rules) holding a legacy
+    /// kit token, which `kit_token_old` refuses (`aesthetics_export::legacy_kit_tokens`):
+    /// each as written with whether the `Common/` rule admits it too (`LegacyKitPath`),
+    /// one per distinct texture (folded) in table order. Every such entry is checked, a
+    /// mesh-unused one's included, but one naming a texture the game supplies
+    /// (`paths::game_supplied`), whose path the Export upgrader keeps as written. Always
+    /// empty for a pre-Fox model or a material set.
+    pub(super) legacy_kit_paths: Vec<LegacyKitPath>,
 }
 
 /// One texture directory a parsed FMDL names that `fmdl_common_path_invalid` refuses.
@@ -226,9 +227,11 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
 /// it, and the texture paths naming the kit stand-in's old spelling, which
 /// `dummy_kit_name_old` refuses (`paths::is_old_kit_stand_in`), one per distinct
 /// texture (folded) in table order, the path as written, and the texture paths holding a
-/// legacy kit token in a folder of the export (`names_export_directory`), which
-/// `kit_token_old` refuses, the same way, but for a texture the game supplies
-/// (`paths::game_supplied`), whose path the Export upgrader keeps as written. Every entry
+/// legacy kit token in a folder of the export under either folder rule
+/// (`names_export_directory`; which rule applies is the caller's, by the folder the FMDL
+/// sits in), which `kit_token_old` refuses, the same way, but for a texture the game
+/// supplies (`paths::game_supplied`), whose path the Export upgrader keeps as written.
+/// Every entry
 /// of the texture table is checked by the other two rules, a `dummy_` stem's and a
 /// mesh-unused one's included, and by this one but for those textures: the spelling is the
 /// export's, so the rules cover them all. The `.mtl`'s two short
@@ -261,19 +264,25 @@ fn texture_table(file: &FmdlFile) -> Result<TextureTable, String> {
             }
         };
         let texture = format!("{}{}", path.directory, path.file_name);
-        let in_export = names_export_directory(&path.directory);
+        // Which of the two folder rules counts the directory the export's: the caller
+        // picks by the folder the FMDL sits in.
+        let in_common = names_export_directory(&path.directory, TokenFolder::Common);
+        let in_player = names_export_directory(&path.directory, TokenFolder::Player);
         if invalid && seen_directories.insert(vtree::fold_name(&path.directory)) {
             table.common_directories.push(CommonDirectory {
                 texture: texture.clone(),
                 directory: path.directory,
             });
         }
-        if in_export
+        if (in_common || in_player)
             && !crate::paths::game_supplied(&path.file_name)
             && !legacy_kit_tokens(&texture).is_empty()
             && seen_legacy.insert(vtree::fold_name(&texture))
         {
-            table.legacy_kit_paths.push(texture.clone());
+            table.legacy_kit_paths.push(LegacyKitPath {
+                texture: texture.clone(),
+                in_common,
+            });
         }
         if crate::paths::is_old_kit_stand_in(&path.file_name)
             && seen_textures.insert(vtree::fold_name(&texture))
@@ -290,26 +299,76 @@ fn texture_table(file: &FmdlFile) -> Result<TextureTable, String> {
 struct TextureTable {
     common_directories: Vec<CommonDirectory>,
     old_kit_names: Vec<String>,
-    legacy_kit_paths: Vec<String>,
+    legacy_kit_paths: Vec<LegacyKitPath>,
+}
+
+/// One texture path an FMDL's table names holding a legacy kit token, its directory
+/// counted the export's by at least one of `names_export_directory`'s rules
+/// (`ModelRead::legacy_kit_paths`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct LegacyKitPath {
+    /// The texture path as written, directory and file name.
+    pub(super) texture: String,
+    /// Whether `names_export_directory`'s `Common/` rule counts the path's directory the
+    /// export's too: `false` marks a game directory only a player, Boots or Gloves
+    /// folder's rule calls the export's, which a `Common/` model's rule keeps.
+    pub(super) in_common: bool,
+}
+
+/// The model folders `kit_token_old` reads an FMDL's texture paths in
+/// (`kit_token_checked`): `Common/`'s and a player, Boots or Gloves folder's, whose kept
+/// game directories differ (`names_export_directory`).
+#[derive(Debug, Clone, Copy)]
+enum TokenFolder {
+    /// `Common/`'s: every game directory kept.
+    Common,
+    /// A player, Boots or Gloves folder's: the game's kit texture folder and the Fox
+    /// common directory's other folders kept.
+    Player,
 }
 
 /// Whether `directory`, an FMDL texture path's directory as written, names a folder of the
-/// export: a relative one (the model's own folder) or, read as its long form
-/// (`paths::export_fmdl_directory`), the team's Common (`team_folder` below the game's Fox
-/// common directory, compared ASCII case-insensitively). Any other directory (the game's kit
-/// texture folder, `common_folder/`'s `sourceimages/`, any other `/Assets/` one) is the
-/// game's, which names its kit textures `u0???pN`, so `kit_token_old` checks only these.
-fn names_export_directory(directory: &str) -> bool {
+/// export under `folder`'s rule: a relative one (the model's own folder) or, read as its
+/// long form (`paths::export_fmdl_directory`), the team's Common (`team_folder` below the
+/// game's Fox common directory, compared ASCII case-insensitively) under both. A
+/// `Common/` model keeps every other directory as the game's. A player, Boots or Gloves
+/// model keeps the two the Export upgrader keeps as written, the game's kit texture
+/// folder (`paths::KIT_TEXTURE_DIRECTORY` or below it, folded) and the Fox common
+/// directory's (`paths::FOX_COMMON_DIRECTORY`, prefix compared ASCII case-insensitively)
+/// folders other than `team_folder`; every other directory there is respelled `./`, so a
+/// token in it is the export's too, while one in a kept directory is the game's own
+/// spelling (`u0???pN`), which `kit_token_old` leaves alone.
+fn names_export_directory(directory: &str, folder: TokenFolder) -> bool {
     let long = crate::paths::export_fmdl_directory(directory);
     let team_common = format!(
         "{}{}/",
         crate::paths::FOX_COMMON_DIRECTORY,
         crate::user_face_xml::TEAM_FOLDER
     );
-    !long.starts_with('/')
+    if !long.starts_with('/')
         || long
             .get(..team_common.len())
             .is_some_and(|head| head.eq_ignore_ascii_case(&team_common))
+    {
+        return true;
+    }
+    match folder {
+        TokenFolder::Common => false,
+        TokenFolder::Player => !kept_game_directory(&long),
+    }
+}
+
+/// Whether `long`, an FMDL texture path's directory with the short forms already read as
+/// their long forms, is one the Export upgrader keeps as written for a model outside
+/// `Common/`: the game's kit texture folder (`paths::KIT_TEXTURE_DIRECTORY`) or below
+/// it, folded as texture directories compare, or one below the game's Fox common
+/// directory (`paths::FOX_COMMON_DIRECTORY`, the prefix compared ASCII
+/// case-insensitively), whose `team_folder` the caller reads first.
+fn kept_game_directory(long: &str) -> bool {
+    vtree::fold_name(long).starts_with(&vtree::fold_name(crate::paths::KIT_TEXTURE_DIRECTORY))
+        || long
+            .get(..crate::paths::FOX_COMMON_DIRECTORY.len())
+            .is_some_and(|head| head.eq_ignore_ascii_case(crate::paths::FOX_COMMON_DIRECTORY))
 }
 
 /// Whether `directory`, an FMDL texture path's directory with the short forms already

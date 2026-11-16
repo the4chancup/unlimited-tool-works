@@ -97,8 +97,8 @@ fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
     let sandbox = Sandbox::new("str_kit_token_old");
     let export = "exports/co Midcup Tokens";
     // Slot 05 holds a texture named with a legacy token; `Common/` a folder so named with
-    // two textures in it; slot 06 two names that are no token: capitals, and a `g` with no
-    // digit after it.
+    // two textures and a model that does not parse in it; slot 06 two names that are no
+    // token: capitals, and a `g` with no digit after it.
     let files = [
         "Players/05 - A/kit1_u0714p1.dds",
         "Common/u0XXXp0/a.dds",
@@ -109,6 +109,10 @@ fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
     for file in files {
         sandbox.write(&format!("{export}/{file}"), &small_dds());
     }
+    sandbox.write(
+        &format!("{export}/Common/u0XXXp0/broken.model"),
+        b"not a model",
+    );
     for slot in ["05 - A", "06 - B"] {
         sandbox.write(
             &format!("{export}/Players/{slot}/face_high.fmdl"),
@@ -129,6 +133,21 @@ fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
             "Error kit_token_old [DropFolder] at Common/u0XXXp0 (path=Common/u0XXXp0)",
             "Info export_identified [Keep] (team=/co/, id=714)",
         ],
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+
+    // On PES 17 every `Common/` file is read, the folder's broken `.model` too: its own
+    // finding is suppressed with the folder's drop, the only one at or below its path.
+    let run = sandbox.run(&pes_settings(&sandbox, 17), &["check"]);
+    let lines = run.messages();
+    let below: Vec<&str> = findings_of(&lines, "co Midcup Tokens")
+        .into_iter()
+        .filter(|line| line.contains("Common/u0XXXp0"))
+        .collect();
+    assert_eq!(
+        below,
+        ["Error kit_token_old [DropFolder] at Common/u0XXXp0 (path=Common/u0XXXp0)"],
         "{lines:#?}"
     );
     assert_eq!(run.exit_code(), 1, "{lines:#?}");
