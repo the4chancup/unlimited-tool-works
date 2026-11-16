@@ -575,14 +575,15 @@ mod tests {
         );
     }
 
-    // An open writes `recent_files` into the settings with the save's path
-    // and version, and the editor started again from the same settings lists
-    // it in the File menu's recents.
+    // Opens write `recent_files` into the settings with each save's path
+    // and version, the last opened first, and the editor started again from
+    // the same settings lists them in the File menu's recents in that order.
     // SE-GUI-90
     #[test]
     fn the_recent_saves_survive_a_restart_through_the_settings() {
         let OneSave {
             path,
+            backups,
             mut tool,
             ctx,
             egui_ctx,
@@ -592,19 +593,35 @@ mod tests {
             ctx.tool_settings(TOOL_ID).get("recent_files").is_none(),
             "premise: the setting holds no recents yet"
         );
-        view_frame(&mut tool, &egui_ctx, &ctx);
-        tool.view.open(&path);
-        view_frame(&mut tool, &egui_ctx, &ctx);
-        assert_eq!(
-            ctx.tool_settings(TOOL_ID)["recent_files"],
-            toml::Value::Array(vec![toml::Value::Table(toml::Table::from_iter([
+        // A PES 2017 save in a folder of its own beside `backups`.
+        let other_dir = backups
+            .parent()
+            .expect("backups sits under the scratch folder")
+            .join("other");
+        std::fs::create_dir_all(&other_dir).unwrap();
+        let other = other_dir.join("EDIT00000000");
+        std::fs::write(
+            &other,
+            pes_savefile::fixture_save(pes_version::PesVersion::Pes17),
+        )
+        .unwrap();
+        let entry = |path: &std::path::Path, version: i64| {
+            toml::Value::Table(toml::Table::from_iter([
                 (
                     "path".to_owned(),
                     toml::Value::String(path.display().to_string()),
                 ),
-                ("version".to_owned(), toml::Value::Integer(21)),
-            ]))]),
-            "the open wrote the save's path and version"
+                ("version".to_owned(), toml::Value::Integer(version)),
+            ]))
+        };
+        view_frame(&mut tool, &egui_ctx, &ctx);
+        tool.view.open(&path);
+        tool.view.open(&other);
+        view_frame(&mut tool, &egui_ctx, &ctx);
+        assert_eq!(
+            ctx.tool_settings(TOOL_ID)["recent_files"],
+            toml::Value::Array(vec![entry(&other, 17), entry(&path, 21)]),
+            "the opens wrote both saves with their versions, the last opened first"
         );
 
         let mut restarted = Tool::new();
@@ -612,11 +629,17 @@ mod tests {
         view_frame(&mut restarted, &egui_ctx, &ctx);
         assert_eq!(
             restarted.view.recents,
-            [crate::settings::RecentSave {
-                path,
-                version: pes_version::PesVersion::Pes21,
-            }],
-            "read back at the restart"
+            [
+                crate::settings::RecentSave {
+                    path: other,
+                    version: pes_version::PesVersion::Pes17,
+                },
+                crate::settings::RecentSave {
+                    path,
+                    version: pes_version::PesVersion::Pes21,
+                },
+            ],
+            "read back at the restart in the same order"
         );
     }
 

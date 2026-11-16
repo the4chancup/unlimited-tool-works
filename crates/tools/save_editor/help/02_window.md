@@ -11,12 +11,12 @@ The **File** menu lists, from the top:
 - under **Open from Documents**, the saves found in your Documents folder for every PES version,
   each named by its version, so your game's save opens in one click (hover an entry to see
   its full path);
-- under **Recent files**, the last 10 saves you opened or saved, the most recent first, kept
-  for the next time the program opens; each is named by its version, folder and file name,
-  so two saves of the same name stand apart;
+- under **Recent files**, the last 10 saves you opened or saved, the most recent first,
+  remembered for the next time the program opens; each is named by its version, folder and
+  file name, so two saves of the same name stand apart;
 - **Close save** (Ctrl+W), which closes the save and brings back the list of saves in the
-  middle of the window, and
-  **Exit** (Ctrl+Q), which closes the window as its close button does.
+  middle of the window;
+- **Exit** (Ctrl+Q), which closes the window as its close button does.
 
 With no save open, the middle of the window offers the same saves, the recent saves and
 **Open…**.

@@ -145,13 +145,18 @@ pub(super) struct Found {
     /// `view`'s recent saves still on disk; one that is gone is skipped but
     /// stays in the setting.
     recents: Vec<RecentSave>,
+    /// `Open…`'s start folder, `picker_folder`'s rule resolved once with
+    /// the look.
+    picker_start: Option<PathBuf>,
 }
 
-/// The look `Found` keeps: discovery under Documents, and which recent
-/// saves are still on disk.
+/// The look `Found` keeps: discovery under Documents, which recent
+/// saves are still on disk, and `Open…`'s start folder.
 fn look(view: &SaveView) -> Found {
+    let saves = discover_all(view);
     Found {
-        saves: discover_all(view),
+        picker_start: picker_folder(view.last_folder.as_deref(), &saves),
+        saves,
         recents: view
             .recents
             .iter()
@@ -163,7 +168,7 @@ fn look(view: &SaveView) -> Found {
 
 /// The opens `found` makes. Discovery lists a version's saves newest
 /// first, and the newest is the one its shortcut opens.
-fn opens(view: &SaveView, found: &Found) -> Opens {
+fn opens(found: &Found) -> Opens {
     let mut saves = Vec::new();
     let mut previous = None;
     for (version, candidate) in &found.saves {
@@ -194,7 +199,7 @@ fn opens(view: &SaveView, found: &Found) -> Opens {
         label: "Open\u{2026}".to_owned(),
         shortcut: "Ctrl+O".to_owned(),
         tip: OPEN_TIP.to_owned(),
-        pending: picker_request(view.last_folder.as_deref(), &found.saves),
+        pending: Pending::OpenPicker(found.picker_start.clone()),
     };
     Opens {
         picker,
@@ -230,7 +235,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
                 view.welcome_discovered = view.discovered.clone();
             }
         }
-        let opens = opens(view, view.discovered.as_ref().expect("filled above"));
+        let opens = opens(view.discovered.as_ref().expect("filled above"));
         let mut chosen = None;
         let mut write = None;
         let mut entry = |ui: &mut egui::Ui, open: &Open| {
@@ -313,10 +318,7 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.welcome_discovered.is_none() {
         view.welcome_discovered = Some(look(view));
     }
-    let opens = opens(
-        view,
-        view.welcome_discovered.as_ref().expect("filled above"),
-    );
+    let opens = opens(view.welcome_discovered.as_ref().expect("filled above"));
     let chosen = studio_core::widgets::dialog_page(
         ui,
         egui::Id::unique("save_editor_welcome"),
@@ -443,24 +445,32 @@ fn discover_all(view: &SaveView) -> Vec<(PesVersion, SavefileCandidate)> {
         .collect()
 }
 
+/// `Open…`'s start folder: `last_folder`, the folder the last save was
+/// opened from, while it is a folder, else `discovered`'s newest save's
+/// folder, else none. `look` resolves it once for its `Found`; the Open
+/// shortcuts' fallback applies it per press.
+fn picker_folder(
+    last_folder: Option<&Path>,
+    discovered: &[(PesVersion, SavefileCandidate)],
+) -> Option<PathBuf> {
+    last_folder
+        .filter(|folder| folder.is_dir())
+        .or_else(|| {
+            discovered
+                .iter()
+                .max_by_key(|(_, candidate)| candidate.modified)
+                .and_then(|(_, candidate)| candidate.path.parent())
+        })
+        .map(Path::to_path_buf)
+}
+
 /// `Open…`'s request, the picker the Open shortcuts fall back to too:
-/// starting in `last_folder`, the folder the last save was opened from, while
-/// it exists, else in `discovered`'s newest save's folder, else in no folder.
+/// `picker_folder`'s rule.
 fn picker_request(
     last_folder: Option<&Path>,
     discovered: &[(PesVersion, SavefileCandidate)],
 ) -> Pending {
-    Pending::OpenPicker(
-        last_folder
-            .filter(|folder| folder.is_dir())
-            .or_else(|| {
-                discovered
-                    .iter()
-                    .max_by_key(|(_, candidate)| candidate.modified)
-                    .and_then(|(_, candidate)| candidate.path.parent())
-            })
-            .map(Path::to_path_buf),
-    )
+    Pending::OpenPicker(picker_folder(last_folder, discovered))
 }
 
 /// Goes on with `pending`, the unsaved-changes prompt first when there
