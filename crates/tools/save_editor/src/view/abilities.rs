@@ -117,11 +117,19 @@ const TIER_CHECK_FAILED_LINE: &str = "Tier check failed: click to see why.";
 /// The gap between the panels of one column (the draft's `.pcol` `gap`),
 /// and between Skills' two card columns (`cards` keeps the same 14).
 const PANEL_GAP: f32 = 14.0;
+/// The margin over each column's panels (the draft's `.pcols > *`
+/// `margin-top`), the columns' tops 3 under the title row's separator.
+const COLUMN_TOP_MARGIN: f32 = 3.0;
 /// The gap a panel's title stands above the first thing drawn under it —
 /// a field's frame, a checkbox's painted square or a label row's text:
 /// the team view's titles' spacing, so the two views read alike. The
 /// Appearance screen's groups leave the same under their titles.
 pub(super) const TITLE_GAP: f32 = 6.0;
+/// The card columns' own margin under a card panel's title (the draft's
+/// `.skcols` `margin-top` is 1.5, a plain content block's ~1): a card
+/// panel's first checkbox stands half a point lower than the same
+/// `TITLE_GAP` puts a field panel's first row.
+const CARD_COLS_MARGIN: f32 = 0.5;
 /// The padding of the ability stats' cells, either side of a label and
 /// of a box (the draft's `stats-grid` `td`), and how far every panel's and
 /// group's content stands in from its title (`inset`), so a title heads
@@ -237,6 +245,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                         // moving the positions grid off the column's centre.
                         ui.set_min_width(first_column_width());
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
+                        ui.add_space(COLUMN_TOP_MARGIN);
                         panel(ui, spacing, "General info", None, 0.0, |ui| {
                             ui.spacing_mut().item_spacing.y = FIELD_SPACING;
                             info_strip::general(ui, session, team_id, slot, player_id, marks);
@@ -276,6 +285,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                             .as_ref()
                             .and_then(|active| aside_cards(active.rules.ruleset()));
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
+                        ui.add_space(COLUMN_TOP_MARGIN);
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing = spacing;
                             skills_changed |= skills_panel(
@@ -297,7 +307,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                                 spacing,
                                 title,
                                 marks.map(|marks| (marks, live_marks::MarkedField::AsideCards)),
-                                card_box_inset(ui),
+                                card_box_inset(ui) - CARD_COLS_MARGIN,
                                 |ui| {
                                     skills_changed |= cards::card_columns(
                                         ui,
@@ -315,7 +325,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                             spacing,
                             "COM playing styles",
                             marks.map(|marks| (marks, live_marks::MarkedField::ComStyles)),
-                            card_box_inset(ui),
+                            card_box_inset(ui) - CARD_COLS_MARGIN,
                             |ui| {
                                 skills_changed |= cards::card_columns(
                                     ui,
@@ -335,6 +345,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
                         ui.spacing_mut().item_spacing = egui::vec2(spacing.x, PANEL_GAP);
+                        ui.add_space(COLUMN_TOP_MARGIN);
                         panel(ui, spacing, "Ability stats", None, 0.0, |ui| {
                             // The cells' padding after each box (the
                             // panel's inset is the one before each label),
@@ -436,7 +447,8 @@ pub(super) fn inset<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) 
 /// How deep into a `cards::card_columns` row its painted square sits
 /// (egui centres the `icon_width` box in the control's `interact_size`
 /// height): a card panel's title leaves it that much less of `TITLE_GAP`
-/// than a first row painted from its top takes.
+/// than a first row painted from its top takes; the card columns' own
+/// `.skcols` `margin-top` comes off it too (`CARD_COLS_MARGIN`).
 fn card_box_inset(ui: &egui::Ui) -> f32 {
     (ui.spacing().interact_size.y - ui.spacing().icon_width) / 2.0
 }
@@ -571,14 +583,17 @@ const POS_LABEL_GAP: f32 = 2.0;
 /// The gap between the grid's rows: the draft's `.poscell` padding, 2
 /// above and 3 below, and the `#pos-grid` 4px gap between them.
 const POS_ROW_GAP: f32 = 9.0;
+/// The `#pos-layout`'s own `margin-top` over a first field row's (the
+/// draft's 4.5 against ~3): the positions' selector stands this much
+/// lower under the panel's title than a field's row.
+const POS_LAYOUT_MARGIN: f32 = 1.5;
 /// The gap between the layout toggle and the grid under it: the room
 /// that puts the first row's squares at the draft's offset under the
-/// title. The draft itself measures ~8 there (its `#pos-layout` margin,
-/// its block's line box and `#pos-grid`'s own margin); ours is wider,
-/// since the toggle stands ~1 higher under the title (the titles' own
-/// gap is 6 against the draft's ~7.4) and the cells pack the draft's
-/// `.poscell` top padding into `POS_ROW_GAP` rather than inside them.
-const TOGGLE_GRID_GAP: f32 = 10.5;
+/// title — the draft's own `#pos-layout` `margin-bottom` and `#pos-grid`
+/// `margin-top` measure ~8 there, with what its `.poscell` top padding
+/// adds inside the first cell, which the build packs into `POS_ROW_GAP`
+/// rather than inside them.
+const TOGGLE_GRID_GAP: f32 = 9.0;
 /// The gap between the List layout's rows: a cell's padding, 1 above and
 /// 1 below, and the `#pos-grid.list` 1px gap between them.
 const LIST_ROW_GAP: f32 = 3.0;
@@ -695,6 +710,7 @@ fn playable_positions(
     // the gap under the toggle stands before `layout_toggle`, the rows'
     // own pitch before theirs.
     ui.spacing_mut().item_spacing.y = TOGGLE_GRID_GAP;
+    ui.add_space(POS_LAYOUT_MARGIN);
     layout_toggle(ui, layout);
     let mut playable = positions.playable;
     // The rows centre in the column: the nominal 350, or the fields'
@@ -1108,8 +1124,8 @@ fn skills_panel(
     });
     ui.spacing_mut().interact_size.y = control_height;
     // The title stands `TITLE_GAP` above the first card row's painted
-    // square, as `panel`'s do.
-    ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y - card_box_inset(ui));
+    // square, as `panel`'s do, the card columns' own margin with it.
+    ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y - card_box_inset(ui) + CARD_COLS_MARGIN);
     let shown: Vec<u8> = all_indices(&labels::SKILLS)
         .into_iter()
         .filter(|index| !aside.is_some_and(|aside| aside.contains(index)))

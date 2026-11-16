@@ -163,7 +163,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             if *edit_aesthetics {
                 ui.weak("A later patch overwrites whatever is edited by hand.");
             }
-            ui.add_space(GROUP_GAP);
         }
         add_enabled_ui(ui, !locked, |ui| {
             groups(
@@ -198,6 +197,10 @@ fn groups(
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
+    // The draft's `.group` `margin-top` stands the first group off the
+    // title's line as the between-group gaps stand each group off the
+    // last.
+    ui.add_space(GROUP_GAP);
     fpc_colors_row(ui, session, player_id, version, player, hide_ids);
     ui.add_space(GROUP_GAP);
     group(ui, "Strip style", |ui| {

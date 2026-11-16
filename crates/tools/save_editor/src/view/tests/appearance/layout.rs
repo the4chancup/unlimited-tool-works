@@ -333,6 +333,25 @@ fn the_group_titles_leave_title_gap_under_them() {
     );
 }
 
+// The first group's heading text stands 20 under the title's line, as
+// the draft's does (its `.sep`, the `.group` `margin-top` and the
+// frame's padding): unlocked, no ownership rows over it.
+#[test]
+fn the_first_groups_heading_stands_twenty_under_the_titles_line() {
+    let path = fixture(PesVersion::Pes21, "first_group_under_line");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (line, _) = line_and_pane_top(&window, &nodes, &shapes);
+    assert!(
+        (label_bounds(&nodes, "Full Player Customization").y0 - line - 20.0).abs() <= 1.0,
+        "the heading stands {} under the title's line, the draft's 20",
+        label_bounds(&nodes, "Full Player Customization").y0 - line
+    );
+}
+
 // SE-GUI-84
 #[test]
 fn the_first_row_fills_the_pane_and_ends_at_one_bottom() {
