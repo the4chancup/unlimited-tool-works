@@ -111,13 +111,21 @@ impl Portraits {
         }
         self.folder = folder.map(Path::to_path_buf);
         self.version = Some(version);
+        self.restart(ctx);
+    }
+
+    /// The worker and its answers dropped, the source started again on the folder and
+    /// version `select` last gave: an id's answered `None` is stale once the folder may
+    /// hold what it lacked (a re-pick of it, or the exe check finding the game where it
+    /// found none).
+    pub(crate) fn restart(&mut self, ctx: &egui::Context) {
         // Dropping the request sender ends the worker; its textures go with it.
         self.worker = None;
         self.resolved.clear();
         self.pending.clear();
         #[cfg(test)]
         self.images.clear();
-        if let Some(folder) = &self.folder {
+        if let (Some(folder), Some(version)) = (&self.folder, self.version) {
             self.worker = Some(Worker::spawn(ctx, folder, version));
         }
     }
@@ -206,7 +214,7 @@ impl Portraits {
     /// `id`'s answer once the worker gave it (`Some` a decoded texture, `None` a portrait
     /// absent or undecodable); `None` while pending or never asked. The tests' wait.
     #[cfg(test)]
-    fn answered(&self, id: u32) -> Option<Option<egui::TextureId>> {
+    pub(crate) fn answered(&self, id: u32) -> Option<Option<egui::TextureId>> {
         self.resolved
             .get(&id)
             .map(|held| held.as_ref().map(egui::TextureHandle::id))
@@ -215,7 +223,7 @@ impl Portraits {
     /// The placeholder texture uploaded for `version` (`None` before `textures` first asks
     /// for it). The tests' identity check for "the marker draws the placeholder".
     #[cfg(test)]
-    fn placeholder_id(&self, version: PesVersion) -> Option<egui::TextureId> {
+    pub(crate) fn placeholder_id(&self, version: PesVersion) -> Option<egui::TextureId> {
         self.placeholder
             .as_ref()
             .and_then(|(held, texture)| (*held == version).then(|| texture.id()))

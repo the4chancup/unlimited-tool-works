@@ -1175,63 +1175,46 @@ fn the_light_themes_selector_colours_read_on_the_buttons_fill() {
     );
 }
 
-// The tools read the selector's own verdict: after a frame over a folder holding another
-// version's exe, the context every tool gets reports what coloured the selector.
-#[test]
-fn the_tools_context_reports_the_exe_check_the_selector_was_colored_by() {
-    let egui_ctx = test_context();
-    let dir = test_dir("studio_core_sidebar_context_pes19");
-    fs::create_dir_all(&dir).unwrap();
-    fs::write(dir.join("PES2019.exe"), b"").unwrap();
-    let (a, calls_a) = stub("a", "A", None);
-    let mut settings = Settings::default();
-    settings.common.pes_version = PesVersion::Pes21;
-    settings.common.pes_folder_path = dir.display().to_string();
-    let Shell { mut app, .. } =
-        shell_with(settings, vec![a], &[], Some(dir.clone()), vec![calls_a]);
-    assert_eq!(
-        app.ctx.pes_exe_check(),
-        None,
-        "no check before the first frame"
-    );
-
-    frame(&egui_ctx, &mut app, Vec::new(), true);
-    assert_eq!(
-        app.ctx.pes_exe_check(),
-        Some(ExeCheck::OtherVersion(PesVersion::Pes19))
-    );
-    fs::remove_dir_all(&dir).unwrap();
-}
-
 #[test]
 fn the_exe_check_relists_on_a_change_or_on_focus_never_per_frame() {
     let egui_ctx = test_context();
-    let dir = test_dir("studio_core_sidebar_recheck");
-    fs::create_dir_all(&dir).unwrap();
-    fs::write(dir.join("PES2021.exe"), b"").unwrap();
+    let dir = TestDir::new("studio_core_sidebar_recheck");
+    fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
 
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = Settings::default();
     settings.common.pes_version = PesVersion::Pes21;
-    settings.common.pes_folder_path = dir.display().to_string();
+    settings.common.pes_folder_path = dir.path().display().to_string();
     let Shell {
         mut app, settings, ..
-    } = shell_with(settings, vec![a], &[], Some(dir.clone()), vec![calls_a]);
+    } = shell_with(
+        settings,
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
 
     frame(&egui_ctx, &mut app, Vec::new(), true);
     frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_eq!(app.sidebar.exe_listings, 1, "no re-list per frame");
 
-    // The window's focus returning re-lists.
+    // The window's focus returning re-lists, once: the frames it stays
+    // focused after the return list nothing more.
     frame(&egui_ctx, &mut app, Vec::new(), false);
     frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_eq!(app.sidebar.exe_listings, 2, "focus regained re-lists");
+    frame(&egui_ctx, &mut app, Vec::new(), true);
+    frame(&egui_ctx, &mut app, Vec::new(), true);
+    assert_eq!(
+        app.sidebar.exe_listings, 2,
+        "no re-list on the focused frames after the return"
+    );
 
     // A version or path change re-lists.
     settings.lock().unwrap().common.pes_version = PesVersion::Pes19;
     frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_eq!(app.sidebar.exe_listings, 3, "the version changed");
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // ST-SIDE-04
@@ -1426,6 +1409,10 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
         PesVersion::Pes19,
         "the switch touched no setting"
     );
+    let listings = app.sidebar.exe_listings;
+    // Nor does the window's refocus under it list: the verdict goes unread.
+    frame(&egui_ctx, &mut app, Vec::new(), false);
+    frame(&egui_ctx, &mut app, Vec::new(), true);
     frame(
         &egui_ctx,
         &mut app,
@@ -1453,6 +1440,10 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
         "the empty selector takes no colour from the failing check"
     );
     assert_eq!(icons(&out.nodes), rail_icons, "no rail entry moved under B");
+    assert_eq!(
+        app.sidebar.exe_listings, listings,
+        "nothing reads the verdict under B, so the folder is not listed"
+    );
 
     // Its hover says why, and the rest opens the sidebar, where it is the same.
     frame(&egui_ctx, &mut app, hover(combo(&out.nodes)), true);
@@ -1536,6 +1527,11 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    assert_eq!(
+        widget_on_row(&nodes, "PES version", Role::ComboBox).value(),
+        Some("PES 2019"),
+        "the settings row shows the version the selector no longer draws"
+    );
     click(
         &egui_ctx,
         &mut app,

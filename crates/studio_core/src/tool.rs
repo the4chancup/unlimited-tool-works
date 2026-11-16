@@ -77,10 +77,11 @@ pub trait StudioTool {
 
     /// Whether the tool works with the PES version the sidebar's selector holds:
     /// `true` for a tool whose work is for the selected game (the Compiler
-    /// compiles for it, the Export upgrader upgrades into it). The selector shows
-    /// the version only while the active tool does; under one it governs nothing
-    /// in (the Save editor follows its open save's version, a ruleset names no
-    /// game) it stands disabled and empty. Default: false.
+    /// compiles for it, the Export upgrader's run is against a save of it).
+    /// The selector shows the version only while the active tool does; under
+    /// one it governs nothing in (the Save editor follows its open save's
+    /// version, a ruleset names no game) it stands disabled and empty.
+    /// Default: false.
     fn targets_pes_version(&self) -> bool {
         false
     }
@@ -224,9 +225,6 @@ pub struct ToolContext {
     requests: Sender<ShellRequest>,
     /// The repaint waker, shared by every clone and filled once, when the window is created.
     wake: Arc<OnceLock<Wake>>,
-    /// The sidebar's latest exe check, shared by every clone; `None` until the sidebar's
-    /// first frame, and always in the CLI.
-    pes_exe_check: Arc<Mutex<Option<ExeCheck>>>,
     /// The per-version exe checks `pes_exe_check_for` fills, each entry keyed by the
     /// folder the settings last resolved for the version: a version's folder is listed
     /// again once it resolves elsewhere, and `clear_pes_exe_checks` drops the map for
@@ -252,7 +250,6 @@ impl ToolContext {
             events,
             requests,
             wake: Arc::new(OnceLock::new()),
-            pes_exe_check: Arc::new(Mutex::new(None)),
             exe_checks: Arc::new(Mutex::new(BTreeMap::new())),
             recorder: Recorder::default(),
         }
@@ -315,29 +312,13 @@ impl ToolContext {
         self.request(ShellRequest::SettingsChanged);
     }
 
-    /// What the PES selector's exe check found in the PES folder, as the sidebar drew it
-    /// this frame (it draws before the active view): a tool that needs the folder to hold
-    /// the selected game reads this verdict rather than listing the folder itself, so it
-    /// never disagrees with the selector's colour. `None` before the sidebar's first frame
-    /// and in the CLI.
-    pub fn pes_exe_check(&self) -> Option<ExeCheck> {
-        *self.pes_exe_check.lock().unwrap()
-    }
-
-    /// Stores the exe check the sidebar's PES selector was coloured by this frame.
-    /// Crate-private: the sidebar alone runs the check.
-    pub(crate) fn set_pes_exe_check(&self, check: ExeCheck) {
-        *self.pes_exe_check.lock().unwrap() = Some(check);
-    }
-
     /// The exe check's verdict for `version`: what `check_pes_folder` finds in the PES
     /// folder the settings resolve for it (`CommonSettings::pes_folder_for`), the same
     /// listing the sidebar's selector is coloured by, so a tool that works a file of one
     /// version asks that version's folder's verdict here rather than the selector's. An
     /// entry is kept per version keyed by the resolved folder and listed again when the
-    /// resolution changes, never per ask; `clear_pes_exe_checks` drops the map. Unlike
-    /// `pes_exe_check`, which waits for the sidebar, the ask runs the listing itself on
-    /// a miss, so there is always a verdict.
+    /// resolution changes, never per ask; `clear_pes_exe_checks` drops the map. The ask
+    /// runs the listing itself on a miss, so there is always a verdict.
     pub fn pes_exe_check_for(&self, version: PesVersion) -> ExeCheck {
         let folder = self.settings.lock().unwrap().common.pes_folder_for(version);
         let mut checks = self.exe_checks.lock().unwrap();
@@ -461,6 +442,7 @@ mod tests {
     use super::*;
     use crate::events::{PipelineEvent, RunId};
     use crate::repro::tests::{journal_doc, scratch, zip_text};
+    use crate::shell::test_harness::TestDir;
     use crate::status::NoticeKind;
 
     /// A context over fresh channels, with the receivers it sends to.
@@ -685,8 +667,8 @@ mod tests {
     // the cached verdict was for: the member repaired it and picked it once more.
     #[test]
     fn a_picked_folder_is_listed_again_though_it_resolves_unchanged() {
-        let dir = scratch("tool_exe_check_repick");
-        let folder = dir.join("PES 2017");
+        let dir = TestDir::new("tool_exe_check_repick");
+        let folder = dir.path().join("PES 2017");
         std::fs::create_dir_all(&folder).unwrap();
         let (ctx, _events_rx, _requests_rx) = context();
         ctx.set_pes_folder_for(&folder, PesVersion::Pes17);
@@ -707,7 +689,6 @@ mod tests {
             ExeCheck::Found,
             "the pick listed the same folder again"
         );
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     // `pes_exe_check_for` answers each version's own folder's verdict (PES 17's
@@ -716,8 +697,8 @@ mod tests {
     // gained its exe only after the cache's drop, never on the next ask.
     #[test]
     fn pes_exe_check_for_checks_each_versions_own_folder() {
-        let dir = scratch("tool_exe_check_for");
-        let games = dir.join("games");
+        let dir = TestDir::new("tool_exe_check_for");
+        let games = dir.path().join("games");
         std::fs::create_dir_all(games.join("PES 2017")).unwrap();
         std::fs::write(games.join("PES 2017/PES2017.exe"), b"").unwrap();
         let (ctx, _events_rx, _requests_rx) = context();
@@ -769,7 +750,6 @@ mod tests {
             ExeCheck::Found,
             "the drop re-lists"
         );
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
@@ -819,5 +799,41 @@ mod tests {
             ["a step through the context", "a step through a clone"],
             "{journal}"
         );
+    }
+
+    // `targets_pes_version` defaults to false: a tool that does not say it
+    // works for the selected game keeps the selector disabled and empty.
+    #[test]
+    fn targets_pes_version_defaults_to_false() {
+        struct Bare;
+        impl StudioTool for Bare {
+            fn id(&self) -> &'static str {
+                "bare"
+            }
+            fn label(&self) -> &'static str {
+                "Bare"
+            }
+            fn icon(&self) -> &'static str {
+                "i"
+            }
+            fn view(&mut self, _ui: &mut egui::Ui, _ctx: &ToolContext) {}
+            fn default_settings(&self) -> toml::Table {
+                toml::Table::new()
+            }
+            fn help(&self) -> HelpSection {
+                HelpSection {
+                    title: "Bare",
+                    topics: Vec::new(),
+                    messages: Vec::new(),
+                }
+            }
+            fn cli_command(&self) -> clap::Command {
+                clap::Command::new("bare")
+            }
+            fn cli_run(&self, _: &clap::ArgMatches, _: &ToolContext) -> Result<u8, CliError> {
+                Ok(0)
+            }
+        }
+        assert!(!Bare.targets_pes_version());
     }
 }

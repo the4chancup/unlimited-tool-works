@@ -123,5 +123,7 @@ mod tests {
             Some(&Vec::new())
         );
         assert_eq!(tool.help().topics.len(), 2);
+        // A ruleset names no game: the selector stays out of it.
+        assert!(!tool.targets_pes_version());
     }
 }

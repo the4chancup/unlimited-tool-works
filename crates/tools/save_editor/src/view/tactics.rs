@@ -389,6 +389,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Some(folder) = pick_folder_dialog()
             {
                 *picked_pes_folder = Some((version, folder));
+                // The member may have repaired the folder and picked the same
+                // one: the worker's empty answers are stale, so it starts again.
+                portraits.restart(ui.ctx());
             }
         }
         let mut assigns_ui = cell(

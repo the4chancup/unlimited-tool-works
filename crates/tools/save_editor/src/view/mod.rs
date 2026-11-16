@@ -308,6 +308,11 @@ pub(crate) struct SaveView {
     /// with `pes_exe_check`: the Set PES path button's tooltip names it.
     /// `None` in the tests' view-only frames until a test sets it.
     pub(crate) pes_folder: Option<PathBuf>,
+    /// The exe check `select_portraits` last saw: `Found` after another
+    /// verdict restarts the portrait source, the folder having been repaired
+    /// where a worker answered empty. A re-picked folder restarts where the
+    /// pick lands (`tactics::show`).
+    portraits_check: Option<ExeCheck>,
     /// The save's version and the folder the Set PES path button's picker
     /// returned, drained by `Tool::view` into `ctx.set_pes_folder_for` (the
     /// shell owns the settings).
@@ -582,6 +587,7 @@ impl SaveView {
             exe_dir: PathBuf::new(),
             pes_exe_check: None,
             pes_folder: None,
+            portraits_check: None,
             picked_pes_folder: None,
             notice: None,
             live_aatf: false,
@@ -611,13 +617,23 @@ impl SaveView {
 
     /// Points the pitch's portrait source at `pes_folder` for `version`: `Tool::view` calls it
     /// each frame with the open save's PES and its version's PES folder, as it refreshes `hide_ids`.
+    /// The exe check turning `Found` restarts the source: the folder it answers for was
+    /// repaired where a worker read empty, so its `None` answers are stale.
     pub(crate) fn select_portraits(
         &mut self,
         ctx: &egui::Context,
         pes_folder: &Path,
         version: PesVersion,
     ) {
+        let repaired = self.pes_exe_check == Some(ExeCheck::Found)
+            && self
+                .portraits_check
+                .is_some_and(|check| check != ExeCheck::Found);
+        self.portraits_check = self.pes_exe_check;
         self.portraits.select(ctx, pes_folder, version);
+        if repaired {
+            self.portraits.restart(ctx);
+        }
     }
 
     /// The aesthetics lock: on while the "Aesthetics from exports" setting

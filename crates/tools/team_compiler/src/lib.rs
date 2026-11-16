@@ -162,5 +162,6 @@ mod tests {
             tool.default_settings()["cpk_name"].as_str(),
             Some("4cc_99_test")
         );
+        assert!(tool.targets_pes_version());
     }
 }
