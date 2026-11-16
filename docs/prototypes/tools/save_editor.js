@@ -5743,7 +5743,7 @@ function teamFields(t) {
     "Name", nameIn, "Short", shortIn,
     colour("color_1", "Color 1"), colour("color_2", "Color 2")), "team-fields");
 }
-const KIT_SLOT_BOX = 72;
+const KIT_SLOT_BOX = 51;
 // The kit slot assignments, behind the team view's Kit slots button. The binding
 // shows as the team's id, as Team ID and Manager ID do, not the stored id times 64;
 // every box is one width, six digits wide, so the rows line up.

@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the saves opened or saved earlier (remembered between runs), above the ordinary file picker, which opens where "The toolbar" says (the folder of the last save opened, else the newest discovered save's); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu (its order, its entries' labels and when its shortcuts act: "The toolbar") lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version as one-click entries, the first of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), and the saves opened or saved earlier, remembered between runs; Ctrl+O is the file picker's; see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as…**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -643,7 +643,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   measured).
 - **The player view** (the Stats screen): three columns side by side. The room the
   fixed columns leave is split into four equal gaps: after the player list, between the
-  columns, and after Ability stats (30.4 points each at the 1280 × 780 window). The first
+  columns, and after Ability stats (28.9 points each at the 1280 × 780 window). The first
   counts from the list's frame, 22 points before the pane (the list's 10-point bar strip and
   the 12 between), and the last runs to the window's edge, past the pane's own 12-point right
   margin. The eye reads the gap from the list's last ink and to the window's edge, and a view
@@ -1433,6 +1433,13 @@ Win32 original hurt the most):
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
   has no narrow fallback. A shorter window scrolls the team view to reach its last row rather
   than squeezing it in.
+
+  After 0.0.2, a remembered view setting picks the grid's **arrangement**: this one, or
+  4ccEditor's, which some members know better (the formation settings below the pitch or
+  left of it, drafted from 4ccEditor's own screen). Each arrangement is a fixed grid with its
+  own draft and its own layout tests. The panels are never moved or resized freely: a free
+  arrangement leaves no layout to check against a draft, and each panel, drawn today for one
+  width, would have to reflow at any width, the pitch included.
 - **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
   Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
   portrait, read from the selected game's `download/` CPKs when that folder is found and holds

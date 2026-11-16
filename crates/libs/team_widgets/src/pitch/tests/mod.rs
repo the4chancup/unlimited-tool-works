@@ -701,8 +701,10 @@ pub(crate) fn party_hard(tactics: &mut TeamTactics, roster: &mut [RosterRow<'_>]
     tactics.presets[0].formations[0] = formation_718_1();
     let row = &mut roster[usize::from(tactics.starting_eleven[8])];
     row.overalls = Some(PARTY_HARD);
-    row.rated[usize::from(position_byte("LMF"))] = true;
-    row.rated[usize::from(position_byte("LWF"))] = true;
+    let mut rated = [false; 13];
+    rated[usize::from(position_byte("LMF"))] = true;
+    rated[usize::from(position_byte("LWF"))] = true;
+    row.rated = Some(rated);
 }
 
 /// The PES 17 fixture save's team 702 (/a/): its tactics, and the

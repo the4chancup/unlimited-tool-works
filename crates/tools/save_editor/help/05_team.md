@@ -89,9 +89,9 @@ Texport. PES 2015 to 2017 name their Texports `TEXPORT00000000`, `TEXPORT0000000
 so on, with no extension, so on a save from those games the file window opens showing
 all files. A squad file lists which record goes to which player.
 
-When the picked file names the team it was exported from and another team is selected, a
-button under **Import into** selects that team, so the file goes back onto it with no
-search through the list.
+When the picked file carries the ID of the team it was exported from and another team is
+selected, a button under **Import into** selects that team, so you can import back onto it
+without looking for it in the list.
 
 Tick the sections to bring in:
 

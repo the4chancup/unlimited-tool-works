@@ -2086,7 +2086,7 @@ fn the_rows_and_the_popover_header_draw_the_names_colours() {
 }
 
 // The two lists share the span the host gives them (the draft's
-// `#tac-lists`): each half of it less the 6-point gap, the eleven at its
+// `#tac-lists`): each half of it less the 8-point gap, the eleven at its
 // left, the bench ending at its right; the space `lineup` claims in the
 // host runs from its top-left to that right edge and the lists' bottom.
 // The host's cell starts away from the screen's origin, so a span or a
@@ -2131,7 +2131,7 @@ fn the_lists_halve_the_span_and_the_lineup_claims_their_height() {
     let [eleven, bench] = lists.as_slice() else {
         panic!("expected the two lists' frames, got {lists:?}")
     };
-    let half = (cell.width() - 6.0) / 2.0;
+    let half = (cell.width() - 8.0) / 2.0;
     assert!(
         (eleven.min.x - cell.min.x).abs() <= 0.5,
         "the eleven at the span's left ({eleven:?})"
@@ -2143,8 +2143,8 @@ fn the_lists_halve_the_span_and_the_lineup_claims_their_height() {
         );
     }
     assert!(
-        (bench.min.x - eleven.max.x - 6.0).abs() <= 0.5,
-        "the lists 6 apart ({eleven:?}, {bench:?})"
+        (bench.min.x - eleven.max.x - 8.0).abs() <= 0.5,
+        "the lists 8 apart ({eleven:?}, {bench:?})"
     );
     assert!(
         (bench.max.x - cell.max.x).abs() <= 0.5,

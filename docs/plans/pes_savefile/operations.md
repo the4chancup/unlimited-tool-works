@@ -74,11 +74,10 @@ aesthetics (the rule above), so the Team TOML carries them where it carries the 
 keys, in the embedded table `[players.NN.appearance.presentation]` (`star_rating`,
 `playing_attitude`, the stored values as the other appearance keys are), and no longer
 beside the stats. The new key is `star_rating`, the name managers know, not the old
-`star`. An import still reads them beside the stats, under their old names, where every
-file written before 0.0.2 holds them (a DBC member's 0.0.1 export): a key the import does not know refuses
-the whole file (`TeamTomlError::UnknownKey`), so dropping the old place would refuse every
-such file. A file holding both places is refused, as two values for one field. An export
-writes the new place only.
+`star`. The old place is not read: until 1.0 the formats change without a migration, so a
+file written before 0.0.2, which holds `star` and `playing_attitude` beside the stats, is
+refused as any file with a key the import does not know is (`TeamTomlError::UnknownKey`),
+and the member exports the team again or deletes the two lines.
 
 ### Texport (read + write)
 

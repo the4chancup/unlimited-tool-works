@@ -496,7 +496,14 @@ fn apply_team(
             "team.manager_id",
         )?
     {
-        next.manager_id = Some(manager_id);
+        // The file's own-id convention, `base_copy_id`'s for the team:
+        // a `manager_id` equal to `[team] id` names the source team's
+        // own coach record, so the target's own id stands in.
+        next.manager_id = Some(if section.id == Some(manager_id) {
+            next.id
+        } else {
+            manager_id
+        });
     }
     if let Some(stadium_id) = section.stadium_id
         && gated(
@@ -773,6 +780,32 @@ mod tests {
         let text = format!("{}substitution = {value}\n{}", &text[..start], &text[end..]);
         let parsed = TeamToml::parse(&text).expect("parses");
         assert_eq!(parsed.tactics.auto.substitution, Some(value));
+    }
+
+    /// The manager id follows the team, as the base copy id follows the
+    /// player: a `manager_id` equal to the file's `[team] id` names the
+    /// source team's own coach record, so the import writes the target's
+    /// own id; any other value names a coach the member chose and applies
+    /// as written. Team 714 (/co/)'s file onto team 701 (/3/).
+    #[test]
+    fn an_own_team_manager_id_imports_as_the_targets_own_id() {
+        let (file, _) = open(PesVersion::Pes19);
+        let team = file.team(701).expect("team 701 is in the fixture");
+        for (manager_id, expected) in [(714, 701), (790, 790)] {
+            let doc = TeamToml::parse(&format!("[team]\nid = 714\nmanager_id = {manager_id}\n"))
+                .expect("parses");
+            let mut target = team.clone();
+            // Neither outcome the target already holds, so a skipped write
+            // would show.
+            target.manager_id = Some(5);
+            doc.apply(PesVersion::Pes19, &mut target, &mut [])
+                .expect("applies");
+            assert_eq!(
+                target.manager_id,
+                Some(expected),
+                "manager_id = {manager_id}"
+            );
+        }
     }
 
     /// (c) A foreign document's unsupported key is a note; the target's own

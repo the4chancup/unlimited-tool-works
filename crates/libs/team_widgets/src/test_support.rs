@@ -66,7 +66,7 @@ pub(crate) fn tactics_settings(
         ) | cell(ui, |ui| {
             player_assignments(ui, tactics, view, roster);
             false
-        }) | automatic_settings(ui, version, tactics)
+        }) | automatic_settings(ui, tactics)
     })
     .inner
 }
@@ -231,7 +231,9 @@ pub(crate) fn roster_rows(rows: &[(String, String, Option<u8>)]) -> Vec<RosterRo
             portrait: None,
             medal: None,
             overalls: None,
-            rated: [false; 13],
+            // A player row reads as rated nowhere until a test sets him;
+            // an empty slot carries no ratings, as the hosts build it.
+            rated: position.map(|_| [false; 13]),
             fielded: &[],
         })
         .collect()
