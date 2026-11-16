@@ -205,6 +205,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         // selectable occupies).
         row_height: ui.spacing().interact_size.y,
         width: frame_width,
+        list_fill: ui.visuals().extreme_bg_color,
         draggable: view.filter.trim().is_empty(),
     };
     // Live AATF's held check: the rows of the team it is for carry its
@@ -533,7 +534,8 @@ fn row_selection(row: ListRow) -> Selection {
 }
 
 /// How the list draws one row, computed once in `show`: the row's height,
-/// its width and whether player rows drag (no filter typed).
+/// its width, the list's own fill and whether player rows drag (no
+/// filter typed).
 #[derive(Clone, Copy)]
 struct RowLayout {
     /// The row's height (`interact_size.y`, what a selectable occupies).
@@ -541,6 +543,10 @@ struct RowLayout {
     /// The row's width, the frame's: the scroll area's own spans the bar's
     /// strip while nothing scrolls.
     width: f32,
+    /// The list's own fill (`extreme_bg_color`, read in `show` because the
+    /// rows' scope clears it): under a resting team row's own fill it is
+    /// the surface the name's codes darken against.
+    list_fill: egui::Color32,
     /// Player rows drag and take drops.
     draggable: bool,
 }
@@ -730,14 +736,15 @@ fn team_row(
     });
     let mark_response = if ui.is_rect_visible(rect) {
         let visuals = paint_row_frame(ui, rect, &response, is_selected);
-        if !(is_selected || response.hovered() || response.has_focus()) {
-            // The team row's own fill sets it apart from a player row
-            // (the draft's `.trow` backdrop).
-            ui.painter().rect_filled(
-                rect,
-                egui::CornerRadius::ZERO,
-                studio_core::theme::palette(ui.visuals()).team_row_fill,
-            );
+        // A resting row (not selected, hovered or focused) paints its own
+        // fill, which sets it apart from a player row (the draft's
+        // `.trow` backdrop); over the list's fill it is also the surface
+        // the name's codes read on.
+        let resting = !(is_selected || response.hovered() || response.has_focus());
+        let row_fill = studio_core::theme::palette(ui.visuals()).team_row_fill;
+        if resting {
+            ui.painter()
+                .rect_filled(rect, egui::CornerRadius::ZERO, row_fill);
         }
         let padding = ui.spacing().button_padding.x;
         let centre = rect.center().y;
@@ -774,7 +781,13 @@ fn team_row(
         }
         x += ui.spacing().item_spacing.x;
         let mut job = egui::text::LayoutJob::default();
-        append_name(&mut job, &team.name, &font, name_background(ui.visuals()));
+        // The resting row's codes sit on `row_fill` over the list's
+        // fill, a step under the panel `name_background` assumes.
+        let on = match name_background(ui.visuals()) {
+            Some(_) if resting => Some(layout.list_fill.blend(row_fill)),
+            on => on,
+        };
+        append_name(&mut job, &team.name, &font, on);
         // The end's room (the gap, the dot, the mark and what sits
         // between them) comes off the truncation width, so a long name
         // never runs under either.
