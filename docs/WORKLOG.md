@@ -1680,7 +1680,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         a team picked in the dropdown under a filter, its row already selected, stayed off
         screen; three tests that pass on wrong code; a doc (lead)
       - [x] the rework (SWE-2, a fresh session, merge `006ba5b9`)
-      - [ ] Carbon's round 7 (at `006ba5b9`): running
+      - [x] Carbon's round 7, 2026-11-16 (at `006ba5b9`): 4 of 5 accepted, none of reach (a)
+        ("C-list r7"), so the loop ends with this rework: two reveal tests that pass on
+        wrong code, two docs (lead)
+      - [ ] the rework (SWE-2, `sk/listrw7` in `noticesrw`): running
     - [x] notices and files (tier 2): `bba7eee1`, `7ac5df69`, `30b1109c`. SWE-2's loop (12 then 1
       accepted) and Carbon's three rounds (15, 7 and 6 accepted, "C-notices r1" to "r3"), each
       reworked; the loop ended with round 3's rework (merge `93f945ee`)
