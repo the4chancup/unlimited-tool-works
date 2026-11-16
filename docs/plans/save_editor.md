@@ -1789,8 +1789,8 @@ Win32 original hurt the most):
   **A range of teams.** The Savefile menu's "Save formation pictures for a range of teams…"
   writes one such picture per team whose id lies between two teams picked in combo boxes on
   one row, `Teams`, the first, `to`, the last. It picks them as Multi-team AATF picks its range:
-  - the save's teams by name as the player list's selector lists them, the save's first and
-    last by default, not typed ids, which a member would have to look up;
+  - the save's teams, each its id and name as Multi-team AATF's pickers show them, the
+    save's first and last by default, not typed ids, which a member would have to look up;
   - the right end lists only the teams from the left one on and follows the left one when it
     passes it, so the range is never reversed.
 

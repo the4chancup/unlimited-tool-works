@@ -1555,8 +1555,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         its headers wrapped otherwise, its rows 19 to 32 higher
     - [x] the built window (lead, 2026-11-17, the release build of `a9ec4919`): the two
       picture dialogs within 1.3 (the forms' row labels, accepted); the range dialog's team
-      pickers read `701 /3/` where the draft's read `/3/`, asked in `questions.html`
-      ("The team pickers in Save formation pictures for a range of teams"): the build took
+      pickers read `701 /3/` where the draft's read `/3/`, kept as built (the maintainer,
+      DECISIONS 2026-11-17; the draft follows): the build took
       Multi-team AATF's pickers (`b213ee6a`), as the plan's "as Multi-team AATF picks its
       range" says, while the draft's are older; `draft_compare.py` pairs by text, so it
       listed the two labels as unmatched and flagged nothing. The Player screen: see the
@@ -3084,8 +3084,8 @@ points there.
     so its labels stand 12 points further right of the title and its Save editor section
     20 lower; its rows also stand 3 to 4 points lower against the title than the build's.
   - The range picture dialog's team selectors: the build writes each team's ID before its
-    name (`701 /3/`), the draft only the name (`/a/`): asked in `questions.html` ("The team
-    pickers in Save formation pictures for a range of teams").
+    name (`701 /3/`), the draft only the name (`/a/`): resolved 2026-11-17, the maintainer
+    keeps the build's (DECISIONS 2026-11-17), the draft follows.
 - open 2026-11-17 (the lead, the answers recheck): with a 200% primary monitor and a 100%
   one beside it, two things go wrong on the 100% one (Windows 10, the release build of
   `a9ec4919`).

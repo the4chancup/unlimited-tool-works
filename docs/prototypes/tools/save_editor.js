@@ -7725,10 +7725,10 @@ function drawPicturesRange() {
   let body, buttons;
   if (!run) {
     const teams = picTeamsIn(picRange.from, picRange.to);
-    // The two ends picked as the player list's team selector picks a team
-    // (its combo of the save's teams by name), not typed as ids.
+    // The two ends picked as Multi-team AATF picks its range (the save's
+    // teams by id and name), not typed as ids.
     const pick = key => {
-      const s = combo(rangeChoices(picRange, key).map(t => [String(t.id), t.name]),
+      const s = combo(rangeChoices(picRange, key).map(t => [String(t.id), t.id + " " + displayName(t.name)]),
         String(picRange[key]), v => { setRangeEnd(picRange, key, Number(v)); render(); });
       s.id = "pic-" + key;
       return s;

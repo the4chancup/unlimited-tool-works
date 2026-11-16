@@ -18426,3 +18426,12 @@ Why: the bundle is the instrument a bug is debugged from. A wrong or silently in
 sends the fix down the wrong path, which costs more than a view's defect; Tier 2's single paid
 round is not enough for that.
 Plan: `RUNBOOK.md` "Review rounds" (Tier 1's list); `WORKLOG.md` current status.
+
+## 2026-11-17 — save_editor — the range pictures' team pickers show each team's id and name
+Decision: "Save formation pictures for a range of teams" lists each team in its two pickers as
+its id and name (`701 /3/`), as Multi-team AATF's pickers do; the draft, which showed the name
+alone, follows the build.
+Why: the dialog picks its range as Multi-team AATF does and shares its pickers; one label for
+both keeps the two ranges read alike, and the id tells apart two teams of one name.
+Plan: `plans/save_editor.md` "Formation pictures" (the range's first bullet); the draft's
+`drawPicturesRange`.
