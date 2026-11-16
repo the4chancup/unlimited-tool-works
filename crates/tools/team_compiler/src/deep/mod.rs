@@ -1781,15 +1781,30 @@ fn file_outcome(
             false,
         ));
     }
+    // A `Common/` model keeps every game directory, a player, Boots or Gloves one only
+    // the two the Export upgrader does (`names_export_directory`), so `Common/`'s
+    // reports only the paths its own rule admits (`in_common`).
+    let in_common = file
+        .path
+        .segments()
+        .next()
+        .is_some_and(|root| root.eq_ignore_ascii_case(COMMON));
     let legacy_kit_paths = if kit_token_checked(&file.path) {
-        read.legacy_kit_paths.as_slice()
+        read.legacy_kit_paths
+            .iter()
+            .filter(|path| !in_common || path.in_common)
+            .map(|path| path.texture.as_str())
+            .collect()
     } else {
-        &[]
+        Vec::new()
     };
     for reference in legacy_kit_paths {
         findings.push(finding(
             Code::KitTokenOld.as_str(),
-            vec![("file", name.to_owned()), ("reference", reference.clone())],
+            vec![
+                ("file", name.to_owned()),
+                ("reference", reference.to_owned()),
+            ],
             disposition,
             false,
         ));
