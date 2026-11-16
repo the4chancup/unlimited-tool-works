@@ -928,7 +928,7 @@ fn the_setting_off_draws_no_lock_and_the_setting_on_locks_the_paths() {
         tooltip.as_deref(),
         Some(
             "On when the cup's looks are compiled from exports: the save's aesthetics are \
-             then read-only, behind Edit aesthetics anyway on the Appearance section."
+             then read-only, behind Edit aesthetics anyway on the Appearance screen."
         ),
         "the checkbox's hover text"
     );

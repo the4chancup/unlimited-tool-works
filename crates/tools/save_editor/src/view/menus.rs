@@ -232,7 +232,10 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         menu_separator(ui);
         if ui.button("Copy/swap stats\u{2026}").clicked() {
-            view.copy_swap = Some(copy_stats::CopySwap::new(session, view.selected));
+            let Some(selected) = view.selected else {
+                return;
+            };
+            view.copy_swap = Some(copy_stats::CopySwap::new(session, selected));
             ui.close();
         }
         menu_separator(ui);

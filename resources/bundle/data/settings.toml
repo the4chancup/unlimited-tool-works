@@ -111,7 +111,7 @@ live_suggestions = false
 live_window = false
 
 # If true, the save's aesthetics are locked: they come from the exports, through the
-# Compiler. "Edit aesthetics anyway" in the Appearance section unlocks them.
+# Compiler. "Edit aesthetics anyway" on the Appearance screen unlocks them.
 # If false, they are edited like any other field.
 # Default: false
 aesthetics_from_exports = false

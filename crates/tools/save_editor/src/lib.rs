@@ -35,7 +35,7 @@ use crate::view::PositionsLayout;
 /// The "Aesthetics from exports" row's hover text in the settings menu.
 const AESTHETICS_FROM_EXPORTS_TIP: &str = "On when the cup's looks are compiled from exports: \
      the save's aesthetics are then read-only, behind Edit aesthetics anyway on the Appearance \
-     section.";
+     screen.";
 
 /// The Save editor, as registered with the `studio` binary. `view` is the window's
 /// state.
