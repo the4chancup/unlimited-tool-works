@@ -94,8 +94,8 @@ pub(super) struct ChangeRow {
 }
 
 /// One row of the unsaved changes (`rows`): its cells, and the change it
-/// shows — what its X in the toolbar's list puts back and what its
-/// item's click switches to.
+/// shows — what its X puts back, in the toolbar's list and the close
+/// prompt alike, and what its item's click in the list switches to.
 pub(super) struct UnsavedRow {
     /// The row's three cells.
     pub(super) cells: ChangeRow,
