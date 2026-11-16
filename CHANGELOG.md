@@ -155,6 +155,11 @@
   which the game never offers.
 - **Save editor**: the unsaved changes list and the close prompt no longer scroll slowly
   after several teams are imported.
+- **Save editor**: on PES 2015 and PES 2016, the Substitution dropdown also offers Very
+  early, as those games' own screens do.
+- **Save editor**: a Team TOML imported onto another team keeps that team's own manager,
+  where it gave it the manager of the team the file came from. A file naming any other
+  manager still sets him.
 
 ### Minor fixes
 
@@ -206,6 +211,12 @@
   list, with its players under it.
 - **Save editor**: the player list's team rows stand out more from its player rows, on both
   themes.
+- **Save editor**: on the Gameplan screen, a held player rated A or B at no position
+  darkens the whole pitch, as in the game, where nothing was darkened.
+- **Save editor**: on the Gameplan screen, the panels and the two lineup lists stand 8
+  points apart, as on the Appearance screen.
+- **Ruleset editor**: the section list on the left has a little more room between its
+  rows.
 
 ## [0.0.1] - 2026-11-03
 
