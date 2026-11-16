@@ -10,6 +10,7 @@
 
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
+use pes_savefile::model::TeamEntry;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     FIELD_SPACING, add_enabled, combo_item, modal_buttons, step_choice, wheel_steps,
@@ -64,6 +65,11 @@ pub(crate) struct CopySwap {
     /// The last Copy/Swap's result, the weak line under the grid; empty
     /// until the first action.
     line: String,
+    /// The two combos' text widths and the session revision they were
+    /// measured at: worked out once per revision over every cup team —
+    /// measuring 4,600 players' labels each frame is too slow, and only
+    /// a change may bring a wider name.
+    widths: Option<(u64, (f32, f32))>,
 }
 
 impl CopySwap {
@@ -87,6 +93,24 @@ impl CopySwap {
             destination: pick,
             seen: selected,
             line: String::new(),
+            widths: None,
+        }
+    }
+
+    /// The Team and Player combos' text widths, measured once for the
+    /// session's current revision and kept: over every cup team the
+    /// combos offer, so a pick or a team change never resizes the
+    /// window's grid (the revision changing re-measures, an edit or a
+    /// new save having changed the names on offer).
+    fn widths(&mut self, ui: &egui::Ui, session: &Session) -> (f32, f32) {
+        let revision = session.revision();
+        match self.widths {
+            Some((at, widths)) if at == revision => widths,
+            _ => {
+                let widths = measure_widths(ui, session.file());
+                self.widths = Some((revision, widths));
+                widths
+            }
         }
     }
 }
@@ -159,31 +183,52 @@ fn player_name(file: &EditFile, player_id: u32) -> String {
         .unwrap_or_else(|| player_id.to_string())
 }
 
+/// The widest team name and the widest roster label of the cup's
+/// teams, as laid out at the Button font: what the two combos size
+/// themselves by, so each keeps one width whatever team its row names.
+fn measure_widths(ui: &egui::Ui, file: &EditFile) -> (f32, f32) {
+    let font = egui::TextStyle::Button.resolve(ui.style());
+    let text_width = |text: &str| {
+        ui.painter()
+            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
+            .size()
+            .x
+    };
+    let teams: Vec<&TeamEntry> = cup_teams(file).collect();
+    let team = teams
+        .iter()
+        .map(|entry| text_width(&display_name(&entry.name)))
+        .fold(0.0_f32, f32::max);
+    let player = teams
+        .iter()
+        .flat_map(|entry| roster_options(file, entry.id))
+        .map(|(_, label)| text_width(&label))
+        .fold(0.0_f32, f32::max);
+    (team, player)
+}
+
 /// One grid row's controls: `label` in the first column, the team combo
 /// in the second (the cup teams by display name) and the player combo in
 /// the third (the picked team's filled roster slots). A changed team
 /// takes its first filled slot; both combos keep the wheel stepping.
 /// Each combo is as wide as its widest option plus the combo's chrome, so
 /// a pick never resizes the window's grid.
-fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick: &mut Pick) {
+fn pick_row(
+    ui: &mut egui::Ui,
+    session: &Session,
+    salt: &str,
+    label: &str,
+    pick: &mut Pick,
+    widths: (f32, f32),
+) {
     ui.label(label);
     let file = session.file();
-    let font = egui::TextStyle::Button.resolve(ui.style());
-    let text_width = |ui: &egui::Ui, text: &str| {
-        ui.painter()
-            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
-            .size()
-            .x
-    };
     // The closed combo's chrome around its text: the button's padding on
     // both sides, the gap and the arrow.
     let chrome = {
         let spacing = ui.spacing();
         2.0 * spacing.button_padding.x + spacing.icon_spacing + spacing.icon_width
     };
-    let team_width = cup_teams(file)
-        .map(|entry| text_width(ui, &display_name(&entry.name)))
-        .fold(0.0_f32, f32::max);
     let mut team = pick.team_id;
     let combo = egui::ComboBox::from_id_salt((salt, "team"))
         .selected_text(
@@ -191,7 +236,7 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
                 .map(|entry| display_name(&entry.name))
                 .unwrap_or_else(|| team.to_string()),
         )
-        .width(team_width + chrome)
+        .width(widths.0 + chrome)
         .show_ui(ui, |ui| {
             for entry in cup_teams(file) {
                 combo_item(ui, &mut team, entry.id, display_name(&entry.name));
@@ -208,10 +253,6 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
         pick.slot = first_filled_slot(file, team).unwrap_or(pick.slot);
     }
     let options = roster_options(file, pick.team_id);
-    let player_width = options
-        .iter()
-        .map(|(_, label)| text_width(ui, label))
-        .fold(0.0_f32, f32::max);
     let mut slot = pick.slot;
     let combo = egui::ComboBox::from_id_salt((salt, "player"))
         .selected_text(
@@ -221,7 +262,7 @@ fn pick_row(ui: &mut egui::Ui, session: &Session, salt: &str, label: &str, pick:
                 .map(|(_, label)| label.clone())
                 .unwrap_or_else(|| "?".to_owned()),
         )
-        .width(player_width + chrome)
+        .width(widths.1 + chrome)
         .show_ui(ui, |ui| {
             for (index, label) in &options {
                 combo_item(ui, &mut slot, *index, label);
@@ -284,6 +325,7 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
         .resizable(false)
         .open(&mut open)
         .show(ui.ctx(), |ui| {
+            let widths = dialog.widths(ui, session);
             let grid = egui::Grid::new("save_editor_copy_stats_grid")
                 .num_columns(3)
                 .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
@@ -298,6 +340,7 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
                         "save_editor_copy_stats_source",
                         "Source",
                         &mut dialog.source,
+                        widths,
                     );
                     ui.end_row();
                     pick_row(
@@ -306,6 +349,7 @@ pub(crate) fn window(ui: &mut egui::Ui, view: &mut SaveView) {
                         "save_editor_copy_stats_destination",
                         "Destination",
                         &mut dialog.destination,
+                        widths,
                     );
                     ui.end_row();
                 });

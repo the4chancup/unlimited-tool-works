@@ -253,7 +253,6 @@ fn assert_gameplan_import(
 }
 
 // SE-GUI-56
-// SE-GUI-79
 #[test]
 fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
     let path = stats_fixture("clip_player_stats");
@@ -326,7 +325,6 @@ fn ctrl_v_arriving_as_paste_image_pastes_nothing() {
 }
 
 // SE-GUI-56
-// SE-GUI-79
 #[test]
 fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {
     let (mut window, mut view) = open_window(&fixture(PesVersion::Pes17, "clip_gameplan"));

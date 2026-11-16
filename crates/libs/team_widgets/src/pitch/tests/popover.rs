@@ -1196,6 +1196,151 @@ fn with_the_portraits_off_a_click_on_the_upper_starters_badge_selects_him() {
     );
 }
 
+// The same badge-top box serves a drag's swap pick and a drop's target:
+// a CF dragged over the AMF's badge marks him with the badge's brackets
+// (upright arms 5, across arms 9), and the release swaps them; a bench
+// row dropped on the same badge swaps him in for the AMF. The PES 18
+// team's formation is the click test's: AMF (53, 26) in slot 8, DMF
+// (52, 20) in slot 5, the CF at (62, 40) in slot 9.
+// SE-GUI-81
+#[test]
+fn with_the_portraits_off_a_drag_and_a_row_drop_hit_the_upper_badge() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let version = PesVersion::Pes18;
+    let file = EditFile::from_bytes(&pes_savefile::fixture_save(version)).expect("fixture save");
+    let mut tactics = file
+        .team(711)
+        .expect("team 711 is in the fixture")
+        .tactics
+        .clone();
+    let rows = team_rows(&file, 711);
+    let roster = roster_rows(&rows);
+    let (amf, dmf, cf) = (8usize, 5usize, 9usize);
+    let mut view = TacticsView {
+        preset: 2,
+        portraits: false,
+        ..TacticsView::default()
+    };
+    let players = tactics.presets[2].formations[0].players;
+    assert_eq!(
+        (
+            position_label(players[cf].position),
+            players[cf].x,
+            players[cf].y
+        ),
+        ("CF", 62, 40),
+        "premise: the dragged starter's spot"
+    );
+    let (before_amf, before_cf) = (players[amf], players[cf]);
+
+    // Press the CF's badge, hold over the AMF's: the swap mark frames
+    // his badge, not the DMF's ghost portrait around it.
+    let (nodes, _) = window.pitch(version, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let (from, onto) = (centres[cf], centres[amf]);
+    assert!(
+        (onto.x - centres[dmf].x).abs() <= BADGE_W / 2.0
+            && onto.y >= centres[dmf].y - ABOVE_CENTRE
+            && onto.y <= centres[dmf].y + BELOW_CENTRE,
+        "premise: the AMF's badge sits inside the DMF's portraits-on box"
+    );
+    window.pitch(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    window.pitch(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(onto)],
+    );
+    let (shapes, _) = window.pitch_shapes(version, &mut tactics, &mut view, &roster, vec![]);
+    assert_badge_brackets(&shapes, onto);
+    let (_, changed) = window.pitch(
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(onto, false),
+    );
+    assert!(changed, "the release wrote the swap");
+    assert_eq!(
+        tactics.presets[2].formations[0].players[amf], before_cf,
+        "the AMF's slot takes the CF's"
+    );
+    assert_eq!(
+        tactics.presets[2].formations[0].players[cf], before_amf,
+        "and his the AMF's"
+    );
+
+    // A bench row released on the AMF's badge swaps him in.
+    let mut tactics = file.team(711).unwrap().tactics.clone();
+    let bench = tactics.bench_order[0];
+    let out = tactics.starting_eleven[amf];
+    let (nodes, _) = window.pitch_and_lineup(version, &mut tactics, &mut view, &roster, vec![]);
+    let from = row_centre(&nodes, 11);
+    let onto = centres_of(
+        canvas_rect(&nodes),
+        &tactics.presets[2].formations[0].players,
+    )[amf];
+    let changed =
+        window.drag_pitch_and_lineup(from, onto, version, &mut tactics, &mut view, &roster);
+    assert!(changed, "the row's release wrote the swap");
+    assert_eq!(
+        tactics.starting_eleven[amf], bench,
+        "the bench player takes the AMF's place"
+    );
+    assert_eq!(tactics.bench_order[0], out, "and he sits");
+}
+
+/// `shapes`' line segments in the selected corners' colour.
+fn selected_arms(shapes: &[egui::epaint::ClippedShape]) -> Vec<[egui::Pos2; 2]> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke }
+                if stroke.color == Palette::DARK.selected_corners =>
+            {
+                Some(*points)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Asserts `shapes` carry the swap mark on the marker whose badge is
+/// centred at `centre`: eight arms — the upright ones 5 to fit the
+/// badge's height, the across ones 9 — each ending on a badge corner.
+#[track_caller]
+fn assert_badge_brackets(shapes: &[egui::epaint::ClippedShape], centre: egui::Pos2) {
+    let badge = egui::Rect::from_center_size(centre, egui::vec2(BADGE_W, BADGE_H));
+    let arms = selected_arms(shapes);
+    assert_eq!(arms.len(), 8, "the swap mark's eight corner arms");
+    let corners = [
+        badge.left_top(),
+        badge.right_top(),
+        badge.left_bottom(),
+        badge.right_bottom(),
+    ];
+    for points in arms {
+        assert!(
+            corners.iter().any(|corner| points.contains(corner)),
+            "{points:?} ends on a badge corner"
+        );
+        let upright = (points[0].x - points[1].x).abs() <= 0.01;
+        let arm = if upright { 5.0 } else { 9.0 };
+        assert!(
+            (points[0].distance(points[1]) - arm).abs() <= 0.01,
+            "a {arm} px arm: {points:?}"
+        );
+    }
+}
+
 // The keeper's marker never moves (the draft's `d.gk`: `moved` never
 // sets for him), so his release is his click however far the pointer
 // moved: a press on him dragged past the click distance and released

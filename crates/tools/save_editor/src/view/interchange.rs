@@ -156,7 +156,7 @@ impl Export {
     /// what the file is, for the member wondering what he holds.
     fn detail(self, team_id: u32, version: PesVersion) -> String {
         match self {
-            Export::TeamToml => format!(" (the CLI's export-toml text for team {team_id})"),
+            Export::TeamToml => format!(" (team {team_id} as a Team TOML)"),
             Export::Texport => format!(" (team {team_id} as a {version} Texport)"),
         }
     }

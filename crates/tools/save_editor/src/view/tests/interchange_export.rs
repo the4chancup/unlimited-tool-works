@@ -244,7 +244,7 @@ fn the_team_toml_written_is_the_command_lines_export() {
             .as_ref()
             .map(|notice| (notice.text.as_str(), notice.kind)),
         Some((
-            "panel.toml written (the CLI's export-toml text for team 714)",
+            "panel.toml written (team 714 as a Team TOML)",
             NoticeKind::Success
         ))
     );
