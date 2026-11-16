@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import temp_alias
-from run_tests import ROOT, binaries, dependents, owner, packages, select
+from run_tests import ROOT, binaries, dependents, owner, packages, select, times_file
 
 
 def meta(*crates: tuple[str, str, list[str]]) -> dict:
@@ -57,6 +57,16 @@ class Packages(unittest.TestCase):
             ("c_lib", "crates/libs/c_lib", []),
         ))
         self.assertEqual(dependents({"c_lib"}, top_down), {"a_binary", "b_tool", "c_lib"})
+
+    def test_the_timings_live_in_the_target_folder_cargo_names(self) -> None:
+        # A worktree can build into another tree's target folder through
+        # CARGO_TARGET_DIR and have no `target/` of its own.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertNotEqual(Path(tmp), ROOT / "target", "premise")
+            self.assertEqual(
+                times_file({"target_directory": tmp}),
+                Path(tmp) / "run_tests_times.json",
+            )
 
 
 class Select(unittest.TestCase):

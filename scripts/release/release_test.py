@@ -1,6 +1,7 @@
 """Tests of scripts/release/release.py; `just release` runs them before the recipe."""
 
 import re
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -28,6 +29,7 @@ from release import (
     leftover_debug,
     links_crt_dynamically,
     linux_symbols_entries,
+    main_tree,
     pack,
     pack_tar,
     pack_tar_flat,
@@ -661,6 +663,29 @@ class Listing(unittest.TestCase):
             member = members["utw.debug"]
             self.assertEqual((member.uid, member.gid, member.uname, member.gname),
                              (0, 0, "", ""))
+
+
+class Git(unittest.TestCase):
+    def test_the_main_tree_is_found_from_a_worktree(self) -> None:
+        # `git rev-parse --git-common-dir` names the main tree's `.git` from any
+        # worktree of the repository.
+        def git(*args: str, cwd: Path) -> None:
+            subprocess.run(["git", *args], cwd=cwd, check=True,
+                           capture_output=True, text=True)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp).resolve()
+            main = base / "main"
+            worktree = base / "linked"
+            main.mkdir()
+            git("init", cwd=main)
+            (main / "f.txt").write_text("x", encoding="utf-8")
+            git("add", "f.txt", cwd=main)
+            git("-c", "user.name=T", "-c", "user.email=t@t",
+                "commit", "-m", "init", cwd=main)
+            git("worktree", "add", str(worktree), cwd=main)
+            self.assertEqual(main_tree(main).resolve(), main)
+            self.assertEqual(main_tree(worktree).resolve(), main)
 
 
 if __name__ == "__main__":

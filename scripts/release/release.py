@@ -470,6 +470,20 @@ def target_dir() -> Path:
     return Path(json.loads(metadata.stdout)["target_directory"])
 
 
+def main_tree(root: Path) -> Path:
+    """The repository's main working tree, asked of `root` which may be one of its linked
+    worktrees: the parent of the `.git` folder `git rev-parse --git-common-dir` names from
+    either. (`--path-format=absolute`: from the main tree the answer is `.git`.)"""
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return Path(common.stdout.strip()).parent
+
+
 def find_7z() -> str | None:
     on_path = shutil.which("7z")
     if on_path:
