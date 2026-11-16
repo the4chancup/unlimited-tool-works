@@ -1,5 +1,20 @@
 use super::*;
 
+/// The topmost drawn list row's label and bounds: the row a kept scroll
+/// leaves unmoved is identified by its label, its bounds alone telling
+/// only that no scroll moved by other than whole rows.
+pub(super) fn top_list_row(nodes: &[accesskit::Node]) -> (String, accesskit::Rect) {
+    nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .filter_map(|node| {
+            node.bounds()
+                .map(|bounds| (node.label().unwrap_or_default().to_owned(), bounds))
+        })
+        .min_by(|a, b| a.1.y0.partial_cmp(&b.1.y0).expect("ordered bounds"))
+        .expect("a top row")
+}
+
 /// The `TextShape` whose galley text starts with `starts_with`, drawn
 /// inside `rect`.
 fn text_in_rect<'a>(

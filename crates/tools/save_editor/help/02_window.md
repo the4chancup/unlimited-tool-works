@@ -57,10 +57,9 @@ a player or the team itself with unsaved changes.
 
 The filter box above the list finds a team or a player by part of a name or shirt name,
 or by the start of an id, so you can find someone without knowing their team first. It
-searches every team of the competition the radio buttons pick (every cup team on All),
-whichever team the dropdown shows. A team whose name or id matches is listed with its
-whole squad. Double-click a team's row to show that team alone: the dropdown picks it
-and the filter box empties.
+searches every team the dropdown lists, even when one team is picked. A team whose name
+or id matches is listed with its whole squad. Double-click a team's row to show that
+team alone: the dropdown picks it and the filter box empties.
 
 While no field has the keyboard and no menu or dialog is open, Up and Down move through
 the list's rows, team rows included. Page Up and Page Down work from a field too: they

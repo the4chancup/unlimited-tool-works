@@ -104,10 +104,11 @@ enum Reveal {
 }
 
 /// The `Reveal` a selection moved outside the list asks its row for: a
-/// jump to a team's row rises it to the list's top, so its players
-/// stand under it; a player row shows the least that shows it. A move
-/// stepped a row at a time — the arrow keys' walk — asks `Nearest`
-/// itself, so a team row stepped onto shows the least too.
+/// jump to a team's row brings it to the list's top, so its players
+/// stand under it; a player row shows the least that shows it. The
+/// moves that ask `Nearest` for themselves — the arrow keys' walk, the
+/// page toggle's Gameplan jump, a team row's double click — show the
+/// least for a team row too.
 fn reveal_for(selected: Option<Selection>) -> Reveal {
     if matches!(selected, Some(Selection::Team(_))) {
         Reveal::Top
@@ -156,8 +157,10 @@ pub(crate) struct SaveView {
     /// longer the selected row at the frame's end, so the target lives
     /// only while its team's row stays selected.
     click_kind: Option<clipboard::ClickKind>,
-    /// A selection moved outside the list's own row clicks: the list
-    /// scrolls to the selected row on the next draw, then clears this.
+    /// A selection moved outside the list's own row clicks, or kept
+    /// while a selector's or a category's pick relisted the rows over
+    /// it: the list scrolls to the selected row on the next draw, then
+    /// clears this.
     reveal_selected: Option<Reveal>,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
@@ -1579,9 +1582,9 @@ pub(crate) fn edit_team(
 
 /// `step` run on the open session, `None` with none: the selection
 /// follows the record it named through the step, the list scrolling to
-/// the slot it lands on. The selection names a roster slot, not a
-/// player, so a step that trades the players' records between the
-/// ids (an undo or a redo of a move, a `Player order` row's X) would
+/// the slot it lands on only when the slot moves. The selection names a
+/// roster slot, not a player, so a step that trades the players' records
+/// between the ids (an undo or a redo of a move, a `Player order` row's X) would
 /// leave it on whoever then holds the slot: the record of the selected
 /// slot's player is read before `step`, and the slot in the same team
 /// whose player holds it after (a move never crosses teams, so the

@@ -5,6 +5,7 @@
 
 use pes_savefile::interchange::team_toml::TeamToml;
 
+use super::list::top_list_row;
 use super::prompt::table_rows;
 use super::*;
 use crate::view::team::{channel_to_show, format_hex};
@@ -1092,12 +1093,7 @@ fn an_undone_edit_keeps_the_selection() {
         draw(&mut window, &mut view);
     }
     let nodes = draw(&mut window, &mut view);
-    let top_row = nodes
-        .iter()
-        .filter(|node| list_row(node))
-        .filter_map(accesskit::Node::bounds)
-        .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
-        .expect("a top row");
+    let top_row = top_list_row(&nodes);
 
     choose(&mut window, &mut view, "Edit", "Undo");
     assert_eq!(
@@ -1107,15 +1103,16 @@ fn an_undone_edit_keeps_the_selection() {
     );
     assert_eq!(selected_player_name(&view), "P02");
     let nodes = draw(&mut window, &mut view);
-    let top_after = nodes
-        .iter()
-        .filter(|node| list_row(node))
-        .filter_map(accesskit::Node::bounds)
-        .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
-        .expect("a top row");
     assert!(
-        (top_after.y0 - top_row.y0).abs() <= 0.5 && (top_after.y1 - top_row.y1).abs() <= 0.5,
-        "the undo left the list's top row where it was ({top_after:?} vs {top_row:?})"
+        !nodes
+            .iter()
+            .any(|node| node.label().is_some_and(|l| l.starts_with("02 CB P02"))),
+        "P02's row stays out of the clip"
+    );
+    assert_eq!(
+        top_list_row(&nodes),
+        top_row,
+        "the undo left the list's top row where it was"
     );
 }
 
