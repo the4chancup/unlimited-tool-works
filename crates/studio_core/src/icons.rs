@@ -1,5 +1,6 @@
 //! The icon glyphs the shell and the tools draw: sidebar rail entries, the Report a problem,
-//! Help and Settings buttons, the status bar's condition and dismiss icons. Each constant is the
+//! Help and Settings buttons, the status bar's condition and dismiss icons, and the tools' own
+//! buttons (a dock's pop-out, a dialog's close). Each constant is the
 //! glyph's one-character string, at its codepoint in `resources/fonts/icons.ttf`, the
 //! suite's icon font, which `scripts/fonts/make_icons.py` builds from one SVG per icon in
 //! `resources/icons/`. A tool's icon says what the tool does, and most carry one mark
