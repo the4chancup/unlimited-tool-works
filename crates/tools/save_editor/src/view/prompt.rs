@@ -1,7 +1,7 @@
 //! The unsaved-changes prompt (SE-GUI-05, the draft's `drawUnsavedPrompt`):
 //! "Unsaved changes" with Save, Discard and Cancel over the table of what a
-//! close or an open would write or lose, met by the window's close or one
-//! of the File menu's opens. The save's running-game question
+//! close or an open would write or lose, met by the window's close, Close
+//! save or one of the File menu's opens. The save's running-game question
 //! (`edit_mode_dialog`) shares the module: the window's Save and Save as
 //! ask it first while the save's own PES runs (SE-GUI-21's window rule).
 //! So does `confirm`, the question a dialog asks before it replaces or

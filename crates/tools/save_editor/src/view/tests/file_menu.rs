@@ -28,8 +28,10 @@ struct Tree {
     pes21_new: PathBuf,
     /// PES 19 under the account `292733975847239680`, the newest of the three.
     pes19: PathBuf,
-    /// A PES 21 save outside `Documents`.
+    /// A PES 17 save outside `Documents`.
     elsewhere: PathBuf,
+    /// A PES 21 save outside `Documents`, in a folder of its own.
+    other: PathBuf,
 }
 
 /// Builds the tree under `test`'s scratch folder.
@@ -66,13 +68,18 @@ fn tree(test: &str) -> Tree {
     let elsewhere_dir = dir.join("elsewhere");
     std::fs::create_dir_all(&elsewhere_dir).unwrap();
     let elsewhere = elsewhere_dir.join("EDIT00000000");
-    std::fs::write(&elsewhere, fixture_save(PesVersion::Pes21)).unwrap();
+    std::fs::write(&elsewhere, fixture_save(PesVersion::Pes17)).unwrap();
+    let other_dir = dir.join("other");
+    std::fs::create_dir_all(&other_dir).unwrap();
+    let other = other_dir.join("EDIT00000000");
+    std::fs::write(&other, fixture_save(PesVersion::Pes21)).unwrap();
     Tree {
         documents,
         pes21_old,
         pes21_new,
         pes19,
         elsewhere,
+        other,
     }
 }
 
@@ -139,6 +146,45 @@ fn menu_shown(window: &Headless, nodes: &[accesskit::Node]) -> bool {
         })
 }
 
+/// `heading`'s label bounds sit between `above` (the separator above its
+/// group) and `below` (the group's first entry's top): the heading over
+/// its group, as the File menu's and the welcome panel's headings stand.
+fn heading_between(nodes: &[accesskit::Node], heading: &str, above: f64, below: f64) {
+    let bounds = label_bounds(nodes, heading);
+    assert!(
+        above <= bounds.y0 && bounds.y1 <= below,
+        "{heading} between {above} and {below}: {bounds:?}"
+    );
+}
+
+/// The y of each separator line in `stroke` spanning `entry`'s x range at
+/// or under `top`, as `menu_entries` finds them (`ui.separator` in the
+/// panel is the same `noninteractive` stroke the menu's custom one draws).
+fn separator_lines(
+    shapes: &[egui::epaint::ClippedShape],
+    entry: accesskit::Rect,
+    stroke: egui::Stroke,
+    top: f64,
+) -> Vec<f64> {
+    let mut lines: Vec<f64> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) >= top
+                    && f64::from(points[0].x.min(points[1].x)) <= entry.x0 + 8.0
+                    && f64::from(points[0].x.max(points[1].x)) >= entry.x1 - 8.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .collect();
+    lines.sort_by(|a, b| a.partial_cmp(b).expect("ordered lines"));
+    lines
+}
+
 // SE-GUI-26
 #[test]
 fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
@@ -151,8 +197,7 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
     let nodes = open_menu(&mut window, &mut view, "File", PES19_ENTRY);
     // The recent entry: the opened save's version in brackets, then its
     // folder and its file name joined by the platform separator.
-    let version = view.session.as_ref().unwrap().version();
-    let recent = format!("[{version}] save{0}EDIT00000000", std::path::MAIN_SEPARATOR);
+    let recent = format!("[PES 2021] save{0}EDIT00000000", std::path::MAIN_SEPARATOR);
     let labels: Vec<&str> = entries(&nodes, "Open\u{2026}")
         .iter()
         .filter_map(|node| node.label())
@@ -227,6 +272,12 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
         );
     }
 
+    // Each heading stands over its group: under the separator above it,
+    // over the group's first entry.
+    let nodes = draw(&mut window, &mut view);
+    heading_between(&nodes, "Open from Documents", lines[0], entries_at[3].1);
+    heading_between(&nodes, "Recent files", lines[1], entries_at[6].1);
+
     // Each save's and the recent's tooltip is its own full path, found by
     // its place in the menu (the two PES 21 entries read alike); `Open…`'s
     // says where the picker opens.
@@ -269,12 +320,7 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
     // Ctrl+Shift+S opens Save as's picker even while the Name field holds
     // the keyboard (the stub records the dialog's call; it cancels here,
     // so nothing is written).
-    let handed = Rc::new(RefCell::new(Vec::new()));
-    let record = Rc::clone(&handed);
-    view.save_as_dialog = Box::new(move |current| {
-        record.borrow_mut().push(current.to_path_buf());
-        None
-    });
+    let handed = save_as_stub(&mut view, None);
     let nodes = draw(&mut window, &mut view);
     click(&mut window, name_field(&nodes), &mut view);
     draw(&mut window, &mut view);
@@ -299,12 +345,19 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
 // (SE-GUI-26's grouped entries).
 #[test]
 fn the_file_menus_separators_stand_only_between_its_groups() {
+    /// What a `case` frame drew: the File menu's button entries top to
+    /// bottom (label, top, bottom), the separators' ys, and the frame's
+    /// nodes (the headings and the "No PES saves" line are labels, not
+    /// counted entries).
+    struct MenuCase {
+        entries: Vec<(String, f64, f64)>,
+        lines: Vec<f64>,
+        nodes: Vec<accesskit::Node>,
+    }
+
     /// The File menu: `documents` discovered (None stubs empty) and
-    /// `recent` opened first if given. Its entries and separator ys.
-    fn case(
-        documents: Option<&Path>,
-        recent: Option<PathBuf>,
-    ) -> (Vec<(String, f64, f64)>, Vec<f64>) {
+    /// `recent` opened first if given.
+    fn case(documents: Option<&Path>, recent: Option<PathBuf>) -> MenuCase {
         let mut view = SaveView::new();
         match documents {
             Some(documents) => {
@@ -316,13 +369,23 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
             view.open(&recent);
         }
         let mut window = Headless::new();
-        menu_entries(&mut window, &mut view, "File", "Open\u{2026}")
+        let (entries, lines) = menu_entries(&mut window, &mut view, "File", "Open\u{2026}");
+        let nodes = draw(&mut window, &mut view);
+        MenuCase {
+            entries,
+            lines,
+            nodes,
+        }
     }
 
     // Neither list: the writes, then Close save and Exit — the headings
     // and the "No PES saves" line are labels, not counted entries, so both
     // separators land in the gap between Save as… and Close save.
-    let (entries, lines) = case(None, None);
+    let MenuCase {
+        entries,
+        lines,
+        nodes,
+    } = case(None, None);
     assert_eq!(
         entries.len(),
         5,
@@ -336,10 +399,22 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
             "no separator inside a group: entries {above} and {below}"
         );
     }
+    assert!(
+        !label_value(&nodes, "Recent files"),
+        "no Recent files heading with no recent"
+    );
+    assert!(
+        label_value(&nodes, "No PES saves were found in Documents."),
+        "the no-saves line"
+    );
 
     // Discovered only.
     let tree = tree("open_menu_sep_discovered");
-    let (entries, lines) = case(Some(&tree.documents), None);
+    let MenuCase {
+        entries,
+        lines,
+        nodes,
+    } = case(Some(&tree.documents), None);
     assert_eq!(
         entries.len(),
         8,
@@ -354,10 +429,22 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
             "no separator inside a group: entries {above} and {below}"
         );
     }
+    assert!(
+        !label_value(&nodes, "Recent files"),
+        "no Recent files heading with no recent"
+    );
+    assert!(
+        !label_value(&nodes, "No PES saves were found in Documents."),
+        "no no-saves line with saves found"
+    );
 
     // Recents only: the saves' group's separator and the Recent files
     // heading's sit between Save as… and the recent.
-    let (entries, lines) = case(None, Some(tree.elsewhere.clone()));
+    let MenuCase {
+        entries,
+        lines,
+        nodes,
+    } = case(None, Some(tree.elsewhere.clone()));
     assert_eq!(
         entries.len(),
         6,
@@ -375,9 +462,21 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
             "no separator inside a group: entries {above} and {below}"
         );
     }
+    assert!(
+        label_value(&nodes, "Recent files"),
+        "the Recent files heading"
+    );
+    assert!(
+        label_value(&nodes, "No PES saves were found in Documents."),
+        "the no-saves line"
+    );
 
     // Both.
-    let (entries, lines) = case(Some(&tree.documents), Some(tree.elsewhere.clone()));
+    let MenuCase {
+        entries,
+        lines,
+        nodes,
+    } = case(Some(&tree.documents), Some(tree.elsewhere.clone()));
     assert_eq!(
         entries.len(),
         9,
@@ -393,6 +492,14 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
             "no separator inside a group: entries {above} and {below}"
         );
     }
+    assert!(
+        label_value(&nodes, "Recent files"),
+        "the Recent files heading"
+    );
+    assert!(
+        !label_value(&nodes, "No PES saves were found in Documents."),
+        "no no-saves line with saves found"
+    );
 }
 
 // SE-GUI-26
@@ -442,6 +549,51 @@ fn the_picker_starts_in_the_last_opened_folder_then_the_newest_found_saves() {
     let starts = picker_starts(&mut view);
     choose(&mut window, &mut view, "File", "Open\u{2026}");
     assert_eq!(*starts.borrow(), [None], "nothing discovered: no folder");
+}
+
+// The picker's start folder is asked once per look of the menu or the
+// panel, never a frame: the folder the look found is kept while the look
+// is, and the next look resolves it again.
+#[test]
+fn the_picker_start_is_asked_once_per_look_not_every_frame() {
+    let tree = tree("picker_start_once");
+    let mut view = SaveView::new();
+    view.open(&tree.elsewhere);
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let starts = picker_starts(&mut view);
+    let mut window = Headless::new();
+
+    // The welcome panel's look found `last_folder` (the elsewhere save's
+    // folder): deleted under the kept look, the picker still starts there.
+    idle_frames(&mut window, &mut view, 3);
+    std::fs::remove_dir_all(tree.elsewhere.parent().unwrap()).unwrap();
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, menu_item(&nodes, "Open\u{2026}"), &mut view);
+    assert_eq!(
+        *starts.borrow(),
+        [tree.elsewhere.parent().map(Path::to_path_buf)],
+        "the kept look's folder, gone or not"
+    );
+
+    // A new look — the File menu opened and closed — resolves the start
+    // again: the folder gone, the picker starts in the newest discovered
+    // save's.
+    open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, menu_item(&nodes, "Open\u{2026}"), &mut view);
+    assert_eq!(
+        *starts.borrow(),
+        [
+            tree.elsewhere.parent().map(Path::to_path_buf),
+            tree.pes19.parent().map(Path::to_path_buf),
+        ],
+        "the kept look's folder first, then the newest discovered save's"
+    );
 }
 
 // SE-GUI-05, SE-GUI-26: one of the File menu's opens under unsaved changes
@@ -672,15 +824,16 @@ fn bak_of(path: &Path) -> PathBuf {
     PathBuf::from(format!("{}.bak", path.display()))
 }
 
-/// The Save as picker stubbed to return `target`, recording the path it
-/// is handed (the open file's, as `save_as` starts the picker there).
-fn save_as_stub(view: &mut SaveView, target: &Path) -> Rc<RefCell<Vec<PathBuf>>> {
+/// The Save as picker stubbed to return `answer` (`None` cancels),
+/// recording the path it is handed (the open file's, as `save_as` starts
+/// the picker there).
+fn save_as_stub(view: &mut SaveView, answer: Option<&Path>) -> Rc<RefCell<Vec<PathBuf>>> {
     let handed = Rc::new(RefCell::new(Vec::new()));
     let record = Rc::clone(&handed);
-    let target = target.to_path_buf();
+    let answer = answer.map(Path::to_path_buf);
     view.save_as_dialog = Box::new(move |current| {
         record.borrow_mut().push(current.to_path_buf());
-        Some(target.clone())
+        answer.clone()
     });
     handed
 }
@@ -698,7 +851,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
 
     let mut tool = crate::Tool::new();
     tool.view = edited_view(&path, &target);
-    let handed = save_as_stub(&mut tool.view, &target);
+    let handed = save_as_stub(&mut tool.view, Some(&target));
     let mut window = Headless::new();
     choose(&mut window, &mut tool.view, "File", "Save as\u{2026}");
     assert_eq!(
@@ -853,7 +1006,7 @@ fn ctrl_shift_s_runs_the_save_as_picker_and_write() {
     edited.basic.height = 170;
     view.session.as_mut().unwrap().edit_player(1, edited);
     assert!(view.is_dirty(), "premise: unsaved changes");
-    let handed = save_as_stub(&mut view, &target);
+    let handed = save_as_stub(&mut view, Some(&target));
     let mut window = Headless::new();
 
     let shift_s = egui::Modifiers::CTRL | egui::Modifiers::SHIFT;
@@ -1036,9 +1189,10 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
 fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     let tree = tree("welcome_panel");
     let mut view = SaveView::new();
-    // A PES 21 save in a folder outside Documents opened in an earlier
-    // run: the `recent_files` list.
+    // Two saves in folders outside Documents opened in an earlier run,
+    // `other` the more recent: the `recent_files` list.
     view.open(&tree.elsewhere);
+    view.open(&tree.other);
     view.session = None;
     discover_counted(&mut view, &tree.documents);
     let starts = picker_starts(&mut view);
@@ -1055,10 +1209,11 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         "the saves' heading"
     );
     assert!(label_value(&nodes, "Recent files"), "the recents' heading");
-    // The recent entry: the save's version in brackets, its folder and
-    // its file name.
+    // Each recent entry: the save's version in brackets, its folder and
+    // its file name; the list reads the last opened first.
+    let other = format!("[PES 2021] other{0}EDIT00000000", std::path::MAIN_SEPARATOR);
     let recent = format!(
-        "[PES 2021] elsewhere{0}EDIT00000000",
+        "[PES 2017] elsewhere{0}EDIT00000000",
         std::path::MAIN_SEPARATOR
     );
     let labels: Vec<&str> = entries(&nodes, "Open\u{2026}")
@@ -1072,10 +1227,12 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             "PES 2019 Ctrl+9",
             "PES 2021 Ctrl+1",
             "PES 2021",
+            other.as_str(),
             recent.as_str(),
         ],
         "the picker, then the saves by version under Open from Documents, \
-         the first of each with its shortcut, then the recent under Recent files"
+         the first of each with its shortcut, then the recents newest first \
+         under Recent files"
     );
     // Each heading's text starts where an entry's does (the label's and
     // the button's painted text's left edges).
@@ -1088,6 +1245,29 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
             "{heading}'s text at {left}, an entry's at {entry_left}"
         );
     }
+    // Each heading stands over its group, under the separator above it.
+    let sep = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let rows = entries(&nodes, "Open\u{2026}");
+    let first = rows[0].bounds().expect("an entry's bounds");
+    let lines = separator_lines(&shapes, first, sep, first.y0);
+    heading_between(
+        &nodes,
+        "Open from Documents",
+        lines[0],
+        rows[1].bounds().unwrap().y0,
+    );
+    heading_between(
+        &nodes,
+        "Recent files",
+        lines[1],
+        rows[4].bounds().unwrap().y0,
+    );
     assert!(
         window
             .ctx
@@ -1117,6 +1297,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         &tree.pes19,
         &tree.pes21_new,
         &tree.pes21_old,
+        &tree.other,
         &tree.elsewhere,
     ]) {
         let tip = path.display().to_string();
@@ -1134,7 +1315,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
     click(&mut window, menu_item(&nodes, "Open\u{2026}"), &mut view);
     assert_eq!(
         *starts.borrow(),
-        [tree.elsewhere.parent().map(Path::to_path_buf)],
+        [tree.other.parent().map(Path::to_path_buf)],
         "the picker started in the last opened save's folder"
     );
     assert!(view.session.is_none(), "a cancelled picker opens nothing");
@@ -1164,7 +1345,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         !nodes.iter().any(|node| node.role() == Role::Button
             && node
                 .label()
-                .is_some_and(|label| label.starts_with("[PES 2021] elsewhere"))),
+                .is_some_and(|label| label.starts_with("[PES 2017] elsewhere"))),
         "the gone save is skipped"
     );
     // Whether a recent save is still on disk is asked once per stay of the
@@ -1178,6 +1359,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         label_value(&nodes, "Recent files"),
         "the panel's look is kept while it stays up"
     );
+    std::fs::remove_file(&tree.other).unwrap();
     open_menu(&mut window, &mut view, "File", "Open\u{2026}");
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
@@ -1189,7 +1371,7 @@ fn the_welcome_panel_lists_the_opens_and_a_click_opens_its_save() {
         !label_value(&nodes, "Recent files"),
         "no Recent files heading once every recent save is gone"
     );
-    assert_eq!(view.recents.len(), 2, "the gone saves stay in the list");
+    assert_eq!(view.recents.len(), 3, "the gone saves stay in the list");
 }
 
 // SE-GUI-90's "no save discovered" clause: the weak line under the Open
@@ -1415,6 +1597,7 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
         Vec<crate::session::rules::TeamCheck>,
     >::held(key.clone());
     view.live.check.pending = Some(pending);
+    view.live.check.result = Some((key.clone(), Vec::new()));
     press_ctrl(&mut window, &mut view, egui::Key::W);
     assert!(view.session.is_none(), "Ctrl+W closed the save at once");
     assert!(view.prompt.is_none(), "no prompt on a clean save");
@@ -1427,7 +1610,10 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
         label_value(&nodes, "Save editor"),
         "the welcome panel shows"
     );
-    assert!(view.live.check.result.is_none(), "nothing of it drawn");
+    assert!(
+        view.live.check.result.is_none(),
+        "the held result went with the save"
+    );
     assert!(view.selected.is_none(), "the selection went with the save");
 
     // Ctrl+W while the Name field holds the keyboard closes nothing.
