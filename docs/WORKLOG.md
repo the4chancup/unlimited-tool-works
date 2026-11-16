@@ -1446,9 +1446,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     slice merged 2026-11-14 (`c4eee271`): a held-run seam (`Pending::held`), the copy test's
     check held, range picks after the dialog's check, every hang bound 120 s; mutation runs'
     test timeout at least 150 s to match (`.cargo/mutants.toml`). Open: two clean pipelines.
-    Left out, for the watch list: `export_upgrader/src/staging.rs:251` (a 300 ms releaser
-    against a 1.9 s retry window) and `studio/tests/crash_dump.rs` (the child's 2 s
-    connect bound is production code's)
+    The watch list's two, both seen failing under load on 2026-11-16, fixed: the staging
+    test's lock is released by the retried step itself, and the crash monitor's connect
+    bound is 10 s (the crashed run's log showed the monitor missing 2 s)
     Seen 2026-11-14 under the pipeline, a sidekick's run and two workspace test runs at once:
     `save_editor` `overlap::no_two_widgets_overlap_on_the_{player_and_team_views,menus_dialogs}`
     reached their 120 s bound ("a view worker never replied", `view/tests.rs:1511`) twice,
@@ -3309,25 +3309,6 @@ points there.
   `session/player_ops.rs` `team {team_id}'s roster slot {slot} is empty`. Each takes the
   list's `place NN` the way `aatf`'s `MissingPlayer` now does; ride the next Save editor
   text slice
-
-- open 2026-10-29 — `studio`'s `tests/crash_dump.rs`
-  `a_stack_overflow_leaves_a_dump_and_the_monitors_line` failed in k5a's checkpoint
-  (`gates-changed 4e311a05`, four test binaries at once beside `save_editor`'s): the crashed
-  run took 51.9 s and left no `data/utw.dmp` (`Minidump::read_path` → `FileNotFound`); alone
-  it passes in 0.16 s. So the crash monitor's dump fails or times out under load, which a
-  member's machine running PES may also be. Not k5a's (it touches no crash path). Diagnose
-  before trusting a dump on a loaded machine: rerun under the gates' load, read the
-  monitor's own wait and the log it leaves; do not loosen the test
-  Again 2026-11-15 in changesperf's `gates-changed` (27 s, `FileNotFound`) beside three
-  Carbon runs and a sidekick's build; alone it passed in 0.16 s. Likely cause, from the code
-  (not yet confirmed): `start_monitor` waits `MONITOR_CONNECT_TIMEOUT` (2 s) for the monitor,
-  the same binary started again, to accept; a run 27 s slow can miss that, and the session
-  then runs unwatched with one Warn line (`request_dump` itself has no timeout on Windows,
-  minidumper 0.11). Next: make the test print `data/utw.log` when the dump is missing (the
-  Warn line confirms or rules this out), then, if confirmed, raise the bound, which costs
-  nothing when the monitor is up in time.
-  Seen again 2026-11-14 in the lead's `gates-changed 62e261fa` (`FileNotFound` at
-  `crash_dump.rs:70`, beside a SWE-2 census build); alone it passed in 0.27 s.
 
 - open 2026-10-28 — `studio_core`'s first-run tests depend on the portable hint's width
   (8.29b): a hint of about 100 characters made three of them fail as if a click were lost

@@ -41,7 +41,10 @@ const MONITOR_ARG: &str = "--crash-monitor";
 /// The hidden argument running the crash test's trigger, followed by which crash.
 const CRASH_TEST_ARG: &str = "--crash-test";
 /// How long `connect` waits for the monitor to accept its socket before giving up.
-const MONITOR_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
+/// Not 2 s: on a loaded machine (a game or builds running) the monitor, a second start
+/// of the whole binary, took longer to come up, and the session then ran with no crash
+/// dump. The window waits this long only when the monitor is that slow.
+const MONITOR_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// The monitor's log line after writing the slot's dump (ST-RUN-10): it names the
 /// dump's file (`utw.dmp` for slot 1, `utw.n.dmp` for slot n), and
