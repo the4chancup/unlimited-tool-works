@@ -274,6 +274,33 @@ fn the_general_fields_stand_24_apart_and_the_checklist_rows_22() {
     }
 }
 
+// A checklist's first checkbox row stands 17 under its heading's line,
+// as the draft's does: the `strong` heading, the `weak` help and the
+// `statGrid` have no margins, and the draft's 22-point `tr` holds the
+// 18-point checkbox centred in it. The 1280 window keeps the help
+// lines to one line, so the distance is a gap and a line's height.
+#[test]
+fn each_checklist_starts_17_under_its_heading() {
+    let (ctx, _events, _window, mut view) = fresh_blank();
+    let mut window = Headless::sized(1280.0, 780.0);
+    let frame = settled(&mut window, &mut view, &ctx);
+    for (heading, nth) in [("Rating stats", 0), ("May sit below the target", 1)] {
+        let heading_bottom = node(&frame.nodes, heading)
+            .bounds()
+            .expect("a drawn heading")
+            .y1;
+        let box_top = nodes_labeled(&frame.nodes, "Attacking Prowess")[nth]
+            .bounds()
+            .expect("a drawn checkbox")
+            .y0;
+        let gap = box_top - heading_bottom;
+        assert!(
+            (gap - 17.0).abs() <= 1.0,
+            "{heading}: the first checkbox row {gap} under the heading, expected 17"
+        );
+    }
+}
+
 /// The note under the Event logo says where the Save editor shows it.
 #[test]
 fn general_notes_where_the_save_editor_shows_the_logo() {
