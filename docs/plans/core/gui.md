@@ -1163,9 +1163,10 @@ added to the table first (a new dependency, asked for first):
     `docs/prototypes/assets/fonts/` in the app's fallback order (the Dark/light theme row in
     "Other UI components"), naming no system font and no generic family, canvas text
     included;
-  - no bold (egui has no bold face), but for the one text that imitates a game label in a
-    bundled heavier face, the Tactics pitch's formation name (`--font-label`, `FONT_LABEL`:
-    `plans/save_editor.md`, "The formation's name");
+  - no bold (egui has no bold face), but for two texts in a bundled heavier face: the Tactics
+    pitch's formation name, which imitates a game label (`--font-label`, `FONT_LABEL`:
+    `plans/save_editor.md`, "The formation's name"), and the status bar's notices, so they
+    stand out among the bar's other texts ("Status bar", above);
   - every line is at egui's row height, 1.2 times the font size, set explicitly, since egui
     rounds the font's `hhea` height (1.17 times the size for Roboto Flex) to whole pixels, 15
     at 12.5 and 18 at 15, where a browser keeps the fraction (and with Selawik took the
