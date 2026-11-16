@@ -18394,3 +18394,13 @@ review hours, and a Carbon round costs hours and usage. A support
 claim for PES 2019 would rest on an import and a name alone.
 Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL)" (the PES 2019 paragraph);
 RUNBOOK "A checkpoint is one command".
+
+## 2026-11-16 — release — The no-stretch slices move to after 0.0.2
+Decision (the maintainer): the views keeping their default layout in a larger window
+(0.0.2-nostretch, `plans/core/gui.md` "A window larger than the default") are built after 0.0.2,
+not in it. 0.0.2 keeps today's behaviour, where a larger window spreads the views. This narrows
+"0.0.2 is cut without Select all similar, the Carbon rounds and the PES 2019 check" (this day),
+whose worklog kept the slices in.
+Why: a slice per tool is real layout work on files the cut's other fixes also change, and the
+release is due within the day.
+Plan: plans/core/gui.md "A window larger than the default" (unchanged; only its release moves).

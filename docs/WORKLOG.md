@@ -11,17 +11,17 @@ is in `AGENTS.md` ("Working documents").
 
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
 (VGL)"), cut within the day (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
-the Carbon rounds and the PES 2019 check"). After 0.0.2: 0.0.2-similar, every Carbon round a
-0.0.2 step still owes, 0.0.2-pes19 (and with it the readme's PES 2019 claim), and any mutation
-run (mutfast first). Most open steps below wait only for the maintainer's look
+the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
+0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes, 0.0.2-pes19
+(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
+(mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
    title row's line in its rework.
 2. Code: 0.0.2-gaps' leftovers (the Ruleset editor's General checklists, the Tiers fields cut
    at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild;
    Carbon's round-1 reworks never launched (`sk/cmprw`, `sk/selrw`, `sk/instrw`, `sk/ktorw`:
-   accepted concerns, fixed in 0.0.2 with no round 2); 0.0.2-nostretch's slices, one per tool
-   (in 0.0.2, the maintainer 2026-11-16).
+   accepted concerns, fixed in 0.0.2 with no round 2).
    Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, no Carbon round.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
@@ -1815,7 +1815,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (height), the Ruleset editor's rail and shown preview and the player list take the room;
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
-    - [ ] a slice per tool
+    - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
