@@ -1696,8 +1696,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         member's outcome ("C-notices r3"), so the loop ends with this rework: two tests that
         pass on wrong code, SE-GUI-81 and the fonts' readme (lead, `015a035e`), "Appearance
         section" in the lock's tooltip, a dead `None` arm
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices_r3.md`), in `noticesrw`
-        once the recents' rework A has merged from it
+      - [ ] the rework (SWE-2, `sk/noticesrw3`, `.tmp/0_0_2/revdebt/rework_notices_r3.md`):
+        running
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -1740,9 +1740,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         ("C-recents r1"): opening a save rewrote `settings.toml` without its comments, Ctrl+Q
         left an open menu over the prompt, a long recent entry wrapped once the panel
         scrolled; five test gaps, two citations, the changelog, help 02 and stale docs
-      - [ ] the rework in two parts (SWE-2): A, `studio_core`'s settings edit and the shell's
-        popups (`sk/recrw_a`, `.tmp/0_0_2/revdebt/rework_recents_a.md`); B, the rest
-        (`sk/recrw_b`, `rework_recents_b.md`): running; then Carbon's round 2
+      - [x] the rework's part A (SWE-2, merge `9ee8e180`): `studio_core`'s settings edit
+        keeps the comment above a key whose item changes kind; a held close closes popups
+        (ST-RUN-05 widened)
+      - [ ] part B, the rest (SWE-2, `sk/recrw_b`, `rework_recents_b.md`): running; then
+        Carbon's round 2
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
