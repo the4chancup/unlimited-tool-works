@@ -1234,11 +1234,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       field's offset differs; the tactics record is PES 2021's, its instruction values
       PES 2018's table. Nothing writes man marking but Copy preset and the Team TOML, and
       PES 2019's kit slots, measured in the team record, have no schema rows
-    - each field not yet seen, on a copy of the VGL 27 save: an edit per field, values
-      stepped apart, saved by the editor and read off PES 2019's Edit mode (pad and OBS, no
-      focus; no cargo while PES runs), every other team intact (Invitational 1 above all,
-      the case of the dropped tester's report)
-    - a Team TOML import and a `.ted` import (the organizer's first step), loaded in game
+    - each field not yet seen, read off PES 2019's Edit mode (pad and OBS, no focus; no
+      cargo while PES runs), every other team intact (Invitational 1 above all, the case of
+      the dropped tester's report). The save is a copy of the maintainer's own PES 2019
+      save (`.tmp/ingame_saves/backup_19`), not the VGL 27 one, which this install refuses
+      ("Create Edit Data?", 2026-11-13). The Team TOML reaches nearly every field the
+      editor writes, and the GUI's controls write through the same codec, so one Team TOML
+      with every value stepped apart, imported by the CLI into team 701, shows each
+      field's offset:
+      - [ ] part 1, the test save and what the game should show per screen (SWE-2,
+        `.tmp/0_0_2/pes19/brief_rb1.md`)
+      - [ ] part 2, the read-back in game, four players, the team and its three presets
+    - a `.ted` import (the organizer's first step) loaded in game: only the window imports
+      a `.ted` (the CLI takes a Team TOML), so it waits for a built-window run with the
+      maintainer's yes
     - PES 2019's case of three per-version looks: its stat names (8.29d's d3b), a Texport
       the panel exports imported by the game (8.9k's k5d), and whether a team-file import
       writes the DLC bin's team name (k5g)
