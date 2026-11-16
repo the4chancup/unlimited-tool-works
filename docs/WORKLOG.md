@@ -24,12 +24,10 @@ excepted, below), 0.0.2-pes19
    0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild. Carbon's
    round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2) are all merged.
    Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, all ended, no
-   Carbon round; but Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), runs
-   Carbon's and Astra's loops, each followed by a SWE-2 loop: Carbon's round 2 accepted 5,
-   and its rework, read by SWE-2 until a round accepted fewer than five, is merged
-   (`1a1da35d`). Carbon's round 3 accepted 6, none a defect a real input reaches, so
-   Carbon's loop ended; its fixes and SWE-2's round over them are merged (`b3e8f007`), and
-   Astra's loop is next.
+   Carbon round. Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its
+   whole review: Carbon's loop ended at round 3 (6 accepted, none a defect a real input
+   reaches), its fixes and SWE-2's loops over them are merged (`b3e8f007`), and Astra's
+   round 1 accepted nothing.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
