@@ -2258,11 +2258,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the built window beside the draft, 2026-11-16: it matches, but for the welcome
       panel's gap above each heading, about 4 to 5 points tighter than the draft's
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
-      landed (SWE-2, merge `6680c856`); SWE-2's round 2 running, then one Carbon round
+      landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
+      ends the SWE-2 loop: its rework (SWE-2, `sk/recents2`, `recents/.tmp/rework_recents2.md`,
+      with Choose file's tooltip from 0.0.2-answers) running, then one Carbon round
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
-    - [ ] code (SWE-2, one slice, after the recents rework merges, since it touches
-      `file_menu.rs`) -> verify: each a test red first:
+    - [ ] code, in two slices -> verify: each a test red first. SWE-2 (`sk/answers`,
+      `answers/.tmp/brief_answers.md`, running): the lit area, the manager id, the rail,
+      Substitution, the Gameplan's gaps. Opus, next: the Physique box, the indent, `Star
+      rating`, the Kit slots' widths:
       - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
         ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
       - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
@@ -2280,7 +2284,7 @@ briefs, review loops, gates and mutation runs as for any step.
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
         `substitution_choices`, help 08, the two comments)
       - Choose file's tooltip reads "starting in the folder of the last opened save"
-        (`view/file_menu.rs` `OPEN_TIP` and its test)
+        (`view/file_menu.rs` `OPEN_TIP` and its test): in the recents round 2 rework
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
