@@ -1754,8 +1754,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
     - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
-      points less room, the Gameplan's 8-point gaps, Kit slots at 51; it takes focus, so it
-      waits for the maintainer's yes
+      points less room, the Gameplan's 8-point gaps, Kit slots at 51 (lead, next)
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
