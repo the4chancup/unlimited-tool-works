@@ -27,7 +27,9 @@ excepted, below), 0.0.2-pes19
    Carbon round; but Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), runs
    Carbon's and Astra's loops, each followed by a SWE-2 loop: Carbon's round 2 accepted 5,
    and its rework, read by SWE-2 until a round accepted fewer than five, is merged
-   (`1a1da35d`); Carbon's round 3 is running on it.
+   (`1a1da35d`). Carbon's round 3 accepted 6, none a defect a real input reaches, so
+   Carbon's loop ended; its fixes and SWE-2's round over them are merged (`b3e8f007`), and
+   Astra's loop is next.
 3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
    0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
    its drill and its built window; a Linux bundle for the Reset window card.
@@ -1639,10 +1641,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     a release frame of the list with four teams' 2,494 rows 17.45 ms -> 1.01 ms, the close
     prompt 8.73 -> 0.97. Scrolled in the built window with two imports; card
     `test-changes-scroll` asks the maintainer to try four
-    - [ ] no row pops in during a fast scroll -> verify: a test in `tests/changes_popup.rs`
-      wheeling the four-team list fast and asserting, on every frame until it settles, that
-      the drawn rows cover the list's box top to bottom; red with the drawn range one row
-      short (SWE-2, after updrw2)
+    - [x] no row pops in during a fast scroll (2026-11-16, SWE-2, merge `8db25bd4`):
+      `a_fast_scroll_keeps_the_box_covered`, red with the drawn range one row short at
+      either edge and with the wheel off the list
   - [ ] 0.0.2-taskbuild the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
