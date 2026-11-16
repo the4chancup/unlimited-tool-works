@@ -1515,6 +1515,122 @@ fn the_list_lays_out_only_the_rows_in_view() {
     assert!(items <= 14, "{items} Item cells drawn of {rows} rows");
 }
 
+// The drawn range trails the clip by under a row's pitch, so a frame
+// that draws one row short leaves a strip of the panel bare: a fast
+// wheel scroll must keep the box covered on every frame.
+#[test]
+fn a_fast_scroll_keeps_the_box_covered() {
+    let mut view = four_team_imports("changes_list_fast_scroll");
+    let rows = crate::view::prompt::rows(view.session.as_ref().unwrap()).unwrap();
+    assert!(
+        rows.len() > 500,
+        "premise: the case is thousands of rows ({})",
+        rows.len()
+    );
+    let last = rows.last().expect("the case has rows");
+    let last_row = format!("{} · {}", last.cells.item, last.cells.term.label);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    // The wheel lands inside the box, over the list.
+    let at = egui::pos2(popup.left() + 60.0, popup.top() + 120.0);
+    let mut last_top = f64::MAX;
+    let mut settled = false;
+    for frame in 0..120 {
+        // A flick's notches, one a frame, then the frames the smoothed
+        // delta coasts through until the scroll settles.
+        let events = if (1..=8).contains(&frame) {
+            wheel(at, -400.0)
+        } else {
+            Vec::new()
+        };
+        let (_, pairs, _) = window.frame_ids(events, |ui| show(ui, &mut view, &|| Vec::new()));
+        let nodes = list_nodes(&pairs);
+        // The span the box clips to: the vertical scroll bar's track is
+        // the area's inner rect; the horizontal bar's top cuts it short
+        // when the table scrolls sideways.
+        let bars: Vec<accesskit::Rect> = nodes
+            .iter()
+            .filter(|node| node.role() == Role::ScrollBar)
+            .filter_map(|node| node.bounds())
+            .collect();
+        let vertical = bars
+            .iter()
+            .filter(|bounds| bounds.y1 - bounds.y0 > bounds.x1 - bounds.x0)
+            .max_by(|a, b| {
+                (a.y1 - a.y0)
+                    .partial_cmp(&(b.y1 - b.y0))
+                    .expect("ordered bounds")
+            })
+            .expect("the list's scroll bar is drawn");
+        let top = vertical.y0;
+        let bottom = bars
+            .iter()
+            .filter(|bounds| bounds.x1 - bounds.x0 > bounds.y1 - bounds.y0)
+            .map(|bounds| bounds.y0)
+            .fold(vertical.y1, f64::min);
+        // The drawn entries, top to bottom: each row's Item cell, and
+        // the header's while it still shows in the box.
+        let mut cells: Vec<(accesskit::Rect, &str)> = nodes
+            .iter()
+            .filter(|node| node.role() == Role::Label)
+            .filter_map(|node| Some((node.bounds()?, node.value()?)))
+            .filter(|(_, value)| value.contains(" · "))
+            .collect();
+        if let Some(head) = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some("Item"))
+            .and_then(|node| node.bounds())
+            .filter(|bounds| bounds.y1 > top)
+        {
+            cells.push((head, "Item"));
+        }
+        cells.sort_by(|a, b| a.0.y0.partial_cmp(&b.0.y0).expect("ordered bounds"));
+        assert!(cells.len() >= 2, "frame {frame}: a frame draws rows");
+        // A cell sits centred in its row's slot, so two drawn rows
+        // stand the row gap plus their centring margins apart — the
+        // pitch less a cell's height — and the box's edges take the
+        // same room.
+        let pitch = cells
+            .windows(2)
+            .map(|pair| pair[1].0.y0 - pair[0].0.y0)
+            .fold(f64::MAX, f64::min);
+        let room = pitch
+            - cells
+                .iter()
+                .map(|(bounds, _)| bounds.y1 - bounds.y0)
+                .fold(f64::MAX, f64::min)
+            + 0.5;
+        let hole = cells.first().expect("two cells").0.y0 - top;
+        assert!(
+            hole <= room,
+            "frame {frame}: a {hole:.1}-point hole at the box's top ({top:.1}): {cells:?}"
+        );
+        for pair in cells.windows(2) {
+            let hole = pair[1].0.y0 - pair[0].0.y1;
+            assert!(
+                hole <= room,
+                "frame {frame}: a {hole:.1}-point hole between {:?} and {:?}",
+                pair[0].1,
+                pair[1].1
+            );
+        }
+        let (lowest, name) = cells.last().expect("two cells");
+        let hole = bottom - lowest.y1;
+        assert!(
+            hole <= room || *name == last_row.as_str(),
+            "frame {frame}: a {hole:.1}-point hole at the box's bottom ({bottom:.1}): {lowest:?}"
+        );
+        let now = head_top(&nodes);
+        if frame > 8 && (now - last_top).abs() < 0.5 {
+            settled = true;
+            break;
+        }
+        last_top = now;
+    }
+    assert!(settled, "the scroll never settled");
+}
+
 // Scrolled to the end, the last row and its X are laid out like the
 // rest, and the X still puts that row's change back.
 // SE-GUI-74
