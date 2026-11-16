@@ -18342,3 +18342,14 @@ panels that are already drawn apart. Free placement needs snapping, overlap and 
 code, panels that reflow at any width (the pitch included), and leaves no layout to check
 against a draft.
 Plan: plans/save_editor.md, the Tactics editor's "one grid" paragraph ("arrangement").
+
+## 2026-11-16 — save_editor — every field the Save editor writes on PES 2019 is checked in game before 0.0.2
+Decision: before 0.0.2's cut, each field the Save editor writes on a PES 2019 save is edited,
+saved and read back in PES 2019's Edit mode. That covers the player, the team, the tactics,
+Copy/swap stats and the Team TOML and `.ted` imports, each with its values stepped apart. It
+also covers PES 2019's stat names, a Texport imported by the game, and the team name a
+team-file import writes.
+Why: 0.0.2's readme names PES 2019 as supported so that VGL 27's managers can use the
+editor, and so far only an unchanged import and a name edit have been seen in game there.
+Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL): preview 0.0.2"; worklog
+0.0.2-pes19.
