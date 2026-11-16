@@ -1316,6 +1316,53 @@ fn separated(entries: &[(String, f64, f64)], lines: &[f64], above: usize, below:
         .any(|&y| entries[above].2 <= y && y <= entries[below].1)
 }
 
+/// The `.sep`'s painted row under the title's row and the detail pane's
+/// top, of the frame `nodes` and `shapes` came from.
+fn line_and_pane_top(
+    window: &Headless,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+) -> (f64, f64) {
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let (row_bottom, row_left) = ["Stats", "Appearance", "Gameplan"]
+        .iter()
+        .map(|label| {
+            let bounds = node_labeled(nodes, Role::Button, label)
+                .bounds()
+                .expect("bounds");
+            (bounds.y1, bounds.x0)
+        })
+        .fold((0.0_f64, f64::MAX), |(bottom, left), (y, x)| {
+            (bottom.max(y), left.min(x))
+        });
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > row_bottom
+                    && f64::from(points[0].x.min(points[1].x)) <= row_left + 1.0
+                    && f64::from(points[0].x.max(points[1].x)) >= f64::from(PANE_RIGHT) - 1.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .reduce(f64::min)
+        .expect("the separator under the title's row");
+    (
+        line - f64::from(stroke.width) / 2.0,
+        f64::from(pane_frame(shapes, window.screen).min.y),
+    )
+}
+
 /// The pane the shell leaves a tool's view at the 1280 x 780 default
 /// window (`spec/core/gui.md` "The window's size"): the sidebar's 56-point
 /// rail (`studio_core`'s `RAIL_WIDTH`, which it does not export) and the
