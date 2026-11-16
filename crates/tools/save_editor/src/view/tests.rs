@@ -926,6 +926,41 @@ fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
     panic!("the list never reached its end")
 }
 
+/// Wheels the list down until no drawn row passes `shown`, then waits
+/// the wheel's spread-out delta out: each wait bounded, so a list that
+/// never scrolls the row out and a delta that never drains fail rather
+/// than hang.
+fn wheel_row_out_of_clip(
+    window: &mut Headless,
+    view: &mut SaveView,
+    shown: impl Fn(&accesskit::Node) -> bool,
+) {
+    let nodes = draw(window, view);
+    let at = centre(
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+    );
+    let mut out = false;
+    for _ in 0..64 {
+        let nodes = draw(window, view);
+        if !nodes.iter().filter(|node| list_row(node)).any(&shown) {
+            out = true;
+            break;
+        }
+        notch(window, view, at, false);
+    }
+    assert!(out, "the list never scrolled the row out of the clip");
+    for _ in 0..64 {
+        if !window.ctx.input(|input| input.is_scrolling()) {
+            return;
+        }
+        draw(window, view);
+    }
+    panic!("the wheel's delta never drained")
+}
+
 /// Draws a frame and asserts the selected row is drawn inside the list's
 /// clip: its bounds and the clip, for a caller's own placement check
 /// (a team row at the clip's top, a player row's `Nearest` bottom).

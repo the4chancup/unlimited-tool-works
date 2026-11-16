@@ -103,9 +103,10 @@ enum Reveal {
     Top,
 }
 
-/// The `Reveal` a selection moved outside the list asks its row for: a
-/// jump to a team's row brings it to the list's top, so its players
-/// stand under it; a player row shows the least that shows it. The
+/// How the list scrolls to the selected row when something other than a
+/// click on the list moved the selection, or a pick relisted the rows
+/// around a kept one: a team's row goes to the list's top, so its
+/// players stand under it; a player row shows the least that shows it. The
 /// moves that ask `Nearest` for themselves — the arrow keys' walk, the
 /// page toggle's Gameplan jump, a team row's double click — show the
 /// least for a team row too.
