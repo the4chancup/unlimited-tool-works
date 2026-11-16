@@ -331,20 +331,44 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
             // max_rect: a scroll area that read the frame's own available
             // height would get the height the body settled at, shrink to
             // it and keep its bar drawn.
-            let frame = studio_core::widgets::modal_frame(ui.style())
+            let chrome = studio_core::widgets::modal_frame(ui.style())
                 .total_margin()
-                .sum()
-                .y;
+                .sum();
             let title = ui.cursor().top() - ui.min_rect().top();
-            let max_height = rect.height() - frame - title;
+            let max_height = rect.height() - chrome.y - title;
+            // The body's width is its widest entry's — never under the
+            // frame's floor (`min_rect` after `dialog_page` set it),
+            // capped to the pane — the solid bar's strip beside it when
+            // the list scrolls. The invisible child lays the body out
+            // without painting or exposing it, measuring the widest
+            // entry and the body's height.
+            let mut probe = ui.new_child(egui::UiBuilder::new().invisible());
+            let (widest, height) = {
+                let (widest, _) = welcome_body(&mut probe, &opens);
+                (widest, probe.min_rect().height())
+            };
+            let scroll = egui::style::ScrollStyle::solid();
+            let bar = if height > max_height {
+                scroll.allocated_width()
+            } else {
+                0.0
+            };
+            let width = widest
+                .max(ui.min_rect().width())
+                .min(rect.width() - chrome.x - bar)
+                .max(0.0);
             let room = egui::Rect::from_min_max(
                 ui.cursor().min,
-                egui::pos2(ui.max_rect().right(), ui.cursor().top() + max_height),
+                egui::pos2(
+                    ui.cursor().min.x + width + bar,
+                    ui.cursor().top() + max_height,
+                ),
             );
             ui.scope_builder(egui::UiBuilder::new().max_rect(room), |ui| {
+                ui.spacing_mut().scroll = scroll;
                 egui::ScrollArea::vertical()
                     .max_height(max_height)
-                    .show(ui, |ui| welcome_body(ui, &opens))
+                    .show(ui, |ui| welcome_body(ui, &opens).1)
                     .inner
             })
             .inner
@@ -360,41 +384,46 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
 /// `Open…` as wide as the entries under it; the `Open from Documents`
 /// heading over the discovered saves (the weak line with none found); the
 /// `Recent files` heading over the recent saves when there are any.
-/// Returns the clicked entry's `Pending`.
-fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> Option<Pending> {
-    // Justified: every entry fills the frame's width — no discovered
-    // save's label, `PES 2015` to `PES 2021` with `Ctrl+digit`, passes
-    // the frame's 334-point floor, so the floor rules the rows.
-    let entry = |ui: &mut egui::Ui, open: &Open| {
-        ui.add(open.button())
+/// Returns the widest entry's intrinsic width, which `welcome_panel`
+/// sizes the body by, and the clicked entry's `Pending`.
+fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> (f32, Option<Pending>) {
+    // Justified: every entry fills the body's width — `welcome_panel`
+    // sets it to the widest entry's, which `Extend` keeps to one line.
+    let mut widest = 0.0_f32;
+    let mut entry = |ui: &mut egui::Ui, open: &Open| {
+        let response = ui.add(open.button().wrap_mode(egui::TextWrapMode::Extend));
+        widest = widest.max(response.intrinsic_size().unwrap_or(response.rect.size()).x);
+        response
             .on_hover_text(&open.tip)
             .clicked()
             .then(|| open.pending.clone())
     };
     let layout = egui::Layout::top_down_justified(egui::Align::Min);
-    ui.with_layout(layout, |ui| {
-        let mut chosen = entry(ui, &opens.picker);
-        ui.separator();
-        group_heading(ui, egui::RichText::new("Open from Documents").strong());
-        if opens.saves.is_empty() {
-            group_heading(
-                ui,
-                egui::RichText::new("No PES saves were found in Documents.").weak(),
-            );
-        }
-        for open in &opens.saves {
-            chosen = entry(ui, open).or(chosen);
-        }
-        if !opens.recents.is_empty() {
+    let chosen = ui
+        .with_layout(layout, |ui| {
+            let mut chosen = entry(ui, &opens.picker);
             ui.separator();
-            group_heading(ui, egui::RichText::new("Recent files").strong());
-            for open in &opens.recents {
+            group_heading(ui, egui::RichText::new("Open from Documents").strong());
+            if opens.saves.is_empty() {
+                group_heading(
+                    ui,
+                    egui::RichText::new("No PES saves were found in Documents.").weak(),
+                );
+            }
+            for open in &opens.saves {
                 chosen = entry(ui, open).or(chosen);
             }
-        }
-        chosen
-    })
-    .inner
+            if !opens.recents.is_empty() {
+                ui.separator();
+                group_heading(ui, egui::RichText::new("Recent files").strong());
+                for open in &opens.recents {
+                    chosen = entry(ui, open).or(chosen);
+                }
+            }
+            chosen
+        })
+        .inner;
+    (widest, chosen)
 }
 
 /// What an Open shortcut asks for.
