@@ -124,7 +124,8 @@ fn entries<'a>(nodes: &'a [accesskit::Node], first: &str) -> Vec<&'a accesskit::
     entries.into_iter().map(|(_, node)| node).collect()
 }
 
-/// The PES 19 entry's label, the first of the menu (its shortcut follows).
+/// The PES 19 entry's label, the first discovered save's (its shortcut
+/// follows).
 const PES19_ENTRY: &str = "PES 2019";
 
 /// `pressed` with Ctrl held, on one frame of the view.
@@ -335,6 +336,7 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
 // heading), under the saves' group before the Recent files heading when
 // both lists exist, and always before Close save; never elsewhere
 // (SE-GUI-26's grouped entries).
+// SE-GUI-26
 #[test]
 fn the_file_menus_separators_stand_only_between_its_groups() {
     /// What a `case` frame drew: the File menu's button entries top to
@@ -516,6 +518,36 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
     // first entry.
     heading_between(&nodes, "Open from Documents", lines[0], entries[3].1);
     heading_between(&nodes, "Recent files", lines[1], entries[6].1);
+}
+
+// SE-GUI-26
+#[test]
+fn a_recent_entry_clicked_in_the_menu_opens_it_and_moves_it_to_the_front() {
+    let tree = tree("open_menu_recent");
+    let mut view = SaveView::new();
+    // Two saves opened in an earlier run, `other` the more recent.
+    view.open(&tree.elsewhere);
+    view.open(&tree.other);
+    assert_eq!(
+        view.recents[0].path, tree.other,
+        "premise: the last opened is first"
+    );
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+
+    // The older recent, the second entry under Recent files.
+    let older = format!(
+        "[PES 2017] elsewhere{0}EDIT00000000",
+        std::path::MAIN_SEPARATOR
+    );
+    choose(&mut window, &mut view, "File", &older);
+    let session = view.session.as_ref().expect("the entry's save opened");
+    assert_eq!(session.path(), tree.elsewhere.as_path());
+    assert_eq!(
+        view.recents.first().map(|recent| recent.path.as_path()),
+        Some(tree.elsewhere.as_path()),
+        "the reopened save moved to the recents' front"
+    );
 }
 
 // SE-GUI-26
@@ -977,7 +1009,6 @@ fn a_cancelled_save_as_writes_nothing() {
 
 // SE-GUI-21, SE-GUI-26: Save as with the save's own PES running asks the
 // running-game question first; its Save writes to the Save as target.
-// SE-GUI-21, SE-GUI-26
 #[test]
 fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let path = fixture(PesVersion::Pes21, "save_as_running");
@@ -1416,6 +1447,40 @@ fn the_welcome_panel_with_nothing_found_says_so_under_the_heading() {
         !label_value(&nodes, "Recent files"),
         "no Recent files heading with no recent file"
     );
+    // One separator stands under Open…, none under the no-saves line.
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let sep = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let lines = separator_lines(&shapes, picker, sep, picker.y0);
+    assert_eq!(lines.len(), 1, "one separator, under Open…: {lines:?}");
+    heading_between(&nodes, "Open from Documents", lines[0], line.y0);
+
+    // A save opened in an earlier run and none discovered: the line
+    // still under its heading, a separator under it, the recents under
+    // theirs.
+    let path = fixture(PesVersion::Pes21, "welcome_nothing_recents");
+    let mut view = SaveView::new();
+    view.discover = Box::new(|_| Vec::new());
+    view.open(&path);
+    view.session = None;
+    idle_frames(&mut window, &mut view, 3);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let picker = menu_item(&nodes, "Open\u{2026}")
+        .bounds()
+        .expect("Open…'s bounds");
+    let lines = separator_lines(&shapes, picker, sep, picker.y0);
+    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
+    let line = label_below(&nodes, "No PES saves were found in Documents.", lines[0]);
+    heading_between(&nodes, "Open from Documents", lines[0], line.y0);
+    let recent = menu_item(&nodes, "[PES 2021]")
+        .bounds()
+        .expect("the recent entry's bounds");
+    heading_between(&nodes, "Recent files", lines[1], recent.y0);
 }
 
 // SE-GUI-90's "the middle of the view": the panel's frame centres in
@@ -1602,6 +1667,78 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
         paths[0].as_path(),
         "the oldest recent's save"
     );
+    assert_eq!(
+        view.recents.first().map(|recent| recent.path.as_path()),
+        Some(paths[0].as_path()),
+        "the click moved the oldest recent to the front"
+    );
+}
+
+// A recent save's label wider than the frame's floor does not wrap: the
+// body is its widest entry wide, the scroll bar beside it when the list
+// scrolls, and every row stands one line high.
+#[test]
+fn the_welcome_panels_wide_entries_stay_on_one_line() {
+    let tree = tree("welcome_wide");
+    let layout = save_layout(PesVersion::Pes21);
+    for index in 0..10 {
+        let account = format!("9999999999999999{index:02}");
+        let folder = tree
+            .documents
+            .join("KONAMI")
+            .join(layout.game_folder)
+            .join(account)
+            .join("save");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(
+            folder.join(layout.file_name),
+            fixture_save(PesVersion::Pes21),
+        )
+        .unwrap();
+    }
+    let mut view = SaveView::new();
+    // Ten recents, each folder name long enough to pass the frame's floor.
+    let dir = crate::test_support::scratch("welcome_wide_recents");
+    for index in 0..10 {
+        let folder = dir.join(format!(
+            "r{index} VGL26 winter backups of the organizer's own team folder"
+        ));
+        std::fs::create_dir_all(&folder).unwrap();
+        let path = folder.join("EDIT00000000 - VGL26 winter");
+        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
+        view.open(&path);
+    }
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 576.0);
+    idle_frames(&mut window, &mut view, 3);
+
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        nodes.iter().any(|node| node.role() == Role::ScrollBar),
+        "premise: the list scrolls"
+    );
+    let rows = entries(&nodes, "Open\u{2026}");
+    assert_eq!(rows.len(), 24, "every entry is drawn");
+    let (width, height) = {
+        let bounds = rows[0].bounds().expect("the first entry's bounds");
+        (bounds.x1 - bounds.x0, bounds.y1 - bounds.y0)
+    };
+    assert!(width > 334.0, "premise: the labels pass the frame's floor");
+    for node in &rows {
+        let bounds = node.bounds().expect("an entry's bounds");
+        assert_eq!(
+            bounds.y1 - bounds.y0,
+            height,
+            "{:?} is more than one line high",
+            node.label()
+        );
+        assert!(
+            (bounds.x1 - bounds.x0 - width).abs() <= 0.5,
+            "{:?} is not the first row's width",
+            node.label()
+        );
+    }
 }
 
 // The list that fits the panel draws as it did before the body could
@@ -1743,6 +1880,10 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
     let nodes = draw(&mut window, &mut view);
     assert!(view.session.is_none(), "Discard closed the save");
     assert!(
+        !view.request_close,
+        "Close save closed the save, not the window"
+    );
+    assert!(
         label_value(&nodes, "Save editor"),
         "the welcome panel shows"
     );
@@ -1769,6 +1910,10 @@ fn close_save_drops_the_save_for_the_welcome_panel_and_exit_requests_the_close()
     view.live.check.result = Some((key.clone(), Vec::new()));
     press_ctrl(&mut window, &mut view, egui::Key::W);
     assert!(view.session.is_none(), "Ctrl+W closed the save at once");
+    assert!(
+        !view.request_close,
+        "Ctrl+W closed the save, not the window"
+    );
     assert!(view.prompt.is_none(), "no prompt on a clean save");
     assert!(
         replies.send((key, Vec::new())).is_err(),

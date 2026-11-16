@@ -112,8 +112,9 @@
   one higher than the file.
 - **Export upgrader**: the comments of a kit's `config.toml` start at one column, so a
   two-digit value no longer pushes its comment out of line.
-- **Save editor**: with no save open, the middle of the window lists the saves found in
-  Documents (the newest of each version with its shortcut) and Choose file… (Ctrl+O).
+- **Save editor**: with no save open, the middle of the window offers `Open…` (Ctrl+O),
+  the saves found in Documents (the newest of each version with its shortcut) and the
+  recent saves.
 - **Ruleset editor**: the toolbar stays above the start page, so its File menu's Open… is
   there before a ruleset is open.
 - **Save editor**: while a row of the starting eleven or the bench is dragged over a
@@ -126,12 +127,12 @@
   report of something that went wrong: what you did in each tool, the files it opened and
   wrote, the log, your settings and your own words. Nothing is sent: you post the file.
 - **Save editor**: the File menu starts with `Open…` (Ctrl+O, until now `Choose
-  file…`), `Save` and `Save as…`, which now has Ctrl+Shift+S. The saves found in Documents
-  and the recent saves follow, each under a heading, then `Close save` (Ctrl+W), which
-  closes the save and brings back the list of saves, and `Exit` (Ctrl+Q).
+  file…`), `Save` and `Save as…`, which now has Ctrl+Shift+S. The saves found in
+  Documents and the recent saves follow, each under its own heading. Below them are
+  `Close save` (Ctrl+W), which closes the save and brings back the list of saves, and
+  `Exit` (Ctrl+Q).
 - **Save editor**: the recent saves are kept between runs, the last 10, each named by
-  its version, folder and file name (`[PES 2021] backups\EDIT00000000 - VGL26`). With no
-  save open, the middle of the window lists them too.
+  its version, folder and file name (`[PES 2021] backups\EDIT00000000 - VGL26`).
 - **All tools**: Ctrl+Q closes the window, asking first about unsaved changes, as its
   close button does.
 
