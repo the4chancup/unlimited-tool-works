@@ -3,7 +3,7 @@ use studio_core::StudioTool as _;
 use super::*;
 
 /// The category radio button labeled `label` in the open popup.
-fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
+pub(super) fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
     nodes
         .iter()
         .find(|node| node.role() == Role::RadioButton && node.label() == Some(label))
@@ -12,7 +12,7 @@ fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
 
 /// The team selector's combo, clicked open; the popup's `entry` item
 /// picked through its AccessKit action.
-fn pick_in_selector(window: &mut Headless, view: &mut SaveView, entry: &str) {
+pub(super) fn pick_in_selector(window: &mut Headless, view: &mut SaveView, entry: &str) {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     // A pick may have closed the popup; click the combo open only while
     // `entry` is not drawn (a click while it is open closes it).

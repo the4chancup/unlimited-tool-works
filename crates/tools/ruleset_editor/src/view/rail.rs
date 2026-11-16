@@ -23,6 +23,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
         .id_salt("ruleset_rail")
         .auto_shrink(false)
         .show(ui, |ui| {
+            // The draft's `.rail .sel` `padding: 3px 6px`: three points
+            // of padding above and below each row set their tops 24
+            // apart (the 18-point row and the shared six); egui's own
+            // spacing would put them 21.
+            ui.spacing_mut().item_spacing.y = 6.0;
             for &section in Section::RAIL {
                 if section == Section::CustomChecks && document.custom_checks.is_none() {
                     continue;

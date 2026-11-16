@@ -451,27 +451,47 @@ fn a_rows_click_scrolls_the_list_to_its_row() {
     );
 }
 
-// A team change's item clicked with the list scrolled to its end: the
-// click selects the team's own row, which rises to the list's top (`Top`)
-// on the next frame.
+// A team change's item clicked with the list at its top and the team's
+// row below the clip: the click selects the team's own row, which rises
+// to the list's top (`Top`) on the next frame. (The click landing the
+// row at the clip's bottom edge instead would pass under `Nearest`.)
 #[test]
 fn a_team_rows_click_scrolls_the_list_to_its_row() {
     let (mut view, _) = three_changes("changes_list_team_reveal");
+    // A colour change on 718 too: its row stands below the clip while
+    // the list stands at its top.
+    let mut team = team_entry(&view, 718);
+    let colors = team.colors.as_mut().expect("PES 21 stores team colours");
+    assert_ne!(
+        [colors[0].red, colors[0].green, colors[0].blue],
+        [10, 20, 30],
+        "premise: a real change"
+    );
+    colors[0].red = 10;
+    colors[0].green = 20;
+    colors[0].blue = 30;
+    view.session.as_mut().unwrap().edit_team(4, team);
     let mut window = Headless::new();
     click_label(&mut window, &mut view);
-    scroll_player_list_to_bottom(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some("718 /f/")),
+        "premise: 718's row is below the clip"
+    );
 
-    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    let colour = item(&mut window, &mut view, "/f/ · Col. 1");
     click(&mut window, &colour, &mut view);
     assert_eq!(
         view.selected,
-        Some(Selection::Team(701)),
+        Some(Selection::Team(718)),
         "premise: the team's own row selected"
     );
     let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
     assert!(
         (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
-        "701's row at the list's top, `Top` ({bounds:?} vs {clip:?})"
+        "718's row at the list's top, `Top` ({bounds:?} vs {clip:?})"
     );
 }
 
@@ -1022,11 +1042,14 @@ fn an_undo_past_a_save_keeps_the_moved_player_selected() {
     assert_eq!(selected_player_name(&view), "P04");
 }
 
-// A step that trades nothing leaves the selection where it was.
+// A step that trades nothing leaves the selection where it was — and
+// the list where it was, though the selected row is out of the clip.
 #[test]
 fn an_undone_edit_keeps_the_selection() {
     let mut view = told_apart("changes_list_edit_selected");
-    let mut window = Headless::new();
+    // A pane shorter than the team's 24 rows, so the list can scroll
+    // P02's row out of the clip.
+    let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, row(&nodes, "02 CB P02"), &mut view);
     assert_eq!(
@@ -1039,6 +1062,43 @@ fn an_undone_edit_keeps_the_selection() {
     edited.basic.height = 190;
     view.session.as_mut().unwrap().edit_player(1, edited);
 
+    // Wheel down until P02's row is out of the clip (bounded, so a list
+    // that never scrolls him out fails rather than hangs).
+    let at = centre(
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+    );
+    let mut off_clip = false;
+    for _ in 0..64 {
+        let nodes = draw(&mut window, &mut view);
+        if !nodes
+            .iter()
+            .any(|node| node.label().is_some_and(|l| l.starts_with("02 CB P02")))
+        {
+            off_clip = true;
+            break;
+        }
+        notch(&mut window, &mut view, at, false);
+    }
+    assert!(off_clip, "the list scrolled P02's row out of the clip");
+    // Let the wheel's spread-out delta drain before the top row is read:
+    // it would keep scrolling across the undo's frames.
+    for _ in 0..64 {
+        if !window.ctx.input(|input| input.is_scrolling()) {
+            break;
+        }
+        draw(&mut window, &mut view);
+    }
+    let nodes = draw(&mut window, &mut view);
+    let top_row = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .filter_map(accesskit::Node::bounds)
+        .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
+        .expect("a top row");
+
     choose(&mut window, &mut view, "Edit", "Undo");
     assert_eq!(
         view.selected,
@@ -1046,6 +1106,17 @@ fn an_undone_edit_keeps_the_selection() {
         "the edit's undo left the selection on P02"
     );
     assert_eq!(selected_player_name(&view), "P02");
+    let nodes = draw(&mut window, &mut view);
+    let top_after = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .filter_map(accesskit::Node::bounds)
+        .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
+        .expect("a top row");
+    assert!(
+        (top_after.y0 - top_row.y0).abs() <= 0.5 && (top_after.y1 - top_row.y1).abs() <= 0.5,
+        "the undo left the list's top row where it was ({top_after:?} vs {top_row:?})"
+    );
 }
 
 // The order row's new side names the players now on the places, as they

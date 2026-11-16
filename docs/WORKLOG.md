@@ -23,7 +23,8 @@ is in `AGENTS.md` ("Working documents").
 4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon) and the maintainer's looks (`maintainer/tasks.html`).
+   (Carbon), the maintainer's looks (`maintainer/tasks.html`), the Save editor's PES 2019
+   writes checked in game (0.0.2-pes19) and three small fixes 0.0.1 left (0.0.2-left01).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -79,14 +80,6 @@ Things that are true *right now* and would cost the next session time to redisco
 fixture, a flaky test, a crate that doesn't build on one platform). Remove an entry when it stops
 being true. Permanent toolchain facts go in `docs/CONTRIBUTING.md` "Toolchain notes" instead.
 
-- **Until 0.0.1's cut, this machine's CPU goes to 0.0.1** (the maintainer, 2026-10-27; DECISIONS
-  "Until the 0.0.1 cut, no test run reaches past what 0.0.1 needs"): work and test runs on
-  anything 0.0.1 does not strictly need are queued (Phase 20's 20.6a2b and 20.7, the "after
-  0.0.1" steps, mutation runs of crates outside 0.0.1). 0.0.1's own verification keeps this
-  machine at full speed: a step or a merge is gated locally with `just gates-changed <its
-  start>` (the changed packages and every package depending on them), and 0.0.1's mutation
-  runs stay split. Only what no 0.0.1 change reaches moves off it: a full-workspace `just
-  gates-remote` on bonfire when bonfire is free, blocking nothing. Remove this entry at the cut.
 - `just` needs PowerShell as its Windows shell (`set windows-shell` in the justfile): Git for
   Windows' `sh` is not on PATH from a plain PowerShell. Recipes still stop at the first failure.
 - `cargo install just cargo-deny` is required once per machine (both take a few minutes to build);
@@ -718,7 +711,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (`ae9fd2a2`); release build checked 2026-10-30
       - [x] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a, and of k5c's round 1.
         Merged 2026-10-29 (`e194f974`, tests `17cfd6d8`)
-      - [ ] k5d after 0.0.1 (the maintainer, 2026-10-30: 0.0.1 targets PES 2017 only):
+      - [ ] k5d after 0.0.2, PES 2019's case in 0.0.2-pes19 (the maintainer, 2026-10-30: 0.0.1
+        targets PES 2017 only):
         SE-GUI-29 manual, each Texport the panel exports imported by the game's own team import
         in PES 18, 19, 20 and 21 (the installs on G:; saves backed up first). Look: Pending looks
       - [x] k5e PES 2015-2017 Texports in the panel (no extension; on PES 2015-2017 the dialog
@@ -727,7 +721,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         written from templates and the open save"). Landed `740388f4` (Opus sidekick);
         SE-GUI-29's PES 17 case checked in game 2026-10-30; the zero emblem's effect unseen
         (look: Pending looks)
-      - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
+      - [ ] k5g after 0.0.2, PES 2019's case in 0.0.2-pes19 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
         team file in game and check whether the import writes the team name the DLC's team
         bin gives the target's id into the save, as on PES 2017 (`plans/save_editor.md` "Interchange
@@ -754,7 +748,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the dialog's Save wrote it (hash changed); back in Edit mode, Load ("Rigging Edit Data
         will erase current data") then Edit Player showed QUADS ONLYX, no restart
         (`.tmp/release_0_0_1/se21b/shots/12_dialog.png`, `11_after_load_squad.png`)
-  - [ ] 8.10 after 0.0.1: the progress grid (with the log panel's cross-link: a warning or
+  - [ ] 8.10 after 0.0.2: the progress grid (with the log panel's cross-link: a warning or
     error line's click highlights its grid cell, `plans/core/gui.md` "Log panel", which 8.6d3 leaves for
     the grid), the run strip, the exports folder watcher and check cache, cancellation, the launcher (`quick_compile.bat` to its `--gui` form, `quick_upgrade.bat` dropped once the upgrader's view lands), the
     Compiler's and the Export upgrader's views (their drafts first); the notice action
@@ -825,7 +819,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       bar sweeping its bottom edge over any ring (the maintainer's pick over a segment
       going around the edge; DECISIONS "a compiling cell sweeps"). The host page's compiler stub (`startCompile`, its three-row table) is now
       unreachable and goes when the draft is accepted
-  - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
+  - [ ] 8.23 after 0.0.2: edits made in PES come back to the export
     (`plans/aesthetics_export/settings_toml.md` "Edits made in PES come back to the export";
     DECISIONS of 2026-10-25; the maintainer's "even if Studio was not running" first):
     - [ ] 8.23a the in-game check first (PES 21, a save with a compiled team's patch applied,
@@ -849,7 +843,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [x] 8.25 the sidebar as a rail that opens on hover over the view (DECISIONS "The sidebar
     is a rail that opens over the view on hover"; ST-SIDE-02): the drafts' half merged
     `7b5ed0ef`, the code half 2026-10-25 (SWE-2); seen in the built window at 1280 × 800
-  - [ ] 8.22 after 0.0.1: the accepted usability items outside the grid (2026-10-25, P1, P2,
+  - [ ] 8.22 after 0.0.2: the accepted usability items outside the grid (2026-10-25, P1, P2,
     P6, P10-P14; DECISIONS "Usability proposals P1-P14 accepted"; 2026-10-26, P18-P20, P22,
     P32-P36, h to j), each its own commit:
     - [ ] 8.22a the finding line's disposition phrase (`plans/core/architecture.md` "Every
@@ -998,7 +992,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     Done (`832caa83`, merged `0bf68fc4`); seen in the built window 2026-10-30
   - [x] 8.32 the pitch draws the formation's name in its corner: built as 0.0.1x, approved
     2026-10-28
-  - [ ] 8.33 after 0.0.1 (the maintainer, 2026-10-27): a menu entry that saves a picture of
+  - [ ] 8.33 in 0.0.2-flatpitch (the maintainer, 2026-10-27): a menu entry that saves a picture of
     the team's formations to a folder: a grid, one row per preset, one column per formation.
     Drafted and approved 2026-10-28 (DECISIONS 2026-10-27 "Formation pictures, the
     formation's name and the nation names: the maintainer's answers", "The drafts' looks of
@@ -1006,7 +1000,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     label Fluid formation, and put a target on its own line"); the plan written
     (`plans/save_editor.md` "Tactics editor", "Formation pictures"); left: the code, with
     8.34, its scenarios written with it
-  - [ ] 8.34 after 8.33 (the maintainer, 2026-10-27): the same for a range of teams, one
+  - [ ] 8.34 with 8.33 in 0.0.2-flatpitch (the maintainer, 2026-10-27): the same for a range of teams, one
     picture per team, in one go. Drafted and approved with 8.33 (above); left: the code
   - [x] 8.35 a ruleset carries its event's logo and page (P45; DECISIONS "A ruleset carries its
     event's logo and page"; RE-FILE-09, SE-GUI-44, RE-GUI-19): a `aatf`'s keys, b the Save
@@ -1081,7 +1075,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-10-30 (`.tmp/phase_08/8_30c/findings.md`): a the number dialogs' 52-point box (merged
     `bd940680`), b a disabled widget's look, `studio_core::widgets::add_enabled` (merged
     `6cb1a234`). The Fox ownership line's Apply link went unchecked (look: Pending looks)
-  - [ ] 8.39 after 0.0.1 (the maintainer, 2026-10-30): rename `dds_convert` to `image_convert`.
+  - [ ] 8.39 after 0.0.2 (the maintainer, 2026-10-30): rename `dds_convert` to `image_convert`.
     The crate decodes every picture the suite reads (PNG, DDS, FTEX), resizes, writes PNGs and
     encodes the games' textures; the Save editor, the Ruleset editor and `team_widgets` use it
     for logos and portraits that are never a DDS, so the name tells a reader the wrong scope.
@@ -1158,7 +1152,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         2017's stat names are checked"):
         - [x] d3a PES 2017's stat names (`pes_savefile` `labels::stat_name`). Done 2026-10-30
           (Opus sidekick, merged `34639d07`)
-        - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
+        - [ ] d3b after 0.0.2, PES 2019's in 0.0.2-pes19: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
           games on G: for the rest) → verify: a test per version against the gathered names.
           Look: Pending looks
@@ -1173,7 +1167,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] e1 before 0.0.1: the Save editor's eight chapters and the two core ones. Done
         2026-10-30 (Opus sidekick, merged `db1b149d`); e1r the search's labels as plain text
         (merged `1c1fb403`). The read in the built window was left open (look: Pending looks)
-      - [ ] e2 after 0.0.1: the Compiler's, the Export upgrader's and the other tools'
+      - [ ] e2 after 0.0.2: the Compiler's, the Export upgrader's and the other tools'
         chapters
     - [ ] f a second read of every string a member reads, for how a person would say it
       (the maintainer, 2026-11-12, after two lines of the Save editor's import panel that
@@ -1216,594 +1210,45 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   its scroll offset) beside a grid of our own, and keeps the simpler; the maintainer allows
   the direct dependency (2026-11-14)
 
-### Release 0.0.1 — the preview build (DBC's editors, VGL 27's compiler and upgrader)
+### Releases 0.0.1 and 0.0.2 — the preview builds
 
-`plans/core/development_plan.md` "Divegrass Before Christmas" and "The /vg/ League 27 (VGL)"
-(the maintainer's choice of 2026-10-23: the CLI half joins the build already planned). Steps
-a-e run once 8.9e and the second draft (8.9f) are done, while the maintainer rules on that
-draft, and before Phase 20, so the rehearsal's findings have the most time before the league;
-f is the cut, once Phase 20 closes. The usual rigor holds throughout:
-briefs, review loops, gates and mutation runs as for any step.
-
-- [x] 0.0.1a the console's progress line and run summary (`studio` `console.rs`, `indicatif`;
-  ST-CLI-02's piped half by a CLI test). Done; the terminal half checked by hand 2026-10-23
-- [x] 0.0.1b the launchers: `resources/bundle/quick_{compile,upgrade}.bat`, tested through
-  `cmd /c` in `crates/studio/tests/launchers.rs`. Done
-- [x] 0.0.1c an interrupted run: Ctrl+C at several points of a compile and an upgrade, 65
-  killed runs tallied (`.tmp/release_0_0_1/0_0_1/interrupt/tally.md`). Done 2026-10-23
-  (SWE-2): `upgrade-dpfl` writes through a temporary, the compiler skips a killed upgrade's
-  `<output>.upgrading` (`export_upgrade_unfinished`, TC-SRC-11)
-- [x] 0.0.1d `just release <version>` (`scripts/release/release.py`) under the codename, the
-  portable `.7z` with its SHA256 file. Done (0.0.1d1 the codename, 0.0.1d2 below)
-  - [x] 0.0.1d2 `just release`, the readme, a run from a clean worktree at 51e32df0. Done: the
-    exe 35.3 MiB, past the size budget's "about 30 MB"
-- [x] 0.0.1e the rehearsal on PES 2019 with FoxDen: VGL26's 53 old exports through both
-  launchers from the extracted bundle, then checked in game in Edit mode. Done 2026-10-23
-- [x] 0.0.1g the Team compiler and the Export upgrader greyed on the sidebar while their CLI
-  stays (ST-SIDE-08; `studio`'s `CLI_ONLY`). Done
-- [x] 0.0.1h `ingame_face.toml`: the marker becomes a file holding the in-game face, and
-  `settings.toml` loses the face, hair and iris keys (DECISIONS 2026-10-24; TC-STR-18 to 20,
-  TC-BIN-47 to 49, EU-PLY-21, 22, EU-SET-10, 11, SE-GUI-33, 34). Done 2026-10-25 (SWE-2, three
-  slices), SE-GUI-34's earlier form checked in game on PES 21 (re-proved in its patch form at
-  8.36d)
-- [x] 0.0.1i `libs/aatf`'s audit for 0.0.1: the converge audit, the design pass and a census
-  of 424 saves under DBC7's rules, `Rules::player_tier` for 8.9f4d (DECISIONS 2026-10-25).
-  Done 2026-10-25 (side-lead B, SWE-2): the census unchanged after the fixes, the close run's
-  mutation run none missed (`.tmp/release_0_0_1/0_0_1i/`)
-- [x] 0.0.1k the window's diagnostic log, `studio.log` (DECISIONS 2026-10-26): k1 the sink
-  and the panic dialog (ST-RUN-07), k2 backtraces as base and offset with
-  `scripts/release/symbolize_log.py` (ST-RUN-09), k3 the check in the built window, k4 the
-  crash dump (`crates/studio/src/crash_dump.rs`, one `unsafe` block, ST-RUN-10). Done
-  2026-10-28
-  - ST-RUN-08 manual: checked 2026-10-28 by the lead on a release build of `825f1885` in
-    the `ingame` worktree with About's Copy panicking by hand (reverted, rebuilt, the
-    bundle's exe free of it), its own data folder (`.tmp/release_0_0_1/0_0_1k3/`, `k3.py`): the click
-    shows a dialog repeating "k3 test panic: About's Copy clicked" and naming `studio.log`;
-    once closed the process exits 101; the log holds the message, `about.rs:63:17` and 59
-    frames, which `scripts/release/symbolize_log.py` names against the kept exe and `.pdb`
-    (`about::show` at `about.rs:63`), and ends "the crash above was shown to the member"
-    (kept, symbolized, as `.tmp/release_0_0_1/0_0_1k3/symbolized.log`; the later starts rotated it out).
-    ST-RUN-09 the same day: no dialog on the first start (no earlier log) nor after the
-    reported crash; after the process was killed, a dialog before the window naming
-    `studio.old.log`; a WM_CLOSE ends the log "the window closed normally", exit 0
-  - ST-RUN-11 manual: checked 2026-10-27 (k4b's release dump, its exe and `.pdb` kept in
-    `4cc-studio-temp/st_run_11/`; `dump_syms` then `minidump-stackwalk`: the crashed main
-    thread's frames 2-3 `4cc_studio::crash_dump::overflow_the_stack()`, `crash_dump.rs`
-    254 and 263, under `__chkstk` and `memset`; the plan's sentence now names `dump_syms`).
-    manual: checked 2026-10-27, the built window's normal close leaves no monitor (the same
-    release exe, portable over a fresh `data/`; `st_run_11/close_check.py`): two processes
-    open, the window and its `--crash-monitor`, none within 15 s of `WM_CLOSE`, exit 0,
-    the closing line last, no dump.
-    manual: checked 2026-10-28, the window opening when the monitor cannot start: a release
-    build of `825f1885` whose `main.rs` handed `watch_crashes` the exe's path with a `.txt`
-    extension (reverted by hand, rebuilt: 12 bytes from the clean build, the PE and debug
-    timestamps and the PDB signature), over a fresh `data/` (`.tmp/release_0_0_1/0_0_1k4c/`): the window
-    opened (`window.png`), one process and no monitor, the log's second line "the crash
-    monitor did not start, so this session writes no crash dump: cannot start the crash
-    monitor …4cc-studio.txt: The system cannot find the file…", WM_CLOSE's closing line last.
-    Linux: `tests/crash_dump.rs` passed in `just gates-remote` on bonfire (Debian,
-    2026-10-28; expects SIGSEGV, 11); CI's own job ran red then for another cause, the
-    section-pointer check reading the gitignored `.tmp/` (fixed the same day). Reviews:
-    SWE-2 S1 7 of 18, S2 1 of 5, Astra A1 (checkpoint b) 0 of 1 (`.tmp/release_0_0_1/0_0_1k4b/rulings.md`)
-- [ ] 0.0.1l no console window in the preview (`plans/core/architecture.md` "Windows
-  subsystem", DECISIONS 2026-10-25, `AttachConsole` approved): `#![windows_subsystem =
-  "windows"]` on every Windows build (the plan's paragraph after it says why debug too),
-  `AttachConsole(ATTACH_PARENT_PROCESS)` behind one safe function when command arguments are
-  present, the window mode's startup failures in a message dialog, after 0.0.1k (a panic
-  needs the log first) → verify: the gates' piped CLI tests (`help_cli`, `launchers`,
-  `team_compiler_cli`) on the GUI-subsystem binary; ST-RUN-04. Left: the two launchers'
-  check (each prints, its `pause` waits) on 0.0.2's bundle, which has them. Look: Pending
-  looks
-  - [x] l1 the subsystem on the exe, the attach in `main`, `tests/subsystem.rs`
-  - [x] l2 ST-RUN-04 in the bundle: a double-click opens no console; `team-compiler check`
-    from a terminal prints there
-    - ST-RUN-04 manual: checked 2026-11-04, the published `unlimited-tool-works-0.0.1-windows.7z`
-      (its SHA256SUMS hash), extracted to `.tmp/after_cut/l2/`: the exe's PE subsystem is 2;
-      launched through Explorer it opened its window and its `--crash-monitor` child, no console
-      window appeared (`double_click.log`); from `cmd` in a pseudo-console (`run.bat` through
-      `scripts/conpty_run.py`) `UTW --help`, an unknown command's error and `UTW team-compiler
-      check` (`Warning no_exports_found`, exit 0) all printed there. Run with no shell
-      between, under `conpty_run.py` alone, nothing prints: the console's owner is then the
-      script's helper process, not a shell, a case no member meets
-- [x] 0.0.1m the window's fit and its scaling with the width (ST-WIN-01, 02): m1 the fit and
-  the zoom, m2 and m2b no narrow-pane fallback and no frame laid out under the design width
-  (DECISIONS "No narrow-pane fallback, …", "A frame may run three passes"). Done 2026-10-27;
-  the size classes (ST-WIN-03) land with the Music player's view (Phase 10)
-- [x] 0.0.1n the drafts' Layout edit and scaling. Done 2026-10-26 (SWE-2)
-- [x] 0.0.1o Live AATF seen where the fix is (SE-GUI-36; DECISIONS "Live AATF stays off by
-  default", "Live AATF's marks: where they sit and their glyphs", "Live AATF's pitch cross:
-  left of the badge, over every marker"): o1 the draft, o2 the code (o2a the toggle, the
-  list's marks and field crosses; o2b the pitch's cross for `FieldedNotA`). Done 2026-10-27;
-  the marks seen in the built window 2026-10-28
-- [x] 0.0.1p the upgrader's accepted CLI items for VGL 27's managers (P17, P18, P21): p1
-  `unmigrated_content`'s `reason` and `other` (EU-REP-05), p2 `--coverage` (EU-CLI-09), p3
-  `staging_folder_removed` (EU-CLI-10). Done 2026-10-26 (SWE-2)
-- [x] 0.0.1q the window reopens where it was closed, maximized if closed so (P24, P39;
-  ST-WIN-04; DECISIONS "eframe 0.37 gives the shell the monitor list only once the window
-  exists", "A maximized reopen resends its position only where the creation can have landed
-  wrong"). Done 2026-10-27 (q1-q5), checked in the built window on both monitors
-- [x] 0.0.1r a folder per PES version (P25; DECISIONS "A folder per PES version"; ST-SET-04):
-  `[common.pes_folders]`; r2 the path edits 472 points, the menu 660. Done; Browse checked in
-  the built window 2026-10-28
-- [x] 0.0.1s the Save editor's main panel after 4ccEditor's layout, no tabs: s1 the draft and
-  the maintainer's looks, s2 `plans/save_editor.md` "Editing UI" rewritten (SE-GUI-37, 38),
-  s3 the code (s3a-s3k), s4 the player view's last look, s4t the window title's path
-  (`StudioTool::title_detail`), s5 the Tactics editor's grid (DECISIONS "The Tactics editor
-  is one grid"), s6 and s7 the maintainer's requests of 2026-10-27. Done 2026-10-27, its loop's
-  `mutants-diff 3d39aff3` clean; seen in the built window at 1280 x 800
-- [x] 0.0.1t a rules file a member handles ends in `.4ccrules` (DECISIONS "A rules file a
-  member handles ends in `.4ccrules`"): `aatf::RULES_FILE_EXTENSION`. Done 2026-10-26 (SWE-2)
-- [x] 0.0.1u the theme pins egui 0.36's spacing, corner radii, `interact_size` and widget
-  colours (DECISIONS "The theme pins egui 0.36's spacing and corner radii", "The player list
-  reserves its scroll bar's band"): `theme::install`. Done 2026-10-27 (SWE-2)
-- [x] 0.0.1v the preview's icon (DECISIONS "The preview's icon and its build dependency"):
-  v1 the assets (`scripts/fonts/make_icon.py`, `resources/icon/`), v2 the window icon and the
-  exe's resources (`winresource`). Done 2026-10-27; the taskbar, Alt+Tab and Explorer icons
-  checked by the maintainer 2026-10-30
-- [x] 0.0.1w the drafts and the app draw the same fonts: the body font Roboto Flex
-  (DECISIONS "The body font is Roboto Flex at its default axes, unscaled"), the symbols font
-  `resources/fonts/symbols.ttf` (`scripts/make_symbols.py`), the drafts' native controls as
-  egui draws them, a modal's title at 14 points, the Tricks or Free cards panel (w6; DECISIONS
-  "A Tricks panel under Skills", "A Free cards panel for a ruleset without tricks"). Done
-  2026-10-28, seen in the built window
-- [x] 0.0.1x the formation's name on the pitch (8.32; SE-GUI-39; DECISIONS 2026-10-27
-  "Formation pictures, the formation's name and the nation names: the maintainer's
-  answers"): the rule from PES 2021 captures, the plan, the draft (approved 2026-10-28), x4
-  below. Done; seen in the built window 2026-10-28
-  - [x] x4 the code: `team_widgets::pitch::POSITION_ROWS` and `formation_name`, the name in
-    the `label` family (Opus, with y2)
-- [ ] 0.0.1y the Tactics pitch's two swaps as the game's (the maintainer, 2026-10-27: drag
-  swapping should behave as the game's, and the select-one-then-the-other way be offered "if
-  easy enough"; DECISIONS 2026-10-27 "A pitch player dropped on another swaps the two slots in
-  the shown formation, as the game's drag"; the save diffs in `.tmp/release_0_0_1/0_0_1x/captures.md`)
-  - [x] y1 the draft: a marker dropped on another exchanges the two slots' position, X and Y
-  - [x] y2 the code (with x4): `formations[..].players.swap`, the keeper no target; the
-    maintainer's look: "Looks fine" (2026-10-28)
-  - [x] y3 the position areas: no fixed areas to map, measured in PES 2021 (DECISIONS
-    2026-10-27 "A pitch drop keeps the position: the game's rule is not a map of areas";
-    `.tmp/release_0_0_1/0_0_1y3/findings.md`)
-  - [x] y4 the dragged player's position rule read from PES 2016's executable (DECISIONS "The
-    dragged player's position rule is read from PES 2016's executable", "The drag rule's
-    overall is PES 2016's formula until a version's own is measured"): y4e1
-    `PlayerEntry::overall_at`, y4e2 `team_widgets` `pitch/drop_rule.rs`. Done 2026-10-28,
-    checked in game on PES 2017 and in the built window. The PES 2017 check left untested the
-    kicking power/swerve and body control/physical contact mapping and the B bonus (look:
-    Pending looks)
-  - [x] y5 the slot popover's position row: no label, the dropdown and Make GK spanning it.
-    Done 2026-10-28 (SWE-2)
-  - [x] y6 the badge's overall and medal outline (`RosterRow::overalls`). Done 2026-10-28
-    (SWE-2), seen in the built window
-  - [ ] y7 Substitution's Very early on PES 2018 to 2020 too (the maintainer, 2026-10-28:
-    taken from PES 2017 and 2021 having it, the games between them)
-    - [x] y7a the draft and `plans/save_editor.md` "Tactics editor"
-    - [x] y7b the code: `team_widgets`' `substitution_choices` offers Very early from PES 2017
-    - [x] y7c 2026-11-16 the maintainer looked at PES 15, 16, 18, 19 and 20: the same four
-      choices on each (DECISIONS 2026-11-16 "Substitution offers the same four choices on
-      every version"; the build's Very early on 15 and 16 is in 0.0.2-answers)
-- [x] 0.0.1z the maintainer's look at the built app (2026-10-27): the app's sliders kept, the
-  drafts made to match (z1, z4); z2 the code (the slider's fill, Reset window, ST-BAR-05,
-  06, SE-GUI-40; z2c Reset window under zoom), z3 the active-tool bar's left corners. Done
-  2026-10-29, seen in the built window
-- [x] 0.0.1j the default-settings audit before the cut (j1 the update rows hidden until
-  0.2.0, j2 the readme says to pick the version first, j3 Live AATF off, j4 no settings
-  section for a CLI-only tool, j5 the bundle ships VGL 27's rules file). Done 2026-10-27
-- [x] 0.0.1cm comments that stand on their own (DECISIONS "A code comment stands on its
-  own"): the 1044 comments `just comment-refs` listed rewritten (cm1-cm4), `comment-refs` in
-  `just gates` (cm5), `doc_pointers.py` reading a wrapped pointer (cm6). Done 2026-10-27
-- [ ] la the library crates audited again (the maintainer, 2026-10-27: "the library crates need
-  to be as solid foundations as they can be"): four read-only Fable audits of every lib crate
-  but `team_widgets` (brief `.tmp/topics/lib_audit/brief.md`), 55 findings, ruled by the lead
-  (`.tmp/topics/lib_audit/rulings.md`): 43 accepted (some conditionally, one after the cut), 12
-  rejected with a line each. The audit of `music_export` stopped at its context limit after the format core
-  (`select.rs`, `eval.rs`, `resolve.rs`, `state.rs`, `write.rs` unread; Phase 10). Rework in five slices
-  under `.tmp/topics/lib_audit/rework_common.md`, Opus sidekicks, each reviewed and gated before it
-  lands, `mutants-diff` over the loop at its end
-  - [x] A1 `pes_savefile`'s behavior and spec fixes (`slice_a1.md`)
-  - [x] C the model stack (`slice_c.md`)
-  - [x] B `aatf`, `pes_version`, `kit_config`, `color_tools`, `pipeline`, `vtree` (`slice_b.md`)
-  - [x] D `dds_convert` and the containers (`slice_d.md`): the Converter rewraps blocks a
-    target keeps without decoding them
-  - [x] A2 `pes_savefile`'s design items and `aatf`'s bare record (`slice_a2.md`)
-  - [x] the loop's `mutants-diff ba7a4b6d` (2026-10-28): 3 survivors, all equivalent
-    (`883eb9ad`); A2's known gaps tested
-  - [ ] after the cut: `aatf`'s nine fixture modules' repeated tests as helpers (b-3)
-- [x] 0.0.1ov every built window laid over its draft before the final pass: ov1 the
-  comparison (`.tmp/release_0_0_1/0_0_1ov/rect_compare.py`), ov2 the fixes (ov2a-ov2z: the
-  1280 × 780 client area, blue checkboxes, the modal helper, the form grids' 22-point rows, the
-  wheel over a value, ST-WHEEL-01 to 04), ov3 the overlap test, ov4 the drafts' Overlay control
-  and `scripts/drafts/draft_shots.py` (8.20's), ov5 `scripts/drafts/vet_drafts.py`, ov8-ov14.
-  Done 2026-10-29. Built-window looks it left open: look: Pending looks
-  - [x] ov7 Live AATF replaces the AATF panel (DECISIONS "Live AATF replaces the AATF panel;
-    the final pass's fourth rulings"): the toolbar's ruleset dropdown, every ruleset built
-    in, Multi-team AATF (SE-GUI-41)
-  - [x] ov11 the light theme (DECISIONS "Every colour comes from a switchable palette, none
-    written in a view"), ov11a below; the light rulings built, the opened sidebar below modals
-    - [x] ov11a the palette: `studio_core::theme::Palette`, `DARK` and `LIGHT`; `just
-      colour-literals` in the gates. Merge `f145b688`
-- [x] 0.0.1rn the project renamed Unlimited Tool Works (DECISIONS "The project's name in every
-  spelling"): rn1 the code and the files a user receives (`UTW.exe`, merge `21190bba`), rn2
-  the drafts, rn3 the docs, rn4 the repository `the4chancup/unlimited-tool-works`. Done
-  2026-10-29
-- [x] 0.0.1g the bundle for DBC alone (DECISIONS "0.0.1 is the Save editor for DBC alone;
-  VGL's tools wait for 0.0.2"): no launcher, `exports/` or `old_exports/`, PES 2017 picked.
-  Done (`3d7fdc33`, merged `7dc14f79`); 0.0.2 restores the launchers, the folders and the
-  readme's VGL section from git, rewriting `release_test.py`'s
-  `test_the_bundle_ships_no_launcher_and_no_export_folder`
-- [ ] 0.0.1cv the Save editor's converge review before the cut (the maintainer asked,
-  2026-10-30, whether a review loop had covered the whole UI: none had; every loop ran per
-  slice or surface, the crate audits covered `aatf` (0.0.1i) and the libs but `team_widgets`
-  (la), and 0.0.1ov and 8.38 compared the look, not the code). `RUNBOOK.md` "Closing a phase"
-  step (1) over 0.0.1's surface, the Save editor on PES 2017 (`save_editor`, `team_widgets`,
-  `studio_core`'s shell, about 56,000 lines with 38,000 of tests): the lead's audit first
-  (every `plans/save_editor.md` section 0.0.1 ships compared with its code, every SE-GUI
-  scenario on PES 2017 with a test or a `manual: checked` line, the design-tell sweep over
-  the whole surface), its gaps briefed; then Astra over the surface in parts, a SWE-2 loop
-  after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`,
-  after the cut (DECISIONS 2026-10-31, "0.0.1's whole-crate mutation runs come after its
-  cut"). Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`RUNBOOK.md`
-  "Cutting a release")
-  - [x] cv1 the lead's audit (2026-10-30, at `5d0c105d`): 63 findings ruled
-    (`.tmp/release_0_0_1/0_0_1cv/rulings_audit.md`); no finding writes a wrong value to a save
-  - [x] cv2 the plan and scenario edits the audit ruled (17 rulings)
-  - [x] cv3 the view's findings (`save_editor`, `team_widgets`): merged `7e219402`; its
-    `mutants-diff 5da2edf0^1` left partly to cv6's whole-crate runs
-  - [x] cv3b merged `ac53806e`: the Texport name suggestion counts in hexadecimal (DECISIONS
-    2026-10-30 "PES 2017's import names the team from the DLC's bin, and Texport numbers are
-    hexadecimal")
-  - [x] cv4 the shell's findings (`studio_core`, `studio`): merged `ba379914`; Reset window
-    centres on the window's own monitor
-  - [x] cv5 by hand, in the release build of `a8e01940` (portable copy, captures
-    `.tmp/release_0_0_1/0_0_1cv/cv5/`)
-    manual: checked 2026-10-30 by the lead: Output rosters to TSV asks with a save dialog
-    named `EDIT.tsv` and writes UTF-8 with a byte-order mark, 210 teams of 23 rows from the
-    maintainer's PES 2021 save, accented and symbol names intact (SE-GUI-27)
-    ST-SIDE-05 manual: checked 2026-10-30 by the lead, PES 2017 running from
-    `E:/PES2017`, the selector at 21 and `pes_folder_path = 'E:/PES2021'`: the poll switched
-    to 17 with "Switched to PES 2017" and Fix PES path, which wrote `E:\PES20**`; set back
-    to 21 by hand, two polls later still 21 with the game running; the PES 2017 save folder
-    unchanged by hash
-    RE-FILE-08 manual: checked 2026-10-30 by the lead: Open and Save as start in the folder
-    of the last file, also after a restart, and in the folder `last_folder` names when it
-    was pointed elsewhere while closed (so the setting, not Windows' own dialog memory, picks
-    it)
-    manual: checked 2026-10-30 by the lead: the Save editor and the Ruleset editor together:
-    each keeps its document and unsaved mark across switches; closing with both unsaved
-    shows the Save editor's prompt first, Cancel keeps the window with no further prompt,
-    Discard brings the Ruleset editor into view with its own prompt, whose Discard closes
-    the window; the real save untouched (ST-RUN-05)
-    manual: checked 2026-10-30 by the lead: the ownership line at 1280 wide: the sentence
-    fills a row and Apply aesthetics patch starts the next one whole
-  - [x] cv8d the Ruleset editor's Save as name, the event-logo note, the summary's header, the
-    unbuilt sections' demo links. Merged `e1f7cf41`
-  - [x] cv8e the drafts' demo mode, `demo=1` (`docs/prototypes/index.html`). Done, checked
-    on the published page 2026-10-30
-  - [x] cv8f the General section's "Event page (optional)" and "Event logo (optional)"
-    labels. Merged `6c7fcd18`
-  - [x] cv9 the Tactics pitch as PES 2017 has it (DECISIONS 2026-10-31): cv9a an outfielder
-    stops at y 4, cv9b each version draws its own screen's pitch (`PitchLook`). Merged
-    `d93c48d6`, checked in the built window 2026-10-31; PES 2019's look in 0.0.2
-  - [x] cv10 the Open menu labels a save by version alone, Ctrl+5 to Ctrl+1 and Ctrl+O
-    (DECISIONS 2026-10-31, SE-GUI-26). Merged `f6bba2af`
-  - [x] cv11 the pitch badges' medal outlines no longer blink on every edit. Merged
-    `f6bba2af`
-  - [x] cv12 the release exe holds no path of the machine that built it (DECISIONS
-    2026-10-31; `scripts/release/release.py` `remap_flags`). Done 2026-10-31; the toolchain
-    stays 1.98.1
-  - [ ] cv13 after the cut (the maintainer, 2026-11-01: "It can wait"): the window opens
-    slowly (the maintainer, 2026-10-31, on the 03:08 release exe):
-    the exe itself starts in about 170 ms (`--help`, three runs), but the CPU was at 100%
-    (a mutation run and a sidekick), and the log shows wgpu probing four adapters on three
-    backends (Vulkan, DX12, GL). Measure, on an idle machine, the time to the first frame as
-    is and with eframe's wgpu instance limited to one backend
-    (`studio_core` `shell/window_size/mod.rs` `native_options`); the maintainer wants the UI
-    on a single backend if the cons are not noticeable. To weigh: on Windows DX12 runs on
-    every Windows 10 machine and falls back to its software adapter (WARP), where Vulkan needs
-    a driver that ships it; Linux has no DX12 (Vulkan, GL for old GPUs and VMs); the GPU
-    encoding study (16.x c) creates its own instance. Needs the window on screen: once no
-    sidekick builds.
-    - measured 2026-10-31 (`.tmp/release_0_0_1/0_0_1cv/cv13_first_frame.py`, `cv13_times.txt`): idle,
-      the first frame 528 ms as is, 419 with DX12 alone, 449 Vulkan, 592 GL; probing the
-      extra backends costs ~120-140 ms; under load 0.8-1.3 s median with outliers near 6 s
-    - loads apart 2026-11-01 (`.tmp/0_0_2/cv13/cv13_load.py`, `cv13_load.txt`): CPU
-      contention stalls it (2.5 s as is, 1.8 s with DX12 or Vulkan alone), disk alone barely
-      does; the wait looks to be outside the app's own threads
-    The maintainer's target: the first frame under one second, two at most; met at rest,
-    missed under load. A stall that is disk contention alone is accepted (the maintainer,
-    2026-10-31: members rarely run heavy builds while working on cup files); one that is CPU
-    contention is not. Next, on a quiet machine: more rounds of `cv13_load.py cpu` and
-    `cv13_who.py`, to find the process the start waits on; a WPR trace needs an elevated
-    prompt, so it is the maintainer's if it comes to that. One backend at rest (~130 ms) is
-    decided after that
-  - [x] cv14 a ruleset may allow illegal formations (the Whack Patch; plan "Illegal
-    formations", SE-GUI-45, RE-SUM-01, DECISIONS): cv14a the `aatf` field, cv14c the Universal
-    rules page (20.6a2c, RE-GUI-20), cv14b the Save editor's pitch under the flag, cv14g the
-    in-game look on `E:\PES2017`. Done 2026-10-31
-  - [x] cv15 `check-aatf --rules` takes an embedded ruleset's stem (`--rules dbc7`)
-  - [x] cv16 the height findings name their players (P47; cv16a the logic, cv16b the detail
-    lines). Merged `80425dda`, `6993763e`; seen in the built window 2026-10-31
-  - [x] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping. Done with cv16b
-  - [x] cv18 the filter box also lists the players of a team whose name matches (SE-GUI-46).
-    Merged `dcd441ac`
-  - [x] cv19 a double click on a team row sets the team combo to that team. Done with cv18
-  - [x] cv20 the wheel steps the sliders, their value boxes and the toggles (ST-WHEEL-05).
-    Merged `2b21b3e9`
-  - [x] cv21 Live AATF lists the players' rows in two columns, the starting eleven left
-    (SE-GUI-47). Merged `5b00c831`
-  - [x] cv22 bug: an advanced instruction picked back to Unassigned kept the unsaved mark (a
-    target-less pick wrote 255); the pick puts back the target byte as opened. Merged
-    `7b8d1675`
-  - [ ] cv23 the wheel on Ability stats' boxes lags behind the notches, badly under CPU load
-    (the maintainer, 2026-10-31, Live AATF off). By design a notch shows a frame after the one
-    that reads it, a fast turn steps one notch a frame, and a box holding the keyboard waits two
-    frames more (`studio_core` `widgets/wheel.rs`), so the lag is a few frames times the frame's
-    cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
-    stats, idle and on a step's frame, headless, release build; then cut where the time goes;
-    with it, what one Multi-team AATF check over 220 teams costs the UI thread (cv26's
-    rest cuts how many checks start, not what one costs), and what the card badge's
-    `player_tier` and `card_limits` cost on an edit of a team read under the nearest system
-    (since cv33 each runs the candidates' checks; cached per key, once per edit).
-    Measured 2026-11-01 (`.tmp/0_0_2/cv23/run1.log`, `run2.log`): the frame after a notch
-    114 ms, the Cards left badge's `player_tier` and `card_limits`; one Multi-team check over
-    220 teams 3.7 s wall on all cores (about 160 ms a team), a dialog frame listing them 52 ms
-    - [x] cv23a the badge on a worker (DECISIONS 2026-11-01). Merged `56882356`: the frame
-      after a notch 0.72 ms; seen in the built window 2026-11-01
-    - [ ] cv23b the Multi-team dialog's 52 ms frames: find where a listing frame's time goes
-      (220 teams' rows laid out each frame), then cut it. Measured on a quiet machine
-      (`.tmp/0_0_2/cv23/run4.log`, `run4_b.txt`, the merge `56882356`): a listing frame 23 ms
-      median (the 52 was under load), of which `violations_list` 21.3, `listed_players` 0.26,
-      the team list 0.02. Each row words its sentence and detail and makes three text layouts
-      every frame, for every team's rows, visible or not. Usable as it is (a report read
-      once, ~40 frames a second); after the cut: lay out only the rows in view, their heights
-      kept per check key and width, or keep the worded rows per check key
-    - [ ] cv23c the logic's cost: a team check about 160 ms of CPU, the team reading redone
-      by each host call (`height_system` in `player_tier`, `card_limits`, `tier_values` and
-      `check_team`); after the cut unless cv23b shows it is what the dialog waits on
-  - [x] cv26 the wheel over Multi-team AATF's range combos froze the window: both ends open on
-    the first team, the check after 500 ms of rest (SE-GUI-41, DECISIONS 2026-10-31). Merged
-    `5d7fb22b`
-  - [x] cv27 a hovered AATF row outlined, not filled (DECISIONS 2026-11-01). Merged
-    `56882356`
-  - [x] cv28 Live AATF in a window of its own, embedded (SE-GUI-48), the dock's grip
-    (ST-LOG-04). Merged `6bd86314`; seen in the built window 2026-11-01
-  - [x] cv29 the Live AATF dock's close button (SE-GUI-49). Merged `149e99db`
-  - [x] cv30 team-wide AATF rows first, the rows' tooltips, egui's monochrome emoji fonts.
-    Merged `7b778cf4`
-  - [x] cv31 the Ruleset editor's Blank template's label (DECISIONS 2026-11-01)
-  - [x] cv32 cv28-cv30's review rework. Merged `0ff2d1f6`; the loops ended
-  - [x] cv33 a team no quota system takes is read under the nearest system, fewest errors
-    deciding (DECISIONS 2026-11-01). Merged `e1d6cddf`, `c27e945a`
-  - [x] cv34 P48: Multi-team AATF counts the teams under each system (SE-GUI-51). Merged
-    `6c4147ca`
-  - [x] cv35 Set PES path over the team view's pitch while the selector is orange or red
-    (SE-GUI-50, DECISIONS 2026-11-01). Merged `29cf30ee`
-  - [x] cv36 the cv28-32 mutation runs' survivors tested. Merged `86475f0b`
-  - [x] cv37 the AATF and comparator rows at the draft's inset and gap. Merged `b6d49de6`
-  - [x] cv38 the wheel over a Tactics toggle wraps round (ST-WHEEL-05, DECISIONS 2026-11-01).
-    Merged `f2c35716`
-  - [x] cv39 a press held in the Multi-team AATF dialog while its check lands no longer
-    clicks Close (`skip_ahead_auto_ids`). Merged `b5f8bd25`, after the cut
-  - [x] cv40 three view tests raced a worker's reply under load: `workers_replied`. Done
-    (lead, test code only)
-  - [x] cv23d the idle Ability stats view asks for no repaint. Merged `cb6df900`
-  - [x] cv24 event logos resampled to the box's pixels (Lanczos3). Merged `da2ce96d`
-  - [x] cv25 the colour picker's popup as wide as its widest row. Merged `da2ce96d`
-  - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
-    2026-10-31): a read-only sweep of
-    every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
-    `../4cc-studio-temp/wt-argon` at `2c5fe5a9`, outputs `.tmp/argon/parts/`, rulings
-    `.tmp/argon/rulings.md`). Stopped by the maintainer, to keep
-    usage for Astra: 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
-    started; no new Argon review without the maintainer's word. The accepted concerns become
-    one step per crate (cvA1: the fixes first, the mutation run after, an order the
-    30-hour chain set)
-    - [ ] cvA1 `pes_savefile`: Argon's accepted concerns (`.tmp/argon/rulings.md` A1-A6, A19:
-      26 accepted, 8 of them in part; 10 marked "run"); the fixes landed (cvA1r, cvA1r2).
-      Left: `just mutants pes_savefile` (its last whole-crate run is 2026-10-16) over the
-      fixed code, after the 0.0.1 cut: each "run" concern it confirms as a survivor gets its
-      test, the rest drop (A4-6, A6-3, A6-4 unreached by the diff)
-      - [x] cvA1r the rework: `mutants-diff 2337e4f6` triaged, SWE-2 round 1's items. Merged
-        `06a262c6`
-      - [x] cvA1r2 a Team TOML refusal names the value as written, in the file's units.
-        Merged `a881b621`
-  - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
-    mutation runs. Left: the whole-crate runs of the 0.0.1 crates, after the cut;
-    `save_editor`'s was stopped 2026-10-31 (extra kinds done, 40 survivors triaged in
-    `.tmp/release_0_0_1/0_0_1cv/triage_se_extra.md`; main run 119 of 1052 local mutants), rerun from
-    scratch then
-    - [x] cv6a and cv6b merged `468b49e0`: Astra's six parts ruled, SWE-2 S1-S3, every loop
-      ended
-    - [x] `mutants-diff bd75e682` over cv6a and cv6b (73 mutants)
-    - [x] cv6t the triage: the missed mutants tested, the TIMEOUTs classified. Merged
-      `064a8eec`
-  - [x] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30):
-    cv8a off `CLI_ONLY`, cv8b `squad_size` out of `libs/aatf`, cv8c below, the converge (A7,
-    `just mutants ruleset_editor`). Done
-    - [x] cv8c merged `cc3527e1`: A7's rework (a typed tier id counts as unsaved; the summary
-      states the logic's rules, DECISIONS 2026-10-30)
-  - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
-    `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
-    `tactics/mod.rs` (the changes' terms), each past a thousand lines
-- [ ] 0.0.1f the cut, once the Save editor's view and cv are done (the Ruleset editor ships as
-  far as it is built, labelled (WIP), `plans/core/development_plan.md` "Development Plan"):
-  the bundled settings picking DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
-  (ov7: no rules file beside the exe); the clean-machine check (`plans/core/development_plan.md`
-  "Release 0.1.0"'s verification; 0.0.1's bundle has no launcher, 0.0.2's adds both back, "The
-  /vg/ League 27 (VGL): preview 0.0.2"), the exe's size measured crate by
-  crate with `cargo bloat` (35.3 MiB at 0.0.1d2, past the budget's "about 30 MB";
-  `spec/core/distribution.md` "Distribution: portable .7z bundle" gets the new measurement),
-  logic version 1's hash
-  frozen in `LOGIC_VERSIONS` only after the maintainer's final confirmation, given once the UI
-  is polished (the maintainer, 2026-10-25: never before it) (`plans/aatf_rules.md` "Loading and validation": a later logic
-  change is version 2), `just release 0.0.1`, handed to DBC's testers (VGL's organizer gets 0.0.2, its launchers and readme section).
-  Prerequisite: 0.0.1cv, the converge review (`RUNBOOK.md` "Cutting a release")
-  - [x] f1 the preparation (side-lead U, 2026-10-27; DECISIONS "The bundle's `data/` holds its
-    settings and DBC7's rules file"): `release.py` `stage_data`, the readme
-  - [x] f1c (closed by the cut, as 8.38) the maintainer's final pass over the built app's UI;
-    the candidate `release/0.0.1-candidate`, staged by `make_candidate.py`
-  - [x] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (f1d1 Team
-    TOML's `bench_order` of 12, f1d2 both instruction sides under illegal formations, f1d3).
-    Done 2026-11-01, candidate 0.0.1g staged
-  - [ ] f1e the maintainer's f1c pass on 0.0.1g (2026-11-01): everything as listed, except the
-    Tactics "Starting eleven" and "Bench" rows: a press on a row's text selects the text
-    instead of dragging the player (an I-beam over the position and the name; only the gaps
-    drag). On branch `f1e` from `40b274e5` (worktree `wt-f1d`), merged into the candidate and
-    main, candidate 0.0.1h staged for the maintainer's look, then gold (f2). The row's labels
-    stop being selectable (`team_widgets` `pitch/lineup.rs` `lineup_row`; brief
-    `wt-f1d/.tmp/brief_f1e.md`) → verify: a headless test reads the grab cursor over each
-    row's handle, position and name (red: the text cursor); the maintainer drags from a name
-    in the built window (look: Pending looks). The press is taken 2 points outside the
-    labels, where egui hands it to a close click-sensing widget (the maintainer: "four areas
-    of glitch per player"). Reviewed with f1e2-4 (`wt-f1d/.tmp/f1d_rulings.md`; `mutants-diff
-    f1bc0502` none missed)
-    - [ ] f1e2 (the maintainer, 2026-11-01, same branch): Up and Down walk the player list
-      (`plans/save_editor.md` "Editing UI", the player list's paragraph; DECISIONS "Up and
-      Down walk the player list"; drafted in `save_editor.js` `onKey`) → verify: headless,
-      Down from a team's last player selects the next team's row and Up returns; the ends
-      stop; a focused number field keeps its arrows; the selected row scrolled into view
-    - [ ] f1e3 (the maintainer, 2026-11-02, same branch): the import's section boxes read
-      Stats, Aesthetics and Gameplan (the cup's words); the free-kick motion imports with
-      Aesthetics, and Copy and Swap stats stop moving it; `[team]` splits, its colours, kit
-      slots and strip flag going with Aesthetics (`plans/save_editor.md` "Interchange formats in the UI" and
-      the inventory's Copy stats row; DECISIONS "The import's sections are Stats, Aesthetics
-      and Gameplan"; drafted in `save_editor.js` `ixWrite`) → verify: headless, the boxes'
-      labels; a Stats-only import leaves the motions, colours and kits as the target's and an
-      Aesthetics-only import writes them; Copy stats leaves the free-kick motion
-    - [x] f1e4 (closed by the cut, as 8.38) on Windows the window draws through Direct3D 12
-      and OpenGL, not Vulkan (the notebook's Intel driver crashed in Vulkan; DECISIONS "On
-      Windows the window draws through Direct3D 12")
-  - [ ] f1f (the maintainer, 2026-11-02: the cut moves a day; DECISIONS "0.0.1 takes a second
-    batch of small changes before its cut"), each item plan sentence and draft first where it
-    changes what a member sees, on a branch from `f1e` once 0.0.1h's items land. Reviewed
-    (`.tmp/lead/f1f_rulings.md`), the candidate fast-forwarded to `f22a76ae`:
-    - [x] f1f1 the lineup list outlines the row a dragged row would replace. Done 2026-11-02
-      as `cbbb727e`, on `f1e`
-    - [x] f1f2 two copies of UTW.exe run at once, each on its own save. Done 2026-11-02 as
-      `d0ac4845`, on `f1e`
-    - [x] f1f3 Ctrl+C/Ctrl+V on team rows, presets and formations. Done 2026-11-02 as
-      `a4545968`, on `f1e`
-    - [x] f1f4 a VGL 27 tester's captain bonus not shown under the limit: the untaken
-      choice's card counted in the badge's limit. Done 2026-11-02 as `12512060`, on `f1e`
-    - [x] f1f5 the Stronger foot/hand toggle's two colours swapped. Done 2026-11-02 as
-      `091c725b`, on `f1e`
-  - [ ] f1g (the maintainer, 2026-11-02, after the lead's look at 0.0.1h: a polish batch
-    while their look waits; one candidate, 0.0.1i, then their look), each item plan and
-    draft first where a member sees it, on a branch from the candidate's `f22a76ae`:
-    - [x] f1g1 Live AATF's heads in two tones (SE-GUI-63). Done 2026-11-02 as `6dbd8be6`
-    - [x] f1g2 P49: a `Fielded position` row's tooltip. Done 2026-11-02 as `4bccd760`
-    - [x] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog
-      (SE-GUI-62). Done 2026-11-02 as `4bccd760`
-    - [x] f1g4 PgUp/PgDn by team rows (SE-GUI-53). Done 2026-11-02 as `7fece457`
-    - [x] f1g5 an Invert value scrolling setting (ST-WHEEL-06). Done 2026-11-02 as `4e28469b`
-    - [x] f1g6 `cargo bloat` on the release build: 41,491,456 B; closed 2026-11-02 with no
-      change taken (DECISIONS "egui's default fonts stay")
-    - [x] f1g7 CI for GitHub releases, Windows and Linux (DECISIONS "0.0.1 is built by CI",
-      "How CI's release workflow builds, checks and keeps the bundles"):
-      `.github/workflows/release.yml`, the Linux `.tar.gz`, the test tag `v0.0.1-rc.1`. Done
-      2026-11-03
-    - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02
-    - [x] f1g9 the update check (DECISIONS "The update check ships in 0.0.1"): slices 1-2
-      done 2026-11-02 (`79497010`, `ce963700`); f1g9c Update now leaves the dialog
-      (`b05de149`); slice 3 postponed to 0.0.2 (0.0.2-upd)
-    - [x] f1g10 the comparator's heads with the hyphens, Live AATF's `All clean` line. Done
-      2026-11-02 as `6ab65df9`
-    - [x] f1g11 the player list's drag outlines the row it would land on (SE-GUI-64). Done
-      2026-11-02 as `5593c356`
-    - [x] f1g12 the team row's hint reads `[click for gameplan]`. Done 2026-11-02
-      (`3e1a9d85`)
-    - [x] f1g13 four fixes from the look at 0.0.1i-pre2 (the update interval in minutes,
-      SE-GUI-64, 65, 61). Done 2026-11-03 (`4b68d2d7`, `b9954f8a`)
-    - [x] f1g14 three fixes before gold (ST-COMBO-01, SE-GUI-66). Done 2026-11-03 as
-      `699a77ab`
-    - [x] f1g15 Stronger foot/hand's chosen side white (SE-GUI-61). Done 2026-11-03 as
-      `ed74a327`
-  - [x] f2 logic version 1's hash frozen (`f6055ebe`), `just release 0.0.1` by CI, the
-    clean-machine check, the hand-over. Done 2026-11-03: tag `v0.0.1` on `c97ce914`, CI run
-    41564671137, published by the maintainer as "Unlimited Tool Works v0.0.1 pre-alpha"
-  - [x] f3 done 2026-11-04 (scripts `.tmp/lead/rewrite/f3_*.py`): 171 branches to `main` alone,
-    worktrees pruned to the kept 8, the unmerged branches kept as `refs/archive/<branch>`, 35
-    subjects reworded with `git filter-repo` (the old history `refs/archive/pre-reword/`)
-  - [x] f4 superseded 2026-11-02 by f1g7 (DECISIONS "0.0.1 is built by CI"). Was: CI release
-    builds after the cut, sliced:
-    - [ ] f4a the design in `plans/core/distribution.md`: the tag trigger, the draft release's
-      assets, how the Windows asset is checked against the locally checked exe (byte-identical,
-      or the release checks plus the maintainer's look when CI's build cannot match), what
-      the Linux bundle holds (`utw`, no launcher, its archive)
-    - [ ] f4b the Windows bundle built by CI: `scripts/release/release.py`'s checks (no remapped
-      prefix, static C runtime, the user's name absent) passing on CI's exe; the workflow
-      written by the lead (CI is correctness-critical) → verify: a test tag produces a draft
-      release whose `.7z` passes the checks
-    - [ ] f4c the Linux bundle in `release.py` and the workflow, its file list and tests; the
-      GUI run on a real Linux machine (the maintainer's, or a VM) before it is attached
-  - [x] f5 superseded 2026-11-02 (DECISIONS "cv39's fix ships in 0.0.1": onto f1g)
-  - [ ] f6 after the cut (the maintainer, 2026-11-02), moved out of the cut. Done: (1) f1e3's
-    SWE-2 round and its rework f1e3r (2026-11-04); (2) the exe's size crate by crate, 41.6
-    MiB, in `spec/core/distribution.md` "Size budget" (2026-11-04); (3) l2's terminal half
-    (2026-11-04); (4) the GPU encoder's crash guard planned, built with the wiring after
-    0.1.0; (6) PES 15's fluid formation switch, closed without code (no byte in the save);
-    (7) f1g14's and f1g15's mutation runs (`.tmp/after_cut/f1g14m/`); (8) the whole-crate runs
-    of `team_widgets`, `pes_savefile` and `save_editor`, every survivor triaged and its tests
-    landed (`.tmp/after_cut/mutants_whole*/triage.md`); (9) the `review2` worktree removed,
-    nothing to merge; (10) Astra A1 over f1e3r, cv8f, cv10 and cv11, its fix cv11r. Left:
-    - (5) the Ruleset editor's undo merges a run of steps to one value as 8.42 does the Save
-      editor's (`plans/ruleset_editor.md` the undo paragraph; DECISIONS "A run of undo steps
-      is keyed by the widget call") → verify: ten wheel notches on a tier's count, one Undo
-    - (8)'s two design findings, open: `team_widgets` `pitch/popover.rs` `slot_popover`'s
-      outside-press focus surrender is unobservable under egui 0.37 (`Focus::end_pass` drops
-      an undrawn widget's focus; the DragValue commits as typed), so the block and its "cannot
-      end on its own" comment look removable: check against an egui upgrade first; and
-      `save_editor` `abilities.rs` `playable_positions`' `column_width` measured 350 against
-      an available 350 over the whole suite (9,008 frames), so its `max` and `+ CELL_PADDING`
-      decide nothing where the tests look; whether a wider window or font ever makes them
-      bind is unmeasured, its `+` -> `*` mutant a survivor until that is settled
-  - [ ] f7 a design-health pass over the tests (the maintainer, 2026-11-04: tests are code,
-    `CONTRIBUTING.md` "Tests are code"), after f6's tw2 and cv11r land, before 0.0.2 starts.
-    Not a full read of the repo: ~390K Rust lines would be ~600 SWE-2 parts, every concern
-    ruled by the lead. (a) Measure: a script (`scripts/review/`, with its test) hashing
-    normalized ~8-line windows across every crate's `.rs` files lists the duplicated blocks
-    by size and file, and the modules past about a thousand lines; (b) SWE-2 sidekick briefs
-    for the top 10 to 15 files it names (GUI test modules expected first), each naming its
-    blocks, the shared helpers extracted, the tests still passing and still failing under a
-    perturbation; (c) then, to evaluate (the maintainer's idea, 2026-11-04), the rest of the
-    tests swept by a SWE-2 side-lead the maintainer launches in a Devin chat (it compacts
-    itself, where a long sidekick session hangs), running SWE-2 subagents, judging their
-    findings and applying fixes, then reporting every decision. The lead writes its handoff
-    (`.tmp/after_cut/f7/handoff.md`) with: test code only, no assertion changed (a production
-    finding reported, not applied); per change the tests passing, the test count changed only
-    by merged tests, each touched test failing under a hand perturbation, the per-file assert
-    count down only by listed merged duplicates; one commit per test module on its own branch
-    and worktree, each decision naming its commit (keep or `git revert`); the lead's
-    acceptance bar (reach, not truth: a copied scene, repeated checks, a case for an existing
-    table, never a taste-level reshuffle); one cargo build at a time at `CARGO_BUILD_JOBS=4`
-    while a mutation run holds the other, no `rm`, no push; (a)'s ranking worst first, stopping
-    under a block-size threshold, (a) rerun at the end for the before and after; otherwise
-    each phase's close design-health pass covers the rest
-    - [x] (a) 2026-11-04: `clones.py --files --window 8`, the per-file ranking of test code
-      (`.tmp/after_cut/f7/files_w8.txt`, the window-4 ranking beside it)
-    - [ ] (b) also splits each of those files past a thousand lines by concern
-      (`CONTRIBUTING.md` "Architecture rules", test modules), as a pure move checked by
-      `pure_move_check.py`, its own commit before that file's helper extraction. Learned at
-      f7b2: the window-8 ranking counts a file's scenario idiom (one call over a listing, then
-      one assert, each a named behaviour), which is not copied setup; the briefs target the
-      runs of ten shaped lines or more
-      - [x] f7b1 `aesthetics_export` `validate/tests.rs` split into eleven files (SWE-2)
-      - [x] f7b2 its repeated runs into tables and helpers: 15 of 29 clusters (SWE-2)
-    - [ ] (d) every other test module past a thousand lines split the same way, in due time
-      (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
-      `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
-      first (RUNBOOK.md design sweep)
-    - [ ] (e) for 0.1.0 (the maintainer, 2026-11-15, after C-clip r3-1: "That would never
-      happen in real life, please be mindful of overengineering"): every test module read for
-      tests of inputs no member makes, and the production branches that exist only for them:
-      two inputs landing in one frame, a key in the one frame between a state change and the
-      dialog it raises, bytes no game or tool writes, crafted files (AGENTS.md "Inputs are
-      trusted"). Each removal ruled by the lead, with the reach it lacks; a test that pins a
-      real input stays however unlikely it looks. A module (d) splits gets this read in the
-      same brief, so the pass reads each module once -> verify: the per-module list of tests
-      and branches removed, each with its ruling, and the suite green after each module
+- [x] 0.0.1 the preview build for DBC: the Save editor, the Ruleset editor as WIP
+  (`plans/core/development_plan.md` "Divegrass Before Christmas"). Shipped 2026-11-03: tag
+  `v0.0.1` on `c97ce914`, built by CI (run 41564671137), published as "Unlimited Tool Works
+  v0.0.1 pre-alpha". Its steps (0.0.1a to 0.0.1z, la, cv, ov, rn, the cut f) were collapsed
+  2026-11-16; their record is this file at `647da0fb`. Their open items moved: the
+  launchers' check to 0.0.2's bundle (Pending looks), the rest under "after 0.0.2" below
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
   the organizer's order and the AATF check of the official save (the plan's paragraph)
+  - [ ] 0.0.2-pes19 the Save editor's writes on PES 2019 checked in game before the readme
+    calls PES 2019 supported (the maintainer, 2026-11-16: VGL 27's managers use it there).
+    Already seen on PES 2019: an unchanged import leaves the save byte for byte, and the
+    edited-player flag gates a name (0.0.2-se19; `spec/pes_savefile/model.md` "What the
+    player's edit flags gate in game"); the formation looks (2026-11-13); the compiled looks
+    of the proof of concept's rehearsal. Left:
+    - [x] a census first, done 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/census.md`): 107 rows,
+      about 160 stored fields, nearly none seen in game on PES 2019. PES 2019's player
+      record (188 bytes) is laid out apart from PES 2021's (312), so almost every player
+      field's offset differs; the tactics record is PES 2021's, its instruction values
+      PES 2018's table. Nothing writes man marking but Copy preset and the Team TOML, and
+      PES 2019's kit slots, measured in the team record, have no schema rows
+    - each field not yet seen, on a copy of the VGL 27 save: an edit per field, values
+      stepped apart, saved by the editor and read off PES 2019's Edit mode (pad and OBS, no
+      focus; no cargo while PES runs), every other team intact (Invitational 1 above all,
+      the case of the dropped tester's report)
+    - a Team TOML import and a `.ted` import (the organizer's first step), loaded in game
+    - PES 2019's case of three per-version looks: its stat names (8.29d's d3b), a Texport
+      the panel exports imported by the game (8.9k's k5d), and whether a team-file import
+      writes the DLC bin's team name (k5g)
+    -> verify: a `manual: checked` line per field group; a wrong field becomes a test, red
+    first, and its fix
+  - [ ] 0.0.2-left01 three small fixes 0.0.1 left (Issues, 2026-11-01), before 0.0.2's
+    candidate is staged: the Ruleset editor's tier handle no longer starts a text selection
+    beside its glyph (`.selectable(false)`, a test pressing 2 points outside it);
+    `run_tests.py` writes its timings to cargo's target folder; `make_candidate.py` finds
+    `4cc-studio-temp` from the main tree. SWE-2, one brief
   - [x] 0.0.2-arrows 2026-11-13 Up and Down step every whole-number box by one (found in
     0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
     steps, through its own `number_arrows`; the Tactics popover's X stays put after four
@@ -2210,7 +1655,11 @@ briefs, review loops, gates and mutation runs as for any step.
         halves, help and changelog lines that say what the window does not
       - [x] the rework (SWE-2, merge `07b27911`); with it, egui's rubber-band spring off on
         a reveal's frame, which pulled back a list that grew that frame
-      - [ ] Carbon's round 3, over the rework (`review30/.tmp/carbon_list3.md`, at `07b27911`): running
+      - [x] Carbon's round 3, 2026-11-16 (at `07b27911`): 6 of 9 accepted ("C-list r3"):
+        a selector or category pick that keeps the selection reveals nothing, three tests
+        that pass on the wrong reveal or reach no branch, the own-team lines, two docs
+      - [ ] the rework (SWE-2, `sk/listrw3`, `listrw1/.tmp/rework_carbon3.md`): running;
+        then Carbon's round 4
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
@@ -2521,8 +1970,12 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the rework (SWE-2, merge `5b5546d8`)
     - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
-      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Running at
-      `2923f863` (`.tmp/0_0_2/bar/astra_r7.md`)
+      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Done
+      2026-11-16 at `2923f863`: 4 of 4 accepted ("A-bar r7"), under five, so the loop ends
+      with its rework: the welcome panel scrolls once ten kept recents outgrow a 600-point
+      window, a changelog line's "shortcuts are unchanged", Ctrl+Shift+S and Ctrl+W in the
+      close-the-menu test, and the plan's File row (fixed by the lead)
+    - [ ] round 7's rework (SWE-2, `sk/barrw7`, `barrw6/.tmp/rework_astra7.md`): running
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
@@ -3198,6 +2651,68 @@ briefs, review loops, gates and mutation runs as for any step.
   onto a sentence it does not support), corrected by the lead. For the full pass: one
   crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
   with the sentence it documents"; the lead reads each edit against the code
+- [ ] after 0.0.2 (from 0.0.1's la, b-3): `aatf`'s nine fixture modules' repeated tests
+  become helpers (`.tmp/topics/lib_audit/rulings.md`)
+- [ ] after 0.0.2 (from 0.0.1's cv13; the maintainer, 2026-11-01: "It can wait"): the
+  window's first frame under load. The target is under one second, two at most: met at rest
+  (528 ms as is, 419 with DX12 alone), missed under CPU contention (2.5 s, 1.8 s with one
+  backend), which is not accepted where disk contention is
+  (`.tmp/release_0_0_1/0_0_1cv/cv13_times.txt`, `.tmp/0_0_2/cv13/cv13_load.txt`). Next, on a
+  quiet machine: more rounds of `cv13_load.py cpu` and `cv13_who.py` to find the process the
+  start waits on (a WPR trace needs an elevated prompt, so it is the maintainer's); then
+  whether eframe's wgpu runs on one backend (`studio_core` `shell/window_size/mod.rs`
+  `native_options`; about 130 ms at rest)
+- [ ] after 0.0.2 (from 0.0.1's cv23b and cv23c): Multi-team AATF's cost. A listing frame
+  takes 23 ms, 21.3 of them in `violations_list`, because every team's rows word their
+  sentences and lay out three texts each frame, in view or not: lay out only the rows in
+  view, or keep the worded rows per check key (`.tmp/0_0_2/cv23/run4.log`). A team check
+  takes about 160 ms of CPU, the team read again by each host call (`height_system` in
+  `player_tier`, `card_limits`, `tier_values` and `check_team`)
+- [ ] after 0.0.2 (from 0.0.1's cv7): split the modules past a thousand lines, with the tests'
+  pass below: `save_editor` `view/mod.rs` (1,672 lines), `view/interchange.rs` (1,484),
+  `team_widgets` `pitch/mod.rs` (1,600) and `tactics/mod.rs` (1,292)
+- [ ] after 0.0.2 (from 0.0.1's f6): the Ruleset editor's undo merges a run of steps to one
+  value as the Save editor's does (`plans/ruleset_editor.md`, the undo paragraph; DECISIONS
+  "A run of undo steps is keyed by the widget call") -> verify: ten wheel notches on a
+  tier's count, one Undo
+- [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
+  - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
+    unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the
+    DragValue commits as typed), so the block and its "cannot end on its own" comment look
+    removable: check against an egui upgrade first
+  - `save_editor` `abilities.rs` `playable_positions`' `column_width` measured 350 against
+    an available 350 over the whole suite (9,008 frames), so its `max` and `+ CELL_PADDING`
+    decide nothing where the tests look; whether a wider window or font ever makes them
+    bind is unmeasured, its `+` -> `*` mutant a survivor until that is settled
+- [ ] after 0.0.2 (from 0.0.1's f7; the maintainer, 2026-11-04: tests are code,
+  `CONTRIBUTING.md` "Tests are code"): the tests' design-health pass. The ranking is
+  `.tmp/after_cut/f7/files_w8.txt` (`clones.py --files --window 8`); `aesthetics_export`'s
+  `validate/tests.rs` is done (split into eleven files, 15 of 29 clusters into tables and
+  helpers). The window-8 ranking also counts a file's scenario idiom (one call over a
+  listing, then one assert), which is not copied setup, so briefs target runs of ten shaped
+  lines or more. The handoff's rules: `.tmp/after_cut/f7/handoff.md`.
+  - the ranking's other top files, each split by concern as a pure move
+    (`pure_move_check.py`, its own commit) before its helpers are extracted
+  - every other test module past a thousand lines split the same way, in due time (117
+    files at `69687460`); meanwhile a diff that grows one splits it first
+  - for 0.1.0 (the maintainer, 2026-11-15: "That would never happen in real life, please
+    be mindful of overengineering"): every test module read for tests of inputs no member
+    makes, and the production branches that exist only for them (two inputs in one frame, a
+    key in the frame between a state change and its dialog, bytes no game or tool writes,
+    crafted files); each removal ruled by the lead with the reach it lacks, in the same
+    brief as the module's split -> verify: per module the tests and branches removed with
+    their rulings, the suite green after each
+- [ ] after 0.0.2 (the maintainer, 2026-11-16): the Tactics editor's arrangement setting
+  (`plans/save_editor.md`, the "one grid" paragraph's "arrangement"). Waits on the
+  maintainer, who provides 4ccEditor's layout; then the draft, then one slice.
+- [ ] after 0.0.2 (the maintainer, 2026-11-16): a Snap audit of stale comments, beside the
+  citation audit: per function, its doc and inline comments, its body and the same file's
+  functions it calls; Snap answers whether a comment states something the code does not do.
+  Measure first: the comments the review rounds accepted as stale (`.tmp/duck_rulings.md`,
+  reach (d)), each at the commit its reviewer read, against the same comment after its fix;
+  build the recipe only if Snap separates them about as well as it does citations (AUC 0.995).
+  It shares the Snap client (keys, cache, request) with `citation_audit.py`. It cannot see a
+  comment wrong about another file (a doc listing its callers).
 - [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
   2026-11-12: "The draft should ideally use a palette like the app does"): every colour
   that follows the theme is a variable of the host page named as `studio_core`'s
@@ -3473,7 +2988,7 @@ one of them means that page).
 - What a zero emblem in a Texport the panel wrote does in Select Team; PES 2017; 8.9k's k5f;
   harness
 - Each launcher prints in its console and its `pause` waits, on 0.0.2's bundle; any PES;
-  0.0.1l; harness
+  0.0.2 (from 0.0.1l); harness
 - The built window at 1280 × 800 on the FHD monitor, the Tactics tab in three columns; any PES;
   8.15; harness
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
@@ -3733,21 +3248,21 @@ points there.
 - resolved (2026-11-06) — `zip` 9.0.5 fixed Dependabot's alerts. `cargo deny check advisories`
   runs in no gate (fails on `pulldown-cmark` 0.13.4, five unmaintained crates): Dependabot watches
 
-- open (2026-11-01, after 0.0.1) — the Ruleset editor's tier handle
+- open (2026-11-01; fixed in 0.0.2-left01) — the Ruleset editor's tier handle
   (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose
   content is a selectable `ui.label("⠇")`: the defect f1e fixed in the Tactics lineup rows.
   egui 0.37's hit test hands a press within `interact_radius` of a click-sensing widget inside
   a drag area to that widget, so a press just beside the handle's glyph starts a text
   selection instead of the drag. The fix is the same (`.selectable(false)`), with a test
   pressing 2 points outside the glyph
-- open (2026-11-01, after the cut) — `scripts/gates/run_tests.py` writes its timings to
+- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/gates/run_tests.py` writes its timings to
   `<repo>/target/run_tests_times.json` (`TIMES`), not to cargo's target folder: a worktree that
   builds into another tree's target through `CARGO_TARGET_DIR` (the staging worktree
   `wt-cand-e`) and has no `target/` of its own fails `just test` after every test has passed,
   before the doc tests and the rest of the gates (0.0.1g's first full run). Worked around by an
   empty `target/` in the worktree; the fix reads the target folder as `release.target_dir()`
   does
-- open (2026-11-01, after the cut) — `scripts/release/make_candidate.py` puts the candidate in
+- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/release/make_candidate.py` puts the candidate in
   `<repo>/../4cc-studio-temp/` (`DEST`): run from a worktree under `4cc-studio-temp` (as
   `wt-cand-e` is), that is `4cc-studio-temp/4cc-studio-temp/`; 0.0.1g was moved up by hand.
   The fix resolves the folder from the main tree (`git rev-parse --git-common-dir`)

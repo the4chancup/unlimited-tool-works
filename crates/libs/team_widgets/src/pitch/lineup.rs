@@ -14,8 +14,8 @@ use super::{LineupDrag, lineup_colour, position_label};
 use crate::names::{append_name, name_background};
 use crate::tactics::{RosterRow, TacticsView, raw_name_at};
 
-/// The gap between the two lists (the draft's `#tac-lists` `gap: 6px`).
-const LIST_GAP: f32 = 6.0;
+/// The gap between the two lists (the draft's `#tac-lists` `gap: 8px`).
+const LIST_GAP: f32 = 8.0;
 /// A row's height (the draft's `.lrow`).
 const ROW_HEIGHT: f32 = 18.0;
 /// The lists' viewport height: twelve rows (the draft's `#tac-lists

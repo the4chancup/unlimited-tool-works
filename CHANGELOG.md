@@ -116,7 +116,7 @@
   you see who the drop swaps out.
 - **Save editor**: in `Team file interchange` (the Team menu's `Import / export team
   file…`), a button under `Import into` selects the team the picked file was exported
-  from, so the file imports back onto that team with no search through the list.
+  from, so you can import back onto it without looking for it in the list.
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
   report of something that went wrong: what you did in each tool, the files it opened and
   wrote, the log, your settings and your own words. Nothing is sent: you post the file.
@@ -146,7 +146,8 @@
 - **Settings**: with two windows open, a setting changed in one is no longer undone when the
   other changes one of its own.
 - **Save editor**: on the Gameplan screen, a player dragged onto another in the bench list
-  swaps places with him, as in the starting eleven, instead of shifting the players between.
+  swaps places with him, as in the starting eleven, instead of shifting the players in
+  between.
 - **Save editor**: a starter moved on the Tactics pitch stays inside the area the game's
   Formation screen allows, so an edit can no longer make a formation Live AATF warns about.
 - **Save editor**: the Wrist tape left and right dropdowns list the game's four colors,
@@ -155,6 +156,11 @@
   which the game never offers.
 - **Save editor**: the unsaved changes list and the close prompt no longer scroll slowly
   after several teams are imported.
+- **Save editor**: on PES 2015 and PES 2016, the Substitution dropdown also offers Very
+  early, as those games' own screens do.
+- **Save editor**: a Team TOML imported onto another team keeps that team's own manager,
+  where it gave it the manager of the team the file came from. A file naming any other
+  manager still sets him.
 
 ### Minor fixes
 
@@ -206,6 +212,12 @@
   list, with its players under it.
 - **Save editor**: the player list's team rows stand out more from its player rows, on both
   themes.
+- **Save editor**: on the Gameplan screen, a held player rated A or B at no position
+  darkens the whole pitch, as in the game, where nothing was darkened.
+- **Save editor**: on the Gameplan screen, the panels and the two lineup lists stand 8
+  points apart, as on the Appearance screen.
+- **Ruleset editor**: the section list on the left has a little more room between its
+  rows.
 
 ## [0.0.1] - 2026-11-03
 

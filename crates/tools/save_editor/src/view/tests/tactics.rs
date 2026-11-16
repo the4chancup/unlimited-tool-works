@@ -1515,12 +1515,12 @@ fn box_at(rects: &[egui::Rect], left: f64, tol: f64) -> egui::Rect {
 // The editor's grid, the draft's `.tacgrid`: at the default pane (1224
 // x 756) the editor is one grid of three columns and three rows, so
 // every panel lines up with its neighbours — the settings panels' boxes
-// at the column's 422 width, the pitch's border 6 points past them, the
-// Player assignments box 6 past the pitch's border and out to the pane's
+// at the column's 422 width, the pitch's border 8 points past them, the
+// Player assignments box 8 past the pitch's border and out to the pane's
 // edge; the preset bar and the formation bar share one line's centre,
 // the formation bar's first button on the pitch's left; row 3's panels
-// top 6 under row 2's bottom, the two lists halves of columns 2-3 less a
-// 6-point gap.
+// top 8 under row 2's bottom, the two lists halves of columns 2-3 less an
+// 8-point gap.
 // SE-GUI-81
 #[test]
 fn the_tactics_editor_is_one_grid_at_the_default_pane() {
@@ -1555,22 +1555,22 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     }
     // The pitch's border is a point a side outside its canvas, and the
     // column's track holds canvas and border alike: the visible gap
-    // either side of the border is the 6 points between every pair of
+    // either side of the border is the 8 points between every pair of
     // panels in the window.
     let canvas = canvas_of(&nodes);
     let pitch_left = canvas.x0 - 1.0;
     let assigns_left = label_bounds(&nodes, "Player assignments").x0 - 7.0;
     let mut misfits = Vec::new();
     let gap = pitch_left - (settings_left + 422.0);
-    if (gap - 6.0).abs() > 0.5 {
+    if (gap - 8.0).abs() > 0.5 {
         misfits.push(format!(
-            "the settings frame's right to the pitch's border's left is {gap}, not 6"
+            "the settings frame's right to the pitch's border's left is {gap}, not 8"
         ));
     }
     let gap = assigns_left - (canvas.x1 + 1.0);
-    if (gap - 6.0).abs() > 0.5 {
+    if (gap - 8.0).abs() > 0.5 {
         misfits.push(format!(
-            "the pitch's border's right to Player assignments' frame's left is {gap}, not 6"
+            "the pitch's border's right to Player assignments' frame's left is {gap}, not 8"
         ));
     }
     assert!(misfits.is_empty(), "{}", misfits.join("\n"));
@@ -1642,8 +1642,8 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
 
     // The bars are the draft's `.tacbar`, 23 points tall above row 2
     // (the preset selector's 3-point margins round its 17), their widgets
-    // centred in it, and row 2's cells start ROW_GAP (6) below the bar
-    // (the Formation settings box's top), 9 below the 17-point choices'
+    // centred in it, and row 2's cells start ROW_GAP (8) below the bar
+    // (the Formation settings box's top), 11 below the 17-point choices'
     // bottom.
     let bar = 23.0;
     let row2_top = f64::from(box_at(&rects, settings_left, 1.0).min.y);
@@ -1653,26 +1653,26 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         .expect("the preset bar's label");
     for widget in [preset, two, kick_off, scroll, portraits] {
         assert!(
-            (centre_y(widget) - (row2_top - 6.0 - bar / 2.0)).abs() <= 0.5,
+            (centre_y(widget) - (row2_top - 8.0 - bar / 2.0)).abs() <= 0.5,
             "a bar's widget centred in the bar above row 2 ({:?}, row 2 at {row2_top})",
             widget.bounds()
         );
     }
     let bars_bottom = two.bounds().expect("bounds").y1;
     assert!(
-        (row2_top - (bars_bottom + 9.0)).abs() <= 0.5,
-        "row 2 starts 9 below the bars' choices ({row2_top} vs the choices' bottom {bars_bottom})"
+        (row2_top - (bars_bottom + 11.0)).abs() <= 0.5,
+        "row 2 starts 11 below the bars' choices ({row2_top} vs the choices' bottom {bars_bottom})"
     );
 
-    // Row 3's tops 6 under row 2's bottom: row 2's bottom is the deepest
+    // Row 3's tops 8 under row 2's bottom: row 2's bottom is the deepest
     // of the settings box, the pitch's and the assignments'.
     let settings_box = box_at(&rects, settings_left, 1.0);
     let pitch_box = box_at(&rects, pitch_left, 1.0);
     let row2_bottom = f64::from(settings_box.max.y.max(pitch_box.max.y).max(assigns.max.y));
-    let row3_top = row2_bottom + 6.0;
-    // The two lists over columns 2-3, halves less the 6-point gap.
+    let row3_top = row2_bottom + 8.0;
+    // The two lists over columns 2-3, halves less the 8-point gap.
     let span = pane_right - pitch_left;
-    let half = (span - 6.0) / 2.0;
+    let half = (span - 8.0) / 2.0;
     let mut lists: Vec<egui::Rect> = rects
         .iter()
         .copied()
@@ -1692,10 +1692,10 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     );
     assert!(
         (f64::from(eleven.width()) - half).abs() <= 1.0,
-        "the eleven half of the span less 6 ({eleven:?}, half {half})"
+        "the eleven half of the span less 8 ({eleven:?}, half {half})"
     );
     assert!(
-        (f64::from(bench.min.x) - (pitch_left + half + 6.0)).abs() <= 1.0,
+        (f64::from(bench.min.x) - (pitch_left + half + 8.0)).abs() <= 1.0,
         "the bench's left a half and a gap later ({bench:?})"
     );
     assert!(
@@ -1730,10 +1730,10 @@ fn the_two_panels_frames_are_level_with_the_pitchs() {
 
     let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
-    let pitch_left = settings_left + 422.0 + 6.0;
-    // The assignments' column starts 6 past the pitch's 322-point track,
+    let pitch_left = settings_left + 422.0 + 8.0;
+    // The assignments' column starts 8 past the pitch's 322-point track,
     // which holds the canvas and its border.
-    let assigns_left = pitch_left + 322.0 + 6.0;
+    let assigns_left = pitch_left + 322.0 + 8.0;
     let settings = box_at(&rects, settings_left, 1.0);
     let pitch_box = box_at(&rects, pitch_left, 1.0);
     let assigns = box_at(&rects, assigns_left, 1.0);
@@ -1779,9 +1779,9 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     // The lists' boxes share row 3's top — the first box right of the
     // settings column whose top is below the pitch's is theirs (the
     // stack's Advanced instructions is at settings_left).
-    let pitch_left = settings_left + 422.0 + 6.0;
+    let pitch_left = settings_left + 422.0 + 8.0;
     let pitch_box = box_at(&rects, pitch_left, 1.0);
-    let row3_top = f64::from(pitch_box.max.y) + 6.0;
+    let row3_top = f64::from(pitch_box.max.y) + 8.0;
     let lists_bottom = rects
         .iter()
         .filter(|rect| {
@@ -1898,7 +1898,7 @@ fn the_live_aatf_dock_leaves_the_lineup_lists_their_size() {
 // PES 21 save, team 701), each box's top measured from the Tactics' first
 // control (the Fluid formation checkbox) and its height: the bars 23 tall
 // (the preset selector's 3-point margins), Advanced instructions' header
-// row a line of text, the stack's two panels 6 apart and the lists padded
+// row a line of text, the stack's two panels 8 apart and the lists padded
 // 4 inside their borders, so the whole editor is the draft's height.
 #[test]
 fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
@@ -1915,10 +1915,10 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
         .y0;
     let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
-    let pitch_left = settings_left + 422.0 + 6.0;
-    // The assignments' column starts 6 past the pitch's 322-point track,
+    let pitch_left = settings_left + 422.0 + 8.0;
+    // The assignments' column starts 8 past the pitch's 322-point track,
     // which holds the canvas and its border.
-    let assigns_left = pitch_left + 322.0 + 6.0;
+    let assigns_left = pitch_left + 322.0 + 8.0;
     let column = |left: f64| -> Vec<egui::Rect> {
         rects
             .iter()
@@ -1946,13 +1946,13 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
         .expect("the bench's box");
     let assigns = box_at(&rects, assigns_left, 1.0);
     let blocks = [
-        ("Formation settings", settings[0], 26.5, 386.0),
-        ("the pitch", middle[0], 26.5, 386.0),
-        ("Player assignments", assigns, 26.5, 386.0),
-        ("Advanced instructions", settings[1], 418.5, 134.0),
-        ("Automatic settings", settings[2], 558.5, 86.0),
-        ("the starting eleven", middle[1], 418.5, 226.0),
-        ("the bench", bench, 418.5, 226.0),
+        ("Formation settings", settings[0], 28.5, 386.0),
+        ("the pitch", middle[0], 28.5, 386.0),
+        ("Player assignments", assigns, 28.5, 386.0),
+        ("Advanced instructions", settings[1], 422.5, 134.0),
+        ("Automatic settings", settings[2], 564.5, 84.0),
+        ("the starting eleven", middle[1], 422.5, 226.0),
+        ("the bench", bench, 422.5, 226.0),
     ];
     // Every block's misfit at once, so a failure shows the whole table.
     let mut misfits = Vec::new();
@@ -1975,7 +1975,7 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
 // PES 21 save, team 701), x in the client less the 56-point rail the pane
 // starts after: the preset and formation choices padded 5 across and 2
 // apart (the draft's `.sel`s in a `gap: 2px` row), the bars' other items 8
-// apart, and the assignments' column 6 past the pitch's 322-point track,
+// apart, and the assignments' column 8 past the pitch's 322-point track,
 // which holds the canvas and its border.
 #[test]
 fn the_tactics_bars_items_stand_where_the_drafts_do() {
@@ -2000,38 +2000,38 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
         (
             "Kick-off",
             button_bounds(&nodes, "Kick-off"),
-            759.0,
+            761.0,
             Some(52.92),
         ),
         (
             "In-possession",
             button_bounds(&nodes, "In-possession"),
-            813.92,
+            815.92,
             Some(88.5),
         ),
         (
             "Out-of-possession",
             button_bounds(&nodes, "Out-of-possession"),
-            904.42,
+            906.42,
             Some(113.77),
         ),
         (
             "the formations' Copy/swap",
             copy_swap_bounds(&nodes)[1],
-            1026.19,
+            1028.19,
             None,
         ),
-        ("Scroll", check_bounds(&nodes, "Scroll"), 1119.55, None),
+        ("Scroll", check_bounds(&nodes, "Scroll"), 1121.55, None),
         (
             "Portraits",
             check_bounds(&nodes, "Portraits"),
-            1177.31,
+            1179.31,
             None,
         ),
         (
             "Player assignments",
             label_bounds(&nodes, "Player assignments"),
-            1094.0,
+            1098.0,
             None,
         ),
     ];
@@ -3923,7 +3923,7 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
 // ratings, B or better, moved from the record's order (CF first, GK last)
 // to the position byte's. The PES 17 save's Housefires (72115, team 721)
 // is rated LB A and LMF B: his row's `rated` is true at LB (2) and LMF (6)
-// alone. An empty roster slot's is all false.
+// alone. An empty roster slot's is `None`.
 #[test]
 fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
     let file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
@@ -3943,7 +3943,7 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
     expected[6] = true;
     assert_eq!(
         crate::view::tactics::roster_slot(Some(housefires)).4,
-        expected,
+        Some(expected),
         "LB and LMF alone"
     );
     let empty = team
@@ -3953,8 +3953,8 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
         .expect("team 721 has an empty roster slot");
     assert_eq!(
         crate::view::tactics::roster_slot(file.player(empty.player_id)).4,
-        [false; 13],
-        "an empty slot: nothing rated"
+        None,
+        "an empty slot: no ratings"
     );
 }
 

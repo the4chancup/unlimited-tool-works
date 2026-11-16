@@ -35,14 +35,15 @@ use crate::view::{MedalKey, SaveView, edit_settled, edit_team, live_marks, selec
 
 /// The settings column's width (the draft's `.tacgrid` first track).
 const SETTINGS_WIDTH: f32 = 422.0;
-/// The gap between the grid's columns (the draft's `column-gap: 6px`).
-const COLUMN_GAP: f32 = 6.0;
+/// The gap between the grid's columns (the draft's `column-gap: 8px`).
+const COLUMN_GAP: f32 = 8.0;
 /// The pitch's column (the draft's `.tacgrid` second track): the canvas
 /// and its 1-point border a side, so the gaps either side of the border
 /// are the visible `COLUMN_GAP`.
 const PITCH_TRACK: f32 = 322.0;
-/// The gap between the grid's rows (the draft's `row-gap: 6px`).
-const ROW_GAP: f32 = 6.0;
+/// The gap between the grid's rows (the draft's `row-gap: 8px`, also
+/// `.tacstack`'s `gap`, so the stack's panels stand the same apart).
+const ROW_GAP: f32 = 8.0;
 /// The preset and formation bars' height (the draft's `.tacbar`): its
 /// tallest item is the preset selector's `.row`, 17 points with a 3-point
 /// margin above and below, so the bar is 5 taller than its buttons.
@@ -56,8 +57,15 @@ const SET_FOLDER_SIDE_PADDING: f32 = 2.0;
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
 /// display name, the raw name, the registered position, the thirteen
-/// per-position overalls and the positions he is rated A or B at.
-pub(super) type RosterSlot = (String, String, Option<u8>, Option<[u8; 13]>, [bool; 13]);
+/// per-position overalls and the positions he is rated A or B at (the
+/// three `Option`s `None` on an empty slot).
+pub(super) type RosterSlot = (
+    String,
+    String,
+    Option<u8>,
+    Option<[u8; 13]>,
+    Option<[bool; 13]>,
+);
 
 /// `team`'s `RosterSlot`s in `file`, one per roster slot in roster order.
 pub(super) fn roster_slots(file: &EditFile, team: &TeamEntry) -> Vec<RosterSlot> {
@@ -159,10 +167,10 @@ pub(super) fn roster_rows<'a>(
 /// his registered position, the thirteen per-position overalls the
 /// badge's number and the drag's position pick read, and the positions he
 /// is rated A or B at, which a held marker lights. `None`, an empty slot,
-/// gives "", none and nothing rated.
+/// gives the empty row: "" names, `None` position, overalls and ratings.
 pub(super) fn roster_slot(player: Option<&PlayerEntry>) -> RosterSlot {
     let Some(player) = player else {
-        return (String::new(), String::new(), None, None, [false; 13]);
+        return (String::new(), String::new(), None, None, None);
     };
     let mut overalls = [0; 13];
     for (position, overall) in (0u8..).zip(&mut overalls) {
@@ -182,7 +190,7 @@ pub(super) fn roster_slot(player: Option<&PlayerEntry>) -> RosterSlot {
         player.name.clone(),
         Some(player.positions.registered),
         Some(overalls),
-        rated,
+        Some(rated),
     )
 }
 
@@ -426,7 +434,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         );
         // `add_space` adds to the item gap the panel above already left.
         stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
-        changed[4] = tactics::automatic_settings(&mut stack_ui, version, &mut edited);
+        changed[4] = tactics::automatic_settings(&mut stack_ui, &mut edited);
 
         // One advance covering the grid's block (the tallest cell).
         let grid_bottom = stack_ui.min_rect().max.y.max(lists_ui.min_rect().max.y);
