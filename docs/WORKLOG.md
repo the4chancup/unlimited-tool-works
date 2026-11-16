@@ -1687,8 +1687,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the light theme's hovered version selector under 4.5, Copy/swap stats resizing on a
         team change, untested portraits-off drags and drops, the Team TOML notice's draft
         wording, and plan lines behind the code (fixed by the lead)
-      - [ ] the rework (SWE-2, `noticesrw/.tmp/rework_notices_r2.md`, after `sk/answers`
-        merges, which edits the pitch's tests), then Carbon's round 3
+      - [x] the rework (SWE-2, merge `8c672c7e`)
+      - [ ] Carbon's round 3 (at `8c672c7e`, `review32/.tmp/carbon_notices3.md`): running
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
