@@ -329,9 +329,61 @@ fn apply_desired(document: &mut EditTable, held: &Table, written: &EditTable, de
                 keep_leading_decor(document, key, header);
             }
             (_, _, None) => {
-                document.insert(key, fresh.clone());
+                let mut fresh = fresh.clone();
+                place_tables(&mut fresh, header_position(document));
+                document.insert(key, fresh);
             }
         }
+    }
+}
+
+/// The position a header written under `document` takes: the enclosing table's own
+/// position, so a `[key]`/`[[key]]` header renders inside its section; at the root,
+/// which has none, one past the largest position any of its tables carries, so a new
+/// section renders last. The tables cloned out of `written` carry `written`'s own
+/// ordering, which is not the file's.
+fn header_position(document: &EditTable) -> isize {
+    match document.position() {
+        Some(position) => position,
+        None => {
+            document
+                .iter()
+                .filter_map(|(_, item)| deepest_position(item))
+                .max()
+                .unwrap_or_default()
+                + 1
+        }
+    }
+}
+
+/// The largest position `item`'s tables carry, `None` when it has none.
+fn deepest_position(item: &EditItem) -> Option<isize> {
+    match item {
+        EditItem::Table(table) => deepest_in(table),
+        EditItem::ArrayOfTables(tables) => tables.iter().filter_map(deepest_in).max(),
+        _ => None,
+    }
+}
+
+/// The largest position `table` and the tables under it carry, `None` when it has none.
+fn deepest_in(table: &EditTable) -> Option<isize> {
+    table
+        .position()
+        .into_iter()
+        .chain(table.iter().filter_map(|(_, item)| deepest_position(item)))
+        .max()
+}
+
+/// `item`'s tables given `position`, where their headers render (a no-op for a value).
+fn place_tables(item: &mut EditItem, position: isize) {
+    match item {
+        EditItem::Table(table) => table.set_position(position),
+        EditItem::ArrayOfTables(tables) => {
+            for table in tables.iter_mut() {
+                table.set_position(position);
+            }
+        }
+        _ => {}
     }
 }
 
@@ -341,28 +393,14 @@ fn apply_desired(document: &mut EditTable, held: &Table, written: &EditTable, de
 /// (`[[# comment\nkey]]`), which is not TOML a save may write. `header` is the decor the
 /// replaced item's own header carried, when it was a table kind.
 fn keep_leading_decor(document: &mut EditTable, key: &str, header: Option<toml_edit::Decor>) {
-    let position = document.position();
+    let position = header_position(document);
     let Some((mut leaf, slot)) = document.iter_mut().find(|(leaf, _)| leaf.get() == key) else {
         return;
     };
+    place_tables(slot, position);
     let header_slot = match slot {
-        // A header renders where its table's position sorts it; the tables cloned
-        // out of `written` carry `written`'s ordering, not the file's, so they are
-        // given this table's: the header belongs to this section.
-        EditItem::Table(table) => {
-            if let Some(position) = position {
-                table.set_position(position);
-            }
-            Some(table.decor_mut())
-        }
-        EditItem::ArrayOfTables(tables) => {
-            for table in tables.iter_mut() {
-                if let Some(position) = position {
-                    table.set_position(position);
-                }
-            }
-            tables.get_mut(0).map(|table| table.decor_mut())
-        }
+        EditItem::Table(table) => Some(table.decor_mut()),
+        EditItem::ArrayOfTables(tables) => tables.get_mut(0).map(|table| table.decor_mut()),
         _ => None,
     };
     match (header_slot, header) {
@@ -909,6 +947,94 @@ mod tests {
             comments_of(&text),
             comments_of(BUNDLED),
             "every comment line of the bundled file: {text}"
+        );
+        let before_compiler = |text: &str| {
+            let compiler = text.find("[compiler]").unwrap();
+            text.match_indices("[[save-editor.recent_files]]")
+                .all(|(index, _)| index < compiler)
+        };
+        assert!(
+            before_compiler(&text),
+            "the recent saves' headers stand inside [save-editor]: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+
+        // A second save replaces the non-empty list with another, the old first
+        // save last: the comment above the first header survives, and every new
+        // table stands inside the section.
+        let mut settings = Settings::load(&path).unwrap();
+        let mut tool = settings.tool("save-editor").unwrap().clone();
+        tool["recent_files"] = table(
+            "recent_files = [{ path = 'b', name = 'B' }, { path = 'c', name = 'C' }, \
+             { path = 'a', name = 'A' }]",
+        )["recent_files"]
+            .clone();
+        settings.set_tool("save-editor", tool);
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert_eq!(
+            comments_of(&text),
+            comments_of(BUNDLED),
+            "every comment line of the bundled file: {text}"
+        );
+        assert!(before_compiler(&text), "{text}");
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A key the file lacks lands at the end of its section's keys, but its tables take
+    // the section's own position: `written` orders the sections alphabetically, so a
+    // `[[key]]` inserted under a section that is not the last would render after the
+    // later sections it sorts behind. At the root a new section renders last.
+    #[test]
+    fn an_inserted_table_key_stays_inside_its_section() {
+        let dir = test_dir("studio_core_settings_insert_position");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[common]\n\
+             pes_version = 17\n\
+             \n\
+             [save-editor]\n\
+             aatf_ruleset = \"dbc7\"\n\
+             \n\
+             [compiler]\n\
+             multicpk_mode = false\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        let mut tool = settings.tool("save-editor").unwrap().clone();
+        tool.insert(
+            "recent_files".to_owned(),
+            table("recent_files = [{ path = 'a', name = 'A' }, { path = 'b', name = 'B' }]")
+                ["recent_files"]
+                .clone(),
+        );
+        settings.set_tool("save-editor", tool);
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        let compiler = text.find("[compiler]").unwrap();
+        let headers: Vec<_> = text.match_indices("[[save-editor.recent_files]]").collect();
+        assert!(
+            headers.len() == 2 && headers.iter().all(|(index, _)| *index < compiler),
+            "both headers inside [save-editor]'s section, before [compiler]: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+
+        // A section the file lacks lands last: `export-upgrader` sorts before
+        // `save-editor`, where `written` would put it.
+        let mut settings = Settings::load(&path).unwrap();
+        settings.set_tool("export-upgrader", Table::new());
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(
+            text.trim_end().ends_with("[export-upgrader]"),
+            "the new section renders last: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
         fs::remove_dir_all(&dir).unwrap();
