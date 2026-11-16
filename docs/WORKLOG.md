@@ -2208,8 +2208,9 @@ briefs, review loops, gates and mutation runs as for any step.
         the round 1 class (a selection that moves leaves its row off screen) in three more
         places (an undo, a category tick, another save opened), untested reveals and filter
         halves, help and changelog lines that say what the window does not
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon2.md`, a fresh session in
-        `listrw1` from `9f2b8bb0`): running; then Carbon's round 3
+      - [x] the rework (SWE-2, merge `07b27911`); with it, egui's rubber-band spring off on
+        a reveal's frame, which pulled back a list that grew that frame
+      - [ ] Carbon's round 3, over the rework (`review30/.tmp/carbon_list3.md`, at `07b27911`): running
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
