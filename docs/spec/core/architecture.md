@@ -139,6 +139,9 @@ crates/studio_core/src/
 ├── redact.rs         # the home folder written `~` in the log's lines and a repro bundle's text
 ├── repro.rs          # the repro journal: the steps that changed a tool's model and the files it
 │                     #   read and wrote, for "Report a problem" to bundle
+├── repro/
+│   └── read.rs       #   reading a bundle back for `replay`: each kept file checked against its
+│                     #   row's size and SHA-256
 ├── icons.rs          # the icon font's glyphs the shell and the tools draw
 ├── theme.rs          # the shared look: the fonts, the style, the `theme` setting applied
 ├── help/

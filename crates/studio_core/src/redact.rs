@@ -1,5 +1,6 @@
 //! The user's home folder written as `~` in text a member posts: the
-//! window's log lines and a repro bundle's journal.
+//! window's log lines, a repro bundle's journal and text attachments, and
+//! the Report a problem dialog's "Saved to" line.
 
 /// `line` with the user's home folder written as `~`, because findings carry absolute
 /// paths and the log is posted where the cup's members can read it (ST-RUN-07). No home

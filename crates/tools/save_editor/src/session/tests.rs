@@ -1103,6 +1103,7 @@ fn closing_the_save_records_a_step() {
 }
 
 // ST-REP-04's "no save open" clause: the tool reports no state files.
+// ST-REP-04
 #[test]
 fn the_repro_state_is_empty_with_no_save_open() {
     assert!(studio_core::StudioTool::repro_state(&crate::Tool::new()).is_empty());

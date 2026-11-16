@@ -570,6 +570,20 @@ fn the_formations_picture_dialog_writes_one_png() {
     let nodes = scene.press("Save");
     let picture = folder.join("f.png");
     assert_eq!(png_size(&picture), ONE_COLUMN);
+    assert!(
+        crate::test_support::journal_lines(
+            scene
+                .tool
+                .view
+                .session
+                .as_ref()
+                .expect("the save")
+                .recorder(),
+            &scene.dir
+        )
+        .contains(&format!("wrote {}", picture.display())),
+        "the write is a `wrote` journal step"
+    );
     let without_portraits = std::fs::read(&picture).unwrap();
     assert!(!dialog_open(&nodes), "Save closes the dialog");
     assert_eq!(scene.notices(), [written(&folder)]);
