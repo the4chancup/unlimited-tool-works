@@ -18309,3 +18309,16 @@ need a migration.
 Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
 `[players.NN.appearance]`"; plans/aesthetics_export/settings_toml.md, the presentation
 table and the FPC star paragraph.
+
+## 2026-11-16 — pes_savefile — the Team TOML no longer reads star and playing attitude beside the stats
+Decision: an import reads star rating and playing attitude only from
+`[players.NN.appearance.presentation]` (`star_rating`, `playing_attitude`). A file that
+still holds `star` or `playing_attitude` under `stats`, as every Team TOML written before
+0.0.2 does, is refused as any file with an unknown key is; the member exports the team
+again or deletes the two lines. This replaces the old-place reading of the 2026-11-13 entry
+"Copy stats and the import's gameplay section leave star and playing attitude to the
+target" and of this day's `star_rating` entry.
+Why: the maintainer, 2026-11-16: until 1.0.0 the formats change with no compatibility for
+old files, and the two values are no longer stats.
+Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
+`[players.NN.appearance]`".

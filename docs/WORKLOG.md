@@ -2286,7 +2286,10 @@ briefs, review loops, gates and mutation runs as for any step.
         04, the tests that name it), and its key in `[appearance.presentation]` renamed
         `star_rating` in `settings.toml` and the Team TOML alike (`settings_toml/keys.rs`,
         the tests and the `aatf` sample that spell it, the `[Unreleased]` line naming the
-        table); a 0.0.1 file's `stats.star` still read into it
+        table); the Team TOML's old place (`stats.star`, `stats.playing_attitude`) no
+        longer read (`MOVED_TO_PRESENTATION` and its tests go), with an `### Important`
+        changelog line saying how a tester recovers. The layout slice was briefed to keep the
+        old place: its review sends this as a rework
       - the Gameplan screen's panels 8 points apart, Automatic settings ending level with
         the lineup lists' bottom (2 points shorter)
       - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
