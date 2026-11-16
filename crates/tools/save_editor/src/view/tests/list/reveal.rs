@@ -142,9 +142,9 @@ fn a_category_tick_that_relists_nothing_keeps_the_scroll() {
 }
 
 // A team picked in the selector under a typed filter selects its row,
-// the list scrolled to it though the listed rows stay as they were (a
-// filter already lists every team it names): `82` typed, the list
-// scrolled, the filter's last team picked — its row inside the clip on
+// the list scrolled to its top though the listed rows stay as they were
+// (a filter already lists every team it names): `82` typed, the
+// filter's second-to-last team picked — its row at the clip's top on
 // the next frame.
 #[test]
 fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
@@ -152,9 +152,10 @@ fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
     let mut view = SaveView::new();
     view.open(&path);
     view.filter = "82".to_owned();
-    // The last team the filter lists: its row stands rows deep, off the
-    // clip's end.
-    let (teams, name) = {
+    // The filter's second-to-last team: the last team's rows stand
+    // under its row, so `Top` stands it at the clip's top where the
+    // last's own pick would clamp at the list's end.
+    let (pick, name) = {
         let file = view.session.as_ref().unwrap().file();
         let teams: Vec<u32> = selection::list(file, &view.team, &view.filter, view.team_category)
             .iter()
@@ -163,8 +164,12 @@ fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
                 _ => None,
             })
             .collect();
-        let last = *teams.last().expect("a team listed under the filter");
-        let name = display_name(&file.team(last).unwrap().name);
+        assert!(
+            teams.len() > 3,
+            "premise: the filter lists several teams: {teams:?}"
+        );
+        let pick = teams[teams.len() - 2];
+        let name = display_name(&file.team(pick).unwrap().name);
         assert!(
             file.teams()
                 .iter()
@@ -173,27 +178,83 @@ fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
                 == 1,
             "premise: {name:?} is the only one in the selector"
         );
-        (teams, name)
+        (pick, name)
     };
-    assert!(
-        teams.len() > 3,
-        "premise: the filter lists several teams: {teams:?}"
-    );
     let mut window = Headless::new();
 
-    // The first listed row out of the clip, then the last team picked.
+    // Its row stands rows deep, off the clip's end.
     let nodes = draw(&mut window, &mut view);
-    let top_label = top_list_row(&nodes).0;
-    wheel_row_out_of_clip(&mut window, &mut view, |node| {
-        node.label() == Some(top_label.as_str())
-    });
+    let label = format!("{pick} {name}");
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| list_row(node) && node.label() == Some(label.as_str())),
+        "premise: {label:?} is not drawn before the pick"
+    );
+
     pick_in_selector(&mut window, &mut view, &name);
     assert_eq!(
         view.selected,
-        Some(Selection::Team(*teams.last().unwrap())),
+        Some(Selection::Team(pick)),
         "the pick selected its row"
     );
-    assert_selected_row_in_clip(&mut window, &mut view);
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "its row at the clip's top, `Top` ({bounds:?} vs {clip:?})"
+    );
+}
+
+// A pick that names the already-selected team scrolls the list to its
+// row though the pick moved nothing: `82` typed, the dropdown on All
+// teams, 821's row clicked and wheeled out of the clip, 821 picked —
+// the selection and the listed rows stand as they were, and its row
+// stands at the clip's top on the next frame.
+#[test]
+fn a_pick_of_the_selected_team_under_a_filter_scrolls_the_list_to_its_row() {
+    let path = fixture(PesVersion::Pes21, "team_pick_selected_filter_reveal");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.filter = "82".to_owned();
+    let name = display_name(&team_entry(&view, 821).name);
+    assert!(
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .teams()
+            .iter()
+            .filter(|team| display_name(&team.name) == name)
+            .count()
+            == 1,
+        "premise: 821's name {name:?} is the only one in the selector"
+    );
+    let mut window = Headless::new();
+
+    // Its row, drawn under the filter, clicked selected, then wheeled
+    // out of the clip.
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, team_row(&nodes, &view, 821), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(821)),
+        "premise: the click selected 821's row"
+    );
+    wheel_row_out_of_clip(&mut window, &mut view, |node| {
+        node.toggled() == Some(accesskit::Toggled::True)
+    });
+
+    pick_in_selector(&mut window, &mut view, &name);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(821)),
+        "the pick keeps the selection on 821's row"
+    );
+    let (bounds, clip) = assert_selected_row_in_clip(&mut window, &mut view);
+    assert!(
+        (bounds.y0 - f64::from(clip.top())).abs() <= 1.0,
+        "821's row at the clip's top, `Top` ({bounds:?} vs {clip:?})"
+    );
 }
 
 // A category tick under a typed filter that leaves the selection's team
@@ -212,6 +273,11 @@ fn a_category_tick_under_a_filter_scrolls_the_list_to_the_moved_selection() {
     // player row.
     let (expected, expected_label) = {
         let file = view.session.as_ref().unwrap().file();
+        assert_eq!(
+            selection::list(file, &view.team, &view.filter, TeamCategory::All),
+            selection::list(file, &view.team, &view.filter, TeamCategory::Vgl),
+            "premise: `79` lists the same rows under All and VGL"
+        );
         let row = selection::list(file, &view.team, &view.filter, TeamCategory::Vgl)
             .into_iter()
             .find_map(|row| match row {
