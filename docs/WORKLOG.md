@@ -1242,9 +1242,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       editor writes, and the GUI's controls write through the same codec, so one Team TOML
       with every value stepped apart, imported by the CLI into team 701, shows each
       field's offset:
-      - [ ] part 1, the test save and what the game should show per screen (SWE-2,
-        `.tmp/0_0_2/pes19/brief_rb1.md`): running (`pes19rb`, at `9c07f067`)
+      - [x] part 1, 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/rb/`): the stepped Team TOML
+        imported with no note, exported back unchanged, and only team 701 differs among
+        the save's 210 cup teams; `expected.md` says what each Edit-mode screen should show
       - [ ] part 2, the read-back in game, four players, the team and its three presets
+        (SWE-2, `.tmp/0_0_2/pes19/brief_rb2.md`), once no cargo runs
     - a `.ted` import (the organizer's first step) loaded in game: only the window imports
       a `.ted` (the CLI takes a Team TOML), so it waits for a built-window run with the
       maintainer's yes
