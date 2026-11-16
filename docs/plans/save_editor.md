@@ -3172,7 +3172,10 @@ SE-GUI-103 GIVEN the PES 2021 save open on All teams, the list scrolled to its t
                 scrolled to its end, the row as high as that lets it; GIVEN PgDn held over
                 many teams THEN every frame draws the selected row at the list's top edge;
                 GIVEN Down pressed on a list's last shown row THEN the frame that draws
-                the next row selected shows it whole at the list's bottom edge
+                the next row selected shows it whole at the list's bottom edge; GIVEN one
+                team picked, its first player selected and the row seven below out of
+                sight WHEN PgDn is pressed THEN that row is drawn whole at the list's bottom
+                edge, the list scrolled no further
 SE-GUI-54  GIVEN a player selected
            WHEN "abc" is typed into his shirt name, and into his team's short name
            THEN the records hold "ABC"
