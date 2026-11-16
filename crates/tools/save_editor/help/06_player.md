@@ -8,9 +8,9 @@ The **Player** menu works on the selected player:
   amount used in this window.
 - **Hide default body (Enable FPC)** or **Show default body (Disable FPC)**
   (Ctrl+I): the entry's label names what the press will do, following the
-  Appearance section's FPC reading. It shows the default body of a player
+  Appearance screen's FPC reading. It shows the default body of a player
   who reads "The default body is currently hidden" and hides any other's,
-  the same write as the section's Show default body and Hide default body.
+  the same write as the screen's Show default body and Hide default body.
 - **Copy/swap stats…** opens a window that copies one player's stats onto another,
   or trades them, and stays open for the next player.
 
@@ -22,19 +22,17 @@ edit flag. Copy and Swap stats move the gameplay edit flags with the stats.
 
 A player hidden by his model's own boots ID reads "The default body is currently
 shown", so for him the entry hides him again; to show his default body, use the
-section's Show default body instead. The entry stays disabled while the aesthetics lock is on (see the
-Appearance section).
+screen's Show default body instead. The entry stays disabled while the aesthetics lock is on (see the
+Appearance screen).
 
 **Copy and Swap stats**
 
-The window has two rows, Source and Destination, each picked by team, then by
-player; both start on the selected player, or on the team's first player
-when a team row is selected. It stays open over the editor, and selecting a
-player row in the list makes that player the Destination (a team row, its first
-player), so one player's stats go onto several others with a click on each and
-**Copy**. **Swap** trades the two
-players' stats instead. A line in the window says what the last Copy or Swap
-did.
+The window has two rows, Source and Destination, each picked by team and then
+by player. Both start on the selected player, or on the team's first player
+when a team row is selected. While the window stays open, clicking a player row
+in the list sets the Destination to that player (or to a clicked team row's
+first player), so you can copy one player's stats onto several others with a
+click on each and **Copy**. **Swap** trades the two players' stats instead.
 
 Height, weight, every
 ability, form, injury, weak foot, positions, playing style, skills and COM

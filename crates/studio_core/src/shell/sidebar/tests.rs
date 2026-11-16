@@ -1135,6 +1135,40 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
+// The light theme's amber and red are tuned for the panel's grey 248,
+// where the combo's own resting fill is grey 207: `selector_color`
+// darkens each against the button's fill so it still reads at 4.5.
+#[test]
+fn the_light_themes_selector_colours_read_on_the_buttons_fill() {
+    let egui_ctx = test_context();
+    let style = egui_ctx.style_of(egui::Theme::Light);
+    let resting = style.visuals.widgets.inactive.bg_fill;
+    assert_eq!(
+        resting,
+        egui::Color32::from_gray(207),
+        "premise: the light theme's resting widget fill"
+    );
+    for check in [
+        ExeCheck::OtherVersion(PesVersion::Pes19),
+        ExeCheck::NoExe,
+        ExeCheck::NoFolder,
+    ] {
+        let colour = selector_color(check, &style.visuals).expect("a verdict colour");
+        let on_fill = crate::theme::contrast(colour, resting);
+        assert!(
+            on_fill >= 4.5,
+            "{check:?} reads at {on_fill:.3} on the resting fill"
+        );
+    }
+    // The dark theme's verdicts keep their colour as it is.
+    let dark = egui_ctx.style_of(egui::Theme::Dark);
+    assert_eq!(
+        selector_color(ExeCheck::NoExe, &dark.visuals),
+        Some(dark.visuals.warn_fg_color),
+        "the dark amber unchanged"
+    );
+}
+
 // The tools read the selector's own verdict: after a frame over a folder holding another
 // version's exe, the context every tool gets reports what coloured the selector.
 #[test]

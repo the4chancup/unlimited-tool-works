@@ -902,7 +902,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     - the ownership line, the "Edit aesthetics anyway" switch and its note, while the lock's
       setting is on: first, over everything they govern.
     - **Full Player Customization**, taking the row's room, with **Colors** (skin, iris, the
-      two swatch rows' first squares in line) at its right.
+      two swatch rows' first squares in line, the squares 2 points apart) at its right.
     - **Strip style**: fifteen settings in three columns by five rows, every label one
       width and every field one width (the two ID boxes as wide as the dropdowns), thin
       lines in the frame's colour parting what belongs together:
@@ -928,8 +928,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
       gloves show.
     - **Physique** at the left, its 14 sliders two a row, 82 points long (the suite's are
       110; at 110 Motion beside them wrapped two labels) on rows 34 points tall, which fill
-      the group to the height of the two at its right; **Motion** at its right (hunching,
-      arm movement, kick motions, gc1/gc2, two a row, Randomize under them; dribbling
+      the group to the height of the two at its right. Its labels stand 6 points in from its
+      title, as the stats grids' do, and the group is as wide as the draft draws it (a first
+      build drew it 24 points narrower, Motion moving left with it); **Motion**
+      at its right (hunching, arm movement, kick motions, gc1/gc2, two a row, Randomize
+      under them; dribbling
       motion 20+), and **Edit flags** under Motion: the six flags in three columns (face,
       hair, physique over strip, motion, base copy), `Copy from ID` on a row under them.
     - **Presentation**, the pane's width, last: star (19+) and playing attitude (20+), one
@@ -966,6 +969,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   - manager ID (17+) and stadium ID,
   - and a **Kit slots…** button opening the kit slot assignments in a dialog (rarely edited,
     so not a panel that pushes the tactics down; a version that stores none says so in it).
+    Each slot's row holds its Number and its `Bound team ID`: the team's id, as Team ID and
+    Manager ID show one, not the stored number (the id times 64), which no member reads
+    anywhere else. Every box is one width, wide enough for six digits, so the rows line up
+    and a box does not change width between a 3-digit and a 6-digit value.
 
   The ids share the fields' row, not one of their own, because the Tactics editor below needs
   the height: with a heading-size title and the ids on a second row its last row ended about 5
@@ -1302,7 +1309,10 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   The managers' reading is not proven: the PES 2017 study found the game plan menu still
   wiring both numbers but not the match code that reads any slider (the spec section above), so
   the labels and the second lock follow the managers until a study says otherwise. Only the
-  two toggles are disabled: a pasted or imported preset still carries its numbers;
+  two toggles are disabled: a pasted or imported preset (a preset pasted or copied from
+  another, a Gameplan pasted from another team, an imported Team TOML) still carries its
+  numbers, and the AATF check says nothing about them, since the toggles' lock is all a cup
+  needs: it stops the one route a member takes on purpose;
 - formation settings toggles (attacking style, zone, buildup, positioning, defensive style,
   containment, pressure);
 - advanced instructions (2 attack + 2 defense, with target player where applicable);
@@ -1410,12 +1420,11 @@ Win32 original hurt the most):
      bottom.
 
      Substitution is a combo naming the game's choices. Measured in game: Off 0, Very late 1,
-     Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21. PES 17's screen lists Off, Very
-     late, Flexible and Very early, PES 21's four in PES 21's order, so its stored values are
-     read as PES 21's and it offers the four. PES 18 to 20, between the two, offer the four
-     too. That is taken rather than looked at: a look at each game's Substitution choices is
-     still to come. A stored value outside them is shown as its number, so the combo never
-     misreports the save.
+     Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21. Every version's screen lists the
+     same four, Off, Very late, Flexible and Very early, in that order (looked at on PES 15,
+     16, 17, 18, 19, 20 and 21), so each version's stored values are read as PES 21's and the
+     combo offers the four. A stored value outside them is shown as its number, so the combo
+     never misreports the save.
 
   The grid is laid out at the design width. A narrower window scales the whole UI with its
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
@@ -1715,9 +1724,10 @@ Win32 original hurt the most):
   (`<file> written to <folder>`),
   with an Open folder action.
 
-  **The picture.** The theme's panel colour under the team's name in its colour codes'
-  colours, its id and the save's version (a folder of pictures from several saves would
-  otherwise not say which game each came from). Then one row per preset, labelled "Preset n",
+  **The picture.** The whole picture stands on the theme's panel colour. At its top are the
+  team's name in its colour codes' colours, its id and the save's version (a folder of
+  pictures from several saves would otherwise not say which game each came from). Then one
+  row per preset, labelled "Preset n",
   with "Fluid On" or "Fluid Off" under it in the text colour (PES 2016 on), with or without the
   settings. Each cell is the pitch as the view paints it at its own 320 x 384, the formation's
   name in its corner, with none of the view's states (no drag, corners or join fill, a wider
@@ -1767,9 +1777,9 @@ Win32 original hurt the most):
     passes it, so the range is never reversed.
 
   The row ends in the count ("4 teams"), right-aligned where the folder row's Browse ends.
-  Under it stand the folder row with Browse, the same checkbox, and the file-name line, which
-  follows it. Its labels and fields sit on one grid. An existing file is replaced, the
-  file-name line saying so.
+  Under it stand the folder row with Browse, the one-team dialog's three boxes, and after them
+  the file-name line, which names the first team's file whatever the boxes say. Its labels
+  and fields sit on one grid. An existing file is replaced, the file-name line saying so.
 
   The dialog then turns into the run's progress ("Writing 2 of 4: /f/ (718)", a ProgressBar,
   Stop, which keeps the pictures written so far) and then its result ("4 pictures written,
@@ -1948,6 +1958,11 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   the canvas' edge. The darkening is painted as the cells the lit edges cut the canvas into,
   each filled once when no lit rectangle holds it, so overlapping rectangles (a band's and a
   smaller area inside it) never darken twice.
+
+  A player rated A or B nowhere (a blank team's placeholder, whose list is all C, his
+  registered position included) lights nothing, so the whole pitch is darkened, as PES 2019's
+  Edit Position screen shows him. Only a held marker with no ratings at all (an empty roster
+  slot, or a host that reads none) darkens nothing.
 
   These are the PES 2021 screen's edges within 1.5 points but for CF's lower one, which the
   screen draws at y 40.7 where the table's row starts at 40. The editor draws the table's, y
@@ -2257,8 +2272,8 @@ The panel over the spec's `diff` report:
     "Slot 04's number");
   - a man-marking byte, the marked opponent's formation slot, as `Opponent's starter 5`
     (numbered from 1; 255 reads `None`) on the row of the own starter who marks
-    (`Preset 1 · Man marking · <his name>`): the bare byte read as one of the team's own
-    players.
+    (`Preset 1 · Man marking · <his name>`). Shown bare, the byte would read as one of the
+    team's own players.
 
   A slot's number row the prompt lists under its player reads `Shirt number` instead, as the
   strip labels it, since the item already names him.

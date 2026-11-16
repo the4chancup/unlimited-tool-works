@@ -1070,10 +1070,21 @@ pub(super) fn version_label(version: PesVersion, rail: bool) -> String {
 
 /// The selector's colour for an exe-check verdict (ST-SIDE-03): red on a different
 /// version's exe, amber on no exe or no folder, none when the selection is installed.
+/// The light theme's pair is tuned for the panel, a lighter grey than the
+/// combo button it lands on, so each is darkened against the button's own
+/// fill to keep reading there.
 pub(super) fn selector_color(check: ExeCheck, visuals: &egui::Visuals) -> Option<egui::Color32> {
-    match check {
-        ExeCheck::OtherVersion(_) => Some(visuals.error_fg_color),
-        ExeCheck::NoExe | ExeCheck::NoFolder => Some(visuals.warn_fg_color),
-        ExeCheck::Found => None,
+    let colour = match check {
+        ExeCheck::OtherVersion(_) => visuals.error_fg_color,
+        ExeCheck::NoExe | ExeCheck::NoFolder => visuals.warn_fg_color,
+        ExeCheck::Found => return None,
+    };
+    if visuals.dark_mode {
+        Some(colour)
+    } else {
+        Some(crate::theme::darkened_to_read(
+            colour,
+            visuals.widgets.inactive.bg_fill,
+        ))
     }
 }

@@ -1377,10 +1377,9 @@ briefs, review loops, gates and mutation runs as for any step.
     taken from PES 2017 and 2021 having it, the games between them)
     - [x] y7a the draft and `plans/save_editor.md` "Tactics editor"
     - [x] y7b the code: `team_widgets`' `substitution_choices` offers Very early from PES 2017
-    - [ ] y7c later (the maintainer: "we'll check in detail in the future"): a look at PES
-      2018, 2019 and 2020's Game Plan, Automatic settings, Substitution; the plan's "taken
-      rather than looked at" goes with it (`maintainer/questions.html` "After the release"). Look: Pending
-      looks
+    - [x] y7c 2026-11-16 the maintainer looked at PES 15, 16, 18, 19 and 20: the same four
+      choices on each (DECISIONS 2026-11-16 "Substitution offers the same four choices on
+      every version"; the build's Very early on 15 and 16 is in 0.0.2-answers)
 - [x] 0.0.1z the maintainer's look at the built app (2026-10-27): the app's sliders kept, the
   drafts made to match (z1, z4); z2 the code (the slider's fill, Reset window, ST-BAR-05,
   06, SE-GUI-40; z2c Reset window under zoom), z3 the active-tool bar's left corners. Done
@@ -2220,9 +2219,9 @@ briefs, review loops, gates and mutation runs as for any step.
         with the portraits off a hidden portrait took a click meant for the badge above it and
         the brackets framed turf (plan, draft, DECISIONS), the light selector's contrast, the
         Copy/swap window's width, team exports' notice detail, untested clauses, stale help
-      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices2.md`, a fresh session in
-        `noticesrw` from `82aeac10`; the resumed one never took a step): running; then
-        Carbon's round 2
+      - [x] the rework (SWE-2, a fresh session in `noticesrw`; merge `b78e9dd8`)
+      - [ ] Carbon's round 2 (`review32/.tmp/carbon_notices2.md`, at `b78e9dd8`): refused
+        twice on 2026-11-16 by the model provider's outage; retried once it is back
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -2255,8 +2254,42 @@ briefs, review loops, gates and mutation runs as for any step.
     `9f2b8bb0`), with two lead fixes: whether each recent save exists is asked once per look
     of the menu or panel, not every frame (`80acbb1e`), and the bundled settings file names
     `recent_files` (`b9686f0b`)
-    - [ ] the built window beside the draft (`.tmp/lead/shot_filemenu.py` renders the draft)
-    - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
+    - [x] the built window beside the draft, 2026-11-16: it matches, but for the welcome
+      panel's gap above each heading, about 4 to 5 points tighter than the draft's
+    - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
+      (SWE-2, `recents/.tmp/rework_recents1.md`) running; then SWE-2's round 2 and one
+      Carbon round
+  - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
+    DECISIONS edited that day):
+    - [ ] code (SWE-2, one slice, after the recents rework merges, since it touches
+      `file_menu.rs`) -> verify: each a test red first:
+      - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
+        ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
+      - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
+        id, any other as it is (`pes_savefile` "Team TOML")
+      - the Kit slots dialog's boxes one width, six digits wide (`view/team.rs` `kit_slots`)
+      - the Ruleset editor's rail rows 24 apart (3 points of padding)
+      - the Appearance page's Physique box as wide as the draft's (Motion 24 points right),
+        its labels 6 points in from its title, and the Colors squares 2 points apart
+      - every box's content on the Stats and Appearance screens 6 points in from its title,
+        once the maintainer's look at the draft agrees (`tasks.html` `look-box-indent`;
+        drafted 2026-11-16 in `tools/save_editor.js`)
+      - Substitution offers Very early on PES 15 and 16 too (`tactics/mod.rs`
+        `substitution_choices`, help 08, the two comments)
+      - Choose file's tooltip reads "starting in the folder of the last opened save"
+        (`view/file_menu.rs` `OPEN_TIP` and its test)
+    - [ ] the drafts (the lead): Kit slots shows `Bound team ID` as the id, boxes one width;
+      Randomize greyed whole; the three texts of DECISIONS 2026-11-16 "the drafts take
+      three texts"; each captured and critiqued
+    - [ ] in-game (a sidekick, PES 2021): two teams naming one coach record, both in one
+      match's prematch screen -> verify: the screen shows each team's coach, or the fault
+      the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph
+    - [ ] PES 2019's playing attitude (the maintainer: not in Edit mode on 2019 or 2021, a
+      hidden stat; star ratings neither): look for it in
+      the PES 2019 save folder's `EDIT00000000 - defaultdb` (Documents, `KONAMI\PRO
+      EVOLUTION SOCCER 2019\<account folder>\save`), a default-database save, against the same players' PES 2020 values -> verify: a field
+      whose values match theirs, then the editor shows it on 2019; none found, the matter
+      is dropped
   - [x] 0.0.2-tacgap the Tactics grid's two column gaps were 10 and 8 (the draft's
     `column-gap: 10px`, its pitch's border overflowing a 320 track): 6 each, as between every
     pair of panels, the pitch's track 322 (the maintainer, 2026-11-15; draft and plan edited)
@@ -3403,8 +3436,6 @@ one of them means that page).
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
   loads and draws; PES 2017; 0.0.2b (DECISIONS 2026-11-11 "texture_not_div4 holds only a
   pre-Fox texture the compile block-compresses"); harness
-- Substitution's "Very early" in the Game Plan's Automatic settings; PES 2018, 2019 and 2020;
-  0.0.1y's y7c (`maintainer/questions.html` "After the release"); harness
 - The Ability stats column on a PES 17 save in the built window: Tight Possession's and
   Aggression's names as dim as Through Passing's beside them; no PES; 0.0.2-statlbl; harness
 - A motion and a face edit in Edit mode on a save with a compiled team's patch: which keys the

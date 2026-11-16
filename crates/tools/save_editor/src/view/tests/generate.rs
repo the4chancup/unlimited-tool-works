@@ -57,6 +57,7 @@ fn pick_and_write(window: &mut Headless, view: &mut SaveView, dir: PathBuf) {
 }
 
 // SE-GUI-19
+// SE-GUI-79
 #[test]
 fn generated_settings_writes_the_explicit_colour_coded_name() {
     let path = fixture(PesVersion::Pes21, "generate_coded_name");
@@ -100,15 +101,18 @@ fn generated_settings_writes_the_explicit_colour_coded_name() {
         "the explicit string with its codes"
     );
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some((
             format!(
                 "settings.toml for {} written into {}",
                 display_name(&raw),
                 dir.display()
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the status-bar notice"
     );
 
@@ -125,6 +129,7 @@ fn generated_settings_writes_the_explicit_colour_coded_name() {
 }
 
 // SE-GUI-33
+// SE-GUI-79
 #[test]
 fn the_two_generate_actions_split_the_files_as_the_format_has_them() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_face_split", 701, 1);
@@ -150,15 +155,18 @@ fn the_two_generate_actions_split_the_files_as_the_format_has_them() {
     player_menu_item(&mut window, &mut view, "Generate in-game face");
     pick_and_write(&mut window, &mut view, dir.clone());
     assert_eq!(
-        view.notice.as_ref().map(|notice| notice.text.as_str()),
-        Some(
+        view.notice
+            .as_ref()
+            .map(|notice| (notice.text.as_str(), notice.kind)),
+        Some((
             format!(
                 "ingame_face.toml for {} written into {}",
                 display_name(&player_entry(&view, player_id).name),
                 dir.display()
             )
-            .as_str()
-        ),
+            .as_str(),
+            NoticeKind::Success
+        )),
         "the second action's status-bar notice"
     );
 

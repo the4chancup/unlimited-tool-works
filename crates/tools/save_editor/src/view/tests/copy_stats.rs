@@ -6,6 +6,7 @@
 
 use super::player::{mark_copy_players, rostered, slot_label, with_stats_of};
 use super::*;
+use crate::test_support::cup_save::outside_cup_file;
 
 /// The Source/Destination row's two dropdowns (team, then player).
 pub(super) fn row_combos<'a>(nodes: &'a [accesskit::Node], row: &str) -> [&'a accesskit::Node; 2] {
@@ -401,7 +402,8 @@ fn swap_writes_both_field_sets_as_one_undoable_edit() {
 
 // A row's team dropdown changed: its player dropdown shows the new
 // team's first filled slot — labeled by the roster place, not the shirt
-// number.
+// number — even when the pick stood on another slot and the team's slot
+// 01 is empty.
 // SE-GUI-78
 #[test]
 fn a_changed_team_dropdown_takes_the_teams_first_filled_slot() {
@@ -417,13 +419,41 @@ fn a_changed_team_dropdown_takes_the_teams_first_filled_slot() {
     session.edit_team(1, team);
     assert_ne!(usize::from(team_entry(&view, 701).roster[0].number), 1);
     let second_name = display_name(&team_entry(&view, 702).name);
+
+    let nodes = open_window(&mut window, &mut view);
+    // Both rows on a slot past 01 before the team change, so a pick that
+    // never moved shows.
+    let (third_slot, third_id) = rostered(&view, 701)[2];
+    let third = slot_label(&player_entry(&view, third_id), third_slot);
+    let (fourth_slot, fourth_id) = rostered(&view, 701)[3];
+    let fourth = slot_label(&player_entry(&view, fourth_id), fourth_slot);
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Source")[1],
+        &fourth,
+    );
+    let nodes = draw(&mut window, &mut view);
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Destination")[1],
+        &third,
+    );
+    // 702's slot 01 emptied, so its first filled slot is 02.
+    let session = view.session.as_mut().unwrap();
+    let mut team = session.file().team(702).unwrap().clone();
+    assert_ne!(team.roster[0].player_id, 0, "premise: 702's 01 filled");
+    team.roster[0].player_id = 0;
+    session.edit_team(1, team);
     let (second_slot, second_id) = rostered(&view, 702)
         .first()
         .copied()
         .expect("702 has a filled slot");
+    assert_eq!(second_slot, 1, "premise: 702's first filled slot is 02");
     let second = player_entry(&view, second_id);
 
-    let nodes = open_window(&mut window, &mut view);
+    let nodes = draw(&mut window, &mut view);
     pick_option(
         &mut window,
         &mut view,
@@ -462,6 +492,12 @@ fn a_team_row_selection_opens_the_window_on_the_teams_first_filled() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    // 701's slot 01 emptied: its first filled slot is 02.
+    let session = view.session.as_mut().unwrap();
+    let mut team = session.file().team(701).unwrap().clone();
+    assert_ne!(team.roster[0].player_id, 0, "premise: 701's 01 filled");
+    team.roster[0].player_id = 0;
+    session.edit_team(1, team);
     open_team_view(&mut window, &mut view, 701);
     let (first_slot, first_id) = rostered(&view, 701)
         .first()
@@ -510,7 +546,17 @@ fn a_team_row_click_under_the_window_gives_its_first_player() {
         .expect("702 has a filled slot");
     let first = player_entry(&view, first_id);
 
-    open_window(&mut window, &mut view);
+    let nodes = open_window(&mut window, &mut view);
+    // The Destination on a slot past 01 first, so a pick that never
+    // moved shows.
+    let (third_slot, third_id) = rostered(&view, 701)[2];
+    let third = slot_label(&player_entry(&view, third_id), third_slot);
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Destination")[1],
+        &third,
+    );
     let nodes = draw(&mut window, &mut view);
     click(&mut window, team_row(&nodes, &view, 702), &mut view);
     assert_eq!(
@@ -729,6 +775,66 @@ fn the_window_closes_on_close_and_on_its_title_bar_button() {
     }
 }
 
+// The window's width is its grid's, held while the member works: each
+// combo is its widest option plus the combo's chrome and the result
+// line truncates at the grid, so a longer pick or a long line moves
+// neither the window nor the buttons under the pointer.
+#[test]
+fn the_window_holds_its_width_while_the_picks_and_the_line_change() {
+    let path = fixture(PesVersion::Pes21, "copy_window_width");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70102).unwrap().name = "A SOURCE NAME WIDER THAN THE GRID HOLDS".to_owned();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+
+    let nodes = open_window(&mut window, &mut view);
+    let rect_and_copy = |nodes: &[accesskit::Node]| {
+        (
+            window_bounds(nodes),
+            node_labeled(nodes, Role::Button, "Copy")
+                .bounds()
+                .expect("Copy's bounds")
+                .x0,
+        )
+    };
+    let before = rect_and_copy(&nodes);
+
+    // The Source's player dropdown on the wide name: the window stands.
+    let wide = slot_label(&player_entry(&view, 70102), 1);
+    assert!(
+        wide.len() > destination_label(&nodes).len(),
+        "premise: the pick is wider than the open one"
+    );
+    pick_option(
+        &mut window,
+        &mut view,
+        row_combos(&nodes, "Source")[1],
+        &wide,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        rect_and_copy(&nodes),
+        before,
+        "a wider pick moves neither the window nor Copy"
+    );
+
+    // A Copy whose line outgrows the grid, then nothing moved either.
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Copy"),
+        &mut view,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        rect_and_copy(&nodes),
+        before,
+        "a wide result line moves neither the window nor Copy"
+    );
+}
+
 // The window's team dropdown names a team by its display name — the
 // shown text and the entries alike — a colour code's control character
 // and hex digits never show.
@@ -758,6 +864,129 @@ fn the_team_dropdown_names_a_coded_team_by_its_display_name() {
     assert!(
         entries.iter().all(|entry| !entry.contains('\u{11}')),
         "no colour code byte in the popup: {entries:?}"
+    );
+}
+
+// Each combo steps with the wheel over it: a notch down takes the next
+// item — a team change moving the player pick to the new team's first
+// filled slot — and a notch up takes the one before.
+#[test]
+fn the_combos_step_with_the_wheel() {
+    let path = fixture(PesVersion::Pes21, "copy_window_wheel");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let (a_slot, a_id) = rostered(&view, 701)[0];
+    let (b_slot, b_id) = rostered(&view, 701)[1];
+    let (a, b) = (player_entry(&view, a_id), player_entry(&view, b_id));
+    let first_team = display_name(&team_entry(&view, 701).name);
+    let second_team = display_name(&team_entry(&view, 702).name);
+
+    let nodes = open_window(&mut window, &mut view);
+    // The player combo: down to the next slot, up back to 01.
+    let at = centre(row_combos(&nodes, "Destination")[1]);
+    notch(&mut window, &mut view, at, false);
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        destination_label(&nodes),
+        slot_label(&b, b_slot),
+        "a notch down takes the next player"
+    );
+    notch(&mut window, &mut view, at, true);
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        destination_label(&nodes),
+        slot_label(&a, a_slot),
+        "a notch up takes the one before"
+    );
+
+    // The team combo the same: down to the next cup team — its player
+    // pick moving to the new team's first filled slot — and back.
+    let at = centre(row_combos(&nodes, "Destination")[0]);
+    notch(&mut window, &mut view, at, false);
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        row_combos(&nodes, "Destination")[0].value(),
+        Some(second_team.as_str()),
+        "a notch down takes the next team"
+    );
+    let (slot, id) = rostered(&view, 702)
+        .first()
+        .copied()
+        .expect("702 has a filled slot");
+    assert_eq!(
+        destination_label(&nodes),
+        slot_label(&player_entry(&view, id), slot),
+        "and its player pick moved to the first filled slot"
+    );
+    notch(&mut window, &mut view, at, true);
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(
+        row_combos(&nodes, "Destination")[0].value(),
+        Some(first_team.as_str()),
+        "a notch up takes the team back"
+    );
+}
+
+// The button row's order: Copy, Swap, Close, left to right.
+#[test]
+fn the_buttons_stand_copy_swap_close_left_to_right() {
+    let path = fixture(PesVersion::Pes21, "copy_window_buttons");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = open_window(&mut window, &mut view);
+    let x = |label: &str| {
+        let bounds = node_labeled(&nodes, Role::Button, label)
+            .bounds()
+            .expect("bounds");
+        (bounds.x0, bounds.x1)
+    };
+    let (copy, swap, close) = (x("Copy"), x("Swap"), x("Close"));
+    assert!(
+        copy.1 <= swap.0 && swap.1 <= close.0,
+        "Copy, Swap, Close left to right ({copy:?} {swap:?} {close:?})"
+    );
+}
+
+// The team combo lists the cup's teams, not the list's ticked
+// category's: under VGL it still offers 701 (a 4cc team), and team 300,
+// outside the cup's range, is never offered.
+#[test]
+fn the_team_combo_lists_every_cup_team_whatever_the_category() {
+    let (file, _) = outside_cup_file(PesVersion::Pes21);
+    let path = crate::test_support::scratch("copy_window_cup_only").join("EDIT00000000");
+    std::fs::write(
+        &path,
+        file.to_bytes(&crate::test_support::TEST_SALT).unwrap(),
+    )
+    .unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team_category = TeamCategory::Vgl;
+    let four_cc = display_name(&team_entry(&view, 701).name);
+    let outside = display_name(&team_entry(&view, 300).name);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+
+    let nodes = open_window(&mut window, &mut view);
+    click(&mut window, row_combos(&nodes, "Source")[0], &mut view);
+    let (_, nodes, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let labels: Vec<&str> = nodes
+        .iter()
+        .filter(|(_, node)| node.role() == Role::Button)
+        .filter_map(|(_, node)| node.label())
+        .collect();
+    assert!(
+        labels.contains(&four_cc.as_str()),
+        "701 offered under the VGL tick: {labels:?}"
+    );
+    assert!(
+        !labels.contains(&outside.as_str()),
+        "team 300 never offered: {labels:?}"
     );
 }
 

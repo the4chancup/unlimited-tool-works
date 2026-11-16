@@ -1610,6 +1610,17 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         "Portraits ends inside the pane's right edge ({:?})",
         portraits.bounds()
     );
+    // The bar's tail order: the formations' Copy/swap, then Scroll, then
+    // Portraits.
+    let (copy_swap, scroll_b, portraits_b) = (
+        copy_swap_button(&nodes, 1).bounds().expect("bounds"),
+        scroll.bounds().expect("bounds"),
+        portraits.bounds().expect("bounds"),
+    );
+    assert!(
+        copy_swap.x1 <= scroll_b.x0 && scroll_b.x1 <= portraits_b.x0,
+        "Copy/swap, Scroll, Portraits left to right ({copy_swap:?} {scroll_b:?} {portraits_b:?})"
+    );
     for (checkbox, hover) in [
         (
             scroll,
@@ -3376,165 +3387,108 @@ fn every_view_fits_the_pane_the_minimum_window_leaves() {
     }
 }
 
-// The formation bar's Scroll checkbox (`TacticsView::scroll_names`):
-// a view setting, not an edit — on by default, its toggle marks no
-// unsaved change and pushes no undo entry, it writes `scroll_names` to
-// the tool's settings, and a fresh Tool on the same settings reads it
-// back.
-#[test]
-fn scroll_names_is_a_remembered_view_setting() {
-    use studio_core::StudioTool;
-
-    let save_path = fixture(PesVersion::Pes21, "scroll_names_setting");
-    let dir = save_path.parent().expect("the scratch dir").to_path_buf();
-    let mut tool = crate::Tool::new();
-    tool.view.open(&save_path);
-    let mut settings = studio_core::Settings::default();
-    let mut table = tool.default_settings();
-    table.insert("unread_key".to_owned(), toml::Value::Integer(3));
-    settings.set_tool("save-editor", table);
-    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
-    // The design pane: the grid is laid out at 1280, and a narrower
-    // window scales (the core spec, "Scaling with the width"), so the
-    // checkbox sits inside the pane here (below it, the bar's content
-    // runs past the clip).
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_team_view(&mut window, &mut tool.view, 701);
-
-    // On by default; the toggle writes the setting false, the tool's
-    // other keys untouched, and leaves the session clean (a view
-    // setting, not an edit).
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
-    assert_eq!(
-        checkbox.toggled(),
-        Some(accesskit::Toggled::True),
-        "on by default"
-    );
-    press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
-    assert!(
-        !tool.view.tactics.scroll_names,
-        "the pointer toggle flipped the checkbox"
-    );
-    let table = ctx.tool_settings("save-editor");
-    assert_eq!(
-        table["scroll_names"].as_bool(),
-        Some(false),
-        "the toggle wrote the setting off"
-    );
-    assert_eq!(
-        table["unread_key"].as_integer(),
-        Some(3),
-        "the tool's other keys survive"
-    );
-    let session = tool.view.session.as_ref().unwrap();
-    assert!(!session.is_dirty(), "a view setting marks nothing");
-    assert!(!session.can_undo(), "and pushes no undo entry");
-
-    // A fresh tool on the same settings: off on the first frame.
-    let mut tool2 = crate::Tool::new();
-    tool2.view.open(&save_path);
-    open_team_view(&mut window, &mut tool2.view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
-    assert_eq!(
-        checkbox.toggled(),
-        Some(accesskit::Toggled::False),
-        "the restart reads it back"
-    );
-}
-
-// The formation bar's Portraits checkbox (`TacticsView::portraits`):
-// remembered as Scroll is — on by default, its toggle marks no unsaved
-// change and pushes no undo entry, it writes `portraits` to the tool's
-// settings, a fresh Tool on the same settings reads it back, and an
+// The formation bar's Scroll and Portraits checkboxes
+// (`TacticsView::scroll_names`, `portraits`): view settings, not edits —
+// on by default, a toggle writes its key to the tool's settings, the
+// tool's other keys untouched, marks no unsaved change and pushes no
+// undo entry; a fresh Tool on the same settings reads it back, and an
 // open of another save keeps it.
 // SE-GUI-81
 #[test]
-fn portraits_is_a_remembered_view_setting() {
+fn the_bar_checkboxes_are_remembered_view_settings() {
     use studio_core::StudioTool;
 
-    let save_path = fixture(PesVersion::Pes21, "portraits_setting");
-    let other_path = fixture(PesVersion::Pes17, "portraits_setting_other");
-    let dir = save_path.parent().expect("the scratch dir").to_path_buf();
-    let mut tool = crate::Tool::new();
-    tool.view.open(&save_path);
-    let mut settings = studio_core::Settings::default();
-    let mut table = tool.default_settings();
-    table.insert("unread_key".to_owned(), toml::Value::Integer(3));
-    settings.set_tool("save-editor", table);
-    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_team_view(&mut window, &mut tool.view, 701);
+    for (label, key) in [("Scroll", "scroll_names"), ("Portraits", "portraits")] {
+        let read = |view: &SaveView| {
+            if key == "scroll_names" {
+                view.tactics.scroll_names
+            } else {
+                view.tactics.portraits
+            }
+        };
+        let save_path = fixture(PesVersion::Pes21, &format!("{key}_setting"));
+        let other_path = fixture(PesVersion::Pes17, &format!("{key}_setting_other"));
+        let dir = save_path.parent().expect("the scratch dir").to_path_buf();
+        let mut tool = crate::Tool::new();
+        tool.view.open(&save_path);
+        let mut settings = studio_core::Settings::default();
+        let mut table = tool.default_settings();
+        table.insert("unread_key".to_owned(), toml::Value::Integer(3));
+        settings.set_tool("save-editor", table);
+        let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
+        // The design pane: the grid is laid out at 1280, and a narrower
+        // window scales (the core spec, "Scaling with the width"), so the
+        // checkbox sits inside the pane here (below it, the bar's content
+        // runs past the clip).
+        let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+        open_team_view(&mut window, &mut tool.view, 701);
 
-    // On by default; the toggle writes the setting false, the tool's
-    // other keys untouched, and leaves the session clean (a view
-    // setting, not an edit).
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Portraits");
-    assert_eq!(
-        checkbox.toggled(),
-        Some(accesskit::Toggled::True),
-        "on by default"
-    );
-    press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
-    assert!(
-        !tool.view.tactics.portraits,
-        "the pointer toggle flipped the checkbox"
-    );
-    let table = ctx.tool_settings("save-editor");
-    assert_eq!(
-        table["portraits"].as_bool(),
-        Some(false),
-        "the toggle wrote the setting off"
-    );
-    assert_eq!(
-        table["unread_key"].as_integer(),
-        Some(3),
-        "the tool's other keys survive"
-    );
-    let session = tool.view.session.as_ref().unwrap();
-    assert!(!session.is_dirty(), "a view setting marks nothing");
-    assert!(!session.can_undo(), "and pushes no undo entry");
+        // On by default; the toggle writes the setting false, the tool's
+        // other keys untouched, and leaves the session clean (a view
+        // setting, not an edit).
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+        let checkbox = node_labeled(&nodes, Role::CheckBox, label);
+        assert_eq!(
+            checkbox.toggled(),
+            Some(accesskit::Toggled::True),
+            "{label}: on by default"
+        );
+        press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
+        assert!(
+            !read(&tool.view),
+            "{label}: the pointer toggle flipped the checkbox"
+        );
+        let table = ctx.tool_settings("save-editor");
+        assert_eq!(
+            table[key].as_bool(),
+            Some(false),
+            "{label}: the toggle wrote the setting off"
+        );
+        assert_eq!(
+            table["unread_key"].as_integer(),
+            Some(3),
+            "{label}: the tool's other keys survive"
+        );
+        let session = tool.view.session.as_ref().unwrap();
+        assert!(!session.is_dirty(), "{label}: a view setting marks nothing");
+        assert!(!session.can_undo(), "{label}: and pushes no undo entry");
 
-    // A fresh tool on the same settings: off on the first frame.
-    let mut tool2 = crate::Tool::new();
-    tool2.view.open(&save_path);
-    open_team_view(&mut window, &mut tool2.view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Portraits");
-    assert_eq!(
-        checkbox.toggled(),
-        Some(accesskit::Toggled::False),
-        "the restart reads it back"
-    );
+        // A fresh tool on the same settings: off on the first frame.
+        let mut tool2 = crate::Tool::new();
+        tool2.view.open(&save_path);
+        open_team_view(&mut window, &mut tool2.view, 701);
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+        let checkbox = node_labeled(&nodes, Role::CheckBox, label);
+        assert_eq!(
+            checkbox.toggled(),
+            Some(accesskit::Toggled::False),
+            "{label}: the restart reads it back"
+        );
 
-    // Open… opens the next save — the view's and the settings
-    // table's `portraits` both stay false (the open lands inside a
-    // `Tool::view` frame, so the frame's own write-back is the check).
-    let picked = other_path.clone();
-    tool2.view.open_dialog = Box::new(move |_| Some(picked.clone()));
-    tool2.view.discover = Box::new(|_| Vec::new());
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let open = menu_button(&nodes, "File");
-    press_release(&mut window, centre(open), |ui| tool2.view(ui, &ctx));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-    let choose = menu_item(&nodes, "Open\u{2026}");
-    press_release(&mut window, centre(choose), |ui| tool2.view(ui, &ctx));
-    assert_eq!(
-        tool2.view.session.as_ref().unwrap().path(),
-        other_path.as_path(),
-        "premise: the other save opened"
-    );
-    assert!(
-        !tool2.view.tactics.portraits,
-        "the view keeps Portraits off"
-    );
-    assert_eq!(
-        ctx.tool_settings("save-editor")["portraits"].as_bool(),
-        Some(false),
-        "and the settings table keeps it off"
-    );
+        // Open… opens the next save — the view's and the settings
+        // table's key both stay false (the open lands inside a
+        // `Tool::view` frame, so the frame's own write-back is the check).
+        let picked = other_path.clone();
+        tool2.view.open_dialog = Box::new(move |_| Some(picked.clone()));
+        tool2.view.discover = Box::new(|_| Vec::new());
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+        let open = menu_button(&nodes, "File");
+        press_release(&mut window, centre(open), |ui| tool2.view(ui, &ctx));
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
+        let choose = menu_item(&nodes, "Open\u{2026}");
+        press_release(&mut window, centre(choose), |ui| tool2.view(ui, &ctx));
+        assert_eq!(
+            tool2.view.session.as_ref().unwrap().path(),
+            other_path.as_path(),
+            "{label}: premise: the other save opened"
+        );
+        assert!(!read(&tool2.view), "{label}: the view keeps it off");
+        assert_eq!(
+            ctx.tool_settings("save-editor")[key].as_bool(),
+            Some(false),
+            "{label}: and the settings table keeps it off"
+        );
+    }
 }
 
 /// Each starter's medal in team 734 of the PES 2017 fixture save
@@ -3963,63 +3917,6 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
             "starter {index}'s overall at his slot's position"
         );
     }
-}
-
-// Scroll names is remembered in the tool's settings: off,
-// then Open… opens the next save — the view's and the settings table's
-// `scroll_names` both stay false (the open happens inside a `Tool::view`
-// frame, so the frame's own write-back is the check).
-#[test]
-fn scroll_names_survives_opening_another_save() {
-    use studio_core::StudioTool;
-
-    let save_path = fixture(PesVersion::Pes21, "scroll_names_open");
-    let other_path = fixture(PesVersion::Pes17, "scroll_names_open_other");
-    let dir = save_path.parent().expect("the scratch dir").to_path_buf();
-    let mut tool = crate::Tool::new();
-    tool.view.open(&save_path);
-    let mut settings = studio_core::Settings::default();
-    let table = tool.default_settings();
-    settings.set_tool("save-editor", table);
-    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    open_team_view(&mut window, &mut tool.view, 701);
-
-    // Off first, through the checkbox.
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let checkbox = node_labeled(&nodes, Role::CheckBox, "Scroll");
-    press_release(&mut window, centre(checkbox), |ui| tool.view(ui, &ctx));
-    assert_eq!(
-        ctx.tool_settings("save-editor")["scroll_names"].as_bool(),
-        Some(false),
-        "premise: the setting is off"
-    );
-
-    // Open the other save through the File menu's Open…, its
-    // picker stubbed — the open lands inside the `tool.view` frame.
-    let picked = other_path.clone();
-    tool.view.open_dialog = Box::new(move |_| Some(picked.clone()));
-    tool.view.discover = Box::new(|_| Vec::new());
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let open = menu_button(&nodes, "File");
-    press_release(&mut window, centre(open), |ui| tool.view(ui, &ctx));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let choose = menu_item(&nodes, "Open\u{2026}");
-    press_release(&mut window, centre(choose), |ui| tool.view(ui, &ctx));
-    assert_eq!(
-        tool.view.session.as_ref().unwrap().path(),
-        other_path.as_path(),
-        "premise: the other save opened"
-    );
-    assert!(
-        !tool.view.tactics.scroll_names,
-        "the view keeps Scroll names off"
-    );
-    assert_eq!(
-        ctx.tool_settings("save-editor")["scroll_names"].as_bool(),
-        Some(false),
-        "and the settings table keeps it off"
-    );
 }
 
 // The positions a held marker lights come from the player's playable

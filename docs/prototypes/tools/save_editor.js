@@ -356,10 +356,22 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 #appearance-screen .group > .strong { display: block; margin-bottom: 4px; }
 #appearance-screen .group > .strong + .row { margin-top: 0; }
 #appearance-screen #cutscenes > .row:first-child { margin-bottom: 4px !important; }
+/* Every box's content stands 6 points in from its title, as the stats grids' cells pad
+   their labels (General info, Ability stats, Physique): the title then reads as the
+   heading of what is under it. Physique's grid pads itself; Strip style indents its first
+   column's cells, so the grid's lines still start under the title. */
+#appearance-screen .group:not([data-panel=physique], [data-panel=strip-style]) > :not(.strong, .row:first-child) { margin-left: 6px; }
+[data-panel=skills] > .skcols, [data-panel=aside] > .skcols, [data-panel=com-styles] > .skcols,
+  [data-panel=positions] > .phead + div { margin-left: 6px; }
+/* The indent leaves Motion 6 points less room: Physique keeps its width (its labels would
+   wrap), and Motion's labels keep one line, its column taking what the row leaves. */
+.aprow > [data-panel=physique] { flex: none; }
+.aprow > .apcol { min-width: 0; }
+#appearance-screen [data-panel=motion] td { white-space: nowrap; }
 #strip-grid { display: grid; grid-template-columns: repeat(3, max-content); gap: 0; }
 .scell { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 14px;
   border: 0 solid var(--stroke); }
-.scell:nth-child(3n + 1) { padding-left: 0; }
+.scell:nth-child(3n + 1) { padding-left: 6px; }
 .scell.lr { border-right-width: 1px; }
 .scell.lb { border-bottom-width: 1px; }
 .scell .slabel { width: 104px; color: var(--text); }
