@@ -793,22 +793,6 @@ fn on_the_dragged_rows_lower_edge_the_release_reaches_the_marked_row() {
 // SE-GUI-69
 #[test]
 fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
-    /// The texts painted inside `bounds` (a row's), in paint order, each
-    /// with its position.
-    fn texts_inside(
-        shapes: &[egui::epaint::ClippedShape],
-        bounds: egui::Rect,
-    ) -> Vec<(String, egui::Pos2)> {
-        shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Text(shape) if bounds.expand(0.5).contains(shape.pos) => {
-                    Some((shape.galley.job.text.clone(), shape.pos))
-                }
-                _ => None,
-            })
-            .collect()
-    }
     /// The paint-order index and text of each text painted within half a
     /// point of `at`.
     fn texts_at(shapes: &[egui::epaint::ClippedShape], at: egui::Pos2) -> Vec<(usize, &str)> {
@@ -951,6 +935,167 @@ fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
             "the drag moved no record"
         );
     }
+}
+
+/// The texts painted inside `bounds` (a row's), in paint order, each with
+/// its position.
+fn texts_inside(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: egui::Rect,
+) -> Vec<(String, egui::Pos2)> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if bounds.expand(0.5).contains(shape.pos) => {
+                Some((shape.galley.job.text.clone(), shape.pos))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+// Esc ends a held drag with no drop: SECOND held over row 06 (the mark
+// says the drop would move him), Esc pressed, then released there — the
+// row paints at its place again, no float and no mark draws, and the
+// release moves nothing.
+#[test]
+fn escape_ends_a_held_drag_with_no_drop() {
+    let (_file, mut view, mut window, visuals) = mark_scene("drag_esc", DEFAULT_PANE.y, |_| {});
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let sixth = bounds(row(&nodes, "06 CB SIXTH"));
+    let second = bounds(row(&nodes, "02 CB SECOND"));
+    let from = second.center();
+    let shapes = hold_from_to(&mut window, &mut view, from, sixth.center());
+    assert_line(
+        &shapes,
+        &visuals,
+        list_frame(&window, &shapes),
+        sixth,
+        sixth.max.y,
+        "premise: over row 06 the drop would move him",
+    );
+
+    // Esc while held: the drag is over — the row paints at its place
+    // again, no float follows the pointer and no mark draws.
+    let (_, _, shapes) = window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_no_marks(&shapes, &visuals, list_frame(&window, &shapes), "after Esc");
+    let painted: Vec<String> = texts_inside(&shapes, second)
+        .into_iter()
+        .map(|(text, _)| text)
+        .collect();
+    assert_eq!(
+        painted,
+        ["\u{2261}", "02", "CB", "SECOND"],
+        "the row back at its place after Esc"
+    );
+
+    // Released over row 06: no record moves and no mark is left.
+    window.frame(pointer_at(sixth.center(), false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_no_marks(
+        &shapes,
+        &visuals,
+        list_frame(&window, &shapes),
+        "after the release",
+    );
+    assert_eq!(
+        row_labels(&nodes)[1],
+        "02 CB SECOND",
+        "the release after Esc moved no record"
+    );
+    let session = view.session.as_ref().unwrap();
+    assert!(!session.is_dirty(), "nothing is marked unsaved");
+    assert!(!session.can_undo(), "no undo entry");
+}
+
+// The held row's float stays under the pointer while the list scrolls:
+// SECOND pressed and dragged under All teams, then the wheel turned until
+// his row leaves the view — the name keeps painting at its rest place
+// plus the pointer's travel since the press, which is the pressed point
+// kept under the pointer.
+// SE-GUI-69
+#[test]
+fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
+    let (_file, mut view, mut window, _visuals) =
+        mark_scene("drag_float_scroll", DEFAULT_PANE.y, |_| {});
+    // All teams: enough rows that the wheel takes the held row out of view.
+    view.team = TeamChoice::All;
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = row(&nodes, "02 CB SECOND")
+        .bounds()
+        .expect("row 02's bounds");
+    let bounds = egui::Rect::from_min_max(
+        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+    );
+    let rest = texts_inside(&shapes, bounds);
+    let texts: Vec<&str> = rest.iter().map(|(text, _)| text.as_str()).collect();
+    assert_eq!(
+        texts,
+        ["\u{2261}", "02", "CB", "SECOND"],
+        "premise: row 02 paints its handle, place, position and name"
+    );
+    // Pressed 20 points right of the name's start, as SE-GUI-69.
+    let name_rest = rest[3].1;
+    let press = egui::pos2(name_rest.x + 20.0, bounds.center().y);
+    let over = press + egui::vec2(30.0, 40.0);
+    window.frame(pointer_at(press, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    // Wheel, still holding, until the held row leaves the drawn rows
+    // (bounded, so a list that never scrolls fails rather than hangs).
+    let mut gone = false;
+    for _ in 0..64 {
+        window.frame(
+            vec![egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, -600.0),
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+                modifiers: egui::Modifiers::NONE,
+            }],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        if !nodes
+            .iter()
+            .any(|node| player_row(node) && node.label() == Some("02 CB SECOND"))
+        {
+            gone = true;
+            break;
+        }
+    }
+    assert!(gone, "the wheel never scrolled the held row out of view");
+
+    // Still held: the float draws, the name at its rest place plus the
+    // pointer's travel — the pressed point stays under the pointer.
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let at = name_rest + (over - press);
+    let found: Vec<&str> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.pos.distance(at) <= 1.0 => {
+                Some(shape.galley.job.text.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        found,
+        ["SECOND"],
+        "the held row's name painted once at rest plus the travel ({at:?}), got {found:?}"
+    );
+    window.frame(pointer_at(over, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
 }
 
 // A draggable row shows the pointing hand wherever the pointer is on it

@@ -16,7 +16,7 @@ use super::wheel::{number_direction, step_number, wheel_steps};
 /// stored; only an edit is clamped. The wheel over the rail steps the
 /// value by one a notch as the rail reads, wheel down one more and wheel
 /// up one less, whatever `Invert number scrolling` holds; over the value
-/// box it steps as every number box does, the switch included — the box
+/// box it steps as every number box does, the switch included: the box
 /// disagrees with its rail or with every other box either way, and every
 /// box alike is the rule a member can predict.
 /// `wheel_id` names the slider for the wheel's delayed step, and must stay

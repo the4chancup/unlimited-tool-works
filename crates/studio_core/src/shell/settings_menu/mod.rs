@@ -390,11 +390,11 @@ impl SettingsMenu {
                     ui,
                     "Invert number scrolling",
                     "invert_number_scrolling",
-                    "Reverses the mouse wheel over a number box: wheel down then \
-                     raises the number, and wheel up lowers it. Sliders and \
-                     toggles always move right on wheel down, and a dropdown \
-                     always takes the item below. Scrolling a pane is not \
-                     affected.",
+                    "Reverses the mouse wheel over a number box, the box beside \
+                     a slider included: wheel down then raises the number, and \
+                     wheel up lowers it. A slider's rail and a toggle always \
+                     move right on wheel down, and a dropdown always takes the \
+                     item below. Scrolling a pane is not affected.",
                 );
                 let mut on = common.invert_number_scrolling;
                 if checkbox_row(ui, |ui| checkbox_without_text(ui, &mut on))
