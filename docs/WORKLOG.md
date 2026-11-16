@@ -1688,7 +1688,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         team change, untested portraits-off drags and drops, the Team TOML notice's draft
         wording, and plan lines behind the code (fixed by the lead)
       - [x] the rework (SWE-2, merge `8c672c7e`)
-      - [ ] Carbon's round 3 (at `8c672c7e`, `review32/.tmp/carbon_notices3.md`): running
+      - [x] Carbon's round 3, 2026-11-16 (at `8c672c7e`): 6 of 7 accepted, none changing a
+        member's outcome ("C-notices r3"), so the loop ends with this rework: two tests that
+        pass on wrong code, SE-GUI-81 and the fonts' readme (lead, `015a035e`), "Appearance
+        section" in the lock's tooltip, a dead `None` arm
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_notices_r3.md`), in `noticesrw`
+        once the recents' rework A has merged from it
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
