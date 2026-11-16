@@ -2210,7 +2210,11 @@ briefs, review loops, gates and mutation runs as for any step.
         halves, help and changelog lines that say what the window does not
       - [x] the rework (SWE-2, merge `07b27911`); with it, egui's rubber-band spring off on
         a reveal's frame, which pulled back a list that grew that frame
-      - [ ] Carbon's round 3, over the rework (`review30/.tmp/carbon_list3.md`, at `07b27911`): running
+      - [x] Carbon's round 3, 2026-11-16 (at `07b27911`): 6 of 9 accepted ("C-list r3"):
+        a selector or category pick that keeps the selection reveals nothing, three tests
+        that pass on the wrong reveal or reach no branch, the own-team lines, two docs
+      - [ ] the rework (SWE-2, `sk/listrw3`, `listrw1/.tmp/rework_carbon3.md`): running;
+        then Carbon's round 4
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
@@ -2521,8 +2525,12 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] the rework (SWE-2, merge `5b5546d8`)
     - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
-      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Running at
-      `2923f863` (`.tmp/0_0_2/bar/astra_r7.md`)
+      gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Done
+      2026-11-16 at `2923f863`: 4 of 4 accepted ("A-bar r7"), under five, so the loop ends
+      with its rework: the welcome panel scrolls once ten kept recents outgrow a 600-point
+      window, a changelog line's "shortcuts are unchanged", Ctrl+Shift+S and Ctrl+W in the
+      close-the-menu test, and the plan's File row (fixed by the lead)
+    - [ ] round 7's rework (SWE-2, `sk/barrw7`, `barrw6/.tmp/rework_astra7.md`): running
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
