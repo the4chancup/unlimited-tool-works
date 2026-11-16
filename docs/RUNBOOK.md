@@ -39,6 +39,12 @@ past the gate. We do not keep the last gated commit as a typed note, nor the two
 separate steps to remember: three loops once closed with neither run, and a push went red on
 a broken pointer.
 
+**No mutation run starts until the worklog's mutfast step lands** (after 0.0.2): every
+checkpoint meanwhile runs without one, `just pipeline --no-mutants` (or `just checkpoint
+--no-mutants`), and no `just mutants`, `mutants-diff` or `extra-mutants` is started by hand.
+Save_editor's runs had grown to about five minutes a mutant and most of a day a checkpoint,
+and the step that makes a mutant stop at its first failing test comes before the next one.
+
 **The checkpoint runs beside the work, not in front of it.** `just pipeline` runs the
 checkpoint and then `just gates-remote` on the commit main's HEAD is on, from the gate
 worktree (`../4cc-studio-temp/gate`, with its own `target/`), so main's tree stays free:

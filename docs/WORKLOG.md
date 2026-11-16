@@ -1795,18 +1795,6 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
     a unit test sweeping line lengths at three fractional widths
-  - [ ] 0.0.2-mutfast save_editor's mutation runs stop at a mutant's first failing test.
-    Its last diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's
-    build 20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's
-    tests 468 s median against the full suite's 578, since libtest runs every test after
-    the first failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally).
-    -> verify: the same 20 save_editor mutants run with libtest and with cargo-nextest
-    (`test_tool = "nextest"`, fail-fast by default; installed here, check the VPS), wall
-    time per caught and per missed mutant compared, the per-test process cost through
-    `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate whose
-    estimate passes a budget (about an hour a side) runs detached from the checkpoint,
-    which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the
-    baseline from depending on the tree's path
   - [x] 0.0.2-teamfill (2026-11-15, merge `457f30c8`) the player list's team rows take the
     draft's `#202020`: the palette's `team_row_fill`, mid grey at 48 of 255, one value for both
     themes (grey 231 on the light list); the built list beside the draft, both themes, sampled
@@ -2701,6 +2689,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   value as the Save editor's does (`plans/ruleset_editor.md`, the undo paragraph; DECISIONS
   "A run of undo steps is keyed by the widget call") -> verify: ten wheel notches on a
   tier's count, one Undo
+- [ ] after 0.0.2, first (the maintainer, 2026-11-16: no mutation run starts until this
+  lands; checkpoints run `--no-mutants` meanwhile, RUNBOOK "A checkpoint is one command")
+  mutfast: save_editor's mutation runs stop at a mutant's first failing test. Its last
+  diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's build
+  20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's tests
+  468 s median against the full suite's 578, since libtest runs every test after the first
+  failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally). The run of
+  2026-11-16 (`gate/mutants.out`, 198 mutants here) took about 4.7 minutes a mutant with
+  two at a time. -> verify: the same 20 save_editor mutants run with libtest and with
+  cargo-nextest (`test_tool = "nextest"`, fail-fast by default; installed here, check the
+  VPS), wall time per caught and per missed mutant compared, the per-test process cost
+  through `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate
+  whose estimate passes a budget (about an hour a side) runs detached from the checkpoint,
+  which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the baseline
+  from depending on the tree's path
 - [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
   - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
     unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the
@@ -2819,7 +2822,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
   against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
-- [ ] after 0.0.2 (the maintainer, 2026-11-15), if `0.0.2-mutfast`'s trial finds that
+- [ ] after 0.0.2 (the maintainer, 2026-11-15), if mutfast's trial finds that
   cargo-nextest's process per test slows the suite too much: a test runner of our own that
   keeps the standard runner's single process and stops at the first failure, as nextest does.
   Checked 2026-11-15: `libtest-mimic` 0.8.2 runs tests on threads in one process (its
