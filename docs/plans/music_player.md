@@ -553,8 +553,10 @@ What the soundboard must do, distilled from Rigdio's behavior:
   GUI thread: a press landing as the warcry ended left the goalhorn playing with no button
   holding it, and nothing could stop it short of a restart (a streamer's report,
   2026-10-26).
-- What a button shows and does once its song has played to its end (a horn with `end stop`,
-  a victory anthem) waits on `docs/maintainer/questions.html` "A button after its song ends".
+- A button whose song plays to its end (a horn with `end stop`, a victory anthem) is
+  released, so the next press is an ordinary press: it scores and plays. Rigdio left the
+  button pressed, and the next press only released it, with no goal and no sound; a
+  streamer who has learnt that extra press can drop it.
 - **⟲** next to a button stops its sound at once, without a fade, and puts the entry it
   played last back to its start: `start` and `speed` apply again on its next play, its
   synced position is dropped and its `pause ... every n` count restarts; the VA's ⟲ also
@@ -597,8 +599,13 @@ What the soundboard must do, distilled from Rigdio's behavior:
   starts once: a button whose selection is an entry another Chaoshorn button already
   started stays raised and holds nothing (in Rigdio those buttons shared one sound; started
   N times in phase it would be louder by about 20·log10 N dB). A second Chaoshorn press is
-  ignored until Kill. Whether its presses score goals waits on `docs/maintainer/questions.html`
-  "Chaoshorn and the score".
+  ignored until Kill. Each goalhorn button it starts is an ordinary press, so it scores, as in
+  Rigdio: the score jumps by the roster size plus one (the Standard Goalhorn), each horn is
+  chosen as it would be for that goal, and Undo, being one level deep, takes back only the
+  last of them (a per-team Reset zeroes the rest). We score rather than leave the score alone
+  because a horn chosen as if for a goal that is never counted would need a selection of its
+  own. The button is pressed only in a draw, in place of either team's victory anthem, on
+  special occasions, so the score it moves matters little.
 
   **Kill Chaoshorn** stops every button's sound and rewinds its last entry as ⟲ does; it
   starts nothing and scores nothing.
@@ -650,8 +657,7 @@ in-process; the 1-second sleep-for-mpv-metadata hack and its global thread flags
 disappear.
 
 The title is written for goalhorns, anthems and victory anthems, not for a warcry (its
-follow-up is written). Whether chants are written waits on `docs/maintainer/questions.html` "title.log
-and chants".
+follow-up is written) and not for a chant, as in Rigdio.
 
 One title at a time: a song's start replaces the last one, and the file is cleared when the
 song is paused. The file is created empty at startup when the setting is on, and emptied when

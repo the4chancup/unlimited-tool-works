@@ -58,6 +58,17 @@ before applying the file. `apply` adds no note: the file holds no ids.
 Measured 2026-10-22 (worklog 8.9): no current cup save breaks the rule; five older PES 16 saves
 break it in 13 to 25 teams each.
 
+**The manager id follows the team, as the base copy id follows the player.** An import
+writes a `manager_id` equal to the file's `[team] id` as the target team's own id, as it
+already does for a `base_copy_id` equal to the file's own player id. In a member's PES 2021
+save (2026-11-12) every team's manager id is its own team id, and a file exported from team
+876 and imported onto 886 left both naming coach 876. A `manager_id` that differs from the
+file's team id is written as it is: it names a coach the member chose. Whether the game minds
+two teams sharing one coach record is not known; an in-game look on PES 2021 (both teams in
+one match's prematch screen, where a team naming no coach shows at once) settles it, and
+until then the rule stands on its own: a team's export imported onto another should not leave
+it naming the first team's coach.
+
 **Star rating and playing attitude move into `[players.NN.appearance]`.** They are
 aesthetics (the rule above), so the Team TOML carries them where it carries the export's
 keys, in the embedded table `[players.NN.appearance.presentation]` (`star`,

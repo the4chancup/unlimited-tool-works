@@ -966,6 +966,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   - manager ID (17+) and stadium ID,
   - and a **Kit slots…** button opening the kit slot assignments in a dialog (rarely edited,
     so not a panel that pushes the tactics down; a version that stores none says so in it).
+    Each slot's row holds its Number and its `Bound team ID`: the team's id, as Team ID and
+    Manager ID show one, not the stored number (the id times 64), which no member reads
+    anywhere else. Every box is one width, wide enough for six digits, so the rows line up
+    and a box does not change width between a 3-digit and a 6-digit value.
 
   The ids share the fields' row, not one of their own, because the Tactics editor below needs
   the height: with a heading-size title and the ids on a second row its last row ended about 5
@@ -1302,7 +1306,10 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   The managers' reading is not proven: the PES 2017 study found the game plan menu still
   wiring both numbers but not the match code that reads any slider (the spec section above), so
   the labels and the second lock follow the managers until a study says otherwise. Only the
-  two toggles are disabled: a pasted or imported preset still carries its numbers;
+  two toggles are disabled: a pasted or imported preset (a preset pasted or copied from
+  another, a Gameplan pasted from another team, an imported Team TOML) still carries its
+  numbers, and the AATF check says nothing about them, since the toggles' lock is all a cup
+  needs: it stops the one route a member takes on purpose;
 - formation settings toggles (attacking style, zone, buildup, positioning, defensive style,
   containment, pressure);
 - advanced instructions (2 attack + 2 defense, with target player where applicable);
@@ -1410,12 +1417,11 @@ Win32 original hurt the most):
      bottom.
 
      Substitution is a combo naming the game's choices. Measured in game: Off 0, Very late 1,
-     Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21. PES 17's screen lists Off, Very
-     late, Flexible and Very early, PES 21's four in PES 21's order, so its stored values are
-     read as PES 21's and it offers the four. PES 18 to 20, between the two, offer the four
-     too. That is taken rather than looked at: a look at each game's Substitution choices is
-     still to come. A stored value outside them is shown as its number, so the combo never
-     misreports the save.
+     Flexible 2 on PES 15, 16 and 21, Very early 3 on PES 21. Every version's screen lists the
+     same four, Off, Very late, Flexible and Very early, in that order (looked at on PES 15,
+     16, 17, 18, 19, 20 and 21), so each version's stored values are read as PES 21's and the
+     combo offers the four. A stored value outside them is shown as its number, so the combo
+     never misreports the save.
 
   The grid is laid out at the design width. A narrower window scales the whole UI with its
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
@@ -1948,6 +1954,11 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   the canvas' edge. The darkening is painted as the cells the lit edges cut the canvas into,
   each filled once when no lit rectangle holds it, so overlapping rectangles (a band's and a
   smaller area inside it) never darken twice.
+
+  A player rated A or B nowhere (a blank team's placeholder, whose list is all C, his
+  registered position included) lights nothing, so the whole pitch is darkened, as PES 2019's
+  Edit Position screen shows him. Only a held marker with no ratings at all (an empty roster
+  slot, or a host that reads none) darkens nothing.
 
   These are the PES 2021 screen's edges within 1.5 points but for CF's lower one, which the
   screen draws at y 40.7 where the table's row starts at 40. The editor draws the table's, y
