@@ -2690,7 +2690,7 @@ function drawReport() {
         h("input", { type: "checkbox", checked: r.wholeExports,
           onchange: e => { r.wholeExports = e.target.checked; render(); } }),
         " Also include the exports' textures and models (" + sample.exportsSize + ")") : null,
-      h("div", { style: "margin-top:8px" }, "Your username is rewritten as ~."),
+      h("div", { style: "margin-top:8px" }, "Your user folder is written as ~ in the file's paths."),
       r.saved ? h("div", { style: "margin-top:8px" }, "Saved to " + sample.savedTo) : null),
     r.saved ? [button("Close", closeWindow)]
       : [button("Save…", () => { r.saved = true; render(); }), button("Cancel", closeWindow)],

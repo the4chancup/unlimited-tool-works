@@ -150,8 +150,9 @@ crates/studio_core/src/
 │   └── location.rs   #   data-location resolution (portable data/ vs config dir)
 ├── shell/
 │   ├── mod.rs        #   StudioApp: eframe::App, panel layout, logic/ui split, tool registry
-│   └── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
+│   ├── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
 │                     #   refused until Phase 8)
+│   └── report.rs     #   the Report a problem dialog: the bundle's summary, words and Save
 ├── updater/
 │   ├── mod.rs        #   the update check: the newest release, whether it is offered, the notices
 │   ├── install.rs    #   Update now: download, checksum, unpack

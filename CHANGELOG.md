@@ -124,8 +124,9 @@
   file…`), a button under `Import into` selects the team the picked file was exported
   from, so you can import back onto it without looking for it in the list.
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
-  report of something that went wrong: what you did in each tool, the files it opened and
-  wrote, the log, your settings and your own words. Nothing is sent: you post the file.
+  report of something that went wrong: the log, your settings and your own words, and what
+  you did in the Save editor with the files it opened and wrote (the other tools join
+  later). Nothing is sent: you post the file.
 - **Save editor**: the File menu starts with `Open…` (Ctrl+O, until now `Choose
   file…`), `Save` and `Save as…`, which now has Ctrl+Shift+S. The saves found in
   Documents and the recent saves follow, each under its own heading. Below them are
