@@ -1534,6 +1534,7 @@ fn a_fast_scroll_keeps_the_box_covered() {
     let (_, popup) = label_and_popup(&mut window, &mut view);
     // The wheel lands inside the box, over the list.
     let at = egui::pos2(popup.left() + 60.0, popup.top() + 120.0);
+    let mut first_top = None;
     let mut last_top = f64::MAX;
     let mut settled = false;
     for frame in 0..120 {
@@ -1586,7 +1587,13 @@ fn a_fast_scroll_keeps_the_box_covered() {
             cells.push((head, "Item"));
         }
         cells.sort_by(|a, b| a.0.y0.partial_cmp(&b.0.y0).expect("ordered bounds"));
-        assert!(cells.len() >= 2, "frame {frame}: a frame draws rows");
+        // Eleven rows fit the box (`the_list_lays_out_only_the_rows_in_view`):
+        // fewer drawn is a thinned range, whose own pitch would hide it.
+        assert!(
+            cells.len() >= 10,
+            "frame {frame}: {} entries drawn",
+            cells.len()
+        );
         // A cell sits centred in its row's slot, so two drawn rows
         // stand the row gap plus their centring margins apart — the
         // pitch less a cell's height — and the box's edges take the
@@ -1622,7 +1629,14 @@ fn a_fast_scroll_keeps_the_box_covered() {
             "frame {frame}: a {hole:.1}-point hole at the box's bottom ({bottom:.1}): {lowest:?}"
         );
         let now = head_top(&nodes);
+        let first = *first_top.get_or_insert(now);
         if frame > 8 && (now - last_top).abs() < 0.5 {
+            // The flick moved the list: the checks ran on scrolled frames,
+            // not on the opening offset alone.
+            assert!(
+                first - now > 100.0,
+                "the list did not scroll: {first:.1} to {now:.1}"
+            );
             settled = true;
             break;
         }
