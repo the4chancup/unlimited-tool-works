@@ -2240,7 +2240,7 @@ aesthetics** but through the switch:
   The setting is off by default because the cup the suite serves first (DBC7) keeps its looks
   in the save. Its row in the settings menu carries the tooltip "On when the cup's looks are
   compiled from exports: the save's aesthetics are then read-only, behind Edit aesthetics
-  anyway in the Appearance section."
+  anyway on the Appearance screen."
 
 Gameplay data (stats, skills, positions), team data and tactics are unaffected: they were never
 the compiler's, and the savefile builder edits them as before.
@@ -3370,7 +3370,9 @@ SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
                 selected THEN the corner brackets frame his badge, their upright arms its
                 height; GIVEN two starters stacked so the lower one's portrait would
                 cover the upper one's badge WHEN that badge is clicked THEN the upper
-                starter is selected;
+                starter is selected; WHEN a dragged starter or a bench row is held over
+                that badge THEN the drop's brackets frame the badge, and WHEN released
+                there THEN it swaps with the upper starter;
                 GIVEN the editor restarted THEN Portraits is still unticked
 SE-GUI-82  GIVEN the save open on team 718's player 05
            WHEN the detail is drawn
@@ -3770,8 +3772,9 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 Ctrl+9; then the weak heading Recent files over the recent save, labelled
                 with its version in brackets, its folder and its file name (`[PES 2021]
                 <folder>\<file name>`); then Close save with Ctrl+W, disabled, and Exit with
-                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; WHEN the
-                menu is closed and Ctrl+9 is pressed
+                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; GIVEN two
+                recent saves WHEN the older is clicked THEN it opens and stands first under
+                Recent files; WHEN the menu is closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN

@@ -1919,7 +1919,9 @@ ST-RUN-05   GIVEN two stub tools each reporting unsaved work, a third tool's vie
             THEN the window stays and the first stub's view is active with its prompt; WHEN
                  it discards THEN the second stub's view is active with its prompt; WHEN that
                  one discards THEN the window closes; GIVEN either prompt cancelled instead
-                 THEN the window stays and no further prompt shows
+                 THEN the window stays and no further prompt shows; GIVEN a menu open over
+                 the view when the close is asked THEN it is closed on that frame, so
+                 nothing covers the prompt
 ST-RUN-06   GIVEN a stub tool reporting a run in flight, another tool's view active
             WHEN the window's close is requested
             THEN the window stays and the stub's view is active with its prompt; WHEN it

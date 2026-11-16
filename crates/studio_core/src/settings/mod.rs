@@ -140,9 +140,8 @@ impl Settings {
         // the file then carries its comments — and the values alone otherwise. The session's values
         // win there as they win over any hand edit made while the GUI runs, and a folder that
         // cannot be written fails the write below, whatever the read said. So is a file whose edit
-        // would not read back as the settings: a shape the in-place edit cannot carry, such as a
-        // section written inline under a comment, which would come out as a table header `load`
-        // refuses and the next start could not open.
+        // would not read back as the settings: a shape the in-place edit cannot carry would come
+        // out as text `load` refuses and the next start could not open.
         let fresh = |why: &str| -> io::Result<String> {
             let regenerated = toml::to_string_pretty(&desired).map_err(io::Error::other)?;
             let written = regenerated
@@ -312,18 +311,80 @@ fn apply_desired(document: &mut EditTable, held: &Table, written: &EditTable, de
             (Some(held), _, Some(_)) if held == wanted => {}
             // Replaced through the slot, not `insert`: `insert` resets an existing key's
             // decor, which holds the comment above it. The old value's own decor (its trailing
-            // comment) moves onto the new value.
+            // comment) moves onto the new value, and the comment above the key follows to
+            // where the new kind writes it (`keep_leading_decor`).
             (_, _, Some(slot)) => {
+                let header = match slot {
+                    EditItem::Table(table) => Some(table.decor().clone()),
+                    EditItem::ArrayOfTables(tables) => {
+                        tables.iter().next().map(|table| table.decor().clone())
+                    }
+                    _ => None,
+                };
                 let decor = slot.as_value().map(|value| value.decor().clone());
                 *slot = fresh.clone();
                 if let (Some(decor), Some(value)) = (decor, slot.as_value_mut()) {
                     *value.decor_mut() = decor;
                 }
+                keep_leading_decor(document, key, header);
             }
             (_, _, None) => {
                 document.insert(key, fresh.clone());
             }
         }
+    }
+}
+
+/// The comment above a key sits on the key itself for a `key = value` line and on the
+/// (first) table's decor for a `[key]`/`[[key]]` header. A slot whose item changed kind
+/// moves it over: left on the key it would land inside the header's brackets
+/// (`[[# comment\nkey]]`), which is not TOML a save may write. `header` is the decor the
+/// replaced item's own header carried, when it was a table kind.
+fn keep_leading_decor(document: &mut EditTable, key: &str, header: Option<toml_edit::Decor>) {
+    let position = document.position();
+    let Some((mut leaf, slot)) = document.iter_mut().find(|(leaf, _)| leaf.get() == key) else {
+        return;
+    };
+    let header_slot = match slot {
+        // A header renders where its table's position sorts it; the tables cloned
+        // out of `written` carry `written`'s ordering, not the file's, so they are
+        // given this table's: the header belongs to this section.
+        EditItem::Table(table) => {
+            if let Some(position) = position {
+                table.set_position(position);
+            }
+            Some(table.decor_mut())
+        }
+        EditItem::ArrayOfTables(tables) => {
+            for table in tables.iter_mut() {
+                if let Some(position) = position {
+                    table.set_position(position);
+                }
+            }
+            tables.get_mut(0).map(|table| table.decor_mut())
+        }
+        _ => None,
+    };
+    match (header_slot, header) {
+        // A `key = value` became a header: the key's decor moves above the brackets and
+        // is cleared off the key, which a header renders inside them.
+        (Some(decor), None) => {
+            if let Some(prefix) = leaf.leaf_decor().prefix().cloned() {
+                decor.set_prefix(prefix);
+            }
+            leaf.leaf_decor_mut().clear();
+        }
+        // A header replaced by a fresh header keeps its own decor.
+        (Some(decor), Some(header)) => *decor = header,
+        // A header became a `key = value`: its decor's comment moves back above the key,
+        // and the key gets the ` = ` spacing a `key = value` line carries.
+        (None, Some(header)) => {
+            if let Some(prefix) = header.prefix() {
+                leaf.leaf_decor_mut().set_prefix(prefix.clone());
+            }
+            leaf.leaf_decor_mut().set_suffix(" ");
+        }
+        (None, None) => {}
     }
 }
 
@@ -594,11 +655,11 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
-    // A section a member wrote inline, under a comment, is a shape the in-place edit cannot
-    // carry (the comment would land inside the new table header): the save writes the file
-    // fresh rather than one that `load` refuses, so the next start still opens.
+    // A section a member wrote inline, under a comment, becomes a `[section]` table on
+    // save with the comment kept above it: the in-place edit carries the change, so the
+    // file stays the member's.
     #[test]
-    fn save_writes_fresh_when_the_edit_would_not_read_back() {
+    fn an_inline_section_is_written_as_a_table_keeping_its_comment() {
         let dir = test_dir("studio_core_settings_inline_section");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
@@ -608,12 +669,12 @@ mod tests {
         settings.common.last_tool = Some("save-editor".to_owned());
         settings.save(&path).unwrap();
 
-        assert_eq!(
-            Settings::load(&path).unwrap(),
-            settings,
-            "the saved file loads back: {}",
-            fs::read_to_string(&path).unwrap()
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(
+            text.starts_with("# my cup settings\n[common]\n"),
+            "the comment sits above the table the inline section became: {text}"
         );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -736,8 +797,126 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
-    // A template that does not parse, or whose edit does not read back, falls back to the
-    // bare values.
+    // A `key = value` the session turns into a list of tables keeps the comment above
+    // its key: left where the `key =` line held it, the comment would land inside the
+    // `[[key]]` header, the edit would not read back and the file would be written
+    // fresh, without its comments.
+    #[test]
+    fn a_key_becoming_a_list_of_tables_keeps_the_comment_above_it() {
+        let dir = test_dir("studio_core_settings_tables_comment");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[save-editor]\n\
+             # the saves opened last, newest first\n\
+             recent_files = []\n\
+             # its own note\n\
+             label = 'x'\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        let mut tool = settings.tool("save-editor").unwrap().clone();
+        tool["recent_files"] = table(
+            "recent_files = [{ path = 'a', name = 'A' }, { path = 'b', name = 'B' }]",
+        )["recent_files"]
+            .clone();
+        settings.set_tool("save-editor", tool);
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(
+            text.contains("# the saves opened last, newest first\n"),
+            "the comment above the key is kept: {text}"
+        );
+        assert!(
+            text.contains("# its own note\nlabel = 'x'\n"),
+            "the other key and its comment are byte for byte: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The way back: a list of tables emptied to `[]` keeps the comment that sat above
+    // its `[[key]]` header, moved back above the `key =` line.
+    #[test]
+    fn an_emptied_list_of_tables_keeps_the_comment_above_its_key() {
+        let dir = test_dir("studio_core_settings_emptied_comment");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        fs::write(
+            &path,
+            "[save-editor]\n\
+             # its own note\n\
+             label = 'x'\n\
+             # the saves opened last, newest first\n\
+             [[save-editor.recent_files]]\n\
+             name = \"A\"\n\
+             path = 'a'\n\
+             \n\
+             [[save-editor.recent_files]]\n\
+             name = \"B\"\n\
+             path = 'b'\n",
+        )
+        .unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        let mut tool = settings.tool("save-editor").unwrap().clone();
+        tool["recent_files"] = Value::Array(Vec::new());
+        settings.set_tool("save-editor", tool);
+        settings.save(&path).unwrap();
+
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(
+            text.contains("# the saves opened last, newest first\nrecent_files = []\n"),
+            "the comment moved back above the emptied list: {text}"
+        );
+        assert!(
+            text.contains("# its own note\nlabel = 'x'\n"),
+            "the other key and its comment are byte for byte: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // The shipped settings file itself: a save that fills `save-editor`'s
+    // `recent_files` keeps every comment line the file carries.
+    #[test]
+    fn the_bundled_settings_keep_every_comment_when_a_recent_save_lands() {
+        let dir = test_dir("studio_core_settings_bundled_comment");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.toml");
+        const BUNDLED: &str = include_str!("../../../../resources/bundle/data/settings.toml");
+        fs::write(&path, BUNDLED).unwrap();
+
+        let mut settings = Settings::load(&path).unwrap();
+        let mut tool = settings.tool("save-editor").unwrap().clone();
+        tool["recent_files"] = table(
+            "recent_files = [{ path = 'a', name = 'A' }, { path = 'b', name = 'B' }]",
+        )["recent_files"]
+            .clone();
+        settings.set_tool("save-editor", tool);
+        settings.save(&path).unwrap();
+
+        fn comments_of(text: &str) -> Vec<&str> {
+            text.lines()
+                .filter(|line| line.trim_start().starts_with('#'))
+                .collect()
+        }
+        let text = fs::read_to_string(&path).unwrap();
+        assert_eq!(
+            comments_of(&text),
+            comments_of(BUNDLED),
+            "every comment line of the bundled file: {text}"
+        );
+        assert_eq!(Settings::load(&path).unwrap(), settings);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // A template that does not parse falls back to the bare values. One that parses but
+    // holds a shape the file would not (a section written inline, under a comment) is
+    // edited like any other file: the comment moves above the new table header.
     #[test]
     fn a_template_that_does_not_parse_falls_back_to_the_values() {
         let dir = test_dir("studio_core_settings_template_fallback");
@@ -752,19 +931,17 @@ mod tests {
             toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
         );
 
-        // A section written inline under a comment: the edit puts the comment inside the new
-        // table header, which does not parse (as in
-        // `save_writes_fresh_when_the_edit_would_not_read_back`).
+        // The inline section becomes a `[section]` table under its comment, as in
+        // `an_inline_section_is_written_as_a_table_keeping_its_comment`.
         fs::remove_file(&path).unwrap();
         let mut settings =
             Settings::default().with_template("# my cup settings\ncommon = { pes_version = 21 }\n");
         settings.common.last_tool = Some("save-editor".to_owned());
         settings.save(&path).unwrap();
 
-        assert_eq!(
-            fs::read_to_string(&path).unwrap(),
-            toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
-        );
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.starts_with("# my cup settings\n[common]\n"), "{text}");
+        assert_eq!(Settings::load(&path).unwrap().common, settings.common);
         fs::remove_dir_all(&dir).unwrap();
     }
 

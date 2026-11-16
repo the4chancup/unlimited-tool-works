@@ -1672,7 +1672,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         category tick that relists nothing snapped a scrolled list back, tests that cannot
         tell the two reveals apart, two citations, copied helpers, four comments
       - [x] the rework (SWE-2, merge `93dcdc06`); SE-GUI-103 gained one team's PgDn step
-      - [ ] Carbon's round 5 (at `93dcdc06`, `review34/.tmp/carbon_list5.md`): running
+      - [x] Carbon's round 5, 2026-11-16 (at `93dcdc06`): 5 of 5 accepted ("C-list r5"): a
+        team pick under a typed filter moved the selection off screen, two kept-scroll
+        tests, a copied wheel sequence, a doc
+      - [ ] the rework (SWE-2, `.tmp/0_0_2/revdebt/rework_carbon5.md`), in `listrw1` once
+        the recents' rework B has merged from it; then Carbon's round 6
     - [ ] notices and files (tier 2): `bba7eee1` (notice, saved, tomlname, fpcmenu, pitchbar;
       clipmsg was in C-clip's surface), `7ac5df69` (noticeerr), `30b1109c` (copywin)
       - [x] the rework of SWE-2's round 1 (12 accepted; SWE-2, merge `a07139bd`)
@@ -1688,7 +1692,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         team change, untested portraits-off drags and drops, the Team TOML notice's draft
         wording, and plan lines behind the code (fixed by the lead)
       - [x] the rework (SWE-2, merge `8c672c7e`)
-      - [ ] Carbon's round 3 (at `8c672c7e`, `review32/.tmp/carbon_notices3.md`): running
+      - [x] Carbon's round 3, 2026-11-16 (at `8c672c7e`): 6 of 7 accepted, none changing a
+        member's outcome ("C-notices r3"), so the loop ends with this rework: two tests that
+        pass on wrong code, SE-GUI-81 and the fonts' readme (lead, `015a035e`), "Appearance
+        section" in the lock's tooltip, a dead `None` arm
+      - [ ] the rework (SWE-2, `sk/noticesrw3`, `.tmp/0_0_2/revdebt/rework_notices_r3.md`):
+        running
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
@@ -1726,8 +1735,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
       landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
       ends the SWE-2 loop: its rework landed (SWE-2, merge `2923f863`, with Choose file's
-      tooltip from 0.0.2-answers); Carbon's round 1 running (at `d43550fe`, `review35`,
-      `.tmp/carbon_recents1.md`)
+      tooltip from 0.0.2-answers)
+      - [x] Carbon's round 1, 2026-11-16 (at `d43550fe`): 12 accepted, one in part
+        ("C-recents r1"): opening a save rewrote `settings.toml` without its comments, Ctrl+Q
+        left an open menu over the prompt, a long recent entry wrapped once the panel
+        scrolled; five test gaps, two citations, the changelog, help 02 and stale docs
+      - [x] the rework's part A (SWE-2, merge `9ee8e180`): `studio_core`'s settings edit
+        keeps the comment above a key whose item changes kind; a held close closes popups
+        (ST-RUN-05 widened)
+      - [ ] part B, the rest (SWE-2, `sk/recrw_b`, `rework_recents_b.md`): running; then
+        Carbon's round 2
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
