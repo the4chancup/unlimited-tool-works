@@ -506,7 +506,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     (`Ctrl+Q`).
 
   When the menu would run past the window's bottom (many saves found and ten recent ones,
-  in a window about 600 points high and 1280 or more wide, as on a 1366 × 768 laptop), the
+  in a window under about 700 points high, such as the 1280 × 691 a 1366 × 768 laptop opens
+  at, or one resized down to 600), the
   part from *Open from Documents* down to the last recent save scrolls, so `Open…`, the
   writes, `Close save` and `Exit` stay on screen.
 
