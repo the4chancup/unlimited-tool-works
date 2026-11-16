@@ -517,9 +517,8 @@ The settings menu is assembled from injected sections:
   A save edits the file in place (`toml_edit`), changing only the values that changed: until
   the settings menu exists members edit the file by hand, and a tool switch saving
   `last_tool` must not drop their comments, blank lines or key order. Where the edit would
-  not read back as the settings (a section written inline turned into a table header) or the
-  file is not TOML, the save writes it fresh: a file the next start could not open costs more
-  than the comments.
+  not read back as the settings or the file is not TOML, the save writes it fresh: a file
+  the next start could not open costs more than the comments.
 
   A save writes only what its own session changed since it read the file or last wrote it,
   not the session's whole state: with two windows open, each holds its own copy of the

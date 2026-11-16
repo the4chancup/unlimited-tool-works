@@ -246,13 +246,6 @@ exclude_re = [
     # under a test: the event printer fails on a closed stdout, the notice printer on a closed
     # stderr, and a test cannot hand the binary either portably. Unmeasured on purpose.
     "studio/src/main\\.rs:\\d+:\\d+: replace \\|\\| with && in run_loaded",
-    # studio_core: `Settings::save`'s
-    # read-back guard `read_back == desired` -> `true` survives because no known file edits into
-    # TOML that parses yet reads back as other values: the one shape found (an inline section
-    # under a comment) fails to parse, which the `Err` arm beside it catches and its test pins.
-    # The comparison stays as the net for a shape nobody has found, so that it is written fresh
-    # instead of saved wrong. Unmeasured on purpose; the `Err` arm stays measured.
-    "studio_core/src/settings/mod\\.rs:\\d+:\\d+: replace match guard read_back == desired with true in Settings::save",
     # studio_core: the browser build's `FirstRun`
     # stand-in (`first_run.rs`, under `cfg(target_arch = "wasm32")`, after the native impl,
     # so on a three-digit line where the native `up` sits on a two-digit one) is compiled on
