@@ -1675,6 +1675,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
+      - [x] SWE-2's loop over parts A to C ("S-scr", "S-scrc"); part C's last fixes (a team
+        row's name codes, the range run's settings box) are `sk/scrcrw`
+      - [ ] one Carbon round after `sk/scrcrw` merges
     - [ ] the changes list and the close prompt (tier 2): `a6bba169` (changesperf),
       `55f398a9` (promptx)
     - [ ] interchange and export settings (tier 1): `fb42b800` (shirtno), `7b2e9ea2`,
