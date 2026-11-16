@@ -37,15 +37,20 @@ text into the chat. The answered ones then leave this page, and each answer goes
 <h2>The 0.0.2 Save editor report</h2>
 
 <section class="entry" id="settings-checkbox-centred">
-  <h3>Settings: a checkbox alone in its cell, centred?</h3>
+  <h3>Settings: a checkbox alone in its row, centred or 1.5 points higher?</h3>
   <p class="from">From: the built window beside its draft, 2026-11-15</p>
-  <p>In the draft's Settings window, a checkbox standing alone in its cell (Invert value
-  scrolling, Check for updates) sat 1.5 points above its row's middle, while the build centres
-  it. On 2026-11-15 the lead changed the draft to centre it (<code>040d85de</code>), without
-  asking.</p>
+  <p>In the Settings window, a checkbox with no label of its own beside it (Invert number
+  scrolling, Check for updates) used to stand 1.5 points above its row's middle in the draft.
+  The build centres it. On 2026-11-15 the lead changed the draft to centre it too
+  (<code>040d85de</code>), without asking you.</p>
+  <div class="shots">
+    <figure><a href="img/settings_checkbox.png"><img src="img/settings_checkbox.png" alt="The Check for updates row, four times larger: the draft before the change above, the draft now below"></a>
+      <figcaption>The Check for updates row, four times larger. Grey: the row's top and bottom; red: its middle</figcaption></figure>
+  </div>
+  <p class="links"><a href="../prototypes/index.html#save_editor?win=settings">Open the draft's Settings</a></p>
   <div class="options">
-    <label class="opt"><input type="radio" value="keep the draft centred"><b>Keep the change: centred in both</b></label>
-    <label class="opt"><input type="radio" value="restore the draft, raise the build's"><b>Restore the draft, and move the build's checkboxes up 1.5 points</b></label>
+    <label class="opt"><input type="radio" value="keep the draft centred"><b>Centred in both, as now</b></label>
+    <label class="opt"><input type="radio" value="restore the draft, raise the build's"><b>1.5 points higher in both: the draft goes back, and the build's checkboxes move up</b></label>
   </div>
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
